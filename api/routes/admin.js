@@ -2236,9 +2236,12 @@ Collection: ${paragraph.collection || 'Unknown'}
   fastify.get('/server/meili-tasks', { preHandler: requireInternal }, async (request) => {
     try {
       const meili = getMeili();
-      const { status, limit = 20 } = request.query || {};
+      const { status, limit = 20, index, from, type } = request.query || {};
       const query = { limit: Math.min(Number(limit), 100) };
       if (status) query.statuses = [status];
+      if (index) query.indexUids = [index];
+      if (type) query.types = [type];
+      if (from) query.from = Number(from);          // task uid to page back from (newest first)
 
       const tasks = await meili.tasks.getTasks(query);
       return {
@@ -2252,6 +2255,8 @@ Collection: ${paragraph.collection || 'Unknown'}
           enqueuedAt: t.enqueuedAt,
           startedAt: t.startedAt,
           finishedAt: t.finishedAt,
+          duration: t.duration,
+          details: t.details,
           error: t.error?.message
         }))
       };

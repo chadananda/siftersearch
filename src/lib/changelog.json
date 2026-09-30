@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T01:27:32.699Z",
+  "generated": "2026-09-30T02:14:52.627Z",
   "entries": [
+    {
+      "hash": "e5ad19d0",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Disambiguation and HyPE prompts carry the document's catalogue line (doc_meta) — new runs only, no re-run",
+      "scope": "enrich"
+    },
     {
       "hash": "799bcab5",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A language scan that PROPOSES and records, instead of guessing or writing blind",
       "scope": null
-    },
-    {
-      "hash": "1fa5e409",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Stop one book from overwriting another — unique destination per source",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "e5ad19d0",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Disambiguation and HyPE prompts carry the document's catalogue line (doc_meta) — new runs only, no re-run",
+        "scope": "enrich"
+      },
       {
         "hash": "799bcab5",
         "date": "2026-09-29",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "A language scan that PROPOSES and records, instead of guessing or writing blind",
-        "scope": null
-      },
-      {
-        "hash": "1fa5e409",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Stop one book from overwriting another — unique destination per source",
         "scope": null
       }
     ]
