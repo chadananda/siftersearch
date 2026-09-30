@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T22:05:17.849Z",
+  "generated": "2026-09-30T22:31:03.674Z",
   "entries": [
+    {
+      "hash": "6e6320e8",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Look up the linked original of any passage — paragraph/document links, English text → original, an author's quotations",
+      "scope": "api"
+    },
     {
       "hash": "d5e7073d",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Name the URL in fetch failures — I explained this crash twice without evidence",
       "scope": null
-    },
-    {
-      "hash": "a527462b",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "An outage must not be recorded as a bad book (6 books quarantined for a dropped socket)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "6e6320e8",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Look up the linked original of any passage — paragraph/document links, English text → original, an author's quotations",
+        "scope": "api"
+      },
       {
         "hash": "d5e7073d",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Name the URL in fetch failures — I explained this crash twice without evidence",
-        "scope": null
-      },
-      {
-        "hash": "a527462b",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "An outage must not be recorded as a bad book (6 books quarantined for a dropped socket)",
         "scope": null
       }
     ]

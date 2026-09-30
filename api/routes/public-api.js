@@ -18,6 +18,7 @@
  *   GET  /api/v1/paragraph/:id - Get a specific paragraph
  *   GET  /api/v1/paragraph/:id/links - Its original / translations / quoted sources (→ their originals) / quoted-by
  *   POST /api/v1/search/original - English (any) text → the passages holding it → their ORIGINAL-language passages
+ *   POST /api/v1/search/original/batch - the same for up to 50 texts in one request
  *   (POST /search and /search/quick take includeLinks: true to attach the same links to every result)
  *
  * Chat:
@@ -798,6 +799,49 @@ export default async function publicApiRoutes(fastify) {
     logApiSearch({ query: text.slice(0, 200), apiKeyId: request.apiKeyId, resultCount: found.matches.length, durationMs, searchType: 'api_original' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
     return { ...found, processingTimeMs: durationMs };
+  });
+
+  /**
+   * POST /api/v1/search/original/batch — up to 50 texts in one request (the key's hourly limit counts requests, and a
+   * citation list is thousands of verses). Each item answers exactly as POST /search/original; `key` is echoed back.
+   */
+  fastify.post('/search/original/batch', {
+    schema: {
+      description: 'Batch form of POST /search/original: up to 50 {key, text} items, answered in order, each with method/matches/originals. One request against the rate limit.',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
+      body: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: { type: 'array', minItems: 1, maxItems: 50, items: { type: 'object', required: ['text'],
+            properties: { key: { type: 'string', maxLength: 200 }, text: { type: 'string', minLength: 10, maxLength: 8000 } } } },
+          limit: { type: 'integer', minimum: 1, maximum: 20, default: 5 },
+          semantic: { type: 'boolean', default: false, description: 'Semantic fallback per item (slower; off by default in batch).' },
+          minOverlap: { type: 'number', minimum: 0.1, maximum: 1, default: 0.5 },
+        }
+      }
+    }
+  }, async (request) => {
+    const { items, limit = 5, semantic = false, minOverlap = 0.5 } = request.body;
+    const startTime = Date.now();
+    const results = new Array(items.length);
+    let next = 0;
+    const worker = async () => {
+      while (next < items.length) {
+        const k = next++;
+        try {
+          results[k] = { key: items[k].key ?? null, ...(await findOriginals(items[k].text, { limit, semantic, minOverlap, search: hybridSearch })) };
+        } catch (err) {
+          results[k] = { key: items[k].key ?? null, error: err.message };
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: 4 }, worker));
+    const durationMs = Date.now() - startTime;
+    logApiSearch({ query: `[batch ${items.length}]`, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api_original_batch' });
+    if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
+    return { results, processingTimeMs: durationMs };
   });
 
   /**
