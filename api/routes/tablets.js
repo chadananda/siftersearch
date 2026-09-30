@@ -9,7 +9,8 @@ import { queryAll, queryOne, transaction } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
-import { buildDocMeta, contextLine, indexDoc, ftsRow, ftsQuery } from '../lib/doc-meta.js';
+import { buildDocMeta, contextLine, indexDoc, ftsRow } from '../lib/doc-meta.js';
+import { getDocMeta, searchDocMeta } from '../lib/doc-meta-store.js';
 import { getMeili } from '../lib/search.js';
 
 const admin = { preHandler: requireInternal };
@@ -76,21 +77,12 @@ export default async function tabletAdminRoutes(fastify) {
    * deep. Notes docs get no record.
    * /tablets/rebuild is the same call (kept for the scripts that use it).
    */
-  const rebuild = async (req) => {
-    const { dir } = req.body || {};
-    if (dir == null) throw ApiError.badRequest('dir required ("" = the whole library)');
-    const bib = Object.fromEntries((await queryAll('SELECT code, citation, url FROM bib_codes', [], 'docmeta:bib-read')).map((b) => [b.code, b]));
-    const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.author, d.religion, d.collection, d.language, d.year,
-        d.description, d.metadata, d.doc_role,
-        (SELECT l.pin FROM inventory_links l WHERE l.doc_id = d.id ORDER BY l.coverage DESC LIMIT 1) AS linked_pin
-        FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%'`, [dir], 'docmeta:rebuild-docs');
+  const rebuildPage = async (docs, bib) => {
     const fms = new Map(docs.map((d) => [d.id, parse(d.frontmatter) || {}]));
     const notesFor = new Map();
-    for (const part of inChunks(docs.map((d) => d.id), 500)) {
-      for (const n of await queryAll(`SELECT t.tablet_doc_id, n.id, n.title, n.language FROM tablet_notes t JOIN docs n ON n.id = t.notes_doc_id
-          WHERE n.deleted_at IS NULL AND t.tablet_doc_id IN (${part.map(() => '?').join(',')})`, part, 'docmeta:notes-read')) {
-        notesFor.set(n.tablet_doc_id, [...(notesFor.get(n.tablet_doc_id) || []), { docId: n.id, title: n.title, language: n.language }]);
-      }
+    for (const n of await queryAll(`SELECT t.tablet_doc_id, n.id, n.title, n.language FROM tablet_notes t JOIN docs n ON n.id = t.notes_doc_id
+        WHERE n.deleted_at IS NULL AND t.tablet_doc_id IN (${docs.map(() => '?').join(',')})`, docs.map((d) => d.id), 'docmeta:notes-read')) {
+      notesFor.set(n.tablet_doc_id, [...(notesFor.get(n.tablet_doc_id) || []), { docId: n.id, title: n.title, language: n.language }]);
     }
     const pins = [...new Set(docs.map((d) => fms.get(d.id).pin || fms.get(d.id).catalog_ref || d.linked_pin).filter(Boolean))];
     const raws = new Map();
@@ -121,15 +113,35 @@ export default async function tabletAdminRoutes(fastify) {
         ];
       }), 'docmeta:rebuild-write');
     }
-    return { docs: docs.length, built: out.length, tablets: out.filter((o) => o.meta.kind === 'tablet').length };
+    return out;
   };
+  // Pages of 2,000 docs with a yield between them: a single pass over the library held the API's event loop and
+  // /health timed out (2026-09-29). Run large dirs as a background call, never inline in a user path.
+  const rebuild = async (req) => {
+    const { dir } = req.body || {};
+    if (dir == null) throw ApiError.badRequest('dir required ("" = the whole library)');
+    const bib = Object.fromEntries((await queryAll('SELECT code, citation, url FROM bib_codes', [], 'docmeta:bib-read')).map((b) => [b.code, b]));
+    let after = 0, docsSeen = 0, built = 0, tablets = 0;
+    for (;;) {
+      const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.author, d.religion, d.collection, d.language, d.year,
+          d.description, d.metadata, d.doc_role,
+          (SELECT l.pin FROM inventory_links l WHERE l.doc_id = d.id ORDER BY l.coverage DESC LIMIT 1) AS linked_pin
+          FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%' AND d.id > ? ORDER BY d.id LIMIT 2000`, [dir, after], 'docmeta:rebuild-docs');
+      if (!docs.length) break;
+      after = docs[docs.length - 1].id; docsSeen += docs.length;
+      const out = await rebuildPage(docs, bib);
+      built += out.length; tablets += out.filter((o) => o.meta.kind === 'tablet').length;
+      await new Promise((r) => setImmediate(r));
+    }
+    return { docs: docsSeen, built, tablets };
+  };
+  fastify.post('/docmeta/rebuild', admin, rebuild);
+  fastify.post('/tablets/rebuild', admin, rebuild);
   /** POST /docmeta/cancel-meili — withdraw the doc_meta tasks queued in Meilisearch (the index now lives in SQLite). */
   fastify.post('/docmeta/cancel-meili', admin, async () => {
     const t = await getMeili().tasks.cancelTasks({ indexUids: ['doc_meta'], statuses: ['enqueued'] });
     return { cancellationTask: t.taskUid };
   });
-  fastify.post('/docmeta/rebuild', admin, rebuild);
-  fastify.post('/tablets/rebuild', admin, rebuild);
 }
 
 /** Public: GET /api/documents/:id/about — the document's metadata record (reader box, chat "about this book"). */
@@ -139,35 +151,12 @@ export async function tabletPublicRoutes(fastify) {
    * metadata (recipient, place, date, subjects, names) in the separate doc_meta index. Returns doc ids + the fields
    * that matched, so a caller can narrow a passage search with a doc_id filter.
    */
-  fastify.get('/meta/search', async (req) => {
-    const q = req.query || {};
-    const filters = []; const fargs = [];
-    for (const [k, col] of [['kind', 'm.kind'], ['author', 'm.author'], ['place', 'm.place'], ['genre', 'm.genre'], ['pin', 'm.pin']]) {
-      if (q[k]) { filters.push(`${col} = ?`); fargs.push(String(q[k])); }
-    }
-    if (Number(q.year_from)) { filters.push('m.year_to >= ?'); fargs.push(Number(q.year_from)); }
-    if (Number(q.year_to)) { filters.push('m.year_from <= ?'); fargs.push(Number(q.year_to)); }
-    const limit = Math.min(200, Number(q.limit) || 20);
-    const cols = 'm.doc_id, m.kind, m.title, m.author, m.place, m.year_from, m.year_to, m.genre, m.pin, m.context';
-    const run = (match, n, exclude = []) => {
-      const where = [...(match ? ['doc_meta_fts MATCH ?'] : []), ...filters, ...(exclude.length ? [`m.doc_id NOT IN (${exclude.map(() => '?').join(',')})`] : [])];
-      if (!where.length) return [];
-      return queryAll(`SELECT ${cols} FROM ${match ? 'doc_meta_fts f JOIN doc_meta m ON m.doc_id = f.rowid' : 'doc_meta m'}
-          WHERE ${where.join(' AND ')} ${match ? 'ORDER BY bm25(doc_meta_fts, 4, 3, 5, 3, 2, 1, 1, 2, 1)' : 'ORDER BY m.year_from'} LIMIT ?`,
-        [...(match ? [match] : []), ...fargs, ...exclude, n], 'docmeta:search');
-    };
-    // every word first ("Mulla Husayn" should not lead with "Muhammad Husayn son of Mulla Shafi"), then any word
-    let hits = await run(ftsQuery(q.q, 'AND'), limit);
-    if (hits.length < limit && ftsQuery(q.q) && q.q.trim().includes(' ')) hits = hits.concat(await run(ftsQuery(q.q, 'OR'), limit - hits.length, hits.map((h) => h.doc_id)));
-    return { total: hits.length, hits };
-  });
+  fastify.get('/meta/search', async (req) => searchDocMeta(req.query || {}));
 
   fastify.get('/:id/about', async (req, reply) => {
-    const id = Number(req.params.id);
-    const row = await queryOne('SELECT meta FROM doc_meta WHERE doc_id = ?', [id], 'docmeta:about')
-      || await queryOne('SELECT meta FROM tablet_meta WHERE doc_id = ?', [id], 'docmeta:about-legacy');
-    if (!row) return reply.code(404).send({ error: 'NotFound', message: 'No metadata for this document' });
+    const meta = await getDocMeta(Number(req.params.id));
+    if (!meta) return reply.code(404).send({ error: 'NotFound', message: 'No metadata for this document' });
     reply.header('Cache-Control', 'public, max-age=300');
-    return parse(row.meta);
+    return meta;
   });
 }

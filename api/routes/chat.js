@@ -365,6 +365,28 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
   {
     type: 'function',
     function: {
+      name: 'document_info',
+      description: `Everything catalogued ABOUT one document (not its text): for a tablet — to whom it was addressed, date (Gregorian and Hijri), place of revelation, period, the collection it belongs to, manuscripts, where it has been published and translated, subjects, recitations, scholarly notes; for a book — author, translator, publisher, year, subjects. Sources: Stephen Phelps' Partial Inventory, oceanoflights.org, the library. Use when the user asks about a document's circumstances ("to whom was this tablet written?", "when and where was it revealed?", "has it been translated?"). Needs a document_id (from search or find_document_for_citation).`,
+      parameters: { type: 'object', properties: { document_id: { type: 'integer' } }, required: ['document_id'] }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'find_documents_by_metadata',
+      description: `Find DOCUMENTS (not passages) by what is catalogued about them: recipient, place of revelation, date range, subjects, names. E.g. "tablets to Mullá Ḥusayn", "tablets revealed in Adrianople", "Bahá'u'lláh's tablets from 1868", "prayers for healing". Returns document ids with a one-line description each; pass the ids to read_document_for_question, or quote them. Use this before a passage search when the question is about a document's circumstances.`,
+      parameters: { type: 'object', properties: {
+        query: { type: 'string', description: 'free text: a name, place, subject or title' },
+        kind: { type: 'string', enum: ['tablet', 'book'] },
+        author: { type: 'string', description: "exact author as catalogued, e.g. Bahá'u'lláh, 'Abdu'l-Bahá, The Báb" },
+        place: { type: 'string' }, year_from: { type: 'integer' }, year_to: { type: 'integer' },
+        limit: { type: 'integer', default: 10 }
+      } }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'read_document_for_question',
       description: `Targeted read of a document via a sub-agent — keeps your conversation thread clean. Pass document_id and the user's question; sub-agent returns a 1-3 sentence summary plus 2-3 verbatim excerpts. Document body never enters your context.
 
@@ -1248,6 +1270,18 @@ export async function executeTool(name, args, ctx = {}) {
     case 'library_count': return executeLibraryCount(args);
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);
     case 'read_document_for_question': return executeReadDocumentForQuestion(args);
+    case 'document_info': {
+      const { getDocMeta } = await import('../lib/doc-meta-store.js');
+      const m = await getDocMeta(Number(args.document_id));
+      if (!m) return { error: 'nothing catalogued about this document' };
+      const { sources, ...rest } = m;                 // provenance stays server-side; the answer names the catalogues
+      return { ...rest, catalogued_by: [...new Set(Object.values(sources || {}))] };
+    }
+    case 'find_documents_by_metadata': {
+      const { searchDocMeta } = await import('../lib/doc-meta-store.js');
+      return searchDocMeta({ q: args.query, kind: args.kind, author: args.author, place: args.place,
+        year_from: args.year_from, year_to: args.year_to, limit: Math.min(args.limit || 10, 30) });
+    }
     case 'translate_passage': return executeTranslatePassage(args);
     case 'entity_lookup': return { candidates: await entityLookup(args.q, { type: args.type, limit: 12 }) };
     case 'entity_dossier': return (await entityDossier(args.id)) || { error: 'entity not found or merged' };

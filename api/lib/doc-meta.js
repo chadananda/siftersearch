@@ -75,8 +75,9 @@ export function ftsRow(m) {
     .map((v) => v ?? '');
 }
 
-/** User text → a safe FTS5 query: each word quoted (no operator injection); op 'AND' = all words, 'OR' = any. */
+/** User text → a safe FTS5 query: words quoted (no operator injection); op 'PHRASE' = exact phrase, 'AND' = all, 'OR' = any. */
 export function ftsQuery(q, op = 'OR') {
   const words = String(q || '').normalize('NFKC').split(/[^\p{L}\p{N}'’-]+/u).map((w) => w.replace(/["'’]/g, '')).filter((w) => w.length > 1);
-  return words.length ? words.map((w) => `"${w}"`).join(` ${op} `) : null;
+  if (!words.length) return null;
+  return op === 'PHRASE' ? (words.length > 1 ? `"${words.join(' ')}"` : null) : words.map((w) => `"${w}"`).join(` ${op} `);
 }

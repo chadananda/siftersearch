@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T00:26:03.754Z",
+  "generated": "2026-09-30T00:52:45.023Z",
   "entries": [
+    {
+      "hash": "c5d0c3f7",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "Metadata search prefers documents matching every word, then any",
+      "scope": "docmeta"
+    },
     {
       "hash": "7f098f1c",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Scope the work-list to books that HAVE a source, and make each rejection name its own cause",
       "scope": null
-    },
-    {
-      "hash": "f283a1bd",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Reconciler, timestamp contract, and the end of the silent catch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "c5d0c3f7",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "Metadata search prefers documents matching every word, then any",
+        "scope": "docmeta"
+      },
       {
         "hash": "7f098f1c",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Scope the work-list to books that HAVE a source, and make each rejection name its own cause",
-        "scope": null
-      },
-      {
-        "hash": "f283a1bd",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Reconciler, timestamp contract, and the end of the silent catch",
         "scope": null
       }
     ]

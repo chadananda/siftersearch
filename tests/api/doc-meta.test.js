@@ -36,6 +36,8 @@ describe('FTS helpers', () => {
     expect(ftsQuery('Mullá Ḥusayn AND "x" NEAR(')).toBe('"Mullá" OR "Ḥusayn" OR "AND" OR "NEAR"');
     expect(ftsQuery('  ')).toBeNull();
     expect(ftsQuery('Mulla Husayn', 'AND')).toBe('"Mulla" AND "Husayn"');
+    expect(ftsQuery('Mulla Husayn', 'PHRASE')).toBe('"Mulla Husayn"');
+    expect(ftsQuery('Husayn', 'PHRASE')).toBeNull();
   });
   it('lays out a record as the FTS row', () => {
     const r = ftsRow(buildDocMeta({ doc: { id: 1, title: 'Book', author: 'A' }, fm: { subjects: ['x', 'y'] } }));
