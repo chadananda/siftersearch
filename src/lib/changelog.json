@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T14:55:36.914Z",
+  "generated": "2026-09-30T15:05:50.529Z",
   "entries": [
+    {
+      "hash": "34dc4f9a",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Content_source_links (migr 139) — a quoting paragraph → the paragraph it quotes, for reference links; bulk upsert + read endpoints",
+      "scope": "links"
+    },
     {
       "hash": "1433edcb",
       "date": "2026-09-29",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "The article engine's evidence spine — ledgers, authority mapping, corpus adapter",
       "scope": null
-    },
-    {
-      "hash": "736b87a1",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Unpdf + mammoth are PRODUCTION deps — the converter runs on the server",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-30": [
+      {
+        "hash": "34dc4f9a",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Content_source_links (migr 139) — a quoting paragraph → the paragraph it quotes, for reference links; bulk upsert + read endpoints",
+        "scope": "links"
+      }
+    ],
     "2026-09-29": [
       {
         "hash": "1433edcb",
@@ -7051,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "The article engine's evidence spine — ledgers, authority mapping, corpus adapter",
-        "scope": null
-      },
-      {
-        "hash": "736b87a1",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Unpdf + mammoth are PRODUCTION deps — the converter runs on the server",
         "scope": null
       }
     ]

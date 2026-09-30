@@ -21,8 +21,13 @@
   method) + bulk upsert + GET per paragraph → reader renders "Source: <work ¶>". Run as a server script (reads SQLite
   read-only, writes through the single writer in bulk) — no session tokens.
 
-## Then
-- Concept extraction + HyPE: take the LINKED passage too — generate once for original + translation together
-  (Chad: "always better to generate for both passages at the same time").
+## Then — pairs, not paragraphs (Chad: "always better to generate for both passages at the same time")
+- Today the bilingual path fires only on content.original_text (beside). Links made since 09-28 live in
+  content_alignment (published English ↔ original) and translation_text (Phelps beside the original) — unseen.
+- rag-adapter store.getParagraphs: attach the PARTNER — English → linked original(s) (content_alignment.trans_id);
+  original → translation_text beside, else linked English (published authority first). Carry partnerIds.
+- Extract + HyPE: generate ONCE per pair (bilingual prompt: original is authoritative, English = reading aid), write
+  to BOTH paragraphs; the second side sees the first's stamp at the current version and copies instead of calling.
+- Authority: published/SE English > RD compilation > Phelps provisional — the prompt names which English it is.
 - Remaining queue 17,655 ¶: 204+1,794 non-parallel PI files (align blocks by DP instead of count), write the balib pairs,
   then whatever is left goes to CTAI.

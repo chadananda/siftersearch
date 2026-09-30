@@ -20,6 +20,7 @@ import { emptiedHype, emptiedDisambig, emptiedExtract } from '../lib/generator-i
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
+import { linkFor } from '../lib/source-links.js';
 
 const parseRun = (rj) => { try { return rj ? JSON.parse(rj) : null; } catch { return null; } };
 // Live only if the run heartbeated within 150s (executor refreshes every 30s). A crashed/killed book stops
@@ -1149,17 +1150,33 @@ export default async function groundingRoutes(fastify) {
     return { written: rows.length };
   });
 
-  /** GET /concepts/source-links?quoteDoc=|quoteId=|sourceId= — what a paragraph/document quotes, or who quotes a paragraph. */
+  /**
+   * GET /concepts/source-links?quoteDoc=|quoteId=|sourceId= — what a paragraph/document quotes, or who quotes a paragraph.
+   * Each row carries the chain Chad asked for (2026-09-30): the source paragraph, its reference link by policy
+   * (OceanLibrary first, paragraph-exact when known — linkFor), and the ORIGINAL paragraph(s) through translation links.
+   */
   fastify.get('/concepts/source-links', admin, async (req) => {
     const q = req.query || {};
     const col = q.quoteId ? 'l.quote_id' : q.sourceId ? 'l.source_id' : 'l.quote_doc';
     const val = Number(q.quoteId || q.sourceId || q.quoteDoc);
     if (!val) throw ApiError.badRequest('quoteDoc, quoteId or sourceId required');
     const rows = await queryAll(
-      `SELECT l.*, d.title AS source_title, c.paragraph_index AS source_index
+      `SELECT l.*, c.paragraph_index AS source_index, c.external_para_id, d.title AS source_title, d.source_url, d.metadata,
+              d.religion, d.collection, d.slug, d.filename
          FROM content_source_links l JOIN content c ON c.id = l.source_id JOIN docs d ON d.id = l.source_doc
         WHERE ${col} = ? ORDER BY l.quote_id, l.coverage DESC LIMIT ?`, [val, Math.min(2000, Number(q.limit) || 200)], 'source-links:read');
-    return { rows };
+    const ids = [...new Set(rows.map((r) => r.source_id))];
+    const originals = ids.length ? await queryAll(
+      `SELECT a.trans_id, a.orig_id, a.orig_doc, o.paragraph_index AS orig_index, od.title AS orig_title, od.language AS orig_language
+         FROM content_alignment a JOIN content o ON o.id = a.orig_id JOIN docs od ON od.id = a.orig_doc
+        WHERE a.retired_at IS NULL AND a.trans_id IN (${ids.map(() => '?').join(',')})`, ids, 'source-links:originals') : [];
+    const byTrans = new Map();
+    for (const o of originals) byTrans.set(o.trans_id, [...(byTrans.get(o.trans_id) || []), o]);
+    return { rows: rows.map(({ metadata, source_url, religion, collection, slug, filename, external_para_id, ...r }) => ({
+      ...r,
+      link: linkFor({ id: r.source_doc, source_url, metadata, religion, collection, slug, filename, external_para_id }, r.source_index),
+      originals: (byTrans.get(r.source_id) || []).map(({ trans_id, ...o }) => o),
+    })) };
   });
 
   /**
