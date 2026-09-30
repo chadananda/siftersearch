@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T06:03:16.207Z",
+  "generated": "2026-09-30T06:14:15.326Z",
   "entries": [
+    {
+      "hash": "d9e35478",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "/server/meili-coverage — paged audit of live paragraphs vs the Meili index (missing/stale), optional fix",
+      "scope": "admin"
+    },
     {
       "hash": "ff3c9fcc",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "What actually blocks the Astro 7 upgrade — two false blockers corrected, one real one found",
       "scope": null
-    },
-    {
-      "hash": "d3fa96c5",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Make main installable again — realign package.json with the lockfile, lock the converter's deps",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "d9e35478",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "/server/meili-coverage — paged audit of live paragraphs vs the Meili index (missing/stale), optional fix",
+        "scope": "admin"
+      },
       {
         "hash": "ff3c9fcc",
         "date": "2026-09-29",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-13",
         "type": "Docs",
         "description": "What actually blocks the Astro 7 upgrade — two false blockers corrected, one real one found",
-        "scope": null
-      },
-      {
-        "hash": "d3fa96c5",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Make main installable again — realign package.json with the lockfile, lock the converter's deps",
         "scope": null
       }
     ]

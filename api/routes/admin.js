@@ -67,6 +67,7 @@ import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
 import { isAIProcessingPaused, resumeAIProcessing, getAllDailySpending } from '../lib/ai-services.js';
 import { content } from '../lib/content.js';
+import { paragraphIndexForSite } from '../lib/search/scope.js';
 import { createApiKey, listApiKeys, revokeApiKey, getAllApiKeys } from '../lib/api-keys.js';
 
 // Track background tasks
@@ -2304,13 +2305,16 @@ Collection: ${paragraph.collection || 'Unknown'}
   fastify.post('/server/meili-coverage', { preHandler: requireInternal }, async (request) => {
     const { afterDocId = 0, docs = 1000, fix = false } = request.body || {};
     const meili = getMeili();
-    const idx = meili.index('paragraphs');
-    const ids = (await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL AND id > ? ORDER BY id LIMIT ?', [afterDocId, Math.min(docs, 5000)]))
-      .map((d) => d.id);
+    const docRows = await queryAll('SELECT id, source_site FROM docs WHERE deleted_at IS NULL AND id > ? ORDER BY id LIMIT ?', [afterDocId, Math.min(docs, 5000)]);
+    const ids = docRows.map((d) => d.id);
     if (!ids.length) return { done: true, docs: 0 };
-    let live = 0; const missing = []; const stale = [];
-    for (let i = 0; i < ids.length; i += 500) {
-      const part = ids.slice(i, i + 500);
+    // Supplemental sites live in their own index (siftersearch_<prefix>_paragraphs) — audit each doc where the worker puts it.
+    const byIndex = new Map();
+    for (const d of docRows) { const n = paragraphIndexForSite(d.source_site); byIndex.set(n, [...(byIndex.get(n) || []), d.id]); }
+    let live = 0; const missing = []; const staleByIndex = new Map();
+    for (const [indexName, groupIds] of byIndex) for (let i = 0; i < groupIds.length; i += 500) {
+      const idx = meili.index(indexName); const stale = staleByIndex.get(indexName) || []; staleByIndex.set(indexName, stale);
+      const part = groupIds.slice(i, i + 500);
       const rows = await queryAll(`SELECT id FROM content WHERE deleted_at IS NULL AND doc_id IN (${part.map(() => '?').join(',')})`, part);
       const liveIds = new Set(rows.map((r) => r.id)); live += liveIds.size;
       const seen = new Set();
@@ -2323,10 +2327,11 @@ Collection: ${paragraph.collection || 'Unknown'}
     }
     if (fix) {
       for (let i = 0; i < missing.length; i += 500) await content.markUnsynced(missing.slice(i, i + 500));
-      for (let i = 0; i < stale.length; i += 10000) await idx.deleteDocuments(stale.slice(i, i + 10000));
+      for (const [indexName, stale] of staleByIndex) for (let i = 0; i < stale.length; i += 10000) await meili.index(indexName).deleteDocuments(stale.slice(i, i + 10000));
     }
-    return { fix, docs: ids.length, firstDocId: ids[0], nextAfterDocId: ids[ids.length - 1], live,
-      missing: missing.length, stale: stale.length, missingSample: missing.slice(0, 20) };
+    const staleCount = [...staleByIndex.values()].reduce((n, a) => n + a.length, 0);
+    return { fix, docs: ids.length, firstDocId: ids[0], nextAfterDocId: ids[ids.length - 1], live, indexes: [...byIndex.keys()],
+      missing: missing.length, stale: staleCount, missingSample: missing.slice(0, 20) };
   });
 
   /**

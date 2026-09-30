@@ -32,6 +32,11 @@ export function setSiteRegistry(configs) {
   siteRegistry = configs || {};
 }
 
+/** The paragraph index a document's rows live in (same routing as the sync worker): primary unless its source_site has a prefix. */
+export function paragraphIndexForSite(sourceSite) {
+  return getParagraphIndex(sourceSite ? siteRegistry[sourceSite]?.meili_index_prefix : null);
+}
+
 /**
  * Meili paragraph index name for a given site prefix. Pass null/undefined
  * for the primary corpus index.
