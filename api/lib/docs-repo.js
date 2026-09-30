@@ -166,7 +166,7 @@ export async function getParagraphs(docId, { proseOnly = true, limit = 100000, o
     // here the only way to see them was to pay for a dry run — which reads the model, not the database.
     `SELECT c.id, c.doc_id, c.paragraph_index, c.external_para_id, c.text, c.heading, c.blocktype, c.language,
             c.original_text, c.original_lang, c.translation_text, c.translation_authority, c.align_ref,
-            c.hyp_questions, c.hyp_model, c.context, c.context_model
+            c.hyp_questions, c.hyp_model, c.context, c.context_model, c.pdf_page, c.block_attrs
        FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL ${kinds}
       ORDER BY c.paragraph_index LIMIT ? OFFSET ?`,
     [Number(docId), limit, offset], 'docs-repo:paragraphs');

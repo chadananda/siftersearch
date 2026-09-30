@@ -93,12 +93,13 @@ export function splitOversizedBlock(text, maxSize = MAX_PARAGRAPH_SIZE) {
  * @param {string} text - Paragraph text
  * @param {Array} blocks - Array to push blocks to
  */
-function addParagraphBlocks(text, blocks) {
+function addParagraphBlocks(text, blocks, splitOversized = true) {
   const trimmed = text.trim();
   if (!trimmed) return;
 
-  // Split if oversized
-  const chunks = splitOversizedBlock(trimmed);
+  // Split if oversized — except where the source declares its own paragraphing (Chad, 2026-09-30: "we never segment on
+  // arbitrary boundaries"): a size cap cut a 6,039-char paragraph of a finished Arabic source inside a footnote comment.
+  const chunks = splitOversized ? splitOversizedBlock(trimmed) : [trimmed];
   for (const chunk of chunks) {
     blocks.push({
       type: BLOCK_TYPES.PARAGRAPH,
@@ -138,7 +139,7 @@ export function parseBlockAttrs(line) {
  * @param {string} text - Raw markdown text
  * @returns {Array<{type: string, content: string, raw: string, attrs?: object}>} Array of blocks
  */
-export function parseMarkdownBlocks(text) {
+export function parseMarkdownBlocks(text, { splitOversized = true } = {}) {
   if (!text || typeof text !== 'string') {
     return [];
   }
@@ -168,7 +169,7 @@ export function parseMarkdownBlocks(text) {
       } else {
         // Start of code block - flush any pending paragraph
         if (currentParagraph.length) {
-          addParagraphBlocks(currentParagraph.join('\n'), blocks);
+          addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
           currentParagraph = [];
         }
         codeBlockStart = line;
@@ -187,7 +188,7 @@ export function parseMarkdownBlocks(text) {
     if (blockAttrs) {
       // Flush pending paragraph first, then attach attrs to the last block
       if (currentParagraph.length) {
-        addParagraphBlocks(currentParagraph.join('\n'), blocks);
+        addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
         currentParagraph = [];
       }
       if (blocks.length > 0) {
@@ -201,7 +202,7 @@ export function parseMarkdownBlocks(text) {
     if (headingMatch) {
       // Flush any pending paragraph
       if (currentParagraph.length) {
-        addParagraphBlocks(currentParagraph.join('\n'), blocks);
+        addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
         currentParagraph = [];
       }
 
@@ -227,7 +228,7 @@ export function parseMarkdownBlocks(text) {
     if (line.startsWith('> ')) {
       // Flush paragraph
       if (currentParagraph.length) {
-        addParagraphBlocks(currentParagraph.join('\n'), blocks);
+        addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
         currentParagraph = [];
       }
 
@@ -244,7 +245,7 @@ export function parseMarkdownBlocks(text) {
     if (listMatch) {
       // Flush paragraph
       if (currentParagraph.length) {
-        addParagraphBlocks(currentParagraph.join('\n'), blocks);
+        addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
         currentParagraph = [];
       }
 
@@ -259,7 +260,7 @@ export function parseMarkdownBlocks(text) {
     // Empty line = paragraph break
     if (!line.trim()) {
       if (currentParagraph.length) {
-        addParagraphBlocks(currentParagraph.join('\n'), blocks);
+        addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
         currentParagraph = [];
       }
       continue;
@@ -271,7 +272,7 @@ export function parseMarkdownBlocks(text) {
 
   // Flush remaining paragraph
   if (currentParagraph.length) {
-    addParagraphBlocks(currentParagraph.join('\n'), blocks);
+    addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
   }
 
   // Handle unclosed code block

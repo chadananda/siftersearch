@@ -8,6 +8,7 @@
 #   prepare  <md> <jobs.json> [--min 12000] [--title T]   paragraphs over --min visible chars → windows
 #   sample   <jobs.json> <n> [--model M]                  run n windows LIVE and print the breaks for reading
 #   submit   <jobs.json> [--model M]                       Message Batches API (50%); writes <jobs>.batch
+#   live     <jobs.json> [--model M]                       small jobs: run now, write <jobs>.starts.json
 #   collect  <jobs.json>                                   batch results → <jobs>.starts.json
 #   apply    <jobs.json> <out.md>                          insert the breaks, verify the text
 #   prepare-whole <md> <jobs.json> [--title T]              a WHOLE document whose source is not paragraphed: units are its
@@ -161,6 +162,11 @@ def main():
             for s_ in st[:6]:
                 if lines: print('   ¶ at', s_, ':', next((l[:160] for l in lines if l.startswith(f'[{s_}]')), '?'))
         return
+    if cmd == 'live':                                  # small jobs: run now (standard price), save like `collect`
+        out = {}
+        for w in jobs['windows']:
+            out[w['id']] = starts_from(client.messages.create(**request(w, jobs['title'], model)))
+        json.dump(out, open(a[0] + '.starts.json', 'w')); print('windows', len(out), 'starts', sum(map(len, out.values()))); return
     if cmd == 'submit':
         from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
         from anthropic.types.messages.batch_create_params import Request

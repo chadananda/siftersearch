@@ -776,7 +776,8 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     maxChunkSize = CHUNK_CONFIG.maxChunkSize,
     minChunkSize = CHUNK_CONFIG.minChunkSize,
     language = 'en',
-    skipAISegmentation = false
+    skipAISegmentation = false,
+    keepParagraphs = false          // the source declares its paragraphing (needs_segmentation: false): never re-cut it
   } = options;
 
   if (!text || typeof text !== 'string') {
@@ -857,7 +858,7 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   // NOTE: Sentence markers for non-English are added LATER in ingestDocument(),
   // after this function returns. This function only handles PARAGRAPH structure.
   // ───────────────────────────────────────────────────────────────────────────
-  const blocks = parseMarkdownBlocks(text);
+  const blocks = parseMarkdownBlocks(text, { splitOversized: !keepParagraphs });
 
   if (blocks.length === 0) {
     return { chunks: [], autoSegmented: false };
@@ -870,6 +871,8 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   let carry = '';
   for (const block of blocks) {
     if (!block.content) continue;
+    // A source that declares its paragraphing keeps every paragraph as written — no joining of short ones either.
+    if (keepParagraphs) { chunks.push({ text: block.content, blocktype: block.type, attrs: block.attrs || null }); continue; }
     const text = carry ? `${carry} ${block.content}` : block.content;
     if (text.length < minChunkSize) { carry = text; continue; }
     carry = '';
@@ -1516,7 +1519,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Uses AI segmentation for RTL languages without punctuation (unless skipAISegmentation)
   let { chunks, autoSegmented } = await parseDocumentWithBlocks(contentToProcess, {
     language: finalMeta.language,
-    skipAISegmentation
+    skipAISegmentation,
+    keepParagraphs: String(extractedMeta.needs_segmentation).toLowerCase() === 'false'
   });
   // Print-page breaks (<pb vol n/>) and a page's footnotes (<!-- fn -->) live in the SOURCE only: record each
   // paragraph's page (pdf_page + block_attrs) and take them out of the stored text. See lib/page-breaks.js.

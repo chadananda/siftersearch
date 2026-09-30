@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T20:24:05.674Z",
+  "generated": "2026-09-30T20:43:51.956Z",
   "entries": [
+    {
+      "hash": "9e63a567",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Semantic paragraph segmentation written INTO the markdown (paid once) + exact-text builds for derived Arabic sources",
+      "scope": "sources"
+    },
     {
       "hash": "749479b1",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Give the slow-query detector a consumer (it timed everything and told no one)",
       "scope": null
-    },
-    {
-      "hash": "d5cb78df",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Delete the boot-time scan that blocked the single writer for 60s (root cause of \"other side closed\")",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "9e63a567",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Semantic paragraph segmentation written INTO the markdown (paid once) + exact-text builds for derived Arabic sources",
+        "scope": "sources"
+      },
       {
         "hash": "749479b1",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Give the slow-query detector a consumer (it timed everything and told no one)",
-        "scope": null
-      },
-      {
-        "hash": "d5cb78df",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Delete the boot-time scan that blocked the single writer for 60s (root cause of \"other side closed\")",
         "scope": null
       }
     ]
