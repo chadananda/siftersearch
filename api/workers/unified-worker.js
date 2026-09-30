@@ -24,6 +24,7 @@ import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
+import { flushMeiliDeletes } from '../lib/meili-pending.js';
 import { runMigrations } from '../lib/migrations.js';
 import { setSiteRegistry } from '../lib/search/scope.js';
 import { loadAllSiteConfigs } from '../services/sites-ingester.js';
@@ -197,6 +198,18 @@ async function processSyncJob(job) {
       return;
     }
     const documentsIndex = meili.index('documents');
+    // Queued deletions go first, in bulk (their ids never collide with the fresh rows this job sends — flush skips
+    // ids that are live again).
+    try { const d = await flushMeiliDeletes(meili); if (d.jobs) logger.info(d, 'Meili deletions flushed in bulk'); }
+    catch (err) { logger.warn({ err: err.message }, 'Bulk Meili deletion failed — will retry'); }
+    // The documents index gets ONE job per 500 documents, not one per document: a Meili job costs seconds-to-minutes
+    // whatever its size (50,552 one-document jobs were queued on 2026-09-29).
+    let docBuffer = [];
+    const flushDocs = async (force = false) => {
+      if (!docBuffer.length || (!force && docBuffer.length < 500)) return;
+      const batch = docBuffer; docBuffer = [];
+      try { await documentsIndex.addDocuments(batch); } catch (err) { logger.error({ err: err.message, count: batch.length }, 'Failed to submit document metadata batch'); }
+    };
     // Resolve a doc's source_site → Meili paragraph index name.
     // Primary docs (source_site IS NULL) → 'paragraphs'. Supplementals
     // route to siftersearch_<prefix>_paragraphs based on sites.yaml. Null
@@ -308,18 +321,19 @@ async function processSyncJob(job) {
           let authority;
           try { authority = getAuthority(doc); } catch { authority = 0; }
 
-          // Submit doc metadata
+          // Doc metadata → buffered, sent 500 documents per job (flushDocs)
           try {
             const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
-            await documentsIndex.addDocuments([{
+            docBuffer.push({
               id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
               collection: doc.collection, language: doc.language,
               year: doc.year ? parseInt(doc.year, 10) : null,
               description: doc.description, filename: doc.filename, authority,
               chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
-            }]);
+            });
+            await flushDocs();
           } catch (err) {
-            logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document metadata');
+            logger.error({ err: err.message, docId: doc.id }, 'Failed to buffer document metadata');
           }
 
           // Process paragraphs in batches.
@@ -423,6 +437,7 @@ async function processSyncJob(job) {
     for (const indexName of [...buffer.keys()]) {
       await flushBuffer(indexName, true);
     }
+    await flushDocs(true);
 
     if (isShuttingDown) {
       logger.info({ jobId: job.id, completedItems, failedItems, inFlight: inFlight.length }, 'Shutdown mid-job — requeueing');
@@ -787,6 +802,7 @@ async function runMeiliReconcileCycle() {
 async function runPeriodicTasks() {
   const T = PERIODIC_TASK_TIMEOUT_MS;
   const now = Date.now();
+  await withTimeout(async () => { const m = await getMeili(); if (m) { const d = await flushMeiliDeletes(m); if (d.jobs) logger.info(d, 'Meili deletions flushed in bulk'); } }, T, 'meiliDeletes');
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await withTimeout(() => runCleanupCycle(), T, 'cleanupCycle');
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await withTimeout(() => runFullSyncCheck(), T, 'fullSyncCheck');
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await withTimeout(() => runHypeSyncCycle(), T, 'hypeSyncCycle');

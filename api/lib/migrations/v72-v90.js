@@ -1445,6 +1445,16 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_doc_meta_title_lc ON doc_meta(lower(title))');
     logger.info('Migration 137 complete');
   },
+  138: async () => {
+    // Meilisearch deletions are QUEUED here and sent in bulk by the worker. Ingest used to send one delete (and one add)
+    // per document: a Meili job costs ~95 s whatever its size, so 5,000 one-paragraph tablets = 5+ days of queue
+    // (measured 2026-09-29: 1 doc/job 94 s median, 500 docs/job 413 s).
+    logger.info('Starting migration 138: meili_pending_deletes');
+    await query(`CREATE TABLE IF NOT EXISTS meili_pending_deletes (
+      para_id INTEGER NOT NULL, index_uid TEXT NOT NULL DEFAULT 'paragraphs', queued_at INTEGER DEFAULT (unixepoch()),
+      PRIMARY KEY (para_id, index_uid))`);
+    logger.info('Migration 138 complete');
+  },
 };
 
 export const graphMigrations = {

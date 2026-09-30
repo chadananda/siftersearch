@@ -574,66 +574,18 @@ export async function indexDocumentFromText(text, metadata = {}) {
     ...(sidecars[index] || {})
   }));
 
+  // The paragraph ids this file had before — storeInLibsql() replaces them with new ids.
+  const oldIds = (await queryAll(`SELECT c.id FROM content c JOIN docs d ON d.id = c.doc_id WHERE d.file_path = ?`, [filePath])).map((r) => r.id);
   const { docId, paragraphIds } = await storeInLibsql(document, libsqlParagraphs);
 
-  // storeInLibsql() deleted all old content rows and inserted new ones with new IDs.
-  // Delete old paragraphs from Meilisearch to prevent orphaned entries.
+  // Meilisearch is updated by the unified worker IN BULK, never per document here: one job costs ~95 s whatever its
+  // size, and this path used to send a delete + an add for every file (5,000 one-paragraph tablets = 5+ days of queue,
+  // 2026-09-29). Old ids are queued for bulk deletion; the new paragraphs stay synced=0 for the worker's batched sync.
   try {
-    const meili = getMeili();
-    if (meili) {
-      await meili.index(INDEXES.PARAGRAPHS).deleteDocuments({
-        filter: `doc_id = ${docId}`
-      });
-    }
+    const { queueMeiliDeletes } = await import('../lib/meili-pending.js');
+    await queueMeiliDeletes(oldIds.filter((id) => !paragraphIds.includes(id)));
   } catch (err) {
-    logger.warn({ docId, err: err.message }, 'Failed to clean old paragraphs from Meilisearch before re-index');
-  }
-
-  // Create document record for Meilisearch (uses INTEGER id from SQLite)
-  const meiliDocument = {
-    id: docId,  // INTEGER id from SQLite
-    title: finalMeta.title,
-    author: finalMeta.author,
-    religion: finalMeta.religion,
-    collection: finalMeta.collection,
-    language: finalMeta.language,
-    year: finalMeta.year ? parseInt(finalMeta.year, 10) : null,
-    description: finalMeta.description,
-    authority,
-    chunk_count: chunks.length,
-    created_at: new Date().toISOString()
-  };
-
-  // Create paragraph records for Meilisearch using SQLite-generated ids
-  const paragraphs = chunks.map((text, index) => ({
-    id: paragraphIds[index],  // INTEGER id from SQLite
-    doc_id: docId,  // INTEGER from SQLite docs.id
-    paragraph_index: index,
-    text,
-    title: finalMeta.title,
-    author: finalMeta.author,
-    religion: finalMeta.religion,
-    collection: finalMeta.collection,
-    language: finalMeta.language,
-    year: finalMeta.year ? parseInt(finalMeta.year, 10) : null,
-    authority,  // Doctrinal weight (1-10) for ranking - same as parent document
-    heading: extractHeading(bodyText, text), // Try to find section heading
-    _vectors: {
-      default: embeddings[index]
-    },
-    created_at: new Date().toISOString()
-  }));
-
-  // Index in Meilisearch
-  await indexDocument(meiliDocument, paragraphs);
-
-  // Mark paragraphs as synced via content API
-  // NOTE: indexDocument() above uses fire-and-forget Meilisearch enqueue.
-  // The sync-worker will handle verified sync for any that fail.
-  // This optimistic mark is acceptable here because the sync-worker
-  // will re-dirty and re-sync any that Meilisearch actually rejected.
-  if (paragraphIds.length > 0) {
-    await content.markSynced(paragraphIds);
+    logger.warn({ docId, err: err.message }, 'Failed to queue old paragraphs for Meilisearch deletion');
   }
 
   return {
