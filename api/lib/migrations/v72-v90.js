@@ -1455,6 +1455,20 @@ export const migrations = {
       PRIMARY KEY (para_id, index_uid))`);
     logger.info('Migration 138 complete');
   },
+  139: async () => {
+    // SOURCE links (not translation links): a paragraph that QUOTES another — a compilation, a book citing the Writings —
+    // → the paragraph it quotes, so the reader can show "Source: <work ¶>" (Chad, 2026-09-30). Found by text overlap in the
+    // same language; coverage = share of the SOURCE found in the quoting paragraph, share = share of the QUOTING paragraph
+    // that is the quote. Distinct from content_alignment (translation ↔ original).
+    logger.info('Starting migration 139: content_source_links');
+    await query(`CREATE TABLE IF NOT EXISTS content_source_links (
+      quote_id INTEGER NOT NULL, source_id INTEGER NOT NULL, quote_doc INTEGER, source_doc INTEGER,
+      coverage REAL, share REAL, basis TEXT, method TEXT, created_at INTEGER DEFAULT (unixepoch()),
+      PRIMARY KEY (quote_id, source_id))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_csl_source ON content_source_links(source_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_csl_quote_doc ON content_source_links(quote_doc)');
+    logger.info('Migration 139 complete');
+  },
 };
 
 export const graphMigrations = {

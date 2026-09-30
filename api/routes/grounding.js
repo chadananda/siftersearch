@@ -1133,6 +1133,36 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/source-links/bulk {rows:[{quoteId, sourceId, quoteDoc, sourceDoc, coverage, share, basis, method}]}
+   * A quoting paragraph → the paragraph it quotes (content_source_links, migr 139). A SOURCE link for a reference, not a
+   * translation link. Upsert: a re-run with a better match replaces the scores.
+   */
+  fastify.post('/concepts/source-links/bulk', admin, async (req) => {
+    const rows = req.body?.rows || [];
+    if (!rows.length || rows.length > 5000) throw ApiError.badRequest('1..5000 rows');
+    await transaction(rows.map((r) => ({
+      sql: `INSERT INTO content_source_links (quote_id, source_id, quote_doc, source_doc, coverage, share, basis, method)
+            VALUES (?,?,?,?,?,?,?,?) ON CONFLICT (quote_id, source_id) DO UPDATE SET coverage = excluded.coverage,
+            share = excluded.share, basis = excluded.basis, method = excluded.method`,
+      args: [r.quoteId, r.sourceId, r.quoteDoc ?? null, r.sourceDoc ?? null, r.coverage ?? null, r.share ?? null,
+        r.basis ?? null, r.method ?? null] })), 'source-links:bulk');
+    return { written: rows.length };
+  });
+
+  /** GET /concepts/source-links?quoteDoc=|quoteId=|sourceId= — what a paragraph/document quotes, or who quotes a paragraph. */
+  fastify.get('/concepts/source-links', admin, async (req) => {
+    const q = req.query || {};
+    const col = q.quoteId ? 'l.quote_id' : q.sourceId ? 'l.source_id' : 'l.quote_doc';
+    const val = Number(q.quoteId || q.sourceId || q.quoteDoc);
+    if (!val) throw ApiError.badRequest('quoteDoc, quoteId or sourceId required');
+    const rows = await queryAll(
+      `SELECT l.*, d.title AS source_title, c.paragraph_index AS source_index
+         FROM content_source_links l JOIN content c ON c.id = l.source_id JOIN docs d ON d.id = l.source_doc
+        WHERE ${col} = ? ORDER BY l.quote_id, l.coverage DESC LIMIT ?`, [val, Math.min(2000, Number(q.limit) || 200)], 'source-links:read');
+    return { rows };
+  });
+
+  /**
    * POST /concepts/translations/bulk {rows:[{contentId, text, authority, ref}]} — English BESIDE an original paragraph
    * (content.translation_text, migr 120). authority: 'published' (a published translation's wording) or
    * 'provisional-phelps' (Stephen Phelps' rendering — stored, not surfaced until he agrees). ref = provenance JSON.
