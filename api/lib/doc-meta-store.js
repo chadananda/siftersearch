@@ -47,8 +47,9 @@ export async function searchDocMeta(q = {}) {
   // every word, any word — each tier only fills what the one before left
   let hits = [];
   if (String(q.q || '').trim()) {
-    hits = await queryAll(`SELECT ${cols} FROM doc_meta m WHERE lower(m.title) = lower(?) ${filters.length ? 'AND ' + filters.join(' AND ') : ''}
-        ORDER BY COALESCE(m.authority, 1) DESC LIMIT ?`, [String(q.q).trim(), ...fargs, limit], 'docmeta:search-title');
+    const t = String(q.q).trim().toLowerCase().replace(/^the\s+/, '');     // "Dawn-Breakers" finds "The Dawn-Breakers"
+    hits = await queryAll(`SELECT ${cols} FROM doc_meta m WHERE lower(m.title) IN (?, ?) ${filters.length ? 'AND ' + filters.join(' AND ') : ''}
+        ORDER BY COALESCE(m.authority, 1) DESC LIMIT ?`, [t, `the ${t}`, ...fargs, limit], 'docmeta:search-title');
   }
   for (const op of ['PHRASE', 'AND', 'OR']) {
     const match = ftsQuery(q.q, op);
