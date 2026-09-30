@@ -117,8 +117,8 @@ export default async function tabletAdminRoutes(fastify) {
     }
     return out;
   };
-  // Pages of 2,000 docs with a yield between them: a single pass over the library held the API's event loop and
-  // /health timed out (2026-09-29). Run large dirs as a background call, never inline in a user path.
+  // Pages of 200 docs with a 100 ms pause: a single pass held the API's event loop (/health timed out) and 2,000-doc
+  // pages still slowed it to 7–18 s (2026-09-29). Run large dirs as a background call, never inline in a user path.
   const rebuild = async (req) => {
     const { dir } = req.body || {};
     if (dir == null) throw ApiError.badRequest('dir required ("" = the whole library)');
@@ -128,12 +128,12 @@ export default async function tabletAdminRoutes(fastify) {
       const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.author, d.religion, d.collection, d.language, d.year,
           d.description, d.metadata, d.doc_role, d.source_site,
           (SELECT l.pin FROM inventory_links l WHERE l.doc_id = d.id ORDER BY l.coverage DESC LIMIT 1) AS linked_pin
-          FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%' AND d.id > ? ORDER BY d.id LIMIT 2000`, [dir, after], 'docmeta:rebuild-docs');
+          FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%' AND d.id > ? ORDER BY d.id LIMIT 200`, [dir, after], 'docmeta:rebuild-docs');
       if (!docs.length) break;
       after = docs[docs.length - 1].id; docsSeen += docs.length;
       const out = await rebuildPage(docs, bib);
       built += out.length; tablets += out.filter((o) => o.meta.kind === 'tablet').length;
-      await new Promise((r) => setImmediate(r));
+      await new Promise((r) => setTimeout(r, 100));             // let search and health requests in between pages
     }
     return { docs: docsSeen, built, tablets };
   };
