@@ -25,6 +25,33 @@ const PROSE = "blocktype IN ('paragraph','quote')";
 const GAZETTEER_PATH = process.env.SIFTER_GAZETTEER || 'data/siftersearch-gazetteer.json';
 
 export function makeStore() {
+  async function partnersOf(docId) {
+      const out = new Map();
+      const toEnglish = await db.queryAll(
+        `SELECT a.trans_id AS pid, o.id, o.text, o.paragraph_index AS idx, od.language AS lang, a.orig_doc AS doc
+           FROM content_alignment a JOIN content o ON o.id = a.orig_id AND o.deleted_at IS NULL JOIN docs od ON od.id = a.orig_doc
+          WHERE a.trans_doc = ? AND a.retired_at IS NULL`, [docId]);
+      const toOriginal = await db.queryAll(
+        `SELECT a.orig_id AS pid, t.id, t.text, t.paragraph_index AS idx, 'en' AS lang, a.trans_doc AS doc
+           FROM content_alignment a JOIN content t ON t.id = a.trans_id AND t.deleted_at IS NULL
+          WHERE a.orig_doc = ? AND a.retired_at IS NULL`, [docId]);
+      const group = (rows, kind) => {
+        const by = new Map();
+        for (const r of rows) by.set(r.pid, [...(by.get(r.pid) || []), r]);
+        for (const [pid, rs] of by) {
+          // one partner document only (the first by id) — several editions of the same English would repeat the text
+          const doc = rs.map((r) => r.doc).sort((a, b) => a - b)[0];
+          const pick = rs.filter((r) => r.doc === doc);
+          pick.sort((a, b) => a.idx - b.idx);
+          out.set(pid, { kind, doc, ids: pick.map((r) => r.id), lang: String(pick[0].lang || '').toLowerCase().slice(0, 2) || null,
+            text: pick.map((r) => String(r.text).replace(/⁅\/?s\d+⁆/g, '').replace(/\s+/g, ' ').trim()).join('\n'),
+            authority: kind === 'translation' ? 'published' : null });
+        }
+      };
+      group(toEnglish, 'original');
+      group(toOriginal, 'translation');
+      return out;
+  }
   return {
     // Follow duplicate_of to the copy that actually holds the text — the ONE owner of that rule is
     // docs-repo, never a second implementation here.
@@ -58,10 +85,24 @@ export function makeStore() {
       const rows = await db.queryAll(
         `SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, blocktype AS kind, text,
                 context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis, hyp_model AS hypModel,
-                original_text AS original, original_lang AS originalLang, translation_authority AS translationAuthority
+                original_text AS original, original_lang AS originalLang, translation_authority AS translationAuthority,
+                translation_text AS translationText
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE} ORDER BY paragraph_index`, [docId]);
-      return rows.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
+      const partners = await partnersOf(docId);
+      return rows.map(({ translationText, ...p }) => {
+        const partner = partners.get(p.id)
+          ?? (translationText ? { kind: 'translation', ids: [], text: translationText, lang: 'en', authority: p.translationAuthority } : null);
+        return { ...p, text: String(p.text).replace(/\s+/g, ' ').trim(), partner };
+      });
     },
+
+    // THE LINKED PASSAGE (Chad, 2026-09-30: "always better to generate for both passages at the same time"). A paragraph's
+    // partner in the other language, through content_alignment: an English paragraph → the original(s) it translates;
+    // an original → the English that translates it (published first). Phelps' English stored BESIDE an original
+    // (translation_text) is the fallback in getParagraphs. Kept apart from `original` (the column) on purpose: the
+    // bilingual backfill reads that to know what is already done. pid → { kind, ids, text, lang, authority }.
+    getPartners: (docId) => partnersOf(docId),
+
 
     // Persist a disambiguation note against a paragraph, tagged with the method version (routed to the writer).
     async saveContext(paragraphId, note, methodVersion) {
@@ -79,6 +120,27 @@ export function makeStore() {
     // (hyp_model — mirrors context_model); flags the row for Meili re-index.
     async saveHype(paragraphId, questions, thesis, version) {
       await content.updateHype(paragraphId, questions, thesis, version);
+    },
+
+    // Which of these content ids already carry concept claims from this extractor (claims are keyed by pid + doc).
+    async contentIdsWithConceptClaims(contentIds, extractor) {
+      if (!contentIds?.length) return new Set();
+      const rows = await db.queryAll(
+        `SELECT DISTINCT c.id FROM content c JOIN concept_claims cc
+            ON cc.doc_id = c.doc_id AND cc.para_id = COALESCE(c.external_para_id, 'p' || c.id)
+          WHERE c.id IN (${contentIds.map(() => '?').join(',')}) AND cc.extractor_version = ?`, [...contentIds, extractor]);
+      return new Set(rows.map((r) => r.id));
+    },
+
+    // The same questions for a LINKED paragraph (the other language of one passage) — only where it has no HyPE at all,
+    // so a pair written from one side never overwrites what the other side generated. Returns how many were written.
+    async saveHypeWhereMissing(paragraphIds, questions, thesis, version) {
+      if (!paragraphIds?.length) return 0;
+      const bare = await db.queryAll(
+        `SELECT id FROM content WHERE id IN (${paragraphIds.map(() => '?').join(',')}) AND deleted_at IS NULL
+            AND hyp_model IS NULL AND (hyp_questions IS NULL OR hyp_questions IN ('', '[]'))`, paragraphIds);
+      for (const { id } of bare) await content.updateHype(id, questions, thesis, version);
+      return bare.length;
     },
 
     // Cited claims per paragraph — the knowledge feed for fact-informed HyPE (retrieval stage's optional

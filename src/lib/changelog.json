@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T15:25:11.829Z",
+  "generated": "2026-09-30T15:32:40.863Z",
   "entries": [
+    {
+      "hash": "ff7beffc",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "/server/meili-vector — batch pure-vector nearest paragraphs (cross-lingual linking of originals to English)",
+      "scope": "admin"
+    },
     {
       "hash": "3d296262",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Auto-chunk oversized paragraphs for ANY language whose text can be split",
       "scope": null
-    },
-    {
-      "hash": "3be0180a",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Permanent extraction failures are REJECTIONS, not retries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "ff7beffc",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "/server/meili-vector — batch pure-vector nearest paragraphs (cross-lingual linking of originals to English)",
+        "scope": "admin"
+      },
       {
         "hash": "3d296262",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Auto-chunk oversized paragraphs for ANY language whose text can be split",
-        "scope": null
-      },
-      {
-        "hash": "3be0180a",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Permanent extraction failures are REJECTIONS, not retries",
         "scope": null
       }
     ]

@@ -39,6 +39,13 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
       INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
+      CREATE TABLE content_alignment (trans_id INT, orig_id INT, trans_doc INT, orig_doc INT, basis TEXT, score REAL, retired_at INT);
+      ALTER TABLE docs ADD COLUMN language TEXT;
+      INSERT INTO docs (id, title, author, language) VALUES (8, 'Súriy-i-Mulúk', 'Bahá''u''lláh', 'ar'), (9, 'Lawḥ', 'Bahá''u''lláh', 'fa');
+      INSERT INTO content (id, doc_id, paragraph_index, text, blocktype) VALUES (200, 8, 1, 'يا ملوك الارض', 'paragraph'), (201, 8, 2, 'اسمعوا نداء الله', 'paragraph');
+      INSERT INTO content (id, doc_id, paragraph_index, text, blocktype, translation_text, translation_authority) VALUES (300, 9, 1, 'ای دوستان', 'paragraph', 'O friends!', 'partial-inventory');
+      -- English ¶100 translates originals 201 then 200 (stored out of order); a retired link must not count.
+      INSERT INTO content_alignment VALUES (100, 201, 7, 8, 'pi-english', 0.9, NULL), (100, 200, 7, 8, 'pi-english', 0.9, NULL), (101, 200, 7, 8, 'old', 0.5, 1);
       CREATE TABLE graph_entities (id INTEGER PRIMARY KEY, name TEXT, canonical_name TEXT, entity_type TEXT, importance INT, last_assessed_version TEXT);
       CREATE TABLE entity_research (canonical_name TEXT, entity_type TEXT, summary TEXT, aliases TEXT);
       CREATE TABLE entity_lookup_keys (entity_id INT, skeleton_key TEXT);
@@ -318,5 +325,18 @@ describe('merge survivor', () => {
     const ents = [{ id: 1299654, importance: null, mentions: 9 }, { id: 1249578, importance: 70, mentions: 3 }];
     expect(pickCanonical(ents, [1299654, 1249578])).toBe(1249578);
     expect(pickCanonical([{ id: 5, mentions: 1 }, { id: 3, mentions: 1 }], [5, 3])).toBe(3);
+  });
+
+  it('getParagraphs attaches the LINKED passage both ways (Chad 2026-09-30: generate for both at once)', async () => {
+    const en = await store.getParagraphs(7);
+    const p100 = en.find((p) => p.id === 100);
+    expect(p100.partner).toMatchObject({ kind: 'original', ids: [200, 201], lang: 'ar' });   // reading order, not link order
+    expect(p100.partner.text).toBe('يا ملوك الارض\nاسمعوا نداء الله');
+    expect(p100.original).toBeNull();                                  // the column itself is untouched
+    expect(en.find((p) => p.id === 101).partner).toBeNull();           // retired link ignored
+    const ar = await store.getParagraphs(8);
+    expect(ar.find((p) => p.id === 200).partner).toMatchObject({ kind: 'translation', ids: [100], lang: 'en', authority: 'published' });
+    const fa = await store.getParagraphs(9);                            // Phelps' English BESIDE the original = fallback partner
+    expect(fa[0].partner).toMatchObject({ kind: 'translation', ids: [], text: 'O friends!', authority: 'partial-inventory' });
   });
 });

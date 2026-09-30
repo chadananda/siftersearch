@@ -131,7 +131,7 @@ export async function run(ctx, docId, opts = {}) {
         // a reason to look, never a reason to delete a reader's route to the passage.
         const kept = [];
         for (const it of parsed.items) {
-          const present = spanIsPresent(it.a, [p.text, p.original]);
+          const present = spanIsPresent(it.a, [p.text, p.original, p.partner?.text]);
           if (present === false) { stats.unanswered = (stats.unanswered || 0) + 1; continue; }
           if (present === null) stats.unverified = (stats.unverified || 0) + 1;
           kept.push(it);
@@ -139,7 +139,13 @@ export async function run(ctx, docId, opts = {}) {
         parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis } : null;
       }
       if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
-      if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
+      if (!opts.dryRun) {
+        await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
+        // Both passages at once: the partner gets the same questions — only where it has none (never overwrites).
+        if (p.partner?.ids?.length && ctx.store.saveHypeWhereMissing) {
+          stats.partnerWritten = (stats.partnerWritten || 0) + await ctx.store.saveHypeWhereMissing(p.partner.ids, parsed.questions, parsed.thesis, HYPE_VERSION);
+        }
+      }
       stats.done++; if (escalated) stats.escalated++; report();
     } catch (e) {
       if (e?.fatal) throw e;
@@ -365,6 +371,20 @@ export function parseHypeSlice(raw) {
 // Framed as ASK-ABOUT, unlike CONTEXT which is explicitly reference-resolution only: the concept IS the thing
 // a reader searches for. Bounded, so a large lexicon cannot crowd out the paragraph itself.
 const MAX_CONCEPTS_PER_PARA = 8;
+// THE LINKED PASSAGE (Chad, 2026-09-30: "always better to generate for both passages at the same time"). A paragraph
+// linked to its original / translation is read WITH it, and the questions are written to both (see hypeOne). Not added
+// when the original already rides beside the English (content.original_text — the older bilingual layer).
+// New runs only: HYPE_VERSION is NOT bumped for this — a bump makes every stamped paragraph in the library "not done"
+// (isHyped), i.e. a whole-library re-hype; that is Chad's call, not a side effect.
+const MAX_PARTNER_CHARS = 6000;
+export function partnerBlock(p) {
+  const q = p.partner;
+  if (!q?.text || p.original) return '';
+  const what = q.kind === 'original'
+    ? `the ORIGINAL (${q.lang === 'fa' ? 'Persian' : q.lang === 'ar' ? 'Arabic' : q.lang || 'original language'}) of this same passage`
+    : `an ENGLISH TRANSLATION of this same passage${q.authority === 'partial-inventory' ? " (Stephen Phelps' provisional rendering)" : ''}`;
+  return `\n\nPARALLEL TEXT — ${what}. Read it to understand the passage; every question must still be answered by the passage:\n${q.text.slice(0, MAX_PARTNER_CHARS)}`;
+}
 export function buildUser(p, facts = null, slice = null, concepts = null) {
   const factBlock = facts?.length
     ? `\n\nESTABLISHED FACTS (cited claims from this paragraph — make each retrievable):\n${facts.slice(0, MAX_FACTS_PER_PARA).map((f) => `- ${f}`).join('\n')}`
@@ -377,9 +397,10 @@ export function buildUser(p, facts = null, slice = null, concepts = null) {
   // "The Need for an Educator" — that is the single most orienting fact about a paragraph, and writing
   // questions without it means guessing which discussion the passage belongs to.
   const headingBlock = p.heading ? `\n\nUNDER THE HEADING: ${p.heading}` : '';
-  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${headingBlock}${factBlock}${conceptBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  const pairBlock = partnerBlock(p);
+  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${headingBlock}${factBlock}${conceptBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}${pairBlock}`;
   const thesisNote = slice.part === 1
     ? 'Include the "thesis" for the WHOLE paragraph.'
     : 'Set "thesis" to "" — it was written with part 1.';
-  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${headingBlock}${factBlock}${conceptBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
+  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${headingBlock}${factBlock}${conceptBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}${pairBlock}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
 }

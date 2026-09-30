@@ -43,6 +43,26 @@ export async function run(ctx, docId, opts = {}) {
     return null;
   };
   const authorityFor = (p) => p.translationAuthority ?? rosterAuthority(docId);
+  // THE PAIR (Chad, 2026-09-30: "grab linked passage for consideration … always better to generate for both passages at
+  // the same time"). One view per paragraph: the original beside it (older bilingual layer), else the LINKED partner —
+  // an English paragraph's original through content_alignment, or an original's English (published, else Phelps').
+  // The English's authority is whoever rendered it: an original linked to Gleanings reads Shoghi Effendi's English.
+  const pairOf = (p) => {
+    if (p.original) return { source: p.original, lang: p.originalLang, english: p.text, authority: authorityFor(p) };
+    const q = p.partner;
+    if (q?.kind === 'original' && q.text) return { source: q.text, lang: q.lang, english: p.text, authority: authorityFor(p) };
+    if (q?.kind === 'translation' && q.text) {
+      return { source: p.text, lang: /[\u067E\u0686\u0698\u06AF]/.test(p.text) ? 'fa' : 'ar', english: q.text, sourceIsParagraph: true,
+        authority: (q.doc && rosterAuthority(q.doc)) || (q.authority === 'partial-inventory' ? 'provisional' : q.authority) };
+    }
+    return null;
+  };
+  // Once per pair: a paragraph whose partner already carries this extractor's claims was extracted WITH it.
+  const pairDone = ctx.store.contentIdsWithConceptClaims
+    ? await ctx.store.contentIdsWithConceptClaims(paras.flatMap((p) => p.partner?.ids || []), extractor) : new Set();
+  const before = paras.length;
+  paras = paras.filter((p) => !(p.partner?.ids || []).some((id) => pairDone.has(id)));
+  const pairDoneElsewhere = before - paras.length;
   const authorityCount = {};
   // BILINGUAL WHERE WE HAVE IT. A paragraph carrying its aligned original is read with BOTH texts in view:
   // the original fixes WHICH TERM (English collapses Ṣalát/Duʿá/Dhikr into "prayer", ʿadl/inṣáf into
@@ -64,7 +84,7 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   // proofFrom answers "which text is this doctrine cited from" — the number that would have shown, on the
   // first run, that every Persian-quoted proof was being thrown away.
-  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {}, dropSamples: [], failSamples: [] };
+  const stats = { paras: paras.length, pairDoneElsewhere, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {}, dropSamples: [], failSamples: [] };
   // A bare `paras: 0` is indistinguishable from "this book has no concepts". Name the reason.
   if (!paras.length) {
     const all = await ctx.store.getParagraphs(docId);
@@ -76,7 +96,8 @@ export async function run(ctx, docId, opts = {}) {
   const rows = [];   // dry-run review buffer only
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
   await pool(opts.concurrency ?? 5, paras, async (p) => {
-    const hasOriginal = Boolean(p.original);
+    const pair = pairOf(p);
+    const hasOriginal = Boolean(pair);
     // Declare the ORIGINAL's language for this paragraph, so the spend policy can see the actual capability
     // case: deepseek cannot read Persian at all. Without this the gate has only the DOC's language (English)
     // and refuses the very call the exception exists to permit.
@@ -90,15 +111,15 @@ export async function run(ctx, docId, opts = {}) {
     // him in English — there is no other text to consult, so the cheap English path is not a compromise
     // there, it is the correct reading. Checked explicitly rather than relying on original_text simply
     // being absent, so a stray alignment written onto such a book can never buy it a paid model.
-    const bilingual = hasOriginal && ['ar', 'fa'].includes(p.originalLang) && !englishIsOriginal(docId);
-    if (bilingual) authorityCount[authorityFor(p) ?? 'unattributed'] = (authorityCount[authorityFor(p) ?? 'unattributed'] || 0) + 1;
+    const bilingual = hasOriginal && ['ar', 'fa'].includes(pair.lang) && !englishIsOriginal(docId);
+    if (bilingual) authorityCount[pair.authority ?? 'unattributed'] = (authorityCount[pair.authority ?? 'unattributed'] || 0) + 1;
     const { parsed, escalated, finishReason, raw } = await withAIContext(
-      { stage: 'concept-extract', docId, originalLang: bilingual ? p.originalLang : null },
+      { stage: 'concept-extract', docId, originalLang: bilingual ? pair.lang : null },
       () => ctx.model.runLadder({
       route: bilingual ? bilingualRoute : route,
-      system: bilingual ? bilingualSystemFor(authorityFor(p)) : system,
+      system: bilingual ? bilingualSystemFor(pair.authority) : system,
       user: bilingual
-        ? buildBilingualUser(p, { source: p.original, translation: p.text })
+        ? buildBilingualUser(p, { source: pair.source, translation: pair.english })
         : buildUser(p),
       parse: parseConceptClaims, maxTokens }));
     if (bilingual) stats.bilingual++;
@@ -121,8 +142,8 @@ export async function run(ctx, docId, opts = {}) {
     // BOTH TEXTS ARE CITABLE. The English is checked first because it is the common case; the original is
     // offered whenever the paragraph carries one, whether or not this call was bilingual — a proof quoted
     // from the source is valid regardless of which prompt produced it.
-    const haystacks = [{ lang: 'en', norm: proofNorm(p.text) }];
-    if (hasOriginal) haystacks.push({ lang: p.originalLang || 'src', norm: proofNorm(p.original), raw: p.original });
+    const haystacks = [{ lang: 'en', norm: proofNorm(hasOriginal ? pair.english : p.text) }];
+    if (hasOriginal) haystacks.push({ lang: pair.lang || 'src', norm: proofNorm(pair.source), raw: pair.source });
     const paraRows = [];
     for (const c of parsed) {
       stats.claims++;
@@ -138,7 +159,7 @@ export async function run(ctx, docId, opts = {}) {
             missing: !c.concept ? 'concept' : !c.relation ? 'relation' : !c.proof ? 'proof' : 'not-verbatim',
             proof: String(c.proof ?? '').slice(0, 160),
             enHead: String(p.text || '').slice(0, 160),
-            srcHead: String(p.original || '').slice(0, 160),
+            srcHead: String(pair?.source || '').slice(0, 160),
           });
         }
         continue;
