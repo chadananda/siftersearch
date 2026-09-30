@@ -2295,6 +2295,41 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * POST /server/meili-coverage {afterDocId=0, docs=1000, fix=false} — audit one page of documents: live paragraph ids in
+   * SQLite vs entries in the paragraphs index. missing = live but not searchable; stale = indexed but no longer live.
+   * fix: missing → synced=0 (the worker re-sends in bulk), stale → deleted by id. Page through with nextAfterDocId.
+   * Why: untracked add jobs can fail in Meili after the rows were marked synced (1,731 jobs on 2026-09-30) — nothing
+   * else notices. Samples ≤ 20 missing ids per page.
+   */
+  fastify.post('/server/meili-coverage', { preHandler: requireInternal }, async (request) => {
+    const { afterDocId = 0, docs = 1000, fix = false } = request.body || {};
+    const meili = getMeili();
+    const idx = meili.index('paragraphs');
+    const ids = (await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL AND id > ? ORDER BY id LIMIT ?', [afterDocId, Math.min(docs, 5000)]))
+      .map((d) => d.id);
+    if (!ids.length) return { done: true, docs: 0 };
+    let live = 0; const missing = []; const stale = [];
+    for (let i = 0; i < ids.length; i += 500) {
+      const part = ids.slice(i, i + 500);
+      const rows = await queryAll(`SELECT id FROM content WHERE deleted_at IS NULL AND doc_id IN (${part.map(() => '?').join(',')})`, part);
+      const liveIds = new Set(rows.map((r) => r.id)); live += liveIds.size;
+      const seen = new Set();
+      for (let offset = 0; ; offset += 1000) {
+        const r = await idx.getDocuments({ filter: `doc_id IN [${part.join(',')}]`, fields: ['id'], limit: 1000, offset });
+        for (const d of r.results) { seen.add(d.id); if (!liveIds.has(d.id)) stale.push(d.id); }
+        if (r.results.length < 1000) break;
+      }
+      for (const id of liveIds) if (!seen.has(id)) missing.push(id);
+    }
+    if (fix) {
+      for (let i = 0; i < missing.length; i += 500) await content.markUnsynced(missing.slice(i, i + 500));
+      for (let i = 0; i < stale.length; i += 10000) await idx.deleteDocuments(stale.slice(i, i + 10000));
+    }
+    return { fix, docs: ids.length, firstDocId: ids[0], nextAfterDocId: ids[ids.length - 1], live,
+      missing: missing.length, stale: stale.length, missingSample: missing.slice(0, 20) };
+  });
+
+  /**
    * POST /server/meili-switchover {docIds, dryRun=true} — replace the per-document jobs the old indexer queued (a
    * delete-by-doc + a 1-paragraph add per tablet, ~95 s each: 5½ days for 5,229 tablets, 2026-09-29) with bulk work:
    *   1. cancel, BY TASK UID, only the queued paragraph jobs that belong to those docs (deletion filters naming them)
