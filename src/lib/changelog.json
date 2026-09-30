@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T18:29:10.387Z",
+  "generated": "2026-09-30T19:19:46.663Z",
   "entries": [
+    {
+      "hash": "6e62a8b8",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Force option clears stored hashes — a cancelled run can leave the doc claiming 'unchanged' with old paragraphs",
+      "scope": "reingest"
+    },
     {
       "hash": "0bef9444",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Accept PM2 instance-suffixed names; migrations: never abort on an optional index",
       "scope": null
-    },
-    {
-      "hash": "dcc75f5b",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "One owner for \"is this paragraph disambiguated\" (was five, drifting)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "6e62a8b8",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Force option clears stored hashes — a cancelled run can leave the doc claiming 'unchanged' with old paragraphs",
+        "scope": "reingest"
+      },
       {
         "hash": "0bef9444",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Accept PM2 instance-suffixed names; migrations: never abort on an optional index",
-        "scope": null
-      },
-      {
-        "hash": "dcc75f5b",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "One owner for \"is this paragraph disambiguated\" (was five, drifting)",
         "scope": null
       }
     ]

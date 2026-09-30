@@ -1642,8 +1642,11 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Check if chunks already have sentence markers (from source file or prior segmentation)
   const hasExistingMarkers = chunks.some(c => c.text && c.text.includes('\u2045'));
 
-  // Sentence markers needed for ALL non-English documents (for translation support)
-  const isNonEnglish = finalMeta.language && finalMeta.language !== 'en';
+  // Sentence markers needed for ALL non-English documents (for translation support) — unless the source DEFERS them
+  // (frontmatter `sentence_markers: defer`): paragraphs are enough for search, and sentence segmentation of unpunctuated
+  // classical Arabic is a paid model pass (~$50–450 for five works, 2026-09-30) to be done later, into the source.
+  const deferSentences = String(extractedMeta.sentence_markers ?? '').toLowerCase() === 'defer';
+  const isNonEnglish = finalMeta.language && finalMeta.language !== 'en' && !deferSentences;
 
   if (hasExistingMarkers) {
     // Count existing sentences
@@ -1955,7 +1958,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   // For non-English document UPDATES with NEW paragraphs, add sentence markers only to new ones
   // This is the cost-efficient path: reuse existing markers, only process truly new content
-  if (isNonEnglish && existingDoc && insertStatements.length > 0) {
+  // Not when the source carries its own markers: a pre-segmented source must re-ingest with NO model call (Chad,
+  // 2026-09-30: "segment and clean up before ingestion so that re-ingestion always remains cheap").
+  if (isNonEnglish && existingDoc && insertStatements.length > 0 && !hasExistingMarkers) {
     try {
       // Extract new paragraph texts for sentence detection
       const newParagraphs = insertStatements.map((stmt, idx) => ({

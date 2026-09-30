@@ -6,11 +6,12 @@
 #   · the page's notes → <!-- fn: … --> just before the next <pb> (kept in the source, out of paragraphs)
 #   · paragraph breaks at OpenITI '#' starts, found monotonically in our text; a break falling on a page join where the
 #     text before does not end a sentence is a page cut, not a paragraph, and is ignored
-#   · OpenITI headings found verbatim (letters) become '## ' lines; long punctuated paragraphs split at sentence ends
+#   · OpenITI headings found verbatim (letters) become '## ' lines. NO length-based splitting — only semantic.
 # usage: python3 openiti-paginate.py <openiti file> <our source .md> <out .md>
 import re, sys
 
 RULE = re.compile(r'_{5,}')
+WINDOW = 8000                        # letters ahead of the cursor to look for the next OpenITI paragraph start
 DIAC = re.compile(r'[ؐ-ًؚ-ٰٟۖ-ۭـ]')
 FOLD = str.maketrans({'ى': 'ي', 'ی': 'ي', 'ئ': 'ي', 'ک': 'ك', 'ة': 'ه', 'ۀ': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ؤ': 'و'})
 LETTER = re.compile(r'[ء-يپچژگ]')
@@ -31,6 +32,7 @@ def oiti_structure(oiti):
         line = line.strip()
         if not line: continue
         is_head = line.startswith('### ') and not re.match(r'^### \$', line)
+        is_entry = bool(re.match(r'^### \$', line)) or bool(re.match(r'^#+\s*(### )?\$?\s*[\d٠-٩]+\s*-', line))
         text = re.sub(r'^(### (\|+|\$+)?\s*|#\s*)', '', line)
         para_start = line.startswith('#')
         for k, part in enumerate(re.split(r'(PageV\d+P\d+)', text)):
@@ -41,7 +43,7 @@ def oiti_structure(oiti):
             if pending_page is not None:
                 pages.append((key, *pending_page)); pending_page = None
             if k == 0 and para_start:
-                paras.append((key, part.strip() if is_head and len(part) <= 200 else None))
+                paras.append((key, part.strip() if is_head and len(part) <= 200 else None, is_entry))
     return pages, paras
 
 def paginate(oiti, ours):
@@ -107,18 +109,35 @@ def paginate(oiti, ours):
     visible = re.sub(r'<!--.*?-->|<pb[^>]*/>', lambda m: '\0' * len(m.group()), stream)
     L, idx = letters(visible)
     joins = set(page_join_at)
-    cuts, cursor = [], 0
-    for key, head in paras:
-        p = L.find(key, cursor, cursor + 60000)
-        if p < 0: continue
-        raw = idx[p]
-        # walk back over whitespace/tags to the break point
+    # Where each OpenITI paragraph start falls in OUR text: every occurrence of its letters is a candidate, and the chosen
+    # set is the LONGEST chain in reading order (LIS) — a repeated phrase can neither drag the search far ahead (losing
+    # everything between) nor strand it behind. Starts with no place in the chain are simply not paragraph breaks here.
+    import bisect
+    cands = []                                   # (position, para index) in reading order of paras
+    for i, (key, head, _entry) in enumerate(paras):
+        occ, p0 = [], L.find(key)
+        while p0 >= 0 and len(occ) < 40: occ.append(p0); p0 = L.find(key, p0 + 1)
+        for pos in sorted(occ, reverse=True): cands.append((pos, i))   # descending: one per paragraph in the chain
+    tails, tail_idx, prev = [], [], [None] * len(cands)
+    for c, (pos, i) in enumerate(cands):
+        j = bisect.bisect_left(tails, pos)
+        if j > 0: prev[c] = tail_idx[j - 1]
+        if j == len(tails): tails.append(pos); tail_idx.append(c)
+        else: tails[j] = pos; tail_idx[j] = c
+    chain, c = [], (tail_idx[-1] if tail_idx else None)
+    while c is not None: chain.append(cands[c]); c = prev[c]
+    chain.reverse()
+    cuts = []
+    for pos, i in chain:
+        raw = idx[pos]; head = paras[i][1]; entry = paras[i][2]
         b = raw
-        while b > 0 and (stream[b - 1].isspace()): b -= 1
+        while b > 0 and stream[b - 1].isspace(): b -= 1
         before = re.sub(r'<!--.*?-->|<pb[^>]*/>', '', stream[max(0, b - 400):b]).rstrip()
         at_join = any(abs(b - j) <= 2 for j in joins) or stream[max(0, b - 3):b] == '/>'
-        if at_join and not END.search(before): stats['page_cuts_ignored'] += 1; cursor = p + 1; continue
-        cuts.append((raw, head)); cursor = p + len(key)
+        # a heading or a numbered/biography ENTRY always opens a paragraph, even on a page whose last line has no stop
+        if at_join and not END.search(before) and not head and not entry: stats['page_cuts_ignored'] += 1; continue
+        cuts.append((raw, head))
+    stats['chain'] = len(chain)
     out, last = [], 0
     for raw, head in cuts:
         seg = stream[last:raw].strip()
@@ -135,23 +154,13 @@ def paginate(oiti, ours):
     if tail: out.append(tail)
     return fm, out, stats
 
-SENT_END = re.compile(r'(?<=[.؟!؛])\s+(?![^<]*-->)')
-def split_long(p, limit=1500, target=1000):
-    vis = lambda s: re.sub(r'<!--.*?-->|<pb[^>]*/>', '', s)
-    if len(vis(p)) <= limit or p.startswith('## '): return [p]
-    sents = SENT_END.split(p)
-    if len(sents) < 3: return [p]
-    out, cur = [], ''
-    for s_ in sents:
-        if cur and len(vis(cur)) + len(s_) > target: out.append(cur.strip()); cur = ''
-        cur += (' ' if cur else '') + s_
-    if cur.strip(): out.append(cur.strip())
-    return out
 
 if __name__ == '__main__':
     src, ours_p, out_p = sys.argv[1:4]
     fm, paras, stats = paginate(open(src, encoding='utf-8').read(), open(ours_p, encoding='utf-8').read())
-    final = [x for p in paras for x in split_long(re.sub(r'\s+', ' ', p).strip())]
+    # NEVER split by length (Chad, 2026-09-30: "we never segment on arbitrary boundaries") — an over-long paragraph stays
+    # whole until the semantic segmenter handles it.
+    final = [re.sub(r'\s+', ' ', p).strip() for p in paras]
     open(out_p, 'w', encoding='utf-8').write(fm + '\n\n' + '\n\n'.join(final) + '\n')
     vis = sorted(len(re.sub(r'<!--.*?-->|<pb[^>]*/>', '', p)) for p in final if not p.startswith('## '))
     print(stats, '| paragraphs', len(final), 'median', vis[len(vis) // 2], 'p95', vis[int(.95 * len(vis))], 'max', vis[-1])
