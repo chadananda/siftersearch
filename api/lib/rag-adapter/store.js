@@ -37,7 +37,9 @@ export function makeStore() {
     // Document metadata for profiling. Maps DB columns → the port's neutral DocMeta shape.
     async getDocMeta(docId) {
       return (await db.queryAll(
-        `SELECT id, title, author, religion, collection, year, description FROM docs WHERE id=?`, [docId]
+        // catalogue: the document's metadata line (doc_meta — recipient, place, date, subjects) for the prompts
+        `SELECT id, title, author, religion, collection, year, description,
+                (SELECT context FROM doc_meta m WHERE m.doc_id = docs.id) AS catalogue FROM docs WHERE id=?`, [docId]
       ))[0] || { id: docId };
     },
 

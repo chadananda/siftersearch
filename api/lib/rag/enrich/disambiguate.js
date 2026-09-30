@@ -154,7 +154,7 @@ const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
 export function buildSystem(profile, meta, cast = '') {
   const lang = LANG_NAME[profile.lang] || profile.lang;
   const foreign = profile.lang !== 'en' ? ` written in ${lang} (${profile.script} script) — READ the ${lang} passage and write your note in ENGLISH` : '';
-  const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
+  const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : '', meta.catalogue ? `Catalogue: ${meta.catalogue}` : ''].filter(Boolean).join('\n');
   return `You output a compact disambiguation note as JSON for ONE passage of a ${profile.genre} work${foreign}, so a later English-reading AI that has NOT seen the surrounding text can place the passage and tell who/what is meant. Output JSON ONLY.
 
 Return exactly: {"place":"…","era":"… [pin|est]","idea":"…","resolve":["<name as written> = <fuller handle>", …]}

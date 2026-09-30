@@ -31,7 +31,9 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
   beforeAll(() => {
     raw.exec(`
       CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, religion TEXT, collection TEXT, year INT, description TEXT, lang TEXT);
-      CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, external_para_id TEXT, paragraph_index INT, heading TEXT, text TEXT, context TEXT, context_model TEXT, blocktype TEXT, deleted_at TEXT, hyp_questions TEXT, hyp_thesis TEXT, hyp_model TEXT, original_text TEXT, original_lang TEXT, translation_text TEXT, translation_authority TEXT, align_ref TEXT, word_alignment TEXT);
+      CREATE TABLE doc_meta (doc_id INTEGER PRIMARY KEY, kind TEXT, meta TEXT, context TEXT);
+    INSERT INTO doc_meta (doc_id, kind, meta, context) VALUES (7, 'book', '{}', 'Work: «God Passes By» by Shoghi Effendi; year 1944');
+    CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, external_para_id TEXT, paragraph_index INT, heading TEXT, text TEXT, context TEXT, context_model TEXT, blocktype TEXT, deleted_at TEXT, hyp_questions TEXT, hyp_thesis TEXT, hyp_model TEXT, original_text TEXT, original_lang TEXT, translation_text TEXT, translation_authority TEXT, align_ref TEXT, word_alignment TEXT);
       INSERT INTO docs VALUES (7, 'God Passes By', 'Shoghi Effendi', 'bahai', 'History', 1944, 'A history.', 'en');
       INSERT INTO content VALUES (100, 7, 'para_1', 1, 'Chapter I', '${'the Báb declared His mission in Shíráz. '.repeat(8)}', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -141,6 +143,10 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
 
   it('getDocMeta maps columns to the DocMeta shape', async () => {
     expect(await store.getDocMeta(7)).toMatchObject({ id: 7, title: 'God Passes By', author: 'Shoghi Effendi' });
+  });
+
+  it('getDocMeta carries the catalogue line (doc_meta) the disambiguation and HyPE prompts use', async () => {
+    expect((await store.getDocMeta(7)).catalogue).toBe('Work: «God Passes By» by Shoghi Effendi; year 1944');
   });
 
   it('getSampleText returns a substantial, non-deleted paragraph', async () => {
