@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T00:52:45.023Z",
+  "generated": "2026-09-30T01:00:16.322Z",
   "entries": [
+    {
+      "hash": "0bb962e0",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Chat tools document_info + find_documents_by_metadata; phrase-first metadata search; paged rebuild that yields",
+      "scope": "docmeta"
+    },
     {
       "hash": "c5d0c3f7",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Tune the quality gate from the rejection data — it was discarding real books",
       "scope": null
-    },
-    {
-      "hash": "42ce9fc8",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Scope the work-list to books that HAVE a source, and make each rejection name its own cause",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "0bb962e0",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Chat tools document_info + find_documents_by_metadata; phrase-first metadata search; paged rebuild that yields",
+        "scope": "docmeta"
+      },
       {
         "hash": "c5d0c3f7",
         "date": "2026-09-29",
@@ -7051,15 +7058,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Tune the quality gate from the rejection data — it was discarding real books",
-        "scope": null
-      }
-    ],
-    "2026-08-12": [
-      {
-        "hash": "42ce9fc8",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Scope the work-list to books that HAVE a source, and make each rejection name its own cause",
         "scope": null
       }
     ]

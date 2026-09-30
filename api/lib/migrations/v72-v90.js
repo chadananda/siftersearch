@@ -1432,6 +1432,13 @@ export const migrations = {
       tokenize = 'unicode61 remove_diacritics 2')`);
     logger.info('Migration 135 complete');
   },
+  136: async () => {
+    // Metadata search must rank the canonical Dawn-Breakers above a scraped "Tag: Dawn-Breakers" page: carry the same
+    // 1–10 authority that paragraph search uses (lib/authority.js).
+    logger.info('Starting migration 136: doc_meta.authority');
+    try { await query('ALTER TABLE doc_meta ADD COLUMN authority INTEGER'); } catch { /* exists */ }
+    logger.info('Migration 136 complete');
+  },
 };
 
 export const graphMigrations = {

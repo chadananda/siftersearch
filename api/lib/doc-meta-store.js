@@ -1,5 +1,6 @@
 // Reads of the document metadata store (doc_meta + its SQLite FTS5 index). Used by the public API, the chat's
 // document tools, and (next) disambiguation/HyPE prompts. Deps: db.js, doc-meta.js (ftsQuery).
+// :rules: relevance (bm25, negative = better) is weighted by the 1–10 authority, so canonical texts outrank scrapes.
 // :edge: search runs exact phrase, then every word, then any word — "Mulla Husayn" must not lead with
 //   "Muhammad Husayn son of Mulla Shafi".
 import { queryAll, queryOne } from './db.js';
@@ -39,7 +40,7 @@ export async function searchDocMeta(q = {}) {
     const where = [...(match ? ['doc_meta_fts MATCH ?'] : []), ...filters, ...(exclude.length ? [`m.doc_id NOT IN (${exclude.map(() => '?').join(',')})`] : [])];
     if (!where.length) return [];
     return queryAll(`SELECT ${cols} FROM ${match ? 'doc_meta_fts f JOIN doc_meta m ON m.doc_id = f.rowid' : 'doc_meta m'}
-        WHERE ${where.join(' AND ')} ${match ? 'ORDER BY bm25(doc_meta_fts, 4, 3, 5, 3, 2, 1, 1, 2, 1)' : 'ORDER BY m.year_from'} LIMIT ?`,
+        WHERE ${where.join(' AND ')} ${match ? 'ORDER BY bm25(doc_meta_fts, 4, 3, 5, 3, 2, 1, 1, 2, 1) * (1 + COALESCE(m.authority, 1) / 5.0)' : 'ORDER BY m.authority DESC, m.year_from'} LIMIT ?`,
       [...(match ? [match] : []), ...fargs, ...exclude, n], 'docmeta:search');
   };
   // exact phrase, then every word, then any word — each tier only fills what the one before left

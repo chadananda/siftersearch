@@ -11,6 +11,7 @@ import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import { buildDocMeta, contextLine, indexDoc, ftsRow } from '../lib/doc-meta.js';
 import { getDocMeta, searchDocMeta } from '../lib/doc-meta-store.js';
+import { getAuthority } from '../lib/authority.js';
 import { getMeili } from '../lib/search.js';
 
 const admin = { preHandler: requireInternal };
@@ -95,18 +96,19 @@ export default async function tabletAdminRoutes(fastify) {
       const fm = fms.get(d.id);
       const pin = fm.pin || fm.catalog_ref || d.linked_pin || null;
       const meta = buildDocMeta({ doc: d, fm, pi: pin ? raws.get(pin) || { PIN: pin } : null, bib, notes: notesFor.get(d.id) || [] });
-      out.push({ meta, row: [d.id, meta.kind, JSON.stringify(meta), contextLine(meta)] });
+      out.push({ meta, row: [d.id, meta.kind, JSON.stringify(meta), contextLine(meta)],
+        authority: getAuthority({ author: d.author, religion: d.religion, collection: d.collection, source_site: d.source_site }) });
     }
     for (const part of inChunks(out, 300)) {
-      await transaction(part.flatMap(({ meta, row }) => {
+      await transaction(part.flatMap(({ meta, row, authority }) => {
         const x = indexDoc(meta);
         return [
-          { sql: `INSERT INTO doc_meta (doc_id, kind, meta, context, title, author, place, genre, year_from, year_to, pin, built_at)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?, unixepoch()) ON CONFLICT (doc_id) DO UPDATE SET kind = excluded.kind, meta = excluded.meta,
+          { sql: `INSERT INTO doc_meta (doc_id, kind, meta, context, title, author, place, genre, year_from, year_to, pin, authority, built_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?, unixepoch()) ON CONFLICT (doc_id) DO UPDATE SET kind = excluded.kind, meta = excluded.meta,
               context = excluded.context, title = excluded.title, author = excluded.author, place = excluded.place,
               genre = excluded.genre, year_from = excluded.year_from, year_to = excluded.year_to, pin = excluded.pin,
-              built_at = excluded.built_at`,
-            args: [...row, x.title, x.author, x.place, x.genre, x.year_from, x.year_to, x.pin] },
+              authority = excluded.authority, built_at = excluded.built_at`,
+            args: [...row, x.title, x.author, x.place, x.genre, x.year_from, x.year_to, x.pin, authority] },
           { sql: 'DELETE FROM doc_meta_fts WHERE rowid = ?', args: [meta.doc_id] },
           { sql: `INSERT INTO doc_meta_fts (rowid, title, names, recipient, place, subjects, first_line_en, description, author, translator)
               VALUES (?,?,?,?,?,?,?,?,?,?)`, args: [meta.doc_id, ...ftsRow(meta)] },
@@ -124,7 +126,7 @@ export default async function tabletAdminRoutes(fastify) {
     let after = 0, docsSeen = 0, built = 0, tablets = 0;
     for (;;) {
       const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.author, d.religion, d.collection, d.language, d.year,
-          d.description, d.metadata, d.doc_role,
+          d.description, d.metadata, d.doc_role, d.source_site,
           (SELECT l.pin FROM inventory_links l WHERE l.doc_id = d.id ORDER BY l.coverage DESC LIMIT 1) AS linked_pin
           FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%' AND d.id > ? ORDER BY d.id LIMIT 2000`, [dir, after], 'docmeta:rebuild-docs');
       if (!docs.length) break;
