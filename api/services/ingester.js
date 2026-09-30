@@ -15,6 +15,7 @@ import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
 import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
+import { applyPageBreaks, protectPageBreaks, hasPageBreaks } from '../lib/page-breaks.js';
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
@@ -335,6 +336,15 @@ export async function writeMarkersToSource(docId, relativePath, markedParagraphs
  * @returns {Promise<void>}
  */
 async function autoWriteMarkersToSource(docId, relativePath) {
+  // The write-back rebuilds the body from STORED paragraph text, which no longer holds the source's print-page breaks or
+  // footnote comments — rewriting would erase them from the only place they live. Such a source is never rewritten.
+  try {
+    const src = await readFile(join(config.library.basePath, relativePath), 'utf8');
+    if (hasPageBreaks(src) || src.includes('<!-- fn:')) {
+      logger.info({ docId, relativePath }, 'Source carries page breaks/footnotes — markers not written back');
+      return;
+    }
+  } catch { /* unreadable: the existing path below reports it */ }
   // Get paragraphs from database
   const paragraphs = await queryAll(
     'SELECT text FROM content WHERE doc_id = ? ORDER BY paragraph_index',
@@ -803,7 +813,7 @@ export async function parseDocumentWithBlocks(text, options = {}) {
 
     try {
       // Strip HTML comments (manual exclusions like page markers)
-      const cleanText = text.replace(/<!--[\s\S]*?-->/g, '');
+      const cleanText = protectPageBreaks(text.replace(/<!--[\s\S]*?-->/g, ''));   // a <pb/> must stay one 'word'
 
       // Segmentation creates paragraphs from sentences
       // Handles large documents internally via chunking with carryover
@@ -1508,6 +1518,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     language: finalMeta.language,
     skipAISegmentation
   });
+  // Print-page breaks (<pb vol n/>) and a page's footnotes (<!-- fn -->) live in the SOURCE only: record each
+  // paragraph's page (pdf_page + block_attrs) and take them out of the stored text. See lib/page-breaks.js.
+  chunks = applyPageBreaks(chunks);
 
   if (chunks.length === 0) {
     logger.warn({ documentId: existingDoc?.id, relativePath }, 'Document has no content to ingest');

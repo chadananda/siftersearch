@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T15:56:55.813Z",
+  "generated": "2026-09-30T17:28:22.516Z",
   "entries": [
+    {
+      "hash": "dbd85708",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Questions MERGE into every linked paragraph — translation partner (all), quotes/duplicates via source links (only questions answered in their text)",
+      "scope": "hype"
+    },
     {
       "hash": "4e0b8e69",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Read a pipeline log over the API — \"I need ssh\" means the management API is short an endpoint",
       "scope": null
-    },
-    {
-      "hash": "71997c5e",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Stage 1 question map — built against the real CuriosityGraph contract, with its gate",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "dbd85708",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Questions MERGE into every linked paragraph — translation partner (all), quotes/duplicates via source links (only questions answered in their text)",
+        "scope": "hype"
+      },
       {
         "hash": "4e0b8e69",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Read a pipeline log over the API — \"I need ssh\" means the management API is short an endpoint",
-        "scope": null
-      },
-      {
-        "hash": "71997c5e",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Stage 1 question map — built against the real CuriosityGraph contract, with its gate",
         "scope": null
       }
     ]
