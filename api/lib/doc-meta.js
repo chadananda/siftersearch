@@ -68,9 +68,15 @@ export function indexDoc(m) {
   };
 }
 
-export const DOC_META_INDEX = 'doc_meta';
-export const DOC_META_SETTINGS = {
-  searchableAttributes: ['title', 'names', 'recipient', 'place', 'subjects', 'first_line_en', 'description', 'author', 'translator'],
-  filterableAttributes: ['kind', 'author', 'place', 'period', 'genre', 'year_from', 'year_to', 'pin', 'religion', 'collection', 'language'],
-  sortableAttributes: ['year_from'],
-};
+/** The FTS5 row (doc_meta_fts, same column order as the table) for a record. */
+export function ftsRow(m) {
+  const x = indexDoc(m);
+  return [x.title, x.names.join(' · '), x.recipient, x.place, x.subjects.join(' · '), x.first_line_en, x.description, x.author, x.translator]
+    .map((v) => v ?? '');
+}
+
+/** User text → a safe FTS5 query: each word quoted (no operator injection), ANY word may match, bm25 ranks. */
+export function ftsQuery(q) {
+  const words = String(q || '').normalize('NFKC').split(/[^\p{L}\p{N}'’-]+/u).map((w) => w.replace(/["'’]/g, '')).filter((w) => w.length > 1);
+  return words.length ? words.map((w) => `"${w}"`).join(' OR ') : null;
+}

@@ -29,3 +29,15 @@ describe('contextLine / indexDoc', () => {
     expect(indexDoc(tablet)).toMatchObject({ id: 9, kind: 'tablet', title: 'Lawḥ-i-Naṣír', place: 'Adrianople', year_from: 1866, year_to: 1867, pin: 'BH1' });
   });
 });
+
+import { ftsQuery, ftsRow } from '../../api/lib/doc-meta.js';
+describe('FTS helpers', () => {
+  it('quotes every word so user text can never inject FTS5 operators', () => {
+    expect(ftsQuery('Mullá Ḥusayn AND "x" NEAR(')).toBe('"Mullá" OR "Ḥusayn" OR "AND" OR "NEAR"');
+    expect(ftsQuery('  ')).toBeNull();
+  });
+  it('lays out a record as the FTS row', () => {
+    const r = ftsRow(buildDocMeta({ doc: { id: 1, title: 'Book', author: 'A' }, fm: { subjects: ['x', 'y'] } }));
+    expect(r).toEqual(['Book', '', '', '', 'x · y', '', '', 'A', '']);
+  });
+});

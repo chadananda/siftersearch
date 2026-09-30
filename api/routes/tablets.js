@@ -9,7 +9,7 @@ import { queryAll, queryOne, transaction } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
-import { buildDocMeta, contextLine, indexDoc, DOC_META_INDEX, DOC_META_SETTINGS } from '../lib/doc-meta.js';
+import { buildDocMeta, contextLine, indexDoc, ftsRow, ftsQuery } from '../lib/doc-meta.js';
 import { getMeili } from '../lib/search.js';
 
 const admin = { preHandler: requireInternal };
@@ -72,11 +72,12 @@ export default async function tabletAdminRoutes(fastify) {
   /**
    * POST /docmeta/rebuild {dir, index=true} — one sourced record per document under dir (doc_meta): tablets merge
    * frontmatter + Phelps' row (the doc's own pin, else its inventory link) + linked notes; books use their library row +
-   * frontmatter. Then (re)fills the SEPARATE Meili index doc_meta — never the paragraphs index. Notes docs get no record.
+   * frontmatter. Also fills its own SQLite full-text index (doc_meta_fts) — not Meilisearch, whose task queue is weeks
+   * deep. Notes docs get no record.
    * /tablets/rebuild is the same call (kept for the scripts that use it).
    */
   const rebuild = async (req) => {
-    const { dir, index = true } = req.body || {};
+    const { dir } = req.body || {};
     if (dir == null) throw ApiError.badRequest('dir required ("" = the whole library)');
     const bib = Object.fromEntries((await queryAll('SELECT code, citation, url FROM bib_codes', [], 'docmeta:bib-read')).map((b) => [b.code, b]));
     const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.author, d.religion, d.collection, d.language, d.year,
@@ -104,18 +105,29 @@ export default async function tabletAdminRoutes(fastify) {
       const meta = buildDocMeta({ doc: d, fm, pi: pin ? raws.get(pin) || { PIN: pin } : null, bib, notes: notesFor.get(d.id) || [] });
       out.push({ meta, row: [d.id, meta.kind, JSON.stringify(meta), contextLine(meta)] });
     }
-    for (const part of inChunks(out, 400)) await transaction(part.map(({ row }) => ({ sql: `INSERT INTO doc_meta (doc_id, kind, meta, context, built_at)
-      VALUES (?,?,?,?, unixepoch()) ON CONFLICT (doc_id) DO UPDATE SET kind = excluded.kind, meta = excluded.meta,
-      context = excluded.context, built_at = excluded.built_at`, args: row })), 'docmeta:rebuild-write');
-    let indexed = 0;
-    if (index && out.length) {
-      const meili = getMeili();
-      try { await meili.createIndex(DOC_META_INDEX, { primaryKey: 'id' }); } catch { /* exists */ }
-      await meili.index(DOC_META_INDEX).updateSettings(DOC_META_SETTINGS);   // this small index only
-      for (const part of inChunks(out, 5000)) { await meili.index(DOC_META_INDEX).addDocuments(part.map(({ meta }) => indexDoc(meta))); indexed += part.length; }
+    for (const part of inChunks(out, 300)) {
+      await transaction(part.flatMap(({ meta, row }) => {
+        const x = indexDoc(meta);
+        return [
+          { sql: `INSERT INTO doc_meta (doc_id, kind, meta, context, title, author, place, genre, year_from, year_to, pin, built_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?, unixepoch()) ON CONFLICT (doc_id) DO UPDATE SET kind = excluded.kind, meta = excluded.meta,
+              context = excluded.context, title = excluded.title, author = excluded.author, place = excluded.place,
+              genre = excluded.genre, year_from = excluded.year_from, year_to = excluded.year_to, pin = excluded.pin,
+              built_at = excluded.built_at`,
+            args: [...row, x.title, x.author, x.place, x.genre, x.year_from, x.year_to, x.pin] },
+          { sql: 'DELETE FROM doc_meta_fts WHERE rowid = ?', args: [meta.doc_id] },
+          { sql: `INSERT INTO doc_meta_fts (rowid, title, names, recipient, place, subjects, first_line_en, description, author, translator)
+              VALUES (?,?,?,?,?,?,?,?,?,?)`, args: [meta.doc_id, ...ftsRow(meta)] },
+        ];
+      }), 'docmeta:rebuild-write');
     }
-    return { docs: docs.length, built: out.length, tablets: out.filter((o) => o.meta.kind === 'tablet').length, indexed };
+    return { docs: docs.length, built: out.length, tablets: out.filter((o) => o.meta.kind === 'tablet').length };
   };
+  /** POST /docmeta/cancel-meili — withdraw the doc_meta tasks queued in Meilisearch (the index now lives in SQLite). */
+  fastify.post('/docmeta/cancel-meili', admin, async () => {
+    const t = await getMeili().tasks.cancelTasks({ indexUids: ['doc_meta'], statuses: ['enqueued'] });
+    return { cancellationTask: t.taskUid };
+  });
   fastify.post('/docmeta/rebuild', admin, rebuild);
   fastify.post('/tablets/rebuild', admin, rebuild);
 }
@@ -129,17 +141,21 @@ export async function tabletPublicRoutes(fastify) {
    */
   fastify.get('/meta/search', async (req) => {
     const q = req.query || {};
-    const esc = (v) => String(v).replace(/"/g, '\\"');
-    const filter = [
-      q.kind && `kind = "${esc(q.kind)}"`, q.author && `author = "${esc(q.author)}"`, q.place && `place = "${esc(q.place)}"`,
-      q.genre && `genre = "${esc(q.genre)}"`, q.religion && `religion = "${esc(q.religion)}"`,
-      Number(q.year_from) && `year_to >= ${Number(q.year_from)}`, Number(q.year_to) && `year_from <= ${Number(q.year_to)}`,
-    ].filter(Boolean);
-    const res = await getMeili().index(DOC_META_INDEX).search(String(q.q || ''), {
-      filter, limit: Math.min(200, Number(q.limit) || 20),
-      attributesToRetrieve: ['doc_id', 'kind', 'title', 'author', 'recipient', 'place', 'year_from', 'year_to', 'genre', 'subjects', 'pin'],
-    });
-    return { total: res.estimatedTotalHits, hits: res.hits };
+    const where = []; const args = [];
+    const match = ftsQuery(q.q);
+    if (match) { where.push('doc_meta_fts MATCH ?'); args.push(match); }
+    for (const [k, col] of [['kind', 'm.kind'], ['author', 'm.author'], ['place', 'm.place'], ['genre', 'm.genre'], ['pin', 'm.pin']]) {
+      if (q[k]) { where.push(`${col} = ?`); args.push(String(q[k])); }
+    }
+    if (Number(q.year_from)) { where.push('m.year_to >= ?'); args.push(Number(q.year_from)); }
+    if (Number(q.year_to)) { where.push('m.year_from <= ?'); args.push(Number(q.year_to)); }
+    if (!where.length) return { total: 0, hits: [] };
+    const limit = Math.min(200, Number(q.limit) || 20);
+    const hits = await queryAll(`SELECT m.doc_id, m.kind, m.title, m.author, m.place, m.year_from, m.year_to, m.genre, m.pin, m.context
+        FROM ${match ? 'doc_meta_fts f JOIN doc_meta m ON m.doc_id = f.rowid' : 'doc_meta m'}
+        WHERE ${where.join(' AND ')} ${match ? 'ORDER BY bm25(doc_meta_fts, 4, 3, 5, 3, 2, 1, 1, 2, 1)' : 'ORDER BY m.year_from'} LIMIT ?`,
+      [...args, limit], 'docmeta:search');
+    return { total: hits.length, hits };
   });
 
   fastify.get('/:id/about', async (req, reply) => {

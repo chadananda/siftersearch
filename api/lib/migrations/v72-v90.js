@@ -1415,6 +1415,23 @@ export const migrations = {
     await query(`INSERT OR IGNORE INTO doc_meta (doc_id, kind, meta, built_at) SELECT doc_id, 'tablet', meta, built_at FROM tablet_meta`);
     logger.info('Migration 134 complete');
   },
+  135: async () => {
+    // doc_meta is searched in SQLITE, not Meilisearch (2026-09-29): Meili works its task queue one at a time and had
+    // 65k tasks queued (~1.5/min) — a new index there would have waited a month. FTS5 builds in seconds and never
+    // queues. Facet columns carry the filters (kind, author, place, genre, year range, pin).
+    logger.info('Starting migration 135: doc_meta facets + FTS5');
+    for (const [c, t] of [['title', 'TEXT'], ['author', 'TEXT'], ['place', 'TEXT'], ['genre', 'TEXT'], ['year_from', 'INTEGER'],
+      ['year_to', 'INTEGER'], ['pin', 'TEXT']]) {
+      try { await query(`ALTER TABLE doc_meta ADD COLUMN ${c} ${t}`); } catch { /* exists */ }
+    }
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_meta_place ON doc_meta(place)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_meta_years ON doc_meta(year_from, year_to)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_meta_pin ON doc_meta(pin)');
+    await query(`CREATE VIRTUAL TABLE IF NOT EXISTS doc_meta_fts USING fts5(
+      title, names, recipient, place, subjects, first_line_en, description, author, translator,
+      tokenize = 'unicode61 remove_diacritics 2')`);
+    logger.info('Migration 135 complete');
+  },
 };
 
 export const graphMigrations = {
