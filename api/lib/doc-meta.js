@@ -75,8 +75,8 @@ export function ftsRow(m) {
     .map((v) => v ?? '');
 }
 
-/** User text → a safe FTS5 query: each word quoted (no operator injection), ANY word may match, bm25 ranks. */
-export function ftsQuery(q) {
+/** User text → a safe FTS5 query: each word quoted (no operator injection); op 'AND' = all words, 'OR' = any. */
+export function ftsQuery(q, op = 'OR') {
   const words = String(q || '').normalize('NFKC').split(/[^\p{L}\p{N}'’-]+/u).map((w) => w.replace(/["'’]/g, '')).filter((w) => w.length > 1);
-  return words.length ? words.map((w) => `"${w}"`).join(' OR ') : null;
+  return words.length ? words.map((w) => `"${w}"`).join(` ${op} `) : null;
 }

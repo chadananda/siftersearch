@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T00:19:20.633Z",
+  "generated": "2026-09-30T00:26:03.754Z",
   "entries": [
+    {
+      "hash": "7f098f1c",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Search document metadata in SQLite FTS5 (migr 135), not Meilisearch — its queue is ~65k tasks deep",
+      "scope": "docmeta"
+    },
     {
       "hash": "9f3afabc",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Reconciler, timestamp contract, and the end of the silent catch",
       "scope": null
-    },
-    {
-      "hash": "2be9c7b0",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Record pipeline state as FACT — one API call replaces every investigation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "7f098f1c",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Search document metadata in SQLite FTS5 (migr 135), not Meilisearch — its queue is ~65k tasks deep",
+        "scope": "docmeta"
+      },
       {
         "hash": "9f3afabc",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Reconciler, timestamp contract, and the end of the silent catch",
-        "scope": null
-      },
-      {
-        "hash": "2be9c7b0",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Record pipeline state as FACT — one API call replaces every investigation",
         "scope": null
       }
     ]

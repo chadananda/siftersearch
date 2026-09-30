@@ -141,20 +141,24 @@ export async function tabletPublicRoutes(fastify) {
    */
   fastify.get('/meta/search', async (req) => {
     const q = req.query || {};
-    const where = []; const args = [];
-    const match = ftsQuery(q.q);
-    if (match) { where.push('doc_meta_fts MATCH ?'); args.push(match); }
+    const filters = []; const fargs = [];
     for (const [k, col] of [['kind', 'm.kind'], ['author', 'm.author'], ['place', 'm.place'], ['genre', 'm.genre'], ['pin', 'm.pin']]) {
-      if (q[k]) { where.push(`${col} = ?`); args.push(String(q[k])); }
+      if (q[k]) { filters.push(`${col} = ?`); fargs.push(String(q[k])); }
     }
-    if (Number(q.year_from)) { where.push('m.year_to >= ?'); args.push(Number(q.year_from)); }
-    if (Number(q.year_to)) { where.push('m.year_from <= ?'); args.push(Number(q.year_to)); }
-    if (!where.length) return { total: 0, hits: [] };
+    if (Number(q.year_from)) { filters.push('m.year_to >= ?'); fargs.push(Number(q.year_from)); }
+    if (Number(q.year_to)) { filters.push('m.year_from <= ?'); fargs.push(Number(q.year_to)); }
     const limit = Math.min(200, Number(q.limit) || 20);
-    const hits = await queryAll(`SELECT m.doc_id, m.kind, m.title, m.author, m.place, m.year_from, m.year_to, m.genre, m.pin, m.context
-        FROM ${match ? 'doc_meta_fts f JOIN doc_meta m ON m.doc_id = f.rowid' : 'doc_meta m'}
-        WHERE ${where.join(' AND ')} ${match ? 'ORDER BY bm25(doc_meta_fts, 4, 3, 5, 3, 2, 1, 1, 2, 1)' : 'ORDER BY m.year_from'} LIMIT ?`,
-      [...args, limit], 'docmeta:search');
+    const cols = 'm.doc_id, m.kind, m.title, m.author, m.place, m.year_from, m.year_to, m.genre, m.pin, m.context';
+    const run = (match, n, exclude = []) => {
+      const where = [...(match ? ['doc_meta_fts MATCH ?'] : []), ...filters, ...(exclude.length ? [`m.doc_id NOT IN (${exclude.map(() => '?').join(',')})`] : [])];
+      if (!where.length) return [];
+      return queryAll(`SELECT ${cols} FROM ${match ? 'doc_meta_fts f JOIN doc_meta m ON m.doc_id = f.rowid' : 'doc_meta m'}
+          WHERE ${where.join(' AND ')} ${match ? 'ORDER BY bm25(doc_meta_fts, 4, 3, 5, 3, 2, 1, 1, 2, 1)' : 'ORDER BY m.year_from'} LIMIT ?`,
+        [...(match ? [match] : []), ...fargs, ...exclude, n], 'docmeta:search');
+    };
+    // every word first ("Mulla Husayn" should not lead with "Muhammad Husayn son of Mulla Shafi"), then any word
+    let hits = await run(ftsQuery(q.q, 'AND'), limit);
+    if (hits.length < limit && ftsQuery(q.q) && q.q.trim().includes(' ')) hits = hits.concat(await run(ftsQuery(q.q, 'OR'), limit - hits.length, hits.map((h) => h.doc_id)));
     return { total: hits.length, hits };
   });
 

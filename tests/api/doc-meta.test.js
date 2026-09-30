@@ -35,6 +35,7 @@ describe('FTS helpers', () => {
   it('quotes every word so user text can never inject FTS5 operators', () => {
     expect(ftsQuery('Mullá Ḥusayn AND "x" NEAR(')).toBe('"Mullá" OR "Ḥusayn" OR "AND" OR "NEAR"');
     expect(ftsQuery('  ')).toBeNull();
+    expect(ftsQuery('Mulla Husayn', 'AND')).toBe('"Mulla" AND "Husayn"');
   });
   it('lays out a record as the FTS row', () => {
     const r = ftsRow(buildDocMeta({ doc: { id: 1, title: 'Book', author: 'A' }, fm: { subjects: ['x', 'y'] } }));
