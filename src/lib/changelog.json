@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T03:02:33.677Z",
+  "generated": "2026-09-30T03:37:30.371Z",
   "entries": [
+    {
+      "hash": "22bbca1c",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "Meili-switchover measures the index — removes only entries whose paragraph no longer exists; live ones overwritten in place (no search gap)",
+      "scope": "admin"
+    },
     {
       "hash": "1a14d002",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Build the APPROVE half of propose-then-approve",
       "scope": null
-    },
-    {
-      "hash": "7b8cdc54",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "A durable, queryable record of every file and doc mutation — and WHY",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "22bbca1c",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "Meili-switchover measures the index — removes only entries whose paragraph no longer exists; live ones overwritten in place (no search gap)",
+        "scope": "admin"
+      },
       {
         "hash": "1a14d002",
         "date": "2026-09-29",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Build the APPROVE half of propose-then-approve",
-        "scope": null
-      },
-      {
-        "hash": "7b8cdc54",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "A durable, queryable record of every file and doc mutation — and WHY",
         "scope": null
       }
     ]

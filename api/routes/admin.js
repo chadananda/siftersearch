@@ -2266,14 +2266,32 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
-   * POST /server/backup — run the daily backup now (SQLite snapshot + verify, Meili rsync, embedding cache, vault copy)
-   * as a background task, e.g. before a risky operation. Read it at GET /server/tasks/backup. See scripts/backup-daily.mjs.
+   * POST /server/backup — run the daily backup now (SQLite snapshot + verify, Meili rsync, embedding cache, vault copy),
+   * e.g. before a risky operation. DETACHED with its output in a log file: an API restart (every push deploys) must not
+   * kill it — a piped child died with its parent mid-backup (2026-09-30). Read it at GET /server/backup/status.
    */
+  const BACKUP_DIR = process.env.BACKUP_DIR || '/tank/backups/siftersearch';
+  const BACKUP_LOG = join(process.cwd(), 'logs', 'backup-manual.log');
   fastify.post('/server/backup', { preHandler: requireInternal }, async () => {
-    const running = backgroundTasks.get('backup');
-    if (running && running.status === 'running') throw ApiError.conflict('backup is already running');
-    const task = runBackgroundTask('backup', 'scripts/backup-daily.mjs');
-    return { success: true, taskId: 'backup', status: task.status };
+    const { openSync, mkdirSync } = await import('fs');
+    mkdirSync(join(process.cwd(), 'logs'), { recursive: true });
+    const out = openSync(BACKUP_LOG, 'w');
+    const child = spawn('node', ['scripts/backup-daily.mjs'], { cwd: process.cwd(), detached: true, stdio: ['ignore', out, out],
+      env: { ...process.env, FORCE_COLOR: '0' } });
+    child.unref();
+    return { success: true, pid: child.pid, log: BACKUP_LOG };
+  });
+
+  /** GET /server/backup/status — backup files (size, time), the Meili copy's age, and the tail of the manual-run log. */
+  fastify.get('/server/backup/status', { preHandler: requireInternal }, async () => {
+    const { readdirSync, statSync, existsSync } = await import('fs');
+    const stat = (p) => { try { const s = statSync(p); return { bytes: s.size, mtime: s.mtime.toISOString() }; } catch { return null; } };
+    const files = existsSync(BACKUP_DIR) ? readdirSync(BACKUP_DIR).filter((f) => /^sifter-.*\.db/.test(f)).sort().slice(-6)
+      .map((f) => ({ file: f, ...stat(join(BACKUP_DIR, f)) })) : [];
+    let log = null;
+    try { log = readFileSync(BACKUP_LOG, 'utf8').split('\n').filter(Boolean).slice(-15); } catch { /* no manual run */ }
+    return { backupDir: BACKUP_DIR, files, meili: stat(join(BACKUP_DIR, 'meilisearch')),
+      meiliDataFile: stat(join(BACKUP_DIR, 'meilisearch', 'indexes')), log };
   });
 
   /**
