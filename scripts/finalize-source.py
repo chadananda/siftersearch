@@ -26,7 +26,7 @@ if __name__ == '__main__':
     o = open(original, encoding='utf-8').read()
     lo, ln = len(LETTERS.sub('', o)), len(LETTERS.sub('', new))
     do, dn = len(DIAC.findall(o)), len(DIAC.findall(new))
-    ok = ln >= lo * 0.999 and dn >= do
+    ok = ln == lo and dn == do                      # EXACT: a gain means duplicated text, a loss means dropped text
     print(f'paragraphs {len(paras)} -> {len(final)} | letters {ln / lo:.4f} | diacritics {dn}/{do} | {"OK" if ok else "FAILED"}')
     if not ok: sys.exit(1)
     open(out, 'w', encoding='utf-8').write(new)

@@ -139,7 +139,11 @@ def paginate(oiti, ours):
         cuts.append((raw, head))
     stats['chain'] = len(chain)
     out, last = [], 0
-    for raw, head in cuts:
+    for raw, head in sorted(cuts):
+        # the break goes BEFORE any opening mark that belongs to the paragraph's first word — «(تمييز)», "لا …
+        # …and never inside a word: OpenITI may open at «حدثنا» where our text reads «وحدثنا» — back to the word's start
+        while raw > 0 and not stream[raw - 1].isspace() and stream[raw - 1] != '>': raw -= 1
+        if raw < last: continue                      # inside text already emitted (an extended heading) — never duplicate
         seg = stream[last:raw].strip()
         if seg: out.append(seg)
         last = raw
@@ -148,6 +152,7 @@ def paginate(oiti, ours):
             while q < len(stream) and n < hl:
                 if LETTER.match(DIAC.sub('', stream[q]).translate(FOLD) or ' '): n += 1
                 q += 1
+            while q < len(stream) and not stream[q].isspace() and stream[q] != '<': q += 1   # finish the word: never cut before its diacritics
             out.append('## ' + stream[raw:q].strip()); last = q; stats['headings'] += 1
         stats['para_breaks'] += 1
     tail = stream[last:].strip()
