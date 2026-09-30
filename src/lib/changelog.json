@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T21:21:58.766Z",
+  "generated": "2026-09-30T22:05:17.849Z",
   "entries": [
+    {
+      "hash": "d5e7073d",
+      "date": "2026-09-30",
+      "type": "Fixed",
+      "description": "Smart diff keeps every paragraph sharing a text hash (no stale duplicates); paginator heading walk skips comments/page tags",
+      "scope": "ingest"
+    },
     {
       "hash": "6182eb2a",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "An outage must not be recorded as a bad book (6 books quarantined for a dropped socket)",
       "scope": null
-    },
-    {
-      "hash": "0173a14a",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "One dropped writer connection must not kill a book (2nd failure of all 6, $0.00 spend)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "d5e7073d",
+        "date": "2026-09-30",
+        "type": "Fixed",
+        "description": "Smart diff keeps every paragraph sharing a text hash (no stale duplicates); paginator heading walk skips comments/page tags",
+        "scope": "ingest"
+      },
       {
         "hash": "6182eb2a",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "An outage must not be recorded as a bad book (6 books quarantined for a dropped socket)",
-        "scope": null
-      },
-      {
-        "hash": "0173a14a",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "One dropped writer connection must not kill a book (2nd failure of all 6, $0.00 spend)",
         "scope": null
       }
     ]

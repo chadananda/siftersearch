@@ -9,11 +9,16 @@
  *   GET  /api/v1/library/documents/:id  - Get single document metadata + canonical URL
  *   GET  /api/v1/library/authors        - List all authors with document counts
  *   GET  /api/v1/library/religions      - Religion/collection tree with counts
+ *   GET  /api/v1/library/documents/:id/links - Every paragraph of a document with its links (originals, sources)
+ *   GET  /api/v1/library/quotes?author= - Every linked quotation in an author's works + source + original, with references
  *
  * Search:
  *   POST /api/v1/search        - Hybrid search (semantic + keyword) with AI analysis
  *   POST /api/v1/search/quick  - Fast keyword-only search (no AI)
  *   GET  /api/v1/paragraph/:id - Get a specific paragraph
+ *   GET  /api/v1/paragraph/:id/links - Its original / translations / quoted sources (→ their originals) / quoted-by
+ *   POST /api/v1/search/original - English (any) text → the passages holding it → their ORIGINAL-language passages
+ *   (POST /search and /search/quick take includeLinks: true to attach the same links to every result)
  *
  * Chat:
  *   POST /api/v1/chat          - AI research assistant (SSE streaming)
@@ -40,6 +45,7 @@ import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 import { participantId as resolveParticipant, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 import { rankByTitle } from '../lib/title-rank.js';
+import { resolveLinks, findOriginals, getPassages } from '../lib/passage-links.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -91,6 +97,15 @@ function getParagraphUrl(doc, paragraphIndex) {
   const ol = olSourceUrl(doc);
   if (ol) return ol;   // search.js already appended ?paraId=external_para_id when known
   return `${getDocumentUrl(doc)}#p${paragraphIndex}`;
+}
+
+/** Attach resolveLinks() to each result (one batched lookup); a result with no links gets links: null. */
+async function attachLinks(results) {
+  const links = await resolveLinks(results.map((r) => r.id), { quotedBy: false });
+  for (const r of results) {
+    const l = links.get(Number(r.id));
+    r.links = l && (l.original || l.originals.length || l.translations.length || l.sources.length) ? l : null;
+  }
 }
 
 /** Log search to search_log table (fire-and-forget, fail-fast) */
@@ -343,6 +358,7 @@ export default async function publicApiRoutes(fastify) {
           phraseBoost: { type: 'boolean', default: false, description: 'Rank exact phrase matches first, then by authority. Off by default.' },
           analyze: { type: 'boolean', default: true, description: 'false = RAW: planned retrieval with ZERO LLM calls (no summaries); order and text only.' },
           plan: { type: 'boolean', default: true, description: 'Plan the search with fast classification (scope, author preference, layers). false = legacy hybrid path.' },
+          includeLinks: { type: 'boolean', default: false, description: 'Attach each result\'s links: original-language passage(s), translations, the passages it quotes (with THEIR originals). Same shape as GET /paragraph/:id/links.' },
           filters: {
             type: 'object',
             properties: {
@@ -357,7 +373,7 @@ export default async function publicApiRoutes(fastify) {
       }
     }
   }, async (request) => {
-    const { query, limit = 10, filters = {}, plan: usePlan = true, analyze = true } = request.body;
+    const { query, limit = 10, filters = {}, plan: usePlan = true, analyze = true, includeLinks = false } = request.body;
     const startTime = Date.now();
 
     // Pass filters as structured object — hybridSearch reads filters.religion, .author, etc.
@@ -601,6 +617,7 @@ export default async function publicApiRoutes(fastify) {
       readerUrl: link.reader_url,
       link: { site: link.site, tier: link.tier, paragraph_level: link.paragraph_level },
     }; });
+    if (includeLinks) await attachLinks(results);
 
     const durationMs = Date.now() - startTime;
     logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api', filters });
@@ -643,6 +660,7 @@ export default async function publicApiRoutes(fastify) {
         properties: {
           query: { type: 'string', minLength: 1, maxLength: 200 },
           limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+          includeLinks: { type: 'boolean', default: false, description: 'Attach each result\'s links (original-language passages, sources it quotes and their originals).' },
           filters: {
             type: 'object',
             properties: {
@@ -655,7 +673,7 @@ export default async function publicApiRoutes(fastify) {
       }
     }
   }, async (request) => {
-    const { query, limit = 10, filters = {} } = request.body;
+    const { query, limit = 10, filters = {}, includeLinks = false } = request.body;
     const startTime = Date.now();
 
     const searchResults = await keywordSearch(query, { limit, filters });
@@ -678,6 +696,7 @@ export default async function publicApiRoutes(fastify) {
       url: getParagraphUrl(hit, hit.paragraph_index),
       documentUrl: getDocumentUrl(hit)
     }));
+    if (includeLinks) await attachLinks(results);
 
     const durationMs = Date.now() - startTime;
     logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api_quick', filters });
@@ -731,6 +750,54 @@ export default async function publicApiRoutes(fastify) {
       documentUrl: getDocumentUrl({ id: paragraph.doc_id, ...docInfo }),
       document: docInfo
     };
+  });
+
+  /**
+   * GET /api/v1/paragraph/:id/links — the passage and everything linked to it. `original` is the single best
+   * original-language passage by whichever path reaches it: a translation link, or quote → source → original.
+   */
+  fastify.get('/paragraph/:id/links', {
+    schema: {
+      description: 'A paragraph with its links: original-language passage(s) it translates, its translations, the passages it quotes (each with its own originals), and who quotes it. `original` = the best original by any path.',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
+      params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] },
+    }
+  }, async (request) => {
+    const id = Number(request.params.id);
+    const [passages, links] = await Promise.all([getPassages([id]), resolveLinks([id])]);
+    if (!passages.has(id)) throw new ApiError('Paragraph not found', 404);
+    return { passage: passages.get(id), ...links.get(id) };
+  });
+
+  /**
+   * POST /api/v1/search/original — CTAI's lookup (Chad, 2026-09-30): a verse found in English → the library passages
+   * that hold it (exact phrases, overlap-verified; semantic fallback for a different translation) → their originals.
+   */
+  fastify.post('/search/original', {
+    schema: {
+      description: 'Find the ORIGINAL-language passage of a verse or quotation. Send the English (or any) text; returns the matching library passages (overlap = share of the shorter text found verbatim in the other) and the originals linked to them, directly or through the source they quote. method = "phrase" (verbatim) or "semantic" (no verbatim match, e.g. a different translation — check overlap).',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
+      body: {
+        type: 'object',
+        required: ['text'],
+        properties: {
+          text: { type: 'string', minLength: 10, maxLength: 8000 },
+          limit: { type: 'integer', minimum: 1, maximum: 20, default: 5 },
+          semantic: { type: 'boolean', default: true, description: 'Fall back to semantic search when no verbatim match is found.' },
+          minOverlap: { type: 'number', minimum: 0.1, maximum: 1, default: 0.5, description: 'Minimum verbatim overlap for a phrase match.' },
+        }
+      }
+    }
+  }, async (request) => {
+    const { text, limit = 5, semantic = true, minOverlap = 0.5 } = request.body;
+    const startTime = Date.now();
+    const found = await findOriginals(text, { limit, semantic, minOverlap, search: hybridSearch });
+    const durationMs = Date.now() - startTime;
+    logApiSearch({ query: text.slice(0, 200), apiKeyId: request.apiKeyId, resultCount: found.matches.length, durationMs, searchType: 'api_original' });
+    if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
+    return { ...found, processingTimeMs: durationMs };
   });
 
   /**
@@ -1356,6 +1423,89 @@ export default async function publicApiRoutes(fastify) {
    * Sub-section ranges (e.g. "Tablet of Wisdom" → doc 8270 paragraphs
    * 313-365) come back with start_paragraph + end_paragraph.
    */
+  /**
+   * GET /api/v1/library/documents/:id/links — a document's paragraphs in order, each with its links. linkedOnly
+   * (default true) keeps only paragraphs that have any link — e.g. every quotation in a compilation with its original.
+   */
+  fastify.get('/library/documents/:id/links', {
+    schema: {
+      description: 'Paragraphs of a document with their links (original-language passages, translations, quoted sources and their originals). Paged by paragraph order.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] },
+      querystring: {
+        type: 'object',
+        properties: {
+          offset: { type: 'integer', minimum: 0, default: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+          linkedOnly: { type: 'boolean', default: true },
+        }
+      }
+    }
+  }, async (request) => {
+    const docId = Number(request.params.id);
+    const { offset = 0, limit = 100, linkedOnly = true } = request.query || {};
+    const doc = await queryOne('SELECT id, title, author, language FROM docs WHERE id = ? AND deleted_at IS NULL', [docId]);
+    if (!doc) throw new ApiError('Document not found', 404);
+    const rows = await queryAll(
+      'SELECT id FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT ? OFFSET ?',
+      [docId, limit, offset]);
+    const ids = rows.map((r) => r.id);
+    const [passages, links] = await Promise.all([getPassages(ids), resolveLinks(ids)]);
+    const has = (l) => l && (l.original || l.originals.length || l.translations.length || l.sources.length || l.quotedBy?.count);
+    const paragraphs = ids.filter((id) => passages.has(id) && (!linkedOnly || has(links.get(id))))
+      .map((id) => ({ passage: passages.get(id), ...links.get(id) }));
+    return { document: doc, offset, limit, scanned: ids.length, hasMore: ids.length === limit, paragraphs };
+  });
+
+  /**
+   * GET /api/v1/library/quotes?author= — every linked quotation in an author's works, with its source and ORIGINAL
+   * (Chad, 2026-09-30: "all quotes of the Guardian and the original for each (with reference)"). A row is a paragraph
+   * of that author's documents that quotes a source (content_source_links) or is itself aligned to an original
+   * (content_alignment — e.g. his translations). Each passage carries document + paragraph link for the reference.
+   */
+  fastify.get('/library/quotes', {
+    schema: {
+      description: 'All linked quotations in the works of an author (e.g. "Shoghi Effendi"), in document/paragraph order: the quoting passage, the source it quotes and the original-language passage, each with its reference (document title + paragraph link). onlyWithOriginal=true keeps rows whose original is linked.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      querystring: {
+        type: 'object',
+        required: ['author'],
+        properties: {
+          author: { type: 'string', minLength: 3 },
+          documentId: { type: 'integer', description: 'Only this document.' },
+          onlyWithOriginal: { type: 'boolean', default: false },
+          offset: { type: 'integer', minimum: 0, default: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
+        }
+      }
+    }
+  }, async (request) => {
+    const { author, documentId, onlyWithOriginal = false, offset = 0, limit = 50 } = request.query;
+    const docs = await queryAll(
+      `SELECT id, title FROM docs WHERE deleted_at IS NULL AND author LIKE ? ${documentId ? 'AND id = ?' : ''}`,
+      [`%${author}%`, ...(documentId ? [documentId] : [])]);
+    if (!docs.length) return { author, documents: 0, total: 0, offset, limit, quotes: [] };
+    const docIds = docs.map((d) => d.id);
+    const inDocs = docIds.map(() => '?').join(',');
+    const linked = `SELECT quote_id AS id FROM content_source_links WHERE quote_doc IN (${inDocs})
+                    UNION SELECT trans_id FROM content_alignment WHERE retired_at IS NULL AND trans_doc IN (${inDocs})`;
+    const [{ total }, rows] = await Promise.all([
+      queryOne(`SELECT COUNT(*) AS total FROM (${linked})`, [...docIds, ...docIds]),
+      queryAll(`SELECT c.id FROM content c WHERE c.deleted_at IS NULL AND c.id IN (${linked})
+                 ORDER BY c.doc_id, c.paragraph_index LIMIT ? OFFSET ?`, [...docIds, ...docIds, limit, offset]),
+    ]);
+    const ids = rows.map((r) => r.id);
+    const [passages, links] = await Promise.all([getPassages(ids), resolveLinks(ids, { quotedBy: false })]);
+    const quotes = ids.filter((id) => passages.has(id) && (!onlyWithOriginal || links.get(id)?.original))
+      .map((id) => {
+        const { original, originals, sources } = links.get(id) || {};
+        return { quote: passages.get(id), original: original || null, originals: originals || [], sources: sources || [] };
+      });
+    return { author, documents: docs.length, total, offset, limit, hasMore: offset + ids.length < total, quotes };
+  });
+
   fastify.get('/library/find-document', {
     schema: {
       description: 'Locate a specific named scripture or work by title. Returns up to 5 candidates with authority-boosted ranking. Canonical works hard-resolve to known doc_ids; sub-section works (e.g. Tablet of Wisdom inside the compilation) return start_paragraph + end_paragraph.',
