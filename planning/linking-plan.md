@@ -11,6 +11,17 @@
   - bahai-library.com provisional/published English → PI: 8,053 pairs (pi-english-links-balib.jsonl) — NOT yet written;
     all hit originals that already had Phelps' English (adds better English, shrinks nothing).
 
+## Done 2026-09-30 (afternoon)
+- Translation links: Research Dept compilations (pi-english-rd-v1) + bahai-library.com (pi-english-balib-v1), score ≥0.82
+  (read the 0.80–0.85 band: 5/6 right; the miss = right tablet, neighbour paragraph) → 9,607 pairs.
+- SOURCE links (migr 139 content_source_links, v2.187.335): English books → English Writings, word 8-grams
+  (quote_match_en.py + quote_select.py): 85,590 links, 62,767 quoting ¶ in 3,129 docs. One source per DISTINCT passage
+  (other editions of the same passage dropped: 546k). Rank: canonical English (Gleanings, P&M, TB, SWAB, …) > CF work
+  linked to an original > OceanLibrary / Tablet Translations / Core Talks+Publications / Compilations > compilation
+  extract only if translation-linked. Dropped: pilgrim notes, papers, bibliography/footnote sources, whole-¶ copies.
+  GET /concepts/source-links returns link (OceanLibrary first) + originals. GPB: 247 links, 144 reach an original.
+- Ar/fa source links (quote_match_arfa.py, letter 5-grams, ≥15 shared, ≥0.6 of either side): 160,926 links from 132,075 ¶ in 3,939 docs (oceanoflights.org site docs labelled en but ar/fa: INBA vols, Ẓuhúr al-Ḥaqq …). Weak band read: right.
+
 ## Next — SOURCE links (not translation links) — Chad: "just so we can generate a reference link for the quote"
 - A quote in a compilation/book → the paragraph it comes from. Deterministic first (free, no LLM tokens):
   1. ar/fa compilations & books → Core Tablets originals: letter-5-gram shingle index (as pi_attach_global).

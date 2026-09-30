@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T15:05:50.529Z",
+  "generated": "2026-09-30T15:25:11.829Z",
   "entries": [
+    {
+      "hash": "3d296262",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Source-links read returns the chain — reference link by policy (OceanLibrary first, paragraph-exact) + the original paragraph(s) via translation links",
+      "scope": "links"
+    },
     {
       "hash": "34dc4f9a",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Permanent extraction failures are REJECTIONS, not retries",
       "scope": null
-    },
-    {
-      "hash": "0b8b54e9",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "The article engine's evidence spine — ledgers, authority mapping, corpus adapter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "3d296262",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Source-links read returns the chain — reference link by policy (OceanLibrary first, paragraph-exact) + the original paragraph(s) via translation links",
+        "scope": "links"
+      },
       {
         "hash": "34dc4f9a",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Permanent extraction failures are REJECTIONS, not retries",
-        "scope": null
-      },
-      {
-        "hash": "0b8b54e9",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "The article engine's evidence spine — ledgers, authority mapping, corpus adapter",
         "scope": null
       }
     ]

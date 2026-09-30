@@ -2296,6 +2296,22 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * POST /server/meili-vector {vectors:[[512 floats]], filter?, limit=5} — pure-vector nearest paragraphs for a batch of
+   * query vectors (text-embedding-3-large @512, the index's own geometry). For cross-lingual linking: an Arabic/Persian
+   * original's vector finds the English that translates it (Chad 2026-09-30: "finding the same English … with semantic
+   * search"). ≤20 vectors per call; hits carry id, doc_id, title, language and the semantic score.
+   */
+  fastify.post('/server/meili-vector', { preHandler: requireInternal }, async (request) => {
+    const { vectors = [], filter = null, limit = 5 } = request.body || {};
+    if (!vectors.length || vectors.length > 20) throw ApiError.badRequest('1..20 vectors');
+    const r = await getMeili().multiSearch({ queries: vectors.map((vector) => ({
+      indexUid: 'paragraphs', q: '', vector, hybrid: { semanticRatio: 1, embedder: 'default' }, filter: filter || undefined,
+      limit: Math.min(Number(limit) || 5, 20), showRankingScore: true,
+      attributesToRetrieve: ['id', 'doc_id', 'title', 'author', 'language', 'paragraph_index', 'text'] })) });
+    return { results: r.results.map((x) => x.hits.map(({ _rankingScore, text, ...h }) => ({ ...h, score: _rankingScore, text: String(text || '').slice(0, 400) }))) };
+  });
+
+  /**
    * POST /server/meili-coverage {afterDocId=0, docs=1000, fix=false} — audit one page of documents: live paragraph ids in
    * SQLite vs entries in the paragraphs index. missing = live but not searchable; stale = indexed but no longer live.
    * fix: missing → synced=0 (the worker re-sends in bulk), stale → deleted by id. Page through with nextAfterDocId.
