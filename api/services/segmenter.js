@@ -1053,6 +1053,14 @@ export async function detectAllSentenceBoundaries(paragraphs, language, options 
   if (!isRTL) {
     return detectPunctuationBoundariesBatch(paragraphs);
   }
+  // PUNCTUATED Arabic/Persian (edited editions — Shamela, OpenITI) marks its own sentences: read them, don't pay a model
+  // to. 2026-09-30: re-ingesting a punctuated classical work sent every paragraph to AI sentence detection, and with the
+  // local model down that silently became cloud calls. Same threshold as isUnpunctuatedText: ≥1 ender per 50 words.
+  const words = paragraphs.reduce((n, p) => n + String(p.text || '').split(/\s+/).length, 0);
+  const enders = paragraphs.reduce((n, p) => n + (String(p.text || '').match(/[.!?؟؛]/g) || []).length, 0);
+  if (words && enders * 50 >= words) {
+    return detectPunctuationBoundariesBatch(paragraphs);
+  }
 
   // Batch paragraphs by character count to stay within token limits
   const results = new Map();
@@ -1252,7 +1260,7 @@ function detectPunctuationBoundariesBatch(paragraphs) {
 
   for (const para of paragraphs) {
     const endings = [];
-    const sentenceEnders = /[.!?]/g;
+    const sentenceEnders = /[.!?؟؛]/g;   // Arabic ؟ and ؛ too
     let match;
 
     while ((match = sentenceEnders.exec(para.text)) !== null) {

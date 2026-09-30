@@ -122,7 +122,12 @@ async function reingestDocument(docId) {
   );
   console.log(`Existing paragraphs: ${existingParagraphs?.count || 0}`);
 
-  const result = await ingestDocument(fileContent, { id: docId }, doc.file_path);
+  // LOCAL-ONLY scope: a manual re-ingest must never turn into a cloud bill. If a step needs a model and the local one is
+  // down, it FAILS (and the document keeps its old paragraphs) instead of silently falling back to a paid API —
+  // 2026-09-30, a re-ingest of a punctuated Arabic work did exactly that. The Arabic cost gate also admits this scope.
+  const { withAIContext } = await import('../api/lib/ai-context.js');
+  const result = await withAIContext({ localOnly: true, stage: 'reingest', docId },
+    () => ingestDocument(fileContent, { id: docId }, doc.file_path));
 
   console.log(`\n=== AFTER Re-Ingestion ===`);
   console.log(`Status: ${result.status}`);
