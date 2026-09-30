@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T06:14:15.326Z",
+  "generated": "2026-09-30T06:16:02.362Z",
   "entries": [
+    {
+      "hash": "43075551",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "Meili-coverage audits each doc in the index the worker routes it to (supplemental sites have their own) — the first run counted 1.9M site paragraphs as missing",
+      "scope": "admin"
+    },
     {
       "hash": "d9e35478",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Use the adapter's official entry point — removes the Astro 7 blocker, drops dead PWA dep",
       "scope": null
-    },
-    {
-      "hash": "c7b84a4d",
-      "date": "2026-08-13",
-      "type": "Docs",
-      "description": "What actually blocks the Astro 7 upgrade — two false blockers corrected, one real one found",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "43075551",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "Meili-coverage audits each doc in the index the worker routes it to (supplemental sites have their own) — the first run counted 1.9M site paragraphs as missing",
+        "scope": "admin"
+      },
       {
         "hash": "d9e35478",
         "date": "2026-09-29",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Use the adapter's official entry point — removes the Astro 7 blocker, drops dead PWA dep",
-        "scope": null
-      },
-      {
-        "hash": "c7b84a4d",
-        "date": "2026-08-13",
-        "type": "Docs",
-        "description": "What actually blocks the Astro 7 upgrade — two false blockers corrected, one real one found",
         "scope": null
       }
     ]

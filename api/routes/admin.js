@@ -2311,7 +2311,16 @@ Collection: ${paragraph.collection || 'Unknown'}
     // Supplemental sites live in their own index (siftersearch_<prefix>_paragraphs) — audit each doc where the worker puts it.
     const byIndex = new Map();
     for (const d of docRows) { const n = paragraphIndexForSite(d.source_site); byIndex.set(n, [...(byIndex.get(n) || []), d.id]); }
-    let live = 0; const missing = []; const staleByIndex = new Map();
+    let live = 0; const missing = []; const staleByIndex = new Map(); const unauditable = {};
+    for (const [indexName, groupIds] of byIndex) {
+      // A site index created without settings has no filterable doc_id: report its size, audit nothing there.
+      const { filterableAttributes = [] } = await meili.index(indexName).getSettings().catch(() => ({}));
+      if (!filterableAttributes.includes('doc_id')) {
+        const st = await meili.index(indexName).getStats().catch(() => null);
+        unauditable[indexName] = { docs: groupIds.length, indexEntries: st?.numberOfDocuments ?? null };
+        byIndex.delete(indexName);
+      }
+    }
     for (const [indexName, groupIds] of byIndex) for (let i = 0; i < groupIds.length; i += 500) {
       const idx = meili.index(indexName); const stale = staleByIndex.get(indexName) || []; staleByIndex.set(indexName, stale);
       const part = groupIds.slice(i, i + 500);
@@ -2330,7 +2339,7 @@ Collection: ${paragraph.collection || 'Unknown'}
       for (const [indexName, stale] of staleByIndex) for (let i = 0; i < stale.length; i += 10000) await meili.index(indexName).deleteDocuments(stale.slice(i, i + 10000));
     }
     const staleCount = [...staleByIndex.values()].reduce((n, a) => n + a.length, 0);
-    return { fix, docs: ids.length, firstDocId: ids[0], nextAfterDocId: ids[ids.length - 1], live, indexes: [...byIndex.keys()],
+    return { fix, docs: ids.length, firstDocId: ids[0], nextAfterDocId: ids[ids.length - 1], live, indexes: [...byIndex.keys()], unauditable,
       missing: missing.length, stale: staleCount, missingSample: missing.slice(0, 20) };
   });
 
