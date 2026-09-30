@@ -17,10 +17,12 @@ case $mode in
   asis)     cp "$orig" "$out/$d.a.md" ;;
 esac
 step="$out/$d.a.md"
-if [ -f "$SP/sem/$d.json.starts.json" ]; then
-  python3 scripts/semantic-paragraphs.py apply "$SP/sem/$d.json" "$out/$d.s.md" --onto "$step"
-  step="$out/$d.s.md"
-fi
+for pass in "" .r2; do                           # batch pass, then any live follow-up pass — both matched by text
+  if [ -f "$SP/sem/$d$pass.json.starts.json" ]; then
+    python3 scripts/semantic-paragraphs.py apply "$SP/sem/$d$pass.json" "$out/$d.s$pass.md" --onto "$step"
+    step="$out/$d.s$pass.md"
+  fi
+done
 if [ "$punct" = 1 ]; then
   python3 scripts/mark-sentences.py "$step" "$out/$d.m.md" >/dev/null; step="$out/$d.m.md"
   python3 scripts/finalize-source.py "$step" "$orig" "$out/$d.md" "openiti=$oiti"

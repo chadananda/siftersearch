@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T20:43:51.956Z",
+  "generated": "2026-09-30T21:21:58.766Z",
   "entries": [
+    {
+      "hash": "6182eb2a",
+      "date": "2026-09-30",
+      "type": "Fixed",
+      "description": "A source that declares its paragraphing is never re-cut or re-joined by size",
+      "scope": "ingest"
+    },
     {
       "hash": "9e63a567",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "One dropped writer connection must not kill a book (2nd failure of all 6, $0.00 spend)",
       "scope": null
-    },
-    {
-      "hash": "79a4ba71",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Give the slow-query detector a consumer (it timed everything and told no one)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "6182eb2a",
+        "date": "2026-09-30",
+        "type": "Fixed",
+        "description": "A source that declares its paragraphing is never re-cut or re-joined by size",
+        "scope": "ingest"
+      },
       {
         "hash": "9e63a567",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "One dropped writer connection must not kill a book (2nd failure of all 6, $0.00 spend)",
-        "scope": null
-      },
-      {
-        "hash": "79a4ba71",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Give the slow-query detector a consumer (it timed everything and told no one)",
         "scope": null
       }
     ]

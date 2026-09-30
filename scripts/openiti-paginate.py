@@ -150,6 +150,8 @@ def paginate(oiti, ours):
         if head:                                   # a heading: its text becomes the '## ' line
             hl = len(letters(head)[0]); q = raw; n = 0
             while q < len(stream) and n < hl:
+                if stream.startswith('<!--', q): q = stream.index('-->', q) + 3; continue   # a note or page break inside
+                if stream.startswith('<pb', q): q = stream.index('/>', q) + 2; continue     # a heading: never counted, never cut
                 if LETTER.match(DIAC.sub('', stream[q]).translate(FOLD) or ' '): n += 1
                 q += 1
             while q < len(stream) and not stream[q].isspace() and stream[q] != '<': q += 1   # finish the word: never cut before its diacritics

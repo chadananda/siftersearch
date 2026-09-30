@@ -1132,7 +1132,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   const bodyHashNorm = hashBodyNormalized(bodyContent); // Normalized hash (for dedup, ignores formatting)
 
   let existingDoc = null;
-  let existingParagraphs = new Map(); // content_hash -> paragraph data
+  let existingParagraphs = new Map(); // word hash -> [paragraph rows] (a list: identical texts repeat)
 
   // PRIORITY 1: If explicit ID is passed, look up by ID first
   // This is critical for updating documents through the editor - the ID must be preserved
@@ -1363,15 +1363,17 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Use word hashes (ignoring markers) so re-segmentation preserves embeddings
   if (existingDoc) {
     const paragraphs = await queryAll(
-      'SELECT id, text, content_hash, embedding, synced FROM content WHERE doc_id = ?',
+      'SELECT id, text, content_hash, embedding, synced, paragraph_index FROM content WHERE doc_id = ? AND deleted_at IS NULL',
       [existingDoc.id]
     );
     for (const p of paragraphs) {
-      // Key by word hash (ignoring markers) so same words match even if markers differ
-      // Skip paragraphs without text (shouldn't happen, but defensive)
+      // Key by word hash (ignoring markers) so same words match even if markers differ. A LIST per hash: a text that
+      // repeats (a formula like «وفيه ثلاثة فروع», 32× in one work) is several rows — a single-slot map kept only the
+      // last, so the others were never matched and never deleted, and every re-ingest left duplicates behind.
       if (!p.text) continue;
       const wordHash = hashContentWords(p.text);
-      existingParagraphs.set(wordHash, p);
+      if (!existingParagraphs.has(wordHash)) existingParagraphs.set(wordHash, []);
+      existingParagraphs.get(wordHash).push(p);
     }
     logger.info({ documentId: existingDoc.id, relativePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
   }
@@ -1905,7 +1907,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const contentHash = hashContent(chunkText);  // Full hash for storage
     newWordHashes.add(wordHash);
 
-    const existing = existingParagraphs.get(wordHash);
+    const existing = existingParagraphs.get(wordHash)?.shift();   // one old row per new occurrence
 
     if (existing) {
       // Same words found - REUSE existing text with markers (preserves embeddings AND markers!)
@@ -1932,8 +1934,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           existing.id
         ]
       });
-      // Mark as used so we don't delete it later
-      existingParagraphs.delete(wordHash);
+      // (consumed from its hash's list above, so it is not deleted below)
     } else {
       // New paragraph - insert it with blocktype and block attrs
       // Let SQLite auto-generate INTEGER id (matches Meilisearch rowid)
@@ -1991,7 +1992,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   // Collect stale paragraphs that no longer exist in the document
   let deletedCount = 0;
-  for (const [, oldParagraph] of existingParagraphs) {
+  for (const oldParagraph of [...existingParagraphs.values()].flat()) {
     deletedCount++;
     // Note: Embeddings are cached by content_hash, not paragraph_id
     // So deleting the content row doesn't lose the embedding cache
