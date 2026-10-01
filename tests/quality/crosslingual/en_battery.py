@@ -45,7 +45,9 @@ def ok(c, pid):
 if __name__ == '__main__':
     option, a = sys.argv[1], sys.argv[2:]
     n = int(a[a.index('--n-hype') + 1]) if '--n-hype' in a else 400
-    search = local_search.make(option)
+    if option.split(':')[0] in ('rmeili', 'rmeili-rescore', 'qdrant', 'qdrant-norescore'):
+        import engines; search = engines.make(option)
+    else: search = local_search.make(option)
     cs = cases(n)
     def one(c):
         t0 = time.time(); ids = search({'id': c['query'], 'query': c['query']}, 'all')
@@ -57,4 +59,6 @@ if __name__ == '__main__':
         res[s] = {'n': k, '@1': round(sum(r[1] == 1 for r in rs) / k, 3), '@10': round(sum(bool(r[1]) for r in rs) / k, 3),
                   'mrr': round(sum(1 / r[1] for r in rs if r[1]) / k, 3)}
         print(f'{s:8}', res[s])
+    if getattr(search, 'server_ms', None):
+        ms = sorted(search.server_ms); print(f"server ms p50 {ms[len(ms) // 2]} p95 {ms[int(len(ms) * .95)]} p99 {ms[int(len(ms) * .99)]}")
     json.dump({'option': option, 'groups': res, 'rows': rows}, open(os.path.join(DATA, f"en-result-{option.replace(':', '_')}.json"), 'w'))

@@ -29,6 +29,11 @@ def embed_batch(texts, model, dims):
         req = urllib.request.Request('https://api.openai.com/v1/embeddings', json.dumps({'model': model, 'dimensions': dims, 'input': texts}).encode(),
                                      {'Authorization': f"Bearer {KEY('OPENAI_API_KEY')}", 'Content-Type': 'application/json'})
         return [x['embedding'] for x in json.loads(urllib.request.urlopen(req, timeout=180).read())['data']]
+    if model == 'gemini-embedding-2':        # documents: 'title: none | text: …' (titles hurt cross-language — measured)
+        req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:batchEmbedContents?key={KEY('GEMINI_API_KEY')}",
+                                     json.dumps({'requests': [{'model': f'models/{model}', 'content': {'parts': [{'text': f'title: none | text: {t}'}]}, 'outputDimensionality': dims} for t in texts]}).encode(),
+                                     {'Content-Type': 'application/json'})
+        return [e['values'] for e in json.loads(urllib.request.urlopen(req, timeout=180).read())['embeddings']]
     if model.startswith('gemini'):
         req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:batchEmbedContents?key={KEY('GEMINI_API_KEY')}",
                                      json.dumps({'requests': [{'model': f'models/{model}', 'content': {'parts': [{'text': t}]}, 'taskType': 'RETRIEVAL_DOCUMENT', 'outputDimensionality': dims} for t in texts]}).encode(),

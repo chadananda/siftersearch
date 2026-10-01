@@ -89,6 +89,46 @@ Settings: `distinctAttribute: paragraph_id`, embedder `literal` userProvided 307
 - **Chinese**: CJK rule added (split after 。！？；, character-level; tests).
 - `api/lib/phrases.js` ported, 67 tests incl. exact parity with the measured Python splitter on 61 real paragraphs.
 
+- **Embedding model → `gemini-embedding-2`** (stable 2026-03; 001 shuts down 2028-05-14; vectors incompatible).
+  Same test sets: cross-language in-book @1/@10 72.7/91.8 (001: 72.2/91.0), originals 40.4/66.4 (40.9/62.9);
+  English all 58.1/82.5 (54.6/79.3), HyPE questions 59.1/83.8 (54.8/79.5). Exact English quotations fell
+  (4/14 vs 7/14 @1 — small sample; quotations go through the keyword layer anyway). Task is a prompt prefix:
+  queries `task: search result | query: …`, documents `title: none | text: …` (no titles — measured harmful).
+  Price $0.20/M tokens, batch $0.10 → ~46M units × ~70 tokens ≈ 3.2B tokens ≈ **$320 batch** (+ HyPE ~1.7M short
+  questions, a few dollars).
+- **Rescoring (Qdrant-style) measured offline, free** (127k real Gemini vectors, exact search): binary only 69.0 /
+  38.2 @1 (in-book / originals); binary top-100 then full-precision rescoring 72.2 / 41.7 = the same as full float
+  (72.2 / 41.8). Meili cannot rescore, so it keeps the binary loss (~3–4 points); Qdrant recovers it with 100
+  candidates.
+
+- **Meili 1.54 vs Qdrant 1.19 on IDENTICAL data** (tower-nas, same Gemini-2 vectors, same phrases, same filters;
+  tests/quality/crosslingual/engines.py). Server time; Meili timings taken while its 10M load test was indexing.
+
+  | | ar/fa in-book @1/@10 | originals @1/@10 | English all @1/@10 | server p50/p99 |
+  |---|---|---|---|---|
+  | Meili one-bit | 68.2 / 90.2 | 40.2 / 63.7 | 54.4 / 78.6 | 10–12 / 16–87 ms |
+  | Meili top-100 + app rescoring (our vector store) | 70.2 / 91.8 | 41.3 / 67.9 | 58.3 / 83.2 | ~48 / 80 ms |
+  | Qdrant one-bit | 68.6 / 90.2 | 42.2 / 66.2 | 56.0 / 81.1 | 3.5–3.9 / 6–7 ms |
+  | Qdrant one-bit + rescoring | 72.7 / 91.8 | 41.7 / 69.0 | 58.1 / 83.6 | 4 / 7 ms |
+
+  Index time at 125k/164k: Meili 527/692 s, Qdrant 604/785 s. **Meili + our rescoring ≈ Qdrant** (equal in English,
+  −1 to −2.5 on ar/fa: Meili's distinct keeps one unit per paragraph chosen by bits before we rescore). Both fit a
+  < 1 s turn. Open: indexing and latency at 46–90M (matched scale test), and multi-step trees need stored vectors by id
+  (Qdrant native; Meili → our vector store).
+
+- **Keyword search without Meili** (tests/quality/crosslingual/lexical_test.py; 46,112 paragraphs, same queries):
+
+  | | ar/fa fragments, unvocalised, ی/ي ک/ك swapped @1/@10 | English fragments @1/@10 | exact (14) @1/@10 | known-answer (17) @1/@10 |
+  |---|---|---|---|---|
+  | Meili keyword | 82.7 / 87.3 | 90.3 / 95.3 | 50.0 / 64.3 | 64.7 / 76.5 |
+  | SQLite FTS5 + our folding (phrase → AND → OR) + word-order resort | 98.7 / 100 | 94.0 / 97.7 | 42.9 / 71.4 | 47.1 / 88.2 |
+  | Qdrant BM25 sparse (our tokens/TF, IDF by Qdrant) + word-order resort | 98.7 / 100 | 92.0 / 96.3 | 42.9 / 71.4 | 52.9 / 88.2 |
+
+  Word-order resort = re-sort the top 50 by how many query word pairs occur in order (deterministic, ms). Our
+  Arabic-script folding beats Meili's on unvocalised/variant spellings by 16 points @1. Small sets (14/17) are noise.
+  Not available in Qdrant: typo tolerance, prefix search (only matters for search-as-you-type), highlighting (→ Jev
+  picks highlight spans; lexical hits highlight their tokens). → **Meili is not needed for keyword retrieval.**
+
 ## Phases
 
 ### P1 — Segmenters + English measurement (no spend beyond ~$5)
@@ -139,6 +179,9 @@ Settings: `distinctAttribute: paragraph_id`, embedder `literal` userProvided 307
   original phrase; tags propagate across the link both ways.
 - HyPE: re-point each question at its nearest phrase (cosine within the paragraph); index as `question` entries.
 
+### P5b — Strategy layer (System-1 picks search strategy, re-ranker and answer format)
+Separate plan: planning/search-strategy-layer.md. Starts after P4. Its battery reuses all of P1's test sets.
+
 ### P6 — Meaning layers (separate enrichment plan; feeds this index)
 These change what a phrase MEANS in place; the index consumes their output as `grounded` vectors and ids.
 - **Structured context.** `content.context` is a flattened display string today; store the JSON
@@ -162,8 +205,15 @@ These change what a phrase MEANS in place; the index consumes their output as `g
 | Disk: vector store (float16 3072) | ~220 GB today (/tank) |
 | Backfill wall time | unknown — Gemini batch throughput + Meili indexing rate (P2) |
 
+## Stack direction (Chad, 2026-10-01, pending the Qdrant scale test)
+**Qdrant** (phrase vectors with built-in rescoring + BM25 sparse keyword retrieval for paragraphs and site texts) +
+**SQLite** (source of truth; texts, doc_meta, FTS5) + **Jev** (strategy, branching, re-ranking, highlights, format).
+**Meili retired** at the swap — measured unnecessary for both semantic (rescoring) and keyword (folding + word-order
+resort) retrieval. Gate: Qdrant sustains indexing and filtered latency to 10M+ (load test running on tower-nas;
+Meili's comparable run reached 1.74M in ~2 h, 0.85M/h and falling).
+
 ## Decisions (Chad, 2026-10-01)
-1. Vendor: **Gemini** `gemini-embedding-001`.
+1. Vendor: **Gemini** — model now `gemini-embedding-2` (measured better; 001 retires 2028).
 2. Spend: ~$5 for P1 tests approved; the ~$190 backfill comes back for approval after P2.
 3. Dims: decided by the P1 test (3072 vs 1536).
 4. **Second Meili instance** on tower-nas for `phrases`.

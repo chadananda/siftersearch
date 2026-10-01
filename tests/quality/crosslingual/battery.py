@@ -51,6 +51,11 @@ def _embed(text, model, dims):
         req = urllib.request.Request('https://api.openai.com/v1/embeddings', json.dumps({'model': model, 'dimensions': dims, 'input': text}).encode(),
                                      {'Authorization': f"Bearer {KEY('OPENAI_API_KEY')}", 'Content-Type': 'application/json'})
         v = json.loads(urllib.request.urlopen(req, timeout=60).read())['data'][0]['embedding']
+    elif model == 'gemini-embedding-2':     # task given as a prompt prefix (no taskType parameter)
+        req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={KEY('GEMINI_API_KEY')}",
+                                     json.dumps({'content': {'parts': [{'text': f'task: search result | query: {text}'}]}, 'outputDimensionality': dims}).encode(),
+                                     {'Content-Type': 'application/json'})
+        v = json.loads(urllib.request.urlopen(req, timeout=60).read())['embedding']['values']
     elif model.startswith('gemini'):
         req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={KEY('GEMINI_API_KEY')}",
                                      json.dumps({'content': {'parts': [{'text': text}]}, 'taskType': 'RETRIEVAL_QUERY', 'outputDimensionality': dims}).encode(),
@@ -121,9 +126,13 @@ if __name__ == '__main__':
         search = search_prod
     else:
         sys.path.insert(0, os.path.dirname(__file__))
-        import local_search
-        search = local_search.make(option)
+        if option.split(':')[0] in ('rmeili', 'rmeili-rescore', 'qdrant', 'qdrant-norescore'):
+            import engines; search = engines.make(option)
+        else:
+            import local_search; search = local_search.make(option)
     rows = run(cases, scopes, search)
     rep = report(option, rows)
     json.dump({'report': rep, 'rows': rows}, open(os.path.join(DATA, f"result-{option.replace(':', '_')}.json"), 'w'), ensure_ascii=False, indent=1)
     for g, v in rep['groups'].items(): print(f'{g:30} {v}')
+    if getattr(search, 'server_ms', None):   # engine-side time, network excluded
+        ms = sorted(search.server_ms); print(f"server ms p50 {ms[len(ms) // 2]} p95 {ms[int(len(ms) * .95)]} p99 {ms[int(len(ms) * .99)]}")
