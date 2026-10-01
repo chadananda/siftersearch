@@ -2305,15 +2305,11 @@ Collection: ${paragraph.collection || 'Unknown'}
   fastify.post('/server/meili-vector', { preHandler: requireInternal }, async (request) => {
     const { vectors = [], filter = null, limit = 5 } = request.body || {};
     if (!vectors.length || vectors.length > 20) throw ApiError.badRequest('1..20 vectors');
-    // The index's vectors are binary-quantized → over-fetch, then re-score with the exact float vectors (search/rescore.js).
-    const want = Math.min(Number(limit) || 5, 20);
     const r = await getMeili().multiSearch({ queries: vectors.map((vector) => ({
       indexUid: 'paragraphs', q: '', vector, hybrid: { semanticRatio: 1, embedder: 'default' }, filter: filter || undefined,
-      limit: Math.max(want * 5, 60), showRankingScore: true,
+      limit: Math.min(Number(limit) || 5, 20), showRankingScore: true,
       attributesToRetrieve: ['id', 'doc_id', 'title', 'author', 'language', 'paragraph_index', 'text'] })) });
-    const { rescoreHits } = await import('../lib/search/rescore.js');
-    const results = await Promise.all(r.results.map((x, k) => rescoreHits(x.hits, vectors[k], 1)));
-    return { results: results.map((hits) => hits.slice(0, want).map(({ _rankingScore, _meiliScore, _exactScore, text, ...h }) => ({ ...h, score: _rankingScore, quantizedScore: _meiliScore ?? null, text: String(text || '').slice(0, 400) }))) };
+    return { results: r.results.map((x) => x.hits.map(({ _rankingScore, text, ...h }) => ({ ...h, score: _rankingScore, text: String(text || '').slice(0, 400) }))) };
   });
 
   /**

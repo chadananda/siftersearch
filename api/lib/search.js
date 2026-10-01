@@ -5,7 +5,6 @@
  */
 
 import { MeiliSearch } from 'meilisearch';
-import { rescoreHits } from './search/rescore.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
@@ -786,9 +785,7 @@ export async function hybridSearch(query, options = {}) {
   const _embedMs = Date.now() - _h0;
   // Over-fetch so authority reranking can pull canonical sources up from just
   // outside the requested window. Capped at maxResults to keep latency bounded.
-  // A semantic query is re-scored with exact vectors after retrieval (search/rescore.js); give it a candidate pool
-  // large enough that the right passage is in it (it was always in the top 10–20 of the quantized order).
-  const internalLimit = semanticRatio > 0 ? Math.max(overFetchForRerank(offset + limit), 60) : overFetchForRerank(offset + limit);
+  const internalLimit = overFetchForRerank(offset + limit);
 
   // Perform search
   const searchParams = {
@@ -904,11 +901,6 @@ export async function hybridSearch(query, options = {}) {
 
   // Sort by Meili ranking score before authority rerank.
   allHits.sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
-  // The index's vectors are binary-quantized (1 bit/dim) → its semantic order is coarse. Re-score the candidates with
-  // the exact float vectors (content.embedding) before anything else reads _rankingScore. See search/rescore.js.
-  if (vector && semanticRatio > 0) {
-    await rescoreHits(allHits, vector, semanticRatio).catch((err) => logger.warn({ err: err.message }, 'hybridSearch: exact rescore failed (Meili order kept)'));
-  }
 
   // Enrich hits missing source_site/source_url from the docs table.
   // Paragraphs synced before source_site was added to the worker have null in
