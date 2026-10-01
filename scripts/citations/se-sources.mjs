@@ -11,7 +11,7 @@
 //                     across clauses (RRF), consecutive paragraphs kept together, link-graph candidate added
 //         verify    — Opus 5.5 picks the candidate(s) and copies the exact span(s); kept only if verbatim in the text
 //         emit      — the JSONL. Every step is resumable (results.db). Spend guard: --max-usd.
-//   node scripts/citations/se-sources.mjs --resolve --candidates --verify --emit [--max-usd 40] [--limit N]
+//   node scripts/citations/se-sources.mjs --resolve --candidates --verify --emit [--max-usd 40] [--limit N] [--redo-held]
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
 import { readFileSync, writeFileSync } from 'fs';
@@ -36,7 +36,12 @@ CREATE TABLE IF NOT EXISTS verdict (id TEXT PRIMARY KEY, verdict TEXT, usage TEX
 CREATE TABLE IF NOT EXISTS resolved (id TEXT PRIMARY KEY, segments TEXT)`);
 const quotes = JSON.parse(readFileSync(join(DIR, 'se-citations.json'), 'utf8')).quotes;
 const verified = JSON.parse(readFileSync(join(DIR, 'verified-export.json'), 'utf8'));
-const para = src.prepare(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, d.title, d.author, d.slug FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id = ?`);
+// The original may live ON a translation paragraph (bilingual layer, original_text): then that is the text we judge and send.
+const ARAB = /[\u0600-\u06FF]/g;
+const arabicShareOf = (t) => { const l = (String(t || '').match(/\p{L}/gu) || []).length; return l ? (String(t).match(ARAB) || []).length / l : 0; };
+const paraRaw = src.prepare(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.original_text, d.title, d.author, d.slug FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id = ?`);
+const para = { get: (id) => { const p = paraRaw.get(id); if (!p) return p;
+  return arabicShareOf(p.text) >= 0.5 || !p.original_text ? p : { ...p, text: p.original_text, on_translation: true }; } };
 const ws = (s) => String(s || '').split(/\s+/).filter(Boolean).join(' ');
 const fold = (s) => ws(foldArabic(cleanText(s)).replace(/[^\p{L}\p{N}\s]/gu, ' '));
 
@@ -80,6 +85,11 @@ async function qd(path, body) {
   return (await r.json()).result;
 }
 async function candidates() {
+  if (has('redo-held')) {                                  // a new source of originals was indexed: re-search the held ones
+    const ids = JSON.parse(readFileSync(join(DIR, 'held.json'), 'utf8')).map((h) => h.id);
+    const del = out.transaction(() => ids.forEach((i) => { out.prepare('DELETE FROM cand WHERE id = ?').run(i); out.prepare('DELETE FROM verdict WHERE id = ?').run(i); }));
+    del(); log({ phase: 'redo-held', quotations: ids.length });
+  }
   const done = new Set(out.prepare('SELECT id FROM cand').all().map((r) => r.id));
   const QURAN_DOC = +arg('quran-doc', 21380);            // the Arabic Qur'an: Qur'an quotations search only there
   const todo = quotes.filter((q) => !verified[q.id] && !done.has(q.id)).slice(0, LIMIT || undefined);

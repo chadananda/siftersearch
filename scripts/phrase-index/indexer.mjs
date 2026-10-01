@@ -6,6 +6,7 @@
 // :edge: the store is its own SQLite file (not the content DB) → no load on the single writer.
 //   node scripts/phrase-index/indexer.mjs --scope originals --embed [--concurrency 16] [--limit N] [--max-usd 40] [--scan-only]
 //   node scripts/phrase-index/indexer.mjs --docs 21380 --embed     (explicit documents, e.g. the Arabic Qur'an)
+//   node scripts/phrase-index/indexer.mjs --field original --embed  (originals stored on translation paragraphs: original_text)
 //   node scripts/phrase-index/indexer.mjs --qdrant          (QDRANT_KEY in env; after --embed)
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
@@ -22,6 +23,7 @@ const has = (k) => process.argv.includes(`--${k}`);
 const DB = arg('db', join(ROOT, 'data', 'sifter.db'));
 const STORE = arg('store', '/tank/sifter/phrase-vectors/vectors.db');
 const SCOPE = arg('scope', 'originals');
+const FIELD = arg('field', 'text');                      // 'original' = the bilingual layer: content.original_text on (English) paragraphs
 const DOCS = (arg('docs', '') || '').split(',').map(Number).filter(Boolean);   // explicit documents, any religion (e.g. the Arabic Qur'an)                 // originals = Bahá'í paragraphs mostly in Arabic script
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const MAX_USD = +arg('max-usd', 0);                       // spend guard: stop after the scan if the estimate exceeds it
@@ -35,6 +37,7 @@ store.exec(`CREATE TABLE IF NOT EXISTS vec (key TEXT PRIMARY KEY, model TEXT, di
 CREATE TABLE IF NOT EXISTS units (point_id INTEGER PRIMARY KEY, paragraph_id TEXT, doc_id TEXT, k INTEGER, start INTEGER, "end" INTEGER,
   seg_v TEXT, key TEXT, fa_share REAL, religion TEXT, author TEXT, lang_label TEXT, upserted INTEGER DEFAULT 0);
 CREATE INDEX IF NOT EXISTS units_key ON units(key); CREATE INDEX IF NOT EXISTS units_up ON units(upserted);`);
+if (!store.prepare('PRAGMA table_info(units)').all().some((c) => c.name === 'field')) store.exec("ALTER TABLE units ADD COLUMN field TEXT DEFAULT 'text'");
 
 async function embedBatch(texts) {
   const body = { requests: texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS })) };
@@ -52,13 +55,17 @@ async function embedBatch(texts) {
 
 async function embed() {
   const src = new Database(DB, { readonly: true, fileMustExist: true });
-  const rows = src.prepare(`SELECT c.id, c.doc_id, c.text, d.language, d.author, d.religion FROM content c JOIN docs d ON d.id = c.doc_id
+  // FIELD 'original': the original lives on the (English) paragraph as original_text — the unit keeps that paragraph's id,
+  // so translation and original stay linked; point ids cannot collide (those paragraphs' own text is not Arabic-script).
+  const col = FIELD === 'original' ? 'c.original_text' : 'c.text';
+  const rows = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
+      d.author, d.religion FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE ${DOCS.length ? `d.id IN (${DOCS.join(',')})` : "d.religion = 'Baha''i'"} AND d.deleted_at IS NULL AND c.deleted_at IS NULL
-      AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0`);
+      AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0`);
   const haveUnit = store.prepare('SELECT seg_v, key FROM units WHERE point_id = ?');
-  const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", seg_v, key, fa_share, religion, author, lang_label, upserted)
-    VALUES (@pointId, @pid, @doc, @k, @start, @end, @segV, @key, @fa, @religion, @author, @lang, 0)
-    ON CONFLICT(point_id) DO UPDATE SET start=@start, "end"=@end, seg_v=@segV, key=@key, fa_share=@fa, religion=@religion, author=@author, lang_label=@lang, upserted=0`);
+  const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", seg_v, key, fa_share, religion, author, lang_label, field, upserted)
+    VALUES (@pointId, @pid, @doc, @k, @start, @end, @segV, @key, @fa, @religion, @author, @lang, @field, 0)
+    ON CONFLICT(point_id) DO UPDATE SET start=@start, "end"=@end, seg_v=@segV, key=@key, fa_share=@fa, religion=@religion, author=@author, lang_label=@lang, field=@field, upserted=0`);
   const haveVec = store.prepare('SELECT 1 FROM vec WHERE key = ?');
   const pending = new Map();                                   // key → embed text
   let paras = 0, units = 0;
@@ -70,7 +77,7 @@ async function embed() {
     for (const u of unitsOf({ id: p.id, text: p.text, lang: 'ar' })) {
       const key = vecKey(MODEL, DIMS, u.embedText), old = haveUnit.get(u.pointId);
       if (!old || old.seg_v !== u.segV || old.key !== key)
-        buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: p.author, lang: p.language });
+        buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: p.author, lang: p.language, field: FIELD });
       if (!haveVec.get(key)) pending.set(key, u.embedText);
       units++;
     }
@@ -119,7 +126,7 @@ async function upsert() {
     const rows = page.all(); if (!rows.length) break;
     await qd('PUT', `/collections/${COLL}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
       payload: { paragraph_id: Number(r.paragraph_id), doc_id: Number(r.doc_id), k: r.k, start: r.start, end: r.end, seg_v: r.seg_v,
-        lang_group: 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, lang_label: r.lang_label } })) });
+        lang_group: 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, lang_label: r.lang_label, field: r.field || 'text' } })) });
     store.transaction(() => rows.forEach((r) => mark.run(r.point_id)))();
     sent += rows.length;
     if (sent % 25600 < 256) log({ phase: 'upsert', sent, per_hour: Math.round(sent / ((Date.now() - t0) / 3.6e6)) });

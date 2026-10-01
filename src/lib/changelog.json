@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-01T19:46:42.041Z",
+  "generated": "2026-10-01T19:51:41.990Z",
   "entries": [
+    {
+      "hash": "f04a094c",
+      "date": "2026-10-01",
+      "type": "Fixed",
+      "description": "Keep quoted_author; source_author when the source work differs; attribution_check only for a different Central Figure's own work",
+      "scope": "citations"
+    },
     {
       "hash": "7deaf024",
       "date": "2026-10-01",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The chapter runner (Phase B complete, still no model call)",
       "scope": null
-    },
-    {
-      "hash": "79195b04",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Dawn-Breakers profile + renderer (the format is reviewable before anything is generated)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-01": [
+      {
+        "hash": "f04a094c",
+        "date": "2026-10-01",
+        "type": "Fixed",
+        "description": "Keep quoted_author; source_author when the source work differs; attribution_check only for a different Central Figure's own work",
+        "scope": "citations"
+      },
       {
         "hash": "7deaf024",
         "date": "2026-10-01",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "The chapter runner (Phase B complete, still no model call)",
-        "scope": null
-      },
-      {
-        "hash": "79195b04",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Dawn-Breakers profile + renderer (the format is reviewable before anything is generated)",
         "scope": null
       }
     ]
