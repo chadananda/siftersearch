@@ -4,7 +4,7 @@
 // :rules: resumable + idempotent — a vector is keyed by model + dims + exact text (never paid for twice); units keyed by
 //         point id (paragraph × 1000 + k) with their segmenter version; Qdrant upserts only units not yet sent.
 // :edge: the store is its own SQLite file (not the content DB) → no load on the single writer.
-//   node scripts/phrase-index/indexer.mjs --scope originals --embed [--concurrency 16] [--limit N]
+//   node scripts/phrase-index/indexer.mjs --scope originals --embed [--concurrency 16] [--limit N] [--max-usd 40] [--scan-only]
 //   node scripts/phrase-index/indexer.mjs --qdrant          (QDRANT_KEY in env; after --embed)
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
@@ -22,6 +22,7 @@ const DB = arg('db', join(ROOT, 'data', 'sifter.db'));
 const STORE = arg('store', '/tank/sifter/phrase-vectors/vectors.db');
 const SCOPE = arg('scope', 'originals');                 // originals = Bahá'í paragraphs mostly in Arabic script
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
+const MAX_USD = +arg('max-usd', 0);                       // spend guard: stop after the scan if the estimate exceeds it
 const QD = arg('qdrant-url', 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
 const log = (o) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
 
@@ -74,7 +75,10 @@ async function embed() {
   }
   tx(buf); src.close();
   const est = [...pending.values()].reduce((s, t) => s + t.length, 0) / 3;
-  log({ phase: 'scan', scope: SCOPE, paragraphs: paras, units, to_embed: pending.size, est_tokens: Math.round(est), est_usd: +(est / 1e6 * 0.20).toFixed(2) });
+  const estUsd = +(est / 1e6 * 0.20).toFixed(2);
+  log({ phase: 'scan', scope: SCOPE, paragraphs: paras, units, to_embed: pending.size, est_tokens: Math.round(est), est_usd: estUsd });
+  if (MAX_USD && estUsd > MAX_USD) { log({ phase: 'stopped', reason: `estimate $${estUsd} exceeds --max-usd ${MAX_USD}` }); return; }
+  if (has('scan-only')) return;
   const putVec = store.prepare('INSERT OR IGNORE INTO vec (key, model, dims, v, at) VALUES (?, ?, ?, ?, ?)');
   const entries = [...pending.entries()]; let done = 0, next = 0; const t0 = Date.now();
   async function worker() {
