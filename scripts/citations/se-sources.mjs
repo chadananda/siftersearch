@@ -200,9 +200,11 @@ function realign(span, text) {
 function emit() {
   // Quotations that duplicate a book CTAI already holds (Gleanings, Prayers and Meditations, the Íqán, the Epistle, …) are
   // excluded (Chad 10-01): excluded-ctai-books.json = {quote id: {work, by: original|english|english+original}}.
-  let excluded = {};
-  try { excluded = JSON.parse(readFileSync(join(DIR, 'excluded-ctai-books.json'), 'utf8')); } catch { /* none */ }
-  const lines = [], held = [], stats = { verified: 0, matched: 0, held: 0, unprocessed: 0, excluded_ctai_books: 0 };
+  // excluded-not-translation.json = spoken/reported words, other authors' words, fragments (the collection is TRANSLATIONS).
+  const excluded = {};
+  for (const f of ['excluded-ctai-books.json', 'excluded-not-translation.json'])
+    try { Object.assign(excluded, JSON.parse(readFileSync(join(DIR, f), 'utf8'))); } catch { /* none */ }
+  const lines = [], held = [], stats = { verified: 0, matched: 0, held: 0, unprocessed: 0, excluded: 0 };
   const rec = (q, segs, confidence, method, coverage = null) => {
     // several spans in ONE paragraph → one record (spans joined with " … "); segments only across paragraphs
     const byPara = new Map();
@@ -225,7 +227,7 @@ function emit() {
     return ps.length === 1 ? { ...head, ...base(ps[0]) } : { ...head, ref: base(ps[0]).ref, url: base(ps[0]).url, segments: ps.map(base) };
   };
   for (const q of quotes) {
-    if (excluded[q.id]) { stats.excluded_ctai_books++; continue; }
+    if (excluded[q.id]) { stats.excluded++; continue; }
     let r = null;
     const res = out.prepare('SELECT segments FROM resolved WHERE id = ?').get(q.id);
     if (res) { const v = JSON.parse(res.segments); r = rec(q, v.segments.filter((s) => s.content_id), v.confidence, v.method); if (r) stats.verified++; }
