@@ -43,9 +43,10 @@ async function embedBatch(texts) {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) });
       if (r.ok) return (await r.json()).embeddings.map((e) => e.values);
-      if (attempt >= 8 || ![429, 500, 502, 503, 504].includes(r.status)) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 200)}`);
-    } catch (e) { if (attempt >= 8) throw e; }
-    await new Promise((res) => setTimeout(res, Math.min(60000, 2000 * 2 ** attempt)));
+      if (attempt >= 20 || ![429, 500, 502, 503, 504].includes(r.status)) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 200)}`);
+    } catch (e) { if (attempt >= 20) throw e; }
+    // per-minute quota (429) clears in minutes — wait it out (up to 5 min per try) instead of failing the run
+    await new Promise((res) => setTimeout(res, Math.min(300000, 3000 * 2 ** attempt)));
   }
 }
 
