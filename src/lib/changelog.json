@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-01T19:51:41.990Z",
+  "generated": "2026-10-01T20:00:54.031Z",
   "entries": [
+    {
+      "hash": "a0f62f6b",
+      "date": "2026-10-01",
+      "type": "New",
+      "description": "Index the bilingual layer (original_text on translation paragraphs); citations judge/send that original, --redo-held",
+      "scope": "phrase-index"
+    },
     {
       "hash": "f04a094c",
       "date": "2026-10-01",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Wire the real loader + model, and the chapter CLI (dry-run by default)",
       "scope": null
-    },
-    {
-      "hash": "5a98746d",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "The chapter runner (Phase B complete, still no model call)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-01": [
+      {
+        "hash": "a0f62f6b",
+        "date": "2026-10-01",
+        "type": "New",
+        "description": "Index the bilingual layer (original_text on translation paragraphs); citations judge/send that original, --redo-held",
+        "scope": "phrase-index"
+      },
       {
         "hash": "f04a094c",
         "date": "2026-10-01",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Wire the real loader + model, and the chapter CLI (dry-run by default)",
-        "scope": null
-      },
-      {
-        "hash": "5a98746d",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "The chapter runner (Phase B complete, still no model call)",
         "scope": null
       }
     ]

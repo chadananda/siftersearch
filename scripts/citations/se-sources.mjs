@@ -11,7 +11,7 @@
 //                     across clauses (RRF), consecutive paragraphs kept together, link-graph candidate added
 //         verify    — Opus 5.5 picks the candidate(s) and copies the exact span(s); kept only if verbatim in the text
 //         emit      — the JSONL. Every step is resumable (results.db). Spend guard: --max-usd.
-//   node scripts/citations/se-sources.mjs --resolve --candidates --verify --emit [--max-usd 40] [--limit N] [--redo-held]
+//   node scripts/citations/se-sources.mjs --resolve --candidates --verify --emit [--max-usd 40] [--limit N] [--redo-held] [--ids file.json]
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
 import { readFileSync, writeFileSync } from 'fs';
@@ -152,7 +152,8 @@ async function opus(body) {
 }
 async function verify() {
   const done = new Set(out.prepare('SELECT id FROM verdict').all().map((r) => r.id));
-  const jobs = out.prepare('SELECT id, cands FROM cand').all().filter((r) => !done.has(r.id))
+  const only = arg('ids') ? new Set(JSON.parse(readFileSync(arg('ids'), 'utf8'))) : null;   // verify just these quotation ids
+  const jobs = out.prepare('SELECT id, cands FROM cand').all().filter((r) => !done.has(r.id) && (!only || only.has(r.id)))
     .map((r) => ({ id: r.id, cands: JSON.parse(r.cands).map((c) => { const p = para.get(String(c.pid)); return p && { ...p, at: c.at }; }).filter(Boolean) }));
   const byId = Object.fromEntries(quotes.map((q) => [q.id, q]));
   const estIn = jobs.reduce((s, j) => s + (byId[j.id].quote.length + j.cands.reduce((t, c) => t + windowed(c.text, c.at).length, 0)) / 3 + 400, 0);
