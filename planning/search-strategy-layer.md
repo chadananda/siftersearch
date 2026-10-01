@@ -7,6 +7,49 @@ and an answer format which System-1 selects, so that the user is always getting 
 
 Depends on the phrase index (planning/phrase-index-plan.md, P4). No slow LLM anywhere in the loop: Jev only.
 
+## The turn pipeline — no LLM until the last step (Chad 10-01, governing)
+
+"During search we will have no time to introduce LLM thinking. All search strategies pre-planned and simply selected
+by Jev or Laya based on the user's query and conversation thread. The strategy itself branched by Jev or Laya, and
+finally, depending on results and original question, the response format chosen by Jev or Laya. Data and response
+format prompt fed to the chat LLM to format a response."
+
+```
+query + thread working set (code-built summary: ids, last strategy, last results)
+ 1. SELECT   System-1: pattern → strategy, scope, budget tier            (one typed call)
+ 2. EXECUTE  the strategy's PRE-DECLARED plan (code): channels run in parallel; each decision node is a typed
+             System-1 question whose options code generates from the results (which to pursue, which branch, stop?);
+             defaults on timeout; narration line emitted per branch
+ 3. FORMAT   System-1: response format among those code finds feasible for the evidence + channel
+ 4. COMPOSE  the ONLY LLM call: data package (passages + ids + citations + highlights + metadata + strategy trace)
+             + the format's `how` prompt → the chat model writes; streamed after the narration
+```
+
+- **Strategies are code, not prompts:** `{ id, when, fits(ctx), budget, narration, steps: [run | decide], rerank,
+  formats }`. A `decide` step = `{ question, options(ctx) → criteria, default }`. Adding a strategy = adding a catalog
+  entry + its battery cases; nothing is invented at query time.
+- **System-1 is a pluggable interface** (`choice`, `bool`, `score` questions, several per call, with confidence):
+  Jev (TypeSafe) today; Laya and others as adapters; the bake-off decides per use (select, branch, rerank, highlight,
+  format). Every call logged with inputs, options, choice, confidence, latency, fallback used.
+- **Laya** (Convai Innovations, Apache 2.0; open encoder "decision model"): `laya-multilingual` = mmBERT-base, 322M,
+  100+ languages, 1,024-token context extendable to 8,192; typed yes/no / choice / rating with calibrated
+  probabilities in one forward pass. Reported (launch coverage, not independent): ~33 ms p50 vs Jev 236–276 ms; 0.766
+  vs 0.727 on their typed-decisions set. Runs on boss → no per-call cost. Fit: high-volume, short-context decisions —
+  re-ranking and highlighting (one passage per question, 20 passages batched in one forward pass), branch decisions,
+  and above all OFFLINE ENRICHMENT at library scale (gap detection, unit typing, metadata conflicts, mention binding).
+  Watch: context length for long states (one call that holds many passages needs the 8k extension), Arabic/Persian
+  quality (multilingual base, untested on classical text), and boss availability for the live path (fallback to Jev).
+- **Laya running on boss (10-01):** `laya.service` (user unit), `~/laya-svc` (venv: torch 2.14 CPU, laya 0.3.23),
+  Jev-compatible `POST http://100.106.130.68:8791/v1/systemone {state, questions}` → `{answers, ms}`, Tailscale-only,
+  bearer token in `~/laya-svc/token`. Measured from tower-nas: **~43 ms round trip (server ~40 ms)** for one choice
+  question, CPU only (16 threads); 20 per-passage questions ≈ 415 ms on CPU (GPU gfx1151 via ROCm not yet tried).
+  Zero-shot strategy choice 5/5 on spot checks (EN, FA, AR) — NOT a measurement. Model card: weak zero-shot on typed
+  decisions (0.342), uncalibrated/over-confident, Arabic 0.40 on a 20-way intent test → **fine-tune on our labelled
+  decisions** (Jev calls + session reviews) and refit temperature per (question type, option count) before trusting
+  confidence.
+- **The LLM never searches and never decides** — it only writes, from data it is handed, in the shape it is told. Its
+  inputs are reproducible (same package + same prompt), so answers can be audited and re-rendered.
+
 ## The pattern (already proven in `api/lib/anis/formats.js`)
 
 Catalog entry = `{ id, when (Jev reads it), fits(profile) (code removes the impossible), how/run }`.
@@ -137,6 +180,48 @@ with them to pursue a theme … the chat can explain what search strategy it is 
   — check whether ingestion dropped the printed talk headers. Tree: plan (Jev) → talks ∥ dated sources (ids/structure)
   → match by stored opening-phrase vectors near the place, Jev confirms in one batch → dedupe via quote links → sort
   → one gap-filling round with narration. ≈ 0.6–1.1 s (+ ≤ 0.5 s for gaps); no embedding, no LLM.
+
+## System-1 bake-off (per use: select · branch · re-rank · highlight · format · offline enrichment)
+Candidates: Jev (hosted), Laya-multilingual (boss), plus the floors from planning/posts (embedding similarity) and,
+for re-ranking only, a dedicated reranker. ≥ 300 labelled cases per use, ≥ 50 per non-English language; report
+accuracy on confident answers next to the share that is confident, calibration, p50/p95 latency from tower-nas,
+timeouts counted wrong, cost per correct decision. Same questions, same option wording, only the transport differs.
+
+## Every Jev call trains Laya (Chad 10-01)
+"When we start testing with Jev, we can use the opportunity to train those decisions on Laya."
+1. **Log every System-1 call** (one table, all uses): use, question id + version, state (or its hash + ids), options,
+   Jev answer + probabilities + confidence, latency, fallback, and — when it exists — the TRUE answer.
+2. **Shadow Laya** on the same calls (free, ~43 ms, off the critical path): log its answer too → per-use agreement.
+3. **Gold labels beat Jev labels.** Training data, in priority: battery ground truth (strategy-tagged cases, CTAI
+   spans, HyPE targets) · session/human reviews of flagged calls · Jev answers that were confident AND confirmed
+   downstream (e.g. the chosen passage was the one used). Never train on Jev alone where it is unverified — Laya
+   would inherit Jev's errors and be capped at Jev's accuracy.
+4. **Per question family, not per model:** strategy select, branch, re-rank (answerhood / expressiveness /
+   speaker), highlight, format, and the offline families (gap detection, unit typing, metadata conflicts, mention
+   binding). Each gets: fine-tune (training code: github.com/NandhaKishorM/laya, RLCD) → temperature refit
+   (`laya.fit_temperatures`, ECE via `laya.ece_score`) → held-out evaluation vs Jev and vs gold.
+5. **Switch-over (Chad 10-01): "when Laya becomes dependably better than Jev, we switch over to Laya as primary, Jev
+   as fallback."** Per question family. *Dependably better* = on held-out gold, accuracy on confident answers ≥ Jev's
+   at comparable coverage, ECE ≤ 0.1, p95 inside the latency budget — in two consecutive evaluation windows, not one.
+   After the switch: Laya answers first; **Jev is called only when** boss is unreachable or times out, or Laya's
+   calibrated confidence is below that family's threshold. The shadow comparison keeps running in reverse (Jev
+   sampled on a share of Laya-answered calls) so a regression is seen, not discovered. Re-check monthly (drift).
+
+## Two opinions for important decisions (Chad 10-01)
+"There might be important decisions where we want two opinions on each decision."
+- **Which families:** decisions that are costly to get wrong or hard to undo — identity merge/split, attribution
+  (whose words; Shoghi Effendi's translation or another's), authority/kind labels that change ranking for everyone,
+  metadata conflicts that end up in citations (date written, translator), anything published, and offline decisions
+  that write to the data (enrichment) rather than shape one answer. Marked per question family in the catalog.
+- **Rule:** Jev and Laya asked in parallel (live cost = the slower one, ~Jev's 150–250 ms; offline cost ≈ 0).
+  Both confident and agreeing → accept. Disagree, or either below its calibrated threshold → escalate: a third
+  opinion (the session reviewing the flag with passages; offline, a stronger model) — never a coin flip, never "the
+  more confident one wins".
+- **Two opinions only help if their errors are independent.** That is one more reason Laya trains on gold labels,
+  not on Jev's answers (a distilled Laya would agree with Jev's mistakes). Measure it: error correlation per family
+  on the held-out gold — if both fail on the same items, the second opinion is not buying safety there.
+- Cheaper variant where independence is not needed: the same model asked two differently-worded questions
+  (catches wording sensitivity, not model blind spots).
 
 ## Battery (measure every layer separately)
 

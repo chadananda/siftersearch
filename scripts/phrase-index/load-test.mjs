@@ -6,6 +6,10 @@
 //   MEILI_KEY=… [LIVE_MEILI_KEY=…] node scripts/phrase-index/load-test.mjs --meili http://127.0.0.1:7701 [--n 10000000] [--dims 3072]
 //        [--batch 2000] [--every 1000000] [--pid <meili pid for RSS>] [--live http://127.0.0.1:7700]
 //   QDRANT_KEY=… node scripts/phrase-index/load-test.mjs --engine qdrant --qdrant http://127.0.0.1:6333 --storage /fast/qdrant-next/storage
+//   Bulk mode (Qdrant's recommended bulk load: no graph while uploading, one parallel build at the end):
+//     --bulk create              create the collection with indexing off
+//     --bulk upload --offset K --n N   upload ids [K, K+N) (run several in parallel)
+//     --bulk finalize --n TOTAL   turn indexing on, time the graph build, then probe latency
 // Keys come from the environment, never argv (argv shows up in ps and in logs).
 // Output: one JSON line per checkpoint (stdout). Stop with Ctrl-C; --drop deletes the test index at the end.
 import { readFileSync } from 'fs';
@@ -58,6 +62,36 @@ async function probe(n) {
   if (LIVE) { const t0 = performance.now(); await call(LIVE, LIVE_KEY, 'POST', '/indexes/paragraphs/search', { q: 'justice', limit: 10 }); live = Math.round(performance.now() - t0); }
   const disk = ENGINE === 'qdrant' ? diskGb() : +((await meili('GET', '/stats')).databaseSize / 1e9).toFixed(2);
   return { p50: Math.round(pct(lat, 0.5)), p99: Math.round(pct(lat, 0.99)), live_ms: live, disk_gb: disk, rss_mb: rssMb() };
+}
+
+const BULK = arg('bulk'), OFFSET = +arg('offset', 0);
+// fast JSON for a ±c vector (JSON.stringify of 3072 numbers per point was the uploader's bottleneck)
+const PC = String(C), NC = String(-C);
+const vecJson = () => { let s = '['; for (let i = 0; i < DIMS; i++) s += (i ? ',' : '') + (Math.random() < 0.5 ? NC : PC); return s + ']'; };
+const pointJson = (id) => `{"id":${id},"vector":${vecJson()},"payload":{"paragraph_id":${Math.floor(id / 8)},"doc_id":${Math.floor(id / 500)},"language":"${lang()}","religion":"Baha'i","entity_ids":[${id % 5000}]}}`;
+if (ENGINE === 'qdrant' && BULK) {
+  if (BULK === 'create') {
+    await qdrant('DELETE', `/collections/${INDEX}`).catch(() => {});
+    await qdrant('PUT', `/collections/${INDEX}`, { vectors: { size: DIMS, distance: 'Cosine', on_disk: true }, quantization_config: { binary: { always_ram: true } },
+      optimizers_config: { indexing_threshold: 0 } });
+    for (const [field_name, field_schema] of [['paragraph_id', 'integer'], ['doc_id', 'integer'], ['language', 'keyword'], ['entity_ids', 'integer']])
+      await qdrant('PUT', `/collections/${INDEX}/index?wait=true`, { field_name, field_schema });
+    console.log(JSON.stringify({ phase: 'create', ok: true }));
+  } else if (BULK === 'upload') {
+    const start = Date.now();
+    for (let done = 0; done < N; done += 1000) {
+      const ids = Array.from({ length: Math.min(1000, N - done) }, (_, k) => OFFSET + done + k);
+      const r = await fetch(`${QD}/collections/${INDEX}/points?wait=true`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'api-key': QKEY }, body: `{"points":[${ids.map(pointJson).join(',')}]}` });
+      if (!r.ok) throw new Error(`upload ${r.status} ${(await r.text()).slice(0, 200)}`);
+    }
+    console.log(JSON.stringify({ phase: 'upload', offset: OFFSET, n: N, hours: +((Date.now() - start) / 3.6e6).toFixed(3) }));
+  } else if (BULK === 'finalize') {
+    const t0 = Date.now();
+    await qdrant('PATCH', `/collections/${INDEX}`, { optimizers_config: { indexing_threshold: 20000 } });
+    for (;;) { const c = (await qdrant('GET', `/collections/${INDEX}`)).result; if (c.status === 'green' && c.indexed_vectors_count >= c.points_count * 0.99) break; await new Promise((r) => setTimeout(r, 5000)); }
+    console.log(JSON.stringify({ phase: 'build', n: N, build_hours: +((Date.now() - t0) / 3.6e6).toFixed(3), ...(await probe(N)) }));
+  }
+  process.exit(0);
 }
 
 if (ENGINE === 'qdrant') {

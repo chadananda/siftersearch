@@ -93,6 +93,44 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
    Absorbs scenes into the pipeline; claim `when` from frame.
 8. Absorb remaining scripts as stages (verify-encounters, catalog classification into resolve, group facts).
 
+## Training Laya on identity decisions (Chad 10-01)
+"Entity extraction and merging is one of those areas where we should train Laya hard so that it becomes useful later.
+We can budget the very best frontier-model decisions at the outset, but make sure to use those decisions to train
+Laya." (Laya = open System-1 on boss; switch-over and two-opinion rules: planning/search-strategy-layer.md.)
+
+**Decision families** (each a typed question; mention detection itself stays generative extraction):
+1. bind — mention (centred context) → which candidate entity card · `new` · `unclear`
+2. same — are these two clusters / records the same person? (merge; two-opinion family)
+3. namesake — does this mention belong to a different bearer of the name? (split; two-opinion family)
+4. role — speaker · subject · addressee · mentioned
+5. refer — title / epithet / pronoun → which person in the working set (the F1 recall gap)
+6. is-person — is this span a person (vs title of a work, place, office, index line)?
+
+**Labels, best first** (all written to `entity_decisions` with evidence + actor tier — append-only, so every label
+is also a usable, reversible decision):
+- tier 3: Chad's gold (existing regression suite) — never in training, always in the held-out test.
+- **frontier**: the best current model, given the mention passage, the candidate cards (every name and title, all
+  scripts) and the origin passages, returning the decision + the evidence spans it relied on. Budgeted at the outset.
+- session review of flagged items; Jev answers only when confident AND later confirmed.
+
+**What to label (the budget goes where Laya will be weak):** stratified by language (ar · fa · en) and difficulty —
+namesakes, titles/epithets (باب الباب), Persian-only forms, pronouns, cross-script names, retrospective/figurative
+references, index lines — plus ~20% ordinary cases for calibration. After the first round, active learning: label
+next where Jev and Laya disagree or both are unconfident.
+
+**Laya input shape** (fits its budget: 1,024 tokens, 256 for question + options; 8k when needed): state = the
+mention-centred window (≤ ~600 tokens; centring is a lesson from the Mullá Ḥusayn audit) + compact candidate cards
+(≤ ~80 tokens each: names in all scripts, titles, era, place, role, key relations); options = ≤ ~10 candidate ids +
+`new` + `unclear` (Laya degrades past ~20 options).
+
+**Loop:** frontier labels (round 1) → fine-tune laya-multilingual per family (80/20 split, stratified) → temperature
+refit → evaluate on held-out + tier-3 gold vs Jev and vs the frontier model → active-learning round → repeat. Laya
+becomes primary per family only under the switch-over rule; merges/splits keep two opinions + escalation.
+
+**Budget to set before spending:** cost per frontier decision ≈ (~2–3k tokens in: passage + 3–6 cards + origin
+passages; ~150 out: choice + evidence spans) × model price; first round sized per family (e.g. 2–3k decisions each).
+Quote the exact figure from current pricing and get approval before the run.
+
 ## Status
 - [x] 1 projection + replay check (2026-09-27) — `rag/entities/projection.js`, `/api/admin/server/identity-replay`.
   Replay of the log reproduces 207,534 / 216,533 mentions (95.85%) in ~2s. Every divergence explained:

@@ -68,3 +68,12 @@ paragraph entries as filters.
 ## Measure
 - A metadata question battery (≥ 100: when / who translated / where / which edition / list-with-dates), judged against
   a hand-checked answer key; plus field coverage per collection before/after each gathering pass.
+
+## Indexes follow demand (Chad 10-01)
+Qdrant adds a payload index to an existing collection without touching vectors. So: metadata lives in doc_meta (and
+unit metadata); fields are copied onto phrase/paragraph entries by set-payload (one call per document, filtered by
+doc_id — no re-embedding); the Jev strategy logs show which filters/sorts are actually used; frequent ones are promoted
+to payload indexes (e.g. `date_written` as a datetime/integer index → "passages of the Báb on X written before 1848"
+filters inside the vector search instead of sorting afterwards; order-by uses the index; facet counts on indexed
+fields — verify Qdrant's facet API in 1.19). Pure work-level lists ("the Báb's works by date") read doc_meta (≈115k
+rows, SQLite) and need no index at all.
