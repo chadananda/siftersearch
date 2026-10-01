@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-01T18:31:28.976Z",
+  "generated": "2026-10-01T18:39:56.151Z",
   "entries": [
+    {
+      "hash": "a417ccf0",
+      "date": "2026-10-01",
+      "type": "Fixed",
+      "description": "Realign spans to the paragraph's own spelling (ى/ی, ك/ک, marks) so src is verbatim in text; hold spans that cannot be found",
+      "scope": "citations"
+    },
     {
       "hash": "d058e97f",
       "date": "2026-10-01",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Metadata audit via the API (one rule, two callers) so the backfill can be reviewed without a shell",
       "scope": null
-    },
-    {
-      "hash": "10fb8716",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Backfill script for the ~2,058 documents already carrying locator authors (dry-run by default)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-01": [
+      {
+        "hash": "a417ccf0",
+        "date": "2026-10-01",
+        "type": "Fixed",
+        "description": "Realign spans to the paragraph's own spelling (ى/ی, ك/ک, marks) so src is verbatim in text; hold spans that cannot be found",
+        "scope": "citations"
+      },
       {
         "hash": "d058e97f",
         "date": "2026-10-01",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Metadata audit via the API (one rule, two callers) so the backfill can be reviewed without a shell",
-        "scope": null
-      },
-      {
-        "hash": "10fb8716",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Backfill script for the ~2,058 documents already carrying locator authors (dry-run by default)",
         "scope": null
       }
     ]

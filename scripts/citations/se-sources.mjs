@@ -2,7 +2,9 @@
 // Shoghi Effendi citations → their Arabic/Persian originals, in CTAI's handoff format (runs ON tower-nas).
 // Input:  /tank/sifter/citations/se-citations.json (914 quotations, each with CTAI ids) + verified-export.json (spans
 //         already verified). Output: /tank/sifter/citations/se-quotations-sources.jsonl — one record per CTAI id:
-//         {id, quoted_author, work, ref, url, text|segments, src, content_id, confidence} or {id, status:'not_found'}.
+//         {id, quoted_author, work, ref, url, text|segments, src, content_id, confidence}. Unmatched quotations are HELD
+//         (listed in held.json for review) — "none of these candidates" is not evidence that no original exists, so
+//         status:'not_found' is never emitted automatically.
 //         Quotations found beyond CTAI's list (no CTAI id) go out under our id with new:true + the English quote.
 // Steps:  resolve   — verified spans → their paragraph (content id, or exact folded match when only the file was known)
 //         candidates— each English clause → Gemini-2 query vector → Qdrant `phrases` (originals); paragraphs scored
@@ -86,21 +88,34 @@ async function candidates() {
     const clean = cleanText(q.quote);
     const clauses = segment(q.quote, 'en').map((s) => clean.slice(s.start, s.end)).filter((c) => c.split(' ').length >= 4).slice(0, 16);
     const vs = await gemQuery(clauses.length ? clauses : [q.quote.slice(0, 2000)]);
-    const score = new Map();
+    const score = new Map(), at = new Map();          // at: paragraph → offset of its best-ranked matching phrase
     await Promise.all(vs.map(async (v) => {
       const res = await qd(`/collections/${COLL}/points/query/groups`, { query: v, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit: 10,
-        with_payload: ['paragraph_id', 'doc_id'], params: { quantization: { rescore: true, oversampling: 4.0 } },
+        with_payload: ['paragraph_id', 'doc_id', 'start'], params: { quantization: { rescore: true, oversampling: 4.0 } },
         ...(q.figure === 'Qur’án' && { filter: { must: [{ key: 'doc_id', match: { value: QURAN_DOC } }] } }) });
-      res.groups.forEach((g, rank) => score.set(g.id, (score.get(g.id) || 0) + 1 / (60 + rank)));
+      res.groups.forEach((g, rank) => {
+        score.set(g.id, (score.get(g.id) || 0) + 1 / (60 + rank));
+        const st = g.hits?.[0]?.payload?.start;
+        if (st != null && (!at.has(g.id) || rank < at.get(g.id).rank)) at.set(g.id, { start: st, rank });
+      });
     }));
     if (q.original?.content_id) score.set(Number(q.original.content_id), (score.get(Number(q.original.content_id)) || 0) + 0.02);
-    const top = [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([pid, s]) => ({ pid, s: +s.toFixed(4) }));
+    const top = [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([pid, s]) => ({ pid, s: +s.toFixed(4), at: at.get(pid)?.start ?? 0 }));
     put.run(q.id, JSON.stringify(top));
   }
   log({ phase: 'candidates', quotations: todo.length });
 }
 
 // ── verify (Opus 5.5) + exact-span check
+// A candidate is sent as a ~1,500-character window around its best-matching phrase (whole paragraphs made a quotation
+// cost ~$0.10); the verbatim check still runs against the FULL paragraph, and CTAI receives the full paragraph.
+function windowed(text, at = 0) {
+  const t = cleanText(text);
+  if (t.length <= 1600) return t;
+  let a = Math.max(0, at - 500), b = Math.min(t.length, at + 1100);
+  a = a ? t.indexOf(' ', a) + 1 : 0; const sp = t.lastIndexOf(' ', b); b = b < t.length && sp > a ? sp : b;
+  return `${a ? '… ' : ''}${t.slice(a, b)}${b < t.length ? ' …' : ''}`;
+}
 const PROMPT = (fig, quote, cands) => `Shoghi Effendi quoted ${fig} in English — his own rendering, free, sometimes abridged with ellipses.
 Below are candidate passages from the original Arabic/Persian writings.
 
@@ -108,7 +123,7 @@ QUOTATION:
 “${quote}”
 
 CANDIDATES:
-${cands.map((c, k) => `[${k + 1}] ${c.title} ¶${c.paragraph_index} (content ${c.id}):\n${cleanText(c.text)}`).join('\n\n')}
+${cands.map((c, k) => `[${k + 1}] ${c.title} ¶${c.paragraph_index} (content ${c.id}):\n${windowed(c.text, c.at)}`).join('\n\n')}
 
 Does the quotation render passage(s) among these? Judge sentence by sentence by meaning; a passage on a similar theme is
 NOT a match. If it does, copy the EXACT original span(s) he translated — verbatim, character for character from the
@@ -127,9 +142,10 @@ async function opus(body) {
 }
 async function verify() {
   const done = new Set(out.prepare('SELECT id FROM verdict').all().map((r) => r.id));
-  const jobs = out.prepare('SELECT id, cands FROM cand').all().filter((r) => !done.has(r.id)).map((r) => ({ id: r.id, cands: JSON.parse(r.cands).map((c) => para.get(String(c.pid))).filter(Boolean) }));
+  const jobs = out.prepare('SELECT id, cands FROM cand').all().filter((r) => !done.has(r.id))
+    .map((r) => ({ id: r.id, cands: JSON.parse(r.cands).map((c) => { const p = para.get(String(c.pid)); return p && { ...p, at: c.at }; }).filter(Boolean) }));
   const byId = Object.fromEntries(quotes.map((q) => [q.id, q]));
-  const estIn = jobs.reduce((s, j) => s + (byId[j.id].quote.length + j.cands.reduce((t, c) => t + c.text.length, 0)) / 3 + 400, 0);
+  const estIn = jobs.reduce((s, j) => s + (byId[j.id].quote.length + j.cands.reduce((t, c) => t + windowed(c.text, c.at).length, 0)) / 3 + 400, 0);
   const estUsd = +(estIn / 1e6 * PRICE.in + jobs.length * 800 / 1e6 * PRICE.out).toFixed(2);
   log({ phase: 'verify-estimate', quotations: jobs.length, est_usd: estUsd });
   if (estUsd > MAX_USD) { log({ phase: 'stopped', reason: `estimate $${estUsd} > --max-usd ${MAX_USD}` }); return; }
@@ -170,7 +186,7 @@ function realign(span, text) {
 
 // ── emit CTAI JSONL (one record per CTAI id; only confident matches; verbatim spans only)
 function emit() {
-  const lines = [], stats = { verified: 0, matched: 0, held: 0, not_found: 0, unprocessed: 0 };
+  const lines = [], held = [], stats = { verified: 0, matched: 0, held: 0, unprocessed: 0 };
   const rec = (q, segs, confidence, method) => {
     // several spans in ONE paragraph → one record (spans joined with " … "); segments only across paragraphs
     const byPara = new Map();
@@ -195,16 +211,13 @@ function emit() {
       if (!v) { stats.unprocessed++; continue; }
       const segs = (v.segments || []).filter((s) => s.verbatim);
       if (segs.length && v.confidence >= 0.7) { r = rec(q, segs, v.confidence, 'phrase-vector search (Gemini-2/Qdrant) + Opus 5.5 span extraction'); stats.matched++; }
-      else if (!segs.length && v.confidence >= 0.8 && !v.error) {
-        for (const cid of q.ctai_ids?.length ? q.ctai_ids : [q.id]) lines.push({ id: cid, ...(q.ctai_ids?.length ? {} : { new: true }), status: 'not_found', reason: v.reason });
-        stats.not_found++; continue;
-      }
-      else { stats.held++; continue; }
+      else { stats.held++; held.push({ id: q.id, ctai_ids: q.ctai_ids, figure: q.figure, quote: q.quote.slice(0, 300), verdict: v }); continue; }
     }
     if (q.ctai_ids?.length) for (const cid of q.ctai_ids) lines.push({ id: cid, ...r });
     else lines.push({ id: q.id, new: true, quote: q.quote, quoted_in: q.quoted_in, ...r });   // found beyond CTAI's list
   }
   writeFileSync(join(DIR, 'se-quotations-sources.jsonl'), lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
+  writeFileSync(join(DIR, 'held.json'), JSON.stringify(held, null, 1));
   log({ phase: 'emit', records: lines.length, ...stats });
 }
 
