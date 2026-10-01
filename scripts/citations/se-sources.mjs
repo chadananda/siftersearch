@@ -146,13 +146,14 @@ async function verify() {
     .map((r) => ({ id: r.id, cands: JSON.parse(r.cands).map((c) => { const p = para.get(String(c.pid)); return p && { ...p, at: c.at }; }).filter(Boolean) }));
   const byId = Object.fromEntries(quotes.map((q) => [q.id, q]));
   const estIn = jobs.reduce((s, j) => s + (byId[j.id].quote.length + j.cands.reduce((t, c) => t + windowed(c.text, c.at).length, 0)) / 3 + 400, 0);
-  const estUsd = +(estIn / 1e6 * PRICE.in + jobs.length * 800 / 1e6 * PRICE.out).toFixed(2);
+  const estUsd = +(estIn / 1e6 * PRICE.in + jobs.length * 250 / 1e6 * PRICE.out).toFixed(2);   // observed 113–162 output tokens per verdict
   log({ phase: 'verify-estimate', quotations: jobs.length, est_usd: estUsd });
   if (estUsd > MAX_USD) { log({ phase: 'stopped', reason: `estimate $${estUsd} > --max-usd ${MAX_USD}` }); return; }
   const put = out.prepare('INSERT OR REPLACE INTO verdict VALUES (?, ?, ?)');
-  let i = 0, spent = 0;
+  let i = 0, spent = 0, stopped = false;
   async function worker() {
     while (i < jobs.length) {
+      if (spent > MAX_USD) { if (!stopped) log({ phase: 'stopped', reason: `spent $${spent.toFixed(2)} reached --max-usd ${MAX_USD}` }); stopped = true; return; }
       const j = jobs[i++], q = byId[j.id];
       let v;
       try {
