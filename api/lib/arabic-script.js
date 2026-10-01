@@ -24,10 +24,20 @@ const AR_WORDS = new Set(['الذی', 'التی', 'الذین', 'فی', 'علی'
   'لن', 'اذا', 'کل', 'ما', 'لا', 'هو', 'انه', 'یا', 'به', 'لمن']);
 FA_WORDS.delete('ان');   // 'آن' folds to 'ان', which is Arabic 'an/inna' — ambiguous, so it counts for neither
 
+// a folded word that only Persian grammar uses (است، که، را، می‌شود…) — local evidence for Persian rules
+export const isPersianWord = (folded) => FA_WORDS.has(folded);
+
 export function grammarScore(text) {
   let fa = 0, ar = 0;
   for (const w of foldArabic(text).split(/[\s،.:؛!؟()«»"]+/)) FA_WORDS.has(w) ? fa++ : AR_WORDS.has(w) && ar++;
   return { fa, ar };
+}
+
+// Share of Persian among the grammar words of a passage (0 = Arabic, 1 = Persian, null = no evidence). Classical
+// Islamic writing mixes the two freely (Chad, 10-01) — this is a measure to rank by, not a label to filter on.
+export function faShare(text) {
+  const { fa, ar } = grammarScore(text);
+  return fa + ar ? +(fa / (fa + ar)).toFixed(2) : null;
 }
 
 // Persian or Arabic for ONE passage: grammar words decide; too few (< 5) → the label if given, else Persian-only letters

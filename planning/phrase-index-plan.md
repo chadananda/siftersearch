@@ -46,7 +46,8 @@ Why these choices:
 id               paragraph_id * 1000 + k
 paragraph_id     → paragraphs index (distinct attribute)
 doc_id, k, start, end
-language, religion, author_id, collection, authority, encumbered     (filters; copied from the paragraph)
+language, religion, author_id, collection, authority, encumbered     (filters; copied from the paragraph; ar/fa = one group)
+fa_share         0..1 Persian share of the phrase's grammar words (ranking signal for "Persian"/"Arabic" asks)
 kind             phrase | question | rendering                         (question/rendering: later phases)
 entity_ids[], concept_ids[], link_ids[]                                (later phases; partial updates)
 seg_v, emb_v     version stamps
@@ -71,10 +72,14 @@ Settings: `distinctAttribute: paragraph_id`, embedder `literal` userProvided 307
 - **Classical Arabic/Persian normalisation (Chad 10-01: lots of classical text, Persian and Arabic mixed).**
   `api/lib/arabic-script.js` = the ONE folding definition (harakat, superscript alef, Qur'anic annotation + verse
   marks, tatweel, ZWNJ/bidi controls, NFKC presentation forms/ligatures, ی/ي ک/ك ى ة/ۀ hamza seats, Arabic/Persian
-  digits) + `arOrFa()` (Persian vs Arabic per passage from grammar words). Splitter phr-v2 decides on folded forms
-  and picks Persian/Arabic rules **per paragraph**. Measured: on the 19.5k-paragraph test set, 2,988 'ar'-labelled
+  digits) + grammar-word scoring. **No Persian/Arabic division is assumed** (Chad 10-01: classical Islamic writing
+  mixes them; Persian prose is full of Arabic terms and quotation). Splitter phr-v3 = ONE rule set: Arabic clause
+  openers and Persian-only openers fire everywhere; Persian verb endings and shared openers fire only where the clause
+  itself shows Persian (grammar word or پ چ ژ گ). Measured v3 vs v1: in-book @1 72.2 vs 71.8, originals @1 40.9 vs
+  40.6, exact phrase @1 29.5 vs 29.2 — best of the three versions. Measured: on the 19.5k-paragraph test set, 2,988 'ar'-labelled
   paragraphs are Persian (Ẓuhúru'l-Ḥaqq) and 1,567 'fa'-labelled are Arabic (tablets inside Persian volumes) — 10/10
-  spot-checks correct. → **phrase entries carry the DETECTED language**, so language filters work despite labels.
+  spot-checks correct. → phrase entries carry `fa_share` (0 = Arabic … 1 = Persian, from the phrase's own grammar
+  words) — a measure to rank by, never a filter that excludes; the language filter treats ar+fa as one group.
   Units +31% (real Persian clause boundaries); accuracy neutral (in-book 72.7 vs 71.8 @1, originals 40.0 vs 40.6).
   **Embedding input stays RAW**: folding it before embedding measured worse (originals @1 37.8 vs 40.0; in-book @10
   88.6 vs 91.0). Folding is for decisions and keys only.

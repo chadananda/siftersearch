@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { segment, unitTexts, anchored, cleanText, SEG_VERSION } from '../../api/lib/phrases.js';
+import { faShare } from '../../api/lib/arabic-script.js';
 
 const golden = JSON.parse(readFileSync(new URL('../fixtures/phrases-golden.json', import.meta.url), 'utf8')).cases;
 const norm = (s) => s.replace(/<!--.*?-->|<pb[^>]*\/>/g, ' ').split(/[\s\x1c-\x1f\x85]+/).filter(Boolean).join(' ');
@@ -43,6 +44,19 @@ describe('segment — offsets', () => {
   });
 });
 
+describe('segment — Arabic and Persian mixed (one rule set, local evidence)', () => {
+  it('a Persian verb ending closes a Persian clause whatever the label says', () => {
+    const t = 'و این مطلب در کتاب ایقان مذکور است و هر نفس مقبلی از اهل بها که طالب حق باشد از آن محروم نماند';
+    expect(unitTexts(t, 'ar')).toEqual(unitTexts(t, 'fa'));
+    expect(unitTexts(t, 'ar')[0]).toBe('و این مطلب در کتاب ایقان مذکور است');
+  });
+  it('inside an Arabic quotation a word ending like a Persian verb does not split it', () => {
+    // «سعید» / «شدید» end in ید / ید but there is no Persian in the clause, so no Persian verb rule
+    const t = 'قل یا قوم ان ربکم لهو العزیز الشدید الذی خلق الخلق بامره فی یوم سعید عظیم الشان';
+    expect(unitTexts(t, 'fa').some((u) => u.endsWith('الشدید') || u.endsWith('سعید'))).toBe(false);
+  });
+});
+
 describe('segment — Chinese (no spaces; its own sentence punctuation)', () => {
   it('splits after 。！？； and keeps the punctuation with its clause', () => {
     const t = '學而時習之，不亦說乎？有朋自遠方來，不亦樂乎！人不知而不慍，不亦君子乎。';
@@ -67,5 +81,15 @@ describe('anchored — embedding text with neighbouring phrases', () => {
   it('a phrase already ≥ 30 words is embedded alone', () => {
     const big = Array.from({ length: 35 }, (_, i) => `w${i}`).join(' ');
     expect(anchored(['x y', big, 'z'], 1)).toBe(big);
+  });
+});
+
+describe('faShare — Persian as a measure, not a label', () => {
+  it('0 for Arabic, 1 for Persian, in between for mixed, null without evidence', () => {
+    expect(faShare('قل یا قوم ان الذی کان فی هذا الامر قد ظهر')).toBe(0);
+    expect(faShare('این است که از آن بیان معلوم شد')).toBe(1);
+    const mixed = faShare('این است که می‌فرمایند قل الذی کان فی هذا الامر');
+    expect(mixed).toBeGreaterThan(0); expect(mixed).toBeLessThan(1);
+    expect(faShare('بسم الله')).toBeNull();
   });
 });

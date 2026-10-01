@@ -35,7 +35,8 @@ def ar_or_fa(text, label=None):
 AR_PARTICLES = {'قد', 'لا', 'لم', 'لن', 'ان', 'انا', 'انه', 'انها', 'انهم', 'اذا', 'اذ', 'لو', 'ما', 'لما', 'لئن', 'لعل', 'کذلک',
                 'هذا', 'هذه', 'هو', 'هی', 'هم', 'انت', 'انتم', 'نحن', 'من', 'الذی', 'الذین', 'کان', 'کانت', 'لیس', 'سوف', 'کم', 'هل', 'ا'}
 AR_OPENERS = {'ثم', 'قل', 'یا', 'ایها', 'تالله', 'لعمری', 'لعمر', 'بلی', 'کلا', 'الا', 'اما', 'فلما', 'ولما', 'اذا', 'طوبی', 'ویل'}
-FA_OPENERS = {'که', 'تا', 'چون', 'اگر', 'زیرا', 'ولی', 'ولکن', 'لکن', 'پس', 'باری', 'حال', 'امروز', 'ای', 'یا'}
+FA_OPENERS = {'که', 'تا', 'چون', 'اگر', 'زیرا', 'ولی', 'پس', 'باری', 'امروز'}   # Persian-only: open a clause anywhere
+FA_OPENERS_LOCAL = {'حال', 'ای', 'ولکن', 'لکن'}   # shared with Arabic usage: open only inside Persian
 FA_VERB_END = re.compile(r'(است|اند|شود|امد|امدند|داد|دادند|گفت|گفتند|یافت|گشته|گردند|بود|بودند|شد|شده|شدند|نمود|نمودند|نماید|نمایند|کرد|کردند|کند|کنند|فرمود|فرمودند|فرماید|میشود|میگردد|گشت|گردید|گردد|دارد|دارند|نیست|هست|باشد|باشند|خواهد|ید)$')
 AR_VERB = re.compile(r'^(ی|ت|ن)[^\s]{2,6}$')   # imperfect verb shape (yaf'al / taf'al / naf'al)
 PRON_SUFFIX = re.compile(r'(ها|هم|هن|کم|کن|نا|ه)$')   # noun + pronoun ("its leaves") — a list item, not a clause
@@ -80,7 +81,6 @@ def phrases_en(text):
 
 def phrases(text, lang='ar'):
     if lang not in ('ar', 'fa'): return phrases_en(text)
-    lang = ar_or_fa(text, lang)          # per paragraph, from its grammar — not the document label
     words = re.sub(r'⁅/?s\d+⁆|<!--.*?-->|<pb[^>]*/>', ' ', text or '').split()
     if not words: return []
     units, cur = [], []
@@ -88,14 +88,12 @@ def phrases(text, lang='ar'):
         nxt = words[i + 1] if i + 1 < len(words) else None
         start = False
         if cur:
-            if lang == 'fa':
-                b = bare(w)
-                lb = bare(cur[-1]).rstrip('*')
-                after_verb = bool(FA_VERB_END.search(lb) and not lb.startswith('ال') and len(cur) >= SHORT)   # ال…: Arabic noun
-                start = b in FA_OPENERS or after_verb or (b == 'و' and nxt is not None and (FA_VERB_END.search(bare(cur[-1])) is not None))
-                start = start or _is_ar_clause_start(w, nxt)      # Persian texts quote Arabic
-            else:
-                start = _is_ar_clause_start(w, nxt)
+            # ONE rule set for Arabic + Persian (mirrors api/lib/phrases.js): Persian verb endings and shared openers
+            # fire only when the clause so far shows Persian — classical texts mix the two inside a sentence
+            b = bare(w); lb = bare(cur[-1]).rstrip('*')
+            fa = any(bare(x) in FA_WORDS or re.search('[پچژگ]', x) for x in cur)
+            verb_end = bool(FA_VERB_END.search(lb)) and not lb.startswith('ال')
+            start = _is_ar_clause_start(w, nxt) or b in FA_OPENERS or (fa and (b in FA_OPENERS_LOCAL or (verb_end and len(cur) >= SHORT) or (b == 'و' and nxt is not None and verb_end)))
             if re.search(r'[.!?؟؛*]$', cur[-1]): start = True      # editorial punctuation: supporting evidence
         if start:
             units.append(cur); cur = []

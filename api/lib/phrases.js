@@ -4,14 +4,15 @@
 //         punctuation + conjunctions; Chinese/Japanese 。！？；. NEVER cut by length: a run with no marker stays one unit. Paragraph text is never changed.
 // :rules: bump SEG_VERSION on any rule change — the phrase indexer re-segments + re-embeds docs stamped with an older version.
 // :edge: offsets index cleanText(text) (⁅s/p⁆ markers removed); HTML comments and <pb/> tags are skipped, never words.
-import { foldArabic, arOrFa } from './arabic-script.js';
-export const SEG_VERSION = 'phr-v2';
+import { foldArabic, isPersianWord } from './arabic-script.js';
+export const SEG_VERSION = 'phr-v3';
 const SHORT = 4;
 const bare = foldArabic;   // decisions on folded forms (vowels, Qur'anic marks, ZWNJ, letter variants); offsets stay on the raw text
 const AR_PARTICLES = new Set(['قد', 'لا', 'لم', 'لن', 'ان', 'انا', 'انه', 'انها', 'انهم', 'اذا', 'اذ', 'لو', 'ما', 'لما', 'لئن', 'لعل', 'کذلک',
   'هذا', 'هذه', 'هو', 'هی', 'هم', 'انت', 'انتم', 'نحن', 'من', 'الذی', 'الذین', 'کان', 'کانت', 'لیس', 'سوف', 'کم', 'هل', 'ا']);
 const AR_OPENERS = new Set(['ثم', 'قل', 'یا', 'ایها', 'تالله', 'لعمری', 'لعمر', 'بلی', 'کلا', 'الا', 'اما', 'فلما', 'ولما', 'اذا', 'طوبی', 'ویل']);
-const FA_OPENERS = new Set(['که', 'تا', 'چون', 'اگر', 'زیرا', 'ولی', 'ولکن', 'لکن', 'پس', 'باری', 'حال', 'امروز', 'ای', 'یا']);
+const FA_OPENERS = new Set(['که', 'تا', 'چون', 'اگر', 'زیرا', 'ولی', 'پس', 'باری', 'امروز']);   // Persian-only: open a clause anywhere
+const FA_OPENERS_LOCAL = new Set(['حال', 'ای', 'ولکن', 'لکن']);   // shared with Arabic usage: open only inside Persian
 const FA_VERB_END = /(است|اند|شود|امد|امدند|داد|دادند|گفت|گفتند|یافت|گشته|گردند|بود|بودند|شد|شده|شدند|نمود|نمودند|نماید|نمایند|کرد|کردند|کند|کنند|فرمود|فرمودند|فرماید|میشود|میگردد|گشت|گردید|گردد|دارد|دارند|نیست|هست|باشد|باشند|خواهد|ید)$/;
 const AR_VERB = /^(ی|ت|ن)\S{2,6}$/;          // imperfect verb shape (yaf'al / taf'al / naf'al)
 const PRON_SUFFIX = /(ها|هم|هن|کم|کن|نا|ه)$/;  // noun + pronoun ("its leaves") — a list item, not a clause
@@ -47,20 +48,24 @@ const joinShort = (units, keep = () => false) => {
   return out;
 };
 
-const unitsAr = (words, lang) => {
+// Arabic and Persian are ONE rule set — classical writing mixes them inside a sentence (Persian prose quoting Arabic,
+// Arabic letters with Persian asides). Arabic clause openers fire everywhere; Persian-only openers fire everywhere;
+// Persian verb endings and shared openers fire only when the clause so far shows Persian (a Persian grammar word or
+// پ چ ژ گ) — so an Arabic quotation inside Persian prose is split by Arabic rules, the prose around it by Persian.
+const persianClause = (cur) => cur.some(({ w }) => isPersianWord(bare(w)) || /[پچژگ]/.test(w));
+const unitsAr = (words) => {
   const units = [];
   let cur = [];
   for (const [i, { w }] of words.entries()) {
     const nxt = words[i + 1]?.w ?? null;
     let start = false;
     if (cur.length) {
-      const last = cur.at(-1).w;
-      if (lang === 'fa') {
-        const b = bare(w);
-        const lb = bare(last).replace(/\*+$/, '');
-        const afterVerb = FA_VERB_END.test(lb) && !lb.startsWith('ال') && cur.length >= SHORT;   // ال…: an Arabic noun (الحمید), not a Persian verb
-        start = FA_OPENERS.has(b) || afterVerb || (b === 'و' && nxt != null && FA_VERB_END.test(bare(last))) || isArClauseStart(w, nxt);
-      } else start = isArClauseStart(w, nxt);
+      const last = cur.at(-1).w, b = bare(w);
+      const lb = bare(last).replace(/\*+$/, '');
+      const fa = persianClause(cur);
+      const verbEnd = FA_VERB_END.test(lb) && !lb.startsWith('ال');   // ال…: an Arabic noun (الحمید), not a Persian verb
+      start = isArClauseStart(w, nxt) || FA_OPENERS.has(b)
+        || (fa && (FA_OPENERS_LOCAL.has(b) || (verbEnd && cur.length >= SHORT) || (b === 'و' && nxt != null && verbEnd)));
       if (/[.!?؟؛*]$/.test(last)) start = true;                      // editorial punctuation: supporting evidence
     }
     if (start) { units.push(cur); cur = []; }
@@ -98,8 +103,7 @@ export function segment(text, lang = 'en') {
   if (lang === 'zh' || lang === 'ja') return unitsCjk(cleanText(text));
   const words = wordsOf(cleanText(text));
   if (!words.length) return [];
-  // Arabic or Persian is decided per paragraph from its grammar, not the document label (mixed volumes, mislabels)
-  const units = lang === 'ar' || lang === 'fa' ? unitsAr(words, arOrFa(text, lang)) : unitsEn(words);
+  const units = lang === 'ar' || lang === 'fa' ? unitsAr(words) : unitsEn(words);   // ar/fa label = Arabic script; rules decide locally
   return units.map((u) => ({ start: u[0].start, end: u.at(-1).end }));
 }
 

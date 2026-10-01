@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-01T13:47:27.622Z",
+  "generated": "2026-10-01T14:05:49.468Z",
   "entries": [
+    {
+      "hash": "392c3c76",
+      "date": "2026-10-01",
+      "type": "New",
+      "description": "Phrase units + canonical Arabic-script folding (phrase index P1)",
+      "scope": "search"
+    },
     {
       "hash": "7cac9296",
       "date": "2026-09-30",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Key the table the way the counters are keyed (fixes silent merging of query types)",
       "scope": null
-    },
-    {
-      "hash": "fec4f573",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Fix the freezing, and account for ALL query time (not just outliers)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-01": [
+      {
+        "hash": "392c3c76",
+        "date": "2026-10-01",
+        "type": "New",
+        "description": "Phrase units + canonical Arabic-script folding (phrase index P1)",
+        "scope": "search"
+      }
+    ],
     "2026-09-30": [
       {
         "hash": "7cac9296",
@@ -7053,13 +7062,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Key the table the way the counters are keyed (fixes silent merging of query types)",
-        "scope": null
-      },
-      {
-        "hash": "fec4f573",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Fix the freezing, and account for ALL query time (not just outliers)",
         "scope": null
       }
     ]
