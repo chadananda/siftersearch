@@ -188,7 +188,7 @@ function realign(span, text) {
 // ── emit CTAI JSONL (one record per CTAI id; only confident matches; verbatim spans only)
 function emit() {
   const lines = [], held = [], stats = { verified: 0, matched: 0, held: 0, unprocessed: 0 };
-  const rec = (q, segs, confidence, method) => {
+  const rec = (q, segs, confidence, method, coverage = null) => {
     // several spans in ONE paragraph → one record (spans joined with " … "); segments only across paragraphs
     const byPara = new Map();
     for (const s of segs) { const k = String(s.content_id); byPara.set(k, [...(byPara.get(k) || []), s.src]); }
@@ -199,7 +199,9 @@ function emit() {
     if (!ps.length) return null;
     const base = (s) => ({ text: cleanText(s.p.text), src: s.src, content_id: Number(s.p.id), ref: `${s.p.title} ¶${s.p.paragraph_index}`,
       url: `https://siftersearch.com/library/view?doc=${s.p.doc_id}#p${s.p.paragraph_index}` });
-    const head = { quoted_author: q.figure, work: ps[0].p.title, confidence, method };
+    // the author of the matched source document wins over our label (e.g. a passage labelled Bahá'u'lláh that is 'Abdu'l-Bahá's)
+    const author = ps[0].p.author || q.figure;
+    const head = { quoted_author: author, ...(author !== q.figure && { stated_author: q.figure }), work: ps[0].p.title, confidence, method, ...(coverage && { coverage }) };
     return ps.length === 1 ? { ...head, ...base(ps[0]) } : { ...head, ref: base(ps[0]).ref, url: base(ps[0]).url, segments: ps.map(base) };
   };
   for (const q of quotes) {
@@ -211,7 +213,7 @@ function emit() {
       const v = vd && JSON.parse(vd.verdict);
       if (!v) { stats.unprocessed++; continue; }
       const segs = (v.segments || []).filter((s) => s.verbatim);
-      if (segs.length && v.confidence >= 0.7) { r = rec(q, segs, v.confidence, 'phrase-vector search (Gemini-2/Qdrant) + Opus 5.5 span extraction'); stats.matched++; }
+      if (segs.length && v.confidence >= 0.7) { r = rec(q, segs, v.confidence, 'phrase-vector search (Gemini-2/Qdrant) + Opus 5.5 span extraction', v.coverage); stats.matched++; }
       else { stats.held++; held.push({ id: q.id, ctai_ids: q.ctai_ids, figure: q.figure, quote: q.quote.slice(0, 300), verdict: v }); continue; }
     }
     if (q.ctai_ids?.length) for (const cid of q.ctai_ids) lines.push({ id: cid, ...r });
