@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-01T20:00:54.031Z",
+  "generated": "2026-10-01T22:11:55.719Z",
   "entries": [
+    {
+      "hash": "d7315cc4",
+      "date": "2026-10-01",
+      "type": "New",
+      "description": "--ids to verify a chosen list of quotations",
+      "scope": "citations"
+    },
     {
       "hash": "a0f62f6b",
       "date": "2026-10-01",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Phase C — the Book Notes admin API (and the run becomes an API call, not a shell command)",
       "scope": null
-    },
-    {
-      "hash": "c3a28458",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Wire the real loader + model, and the chapter CLI (dry-run by default)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-01": [
+      {
+        "hash": "d7315cc4",
+        "date": "2026-10-01",
+        "type": "New",
+        "description": "--ids to verify a chosen list of quotations",
+        "scope": "citations"
+      },
       {
         "hash": "a0f62f6b",
         "date": "2026-10-01",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Phase C — the Book Notes admin API (and the run becomes an API call, not a shell command)",
-        "scope": null
-      },
-      {
-        "hash": "c3a28458",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Wire the real loader + model, and the chapter CLI (dry-run by default)",
         "scope": null
       }
     ]
