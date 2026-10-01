@@ -79,7 +79,8 @@ async function qd(path, body) {
 }
 async function candidates() {
   const done = new Set(out.prepare('SELECT id FROM cand').all().map((r) => r.id));
-  const todo = quotes.filter((q) => !verified[q.id] && !done.has(q.id) && q.figure !== 'Qur’án').slice(0, LIMIT || undefined);
+  const QURAN_DOC = +arg('quran-doc', 21380);            // the Arabic Qur'an: Qur'an quotations search only there
+  const todo = quotes.filter((q) => !verified[q.id] && !done.has(q.id)).slice(0, LIMIT || undefined);
   const put = out.prepare('INSERT OR REPLACE INTO cand VALUES (?, ?)');
   for (const q of todo) {
     const clean = cleanText(q.quote);
@@ -88,7 +89,8 @@ async function candidates() {
     const score = new Map();
     await Promise.all(vs.map(async (v) => {
       const res = await qd(`/collections/${COLL}/points/query/groups`, { query: v, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit: 10,
-        with_payload: ['paragraph_id', 'doc_id'], params: { quantization: { rescore: true, oversampling: 4.0 } } });
+        with_payload: ['paragraph_id', 'doc_id'], params: { quantization: { rescore: true, oversampling: 4.0 } },
+        ...(q.figure === 'Qur’án' && { filter: { must: [{ key: 'doc_id', match: { value: QURAN_DOC } }] } }) });
       res.groups.forEach((g, rank) => score.set(g.id, (score.get(g.id) || 0) + 1 / (60 + rank)));
     }));
     if (q.original?.content_id) score.set(Number(q.original.content_id), (score.get(Number(q.original.content_id)) || 0) + 0.02);
@@ -154,7 +156,10 @@ async function verify() {
 function emit() {
   const lines = [], stats = { verified: 0, matched: 0, held: 0, not_found: 0, unprocessed: 0 };
   const rec = (q, segs, confidence, method) => {
-    const ps = segs.map((s) => ({ ...s, p: para.get(String(s.content_id)) })).filter((s) => s.p);
+    // several spans in ONE paragraph → one record (spans joined with " … "); segments only across paragraphs
+    const byPara = new Map();
+    for (const s of segs) { const k = String(s.content_id); byPara.set(k, [...(byPara.get(k) || []), s.src]); }
+    const ps = [...byPara.entries()].map(([cid, srcs]) => ({ src: srcs.join(' … '), p: para.get(cid) })).filter((s) => s.p);
     if (!ps.length) return null;
     const base = (s) => ({ text: cleanText(s.p.text), src: s.src, content_id: Number(s.p.id), ref: `${s.p.title} ¶${s.p.paragraph_index}`,
       url: `https://siftersearch.com/library/view?doc=${s.p.doc_id}#p${s.p.paragraph_index}` });

@@ -5,6 +5,7 @@
 //         point id (paragraph × 1000 + k) with their segmenter version; Qdrant upserts only units not yet sent.
 // :edge: the store is its own SQLite file (not the content DB) → no load on the single writer.
 //   node scripts/phrase-index/indexer.mjs --scope originals --embed [--concurrency 16] [--limit N] [--max-usd 40] [--scan-only]
+//   node scripts/phrase-index/indexer.mjs --docs 21380 --embed     (explicit documents, e.g. the Arabic Qur'an)
 //   node scripts/phrase-index/indexer.mjs --qdrant          (QDRANT_KEY in env; after --embed)
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
@@ -20,7 +21,8 @@ const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ?
 const has = (k) => process.argv.includes(`--${k}`);
 const DB = arg('db', join(ROOT, 'data', 'sifter.db'));
 const STORE = arg('store', '/tank/sifter/phrase-vectors/vectors.db');
-const SCOPE = arg('scope', 'originals');                 // originals = Bahá'í paragraphs mostly in Arabic script
+const SCOPE = arg('scope', 'originals');
+const DOCS = (arg('docs', '') || '').split(',').map(Number).filter(Boolean);   // explicit documents, any religion (e.g. the Arabic Qur'an)                 // originals = Bahá'í paragraphs mostly in Arabic script
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const MAX_USD = +arg('max-usd', 0);                       // spend guard: stop after the scan if the estimate exceeds it
 const QD = arg('qdrant-url', 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
@@ -50,7 +52,8 @@ async function embedBatch(texts) {
 async function embed() {
   const src = new Database(DB, { readonly: true, fileMustExist: true });
   const rows = src.prepare(`SELECT c.id, c.doc_id, c.text, d.language, d.author, d.religion FROM content c JOIN docs d ON d.id = c.doc_id
-    WHERE d.religion = 'Baha''i' AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0`);
+    WHERE ${DOCS.length ? `d.id IN (${DOCS.join(',')})` : "d.religion = 'Baha''i'"} AND d.deleted_at IS NULL AND c.deleted_at IS NULL
+      AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0`);
   const haveUnit = store.prepare('SELECT seg_v, key FROM units WHERE point_id = ?');
   const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", seg_v, key, fa_share, religion, author, lang_label, upserted)
     VALUES (@pointId, @pid, @doc, @k, @start, @end, @segV, @key, @fa, @religion, @author, @lang, 0)
