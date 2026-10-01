@@ -1,0 +1,669 @@
+{
+"_about": "Golden units from tests/quality/crosslingual/phrases.py (phr-v2: canonical Arabic-script folding, per-paragraph Persian/Arabic). api/lib/phrases.js must reproduce them.",
+"cases": [
+{
+"lang": "ar",
+"text": "⁅s1⁆## درچنين هنگام ازبهر حسود⁅/s1⁆ ⁅s2⁆****************** ازضغينه دل بجز مردن چه سود⁅/s2⁆",
+"units": [
+"## درچنين هنگام ازبهر حسود ******************",
+"ازضغينه دل بجز مردن چه سود"
+]
+},
+{
+"lang": "ar",
+"text": "⁅s1⁆ذکر اللّه من سدرة الأمر علی البقعة النّورآء قد کان بالحقّ مرفوعا و یسمع منه کلّ حزب انّه لا اله الّا هو و الّذی اتی بالحقّ انّه قد کان علی العالمین رقیبا انّه لجمال الأمر فی الملأ الأعلی و سرّ الظّهور فی غیب العمآء و الکتاب المکنون فی سرادق الکبریآء و هیکل القدم بین العالم و الاسم الأعظم لمن کان علی الأمر قویّا⁅/s1⁆",
+"units": [
+"ذکر اللّه من سدرة الأمر علی البقعة النّورآء قد کان بالحقّ مرفوعا",
+"و یسمع منه کلّ حزب انّه لا اله الّا هو",
+"و الّذی اتی بالحقّ",
+"انّه قد کان علی العالمین رقیبا",
+"انّه لجمال الأمر فی الملأ الأعلی و سرّ الظّهور فی غیب العمآء و الکتاب المکنون فی سرادق الکبریآء و هیکل القدم بین العالم و الاسم الأعظم لمن کان علی الأمر قویّا"
+]
+},
+{
+"lang": "ar",
+"text": "⁅s1⁆ای ربّ نوّر وجهه بنور العفو و الغفران و ادخله فی ملکوتک یا ربّی الرّحمن و اسکنه فی جوار رحمتک یا حنّان یا منّان⁅/s1⁆ ⁅s2⁆و شرّفه بلقائک فی قطب الجنان⁅/s2⁆",
+"units": [
+"ای ربّ نوّر وجهه بنور العفو و الغفران و ادخله فی ملکوتک",
+"یا ربّی الرّحمن و اسکنه فی جوار رحمتک یا حنّان",
+"یا منّان و شرّفه بلقائک فی قطب الجنان"
+]
+},
+{
+"lang": "ar",
+"text": "⁅s1⁆انّ المظلوم احبّ ان یذکر من احبّه و نطق بثنائه و اقبل الی وجهه اذ اعرض عنه ذو عمائم بیضآء و ذو قبب خضرآء یشهد بذلک قلمی الأعلی من لدی الله المهیمن القیّوم⁅/s1⁆",
+"units": [
+"انّ المظلوم احبّ ان یذکر من احبّه",
+"و نطق بثنائه و اقبل الی وجهه اذ اعرض عنه ذو عمائم بیضآء و ذو قبب خضرآء یشهد بذلک قلمی الأعلی من لدی الله المهیمن القیّوم"
+]
+},
+{
+"lang": "ar",
+"text": "⁅s1⁆فوت شد ازآن‌مرض زيشان سه‌تن⁅/s1⁆ ⁅s2⁆*************************** اوّلی بوالقاسم بيمار ### ومن بود⁅/s2⁆ ⁅s3⁆ازاهل عراق وشهر نو... *************************** [درنسخه اصل اين مصرع ### موجود نيست] وين دوتن‌را از خداوند انام⁅/s3⁆ ⁅s4⁆*************************** باقر روح است واسماعيل نام...⁅/s4⁆",
+"units": [
+"فوت شد ازآن‌مرض زيشان سه‌تن ***************************",
+"اوّلی بوالقاسم بيمار ###",
+"ومن بود ازاهل عراق وشهر نو... ***************************",
+"[درنسخه اصل اين مصرع ### موجود نيست] وين دوتن‌را از خداوند انام ***************************",
+"باقر روح است واسماعيل نام..."
+]
+},
+{
+"lang": "ar",
+"text": "⁅s1⁆هو الرّحمن الرّحیم⁅/s1⁆ ⁅s2⁆یا احمد⁅/s2⁆ ⁅s3⁆الحمد للّه الّذی خلقک و رزقک و علّمک و عرّفک و هداک الی صراطه المستقیم السّلام علیک و علی [ابیک] و عمّک و علی من معکم لوجه اللّه⁅/s3⁆",
+"units": [
+"هو الرّحمن الرّحیم یا احمد الحمد للّه الّذی خلقک و رزقک و علّمک و عرّفک و هداک الی صراطه المستقیم السّلام علیک و علی [ابیک] و عمّک و علی من معکم لوجه اللّه"
+]
+},
+{
+"lang": "ar",
+"text": "بسم الله الرحمن الرحيم\nفاستمع لما اوحي الي من ربك انه لا الٓه الا هو فادع الناس  لحكم  ربك  فان  اجل\nالله لات وان الله يعلم غيب السموات والارض وما كان الناس في حكم ذكر  اسم  ربك\nيختلفون وان ربك يقضي بين الناس بالقسط وما اليوم ظلم في حكم ذكر الله وكل  على\nالله يعرضون وان ذلك حكم من لدنا بما نزل في القران من قبل وان ذلك  لهو  الفوز\nالعظيم وقال المشركون للذين امنوا  بالله  واياته  اتؤمنون  بالذي  يدعوكم  الى\nالقتل فما لكم لا تعلمون قل لن ينفعكم الفرار ان متم او قتلتم  لالى  ذكر  الله\nتبعثون وان الله ربك يقضي بين الناس بالحق وان المشركين في النار لخالدون",
+"units": [
+"بسم الله الرحمن الرحيم فاستمع لما اوحي الي من ربك انه لا الٓه",
+"الا هو فادع الناس لحكم ربك",
+"فان اجل الله لات",
+"وان الله يعلم غيب السموات والارض",
+"وما كان الناس في حكم ذكر اسم ربك يختلفون",
+"وان ربك يقضي بين الناس بالقسط",
+"وما اليوم ظلم في حكم ذكر الله وكل على الله يعرضون",
+"وان ذلك حكم من لدنا بما نزل في القران من قبل",
+"وان ذلك لهو الفوز العظيم وقال المشركون للذين امنوا بالله واياته اتؤمنون بالذي يدعوكم الى القتل",
+"فما لكم لا تعلمون",
+"قل لن ينفعكم الفرار ان متم او قتلتم لالى ذكر الله تبعثون",
+"وان الله ربك يقضي بين الناس بالحق",
+"وان المشركين في النار لخالدون"
+]
+},
+{
+"lang": "ar",
+"text": "كس كه كشيد و خورد و زر داد و خريد\n                                                     بی هيچ شكی پست  تر  است\nاز انعام\n   ديگر ميرزا حبيب اللّه بن آقا روبين در سنندج و عاقبت در عشق،آباد  ساكن  شده\nجوراب بافی مي،كرد كربلائی درويش علی كه بدفعات ملّاها  ويرا  بمحضر  شرح  كشيده\nاصرار و تأكيد به لعن و سب نمودند و هر بار بلطائف الحيل از چنگشان خلاص گشت  و\nبه سال ۱۳۳۴ در همدان درگذشت و در اسد آباد ميرزا لطف،اللّه حاجی شاه محمّد  كاكا\nخان و ما چون تمامت احوال سيّد جمال الدّين اسد آبادی  معروف  به  افغانی  را  كه\nچندی پس از واقعه قتل ناصر الدين شاه درگذشت در بخش شش آورديم  محض  اختصار  از\nتكرار صرف نظر از ذكر نموديم",
+"units": [
+"كس كه كشيد و خورد و زر داد",
+"و خريد بی هيچ شكی پست تر است",
+"از انعام ديگر ميرزا حبيب اللّه بن آقا روبين در سنندج و عاقبت در عشق،آباد ساكن شده",
+"جوراب بافی مي،كرد كربلائی درويش علی كه بدفعات ملّاها",
+"ويرا بمحضر شرح كشيده اصرار",
+"و تأكيد به لعن و سب نمودند",
+"و هر بار بلطائف الحيل از چنگشان خلاص گشت",
+"و به سال ۱۳۳۴ در همدان درگذشت و در اسد آباد ميرزا لطف،اللّه حاجی شاه محمّد كاكا خان و ما",
+"چون تمامت احوال سيّد",
+"جمال الدّين اسد آبادی معروف به افغانی را كه چندی",
+"پس از واقعه قتل ناصر الدين شاه درگذشت در بخش شش آورديم محض اختصار از تكرار صرف نظر از ذكر نموديم"
+]
+},
+{
+"lang": "ar",
+"text": "Z Whitehead: SOME EARLY BAHAI’S OF THE WEST‬‬\n‫)ﺁﮐﺴﻔﻮﺭﺩ ‪ ،‬ﺍﻧﮕﻠﺴﺘﺎﻥ‪ :‬ﺍﻧﺘﺸﺎﺭﺍﺕ ﺟﻮﺭﺝ ﺭﻭﻧﺎﻟﺪ ‪ ٤٧ (١٩٩٥‬ـ ‪٤٤‬‬\n‫‪]۲‬ﺑﻪ ﻧﻘﻞ ﺍﺯ ﮐﺘﺎﺏ ﺑﺪﺍﻳﻊ ﺍﻵﺛﺎﺭ‪ ,‬ﺟﻠﺪ ‪ ,۱‬ﺻﻔﺤ |ﻪ ‪[۲۹‬‬\n‫‪17.05.2014 16:08:39‬‬",
+"units": [
+"Z Whitehead: SOME EARLY BAHAI’S OF THE WEST‬‬ ‫)ﺁﮐﺴﻔﻮﺭﺩ ‪ ،‬ﺍﻧﮕﻠﺴﺘﺎﻥ‪ :‬ﺍﻧﺘﺸﺎﺭﺍﺕ ﺟﻮﺭﺝ ﺭﻭﻧﺎﻟﺪ ‪ ٤٧ (١٩٩٥‬ـ ‪٤٤‬‬ ‫‪]۲‬ﺑﻪ ﻧﻘﻞ ﺍﺯ ﮐﺘﺎﺏ ﺑﺪﺍﻳﻊ ﺍﻵﺛﺎﺭ‪ ,‬ﺟﻠﺪ ‪ ,۱‬ﺻﻔﺤ |ﻪ ‪[۲۹‬‬ ‫‪17.05.2014 16:08:39‬‬"
+]
+},
+{
+"lang": "ar",
+"text": "تفسير سورة يوسف عليه السلام وهو ماة واحدي عشر سورة اسماء السور\n    .١الملك          .٢العلماء              .٣الايمان              .٤المدينة",
+"units": [
+"تفسير سورة يوسف عليه السلام",
+"وهو ماة واحدي عشر سورة اسماء السور .١الملك .٢العلماء .٣الايمان .٤المدينة"
+]
+},
+{
+"lang": "ar",
+"text": "‫‪ ۲۸‬ﺑﺮﺍﻳﺎ ‪،‬ﻥ ﺩﻧﻴ ‪،‬‬\n‫‪ ,(٢٠٠١،Sons‬ﺻﻔﺤ |ﻪ ‪١٢٩‬‬\n‫‪ ۲۹‬ﺍﺷﻤﻴﺖ‬\n‫‪ ۳۰‬ﺍﺷﻤﻴﺖ‬\n‫‪17.05.2014 16:08:43‬‬",
+"units": [
+"‫‪ ۲۸‬ﺑﺮﺍﻳﺎ ‪،‬ﻥ ﺩﻧﻴ ‪،‬‬ ‫‪ ,(٢٠٠١،Sons‬ﺻﻔﺤ |ﻪ ‪١٢٩‬‬ ‫‪ ۲۹‬ﺍﺷﻤﻴﺖ‬ ‫‪ ۳۰‬ﺍﺷﻤﻴﺖ‬ ‫‪17.05.2014 16:08:43‬‬"
+]
+},
+{
+"lang": "ar",
+"text": "بالله الله الفرد ذي الفرد    بالله الله الفرد ذي الفراد   بالله  الله  الفرد\nذي الفرداء\nبالله الله الفرد ذي الافارد  بالله الله الفرد  ذي  الافراد       بالله  الله\nالفرد ذي الأفرد\nبالله الله الفرد ذي الفرادد  بالله الله الفرد ذي الفردة   بالله  الله  الفرد\nذي الفرود\nبالله الله الفرد ذي الفراد   بالله الله الفرد  ذي  الافرداء      بالله  الله\nالفرد ذي الفردات\nبالله الله الفرد ذي الفردوت",
+"units": [
+"بالله الله الفرد ذي الفرد بالله الله الفرد ذي الفراد بالله الله الفرد ذي الفرداء بالله الله الفرد ذي الافارد بالله الله الفرد ذي الافراد بالله الله الفرد ذي الأفرد بالله الله الفرد ذي الفرادد بالله الله الفرد ذي الفردة بالله الله الفرد ذي الفرود بالله الله الفرد ذي الفراد بالله الله الفرد ذي الافرداء بالله الله الفرد ذي الفردات بالله الله الفرد ذي الفردوت"
+]
+},
+{
+"lang": "ar",
+"text": "٭٭٭٭٭٭٭٭٭٭٭٭٭٭٭\n                                 ٭٭٭٭٭٭٭٭٭٭\n                                    ٭٭٭٭٭\n                                      ٭\n                           -----------------------\n[^1] -  حضرت عبدالبها ارواحنالرمسه - الاطهرالفدا در لوحي مورخ ديسمبر ١٩١٩  به\nافتخار خانم [همسر] جناب فاضل چنين ميفرمايند: \"... شكر  كن  خدا  را  كه  حضرت\nفاضل مبلغ کامل است و موفق به خدمت جمال مبارك است. جز نشر نفحات ارزوئي  ندارد\nو به غير از ترتيل ايات بينات مقصدي نخواهد درختي در گلشن امكان غرس  نموده  كه\nشاخ رحماني به كاخ ملااعلي رساند ...( امرو خلق جلد ١- صفحه م ١۶)",
+"units": [
+"٭٭٭٭٭٭٭٭٭٭٭٭٭٭٭ ٭٭٭٭٭٭٭٭٭٭ ٭٭٭٭٭ ٭ ----------------------- [^1] - حضرت عبدالبها ارواحنالرمسه - الاطهرالفدا در لوحي مورخ ديسمبر ١٩١٩ به افتخار خانم [همسر] جناب فاضل چنين ميفرمايند: \"...",
+"شكر كن خدا را",
+"كه حضرت فاضل مبلغ کامل است",
+"و موفق به خدمت جمال مبارك است.",
+"جز نشر نفحات ارزوئي ندارد",
+"و به غير از ترتيل ايات بينات مقصدي نخواهد",
+"درختي در گلشن امكان غرس نموده",
+"كه شاخ رحماني به كاخ ملااعلي رساند",
+"...( امرو خلق جلد ١- صفحه م ١۶)"
+]
+},
+{
+"lang": "ar",
+"text": "لیکن شما بایست مراعات حکمت را به وجه اینکه عبدالبهاء چونان سرکردۀ یک دیانت جدید\nاتم بکنید .چون مردم در خوابی عمیق و تحت در خاطرشان مانده باشد .دعوی مظهریت بهاءاهلل",
+"units": [
+"لیکن شما بایست مراعات حکمت را به وجه اینکه عبدالبهاء چونان سرکردۀ یک دیانت جدید اتم بکنید .چون مردم در خوابی عمیق",
+"و تحت در خاطرشان مانده باشد .دعوی مظهریت بهاءاهلل"
+]
+},
+{
+"lang": "ar",
+"text": "الثالث في الثالث\nبسم الله الارئى الارئى\nالحمد لله الذي قد  استعلى  بعلوه  فوق  كل  الممكنات  واستعزز  بعزته  فوق  كل\nالموجودات واستكبر بكبريائيته فوق كل الكائنات واستظهر باظتهاره فوق كل  الذرات\nواستنصر بانتصاره فوق من في ملكوت الارض والسموات فاستشهده وكل  خلقه  على  انه\nلا الٓه الا هو الواحد في الذات والواحد في الصفات والواحد في  الاسماء  والواحد\nفي الامثال لا الٓه الا هو الكبير المتعال فاستشهده وكل  خلقه  شهادة  مطهرة  عن\nكدورت الاشارات ومصفاة عن دلالة الشبهات شهادة يستقر لا في ظل  من  يظهره  الله\nولا يستخرج الى غيره ليوصل بذلك الى منشئها ومحدثها ومربيها  ومذوتها  على  انه\nلا الٓه الا هو وليس كمثله شيء وهو الواحد الراء يرى  كل  ما  خلق  ويخلق  بلطيف\nنظرته ولا يريه من شيء لا من قبل ولا من بعد ولا في السماء ولا  في  الارض  ولا\nما بينهما انه لا الٓه  الا  هو  الواحد  الجلال  فاستشهده  في  ذلك  اليوم  يوم\nالاستقلال على انه سبحانه لما كان لقاء ذاته  ممتنعا  لخلقه  فقد  اصطفى  جوهرة\nبهية ومجردية علية وكافورية جلية وساذجية  رفيعة  وكينونية  علية  وجعل  لقائها\nلقاء نفسه لكل خلقه فاذا قد احتجبوا عن ذلك كل عباده واحجبوه في  جبل  لا  يريه\nاحد الا احد من اوليائه هذا ما قد صنع الله لخلقه وهذا ما قد  صنع  الخلق  لامر\nربهم فاي نار اشد من هذا لكل ما خلق ويخلق اذ هم يعملون",
+"units": [
+"الثالث في الثالث بسم الله الارئى الارئى الحمد لله الذي قد استعلى بعلوه فوق كل الممكنات واستعزز بعزته فوق كل الموجودات واستكبر بكبريائيته فوق كل الكائنات واستظهر باظتهاره فوق كل الذرات واستنصر بانتصاره فوق من في ملكوت الارض والسموات فاستشهده وكل خلقه على انه لا الٓه",
+"الا هو الواحد في الذات والواحد في الصفات والواحد في الاسماء والواحد في الامثال لا الٓه",
+"الا هو الكبير المتعال فاستشهده وكل خلقه شهادة مطهرة عن كدورت الاشارات ومصفاة عن دلالة الشبهات شهادة يستقر لا في ظل من يظهره الله",
+"ولا يستخرج الى غيره ليوصل بذلك الى منشئها ومحدثها ومربيها ومذوتها على انه لا الٓه الا هو وليس كمثله شيء",
+"وهو الواحد الراء يرى كل ما خلق ويخلق بلطيف نظرته",
+"ولا يريه من شيء لا من قبل ولا من بعد ولا في السماء ولا في الارض",
+"ولا ما بينهما انه لا الٓه",
+"الا هو الواحد الجلال فاستشهده في ذلك اليوم يوم الاستقلال على انه سبحانه لما كان لقاء ذاته ممتنعا لخلقه",
+"فقد اصطفى جوهرة بهية ومجردية علية وكافورية جلية وساذجية رفيعة وكينونية علية وجعل لقائها لقاء نفسه لكل خلقه",
+"فاذا قد احتجبوا عن ذلك كل عباده واحجبوه في جبل لا يريه احد",
+"الا احد من اوليائه هذا ما قد صنع الله لخلقه",
+"وهذا ما قد صنع الخلق لامر ربهم فاي نار اشد من هذا لكل ما خلق",
+"ويخلق اذ هم يعملون"
+]
+},
+{
+"lang": "ar",
+"text": "ﻗﻬﻮﻩ‪،‬ﺍﻱ ﻧﻤﻮﺩﺍﺭ ﻣﻲ‪،‬ﺷﺪﻧﺪ ﻭ ﺍﺯ ﺁﻧﺠﺎ ﺑﻪ ﺩﺍﺧﻞ ﺷﻬﺮ ﮐﻮﭼﮏ ﺳﺮﻭﺳﺘﺎﻥ ﻣﻲ‪،‬ﺭﺳﻴﺪ‪.‬‬\n‫ﺕ ﺩﺭ ﺗﺎﺭﻳﺦ ‪٢٠‬‬\n‫‪ (۱‬ﺩﮐﺘﺮ ﺳﻴﺎﻣﮏ ﺗﻮﺍﻧﮕﺮ ‪» ,،‬ﺍﻧﺠﻴﺮ ﺧﺸﮏ ﺍﻳﺮﺍﻥ ‪ «،‬ﺗﻌﺎﻭﻧﻲ ﺗﻮﻟﻴﺪﮐﻨﻨﺪﮔﺎﻥ ﺍﻧﺠﻴﺮ ﺍﺻﻄﻬﺒﺎﻧﺎ ‪،‬‬\n‫ﺩﺳﺎﻣﺒﺮ ‪ .٢٠١٠‬ﺩﺭ ﻭﺑﺴﺎﻳﺖ ‪www.iranfig.com/Driedfigs.html :‬ﻣﺸﺎﻫﺪﻩ ﺷﺪ‪.‬‬\n‫‪ ۱‬ﺷﻬﺮ ﻧﻲ‪،‬ﺭﻳﺰ‬\n‫‪۳۹‬‬\n‫ﻫﻤﻴﻨﻄﻮﺭ ﮐﻪ ﮐﺎﺭﻭﺍﻥ ﺩﺭ ﺍﻳﻦ ﺟﺎ ّﺩﻩ ﭘﻴﺶ ﻣﻲ‪،‬ﺭﻓﺖ ﮐﻢ‪،‬ﮐﻢ ﮐﻮﻩ‪،‬ﻫﺎﻱ ﻗﻬﻮﻩ‪،‬ﺍﻱ ﺩﺭ ﻃﺮﻑ‬\n‫ﺭﺍﺳﺖ ﺩﻭﺭ ﻣﻲ‪،‬ﮔﺮﺩﻳﺪﻧﺪ ﻭ ﺩﺭ ﻃﺮﻑ ﭼﭗ ﺟﺎ ّﺩﻩ ﮐﻮﻫﻬﺎﻱ ﺩﻳﮕﺮﻱ ﻧﻤﺎﻳﺎﻥ ﻣﻲ‪،‬ﺷﺪﻧﺪ‪.‬‬\n‫ﺩﺭ ﺩﻭ ﻃﺮﻑ ﺟﺎ ّﺩﻩ ﺍﻳﻼﺕ ﻭ ﻃﻮﺍﻳﻒ ﻭ ﻋﺸﺎﻳﺮ ﺑﺮﺍﻱ ﻳﻴﻼﻕ ﻳﺎ ﻗﺸﻼﻕ",
+"units": [
+"ﻗﻬﻮﻩ‪،‬ﺍﻱ ﻧﻤﻮﺩﺍﺭ ﻣﻲ‪،‬ﺷﺪﻧﺪ ﻭ ﺍﺯ ﺁﻧﺠﺎ ﺑﻪ ﺩﺍﺧﻞ ﺷﻬﺮ ﮐﻮﭼﮏ ﺳﺮﻭﺳﺘﺎﻥ ﻣﻲ‪،‬ﺭﺳﻴﺪ‪.‬‬ ‫ﺕ ﺩﺭ ﺗﺎﺭﻳﺦ ‪٢٠‬‬ ‫‪ (۱‬ﺩﮐﺘﺮ ﺳﻴﺎﻣﮏ ﺗﻮﺍﻧﮕﺮ ‪» ,،‬ﺍﻧﺠﻴﺮ ﺧﺸﮏ ﺍﻳﺮﺍﻥ ‪ «،‬ﺗﻌﺎﻭﻧﻲ ﺗﻮﻟﻴﺪﮐﻨﻨﺪﮔﺎﻥ ﺍﻧﺠﻴﺮ ﺍﺻﻄﻬﺒﺎﻧﺎ ‪،‬‬ ‫ﺩﺳﺎﻣﺒﺮ ‪ .٢٠١٠‬ﺩﺭ ﻭﺑﺴﺎﻳﺖ ‪www.iranfig.com/Driedfigs.html :‬ﻣﺸﺎﻫﺪﻩ ﺷﺪ‪.‬‬ ‫‪ ۱‬ﺷﻬﺮ ﻧﻲ‪،‬ﺭﻳﺰ‬ ‫‪۳۹‬‬ ‫ﻫﻤﻴﻨﻄﻮﺭ",
+"ﮐﻪ ﮐﺎﺭﻭﺍﻥ ﺩﺭ ﺍﻳﻦ ﺟﺎ ّﺩﻩ ﭘﻴﺶ ﻣﻲ‪،‬ﺭﻓﺖ ﮐﻢ‪،‬ﮐﻢ ﮐﻮﻩ‪،‬ﻫﺎﻱ ﻗﻬﻮﻩ‪،‬ﺍﻱ ﺩﺭ ﻃﺮﻑ‬ ‫ﺭﺍﺳﺖ",
+"ﺩﻭﺭ ﻣﻲ‪،‬ﮔﺮﺩﻳﺪﻧﺪ ﻭ ﺩﺭ ﻃﺮﻑ ﭼﭗ ﺟﺎ ّﺩﻩ ﮐﻮﻫﻬﺎﻱ ﺩﻳﮕﺮﻱ ﻧﻤﺎﻳﺎﻥ ﻣﻲ‪،‬ﺷﺪﻧﺪ‪.‬‬ ‫ﺩﺭ ﺩﻭ ﻃﺮﻑ ﺟﺎ ّﺩﻩ ﺍﻳﻼﺕ ﻭ ﻃﻮﺍﻳﻒ ﻭ ﻋﺸﺎﻳﺮ ﺑﺮﺍﻱ ﻳﻴﻼﻕ",
+"ﻳﺎ ﻗﺸﻼﻕ"
+]
+},
+{
+"lang": "ar",
+"text": "[^8] - طالخونچه (Talkhooncheh) شهری در منتهی الیه جنوب غربی  استان  اصفهان  و\nدر شهرستان مبارکه است.این شهر که به مروارید منطقه مشهور  است  با  قدمتی  چند\nهزار ساله آثار تاریخی دوره‌های مختلف را در خود جای داده که از آن جمله  می‌توان\nبه مساجدی با معماری دوره صفویه، قلعه‌ها و بناهای قدیمی اشاره  کرد نام  اصلی\nاین شهر «طالقان جی» بوده که به دلیل خونریزی قوم مغول در این محل، نام  آن  به\nطالخونچه معروف گردید این  شهر  همچنین  زادگاه صاحب  بن  عباد یکی  از  وزرای\nمسلمان بوده‌است .[^۱]این شهر همچنین به دلیل وجود قلعه‌های زیاد  به  شهر  قلعه‌ها\nمعروف است.در خصوص تعداد کل قلعه‌های این شهر  نقل  فراوان  وجود  دارد.اما  نقل\nمشهور که شامل کلیه قلاع موجود و یا تخریب شده و...است حدود 30قلعه  است  ...از\nدیگر القاب این شهر می‌توان به دیار دارالمومنین اشاره کرد [^9] -  آنچه در بارهء جسد مطّهر حضرت نقطهء اولی روح من فی الملك  لرمسهُ  الاطهر\nفداءِ اين ذّره فانی تحقيق نموده اين است كه پس از شهادت جسد مطّهر  مبارك  را  با\nجسد شريف ميرزا محمّدعلی در همان ميدان انداختند كه هركس برود به بيند  و  توهين\nكند و از اوّل سپرده بودند كسی دفن نكند آقا سيد ابراهيم  خليل  و  ذبيح  كه  از\nاصحاب و كتّاب آنحضرت بودند در آنوقت با چند نفر در كارخانه شعر بافی حاجی  احمد\nميلانی پنهان بودند در فكر آنكه تدبيری كنند",
+"units": [
+"[^8] - طالخونچه (Talkhooncheh) شهری در منتهی الیه جنوب غربی استان اصفهان و در شهرستان مبارکه است.این شهر",
+"که به مروارید منطقه مشهور است",
+"با قدمتی چند هزار ساله آثار تاریخی دوره‌های مختلف را در خود جای داده",
+"که از آن جمله می‌توان به مساجدی با معماری دوره صفویه، قلعه‌ها و بناهای قدیمی اشاره کرد",
+"نام اصلی این شهر «طالقان جی» بوده",
+"که به دلیل خونریزی قوم مغول در این محل، نام آن به طالخونچه معروف گردید",
+"این شهر همچنین زادگاه صاحب بن عباد یکی از وزرای مسلمان بوده‌است",
+".[^۱]این شهر همچنین به دلیل وجود قلعه‌های زیاد به شهر قلعه‌ها معروف است.در خصوص تعداد",
+"کل قلعه‌های این شهر نقل فراوان وجود دارد.اما نقل مشهور",
+"که شامل کلیه قلاع موجود و",
+"یا تخریب شده و...است",
+"حدود 30قلعه است ...از دیگر القاب این شهر می‌توان به دیار دارالمومنین اشاره کرد",
+"[^9] - آنچه در بارهء جسد مطّهر حضرت نقطهء اولی روح من فی الملك لرمسهُ الاطهر فداءِ اين ذّره فانی تحقيق نموده اين است كه",
+"پس از شهادت جسد مطّهر مبارك را با جسد شريف ميرزا محمّدعلی در همان ميدان انداختند",
+"كه هركس برود به بيند",
+"و توهين كند",
+"و از اوّل سپرده بودند",
+"كسی دفن نكند آقا سيد",
+"ابراهيم خليل و ذبيح",
+"كه از اصحاب و كتّاب آنحضرت بودند",
+"در آنوقت با چند نفر در كارخانه شعر بافی حاجی احمد ميلانی پنهان بودند",
+"در فكر آنكه تدبيری كنند"
+]
+},
+{
+"lang": "ar",
+"text": "•  الف- اگر لحظه تحويل سال، بين بعد از ظهر سيصد و شصت و پنجمين و قبل از ظهر\n سيصد و شصت و ششمين روز سال واقع شود، سيصد و شصت و ششمين روز سال را نوروز، و\n                                        سال تمام شده را عادي به حساب مي‌آورند\n     •  ب- اگر لحظه تحويل سال، در بعد از ظهر سيصد و شصت و ششمين روز سال واقع\n  شود، سيصد و شصت و هفتمين روز سال را نوروز، و سال تمام شده را كبيسه به حساب\n                                                 مي‌آورند. (صياد ١٣۷٣، ص ٣۰ (",
+"units": [
+"• الف- اگر لحظه تحويل سال، بين بعد از ظهر سيصد و شصت و پنجمين و قبل از ظهر سيصد و شصت و ششمين روز سال واقع شود، سيصد و شصت و ششمين روز سال را نوروز، و سال تمام شده",
+"را عادي به حساب مي‌آورند • ب-",
+"اگر لحظه تحويل سال، در بعد از ظهر سيصد و شصت و ششمين روز سال واقع شود، سيصد و شصت و هفتمين روز سال را نوروز، و سال تمام شده",
+"را كبيسه به حساب مي‌آورند.",
+"(صياد ١٣۷٣، ص ٣۰ ("
+]
+},
+{
+"lang": "ar",
+"text": "بسم الله الرحمن الرحيم\nان هذا كتاب من لدنا لقوم يسمعون انما المؤمنون  الذين  اذا  سمعوا  ايات  الله\nفاذا هم يسجدون واذا مروا باللغو فاذا هم  يعرضون  اولئك  الذين  قد  كتب  الله\nعليهم في التورية والانجيل  والفرقان  الا  تحزنوا  وابشروا  بالجنة  فانكم  في\nالكتاب اصحاب الرضوان خالدون ولقد جاء امر ربك بالحق ولكن  الظالمين  قد  كانوا\nبايات الله يجحدون وان ربك يعلم غيب السموات والارض وانه لا الٓه  الا  هو  يحكم\nبالعدل ويقضي بالقسط فيما كنتم فيه تختلفون",
+"units": [
+"بسم الله الرحمن الرحيم ان هذا كتاب من لدنا لقوم يسمعون انما المؤمنون الذين",
+"اذا سمعوا ايات الله فاذا هم يسجدون واذا مروا باللغو",
+"فاذا هم يعرضون اولئك الذين قد كتب الله عليهم في التورية والانجيل والفرقان",
+"الا تحزنوا وابشروا بالجنة فانكم في الكتاب اصحاب الرضوان خالدون ولقد جاء امر ربك بالحق ولكن الظالمين قد كانوا بايات الله يجحدون",
+"وان ربك يعلم غيب السموات والارض وانه لا الٓه",
+"الا هو يحكم بالعدل ويقضي بالقسط",
+"فيما كنتم فيه تختلفون"
+]
+},
+{
+"lang": "ar",
+"text": "‫' ! ‪75+‬‬        ‫آ‪\u000fH‬ب )‪ \u0019)\u000f \\ LM‬ﺏ \u000f*\u0019‪ 3\\\u0004\" ،‬وا\u0018‪\u000f\u0010H‬س ه\b‪ ~H5 \u001b\u001c3F‬ا‪،LM.‬‬\n‫‪ \u0004:. < \u0018\b\" -81‬ذه\u0010\u0019 ا \u0004 ﺏ \u000f*\u0019‪\u0004O( ،‬ت و‪\b\u0010! \u0019$‬ب ا \u0004ا‪\u001b\u001c ، ،N‬رج درآ‪\u000fH‬ب‬\n‫' ! ‪72+‬‬         ‫)‪ \u0019)\u000f \\ LM‬ﺏ \u000f*\u0019‪ 3\\\u0004\" ،‬وا\u0018‪\u000f\u0010H‬س ه\b‪ ~H5 \u001b\u001c3F‬ا‪،LM.‬‬\n‫‪\u0004O( ،\u0019)\u000f \\ 0 )\u001b \u001b$\b\" < \u0018\b\" -85‬ت و‪\b\u0010! \u0019$‬ب ا \u0004ا‪\u001b\u001c ،N‬رج در آ‪\u000fH‬ب )‪LM‬‬",
+"units": [
+"‫' ! ‪75+‬‬ ‫آ‪\u000fH‬ب )‪ \u0019)\u000f \\ LM‬ﺏ \u000f*\u0019‪ 3\\\u0004\" ،‬وا\u0018‪\u000f\u0010H‬س ه\b‪ ~H5 \u001b 3F‬ا‪،LM.‬‬ ‫‪ \u0004:.",
+"< \u0018\b\" -81‬ذه\u0010\u0019 ا \u0004 ﺏ \u000f*\u0019‪\u0004O( ،‬ت و‪\b\u0010!",
+"\u0019$‬ب ا \u0004ا‪\u001b ، ،N‬رج درآ‪\u000fH‬ب‬ ‫' !",
+"‪72+‬‬ ‫)‪ \u0019)\u000f \\ LM‬ﺏ \u000f*\u0019‪ 3\\\u0004\" ،‬وا\u0018‪\u000f\u0010H‬س ه\b‪ ~H5 \u001b 3F‬ا‪،LM.‬‬ ‫‪\u0004O( ،\u0019)\u000f \\ 0 )\u001b \u001b$\b\" < \u0018\b\" -85‬ت و‪\b\u0010!",
+"\u0019$‬ب ا \u0004ا‪\u001b ،N‬رج در آ‪\u000fH‬ب )‪LM‬‬"
+]
+},
+{
+"lang": "ar",
+"text": "مالی آقا سيد نصراللّه باقراف بود و نام خانوادگی خود را بهين آئين گذاشت و خاندانی بدين نام برقرار نمود تا در سال ۱۳۱۴ هجری شمسی بسن ۷۲ از اينجهان درگذشت ديگر ميرزا عبداللّه مطلق كه نام پدرش استاد حسن كاشی ساز اصفهانی  در  بخش  ششم\nآورديم در سال ۱۲۹۹ به طهران متولد گرديد و در صغر سن بكسب در بازار  مشغول  شد\nو تحصيل فارسی بشبها در خارج مدرسه نمود و بعلّت شوق بخدمت امر  ابهیٰ   در  حدود\nنوزده سالگی نزد حاجی صدر همدانی و آقا ميرزا نعيم درس تبليغ  خواند  بورود  در\nمجالس مؤمنين و هدايت غافلين همّت گماشت و  در  سال  ۱۳۳۵  در  تحت  اداره  محفل\nروحانی ملّی و محلّی طهران پی درپی مسافرت تبليّغيه در بلاد ايران كرد و  سفری  به\nحيفا رفته ايّامی بتشّرف محضر حضرت ولّی امراللّه فائز گشت  و  ابلاغيّه  های  متعّدد\nشامل عنايات و الطاف كثيره در حقّش صدور يافت و  در  مدّت  الحيات  ازدواج  نكرده\nمجرد زيست و بالاخره در سال ۱۳۵۷ در طهران درگذشت",
+"units": [
+"مالی آقا سيد نصراللّه باقراف بود",
+"و نام خانوادگی خود را بهين آئين گذاشت و خاندانی بدين نام برقرار نمود",
+"تا در سال ۱۳۱۴ هجری شمسی بسن ۷۲ از اينجهان درگذشت ديگر ميرزا عبداللّه مطلق",
+"كه نام پدرش استاد حسن كاشی ساز اصفهانی در بخش ششم آورديم در سال ۱۲۹۹ به طهران متولد گرديد",
+"و در صغر سن بكسب در بازار مشغول شد",
+"و تحصيل فارسی بشبها در خارج مدرسه نمود",
+"و بعلّت شوق بخدمت امر ابهیٰ در حدود نوزده سالگی نزد حاجی صدر همدانی و آقا ميرزا نعيم درس تبليغ خواند",
+"بورود در مجالس مؤمنين و هدايت غافلين همّت گماشت و در سال ۱۳۳۵ در تحت اداره محفل روحانی ملّی و محلّی طهران پی درپی مسافرت تبليّغيه در بلاد ايران كرد",
+"و سفری به حيفا رفته ايّامی بتشّرف محضر حضرت",
+"ولّی امراللّه فائز گشت",
+"و ابلاغيّه های متعّدد شامل عنايات و الطاف كثيره در حقّش صدور يافت",
+"و در مدّت الحيات ازدواج نكرده مجرد زيست و بالاخره در سال ۱۳۵۷ در طهران درگذشت"
+]
+},
+{
+"lang": "ar",
+"text": "کنند که وی باید حتم ًا ”بابی“ خوبی باشد که با شوق و خوشنودی زیاد به منزلۀ دلیل اثبات\nدارد تقیه می‌­کند و لذا نبایست او را باور کرد. بابی بودن آن گروه تلقی میشود 44.پس اینجا",
+"units": [
+"کنند که وی باید حتم ًا ”بابی“ خوبی باشد",
+"که با شوق و خوشنودی زیاد به منزلۀ دلیل اثبات دارد تقیه می‌­کند",
+"و لذا نبایست او را باور کرد.",
+"بابی بودن آن گروه تلقی میشود 44.پس اینجا"
+]
+},
+{
+"lang": "ar",
+"text": "بسم الله الرحمن الرحيم\nسبحان الذي قد نزل الكتاب في تسع ايات مستسر لمن كان على هدى من  لدي  وكان  من\nالساجدين ولقد نقص عليك من نبا الاولين في لوح الاول من كتاب كريم ان  اتبع  ما\nينزل من حكم ربك فانه لهو الحق في قسطاس كريم ولقد علمنا ما يقول  الظالمون  في\nايام ربك فلا يحزنك قولهم فان من في النار لا محيص له في كتاب ربك من  قريب  قل\nاصبروا يا ايها الملا فان لكل كتابا قد احكمت بنفسه ولا حكم الا لله  وكل  لديه\nلخاضعون",
+"units": [
+"بسم الله الرحمن الرحيم سبحان الذي قد نزل الكتاب في تسع ايات مستسر لمن كان على هدى من لدي",
+"وكان من الساجدين ولقد نقص عليك من نبا الاولين في لوح الاول من كتاب كريم ان اتبع ما ينزل من حكم ربك",
+"فانه لهو الحق في قسطاس كريم ولقد علمنا ما يقول الظالمون في ايام ربك فلا يحزنك قولهم",
+"فان من في النار لا محيص له في كتاب ربك من قريب قل اصبروا يا ايها الملا",
+"فان لكل كتابا قد احكمت بنفسه ولا حكم",
+"الا لله وكل لديه لخاضعون"
+]
+},
+{
+"lang": "ar",
+"text": "بسم الله الرحمن الرحيم\nحمرا تنزيل من كتاب ربك في لوح حفيظ وان هذا صراط علي في  حكم  الكتاب  لمستقيم\nوانه لهو السر في صحف النبيين والمرسلين يتلو كتاب ربك من  حكم  بديع  ويسئلونك\nمن حكم يونس وما نزل على يوسف قل حكم كل ذلك في لوح الاذن  لمسطور  والله  يشهد\nلمن حج البيت من دون علم الذكر اثما عظيما وان اول  الدين  في  كتاب  ربك  كلمة\nالعدل لا الٓه الا هو العلي الكبير",
+"units": [
+"بسم الله الرحمن الرحيم حمرا تنزيل من كتاب ربك في لوح حفيظ",
+"وان هذا صراط علي في حكم الكتاب لمستقيم",
+"وانه لهو السر في صحف النبيين والمرسلين يتلو كتاب ربك من حكم بديع",
+"ويسئلونك من حكم يونس",
+"وما نزل على يوسف",
+"قل حكم كل ذلك في لوح الاذن لمسطور والله يشهد لمن حج البيت من دون علم الذكر اثما عظيما",
+"وان اول الدين في كتاب ربك كلمة العدل لا الٓه",
+"الا هو العلي الكبير"
+]
+},
+{
+"lang": "ar",
+"text": "‌­ صدوشصت سالۀ خود به دست فراموشی\nفراموشی سپرده شده است ،در حینی که دیگرانی با وجود خاطرات قدمای بهائیان و زندگی‌­نامههای",
+"units": [
+"‌­ صدوشصت سالۀ خود به دست فراموشی فراموشی سپرده شده است ،در حینی که دیگرانی با وجود خاطرات قدمای بهائیان و زندگی‌­نامههای"
+]
+},
+{
+"lang": "fa",
+"text": "⁅s1⁆ای سرمست جام الست این جام سرشار را بدست گیر و بر عاشقان جمال رحمن دور زن بادهٴ الهی ده و نغمهٴ یزدانی بشنوان و بگو آن نور مبین آن برق جبین آن عرش برین باقیست ببین از حیّز خاک پنهان چه باک در عالم پاک کافیست ببین تأیید از اوست توفیق از اوست توحید از اوست وافیست ببین و البهاء علیک⁅/s1⁆",
+"units": [
+"ای سرمست جام الست این جام سرشار را بدست گیر و بر عاشقان جمال رحمن دور زن بادهٴ الهی ده",
+"و نغمهٴ یزدانی بشنوان و بگو آن نور مبین آن برق جبین آن عرش برین باقیست ببین از حیّز خاک پنهان چه باک در عالم پاک کافیست ببین تأیید",
+"از اوست توفیق از اوست توحید",
+"از اوست وافیست ببین و البهاء علیک"
+]
+},
+{
+"lang": "fa",
+"text": "⁅s1⁆ای قوم، شما مقتدريد يا پروردگار عالميان؟ اگر او مقتدر است ظاهر فرمود مظهر نفس خود را هر قسم كه اراده فرمود. و اگر ذنب عبد اين است، اين نبوده از نزد او، بلكه از نزد خالق زمين و آسمان. ای قوم، بشنويد ندايم را و تسنيم حيوان را از كأس رحمن در اين ايّام بياشاميد و نباشيد از محرومان!⁅/s1⁆",
+"units": [
+"ای قوم، شما مقتدريد يا پروردگار عالميان؟",
+"اگر او مقتدر است",
+"ظاهر فرمود مظهر نفس خود را هر قسم كه اراده فرمود. و",
+"اگر ذنب عبد اين است، اين نبوده از نزد او، بلكه از نزد خالق زمين و آسمان.",
+"ای قوم، بشنويد ندايم را",
+"و تسنيم حيوان را از كأس رحمن در اين ايّام بياشاميد",
+"و نباشيد از محرومان!"
+]
+},
+{
+"lang": "fa",
+"text": "⁅s1⁆الها کریما رحیما غفورا مدافع مشرکین حصنهای موحّدین را بر باد داد و از بنادق منکرین بنیان ذکر و عرفان متزعزع و قلوب مقرّبین و مخلصین [مرتجل] و مضطرب اگرچه ای خدای عالم دانا اعمال این حزب و افعالش بعد از عزّت ذلّت آورده و بعد از قدرت عجز آشکار نموده ولکن از تو فضل قدیمت را میطلبیم و عرض مینمائیم بر اعمال و افعال ما منگر چه که لایق نظر نبوده و نیست بر شفقت و کرم خود نظر فرما توئی که هر ذی لسانی بر عفوت شهادت داده و هر ذی بصری بر قدرتت شاهد و گواه لا اله الّا انت الغفور الرّحیم⁅/s1⁆",
+"units": [
+"الها کریما رحیما غفورا مدافع مشرکین حصنهای موحّدین را بر باد داد",
+"و از بنادق منکرین بنیان ذکر و عرفان متزعزع و قلوب مقرّبین و مخلصین [مرتجل] و مضطرب اگرچه",
+"ای خدای عالم دانا اعمال این حزب و افعالش بعد از عزّت ذلّت آورده و بعد از قدرت عجز آشکار نموده",
+"ولکن از تو فضل قدیمت را میطلبیم و عرض مینمائیم بر اعمال و افعال ما منگر چه",
+"که لایق نظر نبوده",
+"و نیست بر شفقت و کرم خود نظر فرما توئی",
+"که هر ذی لسانی بر عفوت شهادت داده و هر ذی بصری بر قدرتت شاهد و گواه لا اله",
+"الّا انت الغفور الرّحیم"
+]
+},
+{
+"lang": "fa",
+"text": "⁅s1⁆انشآءاللّه از نار سدرهٴ ربّانیّه بشأنی مشتعل شوی که حرارت آن افئدهٴ بارده را جذب نموده بیمین احدیّه کشاند⁅/s1⁆",
+"units": [
+"انشآءاللّه از نار سدرهٴ ربّانیّه بشأنی مشتعل شوی",
+"که حرارت آن افئدهٴ بارده را جذب نموده بیمین احدیّه کشاند"
+]
+},
+{
+"lang": "fa",
+"text": "⁅s1⁆الهی الهی هؤلآء⁅/s1⁆ ⁅s2⁆عبادک المخلصون المنجذبون بنفحات قدسک المشتعلون بنار محبّتک النّاطقون بالثّنآء علیک المبیّنون لحجّتک و برهانک المروّجون لدینک ابتهل الیک و اسئلک ان تؤیّدهم بما وعدتهم بتأییدات صمدانیّتک و نصرة جنود ملئک الأعلی و قبیل ملائکتک المقرّبین ربّ⁅/s2⁆ ⁅s3⁆نوّر وجوههم بنور لامع و عطّر مشامّهم بطیب ساطع و اقرّ اعینهم بمشاهدة آیاتک و اسمع آذانهم ندائک الأحلی من ملکوتک الأبهی حتّی یکونوا عونة لعبدک هذا فی نشر نفحاتک بین الوری و انّک⁅/s3⁆ ⁅s4⁆لتعلم یا محبوبی انّنی احبّ عبادک المخلصین فی ارض الشّین و افدیهم بروحی و نفسی و ابتهل الیک فی جنح اللّیالی و بطون الأسحار ان تجعل هؤلآء الأبرار سرجاً نورانیّة ساطعة بالأنوار انّک انت العزیز المختار انّک انت الکریم المتعال و علیکم البهآء الأبهی⁅/s4⁆",
+"units": [
+"الهی الهی هؤلآء عبادک المخلصون المنجذبون بنفحات قدسک المشتعلون بنار محبّتک النّاطقون بالثّنآء علیک المبیّنون لحجّتک و برهانک المروّجون لدینک ابتهل الیک و اسئلک ان تؤیّدهم بما وعدتهم بتأییدات صمدانیّتک و نصرة جنود ملئک الأعلی و قبیل ملائکتک المقرّبین ربّ نوّر وجوههم بنور لامع و عطّر مشامّهم بطیب ساطع و اقرّ اعینهم بمشاهدة آیاتک و اسمع آذانهم ندائک الأحلی من ملکوتک الأبهی حتّی یکونوا عونة لعبدک هذا فی نشر نفحاتک بین الوری و انّک لتعلم",
+"یا محبوبی انّنی احبّ عبادک المخلصین فی ارض الشّین و افدیهم بروحی",
+"و نفسی و ابتهل الیک فی جنح اللّیالی و بطون الأسحار ان تجعل هؤلآء الأبرار سرجاً نورانیّة ساطعة بالأنوار انّک انت العزیز المختار انّک انت الکریم المتعال و علیکم البهآء الأبهی"
+]
+},
+{
+"lang": "fa",
+"text": "⁅s1⁆نمينمود بارى اى عباد نداى على اعلى را در ظهور اخرى او بشنويد و جميع اين دلائل⁅/s1⁆",
+"units": [
+"نمينمود بارى اى عباد نداى على اعلى را در ظهور اخرى او بشنويد",
+"و جميع اين دلائل"
+]
+},
+{
+"lang": "en",
+"text": "| 1 | wáw | waláya/guardianship | 12b-19a |\n| 2 | alif | álá'/blessings | 19a-19b |\n| 3 | lám | liwá'/banner | 19b-20a |\n| 4 | 'ayn | 'ulúw//loftiness | 20a-20b |\n| 5 | sád | samadániya/everlastingness | 20b-20b |\n| 6 | rá' | rahma/mercy | 20b-21b |\n| 7 | alif | annáya/identity | 21b-21b |\n| 8 | nún | núr/light | 21b-22a |\n| 9 | alif | iráda/purpose | 22a-22b |\n| 10 | lám | la'áli/pearls | 22b-23a |\n| 11 | alif | ibdá'/origination | 23a-23a |\n| 12 | nún | núr | 23a-23b |\n| 13 | sín | saná'/splendour | 23b-23b |\n| 14 | alif | áyát/signs | 23b-24a |",
+"units": [
+"| 1 | wáw | waláya/guardianship | 12b-19a | | 2 | alif | álá'/blessings | 19a-19b | | 3 | lám | liwá'/banner | 19b-20a | | 4 | 'ayn | 'ulúw//loftiness | 20a-20b | | 5 | sád | samadániya/everlastingness | 20b-20b | | 6 | rá' | rahma/mercy | 20b-21b | | 7 | alif | annáya/identity | 21b-21b | | 8 | nún | núr/light | 21b-22a | | 9 | alif | iráda/purpose | 22a-22b | | 10 | lám | la'áli/pearls | 22b-23a | | 11 | alif | ibdá'/origination | 23a-23a | | 12 | nún | núr | 23a-23b | | 13 | sín | saná'/splendour | 23b-23b | | 14 | alif | áyát/signs | 23b-24a |"
+]
+},
+{
+"lang": "en",
+"text": "But another question arises: Man’s condition is one of utter helplessness and absolute poverty. All might and power belong to God alone, and man’s exaltation and abasement depend on the will and purpose of the Most High. Thus it is said in the Gospel that God is like a potter who makes “one vessel unto honour, and another unto dishonour”.[^151]  Now, the dishonoured vessel has no right to reproach the potter, saying, “Why did you not make me a precious cup that would be passed from hand to hand? ”The meaning of these words is that souls occupy different stations. That which occupies the lowest station of existence, like the mineral, has no right to object, saying, “O God, why have you denied me the perfections of the plant?” Likewise, the plant has no right to protest that it has been deprived of the perfections of the animal realm. And, similarly, it is not befitting for the animal to complain of the want of human perfections. No, all these things are perfect in their own degree and must pursue the perfections of that degree. As we have said previously, that which is inferior in rank has no right or qualification to aspire to the station and perfections of that which is superior, but must progress within its own degree.[^152]",
+"units": [
+"But another question arises:",
+"Man’s condition is one of utter helplessness and absolute poverty.",
+"All might and power belong to God alone,",
+"and man’s exaltation and abasement depend on the will and purpose of the Most High.",
+"Thus it is said in the Gospel that God is like a potter who makes “one vessel unto honour,",
+"and another unto dishonour”.[^151] Now, the dishonoured vessel has no right to reproach the potter, saying, “Why did you not make me a precious cup that would be passed from hand to hand?",
+"”The meaning of these words is that souls occupy different stations.",
+"That which occupies the lowest station of existence, like the mineral, has no right to object, saying, “O God, why have you denied me the perfections of the plant?”",
+"Likewise, the plant has no right to protest that it has been deprived of the perfections of the animal realm.",
+"And, similarly, it is not befitting for the animal to complain of the want of human perfections.",
+"No, all these things are perfect in their own degree and must pursue the perfections of that degree.",
+"As we have said previously,",
+"that which is inferior in rank has no right or qualification to aspire to the station and perfections of that which is superior,",
+"but must progress within its own degree.[^152]"
+]
+},
+{
+"lang": "en",
+"text": "The Báb regained His home and for some time was able to lead, in the privacy of His house, and in close association with His family and kinsmen, a life of comparative tranquillity. In those days He celebrated the advent of the first Naw-Rúz since He had declared His Mission. That festival fell, in that year, on the tenth day of the month of Rabí‘u’l-Avval, 1261 A.H.[^156]",
+"units": [
+"The Báb regained His home and for some time was able to lead, in the privacy of His house,",
+"and in close association with His family and kinsmen, a life of comparative tranquillity.",
+"In those days He celebrated the advent of the first Naw-Rúz since He had declared His Mission.",
+"That festival fell, in that year, on the tenth day of the month of Rabí‘u’l-Avval, 1261 A.H.[^156]"
+]
+},
+{
+"lang": "en",
+"text": "The Báb’s appeal, which was originally addressed to His followers in Persia, was soon transmitted to the adherents of His Faith in ‘Iráq. Ṭáhirih gloriously responded. Her example was followed immediately by a large number of her faithful admirers, all of whom expressed their readiness to journey forthwith to Ḵhurásán. The ‘ulamás of Karbilá sought to dissuade her from undertaking that journey. Perceiving immediately the motive which prompted them to tender her such advice, and aware of their malignant design, she addressed to each of these sophists a lengthy epistle in which she set forth her motives and exposed their dissimulation.[^273][pg 272]",
+"units": [
+"The Báb’s appeal, which was originally addressed to His followers in Persia, was soon transmitted to the adherents of His Faith in ‘Iráq. Ṭáhirih gloriously responded.",
+"Her example was followed immediately by a large number of her faithful admirers, all of whom expressed their readiness to journey forthwith to Ḵhurásán.",
+"The ‘ulamás of Karbilá sought to dissuade her from undertaking that journey.",
+"Perceiving immediately the motive which prompted them to tender her such advice,",
+"and aware of their malignant design, she addressed to each of these sophists a lengthy epistle in which she set forth her motives and exposed their dissimulation.[^273][pg 272]"
+]
+},
+{
+"lang": "en",
+"text": "[\\[172\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=1#_ftnref172) Lawson, \"Exploded Commentary\".",
+"units": [
+"[\\[172\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=1#_ftnref172) Lawson, \"Exploded Commentary\"."
+]
+},
+{
+"lang": "en",
+"text": "As soon as the Báb revealed His Cause, Bahá’u’lláh proclaimed: “This great Man is the Lord of the righteous, and[pg 33]  it is incumbent upon all to bear allegiance unto Him.” He arose to promote the Cause of the Báb, adducing decisive proofs and conclusive arguments of His truth. Although the divines of the nation had obliged the Persian government to exert the most vehement opposition; although they had all issued decrees ordering the massacre, pillage, persecution, and annihilation of the Báb’s followers; and although throughout the land the people had undertaken to kill, burn, and plunder them, and even harass their women and children — despite all this, Bahá’u’lláh was engaged, with the utmost constancy and composure, in exalting the word of the Báb. Nor did He seek for a moment to conceal Himself, but associated openly and visibly with His enemies, occupied Himself with adducing proofs and arguments, and became renowned for exalting the Word of God. Time and again He suffered intense adversities, and at every moment His life was in grave danger.",
+"units": [
+"As soon as the Báb revealed His Cause, Bahá’u’lláh proclaimed:",
+"“This great Man is the Lord of the righteous, and[pg 33] it is incumbent upon all to bear allegiance unto Him.”",
+"He arose to promote the Cause of the Báb, adducing decisive proofs and conclusive arguments of His truth.",
+"Although the divines of the nation had obliged the Persian government to exert the most vehement opposition;",
+"although they had all issued decrees ordering the massacre, pillage, persecution,",
+"and annihilation of the Báb’s followers;",
+"and although throughout the land the people had undertaken to kill, burn, and plunder them,",
+"and even harass their women and children — despite all this, Bahá’u’lláh was engaged, with the utmost constancy and composure, in exalting the word of the Báb.",
+"Nor did He seek for a moment to conceal Himself,",
+"but associated openly and visibly with His enemies, occupied Himself with adducing proofs and arguments,",
+"and became renowned for exalting the Word of God.",
+"Time and again He suffered intense adversities,",
+"and at every moment His life was in grave danger."
+]
+},
+{
+"lang": "en",
+"text": "information) narreme (a word not admitted to the OED) is a distinctively Islamic process, fascinating to trace throughout the exegetic literature. 93 In a sense, all fabrics are related,",
+"units": [
+"information) narreme (a word not admitted to the OED) is a distinctively Islamic process, fascinating to trace throughout the exegetic literature.",
+"93 In a sense, all fabrics are related,"
+]
+},
+{
+"lang": "en",
+"text": "[\\[1037\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=3#_ftnref1037) Masháriq, p.166. Lest it be thought that the last phrase is a misprint, it is found quoted in this way at Baq., p.9, C, f.3a, and I, p.157: wa 'l-firdaws rá'yu 'l-'ayn. The editor's note in the text reads simply: fí 'l-asl \"afradaws\".",
+"units": [
+"[\\[1037\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=3#_ftnref1037) Masháriq, p.166. Lest it be thought that the last phrase is a misprint, it is found quoted in this way at Baq., p.9, C, f.3a, and I, p.157:",
+"wa 'l-firdaws rá'yu 'l-'ayn.",
+"The editor's note in the text reads simply: fí 'l-asl \"afradaws\"."
+]
+},
+{
+"lang": "en",
+"text": "As Abdul Ba-ha spoke leaning back in a chair drawn near the window of his room in this the hotel-he glanced from the rain flecked leaves of a swaying tree skating its branches near the panes of glass. The gray beared man \"with the message of universal religion wrinkled his high forehead at times and occasionally closed his eyes as though looking into the future for the realization of the message which he believes is finding material ground for fruitage in America.",
+"units": [
+"As Abdul Ba-ha spoke leaning back in a chair drawn near the window of his room in this the hotel-he glanced from the rain flecked leaves of a swaying tree skating its branches near the panes of glass.",
+"The gray beared man \"with the message of universal religion wrinkled his high forehead at times and occasionally closed his eyes as though looking into the future for the realization of the message which he believes is finding material ground for fruitage in America."
+]
+},
+{
+"lang": "en",
+"text": "**Previous translations**  \n  \nChapter four compares the various translations of Ibrahim Kheiralla, Jean Stannard, Aminulla Fareed, and Shoghi Effendi. This section (67-90), along with the final appendix (191-215), with its side-by-side comparison of five versions of the first twenty Arabic Hidden Words, is absolutely fascinating. The Bahá'í community is generally unaware of the extent to which these early translations laid the groundwork for Shoghi Effendi's translation of the _Hidden Words_. Sometimes Kheiralla or Fareed first hit upon the phrasing that Shoghi Effendi later adopted, though each subsequent translation tends to improve upon its predecessors (as is often the case with successive translations). Though Malouf concludes that Shoghi Effendi's English version should be seen as a new translation rather than a revision of the earlier translations (78), she does show Shoghi Effendi hard at work on revising his own translation.",
+"units": [
+"**Previous translations** Chapter four compares the various translations of Ibrahim Kheiralla, Jean Stannard, Aminulla Fareed, and Shoghi Effendi.",
+"This section (67-90), along with the final appendix (191-215), with its side-by-side comparison of five versions of the first twenty Arabic Hidden Words, is absolutely fascinating.",
+"The Bahá'í community is generally unaware of the extent to which these early translations laid the groundwork for Shoghi Effendi's translation of the _Hidden Words_.",
+"Sometimes Kheiralla or Fareed first hit upon the phrasing that Shoghi Effendi later adopted,",
+"though each subsequent translation tends to improve upon its predecessors (as is often the case with successive translations).",
+"Though Malouf concludes that Shoghi Effendi's English version should be seen as a new translation rather than a revision of the earlier translations (78), she does show Shoghi Effendi hard at work on revising his own translation."
+]
+},
+{
+"lang": "en",
+"text": "[\\[989\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=3#_ftnref989) Qasída, p.236.",
+"units": [
+"[\\[989\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=3#_ftnref989) Qasída, p.236."
+]
+},
+{
+"lang": "en",
+"text": "One of his functions was to authenticate the handwriting of Baha’u’llah, and he spoke little English, his son Dr Samandari acting as his interpreter. Dr Samandari was now a man in his fifties. Mr Samandari had spent much of his life travelling, living out of a suitcase and I understood that he had not seen his son since he was fifteen years old. The Baha’is in Yellowknife were deadly afraid that Mr Samandari my die while with us, and none of us any idea of how to handle a funeral for such a unique person.",
+"units": [
+"One of his functions was to authenticate the handwriting of Baha’u’llah,",
+"and he spoke little English, his son Dr Samandari acting as his interpreter.",
+"Dr Samandari was now a man in his fifties.",
+"Mr Samandari had spent much of his life travelling, living out of a suitcase and I understood that he had not seen his son since he was fifteen years old.",
+"The Baha’is in Yellowknife were deadly afraid that Mr Samandari my die while with us,",
+"and none of us any idea of how to handle a funeral for such a unique person."
+]
+},
+{
+"lang": "en",
+"text": "[\\[109\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=1#_ftnref109) Corbin, \"Visionary Dreams,\" pp.406-7.",
+"units": [
+"[\\[109\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=1#_ftnref109) Corbin, \"Visionary Dreams,\" pp.406-7."
+]
+},
+{
+"lang": "en",
+"text": "Apprise the followers of Assurance that a new Orchard hath appeared near the Rizwan, in the Plain of Holiness, and that all the people of the high Heavens, and the dwellers of the eternal Paradise, are surrounding it. Endeavour to reach that Station and discover the truths of the Mystery of Love from its red Anemonies, and unveil abundant knowledge of the Oneness from its eternal Fruits. Enlightened are the eyes of whosoever entereth it safely.",
+"units": [
+"Apprise the followers of Assurance that a new Orchard hath appeared near the Rizwan, in the Plain of Holiness,",
+"and that all the people of the high Heavens,",
+"and the dwellers of the eternal Paradise, are surrounding it.",
+"Endeavour to reach that Station and discover the truths of the Mystery of Love from its red Anemonies,",
+"and unveil abundant knowledge of the Oneness from its eternal Fruits.",
+"Enlightened are the eyes of whosoever entereth it safely."
+]
+},
+{
+"lang": "en",
+"text": "Human education, however, consists in civilization and progress, that is, sound governance, social order, human welfare, commerce and industry, arts and sciences, momentous discoveries, and great undertakings, which are the central features distinguishing man from the animal.",
+"units": [
+"Human education, however, consists in civilization and progress,",
+"that is, sound governance, social order, human welfare, commerce and industry, arts and sciences, momentous discoveries, and great undertakings,",
+"which are the central features distinguishing man from the animal."
+]
+},
+{
+"lang": "en",
+"text": "[22.9] Seek with all your hearts this Heavenly Light, so that you may be enabled to understand the realities, that you may know the secret things of God, that the hidden ways may be made plain before your eyes.",
+"units": [
+"[22.9] Seek with all your hearts this Heavenly Light,",
+"so that you may be enabled to understand the realities,",
+"that you may know the secret things of God,",
+"that the hidden ways may be made plain before your eyes."
+]
+},
+{
+"lang": "en",
+"text": "Thou hast made mention of the people of Tár.[^18] We have set Our face toward the servants of God therein and advise them first to consider that which the Point of the Bayán hath revealed concerning this Revelation whereby all names and titles have been shaken, the idols of vain imaginings have crumbled and the Tongue of Grandeur hath, from the realm of glory, proclaimed: By the righteousness of God! The Hidden Treasure, the Impenetrable Mystery, hath been uncovered to men’s eyes, causing all things, whether of the past or of the future, to rejoice. He hath said, and His word is the truth: “Of all the tributes I have paid to Him Who is to come after Me, the greatest is this, My written confession, that no words of Mine can adequately describe Him, nor can any reference to Him in My Book, the Bayán, do justice to His Cause.”",
+"units": [
+"Thou hast made mention of the people of Tár.[^18] We have set Our face toward the servants of God therein and advise them first to consider that which the Point of the Bayán hath revealed concerning this Revelation whereby all names and titles have been shaken, the idols of vain imaginings have crumbled and the Tongue of Grandeur hath, from the realm of glory, proclaimed:",
+"By the righteousness of God!",
+"The Hidden Treasure, the Impenetrable Mystery, hath been uncovered to men’s eyes, causing all things, whether of the past or of the future, to rejoice. He hath said,",
+"and His word is the truth:",
+"“Of all the tributes I have paid to Him Who is to come after Me, the greatest is this, My written confession,",
+"that no words of Mine can adequately describe Him,",
+"nor can any reference to Him in My Book, the Bayán, do justice to His Cause.”"
+]
+},
+{
+"lang": "en",
+"text": "Accordingly, after the advent of Bahá’u’lláh the earth and\nthe heaven have become illumined by the Word of God. Those\nwho have believed in Him have actually seen God. Recognition\nand belief in the Manifestation of God is, in fact, meeting with\nGod.\n39\\. The crookedness of the nations will be\nrectified",
+"units": [
+"Accordingly, after the advent of Bahá’u’lláh the earth and the heaven have become illumined by the Word of God.",
+"Those who have believed in Him have actually seen God.",
+"Recognition and belief in the Manifestation of God is, in fact, meeting with God. 39\\.",
+"The crookedness of the nations will be rectified"
+]
+},
+{
+"lang": "en",
+"text": "<pg num=\"2\"/>\n> Shi’ism to a World (assimilation of ‘civic virtues’) as part of the Baha’i response to modernity.\n> Religion (Cambridge: This process of ‘sacralizing’ certain secular values may be viewed as part of\n> Cambridge University\nPress, 1987) 74.\nthe Baha’i response to modernity.",
+"units": [
+"<pg num=\"2\"/> > Shi’ism to a World (assimilation of ‘civic virtues’) as part of the Baha’i response to modernity. > Religion (Cambridge:",
+"This process of ‘sacralizing’ certain secular values may be viewed as part of > Cambridge University Press, 1987) 74.",
+"the Baha’i response to modernity."
+]
+},
+{
+"lang": "en",
+"text": "[35.1] Ponder awhile. What is it that prompted, in every Dispensation, the peoples of the earth to shun the Manifestation of the All-Merciful? What could have impelled them to turn away from Him and to challenge His authority? Were men to meditate on these words which have flowed from the Pen of the Divine Ordainer, they would, one and all, hasten to embrace the truth of this God-given, and ever-enduring Revelation, and would testify to that which He Himself hath solemnly affirmed. It is the veil of idle imaginations which, in the days of the Manifestations of the Unity of God and the Daysprings of His everlasting glory, hath intervened, and will continue to intervene, between them and the rest of mankind. For in those days, He Who is the Eternal Truth manifesteth Himself in conformity with that which He Himself hath purposed, and not according to the desires and expectations of men. Even as He hath revealed: “So oft, then, as an Apostle cometh to you with that which your souls desire not, do ye swell with pride, and treat some as impostors, and slay others.”",
+"units": [
+"[35.1] Ponder awhile. What is it that prompted, in every Dispensation, the peoples of the earth to shun the Manifestation of the All-Merciful?",
+"What could have impelled them to turn away from Him and to challenge His authority?",
+"Were men to meditate on these words which have flowed from the Pen of the Divine Ordainer, they would, one and all, hasten to embrace the truth of this God-given, and ever-enduring Revelation,",
+"and would testify to that which He Himself hath solemnly affirmed.",
+"It is the veil of idle imaginations which, in the days of the Manifestations of the Unity of God and the Daysprings of His everlasting glory, hath intervened,",
+"and will continue to intervene, between them and the rest of mankind.",
+"For in those days, He Who is the Eternal Truth manifesteth Himself in conformity with that which He Himself hath purposed,",
+"and not according to the desires and expectations of men.",
+"Even as He hath revealed: “So oft, then,",
+"as an Apostle cometh to you with that which your souls desire not, do ye swell with pride,",
+"and treat some as impostors, and slay others.”"
+]
+},
+{
+"lang": "en",
+"text": "[40.26] The Law must reign, and not the individual; thus will the world become a place of beauty and true brotherhood will be realized. Having attained solidarity, men will have found truth.",
+"units": [
+"[40.26] The Law must reign,",
+"and not the individual;",
+"thus will the world become a place of beauty and true brotherhood will be realized.",
+"Having attained solidarity, men will have found truth."
+]
+},
+{
+"lang": "en",
+"text": "To take as an illustration of this, the sun. We do not belive [believe] in the existence of the sun because of the shadows cast by its light; or because of the effect it produces in making the grass grow. But we believe in the sun because we see it shining in the heavens. We know that the sun exists by looking at it — not merely by its effects and the results it produces. So, if you know that a man is a very clever and excellent carpenter, it is not needful for you to see all the things that he had made, in order to believe that he can do them, but you believe he can do these things, because you know the man and his skill; and you know that he has the ability to make them. So, we must always believe in a prophet of GOD, in and for Himself — and we must not search for proofs and prophecies in order to enable us to believe in Him. It is said that the disciples understood these things after Jesus was glorified.",
+"units": [
+"To take as an illustration of this, the sun.",
+"We do not belive [believe] in the existence of the sun because of the shadows cast by its light;",
+"or because of the effect it produces in making the grass grow.",
+"But we believe in the sun because we see it shining in the heavens.",
+"We know that the sun exists by looking at it — not merely by its effects and the results it produces. So,",
+"if you know that a man is a very clever and excellent carpenter, it is not needful for you to see all the things that he had made, in order to believe that he can do them,",
+"but you believe he can do these things,",
+"because you know the man and his skill;",
+"and you know that he has the ability to make them.",
+"So, we must always believe in a prophet of GOD, in and for Himself — and we must not search for proofs and prophecies in order to enable us to believe in Him.",
+"It is said that the disciples understood these things after Jesus was glorified."
+]
+},
+{
+"lang": "en",
+"text": "[\\[508\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=5#_ftnref508) This passage is a good example of the melding of Sufi and Shí'í motifs and vocabulary, e.g., esp. sálikín. The reference to \"their Imám\" is striking, in that it suggests a separate group and is probably an example of the frequent merging of the figures of the Imám Husayn and Husayn b. Mansúr al-Halláj in tradition. This particular statement has been translated as follows:",
+"units": [
+"[\\[508\\]](https://bahai-library.com/lawson_quran_commentary_bab&chapter=5#_ftnref508) This passage is a good example of the melding of Sufi and Shí'í motifs and vocabulary, e.g., esp. sálikín.",
+"The reference to \"their Imám\" is striking, in that it suggests a separate group and is probably an example of the frequent merging of the figures of the Imám Husayn and Husayn b.",
+"Mansúr al-Halláj in tradition.",
+"This particular statement has been translated as follows:"
+]
+},
+{
+"lang": "en",
+"text": "Thus to partake of the Quranic experience is to \"partake\" of divinity - to participate\nThe response of the audience indicates that it was not the discursive and           in the Divine through a symbol that is ·utterly drenched in divinity.",
+"units": [
+"Thus to partake of the Quranic experience is to \"partake\" of divinity - to participate The response of the audience indicates that it was not the discursive and in the Divine through a symbol that is ·utterly drenched in divinity."
+]
+},
+{
+"lang": "en",
+"text": "> See they not how many generations we have destroyed before them? We had settled them on the earth as we have not settled you, and we sent down the very heavens upon them in copious rains, and we made the rivers to flow beneath their feet: yet we destroyed them in their sins, and raised up other generations to succeed them.\n> (Súrah VI, \"Cattle\", v. 6)",
+"units": [
+"> See they not how many generations we have destroyed before them?",
+"We had settled them on the earth as we have not settled you,",
+"and we sent down the very heavens upon them in copious rains,",
+"and we made the rivers to flow beneath their feet:",
+"yet we destroyed them in their sins,",
+"and raised up other generations to succeed them.",
+"> (Súrah VI, \"Cattle\", v. 6)"
+]
+},
+{
+"lang": "ar",
+"text": "قل",
+"units": [
+"قل"
+]
+},
+{
+"lang": "en",
+"text": "One.",
+"units": [
+"One."
+]
+},
+{
+"lang": "en",
+"text": "A short line",
+"units": [
+"A short line"
+]
+},
+{
+"lang": "fa",
+"text": "",
+"units": []
+},
+{
+"lang": "ar",
+"text": "<!-- c --> بسم الله <pb n=\"3\"/> الرحمن الرحيم",
+"units": [
+"بسم الله الرحمن الرحيم"
+]
+}
+]
+}

@@ -35,6 +35,7 @@ One-line index for AI navigation. Open the file for full documentation.
 - `text-normalize.js` — shared normalization + hashing primitives. `normalizeForEmbedding`, `hashNormalized`, `hashContent`. Single source of truth for the regex used to dedup paragraphs across indexer / ingester / sites-ingester.
 - `embedding-cache.js` — sidecar SQLite for cross-doc embedding reuse.
 - `markers.js` — sentence/phrase marker primitives (`⁅s1⁆…⁅/s1⁆`).
+- `phrases.js` — phrase units for the phrase index: `segment(text, lang)` → `{start,end}` offsets (per-language clause rules, never by length), `anchored()` embedding text, `SEG_VERSION`. Plan: planning/phrase-index-plan.md.
 - `slug.js` — `generateDocSlug`, `slugifyPath`. Used by ingester + redirect pipelines.
 - `cloudflare-redirects.js` — push slug-change redirects to CF KV.
 
