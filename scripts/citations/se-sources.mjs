@@ -232,7 +232,7 @@ function emit() {
     if (!r) {
       const vd = out.prepare('SELECT verdict FROM verdict WHERE id = ?').get(q.id);
       const v = vd && JSON.parse(vd.verdict);
-      if (!v) { stats.unprocessed++; continue; }
+      if (!v) { stats.unprocessed++; held.push({ id: q.id, ctai_ids: q.ctai_ids, figure: q.figure, quote: q.quote.slice(0, 300), verdict: null, status: 'awaiting verification' }); continue; }
       const segs = (v.segments || []).filter((s) => s.verbatim);
       if (segs.length && v.confidence >= 0.7) { r = rec(q, segs, v.confidence, 'phrase-vector search (Gemini-2/Qdrant) + Opus 5.5 span extraction', v.coverage); stats.matched++; }
       else { stats.held++; held.push({ id: q.id, ctai_ids: q.ctai_ids, figure: q.figure, quote: q.quote.slice(0, 300), verdict: v }); continue; }
