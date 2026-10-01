@@ -21,7 +21,7 @@ import { swallow } from '../lib/swallow.js';   // a silent AI failure must not l
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { getMeili, INDEXES, hybridSearch } from '../lib/search.js';
 import { aiService } from '../lib/ai-services.js';
-import { hashContent, parseDocument, ingestDocument } from '../services/ingester.js';
+import { hashContent, ingestDocument } from '../services/ingester.js';
 import * as storage from '../lib/storage.js';
 import matter from 'gray-matter';
 import { readFile, writeFile, mkdir } from 'fs/promises';

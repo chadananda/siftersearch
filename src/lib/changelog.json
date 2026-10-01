@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T22:31:03.674Z",
+  "generated": "2026-10-01T01:44:30.379Z",
   "entries": [
+    {
+      "hash": "6c7bb0bf",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "POST /search/original/batch — up to 50 texts per request",
+      "scope": "api"
+    },
     {
       "hash": "6e6320e8",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Label spawned-stage output with script+pid (the gap that stopped tonight's trace cold)",
       "scope": null
-    },
-    {
-      "hash": "c2ae4573",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Name the URL in fetch failures — I explained this crash twice without evidence",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "6c7bb0bf",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "POST /search/original/batch — up to 50 texts per request",
+        "scope": "api"
+      },
       {
         "hash": "6e6320e8",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Label spawned-stage output with script+pid (the gap that stopped tonight's trace cold)",
-        "scope": null
-      },
-      {
-        "hash": "c2ae4573",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Name the URL in fetch failures — I explained this crash twice without evidence",
         "scope": null
       }
     ]

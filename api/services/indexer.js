@@ -340,84 +340,20 @@ async function storeInLibsql(document, paragraphs) {
  * text array suitable for embedding generation.
  */
 export function chunkDocumentForIndexing(text, options = {}) {
-  const {
-    maxChunkSize = CHUNK_CONFIG.maxChunkSize,
-    minChunkSize = CHUNK_CONFIG.minChunkSize,
-    overlapSize = CHUNK_CONFIG.overlapSize
-  } = options;
-
-  // Helper to hard-split text that exceeds maxChunkSize
-  function hardSplit(text) {
-    const result = [];
-    for (let i = 0; i < text.length; i += maxChunkSize) {
-      result.push(text.slice(i, i + maxChunkSize));
-    }
-    return result;
-  }
-
-  // Split by paragraphs first
-  const paragraphs = text.split(CHUNK_CONFIG.paragraphDelimiters)
-    .map(p => p.trim())
-    .filter(p => p.length >= minChunkSize);
-
+  // Paragraphs AS WRITTEN — never cut by length (Chad, 2026-09-30: "cutting off paragraphs by raw size instead of semantic
+  // segmentation … would be forbidden"). This used to pack sentences into maxChunkSize chunks and hard-split by raw
+  // character count, mid-word. An over-long paragraph waits for semantic segmentation (scripts/semantic-paragraphs.py).
+  // A fragment shorter than minChunkSize is JOINED to the next paragraph, never dropped (invocations, numbers).
+  const { minChunkSize = CHUNK_CONFIG.minChunkSize } = options;
   const chunks = [];
-
-  for (const para of paragraphs) {
-    if (para.length <= maxChunkSize) {
-      // Paragraph fits in one chunk
-      chunks.push(para);
-    } else {
-      // Need to split paragraph into smaller chunks
-      const sentences = para.split(CHUNK_CONFIG.sentenceDelimiters);
-      let currentChunk = '';
-
-      for (const sentence of sentences) {
-        const trimmed = sentence.trim();
-        if (!trimmed) continue;
-
-        // If a single sentence exceeds max, hard-split it
-        if (trimmed.length > maxChunkSize) {
-          // Save current chunk first
-          if (currentChunk.length >= minChunkSize) {
-            chunks.push(currentChunk);
-          }
-          // Hard-split the oversized sentence
-          chunks.push(...hardSplit(trimmed));
-          currentChunk = '';
-          continue;
-        }
-
-        if (currentChunk.length + trimmed.length + 1 <= maxChunkSize) {
-          currentChunk += (currentChunk ? ' ' : '') + trimmed;
-        } else {
-          // Save current chunk if it's long enough
-          if (currentChunk.length >= minChunkSize) {
-            chunks.push(currentChunk);
-          }
-          // Start new chunk with overlap
-          if (overlapSize > 0 && currentChunk.length > overlapSize) {
-            // Include last part of previous chunk for context
-            const words = currentChunk.split(/\s+/);
-            const overlapWords = [];
-            let overlapLen = 0;
-            for (let i = words.length - 1; i >= 0 && overlapLen < overlapSize; i--) {
-              overlapWords.unshift(words[i]);
-              overlapLen += words[i].length + 1;
-            }
-            currentChunk = overlapWords.join(' ') + ' ' + trimmed;
-          } else {
-            currentChunk = trimmed;
-          }
-        }
-      }
-
-      // Don't forget the last chunk
-      if (currentChunk.length >= minChunkSize) {
-        chunks.push(currentChunk);
-      }
-    }
+  let carry = '';
+  for (const p of text.split(CHUNK_CONFIG.paragraphDelimiters).map((x) => x.trim()).filter(Boolean)) {
+    const t = carry ? `${carry} ${p}` : p;
+    if (t.length < minChunkSize) { carry = t; continue; }
+    carry = '';
+    chunks.push(t);
   }
-
+  if (carry) chunks.length ? (chunks[chunks.length - 1] += ` ${carry}`) : chunks.push(carry);
   return chunks;
 }
 

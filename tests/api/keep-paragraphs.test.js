@@ -4,8 +4,11 @@ import { parseMarkdownBlocks } from '../../api/services/block-parser.js';
 
 describe('parseMarkdownBlocks keeps declared paragraphs', () => {
   const long = ('قال: حدثنا فلان. ' + 'Then He said. "A quote" 12. ').repeat(150);   // > 3,000 chars with split points
-  it('splits an oversized paragraph by default (legacy behaviour)', () => {
-    expect(parseMarkdownBlocks(long).length).toBeGreaterThan(1);
+  it('never splits an oversized paragraph by default (Chad 2026-09-30: never cut by length)', () => {
+    expect(parseMarkdownBlocks(long)).toHaveLength(1);
+  });
+  it('splits only when a caller explicitly opts in', () => {
+    expect(parseMarkdownBlocks(long, { splitOversized: true }).length).toBeGreaterThan(1);
   });
   it('never splits when the source keeps its own paragraphs', () => {
     const blocks = parseMarkdownBlocks(long, { splitOversized: false });

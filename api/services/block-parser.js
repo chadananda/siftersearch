@@ -139,7 +139,8 @@ export function parseBlockAttrs(line) {
  * @param {string} text - Raw markdown text
  * @returns {Array<{type: string, content: string, raw: string, attrs?: object}>} Array of blocks
  */
-export function parseMarkdownBlocks(text, { splitOversized = true } = {}) {
+// splitOversized is OFF by default: paragraphs are never cut by length (Chad, 2026-09-30); callers must opt in.
+export function parseMarkdownBlocks(text, { splitOversized = false } = {}) {
   if (!text || typeof text !== 'string') {
     return [];
   }

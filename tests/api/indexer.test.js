@@ -38,29 +38,25 @@ Another valid paragraph with enough content to pass the threshold. This paragrap
       expect(chunks.length).toBe(2); // Only the two long paragraphs
     });
 
-    it('should handle long paragraphs by splitting into chunks', () => {
+    it('keeps a long paragraph whole — never cut by length (Chad 2026-09-30)', () => {
       const longParagraph = 'This is a sentence. '.repeat(200);
       const chunks = parseDocument(longParagraph);
-
-      // Should be split into multiple chunks
-      expect(chunks.length).toBeGreaterThan(1);
-
-      // Each chunk should be under the max size (with some buffer for overlap)
-      chunks.forEach(chunk => {
-        expect(chunk.length).toBeLessThan(2000); // Max + overlap buffer
-      });
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]).toBe(longParagraph.trim());
     });
 
-    it('should preserve chunk overlap for context', () => {
-      const text = 'First sentence is here. '.repeat(50) + '\n\n' +
-                   'Second section starts here. '.repeat(50);
-
-      const chunks = parseDocument(text);
-
-      // With overlap, later chunks should contain some content from earlier
-      // This is hard to test precisely, but we verify chunking works
-      expect(chunks.length).toBeGreaterThanOrEqual(2);
+    it('joins a fragment shorter than the minimum to the next paragraph instead of dropping it', () => {
+      const chunks = parseDocument('He is God!\n\nO my God, my Lord and my Master! I beseech Thee.');
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]).toContain('He is God!');
     });
+
+    it('keeps each paragraph as written, with no overlap or re-packing', () => {
+      const first = 'First sentence is here. '.repeat(50).trim();
+      const second = 'Second section starts here. '.repeat(50).trim();
+      expect(parseDocument(first + '\n\n' + second)).toEqual([first, second]);
+    });
+
 
     it('should handle empty input', () => {
       const chunks = parseDocument('');

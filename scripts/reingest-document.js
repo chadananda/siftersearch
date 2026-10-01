@@ -216,7 +216,10 @@ async function main() {
   await reingestDocument(docId);
 }
 
-main().catch(err => {
+// Exit explicitly: an open handle (DB / keep-alive socket / timer) kept the process alive for HOURS after "Re-ingestion
+// complete", so the API task stayed 'running' and every queued re-ingest behind it waited (2026-09-30). All work is
+// awaited inside main().
+main().then(() => process.exit(0)).catch(err => {
   console.error('Error:', err);
   process.exit(1);
 });

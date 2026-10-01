@@ -830,19 +830,9 @@ export async function parseDocumentWithBlocks(text, options = {}) {
 
       logger.info({ paragraphs: chunks.length }, 'AI segmentation complete');
 
-      // Split any oversized paragraphs (max 1500 chars for translation compatibility)
-      const maxParagraphChars = 1500;
-      const finalChunks = splitOversizedParagraphs(chunks, maxParagraphChars);
-
-      if (finalChunks.length !== chunks.length) {
-        logger.info({
-          before: chunks.length,
-          after: finalChunks.length,
-          split: finalChunks.length - chunks.length
-        }, 'Split oversized paragraphs');
-      }
-
-      return { chunks: finalChunks, autoSegmented: true };
+      // The model's paragraphs are SEMANTIC; they are never re-cut by size afterwards (Chad, 2026-09-30: "we never segment
+      // on arbitrary boundaries"). An over-long one waits for semantic segmentation (scripts/semantic-paragraphs.py).
+      return { chunks, autoSegmented: true };
     } catch (err) {
       logger.warn({ err: err.message }, 'AI segmentation failed, falling back to markdown blocks');
       // Fall through to standard approach
@@ -1543,95 +1533,22 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   const languageUsesAISegmentation = isAiSegmentedLanguage(finalMeta.language);
   const isEnglish = !finalMeta.language || finalMeta.language === 'en';
 
+  // Never cut by length (Chad, 2026-09-30). An over-long paragraph is KEPT WHOLE and recorded for semantic segmentation;
+  // the old path packed it into ≤MAX_PARAGRAPH_LENGTH sentence groups or rejected the whole document.
   if (!languageUsesAISegmentation) {
-    const oversizedIdxs = chunks
-      .map((chunk, idx) => ({ idx, length: chunk.text?.length || 0 }))
-      .filter(c => c.length > MAX_PARAGRAPH_LENGTH);
-
-    if (oversizedIdxs.length > 0) {
-      // TRY to auto-recover for ANY non-AI-segmented language, then judge by RESULT. This used to be
-      // English-only, so a French newspaper page (long unbroken columns) was rejected outright with
-      // "split long paragraphs manually" — 12 real books stuck in a retry loop the moment their language
-      // was labelled correctly. Sentence splitting works for any script that ends sentences with . ! ?,
-      // which is every language reaching this branch (RTL/AI-segmented ones returned above). Deciding by
-      // whether the split ACTUALLY worked is safer than an allow-list, which would be wrong for the first
-      // language nobody thought to add.
-      const splitWorked = (() => {
-        if (isEnglish) return true;                    // unchanged path for English
-        return oversizedIdxs.every(({ idx }) => {
-          const text = chunks[idx]?.text || '';
-          const lines = text.split('\n');
-          if (lines.filter((l) => l.trim().startsWith('|')).length / lines.length > 0.5) return true; // table → dropped
-          const parts = parseDocument(text, { maxChunkSize: MAX_PARAGRAPH_LENGTH });
-          return parts.length > 1 && parts.every((t) => t.length <= MAX_PARAGRAPH_LENGTH);
-        });
-      })();
-
-      if (splitWorked) {
-        // Auto-recover instead of rejecting.
-        // Markdown tables (majority of lines are |-delimited) are nav/TOC noise — drop them.
-        // Genuine oversized prose is sentence-split into MAX_PARAGRAPH_LENGTH chunks.
-        let autoChunkedCount = 0;
-        const recoveredChunks = [];
-        for (const chunk of chunks) {
-          if ((chunk.text?.length || 0) <= MAX_PARAGRAPH_LENGTH) {
-            recoveredChunks.push(chunk);
-            continue;
-          }
-          const lines = chunk.text.split('\n');
-          const tableLineRatio = lines.filter(l => l.trim().startsWith('|')).length / lines.length;
-          if (tableLineRatio > 0.5) continue; // drop markdown tables — not useful search content
-          const splitTexts = parseDocument(chunk.text, { maxChunkSize: MAX_PARAGRAPH_LENGTH });
-          for (const t of splitTexts) recoveredChunks.push({ ...chunk, text: t });
-          autoChunkedCount++;
-        }
-
-        if (autoChunkedCount > 0) {
-          chunks = recoveredChunks;
-          await logDocumentFailure({
-            filePath: relativePath,
-            fileName: relativePath?.split('/').pop(),
-            errorType: 'auto_chunked',
-            errorMessage: `${autoChunkedCount} oversized paragraph(s) were auto-split at sentence boundaries.`,
-            details: { autoChunkedCount, language: finalMeta.language }
-          });
-          logger.warn({ relativePath, autoChunkedCount }, 'Document auto-chunked: oversized paragraphs split at sentence boundaries');
-        }
-      } else {
-        // The splitter found no usable sentence boundaries (or the pieces are still oversized), so the
-        // source genuinely needs manual fixing — reject and flag.
-        const errorMessage = `Document has ${oversizedIdxs.length} paragraph(s) exceeding ${MAX_PARAGRAPH_LENGTH} characters. ` +
-                             `Longest: ${Math.max(...oversizedIdxs.map(c => c.length))} chars at paragraph ${oversizedIdxs[0].idx + 1}. ` +
-                             `Please split long paragraphs manually.`;
-        await logDocumentFailure({
-          filePath: relativePath,
-          fileName: relativePath?.split('/').pop(),
-          errorType: 'oversized_paragraph',
-          errorMessage,
-          details: {
-            oversizedCount: oversizedIdxs.length,
-            maxLength: MAX_PARAGRAPH_LENGTH,
-            language: finalMeta.language,
-            paragraphs: oversizedIdxs.map(c => ({ index: c.idx, length: c.length }))
-          }
-        });
-        logger.error({
-          relativePath,
-          language: finalMeta.language,
-          oversizedCount: oversizedIdxs.length,
-          maxAllowed: MAX_PARAGRAPH_LENGTH,
-          longest: Math.max(...oversizedIdxs.map(c => c.length))
-        }, 'Document rejected: oversized paragraphs');
-        return {
-          documentId: existingDoc?.id ?? null,
-          paragraphCount: 0,
-          status: 'error',
-          error: errorMessage
-        };
-      }
+    const long = chunks.map((c, idx) => ({ idx, length: c.text?.length || 0 })).filter((c) => c.length > MAX_PARAGRAPH_LENGTH);
+    if (long.length) {
+      chunks = chunks.filter((c) => {                 // markdown tables (majority of lines |-delimited) are nav/TOC noise
+        const lines = (c.text || '').split('\n');
+        return !((c.text?.length || 0) > MAX_PARAGRAPH_LENGTH && lines.filter((l) => l.trim().startsWith('|')).length / lines.length > 0.5);
+      });
+      await logDocumentFailure({
+        filePath: relativePath, fileName: relativePath?.split('/').pop(), errorType: 'needs_semantic_segmentation',
+        errorMessage: `${long.length} paragraph(s) over ${MAX_PARAGRAPH_LENGTH} chars kept whole; segment semantically at source.`,
+        details: { count: long.length, longest: Math.max(...long.map((c) => c.length)), language: finalMeta.language },
+      });
     }
   }
-
   // ───────────────────────────────────────────────────────────────────────────
   // Sentence/Phrase Markers for Translation Support
   // ───────────────────────────────────────────────────────────────────────────

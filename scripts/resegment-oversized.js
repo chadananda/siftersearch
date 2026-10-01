@@ -12,6 +12,10 @@
  *   node scripts/resegment-oversized.js --doc-id 19954      # single document
  */
 
+// RETIRED 2026-09-30: this tool cut paragraphs at word boundaries every 1,500 characters — forbidden (Chad: "we never segment
+// on arbitrary boundaries"). Over-long paragraphs are segmented SEMANTICALLY at source: scripts/semantic-paragraphs.py.
+console.error('resegment-oversized.js is retired: it cut paragraphs by length. Use scripts/semantic-paragraphs.py (semantic, at source).');
+process.exit(1);
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
