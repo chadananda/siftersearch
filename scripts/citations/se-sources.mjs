@@ -199,9 +199,14 @@ function emit() {
     if (!ps.length) return null;
     const base = (s) => ({ text: cleanText(s.p.text), src: s.src, content_id: Number(s.p.id), ref: `${s.p.title} ¶${s.p.paragraph_index}`,
       url: `https://siftersearch.com/library/view?doc=${s.p.doc_id}#p${s.p.paragraph_index}` });
-    // the author of the matched source document wins over our label (e.g. a passage labelled Bahá'u'lláh that is 'Abdu'l-Bahá's)
-    const author = ps[0].p.author || q.figure;
-    const head = { quoted_author: author, ...(author !== q.figure && { stated_author: q.figure }), work: ps[0].p.title, confidence, method, ...(coverage && { coverage }) };
+    // quoted_author = our label. The source document may be a work that QUOTES the tablet (Ẓuhúru'l-Ḥaqq, a compilation),
+    // so its author differing is normal → source_author. Only a source that is the OWN work of a DIFFERENT Central Figure
+    // suggests a misattribution → attribution_check.
+    const nm = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/gi, '').toLowerCase();
+    const CF = { bahaullah: 1, abdulbaha: 1, thebab: 1, bab: 1 };
+    const sa = ps[0].p.author, diff = sa && nm(sa) !== nm(q.figure);
+    const head = { quoted_author: q.figure, ...(diff && { source_author: sa }), ...(diff && CF[nm(sa)] && CF[nm(q.figure)] && { attribution_check: true }),
+      work: ps[0].p.title, confidence, method, ...(coverage && { coverage }) };
     return ps.length === 1 ? { ...head, ...base(ps[0]) } : { ...head, ref: base(ps[0]).ref, url: base(ps[0]).url, segments: ps.map(base) };
   };
   for (const q of quotes) {
