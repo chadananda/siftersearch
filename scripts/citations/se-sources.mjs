@@ -152,6 +152,22 @@ async function verify() {
   log({ phase: 'verify', quotations: jobs.length, spent_usd: +spent.toFixed(2) });
 }
 
+// A span copied from another edition differs in spelling (ى/ی, ك/ک, vowel marks). Find it in the paragraph after folding
+// both, and return the PARAGRAPH'S OWN characters for that stretch — so src always occurs verbatim in text. null = not found.
+function realign(span, text) {
+  const t = cleanText(text);
+  if (ws(t).includes(ws(span))) return ws(span);
+  let folded = '', map = [];
+  for (let i = 0; i < t.length; i++) {
+    const f = /\s/.test(t[i]) ? ' ' : foldArabic(t[i]);
+    for (const ch of f) { if (ch === ' ' && folded.endsWith(' ')) continue; folded += ch; map.push(i); }
+  }
+  const q = ws(foldArabic(span));
+  const at = folded.indexOf(q);
+  if (at < 0) return null;
+  return ws(t.slice(map[at], map[at + q.length - 1] + 1));
+}
+
 // ── emit CTAI JSONL (one record per CTAI id; only confident matches; verbatim spans only)
 function emit() {
   const lines = [], stats = { verified: 0, matched: 0, held: 0, not_found: 0, unprocessed: 0 };
@@ -159,7 +175,10 @@ function emit() {
     // several spans in ONE paragraph → one record (spans joined with " … "); segments only across paragraphs
     const byPara = new Map();
     for (const s of segs) { const k = String(s.content_id); byPara.set(k, [...(byPara.get(k) || []), s.src]); }
-    const ps = [...byPara.entries()].map(([cid, srcs]) => ({ src: srcs.join(' … '), p: para.get(cid) })).filter((s) => s.p);
+    const ps = [...byPara.entries()].map(([cid, srcs]) => {
+      const p = para.get(cid), al = p && srcs.map((x) => realign(x, p.text));
+      return p && al.every(Boolean) ? { src: al.join(' … '), p } : null;      // any span not found in the paragraph → hold
+    }).filter(Boolean);
     if (!ps.length) return null;
     const base = (s) => ({ text: cleanText(s.p.text), src: s.src, content_id: Number(s.p.id), ref: `${s.p.title} ¶${s.p.paragraph_index}`,
       url: `https://siftersearch.com/library/view?doc=${s.p.doc_id}#p${s.p.paragraph_index}` });
