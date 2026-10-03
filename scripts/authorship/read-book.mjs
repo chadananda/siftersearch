@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-// PILOT (read-only on sifter.db; runs ON tower): read whole books with the attribution state machine
-// (api/lib/authorship/reader.js) — evidence gathered here (OceanLibrary section headings + frontmatter author list,
-// compilation trailers, source links, headings), then System-1 for what the evidence leaves open: open spans (one call per
-// span, its own evidence only, bounded by its neighbours) and continuation checks after lead-ins (chained forward).
-// Every System-1 call → api/lib/systemone.js, task 'paragraph-attribution' (logged: Laya's training data).
-//   node scripts/authorship/read-book.mjs <out-dir> <docId> [<docId> …] [--no-jev]
+// Paragraph authorship (runs ON tower). PASS A per book: evidence (OceanLibrary section headings + frontmatter author list,
+// compilation trailers, source links, headings) → the state machine (api/lib/authorship/reader.js) → System-1 for what the
+// evidence leaves open (open spans, continuation chains), every call logged under task 'paragraph-attribution' (Laya's
+// training data). Each book's result is saved to <out>/a/<id>.json, so a run RESUMES. PASS B across all books:
+// identical-text propagation and mixed paragraphs → <out>/b/<id>.json, and with --write content.authors / docs.authors
+// through the single writer (never synced/updated_at: no Meili resync).
+//   node scripts/authorship/read-book.mjs <out-dir> (<docId> … | --all) [--write] [--no-jev] [--index=<trailers.json>]
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { createHash } from 'crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { readBook, mixedLead, firstPerson } from '../../api/lib/authorship/reader.js';
@@ -19,12 +21,14 @@ dotenv.config({ path: join(ROOT, '.env-secrets'), quiet: true });
 const { ask } = await import('../../api/lib/systemone.js');
 const LIB = '/home/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library';
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
-const [OUTDIR, ...IDS] = args;
-const NO_JEV = process.argv.includes('--no-jev');
+const [OUTDIR, ...IDARGS] = args;
+const NO_JEV = process.argv.includes('--no-jev'), WRITE = process.argv.includes('--write'), ALL = process.argv.includes('--all');
+const READER_VERSION = 'reader-v1-2026-10-03';
+const DOCTRINAL = ['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi'];   // a compilation's display authors (Chad 10-03)
 const TASK = 'paragraph-attribution';
 // Below these, System-1 does not decide: the paragraph is listed for review (and later escalated), never guessed.
 const CONT_MIN = 0.8, SPAN_MIN = 0.6;
-mkdirSync(OUTDIR, { recursive: true });
+mkdirSync(join(OUTDIR, 'a'), { recursive: true }); mkdirSync(join(OUTDIR, 'b'), { recursive: true });
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 const strip = (t) => String(t || '').replace(/⁅\/?s\d+⁆/g, '').trim();
 const FIGURES = ['Bahá’u’lláh', 'The Báb', '‘Abdu’l-Bahá', 'Shoghi Effendi', 'Universal House of Justice'];
@@ -60,11 +64,30 @@ const PRIMARY_DOCS = new Set();
 const strength = (a, docId) => (!a || !a[0] || a[0].role !== 'author') ? -1
   : a[0].basis === 'book' && PRIMARY_DOCS.has(docId) ? 3
   : (STRENGTH[a[0].basis] ?? 0) + ((a[0].basis === 'system1' || a[0].basis === 'continuation') && (a[0].confidence ?? 0) >= 0.9 ? 1 : 0);
-const docOfPara = new Map(), textOfPara = new Map(), docInfo = new Map(), ownerOf = new Map();
-const allAssigned = new Map(), outputs = [];
-const summary = [];
-for (const docId of IDS.map(Number)) {
+// --all: every live primary Bahá’í doc, compilations first, then the figures' own works, then the rest — so a source link is
+// resolved through a paragraph already read wherever possible.
+// System-1 calls of one book run CONC at a time (open spans are independent; each continuation chain is sequential).
+const CONC = 8;
+const pool = async (items, fn) => { let next = 0; await Promise.all(Array.from({ length: CONC }, async () => { while (next < items.length) { const it = items[next++]; try { await fn(it); } catch (e) { console.error(JSON.stringify({ jev_error: e.message?.slice(0, 200) })); } } })); };
+const IDS = ALL ? db.prepare(`SELECT id FROM docs WHERE deleted_at IS NULL AND scope = 'primary' AND religion LIKE 'Bah%'
+    ORDER BY CASE WHEN file_path LIKE '%Compilation%' OR (title LIKE '%compil%' AND title NOT LIKE '%uncompil%') THEN 0
+      WHEN author IN ('Bahá’u’lláh', 'The Báb', '‘Abdu’l-Bahá', 'Shoghi Effendi', 'Universal House of Justice') THEN 1 ELSE 2 END, id`).all().map((r) => r.id)
+  : IDARGS.map(Number);
+const keyOf = (t) => String(t).replace(/\[pg\.?\s*\d+\]|\[\^?\d+\]/gi, '').toLowerCase().replace(/[^\p{L}]/gu, '');
+const fileA = (id) => join(OUTDIR, 'a', `${id}.json`);
+const remember = (a) => {           // a pass-A result feeds the paragraph index and the compilation/primary sets
+  if (a.compilation) COMPILATION_DOCS.add(a.docId);
+  if (a.primary) PRIMARY_DOCS.add(a.docId);
+  for (const p of a.paras) if (p.authors?.[0]?.role === 'author' && p.authors[0].basis !== 'book') paraIndex.set(p.id, { name: p.authors[0].name, on_behalf: !!p.authors[0].on_behalf, basis: p.authors[0].basis });
+};
+let resumed = 0;
+for (const id of IDS) if (existsSync(fileA(id))) { remember(JSON.parse(readFileSync(fileA(id), 'utf8'))); resumed++; }
+if (resumed) console.log(JSON.stringify({ resumed, of: IDS.length }));
+let done = 0, totalCalls = 0, totalTokens = 0;
+for (const docId of IDS) {
+  if (existsSync(fileA(docId))) continue;
   const d = db.prepare(`SELECT id, title, author, file_path FROM docs WHERE id = ?`).get(docId);
+  if (!d) continue;
   const rows = db.prepare(`SELECT id, paragraph_index pidx, text, blocktype, external_para_id ext FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index`).all(docId)
     .map((r) => ({ ...r, text: strip(r.text) }));
   // evidence: OceanLibrary file → section authors + frontmatter author list
@@ -109,7 +132,7 @@ for (const docId of IDS.map(Number)) {
   if (!NO_JEV) {
     const crit = criteriaFor(book);
     // open spans: the span's own evidence — up to 3 paragraphs before (stopping at the previous span/heading) and after
-    for (const s of res.open) {
+    await pool(res.open, async (s) => {
       const i0 = byId.get(s.ids[0]), i1 = byId.get(s.ids[s.ids.length - 1]);
       const back = []; for (let i = i0 - 1; i >= Math.max(0, i0 - 3); i--) { if (paras[i].isHeading || paras[i].trailer || assigned.get(paras[i].id)?.[0]?.basis !== 'book' && assigned.get(paras[i].id)) break; back.unshift(paras[i].text.slice(0, 450)); }
       const fwd = []; for (let i = i1 + 1; i <= Math.min(paras.length - 1, i1 + 3); i++) { fwd.push(paras[i].text.slice(0, 450)); if (paras[i].isHeading || paras[i].trailer) break; }
@@ -121,9 +144,9 @@ for (const docId of IDS.map(Number)) {
       const a = r.answers.speaker; const name = a?.choice ?? a?.value;
       for (const id of s.ids) assigned.set(id, [{ name, role: 'author', basis: 'system1', confidence: +(a?.confidence ?? 0).toFixed(2) }]);
       if ((a?.confidence ?? 0) < SPAN_MIN) review.push({ id: s.ids[0], why: `span ${(a?.confidence ?? 0).toFixed(2)} → ${name}`, paragraphs: s.ids.length });
-    }
+    });
     // continuation checks after lead-ins: chained forward until the author's prose resumes
-    for (const c of res.checks) {
+    await pool(res.checks, async (c) => {
       let i = byId.get(c.id); const leadInText = paras[byId.get(c.span_start) - 1]?.text.slice(0, 450) || '';
       for (let hop = 0; hop < 30 && i < paras.length; hop++, i++) {
         const p = paras[i]; if (p.isHeading || p.trailer || p.source) break;
@@ -141,60 +164,86 @@ for (const docId of IDS.map(Number)) {
         if (conf < CONT_MIN || !speaker) { review.push({ id: p.id, why: conf < CONT_MIN ? `continuation ${conf.toFixed(2)}` : 'speaker unresolved' }); break; }
         assigned.set(p.id, [{ name: speaker, role: 'author', basis: 'continuation', confidence: +conf.toFixed(2) }]);
       }
-    }
+    });
   }
   const basis = {}; for (const [, a] of assigned) { const k = a ? a[0].basis : 'unassigned'; basis[k] = (basis[k] || 0) + 1; }
-  const authorsCount = {}; for (const [, a] of assigned) for (const e of a || []) if (e.role === 'author') authorsCount[e.name] = (authorsCount[e.name] || 0) + 1;
-  const quoted = [...assigned.values()].filter((a) => a?.some((e) => e.role === 'quoted')).length;
-  const s = { id: docId, title: d.title, catalogued: d.author, compilation, book_authors: book.authors, paragraphs: paras.length,
-    basis, by_author: authorsCount, with_inline_quotes: quoted, review: review.length, spans: res.spans.length, open_spans: res.open.length, checks: res.checks.length, calls, tokens };
-  summary.push(s);
-  if (!compilation && FIGURES.includes(d.author)) PRIMARY_DOCS.add(docId);
-  docInfo.set(docId, { author: d.author, compilation });
-  for (const p of paras) { docOfPara.set(p.id, docId); textOfPara.set(p.id, p.text); if (res.owner.has(p.id)) ownerOf.set(p.id, res.owner.get(p.id)); }
-  for (const [id, a] of assigned) { allAssigned.set(id, a); if (a?.[0]?.role === 'author' && a[0].basis !== 'book') paraIndex.set(id, { name: a[0].name, on_behalf: !!a[0].on_behalf, basis: a[0].basis }); }
-  if (compilation) COMPILATION_DOCS.add(docId);
-  outputs.push({ docId, summary: s, review, paras });
-  console.log(JSON.stringify({ id: docId, title: d.title.slice(0, 40), compilation, paras: paras.length, basis, open: res.open.length, checks: res.checks.length, calls, tokens, review: review.length }));
+  const summary = { id: docId, title: d.title, catalogued: d.author, compilation, book_authors: book.authors, paragraphs: paras.length,
+    basis, review: review.length, spans: res.spans.length, open_spans: res.open.length, checks: res.checks.length, calls, tokens };
+  const a = { docId, title: d.title, author: d.author, compilation, primary: !compilation && FIGURES.includes(d.author), summary, review,
+    paras: paras.map((p) => {
+      const k = keyOf(p.text);
+      return { id: p.id, pidx: p.pidx, authors: assigned.get(p.id) || null, owner: res.owner.get(p.id) || d.author,
+        key: k.length >= 60 ? createHash('sha1').update(k).digest('base64').slice(0, 20) : null, mixed: mixedLead(p.text) || undefined,
+        text: ALL ? undefined : p.text.slice(0, 300) };
+    }) };
+  writeFileSync(fileA(docId), JSON.stringify(a));
+  remember(a);
+  done++; totalCalls += calls; totalTokens += tokens;
+  if (!ALL || done % 200 === 0 || calls > 50) console.log(JSON.stringify({ done, of: IDS.length - resumed, id: docId, title: d.title.slice(0, 40), compilation, paras: paras.length, calls, totalCalls, totalTokens, usd: +(totalTokens * 0.042 / 1e6).toFixed(3) }));
 }
-// PASS B — identical text: the same words have the same author, so the strongest attribution in each group of identical
-// paragraphs (normalized_hash, ≥ 60 chars) replaces weaker ones — repairs damaged editions from clean ones.
-const ids = [...allAssigned.keys()];
-// key = the letters alone, lower-cased: page markers ("[pg 453]"), footnote marks, quotation marks and spacing differ
-// between editions (the damaged Lights of Guidance) but the words do not
-const keyOf = (t) => String(t).replace(/\[pg\.?\s*\d+\]|\[\^?\d+\]/gi, '').toLowerCase().replace(/[^\p{L}]/gu, '');
-const hashOf = new Map();
-for (const id of ids) { const k = keyOf(textOfPara.get(id) || ''); if (k.length >= 60) hashOf.set(id, k); }
-const groups = new Map(); for (const [id, h] of hashOf) (groups.get(h) || groups.set(h, []).get(h)).push(id);
+
+// PASS B — load every book's pass-A result.
+const allAssigned = new Map(), docOfPara = new Map(), keyOfPara = new Map(), mixedOf = new Set(), ownerOf = new Map(), docInfo = new Map();
+const books = [];
+for (const id of IDS) {
+  if (!existsSync(fileA(id))) continue;
+  const a = JSON.parse(readFileSync(fileA(id), 'utf8'));
+  docInfo.set(id, { author: a.author, compilation: a.compilation, title: a.title, summary: a.summary, review: a.review });
+  for (const p of a.paras) {
+    allAssigned.set(p.id, p.authors); docOfPara.set(p.id, id); ownerOf.set(p.id, p.owner);
+    if (p.key) keyOfPara.set(p.id, p.key);
+    if (p.mixed) mixedOf.add(p.id);
+  }
+  books.push({ id, paras: a.paras.map((p) => ({ id: p.id, pidx: p.pidx, text: p.text })) });
+}
+// identical text: the same words have the same author, so the strongest attribution in each group of identical paragraphs
+// (letters-only key ≥ 60 letters: page markers, footnote marks and quotation marks differ between editions) replaces
+// weaker ones — repairs damaged editions from clean ones. Only paragraphs read as someone's WORDS take it.
+const groups = new Map(); for (const [id, h] of keyOfPara) (groups.get(h) || groups.set(h, []).get(h)).push(id);
 let propagated = 0;
+const st = (id) => strength(allAssigned.get(id), docOfPara.get(id));
 for (const members of groups.values()) {
   if (members.length < 2) continue;
-  const st = (id) => strength(allAssigned.get(id), docOfPara.get(id));
   const best = members.reduce((b, id) => (st(id) > st(b) ? id : b), members[0]);
   const win = allAssigned.get(best);
   if (st(best) < 2) continue;
-  // only a paragraph read as someone's WORDS takes the stronger attribution — never a heading, meta line or reference
   for (const id of members) if (id !== best && allAssigned.get(id)?.[0]?.role === 'author' && st(id) < st(best) && allAssigned.get(id)?.[0]?.name !== win[0].name) {
     allAssigned.set(id, [{ ...win[0], basis: 'identical-text', from: best }]); propagated++;
   }
 }
-// MIXED paragraphs: in an ordinary book, prose that introduces a quotation ("Calling this the King of Days, Bahá’u’lláh
-// appeals: “…”") is the book author's paragraph quoting someone — both authors, never the quoted person alone. Only where
-// the evidence is paragraph-level (a reference / source link): after a lead-in the whole paragraph IS the quotation, and an
+// MIXED paragraphs: prose that introduces a quotation ("Calling this the King of Days, Bahá’u’lláh appeals: “…”") is the
+// prose owner's paragraph quoting someone — both authors, never the quoted person alone. Only where the evidence is
+// paragraph-level (a reference / source link / identical text): after a lead-in the whole paragraph IS the quotation, and an
 // inner “…” inside a block quotation must not turn it into the book author's prose.
 let mixed = 0;
-for (const [id, a] of allAssigned) {
-  const info = docInfo.get(docOfPara.get(id));
-  const own = ownerOf.get(id) || info?.author;
-  if (!info || (info.compilation && a?.[0]?.basis !== 'reference') || a?.[0]?.role !== 'author' || !['reference', 'source_link', 'identical-text'].includes(a[0].basis) || !a[0].name || a[0].name === own || !mixedLead(textOfPara.get(id))) continue;
+for (const id of mixedOf) {
+  const a = allAssigned.get(id), info = docInfo.get(docOfPara.get(id)), own = ownerOf.get(id) || info?.author;
+  if (!info || (info.compilation && a?.[0]?.basis !== 'reference') || a?.[0]?.role !== 'author' || !['reference', 'source_link', 'identical-text'].includes(a[0].basis) || !a[0].name || a[0].name === own) continue;
   allAssigned.set(id, [{ name: own, role: 'author', basis: own === info.author ? 'book' : 'byline' }, { ...a[0], role: 'quoted' }, ...a.slice(1).filter((x) => x.name !== a[0].name && x.name !== own)]);
   mixed++;
 }
-console.log(JSON.stringify({ mixed }));
-for (const o of outputs) {
-  const basis = {}; for (const p of o.paras) { const a = allAssigned.get(p.id); const k = a ? a[0].basis : 'unassigned'; basis[k] = (basis[k] || 0) + 1; }
-  o.summary.basis_after_propagation = basis;
-  writeFileSync(join(OUTDIR, `${o.docId}.json`), JSON.stringify({ summary: o.summary, review: o.review, paragraphs: o.paras.map((p) => ({ id: p.id, pidx: p.pidx, text: p.text.slice(0, 300), authors: allAssigned.get(p.id) || null })) }, null, 1));
+console.log(JSON.stringify({ books: books.length, identical_text_groups: [...groups.values()].filter((g) => g.length > 1).length, propagated, mixed }));
+
+// docs.authors: a compilation shows the doctrinal authors it cites (canonical order); any other book its catalogue author.
+const docAuthors = (id, paras) => {
+  const info = docInfo.get(id);
+  if (!info.compilation) return [info.author];
+  const seen = new Set(); for (const p of paras) for (const e of allAssigned.get(p.id) || []) if (e.role === 'author' && DOCTRINAL.includes(e.name)) seen.add(e.name);
+  return DOCTRINAL.filter((n) => seen.has(n));
+};
+let wrote = 0;
+const { transaction } = WRITE ? await import('../../api/lib/db.js') : {};
+for (const b of books) {
+  const info = docInfo.get(b.id);
+  const basis = {}; for (const p of b.paras) { const a = allAssigned.get(p.id); const k = a ? a[0].basis : 'unassigned'; basis[k] = (basis[k] || 0) + 1; }
+  writeFileSync(join(OUTDIR, 'b', `${b.id}.json`), JSON.stringify({ summary: { ...info.summary, basis_after_propagation: basis, display_authors: docAuthors(b.id, b.paras) },
+    review: info.review, paragraphs: b.paras.map((p) => ({ id: p.id, pidx: p.pidx, text: p.text, authors: allAssigned.get(p.id) || null })) }));
+  if (!WRITE) continue;
+  const stmts = b.paras.filter((p) => allAssigned.get(p.id)).map((p) => ({ sql: 'UPDATE content SET authors = ?, authors_model = ? WHERE id = ?', args: [JSON.stringify(allAssigned.get(p.id)), READER_VERSION, p.id] }));
+  for (let i = 0; i < stmts.length; i += 500) await transaction(stmts.slice(i, i + 500), 'authorship:content');
+  await transaction([{ sql: 'UPDATE docs SET authors = ? WHERE id = ?', args: [JSON.stringify(docAuthors(b.id, b.paras)), b.id] }], 'authorship:docs');
+  wrote += stmts.length;
+  if (wrote && books.indexOf(b) % 500 === 0) console.log(JSON.stringify({ writing: books.indexOf(b), of: books.length, paragraphs: wrote }));
 }
-console.log(JSON.stringify({ identical_text_groups: [...groups.values()].filter((g) => g.length > 1).length, propagated }));
-writeFileSync(join(OUTDIR, 'summary.json'), JSON.stringify(summary, null, 1));
+console.log(JSON.stringify({ done: true, books: books.length, written: wrote }));
+process.exit(0);

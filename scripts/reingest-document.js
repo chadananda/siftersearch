@@ -22,6 +22,14 @@ import { logger } from '../api/lib/logger.js';
 
 const args = process.argv.slice(2);
 
+// Writes MUST go through the single writer. Run from a plain shell without SIFTER_WRITER_URL, this script wrote directly,
+// hit "database is locked" half-way, and left doc 429 with 3,700 rows deleted and nothing inserted (2026-10-03).
+// --direct only where no writer process runs (a dev machine).
+if (!process.env.SIFTER_WRITER_URL && !process.env.SIFTER_IS_WRITER && !args.includes('--direct')) {
+  console.error('Refusing: set SIFTER_WRITER_URL=http://127.0.0.1:7849 (tower) so writes go through the writer, or pass --direct where no writer runs.');
+  process.exit(2);
+}
+
 async function listDocuments() {
   const docs = await queryAll(`
     SELECT d.id, d.title, d.language, d.file_path, d.paragraph_count,

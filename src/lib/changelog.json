@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T05:20:20.503Z",
+  "generated": "2026-10-03T05:37:38.658Z",
   "entries": [
+    {
+      "hash": "d7174bcc",
+      "date": "2026-10-02",
+      "type": "Fixed",
+      "description": "A blockquote is one block per quoted paragraph, not one per printed line",
+      "scope": "ingest"
+    },
     {
       "hash": "19ebd07b",
       "date": "2026-10-02",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The pilgrim-note groups get their detail too (a separate exclusion from the last fix)",
       "scope": null
-    },
-    {
-      "hash": "6c20c24a",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Grade EVERY listed book — Biographies and General Histories were finished but displayed as untouched",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-02": [
+      {
+        "hash": "d7174bcc",
+        "date": "2026-10-02",
+        "type": "Fixed",
+        "description": "A blockquote is one block per quoted paragraph, not one per printed line",
+        "scope": "ingest"
+      },
       {
         "hash": "19ebd07b",
         "date": "2026-10-02",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "The pilgrim-note groups get their detail too (a separate exclusion from the last fix)",
-        "scope": null
-      },
-      {
-        "hash": "6c20c24a",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Grade EVERY listed book — Biographies and General Histories were finished but displayed as untouched",
         "scope": null
       }
     ]

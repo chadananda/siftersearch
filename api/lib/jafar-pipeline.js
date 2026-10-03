@@ -29,6 +29,7 @@ import { extractQuotedSpan, phraseQueryVariants, scoreCandidate } from './quote-
 import { perplexityFallback } from './perplexity.js';
 import { createSearchExplain } from './search-explain.js';
 import * as companion from './companion/index.js';
+import { effectiveAuthor } from './authorship/effective.js';
 
 // Admin-set global companion dials, cached 60s (they change rarely; a DB read per turn is wasteful).
 let _companionDials = null, _companionDialsAt = 0;
@@ -1852,18 +1853,23 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       const placeholders = quotesWithParaId.map(() => '(?,?)').join(',');
       const vals = quotesWithParaId.flatMap(q => [q.doc_id, q.paragraph_index]);
       const metaRows = await queryAll(
-        `SELECT doc_id, paragraph_index, para_meta FROM content WHERE (doc_id, paragraph_index) IN (VALUES ${placeholders}) AND deleted_at IS NULL`,
+        `SELECT doc_id, paragraph_index, para_meta, authors FROM content WHERE (doc_id, paragraph_index) IN (VALUES ${placeholders}) AND deleted_at IS NULL`,
         vals
       );
-      const metaByKey = new Map(metaRows.map(r => [`${r.doc_id}:${r.paragraph_index}`, r.para_meta]));
+      const rowByKey = new Map(metaRows.map(r => [`${r.doc_id}:${r.paragraph_index}`, r]));
       for (const q of trimmed) {
         const key = `${q.doc_id}:${q.paragraph_index}`;
-        const raw = metaByKey.get(key);
+        const row = rowByKey.get(key);
+        if (!row) continue;
+        // the paragraph's own writer (content.authors, migration 140) wins over the legacy para_meta
+        const who = row.authors ? effectiveAuthor(row) : null;
+        if (who?.author) q.source_author = who.author;
+        const raw = row.para_meta;
         if (!raw) continue;
         try {
           const meta = typeof raw === 'string' ? JSON.parse(raw) : raw;
           if (meta.is_attribution_line) continue; // skip citation-only paragraphs
-          if (meta.author) q.source_author = meta.author;
+          if (meta.author && !who?.author) q.source_author = meta.author;
           if (meta.source_title) q.para_source_title = meta.source_title;
           if (meta.source_type) q.para_source_type = meta.source_type;
           if (meta.source_date) q.para_source_date = meta.source_date;

@@ -19,6 +19,7 @@
 import { logger } from '../logger.js';
 import { createEmbeddings } from '../ai.js';
 import { queryEmbedding } from '../query-embedding.js';
+import { effectiveAuthor } from '../authorship/effective.js';
 
 /**
  * Convert stored hyp_questions text → array of trimmed question strings.
@@ -110,7 +111,7 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
   // past its PM2 memory cap. With the hint: <200ms on 4M rows.
   const rows = await queryAll(`
     SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions, c.hyp_thesis,
-           c.para_meta, d.religion, d.collection, d.encumbered, d.title, d.author
+           c.para_meta, c.authors, d.religion, d.collection, d.encumbered, d.title, d.author
     FROM content c INDEXED BY idx_content_hype_to_sync
     JOIN docs d ON d.id = c.doc_id
     WHERE c.enhanced_synced = 0
@@ -139,21 +140,18 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
 
     // Skip pure citation/attribution lines — they're search noise and should
     // not generate HyPE question records in the index.
-    let paraMeta = null;
-    if (row.para_meta) {
-      try { paraMeta = JSON.parse(row.para_meta); } catch { /* ignore */ }
-    }
-    if (paraMeta?.is_attribution_line) {
+    const who = effectiveAuthor(row);
+    if (who.isReferenceLine) {
       sourceParagraphIds.push(row.paragraph_id); // mark synced so we don't re-visit
       continue;
     }
 
     sourceParagraphIds.push(row.paragraph_id);
-    // Use para_meta.author (compilation-level attribution) over doc-level author
-    // so authority scoring reflects the actual quoted author, not the compiler.
-    const effectiveAuthor = paraMeta?.author || row.author;
+    // The paragraph's own writer (content.authors → para_meta → doc author), so authority scoring reflects the
+    // quoted writer, not the compiler.
+    const effectiveAuthorName = who.author;
     let authority = 0;
-    try { authority = getAuthority ? getAuthority({ author: effectiveAuthor, title: row.title }) : 0; }
+    try { authority = getAuthority ? getAuthority({ author: effectiveAuthorName, title: row.title }) : 0; }
     catch { authority = 0; }
     if (thesis) {
       records.push({

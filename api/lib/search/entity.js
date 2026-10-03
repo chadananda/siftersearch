@@ -6,6 +6,7 @@
 // Follows the hype.js sidecar pattern (deps injected; re-exported from search.js).
 
 import { logger } from '../logger.js';
+import { effectiveAuthor } from '../authorship/effective.js';
 
 /**
  * Search the entity-mentions sidecar by resolved entity IDs.
@@ -58,7 +59,7 @@ export async function syncEntityMentionsBatch({ getMeili, INDEXES }, { queryAll,
     SELECT em.id AS mention_id, em.entity_id, em.content_id AS paragraph_id, em.role,
            ge.canonical_name AS entity_canonical_name, ge.entity_type,
            c.doc_id, d.religion, d.collection, d.encumbered, d.title, d.author,
-           c.para_meta
+           c.para_meta, c.authors
     FROM entity_mentions em
     JOIN graph_entities ge ON ge.id = em.entity_id
     JOIN content c ON c.id = em.content_id
@@ -74,11 +75,9 @@ export async function syncEntityMentionsBatch({ getMeili, INDEXES }, { queryAll,
   if (rows.length === 0) return { processed: 0, indexed: 0, errors: 0 };
 
   const docs = rows.map(row => {
-    let paraMeta = null;
-    try { paraMeta = JSON.parse(row.para_meta); } catch { /* ignore */ }
-    const effectiveAuthor = paraMeta?.author || row.author;
+    const effectiveAuthorName = effectiveAuthor(row).author;
     let authority = 0;
-    try { authority = getAuthority ? getAuthority({ author: effectiveAuthor, title: row.title }) : 0; }
+    try { authority = getAuthority ? getAuthority({ author: effectiveAuthorName, title: row.title }) : 0; }
     catch { authority = 0; }
 
     return {
