@@ -51,11 +51,36 @@ export const isHeading = (row, t) => /^heading/.test(row.blocktype || '') || /^\
 
 // A speaker heading in a record of talks: "ADDRESS BY ‘ABDU’L-BAHÁ", "READING BY REV. BRADFORD LEAVITT", "Talk of the Master".
 // Returns the speaker's name (a known figure where one is named), else null.
+const TALK_RECORD = /^(?:.{0,60},\s*Interpreter\b|Interpreter\s*[—–-]|Interpreted by\b|Translated by .{3,60} from (?:his|her|the) (?:Persian )?notes|Steno(?:graphic)? notes\b|Longhand notes\b|Dictated to\b)/i;
+/** A talk opening inline in a paragraph ("Interpreter —? You are all welcome…") — the only non-heading speaker mark. */
+export const opensTalk = (text) => /^Interpreter\s*[—–-]/i.test(String(text).trim());
 export function bylineSpeaker(heading) {
-  const m = String(heading).replace(/^#+\s*|[*_]/g, '').trim().match(/^(?:an?\s+)?(?:address|talk|reading|remarks|prayer|introduction|words|speech|sermon|lecture|response|reply|answer)s?\s+(?:by|of|from)\s+(.{2,80})$/i);
+  // a talk recorded through an interpreter / from stenographic notes ("Dr. Ameen U. Faríd, Interpreter", "Translated by
+  // Mírzá Aḥmad Sohrab from his Persian notes", "Stenographic notes by Miss Bijou Straun"): in this library those are
+  // ‘Abdu’l-Bahá's talks — the interpreter or stenographer is NEVER the speaker (Chad, 2026-10-03)
+  if (TALK_RECORD.test(String(heading).replace(/^#+\s*|[*_()]/g, '').trim())) return '‘Abdu’l-Bahá';
+  // the speaker named anywhere in the heading: "Good-by! TALK BY ‘ABDU’L-BAHÁ", "EXCERPT FROM AN ADDRESS BY ‘ABDU’L-BAHÁ",
+  // "BENEDICTION BY ‘ABDU’L-BAHÁ", "Message from A.B. to the Japanese boys" ("A.B." only inside such a heading)
+  const h0 = String(heading).replace(/^#+\s*|[*_]/g, '').trim();
+  const any = h0.match(/\b(?:address|talk|benediction|prayer|remarks|words|message|tablet|excerpt from an? \w+)s?\s+(?:by|of|from)\s+(.{2,80})/i);
+  if (any) {
+    if (/^A\.\s?B\.(?=[\s’']|$)/.test(any[1])) return '‘Abdu’l-Bahá';
+    for (const [n, re] of PEOPLE) { const m = any[1].match(re); if (m && m.index === 0) return n; }
+  }
+  const m = String(heading).replace(/^#+\s*|[*_]/g, '').trim().match(/^(?:an?\s+)?(?:[\p{L}’'-]+\s+){0,2}?(?:address|talk|reading|remarks|prayer|introduction|words|speech|sermon|lecture|response|reply|answer)s?\s+(?:by|of|from)\s+(.{2,200})$/iu);
   if (!m) return null;
   for (const [n, re] of PEOPLE) if (re.test(m[1])) return n;
   return m[1].replace(/[.:]+$/, '').toLowerCase().replace(/(^|[\s.‘’'-])(\p{L})/gu, (x, a, b) => a + b.toUpperCase());
+}
+
+// An interview / Q&A transcript line: "’Abdu’l-Bahá. No, no one will give up…", "A. B.: …" → the figure; "Mr. Lawson. Then
+// you are not claiming…", "Q. …" → someone else (other:true). null when the paragraph has no speaker prefix.
+export function dialogueSpeaker(text) {
+  const t = String(text).trim();
+  if (/^A\.\s?B\.\s*[:.—–-]?\s+\S/.test(t)) return { name: '‘Abdu’l-Bahá' };
+  for (const [n, re] of PEOPLE) { const m = t.match(re); if (m && m.index === 0 && /^\s*[.:]\s+\S/.test(t.slice(m[0].length))) return { name: n }; }
+  if (/^(?:(?:Mr|Mrs|Miss|Dr|Rev|Prof)\.?\s+[A-Z][\w’'-]+|Q|Question|Questioner)\s*[.:]\s+\S/.test(t)) return { name: null, other: true };
+  return null;
 }
 
 export function parseTrailer(raw) {

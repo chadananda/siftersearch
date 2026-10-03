@@ -128,7 +128,11 @@ export function readBook(book, paras) {
   for (let i = 0; i < paras.length; i++) {
     const p = paras[i], t = String(p.text || '').trim();
     if (!t) continue;
-    if (p.isHeading) byline = p.byline || null;
+    // a heading sets the speaker; a heading right after another heading (venue, date: "ADDRESS BY ‘ABDU’L-BAHÁ" /
+    // "UNITARIAN CHURCH, PALO ALTO") keeps the speaker the first one named
+    const prevHeading = i > 0 && !!paras[i - 1]?.isHeading;
+    if (p.isHeading) byline = p.byline || (prevHeading ? byline : null);
+    else if (p.byline) byline = p.byline;           // "Interpreter —? You are all welcome…": a talk opening inline
     owner.set(p.id, byline || book.author);
     if (p.isHeading) { close(null, null); out.set(p.id, [{ name: null, role: 'heading', basis: 'heading' }]); continue; }   // ends any span
     if (p.isMeta) { out.set(p.id, [{ name: null, role: 'meta', basis: 'meta' }]); continue; }   // a date / source note: transparent
@@ -199,6 +203,8 @@ export function readBook(book, paras) {
       out.set(p.id, [{ name: ref.name, role: 'author', basis: 'reference' }]);
       continue;
     }
+    // an interview / Q&A transcript line names its own speaker ("’Abdu’l-Bahá. No, …", "Mr. Lawson. Then you …")
+    if (p.dialogue) { out.set(p.id, [{ ...p.dialogue, role: 'author', basis: 'dialogue' }]); continue; }
     // plain prose of the book's author, with any inline quotations it names
     const authors = [own(p)];
     for (const n of inlineSpeakers(t)) if (n !== book.author) authors.push({ name: n, role: 'quoted', basis: 'inline' });

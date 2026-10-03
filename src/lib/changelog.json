@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T05:57:26.071Z",
+  "generated": "2026-10-03T16:28:59.950Z",
   "entries": [
+    {
+      "hash": "c5297645",
+      "date": "2026-10-02",
+      "type": "Fixed",
+      "description": "Speaker = subject of the speech verb; whole-quote links need share; only evidence propagates",
+      "scope": "authorship"
+    },
     {
       "hash": "e74411e9",
       "date": "2026-10-02",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Data-bearing pages must revalidate — a stale tab is indistinguishable from a broken fix",
       "scope": null
-    },
-    {
-      "hash": "70fa1154",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "One membership map for every reader (restores the 607 nested pilgrim notes)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-02": [
+      {
+        "hash": "c5297645",
+        "date": "2026-10-02",
+        "type": "Fixed",
+        "description": "Speaker = subject of the speech verb; whole-quote links need share; only evidence propagates",
+        "scope": "authorship"
+      },
       {
         "hash": "e74411e9",
         "date": "2026-10-02",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Data-bearing pages must revalidate — a stale tab is indistinguishable from a broken fix",
-        "scope": null
-      },
-      {
-        "hash": "70fa1154",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "One membership map for every reader (restores the 607 nested pilgrim notes)",
         "scope": null
       }
     ]

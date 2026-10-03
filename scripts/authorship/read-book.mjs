@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { readBook, mixedLead, firstPerson } from '../../api/lib/authorship/reader.js';
-import { isTrailer, isHeading, parseTrailer, isMeta, isNumberedHeading, bylineSpeaker } from '../../api/lib/authorship/trailers.js';
+import { isTrailer, isHeading, parseTrailer, isMeta, isNumberedHeading, bylineSpeaker, dialogueSpeaker, opensTalk } from '../../api/lib/authorship/trailers.js';
 import { sectionMap, frontmatterAuthors } from '../../api/lib/authorship/sections.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -23,11 +23,13 @@ const LIB = '/home/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdow
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const [OUTDIR, ...IDARGS] = args;
 const NO_JEV = process.argv.includes('--no-jev'), WRITE = process.argv.includes('--write'), ALL = process.argv.includes('--all');
-const READER_VERSION = 'reader-v1-2026-10-03';
+const READER_VERSION = 'reader-v2-2026-10-03';
+// --write-only=<id,…>: read and propagate over everything (pass A resumes) but write only these docs
+const WRITE_ONLY = new Set(((process.argv.find((a) => a.startsWith('--write-only=')) || '').split('=')[1] || '').split(',').filter(Boolean).map(Number));
 const DOCTRINAL = ['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi'];   // a compilation's display authors (Chad 10-03)
 const TASK = 'paragraph-attribution';
 // Below these, System-1 does not decide: the paragraph is listed for review (and later escalated), never guessed.
-const CONT_MIN = 0.8, SPAN_MIN = 0.6;
+const CONT_MIN = 0.8, SPAN_MIN = 0.6, TALK_MIN = 0.8;
 mkdirSync(join(OUTDIR, 'a'), { recursive: true }); mkdirSync(join(OUTDIR, 'b'), { recursive: true });
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 const strip = (t) => String(t || '').replace(/⁅\/?s\d+⁆/g, '').trim();
@@ -114,7 +116,9 @@ for (const docId of IDS) {
       else trailer = t.name ? t : { name: null, kind: t.kind };
       if (trailer.name) lastTrailer = trailer;
     }
-    return { id: r.id, pidx: r.pidx, text: r.text, isHeading: isHeading(r, r.text) || isNumberedHeading(r.text) || !!sm?.heading, byline: bylineSpeaker(r.text), isMeta: !trailer && isMeta(r.text), trailer,
+    const head = isHeading(r, r.text) || isNumberedHeading(r.text) || !!sm?.heading;
+    // only a HEADING names a speaker for what follows; in prose, only an inline talk opening ("Interpreter —? …") does
+    return { id: r.id, pidx: r.pidx, text: r.text, isHeading: head, byline: head ? bylineSpeaker(r.text) : (opensTalk(r.text) ? '‘Abdu’l-Bahá' : null), dialogue: dialogueSpeaker(r.text), isMeta: !trailer && isMeta(r.text), trailer,
       section: sm?.section || null, source: src.get(r.id) || null };
   });
   const named = paras.filter((p) => p.trailer?.name);
@@ -175,6 +179,27 @@ for (const docId of IDS) {
         assigned.set(p.id, [{ name: speaker, role: 'author', basis: 'continuation', confidence: +conf.toFixed(2) }]);
       }
     });
+    // TALK RECORDS (a book whose headings mark ‘Abdu’l-Bahá's talks — interpreter / "ADDRESS BY" headings — but whose
+    // catalogue author is the recorder): a talk also follows narrative headings ("‘ABDU’L-BAHÁ AT THE FEAST") and
+    // "’Abdu’l-Bahá began:". Each paragraph still on the book default is asked: the Master speaking, or the recorder?
+    // Separate task type (its own Laya training set). Decided only at ≥ TALK_MIN.
+    const talkHeads = paras.filter((p) => p.isHeading && p.byline === '‘Abdu’l-Bahá').length;
+    if (!FIGURES.includes(d.author) && talkHeads >= 3) {
+      const todo = paras.map((p, i) => [p, i]).filter(([p]) => p.text.length >= 60 && assigned.get(p.id)?.[0]?.basis === 'book');
+      await pool(todo, async ([p, i]) => {
+        let head = ''; for (let k = i - 1; k >= 0 && k >= i - 40; k--) if (paras[k].isHeading) { head = paras[k].text.slice(0, 160); break; }
+        const state = `BOOK: ${d.title} — notes recorded by ${d.author} of ‘Abdu’l-Bahá's visit, His talks and conversations\nSECTION: ${head}\nPREVIOUS:\n${(paras[i - 1]?.text || '').slice(0, 500)}\n\n>>> THIS PARAGRAPH:\n${p.text.slice(0, 1200)}\n<<<`;
+        const r = await ask('talk-speaker', state, { speaker: { type: 'choice', criteria: {
+          abdulbaha: '‘Abdu’l-Bahá speaking (His talk, address, answer or words, in the first person or quoted)',
+          recorder: `the recorder or editor narrating events, describing people and places, or giving notes`,
+          other: 'someone else speaking or writing (a chairman, a minister, a newspaper, a letter by another person)' },
+          instructions: 'Whose words are in THIS PARAGRAPH?' } }, { ref: p.id });
+        calls++; tokens += r.tokens;
+        const a = r.answers.speaker, choice = a?.choice ?? a?.value, conf = +(a?.confidence ?? 0).toFixed(2);
+        if (conf < TALK_MIN || choice === 'recorder') return;
+        assigned.set(p.id, [choice === 'abdulbaha' ? { name: '‘Abdu’l-Bahá', role: 'author', basis: 'system1', confidence: conf } : { name: null, other: true, role: 'author', basis: 'system1', confidence: conf }]);
+      });
+    }
   }
   const basis = {}; for (const [, a] of assigned) { const k = a ? a[0].basis : 'unassigned'; basis[k] = (basis[k] || 0) + 1; }
   const summary = { id: docId, title: d.title, catalogued: d.author, compilation, book_authors: book.authors, paragraphs: paras.length,
@@ -275,9 +300,10 @@ const { transaction } = WRITE ? await import('../../api/lib/db.js') : {};
 for (const b of books) {
   const info = docInfo.get(b.id);
   const basis = {}; for (const p of b.paras) { const a = allAssigned.get(p.id); const k = a ? a[0].basis : 'unassigned'; basis[k] = (basis[k] || 0) + 1; }
+  if (WRITE_ONLY.size && !WRITE_ONLY.has(b.id)) continue;
   writeFileSync(join(OUTDIR, 'b', `${b.id}.json`), JSON.stringify({ summary: { ...info.summary, basis_after_propagation: basis, display_authors: docAuthors(b.id, b.paras) },
     review: info.review, paragraphs: b.paras.map((p) => ({ id: p.id, pidx: p.pidx, text: p.text, authors: allAssigned.get(p.id) || null })) }));
-  if (!WRITE) continue;
+  if (!WRITE || (WRITE_ONLY.size && !WRITE_ONLY.has(b.id))) continue;
   const stmts = b.paras.filter((p) => allAssigned.get(p.id)).map((p) => ({ sql: 'UPDATE content SET authors = ?, authors_model = ? WHERE id = ?', args: [JSON.stringify(allAssigned.get(p.id)), READER_VERSION, p.id] }));
   for (let i = 0; i < stmts.length; i += 500) await transaction(stmts.slice(i, i + 500), 'authorship:content');
   await transaction([{ sql: 'UPDATE docs SET authors = ? WHERE id = ?', args: [JSON.stringify(docAuthors(b.id, b.paras)), b.id] }], 'authorship:docs');

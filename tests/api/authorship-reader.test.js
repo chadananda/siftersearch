@@ -139,3 +139,57 @@ describe('speakerOf: a figure is the speaker only as the speech verb\'s subject'
   ];
   for (const [text, want] of cases) it(text.slice(0, 50), () => expect(speakerOf(text)).toBe(want));
 });
+
+import { bylineSpeaker } from '../../api/lib/authorship/trailers.js';
+describe('talk records: the interpreter is never the speaker', () => {
+  it('interpreter / stenographic headings mark ‘Abdu’l-Bahá’s talk', () => {
+    expect(bylineSpeaker('Dr. Ameen U. Faríd, Interpreter')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('Mírzá Aḥmad Sohrab, Interpreter')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('Translated by Mírzá Aḥmad Sohrab from his Persian notes')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('Interpreter —? You are all welcome, exceedingly welcome.')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('Talk of ’Abdu’l-Bahá, given at 51 Grosse Bldg., Los Angeles')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('San Francisco, Sunday evening, October 13, 1912')).toBe(null);
+  });
+  it('a talk runs from the interpreter heading to the next heading', () => {
+    const r = readBook({ author: 'Frances Orr Allen', compilation: false }, [
+      { id: 1, text: 'Oakland, 3 P. M., October 3, 1912', isHeading: true },
+      { id: 2, text: 'Dr. Ameen U. Faríd, Interpreter', isHeading: true, byline: '‘Abdu’l-Bahá' },
+      { id: 3, text: 'Praise be to God, this is a good meeting.' },
+      { id: 4, text: 'San Francisco, October 10, 1912', isHeading: true },
+      { id: 5, text: 'Interpreter —? You are all welcome, exceedingly welcome.', byline: '‘Abdu’l-Bahá' },
+      { id: 6, text: 'Then the Master rose to leave.' },
+    ]);
+    expect(names(r, 3)).toEqual(['‘Abdu’l-Bahá:author:byline']);
+    expect(names(r, 5)).toEqual(['‘Abdu’l-Bahá:author:byline']);
+  });
+});
+
+import { dialogueSpeaker } from '../../api/lib/authorship/trailers.js';
+describe('talk headings and interview transcripts', () => {
+  it('a heading naming the speaker anywhere, incl. "A.B."', () => {
+    expect(bylineSpeaker('Good-by! Good-by! TALK BY ‘ABDU’L-BAHÁ')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('EXCERPT FROM AN ADDRESS BY ‘ABDU’L-BAHÁ')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('Message from A.B. to the Japanese boys in Portland through Mrs. Latimer')).toBe('‘Abdu’l-Bahá');
+    expect(bylineSpeaker('INTRODUCTORY REMARKS BY CHAIRMAN W. J. WALTERS')).toBe('Chairman W. J. Walters');
+    expect(bylineSpeaker('Dictated to Miss Bijou Straun')).toBe('‘Abdu’l-Bahá');
+  });
+  it('Q&A lines carry their own speaker', () => {
+    expect(dialogueSpeaker('’Abdu’l-Bahá. No, no one will give up his affiliation with his own religion')).toEqual({ name: '‘Abdu’l-Bahá' });
+    expect(dialogueSpeaker('Mr. Lawson. Then you are not claiming to have any divine revelations')).toEqual({ name: null, other: true });
+    expect(dialogueSpeaker('The Master spoke of the sea.')).toBe(null);
+  });
+});
+
+describe('a venue heading under a speaker heading keeps the speaker', () => {
+  it('ADDRESS BY ‘ABDU’L-BAHÁ / UNITARIAN CHURCH, PALO ALTO', () => {
+    const r = readBook({ author: 'Frances Orr Allen', compilation: false }, [
+      { id: 1, text: 'ADDRESS BY ‘ABDU’L-BAHÁ', isHeading: true, byline: '‘Abdu’l-Bahá' },
+      { id: 2, text: 'UNITARIAN CHURCH, PALO ALTO, CALIFORNIA', isHeading: true },
+      { id: 3, text: 'We must not hate a child just because he is a child.' },
+      { id: 4, text: 'THE NEXT DAY', isHeading: true },
+      { id: 5, text: 'The friends gathered at the Goodall home.' },
+    ]);
+    expect(names(r, 3)).toEqual(['‘Abdu’l-Bahá:author:byline']);
+    expect(names(r, 5)).toEqual(['Frances Orr Allen:author:book']);
+  });
+});
