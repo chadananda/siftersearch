@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T20:19:07.582Z",
+  "generated": "2026-10-03T21:45:21.104Z",
   "entries": [
+    {
+      "hash": "871c05a7",
+      "date": "2026-10-03",
+      "type": "New",
+      "description": "A paragraph's Meili `author` is its own writer — author filters find quotations in any book",
+      "scope": "search"
+    },
     {
       "hash": "755921d3",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Force no-store on live-state /api responses (browser cached progress 4h)",
       "scope": null
-    },
-    {
-      "hash": "51e48f1d",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Live-state endpoints must never come from the edge cache (THE reason nothing I fixed was visible)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "871c05a7",
+        "date": "2026-10-03",
+        "type": "New",
+        "description": "A paragraph's Meili `author` is its own writer — author filters find quotations in any book",
+        "scope": "search"
+      },
       {
         "hash": "755921d3",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Force no-store on live-state /api responses (browser cached progress 4h)",
-        "scope": null
-      },
-      {
-        "hash": "51e48f1d",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Live-state endpoints must never come from the edge cache (THE reason nothing I fixed was visible)",
         "scope": null
       }
     ]

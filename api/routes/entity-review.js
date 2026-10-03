@@ -465,8 +465,10 @@ export default async function entityReviewRoutes(server) {
     await requireAdmin(req, reply); // Bearer fallback; sends 401/403 otherwise
   };
 
-  // Self-bootstrap the flag table at registration (write routes via the single-writer).
-  try { await query(FLAG_DDL); } catch (e) { /* writer may be momentarily down; POST retries */ }
+  // Self-bootstrap the flag table at registration (write routes via the single-writer) — NOT awaited: a deploy restarts
+  // the worker (the writer) at the same moment, the write waits out its retries, the plugin passes Fastify's 10 s
+  // pluginTimeout and the API exits — 6–7 restarts per deploy ("restart storm", 2026-10-03). Idempotent; POST retries.
+  query(FLAG_DDL).catch(() => { /* writer may be momentarily down; POST retries */ });
 
   server.get('/entity-review', { preHandler: adminAuth }, async (req, reply) => {
     let ents;
