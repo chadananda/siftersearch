@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T05:43:21.620Z",
+  "generated": "2026-10-03T05:57:26.071Z",
   "entries": [
+    {
+      "hash": "e74411e9",
+      "date": "2026-10-02",
+      "type": "Fixed",
+      "description": "Library-audit fixes — no low-confidence guesses, no \"another person\" names, tighter dash references",
+      "scope": "authorship"
+    },
     {
       "hash": "0f6bfcc3",
       "date": "2026-10-02",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "One membership map for every reader (restores the 607 nested pilgrim notes)",
       "scope": null
-    },
-    {
-      "hash": "ca389282",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Nesting is PRESENTATION — a nested doc is a plan doc, graded and displayed like any other",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-02": [
+      {
+        "hash": "e74411e9",
+        "date": "2026-10-02",
+        "type": "Fixed",
+        "description": "Library-audit fixes — no low-confidence guesses, no \"another person\" names, tighter dash references",
+        "scope": "authorship"
+      },
       {
         "hash": "0f6bfcc3",
         "date": "2026-10-02",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "One membership map for every reader (restores the 607 nested pilgrim notes)",
-        "scope": null
-      },
-      {
-        "hash": "ca389282",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Nesting is PRESENTATION — a nested doc is a plan doc, graded and displayed like any other",
         "scope": null
       }
     ]

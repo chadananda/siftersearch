@@ -22,7 +22,7 @@ export const firstPerson = (text) => {
   return best;
 };
 
-const SAY = '(writes|wrote|written|says|said|states|stated|declares|declared|affirms|affirmed|asserts|asserted|explains|explained|proclaims|proclaimed|testifies|testified|exclaims|exclaimed|reveals|revealed|observes|observed|adds|added|counsels|counselled|counseled|warns|warned|assures|assured|enjoins|enjoined)';
+const SAY = '(writes|wrote|written|says|said|states|stated|declares|declared|affirms|affirmed|asserts|asserted|explains|explained|proclaims|proclaimed|testifies|testified|exclaims|exclaimed|reveals|revealed|observes|observed|adds|added|counsels|counselled|counseled|warns|warned|assures|assured|enjoins|enjoined|sent|cabled|telegraphed|recounts|recounted|recorded|relates|related|recalls|recalled|remarks|remarked|replies|replied|answers|answered|asks|asked|describes|described|prays|prayed|comments|commented|exhorts|exhorted|urges|urged|addresses|addressed)';
 const LEADIN = new RegExp(`(${SAY}[^.:!?]{0,80}|following|these words|as follows|this passage|\\bhere (?:is|are)\\b[^.!?]{0,80}|\\b(?:prayer|words|tablet|passage|statement|letter) (?:of|by|from)\\b[^.!?]{0,80})[^.!?]{0,40}:\\s*$`, 'i');
 const INLINE = new RegExp(`(?:^|[\\s“"‘'(—–-])([^.;:!?]{0,60}?)\\b${SAY}\\b`, 'gi');
 
@@ -31,13 +31,34 @@ const SAY_RE = new RegExp(`\\b${SAY}\\b`, 'gi');
  *  the name ending closest before that verb, else the first name after it ("writes Bahá’u’lláh"), else the first name. */
 export function speakerOf(text) {
   const t = String(text), verbs = [...t.matchAll(SAY_RE)];
-  if (!verbs.length) return firstPerson(t);
+  // no speech verb: only "the words / prayer / Tablet / cable of X" names X ("challenged the truth of Bahá’u’lláh by the
+  // following argument:" names the OBJECT of a challenge, not a speaker)
+  if (!verbs.length) {
+    const m = t.match(/\b(?:words|prayer|tablet|passage|statement|letter|message|cable|telegram|counsel|exhortation)s?\s+(?:of|from|by)\s+(.{3,60})/i);
+    return m ? firstPerson(m[1].slice(0, 40)) : null;
+  }
   const v = verbs[verbs.length - 1].index;
   const after = t.slice(v + verbs[verbs.length - 1][0].length).replace(/^\s+/, '');   // "writes Bahá’u’lláh:" (inverted)
-  for (const [n, re] of PEOPLE) { const m = after.match(re); if (m && m.index <= 4) return n; }
+  for (const [n, re] of PEOPLE) { const m = after.match(re); if (m && m.index === 0) return n; }
+  // the figure must be the verb's SUBJECT: the last mention before the verb, not in object position ("the room of
+  // ’Abdu’l-Bahá, declared", "wrote to the Master"), within 80 characters of the verb, with no other subject between
+  // ("Lee McClung … declared", "The Chicago Inter-Ocean said", "she asks", "which he wrote"). Otherwise the speaker is
+  // left open for System-1, which can answer "someone else" — narratives mention the figures constantly.
   let best = null, end = -1;
-  for (const [n, re] of PEOPLE) for (const m of t.slice(0, v).matchAll(new RegExp(re.source, 'gi'))) if (m.index + m[0].length > end) { best = n; end = m.index + m[0].length; }
-  return best ?? firstPerson(t.slice(v)) ?? firstPerson(t);
+  const before = t.slice(0, v);
+  for (const [n, re] of PEOPLE) for (const m of before.matchAll(new RegExp(re.source, 'gi'))) {
+    if (/\b(?:of|to|with|from|by|for|about|upon|unto|before|after|toward|towards|against|at|in)\s+(?:the\s+)?$/i.test(before.slice(0, m.index))) continue;
+    if (m.index + m[0].length > end) { best = n; end = m.index + m[0].length; }
+  }
+  if (!best) return null;
+  const gap = t.slice(end, v);
+  if (gap.length > 80) return null;
+  // (a capital "He" mid-sentence is the reverential pronoun for the figure just named, so it does not end the subject)
+  if (/(?:^|[\s,;])(?:he|she|they|we|I|who|which|whom)\s+(?:\w+[\s,]+){0,3}$/.test(gap)) return null;
+  const words = gap.replace(/[^\p{L}\s]/gu, ' ').trim().split(/\s+/).filter(Boolean);
+  const aside = /^\s*,[^,]{0,70},\s*$/.test(gap);   // "Bahá’u’lláh, in His Tablet to the Pope, writes:"
+  if (!aside && words.some((w) => /^\p{Lu}/u.test(w) && !/^(He|His|Him|Himself|In|On|At|To|From|Thus|Then|Later|Once|Further|Again|Also|And|But|As|When|While|After|Before|Here|There|This|That|These|Those|The|A|An)$/.test(w))) return null;
+  return best;
 }
 
 /** A paragraph that ends by introducing a quotation ("Bahá’u’lláh writes:"), with the named speaker if any. */
@@ -143,8 +164,16 @@ export function readBook(book, paras) {
       if (ref && ref.kind !== 'footnote') close(ref.name, 'reference');
       continue;
     }
-    // ordinary book: a source-linked whole quotation is definite; it extends or opens a span with that speaker
-    if (p.source && p.source.coverage >= 0.8) {
+    // the first paragraph after a lead-in that NAMES its speaker is that speaker's — a source link (a catalogue-level clue)
+    // never overrides the book's own introduction ("the following words of ’Abdu’l-Bahá are illuminating:")
+    if (span && !span.ids.length && span.leadIn != null && span.speaker) {
+      span.ids.push(p.id);
+      if (ref) close(ref.name, 'reference');
+      continue;
+    }
+    // ordinary book: a source-linked WHOLE quotation is definite — the source is (nearly) all present (coverage) AND fills
+    // most of this paragraph (share); a short passage inside long prose is an inline quotation (handled below as `quoted`)
+    if (p.source && p.source.coverage >= 0.8 && (p.source.share ?? 1) >= 0.6) {
       if (span && span.speaker && span.speaker !== p.source.author) close(null, null);
       span ??= { ids: [], start: i };
       span.speaker ??= p.source.author; span.basis ??= 'source_link';

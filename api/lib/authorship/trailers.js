@@ -39,7 +39,10 @@ const META = [/^USBN\s*#/i, /^\\?\[(to|To)\s[^\]]+\\?\]$/, /^(Published|Compiled
   /^\([^()]{0,200}\)\.?$/, /^Extract \d+\.?$/i, /^(Cablegram|Cable|Telegram|Message|Letter)\s+(received|dated|sent)\b[^"“”]{0,80}$/i,
   /^[“"]?(Qur[’']?[aá]n|Sura|Súrih)\s+\d+(:\d+)?\.?$/i, /^\\?\[[^\]]{3,160}\\?\]$/,
   /^[^"“”]{0,120}\bcompiled by\b[^"“”]{0,120}$/i, /^(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\.?$/i,
-  /^[^"“”]{3,60},\s*(Interpreter|Translator|Secretary)\.?$/i, /^Guardian of the Bah/i];
+  /^[^"“”]{3,60},\s*(Interpreter|Translator|Secretary)\.?$/i, /^Guardian of the Bah/i,
+  // a page header / footer ("OBS:Online Journal of Bahá’í Studies       502       1 (2007)"), "↑" endnotes, footnote bodies
+  /^(?=.*\d)[^"“”]{3,150}$(?<=\S\s{5,}\S.*)/, /↑/, /^>?\s*\[\^\d+\]:/,
+  /\.{5,}\s*\d+\s*$/, /^<!--[\s\S]*-->$/];   // table-of-contents lines, HTML comments
 export const isMeta = (t) => { const x = String(t).replace(/\s*\{[^}]*\}\s*$/, '').trim();   // drop a trailing {language="en"}
   return x.length < 200 && META.some((re) => re.test(x)); };
 // "1772. What is Commonly Called Evil Spirits …" — a numbered item heading without markup (no closing punctuation, no quote)

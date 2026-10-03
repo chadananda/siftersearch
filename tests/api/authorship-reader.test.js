@@ -122,3 +122,20 @@ describe('bare attribution lines', () => {
     expect(isTrailer('—to be continued')).toBe(false);
   });
 });
+
+import { speakerOf } from '../../api/lib/authorship/reader.js';
+describe('speakerOf: a figure is the speaker only as the speech verb\'s subject', () => {
+  const cases = [
+    ['Katherine, who was only 9, wrote to the Master on the same day as her older sister:', null],
+    ['The Chicago Inter-Ocean said, "WORLD HARMONY IS AIM OF ‘ABDU’L-BAHÁ":', null],
+    ['A famous playwright, when he came from the room of ’Abdu’l-Bahá, declared:', null],
+    ['While Louis was on pilgrimage ’Abdu’l-Bahá wrote to Charles Mason Remey, a white Bahá’í in Washington DC:', '‘Abdu’l-Bahá'],
+    ['In one of His Tablets to Ibn-i-Asdaq, Bahá’u’lláh reveals these celebrated Words:', 'Bahá’u’lláh'],
+    ['Bahá’u’lláh, in His Tablet to the Pope, writes:', 'Bahá’u’lláh'],
+    ['In the late 1920s Shoghi Effendi wrote to her:', 'Shoghi Effendi'],
+    ['the following words of ’Abdu’l-Bahá are illuminating:', '‘Abdu’l-Bahá'],
+    ['Speaking of these companions, Nabíl has recorded the following:', null],
+    ['...’s Christian friends challenged the truth of Bahá’u’lláh by the following argument:', null],
+  ];
+  for (const [text, want] of cases) it(text.slice(0, 50), () => expect(speakerOf(text)).toBe(want));
+});

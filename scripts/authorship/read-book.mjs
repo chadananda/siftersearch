@@ -43,7 +43,7 @@ function criteriaFor(book) {
   return c;
 }
 
-const sourceAuthor = db.prepare(`SELECT l.quote_id, l.source_id, l.source_doc, l.coverage, sd.author FROM content_source_links l JOIN docs sd ON sd.id = l.source_doc WHERE l.quote_doc = ?`);
+const sourceAuthor = db.prepare(`SELECT l.quote_id, l.source_id, l.source_doc, l.coverage, l.share, sd.author FROM content_source_links l JOIN docs sd ON sd.id = l.source_doc WHERE l.quote_doc = ?`);
 // Paragraph-author INDEX (two-pass order): a source link resolves through the SOURCE PARAGRAPH's own attribution, never its
 // book's catalogue author — compilations are filed under Bahá’u’lláh. Seeded from the compilation dry run (--index), grown
 // by every book read earlier in this run (pass compilations and originals first). COMPILATION_DOCS: books whose catalogue
@@ -101,7 +101,7 @@ for (const docId of IDS) {
     // a catalogue author is often a translator, recorder or a stray id ("Aminu'llah Farid", "7326"): only a NAMED writer counts
     const author = known ? known.name : FIGURES.find((f) => f === l.author) || firstPerson(l.author);
     if (!author) continue;
-    if (!src.has(l.quote_id) || src.get(l.quote_id).coverage < l.coverage) src.set(l.quote_id, { author, coverage: l.coverage, via: known ? 'paragraph' : 'book' });
+    if (!src.has(l.quote_id) || src.get(l.quote_id).coverage < l.coverage) src.set(l.quote_id, { author, coverage: l.coverage, share: l.share ?? 1, via: known ? 'paragraph' : 'book' });
   }
   let lastTrailer = null;
   const paras = rows.map((r) => {
@@ -122,7 +122,10 @@ for (const docId of IDS) {
   // A compilation is MOSTLY extracts each followed by its attribution: frontmatter author list, "compilation" in the
   // catalogue, or trailers naming ≥2 writers at ≥1 per 10 paragraphs. (A book like Ives' that ends some block quotations
   // with a reference is not one — its own prose must never inherit a trailer.)
-  const compilation = fmAuthors.length > 1 || /(?<!un)compil/i.test(`${d.title} ${d.author}`) || (trailerNames.size >= 2 && named.length * 10 >= paras.length);
+  // "compilation" in the title counts only with attribution evidence behind it (named trailers ≥ 1 per 30 ¶, or OceanLibrary
+  // sections): "239 Days in America: Compilation of Essays" is essays, not extracts.
+  const titleCompil = /(?<!un)compil/i.test(`${d.title} ${d.author}`) && (named.length * 30 >= paras.length || paras.some((p) => p.section));
+  const compilation = fmAuthors.length > 1 || titleCompil || (trailerNames.size >= 2 && named.length * 10 >= paras.length);
   const book = { author: d.author, authors: [...new Set([...fmAuthors, ...trailerNames])], compilation, title: d.title };
   const res = readBook(book, paras);
   const byId = new Map(paras.map((p, i) => [p.id, i]));
@@ -235,9 +238,12 @@ let propagated = 0;
 const st = (id) => strength(allAssigned.get(id), docOfPara.get(id));
 for (const members of groups.values()) {
   if (members.length < 2) continue;
-  const best = members.reduce((b, id) => (st(id) > st(b) ? id : b), members[0]);
+  // only EVIDENCE propagates: a primary text's catalogue default protects that copy from relabelling (st 3 as a target)
+  // but is never copied onto others — a doc filed under Bahá’u’lláh also holds the Imam ‘Alí sermon He comments on
+  const ev = (id) => (allAssigned.get(id)?.[0]?.basis === 'book' ? -1 : st(id));
+  const best = members.reduce((b, id) => (ev(id) > ev(b) ? id : b), members[0]);
   const win = allAssigned.get(best);
-  if (st(best) < 2) continue;
+  if (ev(best) < 2) continue;
   for (const id of members) if (id !== best && allAssigned.get(id)?.[0]?.role === 'author' && st(id) < st(best) && allAssigned.get(id)?.[0]?.name !== win[0].name) {
     allAssigned.set(id, [{ ...win[0], basis: 'identical-text', from: best }]); propagated++;
   }
@@ -255,6 +261,8 @@ for (const id of mixedOf) {
 }
 console.log(JSON.stringify({ relinked, unlinked, books: books.length, identical_text_groups: [...groups.values()].filter((g) => g.length > 1).length, propagated, mixed }));
 
+// one spelling per writer: "’Abdu’l-Bahá" (catalogue) and "‘Abdu’l-Bahá" (reader) are the same person
+for (const [id, a] of allAssigned) if (a) allAssigned.set(id, a.map((e) => (e.name ? { ...e, name: firstPerson(e.name) || e.name } : e)));
 // docs.authors: a compilation shows the doctrinal authors it cites (canonical order); any other book its catalogue author.
 const docAuthors = (id, paras) => {
   const info = docInfo.get(id);
