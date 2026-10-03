@@ -141,9 +141,16 @@ for (const docId of IDS) {
       const r = await ask(TASK, state, { speaker: { type: 'choice', criteria: crit,
         instructions: 'Whose words are in the PASSAGE? Use an introduction just before it, or a reference / attribution line just after it, and the book’s own author list. In a compilation, the line after a passage names its writer.' } }, { ref: s.ids[0] });
       calls++; tokens += r.tokens;
-      const a = r.answers.speaker; const name = a?.choice ?? a?.value;
-      for (const id of s.ids) assigned.set(id, [{ name, role: 'author', basis: 'system1', confidence: +(a?.confidence ?? 0).toFixed(2) }]);
-      if ((a?.confidence ?? 0) < SPAN_MIN) review.push({ id: s.ids[0], why: `span ${(a?.confidence ?? 0).toFixed(2)} → ${name}`, paragraphs: s.ids.length });
+      const a = r.answers.speaker; const choice = a?.choice ?? a?.value, conf = +(a?.confidence ?? 0).toFixed(2);
+      // below SPAN_MIN System-1 does not decide: the span keeps the book's author, marked unresolved, and is listed for review
+      if (conf < SPAN_MIN) {
+        for (const id of s.ids) assigned.set(id, [{ name: d.author, role: 'author', basis: 'book', unresolved: true }]);
+        review.push({ id: s.ids[0], why: `span ${conf.toFixed(2)} → ${choice}`, paragraphs: s.ids.length });
+        return;
+      }
+      // "another person" is not a name: someone other than the listed writers — stored without a name, never as one
+      const who = choice === 'another person' ? { name: null, other: true } : { name: choice };
+      for (const id of s.ids) assigned.set(id, [{ ...who, role: 'author', basis: 'system1', confidence: conf }]);
     });
     // continuation checks after lead-ins: chained forward until the author's prose resumes
     await pool(res.checks, async (c) => {
@@ -196,6 +203,30 @@ for (const id of IDS) {
   }
   books.push({ id, paras: a.paras.map((p) => ({ id: p.id, pidx: p.pidx, text: p.text })) });
 }
+// SOURCE LINKS, re-resolved now that every book has been read: a paragraph credited through a link takes the FINAL
+// attribution of the paragraph it quotes when that one was decided by evidence; a link into a compilation whose source
+// paragraph has only the catalogue default says nothing, so the paragraph returns to its own book's prose owner.
+let relinked = 0, unlinked = 0;
+{
+  const linked = [...allAssigned].filter(([, a]) => a?.some((e) => e.basis === 'source_link')).map(([id]) => id);
+  const best = new Map();
+  for (let i = 0; i < linked.length; i += 900) {
+    const chunk = linked.slice(i, i + 900);
+    for (const r of db.prepare(`SELECT quote_id, source_id, source_doc, coverage FROM content_source_links WHERE quote_id IN (${chunk.map(() => '?').join(',')})`).all(...chunk))
+      if (!best.has(r.quote_id) || best.get(r.quote_id).coverage < r.coverage) best.set(r.quote_id, r);
+  }
+  for (const id of linked) {
+    const l = best.get(id); if (!l) continue;
+    const srcA = allAssigned.get(l.source_id)?.find((e) => e.role === 'author');
+    const a = allAssigned.get(id);
+    const k = a.findIndex((e) => e.basis === 'source_link');
+    if (srcA && srcA.basis !== 'book' && srcA.name && srcA.name !== a[k].name) { a[k] = { ...a[k], name: srcA.name, on_behalf: srcA.on_behalf || undefined, via: 'paragraph' }; relinked++; }
+    else if ((!srcA || srcA.basis === 'book') && COMPILATION_DOCS.has(l.source_doc)) {
+      if (k === 0) a[0] = { name: ownerOf.get(id), role: 'author', basis: 'book' }; else a.splice(k, 1);
+      unlinked++;
+    }
+  }
+}
 // identical text: the same words have the same author, so the strongest attribution in each group of identical paragraphs
 // (letters-only key ≥ 60 letters: page markers, footnote marks and quotation marks differ between editions) replaces
 // weaker ones — repairs damaged editions from clean ones. Only paragraphs read as someone's WORDS take it.
@@ -222,7 +253,7 @@ for (const id of mixedOf) {
   allAssigned.set(id, [{ name: own, role: 'author', basis: own === info.author ? 'book' : 'byline' }, { ...a[0], role: 'quoted' }, ...a.slice(1).filter((x) => x.name !== a[0].name && x.name !== own)]);
   mixed++;
 }
-console.log(JSON.stringify({ books: books.length, identical_text_groups: [...groups.values()].filter((g) => g.length > 1).length, propagated, mixed }));
+console.log(JSON.stringify({ relinked, unlinked, books: books.length, identical_text_groups: [...groups.values()].filter((g) => g.length > 1).length, propagated, mixed }));
 
 // docs.authors: a compilation shows the doctrinal authors it cites (canonical order); any other book its catalogue author.
 const docAuthors = (id, paras) => {

@@ -55,8 +55,11 @@ export function trailingReference(text) {
   const t = String(text).replace(/\]\([^)]*\)/g, ']').replace(/https?:\/\/\S+/g, '').replace(/(\s*\[pg\.?\s*\d+\])+\s*$/i, '').trim();
   const paren = t.match(/\(([^()]{3,260})\)\s*\.?\s*$/);
   if (paren && firstPerson(paren[1])) return { name: firstPerson(paren[1]), kind: 'reference', cited_in: /cited in|quoted in/i.test(paren[1]) };
+  // "… — ‘Abdu’l-Bahá [SWAB 2]": the name must OPEN the dash segment ("Kansas— Upon her be Bahá’u’lláh El-Abhá!" names
+  // no writer — it is an ‘Abdu’l-Bahá Tablet's greeting)
   const dash = t.match(/[—–]\s*([^—–\n]{3,80})$/);
-  if (dash && firstPerson(dash[1])) return { name: firstPerson(dash[1]), kind: 'dash' };
+  const seg = dash ? dash[1].replace(/^[_*\s]+/, '') : '';
+  if (dash && PEOPLE.some(([, re]) => { const m = seg.match(re); return m && m.index === 0; })) return { name: firstPerson(seg), kind: 'dash' };
   const fn = t.match(/\[\^?\d+\]:?\s*([^\n]{3,200})$/);
   if (fn && firstPerson(fn[1].slice(0, 60))) return { name: firstPerson(fn[1].slice(0, 60)), kind: 'footnote' };
   return null;

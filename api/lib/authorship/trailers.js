@@ -22,7 +22,13 @@ const WORKS = [
 
 const TRAILER = /^\((Ibid|From |Written |Letter |Bah|.?Abdu|Shoghi|The Universal|Universal|The B[aá]b|Memorandum|Extract|Cable|Selections from|Tablet |Gleanings|Kit[aá]b|Some Answered|Paris Talks|Promulgation|Tablets of|Talk |Words of|Postscript|Questions answered)/i;
 const PG = /\s*\[pg\.?\s*\d+\]\s*$/i;                       // "(From a letter … 1971) [pg 614]" — a page marker after it
-export const isTrailer = (t) => { const x = String(t).replace(PG, ''); return x.length < 500 && /^\(.*\)\s*\.?$/s.test(x) && TRAILER.test(x); };
+export const isTrailer = (t) => {
+  const x = String(t).replace(PG, '').trim();
+  if (x.length < 500 && /^\(.*\)\s*\.?$/s.test(x) && TRAILER.test(x)) return true;
+  // a bare attribution line under an extract: "—Bahá’u’lláh", "_—‘Abdu’l-Bahá_" (prayer books, Additional Tablets)
+  const bare = x.replace(/[_*]/g, '').match(/^[—–]{1,2}\s*(.{3,60})$|^--\s*(.{3,60})$/);
+  return !!bare && PEOPLE.some(([, re]) => { const m = (bare[1] || bare[2]).match(re); return m && m.index === 0; });
+};
 // Lines that carry no one's words: source notes, dates, addressee brackets, page/compiler notes. Transparent to spans.
 const META = [/^USBN\s*#/i, /^\\?\[(to|To)\s[^\]]+\\?\]$/, /^(Published|Compiled|Reprinted|Cited|Source)\b[^"“”]{0,160}$/i,
   /^[—–-]?\s*(\w+\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+\w+\s+\d{4})\.?$/, /^(Haifa|Akka|‘Akká|Bahjí),?\s+[^.]{0,40}\d{4}\.?$/i, /^\\?=+$/, /^\[pg\.?\s*\d+\]$/i,

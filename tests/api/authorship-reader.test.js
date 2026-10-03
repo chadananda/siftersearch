@@ -108,4 +108,17 @@ describe('readBook', () => {
     expect(names(r, 4)).toEqual(['‘Abdu’l-Bahá:author:byline']);
     expect(names(r, 6)).toEqual(['Frances Orr Allen:author:book']);
   });
+  it('a dash reference names a writer only when the name OPENS the segment', () => {
+    expect(trailingReference('To the maid-servant of God, Ruth Klos, Kansas— Upon her be Bahá’u’lláh El-Abhá!')).toBe(null);
+    expect(trailingReference('The soul is a sign of God. — ‘Abdu’l-Bahá [SWAB 2]')).toEqual({ name: '‘Abdu’l-Bahá', kind: 'dash' });
+  });
+});
+
+import { isTrailer } from '../../api/lib/authorship/trailers.js';
+describe('bare attribution lines', () => {
+  it('"—Bahá’u’lláh" under an extract is a trailer; other dash lines are not', () => {
+    expect(isTrailer('—Bahá’u’lláh')).toBe(true);
+    expect(isTrailer('_—‘Abdu’l-Bahá_')).toBe(true);
+    expect(isTrailer('—to be continued')).toBe(false);
+  });
 });

@@ -13,4 +13,7 @@ describe('effectiveAuthor', () => {
     expect(mixed.quoted).toEqual(['Bahá’u’lláh']);
     expect(effectiveAuthor({ authors: [{ name: 'Shoghi Effendi', role: 'reference' }], author: 'Helen Hornby' }).isReferenceLine).toBe(true);
   });
+  it('a writer judged to be someone else has no author (not the catalogue author)', () => {
+    expect(effectiveAuthor({ authors: [{ name: null, other: true, role: 'author', basis: 'system1' }], author: 'Martha Root' }).author).toBe(null);
+  });
 });

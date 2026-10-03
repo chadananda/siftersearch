@@ -7,9 +7,10 @@ const parse = (v) => { if (!v) return null; if (typeof v !== 'string') return v;
 export function effectiveAuthor({ authors, para_meta: paraMeta, author } = {}) {
   const list = parse(authors);
   if (Array.isArray(list) && list.length) {
-    const own = list.find((e) => e.role === 'author' && e.name);
+    const own = list.find((e) => e.role === 'author');
     return {
-      author: own?.name || author || null,
+      // a writer judged to be "someone else" (other:true, no name) has NO known author — never the book's catalogue author
+      author: own ? (own.name || null) : (author || null),
       quoted: list.filter((e) => e.role === 'quoted' && e.name).map((e) => e.name),
       onBehalf: !!own?.on_behalf,
       isReferenceLine: !own && list.some((e) => ['reference', 'meta', 'heading'].includes(e.role)),
