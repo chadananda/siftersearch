@@ -23,7 +23,8 @@ import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
 import { content } from '../lib/content.js';
-import { getAuthority } from '../lib/authority.js';
+import { getAuthority, authorAuthority } from '../lib/authority.js';
+import { effectiveAuthor } from '../lib/authorship/effective.js';
 import { flushMeiliDeletes } from '../lib/meili-pending.js';
 import { runMigrations } from '../lib/migrations.js';
 import { setSiteRegistry } from '../lib/search/scope.js';
@@ -372,14 +373,20 @@ async function processSyncJob(job) {
               } else {
                 cacheMisses++;
               }
+              // `author` is the PARAGRAPH's own writer (content.authors, migration 140) — a quotation keeps its writer in any
+              // book, so an author filter finds it there (Chad, 2026-10-03); the book's author stays on the doc record.
+              // No writer known ("someone else") → the book's author, as before. Authority follows the paragraph's writer.
+              const paraAuthor = (p.authors && effectiveAuthor({ authors: p.authors, author: doc.author }).author) || doc.author;
+              let paraAuthority = authority;
+              if (paraAuthor !== doc.author) paraAuthority = authorAuthority(paraAuthor) ?? authority;
               meiliParas.push({
                 id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
                 text: p.text, context: p.context || null,
                 text_grounded: p.text_grounded || null,
                 translation: p.translation || null, translation_segments: p.translation_segments || null,
-                title: doc.title, author: doc.author, filename: doc.filename,
+                title: doc.title, author: paraAuthor, filename: doc.filename,
                 religion: doc.religion, collection: doc.collection, language: doc.language,
-                year: doc.year ? parseInt(doc.year, 10) : null, authority,
+                year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority,
                 heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
                 source_site: doc.source_site || null,
                 source_url: doc.source_url || null,

@@ -949,7 +949,7 @@ async function getDirtyParagraphsForDoc(docId, limit = 500) {
            translation, translation_segments, context,
            external_para_id, pdf_page,
            text_grounded, embedding_grounded, grounded_synced,
-           is_duplicate, deleted_at
+           is_duplicate, deleted_at, authors
     FROM content
     WHERE doc_id = ? AND synced = 0
     ORDER BY paragraph_index

@@ -121,6 +121,7 @@ const SCHEMA = `
     text_grounded TEXT,
     embedding_grounded BLOB,
     grounded_synced INTEGER DEFAULT 0,
+    authors TEXT,
     synced INTEGER DEFAULT 0,
     deleted_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,

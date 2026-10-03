@@ -284,6 +284,17 @@ function normalizeApostrophes(str) {
   return str.replace(/[\u2018\u2019\u02bc\u0060\u00b4]/g, "'");
 }
 
+/**
+ * Authority of a NAMED WRITER, for a paragraph whose own writer is known (content.authors): a Bahá’u’lláh quotation inside
+ * a commentary carries Bahá’u’lláh's authority, whatever the book's collection says. Apostrophes normalised (the reader
+ * writes ’ , this table uses '). null when the writer is not in the table — keep the book's authority then.
+ */
+export function authorAuthority(name) {
+  if (!name) return null;
+  const key = String(name).replace(/[‘’ʼ`]/g, "'");
+  return AUTHOR_AUTHORITY[key] ?? AUTHOR_AUTHORITY[key.replace(/^'/, '')] ?? null;
+}
+
 export function getAuthority(doc) {
   // 1. If document has explicit authority set, use it
   if (doc.authority !== null && doc.authority !== undefined) {

@@ -4,7 +4,7 @@ import { effectiveAuthor } from '../../api/lib/authorship/effective.js';
 describe('effectiveAuthor', () => {
   it('prefers content.authors, then para_meta, then the doc author', () => {
     expect(effectiveAuthor({ authors: '[{"name":"Shoghi Effendi","role":"author","basis":"trailer","on_behalf":true}]', para_meta: '{"author":"X"}', author: 'Bahá’u’lláh' }))
-      .toEqual({ author: 'Shoghi Effendi', quoted: [], onBehalf: true, isReferenceLine: false });
+      .toEqual({ author: 'Shoghi Effendi', quoted: [], onBehalf: true, isReferenceLine: false, fromBook: false });
     expect(effectiveAuthor({ para_meta: '{"author":"Shoghi Effendi"}', author: 'Helen Hornby' }).author).toBe('Shoghi Effendi');
     expect(effectiveAuthor({ author: 'Adib Taherzadeh' }).author).toBe('Adib Taherzadeh');
   });
@@ -15,5 +15,8 @@ describe('effectiveAuthor', () => {
   });
   it('a writer judged to be someone else has no author (not the catalogue author)', () => {
     expect(effectiveAuthor({ authors: [{ name: null, other: true, role: 'author', basis: 'system1' }], author: 'Martha Root' }).author).toBe(null);
+  });
+  it('the book default keeps the catalogue spelling', () => {
+    expect(effectiveAuthor({ authors: [{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'book' }], author: '’Abdu’l-Bahá' }).author).toBe('’Abdu’l-Bahá');
   });
 });

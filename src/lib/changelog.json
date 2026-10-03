@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T16:28:59.950Z",
+  "generated": "2026-10-03T20:19:07.582Z",
   "entries": [
+    {
+      "hash": "755921d3",
+      "date": "2026-10-03",
+      "type": "New",
+      "description": "Talk records — interpreters are never speakers; ‘Abdu’l-Bahá's talks found by headings, Q&A lines, System-1",
+      "scope": "authorship"
+    },
     {
       "hash": "c5297645",
       "date": "2026-10-02",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Live-state endpoints must never come from the edge cache (THE reason nothing I fixed was visible)",
       "scope": null
-    },
-    {
-      "hash": "b85cdd99",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Data-bearing pages must revalidate — a stale tab is indistinguishable from a broken fix",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-03": [
+      {
+        "hash": "755921d3",
+        "date": "2026-10-03",
+        "type": "New",
+        "description": "Talk records — interpreters are never speakers; ‘Abdu’l-Bahá's talks found by headings, Q&A lines, System-1",
+        "scope": "authorship"
+      }
+    ],
     "2026-10-02": [
       {
         "hash": "c5297645",
@@ -7055,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Live-state endpoints must never come from the edge cache (THE reason nothing I fixed was visible)",
-        "scope": null
-      },
-      {
-        "hash": "b85cdd99",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Data-bearing pages must revalidate — a stale tab is indistinguishable from a broken fix",
         "scope": null
       }
     ]

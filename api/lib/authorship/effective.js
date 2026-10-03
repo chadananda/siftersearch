@@ -10,12 +10,14 @@ export function effectiveAuthor({ authors, para_meta: paraMeta, author } = {}) {
     const own = list.find((e) => e.role === 'author');
     return {
       // a writer judged to be "someone else" (other:true, no name) has NO known author — never the book's catalogue author
-      author: own ? (own.name || null) : (author || null),
+      // the book default keeps the book's own spelling of its author (one string per book in the index)
+      author: own?.basis === 'book' ? (author || own.name || null) : own ? (own.name || null) : (author || null),
+      fromBook: !own || own.basis === 'book',
       quoted: list.filter((e) => e.role === 'quoted' && e.name).map((e) => e.name),
       onBehalf: !!own?.on_behalf,
       isReferenceLine: !own && list.some((e) => ['reference', 'meta', 'heading'].includes(e.role)),
     };
   }
   const meta = parse(paraMeta);
-  return { author: meta?.author || author || null, quoted: meta?.quoted_authors || [], onBehalf: false, isReferenceLine: !!meta?.is_attribution_line };
+  return { author: meta?.author || author || null, quoted: meta?.quoted_authors || [], onBehalf: false, isReferenceLine: !!meta?.is_attribution_line, fromBook: !meta?.author };
 }
