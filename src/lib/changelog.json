@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T05:04:43.527Z",
+  "generated": "2026-10-03T05:20:20.503Z",
   "entries": [
+    {
+      "hash": "19ebd07b",
+      "date": "2026-10-02",
+      "type": "New",
+      "description": "Paragraph authors — migration 140 + forward-reading attribution reader",
+      "scope": "authorship"
+    },
     {
       "hash": "3e8e5f5a",
       "date": "2026-10-01",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Grade EVERY listed book — Biographies and General Histories were finished but displayed as untouched",
       "scope": null
-    },
-    {
-      "hash": "97f13c01",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Hold a language change the TITLE contradicts, and record which document it belongs to",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-02": [
+      {
+        "hash": "19ebd07b",
+        "date": "2026-10-02",
+        "type": "New",
+        "description": "Paragraph authors — migration 140 + forward-reading attribution reader",
+        "scope": "authorship"
+      }
+    ],
     "2026-10-01": [
       {
         "hash": "3e8e5f5a",
@@ -7053,13 +7062,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Grade EVERY listed book — Biographies and General Histories were finished but displayed as untouched",
-        "scope": null
-      },
-      {
-        "hash": "97f13c01",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Hold a language change the TITLE contradicts, and record which document it belongs to",
         "scope": null
       }
     ]

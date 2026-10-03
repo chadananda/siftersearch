@@ -151,9 +151,20 @@ export function parseMarkdownBlocks(text, { splitOversized = false } = {}) {
   let inCodeBlock = false;
   let codeBlockContent = [];
   let codeBlockStart = '';
+  // A blockquote is ONE block per quoted paragraph: consecutive "> " lines are a printed paragraph's lines, not
+  // paragraphs (doc 429 was stored one printed line per paragraph, hiding every block quotation — 2026-10-03).
+  // A bare ">" line is a paragraph break inside the quotation; any non-quote line ends it.
+  let quoteLines = [];
+  const flushQuote = () => {
+    if (!quoteLines.length) return;
+    blocks.push({ type: BLOCK_TYPES.QUOTE, content: quoteLines.map((l) => l.trim()).join('\n'), raw: quoteLines.map((l) => `> ${l}`).join('\n') });
+    quoteLines = [];
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const isQuoteLine = !inCodeBlock && /^>(\s|$)/.test(line);
+    if (!isQuoteLine) flushQuote();
 
     // Handle code blocks (``` or ```)
     if (line.startsWith('```')) {
@@ -225,19 +236,15 @@ export function parseMarkdownBlocks(text, { splitOversized = false } = {}) {
       continue;
     }
 
-    // Check for blockquote (> text)
-    if (line.startsWith('> ')) {
+    // Check for blockquote (> text) — accumulate the quoted paragraph's lines
+    if (isQuoteLine) {
       // Flush paragraph
       if (currentParagraph.length) {
         addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
         currentParagraph = [];
       }
-
-      blocks.push({
-        type: BLOCK_TYPES.QUOTE,
-        content: line.slice(2).trim(),
-        raw: line
-      });
+      const body = line.replace(/^>\s?/, '');
+      if (body.trim()) quoteLines.push(body); else flushQuote();
       continue;
     }
 
@@ -271,6 +278,7 @@ export function parseMarkdownBlocks(text, { splitOversized = false } = {}) {
     currentParagraph.push(line);
   }
 
+  flushQuote();
   // Flush remaining paragraph
   if (currentParagraph.length) {
     addParagraphBlocks(currentParagraph.join('\n'), blocks, splitOversized);
@@ -308,7 +316,7 @@ export function blocksToMarkdown(blocks) {
       case BLOCK_TYPES.HEADING3:
         return `### ${block.content}`;
       case BLOCK_TYPES.QUOTE:
-        return `> ${block.content}`;
+        return String(block.content).split('\n').map((l) => `> ${l}`).join('\n');
       case BLOCK_TYPES.LIST_ITEM:
         return `- ${block.content}`;
       case BLOCK_TYPES.CODE:
