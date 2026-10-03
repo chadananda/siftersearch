@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-03T21:45:21.104Z",
+  "generated": "2026-10-03T21:57:01.750Z",
   "entries": [
+    {
+      "hash": "bb0b5658",
+      "date": "2026-10-03",
+      "type": "Fixed",
+      "description": "Don't await the entity-review flag-table DDL at startup — every deploy caused a restart storm",
+      "scope": "api"
+    },
     {
       "hash": "871c05a7",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A done book with no cast now says 0, not blank",
       "scope": null
-    },
-    {
-      "hash": "f379c756",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Force no-store on live-state /api responses (browser cached progress 4h)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "bb0b5658",
+        "date": "2026-10-03",
+        "type": "Fixed",
+        "description": "Don't await the entity-review flag-table DDL at startup — every deploy caused a restart storm",
+        "scope": "api"
+      },
       {
         "hash": "871c05a7",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "A done book with no cast now says 0, not blank",
-        "scope": null
-      },
-      {
-        "hash": "f379c756",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Force no-store on live-state /api responses (browser cached progress 4h)",
         "scope": null
       }
     ]

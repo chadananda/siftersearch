@@ -26,6 +26,8 @@
 import { exec as execCb, spawnSync } from 'child_process';
 import { promisify } from 'util';
 import dotenv from 'dotenv';
+import YAML from 'yaml';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -283,18 +285,14 @@ async function checkPm2() {
     if (procs.length === 0) {
       return skip('pm2', 'not applicable locally (run on tower-nas to verify)');
     }
-    const expected = ['siftersearch-api', 'siftersearch-worker',
-      'siftersearch-library-watcher', 'siftersearch-enrichment-api',
+    // The LIVE set (CLAUDE.md). Retired 2026-07-10 — superseded by the unified enrichment pipeline, pm2-stopped on purpose,
+    // never alarm on them: enrichment, enrichment-api, graph-extractor/promoter/resolver/validator.
+    const expected = ['siftersearch-api', 'siftersearch-worker', 'siftersearch-embedding',
       'siftersearch-deep-research', 'siftersearch-updater'];
-    // warn (not fail) when stopped — all require external services or are tier-gated
-    const warnIfStopped = [
-      'siftersearch-enrichment',        // requires vLLM on boss
-      'siftersearch-graph-extractor',   // tier-gated; may idle between tiers
-      'siftersearch-graph-validator',
-      'siftersearch-graph-resolver',
-      'siftersearch-graph-promoter',
-    ];
-    const optional = [];
+    const warnIfStopped = [];
+    // OFF on purpose until Chad says otherwise (2026-09-25: no scheduled ingest while new texts are prepared) — watched for
+    // crash loops / memory when running, never alarmed for being stopped.
+    const optional = ['siftersearch-library-watcher'];
     const summary = {};
     const problems = [];
     const warnProblems = [];
@@ -516,6 +514,17 @@ async function checkWal() {
   ok('wal_size', 0, details);
 }
 
+// Meili index prefixes of SITE-ONLY sites (own SQLite, not sifter.db) from <library>/-sites/sites.yaml; 'bt' if unreadable.
+function siteOnlyPrefixes() {
+  const out = new Set();
+  try {
+    const lib = process.env.LIBRARY_BASE_PATH || join(process.env.HOME || '', 'Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library');
+    const sites = YAML.parse(readFileSync(join(lib, '-sites', 'sites.yaml'), 'utf8'))?.sites || {};
+    for (const cfg of Object.values(sites)) if (cfg?.scope === 'site-only' && cfg.meili_index_prefix) out.add(cfg.meili_index_prefix);
+  } catch { out.add('bt'); }
+  return out;
+}
+
 async function checkMeiliVsDb() {
   if (!await meiliReachable()) {
     return skip('meili_vs_db', 'remote_only (run on tower-nas to check Meili)');
@@ -525,17 +534,28 @@ async function checkMeiliVsDb() {
 
   try {
     const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
-    const res = await fetch(`${MEILI_URL}/indexes/paragraphs/stats`,
-      { headers, signal: AbortSignal.timeout(30000) });
-    if (!res.ok) return warn('meili_vs_db', `Meili stats HTTP ${res.status}`);
-    const meiliCount = (await res.json()).numberOfDocuments || 0;
+    // sifter.db paragraphs live in SEVERAL indexes: primary 'paragraphs' (library + OceanLibrary) and one per supplemental
+    // site (siftersearch_<prefix>_paragraphs: bahai-library, oceanoflights). Comparing the DB total with 'paragraphs' alone
+    // read the 1.8M site paragraphs as "Meili missing 27%" (2026-10-03). Site-only sites (bahaiteachings) live in their own
+    // SQLite, not sifter.db — their index is left out.
+    const siteOnly = siteOnlyPrefixes();
+    const ires = await fetch(`${MEILI_URL}/indexes?limit=200`, { headers, signal: AbortSignal.timeout(30000) });
+    if (!ires.ok) return warn('meili_vs_db', `Meili indexes HTTP ${ires.status}`);
+    const uids = ((await ires.json()).results || []).map((i) => i.uid)
+      .filter((u) => u === 'paragraphs' || ((m) => m && !siteOnly.has(m[1]))(u.match(/^siftersearch_(\w+)_paragraphs$/)));
+    let meiliCount = 0;
+    for (const uid of uids) {
+      const res = await fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(30000) });
+      if (!res.ok) return warn('meili_vs_db', `Meili stats HTTP ${res.status} (${uid})`);
+      meiliCount += (await res.json()).numberOfDocuments || 0;
+    }
 
     const dbSynced = ph.sync.total_paragraphs - ph.sync.unsynced_count;
     const delta = dbSynced - meiliCount;
     // Use total_paragraphs as denominator when dbSynced is tiny (mass-reset scenario)
     const denominator = Math.max(dbSynced, ph.sync.total_paragraphs * 0.1, 1);
     const pct = Math.round((delta / denominator) * 100);
-    const details = { db_synced: dbSynced, meili_docs: meiliCount, delta, delta_pct: pct, total_paragraphs: ph.sync.total_paragraphs };
+    const details = { db_synced: dbSynced, meili_docs: meiliCount, indexes: uids, delta, delta_pct: pct, total_paragraphs: ph.sync.total_paragraphs };
 
     if (pct > 20) return fail('meili_vs_db', `Meili missing ${pct}% of synced DB paragraphs — restore from backup if mass reset occurred`, details);
     if (pct > 5) return warn('meili_vs_db', `Meili ${pct}% behind DB`, details);
