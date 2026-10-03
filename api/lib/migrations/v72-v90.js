@@ -1469,6 +1469,23 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_csl_quote_doc ON content_source_links(quote_doc)');
     logger.info('Migration 139 complete');
   },
+
+  140: async () => {
+    // PARAGRAPH AUTHORSHIP (Chad, 2026-10-02/03; planning/paragraph-authorship-plan.md): every paragraph names whose words
+    // it holds, not the book's catalogue author — a quotation keeps its writer when cited elsewhere.
+    //   content.authors       JSON [{name, role: author|quoted|heading|meta|reference, basis, on_behalf?, confidence?}]
+    //   content.authors_model reader version that wrote it (re-run when the reader changes)
+    //   docs.authors          JSON display list: a compilation shows only the doctrinal authors it cites (the Báb,
+    //                         Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi). On behalf of Shoghi Effendi IS Shoghi Effendi.
+    logger.info('Starting migration 140: paragraph authors');
+    const addCol = async (sql) => {
+      try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+    await addCol('ALTER TABLE content ADD COLUMN authors TEXT');
+    await addCol('ALTER TABLE content ADD COLUMN authors_model TEXT');
+    await addCol('ALTER TABLE docs ADD COLUMN authors TEXT');
+    logger.info('Migration 140 complete');
+  },
 };
 
 export const graphMigrations = {

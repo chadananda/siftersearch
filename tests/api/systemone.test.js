@@ -1,0 +1,50 @@
+// System-1 client: every call logged per TASK TYPE; Laya never consulted until a checkpoint trained for that task exists.
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { mkdtempSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
+let dir, mod, urls;
+beforeEach(async () => {
+  dir = mkdtempSync(join(tmpdir(), 'systemone-'));
+  process.env.SYSTEMONE_DIR = dir; process.env.LAYA_TOKEN = 't'; process.env.TYPESAFE_API_KEY = 'k';
+  urls = [];
+  vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+    urls.push(url);
+    const body = JSON.parse(init.body);
+    const answers = Object.fromEntries(Object.keys(body.questions).map((q) => [q, { choice: 'Shoghi Effendi', confidence: 0.97, distribution: { 'Shoghi Effendi': 0.97, other: 0.03 } }]));
+    return { ok: true, json: async () => (url.includes('typesafe') ? { model: 'jev-1.13.0', answers, usage: { input_tokens: 900 } } : { answers, ms: 40 }) };
+  }));
+  vi.resetModules();
+  mod = await import('../../api/lib/systemone.js');
+});
+afterEach(() => { mod._test.reset(); vi.unstubAllGlobals(); });
+
+const Q = { speaker: { type: 'choice', criteria: { 'Shoghi Effendi': 'x', other: 'y' }, instructions: 'who?' } };
+
+describe('systemone.ask', () => {
+  it('requires a task type', async () => {
+    await expect(mod.ask(null, 's', Q)).rejects.toThrow(/task type/);
+  });
+  it('untrained task: Jev only, Laya never called, call logged with task + Jev distribution', async () => {
+    const r = await mod.ask('paragraph-attribution', 'state text', Q, { ref: 42 });
+    expect(r.served_by).toBe('jev');
+    expect(urls.every((u) => u.includes('typesafe'))).toBe(true);
+    const row = mod._test.db().prepare('SELECT * FROM calls WHERE id = ?').get(r.id);
+    expect(row).toMatchObject({ task: 'paragraph-attribution', ref: '42', jev_tokens: 900, laya: null, served_by: 'jev' });
+    expect(JSON.parse(row.jev).speaker.distribution['Shoghi Effendi']).toBe(0.97);
+  });
+  it('trained task: Laya shadows Jev; when Laya is primary and confident it serves', async () => {
+    writeFileSync(join(dir, 'routing.json'), JSON.stringify({ 'paragraph-attribution': { laya_model: 'ckpt-attr-v1' }, 'search-scope': { laya_model: 'ckpt-scope-v1', primary: 'laya' } }));
+    const a = await mod.ask('paragraph-attribution', 's', Q);
+    expect(a.served_by).toBe('jev'); expect(a.laya).toBeTruthy();
+    urls = [];
+    const b = await mod.ask('search-scope', 's', Q);
+    expect(b.served_by).toBe('laya'); expect(urls.some((u) => u.includes('typesafe'))).toBe(false);
+  });
+  it('attaches gold labels by task + ref', async () => {
+    await mod.ask('paragraph-attribution', 's', Q, { ref: 7 });
+    expect(mod.attachGold('paragraph-attribution', 7, { speaker: 'Shoghi Effendi' }, 'trailer')).toBe(1);
+    expect(mod.attachGold('search-scope', 7, {}, 'x')).toBe(0);   // task types never mix
+  });
+});

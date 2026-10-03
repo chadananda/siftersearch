@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-01T22:24:59.550Z",
+  "generated": "2026-10-03T05:04:43.527Z",
   "entries": [
+    {
+      "hash": "3e8e5f5a",
+      "date": "2026-10-01",
+      "type": "Fixed",
+      "description": "Also exclude non-translations (spoken/reported words, other authors, fragments)",
+      "scope": "citations"
+    },
     {
       "hash": "7b0275d0",
       "date": "2026-10-01",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Hold a language change the TITLE contradicts, and record which document it belongs to",
       "scope": null
-    },
-    {
-      "hash": "b12a0ff6",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "The Book Notes admin page — the interactive review loop Chad asked for",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-01": [
+      {
+        "hash": "3e8e5f5a",
+        "date": "2026-10-01",
+        "type": "Fixed",
+        "description": "Also exclude non-translations (spoken/reported words, other authors, fragments)",
+        "scope": "citations"
+      },
       {
         "hash": "7b0275d0",
         "date": "2026-10-01",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Hold a language change the TITLE contradicts, and record which document it belongs to",
-        "scope": null
-      },
-      {
-        "hash": "b12a0ff6",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "The Book Notes admin page — the interactive review loop Chad asked for",
         "scope": null
       }
     ]
