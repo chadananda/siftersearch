@@ -54,7 +54,9 @@ export function toQdrantFilter(filters = {}) {
 
 async function qdrant(path, body) {
   const r = await fetch(QD() + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
-    body: JSON.stringify(body), signal: AbortSignal.timeout(5000) });
+    // 2.5 s: past the search budget a layer is dropped, not waited on — and the relax ladder re-runs the engine, so a stalled
+    // Qdrant (a payload backfill or build beside it, 2026-10-04) cost 5 s per rung at the old 5 s.
+    body: JSON.stringify(body), signal: AbortSignal.timeout(2500) });
   if (!r.ok) throw new Error(`qdrant ${path} ${r.status} ${(await r.text()).slice(0, 120)}`);
   return (await r.json()).result;
 }

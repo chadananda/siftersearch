@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T18:16:19.348Z",
+  "generated": "2026-10-04T18:22:56.958Z",
   "entries": [
+    {
+      "hash": "797e23dc",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Qdrant author filter folds spelling variants (author_fold), as Meili's CONTAINS does; indexers write it, backfill per distinct author",
+      "scope": "search"
+    },
     {
       "hash": "fcb3c9e7",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Enumerate the books that can never satisfy the extraction gate",
       "scope": null
-    },
-    {
-      "hash": "a04bc8f6",
-      "date": "2026-08-15",
-      "type": "Other",
-      "description": "A CTE is a READ — the mislabel that hid the query plan",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "797e23dc",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Qdrant author filter folds spelling variants (author_fold), as Meili's CONTAINS does; indexers write it, backfill per distinct author",
+        "scope": "search"
+      },
       {
         "hash": "fcb3c9e7",
         "date": "2026-10-04",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-15",
         "type": "Other",
         "description": "Enumerate the books that can never satisfy the extraction gate",
-        "scope": null
-      },
-      {
-        "hash": "a04bc8f6",
-        "date": "2026-08-15",
-        "type": "Other",
-        "description": "A CTE is a READ — the mislabel that hid the query plan",
         "scope": null
       }
     ]
