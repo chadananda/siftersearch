@@ -5,6 +5,7 @@
 // build that predates author_fold (the indexers write it from 2026-10-04). Runs ON tower; dry run by default.
 //   node scripts/phrase-index/backfill-author-fold.mjs [--apply] [--collection phrases]
 import dotenv from 'dotenv';
+import http from 'http';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
@@ -15,14 +16,18 @@ const APPLY = process.argv.includes('--apply');
 const ONLY = process.argv[process.argv.indexOf('--collection') + 1];
 const COLLS = process.argv.includes('--collection') ? [ONLY] : ['phrases', 'paragraphs_kw'];
 
-async function qd(method, path, body) {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      const r = await fetch(QD + path, { method, headers: { 'Content-Type': 'application/json', 'api-key': QK }, body: body ? JSON.stringify(body) : undefined });
-      if (!r.ok) throw Object.assign(new Error(`${path} → ${r.status} ${(await r.text()).slice(0, 200)}`), { http: true });
-      return (await r.json()).result;
-    } catch (e) { if (e.http || attempt >= 4) throw e; await new Promise((res) => setTimeout(res, 2000 * (attempt + 1))); }
-  }
+// node:http, not fetch: a set_payload over hundreds of thousands of points outlives fetch's fixed 5-min headers timeout
+// (first run died on its first batch, 2026-10-04).
+function qd(method, path, body) {
+  const u = new URL(QD + path), data = body ? JSON.stringify(body) : null;
+  return new Promise((ok, fail) => {
+    const req = http.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search, method,
+      headers: { 'Content-Type': 'application/json', 'api-key': QK, ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}) } }, (res) => {
+      let out = ''; res.setEncoding('utf8'); res.on('data', (c) => { out += c; });
+      res.on('end', () => (res.statusCode >= 300 ? fail(new Error(`${path} → ${res.statusCode} ${out.slice(0, 200)}`)) : ok(JSON.parse(out).result)));
+    });
+    req.on('error', fail); if (data) req.write(data); req.end();
+  });
 }
 
 for (const coll of COLLS) {
@@ -33,10 +38,16 @@ for (const coll of COLLS) {
     sample: todo.slice(0, 5).map((a) => `${a.author} → ${a.fold}`) }));
   if (!APPLY) continue;
   await qd('PUT', `/collections/${coll}/index?wait=false`, { field_name: 'author_fold', field_schema: 'keyword' }).catch(() => {});
-  for (let i = 0; i < todo.length; i += 100) {
-    const ops = todo.slice(i, i + 100).map((a) => ({ set_payload: { payload: { author_fold: a.fold }, filter: { must: [{ key: 'author', match: { value: a.author } }] } } }));
+  // batches by POINT budget (≤50k points per request), not author count: one author can hold 500k points
+  const batches = []; let cur = [], pts = 0;
+  for (const a of todo) { if (cur.length && (pts + a.n > 50000 || cur.length >= 100)) { batches.push(cur); cur = []; pts = 0; } cur.push(a); pts += a.n; }
+  if (cur.length) batches.push(cur);
+  let sent = 0;
+  for (const [b, batch] of batches.entries()) {
+    const ops = batch.map((a) => ({ set_payload: { payload: { author_fold: a.fold }, filter: { must: [{ key: 'author', match: { value: a.author } }] } } }));
     await qd('POST', `/collections/${coll}/points/batch?wait=true`, { operations: ops });   // wait: one batch at a time keeps Qdrant's queue short beside a live build
-    if ((i / 100) % 50 === 0) console.log(JSON.stringify({ coll, sent: Math.min(i + 100, todo.length), of: todo.length }));
+    sent += batch.length;
+    if (b % 50 === 0) console.log(JSON.stringify({ coll, batch: b + 1, of: batches.length, authors: sent }));
   }
   console.log(JSON.stringify({ coll, done: todo.length }));
 }

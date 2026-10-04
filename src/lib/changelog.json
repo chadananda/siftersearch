@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T18:22:56.958Z",
+  "generated": "2026-10-04T18:45:21.429Z",
   "entries": [
+    {
+      "hash": "de16cdba",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Qdrant layer timeout 5 s → 2.5 s (a stalled layer cost 5 s per relax rung)",
+      "scope": "search"
+    },
     {
       "hash": "797e23dc",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A note is extractable whatever version stamped it (ends the storm)",
       "scope": null
-    },
-    {
-      "hash": "1db20323",
-      "date": "2026-08-15",
-      "type": "Other",
-      "description": "Enumerate the books that can never satisfy the extraction gate",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "de16cdba",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Qdrant layer timeout 5 s → 2.5 s (a stalled layer cost 5 s per relax rung)",
+        "scope": "search"
+      },
       {
         "hash": "797e23dc",
         "date": "2026-10-04",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-15",
         "type": "Other",
         "description": "A note is extractable whatever version stamped it (ends the storm)",
-        "scope": null
-      },
-      {
-        "hash": "1db20323",
-        "date": "2026-08-15",
-        "type": "Other",
-        "description": "Enumerate the books that can never satisfy the extraction gate",
         "scope": null
       }
     ]
