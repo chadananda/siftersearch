@@ -14,6 +14,7 @@ import { tokens, bm25Doc } from '../../api/lib/keyword-tokens.js';
 import { paragraphLang } from '../../api/lib/phrase-vectors.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
+import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -66,7 +67,7 @@ if (has('fresh') && SCOPE === 'supplemental') throw new Error('--fresh with --sc
 if (!exists || has('fresh')) {
   if (exists) await qd('DELETE', `/collections/${COLL}`);
   await qd('PUT', `/collections/${COLL}`, { vectors: {}, sparse_vectors: { bm25: { modifier: 'idf' } } });
-  for (const [field_name, field_schema] of [['doc_id', 'integer'], ['lang_group', 'keyword'], ['religion', 'keyword'], ['collection', 'keyword'], ['author', 'keyword'], ['scope', 'keyword']])
+  for (const [field_name, field_schema] of [['doc_id', 'integer'], ['lang_group', 'keyword'], ['religion', 'keyword'], ['collection', 'keyword'], ['author', 'keyword'], ['author_fold', 'keyword'], ['scope', 'keyword']])
     await qd('PUT', `/collections/${COLL}/index?wait=true`, { field_name, field_schema });
   log({ phase: 'collection-created', collection: COLL });
 }
@@ -85,7 +86,7 @@ for (const p of src.prepare(SQL).iterate(state.lastId)) {
   const v = bm25Doc(p.text, state.avgLen);
   if (v) terms += v.indices.length;
   if (v) batch.push({ id: p.id, vector: { bm25: v }, payload: { paragraph_id: p.id, doc_id: p.doc_id, lang_group: paragraphLang(p.text, p.language).group,
-    religion: p.religion, collection: p.collection, author: paragraphAuthor(p), scope: DB_SCOPE } });
+    religion: p.religion, collection: p.collection, author: paragraphAuthor(p), author_fold: authorKey(paragraphAuthor(p)), scope: DB_SCOPE } });
   if (batch.length >= BATCH || terms >= MAX_TERMS) await flush();
   if (LIMIT && sentRun + batch.length >= LIMIT) break;
 }

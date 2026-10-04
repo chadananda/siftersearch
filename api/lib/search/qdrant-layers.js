@@ -25,6 +25,12 @@ export function geminiQueryVector(text) {
   return p;
 }
 
+// The author as a filter KEY: accents, apostrophe variants and punctuation folded away — the same folding search.js's
+// authorMatches uses — so "Abdu'l-Bahá", "‘Abdu’l-Bahá" and "Abdu'l-Baha" are one author. Meili matches with CONTAINS over
+// apostrophe variants; a Qdrant keyword match is exact, so points carry `author_fold` and the filter folds too.
+export const authorKey = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').replace(/[^a-zA-Z0-9]+/g, '').toLowerCase();
+
 // Search filters (as search.js uses them) → a Qdrant filter. Keys the payloads lack (year, language label) are ignored.
 // scope: 'primary' (library only) = NOT supplemental — library points written before `scope` existed carry none, and a
 // bulk re-stamp of millions of points did not complete under load, so absence must mean library. 'supplemental' = the
@@ -36,7 +42,7 @@ export function toQdrantFilter(filters = {}) {
   const eq = (key, v) => must.push(Array.isArray(v) ? { key, match: { any: v } } : { key, match: { value: v } });
   if (filters.religion) eq('religion', filters.religion);
   if (filters.collection) eq('collection', filters.collection);
-  if (filters.author) eq('author', filters.author);
+  if (filters.author) eq('author_fold', Array.isArray(filters.author) ? filters.author.map(authorKey) : authorKey(filters.author));
   if (filters.documentId != null) eq('doc_id', Array.isArray(filters.documentId) ? filters.documentId.map(Number) : Number(filters.documentId));
   // lang_group is the paragraph's script group ('ar-fa', 'ja', 'zh', else the doc language); the Meili-style
   // `language` filter maps onto it so one filter means the same thing on both engines.

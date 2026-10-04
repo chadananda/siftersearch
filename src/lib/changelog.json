@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T16:46:38.972Z",
+  "generated": "2026-10-04T18:16:19.348Z",
   "entries": [
+    {
+      "hash": "fcb3c9e7",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Scripture never waits on a cold encounter-index build (the ~13 s p95 tail); warm the index after startup",
+      "scope": "search"
+    },
     {
       "hash": "146cf711",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A CTE is a READ — the mislabel that hid the query plan",
       "scope": null
-    },
-    {
-      "hash": "92a7498d",
-      "date": "2026-08-15",
-      "type": "Other",
-      "description": "EXPLAIN QUERY PLAN for the snapshot's expensive queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "fcb3c9e7",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Scripture never waits on a cold encounter-index build (the ~13 s p95 tail); warm the index after startup",
+        "scope": "search"
+      },
       {
         "hash": "146cf711",
         "date": "2026-10-04",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-15",
         "type": "Other",
         "description": "A CTE is a READ — the mislabel that hid the query plan",
-        "scope": null
-      },
-      {
-        "hash": "92a7498d",
-        "date": "2026-08-15",
-        "type": "Other",
-        "description": "EXPLAIN QUERY PLAN for the snapshot's expensive queries",
         "scope": null
       }
     ]

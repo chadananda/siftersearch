@@ -22,6 +22,7 @@ import { unitsOf, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTok
 import { faShare } from '../../api/lib/arabic-script.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
+import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -172,7 +173,7 @@ async function ensureCollection() {
     log({ phase: 'collection-created', collection: COLL });
   }
   for (const [field_name, field_schema] of [['paragraph_id', 'integer'], ['doc_id', 'integer'], ['lang_group', 'keyword'], ['religion', 'keyword'],
-    ['author', 'keyword'], ['collection', 'keyword'], ['fa_share', 'float'], ['scope', 'keyword']])
+    ['author', 'keyword'], ['author_fold', 'keyword'], ['collection', 'keyword'], ['fa_share', 'float'], ['scope', 'keyword']])
     await qd('PUT', `/collections/${COLL}/index?wait=true`, { field_name, field_schema }).catch(() => {});   // already there → fine
 }
 
@@ -184,7 +185,7 @@ async function upsert() {
     const rows = page.all(); if (!rows.length) break;
     await qd('PUT', `/collections/${COLL}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
       payload: { paragraph_id: Number(r.paragraph_id), doc_id: Number(r.doc_id), k: r.k, start: r.start, end: r.end, seg_v: r.seg_v,
-        lang_group: r.lang_group || 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, collection: r.collection,
+        lang_group: r.lang_group || 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, author_fold: authorKey(r.author), collection: r.collection,
         lang_label: r.lang_label, field: r.field || 'text', scope: r.scope || 'primary' } })) });
     store.transaction(() => rows.forEach((r) => mark.run(r.point_id)))();
     sent += rows.length;

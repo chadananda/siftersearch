@@ -1,6 +1,6 @@
 // Qdrant search layers: filter mapping, request shapes, and hit shapes (fetch mocked — no network).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toQdrantFilter, searchPhrases, searchKeywordQdrant } from '../../api/lib/search/qdrant-layers.js';
+import { toQdrantFilter, searchPhrases, searchKeywordQdrant, authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 describe('toQdrantFilter', () => {
   it('maps the search filters the payloads carry; ignores the rest', () => {
@@ -70,5 +70,17 @@ describe('qdrantOption (per-request A/B switch)', async () => {
     expect(qdrantDefault('')).toEqual({ phrase: false, keyword: false, only: false });
     expect(qdrantDefault('phrase,keyword')).toEqual({ phrase: true, keyword: true, only: false });
     expect(qdrantDefault('only')).toEqual({ phrase: true, keyword: true, only: true });
+  });
+});
+
+describe('author filter folds spelling variants', () => {
+  it('one key for every apostrophe/accent spelling', () => {
+    expect(authorKey('‘Abdu’l-Bahá')).toBe('abdulbaha');
+    expect(authorKey("Abdu'l-Baha")).toBe('abdulbaha');
+    expect(authorKey("Bahá'u'lláh")).toBe(authorKey('Bahá’u’lláh'));
+  });
+  it('filters on author_fold', () => {
+    expect(toQdrantFilter({ author: "'Abdu'l-Bahá" })).toEqual({ must: [{ key: 'author_fold', match: { value: 'abdulbaha' } }] });
+    expect(toQdrantFilter({ author: ['Shoghi Effendi', 'Shoghi Rabbani'] })).toEqual({ must: [{ key: 'author_fold', match: { any: ['shoghieffendi', 'shoghirabbani'] } }] });
   });
 });
