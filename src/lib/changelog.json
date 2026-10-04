@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T21:28:13.698Z",
+  "generated": "2026-10-04T21:34:54.670Z",
   "entries": [
+    {
+      "hash": "f7ec871b",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Standard abbreviation trailers (\"…\" PRP 159, GWB 141-2, AHW #64) name the quotation's writer",
+      "scope": "authorship"
+    },
     {
       "hash": "b203b9dd",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Report the whole settled set, not just the exhausted slice",
       "scope": null
-    },
-    {
-      "hash": "cd3368cc",
-      "date": "2026-08-15",
-      "type": "Other",
-      "description": "Read the exhausted convert items before retrying any of them",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "f7ec871b",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Standard abbreviation trailers (\"…\" PRP 159, GWB 141-2, AHW #64) name the quotation's writer",
+        "scope": "authorship"
+      },
       {
         "hash": "b203b9dd",
         "date": "2026-10-04",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-15",
         "type": "Other",
         "description": "Report the whole settled set, not just the exhausted slice",
-        "scope": null
-      },
-      {
-        "hash": "cd3368cc",
-        "date": "2026-08-15",
-        "type": "Other",
-        "description": "Read the exhausted convert items before retrying any of them",
         "scope": null
       }
     ]

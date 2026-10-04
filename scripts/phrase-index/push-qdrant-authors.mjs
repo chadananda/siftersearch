@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
+import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -52,7 +53,7 @@ const setUnits = store?.prepare('UPDATE units SET author = ? WHERE doc_id = ? AN
 for (let i = 0; i < updates.length; i += 200) {
   const chunk = updates.slice(i, i + 200), groups = new Map();
   for (const u of chunk) (groups.get(u.author) || groups.set(u.author, []).get(u.author)).push(u.id);
-  const ops = (f) => [...groups].map(([author, ids]) => ({ set_payload: { payload: { author }, filter: f(ids) } }));
+  const ops = (f) => [...groups].map(([author, ids]) => ({ set_payload: { payload: { author, author_fold: authorKey(author) }, filter: f(ids) } }));
   if (DO_QDRANT) await qd('/collections/phrases/points/batch?wait=false', { operations: ops((ids) => ({ must: [{ key: 'paragraph_id', match: { any: ids } }] })) });
   if (DO_QDRANT) await qd('/collections/paragraphs_kw/points/batch?wait=false', { operations: ops((ids) => ({ must: [{ has_id: ids }] })) });
   if (DO_STORE) store.transaction(() => { for (const u of chunk) setUnits.run(u.author, u.doc, String(u.id)); })();
