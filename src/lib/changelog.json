@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T04:42:57.197Z",
+  "generated": "2026-10-04T05:27:05.562Z",
   "entries": [
+    {
+      "hash": "d2f6f2e0",
+      "date": "2026-10-03",
+      "type": "New",
+      "description": "Migration 141 — content.translator(+basis), docs.translators; interpreters of talks, book translators",
+      "scope": "translators"
+    },
     {
       "hash": "d3da5604",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Stop re-running the two heaviest API queries every 2.4 minutes",
       "scope": null
-    },
-    {
-      "hash": "f184b65a",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Bump CURRENT_VERSION to 115 + test that it can never lag again",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "d2f6f2e0",
+        "date": "2026-10-03",
+        "type": "New",
+        "description": "Migration 141 — content.translator(+basis), docs.translators; interpreters of talks, book translators",
+        "scope": "translators"
+      },
       {
         "hash": "d3da5604",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Stop re-running the two heaviest API queries every 2.4 minutes",
-        "scope": null
-      },
-      {
-        "hash": "f184b65a",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Bump CURRENT_VERSION to 115 + test that it can never lag again",
         "scope": null
       }
     ]

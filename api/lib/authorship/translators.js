@@ -4,7 +4,7 @@
 
 // Known translators/interpreters: canonical name ← variants (any match anywhere in the raw name).
 const KNOWN = [
-  ['Ameen U. Faríd', /\b(?:Ameen|Amin(?:u['’]?ll[aá]h)?)\b.*\bFar[iíe]{1,2}d\b|\bDr\.?\s*Far[iíe]{1,2}d\b|^Far[iíe]{1,2}d$/i],
+  ['Ameen U. Faríd', /\b(?:Ameen|Am[ií]n(?:u['’]?ll[aá]h)?)\b.*\bFar[iíe]{1,2}d\b|\bDr\.?\s*Far[iíe]{1,2}d\b|^Far[iíe]{1,2}d$/i],
   ['Mírzá Aḥmad Sohrab', /\bSohr[aá]b\b/i],
   ['Shoghi Effendi', /\bShoghi\b|\bRabb[aá]n[ií]\b/i],
   ['Ali-Kuli Khan', /\bAl[ií][- ]?K[uú]l[ií]\s+Kh[aá]n\b/i],
@@ -12,6 +12,7 @@ const KNOWN = [
   ['Ruhi Afnan', /\bR[uú][hḥ][ií]\b.*\bAfn[aá]n\b/i],
   ['Habib Taherzadeh', /\bHab[ií]b\b.*\bTaherzadeh\b/i],
   ['Youness Afroukhteh', /\bAfroukhteh\b/i],
+  ['Díyá M. Baghdádí', /\bBa[gḡ]h?d[aá]d[ií]\b/i],
 ];
 const TITLES = /^(?:Dr\.?|Doctor|Mr\.?|Mrs\.?|Miss|Prof\.?|Jin[aá]b-i-|Jenabe?)\s+/i;
 
@@ -20,6 +21,8 @@ export function canonicalTranslator(raw) {
   const s = String(raw || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').replace(/[*_]/g, '').replace(/\s+/g, ' ').trim()
     .replace(/[.,;:—–-]+$/, '').trim();
   if (!s || s.length < 3 || /^unknown$/i.test(s)) return null;
+  // a PERSON's name: capitalised, not a Central Figure ("interpreted by ’Abdu’l-Bahá to mean", "a Mullá in our"), short
+  if (!/^\p{Lu}/u.test(s) || /Bah[aá]['’]?u['’]?ll[aá]h|['’‘]Abdu['’]l-Bah[aá]|\bthe B[aá]b\b/i.test(s) || s.split(' ').length > 6) return null;
   for (const [name, re] of KNOWN) if (re.test(s)) return name;
   return s.replace(TITLES, '').trim() || null;
 }
@@ -29,8 +32,8 @@ export function interpreterOf(line) {
   const t = String(line || '').replace(/^#+\s*|[*_]/g, '').replace(/\[a\d+\]/g, '').trim();
   if (t.length > 160) return null;
   let m = t.match(/^(.{2,60}?),\s*Interpreter\b/i)
-    || t.match(/\bInterpreted\s+by\s+(.{3,60}?)(?:[;,]|\s+(?:and|stenographic|notes)\b|\.?$)/i)
-    || t.match(/^Translated\s+by\s+(.{3,60}?)(?:\s+from\b.*)?[.;]?$/i);
+    || t.match(/\bInterpreted\s+by\s+([^,;]{3,60}?)(?:[;,]|\s+(?:and|stenographic|notes|to)\b|\.?$)/i)
+    || t.match(/^Translated\s+by\s+([^,;]{3,60}?)(?:\s+from\b.*|,.*)?[.;]?$/i);
   return m ? canonicalTranslator(m[1]) : null;
 }
 

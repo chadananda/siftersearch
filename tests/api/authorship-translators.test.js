@@ -24,4 +24,11 @@ describe('translators', () => {
     expect(frontmatterTranslators('Shoghi Effendi')).toEqual(['Shoghi Effendi']);
     expect(frontmatterTranslators('Ruhi Afnan (Rúḥí M. Afnán)')).toEqual(['Ruhi Afnan']);
   });
+  it('rejects prose and strips dates', () => {
+    expect(interpreterOf('which was interpreted by ’Abdu’l-Bahá to mean the Covenant')).toBe(null);
+    expect(interpreterOf('Translated by Díyá M. Baghdádí, 14 August 1922, Chicago, Illinois')).toBe('Díyá M. Baghdádí');
+    expect(interpreterOf('Translated by Mirza Yuhanna Dawud, August 15, 1911')).toBe('Mirza Yuhanna Dawud');
+    expect(canonicalTranslator('Amín U. Faríd')).toBe('Ameen U. Faríd');
+    expect(canonicalTranslator('a Mullá in our')).toBe(null);
+  });
 });
