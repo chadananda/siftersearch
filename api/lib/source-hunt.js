@@ -22,13 +22,37 @@ export function prepareQuote(raw) {
 
 const isCanonical = (p) => !p.source_site || p.source_site === 'oceanlibrary.com';
 
+// The doctrinal authors (Chad 10-03: compilations display the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi; UHJ is not doctrinal).
+const DOCTRINAL = new Set(['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi']);
+
+/** Whose words these are: of every name the matches credit — as a paragraph's writer or as the person it quotes — the
+ *  doctrinal author of highest standing (Bahá’u’lláh over the UHJ letter or the study that quotes Him). Null when the
+ *  matches credit no doctrinal author. */
+export function quoteAuthorOf(matches) {
+  let best = null, bestA = -1;
+  for (const m of matches) {
+    let names = [];
+    try { names = (JSON.parse(m.authors || '[]') || []).map((a) => a?.name).filter(Boolean); } catch { /* no list */ }
+    for (const n of [...names, m.writer]) {
+      const c = firstPerson(n || '') || n;
+      if (!DOCTRINAL.has(c)) continue;
+      const a = authorAuthority(c) ?? 0;
+      if (a > bestA) { best = c; bestA = a; }
+    }
+  }
+  return best;
+}
+
 /**
- * Rank origin candidates: the writer's OWN book beats a compilation or study that quotes it; then the writer's standing,
+ * Rank origin candidates: the QUOTE'S writer's own text first (a UHJ letter quoting Bahá’u’lláh counts as the UHJ's
+ * "own work" — paragraph attribution does not split every mixed paragraph); the writer's OWN book beats a compilation or study that quotes it; then the writer's standing,
  * the canonical library (OceanLibrary) over scraped sites, how many matches link to it as their source, and how fully it
  * holds the quote.
  */
-export function rankOrigins(cands) {
-  const key = (c) => [c.ownWork ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0, c.overlap || 0];
+export function rankOrigins(cands, quoteAuthor = null) {
+  const canon = (n) => firstPerson(n || '') || n;
+  const key = (c) => [quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0, c.authority ?? 0,
+    isCanonical(c) ? 1 : 0, c.linkedFrom || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
 }
 
@@ -60,9 +84,27 @@ export async function sourceHunt(raw, deps = {}) {
       const book = firstPerson(c.book_author || '') || c.book_author;
       return { ...c, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: linkedFrom.get(c.id) || 0 };
     });
+  // 2b. the quote's writer's OWN paragraphs: a line quoted by dozens of books can crowd its source out of the first
+  // candidates, so search again inside that writer's texts (author_fold filter) and add what holds the quote verbatim
+  const quoteAuthor = quoteAuthorOf(pool);
+  if (quoteAuthor) {
+    const f = { author: quoteAuthor, religion: "Baha'i" };
+    const [p2, k2] = await Promise.all([
+      d.phrases(q.match, { limit: 20, filters: f }).catch(() => ({ hits: [] })),
+      d.keyword(q.match, { limit: 20, filters: f }).catch(() => ({ hits: [] })),
+    ]);
+    const more = [...new Set([...p2.hits, ...k2.hits].map((h) => h.paragraph_id))].filter((id) => !pool.some((c) => c.id === id));
+    for (const r of await d.rows(more)) {
+      const ov = overlap(q.match, r.text);
+      if (ov < VERBATIM || r.doc_role === 'metadata') continue;
+      const writer = paragraphAuthor({ authors: r.authors, author: r.book_author });
+      const book = firstPerson(r.book_author || '') || r.book_author;
+      pool.push({ ...r, overlap: ov, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
+    }
+  }
   if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null), ms: Date.now() - t0 };
 
-  const origin = rankOrigins(pool)[0];
+  const origin = rankOrigins(pool, quoteAuthor)[0];
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
   const full = (await d.links([origin.id], { quotedBy: true })).get(origin.id) || {};
@@ -81,6 +123,7 @@ export async function sourceHunt(raw, deps = {}) {
 
   return {
     quote: q.text,
+    quoteAuthor,
     origin: { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
       text: origin.text, url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) },
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,

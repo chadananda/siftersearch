@@ -1,6 +1,6 @@
 // SourceHunt: origin choice, citing publications, tablet (linked vs cross-lingual candidates) — all deps faked.
 import { describe, it, expect } from 'vitest';
-import { sourceHunt, prepareQuote, rankOrigins } from '../../api/lib/source-hunt.js';
+import { sourceHunt, prepareQuote, rankOrigins, quoteAuthorOf } from '../../api/lib/source-hunt.js';
 
 const QUOTE = 'The earth is but one country, and mankind its citizens';
 const ROWS = {
@@ -59,5 +59,23 @@ describe('sourceHunt', () => {
 
   it('too short a quote is refused', async () => {
     expect((await sourceHunt('one country', deps())).error).toMatch(/four words/);
+  });
+});
+
+describe('quote author', () => {
+  it("a UHJ letter quoting Bahá’u’lláh: the quote is His, and His own book wins over the letter's 'own work'", () => {
+    const m = [
+      { id: 5, writer: 'Universal House of Justice', authors: '[{"name":"Universal House of Justice","role":"author"},{"name":"Bahá’u’lláh","role":"quoted"}]' },
+      { id: 6, writer: 'Helen Hornby', authors: null },
+    ];
+    expect(quoteAuthorOf(m)).toBe('Bahá’u’lláh');
+    const top = rankOrigins([
+      { id: 5, writer: 'Universal House of Justice', ownWork: true, authority: 9, overlap: 1 },
+      { id: 1, writer: 'Bahá’u’lláh', ownWork: true, authority: 10, overlap: 0.7 },
+    ], 'Bahá’u’lláh')[0];
+    expect(top.id).toBe(1);
+  });
+  it('no one of standing → null', () => {
+    expect(quoteAuthorOf([{ writer: 'J. Smith', authors: null }])).toBeNull();
   });
 });

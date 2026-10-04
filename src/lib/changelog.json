@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T23:07:44.203Z",
+  "generated": "2026-10-04T23:18:58.671Z",
   "entries": [
+    {
+      "hash": "0580c929",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Paste an English quote → its published book, every publication citing it, the likely original tablet",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "38085e67",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Reject a file that belongs to the containing volume, not the page",
       "scope": null
-    },
-    {
-      "hash": "f213994a",
-      "date": "2026-08-16",
-      "type": "Other",
-      "description": "Landing-page resolver + DRY RUN (no writes)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "0580c929",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Paste an English quote → its published book, every publication citing it, the likely original tablet",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "38085e67",
         "date": "2026-10-04",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-16",
         "type": "Other",
         "description": "Reject a file that belongs to the containing volume, not the page",
-        "scope": null
-      },
-      {
-        "hash": "f213994a",
-        "date": "2026-08-16",
-        "type": "Other",
-        "description": "Landing-page resolver + DRY RUN (no writes)",
         "scope": null
       }
     ]
