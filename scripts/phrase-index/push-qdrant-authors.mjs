@@ -4,7 +4,9 @@
 // Without it a Qdrant author filter means "book by X" while Meili's means "written by X" (search A/B 2026-10-04).
 // set_payload only — no re-embedding. Also updates the vector store's units table so a later re-upsert keeps the value.
 // Library + OceanLibrary only (scraped sites untouched). Runs ON tower; dry run by default.
-//   node scripts/phrase-index/push-qdrant-authors.mjs [--apply]
+//   node scripts/phrase-index/push-qdrant-authors.mjs [--apply] [--qdrant-only | --store-only]
+// The store is written by a running build in long transactions (SQLITE_BUSY past 60 s, 2026-10-04): stamp Qdrant with
+// --qdrant-only while a build runs, then --store-only once it has finished. Both halves are idempotent.
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
 import { dirname, join } from 'path';
@@ -15,6 +17,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 const QD = process.env.QDRANT_URL || 'http://127.0.0.1:6333', QK = process.env.QDRANT_KEY || '';
 const APPLY = process.argv.includes('--apply');
+const DO_QDRANT = !process.argv.includes('--store-only'), DO_STORE = !process.argv.includes('--qdrant-only');
 
 const src = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 src.pragma('busy_timeout = 120000');
@@ -40,19 +43,19 @@ async function qd(path, body) {
     } catch (e) { if (e.http || attempt >= 4) throw e; await new Promise((res) => setTimeout(res, 1000 * (attempt + 1))); }
   }
 }
-const store = new Database('/tank/sifter/phrase-vectors/vectors.db');
-store.pragma('busy_timeout = 60000');   // the build writes this store concurrently
+const store = DO_STORE ? new Database('/tank/sifter/phrase-vectors/vectors.db') : null;
+store?.pragma('busy_timeout = 60000');   // the build writes this store concurrently
 // by doc_id first: units has an index on doc_id, none on paragraph_id (16M rows; building one would lock the live build)
-const setUnits = store.prepare('UPDATE units SET author = ? WHERE doc_id = ? AND paragraph_id = ?');
+const setUnits = store?.prepare('UPDATE units SET author = ? WHERE doc_id = ? AND paragraph_id = ?');
 // one batch request per 200 paragraphs, one set_payload per author in it. Filters, not point ids: a paragraph with no
 // keyword tokens has no paragraphs_kw point, and set_payload on a missing id fails the whole request; a filter just matches none.
 for (let i = 0; i < updates.length; i += 200) {
   const chunk = updates.slice(i, i + 200), groups = new Map();
   for (const u of chunk) (groups.get(u.author) || groups.set(u.author, []).get(u.author)).push(u.id);
   const ops = (f) => [...groups].map(([author, ids]) => ({ set_payload: { payload: { author }, filter: f(ids) } }));
-  await qd('/collections/phrases/points/batch?wait=false', { operations: ops((ids) => ({ must: [{ key: 'paragraph_id', match: { any: ids } }] })) });
-  await qd('/collections/paragraphs_kw/points/batch?wait=false', { operations: ops((ids) => ({ must: [{ has_id: ids }] })) });
-  store.transaction(() => { for (const u of chunk) setUnits.run(u.author, u.doc, String(u.id)); })();
+  if (DO_QDRANT) await qd('/collections/phrases/points/batch?wait=false', { operations: ops((ids) => ({ must: [{ key: 'paragraph_id', match: { any: ids } }] })) });
+  if (DO_QDRANT) await qd('/collections/paragraphs_kw/points/batch?wait=false', { operations: ops((ids) => ({ must: [{ has_id: ids }] })) });
+  if (DO_STORE) store.transaction(() => { for (const u of chunk) setUnits.run(u.author, u.doc, String(u.id)); })();
   if ((i / 200) % 25 === 0) console.log(JSON.stringify({ sent: Math.min(i + 200, updates.length), of: updates.length }));
 }
 console.log(JSON.stringify({ done: updates.length }));

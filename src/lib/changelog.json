@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T15:50:08.080Z",
+  "generated": "2026-10-04T16:43:34.996Z",
   "entries": [
+    {
+      "hash": "43d0ca8b",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Qdrant points carry the paragraph's own author (one paragraphAuthor for Meili + Qdrant); A/B results",
+      "scope": "search"
+    },
     {
       "hash": "d53bbee0",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "PII sanitizer now fails CLOSED, not open",
       "scope": null
-    },
-    {
-      "hash": "d72021ed",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "\"created\" counted arrivals that never happened",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "43d0ca8b",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Qdrant points carry the paragraph's own author (one paragraphAuthor for Meili + Qdrant); A/B results",
+        "scope": "search"
+      },
       {
         "hash": "d53bbee0",
         "date": "2026-10-04",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "PII sanitizer now fails CLOSED, not open",
-        "scope": null
-      },
-      {
-        "hash": "d72021ed",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "\"created\" counted arrivals that never happened",
         "scope": null
       }
     ]
