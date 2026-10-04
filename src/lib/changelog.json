@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T05:56:02.967Z",
+  "generated": "2026-10-04T06:36:28.311Z",
   "entries": [
+    {
+      "hash": "bcd1ee9d",
+      "date": "2026-10-03",
+      "type": "Fixed",
+      "description": "Match known names on the whole string first; cut a trailing place (\"… Kahn. Pittsburgh\"), never a title",
+      "scope": "translators"
+    },
     {
       "hash": "29d53565",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A failed probe must not read as \"nothing pending\"",
       "scope": null
-    },
-    {
-      "hash": "7a5ddb85",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Aggregate content BEFORE joining docs (4,500s/day of freeze)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "bcd1ee9d",
+        "date": "2026-10-03",
+        "type": "Fixed",
+        "description": "Match known names on the whole string first; cut a trailing place (\"… Kahn. Pittsburgh\"), never a title",
+        "scope": "translators"
+      },
       {
         "hash": "29d53565",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "A failed probe must not read as \"nothing pending\"",
-        "scope": null
-      },
-      {
-        "hash": "7a5ddb85",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Aggregate content BEFORE joining docs (4,500s/day of freeze)",
         "scope": null
       }
     ]

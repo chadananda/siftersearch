@@ -16,6 +16,9 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { canonicalTranslator, interpreterOf, titleTranslator, frontmatterTranslators } from '../../api/lib/authorship/translators.js';
 import { effectiveAuthor } from '../../api/lib/authorship/effective.js';
+import { firstPerson } from '../../api/lib/authorship/reader.js';
+// canonical writer: a book default keeps the catalogue spelling ("'Abdu'l-Bahá", "Baha'u'llah") — compare canonical names
+const writerOf = (row, d) => { const a = effectiveAuthor({ authors: row.authors, author: d.author }); return { ...a, author: firstPerson(a.author || '') || a.author }; };
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const WRITE = process.argv.includes('--write');
@@ -77,7 +80,7 @@ for (const docId of talkCand) {
     if (head) { if (!prevHeading) cur = null; prevHeading = true; continue; }
     prevHeading = false;
     if (!cur) continue;
-    const a = effectiveAuthor({ authors: r.authors, author: d.author });
+    const a = writerOf(r, d);
     if (a.author !== '‘Abdu’l-Bahá') continue;            // the interpreter rendered the Master's words only
     assign.set(r.id, { translator: cur, basis: 'interpreter-heading' }); counts[cur]++;
   }
@@ -96,7 +99,7 @@ for (let last = 0; ;) {
   const rows = page.all(last); if (!rows.length) break; last = rows[rows.length - 1].id;
   for (const r of rows) {
     const d = docById.get(r.doc_id); if (!d) continue;
-    const a = effectiveAuthor({ authors: r.authors, author: d.author });
+    const a = writerOf(r, d);
     const translated = d.religion?.startsWith('Bah') ? TRANSLATED_FIGURES.has(a.author) && !/^(ar|fa|he)/i.test(d.language || '')
       : !!docTrans.get(r.doc_id) && a.fromBook;
     if (!translated) continue;
