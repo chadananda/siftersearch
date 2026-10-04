@@ -193,3 +193,17 @@ describe('a venue heading under a speaker heading keeps the speaker', () => {
     expect(names(r, 5)).toEqual(['Frances Orr Allen:author:book']);
   });
 });
+
+describe('standard abbreviation trailers', async () => {
+  const { trailingReference } = await import('../../api/lib/authorship/reader.js');
+  it('a closing quotation + a known abbreviation and page names the writer', () => {
+    expect(trailingReference('"The names and attributes of God require the existence of beings." SAQ 281')?.name).toBe('‘Abdu’l-Bahá');
+    expect(trailingReference('"Nay, loftiness and sublimity are themselves the creations of His Word." GWB 141-2')?.name).toBe('Bahá’u’lláh');
+    expect(trailingReference('"My eternity is My creation, I have created it for thee." AHW #64')?.name).toBe('Bahá’u’lláh');
+  });
+  it('multi-author collections, unknown codes and uncited prose name nobody', () => {
+    expect(trailingReference('"The Guardian has stated that…" LG 85')).toBeNull();
+    expect(trailingReference('"…according to their states."146')).toBeNull();
+    expect(trailingReference('This is discussed at length in SAQ 146')).toBeNull();
+  });
+});

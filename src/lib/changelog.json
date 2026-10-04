@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T18:45:21.429Z",
+  "generated": "2026-10-04T21:28:13.698Z",
   "entries": [
+    {
+      "hash": "b203b9dd",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Author_fold backfill uses node:http (fetch's 5-min headers timeout killed it) and ≤50k-point batches",
+      "scope": "phrase-index"
+    },
     {
       "hash": "de16cdba",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Read the exhausted convert items before retrying any of them",
       "scope": null
-    },
-    {
-      "hash": "b4662153",
-      "date": "2026-08-15",
-      "type": "Other",
-      "description": "A note is extractable whatever version stamped it (ends the storm)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "b203b9dd",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Author_fold backfill uses node:http (fetch's 5-min headers timeout killed it) and ≤50k-point batches",
+        "scope": "phrase-index"
+      },
       {
         "hash": "de16cdba",
         "date": "2026-10-04",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-15",
         "type": "Other",
         "description": "Read the exhausted convert items before retrying any of them",
-        "scope": null
-      },
-      {
-        "hash": "b4662153",
-        "date": "2026-08-15",
-        "type": "Other",
-        "description": "A note is extractable whatever version stamped it (ends the storm)",
         "scope": null
       }
     ]

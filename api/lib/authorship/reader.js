@@ -69,6 +69,15 @@ export function leadIn(text) {
   return { speaker: speakerOf(tail), pronoun: !firstPerson(tail) && /\b(He|She|They|it)\b/.test(tail) };
 }
 
+// Standard reference ABBREVIATIONS of single-author works — `"…" PRP 159`, `"…" GWB 141-2`, `"…" AHW #64` — as defined in the
+// books that use them (Phelps, Divine Philosophy, "Table of Sources"). Multi-author collections (LG Lights of Guidance, BSC
+// Bahá'í Scriptures, SW Star of the West, BWF Bahá'í World Faith) are deliberately absent: they name no single writer.
+export const CITED_ABBR = new Map([
+  ...['PRP', 'SAQ', 'SWA', 'SWAB', 'PT', 'ADP', 'TAB', 'Forel', 'AL', 'SDC', 'TDP', 'MF', 'FWU'].map((k) => [k, '‘Abdu’l-Bahá']),
+  ...['GWB', 'PM', 'KI', 'TB', 'ESW', 'SV', 'HW', 'AHW', 'PHW', 'KA', 'Hykal', 'SLH', 'GDM'].map((k) => [k, 'Bahá’u’lláh']),
+  ...['SWB'].map((k) => [k, 'The Báb']),
+  ...['WOB', 'GPB', 'PDC', 'ADJ', 'CF', 'MA'].map((k) => [k, 'Shoghi Effendi']),
+]);
 /** A trailing reference inside the paragraph: "… (Bahá’u’lláh, Gleanings, p. 287)", "— ‘Abdu’l-Bahá [BWF 353]",
  *  or a footnote "[^175] [175]: Bahá’u’lláh, Seven Valleys". Returns the named writer. */
 export function trailingReference(text) {
@@ -81,6 +90,10 @@ export function trailingReference(text) {
   const dash = t.match(/[—–]\s*([^—–\n]{3,80})$/);
   const seg = dash ? dash[1].replace(/^[_*\s]+/, '') : '';
   if (dash && PEOPLE.some(([, re]) => { const m = seg.match(re); return m && m.index === 0; })) return { name: firstPerson(seg), kind: 'dash' };
+  // `"…" PRP 159` / `"…" AHW #64`: a CLOSING quotation mark, then a standard abbreviation and page — the quotation's source.
+  // (Without the closing quote mark, a commentary sentence that merely cites a page would be credited to the cited author.)
+  const ab = t.match(/[”"]\s*\.?\s*([A-Z][A-Za-z]{1,5})\s*(?:#\s*)?\d[\d\s,:–-]*\.?$/);
+  if (ab && CITED_ABBR.has(ab[1])) return { name: CITED_ABBR.get(ab[1]), kind: 'abbreviation' };
   const fn = t.match(/\[\^?\d+\]:?\s*([^\n]{3,200})$/);
   if (fn && firstPerson(fn[1].slice(0, 60))) return { name: firstPerson(fn[1].slice(0, 60)), kind: 'footnote' };
   return null;
