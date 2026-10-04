@@ -1,0 +1,18 @@
+---
+// SourceHunt: paste an English quotation → the published book it comes from, every publication citing it, and the likely
+// original tablet (oceanoflights / Phelps Inventory). The work happens client-side against POST /api/search/source-hunt.
+import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/common/NavBar.svelte';
+import SourceHunt from '../components/SourceHunt.svelte';
+---
+
+<Layout title="SourceHunt — find the source of a quotation" description="Paste a quotation in English to find the book it comes from, every publication that cites it, and the original tablet.">
+  <NavBar client:idle currentPage="sourcehunt" />
+  <main class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
+    <header class="flex flex-col gap-2">
+      <h1 class="text-3xl font-semibold text-primary">SourceHunt</h1>
+      <p class="text-secondary">Paste a quotation. SourceHunt finds the published book it comes from, the other publications that cite it, and the original tablet it was translated from.</p>
+    </header>
+    <SourceHunt client:load />
+  </main>
+</Layout>

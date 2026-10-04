@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T22:08:22.061Z",
+  "generated": "2026-10-04T23:07:44.203Z",
   "entries": [
+    {
+      "hash": "38085e67",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "HyPE in Qdrant (indexer --field hype, qhype layer); metadata documents never returned as passages",
+      "scope": "search"
+    },
     {
       "hash": "ab143ce1",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Landing-page resolver + DRY RUN (no writes)",
       "scope": null
-    },
-    {
-      "hash": "b380270a",
-      "date": "2026-08-15",
-      "type": "Other",
-      "description": "Is 'no source file linked' a missing URL or an unrecognised one?",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "38085e67",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "HyPE in Qdrant (indexer --field hype, qhype layer); metadata documents never returned as passages",
+        "scope": "search"
+      },
       {
         "hash": "ab143ce1",
         "date": "2026-10-04",
@@ -7055,15 +7062,6 @@
         "date": "2026-08-16",
         "type": "Other",
         "description": "Landing-page resolver + DRY RUN (no writes)",
-        "scope": null
-      }
-    ],
-    "2026-08-15": [
-      {
-        "hash": "b380270a",
-        "date": "2026-08-15",
-        "type": "Other",
-        "description": "Is 'no source file linked' a missing URL or an unrecognised one?",
         "scope": null
       }
     ]

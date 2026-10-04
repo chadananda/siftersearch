@@ -459,6 +459,16 @@ export default async function searchRoutes(fastify) {
     return { hits: await withLinks(r.hits), _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
   });
 
+  // SourceHunt (/sourcehunt page): an English quote → its published book, every publication citing it, the likely tablet.
+  // Qdrant + SQLite only (no Meili). First-party: the site's own page.
+  fastify.post('/source-hunt', { preHandler: requireFirstParty }, async (request, reply) => {
+    const quote = String(request.body?.quote || '').slice(0, 4000);
+    const { sourceHunt } = await import('../lib/source-hunt.js');
+    const r = await sourceHunt(quote);
+    if (r.error) return reply.code(400).send({ error: 'BadRequest', message: r.error });
+    return r;
+  });
+
   fastify.get('/stats', async (request) => {
     const now = Date.now();
     if (searchStatsCache.data && (now - searchStatsCache.timestamp) < searchStatsCache.ttl) {

@@ -172,6 +172,13 @@
           </svg>
           <span class="nav-label">Research</span>
         </a>
+        <a href="/sourcehunt" class="nav-link show-md" class:active={currentPage === 'sourcehunt'} title="Find the source of a quotation">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7"/><path d="m20 20-4.9-4.9"/>
+            <path d="M7.5 11.5c0-1.6.8-2.6 2-3M10.5 11.5c0-1.6.8-2.6 2-3"/>
+          </svg>
+          <span class="nav-label">SourceHunt</span>
+        </a>
         <!-- Discuss tab hidden until multi-user launch -->
         <!--<a href="/community" class="nav-link show-md" class:active={currentPage === 'community'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -263,6 +270,13 @@
                 <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
               </svg>
               Research
+            </a>
+            <a href="/sourcehunt" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'sourcehunt'} role="menuitem" onclick={closeNavMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="10" cy="10" r="7"/><path d="m20 20-4.9-4.9"/>
+            <path d="M7.5 11.5c0-1.6.8-2.6 2-3M10.5 11.5c0-1.6.8-2.6 2-3"/>
+              </svg>
+              SourceHunt
             </a>
             <a href="/docs" class="nav-dropdown-item hide-above-lg" class:active={currentPage === 'docs'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
