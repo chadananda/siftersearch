@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T04:39:29.262Z",
+  "generated": "2026-10-04T04:42:57.197Z",
   "entries": [
+    {
+      "hash": "d3da5604",
+      "date": "2026-10-03",
+      "type": "New",
+      "description": "Qdrant phrase + keyword layers (opt-in), source-link precedence, scraped-site junk filter, paged phrase indexer",
+      "scope": "search"
+    },
     {
       "hash": "0c6a016f",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Bump CURRENT_VERSION to 115 + test that it can never lag again",
       "scope": null
-    },
-    {
-      "hash": "be55086d",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Stamp every paragraph with the extractor version (migration 115)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "d3da5604",
+        "date": "2026-10-03",
+        "type": "New",
+        "description": "Qdrant phrase + keyword layers (opt-in), source-link precedence, scraped-site junk filter, paged phrase indexer",
+        "scope": "search"
+      },
       {
         "hash": "0c6a016f",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Bump CURRENT_VERSION to 115 + test that it can never lag again",
-        "scope": null
-      },
-      {
-        "hash": "be55086d",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Stamp every paragraph with the extractor version (migration 115)",
         "scope": null
       }
     ]

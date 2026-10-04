@@ -1486,6 +1486,25 @@ export const migrations = {
     await addCol('ALTER TABLE docs ADD COLUMN authors TEXT');
     logger.info('Migration 140 complete');
   },
+
+  141: async () => {
+    // TRANSLATORS (Chad, 2026-10-03: "every translation … the translator identified. Every talk needs to list the
+    // translator (when possible) so we can compare Farid to Sohrab etc."). Distinct from translation_by (migration 131),
+    // which names who made the English set BESIDE an original (translation_text); this names who translated THIS
+    // paragraph's own text into its language — a book's translator, or a talk's interpreter.
+    //   content.translator        canonical name ("Ameen U. Faríd", "Mírzá Aḥmad Sohrab", "Shoghi Effendi")
+    //   content.translator_basis  interpreter-heading | book | source-link | identical-text
+    //   docs.translators          JSON [{name, basis: frontmatter|title|interpreter-heading, raw}]
+    logger.info('Starting migration 141: translators');
+    const addCol = async (sql) => {
+      try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+    await addCol('ALTER TABLE content ADD COLUMN translator TEXT');
+    await addCol('ALTER TABLE content ADD COLUMN translator_basis TEXT');
+    await addCol('ALTER TABLE docs ADD COLUMN translators TEXT');
+    await query('CREATE INDEX IF NOT EXISTS idx_content_translator ON content(translator) WHERE translator IS NOT NULL');
+    logger.info('Migration 141 complete');
+  },
 };
 
 export const graphMigrations = {
