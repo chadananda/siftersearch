@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T16:43:34.996Z",
+  "generated": "2026-10-04T16:46:38.972Z",
   "entries": [
+    {
+      "hash": "146cf711",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Push-qdrant-authors splits Qdrant (--qdrant-only) from the vector store (--store-only); a running build locks the store",
+      "scope": "phrase-index"
+    },
     {
       "hash": "43d0ca8b",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "EXPLAIN QUERY PLAN for the snapshot's expensive queries",
       "scope": null
-    },
-    {
-      "hash": "0d0020cb",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "PII sanitizer now fails CLOSED, not open",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "146cf711",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Push-qdrant-authors splits Qdrant (--qdrant-only) from the vector store (--store-only); a running build locks the store",
+        "scope": "phrase-index"
+      },
       {
         "hash": "43d0ca8b",
         "date": "2026-10-04",
@@ -7057,15 +7064,6 @@
         "date": "2026-08-15",
         "type": "Other",
         "description": "EXPLAIN QUERY PLAN for the snapshot's expensive queries",
-        "scope": null
-      }
-    ],
-    "2026-08-14": [
-      {
-        "hash": "0d0020cb",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "PII sanitizer now fails CLOSED, not open",
         "scope": null
       }
     ]

@@ -375,8 +375,14 @@ export function isEncounterQuestion(q) {
 }
 
 /** Async wrapper for the claims layer: encounterSearch + each cited paragraph's source title and policy link. */
+// A who-met-whom QUESTION, for the cold-index case only (once built, isEncounterQuestion decides by the names it knows).
+const QUESTION = /^\s*(did|who|whom|when|where|has|have|had|which|was|were|is|are|how|list)\b|\?\s*$/i;
 export async function encounterPeople(q) {
   if (!VERB.test(fold(q))) return null;
+  // Scripture matches the verbs too ("known by a different name", "saw", "presence"). Waiting on a COLD index build froze
+  // every concurrent search for 5–15 s (better-sqlite3 is synchronous; 2026-10-04 p95 tail) — so only a question that
+  // names people waits; a passage never does. The index is warmed at API startup (api/index.js).
+  if (_index ? !isEncounterQuestion(q) : !QUESTION.test(q)) return null;
   const t = Date.now();
   const index = await getEncounterIndex();
   const res = encounterSearch(q, { index });

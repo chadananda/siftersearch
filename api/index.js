@@ -63,6 +63,10 @@ const start = async () => {
 
     await server.listen({ port, host });
 
+    // Warm the who-met-whom index once, off the request path (a ~5 s synchronous build; searches never wait on it cold).
+    setTimeout(() => import('./lib/encounters.js').then((m) => m.getEncounterIndex()).catch((err) =>
+      logger.warn({ err: err.message }, 'encounter index warm-up failed')), 20000).unref();
+
     // Run database migrations AFTER listening so health checks work during migration.
     // In single-writer architecture, the unified worker is the authoritative migration runner.
     // API tolerates SQLITE_BUSY — the worker will complete the migration.
