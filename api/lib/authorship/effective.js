@@ -21,3 +21,7 @@ export function effectiveAuthor({ authors, para_meta: paraMeta, author } = {}) {
   const meta = parse(paraMeta);
   return { author: meta?.author || author || null, quoted: meta?.quoted_authors || [], onBehalf: false, isReferenceLine: !!meta?.is_attribution_line, fromBook: !meta?.author };
 }
+
+/** The author an index stores for a paragraph: its own writer when the reader named one, else the book's. One definition
+ *  for Meili (unified-worker) and the Qdrant indexers, so an author filter means the same thing on both engines. */
+export const paragraphAuthor = ({ authors, author }) => (authors && effectiveAuthor({ authors, author }).author) || author;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T13:39:48.370Z",
+  "generated": "2026-10-04T15:50:08.080Z",
   "entries": [
+    {
+      "hash": "d53bbee0",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Qdrant-only arm (meili:false) for the swap A/B; /multi hits carry links; language filter maps to lang_group; end-to-end cross-lingual battery",
+      "scope": "search"
+    },
     {
       "hash": "fbd93caf",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "\"created\" counted arrivals that never happened",
       "scope": null
-    },
-    {
-      "hash": "a186f388",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Add the preview half of the review gate",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "d53bbee0",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Qdrant-only arm (meili:false) for the swap A/B; /multi hits carry links; language filter maps to lang_group; end-to-end cross-lingual battery",
+        "scope": "search"
+      },
       {
         "hash": "fbd93caf",
         "date": "2026-10-04",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "\"created\" counted arrivals that never happened",
-        "scope": null
-      },
-      {
-        "hash": "a186f388",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Add the preview half of the review gate",
         "scope": null
       }
     ]

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { effectiveAuthor } from '../../api/lib/authorship/effective.js';
+import { effectiveAuthor, paragraphAuthor } from '../../api/lib/authorship/effective.js';
 
 describe('effectiveAuthor', () => {
   it('prefers content.authors, then para_meta, then the doc author', () => {
@@ -18,5 +18,12 @@ describe('effectiveAuthor', () => {
   });
   it('the book default keeps the catalogue spelling', () => {
     expect(effectiveAuthor({ authors: [{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'book' }], author: '’Abdu’l-Bahá' }).author).toBe('’Abdu’l-Bahá');
+  });
+});
+
+describe('paragraphAuthor (the author every index stores)', () => {
+  it("is the paragraph's own writer when named, else the book's", () => {
+    expect(paragraphAuthor({ authors: '[{"name":"Shoghi Effendi","role":"author","conf":0.9}]', author: 'Helen Hornby' })).toBe('Shoghi Effendi');
+    expect(paragraphAuthor({ authors: null, author: 'Helen Hornby' })).toBe('Helen Hornby');
   });
 });

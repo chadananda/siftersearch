@@ -24,7 +24,7 @@ import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
 import { content } from '../lib/content.js';
 import { getAuthority, authorAuthority } from '../lib/authority.js';
-import { effectiveAuthor } from '../lib/authorship/effective.js';
+import { paragraphAuthor } from '../lib/authorship/effective.js';
 import { flushMeiliDeletes } from '../lib/meili-pending.js';
 import { runMigrations } from '../lib/migrations.js';
 import { setSiteRegistry } from '../lib/search/scope.js';
@@ -376,7 +376,7 @@ async function processSyncJob(job) {
               // `author` is the PARAGRAPH's own writer (content.authors, migration 140) — a quotation keeps its writer in any
               // book, so an author filter finds it there (Chad, 2026-10-03); the book's author stays on the doc record.
               // No writer known ("someone else") → the book's author, as before. Authority follows the paragraph's writer.
-              const paraAuthor = (p.authors && effectiveAuthor({ authors: p.authors, author: doc.author }).author) || doc.author;
+              const paraAuthor = paragraphAuthor({ authors: p.authors, author: doc.author });
               let paraAuthority = authority;
               if (paraAuthor !== doc.author) paraAuthority = authorAuthority(paraAuthor) ?? authority;
               meiliParas.push({

@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { tokens, bm25Doc } from '../../api/lib/keyword-tokens.js';
 import { paragraphLang } from '../../api/lib/phrase-vectors.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
+import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -44,7 +45,7 @@ const src = new Database(DB, { readonly: true, fileMustExist: true });
 // scraped sites: skip markup-only lines and recurring page chrome (api/lib/site-boilerplate.js); library never filtered
 const BP = SCOPE === 'supplemental' ? boilerplateTexts(src) : null;
 const wanted = (text) => !BP || keepSiteParagraph(text, BP);
-const SQL = `SELECT c.id, c.doc_id, c.text, d.language, d.religion, d.collection, d.author FROM content c JOIN docs d ON d.id = c.doc_id
+const SQL = `SELECT c.id, c.doc_id, c.text, c.authors, d.language, d.religion, d.collection, d.author FROM content c JOIN docs d ON d.id = c.doc_id
   WHERE d.scope = '${DB_SCOPE}' AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
   AND c.id > ? ORDER BY c.id`;
 
@@ -84,7 +85,7 @@ for (const p of src.prepare(SQL).iterate(state.lastId)) {
   const v = bm25Doc(p.text, state.avgLen);
   if (v) terms += v.indices.length;
   if (v) batch.push({ id: p.id, vector: { bm25: v }, payload: { paragraph_id: p.id, doc_id: p.doc_id, lang_group: paragraphLang(p.text, p.language).group,
-    religion: p.religion, collection: p.collection, author: p.author, scope: DB_SCOPE } });
+    religion: p.religion, collection: p.collection, author: paragraphAuthor(p), scope: DB_SCOPE } });
   if (batch.length >= BATCH || terms >= MAX_TERMS) await flush();
   if (LIMIT && sentRun + batch.length >= LIMIT) break;
 }

@@ -21,6 +21,7 @@ import { fileURLToPath } from 'url';
 import { unitsOf, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { faShare } from '../../api/lib/arabic-script.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
+import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -82,7 +83,7 @@ function source() {
   // for the entire build (12–27 h), so the WAL could never be checkpointed — it grew to 12 GB, and the worker restarted the
   // API every 15 min trying to free it (the 2026-10-03 "restart storm"). Never stream a long build through one statement.
   const page = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
-      d.author, d.religion, d.collection, d.scope FROM content c JOIN docs d ON d.id = c.doc_id
+      c.authors, d.author, d.religion, d.collection, d.scope FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE ${where} AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
   const rows = { *iterate() { for (let last = 0; ;) { const got = page.all(last); if (!got.length) return; yield* got; last = got[got.length - 1].id; } } };
@@ -119,7 +120,7 @@ function unitize(paras) {
     for (const u of unitsOf({ id: p.id, text: p.text, lang: seg })) {
       const key = vecKey(MODEL, DIMS, u.embedText), old = haveUnit.get(u.pointId);
       if (!old || old.seg_v !== u.segV || old.key !== key)
-        buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: p.author,
+        buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
           lang: p.language, field: FIELD, group, collection: p.collection || null, scope: p.scope || 'primary' });
       if (!haveVec.get(key)) pending.set(key, u.embedText);
     }
