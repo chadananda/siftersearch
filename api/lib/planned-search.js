@@ -91,9 +91,10 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 // people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
 // Qdrant layers (P4, planning/phrase-index-plan.md): off until the batteries pass with them. SEARCH_QDRANT=phrase,keyword
 // turns them on server-wide; a caller (the battery, via /api/search/multi) can pass {phrase, keyword} per request.
-export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase: /phrase/.test(v), keyword: /keyword/.test(v) });
-export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true } : v && typeof v === 'object'
-  ? { phrase: !!v.phrase, keyword: !!v.keyword } : v === false ? { phrase: false, keyword: false } : qdrantDefault();
+// 'only' = Qdrant ranks alone, Meili layers off (the swap candidate).
+export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase: /phrase|only/.test(v), keyword: /keyword|only/.test(v), only: /only/.test(v) });
+export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, only: false } : v === 'only' ? { phrase: true, keyword: true, only: true }
+  : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, only: !!v.only } : v === false ? { phrase: false, keyword: false, only: false } : qdrantDefault();
 
 export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights } = {}) {
   const t0 = Date.now();
@@ -132,7 +133,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
       keywordLayer: layers.keyword, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
-      phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(weights ? { weights } : {}),
+      phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}),
       ...(only || {}),
     });
     (stages.engine ||= []).push({ filters: Object.keys(filters || {}).filter((k) => filters[k]), ...(res?._timings || {}) });

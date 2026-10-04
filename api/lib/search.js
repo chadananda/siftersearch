@@ -1236,6 +1236,9 @@ export async function multiIndexSearch(query, options = {}) {
   // semantic:false (the plan's strategy needs no meaning-match: a quote, a lookup, a who-met-whom) → no query
   // embedding at all: main runs BM25 and the vector-only HyPE layer is skipped.
   const semanticOff = options.semantic === false;
+  // meili:false = Qdrant-only ranking (the swap candidate, P4): the Meili main/HyPE/keyword layers are skipped and the
+  // two Qdrant layers always run. Paragraph bodies for the hits still come from Meili by id until hydration moves to SQLite.
+  const meiliOff = options.meili === false;
   const mainSemanticRatio = semanticOff ? 0 : options.semanticRatio != null
     ? options.semanticRatio
     : (filters.religion && !filters.collection) ? 0.3 : 0.5;
@@ -1247,14 +1250,14 @@ export async function multiIndexSearch(query, options = {}) {
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
   const [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult] = await Promise.all([
-    timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
+    meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
     }),
     // HyPE: only query when scope includes primary. Site-only sites don't
     // have HyPE (gated off in v1), and supplementals don't either. The
     // primary `hype_questions` index is the only one populated.
-    (options.hype !== false && !semanticOff && (!scope_config || scope_config.primary))
+    (options.hype !== false && !semanticOff && !meiliOff && (!scope_config || scope_config.primary))
       ? timed('hype', searchHypeQuestions(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
           return { hits: [] };
@@ -1269,20 +1272,20 @@ export async function multiIndexSearch(query, options = {}) {
       : Promise.resolve({ hits: [] }),
     // Keyword layer (planner: shape=quote). Pure BM25, unfederated — a verbatim quote loses to its semantic
     // neighbours in the hybrid main layer (Hidden Words → Qur'án/Psalms) but ranks #1–2 on its own words.
-    options.keywordLayer
+    options.keywordLayer && !meiliOff
       ? timed('keyword', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: 0, federate: false })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: keyword failed');
           return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
     // Qdrant layers (P4, planning/phrase-index-plan.md) — opt-in until measured on both batteries.
-    (options.phraseLayer && !semanticOff && (!scope_config || scope_config.primary))
+    ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary)
       ? timed('phrase', searchPhrases(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: phrase layer failed');
           return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
-    (options.qdrantKeyword && (!scope_config || scope_config.primary))
+    ((options.qdrantKeyword || meiliOff) && (!scope_config || scope_config.primary))
       ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
           return { hits: [] };

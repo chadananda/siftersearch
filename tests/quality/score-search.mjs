@@ -43,9 +43,9 @@ const MULTI = args.includes('--multi');
 // --phrase-boost: ask the API for the opt-in exact-phrase re-rank, so its effect can be MEASURED against
 // the same fixtures before anyone changes what users see.
 const PHRASE_BOOST = args.includes('--phrase-boost');
-// --qdrant[=phrase,keyword]: turn on the Qdrant layers (P4) for this run; --weights=phrase:1.5,qkeyword:1 tunes RRF.
+// --qdrant[=phrase,keyword|only]: turn on the Qdrant layers (P4) for this run; --weights=phrase:1.5,qkeyword:1 tunes RRF.
 const QDRANT_ARG = args.find((a) => a === '--qdrant' || a.startsWith('--qdrant='));
-const QDRANT = QDRANT_ARG ? (QDRANT_ARG.includes('=') ? { phrase: /phrase/.test(QDRANT_ARG), keyword: /keyword/.test(QDRANT_ARG) } : true) : false;
+const QDRANT = QDRANT_ARG ? (QDRANT_ARG === '--qdrant=only' ? 'only' : QDRANT_ARG.includes('=') ? { phrase: /phrase/.test(QDRANT_ARG), keyword: /keyword/.test(QDRANT_ARG) } : true) : false;
 const WEIGHTS = (args.find((a) => a.startsWith('--weights='))?.split('=')[1] || '').split(',').filter(Boolean)
   .reduce((o, kv) => { const [k, v] = kv.split(':'); o[k] = Number(v); return o; }, {});
 if (QDRANT_ARG && !args.includes('--multi')) { console.error('--qdrant needs --multi (/api/search/multi)'); process.exit(2); }

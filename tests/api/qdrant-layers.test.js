@@ -48,3 +48,27 @@ describe('layers', () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe('language filter → lang_group', () => {
+  it('maps Arabic and Persian to the shared script group, other languages as given', () => {
+    expect(toQdrantFilter({ language: 'fa' })).toEqual({ must: [{ key: 'lang_group', match: { value: 'ar-fa' } }] });
+    expect(toQdrantFilter({ language: 'Ar' })).toEqual({ must: [{ key: 'lang_group', match: { value: 'ar-fa' } }] });
+    expect(toQdrantFilter({ language: 'EN' })).toEqual({ must: [{ key: 'lang_group', match: { value: 'en' } }] });
+    expect(toQdrantFilter({ language: 'fa', langGroup: 'en' })).toEqual({ must: [{ key: 'lang_group', match: { value: 'en' } }] });
+  });
+});
+
+describe('qdrantOption (per-request A/B switch)', async () => {
+  const { qdrantOption, qdrantDefault } = await import('../../api/lib/planned-search.js');
+  it('reads true / only / object / false', () => {
+    expect(qdrantOption(true)).toEqual({ phrase: true, keyword: true, only: false });
+    expect(qdrantOption('only')).toEqual({ phrase: true, keyword: true, only: true });
+    expect(qdrantOption({ phrase: true })).toEqual({ phrase: true, keyword: false, only: false });
+    expect(qdrantOption(false)).toEqual({ phrase: false, keyword: false, only: false });
+  });
+  it('falls back to SEARCH_QDRANT', () => {
+    expect(qdrantDefault('')).toEqual({ phrase: false, keyword: false, only: false });
+    expect(qdrantDefault('phrase,keyword')).toEqual({ phrase: true, keyword: true, only: false });
+    expect(qdrantDefault('only')).toEqual({ phrase: true, keyword: true, only: true });
+  });
+});

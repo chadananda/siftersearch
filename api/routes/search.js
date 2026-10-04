@@ -435,14 +435,28 @@ export default async function searchRoutes(fastify) {
     const { query, limit = 10, filters = {}, plan = true, messages, qdrant: qd, weights } = request.body || {};
     if (!query || !String(query).trim()) return { hits: [] };
     const lim = Math.min(Number(limit) || 10, 30);
-    // qdrant: true | {phrase, keyword} — the battery's A/B switch for the Qdrant layers; weights: RRF tuning.
+    // qdrant: true | 'only' | {phrase, keyword, only} — the battery's A/B switch for the Qdrant layers; weights: RRF tuning.
     const { plannedSearch, qdrantOption } = await import('../lib/planned-search.js');
     const qdrant = qdrantOption(qd);
     // plan:false = the raw engine, kept so the battery can measure what planning adds.
-    if (plan === false) return multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true,
-      phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(weights ? { weights } : {}) });
+    // Each hit carries the same `link` the public /v1/search returns, so the battery's link checks judge this path too.
+    const withLinks = async (hits = []) => {
+      const { linkFor } = await import('../lib/source-links.js');
+      const { getLinkMeta } = await import('../lib/docs-repo.js');
+      const meta = await getLinkMeta(hits.map((h) => h.doc_id ?? h.document_id)).catch(() => new Map());
+      return hits.map((h) => {
+        const m = meta.get(Number(h.doc_id ?? h.document_id)) || {};
+        const l = linkFor({ ...m, ...h, document_id: h.doc_id ?? h.document_id, source_url: h.source_url || m.source_url || null, metadata: m.metadata }, h.paragraph_index);
+        return { ...h, url: l.url, link: { site: l.site, tier: l.tier, paragraph_level: l.paragraph_level } };
+      });
+    };
+    if (plan === false) {
+      const r = await multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true,
+        phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}) });
+      return { ...r, hits: await withLinks(r.hits) };
+    }
     const r = await plannedSearch(String(query), { limit: lim, given: filters, messages, qdrant, ...(weights ? { weights } : {}) });
-    return { hits: r.hits, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
+    return { hits: await withLinks(r.hits), _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
   });
 
   fastify.get('/stats', async (request) => {

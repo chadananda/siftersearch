@@ -38,7 +38,10 @@ export function toQdrantFilter(filters = {}) {
   if (filters.collection) eq('collection', filters.collection);
   if (filters.author) eq('author', filters.author);
   if (filters.documentId != null) eq('doc_id', Array.isArray(filters.documentId) ? filters.documentId.map(Number) : Number(filters.documentId));
-  if (filters.langGroup) eq('lang_group', filters.langGroup);
+  // lang_group is the paragraph's script group ('ar-fa', 'ja', 'zh', else the doc language); the Meili-style
+  // `language` filter maps onto it so one filter means the same thing on both engines.
+  const group = filters.langGroup || (filters.language ? (/^(ar|fa)/i.test(filters.language) ? 'ar-fa' : String(filters.language).toLowerCase()) : null);
+  if (group) eq('lang_group', group);
   if (!must.length && !must_not.length) return undefined;
   return { ...(must.length ? { must } : {}), ...(must_not.length ? { must_not } : {}) };
 }

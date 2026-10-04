@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T12:15:23.294Z",
+  "generated": "2026-10-04T13:39:48.370Z",
   "entries": [
+    {
+      "hash": "fbd93caf",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Per-request Qdrant layer switch + RRF weights on /api/search/multi; batteries gain --qdrant / --weights",
+      "scope": "search"
+    },
     {
       "hash": "6017aa28",
       "date": "2026-10-03",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Add the preview half of the review gate",
       "scope": null
-    },
-    {
-      "hash": "0381ab6e",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Repair prose-in-JSON columns (dry-run first)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-04": [
+      {
+        "hash": "fbd93caf",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Per-request Qdrant layer switch + RRF weights on /api/search/multi; batteries gain --qdrant / --weights",
+        "scope": "search"
+      }
+    ],
     "2026-10-03": [
       {
         "hash": "6017aa28",
@@ -7057,13 +7066,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Add the preview half of the review gate",
-        "scope": null
-      },
-      {
-        "hash": "0381ab6e",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Repair prose-in-JSON columns (dry-run first)",
         "scope": null
       }
     ]
