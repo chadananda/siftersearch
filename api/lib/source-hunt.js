@@ -102,7 +102,7 @@ export async function sourceHunt(raw, deps = {}) {
       pool.push({ ...r, overlap: ov, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
     }
   }
-  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null), ms: Date.now() - t0 };
+  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0 };
 
   const origin = rankOrigins(pool, quoteAuthor)[0];
 
@@ -127,18 +127,19 @@ export async function sourceHunt(raw, deps = {}) {
     origin: { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
       text: origin.text, url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) },
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,
-    tablet: await tabletGuess(d, q, full),
+    tablet: await tabletGuess(d, q, full, quoteAuthor),
     ms: Date.now() - t0,
   };
 }
 
 /** The original: a LINKED one (translation or quote→source→original) is certain; otherwise the nearest Arabic/Persian
  *  paragraphs by phrase vector are offered as candidates, labelled as such. Each carries its tablet metadata. */
-async function tabletGuess(d, q, links) {
+async function tabletGuess(d, q, links, author = null) {
   const withMeta = async (p, basis) => p && ({ id: p.id, documentId: p.documentId, title: p.document?.title, text: p.text,
     url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) });
   if (links?.original) return { certain: true, ...(await withMeta(links.original, links.original.path || 'translation')) };
-  const near = await d.phrases(q.match, { limit: 3, filters: { langGroup: 'ar-fa', religion: "Baha'i" } }).catch(() => ({ hits: [] }));
+  // only the quote's own writer's originals: an ‘Abdu’l-Bahá talk near in meaning is not the source of a Bahá’u’lláh line
+  const near = await d.phrases(q.match, { limit: 3, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
   const ps = await d.passages(near.hits.map((h) => h.paragraph_id));
   const out = [];
   for (const h of near.hits) { const p = ps.get(h.paragraph_id); if (p) out.push({ ...(await withMeta(p, 'cross-lingual')), score: +h.score.toFixed(3) }); }

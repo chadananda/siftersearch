@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T23:18:58.671Z",
+  "generated": "2026-10-04T23:25:01.171Z",
   "entries": [
+    {
+      "hash": "014c6eac",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Infer the quote's doctrinal writer from the matches and search that writer's own texts; rank the writer's text first",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "0580c929",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Register the split's queries so the slow one can be EXPLAINed",
       "scope": null
-    },
-    {
-      "hash": "ebe89859",
-      "date": "2026-08-16",
-      "type": "Other",
-      "description": "Reject a file that belongs to the containing volume, not the page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "014c6eac",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Infer the quote's doctrinal writer from the matches and search that writer's own texts; rank the writer's text first",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "0580c929",
         "date": "2026-10-04",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-16",
         "type": "Other",
         "description": "Register the split's queries so the slow one can be EXPLAINed",
-        "scope": null
-      },
-      {
-        "hash": "ebe89859",
-        "date": "2026-08-16",
-        "type": "Other",
-        "description": "Reject a file that belongs to the containing volume, not the page",
         "scope": null
       }
     ]
