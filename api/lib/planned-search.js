@@ -8,7 +8,7 @@ import { relaxScope } from './search-scope.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
-const KEYWORD_ONLY = { keywordLayer: true, semantic: false, hype: false, diversify: false };
+const KEYWORD_ONLY = { keywordLayer: true, phraseLayer: false, semantic: false, hype: false, diversify: false };
 const MAX = 500;
 const cache = new Map();
 export const clearPlannedCache = () => cache.clear();
@@ -89,7 +89,13 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  */
 // resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
 // people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000, targeter } = {}) {
+// Qdrant layers (P4, planning/phrase-index-plan.md): off until the batteries pass with them. SEARCH_QDRANT=phrase,keyword
+// turns them on server-wide; a caller (the battery, via /api/search/multi) can pass {phrase, keyword} per request.
+export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase: /phrase/.test(v), keyword: /keyword/.test(v) });
+export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true } : v && typeof v === 'object'
+  ? { phrase: !!v.phrase, keyword: !!v.keyword } : v === false ? { phrase: false, keyword: false } : qdrantDefault();
+
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
@@ -112,7 +118,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));
-  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null]);
+  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null]);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) {
     return { ...hit.value, cached: true, timings: { plan_ms: planMs, search_ms: 0, total_ms: Date.now() - t0 } };
@@ -126,6 +132,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
       keywordLayer: layers.keyword, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
+      phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(weights ? { weights } : {}),
       ...(only || {}),
     });
     (stages.engine ||= []).push({ filters: Object.keys(filters || {}).filter((k) => filters[k]), ...(res?._timings || {}) });

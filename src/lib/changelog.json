@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T06:36:28.311Z",
+  "generated": "2026-10-04T12:15:23.294Z",
   "entries": [
+    {
+      "hash": "6017aa28",
+      "date": "2026-10-03",
+      "type": "Fixed",
+      "description": "Compare canonical writer names; linker gains pair mode, inheritance, fair eval",
+      "scope": "translators,linking"
+    },
     {
       "hash": "bcd1ee9d",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Repair prose-in-JSON columns (dry-run first)",
       "scope": null
-    },
-    {
-      "hash": "3ca6a36e",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "A failed probe must not read as \"nothing pending\"",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "6017aa28",
+        "date": "2026-10-03",
+        "type": "Fixed",
+        "description": "Compare canonical writer names; linker gains pair mode, inheritance, fair eval",
+        "scope": "translators,linking"
+      },
       {
         "hash": "bcd1ee9d",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Repair prose-in-JSON columns (dry-run first)",
-        "scope": null
-      },
-      {
-        "hash": "3ca6a36e",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "A failed probe must not read as \"nothing pending\"",
         "scope": null
       }
     ]

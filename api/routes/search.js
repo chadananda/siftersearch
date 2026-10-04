@@ -432,13 +432,16 @@ export default async function searchRoutes(fastify) {
   // the search-quality battery could never measure HyPE's contribution. Internal-only; used by
   // tests/quality/score-search.mjs --multi. Hits carry _layerRanks {main,hype,entity} + matched_hype.
   fastify.post('/multi', { preHandler: requireInternal }, async (request) => {
-    const { query, limit = 10, filters = {}, plan = true, messages } = request.body || {};
+    const { query, limit = 10, filters = {}, plan = true, messages, qdrant: qd, weights } = request.body || {};
     if (!query || !String(query).trim()) return { hits: [] };
     const lim = Math.min(Number(limit) || 10, 30);
+    // qdrant: true | {phrase, keyword} — the battery's A/B switch for the Qdrant layers; weights: RRF tuning.
+    const { plannedSearch, qdrantOption } = await import('../lib/planned-search.js');
+    const qdrant = qdrantOption(qd);
     // plan:false = the raw engine, kept so the battery can measure what planning adds.
-    if (plan === false) return multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true });
-    const { plannedSearch } = await import('../lib/planned-search.js');
-    const r = await plannedSearch(String(query), { limit: lim, given: filters, messages });
+    if (plan === false) return multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true,
+      phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(weights ? { weights } : {}) });
+    const r = await plannedSearch(String(query), { limit: lim, given: filters, messages, qdrant, ...(weights ? { weights } : {}) });
     return { hits: r.hits, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
   });
 

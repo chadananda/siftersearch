@@ -21,6 +21,13 @@ const MULTI = args.includes('--multi');
 const NO_PLAN = args.includes('--no-plan');
 // --raw: public /v1/search with analyze:false — planned retrieval, zero LLM calls.
 const RAW = args.includes('--raw');
+// --qdrant[=phrase,keyword]: turn on the Qdrant layers (P4) for this run; --weights=phrase:1.5,qkeyword:1 tunes RRF.
+const QDRANT_ARG = args.find((a) => a === '--qdrant' || a.startsWith('--qdrant='));
+const QDRANT = QDRANT_ARG ? (QDRANT_ARG.includes('=') ? { phrase: /phrase/.test(QDRANT_ARG), keyword: /keyword/.test(QDRANT_ARG) } : true) : false;
+const WEIGHTS = (args.find((a) => a.startsWith('--weights='))?.split('=')[1] || '').split(',').filter(Boolean)
+  .reduce((o, kv) => { const [k, v] = kv.split(':'); o[k] = Number(v); return o; }, {});
+if (QDRANT_ARG && !args.includes('--multi')) { console.error('--qdrant needs --multi (/api/search/multi)'); process.exit(2); }
+const AB = { qdrant: QDRANT, ...(Object.keys(WEIGHTS).length ? { weights: WEIGHTS } : {}) };
 const TOP_K = parseInt(args.find((a) => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const TYPE = args.find((a) => a.startsWith('--type='))?.split('=')[1] || null;
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
@@ -55,7 +62,7 @@ async function call(path, { method = 'GET', body, internal = false, keyless = fa
 
 async function search(query) {
   const { data, ms } = MULTI
-    ? await call('/api/search/multi', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}) }, internal: true })
+    ? await call('/api/search/multi', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}), ...AB }, internal: true })
     : await call('/api/v1/search', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}), ...(RAW ? { analyze: false } : {}) } });
   const hits = (data.results || data.hits || data.passages || []).slice(0, TOP_K);
   const plan = data._plan ? { shape: data._plan.shape ?? null, fallback: data._plan.fallback ?? null, error: data._plan.error ?? null } : null;

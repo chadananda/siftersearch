@@ -43,6 +43,13 @@ const MULTI = args.includes('--multi');
 // --phrase-boost: ask the API for the opt-in exact-phrase re-rank, so its effect can be MEASURED against
 // the same fixtures before anyone changes what users see.
 const PHRASE_BOOST = args.includes('--phrase-boost');
+// --qdrant[=phrase,keyword]: turn on the Qdrant layers (P4) for this run; --weights=phrase:1.5,qkeyword:1 tunes RRF.
+const QDRANT_ARG = args.find((a) => a === '--qdrant' || a.startsWith('--qdrant='));
+const QDRANT = QDRANT_ARG ? (QDRANT_ARG.includes('=') ? { phrase: /phrase/.test(QDRANT_ARG), keyword: /keyword/.test(QDRANT_ARG) } : true) : false;
+const WEIGHTS = (args.find((a) => a.startsWith('--weights='))?.split('=')[1] || '').split(',').filter(Boolean)
+  .reduce((o, kv) => { const [k, v] = kv.split(':'); o[k] = Number(v); return o; }, {});
+if (QDRANT_ARG && !args.includes('--multi')) { console.error('--qdrant needs --multi (/api/search/multi)'); process.exit(2); }
+const AB = { qdrant: QDRANT, ...(Object.keys(WEIGHTS).length ? { weights: WEIGHTS } : {}) };
 
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
@@ -113,7 +120,7 @@ async function runOnce(fix) {
   const t0 = Date.now();
   const filters = {};
   if (fix.religion_filter) filters.religion = fix.religion_filter;
-  const reqBody = { query: fix.query, limit: TOP_K, filters, ...(PHRASE_BOOST ? { phraseBoost: true } : {}) };
+  const reqBody = { query: fix.query, limit: TOP_K, filters, ...(PHRASE_BOOST ? { phraseBoost: true } : {}), ...(MULTI ? AB : {}) };
 
   let res, body;
   try {
