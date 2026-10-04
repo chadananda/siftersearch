@@ -22,7 +22,7 @@ const TOP_K = Number(arg('top-k') || 10);
 // returns the English translation first, which the text judge (rightly) never counts. --scope=library drops the filter.
 const LIBRARY = arg('scope') === 'library';
 const QD = args.find((a) => a === '--qdrant' || a.startsWith('--qdrant='));
-const qdrant = QD ? (QD === '--qdrant=only' ? 'only' : QD.includes('=') ? { phrase: /phrase/.test(QD), keyword: /keyword/.test(QD) } : true) : false;
+const qdrant = QD ? (QD === '--qdrant=only' ? 'only' : QD.includes('=') ? { phrase: /phrase/.test(QD), keyword: /keyword/.test(QD), hype: /hype/.test(QD) } : true) : false;
 const weights = (arg('weights') || '').split(',').filter(Boolean).reduce((o, kv) => { const [k, v] = kv.split(':'); o[k] = Number(v); return o; }, {});
 
 let cases = JSON.parse(readFileSync(join(__dirname, 'crosslingual-fixtures.json'), 'utf8')).cases;

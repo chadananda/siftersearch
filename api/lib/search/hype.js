@@ -20,6 +20,7 @@ import { logger } from '../logger.js';
 import { createEmbeddings } from '../ai.js';
 import { queryEmbedding } from '../query-embedding.js';
 import { effectiveAuthor } from '../authorship/effective.js';
+import { meiliExclusion } from './excluded-docs.js';
 
 /**
  * Convert stored hyp_questions text → array of trimmed question strings.
@@ -66,6 +67,7 @@ export async function searchHypeQuestions({ getMeili, INDEXES }, query, options 
   const docIdFilter = typeof filters.documentId === 'number' ? filters.documentId
     : (typeof filters.doc_id === 'number' ? filters.doc_id : null);
   if (docIdFilter !== null) meiliFilters.push(`doc_id = ${docIdFilter}`);
+  else { const excl = meiliExclusion(); if (excl) meiliFilters.push(excl); }   // metadata indexes are not passages
   if (filters.encumbered === false) meiliFilters.push('encumbered != 1');
 
   try {

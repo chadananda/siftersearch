@@ -452,7 +452,7 @@ export default async function searchRoutes(fastify) {
     };
     if (plan === false) {
       const r = await multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true,
-        phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}) });
+        phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, qdrantHype: qdrant.hype, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}) });
       return { ...r, hits: await withLinks(r.hits) };
     }
     const r = await plannedSearch(String(query), { limit: lim, given: filters, messages, qdrant, ...(weights ? { weights } : {}) });

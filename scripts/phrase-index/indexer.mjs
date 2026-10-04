@@ -13,6 +13,10 @@
 //   node scripts/phrase-index/indexer.mjs --docs 21380 --embed          (explicit documents, e.g. the Arabic Qur'an)
 //   node scripts/phrase-index/indexer.mjs --field original --embed      (originals stored on translations: original_text)
 //   node scripts/phrase-index/indexer.mjs --qdrant                      (upsert anything embedded but not yet sent)
+//   node scripts/phrase-index/indexer.mjs --field hype --scope library --store /tank/sifter/hype-vectors/vectors.db \
+//        --collection hype --budget-key hype-build --embed --qdrant --max-usd 40
+//        (HyPE: each stored question + the thesis is a unit; point id = paragraph × 1000 + k, thesis k = 999. Own store and
+//         collection — ids would collide with phrase units, and the phrase build holds that store's write lock.)
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
 import { mkdirSync } from 'fs';
@@ -23,6 +27,7 @@ import { faShare } from '../../api/lib/arabic-script.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
+import { parseStoredHypQuestions } from '../../api/lib/search/hype.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -33,7 +38,7 @@ const STORE = arg('store', '/tank/sifter/phrase-vectors/vectors.db');
 const SCOPE = arg('scope', 'originals');                  // originals | library | supplemental
 const SCRIPT = arg('script', 'all');                      // library only: arabic | other | all
 const RELIGION = arg('religion', 'all');                  // library only: bahai | other | all (plan order: Bahá'í first)
-const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text
+const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions
 const DOCS = (arg('docs', '') || '').split(',').map(Number).filter(Boolean);
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const CHUNK = +arg('chunk', 20000);                       // paragraphs per embed→upsert cycle
@@ -84,8 +89,9 @@ function source() {
   // for the entire build (12–27 h), so the WAL could never be checkpointed — it grew to 12 GB, and the worker restarted the
   // API every 15 min trying to free it (the 2026-10-03 "restart storm"). Never stream a long build through one statement.
   const page = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
-      c.authors, d.author, d.religion, d.collection, d.scope FROM content c JOIN docs d ON d.id = c.doc_id
+      c.authors, d.author, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''} FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE ${where} AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
+      ${FIELD === 'hype' ? "AND (COALESCE(c.hyp_questions, '') <> '' OR COALESCE(c.hyp_thesis, '') <> '')" : ''}
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
   const rows = { *iterate() { for (let last = 0; ;) { const got = page.all(last); if (!got.length) return; yield* got; last = got[got.length - 1].id; } } };
   return { src, rows };
@@ -113,12 +119,21 @@ const haveVec = store.prepare('SELECT 1 FROM vec WHERE key = ?');
 const putVec = store.prepare('INSERT OR IGNORE INTO vec (key, model, dims, v, at) VALUES (?, ?, ?, ?, ?)');
 const tx = store.transaction((list) => { for (const u of list) putUnit.run(u); });
 
+// The units of one paragraph: its phrases, or (--field hype) its HyPE questions + thesis.
+const HYPE_SEG = 'hype-v1';
+function unitsFor(p, seg) {
+  if (FIELD !== 'hype') return unitsOf({ id: p.id, text: p.text, lang: seg });
+  const qs = parseStoredHypQuestions(p.hyp_questions).slice(0, 998), thesis = String(p.hyp_thesis || '').trim();
+  const u = (k, text) => ({ pointId: p.id * 1000 + k, k, start: null, end: null, segV: HYPE_SEG, embedText: text });
+  return [...qs.map((q, k) => u(k, q)), ...(thesis ? [u(999, thesis)] : [])];
+}
+
 // Paragraphs → units (stored) + texts still needing a vector. Returns the pending map for this chunk.
 function unitize(paras) {
   const pending = new Map(), buf = [];
   for (const p of paras) {
     const { seg, group } = paragraphLang(p.text, p.language);
-    for (const u of unitsOf({ id: p.id, text: p.text, lang: seg })) {
+    for (const u of unitsFor(p, seg)) {
       const key = vecKey(MODEL, DIMS, u.embedText), old = haveUnit.get(u.pointId);
       if (!old || old.seg_v !== u.segV || old.key !== key)
         buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
@@ -186,7 +201,7 @@ async function upsert() {
     await qd('PUT', `/collections/${COLL}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
       payload: { paragraph_id: Number(r.paragraph_id), doc_id: Number(r.doc_id), k: r.k, start: r.start, end: r.end, seg_v: r.seg_v,
         lang_group: r.lang_group || 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, author_fold: authorKey(r.author), collection: r.collection,
-        lang_label: r.lang_label, field: r.field || 'text', scope: r.scope || 'primary' } })) });
+        lang_label: r.lang_label, field: r.field || 'text', scope: r.scope || 'primary', ...(r.field === 'hype' ? { is_thesis: r.k === 999 } : {}) } })) });
     store.transaction(() => rows.forEach((r) => mark.run(r.point_id)))();
     sent += rows.length;
   }
@@ -199,7 +214,7 @@ async function scanOnly() {
     if (!keep(p.text)) continue;
     paras++;
     const { seg } = paragraphLang(p.text, p.language);
-    for (const u of unitsOf({ id: p.id, text: p.text, lang: seg })) {
+    for (const u of unitsFor(p, seg)) {
       units++;
       const key = vecKey(MODEL, DIMS, u.embedText);
       if (!seen.has(key) && !haveVec.get(key)) { seen.add(key); tokens += estTokens(u.embedText); }

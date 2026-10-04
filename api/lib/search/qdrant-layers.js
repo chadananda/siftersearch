@@ -4,6 +4,7 @@
 // Deps: keyword-tokens.js (same tokenizer as the index). Env: QDRANT_URL, QDRANT_KEY, GEMINI_API_KEY.
 // :rules: query prefix "task: search result | query:" (measured; documents were embedded with "title: none | text:").
 import { bm25Query } from '../keyword-tokens.js';
+import { excludedDocIds } from './excluded-docs.js';
 
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 const MODEL = 'gemini-embedding-2', DIMS = 3072;
@@ -43,6 +44,8 @@ export function toQdrantFilter(filters = {}) {
   if (filters.religion) eq('religion', filters.religion);
   if (filters.collection) eq('collection', filters.collection);
   if (filters.author) eq('author_fold', Array.isArray(filters.author) ? filters.author.map(authorKey) : authorKey(filters.author));
+  const excl = filters.documentId == null ? excludedDocIds() : [];
+  if (excl.length) must_not.push({ key: 'doc_id', match: { any: excl } });   // metadata indexes are not passages
   if (filters.documentId != null) eq('doc_id', Array.isArray(filters.documentId) ? filters.documentId.map(Number) : Number(filters.documentId));
   // lang_group is the paragraph's script group ('ar-fa', 'ja', 'zh', else the doc language); the Meili-style
   // `language` filter maps onto it so one filter means the same thing on both engines.
@@ -71,6 +74,20 @@ export async function searchPhrases(query, { limit = 30, filters } = {}) {
   return { hits: (res.groups || []).map((g) => {
     const p = g.hits[0];
     return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end } };
+  }) };
+}
+
+/** → { hits: [{ paragraph_id, doc_id, score, thesis }] } — HyPE questions (+ thesis) embedded with the SAME Gemini model as
+ *  the phrase layer, so one query vector serves both (memoized). The SQLite hyp_questions are the store; `hype` is their index. */
+export async function searchHypeQdrant(query, { limit = 30, filters } = {}) {
+  const vector = await geminiQueryVector(query);
+  const res = await qdrant('/collections/hype/points/query/groups', {
+    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'k'],
+    params: { quantization: { rescore: true, oversampling: 4 } }, filter: toQdrantFilter(filters),
+  });
+  return { hits: (res.groups || []).map((g) => {
+    const p = g.hits[0];
+    return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999 };
   }) };
 }
 

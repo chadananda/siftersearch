@@ -1,6 +1,6 @@
 // Qdrant search layers: filter mapping, request shapes, and hit shapes (fetch mocked — no network).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toQdrantFilter, searchPhrases, searchKeywordQdrant, authorKey } from '../../api/lib/search/qdrant-layers.js';
+import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 describe('toQdrantFilter', () => {
   it('maps the search filters the payloads carry; ignores the rest', () => {
@@ -38,6 +38,14 @@ describe('layers', () => {
     expect(r.hits).toEqual([{ paragraph_id: 11, doc_id: 2, score: 0.8, span: { start: 5, end: 40 } }]);
   });
 
+  it('hype: the hype collection, same query vector model, one hit per paragraph', async () => {
+    const r = await searchHypeQdrant('what is the soul?', { limit: 4 });
+    expect(calls[0].body.content.parts[0].text).toBe('task: search result | query: what is the soul?');
+    expect(calls[1].url).toContain('/collections/hype/points/query/groups');
+    expect(calls[1].body).toMatchObject({ group_by: 'paragraph_id', group_size: 1, limit: 4 });
+    expect(r.hits).toEqual([{ paragraph_id: 11, doc_id: 2, score: 0.8, thesis: false }]);
+  });
+
   it('keyword: sparse query from our tokenizer; empty query → no call', async () => {
     const r = await searchKeywordQdrant('قل یا قوم', { limit: 3 });
     expect(calls[0].body.using).toBe('bm25');
@@ -61,15 +69,15 @@ describe('language filter → lang_group', () => {
 describe('qdrantOption (per-request A/B switch)', async () => {
   const { qdrantOption, qdrantDefault } = await import('../../api/lib/planned-search.js');
   it('reads true / only / object / false', () => {
-    expect(qdrantOption(true)).toEqual({ phrase: true, keyword: true, only: false });
-    expect(qdrantOption('only')).toEqual({ phrase: true, keyword: true, only: true });
-    expect(qdrantOption({ phrase: true })).toEqual({ phrase: true, keyword: false, only: false });
-    expect(qdrantOption(false)).toEqual({ phrase: false, keyword: false, only: false });
+    expect(qdrantOption(true)).toEqual({ phrase: true, keyword: true, hype: false, only: false });
+    expect(qdrantOption('only')).toEqual({ phrase: true, keyword: true, hype: true, only: true });
+    expect(qdrantOption({ phrase: true })).toEqual({ phrase: true, keyword: false, hype: false, only: false });
+    expect(qdrantOption(false)).toEqual({ phrase: false, keyword: false, hype: false, only: false });
   });
   it('falls back to SEARCH_QDRANT', () => {
-    expect(qdrantDefault('')).toEqual({ phrase: false, keyword: false, only: false });
-    expect(qdrantDefault('phrase,keyword')).toEqual({ phrase: true, keyword: true, only: false });
-    expect(qdrantDefault('only')).toEqual({ phrase: true, keyword: true, only: true });
+    expect(qdrantDefault('')).toEqual({ phrase: false, keyword: false, hype: false, only: false });
+    expect(qdrantDefault('phrase,keyword')).toEqual({ phrase: true, keyword: true, hype: false, only: false });
+    expect(qdrantDefault('only')).toEqual({ phrase: true, keyword: true, hype: true, only: true });
   });
 });
 
@@ -82,5 +90,16 @@ describe('author filter folds spelling variants', () => {
   it('filters on author_fold', () => {
     expect(toQdrantFilter({ author: "'Abdu'l-Bahá" })).toEqual({ must: [{ key: 'author_fold', match: { value: 'abdulbaha' } }] });
     expect(toQdrantFilter({ author: ['Shoghi Effendi', 'Shoghi Rabbani'] })).toEqual({ must: [{ key: 'author_fold', match: { any: ['shoghieffendi', 'shoghirabbani'] } }] });
+  });
+});
+
+describe('metadata documents are not passages', async () => {
+  const { _setExcluded, meiliExclusion } = await import('../../api/lib/search/excluded-docs.js');
+  it('both engines exclude them unless a document is asked for by id', () => {
+    _setExcluded([8746]);
+    expect(meiliExclusion()).toBe('doc_id NOT IN [8746]');
+    expect(toQdrantFilter({})).toEqual({ must_not: [{ key: 'doc_id', match: { any: [8746] } }] });
+    expect(toQdrantFilter({ documentId: 8746 })).toEqual({ must: [{ key: 'doc_id', match: { value: 8746 } }] });
+    _setExcluded([]);
   });
 });

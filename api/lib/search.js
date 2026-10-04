@@ -9,7 +9,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
-import { searchPhrases, searchKeywordQdrant } from './search/qdrant-layers.js';
+import { searchPhrases, searchKeywordQdrant, searchHypeQdrant } from './search/qdrant-layers.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -24,6 +24,7 @@ const BISMILLAH_RE = /^In the Name of (?:God|Allah).{0,10}the Compassionate.{0,1
 // In-memory cache extracted to api/lib/search/cache.js. Re-exported here so
 // existing importers (api/index.js prewarmCache call, agent-librarian.js
 // getSearchCacheStats, etc.) keep working unchanged.
+import { meiliExclusion } from './search/excluded-docs.js';
 import {
   getCachedSearch,
   setCachedSearch,
@@ -749,6 +750,7 @@ export async function hybridSearch(query, options = {}) {
   if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
   if (filters.documentId) filterParts.push(`doc_id = ${filters.documentId}`);  // INTEGER, no quotes
+  const excl = meiliExclusion(); if (excl && !filters.documentId) filterParts.push(excl);   // metadata indexes are not passages
 
   // Add text-based filters for author/collection/title (from parenthetical query syntax)
   if (filterTerms.length > 0) {
@@ -832,6 +834,7 @@ export async function hybridSearch(query, options = {}) {
   if (filters.yearFrom) extraFilterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) extraFilterParts.push(`year <= ${filters.yearTo}`);
   if (filters.documentId) extraFilterParts.push(`doc_id = ${filters.documentId}`);
+  if (excl && !filters.documentId) extraFilterParts.push(excl);
   const extraFilter = extraFilterParts.length > 0 ? extraFilterParts.join(' AND ') : null;
   // Slots per tradition = ceil(requested limit / tradition count), floor at 2.
   // No +1 buffer: over-fetching caused same-work volumes (e.g. Mahabharata 3/5/12)
@@ -1156,7 +1159,8 @@ const DEFAULT_WEIGHTS = {
   hype: 1.5,    // HyPE question + thesis match (highest signal — designed to answer)
   entity: 1.0,  // entity-mentions sidecar (resolved named entity filter)
   phrase: 1.0,  // Qdrant phrase vectors (opt-in: options.phraseLayer) — not yet tuned on the batteries
-  qkeyword: 1.0 // Qdrant BM25 with our folding (opt-in: options.qdrantKeyword) — not yet tuned
+  qkeyword: 1.0, // Qdrant BM25 with our folding (opt-in: options.qdrantKeyword) — not yet tuned
+  qhype: 1.5    // Qdrant HyPE (options.qdrantHype, always with meili:false) — the same weight as Meili's HyPE layer
 };
 
 /**
@@ -1249,7 +1253,7 @@ export async function multiIndexSearch(query, options = {}) {
   const _t0 = Date.now();
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
-  const [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult] = await Promise.all([
+  const [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1288,6 +1292,12 @@ export async function multiIndexSearch(query, options = {}) {
     ((options.qdrantKeyword || meiliOff) && (!scope_config || scope_config.primary))
       ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
+          return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] }),
+    ((options.qdrantHype || meiliOff) && options.hype !== false && !semanticOff && (!scope_config || scope_config.primary))
+      ? timed('qhype', searchHypeQdrant(query, { limit: overFetch, filters })).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: qdrant hype failed');
           return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
@@ -1357,7 +1367,7 @@ export async function multiIndexSearch(query, options = {}) {
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult]]) {
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
@@ -1462,7 +1472,7 @@ export async function multiIndexSearch(query, options = {}) {
       _rrfScore: e.score,
       ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
       _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null,
-        phrase: e.phraseRank ?? null, qkeyword: e.qkeywordRank ?? null },
+        phrase: e.phraseRank ?? null, qkeyword: e.qkeywordRank ?? null, qhype: e.qhypeRank ?? null },
       ...(e.phraseSpan ? { phrase_span: e.phraseSpan } : {}),
     };
     if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;
@@ -1487,6 +1497,7 @@ export async function multiIndexSearch(query, options = {}) {
       entity_mentions: (entityResult.hits || []).length,
       phrase: (phraseResult.hits || []).length,
       qkeyword: (qkeywordResult.hits || []).length,
+      qhype: (qhypeResult.hits || []).length,
     },
     // Emitted for the trace. Retrieval layers run in parallel, so these are completion offsets from the
     // start of the fan-out, not additive costs; `merge` is the RRF + diversity work after them.
