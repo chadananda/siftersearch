@@ -31,4 +31,8 @@ describe('translators', () => {
     expect(canonicalTranslator('Amín U. Faríd')).toBe('Ameen U. Faríd');
     expect(canonicalTranslator('a Mullá in our')).toBe(null);
   });
+  it('cuts a place after the name', () => {
+    expect(canonicalTranslator('Bozorgzadeh E. Kahn. Pittsburgh')).toBe('Bozorgzadeh E. Kahn');
+    expect(canonicalTranslator('Dr. Ameen U. Faríd')).toBe('Ameen U. Faríd');
+  });
 });

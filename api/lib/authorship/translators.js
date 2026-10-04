@@ -21,10 +21,13 @@ export function canonicalTranslator(raw) {
   const s = String(raw || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').replace(/[*_]/g, '').replace(/\s+/g, ' ').trim()
     .replace(/[.,;:—–-]+$/, '').trim();
   if (!s || s.length < 3 || /^unknown$/i.test(s)) return null;
-  // a PERSON's name: capitalised, not a Central Figure ("interpreted by ’Abdu’l-Bahá to mean", "a Mullá in our"), short
-  if (!/^\p{Lu}/u.test(s) || /Bah[aá]['’]?u['’]?ll[aá]h|['’‘]Abdu['’]l-Bah[aá]|\bthe B[aá]b\b/i.test(s) || s.split(' ').length > 6) return null;
-  for (const [name, re] of KNOWN) if (re.test(s)) return name;
-  return s.replace(TITLES, '').trim() || null;
+  // a PERSON's name: capitalised, not a Central Figure ("interpreted by ’Abdu’l-Bahá to mean", "a Mullá in our")
+  if (!/^\p{Lu}/u.test(s) || /Bah[aá]['’]?u['’]?ll[aá]h|['’‘]Abdu['’]l-Bah[aá]|\bthe B[aá]b\b/i.test(s)) return null;
+  for (const [name, re] of KNOWN) if (re.test(s)) return name;      // known names first, on the whole string
+  // a place after the name: "Bozorgzadeh E. Kahn. Pittsburgh" — cut at a period ending a whole word (not an initial or title)
+  const n = s.replace(/\b(?!(?:Mrs?|Dr|Rev|Prof|Jr|Sr|St)\.)(\p{L}{3,})\.\s+\p{Lu}.*$/u, '$1');
+  if (n.split(' ').length > 6) return null;
+  return n.replace(TITLES, '').trim() || null;
 }
 
 /** The interpreter / translator named by a talk-record line or heading, or null. */

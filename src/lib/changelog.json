@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T05:27:05.562Z",
+  "generated": "2026-10-04T05:56:02.967Z",
   "entries": [
+    {
+      "hash": "29d53565",
+      "date": "2026-10-03",
+      "type": "Fixed",
+      "description": "Interpreter names are people — reject prose and Central Figures, strip dates; fold Faríd/Baghdádí variants feat(linking): scripts/linking/xl-link.mjs — cross-language paragraph linker (phrase voting → anchors → order/window fill)",
+      "scope": "translators"
+    },
     {
       "hash": "d2f6f2e0",
       "date": "2026-10-03",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Aggregate content BEFORE joining docs (4,500s/day of freeze)",
       "scope": null
-    },
-    {
-      "hash": "35f325b9",
-      "date": "2026-08-14",
-      "type": "Other",
-      "description": "Stop re-running the two heaviest API queries every 2.4 minutes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-03": [
+      {
+        "hash": "29d53565",
+        "date": "2026-10-03",
+        "type": "Fixed",
+        "description": "Interpreter names are people — reject prose and Central Figures, strip dates; fold Faríd/Baghdádí variants feat(linking): scripts/linking/xl-link.mjs — cross-language paragraph linker (phrase voting → anchors → order/window fill)",
+        "scope": "translators"
+      },
       {
         "hash": "d2f6f2e0",
         "date": "2026-10-03",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-14",
         "type": "Other",
         "description": "Aggregate content BEFORE joining docs (4,500s/day of freeze)",
-        "scope": null
-      },
-      {
-        "hash": "35f325b9",
-        "date": "2026-08-14",
-        "type": "Other",
-        "description": "Stop re-running the two heaviest API queries every 2.4 minutes",
         "scope": null
       }
     ]
