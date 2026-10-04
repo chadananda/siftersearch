@@ -699,7 +699,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
         }
         // No meta → source_url stays null
         // Link policy (source-links.js): the document's own origin (source_url or metadata.sourceUrl) by site tier —
-        // OceanLibrary → BahaiLibrary → OceanofLights → publisher — else the SifterSearch paragraph.
+        // OceanLibrary → OceanofLights → Phelps collection → BahaiLibrary → publisher — else the SifterSearch paragraph.
         if (meta) {
           const link = linkFor({ ...meta, source_url: result.source_url?.includes('siftersearch.com') ? meta.source_url : (result.source_url || meta.source_url) }, hit.paragraph_index);
           result.source_url = link.url;

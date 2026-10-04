@@ -77,6 +77,13 @@ vi.mock('../../api/lib/authority.js', () => ({
 // Mock the meilisearch package — search.js's getMeili() does
 // `new MeiliSearch(...)` so this captures every search call. Constructor
 // ignores args and returns the shared meiliMock instance.
+// Qdrant layers (opt-in) — mocked so the default-off path is provable and the on path needs no network.
+const qdrantCalls = [];
+vi.mock('../../api/lib/search/qdrant-layers.js', () => ({
+  searchPhrases: vi.fn(async (q) => { qdrantCalls.push('phrase'); return { hits: [{ paragraph_id: 77, doc_id: 1, score: 0.9, span: { start: 3, end: 20 } }] }; }),
+  searchKeywordQdrant: vi.fn(async () => { qdrantCalls.push('qkeyword'); return { hits: [{ paragraph_id: 77, doc_id: 1, score: 5 }] }; }),
+}));
+
 vi.mock('meilisearch', () => ({
   MeiliSearch: function () { return meiliMock; },
 }));
@@ -203,5 +210,23 @@ describe('multiIndexSearch propagates scope_config', () => {
     const names = searchCalls.map(c => c.name);
     expect(names).toContain('paragraphs');
     expect(names).toContain('hype_questions');
+  });
+
+  it('Qdrant layers are off by default; when on, a phrase-only hit is fetched and carries its span', async () => {
+    qdrantCalls.length = 0;
+    await multiIndexSearch('test', { scope_config: { primary: true, sites: [] } });
+    expect(qdrantCalls).toEqual([]);
+
+    meiliMock.index.mockImplementation((name) => ({
+      search: vi.fn(async () => ({ hits: [], processingTimeMs: 1 })),
+      getDocuments: vi.fn(async () => ({ results: [{ id: 77, paragraph_id: 77, doc_id: 1, text: 'the phrase text here' }] })),
+    }));
+    const r = await multiIndexSearch('test', { scope_config: { primary: true, sites: [] }, phraseLayer: true, qdrantKeyword: true });
+    expect(qdrantCalls.sort()).toEqual(['phrase', 'qkeyword']);
+    const hit = r.hits.find(h => String(h.id) === '77');
+    expect(hit).toBeTruthy();
+    expect(hit.phrase_span).toEqual({ start: 3, end: 20 });
+    expect(hit._layerRanks).toMatchObject({ phrase: 0, qkeyword: 0 });
+    expect(r._layers).toMatchObject({ phrase: 1, qkeyword: 1 });
   });
 });

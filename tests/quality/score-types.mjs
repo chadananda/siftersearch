@@ -101,6 +101,12 @@ const CHECKS = {
     const i = items.findIndex((h) => matchHit(h, want));
     return i >= 0 ? { ok: true, rank: i + 1 } : { ok: false, why: `no top-${items.length} hit with ${JSON.stringify(want)}` };
   },
+  // COMPLETENESS: every listed passage must be among the top-K (Omid's test, 2026-10-02 — a research question is
+  // answered only when the key references are ALL there; ranking one high does not excuse missing another).
+  hits_all: (items, wants) => {
+    const missing = wants.filter((w) => !items.some((h) => matchHit(h, w)));
+    return missing.length ? { ok: false, why: `missing ${missing.length}/${wants.length}: ${missing.map((w) => JSON.stringify(w)).join(' ; ')}` } : { ok: true };
+  },
   no_hit: (items, want) => {
     const i = items.findIndex((h) => matchHit(h, want));
     return i < 0 ? { ok: true } : { ok: false, why: `hit #${i + 1} "${items[i].title}" appears to confirm it` };

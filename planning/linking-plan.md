@@ -32,7 +32,15 @@
   method) + bulk upsert + GET per paragraph → reader renders "Source: <work ¶>". Run as a server script (reads SQLite
   read-only, writes through the single writer in bulk) — no session tokens.
 
-## Then — pairs, not paragraphs (Chad: "always better to generate for both passages at the same time")
+## Done — pairs (4e0b8e69): getParagraphs attaches `partner` (content_alignment both ways; Phelps beside = fallback);
+concept extract reads the pair with the English's real authority (original linked to Gleanings → Shoghi Effendi) and skips
+a ¶ whose partner already has claims; HyPE reads both, writes the same questions to a partner with none. NEW RUNS ONLY —
+HYPE_VERSION not bumped (bump = whole-library re-hype). DECISION FOR CHAD: re-hype paragraphs that now have partners?
+- Also: whole-corpus cross-lingual vector search does NOT find translations (5% top-1) — narrow to a work first.
+- Phelps exhausted as a source: +196 after BOM-cleaned blocks. Queue ≈17,460 ¶ (9.9k unmatched volume lines, 3.3k
+  non-parallel PI, 3.1k no PIN, 1.4k too short).
+
+## Design notes — pairs, not paragraphs (Chad: "always better to generate for both passages at the same time")
 - Today the bilingual path fires only on content.original_text (beside). Links made since 09-28 live in
   content_alignment (published English ↔ original) and translation_text (Phelps beside the original) — unseen.
 - rag-adapter store.getParagraphs: attach the PARTNER — English → linked original(s) (content_alignment.trans_id);

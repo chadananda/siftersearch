@@ -1,20 +1,22 @@
-// Link policy for search results (Chad, 2026-09-25; OceanofLights raised to second 2026-09-29): OceanLibrary.com →
-// OceanofLights.org → BahaiLibrary.com → (another publisher) → SifterSearch.com. The document's own origin is docs.source_url OR docs.metadata.sourceUrl
+// Link policy for search results (Chad, 2026-09-25; OceanofLights raised to second 2026-09-29; Phelps' collection placed
+// third 2026-10-02): OceanLibrary.com → OceanofLights.org → Phelps collection (Partial Inventory browser) →
+// BahaiLibrary.com → (another publisher) → SifterSearch.com. The document's own origin is docs.source_url OR docs.metadata.sourceUrl
 // (the importer stores frontmatter `sourceUrl` in the JSON) — reading only the column produced 0 BahaiLibrary links
 // in 435. Every result also carries a paragraph-exact SifterSearch reader link. Pure; deps: slug.js.
 import { generateDocSlug, slugifyPath } from './slug.js';
 
 const SITE = 'https://siftersearch.com';
-const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['bahai-library.com', 3]];
+const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
 const OURS = 'siftersearch.com';
+export const PUBLISHER_TIER = 5, SIFTER_TIER = 6;   // consumers compare against these, never against literals
 
-/** Site tier of a URL: 1 OceanLibrary, 2 OceanofLights, 3 BahaiLibrary, 4 another publisher, 5 SifterSearch. */
+/** Site tier of a URL: 1 OceanLibrary, 2 OceanofLights, 3 Phelps collection, 4 BahaiLibrary, 5 another publisher, 6 SifterSearch. */
 export function tierOf(url) {
   let host;
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { return { site: null, tier: 9 }; }
-  if (host === OURS || host.endsWith(`.${OURS}`)) return { site: OURS, tier: 5 };
+  if (host === OURS || host.endsWith(`.${OURS}`)) return { site: OURS, tier: SIFTER_TIER };
   const hit = TIERS.find(([d]) => host === d || host.endsWith(`.${d}`));
-  return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: 4 };
+  return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
 }
 
 const paragraphLevel = (url) => /paraId=|#p\d+|[?&]p=\d+/.test(url || '');
@@ -59,10 +61,10 @@ export function linkFor(doc, paragraphIndex) {
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .map((u) => withPara(u))
     .map((u) => ({ url: u, ...tierOf(u) }))
-    .filter((c) => c.tier < 5);   // our own address stored as a "source" is not a source
+    .filter((c) => c.tier < SIFTER_TIER);   // our own address stored as a "source" is not a source
   // Best tier wins; within a tier, a paragraph-level link beats a whole-document one.
   candidates.sort((a, b) => a.tier - b.tier || Number(paragraphLevel(b.url)) - Number(paragraphLevel(a.url)));
   const best = candidates[0];
-  if (!best) return { url: reader, site: OURS, tier: 5, paragraph_level: true, reader_url: reader };
+  if (!best) return { url: reader, site: OURS, tier: SIFTER_TIER, paragraph_level: true, reader_url: reader };
   return { url: best.url, site: best.site, tier: best.tier, paragraph_level: paragraphLevel(best.url), reader_url: reader };
 }

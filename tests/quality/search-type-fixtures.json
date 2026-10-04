@@ -1276,6 +1276,28 @@
     "min_count": 12
    },
    "truth": "corpus-status: 12 traditions"
+  },
+  {
+   "id": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "what quotes or works from Shoghi Effendi can you find that elaborates on the Baha'i theme that all manifestations are God are regarded as one soul and the same person?",
+   "expect": {
+    "hits_all": [
+     {
+      "text": "oneness of all the prophets"
+     },
+     {
+      "text": "lesser prophets"
+     }
+    ]
+   },
+   "should": [
+    "World Order of Bahá’u’lláh ¶120 (Íqán: abide in the same tabernacle…)",
+    "World Order of Bahá’u’lláh ¶230 (Íqán: Luminaries of Truth…)"
+   ],
+   "truth": "Omid (2026-10-02), asked of Gemini: it ALWAYS found the Dispensation (WOB ¶332 'absolute oneness of all the Prophets… unalterable foundation and central tenet') but only SOMETIMES the 8 Feb 1949 letter on behalf of Shoghi Effendi, Lights of Guidance p. 498 ('The Prophets regarded as one and the same person include the lesser Prophets as well…' — also Directives from the Guardian, Uncompiled Published Letters). Goal: faster, more precise, more complete than Gemini. Note: doc 20804 'Lights of Guidance' is mis-attributed to Bahá’u’lláh."
   }
  ]
 }

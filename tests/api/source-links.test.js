@@ -1,5 +1,5 @@
-// Link policy for raw search (Chad, 2026-09-25): core books → OceanLibrary.com, then BahaiLibrary.com, then
-// OceanofLights.org, and only then SifterSearch.com. Audit: 0 BahaiLibrary / 0 OceanofLights links out of 435, because
+// Link policy for raw search (Chad, 2026-09-25; revised 09-29 and 10-02): OceanLibrary.com → OceanofLights.org →
+// Phelps collection → BahaiLibrary.com → another publisher → SifterSearch.com. Audit: 0 BahaiLibrary / 0 OceanofLights links out of 435, because
 // the document's sourceUrl lives in docs.metadata JSON and the link code only read docs.source_url.
 import { describe, it, expect } from 'vitest';
 import { linkFor, tierOf } from '../../api/lib/source-links.js';
@@ -10,9 +10,10 @@ describe('tierOf', () => {
   it('ranks the sites in Chad’s order', () => {
     expect(tierOf('https://oceanlibrary.com/x').tier).toBe(1);
     expect(tierOf('https://www.oceanoflights.org/x').tier).toBe(2);   // raised above BahaiLibrary 2026-09-29
-    expect(tierOf('https://bahai-library.com/x').tier).toBe(3);
-    expect(tierOf('https://adibmasumian.com/x').tier).toBe(4);   // another publisher: after the three, before SifterSearch
-    expect(tierOf('https://siftersearch.com/library/x').tier).toBe(5);
+    expect(tierOf('https://portlandiator.github.io/PI_browser/?id=BH00566').tier).toBe(3);   // Phelps, third (2026-10-02)
+    expect(tierOf('https://bahai-library.com/x').tier).toBe(4);
+    expect(tierOf('https://adibmasumian.com/x').tier).toBe(5);   // another publisher: after the four, before SifterSearch
+    expect(tierOf('https://siftersearch.com/library/x').tier).toBe(6);
   });
 });
 
@@ -37,7 +38,7 @@ describe('linkFor', () => {
 
   it('uses the BahaiLibrary sourceUrl from metadata instead of a SifterSearch page', () => {
     const l = linkFor({ ...base, source_url: null, metadata: '{"sourceUrl":"https://bahai-library.com/50th-anniversary_greatest_holy_leaf"}' }, 12);
-    expect(l).toMatchObject({ site: 'bahai-library.com', tier: 3, url: 'https://bahai-library.com/50th-anniversary_greatest_holy_leaf' });
+    expect(l).toMatchObject({ site: 'bahai-library.com', tier: 4, url: 'https://bahai-library.com/50th-anniversary_greatest_holy_leaf' });
   });
 
   it('ignores a SifterSearch address stored as the source (it is our own page, not a source)', () => {
@@ -52,7 +53,7 @@ describe('linkFor', () => {
 
   it('falls back to the SifterSearch paragraph when nothing else exists', () => {
     const l = linkFor({ ...base, source_url: null, metadata: '{}' }, 5);
-    expect(l).toMatchObject({ site: 'siftersearch.com', tier: 5, paragraph_level: true });
+    expect(l).toMatchObject({ site: 'siftersearch.com', tier: 6, paragraph_level: true });
   });
 
   it('survives malformed metadata', () => {
@@ -66,7 +67,12 @@ describe('linkFor', () => {
 
   it('links a Partial-Inventory-only tablet to Stephen Phelps\' browser', () => {
     const l = linkFor({ ...base, source_url: null, metadata: '{"pin":"BH00566"}' }, 0);
-    expect(l).toMatchObject({ site: 'portlandiator.github.io', tier: 4, url: 'https://portlandiator.github.io/PI_browser/?id=BH00566' });
+    expect(l).toMatchObject({ site: 'portlandiator.github.io', tier: 3, url: 'https://portlandiator.github.io/PI_browser/?id=BH00566' });
+  });
+
+  it('prefers the Phelps collection to BahaiLibrary, and OceanofLights to Phelps', () => {
+    expect(linkFor({ ...base, source_url: 'https://bahai-library.com/x', metadata: '{"pin":"BH00566"}' }, 0).site).toBe('portlandiator.github.io');
+    expect(linkFor({ ...base, source_url: null, metadata: '{"bookid":"BH_1","pin":"BH00566"}' }, 0).site).toBe('oceanoflights.org');
   });
 
   it('prefers OceanofLights to BahaiLibrary', () => {

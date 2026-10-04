@@ -26,3 +26,31 @@ export function arabicShare(text) {
   const letters = (String(text || '').match(/\p{L}/gu) || []).length;
   return letters ? (String(text).match(ARABIC) || []).length / letters : 0;
 }
+
+// Document language labels are not normalised in the library (en/En/Eng, fr/Fr/FR, de/Ger…).
+const LANG_ALIASES = { eng: 'en', english: 'en', fre: 'fr', fra: 'fr', french: 'fr', ger: 'de', deu: 'de', german: 'de',
+  spa: 'es', esp: 'es', spanish: 'es', ita: 'it', heb: 'he', per: 'fa', fas: 'fa', persian: 'fa', ara: 'ar', arabic: 'ar' };
+export function normLang(code) {
+  const c = String(code || '').trim().toLowerCase();
+  return c ? (LANG_ALIASES[c] || c.slice(0, 2)) : 'und';
+}
+
+// Which segmenter a paragraph gets, and the language group it is filed under. Script decides, not the document label:
+// translations carry Arabic-script originals and Arabic works carry English notes.
+const HAN = /[一-鿿]/g, KANA = /[぀-ヿ]/g;
+export function paragraphLang(text, docLang) {
+  const t = String(text || '');
+  if (arabicShare(t) >= 0.5) return { seg: 'ar', group: 'ar-fa' };
+  const letters = (t.match(/\p{L}/gu) || []).length || 1;
+  const kana = (t.match(KANA) || []).length, han = (t.match(HAN) || []).length;
+  if (kana / letters >= 0.1) return { seg: 'ja', group: 'ja' };
+  if (han / letters >= 0.3) return { seg: 'zh', group: 'zh' };
+  return { seg: 'en', group: normLang(docLang) };
+}
+
+// Token estimate for spend: measured on the first 1.19M units (Arabic script ≈ 2.2 chars/token; Latin ≈ 4.2).
+export function estTokens(text) {
+  const t = String(text || '');
+  const ar = arabicShare(t);
+  return Math.round(t.length * (ar / 2.2 + (1 - ar) / 4.2));
+}

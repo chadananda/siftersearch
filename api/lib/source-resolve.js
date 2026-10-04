@@ -9,7 +9,7 @@
 // deterministic fallback when Jev abstains or fails. Deps (injectable): Jev, hybridSearch, docs-repo getLinkMeta.
 import { quoteSpans, containsQuote, foldText } from './quote-text.js';
 import { ENDPOINT as JEV_ENDPOINT } from './scope-extract.js';
-import { linkFor } from './source-links.js';
+import { linkFor, SIFTER_TIER } from './source-links.js';
 
 // The figures whose words are quoted across the corpus, with how their names appear in author fields.
 export const SPEAKERS = {
@@ -36,7 +36,7 @@ const speakerOf = (hits) => Object.keys(SPEAKERS).find((s) => hits.some((h) => i
 /** Worth checking? It quotes; or it is not by a central figure; or it is a central figure's text NOT on OceanLibrary;
  *  or it is on OceanLibrary but without the paragraph id (a duplicate of the OceanLibrary site copy, e.g. Paris Talks 8320). */
 export function needsCheck(hit, tier, paraLevel = true) {
-  return quoteSpans(hit.text).length > 0 || !isCentral(hit.author) || (tier ?? 5) > 1 || ((tier ?? 5) === 1 && !paraLevel);
+  return quoteSpans(hit.text).length > 0 || !isCentral(hit.author) || (tier ?? SIFTER_TIER) > 1 || ((tier ?? SIFTER_TIER) === 1 && !paraLevel);
 }
 
 // Policy ranking, most important first:
@@ -44,7 +44,7 @@ export function needsCheck(hit, tier, paraLevel = true) {
 //   selection/anthology/compilation of it → recorded authority (missing = 0, so uploader copies sink) → better tier.
 //   A paragraph-level OceanLibrary link comes AFTER original-before-anthology, so it never lifts Gleanings over the Íqán.
 const rank = (h, speaker, tiers, para = new Map()) => {
-  const t = tiers.get(h.id) ?? 5;
+  const t = tiers.get(h.id) ?? SIFTER_TIER;
   return [t === 1 ? 1 : 0, isSpeaker(h.author, speaker) ? 1 : 0, SELECTION.test(foldText(h.title)) ? 0 : 1,
     para.get(h.id) ? 1 : 0, Number(h.authority) || 0, -t];
 };
@@ -170,7 +170,7 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
   await Promise.all(checkIdx.map(async (i) => {
     const hit = hits[i];
     const spans = quoteSpans(hit.text).sort((a, b) => b.length - a.length).slice(0, 3).map((s) => ({ span: s, mode: 'quote' }));
-    const t = tiers.get(hit.id) ?? 5;
+    const t = tiers.get(hit.id) ?? SIFTER_TIER;
     const olWithoutPara = t === 1 && !para.get(hit.id);
     if (!spans.length && ((isCentral(hit.author) && t > 1) || olWithoutPara)) spans.push({ span: opening(hit.text), mode: 'copy' });
     // All spans at once (one batched Meili call), bounded by the deadline: a late check is skipped, not waited for.
@@ -184,7 +184,7 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
   }));
   ms.phrase = Date.now() - t0 - ms.meta;
   await tierFor(groups.flatMap((g) => g.options));
-  for (const g of groups) g.options = g.options.map((o) => ({ ...o, site: tiers.get(o.id) === 1 ? 'oceanlibrary.com' : tiers.get(o.id) === 5 ? 'siftersearch.com' : 'supplementary' }));
+  for (const g of groups) g.options = g.options.map((o) => ({ ...o, site: tiers.get(o.id) === 1 ? 'oceanlibrary.com' : tiers.get(o.id) === SIFTER_TIER ? 'siftersearch.com' : 'supplementary' }));
 
   // 2. ONE Jev call for every passage and group.
   const passages = checkIdx.map((i) => hits[i]);

@@ -77,6 +77,19 @@ outside two books — and wrong in those two:
 Remaining error classes: Jev guessing a writer for unnamed compilation prayers (Mashriqu’l-Adhkár: says Bahá’u’lláh
 at 0.9 where ‘Abdu’l-Bahá is likely); continuation chains in 429; reference/title lines labelled as someone's words.
 
+## Library run (2026-10-03 night; Chad: on-behalf-of-SE IS SE, UHJ separate/non-doctrinal, compilations display only
+the four doctrinal authors, migration approved)
+Migration 140 live. Accuracy measured on RANDOM library books, never the pilot, a fresh sample each round:
+non-default ~70% → 90% (dev) → 83% (holdout 1, before the share rule) → 49/50 (holdout 2); defaults 90–97%.
+Main fixes: the speaker of a lead-in is the speech verb's SUBJECT only (else System-1, which may answer "someone
+else"); a lead-in beats a catalogue-level source link; a source link is a whole quotation only if it also fills the
+paragraph (share ≥ 0.6); identical text propagates evidence, never a catalogue default; low-confidence System-1 keeps the
+book author (unresolved). Written: content.authors (+authors_model reader-v1-2026-10-03), docs.authors.
+Readers: api/lib/authorship/effective.js (HyPE + entity indexing, Jafar quote hydration).
+Remaining error classes: unlabelled prayers/Bible verses in essays (default), translator notes inside Tablet translations,
+mis-catalogued docs (919098 "Gleanings" is a study guide; translators as authors; "wellspring", "Unknown", "7326"),
+1,305 books with quotations split per printed line (planning/quote-split-docs.json — re-ingest awaits Chad).
+
 ## Open (Chad)
 - On-behalf letters: searchable as Shoghi Effendi / the House of Justice with a label (proposed) — or a separate
   "secretary" author?

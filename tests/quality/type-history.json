@@ -994,5 +994,515 @@
     },
     "latency_p50_ms": 1009,
     "latency_p95_ms": 3809
+  },
+  {
+    "run_at": "2026-09-25T14:18:02.971Z",
+    "endpoint": "public-nollm",
+    "top_k": 10,
+    "valid": true,
+    "total": 82,
+    "measured": 82,
+    "errored": 0,
+    "passed": 54,
+    "pass_rate": 66,
+    "plan_fallbacks": [],
+    "contract": {
+      "results": 428,
+      "no_text": 0,
+      "no_author": 0,
+      "uploader_author": 27,
+      "no_url": 0,
+      "book_root_url": 146,
+      "quoted_no_source": 0,
+      "examples": {
+        "book_root_url": [
+          "the promised day is come [Shoghi Effendi] https://oceanlibrary.com/promised-day-is-come_shoghi-effendi",
+          "pilgrimage and religious identity in the [Per-Olof Akerdahl] https://bahai-library.com/akerdahl_pilgrimage_religious_identity",
+          "parallel hidden words in english early a [Bahá’u’lláh] https://bahai-library.com/bahaullah_hidden-words_arabic_1903",
+          "divine philosophy [Steven Phelps] https://oceanlibrary.com/divine-philosophy_abdul-baha"
+        ],
+        "uploader_author": [
+          "tablets of bahaullah vol 3 compilation a [michot] https://siftersearch.com/library/bahai/books/michot_tablets-of-bahaullah-vol-3-compilation-and-provisional-translations#p104",
+          "gleanings from the writings of bahaullah [bayat] https://siftersearch.com/library/bahai/books/bayat_gleanings-from-the-writings-of-bahaullah-study-guide#p27",
+          "hartz bahai faith [pdf-h-hartz] https://siftersearch.com/library/bahai/books/pdf-h-hartz_hartz-bahai-faith#p5",
+          "vakil natural stirrings grassroots [pdf-v-vakil] https://siftersearch.com/library/bahai/books/pdf-v-vakil_vakil-natural-stirrings-grassroots#p22"
+        ]
+      }
+    },
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-one-country",
+      "xp-justice-best-beloved",
+      "xp-fruits-one-tree",
+      "xp-noble-created",
+      "xp-two-wings",
+      "xp-thought-of-war",
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "xp-beginning-word",
+      "lp-earth-one-country",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "df-nirvana",
+      "sr-essence-justice",
+      "sr-light-of-men",
+      "sr-best-beloved",
+      "sr-two-wings",
+      "sr-harmony"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 5,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 36,
+        "p50_ms": 2055
+      },
+      "lay_paraphrase": {
+        "passed": 4,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 57,
+        "p50_ms": 1146
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 133
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 155
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 98
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5101
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1312
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 3133
+      },
+      "author_scoped": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1354
+      },
+      "history_fact": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1087
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 1138
+      },
+      "source_resolution": {
+        "passed": 1,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 17,
+        "p50_ms": 1810
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 167
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 26,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 72,
+        "p50_ms": 985
+      },
+      "chat": {
+        "passed": 13,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 72,
+        "p50_ms": 1059
+      },
+      "research": {
+        "passed": 15,
+        "measured": 28,
+        "errored": 0,
+        "pass_rate": 54,
+        "p50_ms": 332
+      }
+    },
+    "latency_p50_ms": 969,
+    "latency_p95_ms": 3575
+  },
+  {
+    "run_at": "2026-09-25T16:44:22.651Z",
+    "endpoint": "public-nollm",
+    "top_k": 10,
+    "valid": true,
+    "total": 82,
+    "measured": 82,
+    "errored": 0,
+    "passed": 58,
+    "pass_rate": 71,
+    "plan_fallbacks": [],
+    "contract": {
+      "results": 430,
+      "no_text": 0,
+      "no_author": 0,
+      "uploader_author": 28,
+      "no_url": 0,
+      "book_root_url": 144,
+      "quoted_no_source": 0,
+      "examples": {
+        "book_root_url": [
+          "the promised day is come [Shoghi Effendi] https://oceanlibrary.com/promised-day-is-come_shoghi-effendi",
+          "pilgrimage and religious identity in the [Per-Olof Akerdahl] https://bahai-library.com/akerdahl_pilgrimage_religious_identity",
+          "gleanings from the writings of bahaullah [Bahá’u’lláh] https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah",
+          "epistle to the son of the wolf [Bahá’u’lláh] https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah"
+        ],
+        "uploader_author": [
+          "gleanings from the writings of bahaullah [bayat] https://siftersearch.com/library/bahai/books/bayat_gleanings-from-the-writings-of-bahaullah-study-guide#p27",
+          "hartz bahai faith [pdf-h-hartz] https://siftersearch.com/library/bahai/books/pdf-h-hartz_hartz-bahai-faith#p5",
+          "tablets of bahaullah vol 3 compilation a [michot] https://siftersearch.com/library/bahai/books/michot_tablets-of-bahaullah-vol-3-compilation-and-provisional-translations#p104",
+          "bahaullah abdul baha sacred writings boo [pdf-b-bahaullah] https://siftersearch.com/library/bahai/books/pdf-b-bahaullah_bahaullah-abdul-baha-sacred-writings-book#p118"
+        ]
+      }
+    },
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-fruits-one-tree",
+      "xp-two-wings",
+      "xp-thought-of-war",
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "lp-two-wings-bird",
+      "lp-earth-one-country",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "df-nirvana",
+      "sr-essence-justice",
+      "sr-light-of-men",
+      "sr-two-wings",
+      "sr-harmony"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 9,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 64,
+        "p50_ms": 3350
+      },
+      "lay_paraphrase": {
+        "passed": 3,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 43,
+        "p50_ms": 1684
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 121
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 144
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 109
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5573
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1810
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 3988
+      },
+      "author_scoped": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1729
+      },
+      "history_fact": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1502
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 1292
+      },
+      "source_resolution": {
+        "passed": 2,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 33,
+        "p50_ms": 1878
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 133
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 30,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 83,
+        "p50_ms": 1795
+      },
+      "chat": {
+        "passed": 12,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 67,
+        "p50_ms": 1264
+      },
+      "research": {
+        "passed": 16,
+        "measured": 28,
+        "errored": 0,
+        "pass_rate": 57,
+        "p50_ms": 1092
+      }
+    },
+    "latency_p50_ms": 1264,
+    "latency_p95_ms": 4000
+  },
+  {
+    "run_at": "2026-09-26T17:24:17.869Z",
+    "endpoint": "public-nollm",
+    "top_k": 10,
+    "valid": true,
+    "total": 82,
+    "measured": 82,
+    "errored": 0,
+    "passed": 65,
+    "pass_rate": 79,
+    "plan_fallbacks": [],
+    "contract": {
+      "results": 420,
+      "no_text": 0,
+      "no_author": 0,
+      "uploader_author": 30,
+      "no_url": 0,
+      "book_root_url": 103,
+      "quoted_no_source": 0,
+      "examples": {
+        "uploader_author": [
+          "holley religion for mankind [pdf-h-holley] https://siftersearch.com/library/bahai/books/pdf-h-holley_holley-religion-for-mankind#p22",
+          "bahaullah abdul baha sacred writings boo [pdf-b-bahaullah] https://siftersearch.com/library/bahai/books/pdf-b-bahaullah_bahaullah-abdul-baha-sacred-writings-book#p117",
+          "gleanings from the writings of bahaullah [bayat] https://siftersearch.com/library/bahai/books/bayat_gleanings-from-the-writings-of-bahaullah-study-guide#p27",
+          "tablets of bahaullah vol 3 compilation a [michot] https://siftersearch.com/library/bahai/books/michot_tablets-of-bahaullah-vol-3-compilation-and-provisional-translations#p104"
+        ],
+        "book_root_url": [
+          "pilgrimage and religious identity in the [Per-Olof Akerdahl] https://bahai-library.com/akerdahl_pilgrimage_religious_identity",
+          "divine philosophy [Steven Phelps] https://oceanlibrary.com/divine-philosophy_abdul-baha",
+          "divine philosophy [Steven Phelps] https://oceanlibrary.com/divine-philosophy_abdul-baha",
+          "the bahai movement with some recollectio [Maude M. Holbach] https://bahai-library.com/holbach_bahai_movement"
+        ]
+      }
+    },
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "lp-love-enemies",
+      "fw-dawnbreakers-one-word",
+      "df-nirvana",
+      "sr-essence-justice",
+      "sr-light-of-men",
+      "sr-harmony"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 12,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 1978
+      },
+      "lay_paraphrase": {
+        "passed": 6,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 1139
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 111
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 142
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 97
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5942
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1130
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 2502
+      },
+      "author_scoped": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1187
+      },
+      "history_fact": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1084
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 1011
+      },
+      "source_resolution": {
+        "passed": 3,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 1105
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 147
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 33,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 1007
+      },
+      "chat": {
+        "passed": 15,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 83,
+        "p50_ms": 963
+      },
+      "research": {
+        "passed": 17,
+        "measured": 28,
+        "errored": 0,
+        "pass_rate": 61,
+        "p50_ms": 1040
+      }
+    },
+    "latency_p50_ms": 1004,
+    "latency_p95_ms": 2602
   }
 ]

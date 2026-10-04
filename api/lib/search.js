@@ -9,6 +9,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
+import { searchPhrases, searchKeywordQdrant } from './search/qdrant-layers.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1153,7 +1154,9 @@ const RRF_K = 60;
 const DEFAULT_WEIGHTS = {
   main: 1.0,    // paragraphs hybrid (text + context + paragraph embedding)
   hype: 1.5,    // HyPE question + thesis match (highest signal — designed to answer)
-  entity: 1.0   // entity-mentions sidecar (resolved named entity filter)
+  entity: 1.0,  // entity-mentions sidecar (resolved named entity filter)
+  phrase: 1.0,  // Qdrant phrase vectors (opt-in: options.phraseLayer) — not yet tuned on the batteries
+  qkeyword: 1.0 // Qdrant BM25 with our folding (opt-in: options.qdrantKeyword) — not yet tuned
 };
 
 /**
@@ -1243,7 +1246,7 @@ export async function multiIndexSearch(query, options = {}) {
   const _t0 = Date.now();
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
-  const [mainResult, hypeResult, entityResult, keywordResult] = await Promise.all([
+  const [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult] = await Promise.all([
     timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1269,6 +1272,19 @@ export async function multiIndexSearch(query, options = {}) {
     options.keywordLayer
       ? timed('keyword', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: 0, federate: false })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: keyword failed');
+          return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] }),
+    // Qdrant layers (P4, planning/phrase-index-plan.md) — opt-in until measured on both batteries.
+    (options.phraseLayer && !semanticOff && (!scope_config || scope_config.primary))
+      ? timed('phrase', searchPhrases(query, { limit: overFetch, filters })).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: phrase layer failed');
+          return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] }),
+    (options.qdrantKeyword && (!scope_config || scope_config.primary))
+      ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters })).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
           return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
@@ -1335,6 +1351,20 @@ export async function multiIndexSearch(query, options = {}) {
     }
     aggregate.set(pid, cur);
   });
+
+  // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
+  // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult]]) {
+    (result.hits || []).forEach((hit, rank) => {
+      const pid = hit.paragraph_id;
+      const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
+      cur.score += (weights[layer] ?? 1.0) / (RRF_K + rank);
+      cur[`${layer}Rank`] = rank;
+      if (hit.span && !cur.phraseSpan) cur.phraseSpan = hit.span;
+      if (!cur.paragraph) cur.paragraph = { id: pid, doc_id: hit.doc_id, _stub: true };
+      aggregate.set(pid, cur);
+    });
+  }
 
   // Fetch full paragraphs for hype-only hits (those flagged _stub).
   // The paragraphs index uses `id` as primary key but doesn't expose `id`
@@ -1428,7 +1458,9 @@ export async function multiIndexSearch(query, options = {}) {
       ...e.paragraph,
       _rrfScore: e.score,
       ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
-      _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null }
+      _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null,
+        phrase: e.phraseRank ?? null, qkeyword: e.qkeywordRank ?? null },
+      ...(e.phraseSpan ? { phrase_span: e.phraseSpan } : {}),
     };
     if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;
     return h;
@@ -1450,6 +1482,8 @@ export async function multiIndexSearch(query, options = {}) {
       main: (mainResult.hits || []).length,
       hype: (hypeResult.hits || []).length,
       entity_mentions: (entityResult.hits || []).length,
+      phrase: (phraseResult.hits || []).length,
+      qkeyword: (qkeywordResult.hits || []).length,
     },
     // Emitted for the trace. Retrieval layers run in parallel, so these are completion offsets from the
     // start of the fan-out, not additive costs; `merge` is the RRF + diversity work after them.

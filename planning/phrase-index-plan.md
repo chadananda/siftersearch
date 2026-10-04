@@ -205,7 +205,13 @@ These change what a phrase MEANS in place; the index consumes their output as `g
 | Disk: vector store (float16 3072) | ~220 GB today (/tank) |
 | Backfill wall time | unknown — Gemini batch throughput + Meili indexing rate (P2) |
 
-## Stack direction (Chad, 2026-10-01, pending the Qdrant scale test)
+## Qdrant scale test — PASSED (2026-10-01)
+10M synthetic 3072-dim entries on tower-nas (Qdrant 1.19.1; vectors on disk, binary in RAM; 8 parallel uploaders,
+graph built once at the end on 56 threads): upload 37 min (~16M/h) · graph build 23 min · ~1 h empty → searchable ·
+filtered search with group-by-paragraph + rescoring p50 53 ms / p99 113 ms · live Meili search during build 33 ms
+(unaffected) · disk 60 GB · RSS 13 GB. Meili's comparable run: 1.74M in ~2 h, 0.85M/h and falling. → 46M ≈ 4–5 h.
+
+## Stack direction (Chad, 2026-10-01)
 **Qdrant** (phrase vectors with built-in rescoring + BM25 sparse keyword retrieval for paragraphs and site texts) +
 **SQLite** (source of truth; texts, doc_meta, FTS5) + **Jev** (strategy, branching, re-ranking, highlights, format).
 **Meili retired** at the swap — measured unnecessary for both semantic (rescoring) and keyword (folding + word-order
