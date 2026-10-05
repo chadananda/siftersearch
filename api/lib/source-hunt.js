@@ -125,7 +125,7 @@ export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
-    /core publications/i.test(c.collection || '') ? 1 : 0,
+    /core publications/i.test(c.collection || '') || c.coreTwin ? 1 : 0,
     // within the same writer's own book, the paragraph holding the WORDING beats a neighbour the decision also passed on
     // meaning (Liliane 10-05: Gleanings 60.3 beat the verbatim 60.2 on quotedCount). A different translation is verbatim
     // nowhere, so cross-translation ranking is unchanged.
@@ -398,6 +398,7 @@ async function tabletGuess(d, q, links, author = null) {
   return { certain: false, candidates: out.slice(0, 3) };
 }
 
+let coreTitles = null;   // { at, set } — Core Publications titles, refreshed every 10 min
 async function defaultDeps() {
   const [{ searchPhrases, searchKeywordQdrant, searchPhraseSpans }, { resolveLinks, getPassages }, { queryAll, queryOne }, { getDocMeta }, { linkFor }] = await Promise.all([
     import('./search/qdrant-layers.js'), import('./passage-links.js'), import('./db.js'), import('./doc-meta-store.js'), import('./source-links.js')]);
@@ -413,7 +414,18 @@ async function defaultDeps() {
           d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year
         FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'source-hunt:rows');
-      return rs.map((r) => ({ ...r, text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
+      // Core Publications books whose paragraphs are flagged duplicates of their OceanLibrary copy (Gleanings, ESW, Gems, …)
+      // are not in the phrase index — only the copy is, and the copy carries no collection. A row whose title is a Core
+      // title ranks as Core (10-05: the verbatim Gleanings copy lost to a Core book that only paraphrased the quote).
+      if (!coreTitles || Date.now() - coreTitles.at > 600000) {
+        const { listDocs } = await import('./docs-repo.js'), set = new Set();
+        for (let offset = 0; ; offset += 1000) {
+          const { docs } = await listDocs({ collection: 'Core Publications', fields: ['id', 'title'], limit: 1000, offset });
+          docs.forEach((x) => set.add(x.title)); if (docs.length < 1000) break;
+        }
+        coreTitles = { at: Date.now(), set };
+      }
+      return rs.map((r) => ({ ...r, coreTwin: coreTitles.set.has(r.title), text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
         url: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
           slug: r.slug, filename: r.filename, external_para_id: r.external_para_id }, r.paragraph_index).url }));
     },

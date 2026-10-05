@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T22:23:11.825Z",
+  "generated": "2026-10-05T22:40:14.430Z",
   "entries": [
+    {
+      "hash": "9c273248",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Original-side highlight = ONE stretch chosen by start/end clause vote (Clef + Clef-flash, Jev tie-break), not a yes/no per clause",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "ba92c29e",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Stop claiming every entry is a metaphor",
       "scope": null
-    },
-    {
-      "hash": "75bbb915",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Meter the run — it was spending outside the policy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "9c273248",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Original-side highlight = ONE stretch chosen by start/end clause vote (Clef + Clef-flash, Jev tie-break), not a yes/no per clause",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "ba92c29e",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Stop claiming every entry is a metaphor",
-        "scope": null
-      },
-      {
-        "hash": "75bbb915",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Meter the run — it was spending outside the policy",
         "scope": null
       }
     ]

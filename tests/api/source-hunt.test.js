@@ -33,6 +33,12 @@ describe('prepareQuote', () => {
 });
 
 describe('rankOrigins', () => {
+  it('the OceanLibrary copy of a Core book (no collection, coreTwin) holding the words beats a Core book that only paraphrases', () => {
+    const w = { writer: 'Bahá’u’lláh', ownWork: true, holds: true };
+    const r = rankOrigins([{ ...w, id: 1, title: 'Tablets of Bahá’u’lláh', collection: 'Core Publications', overlap: 0.1, quotedCount: 9 },
+      { ...w, id: 2, title: 'Gleanings', collection: null, coreTwin: true, overlap: 1 }, { ...w, id: 3, title: 'Bahá’í Sacred Writings', collection: null, overlap: 1 }], 'Bahá’u’lláh');
+    expect(r[0].id).toBe(2);
+  });
   it('in the same book, the verbatim paragraph beats a meaning-only neighbour that is quoted more often (Gleanings 60.2 vs 60.3)', () => {
     const base = { title: 'Gleanings', writer: 'Bahá’u’lláh', ownWork: true, collection: 'Core Publications', holds: true };
     const r = rankOrigins([{ ...base, id: 2, overlap: 0, quotedCount: 19 }, { ...base, id: 1, overlap: 1, quotedCount: 1 }], 'Bahá’u’lláh');
