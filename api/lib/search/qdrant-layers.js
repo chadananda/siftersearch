@@ -55,22 +55,22 @@ export function toQdrantFilter(filters = {}) {
   return { ...(must.length ? { must } : {}), ...(must_not.length ? { must_not } : {}) };
 }
 
-async function qdrant(path, body) {
+async function qdrant(path, body, timeoutMs = 2500) {
   const r = await fetch(QD() + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
     // 2.5 s: past the search budget a layer is dropped, not waited on — and the relax ladder re-runs the engine, so a stalled
     // Qdrant (a payload backfill or build beside it, 2026-10-04) cost 5 s per rung at the old 5 s.
-    body: JSON.stringify(body), signal: AbortSignal.timeout(2500) });
+    body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
   if (!r.ok) throw new Error(`qdrant ${path} ${r.status} ${(await r.text()).slice(0, 120)}`);
   return (await r.json()).result;
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score, span: {start, end} }] } — best phrase per paragraph. */
-export async function searchPhrases(query, { limit = 30, filters } = {}) {
+export async function searchPhrases(query, { limit = 30, filters, timeoutMs } = {}) {
   const vector = await geminiQueryVector(query);
   const res = await qdrant('/collections/phrases/points/query/groups', {
     query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'start', 'end'],
     params: { quantization: { rescore: true, oversampling: 4 } }, filter: toQdrantFilter(filters),
-  });
+  }, timeoutMs);
   return { hits: (res.groups || []).map((g) => {
     const p = g.hits[0];
     return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end } };
@@ -79,12 +79,12 @@ export async function searchPhrases(query, { limit = 30, filters } = {}) {
 
 /** → { hits: [{ paragraph_id, doc_id, score, thesis }] } — HyPE questions (+ thesis) embedded with the SAME Gemini model as
  *  the phrase layer, so one query vector serves both (memoized). The SQLite hyp_questions are the store; `hype` is their index. */
-export async function searchHypeQdrant(query, { limit = 30, filters } = {}) {
+export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs } = {}) {
   const vector = await geminiQueryVector(query);
   const res = await qdrant('/collections/hype/points/query/groups', {
     query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'k'],
     params: { quantization: { rescore: true, oversampling: 4 } }, filter: toQdrantFilter(filters),
-  });
+  }, timeoutMs);
   return { hits: (res.groups || []).map((g) => {
     const p = g.hits[0];
     return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999 };
@@ -92,11 +92,11 @@ export async function searchHypeQdrant(query, { limit = 30, filters } = {}) {
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — BM25 over whole paragraphs with our folding. */
-export async function searchKeywordQdrant(query, { limit = 30, filters } = {}) {
+export async function searchKeywordQdrant(query, { limit = 30, filters, timeoutMs } = {}) {
   const sparse = bm25Query(query);
   if (!sparse.indices.length) return { hits: [] };
   const res = await qdrant('/collections/paragraphs_kw/points/query', {
     query: sparse, using: 'bm25', limit, with_payload: ['paragraph_id', 'doc_id'], filter: toQdrantFilter(filters),
-  });
+  }, timeoutMs);
   return { hits: (res.points || []).map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score })) };
 }

@@ -10,6 +10,7 @@ import { authorAuthority } from './authority.js';
 
 const VERBATIM = 0.6;        // share of the quote's word 3-grams a paragraph must hold
 const CANDIDATES = 60;
+const QD_MS = 10000;     // a deliberate lookup, not the 1 s search path: wait for Qdrant under build load (2.5 s timed out silently)
 
 /** The quote as searched: quotation marks, ellipses and reference tails dropped; the longest run between ellipses is the
  *  one matched against paragraphs (an elided quote never appears whole in its source). */
@@ -68,8 +69,8 @@ export async function sourceHunt(raw, deps = {}) {
 
   // 1. candidates: phrase vectors (meaning + wording) and BM25 (wording), whole library + scraped sites
   const [ph, kw] = await Promise.all([
-    d.phrases(q.match, { limit: CANDIDATES, filters: {} }).catch(() => ({ hits: [] })),
-    d.keyword(q.match, { limit: CANDIDATES, filters: {} }).catch(() => ({ hits: [] })),
+    d.phrases(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
+    d.keyword(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
   ]);
   const ids = [...new Set([...ph.hits, ...kw.hits].map((h) => h.paragraph_id))];
   const rows = await d.rows(ids);
@@ -93,8 +94,8 @@ export async function sourceHunt(raw, deps = {}) {
   if (quoteAuthor) {
     const f = { author: quoteAuthor, religion: "Baha'i" };
     const [p2, k2] = await Promise.all([
-      d.phrases(q.match, { limit: 20, filters: f }).catch(() => ({ hits: [] })),
-      d.keyword(q.match, { limit: 20, filters: f }).catch(() => ({ hits: [] })),
+      d.phrases(q.match, { limit: 20, filters: f, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
+      d.keyword(q.match, { limit: 20, filters: f, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
     ]);
     const more = [...new Set([...p2.hits, ...k2.hits].map((h) => h.paragraph_id))].filter((id) => !pool.some((c) => c.id === id));
     for (const r of await d.rows(more)) {
@@ -145,7 +146,7 @@ async function tabletGuess(d, q, links, author = null) {
     url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) });
   if (links?.original) return { certain: true, ...(await withMeta(links.original, links.original.path || 'translation')) };
   // only the quote's own writer's originals: an ‘Abdu’l-Bahá talk near in meaning is not the source of a Bahá’u’lláh line
-  const near = await d.phrases(q.match, { limit: 3, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
+  const near = await d.phrases(q.match, { limit: 3, timeoutMs: QD_MS, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
   const ps = await d.passages(near.hits.map((h) => h.paragraph_id));
   const out = [];
   for (const h of near.hits) { const p = ps.get(h.paragraph_id); if (p) out.push({ ...(await withMeta(p, 'cross-lingual')), score: +h.score.toFixed(3) }); }

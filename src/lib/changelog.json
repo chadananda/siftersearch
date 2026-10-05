@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T00:33:00.218Z",
+  "generated": "2026-10-05T00:40:46.155Z",
   "entries": [
+    {
+      "hash": "f0f5d309",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Origin must hold the quote; same writer → Core Publications, then the earliest publication",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "8e95e7c5",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Recover real title/author from the landing page (dry run, nothing written)",
       "scope": null
-    },
-    {
-      "hash": "91451479",
-      "date": "2026-08-17",
-      "type": "Other",
-      "description": "Remove an echoed name from ASSISTANT turns, without touching the model pass",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "f0f5d309",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Origin must hold the quote; same writer → Core Publications, then the earliest publication",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "8e95e7c5",
         "date": "2026-10-04",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-17",
         "type": "Other",
         "description": "Recover real title/author from the landing page (dry run, nothing written)",
-        "scope": null
-      },
-      {
-        "hash": "91451479",
-        "date": "2026-08-17",
-        "type": "Other",
-        "description": "Remove an echoed name from ASSISTANT turns, without touching the model pass",
         "scope": null
       }
     ]
