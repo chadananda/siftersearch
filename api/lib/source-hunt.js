@@ -44,15 +44,18 @@ export function quoteAuthorOf(matches) {
 }
 
 /**
- * Rank origin candidates: the QUOTE'S writer's own text first (a UHJ letter quoting Bahá’u’lláh counts as the UHJ's
+ * Rank origin candidates — only a paragraph that HOLDS the quote can be its origin; then the QUOTE'S writer's own text (a UHJ letter quoting Bahá’u’lláh counts as the UHJ's
  * "own work" — paragraph attribution does not split every mixed paragraph); the writer's OWN book beats a compilation or study that quotes it; then the writer's standing,
  * the canonical library (OceanLibrary) over scraped sites, how many matches link to it as their source, and how fully it
- * holds the quote.
+ * holds the quote. Between the same writer's own books, the library's Core Publications, then the EARLIEST
+ * (a later compilation of a writer's extracts — Call to the Nations — quotes the original, The World Order of Bahá’u’lláh).
  */
 export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
-  const key = (c) => [quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0, c.authority ?? 0,
-    isCanonical(c) ? 1 : 0, c.linkedFrom || 0, c.overlap || 0];
+  const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
+  const key = (c) => [(c.overlap || 0) >= VERBATIM ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
+    /core publications/i.test(c.collection || '') ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
+    -year(c), c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
 }
 
@@ -129,7 +132,7 @@ export async function sourceHunt(raw, deps = {}) {
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,
     // why this source: the next best candidates with the facts the ranking used
     considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, bookAuthor: c.book_author,
-      ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, overlap: +c.overlap.toFixed(2) })),
+      ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, year: c.year || null, overlap: +c.overlap.toFixed(2) })),
     tablet: await tabletGuess(d, q, full, quoteAuthor),
     ms: Date.now() - t0,
   };
@@ -158,7 +161,7 @@ async function defaultDeps() {
       const uniq = [...new Set(ids.map(Number).filter(Boolean))];
       if (!uniq.length) return [];
       const rs = await queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.authors, c.external_para_id, d.title, d.author AS book_author,
-          d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role
+          d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year
         FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'source-hunt:rows');
       return rs.map((r) => ({ ...r, text: String(r.text || '').replace(/⁅\/?s\d+⁆/g, ''),

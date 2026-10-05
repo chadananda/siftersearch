@@ -84,6 +84,12 @@ describe('quote author', () => {
     ];
     expect(quoteAuthorOf(m)).toBe('Shoghi Effendi');
   });
+  it("same writer: Core Publications, then the earliest; a candidate that doesn't hold the quote never wins", () => {
+    const own = { writer: 'Shoghi Effendi', ownWork: true, authority: 8, overlap: 0.8 };
+    expect(rankOrigins([{ ...own, id: 1, title: 'Call to the Nations', year: 1977 }, { ...own, id: 2, title: 'World Order', year: 1938 }], 'Shoghi Effendi')[0].id).toBe(2);
+    expect(rankOrigins([{ ...own, id: 3, year: 1900 }, { ...own, id: 4, year: 1990, collection: 'Core Publications' }], 'Shoghi Effendi')[0].id).toBe(4);
+    expect(rankOrigins([{ ...own, id: 5, overlap: 0.2, collection: 'Core Publications' }, { ...own, id: 6 }], 'Shoghi Effendi')[0].id).toBe(6);
+  });
   it('no one of standing → null', () => {
     expect(quoteAuthorOf([{ writer: 'J. Smith', authors: null }])).toBeNull();
   });

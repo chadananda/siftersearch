@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T00:28:36.341Z",
+  "generated": "2026-10-05T00:33:00.218Z",
   "entries": [
+    {
+      "hash": "8e95e7c5",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "The quote's writer by vote (writers of the matches 2, marked quotations 1; mentions never); return the candidates considered",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "e19b351b",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove an echoed name from ASSISTANT turns, without touching the model pass",
       "scope": null
-    },
-    {
-      "hash": "71c03099",
-      "date": "2026-08-16",
-      "type": "Fixed",
-      "description": "NAMED_QUERIES referenced consts before they existed (would crash the snapshot)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "8e95e7c5",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "The quote's writer by vote (writers of the matches 2, marked quotations 1; mentions never); return the candidates considered",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "e19b351b",
         "date": "2026-10-04",
@@ -7053,15 +7060,6 @@
         "date": "2026-08-17",
         "type": "Other",
         "description": "Remove an echoed name from ASSISTANT turns, without touching the model pass",
-        "scope": null
-      }
-    ],
-    "2026-08-16": [
-      {
-        "hash": "71c03099",
-        "date": "2026-08-16",
-        "type": "Fixed",
-        "description": "NAMED_QUERIES referenced consts before they existed (would crash the snapshot)",
         "scope": null
       }
     ]
