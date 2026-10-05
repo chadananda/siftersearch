@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T18:40:33.826Z",
+  "generated": "2026-10-05T20:30:19.725Z",
   "entries": [
+    {
+      "hash": "2675579d",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Clause highlight by VOTE — Clef + Clef-flash in parallel, Jev breaks a disagreement by majority; fallback spans fixed (cleanText offsets) and limited to the single best phrase",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "8b143693",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A detached runner, so a real book can actually finish",
       "scope": null
-    },
-    {
-      "hash": "f5d8edea",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Index them, so a concept is searchable in its own right",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "2675579d",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Clause highlight by VOTE — Clef + Clef-flash in parallel, Jev breaks a disagreement by majority; fallback spans fixed (cleanText offsets) and limited to the single best phrase",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "8b143693",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "A detached runner, so a real book can actually finish",
-        "scope": null
-      },
-      {
-        "hash": "f5d8edea",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Index them, so a concept is searchable in its own right",
         "scope": null
       }
     ]

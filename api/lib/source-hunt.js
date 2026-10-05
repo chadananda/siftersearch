@@ -3,6 +3,7 @@
 // links. Candidates come from the Qdrant phrase + BM25 layers (no Meili); the link graph (passage-links.js) walks
 // quote → source → original. A paragraph COUNTS only when it holds the quote verbatim (word 3-gram overlap).
 // Deps injected (default: the live ones) so the logic is testable without a database.
+import { stripAppendedReference } from './quote-clean.js';
 import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
@@ -35,7 +36,7 @@ const QD_MS = 10000;     // a deliberate lookup, not the 1 s search path: wait f
 /** The quote as searched: quotation marks, ellipses and reference tails dropped; the longest run between ellipses is the
  *  one matched against paragraphs (an elided quote never appears whole in its source). */
 export function prepareQuote(raw) {
-  const text = String(raw || '').replace(/[“”"«»]/g, ' ').replace(/\s*\([^()]{0,80}\)\s*$/, '').replace(/\s+/g, ' ').trim();
+  const text = stripAppendedReference(String(raw || '')).replace(/[“”"«»]/g, ' ').replace(/\s*\([^()]{0,80}\)\s*$/, '').replace(/\s+/g, ' ').trim();
   const runs = text.split(/\s*(?:\.\.\.|…)\s*/).map((s) => s.trim()).filter(Boolean);
   const longest = runs.sort((a, b) => b.length - a.length)[0] || '';
   return { text, match: longest, words: matchWords(longest).length };

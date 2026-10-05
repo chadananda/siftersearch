@@ -6,6 +6,7 @@
   import AynLens from './sourcehunt/AynLens.svelte';
   import ProbeField from './sourcehunt/ProbeField.svelte';
   import CitationShelf from './sourcehunt/CitationShelf.svelte';
+  import { stripAppendedReference } from '../../api/lib/quote-clean.js';
 
   const API = import.meta.env.PUBLIC_API_URL || '';
 
@@ -80,7 +81,7 @@
   }
 
   async function hunt(q = quote) {
-    q = String(q || '').trim(); if (!q || phase === 'hunting') return;
+    q = stripAppendedReference(String(q || '')); if (!q || phase === 'hunting') return;
     quote = q; abort?.abort(); abort = new AbortController();
     tick().then(grow);
     phase = 'hunting'; error = null; ev = {}; result = null; ticker = []; field?.reset();
@@ -127,6 +128,21 @@
     document.getElementById('sh-results')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
 
+  // A paste drops what the library's copy appends (reference line, link). Pasting while a result is shown — or over the
+  // whole of the last quote — starts a NEW hunt with only the pasted text (Liliane 10-05: pasting on top gave the old quote).
+  function onPaste(e) {
+    const pasted = e.clipboardData?.getData('text/plain'); if (!pasted) return;
+    const clean = stripAppendedReference(pasted);
+    const whole = box && box.selectionStart === 0 && box.selectionEnd === box.value.length;
+    if (phase !== 'idle' || whole || !quote.trim()) {
+      e.preventDefault(); if (phase === 'hunting') { abort?.abort(); phase = 'idle'; } quote = clean; tick().then(grow); if (clean.split(/\s+/).length >= 4) hunt(clean);
+    } else if (clean !== pasted) { e.preventDefault(); document.execCommand('insertText', false, clean); }
+  }
+  function clearQuote() {
+    abort?.abort(); clearInterval(tickTimer);
+    quote = ''; phase = 'idle'; error = null; ev = {}; result = null; ticker = []; field?.reset();
+    tick().then(() => { grow(); box?.focus(); });
+  }
   const onKey = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) hunt(); };
   const segments = (text, ranges = []) => {
     const out = []; let at = 0;
@@ -197,8 +213,12 @@
   <div class="sh-input rounded-2xl border border-border bg-surface-1 p-2.5 sm:p-3" class:is-hunting={phase === 'hunting'}>
     <div class="flex flex-col gap-2 md:flex-row md:items-end">
       <label for="sh-quote" class="sr-only">Quotation</label>
-      <textarea id="sh-quote" bind:this={box} bind:value={quote} oninput={grow} onkeydown={onKey} rows="1" placeholder="Paste a quotation in English…"
+      <textarea id="sh-quote" bind:this={box} bind:value={quote} oninput={grow} onkeydown={onKey} onpaste={onPaste} rows="1" placeholder="Paste a quotation in English…"
         class="sh-quote w-full flex-1 resize-none bg-transparent px-3 py-2.5 text-primary placeholder:text-muted focus:outline-none"></textarea>
+      {#if quote}
+        <button onclick={clearQuote} type="button" aria-label="Clear the quotation" title="Clear"
+          class="shrink-0 self-end rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-primary md:self-auto md:py-3">✕ Clear</button>
+      {/if}
       <button onclick={() => hunt()} disabled={phase === 'hunting' || !quote.trim()}
         class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 font-semibold text-accent-text transition-transform hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50">
         {phase === 'hunting' ? 'Hunting…' : 'Find the source'}
