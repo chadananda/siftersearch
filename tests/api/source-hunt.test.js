@@ -266,3 +266,21 @@ describe('one continuous run for an un-elided quote', () => {
     expect(r.tablet.highlight.length).toBeGreaterThan(1);
   });
 });
+
+describe('relative cutoff', () => {
+  it('Jev 0.91/0.81 on the true clauses, 0.64/0.50 on strays → only the true run', async () => {
+    const RAW = 'امروز انسان کسی است که بخدمت جمیع من علی الأرض قیام نماید. حضرت موجود میفرماید طوبی لمن أصبح. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن.';
+    const r = await sourceHunt(QUOTE, deps({
+      passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool' }])),
+      links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
+        original: quotedBy ? { id: 77, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool', path: 'translation' } : null }])),
+      spans: async () => [], rawText: async () => RAW,
+      decide: async (task, state) => (task !== 'sourcehunt-highlight' ? null : { answers: Object.fromEntries([...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)]
+        .map(([, k, t]) => [k, { noul: t.includes('وطن') ? 0.91 : t.includes('اهل آن') ? 0.81 : t.includes('بخدمت') ? 0.64 : t.includes('طوبی') ? 0.5 : 0.2 }])) }),
+    }));
+    const marked = r.tablet.highlight.map(([a, b]) => r.tablet.text.slice(a, b)).join(' | ');
+    expect(marked).toContain('وطن');
+    expect(marked).not.toContain('بخدمت');
+    expect(marked).not.toContain('طوبی');
+  });
+});

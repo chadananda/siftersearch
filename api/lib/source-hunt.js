@@ -329,7 +329,9 @@ async function decideRanges(d, quoteText, text, lang, hint = []) {
   if (!r?.answers) return null;
   const p = units.map((u, i) => ({ u, i, p: r.answers[`c${i + 1}`]?.noul ?? 0 }));
   const top = p.reduce((m, x) => (x.p > m.p ? x : m), { p: 0 });
-  let picked = p.filter((x) => x.p >= 0.5);
+  // within 0.2 of the strongest clause: a model's answer stands well above its strays (Jev 0.91/0.81 on the true clauses,
+  // 0.64/0.50 on two neighbours of "The earth is but one country…", 10-05) — a flat 0.5 cutoff marked them all
+  let picked = p.filter((x) => x.p >= 0.5 && x.p >= top.p - 0.2);
   if (!picked.length) picked = top.p >= 0.3 ? [top] : [];
   if (!picked.length) return [];
   const ranges = [];

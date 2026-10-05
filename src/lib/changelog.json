@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T15:55:21.800Z",
+  "generated": "2026-10-05T16:02:44.181Z",
   "entries": [
+    {
+      "hash": "a6e9f947",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "An un-elided quote highlights one continuous run of clauses (drops a stray 0.61 clause); model-neutral caption",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "f4ecb882",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Let questions ask about the CONCEPT, not echo the wording",
       "scope": null
-    },
-    {
-      "hash": "61449041",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Fix ambiguous deleted_at in the unresolvable-notes count",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "a6e9f947",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "An un-elided quote highlights one continuous run of clauses (drops a stray 0.61 clause); model-neutral caption",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "f4ecb882",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Let questions ask about the CONCEPT, not echo the wording",
-        "scope": null
-      },
-      {
-        "hash": "61449041",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Fix ambiguous deleted_at in the unresolvable-notes count",
         "scope": null
       }
     ]
