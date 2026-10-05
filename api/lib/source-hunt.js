@@ -49,14 +49,15 @@ export function quoteAuthorOf(matches) {
  * "own work" — paragraph attribution does not split every mixed paragraph); the writer's OWN book beats a compilation or study that quotes it; then the writer's standing,
  * the canonical library (OceanLibrary) over scraped sites, how many matches link to it as their source, and how fully it
  * holds the quote. Between the same writer's own books, the library's Core Publications, then the EARLIEST
- * (a later compilation of a writer's extracts — Call to the Nations — quotes the original, The World Order of Bahá’u’lláh).
+ * (a later compilation of a writer's extracts — Call to the Nations — quotes the original, The World Order of Bahá’u’lláh),
+ * and where years are missing, the paragraph more books are linked as quoting (quotedCount).
  */
 export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   const key = (c) => [(c.overlap || 0) >= VERBATIM ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
     /core publications/i.test(c.collection || '') ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
-    -year(c), c.overlap || 0];
+    -year(c), c.quotedCount || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
 }
 
@@ -108,6 +109,11 @@ export async function sourceHunt(raw, deps = {}) {
   }
   if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0 };
 
+  // how many paragraphs the link graph records as quoting each leading candidate — the original is quoted, the compilation
+  // that reprints it rarely is (the tiebreak when publication years are missing)
+  const lead = rankOrigins(pool, quoteAuthor).slice(0, 8);
+  const qc = await d.links(lead.map((c) => c.id), { quotedBy: true }).catch(() => new Map());
+  for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
   const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
@@ -133,7 +139,7 @@ export async function sourceHunt(raw, deps = {}) {
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,
     // why this source: the next best candidates with the facts the ranking used
     considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, bookAuthor: c.book_author,
-      ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, year: c.year || null, overlap: +c.overlap.toFixed(2) })),
+      ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, year: c.year || null, quotedCount: c.quotedCount ?? null, overlap: +c.overlap.toFixed(2) })),
     tablet: await tabletGuess(d, q, full, quoteAuthor),
     ms: Date.now() - t0,
   };
@@ -146,11 +152,14 @@ async function tabletGuess(d, q, links, author = null) {
     url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) });
   if (links?.original) return { certain: true, ...(await withMeta(links.original, links.original.path || 'translation')) };
   // only the quote's own writer's originals: an ‘Abdu’l-Bahá talk near in meaning is not the source of a Bahá’u’lláh line
-  const near = await d.phrases(q.match, { limit: 3, timeoutMs: QD_MS, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
+  const near = await d.phrases(q.match, { limit: 8, timeoutMs: QD_MS, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
   const ps = await d.passages(near.hits.map((h) => h.paragraph_id));
-  const out = [];
-  for (const h of near.hits) { const p = ps.get(h.paragraph_id); if (p) out.push({ ...(await withMeta(p, 'cross-lingual')), score: +h.score.toFixed(3) }); }
-  return { certain: false, candidates: out };
+  const out = [], seen = new Set();   // one candidate per document
+  for (const h of near.hits) {
+    const p = ps.get(h.paragraph_id); if (!p || seen.has(p.documentId)) continue;
+    seen.add(p.documentId); out.push({ ...(await withMeta(p, 'cross-lingual')), score: +h.score.toFixed(3) });
+  }
+  return { certain: false, candidates: out.slice(0, 3) };
 }
 
 async function defaultDeps() {

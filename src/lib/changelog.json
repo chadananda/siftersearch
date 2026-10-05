@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T00:40:46.155Z",
+  "generated": "2026-10-05T00:44:24.491Z",
   "entries": [
+    {
+      "hash": "cf09f433",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Qdrant calls get a 10 s timeout (per-call option; search keeps 2.5 s) — under build load they timed out silently",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "f0f5d309",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Systematic search quality, grounded in the justice-miss evidence",
       "scope": null
-    },
-    {
-      "hash": "1937e270",
-      "date": "2026-08-17",
-      "type": "Other",
-      "description": "Recover real title/author from the landing page (dry run, nothing written)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "cf09f433",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Qdrant calls get a 10 s timeout (per-call option; search keeps 2.5 s) — under build load they timed out silently",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "f0f5d309",
         "date": "2026-10-04",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-17",
         "type": "Other",
         "description": "Systematic search quality, grounded in the justice-miss evidence",
-        "scope": null
-      },
-      {
-        "hash": "1937e270",
-        "date": "2026-08-17",
-        "type": "Other",
-        "description": "Recover real title/author from the landing page (dry run, nothing written)",
         "scope": null
       }
     ]
