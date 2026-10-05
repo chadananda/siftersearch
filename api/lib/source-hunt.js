@@ -15,7 +15,20 @@ const NAMED = { quot: '"', amp: '&', lt: '<', gt: '>', apos: "'", nbsp: '\u00a0'
 export const decodeEntities = (s) => String(s ?? '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) =>
   e[0] === '#' ? String.fromCodePoint(e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : (NAMED[e.toLowerCase()] ?? m));
 
-const VERBATIM = 0.6;        // share of the quote's word 3-grams a paragraph must hold
+const VERBATIM = 0.6;
+// A translation VARIANT ("…and the people of the world its citizens" for "…and mankind its citizens", Chad 10-05) shares
+// too few 3-word runs for the verbatim gate (5 of 12), so it also counts when nearly all its content words are present and
+// a quarter of its phrasing matches. The writer's own book then still wins over a booklet that quotes it.
+const VARIANT_WORDS = 0.75, VARIANT_PHRASING = 0.25;
+const STOP = new Set('the a an and or of to in on at by for with from as is are was were be been it its this that these those his her their our your my thy thee thou ye he she they we i you who which what but not no nor so than then there here all any'.split(' '));
+export function contentContainment(quote, text) {
+  const q = [...new Set(matchWords(quote).filter((w) => !STOP.has(w) && w.length > 1))];
+  if (!q.length) return 0;
+  const have = new Set(matchWords(text));
+  return q.filter((w) => have.has(w)).length / q.length;
+}
+/** Holds the quote: verbatim (3-gram share ≥ 0.6) or a close translation variant. */
+const holds = (quote, text, ov = overlap(quote, text)) => ov >= VERBATIM || (ov >= VARIANT_PHRASING && contentContainment(quote, text) >= VARIANT_WORDS);        // share of the quote's word 3-grams a paragraph must hold
 const CANDIDATES = 60;
 const QD_MS = 10000;     // a deliberate lookup, not the 1 s search path: wait for Qdrant under build load (2.5 s timed out silently)
 
@@ -110,7 +123,7 @@ export function quoteAuthorOf(matches) {
 export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
-  const key = (c) => [(c.overlap || 0) >= VERBATIM ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
+  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
     /core publications/i.test(c.collection || '') ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
     -year(c), c.quotedCount || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
@@ -137,7 +150,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const rows = await d.rows(ids);
   const probedDocs = [...new Map(rows.map((r) => [r.doc_id, docBrief(r)])).values()];
   say('candidates', { phrase: ph.hits.length, keyword: kw.hits.length, paragraphs: ids.length, documents: probedDocs });
-  const matches = rows.map((r) => ({ ...r, overlap: overlap(q.match, r.text) })).filter((r) => r.overlap >= VERBATIM);
+  const matches = rows.map((r) => ({ ...r, overlap: overlap(q.match, r.text) })).filter((r) => holds(q.match, r.text, r.overlap));
   say('verbatim', { count: matches.length, rejected: rows.length - matches.length,
     documents: [...new Map(matches.map((r) => [r.doc_id, docBrief(r)])).values()] });
 
@@ -147,7 +160,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   for (const m of matches) for (const s of links.get(m.id)?.sources || []) if ((s.link?.coverage ?? 0) >= 0.8) linkedFrom.set(s.id, (linkedFrom.get(s.id) || 0) + 1);
   const extra = [...linkedFrom.keys()].filter((id) => !matches.some((m) => m.id === id));
   say('links', { sources: linkedFrom.size, added: extra.length });
-  const pool = [...matches, ...(await d.rows(extra)).map((r) => ({ ...r, overlap: overlap(q.match, r.text) }))]
+  const pool = [...matches, ...(await d.rows(extra)).map((r) => ({ ...r, overlap: overlap(q.match, r.text) }))].map((c) => ({ ...c, holds: holds(q.match, c.text, c.overlap) }))
     .filter((c) => c.doc_role !== 'metadata')
     .map((c) => {
       const writer = paragraphAuthor({ authors: c.authors, author: c.book_author });
@@ -167,10 +180,10 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
     const more = [...new Set([...p2.hits, ...k2.hits].map((h) => h.paragraph_id))].filter((id) => !pool.some((c) => c.id === id));
     for (const r of await d.rows(more)) {
       const ov = overlap(q.match, r.text);
-      if (ov < VERBATIM || r.doc_role === 'metadata') continue;
+      if (!holds(q.match, r.text, ov) || r.doc_role === 'metadata') continue;
       const writer = paragraphAuthor({ authors: r.authors, author: r.book_author });
       const book = firstPerson(r.book_author || '') || r.book_author;
-      pool.push({ ...r, overlap: ov, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
+      pool.push({ ...r, overlap: ov, holds: true, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
     }
     say('targeted', { searched: more.length, pool: pool.length });
   }
@@ -184,8 +197,12 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
   // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
-  const exact = quoteRanges(origin.text, q.text);
+  const exactAll = quoteRanges(origin.text, q.text);
+  // the exact run must cover most of the quote's words; a variant matches only part of it ("THE EARTH IS BUT ONE COUNTRY; AND")
+  const covered = exactAll.reduce((n, [a, b]) => n + matchWords(origin.text.slice(a, b)).length, 0);
+  const exact = covered >= 0.8 * matchWords(q.text).length ? exactAll : [];
   const byMeaning = exact.length ? null : await meaningRanges(d, q, origin.id, origin.text, 'en');
+  if (!exact.length && !byMeaning.highlight?.length && exactAll.length) Object.assign(byMeaning, { highlight: exactAll, highlightBy: 'wording' });
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
     text: origin.text, highlight: exact.length ? exact : byMeaning.highlight, highlightBy: exact.length ? 'wording' : byMeaning.highlightBy,
     url: origin.url, site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };

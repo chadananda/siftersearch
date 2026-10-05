@@ -205,3 +205,18 @@ describe('highlight by decision (Clef-flash / Jev clause choice)', () => {
     expect(r.tablet.highlightBy).toBe(null);
   });
 });
+
+describe('translation variants', async () => {
+  const { contentContainment } = await import('../../api/lib/source-hunt.js');
+  it('a close variant keeps nearly all content words even when its 3-word runs differ', () => {
+    const src = 'In another passage He hath proclaimed: It is not for him to pride himself who loveth his own country, but rather for him who loveth the whole world. The earth is but one country, and mankind its citizens. The peoples of the world are its people.';
+    expect(contentContainment('The earth is but one country, and the people of the world its citizens.', src)).toBeGreaterThanOrEqual(0.75);
+    expect(contentContainment('Justice is the best beloved of all things in My sight', src)).toBeLessThan(0.5);
+  });
+  it('the variant reaches the writer’s own book (not dropped by the verbatim gate)', async () => {
+    const VAR = 'The earth is but one country, and the people of the world its citizens.';
+    const r = await sourceHunt(VAR, deps({ rows: async (ids) => ids.map((i) => ROWS[i]).filter(Boolean).map((x) => ({ ...x,
+      text: x.id === 1 ? 'The earth is but one country, and mankind its citizens. The peoples of the world are thy people.' : x.text, url: `u/${x.id}` })) }));
+    expect(r.origin.title).toBe('Gleanings');
+  });
+});

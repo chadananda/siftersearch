@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:26:15.965Z",
+  "generated": "2026-10-05T13:29:16.359Z",
   "entries": [
+    {
+      "hash": "806c88bf",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "ʿayn sized to sit inside the lens; library summary one compact row on phones",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "799b5a34",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Embedding-stats now index-only, every plan verified in production",
       "scope": null
-    },
-    {
-      "hash": "a8b2e106",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "EXPLAIN condemned one of the three replacements",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "806c88bf",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "ʿayn sized to sit inside the lens; library summary one compact row on phones",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "799b5a34",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Embedding-stats now index-only, every plan verified in production",
-        "scope": null
-      },
-      {
-        "hash": "a8b2e106",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "EXPLAIN condemned one of the three replacements",
         "scope": null
       }
     ]
