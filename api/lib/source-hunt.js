@@ -125,7 +125,11 @@ export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
-    /core publications/i.test(c.collection || '') ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
+    /core publications/i.test(c.collection || '') ? 1 : 0,
+    // within the same writer's own book, the paragraph holding the WORDING beats a neighbour the decision also passed on
+    // meaning (Liliane 10-05: Gleanings 60.3 beat the verbatim 60.2 on quotedCount). A different translation is verbatim
+    // nowhere, so cross-translation ranking is unchanged.
+    (c.overlap || 0) >= VERBATIM ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
     -year(c), c.quotedCount || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
 }

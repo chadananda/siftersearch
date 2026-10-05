@@ -33,6 +33,11 @@ describe('prepareQuote', () => {
 });
 
 describe('rankOrigins', () => {
+  it('in the same book, the verbatim paragraph beats a meaning-only neighbour that is quoted more often (Gleanings 60.2 vs 60.3)', () => {
+    const base = { title: 'Gleanings', writer: 'Bahá’u’lláh', ownWork: true, collection: 'Core Publications', holds: true };
+    const r = rankOrigins([{ ...base, id: 2, overlap: 0, quotedCount: 19 }, { ...base, id: 1, overlap: 1, quotedCount: 1 }], 'Bahá’u’lláh');
+    expect(r[0].id).toBe(1);
+  });
   it("the writer's own book beats a compilation quoting it, even with a higher overlap", () => {
     const top = rankOrigins([
       { id: 2, ownWork: false, authority: 10, overlap: 1 },

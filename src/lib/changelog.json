@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T20:44:02.950Z",
+  "generated": "2026-10-05T20:58:05.589Z",
   "entries": [
+    {
+      "hash": "c12b72f8",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Roadmap grader single-flight + 5-min cache — the plan follower re-graded ~900 books every 3 min with synchronous scans; one took 62 s and froze the API through the :30 health check (alerts 19:32Z, 20:32Z)",
+      "scope": "api"
+    },
     {
       "hash": "6061dc94",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Report what the track actually produced",
       "scope": null
-    },
-    {
-      "hash": "ab27a461",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Create the index even when there is nothing to write",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "c12b72f8",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Roadmap grader single-flight + 5-min cache — the plan follower re-graded ~900 books every 3 min with synchronous scans; one took 62 s and froze the API through the :30 health check (alerts 19:32Z, 20:32Z)",
+        "scope": "api"
+      },
       {
         "hash": "6061dc94",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Report what the track actually produced",
-        "scope": null
-      },
-      {
-        "hash": "ab27a461",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Create the index even when there is nothing to write",
         "scope": null
       }
     ]
