@@ -35,6 +35,17 @@
     return out;
   };
 
+  // Demo samples — each one scored fully right on the battery (book, linked original, paragraph), 2026-10-04.
+  const SAMPLES = [
+    { label: 'One country', quote: 'The earth is but one country, and mankind its citizens.' },
+    { label: 'Hidden Words', quote: 'For like seeketh like, and taketh pleasure in the company of its kind.' },
+    { label: 'Kitáb-i-Íqán', quote: 'In the eyes of God, the ideal King, all the places of the earth are one and the same, excepting that place which, in the days of His Manifestations, He doth appoint for a particular purpose.' },
+    { label: 'Tablet of Carmel', quote: 'Separation from Thee, O Thou Source of everlasting life, hath well nigh consumed me, and my remoteness from Thy presence hath burned away my soul.' },
+    { label: 'Súriy-i-Haykal', quote: 'Erelong shall We bring into being through you pure and undefiled ears which will heed the Word of God and that which hath appeared from the Dayspring of the Utterance of your Lord, the All-Merciful.' },
+    { label: 'Will and Testament', quote: 'Should differences arise, they shall be amicably and conclusively settled by the Supreme Tribunal, that shall include members from all the governments and peoples of the world.' },
+  ];
+  const trySample = (s) => { quote = s.quote; hunt(); };
+
   const onKey = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) hunt(); };
   const tabletLinks = (meta) => [
     meta?.links?.oceanoflights && { href: meta.links.oceanoflights, label: 'Ocean of Lights' },
@@ -54,6 +65,13 @@
         {loading ? 'Searching…' : 'Find the source'}
       </button>
       <span class="text-xs text-muted">⌘/Ctrl + Enter</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-xs text-muted">Try:</span>
+      {#each SAMPLES as s (s.label)}
+        <button onclick={() => trySample(s)} disabled={loading}
+          class="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs text-secondary hover:border-accent hover:text-accent disabled:opacity-50">{s.label}</button>
+      {/each}
     </div>
   </div>
 

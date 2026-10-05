@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T01:36:41.214Z",
+  "generated": "2026-10-05T03:05:27.563Z",
   "entries": [
+    {
+      "hash": "11a681ba",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Re-check the paragraph inside the linked tablet by cross-lingual similarity; battery scores tablet vs paragraph, accent-folded titles",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "6d1dda8c",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Carry the chapter heading through the passage projection",
       "scope": null
-    },
-    {
-      "hash": "00c396fa",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "Read-only endpoint for the STORED Meili document",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "11a681ba",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Re-check the paragraph inside the linked tablet by cross-lingual similarity; battery scores tablet vs paragraph, accent-folded titles",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "6d1dda8c",
         "date": "2026-10-04",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "Carry the chapter heading through the passage projection",
-        "scope": null
-      },
-      {
-        "hash": "00c396fa",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "Read-only endpoint for the STORED Meili document",
         "scope": null
       }
     ]
