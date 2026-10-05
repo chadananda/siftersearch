@@ -13,6 +13,7 @@
 //   node scripts/phrase-index/indexer.mjs --docs 21380 --embed          (explicit documents, e.g. the Arabic Qur'an)
 //   node scripts/phrase-index/indexer.mjs --field original --embed      (originals stored on translations: original_text)
 //   node scripts/phrase-index/indexer.mjs --qdrant                      (upsert anything embedded but not yet sent)
+//   … --monthly-usd 400   stop when this month's Gemini indexing spend (all indexers, /tank/sifter/gemini-spend.db) would pass $400
 //   node scripts/phrase-index/indexer.mjs --field hype --scope library --store /tank/sifter/hype-vectors/vectors.db \
 //        --collection hype --budget-key hype-build --embed --qdrant --max-usd 40
 //        (HyPE: each stored question + the thesis is a unit; point id = paragraph × 1000 + k, thesis k = 999. Own store and
@@ -58,6 +59,18 @@ CREATE TABLE IF NOT EXISTS spend (budget TEXT PRIMARY KEY, tokens INTEGER, usd R
 const cols = new Set(store.prepare('PRAGMA table_info(units)').all().map((c) => c.name));
 for (const [c, t] of [['field', "TEXT DEFAULT 'text'"], ['lang_group', 'TEXT'], ['collection', 'TEXT'], ['scope', 'TEXT']])
   if (!cols.has(c)) store.exec(`ALTER TABLE units ADD COLUMN ${c} ${t}`);
+
+// MONTHLY cap across ALL Gemini indexing (Chad 10-05: "$400/month total"): one shared ledger every indexer adds to; a run
+// stops cleanly when the month's spend would pass --monthly-usd, and is resumed next month (vectors are cached, so a stop
+// costs nothing). Separate from --max-usd (a lifetime cap per budget key).
+const MONTHLY = +arg('monthly-usd', 0);
+const ledger = new Database(arg('ledger', '/tank/sifter/gemini-spend.db'));
+ledger.pragma('busy_timeout = 60000');
+ledger.exec('CREATE TABLE IF NOT EXISTS month_spend (month TEXT, source TEXT, tokens INTEGER DEFAULT 0, usd REAL DEFAULT 0, PRIMARY KEY (month, source))');
+const thisMonth = () => new Date().toISOString().slice(0, 7);
+const monthSpent = () => ledger.prepare('SELECT COALESCE(SUM(usd), 0) s FROM month_spend WHERE month = ?').get(thisMonth()).s;
+const addMonth = ledger.prepare(`INSERT INTO month_spend (month, source, tokens, usd) VALUES (?, ?, ?, ?)
+  ON CONFLICT(month, source) DO UPDATE SET tokens = tokens + excluded.tokens, usd = usd + excluded.usd`);
 
 const spentRow = () => store.prepare('SELECT tokens, usd FROM spend WHERE budget = ?').get(BUDGET) || { tokens: 0, usd: 0 };
 const addSpend = store.prepare(`INSERT INTO spend (budget, tokens, usd, at) VALUES (@b, @t, @u, @at)
@@ -153,11 +166,13 @@ async function embedPending(pending) {
       const chunk = entries.slice(next, next += BATCH);
       const tokens = chunk.reduce((s, [, t]) => s + estTokens(t), 0), usd = tokens / 1e6 * PRICE;
       if (MAX_USD && spentRow().usd + usd > MAX_USD) { stopped = `budget ${BUDGET} would pass $${MAX_USD}`; break; }
+      if (MONTHLY && monthSpent() + usd > MONTHLY) { stopped = `monthly cap: ${thisMonth()} would pass $${MONTHLY}`; break; }
       const vs = await embedBatch(chunk.map(([, t]) => t));
       store.transaction(() => {
         chunk.forEach(([k], i) => putVec.run(k, MODEL, DIMS, packF16(vs[i]), Date.now()));
         addSpend.run({ b: BUDGET, t: tokens, u: usd, at: Date.now() });
       })();
+      addMonth.run(thisMonth(), BUDGET, tokens, usd);
       done += chunk.length;
     }
   }
@@ -234,7 +249,7 @@ async function build() {
     const r = unitize(batch); units += r.units; batch = [];
     if (has('embed')) embedded += await embedPending(r.pending);
     if (has('qdrant')) sent += await upsert();
-    log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(),
+    log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
       paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)) });
   };
   for (const p of rows.iterate()) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T03:12:47.776Z",
+  "generated": "2026-10-05T12:30:16.990Z",
   "entries": [
+    {
+      "hash": "07205921",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Decode HTML entities in stored text (&quot; in 96k paragraphs, mostly bahai-library.com copies); sample buttons show the quote's opening words, not the answer",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "ed126be4",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The missing argument-carrying disambiguate module",
       "scope": null
-    },
-    {
-      "hash": "4a5985a7",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "Add the Doctrinal Spine phase - the conceptual track's seed",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "07205921",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Decode HTML entities in stored text (&quot; in 96k paragraphs, mostly bahai-library.com copies); sample buttons show the quote's opening words, not the answer",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "ed126be4",
         "date": "2026-10-04",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "The missing argument-carrying disambiguate module",
-        "scope": null
-      },
-      {
-        "hash": "4a5985a7",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "Add the Doctrinal Spine phase - the conceptual track's seed",
         "scope": null
       }
     ]
