@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T12:43:39.587Z",
+  "generated": "2026-10-05T12:45:12.230Z",
   "entries": [
+    {
+      "hash": "9dbe9bfb",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Clef / Clef-flash via our Worker's Workers AI binding (POST /_s1/run, internal key) — primary per task or SHADOWED after every answer",
+      "scope": "systemone"
+    },
     {
       "hash": "31df2bd6",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "\"table may not exist\" must swallow ONLY that",
       "scope": null
-    },
-    {
-      "hash": "56c7db63",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "One implementation of the thread<->dialog link, not two",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "9dbe9bfb",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Clef / Clef-flash via our Worker's Workers AI binding (POST /_s1/run, internal key) — primary per task or SHADOWED after every answer",
+        "scope": "systemone"
+      },
       {
         "hash": "31df2bd6",
         "date": "2026-10-05",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "\"table may not exist\" must swallow ONLY that",
-        "scope": null
-      },
-      {
-        "hash": "56c7db63",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "One implementation of the thread<->dialog link, not two",
         "scope": null
       }
     ]
