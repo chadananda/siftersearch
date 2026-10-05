@@ -134,6 +134,19 @@
     if (at < text.length) out.push({ t: text.slice(at) });
     return out;
   };
+  // A search result, not a reader (Chad 10-05): a long passage is cut to ~two lines before the first highlight and ~two
+  // after the last, at word boundaries, with ellipses; highlight ranges shift with the cut. Short passages show whole.
+  function clip(text = '', ranges = [], before = 170, after = 230, max = 700) {
+    if (text.length <= max || !ranges?.length) return text.length <= max || !ranges?.length ? [text.length > max * 1.6 ? `${text.slice(0, max).replace(/\s+\S*$/, '')} …` : text, ranges || []] : [text, ranges];
+    const first = ranges[0][0], last = ranges[ranges.length - 1][1];
+    let a = Math.max(0, first - before), b = Math.min(text.length, last + after);
+    if (a > 0) { const sp = text.indexOf(' ', a); a = sp >= 0 && sp < first ? sp + 1 : a; }
+    if (b < text.length) { const sp = text.lastIndexOf(' ', b); b = sp > last ? sp : b; }
+    const pre = a > 0 ? '… ' : '', post = b < text.length ? ' …' : '';
+    return [pre + text.slice(a, b) + post, ranges.map(([x, y]) => [x - a + pre.length, y - a + pre.length])];
+  }
+  const shown_ = (text, ranges) => segments(...clip(text, ranges));
+
   const origin = $derived(ev.origin?.origin || result?.origin || null);
   const cited = $derived(ev.cited || (result && { citedBy: result.citedBy, citedByLinkCount: result.citedByLinkCount }) || null);
   const tablet = $derived(ev.tablet?.tablet || result?.tablet || null);
@@ -251,7 +264,7 @@
         {#if origin}
           <a href={origin.url} target="_blank" rel="noopener" class="sh-book text-accent hover:text-accent-hover">{origin.title}</a>
           <p class="text-sm text-secondary">{origin.author}{#if origin.bookAuthor && origin.bookAuthor !== origin.author} · in a book by {origin.bookAuthor}{/if}</p>
-          <blockquote class="sh-passage text-primary">{#each segments(origin.text, origin.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {350 + i * 120}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
+          <blockquote class="sh-passage text-primary">{#each shown_(origin.text, origin.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {350 + i * 120}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if result?.considered?.length > 1}
             <details class="mt-1 text-sm">
               <summary class="cursor-pointer text-muted hover:text-accent">Why this source</summary>
@@ -293,7 +306,7 @@
         {:else if tablet.certain}
           <p class="sh-book text-primary">{tablet.meta?.title || tablet.title}</p>
           {#if tablet.meta?.first_line_en}<p class="text-sm italic text-secondary">{tablet.meta.first_line_en}</p>{/if}
-          <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each segments(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
+          <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each shown_(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause Clef-flash judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           <div class="flex flex-wrap gap-2 pt-1">
             {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
@@ -304,7 +317,7 @@
           {#each tablet.candidates as t (t.id)}
             <div class="flex flex-col gap-2 border-t border-border-subtle pt-3">
               <p class="font-semibold text-primary">{t.meta?.title || t.title} <span class="text-xs font-normal text-muted">similarity {t.score}</span></p>
-              <blockquote dir="rtl" lang="ar" class="sh-arabic sh-arabic-sm text-primary">{#each segments(t.text, t.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
+              <blockquote dir="rtl" lang="ar" class="sh-arabic sh-arabic-sm text-primary">{#each shown_(t.text, t.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
               <div class="flex flex-wrap gap-2">{#each tabletLinks(t.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}</div>
             </div>
           {/each}

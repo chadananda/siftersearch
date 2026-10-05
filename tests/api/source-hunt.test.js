@@ -186,7 +186,8 @@ describe('highlight by decision (Clef-flash / Jev clause choice)', () => {
     passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77' }])),
     links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
       original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77', path: 'translation' } : null }])),
-    spans: async () => [], rawText: async () => RAW, decide,
+    spans: async () => [], rawText: async () => RAW,
+    decide: (task, ...a) => (task === 'sourcehunt-highlight' ? decide(task, ...a) : Promise.resolve(null)),
   });
   it('marks the clause(s) the decision model picks; the task is sourcehunt-highlight', async () => {
     let seen;
@@ -217,6 +218,30 @@ describe('translation variants', async () => {
     const VAR = 'The earth is but one country, and the people of the world its citizens.';
     const r = await sourceHunt(VAR, deps({ rows: async (ids) => ids.map((i) => ROWS[i]).filter(Boolean).map((x) => ({ ...x,
       text: x.id === 1 ? 'The earth is but one country, and mankind its citizens. The peoples of the world are thy people.' : x.text, url: `u/${x.id}` })) }));
+    expect(r.origin.title).toBe('Gleanings');
+  });
+});
+
+describe('holds-the-quote by DECISION (cross-translation)', () => {
+  it('a paraphrase the wording test would reject is kept when the decision says it holds the statement', async () => {
+    const VAR = 'All the earth forms a single homeland, and humankind are its people.';   // shares almost no 3-word runs
+    let asked;
+    const r = await sourceHunt(VAR, deps({
+      decide: async (task, state, q) => {
+        if (task === 'sourcehunt-holds') {
+          asked = Object.keys(q).length;
+          // the passage numbering follows the candidate order; say yes to the Gleanings paragraph (contains 'one country')
+          const ids = [...state.matchAll(/\[p(\d+)\] ([^\n]*)/g)].map((m) => [m[1], m[2]]);
+          return { answers: Object.fromEntries(ids.map(([n, t]) => [`p${n}`, { noul: /one country/.test(t) && !/As Bahá/.test(t) ? 0.92 : 0.1 }])) };
+        }
+        return null;
+      },
+    }));
+    expect(asked).toBeGreaterThan(0);
+    expect(r.origin.title).toBe('Gleanings');
+  });
+  it('no decision available → the wording fallback still works', async () => {
+    const r = await sourceHunt(QUOTE, deps({ decide: async () => null }));
     expect(r.origin.title).toBe('Gleanings');
   });
 });

@@ -141,17 +141,30 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const say = (stage, data) => { try { emit(stage, { ...data, ms: Date.now() - t0 }); } catch { /* a closed stream never breaks the hunt */ } };
   say('query', { words: q.words, runs: q.text.split(/\s*(?:\.\.\.|…)\s*/).filter(Boolean).length });
 
-  // 1. candidates: phrase vectors (meaning + wording) and BM25 (wording), whole library + scraped sites
-  const [ph, kw] = await Promise.all([
+  // 1. candidates BY MEANING: phrase vectors (cross-lingual, cross-translation) and BM25, over the whole library + sites —
+  // and the same restricted to the doctrinal writers, so a line quoted by dozens of books cannot crowd out its own source
+  const DOC = { author: [...DOCTRINAL], religion: "Baha'i" };
+  const [ph, kw, phD, kwD] = await Promise.all([
     d.phrases(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
     d.keyword(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
+    d.phrases(q.match, { limit: 20, filters: DOC, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
+    d.keyword(q.match, { limit: 10, filters: DOC, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
   ]);
-  const ids = [...new Set([...ph.hits, ...kw.hits].map((h) => h.paragraph_id))];
+  const order = [...phD.hits, ...ph.hits, ...kwD.hits, ...kw.hits];
+  const ids = [...new Set(order.map((h) => h.paragraph_id))];
+  const span = new Map(order.filter((h) => h.span).map((h) => [h.paragraph_id, h.span]));
   const rows = await d.rows(ids);
   const probedDocs = [...new Map(rows.map((r) => [r.doc_id, docBrief(r)])).values()];
-  say('candidates', { phrase: ph.hits.length, keyword: kw.hits.length, paragraphs: ids.length, documents: probedDocs });
-  const matches = rows.map((r) => ({ ...r, overlap: overlap(q.match, r.text) })).filter((r) => holds(q.match, r.text, r.overlap));
-  say('verbatim', { count: matches.length, rejected: rows.length - matches.length,
+  say('candidates', { phrase: ph.hits.length + phD.hits.length, keyword: kw.hits.length + kwD.hits.length, paragraphs: ids.length, documents: probedDocs });
+  // 1b. which candidates HOLD the quote — judged by a System-1 decision on meaning (any translation or paraphrase), never by
+  // shared wording (Chad 10-05: "this is a cross-translation search, so no phrase matching should be used"); the wording
+  // test is only the fallback when no decision is available.
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const ranked0 = ids.map((id) => byId.get(id)).filter(Boolean);
+  const decided = await decideHolds(d, q, ranked0.slice(0, HOLDS_MAX), span);
+  const holdsRow = (r) => (decided ? decided.has(r.id) : holds(q.match, r.text, overlap(q.match, r.text)));
+  const matches = ranked0.filter(holdsRow).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }));
+  say('verbatim', { count: matches.length, rejected: rows.length - matches.length, by: decided ? 'decision' : 'wording',
     documents: [...new Map(matches.map((r) => [r.doc_id, docBrief(r)])).values()] });
 
   // 2. the source each match quotes (a citing book → the Gleanings paragraph), added to the origin pool
@@ -160,7 +173,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   for (const m of matches) for (const s of links.get(m.id)?.sources || []) if ((s.link?.coverage ?? 0) >= 0.8) linkedFrom.set(s.id, (linkedFrom.get(s.id) || 0) + 1);
   const extra = [...linkedFrom.keys()].filter((id) => !matches.some((m) => m.id === id));
   say('links', { sources: linkedFrom.size, added: extra.length });
-  const pool = [...matches, ...(await d.rows(extra)).map((r) => ({ ...r, overlap: overlap(q.match, r.text) }))].map((c) => ({ ...c, holds: holds(q.match, c.text, c.overlap) }))
+  const pool = [...matches, ...(await d.rows(extra)).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }))]
     .filter((c) => c.doc_role !== 'metadata')
     .map((c) => {
       const writer = paragraphAuthor({ authors: c.authors, author: c.book_author });
@@ -177,10 +190,13 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
       d.phrases(q.match, { limit: 20, filters: f, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
       d.keyword(q.match, { limit: 20, filters: f, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
     ]);
-    const more = [...new Set([...p2.hits, ...k2.hits].map((h) => h.paragraph_id))].filter((id) => !pool.some((c) => c.id === id));
-    for (const r of await d.rows(more)) {
+    const more = [...new Set([...p2.hits, ...k2.hits].map((h) => h.paragraph_id))].filter((id) => !pool.some((c) => c.id === id) && !byId.has(id));
+    const moreRows = await d.rows(more);
+    for (const h of p2.hits) if (h.span) span.set(h.paragraph_id, h.span);
+    const decided2 = moreRows.length ? await decideHolds(d, q, moreRows.slice(0, HOLDS_MAX), span) : new Set();
+    for (const r of moreRows) {
       const ov = overlap(q.match, r.text);
-      if (!holds(q.match, r.text, ov) || r.doc_role === 'metadata') continue;
+      if (!(decided2 ? decided2.has(r.id) : holds(q.match, r.text, ov)) || r.doc_role === 'metadata') continue;
       const writer = paragraphAuthor({ authors: r.authors, author: r.book_author });
       const book = firstPerson(r.book_author || '') || r.book_author;
       pool.push({ ...r, overlap: ov, holds: true, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
@@ -197,14 +213,12 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
   // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
-  const exactAll = quoteRanges(origin.text, q.text);
-  // the exact run must cover most of the quote's words; a variant matches only part of it ("THE EARTH IS BUT ONE COUNTRY; AND")
-  const covered = exactAll.reduce((n, [a, b]) => n + matchWords(origin.text.slice(a, b)).length, 0);
-  const exact = covered >= 0.8 * matchWords(q.text).length ? exactAll : [];
-  const byMeaning = exact.length ? null : await meaningRanges(d, q, origin.id, origin.text, 'en');
-  if (!exact.length && !byMeaning.highlight?.length && exactAll.length) Object.assign(byMeaning, { highlight: exactAll, highlightBy: 'wording' });
+  // highlight BY MEANING (the clause decision) — any translation; the exact word run only when no decision is available
+  const byMeaning = await meaningRanges(d, q, origin.id, origin.text, 'en');
+  const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
+  const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
-    text: origin.text, highlight: exact.length ? exact : byMeaning.highlight, highlightBy: exact.length ? 'wording' : byMeaning.highlightBy,
+    text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
     url: origin.url, site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
   say('origin', { origin: originOut, candidates: ranked.length });
 
@@ -270,6 +284,26 @@ async function originalRanges(d, q, id, shown) {
  * Returns ranges, [] for "none", or null when the decision is unavailable (the caller keeps the vector spans).
  */
 const MAX_CLAUSES = 18;
+const HOLDS_MAX = 24;
+
+/** Which candidate paragraphs CONTAIN the quoted statement — one System-1 call, one yes/no (noul) per candidate, each shown
+ *  as an excerpt around its best-matching phrase. Same saying in any translation or close paraphrase = yes; same topic = no.
+ *  Logged as task sourcehunt-holds (Jev serves; Clef shadows). Returns a Set of ids, or null when no decision is available. */
+async function decideHolds(d, q, rows, span = new Map()) {
+  if (!d.decide || !rows.length) return null;
+  const excerpt = (r) => {
+    const t = r.text || '', s = span.get(r.id);
+    if (t.length <= 900) return t;
+    const a = Math.max(0, (s?.start ?? 0) - 350), b = Math.min(t.length, (s?.end ?? 550) + 350);
+    return `${a > 0 ? '… ' : ''}${t.slice(a, b)}${b < t.length ? ' …' : ''}`;
+  };
+  const state = `QUOTATION:\n${q.text}\n\nPASSAGES:\n` + rows.map((r, i) => `[p${i + 1}] ${excerpt(r)}`).join('\n\n');
+  const questions = Object.fromEntries(rows.map((r, i) => [`p${i + 1}`, { type: 'noul',
+    instructions: `Does passage [p${i + 1}] contain the quoted statement — the same saying, whether in the same words, another translation, or a close paraphrase? A passage that only discusses the same topic does not.` }]));
+  const res = await d.decide('sourcehunt-holds', state, questions).catch(() => null);
+  if (!res?.answers) return null;
+  return new Set(rows.filter((r, i) => (res.answers[`p${i + 1}`]?.noul ?? 0) >= 0.5).map((r) => r.id));
+}
 async function decideRanges(d, quoteText, text, lang, hint = []) {
   if (!d.decide) return null;
   let units = segment(text, lang);
