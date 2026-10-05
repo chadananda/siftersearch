@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T01:17:43.454Z",
+  "generated": "2026-10-05T01:20:50.133Z",
   "entries": [
+    {
+      "hash": "fe3a40d7",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Complete audit log (JSONL: quote + full response per query) + GET /source-hunt/log; battery over the verified cross-lingual cases",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "cdbed1c4",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Is content.heading populated, or just not reaching the index?",
       "scope": null
-    },
-    {
-      "hash": "a1902981",
-      "date": "2026-08-17",
-      "type": "Other",
-      "description": "Answer-path decision battery (Phase 1, offline half)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "fe3a40d7",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Complete audit log (JSONL: quote + full response per query) + GET /source-hunt/log; battery over the verified cross-lingual cases",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "cdbed1c4",
         "date": "2026-10-04",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-17",
         "type": "Other",
         "description": "Is content.heading populated, or just not reaching the index?",
-        "scope": null
-      },
-      {
-        "hash": "a1902981",
-        "date": "2026-08-17",
-        "type": "Other",
-        "description": "Answer-path decision battery (Phase 1, offline half)",
         "scope": null
       }
     ]

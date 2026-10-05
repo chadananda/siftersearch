@@ -269,6 +269,15 @@ mark {
   font-weight: 500;
 }
 
+/* SourceHunt - the quote inside the published passage */
+.sourcehunt-quote mark {
+  background: color-mix(in srgb, var(--accent-primary) 24%, transparent) !important;
+  color: inherit;
+  padding: 0.05em 0.15em;
+  border-radius: 0.2em;
+  font-weight: 600;
+}
+
 /* Quick Search - Sentence-level highlighting with yellow background */
 .sentence-hit {
   background-color: #fff3cd;

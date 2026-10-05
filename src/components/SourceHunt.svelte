@@ -27,6 +27,14 @@
     }
   }
 
+  // the passage split into plain / quoted segments (ranges from the API: [start, end) character offsets)
+  const segments = (text, ranges = []) => {
+    const out = []; let at = 0;
+    for (const [a, b] of ranges) { if (a > at) out.push({ t: text.slice(at, a) }); out.push({ t: text.slice(a, b), q: true }); at = b; }
+    if (at < text.length) out.push({ t: text.slice(at) });
+    return out;
+  };
+
   const onKey = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) hunt(); };
   const tabletLinks = (meta) => [
     meta?.links?.oceanoflights && { href: meta.links.oceanoflights, label: 'Ocean of Lights' },
@@ -63,7 +71,7 @@
           {result.origin.author}{#if result.origin.bookAuthor && result.origin.bookAuthor !== result.origin.author} · in a book by {result.origin.bookAuthor}{/if}
           · {siteLabel(result.origin.site)}
         </p>
-        <blockquote class="border-l-2 border-accent pl-3 text-primary">{result.origin.text}</blockquote>
+        <blockquote class="sourcehunt-quote border-l-2 border-accent pl-3 text-primary">{#each segments(result.origin.text, result.origin.highlight) as seg}{#if seg.q}<mark>{seg.t}</mark>{:else}{seg.t}{/if}{/each}</blockquote>
       {:else}
         <p class="text-secondary">No publication in the library holds this wording verbatim. It may be a paraphrase or a different translation — the tablet candidates below are matched by meaning.</p>
       {/if}

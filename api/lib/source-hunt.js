@@ -21,6 +21,27 @@ export function prepareQuote(raw) {
   return { text, match: longest, words: matchWords(longest).length };
 }
 
+/** Where the quote sits in a passage: character ranges [start, end) of the longest run of the quote's words found in order
+ *  (accent-, apostrophe- and punctuation-blind, as the verbatim test). An elided quote ("… … …") gives one range per run.
+ *  Runs shorter than three words are not marked (a stray "of the" is no evidence). */
+export function quoteRanges(passage, quoteText) {
+  const tok = (s) => [...String(s).matchAll(/[\p{L}\p{N}’'ʼ‘`]+/gu)].map((m) => ({ w: matchWords(m[0]).join(''), start: m.index, end: m.index + m[0].length }))
+    .filter((t) => t.w);
+  const P = tok(passage), out = [];
+  for (const run of String(quoteText).split(/\s*(?:\.\.\.|…)\s*/)) {
+    const Q = tok(run).map((t) => t.w);
+    if (Q.length < 3) continue;
+    let best = { len: 0, end: -1 }, prev = new Array(Q.length + 1).fill(0);
+    for (let i = 1; i <= P.length; i++) {               // longest common contiguous word run (DP, one row kept)
+      const cur = new Array(Q.length + 1).fill(0);
+      for (let j = 1; j <= Q.length; j++) if (P[i - 1].w === Q[j - 1]) { cur[j] = prev[j - 1] + 1; if (cur[j] > best.len) best = { len: cur[j], end: i - 1 }; }
+      prev = cur;
+    }
+    if (best.len >= 3) out.push([P[best.end - best.len + 1].start, P[best.end].end]);
+  }
+  return out.sort((a, b) => a[0] - b[0]);
+}
+
 const isCanonical = (p) => !p.source_site || p.source_site === 'oceanlibrary.com';
 
 // The doctrinal authors (Chad 10-03: compilations display the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi; UHJ is not doctrinal).
@@ -135,7 +156,7 @@ export async function sourceHunt(raw, deps = {}) {
     quote: q.text,
     quoteAuthor,
     origin: { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
-      text: origin.text, url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) },
+      text: origin.text, highlight: quoteRanges(origin.text, q.text), url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) },
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,
     // why this source: the next best candidates with the facts the ranking used
     considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, bookAuthor: c.book_author,

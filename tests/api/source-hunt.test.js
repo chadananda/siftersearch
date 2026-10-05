@@ -94,3 +94,19 @@ describe('quote author', () => {
     expect(quoteAuthorOf([{ writer: 'J. Smith', authors: null }])).toBeNull();
   });
 });
+
+describe('quoteRanges (highlight the quote in the passage)', async () => {
+  const { quoteRanges } = await import('../../api/lib/source-hunt.js');
+  it('marks the quoted words, accent- and apostrophe-blind', () => {
+    const p = 'O people of Bahá! The earth is but one country, and mankind its citizens. Blessed is he.';
+    const [[a, b]] = quoteRanges(p, '“the earth is but one country, and mankind its citizens”');
+    expect(p.slice(a, b)).toBe('The earth is but one country, and mankind its citizens');
+    const [[c, d]] = quoteRanges('As Bahá’u’lláh wrote: thou art My lamp.', "Baha'u'llah wrote thou art");
+    expect('As Bahá’u’lláh wrote: thou art My lamp.'.slice(c, d)).toBe('Bahá’u’lláh wrote: thou art');
+  });
+  it('an elided quote marks each run; two-word fragments are not marked', () => {
+    const p = 'Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting.';
+    const r = quoteRanges(p, 'Possess a pure, kindly and radiant heart … a sovereignty ancient, imperishable … of the');
+    expect(r.map(([a, b]) => p.slice(a, b))).toEqual(['Possess a pure, kindly and radiant heart', 'a sovereignty ancient, imperishable']);
+  });
+});
