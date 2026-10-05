@@ -314,18 +314,19 @@ async function decideRanges(d, quoteText, text, lang, hint = []) {
     units = units.slice(from, from + MAX_CLAUSES);
   }
   const clause = (u) => text.slice(u.start, u.end);
-  const criteria = Object.fromEntries(units.map((u, i) => [`c${i + 1}`, clause(u)]));
-  criteria.none = 'No clause of the passage says what the quotation says.';
+  // one yes/no per clause — a quote often spans several clauses ("For like seeketh like, / and taketh pleasure in …"), and a
+  // single choice could mark only one of them
   const state = `QUOTATION (English):\n${quoteText}\n\nPASSAGE (${lang === 'en' ? 'English' : 'Arabic/Persian'}) — numbered clauses:\n`
     + units.map((u, i) => `[c${i + 1}] ${clause(u)}`).join('\n');
-  const questions = { clause: { type: 'choice', criteria,
-    instructions: 'Which numbered clause of the passage expresses what the quotation says — the same meaning, in any language or translation? Choose "none" if no clause does.' } };
+  const questions = Object.fromEntries(units.map((u, i) => [`c${i + 1}`, { type: 'noul',
+    instructions: `Is clause [c${i + 1}] part of what the quotation says — the same meaning, in any language or translation? A clause that is only on the same topic is not.` }]));
   const r = await d.decide('sourcehunt-highlight', state, questions).catch(() => null);
-  const a = r?.answers?.clause, probs = a?.probabilities || a?.distribution;
-  if (!probs) return null;
-  const top = Math.max(...Object.values(probs));
-  if ((probs.none ?? 0) >= top) return [];
-  const picked = units.map((u, i) => ({ u, i, p: probs[`c${i + 1}`] ?? 0 })).filter((x) => x.p >= Math.max(0.15, top * 0.4));
+  if (!r?.answers) return null;
+  const p = units.map((u, i) => ({ u, i, p: r.answers[`c${i + 1}`]?.noul ?? 0 }));
+  const top = p.reduce((m, x) => (x.p > m.p ? x : m), { p: 0 });
+  let picked = p.filter((x) => x.p >= 0.5);
+  if (!picked.length) picked = top.p >= 0.3 ? [top] : [];
+  if (!picked.length) return [];
   const ranges = [];
   for (const x of picked) {
     const last = ranges[ranges.length - 1];

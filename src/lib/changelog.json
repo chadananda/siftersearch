@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:37:30.613Z",
+  "generated": "2026-10-05T13:43:54.398Z",
   "entries": [
+    {
+      "hash": "d7d3d3ea",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Cross-translation — 'holds the quote' judged by a System-1 decision (sourcehunt-holds), doctrinal-writer retrieval in parallel, highlights by meaning; long passages clipped around the highlight",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "eaa60515",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A control-plane path to run the conceptual track",
       "scope": null
-    },
-    {
-      "hash": "5bac53f3",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "A disambiguation note must reach the index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "d7d3d3ea",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Cross-translation — 'holds the quote' judged by a System-1 decision (sourcehunt-holds), doctrinal-writer retrieval in parallel, highlights by meaning; long passages clipped around the highlight",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "eaa60515",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "A control-plane path to run the conceptual track",
-        "scope": null
-      },
-      {
-        "hash": "5bac53f3",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "A disambiguation note must reach the index",
         "scope": null
       }
     ]
