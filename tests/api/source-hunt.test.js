@@ -179,3 +179,29 @@ describe('highlight in the original', () => {
     expect(t.text.slice(...t.highlight[0])).toBe('انّما الارض وطن واحد');
   });
 });
+
+describe('highlight by decision (Clef-flash / Jev clause choice)', () => {
+  const RAW = 'امروز انسان کسی است که بخدمت جمیع قیام نماید. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن. و این بیان روشن است.';
+  const base = (decide) => deps({
+    passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77' }])),
+    links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
+      original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77', path: 'translation' } : null }])),
+    spans: async () => [], rawText: async () => RAW, decide,
+  });
+  it('marks the clause(s) the decision model picks; the task is sourcehunt-highlight', async () => {
+    let seen;
+    const r = await sourceHunt(QUOTE, base(async (task, state, q) => {
+      seen = { task, opts: Object.keys(q.clause.criteria) };
+      const key = Object.entries(q.clause.criteria).find(([, v]) => v.includes('وطن'))[0];
+      return { answers: { clause: { choice: key, probabilities: { [key]: 0.9, none: 0.02 } } } };
+    }));
+    expect(seen.task).toBe('sourcehunt-highlight');
+    expect(seen.opts).toContain('none');
+    expect(r.tablet.highlightBy).toBe('decision');
+    expect(r.tablet.text.slice(...r.tablet.highlight[0])).toContain('عالم یک وطن');
+  });
+  it('"none" or no decision → the vector spans stand (here none)', async () => {
+    const r = await sourceHunt(QUOTE, base(async (task, state, q) => ({ answers: { clause: { choice: 'none', probabilities: { none: 0.8, c1: 0.1 } } } })));
+    expect(r.tablet.highlightBy).toBe(null);
+  });
+});

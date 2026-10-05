@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:09:38.670Z",
+  "generated": "2026-10-05T13:12:19.674Z",
   "entries": [
+    {
+      "hash": "8c5ab29e",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Compact live console — horizontal stage stepper, probe field + ticker side by side at one short height (no empty space)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "a5bbf151",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Conceptual track is built — the status line said otherwise and cost real damage",
       "scope": null
-    },
-    {
-      "hash": "53b5abb5",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "Count the AI quality assessment failing, do not just fall back",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "8c5ab29e",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Compact live console — horizontal stage stepper, probe field + ticker side by side at one short height (no empty space)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "a5bbf151",
         "date": "2026-10-05",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-18",
         "type": "Docs",
         "description": "Conceptual track is built — the status line said otherwise and cost real damage",
-        "scope": null
-      },
-      {
-        "hash": "53b5abb5",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "Count the AI quality assessment failing, do not just fall back",
         "scope": null
       }
     ]

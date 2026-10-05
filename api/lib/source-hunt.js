@@ -7,6 +7,7 @@ import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { authorAuthority } from './authority.js';
+import { segment } from './phrases.js';
 
 /** Stored text still carries HTML entities in ~96k paragraphs (mostly the bahai-library.com copies: `&quot;` around a
  *  quoted Arabic line in a Persian passage). Decoded before matching, highlighting and display. */
@@ -184,9 +185,10 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
   const exact = quoteRanges(origin.text, q.text);
+  const byMeaning = exact.length ? null : await meaningRanges(d, q, origin.id, origin.text, 'en');
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
-    text: origin.text, highlight: exact.length ? exact : await originalRanges(d, q, origin.id, origin.text),
-    highlightBy: exact.length ? 'wording' : 'meaning', url: origin.url, site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
+    text: origin.text, highlight: exact.length ? exact : byMeaning.highlight, highlightBy: exact.length ? 'wording' : byMeaning.highlightBy,
+    url: origin.url, site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
   say('origin', { origin: originOut, candidates: ranked.length });
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
@@ -242,11 +244,57 @@ async function originalRanges(d, q, id, shown) {
   return merged;
 }
 
+/**
+ * The quote's clauses inside a passage, chosen by a System-1 DECISION model (Chad 10-05: "use Clef-flash to find the
+ * highlight range of a concept match"): the passage is split into its clauses (the phrase index's own segmenter — meaning,
+ * never length), and one choice question asks which numbered clause says what the quotation says, in any language or
+ * translation, with "none" as an option. Clauses with real probability (≥ 0.15 and ≥ 40% of the top) are marked; adjacent
+ * ones merge. Logged per task (sourcehunt-highlight) — served by Clef-flash where routed, Jev checking it in the background.
+ * Returns ranges, [] for "none", or null when the decision is unavailable (the caller keeps the vector spans).
+ */
+const MAX_CLAUSES = 18;
+async function decideRanges(d, quoteText, text, lang, hint = []) {
+  if (!d.decide) return null;
+  let units = segment(text, lang);
+  if (units.length < 2) return null;
+  if (units.length > MAX_CLAUSES) {                           // a window of clauses around the vector hint
+    const c = hint.length ? Math.max(0, units.findIndex((u) => u.end > hint[0][0])) : 0;
+    const from = Math.max(0, Math.min(units.length - MAX_CLAUSES, c - (MAX_CLAUSES >> 1)));
+    units = units.slice(from, from + MAX_CLAUSES);
+  }
+  const clause = (u) => text.slice(u.start, u.end);
+  const criteria = Object.fromEntries(units.map((u, i) => [`c${i + 1}`, clause(u)]));
+  criteria.none = 'No clause of the passage says what the quotation says.';
+  const state = `QUOTATION (English):\n${quoteText}\n\nPASSAGE (${lang === 'en' ? 'English' : 'Arabic/Persian'}) — numbered clauses:\n`
+    + units.map((u, i) => `[c${i + 1}] ${clause(u)}`).join('\n');
+  const questions = { clause: { type: 'choice', criteria,
+    instructions: 'Which numbered clause of the passage expresses what the quotation says — the same meaning, in any language or translation? Choose "none" if no clause does.' } };
+  const r = await d.decide('sourcehunt-highlight', state, questions).catch(() => null);
+  const a = r?.answers?.clause, probs = a?.probabilities || a?.distribution;
+  if (!probs) return null;
+  const top = Math.max(...Object.values(probs));
+  if ((probs.none ?? 0) >= top) return [];
+  const picked = units.map((u, i) => ({ u, i, p: probs[`c${i + 1}`] ?? 0 })).filter((x) => x.p >= Math.max(0.15, top * 0.4));
+  const ranges = [];
+  for (const x of picked) {
+    const last = ranges[ranges.length - 1];
+    if (last && x.i === last.i + 1) { last.r[1] = x.u.end; last.i = x.i; } else ranges.push({ r: [x.u.start, x.u.end], i: x.i });
+  }
+  return ranges.map((x) => x.r);
+}
+
+/** Highlight an original: Clef/Jev's clause decision where it answers, else the phrase-vector spans. */
+async function meaningRanges(d, q, id, text, lang) {
+  const vec = await originalRanges(d, q, id, text);
+  const dec = await decideRanges(d, q.text, text, lang, vec);
+  return dec && dec.length ? { highlight: dec, highlightBy: 'decision' } : { highlight: vec, highlightBy: vec.length ? 'vectors' : null };
+}
+
 async function tabletGuess(d, q, links, author = null) {
   const withMeta = async (p, basis) => {
     if (!p) return p;
     const text = decodeEntities(p.text);
-    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, highlight: await originalRanges(d, q, p.id, text), highlightBy: 'meaning',
+    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...(await meaningRanges(d, q, p.id, text, 'ar')),
       url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) };
   };
   if (links?.original) {
@@ -278,6 +326,8 @@ async function defaultDeps() {
   return {
     phrases: searchPhrases, keyword: searchKeywordQdrant, links: resolveLinks, passages: getPassages, meta: getDocMeta, spans: searchPhraseSpans,
     rawText: async (id) => (await queryOne('SELECT text FROM content WHERE id = ?', [Number(id)], 'source-hunt:raw'))?.text ?? null,
+    // System-1 decision (task-routed: Clef-flash serves where routing.json says so; every call logged + shadowed)
+    decide: async (task, state, questions) => (await import('./systemone.js')).ask(task, state, questions, { timeoutMs: 4000, retries: 0 }),
     async rows(ids) {
       const uniq = [...new Set(ids.map(Number).filter(Boolean))];
       if (!uniq.length) return [];
