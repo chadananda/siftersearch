@@ -802,6 +802,66 @@ export default async function publicApiRoutes(fastify) {
   });
 
   /**
+   * POST /api/v1/source-hunt — a quotation (any decent English translation) → the published source, the original tablet and
+   * the publications citing it. Matching is by meaning (phrase vectors + a System-1 decision), so another translation or a
+   * close paraphrase finds the same source. Links are page / paragraph links (range links come later).
+   */
+  fastify.post('/source-hunt', {
+    schema: {
+      description: 'Trace a quotation to its published source (book, paragraph link, quoted words), its original Arabic/Persian tablet (title, Inventory PIN, Ocean of Lights + Phelps Inventory links, quoted clause) and every publication citing it. Works across translations. `original` is set only when a translation link confirms it; otherwise `possibleOriginals` lists the closest originals by meaning (verify before citing).',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
+      body: { type: 'object', required: ['quote'], properties: { quote: { type: 'string', minLength: 15, maxLength: 4000 } } },
+    },
+  }, async (request, reply) => {
+    const { quote } = request.body;
+    const t0 = Date.now();
+    const { sourceHunt } = await import('../lib/source-hunt.js');
+    const { toApi, audit } = await import('../lib/source-hunt-api.js');
+    const r = await sourceHunt(quote).catch((err) => ({ failed: err.message }));
+    audit({ quote, ms: Date.now() - t0, mode: 'api', apiKeyId: request.apiKeyId || null, result: r });
+    logApiSearch({ query: quote.slice(0, 200), apiKeyId: request.apiKeyId, resultCount: r.origin ? 1 : 0, durationMs: Date.now() - t0, searchType: 'api_source_hunt' });
+    if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
+    if (r.failed) return reply.code(500).send({ error: 'SourceHuntFailed', message: r.failed });
+    if (r.error) return reply.code(400).send({ error: 'BadRequest', message: r.error });
+    return toApi(r);
+  });
+
+  /**
+   * POST /api/v1/source-hunt/page — an article (url, html or text) → its quotations (blockquotes and text in quotation marks,
+   * 8–150 words), each hunted as POST /source-hunt answers it. The server fetches only public http(s) pages.
+   */
+  fastify.post('/source-hunt/page', {
+    schema: {
+      description: 'Find the quotations in an article (pass `url`, `html` or `text`) and trace each to its published source and original tablet. Up to `maxQuotes` (default 20, max 40).',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
+      body: { type: 'object', properties: {
+        url: { type: 'string', maxLength: 2000 }, html: { type: 'string', maxLength: 3000000 }, text: { type: 'string', maxLength: 1000000 },
+        maxQuotes: { type: 'integer', minimum: 1, maximum: 40, default: 20 } } },
+    },
+  }, async (request, reply) => {
+    const { url, html, text, maxQuotes = 20 } = request.body || {};
+    if (!url && !html && !text) return reply.code(400).send({ error: 'BadRequest', message: 'send url, html or text' });
+    const t0 = Date.now();
+    const { sourceHunt } = await import('../lib/source-hunt.js');
+    const { huntPage, audit } = await import('../lib/source-hunt-api.js');
+    try {
+      const hunt = async (q) => {
+        const r = await sourceHunt(q);
+        audit({ quote: q, ms: r.ms, mode: 'api-page', page: url || null, apiKeyId: request.apiKeyId || null, result: r });
+        return r;
+      };
+      const out = await huntPage({ url, html, text }, { hunt, max: maxQuotes });
+      logApiSearch({ query: (url || 'inline page').slice(0, 200), apiKeyId: request.apiKeyId, resultCount: out.results.length, durationMs: Date.now() - t0, searchType: 'api_source_hunt_page' });
+      if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
+      return { ...out, processingTimeMs: Date.now() - t0 };
+    } catch (err) {
+      return reply.code(400).send({ error: 'BadRequest', message: err.message });
+    }
+  });
+
+  /**
    * POST /api/v1/search/original/batch — up to 50 texts in one request (the key's hourly limit counts requests, and a
    * citation list is thousands of verses). Each item answers exactly as POST /search/original; `key` is echoed back.
    */

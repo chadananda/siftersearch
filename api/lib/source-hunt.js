@@ -138,7 +138,8 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const q = prepareQuote(raw);
   if (q.words < 4) return { error: 'Paste at least four words of the quote.' };
   const t0 = Date.now();
-  const say = (stage, data) => { try { emit(stage, { ...data, ms: Date.now() - t0 }); } catch { /* a closed stream never breaks the hunt */ } };
+  const stages = {};   // stage → ms since start (kept in the result: the audit log shows where the time went)
+  const say = (stage, data) => { stages[stage] = Date.now() - t0; try { emit(stage, { ...data, ms: stages[stage] }); } catch { /* a closed stream never breaks the hunt */ } };
   say('query', { words: q.words, runs: q.text.split(/\s*(?:\.\.\.|…)\s*/).filter(Boolean).length });
 
   // 1. candidates BY MEANING: phrase vectors (cross-lingual, cross-translation) and BM25, over the whole library + sites —
@@ -213,6 +214,9 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
   // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
+  // the citation graph for the origin starts NOW, beside the source highlight (they do not depend on each other)
+  const fullP = d.links([origin.id], { quotedBy: true }).then((m) => m.get(origin.id) || {}).catch(() => ({}));
+  const tabletP = fullP.then((full) => tabletGuess(d, q, full, quoteAuthor));   // the original, as soon as the graph names it
   // highlight BY MEANING (the clause decision) — any translation; the exact word run only when no decision is available
   const byMeaning = await meaningRanges(d, q, origin.id, origin.text, 'en');
   const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
@@ -223,7 +227,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   say('origin', { origin: originOut, candidates: ranked.length });
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
-  const full = (await d.links([origin.id], { quotedBy: true })).get(origin.id) || {};
+  const full = await fullP;
   const byDoc = new Map();
   const add = (p) => {
     if (p.doc_id === origin.doc_id) return;
@@ -237,7 +241,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
   const citedBy = dedupeCitations([...byDoc.values()]);
   say('cited', { citedBy, citedByLinkCount: full.quotedBy?.count || 0 });
-  const tablet = await tabletGuess(d, q, full, quoteAuthor);
+  const tablet = await tabletP;
   say('tablet', { tablet });
 
   return {
@@ -250,6 +254,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
       ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, year: c.year || null, quotedCount: c.quotedCount ?? null, overlap: +c.overlap.toFixed(2) })),
     tablet,
     ms: Date.now() - t0,
+    stages,
   };
 }
 
@@ -337,8 +342,11 @@ async function decideRanges(d, quoteText, text, lang, hint = []) {
 
 /** Highlight an original: Clef/Jev's clause decision where it answers, else the phrase-vector spans. */
 async function meaningRanges(d, q, id, text, lang) {
-  const vec = await originalRanges(d, q, id, text);
-  const dec = await decideRanges(d, q.text, text, lang, vec);
+  // the vector spans only steer WHICH clauses are asked about when a passage has more than MAX_CLAUSES; otherwise both run at once
+  const short = segment(text, lang).length <= MAX_CLAUSES;
+  const vecP = originalRanges(d, q, id, text);
+  const [vec, dec] = short ? await Promise.all([vecP, decideRanges(d, q.text, text, lang, [])])
+    : await vecP.then(async (v) => [v, await decideRanges(d, q.text, text, lang, v)]);
   return dec && dec.length ? { highlight: dec, highlightBy: 'decision' } : { highlight: vec, highlightBy: vec.length ? 'vectors' : null };
 }
 
