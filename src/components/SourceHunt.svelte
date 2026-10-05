@@ -197,15 +197,28 @@
     <p class="rounded-xl border border-error bg-surface-1 p-4 text-error">{error}</p>
   {/if}
 
-  <!-- ── the hunt, live ── -->
+  <!-- ── the hunt, live: status · stepper · probe field + ticker (compact, no empty rows) ── -->
   {#if phase !== 'idle'}
-    <div class="sh-console grid gap-4 rounded-2xl border border-border bg-surface-1 p-4 sm:p-5 lg:grid-cols-12">
-      <div class="flex min-w-0 flex-col gap-3 lg:col-span-8">
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-          <span class="flex items-center gap-2"><i class="live" class:on={phase === 'hunting'}></i>{phase === 'hunting' ? 'Searching the library…' : phase === 'done' ? `Done in ${((result?.ms ?? 0) / 1000).toFixed(1)} s` : 'Stopped'}</span>
-          <span>{scale ? `${fmt(scale.phraseVectors)} phrase vectors · ${fmt(scale.paragraphs)} paragraphs` : ''}</span>
-        </div>
-        <ProbeField bind:this={field} active={phase === 'hunting'} height={132} />
+    <div class="sh-console flex flex-col gap-3 rounded-2xl border border-border bg-surface-1 p-4 sm:p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+        <span class="flex items-center gap-2"><i class="live" class:on={phase === 'hunting'}></i>{phase === 'hunting' ? 'Searching the library…' : phase === 'done' ? `Done in ${((result?.ms ?? 0) / 1000).toFixed(1)} s` : 'Stopped'}</span>
+        <span>{scale ? `${fmt(scale.phraseVectors)} phrase vectors · ${fmt(scale.paragraphs)} paragraphs · ${fmt(scale.tablets)} tablets` : ''}</span>
+      </div>
+      <ol class="stepper">
+        {#each STAGES as s, i (s.k)}
+          {@const st = stageState(s.k, i)}
+          <li class="stage {st}" title={ev[s.k] ? s.d(ev[s.k]) : s.label}>
+            <div class="flex items-center gap-2">
+              <span class="pip"></span>
+              <span class="truncate text-xs font-medium text-primary">{s.label}</span>
+              {#if ev[s.k]}<span class="ml-auto shrink-0 text-[10px] tabular-nums text-muted">{ev[s.k].ms}ms</span>{/if}
+            </div>
+            <p class="truncate pl-[18px] text-[11px] text-secondary">{ev[s.k] ? s.d(ev[s.k]) : st === 'skipped' ? 'not needed' : ' '}</p>
+          </li>
+        {/each}
+      </ol>
+      <div class="grid items-start gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <ProbeField bind:this={field} active={phase === 'hunting'} height={108} />
         <ul class="sh-ticker" aria-live="polite">
           {#each ticker as t (t.id + t.kind)}
             <li class:match={t.kind === 'match'}>
@@ -216,22 +229,6 @@
           {/each}
         </ul>
       </div>
-      <ol class="flex flex-col gap-2 lg:col-span-4">
-        {#each STAGES as s, i (s.k)}
-          {@const st = stageState(s.k, i)}
-          <li class="stage {st}">
-            <span class="pip"></span>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-baseline justify-between gap-2">
-                <span class="text-sm font-medium text-primary">{s.label}</span>
-                {#if ev[s.k]}<span class="shrink-0 text-[11px] tabular-nums text-muted">{ev[s.k].ms} ms</span>{/if}
-              </div>
-              {#if ev[s.k]}<p class="truncate text-xs text-secondary">{s.d(ev[s.k])}</p>
-              {:else if st === 'skipped'}<p class="text-xs text-muted">not needed</p>{/if}
-            </div>
-          </li>
-        {/each}
-      </ol>
     </div>
   {/if}
 
@@ -330,17 +327,19 @@
   .sh-console { animation: rise 500ms var(--rise) both; }
   .live { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: var(--text-muted); }
   .live.on { background: var(--success); animation: blink 1s ease-in-out infinite; }
-  .sh-ticker { display: flex; flex-direction: column; gap: 2px; min-height: 9.5rem; max-height: 9.5rem; overflow: hidden; font-size: .78rem;
-    mask-image: linear-gradient(to bottom, black 70%, transparent); }
+  .sh-ticker { display: flex; flex-direction: column; gap: 1px; height: 108px; overflow: hidden; font-size: .76rem; line-height: 1.35;
+    mask-image: linear-gradient(to bottom, black 65%, transparent); }
   .sh-ticker li { display: flex; align-items: baseline; gap: .5rem; min-width: 0; animation: slide 260ms var(--rise) both; }
   .sh-ticker .mark { width: 1rem; color: var(--text-muted); flex-shrink: 0; }
   .sh-ticker li.match .mark { color: var(--success); font-weight: 700; }
 
-  .stage { display: flex; gap: .75rem; padding: .55rem .7rem; border-radius: .75rem; transition: background 300ms, opacity 300ms; }
-  .stage .pip { margin-top: .35rem; width: 10px; height: 10px; border-radius: 99px; border: 2px solid var(--border-strong); flex-shrink: 0; transition: all 300ms; }
+  .stepper { display: grid; gap: .4rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .stage { min-width: 0; padding: .4rem .55rem; border-radius: .6rem; border: 1px solid var(--border-subtle); transition: background 300ms, opacity 300ms, border-color 300ms; }
+  .stage .pip { width: 10px; height: 10px; border-radius: 99px; border: 2px solid var(--border-strong); flex-shrink: 0; transition: all 300ms; }
+  .stage.done { border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent); }
   .stage.pending { opacity: .45; }
   .stage.skipped { opacity: .4; }
-  .stage.active { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); }
+  .stage.active { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); border-color: var(--accent-primary); }
   .stage.active .pip { border-color: var(--accent-primary); animation: blink .9s ease-in-out infinite; }
   .stage.done .pip { background: var(--accent-primary); border-color: var(--accent-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 18%, transparent); }
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:04:50.979Z",
+  "generated": "2026-10-05T13:09:38.670Z",
   "entries": [
+    {
+      "hash": "a5bbf151",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Citations show the public copy (OceanLibrary › Ocean of Lights › Phelps › BLO; SifterSearch only when none); highlight the original by MEANING (phrase-vector spans), the source by wording with a meaning fallback",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "f5f940bb",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Count the AI quality assessment failing, do not just fall back",
       "scope": null
-    },
-    {
-      "hash": "092eaea8",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "Alarm on mislabelled language, not just measure it",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "a5bbf151",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Citations show the public copy (OceanLibrary › Ocean of Lights › Phelps › BLO; SifterSearch only when none); highlight the original by MEANING (phrase-vector spans), the source by wording with a meaning fallback",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "f5f940bb",
         "date": "2026-10-05",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "Count the AI quality assessment failing, do not just fall back",
-        "scope": null
-      },
-      {
-        "hash": "092eaea8",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "Alarm on mislabelled language, not just measure it",
         "scope": null
       }
     ]
