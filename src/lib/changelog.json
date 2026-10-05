@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T20:58:05.589Z",
+  "generated": "2026-10-05T22:23:11.825Z",
   "entries": [
+    {
+      "hash": "ba92c29e",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Within the writer's own book the verbatim paragraph outranks a meaning-only neighbour (Gleanings 60.3 beat the verbatim 60.2 on quotedCount — Liliane's quotes)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "c12b72f8",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Meter the run — it was spending outside the policy",
       "scope": null
-    },
-    {
-      "hash": "f049276f",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Report what the track actually produced",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "ba92c29e",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Within the writer's own book the verbatim paragraph outranks a meaning-only neighbour (Gleanings 60.3 beat the verbatim 60.2 on quotedCount — Liliane's quotes)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "c12b72f8",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Meter the run — it was spending outside the policy",
-        "scope": null
-      },
-      {
-        "hash": "f049276f",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Report what the track actually produced",
         "scope": null
       }
     ]

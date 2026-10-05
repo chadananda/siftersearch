@@ -288,14 +288,12 @@ async function originalRanges(d, q, id, shown) {
 }
 
 /**
- * The quote's clauses inside a passage, chosen by a System-1 DECISION model (Chad 10-05: "use Clef-flash to find the
- * highlight range of a concept match"): the passage is split into its clauses (the phrase index's own segmenter — meaning,
- * never length), and one choice question asks which numbered clause says what the quotation says, in any language or
- * translation, with "none" as an option. Clauses with real probability (≥ 0.15 and ≥ 40% of the top) are marked; adjacent
- * ones merge. Logged per task (sourcehunt-highlight) — served by Clef-flash where routed, Jev checking it in the background.
- * Returns ranges, [] for "none", or null when the decision is unavailable (the caller keeps the vector spans).
+ * The quote's stretch inside a passage, chosen by System-1 DECISION models: the passage is split into its clauses (the phrase
+ * index's own segmenter — meaning, never length) and two choice questions ask where the quoted stretch begins and ends, in any
+ * language or translation. Logged as task sourcehunt-span. Returns ranges, or null when no decision is available (the caller
+ * keeps the vector spans).
  */
-const MAX_CLAUSES = 18;
+const MAX_CLAUSES = 40;
 const HOLDS_MAX = 24;
 
 /** Which candidate paragraphs CONTAIN the quoted statement — one System-1 call, one yes/no (noul) per candidate, each shown
@@ -319,52 +317,45 @@ async function decideHolds(d, q, rows, span = new Map()) {
 async function decideRanges(d, quoteText, text, lang, hint = []) {
   if (!d.decide) return null;
   let units = segment(text, lang);
-  if (units.length < 2) return null;
+  if (!units.length) return null;
+  if (units.length === 1) return [[units[0].start, units[0].end]];   // nothing to choose
   if (units.length > MAX_CLAUSES) {                           // a window of clauses around the vector hint
     const c = hint.length ? Math.max(0, units.findIndex((u) => u.end > hint[0][0])) : 0;
     const from = Math.max(0, Math.min(units.length - MAX_CLAUSES, c - (MAX_CLAUSES >> 1)));
     units = units.slice(from, from + MAX_CLAUSES);
   }
+  // A quotation is ONE continuous stretch of its original (each run of an elided quote is one), so ask WHERE it starts and
+  // ends — two choice questions — not a yes/no per clause: alone, a fragment like «مگر هر ارضی را» ("except every land") means
+  // nothing, so per-clause questions left the quote's tail unmarked. Battery 10-05 (81 cases, CTAI-verified originals):
+  // per-clause vote 79% good, start/end vote 84%, start/end + fallback 90% (planning/sourcehunt-highlight-20261005-*.json).
+  const runs = /\.\.\.|…/.test(quoteText) ? quoteText.split(/\s*(?:\.\.\.|…)\s*/).filter((r) => r.split(/\s+/).length >= 3).slice(0, 3) : [quoteText];
+  const spans = await Promise.all(runs.map((run) => spanVote(d, run, text, units)));
+  if (spans.every((x) => x === null)) return null;
+  return spans.filter(Boolean).map(([a, b]) => [units[a].start, units[b].end]).sort((x, y) => x[0] - y[0]);
+}
+
+/** Start and end clause of one quoted run: Clef and Clef-flash answer in parallel; if they disagree on either end, Jev's
+ *  answer joins and each end takes the majority (Chad 10-05: vote, Jev as the second opinion). [a, b] clause indexes, or null. */
+async function spanVote(d, quoteText, text, units) {
   const clause = (u) => text.slice(u.start, u.end);
-  // one yes/no per clause — a quote often spans several clauses ("For like seeketh like, / and taketh pleasure in …"), and a
-  // single choice could mark only one of them
-  const state = `QUOTATION (English):\n${quoteText}\n\nPASSAGE (${lang === 'en' ? 'English' : 'Arabic/Persian'}) — numbered clauses:\n`
-    + units.map((u, i) => `[c${i + 1}] ${clause(u)}`).join('\n');
-  const questions = Object.fromEntries(units.map((u, i) => [`c${i + 1}`, { type: 'noul',
-    instructions: `Is clause [c${i + 1}] part of what the quotation says — the same meaning, in any language or translation? A clause that is only on the same topic is not.` }]));
-  // VOTE (Chad 10-05): Clef and Clef-flash judge the clauses at once; if their clause sets agree that is the answer, if not
-  // Jev gives a second opinion and each clause takes the majority. One model alone marked strays (Jev 0.64/0.50 beside the
-  // true 0.91/0.81; Clef-flash missed a true clause at 0.41).
-  const ask = (backend) => d.decide('sourcehunt-highlight', state, questions, { backend }).then((r) => r?.answers || null).catch(() => null);
-  const pick = (ans) => {                                 // a model's clauses: ≥0.5 and within 0.2 of its own best
-    if (!ans) return null;
-    const ps = units.map((u, i) => ans[`c${i + 1}`]?.noul ?? 0), top = Math.max(...ps);
-    return new Set(ps.map((p, i) => (p >= 0.5 && p >= top - 0.2 ? i : -1)).filter((i) => i >= 0));
+  const state = `QUOTATION (English):\n${quoteText}\n\nPASSAGE — numbered clauses:\n` + units.map((u, i) => `[c${i + 1}] ${clause(u)}`).join('\n');
+  const criteria = Object.fromEntries(units.map((u, i) => [`c${i + 1}`, clause(u).slice(0, 80)]));
+  const questions = {
+    start: { type: 'choice', criteria, instructions: 'The quotation is a translation of ONE continuous stretch of this passage. In which clause does that stretch BEGIN?' },
+    end: { type: 'choice', criteria, instructions: 'The quotation is a translation of ONE continuous stretch of this passage. In which clause does that stretch END (the last clause it includes)?' },
   };
+  const ask = (backend) => d.decide('sourcehunt-span', state, questions, { backend }).then((r) => r?.answers || null).catch(() => null);
+  const at = (ans, k) => { const m = /c(\d+)/.exec(String(ans?.[k]?.choice ?? ans?.[k]?.value ?? '')); const i = m ? Number(m[1]) - 1 : -1; return i >= 0 && i < units.length ? i : null; };
   const [big, flash] = await Promise.all([ask('clef'), ask('clef-flash')]);
-  const A = pick(big), B = pick(flash);
-  const same = A && B && A.size === B.size && [...A].every((i) => B.has(i));
-  let chosen;
-  if (same) chosen = A;
-  else {
-    const C = pick(await ask('jev'));
-    const votes = [A, B, C].filter(Boolean);
-    if (!votes.length) return null;
-    chosen = new Set(units.map((u, i) => i).filter((i) => votes.filter((v) => v.has(i)).length >= Math.min(2, votes.length) ));
+  let s = at(big, 'start'), e = at(big, 'end');
+  if (s == null || s !== at(flash, 'start') || e !== at(flash, 'end')) {
+    const jev = await ask('jev');
+    const maj = (k) => { const v = [at(big, k), at(flash, k), at(jev, k)].filter((x) => x != null); return v.find((x) => v.filter((y) => y === x).length >= 2) ?? at(jev, k) ?? v[0] ?? null; };
+    s = maj('start'); e = maj('end');
   }
-  if (!chosen.size) return [];
-  const strength = (i) => [big, flash].reduce((m, a) => Math.max(m, a?.[`c${i + 1}`]?.noul ?? 0), 0);
-  const picked = [...chosen].sort((a, b) => a - b).map((i) => ({ u: units[i], i, p: strength(i) }));
-  const ranges = [];
-  for (const x of picked) {
-    const last = ranges[ranges.length - 1];
-    if (last && x.i === last.i + 1) { last.r[1] = x.u.end; last.i = x.i; last.p = Math.max(last.p, x.p); } else ranges.push({ r: [x.u.start, x.u.end], i: x.i, p: x.p });
-  }
-  // A quotation WITHOUT an ellipsis is one continuous passage: keep only the run of clauses holding the strongest match,
-  // and drop strays elsewhere in the paragraph (Jev said 0.61 for "who arises to serve all on earth" beside the true clause
-  // of "The earth is but one country…", 10-05). An elided quote ("… …") may mark several runs.
-  if (!/\.\.\.|…/.test(quoteText) && ranges.length > 1) return [ranges.reduce((m, x) => (x.p > m.p ? x : m)).r];
-  return ranges.map((x) => x.r);
+  if (s == null && e == null) return null;
+  s ??= e; e ??= s;
+  return s <= e ? [s, e] : [e, s];
 }
 
 /** Highlight an original: Clef/Jev's clause decision where it answers, else the phrase-vector spans. */
@@ -381,7 +372,7 @@ async function tabletGuess(d, q, links, author = null) {
   const withMeta = async (p, basis) => {
     if (!p) return p;
     const text = decodeEntities(p.text);
-    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...(await meaningRanges(d, q, p.id, text, 'ar')),
+    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...(await meaningRanges(d, q, p.id, text, /[پچژگ]/.test(text) ? 'fa' : 'ar')),
       url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) };
   };
   if (links?.original) {

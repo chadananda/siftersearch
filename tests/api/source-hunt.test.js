@@ -186,30 +186,54 @@ describe('highlight in the original', () => {
   });
 });
 
-describe('highlight by decision (Clef-flash / Jev clause choice)', () => {
+describe('highlight by SPAN decision (start clause, end clause)', () => {
   const RAW = 'امروز انسان کسی است که بخدمت جمیع قیام نماید. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن. و این بیان روشن است.';
-  const base = (decide) => deps({
+  const setup = (pick, calls = []) => deps({
     passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77' }])),
     links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
       original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77', path: 'translation' } : null }])),
     spans: async () => [], rawText: async () => RAW,
-    decide: (task, ...a) => (task === 'sourcehunt-highlight' ? decide(task, ...a) : Promise.resolve(null)),
+    decide: async (task, state, q, { backend } = {}) => {
+      if (task !== 'sourcehunt-span' || !/[؀-ۿ]/.test(state.split('PASSAGE')[1] || '')) return null;   // the original only
+      calls.push({ backend, keys: Object.keys(q), state });
+      const clauses = [...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)].map(([, k, t]) => ({ k, t }));
+      const r = pick(backend, clauses, state);
+      return r && { answers: { start: { choice: r[0] }, end: { choice: r[1] } } };
+    },
   });
-  it('marks the clause(s) the decision model picks; the task is sourcehunt-highlight', async () => {
-    let seen;
-    const r = await sourceHunt(QUOTE, base(async (task, state, q) => {
-      seen = { task, opts: Object.keys(q) };
-      const clauses = Object.fromEntries([...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)].map((m) => [m[1], m[2]]));
-      return { answers: Object.fromEntries(Object.entries(clauses).map(([k, t]) => [k, { noul: t.includes('وطن') ? 0.9 : 0.05 }])) };
-    }));
-    expect(seen.task).toBe('sourcehunt-highlight');
-    expect(seen.opts.every((k) => /^c\d+$/.test(k))).toBe(true);
+  const clauseWith = (cs, w) => cs.find((c) => c.t.includes(w))?.k;
+  const marked = (r) => r.tablet.highlight.map(([a, b]) => r.tablet.text.slice(a, b)).join(' | ');
+  it('asks two choice questions (start, end) and marks the stretch between them as ONE range', async () => {
+    const calls = [];
+    const r = await sourceHunt(QUOTE, setup((b, cs) => [clauseWith(cs, 'وطن'), clauseWith(cs, 'اهل آن')], calls));
+    expect(calls[0].keys).toEqual(['start', 'end']);
     expect(r.tablet.highlightBy).toBe('decision');
-    expect(r.tablet.text.slice(...r.tablet.highlight[0])).toContain('عالم یک وطن');
+    expect(r.tablet.highlight).toHaveLength(1);
+    expect(marked(r)).toContain('عالم یک وطن');
+    expect(marked(r)).toContain('اهل آن');
+    expect(marked(r)).not.toContain('بخدمت');
   });
-  it('"none" or no decision → the vector spans stand (here none)', async () => {
-    const r = await sourceHunt(QUOTE, base(async (task, state, q) => ({ answers: Object.fromEntries(Object.keys(q).map((k) => [k, { noul: 0.05 }])) })));
+  it('no decision → the vector spans stand (here none)', async () => {
+    const r = await sourceHunt(QUOTE, setup(() => null));
     expect(r.tablet.highlightBy).toBe(null);
+  });
+  it('agreeing Clef models answer alone (no Jev call)', async () => {
+    const calls = [];
+    await sourceHunt(QUOTE, setup((b, cs) => [clauseWith(cs, 'وطن'), clauseWith(cs, 'وطن')], calls));
+    expect(calls.map((c) => c.backend)).not.toContain('jev');
+    expect(new Set(calls.map((c) => c.backend))).toEqual(new Set(['clef', 'clef-flash']));
+  });
+  it('disagreement → Jev votes and each end takes the majority', async () => {
+    const calls = [];
+    const r = await sourceHunt(QUOTE, setup((b, cs) => (b === 'clef-flash' ? [clauseWith(cs, 'بخدمت'), clauseWith(cs, 'وطن')] : [clauseWith(cs, 'وطن'), clauseWith(cs, 'وطن')]), calls));
+    expect(calls.map((c) => c.backend)).toContain('jev');
+    expect(marked(r)).toContain('وطن');
+    expect(marked(r)).not.toContain('بخدمت');
+  });
+  it('an elided quote asks once per run and keeps separate ranges', async () => {
+    const r = await sourceHunt('That one indeed is a man who … the earth is but one country, and mankind its citizens',
+      setup((b, cs, state) => (/That one indeed/.test(state) ? [clauseWith(cs, 'بخدمت'), clauseWith(cs, 'بخدمت')] : [clauseWith(cs, 'وطن'), clauseWith(cs, 'وطن')])));
+    expect(r.tablet.highlight.length).toBe(2);
   });
 });
 
@@ -252,72 +276,3 @@ describe('holds-the-quote by DECISION (cross-translation)', () => {
   });
 });
 
-describe('one continuous run for an un-elided quote', () => {
-  const RAW = 'امروز انسان کسی است که بخدمت جمیع من علی الأرض قیام نماید. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن. و این بیان روشن است.';
-  const run = (quote, scores) => sourceHunt(quote, deps({
-    passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77' }])),
-    links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
-      original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77', path: 'translation' } : null }])),
-    spans: async () => [], rawText: async () => RAW,
-    decide: async (task, state, q) => (task !== 'sourcehunt-highlight' ? null : { answers: Object.fromEntries(
-      [...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)].map(([, k, t]) => [k, { noul: scores(t) }])) }),
-  }));
-  it('a stray clause elsewhere (0.61) is dropped; the strongest run stays', async () => {
-    const r = await run(QUOTE, (t) => (t.includes('وطن') ? 0.9 : t.includes('بخدمت') ? 0.61 : 0.05));
-    expect(r.tablet.highlight).toHaveLength(1);
-    expect(r.tablet.text.slice(...r.tablet.highlight[0])).toContain('وطن');
-  });
-  it('an elided quote keeps separate runs', async () => {
-    const r = await run('That one indeed is a man who … the earth is but one country, and mankind its citizens', (t) => (t.includes('روشن') || t.includes('بخدمت') ? 0.9 : 0.05));   // first and last clauses: not adjacent
-    expect(r.tablet.highlight.length).toBeGreaterThan(1);
-  });
-});
-
-describe('relative cutoff', () => {
-  it('Jev 0.91/0.81 on the true clauses, 0.64/0.50 on strays → only the true run', async () => {
-    const RAW = 'امروز انسان کسی است که بخدمت جمیع من علی الأرض قیام نماید. حضرت موجود میفرماید طوبی لمن أصبح. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن.';
-    const r = await sourceHunt(QUOTE, deps({
-      passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool' }])),
-      links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
-        original: quotedBy ? { id: 77, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool', path: 'translation' } : null }])),
-      spans: async () => [], rawText: async () => RAW,
-      decide: async (task, state) => (task !== 'sourcehunt-highlight' ? null : { answers: Object.fromEntries([...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)]
-        .map(([, k, t]) => [k, { noul: t.includes('وطن') ? 0.91 : t.includes('اهل آن') ? 0.81 : t.includes('بخدمت') ? 0.64 : t.includes('طوبی') ? 0.5 : 0.2 }])) }),
-    }));
-    const marked = r.tablet.highlight.map(([a, b]) => r.tablet.text.slice(a, b)).join(' | ');
-    expect(marked).toContain('وطن');
-    expect(marked).not.toContain('بخدمت');
-    expect(marked).not.toContain('طوبی');
-  });
-});
-
-describe('clause vote: Clef + Clef-flash, Jev breaks a tie', () => {
-  const RAW = 'امروز انسان کسی است که بخدمت جمیع من علی الأرض قیام نماید. حضرت موجود میفرماید طوبی لمن أصبح. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن.';
-  const setup = (score, calls) => deps({
-    passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool' }])),
-    links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
-      original: quotedBy ? { id: 77, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool', path: 'translation' } : null }])),
-    spans: async () => [], rawText: async () => RAW,
-    decide: async (task, state, q, { backend } = {}) => {
-      if (task !== 'sourcehunt-highlight') return null;
-      calls.push(backend);
-      return { answers: Object.fromEntries([...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)].map(([, k, t]) => [k, { noul: score(backend, t) }])) };
-    },
-  });
-  it('agreeing Clef models answer alone (no Jev call)', async () => {
-    const calls = [];
-    const r = await sourceHunt(QUOTE, setup((b, t) => (t.includes('وطن') ? 0.9 : 0.1), calls));
-    expect(calls).not.toContain('jev');                          // two highlights (English + original), each asked of both Clef models
-    expect(new Set(calls)).toEqual(new Set(['clef', 'clef-flash']));
-    expect(r.tablet.text.slice(...r.tablet.highlight[0])).toContain('وطن');
-  });
-  it('disagreement → Jev votes; the majority wins and a stray loses', async () => {
-    const calls = [];
-    const score = (b, t) => (t.includes('وطن') ? 0.9 : t.includes('بخدمت') ? (b === 'clef-flash' ? 0.85 : 0.1) : 0.1);
-    const r = await sourceHunt(QUOTE, setup(score, calls));
-    expect(calls).toContain('jev');
-    const marked = r.tablet.highlight.map(([a, b]) => r.tablet.text.slice(a, b)).join(' | ');
-    expect(marked).toContain('وطن');
-    expect(marked).not.toContain('بخدمت');
-  });
-});

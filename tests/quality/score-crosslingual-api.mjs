@@ -33,7 +33,7 @@ if (arg('limit')) { const n = Number(arg('limit')), step = cases.length / n; cas
 // same folding as battery.py: harakat/tatweel/ZWNJ dropped, letter variants unified
 const DROP = /[ً-ٰٟۡـ‌‏‎]/g;
 const MAP = { 'ي': 'ی', 'ى': 'ی', 'ك': 'ک', 'ة': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ؤ': 'و', 'ئ': 'ی', 'ٱ': 'ا' };
-const toks = (s) => String(s || '').replace(/⁅\/?s\d+⁆|<[^>]+>|\[[^\]]*\]/g, ' ').replace(DROP, '').replace(/[يىكةأإآؤئٱ]/g, (c) => MAP[c])
+export const toks = (s) => String(s || '').replace(/⁅\/?s\d+⁆|<[^>]+>|\[[^\]]*\]/g, ' ').replace(DROP, '').replace(/[يىكةأإآؤئٱ]/g, (c) => MAP[c])
   .replace(/[^\p{L}\p{N}_\s]/gu, ' ').split(/\s+/).filter(Boolean);
 const grams = (w, n) => new Set(w.length ? Array.from({ length: Math.max(1, w.length - n + 1) }, (_, i) => w.slice(i, i + n).join(' ')) : []);
 export function correct(hitText, target) {
