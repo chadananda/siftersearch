@@ -811,14 +811,16 @@ export default async function publicApiRoutes(fastify) {
       description: 'Trace a quotation to its published source (book, paragraph link, quoted words), its original Arabic/Persian tablet (title, Inventory PIN, Ocean of Lights + Phelps Inventory links, quoted clause) and every publication citing it. Works across translations. `original` is set only when a translation link confirms it; otherwise `possibleOriginals` lists the closest originals by meaning (verify before citing).',
       tags: ['Search'],
       security: [{ apiKey: [] }],
-      body: { type: 'object', required: ['quote'], properties: { quote: { type: 'string', minLength: 15, maxLength: 4000 } } },
+      body: { type: 'object', required: ['quote'], properties: { quote: { type: 'string', minLength: 15, maxLength: 4000 },
+        exclude: { type: 'object', description: 'Publications that may not be returned — e.g. the compilation whose selections you are checking.',
+          properties: { documentIds: { type: 'array', items: { type: 'integer' } }, titles: { type: 'array', items: { type: 'string' } } } } } },
     },
   }, async (request, reply) => {
-    const { quote } = request.body;
+    const { quote, exclude = null } = request.body;
     const t0 = Date.now();
     const { sourceHunt } = await import('../lib/source-hunt.js');
     const { toApi, audit } = await import('../lib/source-hunt-api.js');
-    const r = await sourceHunt(quote).catch((err) => ({ failed: err.message }));
+    const r = await sourceHunt(quote, {}, { exclude }).catch((err) => ({ failed: err.message }));
     audit({ quote, ms: Date.now() - t0, mode: 'api', apiKeyId: request.apiKeyId || null, result: r });
     logApiSearch({ query: quote.slice(0, 200), apiKeyId: request.apiKeyId, resultCount: r.origin ? 1 : 0, durationMs: Date.now() - t0, searchType: 'api_source_hunt' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});

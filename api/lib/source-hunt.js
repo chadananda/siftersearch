@@ -150,9 +150,16 @@ export function rankOrigins(cands, quoteAuthor = null) {
 // opts.emit(stage, data): each stage's REAL result as soon as it exists — the page's live console replays these (never
 // invented progress). Stages: query · candidates · verbatim · links · writer · targeted · origin · cited · tablet.
 const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 'library', religion: r.religion || null });
-export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
+export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null } = {}) {
   const NEED = ['phrases', 'keyword', 'links', 'passages', 'meta', 'rows'];
-  const d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
+  let d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
+  // exclude: { documentIds, titles } — publications that may not be the answer (checking a compilation's own selections: the
+  // compilation holds every one of them verbatim, so it would otherwise be its own source). Excluded rows never enter the hunt.
+  const exIds = new Set((exclude?.documentIds || []).map(Number)), exTitles = new Set((exclude?.titles || []).map(titleKey));
+  if (exIds.size || exTitles.size) {
+    const rows = d.rows;
+    d = { ...d, rows: async (ids) => (await rows(ids)).filter((r) => !exIds.has(Number(r.doc_id)) && !exTitles.has(titleKey(r.title))) };
+  }
   const q = prepareQuote(raw);
   if (q.words < 4) return { error: 'Paste at least four words of the quote.' };
   const t0 = Date.now();

@@ -27,7 +27,7 @@ export function toApi(r) {
   if (!r || r.error || r.failed) return { error: r?.error || r?.failed || 'no result' };
   const o = r.origin, t = r.tablet;
   const original = (x, certain) => x && {
-    certain, basis: x.basis || null, title: x.meta?.title || x.title || null, pin: x.meta?.pin || null,
+    certain, basis: x.basis || null, title: x.meta?.title || x.title || null, documentId: x.documentId ?? null, paragraphId: x.id ?? null, pin: x.meta?.pin || null,
     firstLineEnglish: x.meta?.first_line_en || null, excerpt: excerpt(x.text, x.highlight), quotedText: quoted(x.text, x.highlight),
     matchedBy: x.highlightBy || null, url: x.url || null, rangeUrl: x.rangeUrl || null,
     links: { oceanOfLights: x.meta?.links?.oceanoflights || null, oceanOfLightsRange: x.meta?.links?.oceanoflightsRange || null, phelpsInventory: x.meta?.links?.inventory || null },

@@ -301,3 +301,10 @@ describe('textFragment (range links)', async () => {
   });
   it('no range → null', () => { expect(textFragment('u', T, [])).toBe(null); });
 });
+
+describe('exclude (a compilation checking its own selections)', () => {
+  it('an excluded publication is never the source', async () => {
+    const r = await sourceHunt(QUOTE, deps(), { exclude: { titles: ['Gleanings'] } });
+    expect(r.origin?.title).not.toBe('Gleanings');
+  });
+});
