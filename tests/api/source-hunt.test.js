@@ -276,6 +276,11 @@ describe('holds-the-quote by DECISION (cross-translation)', () => {
     expect(asked).toBeGreaterThan(0);
     expect(r.origin.title).toBe('Gleanings');
   });
+  it('the wording always counts: a verbatim paragraph the decision did not pass (or never saw) is still a source', async () => {
+    const r = await sourceHunt(QUOTE, deps({ decide: async (task, state, q) => (task === 'sourcehunt-holds'
+      ? { answers: Object.fromEntries(Object.keys(q).map((k) => [k, { noul: 0.02 }])) } : null) }));
+    expect(r.origin.title).toBe('Gleanings');
+  });
   it('no decision available → the wording fallback still works', async () => {
     const r = await sourceHunt(QUOTE, deps({ decide: async () => null }));
     expect(r.origin.title).toBe('Gleanings');

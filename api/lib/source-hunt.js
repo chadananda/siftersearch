@@ -125,11 +125,11 @@ export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
-    /core publications/i.test(c.collection || '') || c.coreTwin ? 1 : 0,
-    // within the same writer's own book, the paragraph holding the WORDING beats a neighbour the decision also passed on
-    // meaning (Liliane 10-05: Gleanings 60.3 beat the verbatim 60.2 on quotedCount). A different translation is verbatim
-    // nowhere, so cross-translation ranking is unchanged.
-    (c.overlap || 0) >= VERBATIM ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
+    // the paragraph holding the WORDING beats one the decision passed on meaning only — a neighbour (Liliane 10-05: Gleanings
+    // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
+    // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.
+    (c.overlap || 0) >= VERBATIM ? 1 : 0,
+    /core publications/i.test(c.collection || '') || c.coreTwin ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
     -year(c), c.quotedCount || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
 }
@@ -168,7 +168,10 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const byId = new Map(rows.map((r) => [r.id, r]));
   const ranked0 = ids.map((id) => byId.get(id)).filter(Boolean);
   const decided = await decideHolds(d, q, ranked0.slice(0, HOLDS_MAX), span);
-  const holdsRow = (r) => (decided ? decided.has(r.id) : holds(q.match, r.text, overlap(q.match, r.text)));
+  // the WORDING always counts (a verbatim paragraph past the decision's first HOLDS_MAX candidates was dropped as "not holding" —
+  // battery 10-05: book 88%→82%, e.g. the Íqán's 'addressing Salmán' paragraph lost to two Gems passages that do not contain it);
+  // the decision ADDS what holds the quote in another translation or a close paraphrase
+  const holdsRow = (r) => holds(q.match, r.text, overlap(q.match, r.text)) || !!decided?.has(r.id);
   const matches = ranked0.filter(holdsRow).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }));
   say('verbatim', { count: matches.length, rejected: rows.length - matches.length, by: decided ? 'decision' : 'wording',
     documents: [...new Map(matches.map((r) => [r.doc_id, docBrief(r)])).values()] });
@@ -202,7 +205,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
     const decided2 = moreRows.length ? await decideHolds(d, q, moreRows.slice(0, HOLDS_MAX), span) : new Set();
     for (const r of moreRows) {
       const ov = overlap(q.match, r.text);
-      if (!(decided2 ? decided2.has(r.id) : holds(q.match, r.text, ov)) || r.doc_role === 'metadata') continue;
+      if (!(holds(q.match, r.text, ov) || decided2?.has(r.id)) || r.doc_role === 'metadata') continue;
       const writer = paragraphAuthor({ authors: r.authors, author: r.book_author });
       const book = firstPerson(r.book_author || '') || r.book_author;
       pool.push({ ...r, overlap: ov, holds: true, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
