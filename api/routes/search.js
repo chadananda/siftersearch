@@ -472,20 +472,59 @@ export default async function searchRoutes(fastify) {
 
   // SourceHunt (/sourcehunt page): an English quote → its published book, every publication citing it, the likely tablet.
   // Qdrant + SQLite only (no Meili). First-party: the site's own page.
+  // AUDIT LOG (Chad 10-04: "log results completely so you can check them and audit correctness"): one JSONL line per query
+  // — the quote, the full response (every candidate considered, every citing publication, the tablet and its text), timing,
+  // and any error. Append-only file, not SQLite: an audit log must never be dropped for a lock. Read: GET /source-hunt/log.
+  const auditSourceHunt = (request, quote, t0, r, mode) => appendFile(SOURCE_HUNT_LOG, JSON.stringify({ at: new Date().toISOString(), quote,
+    ms: Date.now() - t0, mode, origin_header: request.headers.origin || request.headers.referer || null, result: r }) + '\n')
+    .catch((err) => request.log.error({ err: err.message }, 'source-hunt audit log write FAILED'));
+
   fastify.post('/source-hunt', { preHandler: requireFirstParty }, async (request, reply) => {
     const quote = String(request.body?.quote || '').slice(0, 4000);
     const { sourceHunt } = await import('../lib/source-hunt.js');
     const t0 = Date.now();
     const r = await sourceHunt(quote).catch((err) => ({ failed: err.message, stack: String(err.stack || '').slice(0, 2000) }));
-    // AUDIT LOG (Chad 10-04: "log results completely so you can check them and audit correctness"): one JSONL line per query
-    // — the quote, the full response (every candidate considered, every citing publication, the tablet and its text), timing,
-    // and any error. Append-only file, not SQLite: an audit log must never be dropped for a lock. Read: GET /source-hunt/log.
-    appendFile(SOURCE_HUNT_LOG, JSON.stringify({ at: new Date().toISOString(), quote, ms: Date.now() - t0,
-      origin_header: request.headers.origin || request.headers.referer || null, result: r }) + '\n')
-      .catch((err) => request.log.error({ err: err.message }, 'source-hunt audit log write FAILED'));
+    auditSourceHunt(request, quote, t0, r, 'json');
     if (r.failed) return reply.code(500).send({ error: 'SourceHuntFailed', message: r.failed });
     if (r.error) return reply.code(400).send({ error: 'BadRequest', message: r.error });
     return r;
+  });
+
+  // The same hunt as server-sent events: one event per stage, as each finishes (the page's live console), then `done` with
+  // the full result. Audited like the JSON route.
+  fastify.post('/source-hunt/stream', { preHandler: requireFirstParty }, async (request, reply) => {
+    const quote = String(request.body?.quote || '').slice(0, 4000);
+    const { sourceHunt } = await import('../lib/source-hunt.js');
+    const origin = request.headers.origin;
+    if (origin) reply.raw.setHeader('Access-Control-Allow-Origin', origin);
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('X-Accel-Buffering', 'no');
+    reply.raw.flushHeaders();
+    const send = (event, data) => { try { reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch { /* client gone */ } };
+    const t0 = Date.now();
+    const r = await sourceHunt(quote, {}, { emit: send }).catch((err) => ({ failed: err.message, stack: String(err.stack || '').slice(0, 2000) }));
+    auditSourceHunt(request, quote, t0, r, 'stream');
+    send(r.failed || r.error ? 'error' : 'done', r.failed ? { message: r.failed } : r);
+    reply.raw.end();
+    return reply;
+  });
+
+  // The corpus the hunt runs over — real counts for the page's console (cached 10 min).
+  let scaleCache = { at: 0, data: null };
+  fastify.get('/source-hunt/scale', async () => {
+    if (scaleCache.data && Date.now() - scaleCache.at < 600000) return scaleCache.data;
+    const QD = process.env.QDRANT_URL || 'http://127.0.0.1:6333';
+    const count = (c) => fetch(`${QD}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(3000) })
+      .then((r) => r.json()).then((j) => j.result?.points_count ?? null).catch(() => null);
+    const { listDocs } = await import('../lib/docs-repo.js');
+    const { queryOne } = await import('../lib/db.js');
+    const [phrases, keyword, hype, docs, tablets] = await Promise.all([count('phrases'), count('paragraphs_kw'), count('hype'),
+      listDocs({ limit: 1, fields: ['id'] }).then((x) => x.total).catch(() => null),
+      queryOne('SELECT COUNT(*) n FROM tablet_meta', [], 'source-hunt:scale').then((x) => x?.n ?? null).catch(() => null)]);
+    scaleCache = { at: Date.now(), data: { phraseVectors: phrases, paragraphs: keyword, hypeQuestions: hype, documents: docs, tablets } };
+    return scaleCache.data;
   });
 
   fastify.get('/stats', async (request) => {

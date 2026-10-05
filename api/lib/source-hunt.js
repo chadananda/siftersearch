@@ -88,12 +88,17 @@ export function rankOrigins(cands, quoteAuthor = null) {
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
 }
 
-export async function sourceHunt(raw, deps = {}) {
+// opts.emit(stage, data): each stage's REAL result as soon as it exists — the page's live console replays these (never
+// invented progress). Stages: query · candidates · verbatim · links · writer · targeted · origin · cited · tablet.
+const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 'library', religion: r.religion || null });
+export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const NEED = ['phrases', 'keyword', 'links', 'passages', 'meta', 'rows'];
   const d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
   const q = prepareQuote(raw);
   if (q.words < 4) return { error: 'Paste at least four words of the quote.' };
   const t0 = Date.now();
+  const say = (stage, data) => { try { emit(stage, { ...data, ms: Date.now() - t0 }); } catch { /* a closed stream never breaks the hunt */ } };
+  say('query', { words: q.words, runs: q.text.split(/\s*(?:\.\.\.|…)\s*/).filter(Boolean).length });
 
   // 1. candidates: phrase vectors (meaning + wording) and BM25 (wording), whole library + scraped sites
   const [ph, kw] = await Promise.all([
@@ -102,13 +107,18 @@ export async function sourceHunt(raw, deps = {}) {
   ]);
   const ids = [...new Set([...ph.hits, ...kw.hits].map((h) => h.paragraph_id))];
   const rows = await d.rows(ids);
+  const probedDocs = [...new Map(rows.map((r) => [r.doc_id, docBrief(r)])).values()];
+  say('candidates', { phrase: ph.hits.length, keyword: kw.hits.length, paragraphs: ids.length, documents: probedDocs });
   const matches = rows.map((r) => ({ ...r, overlap: overlap(q.match, r.text) })).filter((r) => r.overlap >= VERBATIM);
+  say('verbatim', { count: matches.length, rejected: rows.length - matches.length,
+    documents: [...new Map(matches.map((r) => [r.doc_id, docBrief(r)])).values()] });
 
   // 2. the source each match quotes (a citing book → the Gleanings paragraph), added to the origin pool
   const links = await d.links(matches.map((m) => m.id), { quotedBy: false });
   const linkedFrom = new Map();
   for (const m of matches) for (const s of links.get(m.id)?.sources || []) if ((s.link?.coverage ?? 0) >= 0.8) linkedFrom.set(s.id, (linkedFrom.get(s.id) || 0) + 1);
   const extra = [...linkedFrom.keys()].filter((id) => !matches.some((m) => m.id === id));
+  say('links', { sources: linkedFrom.size, added: extra.length });
   const pool = [...matches, ...(await d.rows(extra)).map((r) => ({ ...r, overlap: overlap(q.match, r.text) }))]
     .filter((c) => c.doc_role !== 'metadata')
     .map((c) => {
@@ -119,6 +129,7 @@ export async function sourceHunt(raw, deps = {}) {
   // 2b. the quote's writer's OWN paragraphs: a line quoted by dozens of books can crowd its source out of the first
   // candidates, so search again inside that writer's texts (author_fold filter) and add what holds the quote verbatim
   const quoteAuthor = quoteAuthorOf(pool);
+  say('writer', { quoteAuthor });
   if (quoteAuthor) {
     const f = { author: quoteAuthor, religion: "Baha'i" };
     const [p2, k2] = await Promise.all([
@@ -133,6 +144,7 @@ export async function sourceHunt(raw, deps = {}) {
       const book = firstPerson(r.book_author || '') || r.book_author;
       pool.push({ ...r, overlap: ov, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
     }
+    say('targeted', { searched: more.length, pool: pool.length });
   }
   if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0 };
 
@@ -142,6 +154,9 @@ export async function sourceHunt(raw, deps = {}) {
   const qc = await d.links(lead.map((c) => c.id), { quotedBy: true }).catch(() => new Map());
   for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
   const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
+  const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
+    text: origin.text, highlight: quoteRanges(origin.text, q.text), url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) };
+  say('origin', { origin: originOut, candidates: ranked.length });
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
   const full = (await d.links([origin.id], { quotedBy: true })).get(origin.id) || {};
@@ -157,17 +172,19 @@ export async function sourceHunt(raw, deps = {}) {
     book_author: p.document.author, url: p.url, source_site: null }));
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
   const citedBy = [...byDoc.values()].sort((a, b) => (a.site ? 1 : 0) - (b.site ? 1 : 0) || b.paragraphs - a.paragraphs);
+  say('cited', { citedBy, citedByLinkCount: full.quotedBy?.count || 0 });
+  const tablet = await tabletGuess(d, q, full, quoteAuthor);
+  say('tablet', { tablet });
 
   return {
     quote: q.text,
     quoteAuthor,
-    origin: { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
-      text: origin.text, highlight: quoteRanges(origin.text, q.text), url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) },
+    origin: originOut,
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,
     // why this source: the next best candidates with the facts the ranking used
     considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, bookAuthor: c.book_author,
       ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, year: c.year || null, quotedCount: c.quotedCount ?? null, overlap: +c.overlap.toFixed(2) })),
-    tablet: await tabletGuess(d, q, full, quoteAuthor),
+    tablet,
     ms: Date.now() - t0,
   };
 }

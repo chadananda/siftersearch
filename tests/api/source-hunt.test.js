@@ -128,3 +128,19 @@ describe('decodeEntities', async () => {
     expect(decodeEntities('میفرماید: &quot;طوبی لمن أصبح&quot; &amp; &#1576; &#x628; &bogus;')).toBe('میفرماید: "طوبی لمن أصبح" & ب ب &bogus;');
   });
 });
+
+describe('stage events (the live console)', () => {
+  it('emits every stage in order with real data, ending in the tablet', async () => {
+    const seen = [];
+    await sourceHunt(QUOTE, deps(), { emit: (stage, data) => seen.push([stage, data]) });
+    expect(seen.map(([s]) => s)).toEqual(['query', 'candidates', 'verbatim', 'links', 'writer', 'targeted', 'origin', 'cited', 'tablet']);
+    const cand = seen.find(([s]) => s === 'candidates')[1];
+    expect(cand.paragraphs).toBe(4);
+    expect(cand.documents.map((x) => x.title)).toContain('Gleanings');
+    expect(seen.find(([s]) => s === 'verbatim')[1].count).toBe(3);
+  });
+  it('a throwing listener never breaks the hunt', async () => {
+    const r = await sourceHunt(QUOTE, deps(), { emit: () => { throw new Error('closed'); } });
+    expect(r.origin.title).toBe('Gleanings');
+  });
+});
