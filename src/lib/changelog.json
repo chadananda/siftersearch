@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T22:58:00.180Z",
+  "generated": "2026-10-05T23:01:17.242Z",
   "entries": [
+    {
+      "hash": "6d19c3fc",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Range links — text fragments to the quoted stretch on citations, the published source and the original (our copy + Ocean of Lights); API rangeUrl fields. Retired duplicates (docs-repo scope 'duplicates') excluded from search and from SourceHunt rows.",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "4ab744e5",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Promotion — one record per concept, so a concept can be asked about",
       "scope": null
-    },
-    {
-      "hash": "5528fbb6",
-      "date": "2026-08-19",
-      "type": "Docs",
-      "description": "The conceptual track HAS run — correcting my own correction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "6d19c3fc",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Range links — text fragments to the quoted stretch on citations, the published source and the original (our copy + Ocean of Lights); API rangeUrl fields. Retired duplicates (docs-repo scope 'duplicates') excluded from search and from SourceHunt rows.",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "4ab744e5",
         "date": "2026-10-05",
@@ -7049,15 +7056,6 @@
         "date": "2026-08-20",
         "type": "Other",
         "description": "Promotion — one record per concept, so a concept can be asked about",
-        "scope": null
-      }
-    ],
-    "2026-08-19": [
-      {
-        "hash": "5528fbb6",
-        "date": "2026-08-19",
-        "type": "Docs",
-        "description": "The conceptual track HAS run — correcting my own correction",
         "scope": null
       }
     ]

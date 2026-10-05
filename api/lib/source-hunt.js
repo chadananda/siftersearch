@@ -251,7 +251,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const full = await fullP;
   const byDoc = new Map();
   const add = (p) => {
-    if (p.doc_id === origin.doc_id) return;
+    if (p.doc_id === origin.doc_id || titleKey(p.title) === titleKey(origin.title)) return;   // the source's own other copy is not a citation
     const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: siteOf(p.url, p.source_site),
       url: p.url, rangeUrl: p.text ? textFragment(p.url, p.text, quoteRanges(p.text, q.text)) : null, paragraphs: 0, first: p.id };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
