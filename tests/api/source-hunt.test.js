@@ -121,3 +121,10 @@ describe('paragraph inside the linked tablet', () => {
     expect(r.tablet).toMatchObject({ certain: true, id: 78, basis: 'tablet linked; paragraph by similarity', linkedParagraph: { id: 77 } });
   });
 });
+
+describe('decodeEntities', async () => {
+  const { decodeEntities } = await import('../../api/lib/source-hunt.js');
+  it('decodes the entities stored in scraped text (named and numeric), leaves unknown ones', () => {
+    expect(decodeEntities('میفرماید: &quot;طوبی لمن أصبح&quot; &amp; &#1576; &#x628; &bogus;')).toBe('میفرماید: "طوبی لمن أصبح" & ب ب &bogus;');
+  });
+});

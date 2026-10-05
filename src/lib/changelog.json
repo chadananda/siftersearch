@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T03:05:27.563Z",
+  "generated": "2026-10-05T03:12:47.776Z",
   "entries": [
+    {
+      "hash": "ed126be4",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Six one-click demo samples (each scored fully right on the battery)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "11a681ba",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add the Doctrinal Spine phase - the conceptual track's seed",
       "scope": null
-    },
-    {
-      "hash": "a41d8355",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "Carry the chapter heading through the passage projection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "ed126be4",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Six one-click demo samples (each scored fully right on the battery)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "11a681ba",
         "date": "2026-10-04",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "Add the Doctrinal Spine phase - the conceptual track's seed",
-        "scope": null
-      },
-      {
-        "hash": "a41d8355",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "Carry the chapter heading through the passage projection",
         "scope": null
       }
     ]

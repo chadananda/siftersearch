@@ -8,6 +8,12 @@ import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { authorAuthority } from './authority.js';
 
+/** Stored text still carries HTML entities in ~96k paragraphs (mostly the bahai-library.com copies: `&quot;` around a
+ *  quoted Arabic line in a Persian passage). Decoded before matching, highlighting and display. */
+const NAMED = { quot: '"', amp: '&', lt: '<', gt: '>', apos: "'", nbsp: '\u00a0', laquo: '«', raquo: '»', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', mdash: '—', ndash: '–', zwnj: '\u200c', zwj: '\u200d' };
+export const decodeEntities = (s) => String(s ?? '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) =>
+  e[0] === '#' ? String.fromCodePoint(e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : (NAMED[e.toLowerCase()] ?? m));
+
 const VERBATIM = 0.6;        // share of the quote's word 3-grams a paragraph must hold
 const CANDIDATES = 60;
 const QD_MS = 10000;     // a deliberate lookup, not the 1 s search path: wait for Qdrant under build load (2.5 s timed out silently)
@@ -169,7 +175,7 @@ export async function sourceHunt(raw, deps = {}) {
 /** The original: a LINKED one (translation or quote→source→original) is certain; otherwise the nearest Arabic/Persian
  *  paragraphs by phrase vector are offered as candidates, labelled as such. Each carries its tablet metadata. */
 async function tabletGuess(d, q, links, author = null) {
-  const withMeta = async (p, basis) => p && ({ id: p.id, documentId: p.documentId, title: p.document?.title, text: p.text,
+  const withMeta = async (p, basis) => p && ({ id: p.id, documentId: p.documentId, title: p.document?.title, text: decodeEntities(p.text),
     url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) });
   if (links?.original) {
     // The LINK fixes the tablet; the paragraph inside it is re-checked: the quote's closest paragraphs in that tablet by
@@ -206,7 +212,7 @@ async function defaultDeps() {
           d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year
         FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'source-hunt:rows');
-      return rs.map((r) => ({ ...r, text: String(r.text || '').replace(/⁅\/?s\d+⁆/g, ''),
+      return rs.map((r) => ({ ...r, text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
         url: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
           slug: r.slug, filename: r.filename, external_para_id: r.external_para_id }, r.paragraph_index).url }));
     },

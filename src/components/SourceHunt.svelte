@@ -45,6 +45,8 @@
     { label: 'Will and Testament', quote: 'Should differences arise, they shall be amicably and conclusively settled by the Supreme Tribunal, that shall include members from all the governments and peoples of the world.' },
   ];
   const trySample = (s) => { quote = s.quote; hunt(); };
+  // the button shows the quote's opening words — never the answer (the source is what the demo finds)
+  const opening = (q, n = 5) => q.split(/\s+/).slice(0, n).join(' ').replace(/[,.;:!?]+$/, '');
 
   const onKey = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) hunt(); };
   const tabletLinks = (meta) => [
@@ -70,7 +72,8 @@
       <span class="text-xs text-muted">Try:</span>
       {#each SAMPLES as s (s.label)}
         <button onclick={() => trySample(s)} disabled={loading}
-          class="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs text-secondary hover:border-accent hover:text-accent disabled:opacity-50">{s.label}</button>
+          title={s.quote}
+          class="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs text-secondary hover:border-accent hover:text-accent disabled:opacity-50">“{opening(s.quote)}…”</button>
       {/each}
     </div>
   </div>
