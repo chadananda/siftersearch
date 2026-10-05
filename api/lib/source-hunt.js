@@ -25,21 +25,21 @@ const isCanonical = (p) => !p.source_site || p.source_site === 'oceanlibrary.com
 // The doctrinal authors (Chad 10-03: compilations display the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi; UHJ is not doctrinal).
 const DOCTRINAL = new Set(['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi']);
 
-/** Whose words these are: of every name the matches credit — as a paragraph's writer or as the person it quotes — the
- *  doctrinal author of highest standing (Bahá’u’lláh over the UHJ letter or the study that quotes Him). Null when the
- *  matches credit no doctrinal author. */
+/** Whose words these are, by VOTE over the verbatim matches: a match WRITTEN by a doctrinal author is strong evidence
+ *  (2), a doctrinal author the reader marks as QUOTED in a match is weaker (1); a name merely mentioned never counts — "the
+ *  teachings of Bahá’u’lláh revolve" is Shoghi Effendi writing about Him. Ties go to standing. Null when no doctrinal
+ *  author is credited. */
 export function quoteAuthorOf(matches) {
-  let best = null, bestA = -1;
+  const votes = new Map();
+  const vote = (n, w) => { const c = firstPerson(n || '') || n; if (DOCTRINAL.has(c)) votes.set(c, (votes.get(c) || 0) + w); };
   for (const m of matches) {
-    let names = [];
-    try { names = (JSON.parse(m.authors || '[]') || []).map((a) => a?.name).filter(Boolean); } catch { /* no list */ }
-    for (const n of [...names, m.writer]) {
-      const c = firstPerson(n || '') || n;
-      if (!DOCTRINAL.has(c)) continue;
-      const a = authorAuthority(c) ?? 0;
-      if (a > bestA) { best = c; bestA = a; }
-    }
+    vote(m.writer, 2);
+    let list = [];
+    try { list = JSON.parse(m.authors || '[]') || []; } catch { /* no list */ }
+    for (const a of list) if (a?.role === 'quoted' && a.name) vote(a.name, 1);
   }
+  let best = null, bv = 0, ba = -1;
+  for (const [n, v] of votes) { const a = authorAuthority(n) ?? 0; if (v > bv || (v === bv && a > ba)) { best = n; bv = v; ba = a; } }
   return best;
 }
 
@@ -104,7 +104,7 @@ export async function sourceHunt(raw, deps = {}) {
   }
   if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0 };
 
-  const origin = rankOrigins(pool, quoteAuthor)[0];
+  const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
   const full = (await d.links([origin.id], { quotedBy: true })).get(origin.id) || {};
@@ -127,6 +127,9 @@ export async function sourceHunt(raw, deps = {}) {
     origin: { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
       text: origin.text, url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) },
     citedBy, citedByLinkCount: full.quotedBy?.count || 0,
+    // why this source: the next best candidates with the facts the ranking used
+    considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, bookAuthor: c.book_author,
+      ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, overlap: +c.overlap.toFixed(2) })),
     tablet: await tabletGuess(d, q, full, quoteAuthor),
     ms: Date.now() - t0,
   };

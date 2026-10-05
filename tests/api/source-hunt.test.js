@@ -75,6 +75,15 @@ describe('quote author', () => {
     ], 'Bahá’u’lláh')[0];
     expect(top.id).toBe(1);
   });
+  it('a name merely mentioned does not vote; the writers of the matches do', () => {
+    const m = [
+      { writer: 'Shoghi Effendi', authors: null },
+      { writer: 'Shoghi Effendi', authors: null },
+      { writer: 'J. Smith', authors: '[{"name":"Shoghi Effendi","role":"quoted"}]' },
+      { writer: 'Bahá’u’lláh', authors: null },
+    ];
+    expect(quoteAuthorOf(m)).toBe('Shoghi Effendi');
+  });
   it('no one of standing → null', () => {
     expect(quoteAuthorOf([{ writer: 'J. Smith', authors: null }])).toBeNull();
   });

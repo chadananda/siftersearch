@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-04T23:25:01.171Z",
+  "generated": "2026-10-05T00:28:36.341Z",
   "entries": [
+    {
+      "hash": "e19b351b",
+      "date": "2026-10-04",
+      "type": "Fixed",
+      "description": "Unlinked tablet candidates come only from the quote's own writer's originals",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "014c6eac",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "NAMED_QUERIES referenced consts before they existed (would crash the snapshot)",
       "scope": null
-    },
-    {
-      "hash": "16fe3cfd",
-      "date": "2026-08-16",
-      "type": "Other",
-      "description": "Register the split's queries so the slow one can be EXPLAINed",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "e19b351b",
+        "date": "2026-10-04",
+        "type": "Fixed",
+        "description": "Unlinked tablet candidates come only from the quote's own writer's originals",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "014c6eac",
         "date": "2026-10-04",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-16",
         "type": "Fixed",
         "description": "NAMED_QUERIES referenced consts before they existed (would crash the snapshot)",
-        "scope": null
-      },
-      {
-        "hash": "16fe3cfd",
-        "date": "2026-08-16",
-        "type": "Other",
-        "description": "Register the split's queries so the slow one can be EXPLAINed",
         "scope": null
       }
     ]
