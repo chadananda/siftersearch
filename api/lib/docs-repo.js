@@ -45,7 +45,7 @@ import { logger } from './logger.js';
  *               other predicate.
  *   all       — everything, tombstones included. Must be named EXPLICITLY; it is never a default.
  */
-export const SCOPES = Object.freeze(['live', 'canonical', 'withProse', 'canonicalWithProse', 'all']);
+export const SCOPES = Object.freeze(['live', 'canonical', 'withProse', 'canonicalWithProse', 'all', 'duplicates']);
 
 const HAS_PROSE = `EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)`;
 const IS_CANONICAL = `(d.source_site = 'oceanlibrary.com' OR d.source_site IS NULL)`;
@@ -57,6 +57,8 @@ export function scopeSql(scope = 'live') {
       `If you need a new visibility policy, add it here rather than hand-writing predicates at the call site.`);
   }
   if (scope === 'all') return [];
+  // retired copies: live rows pointing at the document that holds the work (search excludes them)
+  if (scope === 'duplicates') return ['d.deleted_at IS NULL', 'd.duplicate_of IS NOT NULL'];
   const base = ['d.deleted_at IS NULL', 'd.duplicate_of IS NULL'];
   if (scope === 'canonical') return [...base, IS_CANONICAL];
   if (scope === 'withProse') return [...base, HAS_PROSE];

@@ -1,13 +1,14 @@
-// Documents that are NOT passages and never come back from passage search: doc_role 'metadata' — an index of metadata such
-// as Phelps' Partial Inventory (Chad 2026-10-04: "one is an index of metadata, the other is a compilation"). They stay in
-// the library and feed tablet metadata. Ids cached; refreshed in the background (never on the request path).
+// Documents that never come back from passage search: doc_role 'metadata' — an index of metadata such as Phelps' Partial
+// Inventory (Chad 2026-10-04: "one is an index of metadata, the other is a compilation"), which stays in the library and
+// feeds tablet metadata — and RETIRED DUPLICATES (duplicate_of set; their files live in the library's _retired-duplicates/). Ids cached; refreshed in the background (never on the request path).
 // Deps: docs-repo.js
 let ids = [], at = 0, loading = null;
 
 async function refresh() {
   const { listDocs } = await import('../docs-repo.js');
-  const { docs } = await listDocs({ role: 'metadata', fields: ['id'], limit: 1000 });
-  ids = docs.map((d) => Number(d.id));
+  const [meta, dups] = await Promise.all([listDocs({ role: 'metadata', fields: ['id'], limit: 1000 }),
+    listDocs({ scope: 'duplicates', fields: ['id'], limit: 1000 })]);
+  ids = [...meta.docs, ...dups.docs].map((d) => Number(d.id));
 }
 
 /** Doc ids to exclude (empty until the first refresh lands; then refreshed every 10 min). */

@@ -70,6 +70,12 @@ describe('scopeSql — visibility is a named POLICY, not a pile of booleans', ()
     expect(scopeSql('withProse').join(' AND ')).toContain('EXISTS');
   });
 
+  it("'duplicates' lists the retired copies (live rows with duplicate_of) — search excludes them", () => {
+    const s = scopeSql('duplicates').join(' AND ');
+    expect(s).toContain('deleted_at IS NULL');
+    expect(s).toContain('duplicate_of IS NOT NULL');
+  });
+
   it('THROWS on an unknown scope, pointing the caller at extending the interface', () => {
     // Silently falling back to a default is how a caller ends up with a policy it did not ask for.
     expect(() => scopeSql('whatever')).toThrow(/unknown scope/i);

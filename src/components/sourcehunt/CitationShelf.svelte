@@ -22,7 +22,7 @@
   {#if items.length}
     <div class="shelf" role="list">
       {#each items as c, i (c.documentId)}
-        <a href={c.url} target="_blank" rel="noopener" role="listitem" class="spine {site(c.site).cls}"
+        <a href={c.rangeUrl || c.url} target="_blank" rel="noopener" role="listitem" class="spine {site(c.site).cls}"
           style="--h: {118 + Math.min(c.paragraphs, 8) * 10}px; --d: {Math.min(i, 40) * 35}ms"
           title="{c.title}{c.author ? ` — ${c.author}` : ''} · {site(c.site).label}{c.paragraphs > 1 ? ` · ${c.paragraphs} passages` : ''}">
           <span class="spine-title">{c.title}</span>

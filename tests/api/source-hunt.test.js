@@ -287,3 +287,17 @@ describe('holds-the-quote by DECISION (cross-translation)', () => {
   });
 });
 
+
+describe('textFragment (range links)', async () => {
+  const { textFragment } = await import('../../api/lib/source-hunt.js');
+  const T = 'Intro words. Tear asunder, in My Name, the veils that have grievously blinded your vision[^9], and scatter the idols. After.';
+  const a = T.indexOf('Tear'), b = T.indexOf('idols.') + 6;
+  it('first and last words of the quoted stretch, encoded, without unrendered markup', () => {
+    const u = textFragment('https://bahai-library.com/x', T, [[a, b]]);
+    expect(u).toBe('https://bahai-library.com/x#:~:text=Tear%20asunder%2C%20in%20My,and%20scatter%20the%20idols');
+  });
+  it('joins an existing #anchor with :~:', () => {
+    expect(textFragment('https://siftersearch.com/library/x#p14', 'one two three', [[0, 13]])).toBe('https://siftersearch.com/library/x#p14:~:text=one%20two%20three');
+  });
+  it('no range → null', () => { expect(textFragment('u', T, [])).toBe(null); });
+});

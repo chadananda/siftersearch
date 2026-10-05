@@ -78,6 +78,19 @@ export function siteOf(url, sourceSite) {
 const titleKey = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[‘’'`ʼ]/g, '')
   .replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/^(the|a|an)\s+/, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 /** One entry per work: the best public copy; paragraph counts merged; library-only copies kept only when nothing else exists. */
+/** A RANGE link to the quoted stretch: a text fragment (`#:~:text=first words,last words`, Chrome/Edge/Safari/Firefox) that
+ *  scrolls to and highlights it; a browser without support simply opens the page. Words carrying markup the page does not
+ *  render ([^13], [pg 202], [75.1]) are left out of the anchors. OceanLibrary's own selectionString range links need the
+ *  page's per-paragraph ilmid and are a later step (memory reference_range_links_ocean). Null when there is no range. */
+export function textFragment(url, text, ranges, n = 4) {
+  if (!url || !text || !ranges?.length) return null;
+  const words = text.slice(ranges[0][0], ranges[ranges.length - 1][1]).split(/\s+/).filter((w) => w && !/[[\]^*_#>|]/.test(w));
+  if (!words.length) return null;
+  const enc = (ws) => encodeURIComponent(ws.join(' ').replace(/^[“"‘'(«]+|[”"’')»,.;:!?]+$/g, '')).replace(/-/g, '%2D').replace(/,/g, '%2C').replace(/&/g, '%26');
+  const directive = words.length <= n * 2 ? `text=${enc(words)}` : `text=${enc(words.slice(0, n))},${enc(words.slice(-n))}`;
+  return url.includes('#') ? `${url}:~:${directive}` : `${url}#:~:${directive}`;
+}
+
 export function dedupeCitations(items) {
   const best = new Map();
   for (const c of items) {
@@ -231,7 +244,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
-    url: origin.url, site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
+    url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
   say('origin', { origin: originOut, candidates: ranked.length });
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
@@ -240,12 +253,12 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const add = (p) => {
     if (p.doc_id === origin.doc_id) return;
     const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: siteOf(p.url, p.source_site),
-      url: p.url, paragraphs: 0, first: p.id };
+      url: p.url, rangeUrl: p.text ? textFragment(p.url, p.text, quoteRanges(p.text, q.text)) : null, paragraphs: 0, first: p.id };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
   for (const m of pool) if (m.id !== origin.id) add(m);
   const quoters = (full.quotedBy?.passages || []).map((p) => ({ id: p.id, doc_id: p.documentId, title: p.document.title,
-    book_author: p.document.author, url: p.url, source_site: null }));
+    book_author: p.document.author, url: p.url, text: p.text || null, source_site: null }));
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
   const citedBy = dedupeCitations([...byDoc.values()]);
   say('cited', { citedBy, citedByLinkCount: full.quotedBy?.count || 0 });
@@ -375,8 +388,12 @@ async function tabletGuess(d, q, links, author = null) {
   const withMeta = async (p, basis) => {
     if (!p) return p;
     const text = decodeEntities(p.text);
-    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...(await meaningRanges(d, q, p.id, text, /[پچژگ]/.test(text) ? 'fa' : 'ar')),
-      url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) };
+    const mr = await meaningRanges(d, q, p.id, text, /[پچژگ]/.test(text) ? 'fa' : 'ar');
+    const meta = await d.meta(p.documentId).catch(() => null);
+    // range links for the original: our copy, and Ocean of Lights (a static page — a text fragment lands on the stretch)
+    const ool = meta?.links?.oceanoflights;
+    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...mr, url: p.url, rangeUrl: textFragment(p.url, text, mr.highlight),
+      basis, meta: ool ? { ...meta, links: { ...meta.links, oceanoflightsRange: textFragment(ool, text, mr.highlight) } } : meta };
   };
   if (links?.original) {
     // The LINK fixes the tablet; the paragraph inside it is re-checked: the quote's closest paragraphs in that tablet by
@@ -416,7 +433,7 @@ async function defaultDeps() {
       const rs = await queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.authors, c.external_para_id, d.title, d.author AS book_author,
           d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year
         FROM content c JOIN docs d ON d.id = c.doc_id
-        WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'source-hunt:rows');
+        WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL`, uniq, 'source-hunt:rows');
       // Core Publications books whose paragraphs are flagged duplicates of their OceanLibrary copy (Gleanings, ESW, Gems, …)
       // are not in the phrase index — only the copy is, and the copy carries no collection. A row whose title is a Core
       // title ranks as Core (10-05: the verbatim Gleanings copy lost to a Core book that only paraphrased the quote).

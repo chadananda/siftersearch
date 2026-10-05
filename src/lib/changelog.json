@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T22:51:31.511Z",
+  "generated": "2026-10-05T22:58:00.180Z",
   "entries": [
+    {
+      "hash": "4ab744e5",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "A verbatim paragraph always holds the quote (the decision only ADDS meaning matches); exact wording outranks the Core label",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "207a1316",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "The conceptual track HAS run — correcting my own correction",
       "scope": null
-    },
-    {
-      "hash": "898b23a3",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Index the lexicon, because entities have no writer",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "4ab744e5",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "A verbatim paragraph always holds the quote (the decision only ADDS meaning matches); exact wording outranks the Core label",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "207a1316",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Docs",
         "description": "The conceptual track HAS run — correcting my own correction",
-        "scope": null
-      },
-      {
-        "hash": "898b23a3",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Index the lexicon, because entities have no writer",
         "scope": null
       }
     ]

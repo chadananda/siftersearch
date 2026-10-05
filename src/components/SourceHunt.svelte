@@ -167,7 +167,7 @@
   const cited = $derived(ev.cited || (result && { citedBy: result.citedBy, citedByLinkCount: result.citedByLinkCount }) || null);
   const tablet = $derived(ev.tablet?.tablet || result?.tablet || null);
   const tabletLinks = (meta) => [
-    meta?.links?.oceanoflights && { href: meta.links.oceanoflights, label: 'Ocean of Lights' },
+    meta?.links?.oceanoflights && { href: meta.links.oceanoflightsRange || meta.links.oceanoflights, label: 'Ocean of Lights' },
     meta?.links?.inventory && { href: meta.links.inventory, label: `Phelps Inventory${meta.pin ? ` · ${meta.pin}` : ''}` },
   ].filter(Boolean);
 
@@ -282,7 +282,7 @@
           {#if origin}<span class="chip">{siteName(origin.site)}</span>{/if}
         </div>
         {#if origin}
-          <a href={origin.url} target="_blank" rel="noopener" class="sh-book text-accent hover:text-accent-hover">{origin.title}</a>
+          <a href={origin.rangeUrl || origin.url} target="_blank" rel="noopener" class="sh-book text-accent hover:text-accent-hover">{origin.title}</a>
           <p class="text-sm text-secondary">{origin.author}{#if origin.bookAuthor && origin.bookAuthor !== origin.author} · in a book by {origin.bookAuthor}{/if}</p>
           <blockquote class="sh-passage text-primary">{#each shown_(origin.text, origin.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {350 + i * 120}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if result?.considered?.length > 1}
@@ -330,7 +330,7 @@
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           <div class="flex flex-wrap gap-2 pt-1">
             {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
-            {#if tablet.url}<a href={tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a>{/if}
+            {#if tablet.url}<a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a>{/if}
           </div>
         {:else if tablet.candidates?.length}
           <p class="text-sm text-secondary">No translation link yet — these originals are the closest in meaning. Verify before citing.</p>

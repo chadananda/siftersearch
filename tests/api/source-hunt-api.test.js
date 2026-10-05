@@ -37,7 +37,7 @@ describe('toApi', () => {
     expect(r.source).toMatchObject({ title: 'Gleanings', site: 'OceanLibrary', quotedText: ['The earth'], matchedBy: 'decision' });
     expect(r.original).toMatchObject({ certain: true, pin: 'BH00001', title: 'Tablet of Maqṣúd', quotedText: ['عالم'], links: { oceanOfLights: 'o', phelpsInventory: 'i' } });
     expect(r.possibleOriginals).toEqual([]);
-    expect(r.citedBy[0]).toEqual({ title: 'B', author: 'A', site: "Bahá'í Library Online", url: 'b', passages: 2 });
+    expect(r.citedBy[0]).toEqual({ title: 'B', author: 'A', site: "Bahá'í Library Online", url: 'b', rangeUrl: null, passages: 2 });
   });
 });
 
