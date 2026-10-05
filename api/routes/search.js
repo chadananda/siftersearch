@@ -35,6 +35,10 @@ import { MemoryAgent } from '../agents/agent-memory.js';
 import { getCachedSearch, setCachedSearch } from '../lib/search-cache.js';
 import { analyzePassagesParallel, getOptimalPassageCount } from '../lib/parallel-analyzer.js';
 import { rerank } from '../lib/reranker.js';
+import { appendFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+const SOURCE_HUNT_LOG = process.env.SOURCE_HUNT_LOG || join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'logs', 'source-hunt.jsonl');
 
 // Helper function to parse parenthetical filter terms from query
 /**
@@ -459,12 +463,27 @@ export default async function searchRoutes(fastify) {
     return { hits: await withLinks(r.hits), _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
   });
 
+  // Audit read-back: the last N SourceHunt queries with their complete results (internal).
+  fastify.get('/source-hunt/log', { preHandler: requireInternal }, async (request) => {
+    const n = Math.min(Number(request.query?.limit) || 50, 1000);
+    const text = await readFile(SOURCE_HUNT_LOG, 'utf8').catch(() => '');
+    return text.trim().split('\n').filter(Boolean).slice(-n).map((l) => { try { return JSON.parse(l); } catch { return { unparsed: l.slice(0, 200) }; } });
+  });
+
   // SourceHunt (/sourcehunt page): an English quote → its published book, every publication citing it, the likely tablet.
   // Qdrant + SQLite only (no Meili). First-party: the site's own page.
   fastify.post('/source-hunt', { preHandler: requireFirstParty }, async (request, reply) => {
     const quote = String(request.body?.quote || '').slice(0, 4000);
     const { sourceHunt } = await import('../lib/source-hunt.js');
-    const r = await sourceHunt(quote);
+    const t0 = Date.now();
+    const r = await sourceHunt(quote).catch((err) => ({ failed: err.message, stack: String(err.stack || '').slice(0, 2000) }));
+    // AUDIT LOG (Chad 10-04: "log results completely so you can check them and audit correctness"): one JSONL line per query
+    // — the quote, the full response (every candidate considered, every citing publication, the tablet and its text), timing,
+    // and any error. Append-only file, not SQLite: an audit log must never be dropped for a lock. Read: GET /source-hunt/log.
+    appendFile(SOURCE_HUNT_LOG, JSON.stringify({ at: new Date().toISOString(), quote, ms: Date.now() - t0,
+      origin_header: request.headers.origin || request.headers.referer || null, result: r }) + '\n')
+      .catch((err) => request.log.error({ err: err.message }, 'source-hunt audit log write FAILED'));
+    if (r.failed) return reply.code(500).send({ error: 'SourceHuntFailed', message: r.failed });
     if (r.error) return reply.code(400).send({ error: 'BadRequest', message: r.error });
     return r;
   });
