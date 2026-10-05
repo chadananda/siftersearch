@@ -10,7 +10,8 @@ const ROWS = {
   4: { id: 4, doc_id: 40, text: 'An unrelated paragraph about gardens and rain.', authors: null, book_author: 'X', title: 'Other', source_site: null },
 };
 const deps = (over = {}) => ({
-  phrases: async (q, { filters }) => (filters?.langGroup ? { hits: [{ paragraph_id: 90, score: 0.71 }] } : { hits: [{ paragraph_id: 2 }, { paragraph_id: 4 }] }),
+  phrases: async (q, { filters }) => (filters?.documentId ? { hits: [{ paragraph_id: 77, score: 0.8 }] }
+    : filters?.langGroup ? { hits: [{ paragraph_id: 90, score: 0.71 }] } : { hits: [{ paragraph_id: 2 }, { paragraph_id: 4 }] }),
   keyword: async () => ({ hits: [{ paragraph_id: 1 }, { paragraph_id: 3 }] }),
   rows: async (ids) => ids.map((i) => ROWS[i]).filter(Boolean).map((r) => ({ ...r, url: `u/${r.id}` })),
   links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, {
@@ -108,5 +109,15 @@ describe('quoteRanges (highlight the quote in the passage)', async () => {
     const p = 'Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting.';
     const r = quoteRanges(p, 'Possess a pure, kindly and radiant heart … a sovereignty ancient, imperishable … of the');
     expect(r.map(([a, b]) => p.slice(a, b))).toEqual(['Possess a pure, kindly and radiant heart', 'a sovereignty ancient, imperishable']);
+  });
+});
+
+describe('paragraph inside the linked tablet', () => {
+  it('the closest paragraph of the linked tablet replaces a linked paragraph that is not among its closest', async () => {
+    const r = await sourceHunt(QUOTE, deps({
+      phrases: async (q, { filters }) => (filters?.documentId ? { hits: [{ paragraph_id: 78, score: 0.9 }] } : { hits: [{ paragraph_id: 2 }] }),
+      passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud (Arabic)' }, text: 'الفقرة الصحيحة', url: 'ool/78' }])),
+    }));
+    expect(r.tablet).toMatchObject({ certain: true, id: 78, basis: 'tablet linked; paragraph by similarity', linkedParagraph: { id: 77 } });
   });
 });

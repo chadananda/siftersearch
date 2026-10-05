@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T01:20:50.133Z",
+  "generated": "2026-10-05T01:36:41.214Z",
   "entries": [
+    {
+      "hash": "6d1dda8c",
+      "date": "2026-10-04",
+      "type": "New",
+      "description": "Highlight the quote inside the published passage (word-level, accent/apostrophe-blind; one range per elided run)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "fe3a40d7",
       "date": "2026-10-04",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Read-only endpoint for the STORED Meili document",
       "scope": null
-    },
-    {
-      "hash": "fe574664",
-      "date": "2026-08-17",
-      "type": "Other",
-      "description": "Is content.heading populated, or just not reaching the index?",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-04": [
+      {
+        "hash": "6d1dda8c",
+        "date": "2026-10-04",
+        "type": "New",
+        "description": "Highlight the quote inside the published passage (word-level, accent/apostrophe-blind; one range per elided run)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "fe3a40d7",
         "date": "2026-10-04",
@@ -7051,15 +7058,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "Read-only endpoint for the STORED Meili document",
-        "scope": null
-      }
-    ],
-    "2026-08-17": [
-      {
-        "hash": "fe574664",
-        "date": "2026-08-17",
-        "type": "Other",
-        "description": "Is content.heading populated, or just not reaching the index?",
         "scope": null
       }
     ]

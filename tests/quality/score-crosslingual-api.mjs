@@ -5,7 +5,7 @@
 //   node tests/quality/score-crosslingual-api.mjs [--qdrant] [--limit=N] [--kinds=phrase,sentence] [--top-k=10] [--scope=library] [--out=file]
 import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import dotenv from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,7 +16,7 @@ const args = process.argv.slice(2);
 const arg = (k) => args.find((a) => a.startsWith(`--${k}=`))?.split('=')[1];
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
-if (!KEY) { console.error('needs DEPLOY_SECRET (or INTERNAL_API_KEY)'); process.exit(2); }
+if (!KEY && process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) { console.error('needs DEPLOY_SECRET (or INTERNAL_API_KEY)'); process.exit(2); }
 const TOP_K = Number(arg('top-k') || 10);
 // default scope = originals: the case's own language (ar/fa), as battery.py's 'originals' scope. Unfiltered live search
 // returns the English translation first, which the text judge (rightly) never counts. --scope=library drops the filter.
@@ -44,6 +44,9 @@ export function correct(hitText, target) {
   return k / small.size >= 0.3;
 }
 
+// run only when executed directly — score-sourcehunt.mjs imports correct() and must not start this battery
+const MAIN = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
 async function one(c) {
   const t0 = Date.now();
   try {
@@ -57,7 +60,7 @@ async function one(c) {
   } catch (e) { return { id: c.id, kind: c.kind, error: e.message.slice(0, 120) }; }
 }
 const rows = [];
-for (let i = 0; i < cases.length; i += 4) rows.push(...await Promise.all(cases.slice(i, i + 4).map(one)));
+if (MAIN) for (let i = 0; i < cases.length; i += 4) rows.push(...await Promise.all(cases.slice(i, i + 4).map(one)));
 
 const agg = (rs) => {
   const ok = rs.filter((r) => !r.error); if (!ok.length) return { n: 0, errors: rs.length };
@@ -69,5 +72,5 @@ const agg = (rs) => {
 const groups = { ALL: agg(rows) };
 for (const k of [...new Set(rows.map((r) => r.kind))].sort()) groups[k] = agg(rows.filter((r) => r.kind === k));
 const report = { at: new Date().toISOString(), scope: LIBRARY ? 'library' : 'originals', qdrant, weights, plan: !args.includes('--no-plan'), groups };
-for (const [g, v] of Object.entries(groups)) console.log(g.padEnd(10), JSON.stringify(v));
-if (arg('out')) writeFileSync(arg('out'), JSON.stringify({ report, rows }, null, 1));
+if (MAIN) for (const [g, v] of Object.entries(groups)) console.log(g.padEnd(10), JSON.stringify(v));
+if (MAIN && arg('out')) writeFileSync(arg('out'), JSON.stringify({ report, rows }, null, 1));

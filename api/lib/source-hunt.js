@@ -171,7 +171,18 @@ export async function sourceHunt(raw, deps = {}) {
 async function tabletGuess(d, q, links, author = null) {
   const withMeta = async (p, basis) => p && ({ id: p.id, documentId: p.documentId, title: p.document?.title, text: p.text,
     url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) });
-  if (links?.original) return { certain: true, ...(await withMeta(links.original, links.original.path || 'translation')) };
+  if (links?.original) {
+    // The LINK fixes the tablet; the paragraph inside it is re-checked: the quote's closest paragraphs in that tablet by
+    // cross-lingual phrase similarity. The linked one stands if it is among them; otherwise the closest replaces it
+    // (battery 10-04: Súriy-i-Haykal right tablet / wrong paragraph in 89% of cases, Hidden Words 31%).
+    const o = links.original;
+    const inDoc = await d.phrases(q.match, { limit: 5, timeoutMs: QD_MS, filters: { documentId: o.documentId } }).catch(() => ({ hits: [] }));
+    const ids = inDoc.hits.map((h) => h.paragraph_id);
+    if (!ids.length || ids.includes(o.id)) return { certain: true, ...(await withMeta(o, o.path || 'translation')) };
+    const best = (await d.passages([ids[0]])).get(ids[0]);
+    return { certain: true, ...(await withMeta(best || o, best ? 'tablet linked; paragraph by similarity' : (o.path || 'translation'))),
+      linkedParagraph: best ? { id: o.id, text: o.text } : undefined };
+  }
   // only the quote's own writer's originals: an ‘Abdu’l-Bahá talk near in meaning is not the source of a Bahá’u’lláh line
   const near = await d.phrases(q.match, { limit: 8, timeoutMs: QD_MS, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
   const ps = await d.passages(near.hits.map((h) => h.paragraph_id));
