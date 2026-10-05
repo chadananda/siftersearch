@@ -17,6 +17,9 @@
     { "pattern": "siftersearch.com/*", "zone_name": "siftersearch.com" },
     { "pattern": "www.siftersearch.com/*", "zone_name": "siftersearch.com" }
   ],
+  // Workers AI binding: Clef / Clef-flash (System-1 decision models, Jev-API compatible) run here with no API token;
+  // tower's api/lib/systemone.js reaches them through POST /_s1/run (worker/index.js).
+  "ai": { "binding": "AI" },
   "observability": {
     "enabled": true
   }

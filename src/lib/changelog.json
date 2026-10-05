@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T12:30:16.990Z",
+  "generated": "2026-10-05T12:43:39.587Z",
   "entries": [
+    {
+      "hash": "31df2bd6",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "--monthly-usd cap over a shared Gemini spend ledger (/tank/sifter/gemini-spend.db); $400/month total (Chad 10-05)",
+      "scope": "phrase-index"
+    },
     {
       "hash": "07205921",
       "date": "2026-10-04",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "One implementation of the thread<->dialog link, not two",
       "scope": null
-    },
-    {
-      "hash": "6763a978",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "The missing argument-carrying disambiguate module",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-05": [
+      {
+        "hash": "31df2bd6",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "--monthly-usd cap over a shared Gemini spend ledger (/tank/sifter/gemini-spend.db); $400/month total (Chad 10-05)",
+        "scope": "phrase-index"
+      }
+    ],
     "2026-10-04": [
       {
         "hash": "07205921",
@@ -7051,13 +7060,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "One implementation of the thread<->dialog link, not two",
-        "scope": null
-      },
-      {
-        "hash": "6763a978",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "The missing argument-carrying disambiguate module",
         "scope": null
       }
     ]

@@ -24,12 +24,32 @@ const isApiPath = (p) => p.startsWith('/api/') || p.startsWith('/widget') || p =
 const isLiveState = (p) => p.startsWith('/api/admin/')
   || /\/(progress|status|monitor|health)$/.test(p);
 
+// System-1 at the edge (Chad 10-05: Clef / Clef-flash, Jev-API compatible, vision-capable). Server-to-server only: the
+// caller must present the internal key (Worker secret S1_KEY). The body is passed to the model as is — {state, questions}
+// and any image input — so vision tasks need no change here. Never cached (POST).
+const S1_MODELS = new Set(['clef', 'clef-flash']);
+async function systemOneRun(request, env) {
+  if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });
+  let body;
+  try { body = await request.json(); } catch { return Response.json({ error: 'bad json' }, { status: 400 }); }
+  const { model, ...input } = body || {};
+  if (!S1_MODELS.has(model)) return Response.json({ error: `model must be one of ${[...S1_MODELS].join(', ')}` }, { status: 400 });
+  const t0 = Date.now();
+  try {
+    const out = await env.AI.run(`@cf/cloudflare/${model}`, input);
+    return Response.json({ model, ms: Date.now() - t0, answers: out?.answers ?? out, usage: out?.usage ?? null });
+  } catch (err) {
+    return Response.json({ error: String(err?.message || err).slice(0, 300), model, ms: Date.now() - t0 }, { status: 502 });
+  }
+}
+
 export function createExports(manifest) {
   const app = new App(manifest);
   return {
     default: {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
+        if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
         if (isApiPath(url.pathname)) {
           const target = API_ORIGIN + url.pathname + url.search;
           // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.

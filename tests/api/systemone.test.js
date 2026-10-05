@@ -8,6 +8,8 @@ let dir, mod, urls;
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'systemone-'));
   process.env.SYSTEMONE_DIR = dir; process.env.LAYA_TOKEN = 't'; process.env.TYPESAFE_API_KEY = 'k';
+  // hermetic: the real .env-secrets may carry the internal key, which would switch Clef shadowing on
+  delete process.env.INTERNAL_API_KEY; delete process.env.SYSTEMONE_EDGE_KEY; delete process.env.CLEF; delete process.env.SYSTEMONE_SHADOW;
   urls = [];
   vi.stubGlobal('fetch', vi.fn(async (url, init) => {
     urls.push(url);
@@ -46,5 +48,44 @@ describe('systemone.ask', () => {
     await mod.ask('paragraph-attribution', 's', Q, { ref: 7 });
     expect(mod.attachGold('paragraph-attribution', 7, { speaker: 'Shoghi Effendi' }, 'trailer')).toBe(1);
     expect(mod.attachGold('search-scope', 7, {}, 'x')).toBe(0);   // task types never mix
+  });
+});
+
+describe('Clef backends (Workers AI via our edge Worker)', () => {
+  const clefEnv = () => { process.env.INTERNAL_API_KEY = 'ik'; };
+  afterEach(() => { delete process.env.INTERNAL_API_KEY; delete process.env.SYSTEMONE_SHADOW; });
+  const settle = () => new Promise((r) => setTimeout(r, 20));
+
+  it('no internal key → no Clef calls at all, and a clef primary falls back to Jev', async () => {
+    writeFileSync(join(dir, 'routing.json'), JSON.stringify({ t: { primary: 'clef-flash' } }));
+    const r = await mod.ask('t', 's', Q); await settle();
+    expect(r.served_by).toBe('jev'); expect(urls.some((u) => u.includes('/_s1/run'))).toBe(false);
+  });
+  it('with a token: Jev serves, Clef and Clef-flash shadow AFTER the answer into the shadow table', async () => {
+    clefEnv();
+    const r = await mod.ask('t', 's', Q); await settle();
+    expect(r.served_by).toBe('jev');
+    const rows = mod._test.db().prepare('SELECT backend, answers, error FROM shadow WHERE call_id = ? ORDER BY backend').all(r.id);
+    expect(rows.map((x) => x.backend)).toEqual(['clef', 'clef-flash']);
+    expect(urls.filter((u) => u.includes('/_s1/run'))).toHaveLength(2);
+  });
+  it('clef-flash primary serves; Jev shadows it; Clef failure falls back to Jev', async () => {
+    clefEnv(); writeFileSync(join(dir, 'routing.json'), JSON.stringify({ t: { primary: 'clef-flash' } }));
+    const r = await mod.ask('t', 's', Q); await settle();
+    expect(r.served_by).toBe('clef-flash');
+    const rows = mod._test.db().prepare('SELECT backend FROM shadow WHERE call_id = ? ORDER BY backend').all(r.id).map((x) => x.backend);
+    expect(rows).toEqual(['clef', 'clef-flash', 'jev']);
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      if (url.includes('/_s1/run')) return { ok: false, status: 503, text: async () => 'down' };
+      const body = JSON.parse(init.body);
+      return { ok: true, json: async () => ({ model: 'jev', answers: Object.fromEntries(Object.keys(body.questions).map((q) => [q, { choice: 'other', confidence: 0.9 }])) }) };
+    }));
+    const f = await mod.ask('t', 's', Q);
+    expect(f.served_by).toBe('jev');
+  });
+  it('SYSTEMONE_SHADOW="" turns shadowing off', async () => {
+    clefEnv(); process.env.SYSTEMONE_SHADOW = '';
+    await mod.ask('t', 's', Q); await settle();
+    expect(urls.some((u) => u.includes('/_s1/run'))).toBe(false);
   });
 });
