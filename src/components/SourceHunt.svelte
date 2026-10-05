@@ -307,7 +307,7 @@
           <p class="sh-book text-primary">{tablet.meta?.title || tablet.title}</p>
           {#if tablet.meta?.first_line_en}<p class="text-sm italic text-secondary">{tablet.meta.first_line_en}</p>{/if}
           <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each shown_(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
-          {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause Clef-flash judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
+          {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           <div class="flex flex-wrap gap-2 pt-1">
             {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
             {#if tablet.url}<a href={tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a>{/if}

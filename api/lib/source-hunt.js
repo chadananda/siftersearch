@@ -335,8 +335,12 @@ async function decideRanges(d, quoteText, text, lang, hint = []) {
   const ranges = [];
   for (const x of picked) {
     const last = ranges[ranges.length - 1];
-    if (last && x.i === last.i + 1) { last.r[1] = x.u.end; last.i = x.i; } else ranges.push({ r: [x.u.start, x.u.end], i: x.i });
+    if (last && x.i === last.i + 1) { last.r[1] = x.u.end; last.i = x.i; last.p = Math.max(last.p, x.p); } else ranges.push({ r: [x.u.start, x.u.end], i: x.i, p: x.p });
   }
+  // A quotation WITHOUT an ellipsis is one continuous passage: keep only the run of clauses holding the strongest match,
+  // and drop strays elsewhere in the paragraph (Jev said 0.61 for "who arises to serve all on earth" beside the true clause
+  // of "The earth is but one country…", 10-05). An elided quote ("… …") may mark several runs.
+  if (!/\.\.\.|…/.test(quoteText) && ranges.length > 1) return [ranges.reduce((m, x) => (x.p > m.p ? x : m)).r];
   return ranges.map((x) => x.r);
 }
 

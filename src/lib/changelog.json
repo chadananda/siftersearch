@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T14:08:17.064Z",
+  "generated": "2026-10-05T15:55:21.800Z",
   "entries": [
+    {
+      "hash": "f4ecb882",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "POST /api/v1/source-hunt and /api/v1/source-hunt/page (article → its quotations, each traced); SourceHunt stages run in parallel + per-stage timings",
+      "scope": "api"
+    },
     {
       "hash": "5b162689",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix ambiguous deleted_at in the unresolvable-notes count",
       "scope": null
-    },
-    {
-      "hash": "b2a11e85",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Count the disambiguation failures that pass as done",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "f4ecb882",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "POST /api/v1/source-hunt and /api/v1/source-hunt/page (article → its quotations, each traced); SourceHunt stages run in parallel + per-stage timings",
+        "scope": "api"
+      },
       {
         "hash": "5b162689",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Fix ambiguous deleted_at in the unresolvable-notes count",
-        "scope": null
-      },
-      {
-        "hash": "b2a11e85",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Count the disambiguation failures that pass as done",
         "scope": null
       }
     ]

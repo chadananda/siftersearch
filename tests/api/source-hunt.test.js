@@ -245,3 +245,24 @@ describe('holds-the-quote by DECISION (cross-translation)', () => {
     expect(r.origin.title).toBe('Gleanings');
   });
 });
+
+describe('one continuous run for an un-elided quote', () => {
+  const RAW = 'امروز انسان کسی است که بخدمت جمیع من علی الأرض قیام نماید. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن. و این بیان روشن است.';
+  const run = (quote, scores) => sourceHunt(quote, deps({
+    passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77' }])),
+    links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
+      original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW, url: 'ool/77', path: 'translation' } : null }])),
+    spans: async () => [], rawText: async () => RAW,
+    decide: async (task, state, q) => (task !== 'sourcehunt-highlight' ? null : { answers: Object.fromEntries(
+      [...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)].map(([, k, t]) => [k, { noul: scores(t) }])) }),
+  }));
+  it('a stray clause elsewhere (0.61) is dropped; the strongest run stays', async () => {
+    const r = await run(QUOTE, (t) => (t.includes('وطن') ? 0.9 : t.includes('بخدمت') ? 0.61 : 0.05));
+    expect(r.tablet.highlight).toHaveLength(1);
+    expect(r.tablet.text.slice(...r.tablet.highlight[0])).toContain('وطن');
+  });
+  it('an elided quote keeps separate runs', async () => {
+    const r = await run('That one indeed is a man who … the earth is but one country, and mankind its citizens', (t) => (t.includes('روشن') || t.includes('بخدمت') ? 0.9 : 0.05));   // first and last clauses: not adjacent
+    expect(r.tablet.highlight.length).toBeGreaterThan(1);
+  });
+});
