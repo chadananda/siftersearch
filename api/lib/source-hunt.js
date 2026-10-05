@@ -253,7 +253,9 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const add = (p) => {
     if (p.doc_id === origin.doc_id || titleKey(p.title) === titleKey(origin.title)) return;   // the source's own other copy is not a citation
     const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: siteOf(p.url, p.source_site),
-      url: p.url, rangeUrl: p.text ? textFragment(p.url, p.text, quoteRanges(p.text, q.text)) : null, paragraphs: 0, first: p.id };
+      // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
+      // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
+      url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text)) : null, paragraphs: 0, first: p.id };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
   for (const m of pool) if (m.id !== origin.id) add(m);
