@@ -25,7 +25,7 @@
     <circle cx="52" cy="52" r="38" fill="url(#ayn-glass)" />
     <!-- the letter ʿayn, UNDER the glass: clipped to the lens and drawn large enough that the rim covers its edges -->
     <g clip-path="url(#ayn-clip)">
-      <text x="54" y="74" text-anchor="middle" class="glyph">ع</text>
+      <text x="52" y="70" text-anchor="middle" class="glyph">ع</text>
     </g>
     <!-- the rim and glint sit ON TOP of the letter -->
     <circle cx="52" cy="52" r="38" fill="none" stroke="url(#ayn-ring)" stroke-width="6" />
@@ -48,7 +48,7 @@
   .glass-a { stop-color: color-mix(in srgb, var(--accent-primary) 18%, transparent); }
   .glass-b { stop-color: color-mix(in srgb, var(--accent-tertiary) 6%, transparent); }
   .glint { stroke: color-mix(in srgb, white 70%, transparent); }
-  .glyph { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 78px; fill: var(--text-primary); opacity: .92; }
+  .glyph { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 58px; fill: var(--text-primary); opacity: .92; }
   .ring-pulse { opacity: 0; transform-origin: 52px 52px; }
   .hunting .ring-pulse { animation: ring 1.6s ease-out infinite; }
 

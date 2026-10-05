@@ -161,7 +161,7 @@
 
 <section class="sh flex flex-col gap-6">
   <!-- ── header: the mark, the claim, the scale of the library ── -->
-  <header class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+  <header class="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
     <div class="flex items-center gap-4 sm:gap-6">
       <AynLens size={64} hunting={phase === 'hunting'} />
       <div class="flex flex-col gap-1">
@@ -169,11 +169,12 @@
         <p class="max-w-xl text-secondary">Paste a quotation. SourceHunt traces it to the book it was published in, every publication that cites it, and the original Arabic or Persian tablet.</p>
       </div>
     </div>
-    <div class="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4 lg:min-w-[520px]">
-      {#each [['Phrase vectors', shown.phrase], ['Paragraphs indexed', shown.paragraphs], ['Documents', shown.documents], ['Original tablets', shown.tablets]] as [label, n] (label)}
-        <div class="flex flex-col gap-0.5 bg-surface-1 px-4 py-3">
+    <!-- the library at a glance: one compact row on phones, roomier from sm up -->
+    <div class="grid grid-cols-4 gap-px overflow-hidden rounded-xl border border-border bg-border lg:min-w-[520px]">
+      {#each [['Phrase vectors', shown.phrase], ['Paragraphs', shown.paragraphs], ['Documents', shown.documents], ['Tablets', shown.tablets]] as [label, n] (label)}
+        <div class="flex min-w-0 flex-col gap-0.5 bg-surface-1 px-2 py-1.5 sm:px-4 sm:py-3">
           <span class="sh-num text-primary">{scale ? fmt(n) : '…'}</span>
-          <span class="text-[11px] uppercase tracking-[0.12em] text-muted">{label}</span>
+          <span class="truncate text-[9px] uppercase tracking-[0.08em] text-muted sm:text-[11px] sm:tracking-[0.12em]">{label}</span>
         </div>
       {/each}
     </div>
@@ -324,7 +325,8 @@
 <style>
   .sh { --rise: cubic-bezier(.2,.8,.2,1); }
   .sh-title { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.01em; }
-  .sh-num { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sh-num { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  @media (min-width: 640px) { .sh-num { font-size: 1.35rem; } }
   :global(.sh-label) { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--text-muted); }
   .sh-quote { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.2rem; line-height: 1.55; min-height: 3rem; max-height: 40vh; overflow-y: auto; }
   .sh-input { transition: border-color 300ms, box-shadow 300ms; }

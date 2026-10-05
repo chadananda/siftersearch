@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:24:22.493Z",
+  "generated": "2026-10-05T13:26:15.965Z",
   "entries": [
+    {
+      "hash": "799b5a34",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "The ʿayn sits UNDER the lens — clipped to the glass, rim and glint drawn on top of it",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "8961cfbc",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "EXPLAIN condemned one of the three replacements",
       "scope": null
-    },
-    {
-      "hash": "ff9c62ba",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Kill the 49.8s embedding-stats scan (blob deref, not row count)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "799b5a34",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "The ʿayn sits UNDER the lens — clipped to the glass, rim and glint drawn on top of it",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "8961cfbc",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "EXPLAIN condemned one of the three replacements",
-        "scope": null
-      },
-      {
-        "hash": "ff9c62ba",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Kill the 49.8s embedding-stats scan (blob deref, not row count)",
         "scope": null
       }
     ]
