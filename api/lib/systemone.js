@@ -110,9 +110,11 @@ export function minConfidence(answers = {}) {
  * Ask a System-1 question set for one TASK TYPE. Returns { answers, served_by, id, tokens }.
  * opts: ref (e.g. content id — joins later gold labels), timeoutMs, shadow (default per routing), log (default true).
  */
-export async function ask(task, state, questions, { ref = null, timeoutMs = 20000, shadow, log = true, retries = 4 } = {}) {
+export async function ask(task, state, questions, { ref = null, timeoutMs = 20000, shadow, log = true, retries = 4, backend = null } = {}) {
   if (!task) throw new Error('systemone.ask: task type is required (training is per task type)');
-  const route = routeFor(task);
+  // backend: force one model for this call (an ENSEMBLE caller asks several and votes) — logged, no background shadows
+  const route = backend ? { ...routeFor(task), primary: backend, shadow: false } : routeFor(task);
+  if (backend && CLEF.has(backend) && !clefOn()) throw new Error(`${backend} unavailable (no edge key)`);
   let jev = null, laya = null, primary = null, served = null;
   if (route.primary === 'laya') {
     try { laya = await callLaya(task, route.laya_model, state, questions, Math.min(timeoutMs, 8000)); } catch { laya = null; }
@@ -120,7 +122,10 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
     else { jev = await callJev(state, questions, timeoutMs, retries); served = 'jev'; }
   } else if (CLEF.has(route.primary)) {
     try { primary = await callClef(route.primary, state, questions, timeoutMs); served = route.primary; }
-    catch { jev = await callJev(state, questions, timeoutMs, retries); served = 'jev'; }      // Clef down → Jev, never no answer
+    catch (e) {
+      if (backend) throw e;                                                                    // a forced backend fails honestly
+      jev = await callJev(state, questions, timeoutMs, retries); served = 'jev';                // Clef down → Jev, never no answer
+    }
   } else {
     jev = await callJev(state, questions, timeoutMs, retries); served = 'jev';
     if (route.laya_model && (shadow ?? route.shadow)) { try { laya = await callLaya(task, route.laya_model, state, questions, 8000); } catch { laya = null; } }

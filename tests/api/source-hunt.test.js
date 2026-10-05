@@ -171,7 +171,8 @@ describe('highlight in the original', () => {
       passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW.replace(/⁅\/?s\d+⁆/g, ''), url: 'ool/77' }])),
       links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
         original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW.replace(/⁅\/?s\d+⁆/g, ''), url: 'ool/77', path: 'translation' } : null }])),
-      spans: async () => [{ start: RAW.indexOf('انّما'), end: RAW.indexOf('واحد') + 4, score: 0.8 }, { start: 0, end: 5, score: 0.5 }],
+      // spans are over the CLEAN text (sentence markers removed), as the phrase index stores them
+      spans: async () => { const C = RAW.replace(/⁅\/?s\d+⁆/g, ''); return [{ start: C.indexOf('انّما'), end: C.indexOf('واحد') + 4, score: 0.8 }, { start: 0, end: 5, score: 0.5 }]; },
       rawText: async () => RAW,
     }));
     const t = r.tablet;
@@ -282,5 +283,36 @@ describe('relative cutoff', () => {
     expect(marked).toContain('وطن');
     expect(marked).not.toContain('بخدمت');
     expect(marked).not.toContain('طوبی');
+  });
+});
+
+describe('clause vote: Clef + Clef-flash, Jev breaks a tie', () => {
+  const RAW = 'امروز انسان کسی است که بخدمت جمیع من علی الأرض قیام نماید. حضرت موجود میفرماید طوبی لمن أصبح. فی‌الحقیقه عالم یک وطن محسوب است و من علی الأرض اهل آن.';
+  const setup = (score, calls) => deps({
+    passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool' }])),
+    links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
+      original: quotedBy ? { id: 77, documentId: 700, document: { title: 'M' }, text: RAW, url: 'ool', path: 'translation' } : null }])),
+    spans: async () => [], rawText: async () => RAW,
+    decide: async (task, state, q, { backend } = {}) => {
+      if (task !== 'sourcehunt-highlight') return null;
+      calls.push(backend);
+      return { answers: Object.fromEntries([...state.matchAll(/\[(c\d+)\] ([^\n]*)/g)].map(([, k, t]) => [k, { noul: score(backend, t) }])) };
+    },
+  });
+  it('agreeing Clef models answer alone (no Jev call)', async () => {
+    const calls = [];
+    const r = await sourceHunt(QUOTE, setup((b, t) => (t.includes('وطن') ? 0.9 : 0.1), calls));
+    expect(calls).not.toContain('jev');                          // two highlights (English + original), each asked of both Clef models
+    expect(new Set(calls)).toEqual(new Set(['clef', 'clef-flash']));
+    expect(r.tablet.text.slice(...r.tablet.highlight[0])).toContain('وطن');
+  });
+  it('disagreement → Jev votes; the majority wins and a stray loses', async () => {
+    const calls = [];
+    const score = (b, t) => (t.includes('وطن') ? 0.9 : t.includes('بخدمت') ? (b === 'clef-flash' ? 0.85 : 0.1) : 0.1);
+    const r = await sourceHunt(QUOTE, setup(score, calls));
+    expect(calls).toContain('jev');
+    const marked = r.tablet.highlight.map(([a, b]) => r.tablet.text.slice(a, b)).join(' | ');
+    expect(marked).toContain('وطن');
+    expect(marked).not.toContain('بخدمت');
   });
 });

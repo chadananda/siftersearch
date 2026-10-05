@@ -7,7 +7,7 @@ import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { authorAuthority } from './authority.js';
-import { segment } from './phrases.js';
+import { segment, cleanText } from './phrases.js';
 
 /** Stored text still carries HTML entities in ~96k paragraphs (mostly the bahai-library.com copies: `&quot;` around a
  *  quoted Arabic line in a Persian passage). Decoded before matching, highlighting and display. */
@@ -267,10 +267,12 @@ async function originalRanges(d, q, id, shown) {
   if (!d.spans || !d.rawText) return [];
   const [spans, raw] = await Promise.all([d.spans(q.match, id, { limit: 8, timeoutMs: QD_MS }).catch(() => []), d.rawText(id).catch(() => null)]);
   if (!spans.length || !raw) return [];
-  const top = Math.max(...spans.map((x) => x.score));
+  // the phrase index stores spans over cleanText(raw) (sentence markers removed) — slicing the raw text shifted them into
+  // the middle of words (10-05). Only the single best phrase: a fallback must not scatter marks.
+  const clean = cleanText(raw);
   const out = [];
-  for (const x of spans.filter((s) => s.score >= top - 0.03 && s.end > s.start)) {
-    const piece = decodeEntities(raw.slice(x.start, x.end).replace(/⁅\/?s\d+⁆/g, '')).replace(/[ \t]+/g, ' ').trim();
+  for (const x of [spans.reduce((m, s) => (s.score > m.score ? s : m))].filter((s) => s.end > s.start)) {
+    const piece = decodeEntities(clean.slice(x.start, x.end)).replace(/[ \t]+/g, ' ').trim();
     const at = piece.length >= 4 ? shown.indexOf(piece) : -1;
     if (at >= 0) out.push([at, at + piece.length]);
   }
@@ -325,15 +327,29 @@ async function decideRanges(d, quoteText, text, lang, hint = []) {
     + units.map((u, i) => `[c${i + 1}] ${clause(u)}`).join('\n');
   const questions = Object.fromEntries(units.map((u, i) => [`c${i + 1}`, { type: 'noul',
     instructions: `Is clause [c${i + 1}] part of what the quotation says — the same meaning, in any language or translation? A clause that is only on the same topic is not.` }]));
-  const r = await d.decide('sourcehunt-highlight', state, questions).catch(() => null);
-  if (!r?.answers) return null;
-  const p = units.map((u, i) => ({ u, i, p: r.answers[`c${i + 1}`]?.noul ?? 0 }));
-  const top = p.reduce((m, x) => (x.p > m.p ? x : m), { p: 0 });
-  // within 0.2 of the strongest clause: a model's answer stands well above its strays (Jev 0.91/0.81 on the true clauses,
-  // 0.64/0.50 on two neighbours of "The earth is but one country…", 10-05) — a flat 0.5 cutoff marked them all
-  let picked = p.filter((x) => x.p >= 0.5 && x.p >= top.p - 0.2);
-  if (!picked.length) picked = top.p >= 0.3 ? [top] : [];
-  if (!picked.length) return [];
+  // VOTE (Chad 10-05): Clef and Clef-flash judge the clauses at once; if their clause sets agree that is the answer, if not
+  // Jev gives a second opinion and each clause takes the majority. One model alone marked strays (Jev 0.64/0.50 beside the
+  // true 0.91/0.81; Clef-flash missed a true clause at 0.41).
+  const ask = (backend) => d.decide('sourcehunt-highlight', state, questions, { backend }).then((r) => r?.answers || null).catch(() => null);
+  const pick = (ans) => {                                 // a model's clauses: ≥0.5 and within 0.2 of its own best
+    if (!ans) return null;
+    const ps = units.map((u, i) => ans[`c${i + 1}`]?.noul ?? 0), top = Math.max(...ps);
+    return new Set(ps.map((p, i) => (p >= 0.5 && p >= top - 0.2 ? i : -1)).filter((i) => i >= 0));
+  };
+  const [big, flash] = await Promise.all([ask('clef'), ask('clef-flash')]);
+  const A = pick(big), B = pick(flash);
+  const same = A && B && A.size === B.size && [...A].every((i) => B.has(i));
+  let chosen;
+  if (same) chosen = A;
+  else {
+    const C = pick(await ask('jev'));
+    const votes = [A, B, C].filter(Boolean);
+    if (!votes.length) return null;
+    chosen = new Set(units.map((u, i) => i).filter((i) => votes.filter((v) => v.has(i)).length >= Math.min(2, votes.length) ));
+  }
+  if (!chosen.size) return [];
+  const strength = (i) => [big, flash].reduce((m, a) => Math.max(m, a?.[`c${i + 1}`]?.noul ?? 0), 0);
+  const picked = [...chosen].sort((a, b) => a - b).map((i) => ({ u: units[i], i, p: strength(i) }));
   const ranges = [];
   for (const x of picked) {
     const last = ranges[ranges.length - 1];
@@ -393,7 +409,7 @@ async function defaultDeps() {
     phrases: searchPhrases, keyword: searchKeywordQdrant, links: resolveLinks, passages: getPassages, meta: getDocMeta, spans: searchPhraseSpans,
     rawText: async (id) => (await queryOne('SELECT text FROM content WHERE id = ?', [Number(id)], 'source-hunt:raw'))?.text ?? null,
     // System-1 decision (task-routed: Clef-flash serves where routing.json says so; every call logged + shadowed)
-    decide: async (task, state, questions) => (await import('./systemone.js')).ask(task, state, questions, { timeoutMs: 4000, retries: 0 }),
+    decide: async (task, state, questions, { backend = null } = {}) => (await import('./systemone.js')).ask(task, state, questions, { timeoutMs: 4000, retries: 0, backend }),
     async rows(ids) {
       const uniq = [...new Set(ids.map(Number).filter(Boolean))];
       if (!uniq.length) return [];

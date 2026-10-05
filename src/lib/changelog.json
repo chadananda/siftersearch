@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T16:02:44.181Z",
+  "generated": "2026-10-05T18:40:33.826Z",
   "entries": [
+    {
+      "hash": "8b143693",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Clause highlight needs ≥0.5 AND within 0.2 of the best clause (Jev marked 0.64/0.50 strays beside 0.91/0.81)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "a6e9f947",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Index them, so a concept is searchable in its own right",
       "scope": null
-    },
-    {
-      "hash": "2ed54c5c",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Let questions ask about the CONCEPT, not echo the wording",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "8b143693",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Clause highlight needs ≥0.5 AND within 0.2 of the best clause (Jev marked 0.64/0.50 strays beside 0.91/0.81)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "a6e9f947",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Index them, so a concept is searchable in its own right",
-        "scope": null
-      },
-      {
-        "hash": "2ed54c5c",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Let questions ask about the CONCEPT, not echo the wording",
         "scope": null
       }
     ]
