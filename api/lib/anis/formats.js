@@ -5,6 +5,7 @@
 import { ENDPOINT } from '../scope-extract.js';
 import { supports } from './channels.js';
 import { describeProfile } from './findings.js';
+import { jevFetch } from '../systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 
 export const FORMATS = [
   { id: 'direct_answer', needs: [], fits: (p) => p.passages > 0,
@@ -74,7 +75,7 @@ export function defaultFormat(feasible, profile) {
 }
 
 /** Choose a format: code filters, Jev chooses (one typed call), default on failure. → { id, how, by } */
-export async function chooseFormat({ question, profile, channel, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 600 }) {
+export async function chooseFormat({ question, profile, channel, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-format'), timeoutMs = 600 }) {
   const feasible = feasibleFormats(profile, channel);
   if (feasible.length === 1 || !apiKey) { const f = feasible.length === 1 ? feasible[0] : defaultFormat(feasible, profile); return { id: f.id, how: f.how, by: 'code' }; }
   try {

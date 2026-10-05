@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T12:45:12.230Z",
+  "generated": "2026-10-05T12:46:42.811Z",
   "entries": [
+    {
+      "hash": "308f7408",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Compare-clef.mjs — replay logged calls per task through Clef / Clef-flash; agreement with Jev, Δp, latency, gold accuracy",
+      "scope": "systemone"
+    },
     {
       "hash": "9dbe9bfb",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Settle phantom convert rows instead of reporting them forever",
       "scope": null
-    },
-    {
-      "hash": "954f0903",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "\"table may not exist\" must swallow ONLY that",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "308f7408",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Compare-clef.mjs — replay logged calls per task through Clef / Clef-flash; agreement with Jev, Δp, latency, gold accuracy",
+        "scope": "systemone"
+      },
       {
         "hash": "9dbe9bfb",
         "date": "2026-10-05",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "Settle phantom convert rows instead of reporting them forever",
-        "scope": null
-      },
-      {
-        "hash": "954f0903",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "\"table may not exist\" must swallow ONLY that",
         "scope": null
       }
     ]

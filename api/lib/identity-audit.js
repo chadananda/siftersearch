@@ -1,3 +1,4 @@
+import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 // Cluster audit — a cheap FLAGGER for wrong bindings. For one person, every cluster (one book's label for them) is put
 // to Jev with a window of text around the mention and the person's profile: does the passage's person fit? Anything
 // not a confident "same" is flagged for a careful reader (Chad, 2026-09-28: "leverage Jev to flag records and then you
@@ -63,7 +64,7 @@ export function readAnswer(a, { stage = 1 } = {}) {
   return { verdict, confidence, flagged: !(verdict === 'same' && confidence >= SURE) };
 }
 
-export async function auditClusters(profile, clusters, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 20000, stage = 1 } = {}) {   // 8s timed out 30 of 341 once the profile carried names
+export async function auditClusters(profile, clusters, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('identity-audit'), timeoutMs = 20000, stage = 1 } = {}) {   // 8s timed out 30 of 341 once the profile carried names
   if (!apiKey) throw new Error('no TYPESAFE_API_KEY');
   const out = [];
   const size = stage === 2 ? 3 : BATCH;   // stage-2 windows are ~4× longer
@@ -107,7 +108,7 @@ export function readLink(a) {
   return { pick: ch && ch.startsWith('c') ? Number(ch.slice(1)) : (ch || 'unclear'), confidence };
 }
 
-export async function linkParagraph(passage, occ, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 20000 } = {}) {
+export async function linkParagraph(passage, occ, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('identity-link'), timeoutMs = 20000 } = {}) {
   if (!apiKey) throw new Error('no TYPESAFE_API_KEY');
   let answers = null;
   for (let attempt = 0; attempt < 2 && !answers; attempt++) {

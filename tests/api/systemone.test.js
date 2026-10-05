@@ -89,3 +89,15 @@ describe('Clef backends (Workers AI via our edge Worker)', () => {
     expect(urls.some((u) => u.includes('/_s1/run'))).toBe(false);
   });
 });
+
+describe('record() — calls made outside ask()', () => {
+  it('logs the Jev answer under its task and shadows Clef when on; never throws', async () => {
+    process.env.INTERNAL_API_KEY = 'ik';
+    const id = mod.record('search-plan', 'user: what is justice?', Q, { answers: { speaker: { choice: 'other' } }, ms: 120, model: 'jev-1' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mod._test.db().prepare('SELECT task, jev_ms, served_by FROM calls WHERE id = ?').get(id)).toMatchObject({ task: 'search-plan', jev_ms: 120, served_by: 'jev' });
+    expect(mod._test.db().prepare('SELECT COUNT(*) n FROM shadow WHERE call_id = ?').get(id).n).toBe(2);
+    expect(mod.record(null, 's', Q, {})).toBeNull();
+    delete process.env.INTERNAL_API_KEY;
+  });
+});

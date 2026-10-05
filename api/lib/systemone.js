@@ -148,6 +148,43 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
   return { answers: out.answers, served_by: served, id, tokens: jev?.tokens ?? primary?.tokens ?? 0, jev: jev?.answers ?? null, laya: laya?.answers ?? null };
 }
 
+/**
+ * Log a Jev call made OUTSIDE ask() (latency-critical callers that keep their own fetch — the search planner, Anís triage)
+ * and start the Clef shadows for it, exactly as ask() would. Never throws: logging must not break the caller.
+ * @param {string} task  task type (training + comparison are per task)
+ * @param {{ answers, ms?, model?, tokens?, ref? }} jev  Jev's answers as the caller received them
+ */
+export function record(task, state, questions, { answers, ms = null, model = null, tokens = null, ref = null } = {}) {
+  try {
+    if (!task || !answers) return null;
+    const st = typeof state === 'string' ? state : JSON.stringify(state);
+    const id = db().prepare(`INSERT INTO calls (task, at, ref, state, questions, jev, jev_tokens, jev_ms, jev_model, served_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'jev')`).run(task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions),
+      JSON.stringify(answers), tokens, ms, model).lastInsertRowid;
+    const route = routeFor(task);
+    if (route.shadow) for (const b of route.shadow_backends) {
+      callBackend(b, task, route, st, questions, 20000, 0)
+        .then((r) => recordShadow(id, b, r.answers, r.ms, null))
+        .catch((e) => recordShadow(id, b, null, null, String(e.message || e).slice(0, 300)));
+    }
+    return id;
+  } catch { return null; }
+}
+
+/** A drop-in `fetch` for modules that call Jev directly: identical behaviour and timing for the caller; on a successful
+ *  response, a COPY of the answer is logged under `task` with the request's state + questions (record() → Clef shadows). */
+export const jevFetch = (task, base = (...a) => globalThis.fetch(...a)) => async (url, init = {}) => {
+  const t0 = Date.now();
+  const res = await base(url, init);
+  if (res?.ok && typeof res.clone === 'function') {
+    res.clone().json().then((j) => {
+      const b = JSON.parse(init.body || '{}');
+      record(task, b.state, b.questions, { answers: j.answers, ms: Date.now() - t0, model: j.model ?? null, tokens: j.usage?.input_tokens ?? null });
+    }).catch(() => {});
+  }
+  return res;
+};
+
 function recordShadow(id, backend, answers, ms, error) {
   try {
     db().prepare('INSERT OR REPLACE INTO shadow (call_id, backend, at, answers, ms, error) VALUES (?, ?, ?, ?, ?, ?)')

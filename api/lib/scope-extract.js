@@ -17,6 +17,7 @@
 //
 // Deps: fetch, TYPESAFE_API_KEY. Relaxation policy lives in search-scope.js.
 import { logger } from './logger.js';
+import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 
 export const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 // Below this, treat the signal as absent rather than acting on a coin-flip.
@@ -51,7 +52,7 @@ export async function extractScope(messages, { apiKey = process.env.TYPESAFE_API
 
   const t0 = Date.now();
   try {
-    const res = await fetch(ENDPOINT, {
+    const res = await jevFetch('scope-extract')(ENDPOINT, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({

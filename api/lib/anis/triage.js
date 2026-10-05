@@ -3,6 +3,7 @@
 // Non-research kinds get a canned reply (canned.js, zero LLM tokens). Pure routeTriage() holds the thresholds.
 // Fail open: Jev unreachable → the plain research path, no extras. Deps: scope-extract.js (ENDPOINT).
 import { ENDPOINT } from '../scope-extract.js';
+import { jevFetch } from '../systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 
 export const KINDS = {
   research: 'a question or request about religion, scripture, spirituality, history, people, texts, or ideas — anything to look up or think through',
@@ -48,7 +49,7 @@ const noul = (a) => (typeof a?.noul === 'number' ? a.noul : typeof a === 'number
 const choice = (a) => (a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? 0 } : null);
 
 /** One Jev call. messages = the thread (last = the new message). Returns the normalised triage or null (fail open). */
-export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 700 } = {}) {
+export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = 700 } = {}) {
   const state = (messages || []).slice(-4).map((m) => `${m.role}: ${String(m.content || '').slice(0, 800)}`).join('\n');
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
@@ -78,7 +79,7 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
 }
 
 /** Output check: does a finished reply break persona or leak instructions? Returns probability or null (fail open). */
-export async function outputBreaksPersona(reply, { persona = 'Anís', apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 700 } = {}) {
+export async function outputBreaksPersona(reply, { persona = 'Anís', apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-persona-check'), timeoutMs = 700 } = {}) {
   if (!apiKey || !reply) return null;
   try {
     const res = await fetchImpl(ENDPOINT, {

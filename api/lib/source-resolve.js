@@ -10,6 +10,7 @@
 import { quoteSpans, containsQuote, foldText } from './quote-text.js';
 import { ENDPOINT as JEV_ENDPOINT } from './scope-extract.js';
 import { linkFor, SIFTER_TIER } from './source-links.js';
+import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 
 // The figures whose words are quoted across the corpus, with how their names appear in author fields.
 export const SPEAKERS = {
@@ -73,7 +74,7 @@ function choose(options, choiceId, speaker, tiers, para = new Map()) {
 }
 
 /** ONE Jev call: each passage's kind + speaker, and each copy group's ideal source. */
-export async function jevJudge({ passages, groups }, { apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 3000, fetchImpl = fetch } = {}) {
+export async function jevJudge({ passages, groups }, { apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 3000, fetchImpl = jevFetch('source-resolve') } = {}) {
   if (!apiKey) throw new Error('no TYPESAFE_API_KEY');
   const speakers = { ...Object.fromEntries(Object.keys(SPEAKERS).map((s) => [s, `words of ${s}`])), author: 'the listed author’s own words', other: 'someone else, or unclear' };
   const state = [
