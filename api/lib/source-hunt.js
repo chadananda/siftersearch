@@ -183,7 +183,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const decided = await decideHolds(d, q, ranked0.slice(0, HOLDS_MAX), span);
   // the WORDING always counts (a verbatim paragraph past the decision's first HOLDS_MAX candidates was dropped as "not holding" —
   // battery 10-05: book 88%→82%, e.g. the Íqán's 'addressing Salmán' paragraph lost to two Gems passages that do not contain it);
-  // the decision ADDS what holds the quote in another translation or a close paraphrase
+  // the decision ADDS what holds the same sentence in another translation (never a passage making the same point)
   const holdsRow = (r) => holds(q.match, r.text, overlap(q.match, r.text)) || !!decided?.has(r.id);
   const matches = ranked0.filter(holdsRow).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }));
   say('verbatim', { count: matches.length, rejected: rows.length - matches.length, by: decided ? 'decision' : 'wording',
@@ -258,7 +258,10 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
       url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text)) : null, paragraphs: 0, first: p.id };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
-  for (const m of pool) if (m.id !== origin.id) add(m);
+  // a CITATION quotes the passage: it holds the wording (a translation variant included), or the link graph says it quotes the
+  // source. A passage the decision passed on MEANING alone (SAQ restating the Will's Supreme Tribunal in its own words) helps
+  // find the source but is not a citation (Chad 10-05: "why is it in the list of citations then?")
+  for (const m of pool) if (m.id !== origin.id && holds(q.match, m.text, m.overlap)) add(m);
   const quoters = (full.quotedBy?.passages || []).map((p) => ({ id: p.id, doc_id: p.documentId, title: p.document.title,
     book_author: p.document.author, url: p.url, text: p.text || null, source_site: null }));
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
@@ -315,7 +318,8 @@ const MAX_CLAUSES = 40;
 const HOLDS_MAX = 24;
 
 /** Which candidate paragraphs CONTAIN the quoted statement — one System-1 call, one yes/no (noul) per candidate, each shown
- *  as an excerpt around its best-matching phrase. Same saying in any translation or close paraphrase = yes; same topic = no.
+ *  as an excerpt around its best-matching phrase. The same sentence in any translation = yes; the same point in other words, or the
+ *  same topic = no (Chad 10-05: "we are not looking for similar points").
  *  Logged as task sourcehunt-holds (Jev serves; Clef shadows). Returns a Set of ids, or null when no decision is available. */
 async function decideHolds(d, q, rows, span = new Map()) {
   if (!d.decide || !rows.length) return null;
@@ -327,7 +331,7 @@ async function decideHolds(d, q, rows, span = new Map()) {
   };
   const state = `QUOTATION:\n${q.text}\n\nPASSAGES:\n` + rows.map((r, i) => `[p${i + 1}] ${excerpt(r)}`).join('\n\n');
   const questions = Object.fromEntries(rows.map((r, i) => [`p${i + 1}`, { type: 'noul',
-    instructions: `Does passage [p${i + 1}] contain the quoted statement — the same saying, whether in the same words, another translation, or a close paraphrase? A passage that only discusses the same topic does not.` }]));
+    instructions: `Does passage [p${i + 1}] contain the quoted sentence itself — the same words, or another TRANSLATION of the same original sentence? A passage that makes the same point in its own words does not, nor one on the same topic.` }]));
   const res = await d.decide('sourcehunt-holds', state, questions).catch(() => null);
   if (!res?.answers) return null;
   return new Set(rows.filter((r, i) => (res.answers[`p${i + 1}`]?.noul ?? 0) >= 0.5).map((r) => r.id));

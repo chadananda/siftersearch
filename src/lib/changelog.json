@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T23:06:22.463Z",
+  "generated": "2026-10-05T23:07:46.682Z",
   "entries": [
+    {
+      "hash": "1cc72274",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Citation range links only where the citation holds the quote verbatim (SAQ's paraphrase of the Supreme Tribunal got a fragment on 'governments and peoples')",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "1d11a154",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Swap in the rewritten lang-pending-sync — plan verified first",
       "scope": null
-    },
-    {
-      "hash": "cb3b09f0",
-      "date": "2026-08-20",
-      "type": "Other",
-      "description": "Register a rewrite for the 46.9s lang-pending-sync",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "1cc72274",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Citation range links only where the citation holds the quote verbatim (SAQ's paraphrase of the Supreme Tribunal got a fragment on 'governments and peoples')",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "1d11a154",
         "date": "2026-10-05",
@@ -7049,13 +7056,6 @@
         "date": "2026-08-20",
         "type": "Other",
         "description": "Swap in the rewritten lang-pending-sync — plan verified first",
-        "scope": null
-      },
-      {
-        "hash": "cb3b09f0",
-        "date": "2026-08-20",
-        "type": "Other",
-        "description": "Register a rewrite for the 46.9s lang-pending-sync",
         "scope": null
       }
     ]
