@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T23:22:15.919Z",
+  "generated": "2026-10-05T23:56:37.995Z",
   "entries": [
+    {
+      "hash": "f1b280cd",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Source-hunt exclude {documentIds,titles} (a compilation checking its own selections); original carries documentId/paragraphId; scripts/sourcehunt/batch-csv.mjs runs a sheet through the public API",
+      "scope": "api"
+    },
     {
       "hash": "35a86437",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Tell \"plan exhausted\" apart from \"pipeline stalled\" (kills the permanent CRITICAL)",
       "scope": null
-    },
-    {
-      "hash": "cdfea4e4",
-      "date": "2026-08-21",
-      "type": "Other",
-      "description": "Point at the copies that actually have text",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "f1b280cd",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Source-hunt exclude {documentIds,titles} (a compilation checking its own selections); original carries documentId/paragraphId; scripts/sourcehunt/batch-csv.mjs runs a sheet through the public API",
+        "scope": "api"
+      },
       {
         "hash": "35a86437",
         "date": "2026-10-05",
@@ -7045,15 +7052,6 @@
         "date": "2026-08-23",
         "type": "Other",
         "description": "Tell \"plan exhausted\" apart from \"pipeline stalled\" (kills the permanent CRITICAL)",
-        "scope": null
-      }
-    ],
-    "2026-08-21": [
-      {
-        "hash": "cdfea4e4",
-        "date": "2026-08-21",
-        "type": "Other",
-        "description": "Point at the copies that actually have text",
         "scope": null
       }
     ]
