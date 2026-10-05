@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:17:41.705Z",
+  "generated": "2026-10-05T13:21:23.732Z",
   "entries": [
+    {
+      "hash": "1e1cbf58",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "One fat input line that grows with the text; light-yellow highlighter pen on English and Arabic/Persian (token --highlight-pen)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "0adf7dd4",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Warn that code added here is inert until the updater restarts",
       "scope": null
-    },
-    {
-      "hash": "b82eb28b",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Enforce the declared cron schedule on deploy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "1e1cbf58",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "One fat input line that grows with the text; light-yellow highlighter pen on English and Arabic/Persian (token --highlight-pen)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "0adf7dd4",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Warn that code added here is inert until the updater restarts",
-        "scope": null
-      },
-      {
-        "hash": "b82eb28b",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Enforce the declared cron schedule on deploy",
         "scope": null
       }
     ]

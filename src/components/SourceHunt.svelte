@@ -250,7 +250,7 @@
         {#if origin}
           <a href={origin.url} target="_blank" rel="noopener" class="sh-book text-accent hover:text-accent-hover">{origin.title}</a>
           <p class="text-sm text-secondary">{origin.author}{#if origin.bookAuthor && origin.bookAuthor !== origin.author} · in a book by {origin.bookAuthor}{/if}</p>
-          <blockquote class="sh-passage text-primary">{#each segments(origin.text, origin.highlight) as seg, i}{#if seg.q}<mark style="--d: {350 + i * 120}ms">{seg.t}</mark>{:else}{seg.t}{/if}{/each}</blockquote>
+          <blockquote class="sh-passage text-primary">{#each segments(origin.text, origin.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {350 + i * 120}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if result?.considered?.length > 1}
             <details class="mt-1 text-sm">
               <summary class="cursor-pointer text-muted hover:text-accent">Why this source</summary>
@@ -292,7 +292,7 @@
         {:else if tablet.certain}
           <p class="sh-book text-primary">{tablet.meta?.title || tablet.title}</p>
           {#if tablet.meta?.first_line_en}<p class="text-sm italic text-secondary">{tablet.meta.first_line_en}</p>{/if}
-          <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each segments(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<mark style="--d: {650 + i * 140}ms">{seg.t}</mark>{:else}{seg.t}{/if}{/each}</blockquote>
+          <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each segments(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause Clef-flash judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           <div class="flex flex-wrap gap-2 pt-1">
             {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
@@ -303,7 +303,7 @@
           {#each tablet.candidates as t (t.id)}
             <div class="flex flex-col gap-2 border-t border-border-subtle pt-3">
               <p class="font-semibold text-primary">{t.meta?.title || t.title} <span class="text-xs font-normal text-muted">similarity {t.score}</span></p>
-              <blockquote dir="rtl" lang="ar" class="sh-arabic sh-arabic-sm text-primary">{#each segments(t.text, t.highlight) as seg, i}{#if seg.q}<mark style="--d: {650 + i * 140}ms">{seg.t}</mark>{:else}{seg.t}{/if}{/each}</blockquote>
+              <blockquote dir="rtl" lang="ar" class="sh-arabic sh-arabic-sm text-primary">{#each segments(t.text, t.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
               <div class="flex flex-wrap gap-2">{#each tabletLinks(t.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}</div>
             </div>
           {/each}
@@ -354,14 +354,17 @@
   .sh-orig { animation-delay: 120ms; }
   .sh-book { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.25; }
   .sh-passage { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.08rem; line-height: 1.75; border-left: 3px solid var(--accent-primary); padding-left: 1rem; }
-  /* highlighter pen: light yellow ink swept left-to-right (English) and right-to-left (Arabic/Persian); wraps across lines */
-  .sh-passage mark, .sh-arabic :global(mark) {
+  /* highlighter pen: light yellow ink swept left-to-right (English) and right-to-left (Arabic/Persian); wraps across lines.
+     A <span>, not <mark>: the site's global `mark { background: none !important }` would pin the background so it could
+     never animate. */
+  .pen {
     color: inherit; padding: .04em .18em; margin: 0 -.06em; border-radius: .35em .2em .4em .25em;
     -webkit-box-decoration-break: clone; box-decoration-break: clone;
-    background: linear-gradient(var(--highlight-pen), var(--highlight-pen)) no-repeat 0 60% / 0% 88% !important;
+    background-image: linear-gradient(var(--highlight-pen), var(--highlight-pen));
+    background-repeat: no-repeat; background-position: 0 60%; background-size: 0% 88%;
     animation: pen 950ms cubic-bezier(.3,.7,.2,1) forwards; animation-delay: var(--d);
   }
-  .sh-arabic :global(mark) { background-position: 100% 60% !important; }
+  .sh-arabic .pen { background-position: 100% 60%; }
   .sh-arabic { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: clamp(1.3rem, 2.2vw, 1.65rem); line-height: 2.05; border-right: 3px solid var(--accent-secondary); padding-right: 1rem; }
   .sh-arabic-sm { font-size: 1.2rem; }
 
@@ -388,6 +391,6 @@
   @keyframes flow { to { stroke-dashoffset: 0; } }
   @media (prefers-reduced-motion: reduce) {
     .sh-console, .sh-card, .sh-ticker li, .sh-input.is-hunting, .live.on, .stage.active .pip, .skel, .bridge.on .flow { animation: none; }
-    .sh-passage mark, .sh-arabic :global(mark) { animation: none; background-size: 100% 88% !important; }
+    .pen { animation: none; background-size: 100% 88%; }
   }
 </style>
