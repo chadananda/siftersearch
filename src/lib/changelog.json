@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:21:23.732Z",
+  "generated": "2026-10-05T13:24:22.493Z",
   "entries": [
+    {
+      "hash": "8961cfbc",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Highlighter as span.pen — the global mark{background:none !important} pinned the background, so the pen never showed",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "1e1cbf58",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Kill the 49.8s embedding-stats scan (blob deref, not row count)",
       "scope": null
-    },
-    {
-      "hash": "4bca3e4d",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "Warn that code added here is inert until the updater restarts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "8961cfbc",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Highlighter as span.pen — the global mark{background:none !important} pinned the background, so the pen never showed",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "1e1cbf58",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Kill the 49.8s embedding-stats scan (blob deref, not row count)",
-        "scope": null
-      },
-      {
-        "hash": "4bca3e4d",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "Warn that code added here is inert until the updater restarts",
         "scope": null
       }
     ]
