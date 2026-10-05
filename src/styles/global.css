@@ -42,6 +42,9 @@
   --accent-secondary: light-dark(#14b8a6, #2dd4bf);
   --accent-tertiary: light-dark(#8b5cf6, #a78bfa);
 
+  /* Highlighter pen (SourceHunt quote marks): light yellow ink; lower alpha in dark mode keeps light text readable */
+  --highlight-pen: light-dark(rgba(253, 230, 90, 0.62), rgba(250, 214, 64, 0.30));
+
   /* Semantic colors */
   --success: light-dark(#16a34a, #22c55e);
   --warning: light-dark(#d97706, #fbbf24);

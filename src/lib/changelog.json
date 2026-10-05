@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T13:12:19.674Z",
+  "generated": "2026-10-05T13:17:41.705Z",
   "entries": [
+    {
+      "hash": "0adf7dd4",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Highlight the original's clause by DECISION — Clef-flash picks which numbered clause says what the quote says (any translation); vector spans as fallback; logged as task sourcehunt-highlight with Jev shadow",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "8c5ab29e",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Enforce the declared cron schedule on deploy",
       "scope": null
-    },
-    {
-      "hash": "da34d3fa",
-      "date": "2026-08-18",
-      "type": "Docs",
-      "description": "Conceptual track is built — the status line said otherwise and cost real damage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "0adf7dd4",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Highlight the original's clause by DECISION — Clef-flash picks which numbered clause says what the quote says (any translation); vector spans as fallback; logged as task sourcehunt-highlight with Jev shadow",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "8c5ab29e",
         "date": "2026-10-05",
@@ -7051,15 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Enforce the declared cron schedule on deploy",
-        "scope": null
-      }
-    ],
-    "2026-08-18": [
-      {
-        "hash": "da34d3fa",
-        "date": "2026-08-18",
-        "type": "Docs",
-        "description": "Conceptual track is built — the status line said otherwise and cost real damage",
         "scope": null
       }
     ]

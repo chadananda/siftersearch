@@ -18,6 +18,12 @@
   let scale = $state(null);
   let shown = $state({ phrase: 0, paragraphs: 0, documents: 0, tablets: 0 });
   let field;                              // ProbeField instance
+  let box;                                // the quote textarea (grows with its content)
+  function grow() {
+    if (!box) return;
+    box.style.height = 'auto';
+    box.style.height = `${Math.min(box.scrollHeight, Math.round(window.innerHeight * 0.4))}px`;
+  }
   let abort = null, tickTimer = null;
 
   // Demo samples — each one scored fully right on the battery (book, linked original, paragraph), 2026-10-04.
@@ -76,6 +82,7 @@
   async function hunt(q = quote) {
     q = String(q || '').trim(); if (!q || phase === 'hunting') return;
     quote = q; abort?.abort(); abort = new AbortController();
+    tick().then(grow);
     phase = 'hunting'; error = null; ev = {}; result = null; ticker = []; field?.reset();
     try {
       const res = await fetch(`${API}/api/search/source-hunt/stream`, { method: 'POST', signal: abort.signal,
@@ -172,24 +179,24 @@
     </div>
   </header>
 
-  <!-- ── the question ── -->
-  <div class="sh-input rounded-2xl border border-border bg-surface-1 p-4 sm:p-5" class:is-hunting={phase === 'hunting'}>
-    <label for="sh-quote" class="sr-only">Quotation</label>
-    <textarea id="sh-quote" bind:value={quote} onkeydown={onKey} rows="3" placeholder="Paste a quotation in English…"
-      class="sh-quote w-full resize-y bg-transparent text-primary placeholder:text-muted focus:outline-none"></textarea>
-    <div class="mt-3 flex flex-col gap-3 border-t border-border-subtle pt-3 md:flex-row md:items-center md:justify-between">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-muted">Try</span>
-        {#each SAMPLES as s (s)}
-          <button onclick={() => hunt(s)} disabled={phase === 'hunting'} title={s}
-            class="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs text-secondary transition-colors hover:border-accent hover:text-accent disabled:opacity-50">“{opening(s)}…”</button>
-        {/each}
-      </div>
+  <!-- ── the question: one fat line that grows with the text ── -->
+  <div class="sh-input rounded-2xl border border-border bg-surface-1 p-2.5 sm:p-3" class:is-hunting={phase === 'hunting'}>
+    <div class="flex flex-col gap-2 md:flex-row md:items-end">
+      <label for="sh-quote" class="sr-only">Quotation</label>
+      <textarea id="sh-quote" bind:this={box} bind:value={quote} oninput={grow} onkeydown={onKey} rows="1" placeholder="Paste a quotation in English…"
+        class="sh-quote w-full flex-1 resize-none bg-transparent px-3 py-2.5 text-primary placeholder:text-muted focus:outline-none"></textarea>
       <button onclick={() => hunt()} disabled={phase === 'hunting' || !quote.trim()}
-        class="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-semibold text-accent-text transition-transform hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50">
+        class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 font-semibold text-accent-text transition-transform hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50">
         {phase === 'hunting' ? 'Hunting…' : 'Find the source'}
-        <span class="text-xs opacity-70">⌘↵</span>
+        <span class="hidden text-xs opacity-70 sm:inline">⌘↵</span>
       </button>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 border-t border-border-subtle px-1 pt-2.5 mt-2.5">
+      <span class="text-xs text-muted">Try</span>
+      {#each SAMPLES as s (s)}
+        <button onclick={() => hunt(s)} disabled={phase === 'hunting'} title={s}
+          class="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs text-secondary transition-colors hover:border-accent hover:text-accent disabled:opacity-50">“{opening(s)}…”</button>
+      {/each}
     </div>
   </div>
 
@@ -319,7 +326,7 @@
   .sh-title { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.01em; }
   .sh-num { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   :global(.sh-label) { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--text-muted); }
-  .sh-quote { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.15rem; line-height: 1.6; }
+  .sh-quote { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.2rem; line-height: 1.55; min-height: 3rem; max-height: 40vh; overflow-y: auto; }
   .sh-input { transition: border-color 300ms, box-shadow 300ms; }
   .sh-input:focus-within, .sh-input.is-hunting { border-color: var(--accent-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 14%, transparent); }
   .sh-input.is-hunting { animation: breathe 1.8s ease-in-out infinite; }
@@ -347,18 +354,17 @@
   .sh-orig { animation-delay: 120ms; }
   .sh-book { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.25; }
   .sh-passage { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.08rem; line-height: 1.75; border-left: 3px solid var(--accent-primary); padding-left: 1rem; }
-  .sh-passage mark {
-    color: inherit; font-weight: 600; padding: .05em .1em; border-radius: .2em;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 26%, transparent), color-mix(in srgb, var(--accent-secondary) 26%, transparent)) no-repeat 0 0 / 0% 100% !important;
-    animation: sweep 900ms var(--rise) forwards; animation-delay: var(--d);
+  /* highlighter pen: light yellow ink swept left-to-right (English) and right-to-left (Arabic/Persian); wraps across lines */
+  .sh-passage mark, .sh-arabic :global(mark) {
+    color: inherit; padding: .04em .18em; margin: 0 -.06em; border-radius: .35em .2em .4em .25em;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+    background: linear-gradient(var(--highlight-pen), var(--highlight-pen)) no-repeat 0 60% / 0% 88% !important;
+    animation: pen 950ms cubic-bezier(.3,.7,.2,1) forwards; animation-delay: var(--d);
   }
+  .sh-arabic :global(mark) { background-position: 100% 60% !important; }
   .sh-arabic { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: clamp(1.3rem, 2.2vw, 1.65rem); line-height: 2.05; border-right: 3px solid var(--accent-secondary); padding-right: 1rem; }
   .sh-arabic-sm { font-size: 1.2rem; }
-  .sh-arabic :global(mark) {
-    color: inherit; padding: .05em .15em; border-radius: .25em;
-    background: linear-gradient(270deg, color-mix(in srgb, var(--accent-secondary) 28%, transparent), color-mix(in srgb, var(--accent-primary) 24%, transparent)) no-repeat 100% 0 / 0% 100% !important;
-    animation: sweep 1000ms var(--rise) forwards; animation-delay: var(--d);
-  }
+
 
   .chip { font-size: .7rem; padding: .15rem .55rem; border-radius: 99px; border: 1px solid var(--border-default); color: var(--text-secondary); background: var(--surface-2); white-space: nowrap; }
   .chip-ok { border-color: color-mix(in srgb, var(--success) 50%, transparent); color: var(--success); }
@@ -375,13 +381,13 @@
 
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes slide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
-  @keyframes sweep { to { background-size: 100% 100%; } }
+  @keyframes pen { to { background-size: 100% 88%; } }
   @keyframes blink { 50% { opacity: .35; } }
   @keyframes breathe { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent-primary) 8%, transparent); } }
   @keyframes shimmer { to { background-position: -200% 0; } }
   @keyframes flow { to { stroke-dashoffset: 0; } }
   @media (prefers-reduced-motion: reduce) {
     .sh-console, .sh-card, .sh-ticker li, .sh-input.is-hunting, .live.on, .stage.active .pip, .skel, .bridge.on .flow { animation: none; }
-    .sh-passage mark, .sh-arabic :global(mark) { animation: none; background-size: 100% 100% !important; }
+    .sh-passage mark, .sh-arabic :global(mark) { animation: none; background-size: 100% 88% !important; }
   }
 </style>
