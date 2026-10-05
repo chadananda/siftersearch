@@ -228,7 +228,20 @@ export function gradedPlanDocIds() {
   return allDocs.filter((id) => curatedKeys.has(phaseByDoc[id]));
 }
 
-export async function getIntegrationProgress() {
+// The roadmap grades ~900 plan books with synchronous GROUP BY scans; the plan follower asks every 3 min. Under
+// WAL/IO contention one scan took 62 s and froze the API event loop through the :30 health check (10-05 alerts).
+// Single-flight + short TTL: a book takes hours to ground, so a 5-min-old roadmap changes nothing.
+const PROGRESS_TTL_MS = Number(process.env.INTEGRATION_PROGRESS_TTL_MS ?? 300000);
+let _progress = null;   // { at, promise }
+export function getIntegrationProgress({ fresh = false } = {}) {
+  if (!fresh && _progress && (Date.now() - _progress.at < PROGRESS_TTL_MS)) return _progress.promise;
+  const entry = { at: Date.now(), promise: computeIntegrationProgress() };
+  entry.promise.catch(() => { if (_progress === entry) _progress = null; });
+  _progress = entry;
+  return entry.promise;
+}
+
+async function computeIntegrationProgress() {
   // genreOf is DISPLAY-ONLY now (the biographies/histories genre labels) — it no longer decides membership.
   const genreOf = Object.fromEntries(readHistoryCatalog().map(b => [b.id, b.genre]));
   // Membership is EXPLICIT: a doc is in the plan IFF its id is listed in integration-phases.js. No author-routing,

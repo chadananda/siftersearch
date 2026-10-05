@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T20:30:19.725Z",
+  "generated": "2026-10-05T20:44:02.950Z",
   "entries": [
+    {
+      "hash": "6061dc94",
+      "date": "2026-10-05",
+      "type": "Fixed",
+      "description": "Strip what OceanLibrary/Ocean of Lights copy appends (reference line, short link, page URL) before the hunt; Clear button; pasting over a shown result replaces the quote and runs a new hunt (Liliane's report)",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "2675579d",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Create the index even when there is nothing to write",
       "scope": null
-    },
-    {
-      "hash": "704bd477",
-      "date": "2026-08-19",
-      "type": "Other",
-      "description": "A detached runner, so a real book can actually finish",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "6061dc94",
+        "date": "2026-10-05",
+        "type": "Fixed",
+        "description": "Strip what OceanLibrary/Ocean of Lights copy appends (reference line, short link, page URL) before the hunt; Clear button; pasting over a shown result replaces the quote and runs a new hunt (Liliane's report)",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "2675579d",
         "date": "2026-10-05",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-19",
         "type": "Other",
         "description": "Create the index even when there is nothing to write",
-        "scope": null
-      },
-      {
-        "hash": "704bd477",
-        "date": "2026-08-19",
-        "type": "Other",
-        "description": "A detached runner, so a real book can actually finish",
         "scope": null
       }
     ]
