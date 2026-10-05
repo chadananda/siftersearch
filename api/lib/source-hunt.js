@@ -48,6 +48,33 @@ export function quoteRanges(passage, quoteText) {
   return out.sort((a, b) => a[0] - b[0]);
 }
 
+// Where a citation is SHOWN (Chad 10-05): a public copy wins — OceanLibrary, Ocean of Lights, Phelps, Bahá'í Library Online —
+// and a SifterSearch-only copy appears only when the work has no public copy. The site is read from where the link POINTS
+// (a library document linking to OceanLibrary is an OceanLibrary citation), copies are matched by normalised title.
+const SITE_RANK = { 'oceanlibrary.com': 1, 'oceanoflights.org': 2, phelps: 3, 'bahai-library.com': 4, library: 5 };
+export function siteOf(url, sourceSite) {
+  const u = String(url || '');
+  if (/oceanlibrary\.com/i.test(u)) return 'oceanlibrary.com';
+  if (/oceanoflights\.org/i.test(u)) return 'oceanoflights.org';
+  if (/portlandiator|phelps/i.test(u)) return 'phelps';
+  if (/bahai-library\.com/i.test(u)) return 'bahai-library.com';
+  return sourceSite && SITE_RANK[sourceSite] ? sourceSite : 'library';
+}
+const titleKey = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[‘’'`ʼ]/g, '')
+  .replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/^(the|a|an)\s+/, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+/** One entry per work: the best public copy; paragraph counts merged; library-only copies kept only when nothing else exists. */
+export function dedupeCitations(items) {
+  const best = new Map();
+  for (const c of items) {
+    const k = titleKey(c.title) || `doc:${c.documentId}`;
+    const cur = best.get(k);
+    if (!cur) { best.set(k, { ...c, copies: 1 }); continue; }
+    const keep = (SITE_RANK[c.site] ?? 9) < (SITE_RANK[cur.site] ?? 9) ? { ...c } : cur;
+    best.set(k, { ...keep, paragraphs: Math.max(cur.paragraphs, c.paragraphs), copies: cur.copies + 1 });
+  }
+  return [...best.values()].sort((a, b) => (SITE_RANK[a.site] ?? 9) - (SITE_RANK[b.site] ?? 9) || b.paragraphs - a.paragraphs);
+}
+
 const isCanonical = (p) => !p.source_site || p.source_site === 'oceanlibrary.com';
 
 // The doctrinal authors (Chad 10-03: compilations display the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi; UHJ is not doctrinal).
@@ -154,8 +181,12 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const qc = await d.links(lead.map((c) => c.id), { quotedBy: true }).catch(() => new Map());
   for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
   const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
+  // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
+  // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
+  const exact = quoteRanges(origin.text, q.text);
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
-    text: origin.text, highlight: quoteRanges(origin.text, q.text), url: origin.url, site: origin.source_site || 'library', overlap: +origin.overlap.toFixed(2) };
+    text: origin.text, highlight: exact.length ? exact : await originalRanges(d, q, origin.id, origin.text),
+    highlightBy: exact.length ? 'wording' : 'meaning', url: origin.url, site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
   say('origin', { origin: originOut, candidates: ranked.length });
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
@@ -163,7 +194,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const byDoc = new Map();
   const add = (p) => {
     if (p.doc_id === origin.doc_id) return;
-    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: p.source_site || null,
+    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: siteOf(p.url, p.source_site),
       url: p.url, paragraphs: 0, first: p.id };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
@@ -171,7 +202,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
   const quoters = (full.quotedBy?.passages || []).map((p) => ({ id: p.id, doc_id: p.documentId, title: p.document.title,
     book_author: p.document.author, url: p.url, source_site: null }));
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
-  const citedBy = [...byDoc.values()].sort((a, b) => (a.site ? 1 : 0) - (b.site ? 1 : 0) || b.paragraphs - a.paragraphs);
+  const citedBy = dedupeCitations([...byDoc.values()]);
   say('cited', { citedBy, citedByLinkCount: full.quotedBy?.count || 0 });
   const tablet = await tabletGuess(d, q, full, quoteAuthor);
   say('tablet', { tablet });
@@ -191,9 +222,33 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {} } = {}) {
 
 /** The original: a LINKED one (translation or quote→source→original) is certain; otherwise the nearest Arabic/Persian
  *  paragraphs by phrase vector are offered as candidates, labelled as such. Each carries its tablet metadata. */
+/** Highlight ranges in an ORIGINAL: the quote's best phrases inside that paragraph (phrase index spans over the STORED text),
+ *  each located again in the DISPLAYED text by content — display decodes entities and drops sentence markers, so raw offsets
+ *  would drift. Phrases within 0.03 of the best score are marked; overlaps merge. */
+async function originalRanges(d, q, id, shown) {
+  if (!d.spans || !d.rawText) return [];
+  const [spans, raw] = await Promise.all([d.spans(q.match, id, { limit: 8, timeoutMs: QD_MS }).catch(() => []), d.rawText(id).catch(() => null)]);
+  if (!spans.length || !raw) return [];
+  const top = Math.max(...spans.map((x) => x.score));
+  const out = [];
+  for (const x of spans.filter((s) => s.score >= top - 0.03 && s.end > s.start)) {
+    const piece = decodeEntities(raw.slice(x.start, x.end).replace(/⁅\/?s\d+⁆/g, '')).replace(/[ \t]+/g, ' ').trim();
+    const at = piece.length >= 4 ? shown.indexOf(piece) : -1;
+    if (at >= 0) out.push([at, at + piece.length]);
+  }
+  out.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  for (const r of out) { const last = merged[merged.length - 1]; if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]); else merged.push([...r]); }
+  return merged;
+}
+
 async function tabletGuess(d, q, links, author = null) {
-  const withMeta = async (p, basis) => p && ({ id: p.id, documentId: p.documentId, title: p.document?.title, text: decodeEntities(p.text),
-    url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) });
+  const withMeta = async (p, basis) => {
+    if (!p) return p;
+    const text = decodeEntities(p.text);
+    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, highlight: await originalRanges(d, q, p.id, text), highlightBy: 'meaning',
+      url: p.url, basis, meta: await d.meta(p.documentId).catch(() => null) };
+  };
   if (links?.original) {
     // The LINK fixes the tablet; the paragraph inside it is re-checked: the quote's closest paragraphs in that tablet by
     // cross-lingual phrase similarity. The linked one stands if it is among them; otherwise the closest replaces it
@@ -218,10 +273,11 @@ async function tabletGuess(d, q, links, author = null) {
 }
 
 async function defaultDeps() {
-  const [{ searchPhrases, searchKeywordQdrant }, { resolveLinks, getPassages }, { queryAll }, { getDocMeta }, { linkFor }] = await Promise.all([
+  const [{ searchPhrases, searchKeywordQdrant, searchPhraseSpans }, { resolveLinks, getPassages }, { queryAll, queryOne }, { getDocMeta }, { linkFor }] = await Promise.all([
     import('./search/qdrant-layers.js'), import('./passage-links.js'), import('./db.js'), import('./doc-meta-store.js'), import('./source-links.js')]);
   return {
-    phrases: searchPhrases, keyword: searchKeywordQdrant, links: resolveLinks, passages: getPassages, meta: getDocMeta,
+    phrases: searchPhrases, keyword: searchKeywordQdrant, links: resolveLinks, passages: getPassages, meta: getDocMeta, spans: searchPhraseSpans,
+    rawText: async (id) => (await queryOne('SELECT text FROM content WHERE id = ?', [Number(id)], 'source-hunt:raw'))?.text ?? null,
     async rows(ids) {
       const uniq = [...new Set(ids.map(Number).filter(Boolean))];
       if (!uniq.length) return [];

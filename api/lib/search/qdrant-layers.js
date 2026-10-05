@@ -77,6 +77,17 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs } = 
   }) };
 }
 
+/** The quote's best-matching PHRASES inside one paragraph: [{ start, end, score }] (character spans of the indexed text) —
+ *  what SourceHunt highlights in an Arabic/Persian original. */
+export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeoutMs } = {}) {
+  const vector = await geminiQueryVector(query);
+  const res = await qdrant('/collections/phrases/points/query', {
+    query: vector, using: 'literal', limit, with_payload: ['start', 'end'], params: { quantization: { rescore: true, oversampling: 4 } },
+    filter: { must: [{ key: 'paragraph_id', match: { value: Number(paragraphId) } }] },
+  }, timeoutMs);
+  return (res.points || []).map((p) => ({ start: p.payload.start, end: p.payload.end, score: p.score }));
+}
+
 /** → { hits: [{ paragraph_id, doc_id, score, thesis }] } — HyPE questions (+ thesis) embedded with the SAME Gemini model as
  *  the phrase layer, so one query vector serves both (memoized). The SQLite hyp_questions are the store; `hype` is their index. */
 export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs } = {}) {

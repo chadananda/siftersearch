@@ -46,7 +46,7 @@ describe('sourceHunt', () => {
   it('finds the book, the citing publications, and the linked tablet with its links', async () => {
     const r = await sourceHunt(QUOTE, deps());
     expect(r.origin).toMatchObject({ id: 1, title: 'Gleanings', author: "Bahá'u'lláh" });
-    expect(r.citedBy.map((c) => c.title)).toEqual(['Lights of Guidance', 'Bahá’u’lláh and the New Era']);   // library before sites
+    expect(r.citedBy.map((c) => c.title)).toEqual(['Bahá’u’lláh and the New Era', 'Lights of Guidance']);   // a public copy before a SifterSearch-only one
     expect(r.citedBy.some((c) => c.title === 'Other')).toBe(false);                                          // not verbatim
     expect(r.tablet).toMatchObject({ certain: true, id: 77, basis: 'translation', meta: { pin: 'BH00001' } });
     expect(r.tablet.meta.links.oceanoflights).toContain('oceanoflights.org');
@@ -142,5 +142,40 @@ describe('stage events (the live console)', () => {
   it('a throwing listener never breaks the hunt', async () => {
     const r = await sourceHunt(QUOTE, deps(), { emit: () => { throw new Error('closed'); } });
     expect(r.origin.title).toBe('Gleanings');
+  });
+});
+
+describe('citations: the public copy wins', async () => {
+  const { dedupeCitations, siteOf } = await import('../../api/lib/source-hunt.js');
+  it('site comes from where the link points', () => {
+    expect(siteOf('https://oceanlibrary.com/gleanings?paraId=para_3', null)).toBe('oceanlibrary.com');
+    expect(siteOf('https://siftersearch.com/library/x', null)).toBe('library');
+    expect(siteOf('https://bahai-library.com/x', 'bahai-library.com')).toBe('bahai-library.com');
+  });
+  it('a SifterSearch-only copy is dropped when the same work exists publicly; kept when it is the only copy', () => {
+    const out = dedupeCitations([
+      { documentId: 1, title: 'The Promised Day Is Come', site: 'library', paragraphs: 1 },
+      { documentId: 2, title: 'Promised Day is Come (1980 edition)', site: 'bahai-library.com', paragraphs: 2 },
+      { documentId: 3, title: 'The Promised Day is Come', site: 'oceanlibrary.com', paragraphs: 1 },
+      { documentId: 4, title: 'A private study', site: 'library', paragraphs: 1 },
+    ]);
+    expect(out.map((c) => [c.documentId, c.site])).toEqual([[3, 'oceanlibrary.com'], [4, 'library']]);
+    expect(out[0]).toMatchObject({ paragraphs: 2, copies: 3 });
+  });
+});
+
+describe('highlight in the original', () => {
+  it('marks the best phrases of the original, found by content in the displayed text', async () => {
+    const RAW = 'مقدمة ⁅s1⁆انّما الارض وطن واحد⁅/s1⁆ و &quot;من عليها&quot; اهله';
+    const r = await sourceHunt(QUOTE, deps({
+      passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW.replace(/⁅\/?s\d+⁆/g, ''), url: 'ool/77' }])),
+      links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], quotedBy: quotedBy ? { count: 0, passages: [] } : undefined,
+        original: quotedBy ? { id: 77, documentId: 700, document: { title: 'Lawh-i-Maqsud' }, text: RAW.replace(/⁅\/?s\d+⁆/g, ''), url: 'ool/77', path: 'translation' } : null }])),
+      spans: async () => [{ start: RAW.indexOf('انّما'), end: RAW.indexOf('واحد') + 4, score: 0.8 }, { start: 0, end: 5, score: 0.5 }],
+      rawText: async () => RAW,
+    }));
+    const t = r.tablet;
+    expect(t.highlight).toHaveLength(1);
+    expect(t.text.slice(...t.highlight[0])).toBe('انّما الارض وطن واحد');
   });
 });

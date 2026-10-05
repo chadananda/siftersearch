@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-05T12:59:15.947Z",
+  "generated": "2026-10-05T13:04:50.979Z",
   "entries": [
+    {
+      "hash": "f5f940bb",
+      "date": "2026-10-05",
+      "type": "New",
+      "description": "Live hunt console — streamed real stages (SSE), ʿAyn lens mark, probe field, stage rail, document ticker; full-width results with highlighter sweep, bilingual bridge, citation shelf",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "01f0cdf9",
       "date": "2026-10-05",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Alarm on mislabelled language, not just measure it",
       "scope": null
-    },
-    {
-      "hash": "27afa7bc",
-      "date": "2026-08-18",
-      "type": "Other",
-      "description": "Sampled language audit — size the mislabel backlog without a mutation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
+      {
+        "hash": "f5f940bb",
+        "date": "2026-10-05",
+        "type": "New",
+        "description": "Live hunt console — streamed real stages (SSE), ʿAyn lens mark, probe field, stage rail, document ticker; full-width results with highlighter sweep, bilingual bridge, citation shelf",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "01f0cdf9",
         "date": "2026-10-05",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-18",
         "type": "Other",
         "description": "Alarm on mislabelled language, not just measure it",
-        "scope": null
-      },
-      {
-        "hash": "27afa7bc",
-        "date": "2026-08-18",
-        "type": "Other",
-        "description": "Sampled language audit — size the mislabel backlog without a mutation",
         "scope": null
       }
     ]

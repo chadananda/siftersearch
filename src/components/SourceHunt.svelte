@@ -288,7 +288,8 @@
         {:else if tablet.certain}
           <p class="sh-book text-primary">{tablet.meta?.title || tablet.title}</p>
           {#if tablet.meta?.first_line_en}<p class="text-sm italic text-secondary">{tablet.meta.first_line_en}</p>{/if}
-          <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{tablet.text}</blockquote>
+          <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each segments(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<mark style="--d: {650 + i * 140}ms">{seg.t}</mark>{:else}{seg.t}{/if}{/each}</blockquote>
+          {#if tablet.highlight?.length}<p class="text-[11px] text-muted">Highlighted by meaning — the phrases nearest your quote, whatever its translation.</p>{/if}
           <div class="flex flex-wrap gap-2 pt-1">
             {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
             {#if tablet.url}<a href={tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a>{/if}
@@ -298,7 +299,7 @@
           {#each tablet.candidates as t (t.id)}
             <div class="flex flex-col gap-2 border-t border-border-subtle pt-3">
               <p class="font-semibold text-primary">{t.meta?.title || t.title} <span class="text-xs font-normal text-muted">similarity {t.score}</span></p>
-              <blockquote dir="rtl" lang="ar" class="sh-arabic sh-arabic-sm text-primary">{t.text}</blockquote>
+              <blockquote dir="rtl" lang="ar" class="sh-arabic sh-arabic-sm text-primary">{#each segments(t.text, t.highlight) as seg, i}{#if seg.q}<mark style="--d: {650 + i * 140}ms">{seg.t}</mark>{:else}{seg.t}{/if}{/each}</blockquote>
               <div class="flex flex-wrap gap-2">{#each tabletLinks(t.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}</div>
             </div>
           {/each}
@@ -354,6 +355,11 @@
   }
   .sh-arabic { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: clamp(1.3rem, 2.2vw, 1.65rem); line-height: 2.05; border-right: 3px solid var(--accent-secondary); padding-right: 1rem; }
   .sh-arabic-sm { font-size: 1.2rem; }
+  .sh-arabic :global(mark) {
+    color: inherit; padding: .05em .15em; border-radius: .25em;
+    background: linear-gradient(270deg, color-mix(in srgb, var(--accent-secondary) 28%, transparent), color-mix(in srgb, var(--accent-primary) 24%, transparent)) no-repeat 100% 0 / 0% 100% !important;
+    animation: sweep 1000ms var(--rise) forwards; animation-delay: var(--d);
+  }
 
   .chip { font-size: .7rem; padding: .15rem .55rem; border-radius: 99px; border: 1px solid var(--border-default); color: var(--text-secondary); background: var(--surface-2); white-space: nowrap; }
   .chip-ok { border-color: color-mix(in srgb, var(--success) 50%, transparent); color: var(--success); }
@@ -377,6 +383,6 @@
   @keyframes flow { to { stroke-dashoffset: 0; } }
   @media (prefers-reduced-motion: reduce) {
     .sh-console, .sh-card, .sh-ticker li, .sh-input.is-hunting, .live.on, .stage.active .pip, .skel, .bridge.on .flow { animation: none; }
-    .sh-passage mark { animation: none; background-size: 100% 100% !important; }
+    .sh-passage mark, .sh-arabic :global(mark) { animation: none; background-size: 100% 100% !important; }
   }
 </style>
