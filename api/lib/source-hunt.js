@@ -103,6 +103,10 @@ export function dedupeCitations(items) {
   return [...best.values()].sort((a, b) => (SITE_RANK[a.site] ?? 9) - (SITE_RANK[b.site] ?? 9) || b.paragraphs - a.paragraphs);
 }
 
+// A footnote is an editor's note (the Aqdas's notes are the House of Justice's), never the book author's own text: quoting the
+// passage there makes it a citation, not the source (2026-10-07: "My captivity…" ranked the Aqdas's note 192 as Bahá’u’lláh's).
+const isNote = (blocktype) => blocktype === 'footnote';
+
 const isCanonical = (p) => !p.source_site || p.source_site === 'oceanlibrary.com';
 
 // The doctrinal authors (Chad 10-03: compilations display the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi; UHJ is not doctrinal).
@@ -207,7 +211,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     .map((c) => {
       const writer = paragraphAuthor({ authors: c.authors, author: c.book_author });
       const book = firstPerson(c.book_author || '') || c.book_author;
-      return { ...c, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: linkedFrom.get(c.id) || 0 };
+      return { ...c, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book && !isNote(c.blocktype), authority: authorAuthority(writer), linkedFrom: linkedFrom.get(c.id) || 0 };
     });
   // 2b. the quote's writer's OWN paragraphs: a line quoted by dozens of books can crowd its source out of the first
   // candidates, so search again inside that writer's texts (author_fold filter) and add what holds the quote verbatim
@@ -228,7 +232,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
       if (!(holds(q.match, r.text, ov) || decided2?.has(r.id)) || r.doc_role === 'metadata') continue;
       const writer = paragraphAuthor({ authors: r.authors, author: r.book_author });
       const book = firstPerson(r.book_author || '') || r.book_author;
-      pool.push({ ...r, overlap: ov, holds: true, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book, authority: authorAuthority(writer), linkedFrom: 0 });
+      pool.push({ ...r, overlap: ov, holds: true, writer, ownWork: !!writer && (firstPerson(writer) || writer) === book && !isNote(r.blocktype), authority: authorAuthority(writer), linkedFrom: 0 });
     }
     say('targeted', { searched: more.length, pool: pool.length });
   }
@@ -443,7 +447,7 @@ async function defaultDeps() {
     async rows(ids) {
       const uniq = [...new Set(ids.map(Number).filter(Boolean))];
       if (!uniq.length) return [];
-      const rs = await queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.authors, c.external_para_id, d.title, d.author AS book_author,
+      const rs = await queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.authors, c.external_para_id, c.blocktype, d.title, d.author AS book_author,
           d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year
         FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL`, uniq, 'source-hunt:rows');

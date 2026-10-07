@@ -308,3 +308,18 @@ describe('exclude (a compilation checking its own selections)', () => {
     expect(r.origin?.title).not.toBe('Gleanings');
   });
 });
+
+describe('a footnote is never the writer\'s own text', () => {
+  it('a footnote quoting the passage is not counted as the writer\'s own work', async () => {
+    const r = await sourceHunt(QUOTE, deps({ rows: async (ids) => ids.map((i) => ROWS[i]).filter(Boolean).map((x) => ({ ...x, url: `u/${x.id}`,
+      blocktype: x.title === 'Gleanings' ? 'footnote' : 'paragraph' })) }));
+    const g = r.considered.find((c) => c.title === 'Gleanings');
+    expect(g.ownWork).toBe(false);
+  });
+  it('ranking: the same writer\'s book holding it as text beats that book\'s footnote', () => {
+    const w = { writer: 'Bahá’u’lláh', holds: true, overlap: 1 };
+    const r = rankOrigins([{ ...w, id: 1, title: 'The Kitáb-i-Aqdas', ownWork: false, collection: 'Core Publications' },
+      { ...w, id: 2, title: 'Bahá’í Sacred Writings', ownWork: true, collection: null }], 'Bahá’u’lláh');
+    expect(r[0].id).toBe(2);
+  });
+});
