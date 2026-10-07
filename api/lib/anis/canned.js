@@ -12,7 +12,7 @@ export const CANNED = {
     "Not something I'll do, I'm afraid. Ask me about a teaching, a figure, or a passage, and I'll gladly go looking.",
   ],
   about_anis: [
-    "I'm {name}, an AI companion for studying the world's sacred traditions. I can find a passage you half-remember, show what a text actually says beside what's commonly believed about it, trace a term or a person through the writings, and point you to the original. What are you curious about?",
+    "I'm {name}, an AI companion for studying the world's sacred traditions. I can find a passage you half-remember, tell you where a quotation comes from (the book, and the original tablet it was translated from), show what a text actually says beside what's commonly believed about it, and trace a term or a person through the writings. What are you curious about?",
     "I'm {name} — an AI, and a companion for anyone studying the scriptures and histories of the world's religions. I read with you from the library's own texts and always show my sources. Where would you like to start?",
   ],
   thanks: [
