@@ -95,29 +95,55 @@ const clip = (text = '', ranges = [], before = 240, after = 320) => {
   return `${a > 0 ? '… ' : ''}${text.slice(a, b).trim()}${b < text.length ? ' …' : ''}`;
 };
 
+/** A question about where a quotation comes from, recognised without the triage model (it can time out): a quotation of
+ *  8+ words together with source wording ("where is this from", "who wrote", "the source of", "which tablet"). */
+export function looksLikeSourceQuestion(text) {
+  const t = String(text || '');
+  const asks = /\b(where (is|does|did|was) (this|it|that|the)\b[^?]{0,40}\b(from|come|found|written)|what('s| is) the (source|origin)|source of (this|the)|(who|which \w+) (said|wrote|revealed)|which (book|tablet|work|text)|where can i find)/i.test(t);
+  const q = quotationIn(t);
+  return asks && q !== t.trim() && q.split(/\s+/).length >= 8;   // a quotation SEPARATE from the question (quoted, or after it)
+}
+
 /** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
- *  passages the reply is written from (so the sentence gate and link filter still hold), with a fixed reply shape. */
+ *  passages the reply is written from (so the sentence gate still holds). The model never sees a URL — it writes tags
+ *  ({book}, {tablet}, …) that become exact links; it once copied a 400-char text-fragment URL into a repeating loop. */
 async function huntSource(d, question) {
   const hunt = d.sourceHunt || (await import('../source-hunt.js')).sourceHunt;
   const r = await hunt(quotationIn(question)).catch(() => null);
   if (!r?.origin) return null;
   const o = r.origin, t = r.tablet?.certain ? r.tablet : null;
-  const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null;
-  const retrieved = [{ text: clip(o.text, o.highlight), source_title: o.title, source_author: o.author || '', citation_url: o.rangeUrl || o.url,
-    doc_id: o.documentId, paragraph_index: null, religion: "Baha'i", collection: null, source_lang: 'en', via: 'sourcehunt' }];
-  if (t) retrieved.push({ text: clip(t.text, t.highlight), source_title: `${t.meta?.title || t.title} (original)`, source_author: o.author || '',
-    citation_url: t.meta?.links?.oceanoflightsRange || ool || t.url, doc_id: t.documentId, paragraph_index: null, religion: "Baha'i",
-    collection: null, source_lang: /[پچژگ]/.test(t.text || '') ? 'fa' : 'ar', via: 'sourcehunt' });
+  const tTitle = t ? (t.meta?.title || t.title) : null, lang = t && /[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic';
+  const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null, pin = t?.meta?.pin || null;
   const others = (r.citedBy || []).slice(0, 3);
+  const tags = { book: { title: o.title, url: o.rangeUrl || o.url } };
+  if (t) tags.tablet = { title: tTitle, url: t.meta?.links?.oceanoflightsRange || ool || t.rangeUrl || t.url };
+  if (t && phelps) tags.inventory = { title: `Phelps Inventory${pin ? ` ${pin}` : ''}`, url: phelps, plain: true };
+  others.forEach((c, i) => { tags[`cited${i + 1}`] = { title: c.title, url: c.rangeUrl || c.url }; });
+  const retrieved = [{ text: clip(o.text, o.highlight), source_title: o.title, source_author: o.author || '', citation_url: tags.book.url,
+    doc_id: o.documentId, paragraph_index: null, religion: "Baha'i", collection: null, source_lang: 'en', via: 'sourcehunt' }];
+  if (t) retrieved.push({ text: clip(t.text, t.highlight), source_title: `${tTitle} (original, ${lang})`, source_author: o.author || '',
+    citation_url: tags.tablet.url, doc_id: t.documentId, paragraph_index: null, religion: "Baha'i",
+    collection: null, source_lang: lang === 'Persian' ? 'fa' : 'ar', via: 'sourcehunt' });
   const how = [
-    `Say where this quotation comes from. Name the published book (the first passage) and link it once; say whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
-    t ? `Name the original tablet (the second passage) and link it once (Ocean of Lights); it is in ${/[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic'} — say so, and quote the opening words of the original passage in that script.${phelps ? ` Phelps Inventory: ${phelps}` : ''}`
+    'Never write a URL or a markdown link. Name each source with its tag exactly as written below — the tag becomes the linked title.',
+    `Say the quotation comes from {book} (${o.title}) and whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
+    t ? `Say the original is ${lang} — {tablet} (${tTitle}) — and quote the opening words of the original passage (the second passage) in its own script.${tags.inventory ? ' Mention its entry in {inventory}.' : ''}`
       : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
-    others.length ? `Also quoted in: ${others.map((c) => `${c.title} (${c.rangeUrl || c.url})`).join('; ')} — mention these briefly.` : '',
-    'Keep it short. Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar) — only the book, the writer, the tablet. Do not interpret the passage unless the seeker asks.',
+    others.length ? `Also quoted in: ${others.map((c, i) => `{cited${i + 1}} (${c.title})`).join(', ')} — mention these in one sentence.` : '',
+    'Keep it short. Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar). Do not interpret the passage unless the seeker asks.',
   ].filter(Boolean).join(' ');
-  const extraUrls = [ool, phelps, t?.url, o.url, ...others.map((c) => c.rangeUrl || c.url)].filter(Boolean);
-  return { retrieved, how, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: t ? (t.meta?.title || t.title) : null, ms: r.ms } };
+  const extraUrls = Object.values(tags).map((x) => x.url).filter(Boolean);
+  return { retrieved, tags, how, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: tTitle, ms: r.ms } };
+}
+
+/** {book} / {tablet} / {inventory} / {citedN} → links to the exact URLs (titles italic, the Inventory plain). A tag the model
+ *  wrapped in brackets or asterisks is still found; an unknown tag is dropped. */
+export function fillTags(text, tags) {
+  return String(text || '').replace(/\*{0,2}\[?\{(book|tablet|inventory|cited\d)\}\]?\*{0,2}/g, (m, k) => {
+    const x = tags?.[k];
+    if (!x) return '';
+    return x.url ? `[${x.plain ? x.title : `*${x.title}*`}](${x.url})` : (x.plain ? x.title : `*${x.title}*`);
+  });
 }
 
 // Prior turns only (the current question is sent separately), trimmed — context, not a transcript to re-answer.
@@ -188,7 +214,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
 
   onEvent({ type: 'stage', stage: 'search' });
   // "Where is this from?" → SourceHunt (published source + original tablet); nothing found → the ordinary search
-  const sourced = direction.kind === 'source_lookup' ? await huntSource(d, question) : null;
+  const sourced = (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)) ? await huntSource(d, question) : null;
   if (sourced) conversational = false;
   const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : conversational ? { passages: [], _plan: plan } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
@@ -241,13 +267,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
     ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u }))];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
-  const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(t, exactUrls) : t, retrieved), allowed));
+  const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed));
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
     onEvent({ type: 'text', content: cleanLinks(t) });
   });
   const raw = await d.craft({
-    user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
+    user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
     comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format }, llm: llm || parseLlm(process.env.ANIS_LLM),
     onChunk: (t) => gate.push(t),

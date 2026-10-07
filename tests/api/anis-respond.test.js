@@ -189,11 +189,12 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(d.calls.search).toHaveLength(0);
     expect(d.calls.hunt).toBe('The earth is but one country, and mankind its citizens.');
     const c = d.calls.craft[0];
-    expect(c.retrieved_quotes.map((q) => q.source_title)).toEqual(['Gleanings', 'Tablet of Maqṣúd (original)']);
-    expect(c.retrieved_quotes[1].citation_url).toBe('https://oceanoflights.org/bahaullah-x/');
-    expect(c.direction.format.how).toMatch(/published book/);
-    expect(c.direction.format.how).toMatch(/Promised Day/);
-    expect(c.direction.format.how).toMatch(/it is in Arabic/);
+    expect(c.retrieved_quotes.map((q) => q.source_title)).toEqual(['Gleanings', 'Tablet of Maqṣúd (original, Arabic)']);
+    expect(c.retrieved_quotes.every((q) => !q.citation_url)).toBe(true);           // the model never sees a URL
+    expect(c.direction.format.how).toMatch(/\{book\}/);
+    expect(c.direction.format.how).toMatch(/\{cited1\} \(The Promised Day is Come\)/);
+    expect(c.direction.format.how).toMatch(/original is Arabic/);
+    expect(c.direction.format.how).not.toMatch(/https?:/);
     expect(r.plan.shape).toBe('source');
   });
 
@@ -212,5 +213,20 @@ describe('exactLinks', async () => {
   });
   it('exact links and unknown pages are left alone', () => {
     expect(exactLinks(`[T](${OOL}) [x](https://other.org/p)`, [OOL])).toBe(`[T](${OOL}) [x](https://other.org/p)`);
+  });
+});
+
+describe('source replies: tags → exact links; source questions without triage', async () => {
+  const { fillTags, looksLikeSourceQuestion } = await import('../../api/lib/anis/respond.js');
+  const tags = { book: { title: 'Gleanings', url: 'https://ol/g#:~:text=a' }, tablet: { title: 'Lawh-i-Nasir', url: 'https://ool/n' },
+    inventory: { title: 'Phelps Inventory BH1', url: 'https://pi/BH1', plain: true } };
+  it('fills tags with the exact links, tolerating brackets/asterisks; unknown tags vanish', () => {
+    expect(fillTags('From {book}; the original is **{tablet}** — see [{inventory}]. Also {cited2}.', tags))
+      .toBe('From [*Gleanings*](https://ol/g#:~:text=a); the original is [*Lawh-i-Nasir*](https://ool/n) — see [Phelps Inventory BH1](https://pi/BH1). Also .');
+  });
+  it('recognises a source question with a quotation, but not a plain question', () => {
+    expect(looksLikeSourceQuestion('Where does this come from? Tear asunder, in My Name, the veils that have grievously blinded your vision')).toBe(true);
+    expect(looksLikeSourceQuestion('Who wrote "The earth is but one country, and mankind its citizens"?')).toBe(true);
+    expect(looksLikeSourceQuestion('Where does the idea of progressive revelation come from?')).toBe(false);
   });
 });
