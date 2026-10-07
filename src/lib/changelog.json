@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-07T04:30:33.930Z",
+  "generated": "2026-10-07T04:32:40.497Z",
   "entries": [
+    {
+      "hash": "ac97f9be",
+      "date": "2026-10-06",
+      "type": "New",
+      "description": "'where is this from?' answered from the hunt by template — no model call (no leaked instructions, no persona framing, no rambling); exact links, the original's matched words, Phelps entry, other publications",
+      "scope": "anis"
+    },
     {
       "hash": "5322450a",
       "date": "2026-10-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Normalise surface lookup; state that distinctness is an upper bound",
       "scope": null
-    },
-    {
-      "hash": "a4101a92",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Measure sense RECALL and DISTINCTNESS, not accuracy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-06": [
+      {
+        "hash": "ac97f9be",
+        "date": "2026-10-06",
+        "type": "New",
+        "description": "'where is this from?' answered from the hunt by template — no model call (no leaked instructions, no persona framing, no rambling); exact links, the original's matched words, Phelps entry, other publications",
+        "scope": "anis"
+      },
       {
         "hash": "5322450a",
         "date": "2026-10-06",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Normalise surface lookup; state that distinctness is an upper bound",
-        "scope": null
-      },
-      {
-        "hash": "a4101a92",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Measure sense RECALL and DISTINCTNESS, not accuracy",
         "scope": null
       }
     ]

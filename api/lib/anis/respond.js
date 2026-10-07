@@ -125,7 +125,7 @@ async function huntSource(d, question) {
     citation_url: tags.tablet.url, doc_id: t.documentId, paragraph_index: null, religion: "Baha'i",
     collection: null, source_lang: lang === 'Persian' ? 'fa' : 'ar', via: 'sourcehunt' });
   // the original's own words for this quotation (the highlighted clauses), so the reply quotes the right ones
-  const origWords = t ? (t.highlight || []).map(([a, b]) => t.text.slice(a, b)).join(' … ').split(/\s+/).slice(0, 14).join(' ') : '';
+  const origWords = t ? (t.highlight || []).map(([a, b]) => t.text.slice(a, b)).join(' … ').split(/\s+/).slice(0, 14).join(' ').replace(/[\s.،؛:!?*]+$/u, '') : '';
   const how = [
     'Never write a URL, a markdown link or a title in brackets. Write each source as its tag exactly — {book}, {tablet}, {inventory}, {cited1}… — the tag is replaced by the linked title, so do not also write the title.',
     `At most four sentences. Say the quotation comes from {book} and whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
