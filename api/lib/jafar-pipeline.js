@@ -2461,7 +2461,11 @@ export function stripUngroundedLinks(text, retrievedQuotes) {
   // Allow one level of balanced parens in URLs (e.g., "/path (en)#p10")
   // First: remove literal template placeholders like [text](url) where url is not an https link
   let cleaned = text.replace(/\[([^\]]+)\]\((?!https?:\/\/)([^)]*)\)/g, '$1');
-  return cleaned.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]+|\([^()]*\))*)\)/g, (match, fragment, url) => {
+  // ONE character (or one balanced (…) group) per repetition — `(?:[^()]+|…)*` nested a run inside a repeat, and an UNCLOSED
+  // link (a streamed sentence cut before its ")") backtracked exponentially over the URL: a 400-char text-fragment link froze
+  // the API at 100% CPU for minutes (2026-10-06, Anís source replies). The alternatives start with different characters, so
+  // each character matches one way only: linear.
+  return cleaned.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]|\([^()]*\))*)\)/g, (match, fragment, url) => {
     return validUrls.has(url) || validBaseUrls.has(url.split('#')[0].split('?')[0]) ? match : fragment;
   });
 }
