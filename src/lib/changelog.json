@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-07T04:17:51.224Z",
+  "generated": "2026-10-07T04:21:20.530Z",
   "entries": [
+    {
+      "hash": "296b53f4",
+      "date": "2026-10-06",
+      "type": "New",
+      "description": "Restore SourceHunt as Anís's tool (source_lookup) — the API freeze it exposed was the stripUngroundedLinks regex, fixed in the previous commit",
+      "scope": "anis"
+    },
     {
       "hash": "281d5f5d",
       "date": "2026-10-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Break merge cycles by evidence (the 53 the main repair could not resolve)",
       "scope": null
-    },
-    {
-      "hash": "392ae097",
-      "date": "2026-08-24",
-      "type": "Other",
-      "description": "ONE definition of \"merged\" — 6,668 phantoms were served as live people",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-06": [
+      {
+        "hash": "296b53f4",
+        "date": "2026-10-06",
+        "type": "New",
+        "description": "Restore SourceHunt as Anís's tool (source_lookup) — the API freeze it exposed was the stripUngroundedLinks regex, fixed in the previous commit",
+        "scope": "anis"
+      },
       {
         "hash": "281d5f5d",
         "date": "2026-10-06",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-24",
         "type": "Other",
         "description": "Break merge cycles by evidence (the 53 the main repair could not resolve)",
-        "scope": null
-      },
-      {
-        "hash": "392ae097",
-        "date": "2026-08-24",
-        "type": "Other",
-        "description": "ONE definition of \"merged\" — 6,668 phantoms were served as live people",
         "scope": null
       }
     ]

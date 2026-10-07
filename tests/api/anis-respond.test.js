@@ -203,3 +203,14 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(d.calls.search).toHaveLength(1);
   });
 });
+
+describe('exactLinks', async () => {
+  const { exactLinks } = await import('../../api/lib/anis/respond.js');
+  const OOL = 'https://oceanoflights.org/abdul-baha-bkw03-fa/#:~:text=%D8%A7%DA%AF,%D9%86%D9%85%D8%A7%D9%8A%D8%AF';
+  it('a miscopied link to a page we gave is replaced by our exact URL', () => {
+    expect(exactLinks('[T](https://oceanoflights.org/abdul-baha-bkw03-fa/#:~:text=%D8%A7%DA%AF,%D9%86%D9%85%D8%A7%D9%8A%D8%AD)', [OOL])).toBe(`[T](${OOL})`);
+  });
+  it('exact links and unknown pages are left alone', () => {
+    expect(exactLinks(`[T](${OOL}) [x](https://other.org/p)`, [OOL])).toBe(`[T](${OOL}) [x](https://other.org/p)`);
+  });
+});

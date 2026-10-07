@@ -77,6 +77,18 @@ export function quotationIn(text) {
   return (m ? m[1] : t).trim();
 }
 
+/** A link the model wrote to a page we gave it, copied imperfectly (a long text-fragment URL with one character changed), is
+ *  replaced by the exact URL we gave — same page (base before ? and #) → our URL. Unknown pages are left to the link filter. */
+export function exactLinks(text, urls) {
+  const byBase = new Map();
+  for (const u of urls || []) { const b = String(u).split('#')[0].split('?')[0]; if (!byBase.has(b)) byBase.set(b, u); }
+  return String(text || '').replace(/\]\((https?:\/\/[^\s)]+)\)/g, (m, u) => {
+    if ((urls || []).includes(u)) return m;
+    const exact = byBase.get(u.split('#')[0].split('?')[0]);
+    return exact ? `](${exact})` : m;
+  });
+}
+
 const clip = (text = '', ranges = [], before = 240, after = 320) => {
   if (!ranges?.length || text.length <= 700) return text;
   const a = Math.max(0, ranges[0][0] - before), b = Math.min(text.length, ranges[ranges.length - 1][1] + after);
@@ -98,8 +110,8 @@ async function huntSource(d, question) {
     collection: null, source_lang: /[پچژگ]/.test(t.text || '') ? 'fa' : 'ar', via: 'sourcehunt' });
   const others = (r.citedBy || []).slice(0, 3);
   const how = [
-    `Say where this quotation comes from. Name the published book [1] and link it; say whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
-    t ? `Name the original tablet [2] and link it (Ocean of Lights); it is in ${/[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic'} — say so, and quote the opening words of the original passage in that script.${phelps ? ` Phelps Inventory: ${phelps}` : ''}`
+    `Say where this quotation comes from. Name the published book (the first passage) and link it once; say whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
+    t ? `Name the original tablet (the second passage) and link it once (Ocean of Lights); it is in ${/[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic'} — say so, and quote the opening words of the original passage in that script.${phelps ? ` Phelps Inventory: ${phelps}` : ''}`
       : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
     others.length ? `Also quoted in: ${others.map((c) => `${c.title} (${c.rangeUrl || c.url})`).join('; ')} — mention these briefly.` : '',
     'Keep it short. Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar) — only the book, the writer, the tablet. Do not interpret the passage unless the seeker asks.',
@@ -228,7 +240,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
     ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u }))];
-  const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed));
+  const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
+  const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(t, exactUrls) : t, retrieved), allowed));
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
     onEvent({ type: 'text', content: cleanLinks(t) });
