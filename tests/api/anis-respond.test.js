@@ -193,6 +193,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(c.retrieved_quotes[1].citation_url).toBe('https://oceanoflights.org/bahaullah-x/');
     expect(c.direction.format.how).toMatch(/published book/);
     expect(c.direction.format.how).toMatch(/Promised Day/);
+    expect(c.direction.format.how).toMatch(/it is in Arabic/);
     expect(r.plan.shape).toBe('source');
   });
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-07T03:25:04.347Z",
+  "generated": "2026-10-07T03:32:29.443Z",
   "entries": [
+    {
+      "hash": "a02fe3b7",
+      "date": "2026-10-06",
+      "type": "New",
+      "description": "SourceHunt as a tool — triage kind source_lookup ('where is this quote from?') runs the hunt; the published source + original tablet are the passages, reply shape fixed (book, tablet, original's opening, Ocean of Lights/Phelps links, up to 3 other citing works); falls back to search when nothing is found",
+      "scope": "anis"
+    },
     {
       "hash": "06ce79f4",
       "date": "2026-10-05",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Drop two phantom entries — empty duplicates of books already ground",
       "scope": null
-    },
-    {
-      "hash": "06d19a2a",
-      "date": "2026-08-23",
-      "type": "Other",
-      "description": "Preserve the interpretive-lexicon RED spec instead of deleting it",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-06": [
+      {
+        "hash": "a02fe3b7",
+        "date": "2026-10-06",
+        "type": "New",
+        "description": "SourceHunt as a tool — triage kind source_lookup ('where is this quote from?') runs the hunt; the published source + original tablet are the passages, reply shape fixed (book, tablet, original's opening, Ocean of Lights/Phelps links, up to 3 other citing works); falls back to search when nothing is found",
+        "scope": "anis"
+      }
+    ],
     "2026-10-05": [
       {
         "hash": "06ce79f4",
@@ -7043,15 +7052,6 @@
         "date": "2026-08-24",
         "type": "Other",
         "description": "Drop two phantom entries — empty duplicates of books already ground",
-        "scope": null
-      }
-    ],
-    "2026-08-23": [
-      {
-        "hash": "06d19a2a",
-        "date": "2026-08-23",
-        "type": "Other",
-        "description": "Preserve the interpretive-lexicon RED spec instead of deleting it",
         "scope": null
       }
     ]

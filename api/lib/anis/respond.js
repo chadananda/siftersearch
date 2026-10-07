@@ -99,10 +99,10 @@ async function huntSource(d, question) {
   const others = (r.citedBy || []).slice(0, 3);
   const how = [
     `Say where this quotation comes from. Name the published book [1] and link it; say whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
-    t ? `Name the original tablet [2] and link it (Ocean of Lights); quote the opening words of the original passage in its own script.${phelps ? ` Phelps Inventory: ${phelps}` : ''}`
+    t ? `Name the original tablet [2] and link it (Ocean of Lights); it is in ${/[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic'} — say so, and quote the opening words of the original passage in that script.${phelps ? ` Phelps Inventory: ${phelps}` : ''}`
       : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
     others.length ? `Also quoted in: ${others.map((c) => `${c.title} (${c.rangeUrl || c.url})`).join('; ')} — mention these briefly.` : '',
-    'Keep it short. Do not interpret the passage unless the seeker asks.',
+    'Keep it short. Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar) — only the book, the writer, the tablet. Do not interpret the passage unless the seeker asks.',
   ].filter(Boolean).join(' ');
   const extraUrls = [ool, phelps, t?.url, o.url, ...others.map((c) => c.rangeUrl || c.url)].filter(Boolean);
   return { retrieved, how, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: t ? (t.meta?.title || t.title) : null, ms: r.ms } };
