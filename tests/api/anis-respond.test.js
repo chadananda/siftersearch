@@ -165,3 +165,40 @@ describe('anisRespond', () => {
     expect(typeof r.timings.first_token_ms).toBe('number');
   });
 });
+
+describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
+  const { quotationIn } = await import('../../api/lib/anis/respond.js');
+  const HUNT = {
+    quoteAuthor: 'Bahá’u’lláh', ms: 900,
+    origin: { title: 'Gleanings', author: 'Bahá’u’lláh', documentId: 20783, text: 'The earth is but one country, and mankind its citizens.', highlight: [[0, 55]],
+      url: 'https://oceanlibrary.com/gleanings?paraId=para_1', rangeUrl: 'https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth' },
+    tablet: { certain: true, title: 'Lawh-i-Maqsud', documentId: 700, text: 'ليس الفخر لمن يحبّ الوطن بل لمن يحبّ العالم', highlight: [[0, 20]], url: 'https://siftersearch.com/library/x#p0',
+      meta: { title: 'Tablet of Maqṣúd', links: { oceanoflights: 'https://oceanoflights.org/bahaullah-x/', inventory: 'https://phelps/BH1' } } },
+    citedBy: [{ title: 'The Promised Day is Come', url: 'https://x/pdc' }],
+  };
+  const ask = [{ role: 'user', content: 'Where is this from? "The earth is but one country, and mankind its citizens."' }];
+
+  it('finds the quotation in the message', () => {
+    expect(quotationIn(ask[0].content)).toBe('The earth is but one country, and mankind its citizens.');
+    expect(quotationIn('Where does this come from:\nSay: O people! Let not this fleeting life deceive you.')).toBe('Say: O people! Let not this fleeting life deceive you.');
+  });
+
+  it('hunts instead of searching; the published source and the original are the passages, with a fixed reply shape', async () => {
+    const d = deps({ sourceHunt: async (q) => { d.calls.hunt = q; return HUNT; } });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    expect(d.calls.search).toHaveLength(0);
+    expect(d.calls.hunt).toBe('The earth is but one country, and mankind its citizens.');
+    const c = d.calls.craft[0];
+    expect(c.retrieved_quotes.map((q) => q.source_title)).toEqual(['Gleanings', 'Tablet of Maqṣúd (original)']);
+    expect(c.retrieved_quotes[1].citation_url).toBe('https://oceanoflights.org/bahaullah-x/');
+    expect(c.direction.format.how).toMatch(/published book/);
+    expect(c.direction.format.how).toMatch(/Promised Day/);
+    expect(r.plan.shape).toBe('source');
+  });
+
+  it('nothing found → the ordinary search', async () => {
+    const d = deps({ sourceHunt: async () => ({ origin: null }) });
+    await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    expect(d.calls.search).toHaveLength(1);
+  });
+});
