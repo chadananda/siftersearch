@@ -135,7 +135,16 @@ async function huntSource(d, question) {
     'Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar). Do not interpret the passage unless the seeker asks.',
   ].filter(Boolean).join(' ');
   const extraUrls = Object.values(tags).map((x) => x.url).filter(Boolean);
-  return { retrieved, tags, how, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: tTitle, ms: r.ms } };
+  // The reply itself, from the hunt alone — no model: every fact (writer, book, tablet, the original's words, Inventory
+  // entry, other publications) is the hunt's, so nothing can be invented, leaked from instructions, or rambled (10-06 demo prep).
+  const author = r.quoteAuthor || o.author || null;
+  const reply = [
+    `${author ? `These are the words of ${author}, from {book}.` : 'This is from {book}.'}`,
+    t ? `The original is in ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}»` : ''}.${tags.inventory ? ' Its entry in the Phelps Inventory is {inventory}.' : ''}`
+      : 'I could not confirm the original tablet for this passage.',
+    others.length ? `It is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(others.length > 2 ? ', ' : ' and ').replace(/, (\{cited\d\})$/, ' and $1')}.` : '',
+  ].filter(Boolean).join(' ');
+  return { retrieved, tags, how, reply, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: tTitle, ms: r.ms } };
 }
 
 /** {book} / {tablet} / {inventory} / {citedN} → links to the exact URLs (titles italic, the Inventory plain). A tag the model
@@ -221,7 +230,18 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   onEvent({ type: 'stage', stage: 'search' });
   // "Where is this from?" → SourceHunt (published source + original tablet); nothing found → the ordinary search
   const sourced = (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)) ? await huntSource(d, question) : null;
-  if (sourced) conversational = false;
+  if (sourced) {
+    // "Where is this from?" is answered by the hunt directly (template, no model call, no companion plan).
+    const reply = fillTags(sourced.reply, sourced.tags);
+    const citations = sourced.retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
+      religion: q.religion, document_id: q.doc_id, paragraph_index: null, text: q.text.slice(0, 300) }));
+    onEvent({ type: 'sources', sources: citations, plan: { shape: 'source' }, ms: Date.now() - t0 });
+    onEvent({ type: 'stage', stage: 'craft' });
+    onEvent({ type: 'text', content: reply });
+    return { reply, quotes_removed: 0, citations, retrieved: sourced.retrieved, plan: { shape: 'source', sourceHunt: sourced.hunt },
+      format: { id: 'source', by: 'sourcehunt' }, profile: null,
+      timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
+  }
   const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : conversational ? { passages: [], _plan: plan } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },

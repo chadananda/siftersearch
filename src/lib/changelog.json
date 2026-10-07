@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-07T04:27:28.547Z",
+  "generated": "2026-10-07T04:30:33.930Z",
   "entries": [
+    {
+      "hash": "5322450a",
+      "date": "2026-10-06",
+      "type": "Fixed",
+      "description": "Source replies quote the original's matched words exactly, map {1}/{2}, drop a title repeated after its link, at most four sentences",
+      "scope": "anis"
+    },
     {
       "hash": "63a8ea8c",
       "date": "2026-10-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Measure sense RECALL and DISTINCTNESS, not accuracy",
       "scope": null
-    },
-    {
-      "hash": "e06c0447",
-      "date": "2026-08-24",
-      "type": "Other",
-      "description": "Binding returns the SET of senses, never picks one",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-06": [
+      {
+        "hash": "5322450a",
+        "date": "2026-10-06",
+        "type": "Fixed",
+        "description": "Source replies quote the original's matched words exactly, map {1}/{2}, drop a title repeated after its link, at most four sentences",
+        "scope": "anis"
+      },
       {
         "hash": "63a8ea8c",
         "date": "2026-10-06",
@@ -7043,15 +7050,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Measure sense RECALL and DISTINCTNESS, not accuracy",
-        "scope": null
-      }
-    ],
-    "2026-08-24": [
-      {
-        "hash": "e06c0447",
-        "date": "2026-08-24",
-        "type": "Other",
-        "description": "Binding returns the SET of senses, never picks one",
         "scope": null
       }
     ]

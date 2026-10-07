@@ -172,7 +172,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     quoteAuthor: 'Bahá’u’lláh', ms: 900,
     origin: { title: 'Gleanings', author: 'Bahá’u’lláh', documentId: 20783, text: 'The earth is but one country, and mankind its citizens.', highlight: [[0, 55]],
       url: 'https://oceanlibrary.com/gleanings?paraId=para_1', rangeUrl: 'https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth' },
-    tablet: { certain: true, title: 'Lawh-i-Maqsud', documentId: 700, text: 'ليس الفخر لمن يحبّ الوطن بل لمن يحبّ العالم', highlight: [[0, 20]], url: 'https://siftersearch.com/library/x#p0',
+    tablet: { certain: true, title: 'Lawh-i-Maqsud', documentId: 700, text: 'ليس الفخر لمن يحبّ الوطن بل لمن يحبّ العالم', highlight: [[0, 24]], url: 'https://siftersearch.com/library/x#p0',
       meta: { title: 'Tablet of Maqṣúd', links: { oceanoflights: 'https://oceanoflights.org/bahaullah-x/', inventory: 'https://phelps/BH1' } } },
     citedBy: [{ title: 'The Promised Day is Come', url: 'https://x/pdc' }],
   };
@@ -183,22 +183,22 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(quotationIn('Where does this come from:\nSay: O people! Let not this fleeting life deceive you.')).toBe('Say: O people! Let not this fleeting life deceive you.');
   });
 
-  it('hunts instead of searching; the published source and the original are the passages, with a fixed reply shape', async () => {
+  it('hunts instead of searching and answers from the hunt alone — no model call, exact links, the original\'s words', async () => {
     const d = deps({ sourceHunt: async (q) => { d.calls.hunt = q; return HUNT; } });
     const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
     expect(d.calls.search).toHaveLength(0);
+    expect(d.calls.craft).toHaveLength(0);
     expect(d.calls.hunt).toBe('The earth is but one country, and mankind its citizens.');
-    const c = d.calls.craft[0];
-    expect(c.retrieved_quotes.map((q) => q.source_title)).toEqual(['Gleanings', 'Tablet of Maqṣúd (original, Arabic)']);
-    expect(c.retrieved_quotes.every((q) => !q.citation_url)).toBe(true);           // the model never sees a URL
-    expect(c.direction.format.how).toMatch(/\{book\}/);
-    expect(c.direction.format.how).toMatch(/\{cited1\}/);
-    expect(c.direction.format.how).toMatch(/«ليس الفخر/);
-    expect(c.direction.format.how).toMatch(/original is Arabic/);
-    expect(c.direction.format.how).not.toMatch(/https?:/);
+    expect(r.reply).toBe('These are the words of Bahá’u’lláh, from [*Gleanings*](https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth). '
+      + 'The original is in Arabic, in [*Tablet of Maqṣúd*](https://oceanoflights.org/bahaullah-x/), where it reads «ليس الفخر لمن يحبّ الوطن». '
+      + 'Its entry in the Phelps Inventory is [Phelps Inventory](https://phelps/BH1). It is also quoted in [*The Promised Day is Come*](https://x/pdc).');
     expect(r.plan.shape).toBe('source');
   });
-
+  it('a quotation with no confirmed original says so, in one sentence', async () => {
+    const d = deps({ sourceHunt: async () => ({ ...HUNT, tablet: { certain: false, candidates: [] }, citedBy: [] }) });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    expect(r.reply).toMatch(/I could not confirm the original tablet/);
+  });
   it('nothing found → the ordinary search', async () => {
     const d = deps({ sourceHunt: async () => ({ origin: null }) });
     await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
