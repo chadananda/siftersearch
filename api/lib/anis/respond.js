@@ -67,47 +67,6 @@ export function searchQueryFor(messages) {
 
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
-/** The quotation in a source question: the longest quoted span (≥ 6 words), else the message without a leading request
- *  ("Where is this from:") — what a library's copy appends (reference line, link) is stripped by SourceHunt itself. */
-export function quotationIn(text) {
-  const t = String(text || '').trim();
-  const quoted = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 6);
-  if (quoted.length) return quoted.sort((a, b) => b.length - a.length)[0];
-  const m = /^[^\n:]{0,80}?(?:from|source|origin|written|said|quote|find)[^\n:]{0,60}[:?\n]\s*([\s\S]{20,})$/i.exec(t);
-  return (m ? m[1] : t).trim();
-}
-
-const clip = (text = '', ranges = [], before = 240, after = 320) => {
-  if (!ranges?.length || text.length <= 700) return text;
-  const a = Math.max(0, ranges[0][0] - before), b = Math.min(text.length, ranges[ranges.length - 1][1] + after);
-  return `${a > 0 ? '… ' : ''}${text.slice(a, b).trim()}${b < text.length ? ' …' : ''}`;
-};
-
-/** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
- *  passages the reply is written from (so the sentence gate and link filter still hold), with a fixed reply shape. */
-async function huntSource(d, question) {
-  const hunt = d.sourceHunt || (await import('../source-hunt.js')).sourceHunt;
-  const r = await hunt(quotationIn(question)).catch(() => null);
-  if (!r?.origin) return null;
-  const o = r.origin, t = r.tablet?.certain ? r.tablet : null;
-  const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null;
-  const retrieved = [{ text: clip(o.text, o.highlight), source_title: o.title, source_author: o.author || '', citation_url: o.rangeUrl || o.url,
-    doc_id: o.documentId, paragraph_index: null, religion: "Baha'i", collection: null, source_lang: 'en', via: 'sourcehunt' }];
-  if (t) retrieved.push({ text: clip(t.text, t.highlight), source_title: `${t.meta?.title || t.title} (original)`, source_author: o.author || '',
-    citation_url: t.meta?.links?.oceanoflightsRange || ool || t.url, doc_id: t.documentId, paragraph_index: null, religion: "Baha'i",
-    collection: null, source_lang: /[پچژگ]/.test(t.text || '') ? 'fa' : 'ar', via: 'sourcehunt' });
-  const others = (r.citedBy || []).slice(0, 3);
-  const how = [
-    `Say where this quotation comes from. Name the published book [1] and link it; say whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
-    t ? `Name the original tablet [2] and link it (Ocean of Lights); quote the opening words of the original passage in its own script.${phelps ? ` Phelps Inventory: ${phelps}` : ''}`
-      : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
-    others.length ? `Also quoted in: ${others.map((c) => `${c.title} (${c.rangeUrl || c.url})`).join('; ')} — mention these briefly.` : '',
-    'Keep it short. Do not interpret the passage unless the seeker asks.',
-  ].filter(Boolean).join(' ');
-  const extraUrls = [ool, phelps, t?.url, o.url, ...others.map((c) => c.rangeUrl || c.url)].filter(Boolean);
-  return { retrieved, how, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: t ? (t.meta?.title || t.title) : null, ms: r.ms } };
-}
-
 // Prior turns only (the current question is sent separately), trimmed — context, not a transcript to re-answer.
 function conversationSummary(messages, persona) {
   const prior = (messages || []).slice(0, -1).slice(-6);
@@ -172,18 +131,15 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
 
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
   const plan = d.plan ? await d.plan(messages).catch(() => null) : null;
-  let conversational = plan?.shape === 'converse';
+  const conversational = plan?.shape === 'converse';
 
   onEvent({ type: 'stage', stage: 'search' });
-  // "Where is this from?" → SourceHunt (published source + original tablet); nothing found → the ordinary search
-  const sourced = direction.kind === 'source_lookup' ? await huntSource(d, question) : null;
-  if (sourced) conversational = false;
-  const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : conversational ? { passages: [], _plan: plan } : await d.search({
+  const res = conversational ? { passages: [], _plan: plan } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   });
   const searchMs = Date.now() - t0;
-  const retrieved = sourced ? sourced.retrieved : (res?.passages || []).map((p) => ({
+  const retrieved = (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned',
@@ -204,8 +160,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
-  const formatP = sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
-    : conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
+  const formatP = conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
 
   let comp = null;
   try {
@@ -226,8 +181,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Links allowed = the passages' URLs + the people record's evidence URLs. Applied per sentence while STREAMING
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
-  const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
-    ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u }))];
+  const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url }))];
   const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed));
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;

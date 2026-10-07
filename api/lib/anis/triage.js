@@ -7,7 +7,6 @@ import { jevFetch } from '../systemone.js';   // logs the call per task (Laya tr
 
 export const KINDS = {
   research: 'a question or request about religion, scripture, spirituality, history, people, texts, or ideas — anything to look up or think through',
-  source_lookup: 'gives a quotation (often pasted) and asks where it comes from — which book, author, tablet or original text — or pastes a quotation with nothing else',
   about_anis: 'a question about the assistant itself: who or what it is, what it can do, what model powers it, how it works',
   thanks: 'thanks, appreciation or a pleasantry that asks for nothing further',
   feedback: 'a comment on the assistant\'s previous answer or on the site (praise, complaint, a report of an error) that asks for nothing new',

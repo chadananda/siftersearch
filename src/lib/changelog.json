@@ -1,13 +1,6 @@
 {
-  "generated": "2026-10-07T03:25:04.347Z",
+  "generated": "2026-10-05T23:56:37.995Z",
   "entries": [
-    {
-      "hash": "06ce79f4",
-      "date": "2026-10-05",
-      "type": "Other",
-      "description": "SourceHunt over the 498 Bahá'í Sacred Writings selections via the public API — proposed Original-Language Source (col V) + source check vs the sheet",
-      "scope": "bsw"
-    },
     {
       "hash": "f1b280cd",
       "date": "2026-10-05",
@@ -3500,17 +3493,17 @@
       "type": "Other",
       "description": "Preserve the interpretive-lexicon RED spec instead of deleting it",
       "scope": null
+    },
+    {
+      "hash": "9601a5b0",
+      "date": "2026-08-23",
+      "type": "Other",
+      "description": "Tell \"plan exhausted\" apart from \"pipeline stalled\" (kills the permanent CRITICAL)",
+      "scope": null
     }
   ],
   "grouped": {
     "2026-10-05": [
-      {
-        "hash": "06ce79f4",
-        "date": "2026-10-05",
-        "type": "Other",
-        "description": "SourceHunt over the 498 Bahá'í Sacred Writings selections via the public API — proposed Original-Language Source (col V) + source check vs the sheet",
-        "scope": "bsw"
-      },
       {
         "hash": "f1b280cd",
         "date": "2026-10-05",
@@ -7052,6 +7045,13 @@
         "date": "2026-08-23",
         "type": "Other",
         "description": "Preserve the interpretive-lexicon RED spec instead of deleting it",
+        "scope": null
+      },
+      {
+        "hash": "9601a5b0",
+        "date": "2026-08-23",
+        "type": "Other",
+        "description": "Tell \"plan exhausted\" apart from \"pipeline stalled\" (kills the permanent CRITICAL)",
         "scope": null
       }
     ]
