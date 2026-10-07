@@ -124,13 +124,15 @@ async function huntSource(d, question) {
   if (t) retrieved.push({ text: clip(t.text, t.highlight), source_title: `${tTitle} (original, ${lang})`, source_author: o.author || '',
     citation_url: tags.tablet.url, doc_id: t.documentId, paragraph_index: null, religion: "Baha'i",
     collection: null, source_lang: lang === 'Persian' ? 'fa' : 'ar', via: 'sourcehunt' });
+  // the original's own words for this quotation (the highlighted clauses), so the reply quotes the right ones
+  const origWords = t ? (t.highlight || []).map(([a, b]) => t.text.slice(a, b)).join(' … ').split(/\s+/).slice(0, 14).join(' ') : '';
   const how = [
-    'Never write a URL or a markdown link. Name each source with its tag exactly as written below — the tag becomes the linked title.',
-    `Say the quotation comes from {book} (${o.title}) and whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
-    t ? `Say the original is ${lang} — {tablet} (${tTitle}) — and quote the opening words of the original passage (the second passage) in its own script.${tags.inventory ? ' Mention its entry in {inventory}.' : ''}`
+    'Never write a URL, a markdown link or a title in brackets. Write each source as its tag exactly — {book}, {tablet}, {inventory}, {cited1}… — the tag is replaced by the linked title, so do not also write the title.',
+    `At most four sentences. Say the quotation comes from {book} and whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
+    t ? `Say the original is ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}» — quote exactly those words` : ''}.${tags.inventory ? ' Mention {inventory}.' : ''}`
       : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
-    others.length ? `Also quoted in: ${others.map((c, i) => `{cited${i + 1}} (${c.title})`).join(', ')} — mention these in one sentence.` : '',
-    'Keep it short. Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar). Do not interpret the passage unless the seeker asks.',
+    others.length ? `In one sentence, say it is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(', ')}.` : '',
+    'Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar). Do not interpret the passage unless the seeker asks.',
   ].filter(Boolean).join(' ');
   const extraUrls = Object.values(tags).map((x) => x.url).filter(Boolean);
   return { retrieved, tags, how, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: tTitle, ms: r.ms } };
@@ -138,11 +140,15 @@ async function huntSource(d, question) {
 
 /** {book} / {tablet} / {inventory} / {citedN} → links to the exact URLs (titles italic, the Inventory plain). A tag the model
  *  wrapped in brackets or asterisks is still found; an unknown tag is dropped. */
+const TAG_ALIAS = { 1: 'book', 2: 'tablet' };   // the model sometimes numbers the passages instead
 export function fillTags(text, tags) {
-  return String(text || '').replace(/\*{0,2}\[?\{(book|tablet|inventory|cited\d)\}\]?\*{0,2}/g, (m, k) => {
-    const x = tags?.[k];
+  return String(text || '').replace(/\*{0,2}\[?\{(book|tablet|inventory|cited\d|\d)\}\]?\*{0,2}(\s*\(([^()]{2,160})\))?/g, (m, k, paren, inner) => {
+    const x = tags?.[TAG_ALIAS[k] || k];
     if (!x) return '';
-    return x.url ? `[${x.plain ? x.title : `*${x.title}*`}](${x.url})` : (x.plain ? x.title : `*${x.title}*`);
+    const link = x.url ? `[${x.plain ? x.title : `*${x.title}*`}](${x.url})` : (x.plain ? x.title : `*${x.title}*`);
+    // "(Title)" repeated right after the tag is dropped; any other parenthesis stays
+    const same = (a, b) => a.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '') === b.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    return paren && !same(inner, x.title) ? `${link}${paren}` : link;
   });
 }
 

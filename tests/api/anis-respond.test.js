@@ -192,7 +192,8 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(c.retrieved_quotes.map((q) => q.source_title)).toEqual(['Gleanings', 'Tablet of Maqṣúd (original, Arabic)']);
     expect(c.retrieved_quotes.every((q) => !q.citation_url)).toBe(true);           // the model never sees a URL
     expect(c.direction.format.how).toMatch(/\{book\}/);
-    expect(c.direction.format.how).toMatch(/\{cited1\} \(The Promised Day is Come\)/);
+    expect(c.direction.format.how).toMatch(/\{cited1\}/);
+    expect(c.direction.format.how).toMatch(/«ليس الفخر/);
     expect(c.direction.format.how).toMatch(/original is Arabic/);
     expect(c.direction.format.how).not.toMatch(/https?:/);
     expect(r.plan.shape).toBe('source');
@@ -223,6 +224,10 @@ describe('source replies: tags → exact links; source questions without triage'
   it('fills tags with the exact links, tolerating brackets/asterisks; unknown tags vanish', () => {
     expect(fillTags('From {book}; the original is **{tablet}** — see [{inventory}]. Also {cited2}.', tags))
       .toBe('From [*Gleanings*](https://ol/g#:~:text=a); the original is [*Lawh-i-Nasir*](https://ool/n) — see [Phelps Inventory BH1](https://pi/BH1). Also .');
+  });
+  it('numbered tags map to book/tablet and a repeated "(Title)" is dropped, other parentheses kept', () => {
+    expect(fillTags('From {1} (Gleanings), in {2} (written 1880).', tags))
+      .toBe('From [*Gleanings*](https://ol/g#:~:text=a), in [*Lawh-i-Nasir*](https://ool/n) (written 1880).');
   });
   it('recognises a source question with a quotation, but not a plain question', () => {
     expect(looksLikeSourceQuestion('Where does this come from? Tear asunder, in My Name, the veils that have grievously blinded your vision')).toBe(true);
