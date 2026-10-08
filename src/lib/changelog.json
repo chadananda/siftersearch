@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:44:05.877Z",
+  "generated": "2026-10-08T15:50:09.810Z",
   "entries": [
+    {
+      "hash": "cca24d26",
+      "date": "2026-10-08",
+      "type": "Test",
+      "description": "Held-out gold (New Era, ‘Abdu’l-Bahá in London — talk + editor's report) for the window classifier; never tuned on",
+      "scope": "authorship"
+    },
     {
       "hash": "750b8159",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Assert the stem-pair property, not a stem count",
       "scope": null
-    },
-    {
-      "hash": "3538f96f",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The nested tablets need their own originals — the ratio said so",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "cca24d26",
+        "date": "2026-10-08",
+        "type": "Test",
+        "description": "Held-out gold (New Era, ‘Abdu’l-Bahá in London — talk + editor's report) for the window classifier; never tuned on",
+        "scope": "authorship"
+      },
       {
         "hash": "750b8159",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Test",
         "description": "Assert the stem-pair property, not a stem count",
-        "scope": null
-      },
-      {
-        "hash": "3538f96f",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The nested tablets need their own originals — the ratio said so",
         "scope": null
       }
     ]

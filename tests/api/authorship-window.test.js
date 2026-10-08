@@ -45,3 +45,13 @@ describe('condense', () => {
     expect(condense('short')).toBe('short');
   });
 });
+
+describe('settle + editor label', () => {
+  it('drops a quote of the speaker themself and maps generic narrators to one label', async () => {
+    const { settle, canonical, EDITOR } = await import('../../api/lib/authorship/window.js');
+    expect(settle({ speaker: 'Bahá’u’lláh', quotes: "Baha'u'llah" }).quotes).toBeNull();
+    expect(settle({ speaker: 'John E. Esslemont', quotes: 'Bahá’u’lláh' }).quotes).toBe('Bahá’u’lláh');
+    expect(canonical('narrator')).toBe(EDITOR);
+    expect(canonical('The reporter')).toBe(EDITOR);
+  });
+});

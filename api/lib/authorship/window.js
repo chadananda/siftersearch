@@ -14,9 +14,11 @@ const ALIASES = [
 ];
 
 /** Canonical form of a name an LLM wrote, matched against the roster (case, apostrophes, "the", accents). */
+export const EDITOR = 'the editor or reporter';
 export function canonical(name, roster = []) {
   const n = String(name || '').trim().replace(/\s+/g, ' ');
   if (!n) return null;
+  if (/^(the )?(narrator|editor|reporter|recorder|compiler'?s? (note|narrative)|chronicler|author of (the|this) report)$/i.test(n)) return EDITOR;
   for (const [c, re] of ALIASES) if (re.test(n)) return c;
   const fold = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘ʼ`']/g, '').replace(/^the /i, '').toLowerCase();
   return roster.find((r) => fold(r) === fold(n)) || n;
@@ -78,7 +80,7 @@ export function windowQuestions(roster, n, book, known = []) {
   const q = {};
   for (let i = 1; i <= n; i++) {
     if (!known[i - 1]) q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Who is writing or speaking T${i} as a whole? A narrator who reports or quotes someone is still the speaker — the person quoted is NOT. Only when T${i} is entirely someone else's words (the body of their letter, an extract from their writings, their talk) are they the speaker. A reference or attribution line belongs to the extracts it names. Use the section heading, the decided paragraphs and the lines that follow.` };
-    q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Inside T${i}, whose words are quoted (“…”, "he said", "she wrote") or whose work is cited — someone other than the speaker? If several, the one quoted most.` };
+    q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Inside T${i}, whose words are quoted (“…”, "he said", "she wrote"), whose teaching is reported ("Bahá’u’lláh taught that…", "He lays stress on…") or whose work is cited — always someone OTHER than T${i}'s own speaker? If several, the one quoted most.` };
   }
   return q;
 }
@@ -90,6 +92,11 @@ export function parseAnswers(answers, n) {
     const s = answers?.[`s${k + 1}`] ? pick(answers[`s${k + 1}`]) : { v: null, c: 1 }, q = pick(answers?.[`q${k + 1}`]);
     return { speaker: s.v, quotes: q.v === NONE ? null : q.v, conf: Math.min(s.c, q.c), sconf: s.c };
   });
+}
+
+/** A paragraph never "quotes" its own speaker (v6 listed Bahá’u’lláh as quoted in His own extracts). */
+export function settle(l) {
+  return { ...l, quotes: l.quotes && l.speaker && canonical(l.quotes) === canonical(l.speaker) ? null : l.quotes };
 }
 
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */

@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { getDoc } from '../../api/lib/docs-repo.js';
-import { initialRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, canonical, OTHER } from '../../api/lib/authorship/window.js';
+import { initialRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, canonical, settle, OTHER } from '../../api/lib/authorship/window.js';
 import { OFFICIAL, blocks, officialAuthors, textKey } from './official-sections.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -61,7 +61,7 @@ async function pass(book, rows, roster, prior) {
       }
     }
     // "another person" is not an answer: the LLM names them, or the paragraph stays unresolved (null), never 'another person'
-    got.forEach((l, k) => { labels[i0 + k] = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes }; });
+    got.forEach((l, k) => { labels[i0 + k] = settle({ ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes }); });
   }
   return labels;
 }
