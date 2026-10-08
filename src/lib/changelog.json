@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T17:08:33.697Z",
+  "generated": "2026-10-08T17:22:52.355Z",
   "entries": [
+    {
+      "hash": "c1bbc178",
+      "date": "2026-10-08",
+      "type": "Performance",
+      "description": "Window classifier v13 — rules and speaker descriptions stated once per window, questions are bare names (repeating them in 20 questions was most of the tokens)",
+      "scope": "authorship"
+    },
     {
       "hash": "24d84805",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Say why a paragraph yielded nothing",
       "scope": null
-    },
-    {
-      "hash": "dde17930",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Compare letter sequences, so a typo in OUR text cannot reject a faithful citation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "c1bbc178",
+        "date": "2026-10-08",
+        "type": "Performance",
+        "description": "Window classifier v13 — rules and speaker descriptions stated once per window, questions are bare names (repeating them in 20 questions was most of the tokens)",
+        "scope": "authorship"
+      },
       {
         "hash": "24d84805",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Say why a paragraph yielded nothing",
-        "scope": null
-      },
-      {
-        "hash": "dde17930",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Compare letter sequences, so a typo in OUR text cannot reject a faithful citation",
         "scope": null
       }
     ]

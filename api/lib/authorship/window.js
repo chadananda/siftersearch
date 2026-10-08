@@ -133,6 +133,35 @@ export function settle(l) {
   return { ...l, quotes: l.quotes && l.speaker && canonical(l.quotes) === canonical(l.speaker) ? null : l.quotes };
 }
 
+/** NARRATED, not spoken (v14, from the change spot-check: 12 of 36 sampled changes credited the quoted person): a paragraph
+ *  whose text OUTSIDE its quotation marks names the predicted speaker, or reports speech ("wrote", "said", "affirms",
+ *  "told him"), is the narrator's — the predicted person is quoted in it. A paragraph that is wholly a quotation (no
+ *  narration outside the marks) or an unmarked block (a letter body, an extract) is untouched. */
+const SPEECH = /\b(wr[io]te|written|writes|said|says|saying|told|tells|replied|repl(?:y|ies)|answered|exclaimed|declared|declares|affirm(?:s|ed)?|stat(?:es|ed)|asked|remarked|observed|added|continued|revealed|address(?:ed|es)|cabled|announc(?:ed|es))\b/i;
+export function outsideQuotes(text) {
+  // drop “…” / "…" spans (an unclosed opening quote runs to the end of the paragraph)
+  return String(text || '').replace(/[“"][^”"]*(?:[”"]|$)/g, ' ').replace(/\s+/g, ' ').trim();
+}
+export function isNarrated(text, speaker) {
+  const out = outsideQuotes(text);
+  if (out.length < 12) return false;                                  // wholly a quotation
+  if (!/[“"]/.test(text)) return false;                               // an unmarked block (letter body, extract): its own words
+  const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
+  const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length > 3 && !/^(mirza|haji|mulla|siyyid|shaykh|the|khan)$/.test(w));
+  return SPEECH.test(out) || words.some((w) => fold(out).includes(w));
+}
+/** Lines that never get a speaker of their own: image captions, one-line titles / names / datelines without a sentence. */
+export const isStructuralLine = (text) => /^!\[/.test(String(text || '').trim()) || (String(text || '').trim().length < 40 && !/[“"]/.test(text) && !/\b(is|was|are|were|have|has|had|will|shall|be)\b/i.test(text));
+
+/** Apply the narration guard to a label: a narrated paragraph keeps the narrator (null = the book's default) and the
+ *  predicted person moves to quotes. */
+export function guardNarration(label, text) {
+  if (!label?.speaker || label.fixed || label.speaker === EDITOR) return label;
+  if (isStructuralLine(text)) return { ...label, speaker: null, structural: true };
+  if (isNarrated(text, label.speaker)) return { ...label, speaker: null, quotes: label.quotes || label.speaker, narrated: true };
+  return label;
+}
+
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */
 export const needsEscalation = (l, min) => l.speaker === OTHER || l.quotes === OTHER || l.conf < min;
 

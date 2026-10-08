@@ -87,3 +87,24 @@ describe('relevantRoster', () => {
     expect(r.length).toBeLessThanOrEqual(10);
   });
 });
+
+describe('narration guard (v14, from the change spot-check)', () => {
+  it('keeps the narrator when the quote is introduced in the narration', async () => {
+    const { guardNarration } = await import('../../api/lib/authorship/window.js');
+    const g = (speaker, text) => guardNarration({ speaker, quotes: null }, text);
+    expect(g('Bahá’u’lláh', '“We, verily,” wrote Bahá’u’lláh, surveying, in the evening of His life, “have …”')).toMatchObject({ speaker: null, quotes: 'Bahá’u’lláh', narrated: true });
+    expect(g('‘Abdu’l-Bahá', '‘Abdu’l-Bahá, after enumerating in His “Some Answered Questions” the consequences, significantly affirms that “so…”').narrated).toBe(true);
+    expect(g('the chief', 'The chief turned to one of his farráshes and said, “Take him to the money-changer’s and look into it.”').narrated).toBe(true);
+  });
+  it('leaves whole quotations and unmarked blocks with their own speaker', async () => {
+    const { guardNarration } = await import('../../api/lib/authorship/window.js');
+    expect(guardNarration({ speaker: 'Mullá ‘Abdu’l-Karím' }, '“I spent the entire winter in close companionship with him. During the whole of that period, I faithfully attended his classes.”').speaker).toBe('Mullá ‘Abdu’l-Karím');
+    expect(guardNarration({ speaker: 'Shoghi Effendi' }, 'I have learned with profound regret of the lamentable occurrences in Palestine, and hasten to offer Your Excellency my sympathy.').speaker).toBe('Shoghi Effendi');
+    expect(guardNarration({ speaker: 'Shoghi Effendi', fixed: true }, 'He said “x” and wrote it.').speaker).toBe('Shoghi Effendi');
+  });
+  it('never gives captions or one-line titles a speaker', async () => {
+    const { guardNarration } = await import('../../api/lib/authorship/window.js');
+    expect(guardNarration({ speaker: 'Queen Marie' }, '![FACSIMILES OF QUEEN MARIE’S HANDWRITING](x)').speaker).toBeNull();
+    expect(guardNarration({ speaker: 'Mírzá Músá' }, 'Mírzá Músá.').speaker).toBeNull();
+  });
+});

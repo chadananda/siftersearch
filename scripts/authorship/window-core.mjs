@@ -1,7 +1,7 @@
 // Windowed paragraph attribution — the per-book engine shared by the eval (window-classify.mjs) and the production run
 // (window-run.mjs). Defaults = v10, the measured best (planning/window-classifier-log.md): hybrid, one pass, LLM only to
 // name "another person", one LLM brief per book. Runs ON tower (System-1 calls logged per task for Laya, Clef shadowed).
-import { canonical, EDITOR, initialRoster, relevantRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
@@ -81,7 +81,12 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
         }
       }
       // "another person" is not an answer: the LLM names them, or the paragraph stays unresolved (null)
-      got.forEach((l, k) => { labels[i0 + k] = settle({ ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes }); });
+      got.forEach((l, k) => {
+        const clean = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes };
+        // a narrated paragraph stays the narrator's; null speaker = the book's default author (v14)
+        const g = guardNarration(clean, targets[k].text);
+        labels[i0 + k] = settle(g.narrated && !g.speaker ? { ...g, speaker: book.author } : g);
+      });
     }
     return labels;
   }
@@ -127,7 +132,7 @@ export function nextAuthors(row, label, book) {
   const speakerName = author?.name;
   const quoted = cur.filter((e) => e.role === 'quoted' && e.basis !== 'window');
   const q = label?.quotes && !structural ? canonical(label.quotes) : null;
-  if (q && q !== speakerName && !sameAsAuthor(q, speakerName || '') && !quoted.some((e) => e.name === q)) quoted.push({ name: q, role: 'quoted', basis: 'window' });
+  if (q && fold(q) !== fold(speakerName) && !sameAsAuthor(q, speakerName || '') && !quoted.some((e) => fold(e.name) === fold(q))) quoted.push({ name: q, role: 'quoted', basis: 'window' });
   const others = cur.filter((e) => e.role !== 'author' && e.role !== 'quoted');
   const next = [...(author ? [author] : []), ...others, ...quoted];
   return JSON.stringify(next) === JSON.stringify(cur) ? null : { authors: next, changed };
