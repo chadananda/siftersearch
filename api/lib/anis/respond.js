@@ -314,7 +314,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed));
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
-    onEvent({ type: 'text', content: cleanLinks(t) });
+    onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
   });
   const raw = await d.craft({
     user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),

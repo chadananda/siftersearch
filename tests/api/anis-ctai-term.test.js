@@ -135,7 +135,9 @@ describe('renderings are built by code, by channel', () => {
 describe('Anís answers a word question from CTAI', () => {
   it('skips the ordinary search, uses the study, and places the code-built chart', async () => {
     const calls = { search: 0, craft: null };
+    const streamed = [];
     const r = await anisRespond({
+      onEvent: (e) => { if (e.type === 'text') streamed.push(e.content); },
       messages: [{ role: 'user', content: 'I would like to understand the meaning of the word Irfan' }],
       direction: { channel: channelFor('email', { trusted: true }) },
       llm: { provider: 'test', model: 'test' },
@@ -146,7 +148,7 @@ describe('Anís answers a word question from CTAI', () => {
         ctaiTerm: async () => STUDY,
         companion: async () => ({ append: '', plan: null, offer: false }),
         chooseFormat: async () => ({ id: 'should-not-be-used' }),
-        craft: async (args) => { calls.craft = args; return 'The word is عرفان.\n\n[[RENDERINGS]]\n\nSee [the passage](https://ctai.info/models/gleanings/50/) and [all renderings on CTAI](https://ctai.info/research/root/rf-knowledge-know/).'; },
+        craft: async (args) => { calls.craft = args; args.onChunk('The word is عرفان. [[RENDERINGS]] More. '); return 'The word is عرفان.\n\n[[RENDERINGS]]\n\nSee [the passage](https://ctai.info/models/gleanings/50/) and [all renderings on CTAI](https://ctai.info/research/root/rf-knowledge-know/).'; },
       },
     });
     expect(calls.search).toBe(0);
@@ -155,6 +157,7 @@ describe('Anís answers a word question from CTAI', () => {
     expect(r.reply).toContain('```chart');
     expect(r.reply).toContain('https://ctai.info/research/root/rf-knowledge-know/');   // the concordance link survives the link filter
     expect(r.plan).toMatchObject({ shape: 'define', via: 'ctai' });
+    expect(streamed.join('')).not.toContain('[[');                                   // placeholders never streamed
   });
   it('falls back to the ordinary search when CTAI has nothing', async () => {
     let searched = 0;
