@@ -12,6 +12,7 @@
 // adapter intends, on both v12 and v14.
 import { App } from 'astro/app';
 import { handle } from '@astrojs/cloudflare/handler';
+import { mailRoute } from './mail/index.js';
 
 const API_ORIGIN = 'https://api.siftersearch.com';
 
@@ -50,6 +51,7 @@ export function createExports(manifest) {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
+        if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
         if (isApiPath(url.pathname)) {
           const target = API_ORIGIN + url.pathname + url.search;
           // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.

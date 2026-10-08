@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T02:09:28.447Z",
+  "generated": "2026-10-08T02:47:39.288Z",
   "entries": [
+    {
+      "hash": "0a268501",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Load the env files (PM2 does not pass them); a failed model call is retried after a pause, never recorded as audited",
+      "scope": "audit"
+    },
     {
       "hash": "e6a0d151",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Core roster + bilingual extraction contract",
       "scope": null
-    },
-    {
-      "hash": "c660c2a1",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Identity layer - the prerequisite for cross-referencing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "0a268501",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Load the env files (PM2 does not pass them); a failed model call is retried after a pause, never recorded as audited",
+        "scope": "audit"
+      },
       {
         "hash": "e6a0d151",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Core roster + bilingual extraction contract",
-        "scope": null
-      },
-      {
-        "hash": "c660c2a1",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Identity layer - the prerequisite for cross-referencing",
         "scope": null
       }
     ]

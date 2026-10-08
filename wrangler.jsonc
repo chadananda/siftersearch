@@ -20,6 +20,10 @@
   // Workers AI binding: Clef / Clef-flash (System-1 decision models, Jev-API compatible) run here with no API token;
   // tower's api/lib/systemone.js reaches them through POST /_s1/run (worker/index.js).
   "ai": { "binding": "AI" },
+  // Anís's one history + mail (worker/mail/). Migrations: wrangler d1 migrations apply anis --remote
+  "d1_databases": [
+    { "binding": "ANIS_DB", "database_name": "anis", "database_id": "b7f3d052-7c71-4a0f-aa84-3532c2feb52d", "migrations_dir": "worker/d1/anis" }
+  ],
   "observability": {
     "enabled": true
   }
