@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T04:34:08.598Z",
+  "generated": "2026-10-08T04:38:20.967Z",
   "entries": [
+    {
+      "hash": "44c5273b",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Term-study passage table built by code from CTAI's spans (exact bolding of the word and its rendering, different renderings first, a list where tables can't show); filler alignments ('can', 'your') dropped; punctuation spacing fixed. The model writes only the opening and the reading",
+      "scope": "anis"
+    },
     {
       "hash": "54a4db97",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Capture the WHOLE-BOOK stems — they were never in our corpus",
       "scope": null
-    },
-    {
-      "hash": "ac6923b6",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Selections populated (283), and record the works that HAVE no original",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "44c5273b",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Term-study passage table built by code from CTAI's spans (exact bolding of the word and its rendering, different renderings first, a list where tables can't show); filler alignments ('can', 'your') dropped; punctuation spacing fixed. The model writes only the opening and the reading",
+        "scope": "anis"
+      },
       {
         "hash": "54a4db97",
         "date": "2026-10-07",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Capture the WHOLE-BOOK stems — they were never in our corpus",
-        "scope": null
-      },
-      {
-        "hash": "ac6923b6",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Selections populated (283), and record the works that HAVE no original",
         "scope": null
       }
     ]

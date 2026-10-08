@@ -82,6 +82,7 @@ describe('tables and charts in letters', async () => {
     expect(h).toMatch(/width:66%"><\/div>/);             // 19/29
     expect(h).not.toContain('```');
     expect(h).toContain('After.');
+    expect(h).not.toMatch(/<td[^>]*style="[^"]*"[^>]*style=/);   // no cell styled twice
   });
   it('the plain-text letter draws the same chart with block characters', () => {
     const t = plainText(chart);

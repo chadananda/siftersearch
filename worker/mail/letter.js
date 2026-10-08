@@ -53,14 +53,14 @@ export function bodyHtml(md) {
   const charts = [];
   const withSlots = String(md || '').replace(CHART_RE, (m, src) => { const c = parseChart(src); if (!c) return m; charts.push(chartHtml(c)); return `\n\n@@CHART${charts.length - 1}@@\n\n`; });
   return marked.parse(withSlots, { async: false })
-    .replace(/<p>@@CHART(\d+)@@<\/p>/g, (m, i) => charts[Number(i)])
     .replace(/<p>/g, '<p dir="auto" style="margin:0 0 14px">')
     .replace(/<blockquote>/g, `<blockquote style="margin:16px 0;padding:2px 0 2px 18px;border-left:2px solid ${RULE};color:#3f3a34">`)
     .replace(/<a href=/g, `<a style="color:${SEA};text-decoration:none;border-bottom:1px solid ${SEA}66" href=`)
     .replace(/<li>/g, '<li dir="auto" style="margin:0 0 6px">')
     .replace(/<table>/g, '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:16px 0;font-size:15px">')
     .replace(/<th(\s[^>]*)?>/g, (m, a = '') => `<th${a} dir="auto" style="text-align:left;padding:6px 14px 6px 0;border-bottom:1px solid ${RULE};color:${SEA};vertical-align:bottom">`)
-    .replace(/<td(\s[^>]*)?>/g, (m, a = '') => `<td${a} dir="auto" style="padding:6px 14px 6px 0;border-bottom:1px solid #e3ebee;vertical-align:top">`);
+    .replace(/<td(\s[^>]*)?>/g, (m, a = '') => `<td${a} dir="auto" style="padding:6px 14px 6px 0;border-bottom:1px solid #e3ebee;vertical-align:top">`)
+    .replace(/<p dir="auto" style="[^"]*">@@CHART(\d+)@@<\/p>/g, (m, i) => charts[Number(i)]);   // charts last: they carry their own styles
 }
 
 export const wrapHtml = (inner) => `<div style="font-family:Georgia,'Times New Roman',serif;color:${INK};font-size:16.5px;line-height:1.65;max-width:40em">${inner}</div>`;
