@@ -142,16 +142,23 @@ export function outsideQuotes(text) {
   // drop “…” / "…" spans (an unclosed opening quote runs to the end of the paragraph)
   return String(text || '').replace(/[“"][^”"]*(?:[”"]|$)/g, ' ').replace(/\s+/g, ' ').trim();
 }
+const STOP = /^(mirza|haji|hajji|mulla|siyyid|shaykh|the|khan|and|of|sir|mr|mrs|dr)$/;
 export function isNarrated(text, speaker) {
-  const out = outsideQuotes(text);
-  if (out.length < 12) return false;                                  // wholly a quotation
-  if (!/[“"]/.test(text)) return false;                               // an unmarked block (letter body, extract): its own words
   const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
-  const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length > 3 && !/^(mirza|haji|mulla|siyyid|shaykh|the|khan)$/.test(w));
-  return SPEECH.test(out) || words.some((w) => fold(out).includes(w));
+  const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length >= 3 && !STOP.test(w));   // "Báb" counts
+  const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w}\\b`).test(f)); };
+  if (!/[“"]/.test(text)) return named(text);                        // unmarked: a letter's writer does not name themself
+  const out = outsideQuotes(text);
+  if (SPEECH.test(out)) return true;                                  // “…,” he said. “…” — however short the tag
+  return out.length >= 25 || (out.length >= 12 && named(out));        // a quote introduced in the narration
 }
 /** Lines that never get a speaker of their own: image captions, one-line titles / names / datelines without a sentence. */
-export const isStructuralLine = (text) => /^!\[/.test(String(text || '').trim()) || (String(text || '').trim().length < 40 && !/[“"]/.test(text) && !/\b(is|was|are|were|have|has|had|will|shall|be)\b/i.test(text));
+// a dateline ("Bran August 27th 1926") or a salutation ("Dear Sir,") opens a letter and is its writer's — not a title
+export const isStructuralLine = (text) => {
+  const t = String(text || '').trim();
+  if (/^!\[/.test(t)) return true;
+  return t.length < 40 && !/[“"]/.test(t) && !/\d/.test(t) && !/,$/.test(t) && !/\b(is|was|are|were|have|has|had|will|shall|be)\b/i.test(t);
+};
 
 /** Apply the narration guard to a label: a narrated paragraph keeps the narrator (null = the book's default) and the
  *  predicted person moves to quotes. */

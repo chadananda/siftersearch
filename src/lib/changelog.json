@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T17:22:52.355Z",
+  "generated": "2026-10-08T17:34:53.082Z",
   "entries": [
+    {
+      "hash": "5902bb4a",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window classifier v14 — narration guard (a quote introduced in the narration stays the narrator's; the person moves to quoted), captions and one-line titles get no speaker, Unicode-safe self-quote check. From the change spot-check: 12 of 36 sampled changes credited the quoted person",
+      "scope": "authorship"
+    },
     {
       "hash": "c1bbc178",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Read the claims back, because a count cannot tell doctrine from restatement",
       "scope": null
-    },
-    {
-      "hash": "1f8a23bc",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Say why a paragraph yielded nothing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "5902bb4a",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window classifier v14 — narration guard (a quote introduced in the narration stays the narrator's; the person moves to quoted), captions and one-line titles get no speaker, Unicode-safe self-quote check. From the change spot-check: 12 of 36 sampled changes credited the quoted person",
+        "scope": "authorship"
+      },
       {
         "hash": "c1bbc178",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Read the claims back, because a count cannot tell doctrine from restatement",
-        "scope": null
-      },
-      {
-        "hash": "1f8a23bc",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Say why a paragraph yielded nothing",
         "scope": null
       }
     ]

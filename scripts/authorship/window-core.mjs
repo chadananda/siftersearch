@@ -6,7 +6,8 @@ import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, windo
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
 // basis of an author entry the reader took from evidence on the page — fixed, never re-asked, never overwritten
-export const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work']);
+// source_link: the paragraph is the text of a known source (New Era ¶456, ‘Abdu’l-Bahá's prayer, was overwritten without it)
+export const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work', 'source_link']);
 const BACK = 5, AHEAD = 5;
 
 /** A book's paragraphs in order, each with the full heading path (chapter › section › extract) when the ingest kept it. */

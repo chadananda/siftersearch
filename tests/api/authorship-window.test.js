@@ -108,3 +108,27 @@ describe('narration guard (v14, from the change spot-check)', () => {
     expect(guardNarration({ speaker: 'Mírzá Músá' }, 'Mírzá Músá.').speaker).toBeNull();
   });
 });
+
+describe('narration guard v15', () => {
+  it('catches introductions without speech verbs, short "he said" tags and third-person narration', async () => {
+    const { isNarrated } = await import('../../api/lib/authorship/window.js');
+    expect(isNarrated('“From two ranks amongst men,” is His terse and prophetic utterance, “power hath been seized: kings and ecclesiastics.”', 'Bahá’u’lláh')).toBe(true);
+    expect(isNarrated('“It would take too long,” he said. “And then ‘Abdu’r-Raḥím will never see ‘Akká.”', 'Nabíl-i-Akbar')).toBe(true);
+    expect(isNarrated('Shoghi Effendi was the bearer of letters from this grandfather to some of His English friends, as is attested in a letter he wrote', 'Shoghi Effendi')).toBe(true);
+    expect(isNarrated('The Báb refers to his son in his commentary. The following is the translation: “In truth, thy son Aḥmad…”', 'The Báb')).toBe(true);
+  });
+  it('still leaves whole quotations and letter bodies alone', async () => {
+    const { isNarrated } = await import('../../api/lib/authorship/window.js');
+    expect(isNarrated('“I continued my search until I reached them. Seized with a savage fury, I inflicted upon Mullá ‘Alí unspeakable injuries.”', 'Mullá ‘Alíy-i-Basṭámí')).toBe(false);
+    expect(isNarrated('I have learned with profound regret of the lamentable occurrences in Palestine, and hasten to offer my sympathy.', 'Shoghi Effendi')).toBe(false);
+  });
+});
+
+describe('structural lines v15', () => {
+  it('keeps a letter\'s dateline and salutation with its writer', async () => {
+    const { isStructuralLine } = await import('../../api/lib/authorship/window.js');
+    expect(isStructuralLine('Bran August 27th 1926')).toBe(false);
+    expect(isStructuralLine('Dear Sir,')).toBe(false);
+    expect(isStructuralLine('Mírzá Músá.')).toBe(true);
+  });
+});

@@ -84,7 +84,16 @@ async function runBook(id) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const queue = [...ids];
   await Promise.all(Array.from({ length: CONC }, async () => {
-    while (queue.length) { const id = queue.shift(); try { await runBook(id); } catch (e) { stats.errors++; console.log(JSON.stringify({ id, error: String(e.message || e).slice(0, 200) })); } }
+    while (queue.length) {
+      const id = queue.shift();
+      // one retry after a pause: a transient Jev / writer error must not drop a whole book (10-08: 6 of 6 failed once)
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try { await runBook(id); break; } catch (e) {
+          if (attempt === 2) { stats.errors++; console.log(JSON.stringify({ id, error: String(e.message || e).slice(0, 200) })); }
+          else await new Promise((r) => setTimeout(r, 30000));
+        }
+      }
+    }
   }));
   await flush();
   console.log(JSON.stringify({ done: true, write: WRITE, ...stats, cost }));
