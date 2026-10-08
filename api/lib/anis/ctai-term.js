@@ -52,18 +52,39 @@ const clip = (text, [s, e] = [0, 0], room = 260) => {
   return `${a > 0 ? '… ' : ''}${t.slice(a, b).trim()}${b < t.length ? ' …' : ''}`;
 };
 
-/** CTAI → { term, root, transliteration, meaning, renderings[{en,count}], total, researchUrl, passages[] } or null. */
+/**
+ * How Shoghi Effendi rendered THIS word: his renderings counted over every passage where the word itself occurs,
+ * inflections grouped (recognize · recognition · recognizing). CTAI's own counts are per ROOT — for عرفان they include
+ * ʿarf "fragrance", a different word on the same letters — so they are only the fallback.
+ */
+export function renderingCounts(results = []) {
+  const groups = new Map();
+  for (const r of results) {
+    const en = String(r.focus?.translation || '').trim().toLowerCase();
+    if (!en || en.length < 3) continue;
+    const key = en.replace(/^(the|a|an) /, '').slice(0, 7);
+    const g = groups.get(key) || { forms: new Map(), count: 0 };
+    g.count += 1; g.forms.set(en, (g.forms.get(en) || 0) + 1);
+    groups.set(key, g);
+  }
+  return [...groups.values()].map((g) => ({ en: [...g.forms.entries()].sort((a, b) => b[1] - a[1]).map(([f]) => f).slice(0, 3).join(' / '), count: g.count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** CTAI → { term, root, transliteration, meaning, renderings[{en,count}], counted, total, researchUrl, passages[] } or null. */
 export async function ctaiTerm(term, { fetchImpl = fetch, key = config.ctai?.apiKey, base = config.ctai?.apiUrl || `${SITE}/api/v1`, limit = 10 } = {}) {
   if (!key) return null;
   const auth = { authorization: `Bearer ${key}` };
   const [conc, pas] = await Promise.all([
     fetchImpl(`${base}/concordance`, { method: 'POST', headers: { ...auth, 'content-type': 'application/json' },
       body: JSON.stringify({ phrase: term, detail: 'compact', exemplars: 0 }), signal: AbortSignal.timeout(25000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-    fetchImpl(`${base}/passages?${new URLSearchParams({ q: term, in: 'source', limit: String(limit) })}`, { headers: auth, signal: AbortSignal.timeout(25000) })
+    fetchImpl(`${base}/passages?${new URLSearchParams({ q: term, in: 'source', limit: '100' })}`, { headers: auth, signal: AbortSignal.timeout(25000) })
       .then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
   const t = conc?.terms?.[0] || null;
-  const passages = (pas?.results || []).map((p) => ({
+  const counted = renderingCounts(pas?.results || []);
+  const aligned = counted.reduce((n, r) => n + r.count, 0);
+  const passages = (pas?.results || []).slice(0, limit).map((p) => ({
     work: p.work?.title || '', author: p.work?.author || '', ref: `${p.work?.title || ''} ${p.section_index || ''}`.trim(),
     url: p.url ? `${SITE}${p.url}` : null,
     original: clip(p.source_text, p.focus?.source_span), english: clip(p.translation, p.focus?.target_span),
@@ -72,7 +93,8 @@ export async function ctaiTerm(term, { fetchImpl = fetch, key = config.ctai?.api
   if (!t && !passages.length) return null;
   return {
     term, root: t?.root || null, transliteration: t?.transliteration || null, meaning: t?.meaning || null,
-    renderings: (t?.renderings || []).slice(0, 8).map((r) => ({ en: r.en, count: r.count })),
+    renderings: (aligned >= 3 ? counted : (t?.renderings || []).map((r) => ({ en: r.en, count: r.count }))).slice(0, 8),
+    counted: aligned >= 3 ? aligned : 0,            // passages the counts come from (0 = CTAI's root-level counts)
     total: pas?.total ?? passages.length, researchUrl: t?.more?.url || null, passages,
   };
 }
@@ -87,7 +109,7 @@ export const termEvidence = (study) => study.passages.map((p) => ({
 /** The rendering spread, built by code: a ```chart block where the channel draws charts, a line elsewhere. */
 export function renderingsBlock(study, channel = {}) {
   if (!study?.renderings?.length) return '';
-  const title = `How Shoghi Effendi rendered ${study.term}${study.root ? ` (root ${study.root})` : ''}`;
+  const title = `How Shoghi Effendi rendered ${study.term}${study.counted ? ` in ${study.counted} passages` : study.root ? ` (all words of the root ${study.root})` : ''}`;
   if ((channel.capabilities || []).includes('charts')) {
     return `\`\`\`chart\n${JSON.stringify({ title, bars: study.renderings.map((r) => ({ label: r.en, value: r.count })) })}\n\`\`\``;
   }
@@ -102,8 +124,8 @@ export function termFormatHow(study, channel = {}) {
     'Open with one sentence naming the word in Arabic script with its transliteration and what its root means.',
     'Then write the token [[RENDERINGS]] on a line of its own (code replaces it with the counts — never write counts yourself).',
     tables
-      ? 'Then a table with columns: Original (the word in bold) | Shoghi Effendi’s English (the rendering of that word in bold) | Source (a link). One row per passage given, 5–8 rows, quoting only the given text.'
-      : 'Then 4–6 short items, each: the original phrase (word in bold) — Shoghi Effendi’s English (rendering in bold) — linked source.',
+      ? 'Then a table with columns: Original (a short phrase of 3–8 words around the word, the word in bold) | Shoghi Effendi’s English (the matching phrase, the rendering in bold) | Source (a link). One row per passage given, 5–8 rows, choosing passages that show DIFFERENT renderings, quoting only the given text.'
+      : 'Then 4–6 short items showing different renderings, each: the original phrase (word in bold) — Shoghi Effendi’s English phrase (rendering in bold) — linked source.',
     'Then two or three sentences on what the range of renderings shows about the word, marked as your reading.',
     study.researchUrl ? `End with a link to the full concordance: [all renderings on CTAI](${study.researchUrl}).` : '',
   ].filter(Boolean).join(' ');

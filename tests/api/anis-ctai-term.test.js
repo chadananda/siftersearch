@@ -1,7 +1,7 @@
 // Anís term study via CTAI: which questions are about a word, the CTAI calls (faked fetch), the code-built renderings,
 // and the respond path end to end with injected deps (no network, no model).
 import { describe, it, expect } from 'vitest';
-import { termQuestion, resolveTerm, ctaiTerm, termEvidence, renderingsBlock, placeRenderings, termFormatHow } from '../../api/lib/anis/ctai-term.js';
+import { termQuestion, resolveTerm, ctaiTerm, termEvidence, renderingsBlock, placeRenderings, termFormatHow, renderingCounts } from '../../api/lib/anis/ctai-term.js';
 import { anisRespond } from '../../api/lib/anis/respond.js';
 import { channelFor } from '../../api/lib/anis/channels.js';
 
@@ -45,6 +45,14 @@ describe('resolving a spelling', () => {
   });
 });
 
+describe('counting renderings of the word itself', () => {
+  const r = (t) => ({ focus: { translation: t } });
+  it('groups inflections, skips unaligned, sorts by count', () => {
+    expect(renderingCounts([r('knowledge'), r('Knowledge'), r('recognize'), r('recognition'), r('recognizing'), r(''), r('understanding')]))
+      .toEqual([{ en: 'recognize / recognition / recognizing', count: 3 }, { en: 'knowledge', count: 2 }, { en: 'understanding', count: 1 }]);
+  });
+});
+
 describe('CTAI calls', () => {
   const fakeFetch = async (url) => ({
     ok: true,
@@ -55,7 +63,7 @@ describe('CTAI calls', () => {
   });
   it('builds the study: root, renderings, paired passages with full links', async () => {
     const s = await ctaiTerm('عرفان', { fetchImpl: fakeFetch, key: 'k', base: 'https://ctai.info/api/v1' });
-    expect(s).toMatchObject({ root: 'ع-ر-ف', total: 78, renderings: [{ en: 'knowledge', count: 29 }] });
+    expect(s).toMatchObject({ root: 'ع-ر-ف', total: 78, renderings: [{ en: 'knowledge', count: 29 }], counted: 0 });   // 1 aligned → root fallback
     expect(s.passages[0]).toMatchObject({ ref: 'Gleanings XXIX.1', url: 'https://ctai.info/models/gleanings/50/', rendering: 'know' });
   });
   it('no key → no call', async () => { expect(await ctaiTerm('عرفان', { key: '' })).toBeNull(); });
@@ -63,8 +71,8 @@ describe('CTAI calls', () => {
 
 describe('renderings are built by code, by channel', () => {
   it('a chart where the channel draws charts, a line elsewhere', () => {
-    expect(renderingsBlock(STUDY, channelFor('email', { trusted: true }))).toMatch(/^```chart\n\{"title":"How Shoghi Effendi rendered عرفان \(root ع-ر-ف\)","bars":\[\{"label":"knowledge","value":29\}/);
-    expect(renderingsBlock(STUDY, channelFor('site-chat'))).toBe('**How Shoghi Effendi rendered عرفان (root ع-ر-ف):** knowledge (29) · understanding (19) · recognize (11)');
+    expect(renderingsBlock({ ...STUDY, counted: 59 }, channelFor('email', { trusted: true }))).toMatch(/^```chart\n\{"title":"How Shoghi Effendi rendered عرفان in 59 passages","bars":\[\{"label":"knowledge","value":29\}/);
+    expect(renderingsBlock(STUDY, channelFor('site-chat'))).toBe('**How Shoghi Effendi rendered عرفان (all words of the root ع-ر-ف):** knowledge (29) · understanding (19) · recognize (11)');
   });
   it('replaces the token, or follows the first paragraph if the writer dropped it', () => {
     expect(placeRenderings('Intro.\n\n[[RENDERINGS]]\n\nMore.', STUDY, channelFor('site-chat'))).toContain('Intro.\n\n**How Shoghi Effendi');
