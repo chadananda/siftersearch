@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T02:50:32.059Z",
+  "generated": "2026-10-08T02:51:23.767Z",
   "entries": [
+    {
+      "hash": "69401bb2",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Capture newsletter replies (info@ and any @m.oceanlibrary.com → mailbox 'newsletter'); inbound sorted into new / auto (out-of-office, bounces) / unsubscribe / spam",
+      "scope": "mail"
+    },
     {
       "hash": "054d2d98",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Survey where every translated canonical's original can actually be got",
       "scope": null
-    },
-    {
-      "hash": "67f2d44f",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Canonical restore + conceptual extraction plan",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "69401bb2",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Capture newsletter replies (info@ and any @m.oceanlibrary.com → mailbox 'newsletter'); inbound sorted into new / auto (out-of-office, bounces) / unsubscribe / spam",
+        "scope": "mail"
+      },
       {
         "hash": "054d2d98",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Survey where every translated canonical's original can actually be got",
-        "scope": null
-      },
-      {
-        "hash": "67f2d44f",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Canonical restore + conceptual extraction plan",
         "scope": null
       }
     ]
