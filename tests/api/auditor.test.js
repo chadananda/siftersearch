@@ -23,3 +23,19 @@ describe('auditor', () => {
     expect(costOf({ input_tokens: 2000, output_tokens: 500 }, { input: 0.003, output: 0.015 })).toBeCloseTo(0.0135, 6);
   });
 });
+
+describe('reader feedback reaches the audit', () => {
+  it('every audit records whether the message was feedback', () => {
+    expect(AUDIT_TOOL.input_schema.required).toContain('reader_feedback');
+    expect(AUDIT_TOOL.input_schema.properties.reader_feedback.properties.justified.enum).toEqual(['yes', 'partly', 'no', 'unclear']);
+  });
+  it('feedback is flagged so the earlier reply is judged in its light', () => {
+    const earlier = [{ role: 'user', content: 'What does Irfan mean?' }, { role: 'assistant', content: 'Here are some quotes…' }];
+    const fb = buildAuditPrompt({ earlier, question: 'I do not see the relationship of the quotes to Irfan.', reply: 'Thank you.',
+      path: { triage: { kind: 'feedback', reaction: 'disagreed' } } });
+    expect(fb.user).toMatch(/NOTE: the gate read this message as the reader's FEEDBACK/);
+    expect(fb.system).toMatch(/FEEDBACK/);
+    const plain = buildAuditPrompt({ question: 'What does Irfan mean?', reply: 'x', path: { triage: { kind: 'research', reaction: 'none' } } });
+    expect(plain.user).not.toMatch(/NOTE: the gate/);
+  });
+});

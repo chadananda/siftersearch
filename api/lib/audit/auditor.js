@@ -32,7 +32,7 @@ export const AUDIT_TOOL = {
   description: 'Record the audit of one exchange.',
   input_schema: {
     type: 'object',
-    required: ['strategy_used', 'strategy_verdict', 'best_strategy', 'evidence', 'format_verdict', 'problems', 'new_strategy', 'data_gap', 'summary'],
+    required: ['strategy_used', 'strategy_verdict', 'best_strategy', 'evidence', 'format_verdict', 'problems', 'new_strategy', 'data_gap', 'reader_feedback', 'summary'],
     properties: {
       strategy_used: { type: 'string', enum: Object.keys(STRATEGIES), description: 'the strategy the exchange actually followed' },
       strategy_verdict: { type: 'string', enum: ['right', 'acceptable', 'wrong'] },
@@ -60,6 +60,13 @@ export const AUDIT_TOOL = {
         found: { type: 'boolean' },
         detail: { type: 'string', description: 'missing work, bad OCR, missing original, wrong metadata — name it' },
       } },
+      reader_feedback: { type: 'object', required: ['present'], description: "the reader's own feedback, when the question IS feedback (on an earlier reply, on Anís, or on the library)", properties: {
+        present: { type: 'boolean' },
+        about: { type: 'string', enum: ['earlier-reply', 'anis-generally', 'library', 'other'] },
+        summary: { type: 'string', description: 'what the reader says, in one sentence' },
+        justified: { type: 'string', enum: ['yes', 'partly', 'no', 'unclear'], description: 'judged against the earlier reply and its evidence' },
+        fix: { type: 'string', description: 'the concrete improvement it points to (strategy, index, data, format, voice), or "none"' },
+      } },
       summary: { type: 'string', description: 'one sentence: what most needs improving, or "fine"' },
     },
   },
@@ -75,9 +82,11 @@ export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
     gate: p.gate, triage_kind: p.kind ?? p.triage?.kind, stance: p.triage?.stance, strategy: p.recipe, format: p.format?.id,
     passages: p.retrieved, timings_ms: p.timings, output_check: p.output_check, replaced: p.replaced,
   };
-  const system = `You audit one exchange of Anís, a study companion that answers questions about the world's sacred texts from a library of primary texts, interpretation, history and scholarship. Judge the SEARCH STRATEGY and the use of evidence, not the prose style. Be strict and concrete: name the passage or the missing passage. Strategies available:\n${Object.entries(STRATEGIES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\nSuggest a new strategy only when none of these fits the kind of request — not when an existing one was merely executed badly. Report EVERY mistake you can see, wherever it lies — in the reply, in the library's own data (a passage credited to the wrong writer, a wrong original, wrong metadata), in a published source, or in the reader's premise (e.g. a saying attributed to Bahá'u'lláh that is not his). Catching mistakes of any source is the point of watching.`;
+  const system = `You audit one exchange of Anís, a study companion that answers questions about the world's sacred texts from a library of primary texts, interpretation, history and scholarship. Judge the SEARCH STRATEGY and the use of evidence, not the prose style. Be strict and concrete: name the passage or the missing passage. Strategies available:\n${Object.entries(STRATEGIES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\nSuggest a new strategy only when none of these fits the kind of request — not when an existing one was merely executed badly. Report EVERY mistake you can see, wherever it lies — in the reply, in the library's own data (a passage credited to the wrong writer, a wrong original, wrong metadata), in a published source, or in the reader's premise (e.g. a saying attributed to Bahá'u'lláh that is not his). Catching mistakes of any source is the point of watching. When the reader's message is FEEDBACK — praise, a complaint, "that's not what I asked", "I don't see how these quotes relate" — it is the most valuable signal there is: judge the EARLIER reply in its light, say whether it is justified, and name the concrete fix (record it in reader_feedback; record the earlier reply's mistakes in problems).`;
   const user = [
     earlier.length ? `EARLIER IN THE CONVERSATION:\n${earlier.map((m) => `${m.role === 'user' ? 'Reader' : 'Anís'}: ${clip(m.content, 400)}`).join('\n')}` : '',
+    (p.triage?.kind === 'feedback' || ['confused', 'disagreed'].includes(p.triage?.reaction))
+      ? `NOTE: the gate read this message as the reader's FEEDBACK on the earlier reply (kind ${p.triage?.kind}, reaction ${p.triage?.reaction}). Audit that reply in its light.` : '',
     `QUESTION:\n${clip(question, 2000)}`,
     `WHAT THE SYSTEM DID:\n${JSON.stringify(route)}`,
     `EVIDENCE THE REPLY WAS WRITTEN FROM:\n${evidence || '(not logged for this exchange)'}`,

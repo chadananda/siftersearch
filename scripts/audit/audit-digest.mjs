@@ -36,6 +36,7 @@ const problems = done.flatMap((r) => (r.v.problems || []).map((p) => ({ ...p, se
 const byWhere = {}; for (const p of problems) (byWhere[p.where] ||= []).push(p);
 const newStrats = done.filter((r) => r.v.new_strategy?.suggested).map((r) => ({ need: r.v.new_strategy.need, route: r.v.new_strategy.route, session: r.session_id }));
 const gaps = done.filter((r) => r.v.data_gap?.found).map((r) => r.v.data_gap.detail);
+const feedback = done.filter((r) => r.v.reader_feedback?.present).map((r) => ({ ...r.v.reader_feedback, channel: r.channel, session: r.session_id }));
 
 const WHERE = { 'library-data': 'In our library data (work list)', 'source-text': 'In published sources', 'reader-premise': "In readers' premises", reply: "In Anís's replies" };
 const lines = [
@@ -43,6 +44,7 @@ const lines = [
   `${done.length} exchanges audited${errors ? `, ${errors} errors` : ''} · $${usd.toFixed(2)} spent`,
   'Passages the auditor names as "missed" come from its own knowledge: leads to check, not facts.',
   '',
+  ...(feedback.length ? [`Reader feedback (${feedback.length}) — the strongest signal:`, ...feedback.map((f) => `  • [${f.justified || '?'} · ${f.about || '?'} · ${f.channel || '?'}] ${f.summary || ''}${f.fix && f.fix !== 'none' ? `\n      fix: ${f.fix}` : ''}`), ''] : []),
   `Strategy: right ${strat.right || 0} · acceptable ${strat.acceptable || 0} · wrong ${strat.wrong || 0}`,
   ...(Object.keys(misroutes).length ? ['Better strategy existed (used → best):', ...top(misroutes).map(([k, n]) => `  ${k}  ×${n}`)] : []),
   `Evidence answered: fully ${pct(answered.fully || 0, done.length)} · partly ${pct(answered.partly || 0, done.length)} · no ${pct(answered.no || 0, done.length)}`,
@@ -61,6 +63,6 @@ const html = `<pre style="font:14px/1.5 ui-monospace,Menlo,monospace;white-space
 if (DRY || !TO) { console.log(text); if (!TO) console.log('\n(no recipient configured)'); process.exit(0); }
 if (!done.length && !errors) { console.log('nothing audited in the window — no email'); process.exit(0); }
 const { sendEmail } = await import('../../api/services/email.js');
-await sendEmail({ to: TO, subject: `Anís audit: ${done.length} exchanges · ${strat.wrong || 0} misroutes · ${problems.length} mistakes`, text, html });
+await sendEmail({ to: TO, subject: `Anís audit: ${done.length} exchanges · ${feedback.length ? `${feedback.length} feedback · ` : ''}${strat.wrong || 0} misroutes · ${problems.length} mistakes`, text, html });
 console.log(`sent to ${TO}`);
 process.exit(0);

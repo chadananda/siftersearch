@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T04:12:06.309Z",
+  "generated": "2026-10-08T04:13:32.394Z",
   "entries": [
+    {
+      "hash": "3bdffd0e",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "CTAI concordance as a tool — a question about an Arabic/Persian word ('the word Irfan', 'what does ʿirfán mean', عرفان) becomes a TERM STUDY: Shoghi Effendi's renderings with counts (built by code) and passages pairing the original with his English, linked to CTAI; Latin spellings resolved by one tiny call; falls back to the ordinary search. Letters: styled tables and ```chart blocks drawn as HTML bar charts (every mail client) and block-character bars in plain text",
+      "scope": "anis"
+    },
     {
       "hash": "98f8118f",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A research source for parallel originals — the route to the books CTAI cannot reach",
       "scope": null
-    },
-    {
-      "hash": "f3bd06ce",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Offer the exact-phrase re-rank as a MEASURABLE option, default off",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "3bdffd0e",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "CTAI concordance as a tool — a question about an Arabic/Persian word ('the word Irfan', 'what does ʿirfán mean', عرفان) becomes a TERM STUDY: Shoghi Effendi's renderings with counts (built by code) and passages pairing the original with his English, linked to CTAI; Latin spellings resolved by one tiny call; falls back to the ordinary search. Letters: styled tables and ```chart blocks drawn as HTML bar charts (every mail client) and block-character bars in plain text",
+        "scope": "anis"
+      },
       {
         "hash": "98f8118f",
         "date": "2026-10-07",
@@ -7043,15 +7050,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "A research source for parallel originals — the route to the books CTAI cannot reach",
-        "scope": null
-      }
-    ],
-    "2026-08-25": [
-      {
-        "hash": "f3bd06ce",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Offer the exact-phrase re-rank as a MEASURABLE option, default off",
         "scope": null
       }
     ]
