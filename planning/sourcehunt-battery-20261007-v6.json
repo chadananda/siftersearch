@@ -1,0 +1,2311 @@
+{
+ "at": "2026-10-07T23:35:04.971Z",
+ "groups": {
+  "ALL": {
+   "n": 150,
+   "errors": 0,
+   "writer": 0.993,
+   "book": 0.9,
+   "tablet_certain_right": 0.66,
+   "tablet_right_para_wrong": 0.18,
+   "tablet_certain_WRONG": 0.073,
+   "tablet_candidate_right": 0.033,
+   "tablet_found_any": 0.873,
+   "p50ms": 3065
+  },
+  "kind:citation": {
+   "n": 2,
+   "errors": 0,
+   "writer": 0.5,
+   "book": 0,
+   "tablet_certain_right": 0,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 1,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0,
+   "p50ms": 4038
+  },
+  "kind:passage": {
+   "n": 48,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.938,
+   "tablet_certain_right": 0.75,
+   "tablet_right_para_wrong": 0.208,
+   "tablet_certain_WRONG": 0.021,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0.958,
+   "p50ms": 2714
+  },
+  "kind:phrase": {
+   "n": 50,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.88,
+   "tablet_certain_right": 0.66,
+   "tablet_right_para_wrong": 0.1,
+   "tablet_certain_WRONG": 0.12,
+   "tablet_candidate_right": 0.06,
+   "tablet_found_any": 0.82,
+   "p50ms": 3909
+  },
+  "kind:sentence": {
+   "n": 50,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.92,
+   "tablet_certain_right": 0.6,
+   "tablet_right_para_wrong": 0.24,
+   "tablet_certain_WRONG": 0.04,
+   "tablet_candidate_right": 0.04,
+   "tablet_found_any": 0.88,
+   "p50ms": 3154
+  },
+  "epistle-to-the-son-of-the-wolf": {
+   "n": 16,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.875,
+   "tablet_certain_right": 0.688,
+   "tablet_right_para_wrong": 0.188,
+   "tablet_certain_WRONG": 0.125,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0.875,
+   "p50ms": 3069
+  },
+  "fire-tablet": {
+   "n": 9,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 0.556,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0.111,
+   "tablet_candidate_right": 0.333,
+   "tablet_found_any": 0.889,
+   "p50ms": 4164
+  },
+  "gleanings": {
+   "n": 21,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.81,
+   "tablet_certain_right": 0.905,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0.048,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0.905,
+   "p50ms": 3908
+  },
+  "kitab-i-ahd": {
+   "n": 5,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 1,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 1,
+   "p50ms": 2816
+  },
+  "kitab-i-iqan": {
+   "n": 17,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 1,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 1,
+   "p50ms": 3586
+  },
+  "prayers-and-meditations": {
+   "n": 14,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.714,
+   "tablet_certain_right": 0.714,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0.214,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0.714,
+   "p50ms": 4025
+  },
+  "suriy-i-haykal": {
+   "n": 28,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 0.25,
+   "tablet_right_para_wrong": 0.714,
+   "tablet_certain_WRONG": 0.036,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0.964,
+   "p50ms": 2316
+  },
+  "tablet-of-ahmad": {
+   "n": 4,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.75,
+   "tablet_certain_right": 0.75,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0.25,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 0.75,
+   "p50ms": 2910
+  },
+  "tablet-of-carmel": {
+   "n": 2,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 1,
+   "tablet_right_para_wrong": 0,
+   "tablet_certain_WRONG": 0,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 1,
+   "p50ms": 3575
+  },
+  "tablet-of-the-holy-mariner": {
+   "n": 9,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 0,
+   "tablet_right_para_wrong": 0.111,
+   "tablet_certain_WRONG": 0,
+   "tablet_candidate_right": 0.222,
+   "tablet_found_any": 0.333,
+   "p50ms": 8043
+  },
+  "the-hidden-words": {
+   "n": 13,
+   "errors": 0,
+   "writer": 1,
+   "book": 0.846,
+   "tablet_certain_right": 0.923,
+   "tablet_right_para_wrong": 0.077,
+   "tablet_certain_WRONG": 0,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 1,
+   "p50ms": 2755
+  },
+  "will-and-testament": {
+   "n": 10,
+   "errors": 0,
+   "writer": 1,
+   "book": 1,
+   "tablet_certain_right": 0.8,
+   "tablet_right_para_wrong": 0.2,
+   "tablet_certain_WRONG": 0,
+   "tablet_candidate_right": 0,
+   "tablet_found_any": 1,
+   "p50ms": 2773
+  }
+ },
+ "rows": [
+  {
+   "id": "gleanings#318/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 5827,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "On the Reality of the Soul and Its Destiny After Death (Muntakhabát-i-Áthár:82)"
+   }
+  },
+  {
+   "id": "gleanings#430/sentence",
+   "kind": "sentence",
+   "work": "gleanings",
+   "ms": 3908,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Lawh-i-Manikchi Sahib"
+   }
+  },
+  {
+   "id": "gleanings#682/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 3848,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Lawh-i-Ahmad (Persian)"
+   }
+  },
+  {
+   "id": "gleanings#651/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 4717,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "By the Beauty of the Beloved (Muntakhabát-i-Áthár:142)"
+   }
+  },
+  {
+   "id": "gleanings#272/sentence",
+   "kind": "sentence",
+   "work": "gleanings",
+   "ms": 5658,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "On the Mother of Ashraf and Her Martyred Son (Muntakhabát-i-Áthár:69)"
+   }
+  },
+  {
+   "id": "gleanings#224/sentence",
+   "kind": "sentence",
+   "work": "gleanings",
+   "ms": 4039,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Every Fair-Minded Observer Hath Testified (Muntakhabát-i-Áthár:59)"
+   }
+  },
+  {
+   "id": "gleanings#525/sentence",
+   "kind": "sentence",
+   "work": "gleanings",
+   "ms": 3365,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Lawh-i-Malikah Victoria (Tablet to Queen Victoria)"
+   }
+  },
+  {
+   "id": "gleanings#412/sentence",
+   "kind": "sentence",
+   "work": "gleanings",
+   "ms": 3264,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "The Herald of Oneness Calleth from the Realm of the Godhead (Muntakhabát-i-Áthár:100)"
+   }
+  },
+  {
+   "id": "gleanings#346/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 3386,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Tablet to 'Abdu'r-Razzáq"
+   }
+  },
+  {
+   "id": "gleanings#287/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 2900,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Lawḥ-i-Naṣír (excerpt) (Muntakhabát-i-Áthár:75)"
+   }
+  },
+  {
+   "id": "gleanings#311/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 3043,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Praise be unto God! Thanks be unto His loved ones, and glory unto His chosen ones who have…"
+   }
+  },
+  {
+   "id": "gleanings#341/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 3653,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Blessed Is The Soul That Turneth Unto God (Iqtidárát:18)"
+   }
+  },
+  {
+   "id": "gleanings#516/sentence",
+   "kind": "sentence",
+   "work": "gleanings",
+   "ms": 6358,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": null
+   }
+  },
+  {
+   "id": "gleanings#563/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 2762,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "The Weapon of Victory Is the Fear of God (Muntakhabát-i-Áthár:126)"
+   }
+  },
+  {
+   "id": "gleanings#513/passage",
+   "kind": "passage",
+   "work": "gleanings",
+   "ms": 2481,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "Tablet of Maqṣúd"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#645/sentence",
+   "kind": "sentence",
+   "work": "prayers-and-meditations",
+   "ms": 4426,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "O God, Object of Worship, Adored and Almighty (al-Munáját:153)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#723/passage",
+   "kind": "passage",
+   "work": "prayers-and-meditations",
+   "ms": 3700,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Praise Be to Thee, O My God and the God of All Worlds (al-Munáját:176)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#450/sentence",
+   "kind": "sentence",
+   "work": "prayers-and-meditations",
+   "ms": 4159,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Glorified Art Thou, O Lord My God! Thou Art He Through Whose Might the Mighty Have Been Made Mighty (al-Munáját:105)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#741/sentence",
+   "kind": "sentence",
+   "work": "prayers-and-meditations",
+   "ms": 1988,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Praise Be To Thee, O My God And The God Of All Worlds (Áthár-i-Qalam-i-A‘lá 2:5)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#771/passage",
+   "kind": "passage",
+   "work": "prayers-and-meditations",
+   "ms": 1678,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Where Is The Great Sacrifice That Accepted Not Ransom"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#149/sentence",
+   "kind": "sentence",
+   "work": "prayers-and-meditations",
+   "ms": 3133,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "I Beseech Thee by Thy Name Which None Hath Known in Truth (Nafaḥát ar-Raḥmán:66)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#113/passage",
+   "kind": "passage",
+   "work": "prayers-and-meditations",
+   "ms": 2426,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Glorified Art Thou, O My God! Thou Art He Who Hath Transformed All Created Things (al-Munáját:33)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#320/sentence",
+   "kind": "sentence",
+   "work": "prayers-and-meditations",
+   "ms": 6104,
+   "writer": true,
+   "book": false,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "prayers-and-meditations#634/passage",
+   "kind": "passage",
+   "work": "prayers-and-meditations",
+   "ms": 2647,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "O My God, Praise Be Unto Thee, Inasmuch As the Fragrance of Thy Loving-Kindness Hath Seized Me (al-Munáját:150)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#55/sentence",
+   "kind": "sentence",
+   "work": "kitab-i-iqan",
+   "ms": 4856,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#212/passage",
+   "kind": "passage",
+   "work": "kitab-i-iqan",
+   "ms": 3325,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#188/sentence",
+   "kind": "sentence",
+   "work": "kitab-i-iqan",
+   "ms": 3586,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#122/sentence",
+   "kind": "sentence",
+   "work": "kitab-i-iqan",
+   "ms": 3228,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#39/passage",
+   "kind": "passage",
+   "work": "kitab-i-iqan",
+   "ms": 3296,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#245/sentence",
+   "kind": "sentence",
+   "work": "kitab-i-iqan",
+   "ms": 3589,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#167/passage",
+   "kind": "passage",
+   "work": "kitab-i-iqan",
+   "ms": 2714,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#61/passage",
+   "kind": "passage",
+   "work": "kitab-i-iqan",
+   "ms": 2938,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#270/sentence",
+   "kind": "sentence",
+   "work": "kitab-i-iqan",
+   "ms": 2894,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#84/sentence",
+   "kind": "sentence",
+   "work": "kitab-i-iqan",
+   "ms": 2806,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#266/passage",
+   "kind": "passage",
+   "work": "kitab-i-iqan",
+   "ms": 2759,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#73/passage",
+   "kind": "passage",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2774,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#203/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3623,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#30/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2641,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#130/passage",
+   "kind": "passage",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2074,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#183/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3154,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#85/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3233,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Lawh-i-Napoleon II"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#263/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2731,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#141/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3580,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "The Book of Certitude"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#180/passage",
+   "kind": "passage",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3205,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#54/passage",
+   "kind": "passage",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3065,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#236/sentence",
+   "kind": "sentence",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2282,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "the-hidden-words#84/sentence",
+   "kind": "sentence",
+   "work": "the-hidden-words",
+   "ms": 2755,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "The Hidden Words (Persian)"
+   }
+  },
+  {
+   "id": "the-hidden-words#134/passage",
+   "kind": "passage",
+   "work": "the-hidden-words",
+   "ms": 2308,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "The Hidden Words (Persian)"
+   }
+  },
+  {
+   "id": "the-hidden-words#121/passage",
+   "kind": "passage",
+   "work": "the-hidden-words",
+   "ms": 2242,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Sacred Writings",
+    "tablet": "The Hidden Words"
+   }
+  },
+  {
+   "id": "the-hidden-words#64/sentence",
+   "kind": "sentence",
+   "work": "the-hidden-words",
+   "ms": 2194,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "Kalimat-i-Maknunih (Hidden Words - Arabic)"
+   }
+  },
+  {
+   "id": "the-hidden-words#94/sentence",
+   "kind": "sentence",
+   "work": "the-hidden-words",
+   "ms": 2734,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Parallel Hidden Words in English (Early and Authorised)",
+    "tablet": "The Hidden Words"
+   }
+  },
+  {
+   "id": "the-hidden-words#29/passage",
+   "kind": "passage",
+   "work": "the-hidden-words",
+   "ms": 2755,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "Kalimat-i-Maknunih (Hidden Words - Arabic)"
+   }
+  },
+  {
+   "id": "the-hidden-words#157/sentence",
+   "kind": "sentence",
+   "work": "the-hidden-words",
+   "ms": 2821,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "The Hidden Words"
+   }
+  },
+  {
+   "id": "will-and-testament#22/sentence",
+   "kind": "sentence",
+   "work": "will-and-testament",
+   "ms": 2216,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#45/passage",
+   "kind": "passage",
+   "work": "will-and-testament",
+   "ms": 2144,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#21/sentence",
+   "kind": "sentence",
+   "work": "will-and-testament",
+   "ms": 2015,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#43/passage",
+   "kind": "passage",
+   "work": "will-and-testament",
+   "ms": 3629,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#55/passage",
+   "kind": "passage",
+   "work": "will-and-testament",
+   "ms": 2773,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "fire-tablet#36/passage",
+   "kind": "passage",
+   "work": "fire-tablet",
+   "ms": 2607,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Fire Tablet"
+   }
+  },
+  {
+   "id": "fire-tablet#50/passage",
+   "kind": "passage",
+   "work": "fire-tablet",
+   "ms": 1901,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Fire Tablet"
+   }
+  },
+  {
+   "id": "fire-tablet#28/sentence",
+   "kind": "sentence",
+   "work": "fire-tablet",
+   "ms": 6258,
+   "writer": true,
+   "book": true,
+   "tablet": "candidate-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Fire Tablet (Lawh-i-Qad Ihtaraq al-Mukhlisún)",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#26/sentence",
+   "kind": "sentence",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 6527,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#32/passage",
+   "kind": "passage",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 8709,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#30/sentence",
+   "kind": "sentence",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 18012,
+   "writer": true,
+   "book": true,
+   "tablet": "candidate-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#29/sentence",
+   "kind": "sentence",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 19701,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablet of the Holy Mariner (Lawh-i-Malláhu'l-Quds)",
+    "tablet": null
+   }
+  },
+  {
+   "id": "kitab-i-ahd#8/passage",
+   "kind": "passage",
+   "work": "kitab-i-ahd",
+   "ms": 5623,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "Kitab-i-'Ahd (Book of the Covenant)"
+   }
+  },
+  {
+   "id": "kitab-i-ahd#16/passage",
+   "kind": "passage",
+   "work": "kitab-i-ahd",
+   "ms": 2816,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "Kitáb-i-‘Ahdí (Book of My Covenant)"
+   }
+  },
+  {
+   "id": "tablet-of-ahmad#6/sentence",
+   "kind": "sentence",
+   "work": "tablet-of-ahmad",
+   "ms": 2607,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Lawh-i-Ahmad (Arabic)"
+   }
+  },
+  {
+   "id": "tablet-of-carmel#5/passage",
+   "kind": "passage",
+   "work": "tablet-of-carmel",
+   "ms": 3575,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "On the Commencement of the Construction of the Dome of the Shrine of the Báb"
+   }
+  },
+  {
+   "id": "tablet-of-carmel#2/sentence",
+   "kind": "sentence",
+   "work": "tablet-of-carmel",
+   "ms": 3245,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "Lawh-i-Karmil (Tablet of Carmel)"
+   }
+  },
+  {
+   "id": "haykal#19/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 3336,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#77/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 3839,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#81/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2325,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#20/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2316,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#95/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2134,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Lawh-i-Napoleon II"
+   }
+  },
+  {
+   "id": "haykal#58/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 1797,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#87/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2844,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#14/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 1841,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#82/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 3373,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#56/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2218,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#41/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2458,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#53/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 1947,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#25/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2291,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#96/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 1886,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#88/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2189,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#72/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 1908,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#92/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2702,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#91/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2483,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#61/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 1981,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#94/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2593,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#40/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2609,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#51/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2348,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#35/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2321,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#59/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 1924,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#38/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 1821,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Lawh-i-Napoleon II"
+   }
+  },
+  {
+   "id": "haykal#43/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2627,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#62/sentence",
+   "kind": "sentence",
+   "work": "suriy-i-haykal",
+   "ms": 2001,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "haykal#46/passage",
+   "kind": "passage",
+   "work": "suriy-i-haykal",
+   "ms": 2234,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "se#25377e8f819fbce5",
+   "kind": "citation",
+   "work": "the Báb, quoted in Lawḥ-i-Ibn-i-Dhi'b (Persian)",
+   "ms": 2977,
+   "writer": false,
+   "book": null,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "se#5ea58b2166e85d33",
+   "kind": "citation",
+   "work": "Súriy-i-Haykal (later recension, ب47)",
+   "ms": 4038,
+   "writer": true,
+   "book": null,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "gleanings#489/phrase8",
+   "kind": "phrase",
+   "work": "gleanings",
+   "ms": 4197,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Suriy-i-Muluk (Surih to the Kings)"
+   }
+  },
+  {
+   "id": "gleanings#213/phrase14",
+   "kind": "phrase",
+   "work": "gleanings",
+   "ms": 4298,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Tablet of Pilgrimage"
+   }
+  },
+  {
+   "id": "gleanings#8/phrase17",
+   "kind": "phrase",
+   "work": "gleanings",
+   "ms": 6385,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "The Cause Which Hath Ever Been the Object of the Prophets' Desire (Muntakhabát-i-Áthár:3)"
+   }
+  },
+  {
+   "id": "gleanings#38/phrase55",
+   "kind": "phrase",
+   "work": "gleanings",
+   "ms": 6425,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "Book of Certitude"
+   }
+  },
+  {
+   "id": "gleanings#705/phrase10",
+   "kind": "phrase",
+   "work": "gleanings",
+   "ms": 6393,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Aqdas",
+    "tablet": "The Most Holy Book (excerpt on liberty)"
+   }
+  },
+  {
+   "id": "gleanings#639/phrase2",
+   "kind": "phrase",
+   "work": "gleanings",
+   "ms": 3114,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Gleanings from the Writings of Bahá’u’lláh",
+    "tablet": "O Muḥammad-Qabl-i-‘Alí, Blessed Art Thou (Muntakhabát-i-Áthár:140)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#786/phrase6",
+   "kind": "phrase",
+   "work": "prayers-and-meditations",
+   "ms": 3021,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Kitab-i-Badi'"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#230/phrase20",
+   "kind": "phrase",
+   "work": "prayers-and-meditations",
+   "ms": 4025,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "God Hath Testified to His Own Oneness (al-Munáját:57)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#345/phrase26",
+   "kind": "phrase",
+   "work": "prayers-and-meditations",
+   "ms": 7331,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Glorified Art Thou, O Thou Who Hearest the Clamor of Them That Are Detached (al-Munáját:81)"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#34/phrase4",
+   "kind": "phrase",
+   "work": "prayers-and-meditations",
+   "ms": 7126,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "O My God, Purify Me From Love of Aught Save Thee"
+   }
+  },
+  {
+   "id": "prayers-and-meditations#272/phrase19",
+   "kind": "phrase",
+   "work": "prayers-and-meditations",
+   "ms": 6448,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Prayers and Meditations",
+    "tablet": "Glory Be to Thee, O My God, Thou Seest My Abode in the Prison (al-Munáját:66)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#146/phrase13",
+   "kind": "phrase",
+   "work": "kitab-i-iqan",
+   "ms": 4013,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#207/phrase41",
+   "kind": "phrase",
+   "work": "kitab-i-iqan",
+   "ms": 4335,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#165/phrase22",
+   "kind": "phrase",
+   "work": "kitab-i-iqan",
+   "ms": 30417,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#179/phrase13",
+   "kind": "phrase",
+   "work": "kitab-i-iqan",
+   "ms": 5009,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#50/phrase7",
+   "kind": "phrase",
+   "work": "kitab-i-iqan",
+   "ms": 4558,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "kitab-i-iqan#206/phrase8",
+   "kind": "phrase",
+   "work": "kitab-i-iqan",
+   "ms": 4389,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Kitáb-i-Íqán",
+    "tablet": "Kitab-i-Iqan (The Book of Certitude)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#82/phrase35",
+   "kind": "phrase",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2754,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Tablet to the Pope"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#214/phrase19",
+   "kind": "phrase",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 2964,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#241/phrase2",
+   "kind": "phrase",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3069,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#43/phrase6",
+   "kind": "phrase",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3256,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "epistle-to-the-son-of-the-wolf#108/phrase7",
+   "kind": "phrase",
+   "work": "epistle-to-the-son-of-the-wolf",
+   "ms": 3240,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Epistle to the Son of the Wolf",
+    "tablet": "Lawh-i-Ibn-i-Dhi'b (Epistle to the Son of the Wolf)"
+   }
+  },
+  {
+   "id": "the-hidden-words#14/phrase23",
+   "kind": "phrase",
+   "work": "the-hidden-words",
+   "ms": 2936,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "Kalimat-i-Maknunih (Hidden Words - Arabic)"
+   }
+  },
+  {
+   "id": "the-hidden-words#109/phrase19",
+   "kind": "phrase",
+   "work": "the-hidden-words",
+   "ms": 3010,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "On the Martyrdom of Imám Ḥusayn"
+   }
+  },
+  {
+   "id": "the-hidden-words#27/phrase5",
+   "kind": "phrase",
+   "work": "the-hidden-words",
+   "ms": 2276,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Parallel Hidden Words in English (Early and Authorised)",
+    "tablet": "Kalimat-i-Maknunih (Hidden Words - Arabic)"
+   }
+  },
+  {
+   "id": "the-hidden-words#111/phrase27",
+   "kind": "phrase",
+   "work": "the-hidden-words",
+   "ms": 2887,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "The Hidden Words (Persian)"
+   }
+  },
+  {
+   "id": "the-hidden-words#121/phrase0",
+   "kind": "phrase",
+   "work": "the-hidden-words",
+   "ms": 3161,
+   "writer": true,
+   "book": false,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Sacred Writings",
+    "tablet": "The Hidden Words"
+   }
+  },
+  {
+   "id": "the-hidden-words#88/phrase0",
+   "kind": "phrase",
+   "work": "the-hidden-words",
+   "ms": 3106,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "The Hidden Words of Bahá’u’lláh",
+    "tablet": "The Hidden Words (Persian)"
+   }
+  },
+  {
+   "id": "will-and-testament#11/phrase17",
+   "kind": "phrase",
+   "work": "will-and-testament",
+   "ms": 3439,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#58/phrase20",
+   "kind": "phrase",
+   "work": "will-and-testament",
+   "ms": 3326,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#36/phrase96",
+   "kind": "phrase",
+   "work": "will-and-testament",
+   "ms": 3272,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#29/phrase1",
+   "kind": "phrase",
+   "work": "will-and-testament",
+   "ms": 2427,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "will-and-testament#28/phrase9",
+   "kind": "phrase",
+   "work": "will-and-testament",
+   "ms": 2542,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "‘Abdu’l-Bahá",
+    "book": "The Will and Testament of ‘Abdu’l-Bahá",
+    "tablet": "Alvah-i-Visaya (Will and Testament)"
+   }
+  },
+  {
+   "id": "fire-tablet#21/phrase3",
+   "kind": "phrase",
+   "work": "fire-tablet",
+   "ms": 8627,
+   "writer": true,
+   "book": true,
+   "tablet": "candidate-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "fire-tablet#36/phrase1",
+   "kind": "phrase",
+   "work": "fire-tablet",
+   "ms": 3909,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Fire Tablet"
+   }
+  },
+  {
+   "id": "fire-tablet#19/phrase0",
+   "kind": "phrase",
+   "work": "fire-tablet",
+   "ms": 8944,
+   "writer": true,
+   "book": true,
+   "tablet": "candidate-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "fire-tablet#47/phrase5",
+   "kind": "phrase",
+   "work": "fire-tablet",
+   "ms": 4267,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Fire Tablet"
+   }
+  },
+  {
+   "id": "fire-tablet#5/phrase2",
+   "kind": "phrase",
+   "work": "fire-tablet",
+   "ms": 4164,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Lawh-i-Istintaq (Tablet of the Interrogation)"
+   }
+  },
+  {
+   "id": "fire-tablet#4/phrase3",
+   "kind": "phrase",
+   "work": "fire-tablet",
+   "ms": 2683,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Lawh-i-Istintaq (Tablet of the Interrogation)"
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#56/phrase0",
+   "kind": "phrase",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 4804,
+   "writer": true,
+   "book": true,
+   "tablet": "tablet-right-para-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Lawh-i-Mallahu'l-Quds (Tablet of the Holy Mariner - Persian)"
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#11/phrase1",
+   "kind": "phrase",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 6736,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablet of the Holy Mariner (Lawh-i-Malláhu'l-Quds)",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#18/phrase1",
+   "kind": "phrase",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 8894,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#26/phrase0",
+   "kind": "phrase",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 8043,
+   "writer": true,
+   "book": true,
+   "tablet": "candidate-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": null
+   }
+  },
+  {
+   "id": "tablet-of-the-holy-mariner#6/phrase0",
+   "kind": "phrase",
+   "work": "tablet-of-the-holy-mariner",
+   "ms": 7217,
+   "writer": true,
+   "book": true,
+   "tablet": "candidates-wrong",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablet of the Holy Mariner (Lawh-i-Malláhu'l-Quds)",
+    "tablet": null
+   }
+  },
+  {
+   "id": "kitab-i-ahd#12/phrase4",
+   "kind": "phrase",
+   "work": "kitab-i-ahd",
+   "ms": 2132,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "On the Martyrdom of Imám Ḥusayn"
+   }
+  },
+  {
+   "id": "kitab-i-ahd#2/phrase12",
+   "kind": "phrase",
+   "work": "kitab-i-ahd",
+   "ms": 3014,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "Kitab-i-'Ahd (Book of the Covenant)"
+   }
+  },
+  {
+   "id": "kitab-i-ahd#10/phrase0",
+   "kind": "phrase",
+   "work": "kitab-i-ahd",
+   "ms": 2456,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas",
+    "tablet": "Kitab-i-'Ahd (Book of the Covenant)"
+   }
+  },
+  {
+   "id": "tablet-of-ahmad#8/phrase0",
+   "kind": "phrase",
+   "work": "tablet-of-ahmad",
+   "ms": 2783,
+   "writer": true,
+   "book": false,
+   "tablet": "certain-WRONG",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Summons of the Lord of Hosts",
+    "tablet": "Súriy-i-Haykal (Tablet of the Temple)"
+   }
+  },
+  {
+   "id": "tablet-of-ahmad#14/phrase13",
+   "kind": "phrase",
+   "work": "tablet-of-ahmad",
+   "ms": 3010,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Lawh-i-Ahmad (Arabic)"
+   }
+  },
+  {
+   "id": "tablet-of-ahmad#11/phrase0",
+   "kind": "phrase",
+   "work": "tablet-of-ahmad",
+   "ms": 2910,
+   "writer": true,
+   "book": true,
+   "tablet": "certain-right",
+   "got": {
+    "writer": "Bahá’u’lláh",
+    "book": "Bahá’í Prayers",
+    "tablet": "Lawh-i-Ahmad (Arabic)"
+   }
+  }
+ ]
+}

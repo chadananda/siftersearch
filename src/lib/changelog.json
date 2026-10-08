@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-07T22:27:16.708Z",
+  "generated": "2026-10-08T00:51:14.381Z",
   "entries": [
+    {
+      "hash": "b7b7fd10",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "A footnote is an editor's note, never the writer's own work (the Aqdas's note 192 quoting 'My captivity…' ranked as Bahá’u’lláh's text); scripts/authorship/aqdas-notes.mjs credited the old library Aqdas copy's 207 inline notes to the Universal House of Justice",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "f135f9a5",
       "date": "2026-10-06",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Legislative authority is not doctrinal authority",
       "scope": null
-    },
-    {
-      "hash": "ef16e5ab",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Pilgrim notes outrank later scholars — the ladder was inverted",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-07": [
+      {
+        "hash": "b7b7fd10",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "A footnote is an editor's note, never the writer's own work (the Aqdas's note 192 quoting 'My captivity…' ranked as Bahá’u’lláh's text); scripts/authorship/aqdas-notes.mjs credited the old library Aqdas copy's 207 inline notes to the Universal House of Justice",
+        "scope": "sourcehunt"
+      }
+    ],
     "2026-10-06": [
       {
         "hash": "f135f9a5",
@@ -7043,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Legislative authority is not doctrinal authority",
-        "scope": null
-      },
-      {
-        "hash": "ef16e5ab",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Pilgrim notes outrank later scholars — the ladder was inverted",
         "scope": null
       }
     ]
