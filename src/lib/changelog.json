@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:47:35.317Z",
+  "generated": "2026-10-08T04:12:06.309Z",
   "entries": [
+    {
+      "hash": "98f8118f",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Support.mjs waits for the API's /health before drafting (a deploy restarts the API; the first call got 503)",
+      "scope": "mail"
+    },
     {
       "hash": "fb6c0679",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Offer the exact-phrase re-rank as a MEASURABLE option, default off",
       "scope": null
-    },
-    {
-      "hash": "0311fd38",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Extraction must accept EITHER disambiguation, and say why it read nothing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "98f8118f",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Support.mjs waits for the API's /health before drafting (a deploy restarts the API; the first call got 503)",
+        "scope": "mail"
+      },
       {
         "hash": "fb6c0679",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Offer the exact-phrase re-rank as a MEASURABLE option, default off",
-        "scope": null
-      },
-      {
-        "hash": "0311fd38",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Extraction must accept EITHER disambiguation, and say why it read nothing",
         "scope": null
       }
     ]

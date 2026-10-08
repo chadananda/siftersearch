@@ -5,6 +5,7 @@
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
 import { dropUnverified, createSentenceGate } from './quotes.js';
+import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
@@ -246,12 +247,24 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       format: { id: 'source', by: 'sourcehunt' }, profile: null,
       timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
   }
-  const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : conversational ? { passages: [], _plan: plan } : await d.search({
+  // "What does ʿirfán mean?" → a TERM STUDY from the CTAI concordance: Shoghi Effendi's renderings of the word and
+  // passages pairing the original with his English (api/lib/anis/ctai-term.js). Nothing found → the ordinary search.
+  let study = null;
+  const termQ = !sourced && !conversational ? (d.termQuestion || termQuestion)(question) : null;
+  if (termQ) {
+    try {
+      const word = termQ.script === 'arabic' ? termQ.term : await (d.resolveTerm || resolveTerm)(termQ.term);
+      if (word) study = await (d.ctaiTerm || ctaiTerm)(word);
+      if (!study?.passages?.length) study = null;
+    } catch { study = null; }
+  }
+  const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : conversational ? { passages: [], _plan: plan }
+    : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   });
   const searchMs = Date.now() - t0;
-  const retrieved = sourced ? sourced.retrieved : (res?.passages || []).map((p) => ({
+  const retrieved = sourced ? sourced.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned',
@@ -273,6 +286,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
   const formatP = sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
+    : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })
     : conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
 
   let comp = null;
@@ -295,7 +309,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
-    ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u }))];
+    ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
   const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed));
   const gate = createSentenceGate(retrieved, (t) => {
@@ -312,7 +326,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
   // (the widget reconciles its streamed text to this; email sends only this).
   const guarded = dropUnverified(cleanLinks(raw), retrieved);
-  const reply = guarded.text;
+  const reply = study ? placeRenderings(guarded.text, study, channel) : guarded.text;   // the counts come from code
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and

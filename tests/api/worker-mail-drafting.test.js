@@ -70,3 +70,30 @@ describe('support letters', async () => {
     expect(answerBody('Dear Leila,\nYes.\nWith warm regards,\n— Anís')).toBe('Yes.');
   });
 });
+
+describe('tables and charts in letters', async () => {
+  const { bodyHtml, plainText, composeLetter } = await import('../../worker/mail/letter.js');
+  const chart = '```chart\n{"title":"Renderings of عرفان","bars":[{"label":"knowledge","value":29},{"label":"understanding","value":19},{"label":"recognize","value":11}]}\n```';
+  it('a chart block becomes an HTML bar chart scaled to the largest value', () => {
+    const h = bodyHtml(`Here:\n\n${chart}\n\nAfter.`);
+    expect(h).toContain('<caption');
+    expect(h).toContain('Renderings of عرفان');
+    expect(h).toMatch(/width:100%"><\/div>/);            // the largest bar is full width
+    expect(h).toMatch(/width:66%"><\/div>/);             // 19/29
+    expect(h).not.toContain('```');
+    expect(h).toContain('After.');
+  });
+  it('the plain-text letter draws the same chart with block characters', () => {
+    const t = plainText(chart);
+    expect(t.split('\n')[1]).toMatch(/^knowledge\s+█{20} 29$/);
+    expect(composeLetter(chart, 'https://x/p').text).not.toContain('"bars"');
+  });
+  it('a malformed chart block is left as written', () => {
+    expect(bodyHtml('```chart\nnot json\n```')).toContain('not json');
+  });
+  it('tables are styled and right-to-left cells follow their text', () => {
+    const h = bodyHtml('| Original | English |\n|---|---|\n| عرفان | knowledge |');
+    expect(h).toMatch(/<table cellpadding="0"[^>]*border-collapse/);
+    expect(h).toMatch(/<td dir="auto" style="padding/);
+  });
+});

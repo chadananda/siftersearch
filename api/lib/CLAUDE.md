@@ -72,7 +72,7 @@ One-line index for AI navigation. Open the file for full documentation.
 - `storage.js` — R2 / S3 file storage.
 
 ## Subdirectories
-- `anis/` — the Anís companion: `turn.js` (one turn: log → Jev triage gate → canned/tarpit/research → output check), `respond.js` (research answer), `triage.js`, `canned.js`, `strikes.js`, `lint.js`, `channels.js`, `exchange-log.js`, `pause-link.js`, `soul.md`. Plan: planning/anis-hyper-engagement-prd.md.
+- `anis/` — the Anís companion: `turn.js` (one turn: log → Jev triage gate → canned/tarpit/research → output check), `respond.js` (research answer), `ctai-term.js` (word questions → CTAI concordance term study: renderings chart + paired passages), `triage.js`, `canned.js`, `strikes.js`, `lint.js`, `channels.js`, `exchange-log.js`, `pause-link.js`, `soul.md`. Plan: planning/anis-hyper-engagement-prd.md.
 - `pipeline/` — **unified enrichment pipeline v2** (the ONE gated orchestrator replacing the six legacy pollers): `state.js` (doc_pipeline), `profile.js`, `orchestrator.js`. Design: `docs/architecture/unified-enrichment-pipeline.md`. See `pipeline/CLAUDE.md`.
 - `constants/` — shared enums + lookups (one file per concern).
 - `migrations/` — `v1-v25.js`, `v26-v45.js`, `v46-v58.js`, `v72-v90.js` (latest; migration 89 = doc_pipeline), `user.js`, `runner.js`. Combined dispatch via runner.
