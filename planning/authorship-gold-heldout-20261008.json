@@ -1,0 +1,362 @@
+{
+ "about": "HELD-OUT (never tuned on), hand-labelled 2026-10-08 from full text. speaker: \"@author\" = book author voice; \"@author|re\" = either; \"!re\" = anyone named except re; else a name regex. quotes as in the tuning gold.",
+ "items": [
+  {
+   "doc": 20813,
+   "pidx": 100,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "B[aá]b"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 101,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 102,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 103,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 104,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 105,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 106,
+   "speaker": "@author|Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Prime Minister|Minister|*"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 107,
+   "speaker": "@author|Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 108,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 109,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 110,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 111,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": [
+    null,
+    "*",
+    "God"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 112,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 113,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 114,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Russian|*"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 115,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 116,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 117,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 118,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 119,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 120,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 121,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20813,
+   "pidx": 122,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 123,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20813,
+   "pidx": 124,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 40,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 41,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 42,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 43,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 44,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 45,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 46,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 47,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 48,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 49,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 50,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 51,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 52,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 53,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 54,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 55,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 56,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 57,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 58,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 59,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Sadler",
+    "Bah[aá].u.ll[aá]h",
+    "Gelasius"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 60,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 61,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Christian Commonwealth|*"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 62,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20921,
+   "pidx": 63,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Wilberforce",
+    "Siyyid|Amír"
+   ]
+  },
+  {
+   "doc": 20921,
+   "pidx": 64,
+   "speaker": "!Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Sadler"
+   ]
+  }
+ ]
+}

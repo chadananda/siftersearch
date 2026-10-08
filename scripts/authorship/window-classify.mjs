@@ -77,7 +77,12 @@ async function officialMap(docId) {
 const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`'-]/g, '').toLowerCase();
 const isAuthor = (pred, author) => { const a = fold(author).split(/\s+/)[0], p = fold(pred); return !!p && !!a && (p.includes(a) || a.includes(p.split(/\s+/)[0])); };
 const nfc = (x) => String(x || '').normalize('NFC');
-const speakerOk = (pred, g, author) => (g === '@author' ? isAuthor(pred, author) : new RegExp(nfc(g), 'i').test(nfc(pred)));
+function speakerOk(pred, g, author) {
+  if (g.startsWith('!')) return !!pred && !new RegExp(nfc(g.slice(1)), 'i').test(nfc(pred)) && !isAuthor(pred, author);   // someone other than…
+  if (g === '@author') return isAuthor(pred, author);
+  if (g.startsWith('@author|')) return isAuthor(pred, author) || new RegExp(nfc(g.slice(8)), 'i').test(nfc(pred));
+  return new RegExp(nfc(g), 'i').test(nfc(pred));
+}
 function quotesOk(q, g, base) {
   const named = g.filter((x) => x);
   if (!named.length) return q == null;

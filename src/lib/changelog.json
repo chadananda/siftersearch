@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:34:50.939Z",
+  "generated": "2026-10-08T15:44:05.877Z",
   "entries": [
+    {
+      "hash": "750b8159",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window eval — gold corrected from full text, NFC-normalised matching; LLM escalation budget fits ten transliterated names; 'another person' never stored",
+      "scope": "authorship"
+    },
     {
       "hash": "05d216b6",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The nested tablets need their own originals — the ratio said so",
       "scope": null
-    },
-    {
-      "hash": "fb2f3b0c",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The Haykal's original exists — in a series my catalogue never contained",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "750b8159",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window eval — gold corrected from full text, NFC-normalised matching; LLM escalation budget fits ten transliterated names; 'another person' never stored",
+        "scope": "authorship"
+      },
       {
         "hash": "05d216b6",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The nested tablets need their own originals — the ratio said so",
-        "scope": null
-      },
-      {
-        "hash": "fb2f3b0c",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The Haykal's original exists — in a series my catalogue never contained",
         "scope": null
       }
     ]
