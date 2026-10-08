@@ -62,7 +62,9 @@ describe('book brief (prompt tuner)', () => {
     const b = parseBrief('{"speakers":[{"name":"the Guardian","recognise":"letters signed Shoghi"},{"name":"Research Department","recognise":"x"}],"rules":["Letters follow a dateline."]}', []);
     expect(b.speakers.map((x) => x.name)).toEqual(['Shoghi Effendi']);
     expect(windowState({ book: { title: 'B', author: 'X' }, roster: ['Shoghi Effendi'], anchors: [], targets: [{ text: 't' }], ahead: [], brief: b })).toMatch(/HOW THIS BOOK WORKS: Letters follow a dateline\./);
-    expect(windowQuestions(['Shoghi Effendi'], 1, { author: 'X' }, [], b).s1.criteria['Shoghi Effendi']).toMatch(/letters signed Shoghi/);
+    // v13: the description is stated once in the window, not in every question
+    expect(windowState({ book: { title: 'B', author: 'X' }, roster: ['Shoghi Effendi'], anchors: [], targets: [{ text: 't' }], ahead: [], brief: b })).toMatch(/Shoghi Effendi \(letters signed Shoghi\)/);
+    expect(windowQuestions(['Shoghi Effendi'], 1, { author: 'X' }).s1.instructions).toBe('Speaker of T1?');
   });
 });
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T16:53:50.031Z",
+  "generated": "2026-10-08T17:08:33.697Z",
   "entries": [
+    {
+      "hash": "24d84805",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window classifier offers only the relevant roster per window (whole roster in 20 questions overflowed Jev on Dawn-Breakers and cost ~4x); an overflowing window is split, never dropped",
+      "scope": "authorship"
+    },
     {
       "hash": "927c193c",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Compare letter sequences, so a typo in OUR text cannot reject a faithful citation",
       "scope": null
-    },
-    {
-      "hash": "eda24395",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The bilingual path had never produced a single claim",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "24d84805",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window classifier offers only the relevant roster per window (whole roster in 20 questions overflowed Jev on Dawn-Breakers and cost ~4x); an overflowing window is split, never dropped",
+        "scope": "authorship"
+      },
       {
         "hash": "927c193c",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Compare letter sequences, so a typo in OUR text cannot reject a faithful citation",
-        "scope": null
-      },
-      {
-        "hash": "eda24395",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The bilingual path had never produced a single claim",
         "scope": null
       }
     ]

@@ -46,7 +46,7 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
   // one System-1 call for a window; too long for Jev (max_tokens_exceeded) → the window is split in two, never dropped
   async function askWindow(state, offered, targets, book, b) {
     try {
-      const r = await ask(TASK, state, windowQuestions(offered, targets.length, book, targets.map((p) => p.known), b),
+      const r = await ask(TASK, state, windowQuestions(offered, targets.length, book, targets.map((p) => p.known)),
         { ref: targets[0].id, timeoutMs: 40000, ...(backend ? { backend } : {}) });
       cost.calls++; cost.tokens += r.tokens || 0;
       return r;

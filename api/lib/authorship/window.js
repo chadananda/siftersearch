@@ -67,7 +67,9 @@ export function relevantRoster(roster, text, book, brief, cap = 18) {
 
 /** Window text: anchors (decided, labelled), targets (numbered T1…T10), lookahead (unlabelled). Section headings shown. */
 export function windowState({ book, roster, anchors, targets, ahead, brief = null }) {
-  const lines = [`BOOK: ${book.title} — catalogued author: ${book.author}`, `KNOWN SPEAKERS: ${roster.join('; ')}`];
+  const how = new Map((brief?.speakers || []).map((x) => [x.name, x.recognise]));
+  const lines = [`BOOK: ${book.title} — catalogued author: ${book.author}`, `RULES: ${RULES.join(' ')}`,
+    `KNOWN SPEAKERS: ${roster.map((r) => (how.get(r) ? `${r} (${how.get(r)})` : r)).join('; ')}`];
   if (brief?.rules?.length) lines.push(`HOW THIS BOOK WORKS: ${brief.rules.join(' ')}`);
   lines.push('');
   let lastHead = null;
@@ -86,18 +88,33 @@ export const isCompiler = (n) => /compil|research department/i.test(String(n || 
 
 /** System-1 questions: per target, speaker and quotes, each a choice over the roster. `known[i]` = a speaker already fixed
  *  by evidence (hybrid): only its quotes are asked. */
-export function windowQuestions(roster, n, book, known = [], brief = null) {
+// Stated ONCE per window (v13): repeating these and the roster descriptions in all 20 questions was ~60% of the tokens.
+export const RULES = [
+  'SPEAKER = who writes or speaks the paragraph as a whole. A narrator who reports or quotes someone is still the speaker — the person quoted is NOT. Only when the paragraph is entirely someone else\'s words (the body of their letter, an extract from their writings, their talk, a poem) are they the speaker.',
+  'A reference or attribution line belongs to the extracts it names. In a compilation the speaker of an extract is its writer, never the compiler.',
+  'QUOTES = whose words are quoted inside the paragraph ("…", "he said", "she wrote"), whose teaching it reports ("Bahá’u’lláh taught that…") or whose work it cites — always someone OTHER than the paragraph\'s own speaker; if several, the one quoted most; "none" if no one.',
+];
+
+/** Who-labels: name → short description (only for the figures and the author; the brief's "how to recognise" goes in the
+ *  window text once, not into every question). */
+export function speakerLabels(roster, book) {
   const who = {};
-  const how = new Map((brief?.speakers || []).map((x) => [x.name, x.recognise]));
-  for (const r of roster) who[r] = (FIGURES.includes(r) ? `words of ${r}${/Shoghi|House/.test(r) ? ' (including letters written on behalf)' : ''}` : r) + (how.get(r) ? ` — ${how.get(r)}` : '');
-  if (!roster.includes(book.author) && book.author) who[book.author] = `${book.author}, the author or compiler, in their own voice`;
-  who['the Qur’án'] = 'a verse of the Qur’án'; who['the Bible'] = 'a passage of the Bible';
+  for (const r of roster) who[r] = FIGURES.includes(r) ? `${r}${/Shoghi|House/.test(r) ? ' (incl. on behalf)' : ''}` : r;
+  if (!roster.includes(book.author) && book.author) who[book.author] = `${book.author} (author/compiler, own voice)`;
+  who['the Qur’án'] = 'the Qur’án'; who['the Bible'] = 'the Bible';
   who[OTHER] = 'someone not in this list';
-  const quotes = { [NONE]: 'quotes or cites no one', ...who };
+  return who;
+}
+
+/** System-1 questions: per target, speaker and quotes, each a choice over the roster. `known[i]` = a speaker already fixed
+ *  by evidence (hybrid): only its quotes are asked. The rules live in the window text (RULES). */
+export function windowQuestions(roster, n, book, known = []) {
+  const who = speakerLabels(roster, book);
+  const quotes = { [NONE]: 'no one', ...who };
   const q = {};
   for (let i = 1; i <= n; i++) {
-    if (!known[i - 1]) q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Who is writing or speaking T${i} as a whole? A narrator who reports or quotes someone is still the speaker — the person quoted is NOT. Only when T${i} is entirely someone else's words (the body of their letter, an extract from their writings, their talk) are they the speaker. A reference or attribution line belongs to the extracts it names. Use the section heading, the decided paragraphs and the lines that follow.` };
-    q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Inside T${i}, whose words are quoted (“…”, "he said", "she wrote"), whose teaching is reported ("Bahá’u’lláh taught that…", "He lays stress on…") or whose work is cited — always someone OTHER than T${i}'s own speaker? If several, the one quoted most.` };
+    if (!known[i - 1]) q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Speaker of T${i}?` };
+    q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Quoted or cited in T${i}?` };
   }
   return q;
 }
