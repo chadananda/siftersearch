@@ -132,3 +132,16 @@ describe('structural lines v15', () => {
     expect(isStructuralLine('Mírzá Músá.')).toBe(true);
   });
 });
+
+describe('block evidence (v16)', () => {
+  it('needs something on the page to move an unmarked block off the book author', async () => {
+    const { blockHasEvidence } = await import('../../api/lib/authorship/window.js');
+    const prayer = 'He is God! Thou seest, O my Lord, the assemblage of Thy loved ones, gathered by the precincts of Thine all-sufficing Shrine';
+    // a mention is not an introduction (Memorials ¶508→509: ‘Abdu’l-Bahá's prayer after "Bahá’u’lláh left the world")
+    expect(blockHasEvidence('Bahá’u’lláh', { text: prayer, prevText: 'But then Bahá’u’lláh left the world, and this was the supreme affliction', prevSpeaker: '‘Abdu’l-Bahá' })).toBe(false);
+    expect(blockHasEvidence('Bahá’u’lláh', { text: 'By the righteousness of God! We were in no wise connected…', prevText: 'Many others were seized, among them being Bahá’u’lláh. He afterwards wrote:—' })).toBe(true);
+    expect(blockHasEvidence('Bahá’u’lláh', { text: 'And now, concerning the House of Justice which God hath ordained…', prevText: 'In His Will and Testament ‘Abdu’l-Bahá wrote:' })).toBe(false);
+    expect(blockHasEvidence('Rúmí', { text: 'I am lost, O Love, possessed and dazed,', prevText: 'Bahá’u’lláh had written down an ode of Rúmí’s for him, and Ustád would sing these lines:' })).toBe(true);
+    expect(blockHasEvidence('Rúmí', { text: 'Thou, both End and Origin,', prevSpeaker: 'Rúmí' })).toBe(true);
+  });
+});

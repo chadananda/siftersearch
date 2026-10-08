@@ -144,7 +144,8 @@ export function outsideQuotes(text) {
 }
 const STOP = /^(mirza|haji|hajji|mulla|siyyid|shaykh|the|khan|and|of|sir|mr|mrs|dr)$/;
 export function isNarrated(text, speaker) {
-  const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
+  // possessives drop first: "an ode of Rúmí’s" names Rúmí
+  const fold = (x) => String(x || '').replace(/[’'ʼ]s\b/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
   const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length >= 3 && !STOP.test(w));   // "Báb" counts
   const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w}\\b`).test(f)); };
   if (!/[“"]/.test(text)) return named(text);                        // unmarked: a letter's writer does not name themself
@@ -167,6 +168,24 @@ export function guardNarration(label, text) {
   if (isStructuralLine(text)) return { ...label, speaker: null, structural: true };
   if (isNarrated(text, label.speaker)) return { ...label, speaker: null, quotes: label.quotes || label.speaker, narrated: true };
   return label;
+}
+
+/** An UNMARKED block (no quotation marks — a letter body, a prayer, a quoted will) moves away from the book's author only
+ *  with evidence on the page (v16, from the change spot-check: ‘Abdu’l-Bahá's prayer in Memorials and His Will quoted in
+ *  New Era were credited to Bahá’u’lláh with nothing introducing Him): the previous paragraph or the heading names the
+ *  speaker, the block continues one already theirs, or it ends with their signature. */
+export function blockHasEvidence(speaker, { text, prevText = '', prevSpeaker = null, heading = '' }) {
+  if (/[“"]/.test(text)) return true;                                  // marked quotations are judged by the narration guard
+  if (prevSpeaker && prevSpeaker === speaker) return true;              // continues a block already theirs
+  // possessives drop first: "an ode of Rúmí’s" names Rúmí
+  const fold = (x) => String(x || '').replace(/[’'ʼ]s\b/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
+  const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length >= 3 && !STOP.test(w));
+  const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w}\\b`).test(f)); };
+  // the previous paragraph must name them AND introduce the block ("…sing these lines:", "He afterwards wrote:—"); merely
+  // mentioning them ("But then Bahá’u’lláh left the world…") is not an introduction
+  const p = String(prevText || '').trim();
+  const introduces = /[:—–]\s*[”"]?\s*$/.test(p) || /\b(as follows|the following|thus)\b/i.test(p.slice(-160));
+  return (named(p.slice(-400)) && introduces) || named(heading) || named(String(text).slice(-120));
 }
 
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T17:45:37.723Z",
+  "generated": "2026-10-08T17:53:27.880Z",
   "entries": [
+    {
+      "hash": "daf7e01e",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window eval — gold labels mixing names and the 'someone new' wildcard were parsed as one invalid regex",
+      "scope": "authorship"
+    },
     {
       "hash": "e518c28b",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Write the question a reader types, not a comprehension check",
       "scope": null
-    },
-    {
-      "hash": "341ab89e",
-      "date": "2026-08-26",
-      "type": "Fixed",
-      "description": "The column is extractor_version",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "daf7e01e",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window eval — gold labels mixing names and the 'someone new' wildcard were parsed as one invalid regex",
+        "scope": "authorship"
+      },
       {
         "hash": "e518c28b",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Write the question a reader types, not a comprehension check",
-        "scope": null
-      },
-      {
-        "hash": "341ab89e",
-        "date": "2026-08-26",
-        "type": "Fixed",
-        "description": "The column is extractor_version",
         "scope": null
       }
     ]

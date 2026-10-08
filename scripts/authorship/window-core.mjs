@@ -1,7 +1,7 @@
 // Windowed paragraph attribution — the per-book engine shared by the eval (window-classify.mjs) and the production run
 // (window-run.mjs). Defaults = v10, the measured best (planning/window-classifier-log.md): hybrid, one pass, LLM only to
 // name "another person", one LLM brief per book. Runs ON tower (System-1 calls logged per task for Laya, Clef shadowed).
-import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
@@ -85,8 +85,15 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
       got.forEach((l, k) => {
         const clean = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes };
         // a narrated paragraph stays the narrator's; null speaker = the book's default author (v14)
-        const g = guardNarration(clean, targets[k].text);
-        labels[i0 + k] = settle(g.narrated && !g.speaker ? { ...g, speaker: book.author } : g);
+        let g = guardNarration(clean, targets[k].text);
+        if (g.narrated && !g.speaker) g = { ...g, speaker: book.author };
+        // an unmarked block leaves the book's author only with evidence on the page (v16)
+        const prev = rows[i0 + k - 1];
+        if (g.speaker && !g.fixed && g.speaker !== EDITOR && g.speaker !== book.author
+          && !blockHasEvidence(g.speaker, { text: targets[k].text, prevText: prev?.text, prevSpeaker: labels[i0 + k - 1]?.speaker, heading: targets[k].heading })) {
+          g = { ...g, speaker: book.author, unproven: true };
+        }
+        labels[i0 + k] = settle(g);
       });
     }
     return labels;
