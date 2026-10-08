@@ -134,3 +134,30 @@ describe('oceanlibrary adapter — attr-less prose is kept, structural blocks st
     expect(paragraphs[0].text).toBe('First paragraph under the chapter.');
   });
 });
+
+describe('compilations are credited to their compiler, not their first author', async () => {
+  const { parseDoc, compilationAuthor } = await import('../../api/services/site-adapters/oceanlibrary.js');
+  const doc = (fm) => `---\n${fm}\n---\n\nA paragraph. {#p1}\n`;
+  it('Lights of Guidance → Helen Hornby (compiler)', async () => {
+    const r = await parseDoc("Bahá'í/Bahá’u’lláh/Lights of Guidance.md",
+      doc("slug: lights-of-guidance\ntitle: Lights of Guidance\nauthor: Bahá’u’lláh\nauthor_2: ‘Abdu’l-Bahá\nocean_category: Bahá’í"));
+    expect(r.docFields.author).toBe('Helen Hornby (compiler)');
+  });
+  it('a Research Department compilation → the Research Department', () => {
+    expect(compilationAuthor({ slug: 'peace', author: 'Bahá’u’lláh', author_2: '‘Abdu’l-Bahá' }, "Bahá'í/Research Department Compilations/Peace.md", "Bahá'í"))
+      .toBe('Research Department of the Universal House of Justice (compiler)');
+  });
+  it('other multi-author Bahá’í books → Compilation; one author or non-Bahá’í co-editors unchanged', async () => {
+    expect(compilationAuthor({ slug: 'bahai-prayers', author: 'Bahá’u’lláh', author_2: 'The Báb' }, "Bahá'í/Bahá’u’lláh/Bahá’í Prayers.md", "Bahá'í")).toBe("Compilation (Bahá'í Writings)");
+    expect(compilationAuthor({ slug: 'gleanings', author: 'Bahá’u’lláh', author_2: '' }, "Bahá'í/Bahá’u’lláh/Gleanings.md", "Bahá'í")).toBeNull();
+    expect(compilationAuthor({ slug: 'ecclus', author: 'Arthur Ernest Cowley', author_2: 'Adolf Neubauer' }, 'Judaism/x.md', 'Judaism')).toBeNull();
+  });
+});
+
+describe('compilation authors keep their rank', async () => {
+  const { getAuthority } = await import('../../api/lib/authority.js');
+  it('Bahá’í Writings compilations 8, Research Department compilations 7', () => {
+    expect(getAuthority({ author: "Compilation (Bahá'í Writings)", religion: "Bahá'í", collection: '' })).toBe(8);
+    expect(getAuthority({ author: 'Research Department of the Universal House of Justice (compiler)', religion: "Bahá'í", collection: '' })).toBe(7);
+  });
+});

@@ -58,6 +58,10 @@ const AUTHOR_AUTHORITY = {
   "Abdul-Baha": 7,
   "Shoghi Effendi": 7,
   "Universal House of Justice": 7,
+  // OceanLibrary multi-author compilations, credited to their compiler (site-adapters/oceanlibrary.js) — they are made
+  // of the authoritative texts, so they keep the rank the old "Bahá'u'lláh" credit gave them.
+  "Compilation (Bahá'í Writings)": 8,
+  "Research Department of the Universal House of Justice (compiler)": 7,
   // Islamic scripture — OceanLibrary Quran surahs have author="Muhammad" (exact)
   "Muhammad": 8,
   // Christian scripture — OceanLibrary individual Gospel/Epistle books

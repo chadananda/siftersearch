@@ -210,7 +210,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const docFields = {
     title: (frontmatter.title || '').trim(),
     subtitle: (frontmatter.subtitle || '').trim(),
-    author: (frontmatter.author || 'Unknown').trim(),
+    author: compilationAuthor(frontmatter, relativePath, ourReligion) || (frontmatter.author || 'Unknown').trim(),
     religion: ourReligion || 'General',
     collection: frontmatter.collection_id || '',
     description: frontmatter.description || frontmatter.description_short || '',
@@ -223,6 +223,23 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   };
 
   return { docFields, paragraphs, raw_frontmatter: frontmatter };
+}
+
+// ─── Compilations ─────────────────────────────────────────────────────────
+// OceanLibrary files a multi-author Bahá'í compilation under its FIRST author (author, author_2, author_3…), so
+// Lights of Guidance and every Research Department compilation arrived credited to Bahá'u'lláh — and ranking and
+// SourceHunt trust the author, treating a Universal House of Justice letter in them as Bahá'u'lláh's own work
+// (Chad 2026-10-08). A Bahá'í doc with several authors is a compilation: credit its compiler. A named compiler wins;
+// the folder names the Research Department; otherwise "Compilation (Bahá'í Writings)". Both have authority defaults in
+// api/lib/authority.js, so the revealed texts inside keep their rank. Non-Bahá'í co-authors (editors) are left alone.
+export const COMPILERS = Object.freeze({
+  'lights-of-guidance': 'Helen Hornby (compiler)',
+});
+export function compilationAuthor(frontmatter, relativePath, religion) {
+  if (!String(frontmatter.author_2 || '').trim() || !/^bah/i.test(String(religion || ''))) return null;
+  if (COMPILERS[frontmatter.slug]) return COMPILERS[frontmatter.slug];
+  if (/Research Department Compilations/i.test(relativePath)) return 'Research Department of the Universal House of Justice (compiler)';
+  return "Compilation (Bahá'í Writings)";
 }
 
 // ─── Title / author normalization for fuzzy match ─────────────────────────

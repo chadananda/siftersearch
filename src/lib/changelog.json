@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T04:39:26.114Z",
+  "generated": "2026-10-08T11:55:56.147Z",
   "entries": [
+    {
+      "hash": "200a9fb3",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Term-study placeholders are never streamed to chat (code fills them in the final text)",
+      "scope": "anis"
+    },
     {
       "hash": "0650857b",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Endpoint for whole-work page alignment (align-ool-work)",
       "scope": null
-    },
-    {
-      "hash": "2a4d3250",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Read the PAGE, and bind by the verse number the source itself states",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "200a9fb3",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Term-study placeholders are never streamed to chat (code fills them in the final text)",
+        "scope": "anis"
+      },
       {
         "hash": "0650857b",
         "date": "2026-10-07",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Endpoint for whole-work page alignment (align-ool-work)",
-        "scope": null
-      },
-      {
-        "hash": "2a4d3250",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Read the PAGE, and bind by the verse number the source itself states",
         "scope": null
       }
     ]
