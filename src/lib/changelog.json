@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T12:13:48.351Z",
+  "generated": "2026-10-08T12:20:34.685Z",
   "entries": [
+    {
+      "hash": "feb4c241",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Recover extract-level authors of compilations whose section headings were lost on export (OceanLibrary kept them as bare '##') from the official bahai.org edition — section labels and trailers matched to our paragraphs by text; only weak assignments (book/system1) replaced; dry run by default",
+      "scope": "authorship"
+    },
     {
       "hash": "b2a8cdc6",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Speak in FILE PATHS, not document ids",
       "scope": null
-    },
-    {
-      "hash": "00d205ae",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Skip books that already have their originals — decided BEFORE any fetch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "feb4c241",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Recover extract-level authors of compilations whose section headings were lost on export (OceanLibrary kept them as bare '##') from the official bahai.org edition — section labels and trailers matched to our paragraphs by text; only weak assignments (book/system1) replaced; dry run by default",
+        "scope": "authorship"
+      },
       {
         "hash": "b2a8cdc6",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Speak in FILE PATHS, not document ids",
-        "scope": null
-      },
-      {
-        "hash": "00d205ae",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Skip books that already have their originals — decided BEFORE any fetch",
         "scope": null
       }
     ]

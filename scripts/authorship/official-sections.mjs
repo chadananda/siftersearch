@@ -52,7 +52,8 @@ const decode = (s) => s.replace(/&(#x?[0-9a-f]+|\w+);/gi, (m, e) => (e[0] === '#
 /** XHTML → ordered text blocks (paragraphs, headings, list items). */
 export function blocks(xhtml) {
   return [...String(xhtml).replace(/<sup[^>]*>[\s\S]*?<\/sup>/g, '').matchAll(/<(p|h[1-6]|li)\b[^>]*>([\s\S]*?)<\/\1>/g)]
-    .map((m) => decode(m[2].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim()).filter(Boolean);
+    .map((m) => decode(m[2].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim()
+      .replace(/(?:\s*\[\d+\])+$/, '')).filter(Boolean);   // "(Bahá’u’lláh, from a Tablet) [1]": the note number hid the trailer
 }
 /** The key two copies of one paragraph share: its first letters, case- and punctuation-free. */
 export const textKey = (t) => String(t || '').replace(/⁅\/?s\d+⁆|\[\^\d+\]|\(\d+(?:, ?\d+)*\)/g, '').normalize('NFC').toLowerCase()

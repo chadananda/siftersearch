@@ -29,6 +29,10 @@ describe('official authors by text', () => {
     expect(m.get(textKey('The obligatory prayers are binding on all believers and should be said daily.'))).toMatchObject({ name: 'Shoghi Effendi', on_behalf: true, basis: 'official-trailer' });
     expect(m.get(textKey('A third passage, which a trailer below claims for ‘Abdu’l-Bahá instead.'))).toMatchObject({ name: '‘Abdu’l-Bahá', basis: 'official-trailer' });
   });
+  it('an attribution line ending in a note number is still an attribution line', () => {
+    const m2 = officialAuthors(blocks('<p>And then the voice of the Divine Lote-Tree sounded, calling aloud and saying praise be unto God.</p><p>(Bahá’u’lláh, from a Tablet—translated from the Arabic) <a href="#n1">[1]</a></p>'));
+    expect(m2.get(textKey('And then the voice of the Divine Lote-Tree sounded, calling aloud and saying praise be unto God.'))).toMatchObject({ name: 'Bahá’u’lláh', basis: 'official-trailer' });
+  });
   it('our copy matches the official one despite markers, footnotes and punctuation', () => {
     expect(textKey('⁅s1⁆I. We, verily, have set forth[^3] all things in Our Book (12, 13), as a token of grace'))
       .toBe(textKey('I. We, verily, have set forth all things in Our Book, as a token of grace'));
