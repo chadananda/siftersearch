@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T02:02:04.590Z",
+  "generated": "2026-10-08T02:09:28.447Z",
   "entries": [
+    {
+      "hash": "e6a0d151",
+      "date": "2026-10-07",
+      "type": "Other",
+      "description": "Run the strategy auditor (siftersearch-audit) and its daily 07:00 email digest under PM2; digest marks auditor-named 'missed' passages as leads to check",
+      "scope": "audit"
+    },
     {
       "hash": "03d69bb1",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Identity layer - the prerequisite for cross-referencing",
       "scope": null
-    },
-    {
-      "hash": "63993beb",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "An OPEN producer was feeding a CLOSED whitelist, silently",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "e6a0d151",
+        "date": "2026-10-07",
+        "type": "Other",
+        "description": "Run the strategy auditor (siftersearch-audit) and its daily 07:00 email digest under PM2; digest marks auditor-named 'missed' passages as leads to check",
+        "scope": "audit"
+      },
       {
         "hash": "03d69bb1",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Identity layer - the prerequisite for cross-referencing",
-        "scope": null
-      },
-      {
-        "hash": "63993beb",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "An OPEN producer was feeding a CLOSED whitelist, silently",
         "scope": null
       }
     ]

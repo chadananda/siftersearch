@@ -4,9 +4,14 @@
 // evidence answered, format fit, every mistake grouped by WHERE it lies (reply · library data · source text · reader's
 // premise — the library ones are a work list), suggested new strategies, data gaps. Plain text + simple HTML.
 //   node scripts/audit/audit-digest.mjs [--hours=24] [--dry]   (--dry prints instead of sending)
+import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import { existsSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
+// PM2 does not pass the env files to every app: load them here (as the other tower scripts do)
+for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(join(dirname(fileURLToPath(import.meta.url)), '..', '..'), f), quiet: true });
 const HOURS = Number((process.argv.find((a) => a.startsWith('--hours=')) || '--hours=24').split('=')[1]);
 const DRY = process.argv.includes('--dry');
 const STORE = process.env.AUDIT_DB || '/tank/sifter/audit/audits.db';

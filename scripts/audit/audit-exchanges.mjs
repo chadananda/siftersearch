@@ -5,6 +5,7 @@
 // reader already has the reply. Daily budget (AUDIT_DAILY_USD, default $25): once spent, it waits for the next day; nothing
 // is skipped, only delayed. Reads chat_messages read-only, paged by id (no long read transaction).
 //   node scripts/audit/audit-exchanges.mjs [--once] [--limit=N]
+import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync } from 'fs';
@@ -13,6 +14,8 @@ import { fileURLToPath } from 'url';
 import { buildAuditPrompt, AUDIT_TOOL, costOf } from '../../api/lib/audit/auditor.js';
 import { MODEL_REGISTRY } from '../../api/lib/model-registry.js';
 
+// PM2 does not pass the env files to every app: load them here (as the other tower scripts do)
+for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(join(dirname(fileURLToPath(import.meta.url)), '..', '..'), f), quiet: true });
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ONCE = process.argv.includes('--once');
 const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit=')) || '--limit=0').split('=')[1]) || Infinity;
@@ -58,8 +61,11 @@ async function audit(row) {
     put.run({ ...base, usd: costOf(res.usage, PRICING), input_tokens: res.usage?.input_tokens ?? 0, output_tokens: res.usage?.output_tokens ?? 0,
       status: call ? 'done' : 'error', verdict_json: call ? JSON.stringify(call.input) : null, error: call ? null : `no tool call (${res.stop_reason})` });
   } catch (e) {
-    put.run({ ...base, usd: 0, input_tokens: 0, output_tokens: 0, status: 'error', verdict_json: null, error: String(e.message).slice(0, 300) });
+    // the CALL failed (auth, network, rate limit): nothing is recorded, so this exchange is retried — never skipped
+    console.error(JSON.stringify({ at: new Date().toISOString(), message_id: row.id, error: String(e.message).slice(0, 200) }));
+    return false;
   }
+  return true;
 }
 
 let done = 0;
@@ -69,10 +75,13 @@ for (;;) {
     await new Promise((r) => setTimeout(r, 15 * 60 * 1000)); continue;
   }
   const batch = nextBatch(lastAudited());
+  let failed = false;
   for (const row of batch) {
     if (spentToday() >= DAILY_USD || done >= LIMIT) break;
-    await audit(row); done++;
+    if (!(await audit(row))) { failed = true; break; }
+    done++;
   }
+  if (failed) { if (ONCE) break; await new Promise((r) => setTimeout(r, 5 * 60 * 1000)); continue; }
   if (ONCE || done >= LIMIT) break;
   if (!batch.length) await new Promise((r) => setTimeout(r, 60 * 1000));
 }
