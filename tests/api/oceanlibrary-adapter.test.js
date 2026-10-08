@@ -170,3 +170,20 @@ describe('OceanLibrary site block id', () => {
     expect(paragraphs[1].block_attrs).toBeUndefined();
   });
 });
+
+describe('OceanLibrary heading path', () => {
+  it('keeps the chapter above an episode and the section label above numbered extracts', async () => {
+    const md = FM + [
+      '## CHAPTER XII {.h2 id="para_1" ilm_id="a1" type="header" language="en"}',
+      '#### b. Ḥusayn Ḵhán’s directions {.h4 id="para_2" ilm_id="a2" type="header" language="en"}',
+      'That very moment, the governor summoned… {id="para_3" ilm_id="a3" type="par" language="en"}',
+      '### Extracts From the Writings of Bahá’u’lláh {.h3 id="para_4" ilm_id="a4" type="header" language="en"}',
+      '#### — 1 — {.h4 id="para_5" ilm_id="a5" type="header" language="en"}',
+      'This is the Day… {id="para_6" ilm_id="a6" type="par" language="en"}',
+    ].join('\n\n') + '\n';
+    const { paragraphs } = await parseDoc('test.md', md, {});
+    expect(paragraphs[0].block_attrs.path).toEqual(['CHAPTER XII', 'b. Ḥusayn Ḵhán’s directions']);
+    expect(paragraphs[1].block_attrs.path).toEqual(['CHAPTER XII', 'Extracts From the Writings of Bahá’u’lláh', '— 1 —']);
+    expect(paragraphs[1].heading).toBe('— 1 —');
+  });
+});

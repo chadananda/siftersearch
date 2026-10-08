@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T14:12:17.174Z",
+  "generated": "2026-10-08T15:03:21.149Z",
   "entries": [
+    {
+      "hash": "95ae815b",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Windowed paragraph-attribution pilot (5 decided + 10 to decide + 5 ahead)",
+      "scope": "authorship"
+    },
     {
       "hash": "5a7f4c07",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Try the free deterministic pairing first — SAQ needed no model at all",
       "scope": null
-    },
-    {
-      "hash": "e56ce7e5",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Read Some Answered Questions' original from bahai.org, anchored on the source's own paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "95ae815b",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Windowed paragraph-attribution pilot (5 decided + 10 to decide + 5 ahead)",
+        "scope": "authorship"
+      },
       {
         "hash": "5a7f4c07",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Try the free deterministic pairing first — SAQ needed no model at all",
-        "scope": null
-      },
-      {
-        "hash": "e56ce7e5",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Read Some Answered Questions' original from bahai.org, anchored on the source's own paragraphs",
         "scope": null
       }
     ]

@@ -68,7 +68,9 @@ async function officialMap(docId) {
 const summary = [];
 for (const id of IDS.map(Number)) {
   const d = await getDoc(id, { follow: false, fields: ['id', 'title', 'author', 'religion'] });
-  const rows = db.prepare('SELECT id, paragraph_index pidx, text, heading, authors FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(id);
+  // the full heading path (chapter › section › extract number) when the ingest kept it, else the innermost heading
+  const rows = db.prepare('SELECT id, paragraph_index pidx, text, heading, block_attrs, authors FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(id)
+    .map((r) => { const path = r.block_attrs ? JSON.parse(r.block_attrs).path : null; return { ...r, heading: path?.length ? path.join(' › ') : r.heading }; });
   const book = { title: d.title, author: d.author, religion: d.religion };
   const roster = initialRoster(book);
   const p1 = await pass(book, rows, roster, null);

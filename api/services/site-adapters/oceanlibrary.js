@@ -95,6 +95,13 @@ function cleanParagraphText(text, type) {
  * @param {object} opts - { siteRoot: absolute path to -sites/oceanlibrary.com }
  * @returns {Promise<{ docFields, paragraphs, raw_frontmatter }>}
  */
+/** block_attrs for a paragraph: the site block id and the heading path (only when there is one to keep). */
+export function blockAttrs(ilmId, headStack) {
+  const path = headStack.map((h) => h.text).filter(Boolean);
+  const out = { ...(ilmId ? { ilm_id: ilmId } : {}), ...(path.length > 1 ? { path } : {}) };
+  return Object.keys(out).length ? { block_attrs: out } : {};
+}
+
 export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) throw new Error('No YAML frontmatter found');
@@ -127,6 +134,10 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
 
   const paragraphs = [];
   let currentHeading = '';
+  // The whole heading path, outermost first: a chapter above its episodes ("CHAPTER XII" › "b. Ḥusayn Ḵhán's directions…"),
+  // a section label above its numbered extracts ("Extracts From the Writings of Bahá’u’lláh" › "— 1 —"). `heading` keeps
+  // only the innermost one, which hid the chapter / the writer (2026-10-08). An empty heading still closes deeper levels.
+  const headStack = [];
   let paragraphIndex = 0;
   // A text block whose `{id …}` attribute may arrive on the FOLLOWING block.
   // OceanLibrary writes list items (martyr rolls, enumerations) as a text block
@@ -144,6 +155,9 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
     if (type === 'header') {
       const h = cleanParagraphText(text, type);
       if (h) currentHeading = h;
+      const level = (text.match(/^(#{1,6})(?:\s|$)/) || [])[1]?.length || Number((attrs?.classes || []).find((c) => /^h[1-6]$/.test(c))?.slice(1)) || 6;
+      while (headStack.length && headStack[headStack.length - 1].level >= level) headStack.pop();
+      headStack.push({ level, text: h || '' });
       return;
     }
     const cleanText = cleanParagraphText(text, type);
@@ -155,7 +169,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
       blocktype: type === 'preamble' ? 'preamble' : 'paragraph',
       external_para_id: (attrs && attrs.id) || null,
       // the site's block id: with the book's bookid it makes data-ilmid, the anchor of a range link (lib/ocean-range.js)
-      ...(attrs?.ilm_id ? { block_attrs: { ilm_id: attrs.ilm_id } } : {}),
+      ...blockAttrs(attrs?.ilm_id, headStack),
       language: (attrs && attrs.language) || frontmatter.language || 'en'
     });
   };
