@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T02:47:39.288Z",
+  "generated": "2026-10-08T02:50:32.059Z",
   "entries": [
+    {
+      "hash": "054d2d98",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Anis@oceanlibrary.com via Amazon SES — Worker endpoints for inbound (SNS → S3 raw MIME → D1) and events (bounces, complaints, opens, clicks; suppression list), SNS signatures verified, internal-key send endpoint; D1 'anis' bound (migration 0001_mail)",
+      "scope": "mail"
+    },
     {
       "hash": "0a268501",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Canonical restore + conceptual extraction plan",
       "scope": null
-    },
-    {
-      "hash": "235b1727",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Core roster + bilingual extraction contract",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "054d2d98",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Anis@oceanlibrary.com via Amazon SES — Worker endpoints for inbound (SNS → S3 raw MIME → D1) and events (bounces, complaints, opens, clicks; suppression list), SNS signatures verified, internal-key send endpoint; D1 'anis' bound (migration 0001_mail)",
+        "scope": "mail"
+      },
       {
         "hash": "0a268501",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Canonical restore + conceptual extraction plan",
-        "scope": null
-      },
-      {
-        "hash": "235b1727",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Core roster + bilingual extraction contract",
         "scope": null
       }
     ]

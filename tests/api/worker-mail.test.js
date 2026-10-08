@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { createSign } from 'crypto';
 import { canonicalString, verifySns, isAmazonUrl } from '../../worker/mail/sns.js';
-import { eventRows, threadKey, mimeName } from '../../worker/mail/index.js';
+import { eventRows, threadKey, mimeName, inboundStatus, ownText } from '../../worker/mail/index.js';
 
 const CERT = readFileSync(new URL('../fixtures/sns/test-cert.pem', import.meta.url), 'utf8');
 const KEY = readFileSync(new URL('../fixtures/sns/test-key.pem', import.meta.url), 'utf8');
@@ -73,5 +73,25 @@ describe('threading and headers', () => {
     expect(v).toMatch(/^=\?UTF-8\?B\?[A-Za-z0-9+/=]+\?= <anis@oceanlibrary\.com>$/);
     expect(Buffer.from(v.split('?')[3], 'base64').toString()).toBe('Anís');
     expect(mimeName('Ocean', 'a@b.c')).toBe('"Ocean" <a@b.c>');
+  });
+});
+
+describe('newsletter replies: sorting', () => {
+  it('out-of-office and bounces are auto', () => {
+    expect(inboundStatus({ headers: [{ key: 'Auto-Submitted', value: 'auto-replied' }], text: 'Thanks!' })).toBe('auto');
+    expect(inboundStatus({ subject: 'Automatic reply: Ocean 2.0 news' })).toBe('auto');
+    expect(inboundStatus({ subject: 'Out of Office' })).toBe('auto');
+    expect(inboundStatus({ from: 'MAILER-DAEMON@x.org', subject: 'failure' })).toBe('auto');
+    expect(inboundStatus({ headers: [{ key: 'Auto-Submitted', value: 'no' }], text: 'Lovely issue, thank you.' })).toBe('new');
+  });
+  it('a short removal request is unsubscribe; a real letter that quotes the footer is not', () => {
+    expect(inboundStatus({ text: 'Please remove me from this list.' })).toBe('unsubscribe');
+    expect(inboundStatus({ subject: 'Unsubscribe', text: '' })).toBe('unsubscribe');
+    expect(inboundStatus({ text: 'Thank you for the article on the Kitáb-i-Íqán.\n\nOn Mon, Ocean 2.0 wrote:\n> To unsubscribe click here' })).toBe('new');
+  });
+  it('spam verdicts win', () => expect(inboundStatus({ spam: 'FAIL', text: 'hi' })).toBe('spam'));
+  it('ownText drops quoted history', () => {
+    expect(ownText('Great!\n> old line\nmore')).toBe('Great!\nmore');
+    expect(ownText('Yes.\nOn Tue, 1 Oct 2026, Ocean wrote:\nquoted')).toBe('Yes.');
   });
 });

@@ -1,8 +1,8 @@
 // Anís mail at the edge: anis@oceanlibrary.com through Amazon SES (us-west-2), state in D1 (env.ANIS_DB).
-//   POST /_mail/ses/inbound  SNS → raw MIME from S3 → mail_messages (direction in)
+//   POST /_mail/ses/inbound  SNS → raw MIME from S3 → mail_messages (direction in; mailbox anis, or newsletter = replies to m.oceanlibrary.com)
 //   POST /_mail/ses/events   SNS → mail_events; hard bounce / complaint → mail_suppression
 //   POST /_mail/send         internal key; sends a draft ({id}) or a message ({to, subject, text, html?, inReplyTo?})
-//   GET  /_mail/messages     internal key; ?status=&direction=&limit=
+//   GET  /_mail/messages     internal key; ?mailbox=anis|newsletter &status=&direction=&limit=
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 /* global btoa */
 import { AwsClient } from 'aws4fetch';
@@ -49,6 +49,26 @@ export function eventRows(ev) {
   return { type: type === 'Rendering Failure' ? 'RenderingFailure' : type, sesId, detail, recipients: recipients.length ? recipients : [null], suppress };
 }
 
+const AUTO_SUBJECT = /^\s*(auto(matic)?[ -]?(reply|response)|out of (the )?office|away from|abwesenheit|absence|r[ée]ponse automatique|respuesta autom[áa]tica|undeliverable|delivery status notification|mail delivery failed)/i;
+const UNSUBSCRIBE = /\b(unsubscribe|remove me|take me off|stop (sending|emailing)|no more emails|d[ée]sabonner|darse de baja|abmelden)\b/i;
+
+/** The reader's own words: quoted history (">" lines, "On … wrote:" and below) removed. */
+export function ownText(text = '') {
+  const cut = String(text).split(/\n(?:On .{0,200}wrote:|-{2,} ?Original Message|From: .+\nSent: )/i)[0];
+  return cut.split('\n').filter((l) => !l.startsWith('>')).join('\n').trim();
+}
+
+/** Inbound status: spam | auto (auto-responders, bounces) | unsubscribe (asks to be removed) | new. */
+export function inboundStatus({ spam, virus, headers = [], from = '', subject = '', text = '' }) {
+  if (spam === 'FAIL' || virus === 'FAIL') return 'spam';
+  const h = Object.fromEntries(headers.map((x) => [String(x.key).toLowerCase(), String(x.value).toLowerCase()]));
+  if ((h['auto-submitted'] && h['auto-submitted'] !== 'no') || h['x-autoreply'] || h['x-autorespond'] || /auto_reply|junk/.test(h.precedence || '')
+    || /^(mailer-daemon|postmaster)@/i.test(from) || AUTO_SUBJECT.test(subject)) return 'auto';
+  const own = ownText(text);
+  if (own.length < 400 && (UNSUBSCRIBE.test(own) || UNSUBSCRIBE.test(subject))) return 'unsubscribe';
+  return 'new';
+}
+
 async function readSns(request, topic) {
   let m; try { m = await request.json(); } catch { return { error: json({ error: 'bad json' }, 400) }; }
   if (!(await verifySns(m, new Set([topic])))) return { error: json({ error: 'unverified' }, 403) };
@@ -70,10 +90,11 @@ async function inbound(request, env) {
   if (!res.ok) return json({ error: `s3 ${res.status}` }, 502);              // SNS retries on 5xx
   const mail = await PostalMime.parse(await res.arrayBuffer());
   const spam = body.receipt?.spamVerdict?.status, virus = body.receipt?.virusVerdict?.status;
-  const status = spam === 'FAIL' || virus === 'FAIL' ? 'spam' : 'new';
-  await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_messages (direction, status, ses_message_id, message_id, in_reply_to, thread_key,
+  const status = inboundStatus({ spam, virus, headers: mail.headers, from: mail.from?.address, subject: mail.subject, text: mail.text });
+  const mailbox = act.objectKey.startsWith('newsletter/') ? 'newsletter' : 'anis';
+  await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_messages (mailbox, direction, status, ses_message_id, message_id, in_reply_to, thread_key,
       from_addr, from_name, to_addr, subject, text, html, s3_key, spam_verdict, virus_verdict)
-    VALUES ('in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(status, body.mail?.messageId ?? null, mail.messageId ?? null,
+    VALUES (?, 'in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(mailbox, status, body.mail?.messageId ?? null, mail.messageId ?? null,
     mail.inReplyTo ?? null, threadKey(mail), lower(mail.from?.address), mail.from?.name ?? null,
     (mail.to || []).map((t) => lower(t.address)).join(', '), mail.subject ?? '', mail.text ?? '', mail.html ?? null,
     act.objectKey, spam ?? null, virus ?? null).run();
@@ -121,8 +142,8 @@ async function send(request, env) {
     if (!row) return json({ error: 'no such draft' }, 404);
   } else {
     if (!b.to || !b.subject || !b.text) return json({ error: 'to, subject, text required' }, 400);
-    row = await db.prepare(`INSERT INTO mail_messages (direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key)
-      VALUES ('out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, lower(b.to), b.subject, b.text, b.html ?? null,
+    row = await db.prepare(`INSERT INTO mail_messages (mailbox, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key)
+      VALUES ('anis', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, lower(b.to), b.subject, b.text, b.html ?? null,
       b.inReplyTo ?? null, b.threadKey ?? b.inReplyTo ?? null).first();
   }
   const r = await sendMail(env, { to: row.to_addr, subject: row.subject, text: row.text, html: row.html, inReplyTo: row.in_reply_to, references: row.thread_key });
@@ -138,8 +159,9 @@ async function list(request, env) {
   const where = []; const args = [];
   if (q.get('status')) { where.push('status = ?'); args.push(q.get('status')); }
   if (q.get('direction')) { where.push('direction = ?'); args.push(q.get('direction')); }
+  if (q.get('mailbox')) { where.push('mailbox = ?'); args.push(q.get('mailbox')); }
   const limit = Math.min(Number(q.get('limit')) || 50, 500);
-  const { results } = await env.ANIS_DB.prepare(`SELECT id, direction, status, from_addr, from_name, to_addr, subject, substr(text, 1, 2000) AS text,
+  const { results } = await env.ANIS_DB.prepare(`SELECT id, mailbox, direction, status, from_addr, from_name, to_addr, subject, substr(text, 1, 2000) AS text,
       message_id, in_reply_to, thread_key, created_at, sent_at, error FROM mail_messages ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
     ORDER BY id DESC LIMIT ?`).bind(...args, limit).all();
   return json({ messages: results });
