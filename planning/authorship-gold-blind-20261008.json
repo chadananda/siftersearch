@@ -1,0 +1,326 @@
+{
+ "about": "BLIND third set, labelled 2026-10-08 from full text BEFORE any classifier run on these paragraphs. Letters written on behalf of the House = Universal House of Justice; a compiler heading = the compiler.",
+ "items": [
+  {
+   "doc": 20804,
+   "pidx": 2000,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2001,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2002,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2003,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2004,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2005,
+   "speaker": "Hornby|compil|editor",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2006,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2007,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2008,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2009,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2010,
+   "speaker": "Hornby|compil|editor",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2011,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2012,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20804,
+   "pidx": 2013,
+   "speaker": "Universal House|House of Justice",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 100,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 101,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 102,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 103,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20907,
+   "pidx": 104,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 105,
+   "speaker": "Abdu.l-Bah",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 106,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Farru.?[kḵ]h|Am[ií]nu"
+   ]
+  },
+  {
+   "doc": 20907,
+   "pidx": 107,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Ism[aá].[ií]l|Ust[aá]d"
+   ]
+  },
+  {
+   "doc": 20907,
+   "pidx": 108,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    null,
+    "R[uú]m[ií]",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20907,
+   "pidx": 113,
+   "speaker": "Abdu.l-Bah",
+   "quotes": [
+    "Ism[aá].[ií]l|Ust[aá]d"
+   ]
+  },
+  {
+   "doc": 20907,
+   "pidx": 109,
+   "speaker": "R[uú]m[ií]|Ism[aá].[ií]l|Ust[aá]d",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 110,
+   "speaker": "R[uú]m[ií]|Ism[aá].[ií]l|Ust[aá]d",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 111,
+   "speaker": "R[uú]m[ií]|Ism[aá].[ií]l|Ust[aá]d",
+   "quotes": []
+  },
+  {
+   "doc": 20907,
+   "pidx": 112,
+   "speaker": "R[uú]m[ií]|Ism[aá].[ií]l|Ust[aá]d",
+   "quotes": []
+  },
+  {
+   "doc": 21310,
+   "pidx": 300,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 301,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 302,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 303,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 304,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 305,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 306,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 307,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 308,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 309,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 310,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 311,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 312,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 313,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 314,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h",
+    "Nab[ií]l"
+   ]
+  },
+  {
+   "doc": 21310,
+   "pidx": 315,
+   "speaker": "Shoghi|Guardian",
+   "quotes": []
+  },
+  {
+   "doc": 21310,
+   "pidx": 316,
+   "speaker": "Shoghi|Guardian",
+   "quotes": [
+    null,
+    "Najaf",
+    "*",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  }
+ ]
+}

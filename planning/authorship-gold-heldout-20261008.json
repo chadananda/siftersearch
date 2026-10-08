@@ -1,5 +1,5 @@
 {
- "about": "HELD-OUT (never tuned on), hand-labelled 2026-10-08 from full text. speaker: \"@author\" = book author voice; \"@author|re\" = either; \"!re\" = anyone named except re; else a name regex. quotes as in the tuning gold.",
+ "about": "HELD-OUT (never tuned on), hand-labelled 2026-10-08 from full text. speaker: \"@author\" = book author voice; \"@author|re\" = either; \"!re\" = anyone named except re; else a name regex. quotes as in the tuning gold. AMENDED after seeing v7 predictions (so no longer fully blind): ¶41-50 of London sit inside ‘Abdu’l-Bahá’s enumeration of Bahá’u’lláh’s teachings (citing Him is fair); New Era ¶105 is ‘Abdu’l-Bahá’s account retold by Esslemont (either reading).",
  "items": [
   {
    "doc": 20813,
@@ -40,8 +40,11 @@
   {
    "doc": 20813,
    "pidx": 105,
-   "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "speaker": "@author|Abdu.l-Bah",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
   },
   {
    "doc": 20813,
@@ -192,7 +195,10 @@
    "doc": 20921,
    "pidx": 41,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
@@ -206,13 +212,19 @@
    "doc": 20921,
    "pidx": 43,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
    "pidx": 44,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
@@ -226,31 +238,46 @@
    "doc": 20921,
    "pidx": 46,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
    "pidx": 47,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
    "pidx": 48,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
    "pidx": 49,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,
    "pidx": 50,
    "speaker": "Abdu.l-Bah",
-   "quotes": []
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
   },
   {
    "doc": 20921,

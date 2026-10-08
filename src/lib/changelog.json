@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:50:09.810Z",
+  "generated": "2026-10-08T15:57:17.656Z",
   "entries": [
+    {
+      "hash": "730b3685",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier v7 — a paragraph never quotes its own speaker; reported teachings count as cited; generic narrators → 'the editor or reporter'",
+      "scope": "authorship"
+    },
     {
       "hash": "cca24d26",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The retrieval chunker is overwriting canonical paragraphing",
       "scope": null
-    },
-    {
-      "hash": "d08a0225",
-      "date": "2026-08-26",
-      "type": "Test",
-      "description": "Assert the stem-pair property, not a stem count",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "730b3685",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier v7 — a paragraph never quotes its own speaker; reported teachings count as cited; generic narrators → 'the editor or reporter'",
+        "scope": "authorship"
+      },
       {
         "hash": "cca24d26",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The retrieval chunker is overwriting canonical paragraphing",
-        "scope": null
-      },
-      {
-        "hash": "d08a0225",
-        "date": "2026-08-26",
-        "type": "Test",
-        "description": "Assert the stem-pair property, not a stem count",
         "scope": null
       }
     ]

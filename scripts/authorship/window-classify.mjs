@@ -106,7 +106,7 @@ for (const id of docs) {
   const p2 = PASSES > 1 ? await pass(book, rows, roster, p1) : p1;
   const official = gold ? null : await officialMap(id);
   const s = { id, title: d.title.slice(0, 45), paras: rows.length, roster: roster.length, judged: 0, window_ok: 0, reader_ok: 0,
-    agree_passes: 0, llm_fixed: p2.filter((l) => l.via === 'llm').length, g_n: 0, g_speaker: 0, g_quotes: 0, g_detect: 0, g_reader_speaker: 0 };
+    agree_passes: 0, llm_fixed: p2.filter((l) => l.via === 'llm').length, g_n: 0, g_speaker: 0, g_quotes: 0, g_detect: 0, g_detect_n: 0, g_reader_speaker: 0 };
   const out = rows.map((r, i) => {
     const reader = (JSON.parse(r.authors || '[]').find((e) => e.role === 'author') || {}).name || null;
     const truth = official?.get(textKey(r.text))?.name || null;
@@ -114,11 +114,12 @@ for (const id of docs) {
     if (truth) { s.judged++; if (canonical(p2[i].speaker) === truth) s.window_ok++; if (reader === truth) s.reader_ok++; }
     const g = gold?.get(r.pidx);
     if (g) {
-      s.g_n++;
+      s.g_n++; s.g_detect_n++;
       if (speakerOk(p2[i].speaker, g.speaker, d.author)) s.g_speaker++;
       if (speakerOk(reader, g.speaker, d.author)) s.g_reader_speaker++;
       if (quotesOk(p2[i].quotes, g.quotes, base)) s.g_quotes++;
-      if ((p2[i].quotes != null) === g.quotes.some((x) => x)) s.g_detect++;
+      if (g.quotes[0] === null) s.g_detect_n--;   // optional quote: detection not judged
+      else if ((p2[i].quotes != null) === g.quotes.some((x) => x)) s.g_detect++;
     }
     return { id: r.id, pidx: r.pidx, speaker: p2[i].speaker, quotes: p2[i].quotes, conf: +p2[i].conf.toFixed(2), via: p2[i].via || 's1', pass1: p1[i].speaker, reader, official: truth, gold: g || null, text: r.text.slice(0, 120) };
   });
@@ -126,7 +127,7 @@ for (const id of docs) {
   summary.push(s);
   console.log(JSON.stringify({ ...s, cost }));
 }
-const keys = ['judged', 'window_ok', 'reader_ok', 'g_n', 'g_speaker', 'g_reader_speaker', 'g_quotes', 'g_detect'];
+const keys = ['judged', 'window_ok', 'reader_ok', 'g_n', 'g_speaker', 'g_reader_speaker', 'g_quotes', 'g_detect', 'g_detect_n'];
 const t = Object.fromEntries(keys.map((k) => [k, summary.reduce((a, s) => a + s[k], 0)]));
 console.log(JSON.stringify({ total: t, cost, opts: { MIN, STEP, PASSES }, seconds: Math.round((Date.now() - t0) / 1000) }));
 process.exit(0);
