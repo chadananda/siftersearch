@@ -1,18 +1,19 @@
 #!/usr/bin/env node
-// Windowed paragraph attribution, PILOT (runs ON tower; writes nothing to sifter.db). Per book: pass 1 walks the book in
-// windows (5 decided + 10 to decide + 5 ahead; api/lib/authorship/window.js), System-1 task 'paragraph-speaker-window'
-// (logged → Laya training, Clef shadowed); "another person" / low confidence → deepseek-v4-flash on the same window, new
-// names join the roster. Pass 2 re-reads with the final roster; a target the passes disagree on goes to the LLM. Each book
-// is scored against the official bahai.org edition (where official-sections.mjs maps one) and against the current reader.
-//   node scripts/authorship/window-classify.mjs <out-dir> <docId> … [--min 0.7] [--step 10] [--passes 2]
-//   … <out-dir> --gold planning/authorship-gold-20261008.json   (hand-labelled speaker + quotes; only the labelled stretch ±10)
+// Windowed paragraph attribution — EVALUATION (runs ON tower; writes nothing to sifter.db). Runs the shared engine
+// (window-core.mjs; defaults = v10: hybrid, one pass, LLM only to name "another person", one LLM brief per book) and scores
+// it against hand-labelled gold (speaker + quotes) or the official bahai.org edition, beside the current reader.
+//   node scripts/authorship/window-classify.mjs <out-dir> <docId> …            (official-edition check)
+//   node scripts/authorship/window-classify.mjs <out-dir> --gold <gold.json>    (only the labelled stretch ±10)
+//   switches: [--min 0] [--step 10] [--passes 1] [--backend jev|clef|clef-flash] [--no-hybrid] [--no-brief]
+//   Iterations and results: planning/window-classifier-log.md. Production run: window-run.mjs.
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { getDoc } from '../../api/lib/docs-repo.js';
-import { initialRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, canonical, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical } from '../../api/lib/authorship/window.js';
+import { createClassifier, loadRows } from './window-core.mjs';
 import { OFFICIAL, blocks, officialAuthors, textKey } from './official-sections.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -23,71 +24,12 @@ const VALUED = ['--min', '--step', '--passes', '--gold', '--backend'];
 const args = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && !VALUED.includes(all[i - 1]));
 const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : d);
 const [OUT, ...IDS] = args;
-const MIN = Number(opt('--min', 0.7)), STEP = Number(opt('--step', 10)), PASSES = Number(opt('--passes', 2));
-const GOLD = opt('--gold', null) ? JSON.parse((await import('fs')).readFileSync(opt('--gold'), 'utf-8')).items : null;
-const TASK = 'paragraph-speaker-window', BACK = 5, AHEAD = 5;
-const BACKEND = opt('--backend', null);
-const BRIEF = process.argv.includes('--brief');   // v10: one LLM call per book writes System-1's book-specific brief   // force jev | clef | clef-flash | laya for this run (scored like any other)
-// --hybrid: a speaker the reader took from evidence on the page is fixed (shown, not asked); only its quotes are asked
-const HYBRID = process.argv.includes('--hybrid');
-const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work']);
-// structural lines too: a heading is the book's author / compiler speaking; an attribution line speaks for the writer it names
-function knownSpeaker(r, book) {
-  if (!HYBRID) return null;
-  const list = JSON.parse(r.authors || '[]');
-  const a = list.find((e) => e.role === 'author');
-  if (a?.name && STRONG.has(a.basis)) return a.name;
-  if (list.some((e) => e.role === 'heading')) return book.author;
-  const ref = list.find((e) => e.role === 'reference' && e.name);
-  return ref ? ref.name : null;
-}
+const MIN = Number(opt('--min', 0)), STEP = Number(opt('--step', 10)), PASSES = Number(opt('--passes', 1)), BACKEND = opt('--backend', null);
+const GOLD = opt('--gold', null) ? JSON.parse(readFileSync(opt('--gold'), 'utf-8')).items : null;
+const { classify, cost } = createClassifier({ ask, chatCompletion, min: MIN, step: STEP, backend: BACKEND,
+  hybrid: !process.argv.includes('--no-hybrid'), brief: !process.argv.includes('--no-brief') });
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 mkdirSync(OUT, { recursive: true });
-
-const cost = { calls: 0, tokens: 0, llm: 0, llm_tokens: 0 };
-async function escalate(state, flagged, roster) {
-  const r = await chatCompletion([{ role: 'user', content: escalationPrompt(state, flagged) }],
-    { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 160 * flagged.length + 200, thinking: false, caller: 'authorship-window' });
-  cost.llm++; cost.llm_tokens += (r?.usage?.total_tokens || 0);
-  return parseEscalation(r?.content ?? r, flagged, roster);
-}
-
-async function makeBrief(book, allRows, roster) {
-  const opening = allRows.slice(0, 40).map((r) => r.text.slice(0, 300)).join('\n');
-  const heads = [...new Set(allRows.map((r) => r.heading).filter(Boolean))];
-  const outline = heads.filter((_, i) => i % Math.max(1, Math.ceil(heads.length / 40)) === 0).slice(0, 40).join('\n');
-  const r = await chatCompletion([{ role: 'user', content: briefPrompt(book, opening, outline) }],
-    { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 900, thinking: false, caller: 'authorship-brief' });
-  cost.llm++;
-  const b = parseBrief(r?.content ?? r, roster);
-  for (const x of b?.speakers || []) if (!roster.includes(x.name)) roster.push(x.name);
-  return b;
-}
-
-async function pass(book, rows, roster, prior, brief = null) {
-  const labels = new Array(rows.length).fill(null);
-  for (let i0 = 0; i0 < rows.length; i0 += STEP) {
-    const targets = rows.slice(i0, i0 + STEP).map((p) => ({ ...p, known: knownSpeaker(p, book) }));
-    const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
-    const ahead = rows.slice(i0 + STEP, i0 + STEP + AHEAD);
-    const state = windowState({ book, roster, anchors, targets, ahead, brief });
-    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known), brief), { ref: targets[0].id, timeoutMs: 40000, ...(BACKEND ? { backend: BACKEND } : {}) });
-    cost.calls++; cost.tokens += r.tokens || 0;
-    const got = parseAnswers(r.answers, targets.length).map((l, k) => (targets[k].known ? { ...l, speaker: targets[k].known, fixed: true } : l));
-    // escalate: unnamed / unsure, and in pass 2 anything that disagrees with pass 1
-    const flagged = got.map((l, k) => (needsEscalation(l, MIN) || (prior && prior[i0 + k] && prior[i0 + k].speaker !== l.speaker) ? k : -1)).filter((k) => k >= 0);
-    if (flagged.length) {
-      const fix = await escalate(state, flagged, roster);
-      for (const [k, v] of Object.entries(fix)) {
-        got[k] = { ...got[k], ...v, ...(got[k].fixed ? { speaker: got[k].speaker } : {}), via: 'llm' };
-        for (const n of [v.speaker, v.quotes]) if (n && !roster.includes(n) && n !== OTHER) roster.push(n);   // grows going forward
-      }
-    }
-    // "another person" is not an answer: the LLM names them, or the paragraph stays unresolved (null), never 'another person'
-    got.forEach((l, k) => { labels[i0 + k] = settle({ ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes }); });
-  }
-  return labels;
-}
 
 async function officialMap(docId) {
   const slug = OFFICIAL[docId]; if (!slug) return null;
@@ -119,17 +61,13 @@ const t0 = Date.now();
 for (const id of docs) {
   const d = await getDoc(id, { follow: false, fields: ['id', 'title', 'author', 'religion'] });
   // the full heading path (chapter › section › extract number) when the ingest kept it, else the innermost heading
-  let rows0 = db.prepare('SELECT id, paragraph_index pidx, text, heading, block_attrs, authors FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(id)
-    .map((r) => { const path = r.block_attrs ? JSON.parse(r.block_attrs).path : null; return { ...r, heading: path?.length ? path.join(' › ') : r.heading }; });
+  const rows0 = loadRows(db, id);
   let rows = rows0;
   const gold = GOLD ? new Map(GOLD.filter((g) => g.doc === id).map((g) => [g.pidx, g])) : null;
   if (gold) { const ps = [...gold.keys()]; const lo = Math.min(...ps) - 10, hi = Math.max(...ps) + 10; rows = rows.filter((r) => r.pidx >= lo && r.pidx <= hi); }
   const book = { title: d.title, author: d.author, religion: d.religion };
-  const roster = initialRoster(book), base = [...roster];
-  const brief = BRIEF ? await makeBrief(book, rows0, roster) : null;   // from the book's own opening, not the gold stretch
+  const { roster, base, brief, p1, labels: p2 } = await classify(book, rows0, { rows, passes: PASSES });
   if (brief) writeFileSync(join(OUT, `${id}.brief.json`), JSON.stringify(brief, null, 1));
-  const p1 = await pass(book, rows, roster, null, brief);
-  const p2 = PASSES > 1 ? await pass(book, rows, roster, p1, brief) : p1;
   const official = gold ? null : await officialMap(id);
   const s = { id, title: d.title.slice(0, 45), paras: rows.length, roster: roster.length, judged: 0, window_ok: 0, reader_ok: 0,
     agree_passes: 0, llm_fixed: p2.filter((l) => l.via === 'llm').length, g_n: 0, g_speaker: 0, g_quotes: 0, g_detect: 0, g_detect_n: 0, g_reader_speaker: 0 };

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T16:22:28.280Z",
+  "generated": "2026-10-08T16:45:05.044Z",
   "entries": [
+    {
+      "hash": "a3ca1acd",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier — editor label variants; v10 results logged (speaker ≈99.7%, quotes ≈96% on 165 hand-labelled ¶)",
+      "scope": "authorship"
+    },
     {
       "hash": "71b20507",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Report WHAT was dropped, not just how many",
       "scope": null
-    },
-    {
-      "hash": "f02187d2",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "An authorised reading ESTABLISHES a sense — it does not foreclose the others",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "a3ca1acd",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier — editor label variants; v10 results logged (speaker ≈99.7%, quotes ≈96% on 165 hand-labelled ¶)",
+        "scope": "authorship"
+      },
       {
         "hash": "71b20507",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Report WHAT was dropped, not just how many",
-        "scope": null
-      },
-      {
-        "hash": "f02187d2",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "An authorised reading ESTABLISHES a sense — it does not foreclose the others",
         "scope": null
       }
     ]

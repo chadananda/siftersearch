@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Window classifier evaluation (runs ON tower): hand gold (speaker + quotes) and the three compilations whose official
-# bahai.org edition is a fair speaker check. Usage: scripts/authorship/window-eval.sh <tag> [extra window-classify args]
+# bahai.org edition is a fair speaker check. Defaults = v10. Usage: scripts/authorship/window-eval.sh <tag> [window-classify switches]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 TAG=$1; shift
