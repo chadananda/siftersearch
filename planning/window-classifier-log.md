@@ -25,3 +25,13 @@ Run-to-run noise (Jev): about ±3 on 50-70 ¶.
 **Current best = v9: `--hybrid --passes 1 --min 0`.** Speaker ≈98% on 165 gold ¶ (reader 81%), = reader on compilations; quotes ≈90%.
 Cost ≈ 500 Jev tokens/¶ (≈$0.02 per 1,000 ¶ at the logged Jev rate), ≈0.3 s per 10-¶ window, LLM in ~5% of windows.
 Remaining errors: quotes reached only by pronoun ("He, in that same Tablet…"), first line of a verse quotation, run-to-run noise.
+| clef ×1 | v9 with --backend clef | 70/70 | 60/70 | 54/64 | 336/348 | 12 / 3 | 29 |
+| clef-flash ×1 | v9 with --backend clef-flash | 67/70 | 55/70 | 52/64 | 336/348 | 12 / 1 | 11 |
+| **v10 ×2** | **+ per-book LLM brief (prompt tuner): speakers, how to recognise them, ≤5 book rules** | **70/70** | **65-66/70** | 60-62/64 | 336/348 | 12 / 9-10 | 22-27 |
+
+v10 held-out: speaker 50/50 ×2, quotes 48-49/50. v10 BLIND: speaker 44-45/45, quotes 43-44/45, detect 39-40/40.
+**All 165 gold ¶: speaker 164-165 (≈99.7%; reader 133 = 81%), quotes 157-159 (≈96%).** Compilations unchanged (336/348 = reader; official edition itself errs on some).
+Clef ≈ Jev on speaker, a little worse on quotes, slower; Clef-flash clearly worse → Jev stays primary; every call logged for Laya.
+Cost v10: ≈840 Jev tokens/¶ (brief rules + richer criteria), 1 LLM call per book for the brief + LLM in ~5-10% of windows.
+At the logged Jev rate (~$0.043/M tokens): ≈$0.04 per 1,000 ¶ → OceanLibrary (475k ¶) ≈ $17; whole corpus (~4.6M ¶) ≈ $165 before Laya.
+Speed: ≈0.4 s per 10-¶ window, sequential within a book (anchors), parallel across books.

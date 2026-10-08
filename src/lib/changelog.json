@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T16:17:15.407Z",
+  "generated": "2026-10-08T16:22:28.280Z",
   "entries": [
+    {
+      "hash": "71b20507",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier v10 — per-book LLM brief (speakers + how to recognise them + book rules) tunes System-1's instructions",
+      "scope": "authorship"
+    },
     {
       "hash": "ff2050a0",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "An authorised reading ESTABLISHES a sense — it does not foreclose the others",
       "scope": null
-    },
-    {
-      "hash": "4f1151cc",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "A proof quoted from the ORIGINAL is a proof — and the interpreter paragraph was unconditional",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "71b20507",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier v10 — per-book LLM brief (speakers + how to recognise them + book rules) tunes System-1's instructions",
+        "scope": "authorship"
+      },
       {
         "hash": "ff2050a0",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "An authorised reading ESTABLISHES a sense — it does not foreclose the others",
-        "scope": null
-      },
-      {
-        "hash": "4f1151cc",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "A proof quoted from the ORIGINAL is a proof — and the interpreter paragraph was unconditional",
         "scope": null
       }
     ]

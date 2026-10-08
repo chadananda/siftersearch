@@ -65,3 +65,11 @@ describe('book brief (prompt tuner)', () => {
     expect(windowQuestions(['Shoghi Effendi'], 1, { author: 'X' }, [], b).s1.criteria['Shoghi Effendi']).toMatch(/letters signed Shoghi/);
   });
 });
+
+describe('editor label variants', () => {
+  it('maps "narrator/editor" too', async () => {
+    const { canonical, EDITOR } = await import('../../api/lib/authorship/window.js');
+    expect(canonical('narrator/editor')).toBe(EDITOR);
+    expect(canonical('the editor or reporter')).toBe(EDITOR);
+  });
+});

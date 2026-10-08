@@ -18,7 +18,7 @@ export const EDITOR = 'the editor or reporter';
 export function canonical(name, roster = []) {
   const n = String(name || '').trim().replace(/\s+/g, ' ');
   if (!n) return null;
-  if (/^(the )?(narrator|editor|reporter|recorder|compiler'?s? (note|narrative)|chronicler|author of (the|this) report)$/i.test(n)) return EDITOR;
+  if (/^(the )?(narrator|editor|reporter|recorder|chronicler|compiler'?s? (note|narrative)|author of (the|this) report)(\s*(\/|or|and)\s*(the )?(narrator|editor|reporter))?$/i.test(n)) return EDITOR;
   for (const [c, re] of ALIASES) if (re.test(n)) return c;
   const fold = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘ʼ`']/g, '').replace(/^the /i, '').toLowerCase();
   return roster.find((r) => fold(r) === fold(n)) || n;
