@@ -19,13 +19,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(ROOT, f), quiet: true });
 const { ask } = await import('../../api/lib/systemone.js');
 const { chatCompletion } = await import('../../api/lib/ai.js');
-const VALUED = ['--min', '--step', '--passes', '--gold'];
+const VALUED = ['--min', '--step', '--passes', '--gold', '--backend'];
 const args = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && !VALUED.includes(all[i - 1]));
 const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : d);
 const [OUT, ...IDS] = args;
 const MIN = Number(opt('--min', 0.7)), STEP = Number(opt('--step', 10)), PASSES = Number(opt('--passes', 2));
 const GOLD = opt('--gold', null) ? JSON.parse((await import('fs')).readFileSync(opt('--gold'), 'utf-8')).items : null;
 const TASK = 'paragraph-speaker-window', BACK = 5, AHEAD = 5;
+const BACKEND = opt('--backend', null);   // force jev | clef | clef-flash | laya for this run (scored like any other)
 // --hybrid: a speaker the reader took from evidence on the page is fixed (shown, not asked); only its quotes are asked
 const HYBRID = process.argv.includes('--hybrid');
 const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work']);
@@ -57,7 +58,7 @@ async function pass(book, rows, roster, prior) {
     const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
     const ahead = rows.slice(i0 + STEP, i0 + STEP + AHEAD);
     const state = windowState({ book, roster, anchors, targets, ahead });
-    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known)), { ref: targets[0].id, timeoutMs: 40000 });
+    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known)), { ref: targets[0].id, timeoutMs: 40000, ...(BACKEND ? { backend: BACKEND } : {}) });
     cost.calls++; cost.tokens += r.tokens || 0;
     const got = parseAnswers(r.answers, targets.length).map((l, k) => (targets[k].known ? { ...l, speaker: targets[k].known, fixed: true } : l));
     // escalate: unnamed / unsure, and in pass 2 anything that disagrees with pass 1
@@ -138,5 +139,5 @@ for (const id of docs) {
 }
 const keys = ['judged', 'window_ok', 'reader_ok', 'g_n', 'g_speaker', 'g_reader_speaker', 'g_quotes', 'g_detect', 'g_detect_n'];
 const t = Object.fromEntries(keys.map((k) => [k, summary.reduce((a, s) => a + s[k], 0)]));
-console.log(JSON.stringify({ total: t, cost, opts: { MIN, STEP, PASSES }, seconds: Math.round((Date.now() - t0) / 1000) }));
+console.log(JSON.stringify({ total: t, cost, opts: { MIN, STEP, PASSES, BACKEND }, seconds: Math.round((Date.now() - t0) / 1000) }));
 process.exit(0);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T16:02:30.362Z",
+  "generated": "2026-10-08T16:09:04.809Z",
   "entries": [
+    {
+      "hash": "542e7355",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window hybrid also fixes structural lines — a heading is the book's author/compiler, an attribution line its named writer",
+      "scope": "authorship"
+    },
     {
       "hash": "2ed6373e",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "One policy, consulted — not two that must agree",
       "scope": null
-    },
-    {
-      "hash": "2db9f5a1",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "69 chapters, not 24 — I read the wrong index again",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "542e7355",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window hybrid also fixes structural lines — a heading is the book's author/compiler, an attribution line its named writer",
+        "scope": "authorship"
+      },
       {
         "hash": "2ed6373e",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "One policy, consulted — not two that must agree",
-        "scope": null
-      },
-      {
-        "hash": "2db9f5a1",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "69 chapters, not 24 — I read the wrong index again",
         "scope": null
       }
     ]
