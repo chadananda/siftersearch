@@ -7,7 +7,7 @@
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
 //   dailyDigest    once a day: everything that happened, to the reviewer
 //   reviewPage     GET shows the draft (editable) · POST send | discard. GET never changes anything.
-import { bodyHtml, wrapHtml, signatureHtml, stripSignOff } from './letter.js';
+import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody } from './letter.js';
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
 
@@ -36,7 +36,7 @@ async function reviewId(t, secret) {
 
 /** The thread as Anís's messages: inbound = the reader's own words (quotes removed), sent = Anís's letters. */
 export async function threadMessages(db, threadKey, uptoId = Infinity) {
-  const { results } = await db.prepare(`SELECT id, direction, status, text FROM mail_messages WHERE thread_key = ? AND mailbox = 'anis'
+  const { results } = await db.prepare(`SELECT id, direction, status, text FROM mail_messages WHERE thread_key = ? AND mailbox IN ('anis', 'support')
     AND ((direction = 'in' AND status NOT IN ('spam', 'auto')) OR (direction = 'out' AND status = 'sent')) ORDER BY id`).bind(threadKey).all();
   return results.filter((m) => m.id <= uptoId).map((m) => ({
     role: m.direction === 'in' ? 'user' : 'assistant',
@@ -105,6 +105,34 @@ export async function draftReplies(env, limit = 4) {
 export const fillTemplate = (body, { name, asked_by: askedBy } = {}) => String(body)
   .replace(/\{\{greeting\}\}/g, name ? `Hello ${String(name).trim()},` : 'Hello,')
   .replace(/\{\{intro\}\}/g, askedBy ? `${String(askedBy).trim()} asked me to reach out and introduce myself. ` : '');
+
+const fill = (t, v) => String(t).replace(/\{\{(\w+)\}\}/g, (m, k) => (k in v ? v[k] : m));
+
+/**
+ * A support letter (Chad hands Anís an Ocean support email, approves the answer): record their question (mailbox
+ * 'support'), invite them (asked_by), send ONE letter — the welcome version if Anís has never written to them, else a
+ * short reply. Chad's approval is the approval; the engagement rules still apply.
+ * b: { to, name?, subject, question, answer (Markdown — a full Anís letter is trimmed to its middle), about? }
+ */
+export async function supportLetter(env, b) {
+  const db = env.ANIS_DB;
+  const to = String(b.to || '').trim().toLowerCase();
+  if (!to.includes('@') || !b.question || !b.answer) return { error: 'to, question, answer required' };
+  const key = `<support-${crypto.randomUUID()}@oceanlibrary.com>`;
+  await db.prepare(`INSERT INTO mail_messages (mailbox, direction, status, message_id, thread_key, from_addr, from_name, to_addr, subject, text)
+    VALUES ('support', 'in', 'handled', ?, ?, ?, ?, 'chad (forwarded)', ?, ?)`).bind(key, key, to, b.name ?? null, b.subject ?? '', b.question).run();
+  await db.prepare(`INSERT INTO mail_allowlist (email, name, asked_by, note) VALUES (?, ?, 'Chad', 'support letter')
+    ON CONFLICT(email) DO UPDATE SET name = coalesce(mail_allowlist.name, excluded.name)`).bind(to, b.name ?? null).run();
+  const welcomed = await db.prepare(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND to_addr = ?`).bind(to).first();
+  const tpl = await db.prepare('SELECT subject, body FROM mail_templates WHERE key = ?').bind(welcomed ? 'support_reply' : 'support_welcome').first();
+  const vars = { greeting: b.name ? `Hello ${String(b.name).trim().split(/\s+/)[0]},` : 'Hello,', about: b.about ? ` about ${b.about}` : '',
+    answer: answerBody(b.answer), subject: (b.subject || 'your letter').replace(/^re:\s*/i, '') };
+  const text = fill(tpl.body, vars);
+  const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, thread_key, error)
+    VALUES ('anis', ?, 'out', 'draft', ?, ?, ?, ?, ?, ?, 'support letter; approved by Chad') RETURNING *`)
+    .bind(welcomed ? 'reply' : 'welcome', FROM_ADDR, to, fill(tpl.subject, vars), text, toHtml(text), key).first();
+  return deliver(env, draft);
+}
 
 /** Welcome letters: once, to each person added to the list who has never written and has no welcome yet (any status —
  *  a discarded welcome is a decision, not a gap). Template from D1 mail_templates. When Chad asked for it (asked_by)
@@ -219,6 +247,7 @@ export async function dailyDigest(env) {
   const count = (xs, k) => xs.reduce((m, x) => ((m[x[k]] = (m[x[k]] || 0) + 1), m), {});
   const fmt = (m) => Object.entries(m).map(([k, n]) => `${k} ${n}`).join(' · ') || 'none';
   const line = (m) => `${m.from_name ? `${m.from_name} <${m.from_addr}>` : m.from_addr} — ${m.subject || '(no subject)'}: ${ownText(m.text).replace(/\s+/g, ' ').slice(0, 160)}`;
+  const support = await all(`SELECT o.to_addr, o.subject, o.status FROM mail_messages o WHERE o.direction = 'out' AND o.error LIKE 'support letter%' AND o.created_at > ${since}`);
   const real = (box) => inbound.filter((m) => m.mailbox === box && !['spam', 'auto'].includes(m.status) && m.status !== 'unsubscribe');
   const unsubs = inbound.filter((m) => m.mailbox === 'newsletter' && m.status === 'unsubscribe');
   const links = await Promise.all(pending.map(async (p) => `  • ${p.kind} to ${p.to_addr} — ${p.subject}\n    ${await reviewUrl(p.id, env.MAIL_LINK_SECRET)}`));
@@ -229,6 +258,7 @@ export async function dailyDigest(env) {
     `Drafts waiting for you: ${pending.length}`, ...links,
     '',
     `Received at anis@: ${fmt(count(inbound.filter((m) => m.mailbox === 'anis'), 'status'))}`, ...real('anis').map((m) => `  • ${line(m)}`),
+    ...(support.length ? [`Support letters answered by Anís (${support.length}):`, ...support.map((x) => `  • ${x.status}: ${x.to_addr} — ${x.subject}`)] : []),
     `Newsletter replies: ${fmt(count(inbound.filter((m) => m.mailbox === 'newsletter'), 'status'))}`, ...real('newsletter').map((m) => `  • ${line(m)}`),
     ...(unsubs.length ? [`Newsletter unsubscribe requests — pass to the team (${unsubs.length}):`, ...unsubs.map((m) => `  • ${m.from_addr}`)] : []),
     '',

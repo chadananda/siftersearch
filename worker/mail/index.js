@@ -14,7 +14,7 @@ import PostalMime from 'postal-mime';
 import { verifySns, isAmazonUrl } from './sns.js';
 import { composeLetter } from './letter.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
-import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest } from './drafting.js';
+import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter } from './drafting.js';
 
 const REGION = 'us-west-2';
 const ACCOUNT = '409305238362';
@@ -123,7 +123,7 @@ async function inbound(request, env) {
   await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_messages (mailbox, direction, status, ses_message_id, message_id, in_reply_to, thread_key,
       from_addr, from_name, to_addr, subject, text, html, s3_key, spam_verdict, virus_verdict)
     VALUES (?, 'in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(mailbox, status, body.mail?.messageId ?? null, mail.messageId ?? null,
-    mail.inReplyTo ?? null, threadKey(mail), lower(mail.from?.address), mail.from?.name ?? null,
+    mail.inReplyTo ?? null, await adoptThread(env.ANIS_DB, mail), lower(mail.from?.address), mail.from?.name ?? null,
     (mail.to || []).map((t) => lower(t.address)).join(', '), mail.subject ?? '', mail.text ?? '', mail.html ?? null,
     act.objectKey, spam ?? null, virus ?? null).run();
   if (mailbox === 'anis' && status === 'unsubscribe' && mail.from?.address) {     // "stop writing to me" ends outreach
@@ -214,7 +214,7 @@ export async function sendFacts(db, row, settings = {}) {
   const one = (sql, ...a) => db.prepare(sql).bind(...a).first();
   const { results: rules } = await db.prepare('SELECT pattern FROM mail_ignore').all();
   const inbound = await one(`SELECT count(*) n, julianday('now') - julianday(max(created_at)) days, max(created_at) last FROM mail_messages
-    WHERE direction = 'in' AND mailbox = 'anis' AND from_addr = ? AND status NOT IN ('spam', 'auto')`, addr);
+    WHERE direction = 'in' AND mailbox IN ('anis', 'support') AND from_addr = ? AND status NOT IN ('spam', 'auto')`, addr);
   return {
     kind: row.kind ?? (row.in_reply_to ? 'reply' : 'outreach'),
     suppressed: !!(await one('SELECT 1 x FROM mail_suppression WHERE email = ?', addr)),
@@ -277,7 +277,29 @@ export function mailRoute(request, env) {
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/pause') return pausePage(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/review') return reviewPage(request, env);
   if (request.method === 'POST' && p === '/_mail/run') return runJob(request, env);
+  if (request.method === 'POST' && p === '/_mail/support') return support(request, env);
   return null;
+}
+
+/** A support letter Chad approved (drafting.js supportLetter). Internal key. */
+async function support(request, env) {
+  if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
+  let b; try { b = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+  const r = await supportLetter(env, b);
+  return json(r, r.error ? (r.status ? 502 : 400) : r.status === 'blocked' ? 409 : 200);
+}
+
+/** A reply to one of our letters belongs to that letter's thread: References/In-Reply-To carry the SES Message-ID
+ *  (<ses-id@region.amazonses.com>) of what we sent. */
+async function adoptThread(db, mail) {
+  const ids = `${mail.references || ''} ${mail.inReplyTo || ''}`.match(/<[^>]+>/g) || [];
+  for (const id of ids) {
+    const local = id.slice(1, -1).split('@')[0];
+    const hit = await db.prepare(`SELECT thread_key FROM mail_messages WHERE (direction = 'out' AND ses_message_id = ?) OR message_id = ? LIMIT 1`)
+      .bind(local, id).first();
+    if (hit?.thread_key) return hit.thread_key;
+  }
+  return threadKey(mail);
 }
 
 /** Run a cron job now (internal key): ?job=draft|outreach|digest — for testing without waiting for the clock. */

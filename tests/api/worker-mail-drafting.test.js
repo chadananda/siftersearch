@@ -61,3 +61,12 @@ describe('signature', async () => {
     expect(html.indexOf('AI Research Assistant for Ocean 2.0')).toBeLessThan(html.indexOf('Rather not hear'));
   });
 });
+
+describe('support letters', async () => {
+  const { answerBody } = await import('../../worker/mail/letter.js');
+  it("sets an Anís letter's middle inside another: salutation and closing removed", () => {
+    expect(answerBody('Dear friend,\n\nThe passage reads…\n\nI hope this helps.\n\nWarmly,\nAnis')).toBe('The passage reads…\n\nI hope this helps.');
+    expect(answerBody('The passage reads…')).toBe('The passage reads…');
+    expect(answerBody('Dear Leila,\nYes.\nWith warm regards,\n— Anís')).toBe('Yes.');
+  });
+});

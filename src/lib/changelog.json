@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:37:30.850Z",
+  "generated": "2026-10-08T03:42:57.639Z",
   "entries": [
+    {
+      "hash": "afcb992e",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Anís letter look — signature in large italic Palatino ('— Anís' over 'AI Research Assistant for Ocean 2.0') on every letter, styled body with RTL passages; invite-only: letters to invited people send at once (auto_send_invited), welcome says who asked ('Chad asked me to reach out…') and goes at once when asked; others still drafted for Chad",
+      "scope": "mail"
+    },
     {
       "hash": "94b822ef",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "All 11 CTAI works bound, and resolve the duplicate BEFORE aligning",
       "scope": null
-    },
-    {
-      "hash": "143b8336",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "The truncation guard must probe one BEYOND the ceiling, not test the ceiling itself",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "afcb992e",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Anís letter look — signature in large italic Palatino ('— Anís' over 'AI Research Assistant for Ocean 2.0') on every letter, styled body with RTL passages; invite-only: letters to invited people send at once (auto_send_invited), welcome says who asked ('Chad asked me to reach out…') and goes at once when asked; others still drafted for Chad",
+        "scope": "mail"
+      },
       {
         "hash": "94b822ef",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "All 11 CTAI works bound, and resolve the duplicate BEFORE aligning",
-        "scope": null
-      },
-      {
-        "hash": "143b8336",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "The truncation guard must probe one BEYOND the ceiling, not test the ceiling itself",
         "scope": null
       }
     ]

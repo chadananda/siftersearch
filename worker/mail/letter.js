@@ -37,3 +37,12 @@ export function composeLetter(md, pauseUrl) {
   const html = wrapHtml(`${bodyHtml(body)}${signatureHtml()}<p style="margin:28px 0 0;font-size:12px;color:${MIST}"><a href="${pauseUrl}" style="color:${MIST}">Rather not hear from me?</a></p>`);
   return { text, html };
 }
+
+/** An Anís letter's middle, to set inside another letter: its salutation ("Dear friend,") and closing ("Warmly, Anís")
+ *  removed. */
+export function answerBody(md) {
+  const lines = stripSignOff(md).split('\n');
+  if (/^\s*(dear|hello|hi|greetings|salaam|peace)\b[^\n]{0,60}[,!]?\s*$/i.test(lines[0] || '')) lines.shift();
+  while (lines.length && (/^\s*$/.test(lines.at(-1)) || /^\s*(warmly|warm regards|with warm regards|with love|yours|kind regards|best|blessings|in friendship)[^\n]{0,30}[,.]?\s*$/i.test(lines.at(-1)))) lines.pop();
+  return lines.join('\n').trim();
+}
