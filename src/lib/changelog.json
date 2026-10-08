@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T17:53:27.880Z",
+  "generated": "2026-10-08T18:05:57.695Z",
   "entries": [
+    {
+      "hash": "40415d8c",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window classifier v16 — an unmarked block (prayer, letter body, quoted will) leaves the book's author only when the previous paragraph names AND introduces its speaker, the heading names them, or it continues their block",
+      "scope": "authorship"
+    },
     {
       "hash": "daf7e01e",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A definition is the highest-value thing to retrieve, and the easiest to miss",
       "scope": null
-    },
-    {
-      "hash": "34a9746d",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Write the question a reader types, not a comprehension check",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "40415d8c",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window classifier v16 — an unmarked block (prayer, letter body, quoted will) leaves the book's author only when the previous paragraph names AND introduces its speaker, the heading names them, or it continues their block",
+        "scope": "authorship"
+      },
       {
         "hash": "daf7e01e",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "A definition is the highest-value thing to retrieve, and the easiest to miss",
-        "scope": null
-      },
-      {
-        "hash": "34a9746d",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Write the question a reader types, not a comprehension check",
         "scope": null
       }
     ]

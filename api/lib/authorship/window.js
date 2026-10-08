@@ -185,7 +185,10 @@ export function blockHasEvidence(speaker, { text, prevText = '', prevSpeaker = n
   // mentioning them ("But then Bahá’u’lláh left the world…") is not an introduction
   const p = String(prevText || '').trim();
   const introduces = /[:—–]\s*[”"]?\s*$/.test(p) || /\b(as follows|the following|thus)\b/i.test(p.slice(-160));
-  return (named(p.slice(-400)) && introduces) || named(heading) || named(String(text).slice(-120));
+  // a heading counts only when it attributes ("Address by ‘Abdu’l-Bahá", "Words of…"), not when it names a subject
+  // ("Bahá’u’lláh’s Proclamation to the Kings" passed God Passes By ¶307 to Him)
+  const attributes = /\b(address|talk|discourse|words?|letters?|tablets?|prayers?|writings?|extracts?|by|from|said|says|speech|message)\b/i.test(heading || '');
+  return (named(p.slice(-1500)) && introduces) || (attributes && named(heading)) || named(String(text).slice(-120));
 }
 
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */

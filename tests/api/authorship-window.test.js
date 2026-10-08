@@ -145,3 +145,13 @@ describe('block evidence (v16)', () => {
     expect(blockHasEvidence('Rúmí', { text: 'Thou, both End and Origin,', prevSpeaker: 'Rúmí' })).toBe(true);
   });
 });
+
+describe('block evidence v16b', () => {
+  it('reads the whole introducing paragraph, and only attributing headings', async () => {
+    const { blockHasEvidence } = await import('../../api/lib/authorship/window.js');
+    const intro = 'At one time, Bahá’u’lláh had written down an ode of Rúmí’s for him. ' + 'x '.repeat(300) + 'Ustád would sing these lines:';
+    expect(blockHasEvidence('Rúmí', { text: 'I am lost, O Love,', prevText: intro })).toBe(true);
+    expect(blockHasEvidence('Bahá’u’lláh', { text: 'The French Ambassador, He rebukes', heading: 'Bahá’u’lláh’s Proclamation to the Kings' })).toBe(false);
+    expect(blockHasEvidence('‘Abdu’l-Bahá', { text: 'O noble friends!', heading: 'Address by ‘Abdu’l-Bahá at the City Temple' })).toBe(true);
+  });
+});
