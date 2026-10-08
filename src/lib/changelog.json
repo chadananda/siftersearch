@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T14:04:07.752Z",
+  "generated": "2026-10-08T14:12:17.174Z",
   "entries": [
+    {
+      "hash": "5a7f4c07",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "An OceanLibrary .reference citation that opens with a writer or their work names that writer",
+      "scope": "authorship"
+    },
     {
       "hash": "b7016ebd",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Read Some Answered Questions' original from bahai.org, anchored on the source's own paragraphs",
       "scope": null
-    },
-    {
-      "hash": "046a6c6a",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Make monotonicity a conclusion, not a ratchet — resilience to spurious matches",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "5a7f4c07",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "An OceanLibrary .reference citation that opens with a writer or their work names that writer",
+        "scope": "authorship"
+      },
       {
         "hash": "b7016ebd",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Read Some Answered Questions' original from bahai.org, anchored on the source's own paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "046a6c6a",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Make monotonicity a conclusion, not a ratchet — resilience to spurious matches",
         "scope": null
       }
     ]
