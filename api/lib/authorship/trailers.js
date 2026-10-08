@@ -29,6 +29,16 @@ export const isTrailer = (t) => {
   const bare = x.replace(/[_*]/g, '').match(/^[—–]{1,2}\s*(.{3,60})$|^--\s*(.{3,60})$/);
   return !!bare && PEOPLE.some(([, re]) => { const m = (bare[1] || bare[2]).match(re); return m && m.index === 0; });
 };
+/** A citation line that OPENS with a writer or one of their works names that writer: "Shoghi Effendi, ‘The Advent of
+ *  Divine Justice’, p. 30", "‘Gleanings from the Writings of Bahá’u’lláh’ #155, p. 331" (OceanLibrary `.reference` lines,
+ *  2026-10-08). One that merely mentions a writer inside a title ("Corinne True: Faithful Handmaid of ‘Abdu’l-Bahá, p200")
+ *  does not. → name or null. */
+export function leadsWithWriter(raw) {
+  const t = String(raw).replace(/[_*]/g, '').replace(/^[\s(“"‘'—–-]+/, '');
+  for (const [n, re] of PEOPLE) { const m = t.match(re); if (m && m.index === 0) return n; }
+  for (const [n, re] of WORKS) { const m = t.match(re); if (m && m.index <= 4) return n; }   // "The Kitáb-i-Aqdas", "Tablets of…"
+  return null;
+}
 // Lines that carry no one's words: source notes, dates, addressee brackets, page/compiler notes. Transparent to spans.
 const META = [/^USBN\s*#/i, /^\\?\[(to|To)\s[^\]]+\\?\]$/, /^(Published|Compiled|Reprinted|Cited|Source)\b[^"“”]{0,160}$/i,
   /^[—–-]?\s*(\w+\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+\w+\s+\d{4})\.?$/, /^(Haifa|Akka|‘Akká|Bahjí),?\s+[^.]{0,40}\d{4}\.?$/i, /^\\?=+$/, /^\[pg\.?\s*\d+\]$/i,

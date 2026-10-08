@@ -207,3 +207,17 @@ describe('standard abbreviation trailers', async () => {
     expect(trailingReference('This is discussed at length in SAQ 146')).toBeNull();
   });
 });
+
+describe('leadsWithWriter (OceanLibrary .reference citation lines)', () => {
+  it('names the writer a citation opens with, through markup and quotes', async () => {
+    const { leadsWithWriter } = await import('../../api/lib/authorship/trailers.js');
+    expect(leadsWithWriter('Shoghi Effendi, ‘The Advent of Divine Justice’_,_ p. 30')).toBe('Shoghi Effendi');
+    expect(leadsWithWriter('‘Gleanings from the Writings of Bahá’u’lláh’ #155, p. 331')).toBe('Bahá’u’lláh');
+    expect(leadsWithWriter('The Kitáb-i-Aqdas, par. 42')).toBe('Bahá’u’lláh');
+  });
+  it('ignores a writer named only inside a title', async () => {
+    const { leadsWithWriter } = await import('../../api/lib/authorship/trailers.js');
+    expect(leadsWithWriter('Corinne True: Faithful Handmaid of ‘Abdu’l-Bahá, p200')).toBeNull();
+    expect(leadsWithWriter('The Priceless Pearl, Rúḥíyyih Ḵhánum, p346')).toBeNull();
+  });
+});

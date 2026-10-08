@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { readBook, mixedLead, firstPerson } from '../../api/lib/authorship/reader.js';
-import { isTrailer, isHeading, parseTrailer, isMeta, isNumberedHeading, bylineSpeaker, dialogueSpeaker, opensTalk } from '../../api/lib/authorship/trailers.js';
+import { isTrailer, isHeading, parseTrailer, leadsWithWriter, isMeta, isNumberedHeading, bylineSpeaker, dialogueSpeaker, opensTalk } from '../../api/lib/authorship/trailers.js';
 import { sectionMap, frontmatterAuthors } from '../../api/lib/authorship/sections.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -109,8 +109,9 @@ for (const docId of IDS) {
   const paras = rows.map((r) => {
     const sm = r.ext && secMap ? secMap.get(r.ext) : null;
     let trailer = null;
-    // a file `.reference` line is a trailer only if it is not a bare citation ("Corinne True: Faithful Handmaid of ‘Abdu’l-Bahá, p200")
-    if (isTrailer(r.text) || (sm?.reference && !isMeta(r.text))) {
+    // a file `.reference` line is a trailer unless it is a bare citation ("Corinne True: Faithful Handmaid of ‘Abdu’l-Bahá, p200");
+    // a citation that opens with a writer or their work IS one ("Shoghi Effendi, ‘The Advent of Divine Justice’, p. 30")
+    if (isTrailer(r.text) || (sm?.reference && (!isMeta(r.text) || leadsWithWriter(r.text)))) {
       const t = parseTrailer(r.text);
       if (t.ibid) trailer = lastTrailer ? { ...lastTrailer, date: t.date, ibid: true } : { name: null };   // "(Ibid., …)" = same source
       else trailer = t.name ? t : { name: null, kind: t.kind };

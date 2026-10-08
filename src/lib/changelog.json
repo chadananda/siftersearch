@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T13:55:02.723Z",
+  "generated": "2026-10-08T14:04:07.752Z",
   "entries": [
+    {
+      "hash": "b7016ebd",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "OceanLibrary range links + restore 42 books the export conversion dropped",
+      "scope": "ocean"
+    },
     {
       "hash": "7092e38c",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Make monotonicity a conclusion, not a ratchet — resilience to spurious matches",
       "scope": null
-    },
-    {
-      "hash": "4c2c146e",
-      "date": "2026-08-26",
-      "type": "Fixed",
-      "description": "LargestCluster imported into the wrong route",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "b7016ebd",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "OceanLibrary range links + restore 42 books the export conversion dropped",
+        "scope": "ocean"
+      },
       {
         "hash": "7092e38c",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Make monotonicity a conclusion, not a ratchet — resilience to spurious matches",
-        "scope": null
-      },
-      {
-        "hash": "4c2c146e",
-        "date": "2026-08-26",
-        "type": "Fixed",
-        "description": "LargestCluster imported into the wrong route",
         "scope": null
       }
     ]
