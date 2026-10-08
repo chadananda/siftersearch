@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:42:57.639Z",
+  "generated": "2026-10-08T03:47:35.317Z",
   "entries": [
+    {
+      "hash": "fb6c0679",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Support letters — Ocean support mail Chad hands to Anís: scripts/mail/support.mjs drafts the answer (Anís email turn) for Chad's approval, then POST /_mail/support records the question, invites the person and sends one letter ('Chad asked me to answer your letter…' + the approved answer; a shorter version if Anís has written before); replies to our letters now join their thread; digest lists support letters",
+      "scope": "mail"
+    },
     {
       "hash": "afcb992e",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Extraction must accept EITHER disambiguation, and say why it read nothing",
       "scope": null
-    },
-    {
-      "hash": "04ef3d6a",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "All 11 CTAI works bound, and resolve the duplicate BEFORE aligning",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "fb6c0679",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Support letters — Ocean support mail Chad hands to Anís: scripts/mail/support.mjs drafts the answer (Anís email turn) for Chad's approval, then POST /_mail/support records the question, invites the person and sends one letter ('Chad asked me to answer your letter…' + the approved answer; a shorter version if Anís has written before); replies to our letters now join their thread; digest lists support letters",
+        "scope": "mail"
+      },
       {
         "hash": "afcb992e",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Extraction must accept EITHER disambiguation, and say why it read nothing",
-        "scope": null
-      },
-      {
-        "hash": "04ef3d6a",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "All 11 CTAI works bound, and resolve the duplicate BEFORE aligning",
         "scope": null
       }
     ]

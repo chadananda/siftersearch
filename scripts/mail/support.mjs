@@ -22,7 +22,17 @@ const post = async (url, body) => {
   return out;
 };
 
+/** A deploy restarts the API (updater); wait for GET /health before calling it, up to 3 minutes. */
+async function apiReady(base) {
+  for (let i = 0; i < 36; i++) {
+    try { if ((await fetch(`${base}/health`, { signal: AbortSignal.timeout(5000) })).ok) return; } catch { /* starting */ }
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+  throw new Error(`${base}/health not ready after 3 minutes`);
+}
+
 if (cmd === 'draft') {
+  await apiReady(`http://localhost:${process.env.API_PORT || 7839}`);
   const r = await post(`http://localhost:${process.env.API_PORT || 7839}/api/v1/anis/draft`,
     { messages: [{ role: 'user', content: c.question }], email: c.to });
   c.answer = r.reply;
