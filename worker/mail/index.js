@@ -6,7 +6,7 @@
 //   GET  /_mail/messages     internal key; ?mailbox=anis|newsletter &status=&direction=&limit=
 //   GET|POST /_mail/pause    footer / List-Unsubscribe one-click: stops all outreach to that address (no login)
 //   GET|POST /_mail/review   Chad's signed review page for one draft: edit, send or discard (drafting.js)
-//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js)
+//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js); POST /_mail/run?job= runs one now
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 /* global btoa */
 import { AwsClient } from 'aws4fetch';
@@ -274,7 +274,18 @@ export function mailRoute(request, env) {
   if (request.method === 'GET' && p === '/_mail/messages') return list(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/pause') return pausePage(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/review') return reviewPage(request, env);
+  if (request.method === 'POST' && p === '/_mail/run') return runJob(request, env);
   return null;
+}
+
+/** Run a cron job now (internal key): ?job=draft|outreach|digest — for testing without waiting for the clock. */
+async function runJob(request, env) {
+  if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
+  const job = new URL(request.url).searchParams.get('job');
+  const fn = { draft: draftReplies, outreach: planOutreach, digest: dailyDigest }[job];
+  if (!fn) return json({ error: 'job must be draft | outreach | digest' }, 400);
+  await fn(env);
+  return json({ ran: job });
 }
 
 /** Cron (wrangler.jsonc triggers): drafts every 5 min, outreach hourly, the digest daily at 14:00 UTC (7 am Pacific). */

@@ -9,7 +9,7 @@ Each file registers a route group. `api/index.js` mounts them under `/api/v1/`.
 - `librarian.js` — public library browsing endpoints.
 - `documents.js` — single-doc retrieval, slug resolution, content delivery.
 - `services.js` — TTS, narration, on-demand transformations.
-- `anis.js` — Anís letters (`/api/v1/anis`): the signed footer pause link (GET confirm page, POST pause). No sign-in.
+- `anis.js` — Anís letters (`/api/v1/anis`): the signed footer pause link (GET confirm page, POST pause), and internal-key `/draft` + `/outreach` that write letters for the Worker's mail system (worker/mail/).
 - `content.js` — DB-backed page CRUD (`/api/v1/pages`). Public reads + admin-key writes.
 
 ## Auth + user
