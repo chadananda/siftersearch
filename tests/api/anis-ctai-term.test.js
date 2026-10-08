@@ -45,6 +45,15 @@ describe('resolving a spelling', () => {
   });
 });
 
+describe('spellings', async () => {
+  const { spellings } = await import('../../api/lib/anis/ctai-term.js');
+  it('searches the Persian and the Arabic letters', () => {
+    expect(spellings('ایقان')).toEqual(['ایقان', 'ايقان']);
+    expect(spellings('عرفان')).toEqual(['عرفان']);
+    expect(spellings('کلمه')).toEqual(['کلمه', 'كلمه']);
+  });
+});
+
 describe('counting renderings of the word itself', () => {
   it('a label is the rendering itself, not the words the alignment dragged along', async () => {
     const { renderingLabel } = await import('../../api/lib/anis/ctai-term.js');

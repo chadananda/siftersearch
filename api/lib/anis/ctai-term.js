@@ -79,16 +79,24 @@ export function renderingCounts(results = []) {
     .sort((a, b) => b.count - a.count);
 }
 
+/** Arabic and Persian keyboards spell ی/ي and ک/ك differently and CTAI does not fold them (ایقان 6 passages, ايقان 22):
+ *  search every spelling and merge. */
+export const spellings = (term) => [...new Set([term, term.replace(/ی/g, 'ي').replace(/ک/g, 'ك'), term.replace(/ي/g, 'ی').replace(/ك/g, 'ک')])];
+
 /** CTAI → { term, root, transliteration, meaning, renderings[{en,count}], counted, total, researchUrl, passages[] } or null. */
 export async function ctaiTerm(term, { fetchImpl = fetch, key = config.ctai?.apiKey, base = config.ctai?.apiUrl || `${SITE}/api/v1`, limit = 10 } = {}) {
   if (!key) return null;
   const auth = { authorization: `Bearer ${key}` };
-  const [conc, pas] = await Promise.all([
+  const getPassages = (q) => fetchImpl(`${base}/passages?${new URLSearchParams({ q, in: 'source', limit: '100' })}`, { headers: auth, signal: AbortSignal.timeout(25000) })
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const [conc, ...found] = await Promise.all([
     fetchImpl(`${base}/concordance`, { method: 'POST', headers: { ...auth, 'content-type': 'application/json' },
       body: JSON.stringify({ phrase: term, detail: 'compact', exemplars: 0 }), signal: AbortSignal.timeout(25000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-    fetchImpl(`${base}/passages?${new URLSearchParams({ q: term, in: 'source', limit: '100' })}`, { headers: auth, signal: AbortSignal.timeout(25000) })
-      .then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ...spellings(term).map(getPassages),
   ]);
+  const seen = new Set();
+  const merged = found.flatMap((f) => f?.results || []).filter((r) => r.url && !seen.has(r.url) && seen.add(r.url));
+  const pas = found.some(Boolean) ? { results: merged, total: Math.max(merged.length, ...found.map((f) => f?.total || 0)) } : null;
   const t = conc?.terms?.[0] || null;
   const counted = renderingCounts(pas?.results || []);
   const aligned = counted.reduce((n, r) => n + r.count, 0);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T04:25:39.783Z",
+  "generated": "2026-10-08T04:27:46.740Z",
   "entries": [
+    {
+      "hash": "2f369299",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Term-study chart labels are the rendering itself (the alignment can drag neighbouring words along)",
+      "scope": "anis"
+    },
     {
       "hash": "ea2b07d4",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Make the extractor certain WHOSE translation it reads, and count what is still missing",
       "scope": null
-    },
-    {
-      "hash": "9a5ce9cf",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Pool the fetches — I re-introduced the timeout I had already fixed once",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "2f369299",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Term-study chart labels are the rendering itself (the alignment can drag neighbouring words along)",
+        "scope": "anis"
+      },
       {
         "hash": "ea2b07d4",
         "date": "2026-10-07",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Make the extractor certain WHOSE translation it reads, and count what is still missing",
-        "scope": null
-      },
-      {
-        "hash": "9a5ce9cf",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Pool the fetches — I re-introduced the timeout I had already fixed once",
         "scope": null
       }
     ]
