@@ -221,6 +221,7 @@ export async function sendFacts(db, row, settings = {}) {
     ignored: ignoredBy([addr], rules.map((r) => r.pattern)),
     stopped: !!(await one('SELECT 1 x FROM mail_stop WHERE email_hash = ?', await emailHash(addr))),
     allowlisted: !!(await one('SELECT 1 x FROM mail_allowlist WHERE email = ?', addr)),
+    welcomed: !!(await one(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND kind = 'welcome' AND status = 'sent' AND to_addr = ?`, addr)),
     inboundCount: inbound?.n ?? 0,
     // cadence_unit_minutes (default a day) lets testers run the cadence in minutes; the rules still say 'days'
     daysSinceLastInbound: inbound?.days == null ? Infinity : (inbound.days * 1440) / Number(settings.cadence_unit_minutes || 1440),

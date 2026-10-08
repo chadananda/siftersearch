@@ -51,3 +51,14 @@ describe('pause token', () => {
     expect(await verifyPauseToken('junk', 's3cret')).toBeNull();
   });
 });
+
+describe('welcome letter', () => {
+  const w = { ...base, kind: 'welcome', inboundCount: 0, allowlisted: true, welcomed: false };
+  it('once, to someone on the list, while outreach is on', () => {
+    expect(sendDecision(w, on).ok).toBe(true);
+    expect(sendDecision(w, DEFAULTS).reason).toMatch(/switched off/);
+    expect(sendDecision({ ...w, welcomed: true }, on).reason).toMatch(/already/);
+    expect(sendDecision({ ...w, allowlisted: false }, on).reason).toMatch(/list/);
+    expect(sendDecision({ ...w, stopped: true }, on).reason).toMatch(/paused/);
+  });
+});

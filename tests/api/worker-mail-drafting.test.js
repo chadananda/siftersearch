@@ -1,7 +1,7 @@
 // Anís letters: outreach prompts by step, Markdown → email HTML, signed review links.
 import { describe, it, expect } from 'vitest';
 import { outreachPrompt, CAPABILITIES } from '../../api/lib/anis/outreach.js';
-import { toHtml, reviewUrl, tidy } from '../../worker/mail/drafting.js';
+import { toHtml, reviewUrl, tidy, fillTemplate } from '../../worker/mail/drafting.js';
 
 describe('outreach prompts', () => {
   it('steps 0–1 show a capability on their subject; later steps follow up', () => {
@@ -31,5 +31,12 @@ describe('letters', () => {
     expect(a).toMatch(/\/_mail\/review\?t=12\.[a-f0-9]{32}$/);
     expect(a).not.toBe(c);
     expect(b.split('.')[1]).not.toBe(a.split('.')[1]);
+  });
+});
+
+describe('templates', () => {
+  it('greets by name when known', () => {
+    expect(fillTemplate('{{greeting}}\n\nI am Anís.', { name: 'Leila' })).toBe('Hello Leila,\n\nI am Anís.');
+    expect(fillTemplate('{{greeting}}', {})).toBe('Hello,');
   });
 });

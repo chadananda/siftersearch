@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:22:03.000Z",
+  "generated": "2026-10-08T03:29:24.758Z",
   "entries": [
+    {
+      "hash": "dc2abbdd",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Letters sign as Anís; footnote markers copied from passages are removed from drafts",
+      "scope": "mail"
+    },
     {
       "hash": "26759e9e",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Measure every pair count, and make a truncated fetch impossible to mistake for a full one",
       "scope": null
-    },
-    {
-      "hash": "980b2548",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Derive translation authority from the SOURCE, not from roster membership",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "dc2abbdd",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Letters sign as Anís; footnote markers copied from passages are removed from drafts",
+        "scope": "mail"
+      },
       {
         "hash": "26759e9e",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Measure every pair count, and make a truncated fetch impossible to mistake for a full one",
-        "scope": null
-      },
-      {
-        "hash": "980b2548",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Derive translation authority from the SOURCE, not from roster membership",
         "scope": null
       }
     ]

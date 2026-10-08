@@ -1,7 +1,8 @@
 // Anís's letters, end to end, on Cloudflare (cron in worker/index.js). Tower only researches and writes; every letter
 // is a DRAFT that Chad approves on a signed review page before the engagement rules (rules.js) let it go.
 //   draftReplies   every 5 min: new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → draft → review notice
-//   planOutreach   hourly, only while outreach_enabled = on: who is due by the rules → tower /anis/outreach → draft
+//   planOutreach   hourly, only while outreach_enabled = on: welcome letters (template) for people added to the list with
+//                  no history; then who is due by the rules → tower /anis/outreach → draft
 //   dailyDigest    once a day: everything that happened, to the reviewer
 //   reviewPage     GET shows the draft (editable) · POST send | discard. GET never changes anything.
 import { marked } from 'marked';
@@ -48,7 +49,7 @@ async function tower(env, path, body) {
 
 async function notifyReviewer(env, settings, draft, source) {
   const link = await reviewUrl(draft.id, env.MAIL_LINK_SECRET);
-  const kind = draft.kind === 'outreach' ? 'Letter Anís wants to start' : 'Reply';
+  const kind = { outreach: 'Letter Anís wants to start', welcome: 'Welcome letter' }[draft.kind] || 'Reply';
   const text = `${kind} to ${draft.to_addr} — review and send:\n${link}\n\n` +
     (source ? `THEY WROTE (${source.subject}):\n${ownText(source.text).slice(0, 1500)}\n\n` : '') + `DRAFT:\n${draft.text}`;
   const html = `<p><b>${esc(kind)}</b> to ${esc(draft.to_addr)} — <a href="${link}">review and send</a></p>` +
@@ -87,11 +88,33 @@ export async function draftReplies(env, limit = 4) {
   }
 }
 
+/** Fill a letter template: {{greeting}} → "Hello Name," or "Hello,". */
+export const fillTemplate = (body, { name } = {}) => String(body).replace(/\{\{greeting\}\}/g, name ? `Hello ${String(name).trim()},` : 'Hello,');
+
+/** Welcome letters: once, to each person added to the list who has never written and has no welcome yet (any status —
+ *  a discarded welcome is a decision, not a gap). Template from D1 mail_templates. */
+async function planWelcomes(env, settings) {
+  const db = env.ANIS_DB;
+  const tpl = await db.prepare(`SELECT subject, body FROM mail_templates WHERE key = 'welcome'`).first();
+  if (!tpl) return;
+  const { results } = await db.prepare(`SELECT a.email, a.name FROM mail_allowlist a
+    WHERE NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'in' AND m.from_addr = a.email)
+      AND NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'out' AND m.kind = 'welcome' AND m.to_addr = a.email)`).all();
+  for (const p of results) {
+    if (!sendDecision(await sendFacts(db, { to_addr: p.email, kind: 'welcome' }, settings), settings).ok) continue;
+    const body = fillTemplate(tpl.body, p);
+    const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, error)
+      VALUES ('anis', 'welcome', 'out', 'draft', ?, ?, ?, ?, ?, 'welcome template') RETURNING *`).bind(FROM_ADDR, p.email, tpl.subject, body, toHtml(body)).first();
+    await notifyReviewer(env, settings, draft, null);
+  }
+}
+
 /** Letters Anís starts: only while switched on, only to whom the rules allow now, one pending draft per person. */
 export async function planOutreach(env) {
   const db = env.ANIS_DB;
   const settings = await loadSettings(db);
   if (settings.outreach_enabled !== 'on') return;
+  await planWelcomes(env, settings);
   const { results: people } = await db.prepare(`SELECT from_addr, max(id) last_id FROM mail_messages WHERE direction = 'in' AND mailbox = 'anis'
     AND status NOT IN ('spam', 'auto', 'handled') AND from_addr != ? GROUP BY from_addr`).bind(FROM_ADDR).all();
   for (const p of people) {
@@ -151,7 +174,7 @@ export async function reviewPage(request, env) {
   const verdict = sendDecision(await sendFacts(db, d, settings), settings);
   const src = Number((d.error || '').match(/source:(\d+)/)?.[1]);
   const source = src ? await db.prepare('SELECT subject, text, from_name, created_at FROM mail_messages WHERE id = ?').bind(src).first() : null;
-  return page(`<h1>${d.kind === 'outreach' ? 'A letter Anís wants to start' : 'Reply'} to ${esc(d.to_addr)}</h1>
+  return page(`<h1>${{ outreach: 'A letter Anís wants to start', welcome: 'Welcome letter' }[d.kind] || 'Reply'} to ${esc(d.to_addr)}</h1>
 <p class="meta">${esc(d.error || '')}</p>
 ${verdict.ok ? '' : `<p class="warn">The rules would block this right now: ${esc(verdict.reason)}</p>`}
 ${source ? `<h3>${esc(source.from_name || d.to_addr)} wrote (${esc(source.created_at)} UTC)</h3><div class="them">${esc(ownText(source.text))}</div>` : ''}
