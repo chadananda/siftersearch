@@ -155,3 +155,11 @@ describe('block evidence v16b', () => {
     expect(blockHasEvidence('‘Abdu’l-Bahá', { text: 'O noble friends!', heading: 'Address by ‘Abdu’l-Bahá at the City Temple' })).toBe(true);
   });
 });
+
+describe('names with brackets', () => {
+  it('does not build a broken regex from a speaker like "Bahá’í (Writings)"', async () => {
+    const { isNarrated, blockHasEvidence } = await import('../../api/lib/authorship/window.js');
+    expect(() => isNarrated('He said “x”.', 'Compilation (Bahá’í Writings)')).not.toThrow();
+    expect(() => blockHasEvidence('Compilation (Bahá’í Writings)', { text: 'x', prevText: 'y:' })).not.toThrow();
+  });
+});

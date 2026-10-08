@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T18:15:28.955Z",
+  "generated": "2026-10-08T18:30:59.563Z",
   "entries": [
+    {
+      "hash": "bb04c37a",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window run — trailer-prev protected; rollback.jsonl of every written row's previous authors; change-precision log",
+      "scope": "authorship"
+    },
     {
       "hash": "8067e50d",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A way to STOP a run, so iterating does not mean waiting it out",
       "scope": null
-    },
-    {
-      "hash": "691b1e10",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The unit of work is a paragraph, not a segment — cc finally means something",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "bb04c37a",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window run — trailer-prev protected; rollback.jsonl of every written row's previous authors; change-precision log",
+        "scope": "authorship"
+      },
       {
         "hash": "8067e50d",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "A way to STOP a run, so iterating does not mean waiting it out",
-        "scope": null
-      },
-      {
-        "hash": "691b1e10",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The unit of work is a paragraph, not a segment — cc finally means something",
         "scope": null
       }
     ]

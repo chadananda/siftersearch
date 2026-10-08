@@ -146,8 +146,8 @@ const STOP = /^(mirza|haji|hajji|mulla|siyyid|shaykh|the|khan|and|of|sir|mr|mrs|
 export function isNarrated(text, speaker) {
   // possessives drop first: "an ode of Rúmí’s" names Rúmí
   const fold = (x) => String(x || '').replace(/[’'ʼ]s\b/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
-  const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length >= 3 && !STOP.test(w));   // "Báb" counts
-  const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w}\\b`).test(f)); };
+  const words = fold(speaker).split(/[\s,()\[\]-]+/).filter((w) => w.length >= 3 && !STOP.test(w));   // "Báb" counts
+  const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f)); };
   if (!/[“"]/.test(text)) return named(text);                        // unmarked: a letter's writer does not name themself
   const out = outsideQuotes(text);
   if (SPEECH.test(out)) return true;                                  // “…,” he said. “…” — however short the tag
@@ -179,8 +179,8 @@ export function blockHasEvidence(speaker, { text, prevText = '', prevSpeaker = n
   if (prevSpeaker && prevSpeaker === speaker) return true;              // continues a block already theirs
   // possessives drop first: "an ode of Rúmí’s" names Rúmí
   const fold = (x) => String(x || '').replace(/[’'ʼ]s\b/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
-  const words = fold(speaker).split(/[\s,-]+/).filter((w) => w.length >= 3 && !STOP.test(w));
-  const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w}\\b`).test(f)); };
+  const words = fold(speaker).split(/[\s,()\[\]-]+/).filter((w) => w.length >= 3 && !STOP.test(w));
+  const named = (t) => { const f = fold(t); return words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f)); };
   // the previous paragraph must name them AND introduce the block ("…sing these lines:", "He afterwards wrote:—"); merely
   // mentioning them ("But then Bahá’u’lláh left the world…") is not an introduction
   const p = String(prevText || '').trim();
