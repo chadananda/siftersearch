@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T16:09:04.809Z",
+  "generated": "2026-10-08T16:17:15.407Z",
   "entries": [
+    {
+      "hash": "ff2050a0",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier --backend (score Clef / Clef-flash against the gold directly); iteration log",
+      "scope": "authorship"
+    },
     {
       "hash": "542e7355",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A proof quoted from the ORIGINAL is a proof — and the interpreter paragraph was unconditional",
       "scope": null
-    },
-    {
-      "hash": "8c34eba1",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "One policy, consulted — not two that must agree",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "ff2050a0",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier --backend (score Clef / Clef-flash against the gold directly); iteration log",
+        "scope": "authorship"
+      },
       {
         "hash": "542e7355",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "A proof quoted from the ORIGINAL is a proof — and the interpreter paragraph was unconditional",
-        "scope": null
-      },
-      {
-        "hash": "8c34eba1",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "One policy, consulted — not two that must agree",
         "scope": null
       }
     ]

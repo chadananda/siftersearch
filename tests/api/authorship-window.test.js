@@ -55,3 +55,13 @@ describe('settle + editor label', () => {
     expect(canonical('The reporter')).toBe(EDITOR);
   });
 });
+
+describe('book brief (prompt tuner)', () => {
+  it('reads speakers and rules, drops compilers, shows the rules in the window', async () => {
+    const { parseBrief, windowState, windowQuestions } = await import('../../api/lib/authorship/window.js');
+    const b = parseBrief('{"speakers":[{"name":"the Guardian","recognise":"letters signed Shoghi"},{"name":"Research Department","recognise":"x"}],"rules":["Letters follow a dateline."]}', []);
+    expect(b.speakers.map((x) => x.name)).toEqual(['Shoghi Effendi']);
+    expect(windowState({ book: { title: 'B', author: 'X' }, roster: ['Shoghi Effendi'], anchors: [], targets: [{ text: 't' }], ahead: [], brief: b })).toMatch(/HOW THIS BOOK WORKS: Letters follow a dateline\./);
+    expect(windowQuestions(['Shoghi Effendi'], 1, { author: 'X' }, [], b).s1.criteria['Shoghi Effendi']).toMatch(/letters signed Shoghi/);
+  });
+});

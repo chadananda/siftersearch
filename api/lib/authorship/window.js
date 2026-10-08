@@ -52,8 +52,10 @@ export function condense(t, max = 900) {
 }
 
 /** Window text: anchors (decided, labelled), targets (numbered T1…T10), lookahead (unlabelled). Section headings shown. */
-export function windowState({ book, roster, anchors, targets, ahead }) {
-  const lines = [`BOOK: ${book.title} — catalogued author: ${book.author}`, `KNOWN SPEAKERS: ${roster.join('; ')}`, ''];
+export function windowState({ book, roster, anchors, targets, ahead, brief = null }) {
+  const lines = [`BOOK: ${book.title} — catalogued author: ${book.author}`, `KNOWN SPEAKERS: ${roster.join('; ')}`];
+  if (brief?.rules?.length) lines.push(`HOW THIS BOOK WORKS: ${brief.rules.join(' ')}`);
+  lines.push('');
   let lastHead = null;
   const head = (p) => { if (p.heading && p.heading !== lastHead) { lines.push(`## ${p.heading}`); lastHead = p.heading; } };
   if (anchors.length) lines.push('ALREADY DECIDED:');
@@ -70,9 +72,10 @@ export const isCompiler = (n) => /compil|research department/i.test(String(n || 
 
 /** System-1 questions: per target, speaker and quotes, each a choice over the roster. `known[i]` = a speaker already fixed
  *  by evidence (hybrid): only its quotes are asked. */
-export function windowQuestions(roster, n, book, known = []) {
+export function windowQuestions(roster, n, book, known = [], brief = null) {
   const who = {};
-  for (const r of roster) who[r] = FIGURES.includes(r) ? `words of ${r}${/Shoghi|House/.test(r) ? ' (including letters written on behalf)' : ''}` : r;
+  const how = new Map((brief?.speakers || []).map((x) => [x.name, x.recognise]));
+  for (const r of roster) who[r] = (FIGURES.includes(r) ? `words of ${r}${/Shoghi|House/.test(r) ? ' (including letters written on behalf)' : ''}` : r) + (how.get(r) ? ` — ${how.get(r)}` : '');
   if (!roster.includes(book.author) && book.author) who[book.author] = `${book.author}, the author or compiler, in their own voice`;
   who['the Qur’án'] = 'a verse of the Qur’án'; who['the Bible'] = 'a passage of the Bible';
   who[OTHER] = 'someone not in this list';
@@ -101,6 +104,33 @@ export function settle(l) {
 
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */
 export const needsEscalation = (l, min) => l.speaker === OTHER || l.quotes === OTHER || l.conf < min;
+
+/** PROMPT TUNER (once per book, LLM): from the book's opening and its heading outline, a short brief for System-1 —
+ *  who speaks in this book and how to recognise each, how quotations / letters / extracts are introduced and closed, what
+ *  the headings mean. Chad 10-08: the LLM is "occasional arbitrator, author list extender and … system-1 prompt tuner". */
+export function briefPrompt(book, opening, outline) {
+  return `You are preparing instructions for a fast classifier that will read the book below a few paragraphs at a time and decide, for every paragraph, (1) who is writing or speaking it as a whole and (2) whose words it quotes or whose work it cites.
+
+BOOK: ${book.title} — catalogued author: ${book.author}
+HEADING OUTLINE (sample):
+${outline}
+
+OPENING PARAGRAPHS:
+${opening}
+
+Answer ONLY JSON: {"speakers": [{"name": "…", "recognise": "how to tell a paragraph is theirs"}], "rules": ["…", "…"]}
+- speakers: everyone who speaks or writes whole paragraphs in this book (the author or narrator, people whose letters, talks or writings are reproduced, an editor), with the name as the book gives it.
+- rules: at most 5 short, concrete rules specific to THIS book (e.g. "Each extract is followed by a line naming its source", "Paragraphs after a dateline are the letter's writer's own words until the signature", "The narrator quotes witnesses inside quotation marks; the narrator stays the speaker").`;
+}
+
+export function parseBrief(text, roster) {
+  const m = String(text || '').match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  let j; try { j = JSON.parse(m[0]); } catch { return null; }
+  const speakers = (j.speakers || []).map((x) => ({ name: canonical(x.name, roster), recognise: String(x.recognise || '').slice(0, 200) }))
+    .filter((x) => x.name && !isCompiler(x.name));
+  return { speakers, rules: (j.rules || []).map((r) => String(r).slice(0, 240)).slice(0, 5) };
+}
 
 /** Escalation prompt for the flash LLM: same window, only the flagged targets, answer as JSON with real names. */
 export function escalationPrompt(state, flagged) {

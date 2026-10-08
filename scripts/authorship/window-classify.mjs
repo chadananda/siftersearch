@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { getDoc } from '../../api/lib/docs-repo.js';
-import { initialRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, canonical, settle, OTHER } from '../../api/lib/authorship/window.js';
+import { initialRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, canonical, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 import { OFFICIAL, blocks, officialAuthors, textKey } from './official-sections.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -26,7 +26,8 @@ const [OUT, ...IDS] = args;
 const MIN = Number(opt('--min', 0.7)), STEP = Number(opt('--step', 10)), PASSES = Number(opt('--passes', 2));
 const GOLD = opt('--gold', null) ? JSON.parse((await import('fs')).readFileSync(opt('--gold'), 'utf-8')).items : null;
 const TASK = 'paragraph-speaker-window', BACK = 5, AHEAD = 5;
-const BACKEND = opt('--backend', null);   // force jev | clef | clef-flash | laya for this run (scored like any other)
+const BACKEND = opt('--backend', null);
+const BRIEF = process.argv.includes('--brief');   // v10: one LLM call per book writes System-1's book-specific brief   // force jev | clef | clef-flash | laya for this run (scored like any other)
 // --hybrid: a speaker the reader took from evidence on the page is fixed (shown, not asked); only its quotes are asked
 const HYBRID = process.argv.includes('--hybrid');
 const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work']);
@@ -51,14 +52,26 @@ async function escalate(state, flagged, roster) {
   return parseEscalation(r?.content ?? r, flagged, roster);
 }
 
-async function pass(book, rows, roster, prior) {
+async function makeBrief(book, allRows, roster) {
+  const opening = allRows.slice(0, 40).map((r) => r.text.slice(0, 300)).join('\n');
+  const heads = [...new Set(allRows.map((r) => r.heading).filter(Boolean))];
+  const outline = heads.filter((_, i) => i % Math.max(1, Math.ceil(heads.length / 40)) === 0).slice(0, 40).join('\n');
+  const r = await chatCompletion([{ role: 'user', content: briefPrompt(book, opening, outline) }],
+    { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 900, thinking: false, caller: 'authorship-brief' });
+  cost.llm++;
+  const b = parseBrief(r?.content ?? r, roster);
+  for (const x of b?.speakers || []) if (!roster.includes(x.name)) roster.push(x.name);
+  return b;
+}
+
+async function pass(book, rows, roster, prior, brief = null) {
   const labels = new Array(rows.length).fill(null);
   for (let i0 = 0; i0 < rows.length; i0 += STEP) {
     const targets = rows.slice(i0, i0 + STEP).map((p) => ({ ...p, known: knownSpeaker(p, book) }));
     const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
     const ahead = rows.slice(i0 + STEP, i0 + STEP + AHEAD);
-    const state = windowState({ book, roster, anchors, targets, ahead });
-    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known)), { ref: targets[0].id, timeoutMs: 40000, ...(BACKEND ? { backend: BACKEND } : {}) });
+    const state = windowState({ book, roster, anchors, targets, ahead, brief });
+    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known), brief), { ref: targets[0].id, timeoutMs: 40000, ...(BACKEND ? { backend: BACKEND } : {}) });
     cost.calls++; cost.tokens += r.tokens || 0;
     const got = parseAnswers(r.answers, targets.length).map((l, k) => (targets[k].known ? { ...l, speaker: targets[k].known, fixed: true } : l));
     // escalate: unnamed / unsure, and in pass 2 anything that disagrees with pass 1
@@ -106,14 +119,17 @@ const t0 = Date.now();
 for (const id of docs) {
   const d = await getDoc(id, { follow: false, fields: ['id', 'title', 'author', 'religion'] });
   // the full heading path (chapter › section › extract number) when the ingest kept it, else the innermost heading
-  let rows = db.prepare('SELECT id, paragraph_index pidx, text, heading, block_attrs, authors FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(id)
+  let rows0 = db.prepare('SELECT id, paragraph_index pidx, text, heading, block_attrs, authors FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(id)
     .map((r) => { const path = r.block_attrs ? JSON.parse(r.block_attrs).path : null; return { ...r, heading: path?.length ? path.join(' › ') : r.heading }; });
+  let rows = rows0;
   const gold = GOLD ? new Map(GOLD.filter((g) => g.doc === id).map((g) => [g.pidx, g])) : null;
   if (gold) { const ps = [...gold.keys()]; const lo = Math.min(...ps) - 10, hi = Math.max(...ps) + 10; rows = rows.filter((r) => r.pidx >= lo && r.pidx <= hi); }
   const book = { title: d.title, author: d.author, religion: d.religion };
   const roster = initialRoster(book), base = [...roster];
-  const p1 = await pass(book, rows, roster, null);
-  const p2 = PASSES > 1 ? await pass(book, rows, roster, p1) : p1;
+  const brief = BRIEF ? await makeBrief(book, rows0, roster) : null;   // from the book's own opening, not the gold stretch
+  if (brief) writeFileSync(join(OUT, `${id}.brief.json`), JSON.stringify(brief, null, 1));
+  const p1 = await pass(book, rows, roster, null, brief);
+  const p2 = PASSES > 1 ? await pass(book, rows, roster, p1, brief) : p1;
   const official = gold ? null : await officialMap(id);
   const s = { id, title: d.title.slice(0, 45), paras: rows.length, roster: roster.length, judged: 0, window_ok: 0, reader_ok: 0,
     agree_passes: 0, llm_fixed: p2.filter((l) => l.via === 'llm').length, g_n: 0, g_speaker: 0, g_quotes: 0, g_detect: 0, g_detect_n: 0, g_reader_speaker: 0 };
