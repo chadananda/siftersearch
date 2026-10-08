@@ -43,3 +43,12 @@ describe('window run protects trailer-prev', () => {
     expect(nextAuthors(row([{ name: 'Bahá’u’lláh', role: 'author', basis: 'trailer-prev' }]), { speaker: 'John E. Esslemont' }, { author: 'John E. Esslemont' })).toBeNull();
   });
 });
+
+describe('window run skips no-op author changes', () => {
+  it('leaves a book default (any spelling) or a missing entry alone when the speaker is the book author', () => {
+    const b = { author: "'Abdu'l-Bahá" };
+    expect(nextAuthors(row([{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'book' }]), { speaker: '‘Abdu’l-Bahá' }, b)).toBeNull();
+    expect(nextAuthors(row([]), { speaker: '‘Abdu’l-Bahá' }, b)).toBeNull();
+    expect(nextAuthors(row([{ name: 'Bahá’u’lláh', role: 'author', basis: 'system1' }]), { speaker: '‘Abdu’l-Bahá' }, b).changed).toBe(true);
+  });
+});

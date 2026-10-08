@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T18:30:59.563Z",
+  "generated": "2026-10-08T18:32:16.501Z",
   "entries": [
+    {
+      "hash": "6ffcb1bd",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Escape speaker names in the window classifier's name regexes ('Compilation (Bahá’í Writings)' crashed 3 books)",
+      "scope": "authorship"
+    },
     {
       "hash": "bb04c37a",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "/grounding/stop already existed — I shipped a duplicate and broke every route test",
       "scope": null
-    },
-    {
-      "hash": "31476fdc",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "A way to STOP a run, so iterating does not mean waiting it out",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "6ffcb1bd",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Escape speaker names in the window classifier's name regexes ('Compilation (Bahá’í Writings)' crashed 3 books)",
+        "scope": "authorship"
+      },
       {
         "hash": "bb04c37a",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Fixed",
         "description": "/grounding/stop already existed — I shipped a duplicate and broke every route test",
-        "scope": null
-      },
-      {
-        "hash": "31476fdc",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "A way to STOP a run, so iterating does not mean waiting it out",
         "scope": null
       }
     ]

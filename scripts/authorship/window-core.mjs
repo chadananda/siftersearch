@@ -135,7 +135,10 @@ export function nextAuthors(row, label, book) {
     const isBook = sameAsAuthor(label.speaker, book.author);
     const want = isBook ? { name: book.author, role: 'author', basis: 'book', via: 'window' }
       : { name: label.speaker === EDITOR ? EDITOR : canonical(label.speaker), role: 'author', basis: 'window', confidence: label.conf };
-    if (!own || own.name !== want.name || (own.basis === 'book') !== (want.basis === 'book')) { author = want; changed = true; }
+    // the book's own author needs no entry change: a book default stays as it is (its spelling is the doc's anyway), and a
+    // paragraph with no author entry already falls back to the book (dry run 10-08: 4,259 of 5,371 "changes" were these)
+    const noop = isBook && (!own || own.basis === 'book');
+    if (!noop && (!own || own.name !== want.name || (own.basis === 'book') !== (want.basis === 'book'))) { author = want; changed = true; }
   }
   const speakerName = author?.name;
   const quoted = cur.filter((e) => e.role === 'quoted' && e.basis !== 'window');
