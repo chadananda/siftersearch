@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T11:55:56.147Z",
+  "generated": "2026-10-08T12:13:48.351Z",
   "entries": [
+    {
+      "hash": "b2a8cdc6",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "OceanLibrary multi-author Bahá'í compilations credited to their compiler, not their first author — Lights of Guidance → Helen Hornby (compiler), 29 Research Department compilations → the Research Department, Bahá'í Prayers / Sacred Writings / Japan Will Turn Ablaze → Compilation (Bahá'í Writings); a UHJ letter in them was being treated as Bahá'u'lláh's own work. Authority defaults keep their rank (8 / 7)",
+      "scope": "data"
+    },
     {
       "hash": "200a9fb3",
       "date": "2026-10-07",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Skip books that already have their originals — decided BEFORE any fetch",
       "scope": null
-    },
-    {
-      "hash": "3ef5ccab",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Endpoint for whole-work page alignment (align-ool-work)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-08": [
+      {
+        "hash": "b2a8cdc6",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "OceanLibrary multi-author Bahá'í compilations credited to their compiler, not their first author — Lights of Guidance → Helen Hornby (compiler), 29 Research Department compilations → the Research Department, Bahá'í Prayers / Sacred Writings / Japan Will Turn Ablaze → Compilation (Bahá'í Writings); a UHJ letter in them was being treated as Bahá'u'lláh's own work. Authority defaults keep their rank (8 / 7)",
+        "scope": "data"
+      }
+    ],
     "2026-10-07": [
       {
         "hash": "200a9fb3",
@@ -7043,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Skip books that already have their originals — decided BEFORE any fetch",
-        "scope": null
-      },
-      {
-        "hash": "3ef5ccab",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Endpoint for whole-work page alignment (align-ool-work)",
         "scope": null
       }
     ]
