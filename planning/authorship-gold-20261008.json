@@ -1,5 +1,5 @@
 {
- "about": "Hand-labelled 2026-10-08 (Claude, read in full). speaker: \"@author\" = the book author in their own voice, else a name regex. quotes: regexes for everyone quoted or cited; \"*\" = a person outside the usual roster; [] = none; a leading null = none is also acceptable.",
+ "about": "Hand-labelled 2026-10-08 (Claude, read in full). speaker: \"@author\" = the book author in their own voice, else a name regex. quotes: regexes for everyone quoted or cited; \"*\" = a person outside the usual roster; [] = none; a leading null = none is also acceptable. Corrected 10-08 after reading the full text of 417/303 (quotes past the preview) and allowing indirect speech (404, 308) and a dateline (329).",
  "items": [
   {
    "doc": 21308,
@@ -39,7 +39,10 @@
    "doc": 21308,
    "pidx": 404,
    "speaker": "@author",
-   "quotes": []
+   "quotes": [
+    null,
+    "B[aá]b"
+   ]
   },
   {
    "doc": 21308,
@@ -109,7 +112,9 @@
    "doc": 21308,
    "pidx": 417,
    "speaker": "@author",
-   "quotes": []
+   "quotes": [
+    "Áq[aá]s[ií]|Aqasi|Grand Vaz"
+   ]
   },
   {
    "doc": 21308,
@@ -260,7 +265,9 @@
    "doc": 20878,
    "pidx": 303,
    "speaker": "@author",
-   "quotes": []
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
   },
   {
    "doc": 20878,
@@ -294,7 +301,10 @@
    "doc": 20878,
    "pidx": 308,
    "speaker": "@author",
-   "quotes": []
+   "quotes": [
+    null,
+    "Shoghi|Guardian"
+   ]
   },
   {
    "doc": 20878,
@@ -464,7 +474,10 @@
    "doc": 20878,
    "pidx": 329,
    "speaker": "Marie|Queen",
-   "quotes": []
+   "quotes": [
+    null,
+    "Marie|Queen"
+   ]
   },
   {
    "doc": 20878,

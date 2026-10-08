@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:28:52.653Z",
+  "generated": "2026-10-08T15:34:50.939Z",
   "entries": [
+    {
+      "hash": "05d216b6",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier v3 — a compiler is never an extract's speaker; --hybrid fixes evidence-backed speakers and asks only their quotes",
+      "scope": "authorship"
+    },
     {
       "hash": "f36e8d6b",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The Haykal's original exists — in a series my catalogue never contained",
       "scope": null
-    },
-    {
-      "hash": "b9a7e407",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Summons + Fountain of Wisdom written; the Súriy-i-Haykal is a citation stub, verified against controls",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "05d216b6",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier v3 — a compiler is never an extract's speaker; --hybrid fixes evidence-backed speakers and asks only their quotes",
+        "scope": "authorship"
+      },
       {
         "hash": "f36e8d6b",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The Haykal's original exists — in a series my catalogue never contained",
-        "scope": null
-      },
-      {
-        "hash": "b9a7e407",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Summons + Fountain of Wisdom written; the Súriy-i-Haykal is a citation stub, verified against controls",
         "scope": null
       }
     ]

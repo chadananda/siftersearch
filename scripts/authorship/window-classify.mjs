@@ -36,7 +36,7 @@ mkdirSync(OUT, { recursive: true });
 const cost = { calls: 0, tokens: 0, llm: 0, llm_tokens: 0 };
 async function escalate(state, flagged, roster) {
   const r = await chatCompletion([{ role: 'user', content: escalationPrompt(state, flagged) }],
-    { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 60 * flagged.length + 40, thinking: false, caller: 'authorship-window' });
+    { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 160 * flagged.length + 200, thinking: false, caller: 'authorship-window' });
   cost.llm++; cost.llm_tokens += (r?.usage?.total_tokens || 0);
   return parseEscalation(r?.content ?? r, flagged, roster);
 }
@@ -60,7 +60,8 @@ async function pass(book, rows, roster, prior) {
         for (const n of [v.speaker, v.quotes]) if (n && !roster.includes(n) && n !== OTHER) roster.push(n);   // grows going forward
       }
     }
-    got.forEach((l, k) => { labels[i0 + k] = l; });
+    // "another person" is not an answer: the LLM names them, or the paragraph stays unresolved (null), never 'another person'
+    got.forEach((l, k) => { labels[i0 + k] = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes }; });
   }
   return labels;
 }
@@ -75,13 +76,14 @@ async function officialMap(docId) {
 
 const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`'-]/g, '').toLowerCase();
 const isAuthor = (pred, author) => { const a = fold(author).split(/\s+/)[0], p = fold(pred); return !!p && !!a && (p.includes(a) || a.includes(p.split(/\s+/)[0])); };
-const speakerOk = (pred, g, author) => (g === '@author' ? isAuthor(pred, author) : new RegExp(g, 'i').test(pred || ''));
+const nfc = (x) => String(x || '').normalize('NFC');
+const speakerOk = (pred, g, author) => (g === '@author' ? isAuthor(pred, author) : new RegExp(nfc(g), 'i').test(nfc(pred)));
 function quotesOk(q, g, base) {
   const named = g.filter((x) => x);
   if (!named.length) return q == null;
   if (g[0] === null && q == null) return true;
   if (q == null) return false;
-  return named.some((re) => (re === '*' ? !base.includes(q) : new RegExp(re, 'i').test(q)));
+  return named.some((re) => (re === '*' ? !base.includes(q) : new RegExp(nfc(re), 'i').test(nfc(q))));
 }
 const docs = GOLD ? [...new Set(GOLD.map((g) => g.doc))] : IDS.map(Number);
 const summary = [];
