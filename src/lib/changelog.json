@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:08:33.257Z",
+  "generated": "2026-10-08T03:15:16.316Z",
   "entries": [
+    {
+      "hash": "fb2049f0",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Engagement rules enforced at the one send path — reply vs outreach; outreach kill switch (off), consent (they wrote first), pause/stop, alpha allowlist, cadence 3·5·12·25·44 days then quiet; per-person and global daily caps; signed pause link in every footer + RFC 8058 one-click List-Unsubscribe; an emailed 'unsubscribe' stops outreach. Settings in D1 mail_settings.",
+      "scope": "mail"
+    },
     {
       "hash": "5aa11bf9",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The original's language is per PARAGRAPH, and the Iqan is Persian",
       "scope": null
-    },
-    {
-      "hash": "93f7d71a",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "CTAI is the side-by-side paragraph fetch, nothing more",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "fb2049f0",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Engagement rules enforced at the one send path — reply vs outreach; outreach kill switch (off), consent (they wrote first), pause/stop, alpha allowlist, cadence 3·5·12·25·44 days then quiet; per-person and global daily caps; signed pause link in every footer + RFC 8058 one-click List-Unsubscribe; an emailed 'unsubscribe' stops outreach. Settings in D1 mail_settings.",
+        "scope": "mail"
+      },
       {
         "hash": "5aa11bf9",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "The original's language is per PARAGRAPH, and the Iqan is Persian",
-        "scope": null
-      },
-      {
-        "hash": "93f7d71a",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "CTAI is the side-by-side paragraph fetch, nothing more",
         "scope": null
       }
     ]

@@ -5,12 +5,15 @@
 //                            — every letter passes the engagement rules (rules.js) first; refused → status 'blocked'
 //   GET  /_mail/messages     internal key; ?mailbox=anis|newsletter &status=&direction=&limit=
 //   GET|POST /_mail/pause    footer / List-Unsubscribe one-click: stops all outreach to that address (no login)
+//   GET|POST /_mail/review   Chad's signed review page for one draft: edit, send or discard (drafting.js)
+//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js)
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 /* global btoa */
 import { AwsClient } from 'aws4fetch';
 import PostalMime from 'postal-mime';
 import { verifySns, isAmazonUrl } from './sns.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
+import { reviewPage, draftReplies, planOutreach, dailyDigest } from './drafting.js';
 
 const REGION = 'us-west-2';
 const ACCOUNT = '409305238362';
@@ -140,21 +143,26 @@ async function events(request, env) {
 }
 
 /** Send one message through SES v2 (configuration set 'anis' → events). Suppressed addresses are refused. */
-export async function sendMail(env, { to, subject, text, html, inReplyTo, references }) {
+export async function sendMail(env, { to, subject, text, html, inReplyTo, references, system = false }) {
   const addr = lower(to);
   if (await env.ANIS_DB.prepare('SELECT 1 FROM mail_suppression WHERE email = ?').bind(addr).first()) return { suppressed: true };
+  if (system) return sesSend(env, { addr, subject, text, html, headers: [] });   // notices to Chad: no footer, no rules
   const pause = `${SITE}/_mail/pause?t=${await pauseToken(addr, env.MAIL_LINK_SECRET)}`;
   text = `${text}\n\n—\nAnís, Ocean AI Research Assistant. Rather not hear from me? ${pause}`;
   if (html) html = `${html}<p style="margin-top:2em;font-size:12px;color:#777">Anís, Ocean AI Research Assistant · <a href="${pause}" style="color:#777">Rather not hear from me?</a></p>`;
   const headers = [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }];
   if (inReplyTo) headers.push({ Name: 'In-Reply-To', Value: inReplyTo });
   if (references || inReplyTo) headers.push({ Name: 'References', Value: references || inReplyTo });
+  return sesSend(env, { addr, subject, text, html, headers });
+}
+
+async function sesSend(env, { addr, subject, text, html, headers }) {
   const res = await aws(env, 'ses').fetch(`https://email.${REGION}.amazonaws.com/v2/email/outbound-emails`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       FromEmailAddress: mimeName(FROM_NAME, FROM_ADDR), Destination: { ToAddresses: [addr] }, ConfigurationSetName: CONFIG_SET,
       Content: { Simple: { Subject: { Data: subject, Charset: 'UTF-8' }, Body: { Text: { Data: text, Charset: 'UTF-8' }, ...(html ? { Html: { Data: html, Charset: 'UTF-8' } } : {}) },
-        Headers: headers } },
+        ...(headers.length ? { Headers: headers } : {}) } },
     }),
   });
   const out = await res.json().catch(() => ({}));
@@ -176,20 +184,32 @@ async function send(request, env) {
       VALUES ('anis', ?, 'out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(b.kind ?? (b.inReplyTo ? 'reply' : 'outreach'), FROM_ADDR, lower(b.to), b.subject, b.text, b.html ?? null,
       b.inReplyTo ?? null, b.threadKey ?? b.inReplyTo ?? null).first();
   }
-  const verdict = sendDecision(await sendFacts(db, row), settingsFrom((await db.prepare('SELECT key, value FROM mail_settings').all()).results));
+  const r = await deliver(env, row);
+  return json(r, r.status === 'blocked' ? 409 : r.error ? 502 : 200);
+}
+
+/** Load settings (D1 mail_settings over the defaults). */
+export async function loadSettings(db) { return settingsFrom((await db.prepare('SELECT key, value FROM mail_settings').all()).results); }
+
+/** Send one stored draft through the engagement rules; records the outcome on the row. → { id, status, reason?, ... } */
+export async function deliver(env, row) {
+  const db = env.ANIS_DB;
+  const settings = await loadSettings(db);
+  const verdict = sendDecision(await sendFacts(db, row, settings), settings);
   if (!verdict.ok) {
     await db.prepare(`UPDATE mail_messages SET status = 'blocked', error = ? WHERE id = ?`).bind(verdict.reason, row.id).run();
-    return json({ id: row.id, status: 'blocked', reason: verdict.reason }, 409);
+    return { id: row.id, status: 'blocked', reason: verdict.reason };
   }
   const r = await sendMail(env, { to: row.to_addr, subject: row.subject, text: row.text, html: row.html, inReplyTo: row.in_reply_to, references: row.thread_key });
   const status = r.suppressed ? 'suppressed' : r.error ? 'failed' : 'sent';
   await db.prepare(`UPDATE mail_messages SET status = ?, ses_message_id = ?, error = ?, sent_at = CASE WHEN ? = 'sent' THEN datetime('now') END WHERE id = ?`)
     .bind(status, r.sesMessageId ?? null, r.error ?? null, status, row.id).run();
-  return json({ id: row.id, status, ...r }, r.error ? 502 : 200);
+  return { id: row.id, status, ...r };
 }
 
+
 /** What the rules need to know about one letter's recipient. */
-async function sendFacts(db, row) {
+export async function sendFacts(db, row, settings = {}) {
   const addr = lower(row.to_addr);
   const one = (sql, ...a) => db.prepare(sql).bind(...a).first();
   const { results: rules } = await db.prepare('SELECT pattern FROM mail_ignore').all();
@@ -202,7 +222,8 @@ async function sendFacts(db, row) {
     stopped: !!(await one('SELECT 1 x FROM mail_stop WHERE email_hash = ?', await emailHash(addr))),
     allowlisted: !!(await one('SELECT 1 x FROM mail_allowlist WHERE email = ?', addr)),
     inboundCount: inbound?.n ?? 0,
-    daysSinceLastInbound: inbound?.days ?? Infinity,
+    // cadence_unit_minutes (default a day) lets testers run the cadence in minutes; the rules still say 'days'
+    daysSinceLastInbound: inbound?.days == null ? Infinity : (inbound.days * 1440) / Number(settings.cadence_unit_minutes || 1440),
     outreachSinceLastInbound: (await one(`SELECT count(*) n FROM mail_messages WHERE direction = 'out' AND kind = 'outreach' AND status = 'sent'
       AND to_addr = ? AND sent_at > coalesce(?, '')`, addr, inbound?.last ?? null))?.n ?? 0,
     sentToPersonToday: (await one(`SELECT count(*) n FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND to_addr = ?
@@ -252,5 +273,15 @@ export function mailRoute(request, env) {
   if (request.method === 'POST' && p === '/_mail/send') return send(request, env);
   if (request.method === 'GET' && p === '/_mail/messages') return list(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/pause') return pausePage(request, env);
+  if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/review') return reviewPage(request, env);
   return null;
 }
+
+/** Cron (wrangler.jsonc triggers): drafts every 5 min, outreach hourly, the digest daily at 14:00 UTC (7 am Pacific). */
+export async function mailCron(cron, env) {
+  if (cron === '0 14 * * *') return dailyDigest(env);
+  if (cron === '0 * * * *') return planOutreach(env);
+  return draftReplies(env);                      // */5 (also fires at :00 — each cron has one job, so nothing runs twice)
+}
+
+

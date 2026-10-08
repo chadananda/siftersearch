@@ -24,6 +24,8 @@
   "d1_databases": [
     { "binding": "ANIS_DB", "database_name": "anis", "database_id": "b7f3d052-7c71-4a0f-aa84-3532c2feb52d", "migrations_dir": "worker/d1/anis" }
   ],
+  // Anís mail (worker/mail/drafting.js): drafts every 5 min, outreach planning hourly, daily digest 14:00 UTC.
+  "triggers": { "crons": ["*/5 * * * *", "0 * * * *", "0 14 * * *"] },
   "observability": {
     "enabled": true
   }

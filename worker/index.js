@@ -12,7 +12,7 @@
 // adapter intends, on both v12 and v14.
 import { App } from 'astro/app';
 import { handle } from '@astrojs/cloudflare/handler';
-import { mailRoute } from './mail/index.js';
+import { mailRoute, mailCron } from './mail/index.js';
 
 const API_ORIGIN = 'https://api.siftersearch.com';
 
@@ -93,6 +93,10 @@ export function createExports(manifest) {
           return fetch(target, request);
         }
         return handle(manifest, app, request, env, ctx);
+      },
+      // Cron triggers (wrangler.jsonc): Anís's mail — drafting, outreach, daily digest.
+      async scheduled(event, env, ctx) {
+        ctx.waitUntil(mailCron(event.cron, env));
       },
     },
   };

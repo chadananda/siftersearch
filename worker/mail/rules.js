@@ -13,6 +13,8 @@ export const DEFAULTS = {
   cadence_days: '3,5,12,25,44',       // nth outreach allowed this many days after their last message; then quiet
   per_person_daily_cap: '3',
   global_daily_cap: '200',
+  cadence_unit_minutes: '1440',       // a cadence "day"; set to e.g. 10 to test the whole sequence in an hour
+  reviewer_email: 'chadananda@gmail.com', // drafts for approval + the daily digest
 };
 
 export const settingsFrom = (rows = []) => ({ ...DEFAULTS, ...Object.fromEntries(rows.map((r) => [r.key, r.value])) });
