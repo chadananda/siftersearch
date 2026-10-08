@@ -29,7 +29,16 @@ const TASK = 'paragraph-speaker-window', BACK = 5, AHEAD = 5;
 // --hybrid: a speaker the reader took from evidence on the page is fixed (shown, not asked); only its quotes are asked
 const HYBRID = process.argv.includes('--hybrid');
 const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work']);
-const knownSpeaker = (r) => { if (!HYBRID) return null; const a = JSON.parse(r.authors || '[]').find((e) => e.role === 'author'); return a?.name && STRONG.has(a.basis) ? a.name : null; };
+// structural lines too: a heading is the book's author / compiler speaking; an attribution line speaks for the writer it names
+function knownSpeaker(r, book) {
+  if (!HYBRID) return null;
+  const list = JSON.parse(r.authors || '[]');
+  const a = list.find((e) => e.role === 'author');
+  if (a?.name && STRONG.has(a.basis)) return a.name;
+  if (list.some((e) => e.role === 'heading')) return book.author;
+  const ref = list.find((e) => e.role === 'reference' && e.name);
+  return ref ? ref.name : null;
+}
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 mkdirSync(OUT, { recursive: true });
 
@@ -44,7 +53,7 @@ async function escalate(state, flagged, roster) {
 async function pass(book, rows, roster, prior) {
   const labels = new Array(rows.length).fill(null);
   for (let i0 = 0; i0 < rows.length; i0 += STEP) {
-    const targets = rows.slice(i0, i0 + STEP).map((p) => ({ ...p, known: knownSpeaker(p) }));
+    const targets = rows.slice(i0, i0 + STEP).map((p) => ({ ...p, known: knownSpeaker(p, book) }));
     const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
     const ahead = rows.slice(i0 + STEP, i0 + STEP + AHEAD);
     const state = windowState({ book, roster, anchors, targets, ahead });
