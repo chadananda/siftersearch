@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T12:26:40.388Z",
+  "generated": "2026-10-08T12:32:11.283Z",
   "entries": [
+    {
+      "hash": "7dc8d999",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "A citation naming only a work ('(The Kitáb-i-Aqdas, par. 42)') closes the extracts above it and names its writer through a works map (else the section heading) — extracts were waiting for the next line that named a person",
+      "scope": "authorship"
+    },
     {
       "hash": "74162170",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A double line-shift and an outer range that swallowed a neighbouring work",
       "scope": null
-    },
-    {
-      "hash": "d639ba63",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Segment a continuous original to the English, by comprehension — and three guards before the spend",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "7dc8d999",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "A citation naming only a work ('(The Kitáb-i-Aqdas, par. 42)') closes the extracts above it and names its writer through a works map (else the section heading) — extracts were waiting for the next line that named a person",
+        "scope": "authorship"
+      },
       {
         "hash": "74162170",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "A double line-shift and an outer range that swallowed a neighbouring work",
-        "scope": null
-      },
-      {
-        "hash": "d639ba63",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Segment a continuous original to the English, by comprehension — and three guards before the spend",
         "scope": null
       }
     ]

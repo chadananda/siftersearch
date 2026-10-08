@@ -54,6 +54,7 @@ describe('citations that name only a work', () => {
     expect(workAuthor('(The Advent of Divine Justice, p. 30)')).toBe('Shoghi Effendi');
     expect(workAuthor('(Selections from the Writings of the Báb, 3:2)')).toBe('The Báb');
     expect(workAuthor('(Compilation of Compilations, vol. I)')).toBeNull();
+    expect(workAuthor('(Bahá’u’lláh, quoted in The Advent of Divine Justice, p. 23)')).toBeNull();
     expect(isCitation('(Compilation of Compilations, vol. I)')).toBe(true);
     expect(isCitation('A whole paragraph of ordinary prose (with an aside) that runs on.')).toBe(false);
   });

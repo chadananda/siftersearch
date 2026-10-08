@@ -68,7 +68,8 @@ export const WORKS = [
   [/world order of bah|advent of divine justice|god passes by|promised day is come|dispensation of bah|citadel of faith|messages to america|messages to the bah[aá][’']í world|bah[aá][’']í administration|unfolding destiny|dawn of a new day|arohanui|high endeavours|directives from the guardian|letters from the guardian/i, 'Shoghi Effendi'],
   [/universal house of justice|ri[dḍ]v[aá]n (\d{4} )?message|messages (from|of) the universal house/i, 'Universal House of Justice'],
 ];
-export const workAuthor = (t) => (WORKS.find(([re]) => re.test(t)) || [])[1] || null;
+// "(Bahá’u’lláh, quoted in The Advent of Divine Justice)" — the quoting work is not the writer
+export const workAuthor = (t) => (/\b(quoted|cited) (in|by)\b/i.test(t) ? null : (WORKS.find(([re]) => re.test(t)) || [])[1] || null);
 /** A short line in parentheses: a citation, whether or not it names a person. */
 export const isCitation = (t) => /^\(.{3,300}\)\.?$/.test(String(t).trim());
 
@@ -95,6 +96,11 @@ export function officialAuthors(bl) {
 }
 
 const WEAK = new Set(['book', 'system1']);
+// Books whose OWN attribution lines are known wrong (lost headings + book-only citations: the 10-03 reader carried a later
+// ‘Abdu’l-Bahá line back over Bahá’u’lláh's extracts — 46% agreement with the official edition, 2026-10-08). Here the
+// official section/work attribution also replaces a 'trailer' or 'section' basis. Quotation-heavy books are NOT listed:
+// there the official parse credits the quoting letter, and our copy (crediting the quoted writer) is the better one.
+export const OVERRIDE_STRONG = new Set([20877]);
 const DOCTRINAL = ['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi', 'Universal House of Justice'];
 async function fetchText(url) {
   const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (SifterSearch authorship check)' }, signal: AbortSignal.timeout(60000) });
@@ -120,7 +126,8 @@ async function main() {
       const own = cur.find((e) => e.role === 'author');
       const hit = official.get(textKey(row.text));
       if (hit) r.matched++;
-      if (!own || !WEAK.has(own.basis)) {
+      const overridable = OVERRIDE_STRONG.has(d.id) && own && ['trailer', 'section'].includes(own.basis) && hit && ['official-section', 'official-work'].includes(hit.basis);
+      if ((!own || !WEAK.has(own.basis)) && !overridable) {
         if (hit?.name && own?.name && own.name !== hit.name && r.conflicts_with_strong.length < 8) r.conflicts_with_strong.push({ pidx: row.pidx, ours: `${own.name}/${own.basis}`, official: hit.name, text: row.text.slice(0, 90) });
         if (own) r.kept_strong++;
         continue;
