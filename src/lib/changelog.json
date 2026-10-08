@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:05:08.098Z",
+  "generated": "2026-10-08T15:14:56.192Z",
   "entries": [
+    {
+      "hash": "16590514",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Stray lines left by the block-attrs rework",
+      "scope": "backfill"
+    },
     {
       "hash": "764cd408",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Probe-stems — let the catalogue be the hypothesis space, free",
       "scope": null
-    },
-    {
-      "hash": "5bd3002e",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The Tablets of the Divine Plan DO have a Persian original — per chapter — and stems run in parallel",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "16590514",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Stray lines left by the block-attrs rework",
+        "scope": "backfill"
+      },
       {
         "hash": "764cd408",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Probe-stems — let the catalogue be the hypothesis space, free",
-        "scope": null
-      },
-      {
-        "hash": "5bd3002e",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The Tablets of the Divine Plan DO have a Persian original — per chapter — and stems run in parallel",
         "scope": null
       }
     ]

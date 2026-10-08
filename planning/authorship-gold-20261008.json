@@ -1,0 +1,533 @@
+{
+ "about": "Hand-labelled 2026-10-08 (Claude, read in full). speaker: \"@author\" = the book author in their own voice, else a name regex. quotes: regexes for everyone quoted or cited; \"*\" = a person outside the usual roster; [] = none; a leading null = none is also acceptable.",
+ "items": [
+  {
+   "doc": 21308,
+   "pidx": 400,
+   "speaker": "@author",
+   "quotes": [
+    "Ḥusayn Ḵhán|Husayn Khan|governor"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 401,
+   "speaker": "@author",
+   "quotes": [
+    "B[aá]b",
+    "Qur.?[aá]n",
+    "*"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 402,
+   "speaker": "@author",
+   "quotes": [
+    "*"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 403,
+   "speaker": "@author",
+   "quotes": [
+    "Abdu.l-Ḥam[ií]d|Abdu.l-Hamid"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 404,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 405,
+   "speaker": "@author",
+   "quotes": [
+    "Abdu.l-Ḥam[ií]d|Abdu.l-Hamid"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 406,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 407,
+   "speaker": "@author",
+   "quotes": [
+    "B[aá]b"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 409,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 412,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 413,
+   "speaker": "@author",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h",
+    "Har[aá]t[ií]",
+    "Aḥsá|Ahsa|Aḥmad"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 414,
+   "speaker": "@author",
+   "quotes": [
+    "B[aá]b",
+    "Man[uú]c.?h.?ihr|Mu.?tamid"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 416,
+   "speaker": "@author",
+   "quotes": [
+    "Man[uú]c.?h.?ihr|Mu.?tamid"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 417,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 418,
+   "speaker": "@author",
+   "quotes": [
+    "Asadu.ll[aá]h",
+    "Qur.?[aá]n"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 420,
+   "speaker": "@author",
+   "quotes": [
+    "Man[uú]c.?h.?ihr|Mu.?tamid"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 421,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 422,
+   "speaker": "@author",
+   "quotes": [
+    "Ibr[aá]h[ií]m",
+    "B[aá]b"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 423,
+   "speaker": "@author",
+   "quotes": [
+    "Im[aá]m-Jum|Sul[tṭ][aá]nu"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 424,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 426,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 427,
+   "speaker": "@author",
+   "quotes": [
+    "Man[uú]c.?h.?ihr|Mu.?tamid",
+    "B[aá]b"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 428,
+   "speaker": "@author",
+   "quotes": [
+    "Man[uú]c.?h.?ihr|Mu.?tamid",
+    "B[aá]b",
+    "Qur.?[aá]n"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 429,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 430,
+   "speaker": "@author",
+   "quotes": [
+    "Gurg[ií]n"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 431,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 21308,
+   "pidx": 432,
+   "speaker": "@author",
+   "quotes": [
+    "Gurg[ií]n"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 434,
+   "speaker": "@author",
+   "quotes": [
+    "B[aá]b"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 436,
+   "speaker": "@author",
+   "quotes": [
+    "B[aá]b",
+    "Muḥammad Big|Muhammad Big"
+   ]
+  },
+  {
+   "doc": 21308,
+   "pidx": 439,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 300,
+   "speaker": "@author",
+   "quotes": [
+    "*",
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 301,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 302,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 303,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 304,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 305,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 306,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 307,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 308,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 309,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian",
+    "*"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 310,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 311,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 312,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 313,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 314,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian",
+    "Marie|Queen"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 315,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 316,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 317,
+   "speaker": "@author",
+   "quotes": [
+    "Martha",
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 318,
+   "speaker": "@author",
+   "quotes": [
+    "Martha",
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 319,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 320,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian",
+    "Martha"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 321,
+   "speaker": "@author",
+   "quotes": [
+    "Martha",
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 322,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 323,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 324,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 325,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 326,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 327,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 328,
+   "speaker": "@author",
+   "quotes": [
+    "Shoghi|Guardian",
+    "Marie|Queen"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 329,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 330,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 331,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 332,
+   "speaker": "Marie|Queen",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 20878,
+   "pidx": 333,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 334,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 335,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 336,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 337,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 338,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  },
+  {
+   "doc": 20878,
+   "pidx": 339,
+   "speaker": "Marie|Queen",
+   "quotes": []
+  }
+ ]
+}
