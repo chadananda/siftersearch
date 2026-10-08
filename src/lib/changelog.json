@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T16:45:05.044Z",
+  "generated": "2026-10-08T16:53:50.031Z",
   "entries": [
+    {
+      "hash": "927c193c",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier production runner (resumable per book; --write applies speaker + quoted through the writer, never over evidence / official-edition / structural rows); shared engine window-core.mjs, eval defaults = v10",
+      "scope": "authorship"
+    },
     {
       "hash": "a3ca1acd",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The bilingual path had never produced a single claim",
       "scope": null
-    },
-    {
-      "hash": "b3bdb2f5",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Report WHAT was dropped, not just how many",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "927c193c",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier production runner (resumable per book; --write applies speaker + quoted through the writer, never over evidence / official-edition / structural rows); shared engine window-core.mjs, eval defaults = v10",
+        "scope": "authorship"
+      },
       {
         "hash": "a3ca1acd",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The bilingual path had never produced a single claim",
-        "scope": null
-      },
-      {
-        "hash": "b3bdb2f5",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Report WHAT was dropped, not just how many",
         "scope": null
       }
     ]

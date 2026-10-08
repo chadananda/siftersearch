@@ -51,6 +51,20 @@ export function condense(t, max = 900) {
   return parts.join(' […] ') + (last < t.length ? ' […]' : '');
 }
 
+/** The roster offered in ONE window: the figures, the book's author, the brief's speakers, anyone named in the window's own
+ *  text, then the most recently added — capped. Offering the whole roster (Dawn-Breakers names hundreds) in each of 20
+ *  questions overflowed Jev and quadrupled the cost (dry run 10-08: ~3,400 tokens/¶). */
+export function relevantRoster(roster, text, book, brief, cap = 18) {
+  const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
+  const t = fold(text);
+  const key = (n) => fold(n).split(/[\s,-]+/).filter((w) => w.length > 3 && !/^(mirza|haji|mulla|siyyid|shaykh|the|khan)$/.test(w));
+  const keep = new Set([...FIGURES.filter((f) => roster.includes(f)), ...(book?.author && roster.includes(book.author) ? [book.author] : []),
+    ...(brief?.speakers || []).map((x) => x.name).filter((n) => roster.includes(n))]);
+  for (const n of roster) if (keep.size < cap && key(n).some((w) => t.includes(w))) keep.add(n);
+  for (const n of [...roster].reverse()) { if (keep.size >= cap) break; keep.add(n); }
+  return roster.filter((n) => keep.has(n));
+}
+
 /** Window text: anchors (decided, labelled), targets (numbered T1…T10), lookahead (unlabelled). Section headings shown. */
 export function windowState({ book, roster, anchors, targets, ahead, brief = null }) {
   const lines = [`BOOK: ${book.title} — catalogued author: ${book.author}`, `KNOWN SPEAKERS: ${roster.join('; ')}`];

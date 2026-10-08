@@ -1,7 +1,7 @@
 // Windowed paragraph attribution — the per-book engine shared by the eval (window-classify.mjs) and the production run
 // (window-run.mjs). Defaults = v10, the measured best (planning/window-classifier-log.md): hybrid, one pass, LLM only to
 // name "another person", one LLM brief per book. Runs ON tower (System-1 calls logged per task for Laya, Clef shadowed).
-import { canonical, EDITOR, initialRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical, EDITOR, initialRoster, relevantRoster, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
@@ -43,16 +43,33 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
     return b;
   }
 
+  // one System-1 call for a window; too long for Jev (max_tokens_exceeded) → the window is split in two, never dropped
+  async function askWindow(state, offered, targets, book, b) {
+    try {
+      const r = await ask(TASK, state, windowQuestions(offered, targets.length, book, targets.map((p) => p.known), b),
+        { ref: targets[0].id, timeoutMs: 40000, ...(backend ? { backend } : {}) });
+      cost.calls++; cost.tokens += r.tokens || 0;
+      return r;
+    } catch (e) {
+      if (!/max_tokens|too long|413/i.test(String(e.message || e)) || targets.length < 2) throw e;
+      const h = Math.ceil(targets.length / 2);
+      const shorter = (ts) => windowState({ book, roster: offered, anchors: [], targets: ts, ahead: [], brief: b });
+      const [a, z] = [await askWindow(shorter(targets.slice(0, h)), offered, targets.slice(0, h), book, b), await askWindow(shorter(targets.slice(h)), offered, targets.slice(h), book, b)];
+      const answers = { ...a.answers };
+      for (const [k, v] of Object.entries(z.answers || {})) answers[k.replace(/\d+$/, (n) => String(Number(n) + h))] = v;
+      return { answers, tokens: 0 };
+    }
+  }
+
   async function pass(book, rows, roster, prior, b) {
     const labels = new Array(rows.length).fill(null);
     for (let i0 = 0; i0 < rows.length; i0 += step) {
       const targets = rows.slice(i0, i0 + step).map((p) => ({ ...p, known: hybrid ? knownSpeaker(p, book) : null }));
       const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
       const ahead = rows.slice(i0 + step, i0 + step + AHEAD);
-      const state = windowState({ book, roster, anchors, targets, ahead, brief: b });
-      const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known), b),
-        { ref: targets[0].id, timeoutMs: 40000, ...(backend ? { backend } : {}) });
-      cost.calls++; cost.tokens += r.tokens || 0;
+      const offered = relevantRoster(roster, [...anchors, ...targets, ...ahead].map((p) => p.text).join(' '), book, b);
+      const state = windowState({ book, roster: offered, anchors, targets, ahead, brief: b });
+      const r = await askWindow(state, offered, targets, book, b);
       const got = parseAnswers(r.answers, targets.length).map((l, k) => (targets[k].known ? { ...l, speaker: targets[k].known, fixed: true } : l));
       // the LLM arbitrates: an unnamed person, low confidence (when min > 0), or a pass-2 disagreement
       const flagged = got.map((l, k) => (needsEscalation(l, min) || (prior && prior[i0 + k] && prior[i0 + k].speaker !== l.speaker) ? k : -1)).filter((k) => k >= 0);

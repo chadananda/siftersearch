@@ -73,3 +73,15 @@ describe('editor label variants', () => {
     expect(canonical('the editor or reporter')).toBe(EDITOR);
   });
 });
+
+describe('relevantRoster', () => {
+  it('keeps figures, the author, the brief and names in the text, and caps the rest', async () => {
+    const { relevantRoster } = await import('../../api/lib/authorship/window.js');
+    const roster = ['Bahá’u’lláh', 'The Báb', 'Nabil Zarandi', ...Array.from({ length: 40 }, (_, i) => `Person Number${i}`), 'Manúchihr Ḵhán'];
+    const r = relevantRoster(roster, 'the Mu‘tamid, Manúchihr Ḵhán, said', { author: 'Nabil Zarandi' }, null, 10);
+    expect(r).toContain('Bahá’u’lláh');
+    expect(r).toContain('Nabil Zarandi');
+    expect(r).toContain('Manúchihr Ḵhán');
+    expect(r.length).toBeLessThanOrEqual(10);
+  });
+});
