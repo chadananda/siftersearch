@@ -6,12 +6,13 @@
 //     author (STRONG), an official-edition row (authors_model official-sections*) and heading / reference / meta lines are
 //     never changed. The book's own author keeps the book default entry (one spelling per book in the index).
 //   · quoted — {name, role:'quoted', basis:'window'} (previous window entries replaced; the reader's own kept).
-// authors_model = window-v10-2026-10-08 where the author changed. synced is NOT reset: push-meili-authors.mjs carries
+// authors_model = window-v10-2026-10-08 where the author changed. Every written row's previous authors / authors_model are
+// appended to <out>/rollback.jsonl first, so a run can be undone exactly. synced is NOT reset: push-meili-authors.mjs carries
 // authors to Meili as a two-field partial update afterwards. Dry run unless --write (needs SIFTER_WRITER_URL).
 //   node scripts/authorship/window-run.mjs <out> (<docId> … | --oceanlibrary) [--concurrency 4] [--write] [--limit N]
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { getDoc, listDocs } from '../../api/lib/docs-repo.js';
@@ -72,6 +73,7 @@ async function runBook(id) {
     if (n.changed) stats.author_changed++;
     if (n.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;
     stats.writes++;
+    if (WRITE) appendFileSync(join(OUT, 'rollback.jsonl'), JSON.stringify({ id: r.id, authors: r.authors, authors_model: r.authors_model }) + '\n');
     pending.push(n.changed
       ? { sql: 'UPDATE content SET authors = ?, authors_model = ? WHERE id = ?', args: [JSON.stringify(n.authors), MODEL, r.id] }
       : { sql: 'UPDATE content SET authors = ? WHERE id = ?', args: [JSON.stringify(n.authors), r.id] });

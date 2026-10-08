@@ -35,3 +35,12 @@ Clef ≈ Jev on speaker, a little worse on quotes, slower; Clef-flash clearly wo
 Cost v10: ≈840 Jev tokens/¶ (brief rules + richer criteria), 1 LLM call per book for the brief + LLM in ~5-10% of windows.
 At the logged Jev rate (~$0.043/M tokens): ≈$0.04 per 1,000 ¶ → OceanLibrary (475k ¶) ≈ $17; whole corpus (~4.6M ¶) ≈ $165 before Laya.
 Speed: ≈0.4 s per 10-¶ window, sequential within a book (anchors), parallel across books.
+
+## Change precision (what would be WRITTEN) — spot-checks of 36-46 sampled changes over 6 whole books
+| version | change | change precision (judged) | gold speaker (tune/held/blind) |
+|---|---|---|---|
+| v13 | (baseline) | ~67% (12/36 wrong: quotes introduced in narration credited to the quoted person) | 70/50/45 |
+| v14 | narration guard (speech verbs / name outside quotes), captions & titles no speaker | ~78% | 68/–/– |
+| v15 | guard: no-verb introductions, short tags, third-person narration, 3-letter names; source_link protected | ~87% (prayers in Memorials) | 70/50/45 |
+| v16b | unmarked blocks need an introduction (prev ¶ names AND introduces, attributing heading, continuation) | ~95% (+ trailer-prev protected after) | 70/49/45 |
+Tokens on whole narrative books ≈1,250/¶ (compilations ≈500/¶). God Passes By: 0 changes (all earlier ones were wrong).

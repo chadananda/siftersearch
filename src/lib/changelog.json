@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T18:05:57.695Z",
+  "generated": "2026-10-08T18:15:28.955Z",
   "entries": [
+    {
+      "hash": "8067e50d",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Block evidence reads the whole introducing paragraph; a heading counts only when it attributes (Address by…, Words of…), not when it names a subject",
+      "scope": "authorship"
+    },
     {
       "hash": "40415d8c",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The unit of work is a paragraph, not a segment — cc finally means something",
       "scope": null
-    },
-    {
-      "hash": "472e1417",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "A definition is the highest-value thing to retrieve, and the easiest to miss",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "8067e50d",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Block evidence reads the whole introducing paragraph; a heading counts only when it attributes (Address by…, Words of…), not when it names a subject",
+        "scope": "authorship"
+      },
       {
         "hash": "40415d8c",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The unit of work is a paragraph, not a segment — cc finally means something",
-        "scope": null
-      },
-      {
-        "hash": "472e1417",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "A definition is the highest-value thing to retrieve, and the easiest to miss",
         "scope": null
       }
     ]

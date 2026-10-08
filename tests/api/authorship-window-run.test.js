@@ -37,3 +37,9 @@ describe('window run write rules', () => {
     expect(nextAuthors(row(first.authors), { speaker: 'The Báb', quotes: null, conf: 0.9 }, book)).toBeNull();
   });
 });
+
+describe('window run protects trailer-prev', () => {
+  it('never changes an author the reader took from the previous attribution line', () => {
+    expect(nextAuthors(row([{ name: 'Bahá’u’lláh', role: 'author', basis: 'trailer-prev' }]), { speaker: 'John E. Esslemont' }, { author: 'John E. Esslemont' })).toBeNull();
+  });
+});
