@@ -33,6 +33,22 @@ export function initialRoster({ author, authors = [], religion = '' }) {
 
 const clip = (t, n) => (t.length > n ? `${t.slice(0, n)} […]` : t);
 
+/** A long paragraph shown in full where it matters for attribution: the opening, then every quotation with the words that
+ *  introduce it ("…he exclaimed. “Hear me!”") — cutting at a fixed length hid quotations further in (v1 missed 6 of 30). */
+export function condense(t, max = 900) {
+  if (t.length <= max) return t;
+  const parts = [t.slice(0, 380)];
+  let last = 380;
+  for (const m of t.matchAll(/[“"]([^”"]{8,})[”"]?/g)) {
+    if (m.index < last) continue;
+    const from = Math.max(last, m.index - 90);
+    parts.push(t.slice(from, Math.min(t.length, m.index + 130)));
+    last = m.index + 130;
+    if (parts.length >= 6) break;
+  }
+  return parts.join(' […] ') + (last < t.length ? ' […]' : '');
+}
+
 /** Window text: anchors (decided, labelled), targets (numbered T1…T10), lookahead (unlabelled). Section headings shown. */
 export function windowState({ book, roster, anchors, targets, ahead }) {
   const lines = [`BOOK: ${book.title} — catalogued author: ${book.author}`, `KNOWN SPEAKERS: ${roster.join('; ')}`, ''];
@@ -41,7 +57,7 @@ export function windowState({ book, roster, anchors, targets, ahead }) {
   if (anchors.length) lines.push('ALREADY DECIDED:');
   for (const p of anchors) { head(p); lines.push(`[speaker: ${p.label.speaker || '?'}; quotes: ${p.label.quotes || NONE}] ${clip(p.text, 300)}`); }
   lines.push('', 'TO DECIDE:');
-  targets.forEach((p, i) => { head(p); lines.push(`T${i + 1}: ${clip(p.text, 700)}`); });
+  targets.forEach((p, i) => { head(p); lines.push(`T${i + 1}: ${condense(p.text)}`); });
   if (ahead.length) lines.push('', 'WHAT FOLLOWS (attribution lines often come AFTER the extracts they name):');
   for (const p of ahead) { head(p); lines.push(clip(p.text, 300)); }
   return lines.join('\n');
@@ -57,8 +73,8 @@ export function windowQuestions(roster, n, book) {
   const quotes = { [NONE]: 'quotes or cites no one', ...who };
   const q = {};
   for (let i = 1; i <= n; i++) {
-    q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Whose words are in T${i}? A reference or attribution line belongs to the extracts it names. Use the section heading, the decided paragraphs and the lines that follow.` };
-    q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Inside T${i}, whose words are quoted or whose work is cited (other than the speaker)?` };
+    q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Who is writing or speaking T${i} as a whole? A narrator who reports or quotes someone is still the speaker — the person quoted is NOT. Only when T${i} is entirely someone else's words (the body of their letter, an extract from their writings, their talk) are they the speaker. A reference or attribution line belongs to the extracts it names. Use the section heading, the decided paragraphs and the lines that follow.` };
+    q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Inside T${i}, whose words are quoted (“…”, "he said", "she wrote") or whose work is cited — someone other than the speaker? If several, the one quoted most.` };
   }
   return q;
 }
@@ -77,7 +93,7 @@ export const needsEscalation = (l, min) => l.speaker === OTHER || l.quotes === O
 
 /** Escalation prompt for the flash LLM: same window, only the flagged targets, answer as JSON with real names. */
 export function escalationPrompt(state, flagged) {
-  return `${state}\n\nFor each of ${flagged.map((i) => `T${i + 1}`).join(', ')}, name whose words it is (speaker) and whose words it quotes or whose work it cites (quotes, or null). Use a name from KNOWN SPEAKERS when it is one of them; otherwise give the person's name as the text gives it. A reference or attribution line ("Shoghi Effendi, The Advent of Divine Justice, p. 30", "From a letter written on behalf of…") names the writer of the extracts above it.\nAnswer ONLY JSON: {"T1": {"speaker": "…", "quotes": null}, …}`;
+  return `${state}\n\nFor each of ${flagged.map((i) => `T${i + 1}`).join(', ')}, give the speaker — who writes or speaks the paragraph as a whole; a narrator who reports or quotes someone is still the speaker; only a paragraph that is entirely someone else's words (their letter, extract or talk) has them as speaker — and quotes: whose words are quoted inside it or whose work it cites (the one quoted most), or null. Use a name from KNOWN SPEAKERS when it is one of them; otherwise give the person's name as the text gives it. A reference or attribution line ("Shoghi Effendi, The Advent of Divine Justice, p. 30", "From a letter written on behalf of…") names the writer of the extracts above it.\nAnswer ONLY JSON: {"T1": {"speaker": "…", "quotes": null}, …}`;
 }
 
 export function parseEscalation(text, flagged, roster) {

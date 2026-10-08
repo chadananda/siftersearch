@@ -34,3 +34,14 @@ describe('authorship window', () => {
     expect(parseEscalation('ok {"T2": {"speaker": "the Guardian", "quotes": "Baha\'u\'llah"}}', [1], [])).toEqual({ 1: { speaker: 'Shoghi Effendi', quotes: 'Bahá’u’lláh' } });
   });
 });
+
+describe('condense', () => {
+  it('keeps every quotation of a long paragraph with its lead-in', async () => {
+    const { condense } = await import('../../api/lib/authorship/window.js');
+    const t = 'x'.repeat(1200) + ' The Mu‘tamid could not help giving vent to his joy. “Hear me!” he exclaimed. ' + 'y'.repeat(300);
+    const c = condense(t);
+    expect(c.length).toBeLessThan(t.length);
+    expect(c).toMatch(/giving vent to his joy\. “Hear me!”/);
+    expect(condense('short')).toBe('short');
+  });
+});

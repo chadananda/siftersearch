@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:14:56.192Z",
+  "generated": "2026-10-08T15:18:53.675Z",
   "entries": [
+    {
+      "hash": "f65abaac",
+      "date": "2026-10-08",
+      "type": "Test",
+      "description": "Hand-labelled speaker+quotes gold (Dawn-Breakers, Priceless Pearl) and gold scoring / variant switches for the window classifier",
+      "scope": "authorship"
+    },
     {
       "hash": "16590514",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The compilations, found by probe rather than recalled — and a coverage figure that exceeded 1",
       "scope": null
-    },
-    {
-      "hash": "68a6aef1",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Probe-stems — let the catalogue be the hypothesis space, free",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "f65abaac",
+        "date": "2026-10-08",
+        "type": "Test",
+        "description": "Hand-labelled speaker+quotes gold (Dawn-Breakers, Priceless Pearl) and gold scoring / variant switches for the window classifier",
+        "scope": "authorship"
+      },
       {
         "hash": "16590514",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The compilations, found by probe rather than recalled — and a coverage figure that exceeded 1",
-        "scope": null
-      },
-      {
-        "hash": "68a6aef1",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Probe-stems — let the catalogue be the hypothesis space, free",
         "scope": null
       }
     ]
