@@ -57,12 +57,20 @@ const clip = (text, [s, e] = [0, 0], room = 260) => {
  * inflections grouped (recognize · recognition · recognizing). CTAI's own counts are per ROOT — for عرفان they include
  * ʿarf "fragrance", a different word on the same letters — so they are only the fallback.
  */
+/** One rendering as a label: the alignment can carry neighbouring words ("knowledge,” the “heaven"); keep the head. */
+export function renderingLabel(en) {
+  let t = String(en || '').toLowerCase().replace(/[“”"‘’]/g, '').split(/[,;:.!?()]/)[0].trim();
+  t = t.replace(/^(?:of|the|a|an|to|his|thy|thine|my|its|their|our|her)\s+/g, '').replace(/^(?:of|the|a|an)\s+/, '');
+  const words = t.split(/\s+/).filter(Boolean);
+  return words.length > 3 ? '' : words.join(' ');
+}
+
 export function renderingCounts(results = []) {
   const groups = new Map();
   for (const r of results) {
-    const en = String(r.focus?.translation || '').trim().toLowerCase();
-    if (!en || en.length < 3) continue;
-    const key = en.replace(/^(the|a|an) /, '').slice(0, 7);
+    const en = renderingLabel(r.focus?.translation);
+    if (en.length < 3) continue;
+    const key = en.slice(0, 7);
     const g = groups.get(key) || { forms: new Map(), count: 0 };
     g.count += 1; g.forms.set(en, (g.forms.get(en) || 0) + 1);
     groups.set(key, g);

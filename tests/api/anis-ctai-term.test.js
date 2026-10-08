@@ -46,6 +46,15 @@ describe('resolving a spelling', () => {
 });
 
 describe('counting renderings of the word itself', () => {
+  it('a label is the rendering itself, not the words the alignment dragged along', async () => {
+    const { renderingLabel } = await import('../../api/lib/anis/ctai-term.js');
+    expect(renderingLabel('knowledge,” the “heaven')).toBe('knowledge');
+    expect(renderingLabel('of knowledge, above the horizon of the prison-city')).toBe('knowledge');
+    expect(renderingLabel('understanding, and love; whilst')).toBe('understanding');
+    expect(renderingLabel('comprehend thy nature')).toBe('comprehend thy nature');
+    expect(renderingLabel('the capacity')).toBe('capacity');
+    expect(renderingLabel('a very long aligned phrase that is not a rendering')).toBe('');
+  });
   const r = (t) => ({ focus: { translation: t } });
   it('groups inflections, skips unaligned, sorts by count', () => {
     expect(renderingCounts([r('knowledge'), r('Knowledge'), r('recognize'), r('recognition'), r('recognizing'), r(''), r('understanding')]))

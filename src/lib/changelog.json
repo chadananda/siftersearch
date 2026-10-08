@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T04:19:10.006Z",
+  "generated": "2026-10-08T04:25:39.783Z",
   "entries": [
+    {
+      "hash": "ea2b07d4",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Term study counts Shoghi Effendi's renderings of the WORD over its own passages (inflections grouped), not CTAI's per-root counts — عرفان's chart had 'fragrance' (ʿarf, same letters, another word) second; table rows quote a phrase and show different renderings",
+      "scope": "anis"
+    },
     {
       "hash": "9f1d1472",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Pool the fetches — I re-introduced the timeout I had already fixed once",
       "scope": null
-    },
-    {
-      "hash": "9ab04c38",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Pair on the RAW lists — the parallel printing shares our paragraphing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "ea2b07d4",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Term study counts Shoghi Effendi's renderings of the WORD over its own passages (inflections grouped), not CTAI's per-root counts — عرفان's chart had 'fragrance' (ʿarf, same letters, another word) second; table rows quote a phrase and show different renderings",
+        "scope": "anis"
+      },
       {
         "hash": "9f1d1472",
         "date": "2026-10-07",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Pool the fetches — I re-introduced the timeout I had already fixed once",
-        "scope": null
-      },
-      {
-        "hash": "9ab04c38",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Pair on the RAW lists — the parallel printing shares our paragraphing",
         "scope": null
       }
     ]
