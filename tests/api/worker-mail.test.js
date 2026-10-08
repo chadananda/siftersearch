@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { createSign } from 'crypto';
 import { canonicalString, verifySns, isAmazonUrl } from '../../worker/mail/sns.js';
-import { eventRows, threadKey, mimeName, inboundStatus, ownText } from '../../worker/mail/index.js';
+import { eventRows, threadKey, mimeName, inboundStatus, ownText, ignoredBy } from '../../worker/mail/index.js';
 
 const CERT = readFileSync(new URL('../fixtures/sns/test-cert.pem', import.meta.url), 'utf8');
 const KEY = readFileSync(new URL('../fixtures/sns/test-key.pem', import.meta.url), 'utf8');
@@ -93,5 +93,21 @@ describe('newsletter replies: sorting', () => {
   it('ownText drops quoted history', () => {
     expect(ownText('Great!\n> old line\nmore')).toBe('Great!\nmore');
     expect(ownText('Yes.\nOn Tue, 1 Oct 2026, Ocean wrote:\nquoted')).toBe('Yes.');
+  });
+});
+
+describe('ignore rules', () => {
+  const rules = ['bnc.org', 'usbnc.org'];
+  it('matches the domain, its subdomains and "Name <addr>" headers', () => {
+    expect(ignoredBy(['someone@bnc.org'], rules)).toBe('bnc.org');
+    expect(ignoredBy(['x@mail.USBNC.org'], rules)).toBe('usbnc.org');
+    expect(ignoredBy([null, 'Office <office@usbnc.org>'], rules)).toBe('usbnc.org');
+  });
+  it('does not match look-alike domains', () => {
+    expect(ignoredBy(['a@notbnc.org', 'b@bnc.org.evil.com', 'c@bnc.com'], rules)).toBeNull();
+  });
+  it('a full-address rule matches only that address', () => {
+    expect(ignoredBy(['news@x.org'], ['news@x.org'])).toBe('news@x.org');
+    expect(ignoredBy(['other@x.org'], ['news@x.org'])).toBeNull();
   });
 });

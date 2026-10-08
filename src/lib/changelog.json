@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T02:51:23.767Z",
+  "generated": "2026-10-08T02:56:12.516Z",
   "entries": [
+    {
+      "hash": "25fbea1a",
+      "date": "2026-10-07",
+      "type": "Chore",
+      "description": "Track the D1 'anis' migrations (global gitignore excludes *.sql)",
+      "scope": "mail"
+    },
     {
       "hash": "69401bb2",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fetch a work's pairs concurrently, and stop probing past the last one",
       "scope": null
-    },
-    {
-      "hash": "32a233e2",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Survey where every translated canonical's original can actually be got",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "25fbea1a",
+        "date": "2026-10-07",
+        "type": "Chore",
+        "description": "Track the D1 'anis' migrations (global gitignore excludes *.sql)",
+        "scope": "mail"
+      },
       {
         "hash": "69401bb2",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Fetch a work's pairs concurrently, and stop probing past the last one",
-        "scope": null
-      },
-      {
-        "hash": "32a233e2",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Survey where every translated canonical's original can actually be got",
         "scope": null
       }
     ]

@@ -52,6 +52,19 @@ export function eventRows(ev) {
 const AUTO_SUBJECT = /^\s*(auto(matic)?[ -]?(reply|response)|out of (the )?office|away from|abwesenheit|absence|r[ée]ponse automatique|respuesta autom[áa]tica|undeliverable|delivery status notification|mail delivery failed)/i;
 const UNSUBSCRIBE = /\b(unsubscribe|remove me|take me off|stop (sending|emailing)|no more emails|d[ée]sabonner|darse de baja|abmelden)\b/i;
 
+/** The ignore rule (a domain — also its subdomains — or a full address) any sender matches, else null.
+ *  Senders may be bare addresses or "Name <addr>" headers. */
+export function ignoredBy(senders, patterns) {
+  for (const s of senders) {
+    const addr = lower(String(s || '').match(/<([^>]+)>/)?.[1] ?? s);
+    const domain = addr.split('@')[1] || '';
+    for (const p of patterns.map(lower)) {
+      if (p.includes('@') ? addr === p : domain === p || domain.endsWith(`.${p}`)) return p;
+    }
+  }
+  return null;
+}
+
 /** The reader's own words: quoted history (">" lines, "On … wrote:" and below) removed. */
 export function ownText(text = '') {
   const cut = String(text).split(/\n(?:On .{0,200}wrote:|-{2,} ?Original Message|From: .+\nSent: )/i)[0];
@@ -86,6 +99,13 @@ async function inbound(request, env) {
   if (error) return error;
   const act = body.receipt?.action;
   if (act?.type !== 'S3' || !act.objectKey) return json({ ignored: body.notificationType || 'no s3 action' });
+  const senders = [body.mail?.source, ...(body.mail?.commonHeaders?.from || [])];
+  const { results: rules } = await env.ANIS_DB.prepare('SELECT pattern FROM mail_ignore').all();
+  const rule = ignoredBy(senders, rules.map((r) => r.pattern));
+  if (rule) {                                                                 // dropped unread: nothing fetched or stored
+    await env.ANIS_DB.prepare(`UPDATE mail_ignore SET hits = hits + 1, last_hit = datetime('now') WHERE pattern = ?`).bind(rule).run();
+    return json({ ignored: rule });
+  }
   const res = await aws(env, 's3').fetch(`https://${act.bucketName}.s3.${REGION}.amazonaws.com/${encodeURIComponent(act.objectKey).replace(/%2F/g, '/')}`);
   if (!res.ok) return json({ error: `s3 ${res.status}` }, 502);              // SNS retries on 5xx
   const mail = await PostalMime.parse(await res.arrayBuffer());
