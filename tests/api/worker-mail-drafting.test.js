@@ -20,8 +20,9 @@ describe('outreach prompts', () => {
 describe('letters', () => {
   it('Markdown becomes email HTML', () => {
     const h = toHtml('Dear friend,\n\n> a passage\n\n[Source](https://oceanlibrary.com/x)');
-    expect(h).toContain('<blockquote>');
-    expect(h).toContain('<a href="https://oceanlibrary.com/x">Source</a>');
+    expect(h).toMatch(/<blockquote style="[^"]+">/);
+    expect(h).toMatch(/<a style="[^"]+" href="https:\/\/oceanlibrary.com\/x">Source<\/a>/);
+    expect(h).toContain('AI Research Assistant for Ocean 2.0');
   });
   it('footnote markers copied from passages are removed', () => {
     expect(tidy('Set it then before thine eyes.[^14]\n\nWarmly')).toBe('Set it then before thine eyes.\n\nWarmly');
@@ -38,5 +39,25 @@ describe('templates', () => {
   it('greets by name when known', () => {
     expect(fillTemplate('{{greeting}}\n\nI am Anís.', { name: 'Leila' })).toBe('Hello Leila,\n\nI am Anís.');
     expect(fillTemplate('{{greeting}}', {})).toBe('Hello,');
+  });
+  it('says who asked Anís to write, when someone did', () => {
+    expect(fillTemplate("{{intro}}I'm Anís.", { asked_by: 'Chad' })).toBe("Chad asked me to reach out and introduce myself. I'm Anís.");
+    expect(fillTemplate("{{intro}}I'm Anís.", {})).toBe("I'm Anís.");
+  });
+});
+
+describe('signature', async () => {
+  const { stripSignOff, composeLetter } = await import('../../worker/mail/letter.js');
+  it("replaces the writer's own sign-off name, keeps the closing", () => {
+    expect(stripSignOff('Thanks.\n\nWarmly,\nAnis')).toBe('Thanks.\n\nWarmly,');
+    expect(stripSignOff('Warmly,\nAnís\nOcean AI Research Assistant\n')).toBe('Warmly,');
+    expect(stripSignOff('— Anís')).toBe('');
+    expect(stripSignOff('Anís wrote of this before.\nMore.')).toBe('Anís wrote of this before.\nMore.');
+  });
+  it('every letter: body, the signature, then the pause link', () => {
+    const { text, html } = composeLetter('Hello.\n\nWarmly,\nAnis', 'https://x/p');
+    expect(text).toBe('Hello.\n\nWarmly,\n\n— Anís\nAI Research Assistant for Ocean 2.0\n\n—\nRather not hear from me? https://x/p');
+    expect(html).toMatch(/font-style:italic;font-size:24px[^>]*>— Anís<\/p>/);
+    expect(html.indexOf('AI Research Assistant for Ocean 2.0')).toBeLessThan(html.indexOf('Rather not hear'));
   });
 });

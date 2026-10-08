@@ -6,14 +6,15 @@
 //   GET  /_mail/messages     internal key; ?mailbox=anis|newsletter &status=&direction=&limit=
 //   GET|POST /_mail/pause    footer / List-Unsubscribe one-click: stops all outreach to that address (no login)
 //   GET|POST /_mail/review   Chad's signed review page for one draft: edit, send or discard (drafting.js)
-//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js); POST /_mail/run?job= runs one now
+//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js); POST /_mail/run?job=draft|outreach|welcome|digest runs one now
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 /* global btoa */
 import { AwsClient } from 'aws4fetch';
 import PostalMime from 'postal-mime';
 import { verifySns, isAmazonUrl } from './sns.js';
+import { composeLetter } from './letter.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
-import { reviewPage, draftReplies, planOutreach, dailyDigest } from './drafting.js';
+import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest } from './drafting.js';
 
 const REGION = 'us-west-2';
 const ACCOUNT = '409305238362';
@@ -148,8 +149,7 @@ export async function sendMail(env, { to, subject, text, html, inReplyTo, refere
   if (await env.ANIS_DB.prepare('SELECT 1 FROM mail_suppression WHERE email = ?').bind(addr).first()) return { suppressed: true };
   if (system) return sesSend(env, { addr, subject, text, html, headers: [] });   // notices to Chad: no footer, no rules
   const pause = `${SITE}/_mail/pause?t=${await pauseToken(addr, env.MAIL_LINK_SECRET)}`;
-  text = `${text}\n\n—\nAnís, Ocean AI Research Assistant. Rather not hear from me? ${pause}`;
-  if (html) html = `${html}<p style="margin-top:2em;font-size:12px;color:#777">Anís, Ocean AI Research Assistant · <a href="${pause}" style="color:#777">Rather not hear from me?</a></p>`;
+  ({ text, html } = composeLetter(text, pause));          // one look for every letter: body, signature, pause footer
   const headers = [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }];
   if (inReplyTo) headers.push({ Name: 'In-Reply-To', Value: inReplyTo });
   if (references || inReplyTo) headers.push({ Name: 'References', Value: references || inReplyTo });
@@ -221,6 +221,7 @@ export async function sendFacts(db, row, settings = {}) {
     ignored: ignoredBy([addr], rules.map((r) => r.pattern)),
     stopped: !!(await one('SELECT 1 x FROM mail_stop WHERE email_hash = ?', await emailHash(addr))),
     allowlisted: !!(await one('SELECT 1 x FROM mail_allowlist WHERE email = ?', addr)),
+    askedBy: (await one('SELECT asked_by FROM mail_allowlist WHERE email = ?', addr))?.asked_by ?? null,
     welcomed: !!(await one(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND kind = 'welcome' AND status = 'sent' AND to_addr = ?`, addr)),
     inboundCount: inbound?.n ?? 0,
     // cadence_unit_minutes (default a day) lets testers run the cadence in minutes; the rules still say 'days'
@@ -283,8 +284,8 @@ export function mailRoute(request, env) {
 async function runJob(request, env) {
   if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
   const job = new URL(request.url).searchParams.get('job');
-  const fn = { draft: draftReplies, outreach: planOutreach, digest: dailyDigest }[job];
-  if (!fn) return json({ error: 'job must be draft | outreach | digest' }, 400);
+  const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest }[job];
+  if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest' }, 400);
   await fn(env);
   return json({ ran: job });
 }

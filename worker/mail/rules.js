@@ -2,7 +2,8 @@
 // Pure: sendDecision(facts, settings) → { ok } or { ok:false, reason }. Two kinds of letter:
 //   reply    — answers a message the person sent. Allowed unless they bounced/complained or are ignored; a pause or
 //              "stop" does NOT block it (they wrote to us).
-//   welcome  — once, to someone added to mail_allowlist (Chad's list = consent); kill switch, pause and caps apply.
+//   welcome  — once, to someone added to mail_allowlist (Chad's list = consent); sent at once when Chad asked for it
+//              (asked_by), otherwise only while outreach is on; pause and caps apply.
 //   outreach — Anís writes first. Off unless the switch is on; only to people who have written at least once (D1 hybrid:
 //              a relationship they took part in); never after a pause/stop; alpha allowlist; cadence 3·5·12·25·44 days
 //              after their last message, then silence.
@@ -21,7 +22,7 @@ export const DEFAULTS = {
 export const settingsFrom = (rows = []) => ({ ...DEFAULTS, ...Object.fromEntries(rows.map((r) => [r.key, r.value])) });
 
 /**
- * facts: { kind, welcomed, suppressed, ignored, stopped, allowlisted, inboundCount, daysSinceLastInbound,
+ * facts: { kind, welcomed, askedBy, suppressed, ignored, stopped, allowlisted, inboundCount, daysSinceLastInbound,
  *          outreachSinceLastInbound, sentToPersonToday, sentToday }
  */
 export function sendDecision(f, s = DEFAULTS) {
@@ -30,7 +31,8 @@ export function sendDecision(f, s = DEFAULTS) {
   if (f.sentToday >= Number(s.global_daily_cap)) return { ok: false, reason: 'global daily cap reached' };
   if (f.sentToPersonToday >= Number(s.per_person_daily_cap)) return { ok: false, reason: 'daily cap for this person reached' };
   if (f.kind === 'welcome') {                  // once, to someone Chad added to the list (the list is the consent)
-    if (s.outreach_enabled !== 'on') return { ok: false, reason: 'outreach is switched off' };
+    // Chad asking for it IS the approval (invite-only, 2026-10-08): the outreach switch governs only what Anís starts
+    if (!f.askedBy && s.outreach_enabled !== 'on') return { ok: false, reason: 'outreach is switched off' };
     if (f.stopped) return { ok: false, reason: 'this person paused letters or asked to stop' };
     if (!f.allowlisted) return { ok: false, reason: 'welcome only to people added to the list' };
     if (f.welcomed) return { ok: false, reason: 'already welcomed' };

@@ -57,6 +57,8 @@ describe('welcome letter', () => {
   it('once, to someone on the list, while outreach is on', () => {
     expect(sendDecision(w, on).ok).toBe(true);
     expect(sendDecision(w, DEFAULTS).reason).toMatch(/switched off/);
+    expect(sendDecision({ ...w, askedBy: 'Chad' }, DEFAULTS).ok).toBe(true);          // Chad asked: goes even with outreach off
+    expect(sendDecision({ ...w, askedBy: 'Chad', welcomed: true }, DEFAULTS).ok).toBe(false);
     expect(sendDecision({ ...w, welcomed: true }, on).reason).toMatch(/already/);
     expect(sendDecision({ ...w, allowlisted: false }, on).reason).toMatch(/list/);
     expect(sendDecision({ ...w, stopped: true }, on).reason).toMatch(/paused/);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:34:15.601Z",
+  "generated": "2026-10-08T03:37:30.850Z",
   "entries": [
+    {
+      "hash": "94b822ef",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Anís describes itself as an experimental AI research assistant with its own email address (anis@oceanlibrary.com) — soul + 'about Anís' replies; renamed personas keep the general description",
+      "scope": "anis"
+    },
     {
       "hash": "9486961e",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The truncation guard must probe one BEYOND the ceiling, not test the ceiling itself",
       "scope": null
-    },
-    {
-      "hash": "60bb39dd",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "The English's weight depends on WHO rendered it; rejoin Hidden Words openings",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "94b822ef",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Anís describes itself as an experimental AI research assistant with its own email address (anis@oceanlibrary.com) — soul + 'about Anís' replies; renamed personas keep the general description",
+        "scope": "anis"
+      },
       {
         "hash": "9486961e",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "The truncation guard must probe one BEYOND the ceiling, not test the ceiling itself",
-        "scope": null
-      },
-      {
-        "hash": "60bb39dd",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "The English's weight depends on WHO rendered it; rejoin Hidden Words openings",
         "scope": null
       }
     ]

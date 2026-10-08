@@ -1,20 +1,23 @@
 // Anís's letters, end to end, on Cloudflare (cron in worker/index.js). Tower only researches and writes; every letter
-// is a DRAFT that Chad approves on a signed review page before the engagement rules (rules.js) let it go.
-//   draftReplies   every 5 min: new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → draft → review notice
+// to someone outside the invited list is a DRAFT Chad approves on a signed review page; every letter passes the
+// engagement rules (rules.js).
+//   draftReplies   every 5 min: new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → sent at once to invited
+//                  people (auto_send_invited), otherwise a draft + review notice to Chad
 //   planOutreach   hourly, only while outreach_enabled = on: welcome letters (template) for people added to the list with
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
 //   dailyDigest    once a day: everything that happened, to the reviewer
 //   reviewPage     GET shows the draft (editable) · POST send | discard. GET never changes anything.
-import { marked } from 'marked';
+import { bodyHtml, wrapHtml, signatureHtml, stripSignOff } from './letter.js';
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
 
 const TOWER = 'https://api.siftersearch.com/api/v1/anis';
 const SITE = 'https://siftersearch.com';
 const FROM_ADDR = 'anis@oceanlibrary.com';
-const FOOTER_CUT = /\n\n—\nAnís, Ocean AI Research Assistant\.[\s\S]*$/;
+const FOOTER_CUT = /\n\n—\nAnís, Ocean AI Research Assistant\.[\s\S]*$|\n\n— Anís\nAI Research Assistant for Ocean 2\.0[\s\S]*$/;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-export const toHtml = (md) => `<div style="font:16px/1.6 Georgia,serif;color:#222;max-width:40em">${marked.parse(String(md || ''), { async: false })}</div>`;
+/** The draft as the reader will see it (signature included; the pause footer is added at send). */
+export const toHtml = (md) => wrapHtml(`${bodyHtml(stripSignOff(md))}${signatureHtml()}`);
 /** Tidy a letter from the research pipeline: footnote markers copied from passages ("[^14]") never reach a reader. */
 export const tidy = (t) => String(t || '').replace(/\[\^\d+\]/g, '').replace(/[ \t]+\n/g, '\n');
 const reSubject = (s) => (/^re:/i.test(s || '') ? s : `Re: ${s || 'your message'}`);
@@ -45,6 +48,15 @@ async function tower(env, path, body) {
   const res = await fetch(`${TOWER}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-internal-key': env.S1_KEY }, body: JSON.stringify(body) });
   if (!res.ok) throw new Error(`tower ${path} ${res.status}`);
   return res.json();
+}
+
+/** Invite-only alpha (Chad 2026-10-08: "no need to go to draft since this is an internal group"): letters to invited
+ *  people (mail_allowlist) are sent at once; anyone else's goes to Chad as a draft. */
+async function sendOrReview(env, settings, draft, source) {
+  const invited = settings.auto_send_invited === 'on'
+    && await env.ANIS_DB.prepare('SELECT 1 x FROM mail_allowlist WHERE email = ?').bind(draft.to_addr).first();
+  if (invited) return deliver(env, draft);                             // in the daily digest as sent, or blocked with why
+  return notifyReviewer(env, settings, draft, source);
 }
 
 async function notifyReviewer(env, settings, draft, source) {
@@ -81,31 +93,38 @@ export async function draftReplies(env, limit = 4) {
         VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, reSubject(m.subject), tidy(r.reply), toHtml(tidy(r.reply)),
         m.message_id, m.thread_key, `source:${m.id}; anis:${r.status}${r.triage?.stance ? `; stance:${r.triage.stance}` : ''}`).first();
       await db.prepare(`UPDATE mail_messages SET status = 'drafted' WHERE id = ?`).bind(m.id).run();
-      await notifyReviewer(env, settings, draft, m);
+      await sendOrReview(env, settings, draft, m);
     } catch (e) {
       await db.prepare(`UPDATE mail_messages SET status = 'new', error = ? WHERE id = ?`).bind(String(e.message).slice(0, 300), m.id).run();
     }
   }
 }
 
-/** Fill a letter template: {{greeting}} → "Hello Name," or "Hello,". */
-export const fillTemplate = (body, { name } = {}) => String(body).replace(/\{\{greeting\}\}/g, name ? `Hello ${String(name).trim()},` : 'Hello,');
+/** Fill a letter template: {{greeting}} → "Hello Name," or "Hello,"; {{intro}} → "Chad asked me to reach out and
+ *  introduce myself. " when someone asked Anís to write (invite-only), else nothing. */
+export const fillTemplate = (body, { name, asked_by: askedBy } = {}) => String(body)
+  .replace(/\{\{greeting\}\}/g, name ? `Hello ${String(name).trim()},` : 'Hello,')
+  .replace(/\{\{intro\}\}/g, askedBy ? `${String(askedBy).trim()} asked me to reach out and introduce myself. ` : '');
 
 /** Welcome letters: once, to each person added to the list who has never written and has no welcome yet (any status —
- *  a discarded welcome is a decision, not a gap). Template from D1 mail_templates. */
-async function planWelcomes(env, settings) {
+ *  a discarded welcome is a decision, not a gap). Template from D1 mail_templates. When Chad asked for it (asked_by)
+ *  it is SENT at once — his request is the approval; otherwise it is drafted for review. */
+export async function planWelcomes(env, settings) {
   const db = env.ANIS_DB;
+  settings ||= await loadSettings(db);
   const tpl = await db.prepare(`SELECT subject, body FROM mail_templates WHERE key = 'welcome'`).first();
   if (!tpl) return;
-  const { results } = await db.prepare(`SELECT a.email, a.name FROM mail_allowlist a
+  const { results } = await db.prepare(`SELECT a.email, a.name, a.asked_by FROM mail_allowlist a
     WHERE NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'in' AND m.from_addr = a.email)
       AND NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'out' AND m.kind = 'welcome' AND m.to_addr = a.email)`).all();
   for (const p of results) {
-    if (!sendDecision(await sendFacts(db, { to_addr: p.email, kind: 'welcome' }, settings), settings).ok) continue;
+    if (!sendDecision(await sendFacts(db, { to_addr: p.email, kind: 'welcome' }, settings), settings).ok) continue;   // e.g. not asked for, outreach off
     const body = fillTemplate(tpl.body, p);
     const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, error)
-      VALUES ('anis', 'welcome', 'out', 'draft', ?, ?, ?, ?, ?, 'welcome template') RETURNING *`).bind(FROM_ADDR, p.email, tpl.subject, body, toHtml(body)).first();
-    await notifyReviewer(env, settings, draft, null);
+      VALUES ('anis', 'welcome', 'out', 'draft', ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, p.email, tpl.subject, body, toHtml(body),
+      p.asked_by ? `welcome template; asked by ${p.asked_by}` : 'welcome template').first();
+    if (p.asked_by) await deliver(env, draft);                         // Chad asked: his request is the approval
+    else await sendOrReview(env, settings, draft, null);
   }
 }
 
@@ -113,8 +132,8 @@ async function planWelcomes(env, settings) {
 export async function planOutreach(env) {
   const db = env.ANIS_DB;
   const settings = await loadSettings(db);
+  await planWelcomes(env, settings);                                   // the welcomes Chad asked for go even while outreach is off
   if (settings.outreach_enabled !== 'on') return;
-  await planWelcomes(env, settings);
   const { results: people } = await db.prepare(`SELECT from_addr, max(id) last_id FROM mail_messages WHERE direction = 'in' AND mailbox = 'anis'
     AND status NOT IN ('spam', 'auto', 'handled') AND from_addr != ? GROUP BY from_addr`).bind(FROM_ADDR).all();
   for (const p of people) {
@@ -136,7 +155,7 @@ export async function planOutreach(env) {
       const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, thread_key, error)
         VALUES ('anis', 'outreach', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, p.from_addr, r.subject, body, toHtml(body),
         last.thread_key, `step:${facts.outreachSinceLastInbound}; ${r.capability}`).first();
-      await notifyReviewer(env, settings, draft, null);
+      await sendOrReview(env, settings, draft, null);
     } catch { /* tower unreachable: try next hour */ }
   }
 }
