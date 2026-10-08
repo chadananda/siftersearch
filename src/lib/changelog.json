@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T01:58:22.646Z",
+  "generated": "2026-10-08T02:02:04.590Z",
   "entries": [
+    {
+      "hash": "03d69bb1",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Strategy auditor — every Anís exchange audited after the reply (typed verdicts: strategy right/best, evidence answered and why not, format, every mistake WHEREVER it lies incl. library data and readers' premises, new-strategy proposals, data gaps); $25/day cap; daily email digest; exchanges now log their evidence passages",
+      "scope": "audit"
+    },
     {
       "hash": "b7b7fd10",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "An OPEN producer was feeding a CLOSED whitelist, silently",
       "scope": null
-    },
-    {
-      "hash": "550ed60d",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Legislative authority is not doctrinal authority",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "03d69bb1",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Strategy auditor — every Anís exchange audited after the reply (typed verdicts: strategy right/best, evidence answered and why not, format, every mistake WHEREVER it lies incl. library data and readers' premises, new-strategy proposals, data gaps); $25/day cap; daily email digest; exchanges now log their evidence passages",
+        "scope": "audit"
+      },
       {
         "hash": "b7b7fd10",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "An OPEN producer was feeding a CLOSED whitelist, silently",
-        "scope": null
-      },
-      {
-        "hash": "550ed60d",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Legislative authority is not doctrinal authority",
         "scope": null
       }
     ]

@@ -516,6 +516,37 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Strategy auditor (planning/strategy-audit-plan.md): audits each Anís exchange after the reply, $25/day cap
+      // (AUDIT_DAILY_USD). Own SQLite (/tank/sifter/audit/audits.db); reads sifter.db read-only.
+      name: 'siftersearch-audit',
+      script: 'scripts/audit/audit-exchanges.mjs',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 60000,
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/audit-error.log',
+      out_file: './logs/audit-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
+      // Daily audit digest email to Chad, 07:00 server time.
+      name: 'siftersearch-audit-digest',
+      script: 'scripts/audit/audit-digest.mjs',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '0 7 * * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/audit-digest-error.log',
+      out_file: './logs/audit-digest-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // One-shot snapshot generator: runs every 5 min via cron_restart, computes
       // the pipeline/Meili status in isolation, writes data/pipeline-status.json,
       // then exits. autorestart:false so PM2 only re-runs it on the cron tick —

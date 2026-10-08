@@ -36,6 +36,7 @@ const WHERE = { 'library-data': 'In our library data (work list)', 'source-text'
 const lines = [
   `Anís strategy audit — last ${HOURS} h`,
   `${done.length} exchanges audited${errors ? `, ${errors} errors` : ''} · $${usd.toFixed(2)} spent`,
+  'Passages the auditor names as "missed" come from its own knowledge: leads to check, not facts.',
   '',
   `Strategy: right ${strat.right || 0} · acceptable ${strat.acceptable || 0} · wrong ${strat.wrong || 0}`,
   ...(Object.keys(misroutes).length ? ['Better strategy existed (used → best):', ...top(misroutes).map(([k, n]) => `  ${k}  ×${n}`)] : []),
