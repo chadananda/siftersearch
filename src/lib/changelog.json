@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:03:21.149Z",
+  "generated": "2026-10-08T15:05:08.098Z",
   "entries": [
+    {
+      "hash": "764cd408",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "OceanLibrary paragraphs keep their whole heading path, not only the innermost heading",
+      "scope": "ingest"
+    },
     {
       "hash": "95ae815b",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The Tablets of the Divine Plan DO have a Persian original — per chapter — and stems run in parallel",
       "scope": null
-    },
-    {
-      "hash": "549f6c72",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Try the free deterministic pairing first — SAQ needed no model at all",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "764cd408",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "OceanLibrary paragraphs keep their whole heading path, not only the innermost heading",
+        "scope": "ingest"
+      },
       {
         "hash": "95ae815b",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The Tablets of the Divine Plan DO have a Persian original — per chapter — and stems run in parallel",
-        "scope": null
-      },
-      {
-        "hash": "549f6c72",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Try the free deterministic pairing first — SAQ needed no model at all",
         "scope": null
       }
     ]

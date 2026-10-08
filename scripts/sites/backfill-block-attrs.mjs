@@ -50,8 +50,5 @@ for (const d of docs) {
   }
 }
 await flush();
-  }
-}
-await flush();
 console.log(JSON.stringify({ apply: APPLY, ...stats }));
 process.exit(0);
