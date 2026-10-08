@@ -86,7 +86,7 @@ export async function anisTurn({ messages, channel: channelName = 'widget-chat',
     const replaced = broken != null && broken >= OUTPUT_BREAK;
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
     const lint = lintReply(reply);
-    const path = await finish(reply, 'answered', { engine: 'anis', recipe: r.plan?.shape ?? null, retrieved: r.retrieved?.length ?? 0,
+    const path = await finish(reply, 'answered', { engine: 'anis', evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null, retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
       output_check: broken, replaced, lint, timings: r.timings });
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path };

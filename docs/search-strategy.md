@@ -147,6 +147,33 @@ The older 516-query battery on the [Search Quality](/docs/search-quality) page m
 engine's results more than correctness (many of its "phrase" tests are one word with one expected book), so it is kept as
 a regression check, not as the measure of quality.
 
+## 3b. Research projects
+
+Some requests are not a question but a piece of work: *write an article on…*, *help me with a blog post about…*, *set
+out the debate on…*, *give me a timeline of…*. These are **projects**: recipes that chain several strategies, gather
+evidence, and then write. They are where slow thinking belongs, because the reader asked for work, not an answer. Anís
+offers one when a request calls for it, runs it in the background, and returns it as a document or a letter.
+
+Every project shares the same machinery:
+
+1. **Plan** — survey the subject: its main ideas, its positions, or its events.
+2. **Evidence ledger** — targeted searches per part; each claim keeps its verified passage, its authority (scripture,
+   authorised interpretation, scholarship, history) and its source link.
+3. **Write** — the slow model works from the ledger only; prose cites claims, never memory.
+4. **Verify** — every quotation is checked against its source (the sentence gate; SourceHunt across translations); a
+   quote that does not verify is removed, not softened.
+
+| project | plan | shape | status |
+|---|---|---|---|
+| article | the article-writer PRD: an angle chosen before any outline; research to map the field, then research that tries to break the thesis; a claim ledger; a required original contribution | a long piece with its evidence trail | PRD written (2026-08), not built |
+| blog post | the same pipeline, lighter: one angle, one promise, a few key passages | short, readable, every quote linked | builds on the article pipeline |
+| debate | the real positions on a question, then the strongest evidence for and against each, fairly — Anís asks "might there not be another explanation?" and never declares a winner | positions side by side with their passages; good for study circles | new |
+| timeline | dated events for a person, subject or period: entity claims (164,359 dated), scenes (506 dated), tablet dates from the Phelps Inventory | a dated sequence, each event with its proving passage | data exists; recipe to build |
+| study guide, topical compilation, FAQ, presentation | the same machinery with a different plan and shape | — | later |
+
+**Tested by** the verification step itself (every quotation must check out) and, per project, a small set of reviewed
+examples.
+
 ## 4. Choosing a format
 
 After search, the reply's shape is chosen from three things: the question, the conversation, and *what was found*. Code
@@ -195,3 +222,18 @@ point to primary texts and the person's own study, not back to Anís; a person w
 
 **Open questions.** How a subject map is built (from compilations, curricula, the concept index?); whether daily
 selections go by email, in the widget, or both; how assessment stays humble — a conversation, never a score.
+
+## 7. Continuous audit
+
+The strategies above are a starting point; real use is the teacher. Every interaction is audited **after the fact** —
+never inline, so no answer is slowed — by a careful model asking, for each one: *was the strategy right, and was it the
+best? Did the evidence answer the question? Was the format right? Was anything misquoted or misattributed? Does this
+suggest a new strategy? Does it reveal a gap in the library?*
+
+The verdicts are counted weekly: the misroutes (which strategy was wanted, which was chosen), the unmet needs grouped
+into candidate new strategies with their examples, a work list of data gaps, and trend lines for the right-strategy rate
+and the answered rate. Confirmed verdicts become new cases in the routing battery and labelled training data for Clef and
+Laya; recurring unmet needs become proposals on this page. The audit proposes, the batteries test, and Chad decides —
+nothing changes routing on its own.
+
+This runs nightly for the first thousand days or so. Design: `planning/strategy-audit-plan.md`.

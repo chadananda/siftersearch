@@ -65,6 +65,10 @@ export function searchQueryFor(messages) {
   return (ANAPHOR.test(current) || short) ? `${previous} ${current}` : current;
 }
 
+/** The passages a reply was written from, compact, for the exchange log (the strategy auditor reads them). */
+export const evidenceOf = (retrieved) => (retrieved || []).slice(0, 10).map((q) => ({ title: q.source_title || null,
+  author: q.source_author || null, url: q.citation_url || null, religion: q.religion || null, text: String(q.text || '').slice(0, 300) }));
+
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
 /** The quotation in a source question: the longest quoted span (≥ 6 words), else the message without a leading request
@@ -238,7 +242,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     onEvent({ type: 'sources', sources: citations, plan: { shape: 'source' }, ms: Date.now() - t0 });
     onEvent({ type: 'stage', stage: 'craft' });
     onEvent({ type: 'text', content: reply });
-    return { reply, quotes_removed: 0, citations, retrieved: sourced.retrieved, plan: { shape: 'source', sourceHunt: sourced.hunt },
+    return { reply, quotes_removed: 0, citations, retrieved: sourced.retrieved, evidence: evidenceOf(sourced.retrieved), plan: { shape: 'source', sourceHunt: sourced.hunt },
       format: { id: 'source', by: 'sourcehunt' }, profile: null,
       timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
   }
@@ -314,7 +318,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
   // Qabbalah under an answer that used two Bahá'í texts).
   const cited = citations.filter((c) => c.url && reply.includes(c.url));
-  return { reply, quotes_removed: guarded.removed, citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
+  return { reply, quotes_removed: guarded.removed, evidence: evidenceOf(retrieved), citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }
