@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:29:24.758Z",
+  "generated": "2026-10-08T03:34:15.601Z",
   "entries": [
+    {
+      "hash": "9486961e",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Welcome letter — once, to someone added to the list with no history (template in D1 mail_templates, editable without a deploy); drafted for review like every letter; kill switch, pause and caps apply",
+      "scope": "mail"
+    },
     {
       "hash": "dc2abbdd",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The English's weight depends on WHO rendered it; rejoin Hidden Words openings",
       "scope": null
-    },
-    {
-      "hash": "13d8d6bf",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Measure every pair count, and make a truncated fetch impossible to mistake for a full one",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "9486961e",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Welcome letter — once, to someone added to the list with no history (template in D1 mail_templates, editable without a deploy); drafted for review like every letter; kill switch, pause and caps apply",
+        "scope": "mail"
+      },
       {
         "hash": "dc2abbdd",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "The English's weight depends on WHO rendered it; rejoin Hidden Words openings",
-        "scope": null
-      },
-      {
-        "hash": "13d8d6bf",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Measure every pair count, and make a truncated fetch impossible to mistake for a full one",
         "scope": null
       }
     ]

@@ -235,3 +235,13 @@ describe('source replies: tags → exact links; source questions without triage'
     expect(looksLikeSourceQuestion('Where does the idea of progressive revelation come from?')).toBe(false);
   });
 });
+
+describe('how Anís describes itself', async () => {
+  const { cannedReply, ANIS_SELF } = await import('../../api/lib/anis/canned.js');
+  it('Anís: an experimental AI research assistant with its own email address', () => {
+    for (const seed of ['a', 'b', 'c', 'd']) expect(cannedReply('about_anis', { name: 'Anís', seed })).toContain(ANIS_SELF);
+  });
+  it('a renamed persona keeps the general description and never claims the address', () => {
+    for (const seed of ['a', 'b', 'c', 'd']) expect(cannedReply('about_anis', { name: 'Jafar', seed })).not.toContain('anis@oceanlibrary.com');
+  });
+});

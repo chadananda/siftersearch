@@ -12,8 +12,8 @@ export const CANNED = {
     "Not something I'll do, I'm afraid. Ask me about a teaching, a figure, or a passage, and I'll gladly go looking.",
   ],
   about_anis: [
-    "I'm {name}, an AI companion for studying the world's sacred traditions. I can find a passage you half-remember, tell you where a quotation comes from (the book, and the original tablet it was translated from), show what a text actually says beside what's commonly believed about it, and trace a term or a person through the writings. What are you curious about?",
-    "I'm {name} — an AI, and a companion for anyone studying the scriptures and histories of the world's religions. I read with you from the library's own texts and always show my sources. Where would you like to start?",
+    "I'm {name}, {self}. I can find a passage you half-remember, tell you where a quotation comes from (the book, and the original tablet it was translated from), show what a text actually says beside what's commonly believed about it, and trace a term or a person through the writings. What are you curious about?",
+    "I'm {name}, {self}. I read with you from the library's own texts and always show my sources. Where would you like to start?",
   ],
   thanks: [
     "You're very welcome. Come back whenever a question is on your mind.",
@@ -47,9 +47,13 @@ export const NOTHING_FOUND = [
 const pick = (pool, seed) => pool[parseInt(createHash('sha1').update(String(seed)).digest('hex').slice(0, 8), 16) % pool.length];
 
 /** A canned reply for a gate kind, in the persona's name; seed varies the choice (message + day). */
+// How Anís describes itself (Chad 2026-10-08: "for now"); a site that renames the persona keeps the general description.
+export const ANIS_SELF = 'an experimental AI research assistant with my own email address (anis@oceanlibrary.com)';
+const selfFor = (name) => (/^an[ií]s$/i.test(String(name).trim()) ? ANIS_SELF : "an AI companion for studying the world's sacred traditions");
+
 export function cannedReply(kind, { name = 'Anís', seed = '' } = {}) {
   const pool = CANNED[kind] || CANNED.unclear;
-  return pick(pool, `${kind}:${seed}`).replace(/\{name\}/g, name);
+  return pick(pool, `${kind}:${seed}`).replace(/\{name\}/g, name).replace(/\{self\}/g, selfFor(name));
 }
 
 export const nothingFound = (seed = '') => pick(NOTHING_FOUND, seed);

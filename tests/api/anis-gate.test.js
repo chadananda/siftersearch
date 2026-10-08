@@ -52,7 +52,8 @@ describe('canned replies', () => {
     expect(cannedReply('refuse', { seed: 'a' })).toBe(cannedReply('refuse', { seed: 'a' }));
   });
   it('the about-Anís reply says it is an AI (soul: says so when asked)', () => {
-    for (const r of CANNED.about_anis) expect(r).toMatch(/\bAI\b/);
+    for (const name of ['Anís', 'Jafar']) for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) expect(cannedReply('about_anis', { name, seed })).toMatch(/\bAI\b/);
+    expect(CANNED.about_anis.length).toBeGreaterThan(0);
   });
 });
 
