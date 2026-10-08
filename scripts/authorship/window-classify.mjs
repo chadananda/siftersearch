@@ -53,7 +53,8 @@ function quotesOk(q, g, base) {
   if (!named.length) return q == null;
   if (g[0] === null && q == null) return true;
   if (q == null) return false;
-  return named.some((re) => (re === '*' ? !base.includes(q) : new RegExp(nfc(re), 'i').test(nfc(q))));
+  // a label may mix names and the "someone new" wildcard: 'Prime Minister|Minister|*'
+  return named.some((re) => re.split('|').some((part) => (part === '*' ? !base.includes(q) : new RegExp(nfc(part), 'i').test(nfc(q)))));
 }
 const docs = GOLD ? [...new Set(GOLD.map((g) => g.doc))] : IDS.map(Number);
 const summary = [];

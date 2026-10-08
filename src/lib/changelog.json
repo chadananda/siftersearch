@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T17:34:53.082Z",
+  "generated": "2026-10-08T17:45:37.723Z",
   "entries": [
+    {
+      "hash": "e518c28b",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window classifier v15 — narration guard catches introductions without speech verbs, short 'he said' tags, third-person narration and three-letter names; source links protected; datelines and salutations stay with the letter's writer; runner retries a failed book once",
+      "scope": "authorship"
+    },
     {
       "hash": "5902bb4a",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The column is extractor_version",
       "scope": null
-    },
-    {
-      "hash": "9e714ed1",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Read the claims back, because a count cannot tell doctrine from restatement",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "e518c28b",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window classifier v15 — narration guard catches introductions without speech verbs, short 'he said' tags, third-person narration and three-letter names; source links protected; datelines and salutations stay with the letter's writer; runner retries a failed book once",
+        "scope": "authorship"
+      },
       {
         "hash": "5902bb4a",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Fixed",
         "description": "The column is extractor_version",
-        "scope": null
-      },
-      {
-        "hash": "9e714ed1",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Read the claims back, because a count cannot tell doctrine from restatement",
         "scope": null
       }
     ]
