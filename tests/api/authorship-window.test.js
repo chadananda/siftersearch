@@ -163,3 +163,19 @@ describe('names with brackets', () => {
     expect(() => blockHasEvidence('Compilation (Bahá’í Writings)', { text: 'x', prevText: 'y:' })).not.toThrow();
   });
 });
+
+describe('editor evidence (v17)', () => {
+  it('keeps scripture that speaks of its Author in the third person with the Author', async () => {
+    const { editorHasEvidence } = await import('../../api/lib/authorship/window.js');
+    expect(editorHasEvidence('Such is the inebriating effect of the words of God upon Him Who is the Revealer of His undoubted proofs', 'Bahá’u’lláh')).toBe(false);
+    expect(editorHasEvidence('He is God!', '‘Abdu’l-Bahá')).toBe(false);
+    expect(editorHasEvidence('Conflict and contention are categorically forbidden in His Book.', 'Bahá’u’lláh')).toBe(false);
+  });
+  it('accepts real editorial notes', async () => {
+    const { editorHasEvidence } = await import('../../api/lib/authorship/window.js');
+    expect(editorHasEvidence('Revealed on March 29, 1916, outside the house in Bahjí, and addressed to the Bahá’ís of twelve Central States', '‘Abdu’l-Bahá')).toBe(true);
+    expect(editorHasEvidence('Shoghi Effendi had established an International Bahá’í Relief Fund', 'Shoghi Effendi')).toBe(true);
+    expect(editorHasEvidence('The National Spiritual Assembly had cabled the Guardian on 30 April 1939', 'Shoghi Effendi')).toBe(true);
+    expect(editorHasEvidence('Mírzá Áqá Ján, the amanuensis.', 'Bahá’u’lláh', { footnote: true })).toBe(true);
+  });
+});

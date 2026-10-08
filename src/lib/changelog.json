@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T18:32:16.501Z",
+  "generated": "2026-10-08T18:37:47.837Z",
   "entries": [
+    {
+      "hash": "923da697",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window run never rewrites a book default (any spelling) or adds one where none exists — 4,259 of 5,371 dry-run 'changes' were such no-ops",
+      "scope": "authorship"
+    },
     {
       "hash": "6ffcb1bd",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The concurrency dial was never connected",
       "scope": null
-    },
-    {
-      "hash": "1c256934",
-      "date": "2026-08-26",
-      "type": "Fixed",
-      "description": "/grounding/stop already existed — I shipped a duplicate and broke every route test",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "923da697",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window run never rewrites a book default (any spelling) or adds one where none exists — 4,259 of 5,371 dry-run 'changes' were such no-ops",
+        "scope": "authorship"
+      },
       {
         "hash": "6ffcb1bd",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "The concurrency dial was never connected",
-        "scope": null
-      },
-      {
-        "hash": "1c256934",
-        "date": "2026-08-26",
-        "type": "Fixed",
-        "description": "/grounding/stop already existed — I shipped a duplicate and broke every route test",
         "scope": null
       }
     ]

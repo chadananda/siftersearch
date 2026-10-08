@@ -16,7 +16,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { getDoc, listDocs } from '../../api/lib/docs-repo.js';
-import { createClassifier, loadRows, nextAuthors, WINDOW_MODEL as MODEL } from './window-core.mjs';
+import { createClassifier, loadRows, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from './window-core.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(ROOT, f), quiet: true });
@@ -65,7 +65,10 @@ async function runBook(id) {
     saved = { id, title: d.title, author: d.author, roster, brief, labels: rows.map((r, i) => ({ id: r.id, ...labels[i] })) };
     writeFileSync(file, JSON.stringify(saved));
   }
-  const byId = new Map(saved.labels.map((l) => [l.id, l]));
+  // the deterministic checks run again on saved labels, so a book classified by an earlier version gets today's rules
+  const raw = new Map(saved.labels.map((l) => [l.id, l]));
+  const byId = new Map();
+  rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book)); });
   for (const r of rows) {
     stats.paras++;
     const n = nextAuthors(r, byId.get(r.id), book);

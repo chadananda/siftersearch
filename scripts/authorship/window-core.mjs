@@ -1,7 +1,7 @@
 // Windowed paragraph attribution — the per-book engine shared by the eval (window-classify.mjs) and the production run
 // (window-run.mjs). Defaults = v10, the measured best (planning/window-classifier-log.md): hybrid, one pass, LLM only to
 // name "another person", one LLM brief per book. Runs ON tower (System-1 calls logged per task for Laya, Clef shadowed).
-import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, editorHasEvidence, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
@@ -12,7 +12,7 @@ const BACK = 5, AHEAD = 5;
 
 /** A book's paragraphs in order, each with the full heading path (chapter › section › extract) when the ingest kept it. */
 export function loadRows(db, docId) {
-  return db.prepare('SELECT id, paragraph_index pidx, text, heading, block_attrs, authors, authors_model FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(docId)
+  return db.prepare('SELECT id, paragraph_index pidx, text, heading, blocktype, block_attrs, authors, authors_model FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index').all(docId)
     .map((r) => { const path = r.block_attrs ? JSON.parse(r.block_attrs).path : null; return { ...r, heading: path?.length ? path.join(' › ') : r.heading }; });
 }
 
@@ -25,6 +25,25 @@ export function knownSpeaker(r, book) {
   if (list.some((e) => e.role === 'heading')) return book.author;
   const ref = list.find((e) => e.role === 'reference' && e.name);
   return ref ? ref.name : null;
+}
+
+/** The deterministic checks on one System-1 label, in order (v14-v17). Pure and idempotent, so the write step re-applies
+ *  them to labels saved by an earlier version: "another person" → unresolved; a quote introduced in the narration stays
+ *  the narrator's; an unmarked block leaves the book's author only when introduced; the editor only with editorial
+ *  evidence; a paragraph never quotes its own speaker. */
+export function refineLabel(l, row, prevRow, prevLabel, book) {
+  if (!l) return l;
+  const clean = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes };
+  let g = guardNarration(clean, row.text);
+  if (g.narrated && !g.speaker) g = { ...g, speaker: book.author };
+  if (g.speaker && !g.fixed && g.speaker !== EDITOR && g.speaker !== book.author
+    && !blockHasEvidence(g.speaker, { text: row.text, prevText: prevRow?.text, prevSpeaker: prevLabel?.speaker, heading: row.heading })) {
+    g = { ...g, speaker: book.author, unproven: true };
+  }
+  if (g.speaker === EDITOR && !g.fixed && !editorHasEvidence(row.text, book.author, { footnote: row.blocktype === 'footnote' || /\{language=/.test(row.text) })) {
+    g = { ...g, speaker: book.author, unproven: true };
+  }
+  return settle(g);
 }
 
 export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybrid = true, backend = null, brief = true }) {
@@ -82,19 +101,7 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
         }
       }
       // "another person" is not an answer: the LLM names them, or the paragraph stays unresolved (null)
-      got.forEach((l, k) => {
-        const clean = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes };
-        // a narrated paragraph stays the narrator's; null speaker = the book's default author (v14)
-        let g = guardNarration(clean, targets[k].text);
-        if (g.narrated && !g.speaker) g = { ...g, speaker: book.author };
-        // an unmarked block leaves the book's author only with evidence on the page (v16)
-        const prev = rows[i0 + k - 1];
-        if (g.speaker && !g.fixed && g.speaker !== EDITOR && g.speaker !== book.author
-          && !blockHasEvidence(g.speaker, { text: targets[k].text, prevText: prev?.text, prevSpeaker: labels[i0 + k - 1]?.speaker, heading: targets[k].heading })) {
-          g = { ...g, speaker: book.author, unproven: true };
-        }
-        labels[i0 + k] = settle(g);
-      });
+      got.forEach((l, k) => { labels[i0 + k] = refineLabel(l, rows[i0 + k], rows[i0 + k - 1], labels[i0 + k - 1], book); });
     }
     return labels;
   }

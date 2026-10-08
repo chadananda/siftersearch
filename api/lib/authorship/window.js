@@ -191,6 +191,23 @@ export function blockHasEvidence(speaker, { text, prevText = '', prevSpeaker = n
   return (named(p.slice(-1500)) && introduces) || (attributes && named(heading)) || named(String(text).slice(-120));
 }
 
+/** "The editor or reporter" for a NON-footnote paragraph needs editorial evidence (v17, from the OceanLibrary run: in
+ *  Days of Remembrance Bahá’u’lláh speaking of Himself in the third person — "upon Him Who is the Revealer…" — and
+ *  ‘Abdu’l-Bahá's "He is God!" went to the editor): the paragraph names the book's author in the third person (or an
+ *  alias — the Guardian, the Master, the Blessed Beauty) or opens like a note. */
+const ALIAS = { 'Shoghi Effendi': /\bthe guardian\b/i, '‘Abdu’l-Bahá': /\bthe master\b/i, 'Bahá’u’lláh': /\b(the )?blessed beauty\b|\bthe ancient beauty\b/i };
+const NOTE_OPEN = /^(revealed|written|translated|dictated|addressed|this (message|letter|tablet|cable|book|edition|compilation)|excerpts?|extracts?|from (a|the|his|her)|cf\.|see |literally|note:|the (following|above)|introduction|preface|foreword)\b/i;
+export function editorHasEvidence(text, bookAuthor, { footnote = false } = {}) {
+  if (footnote) return true;
+  const t = String(text || '').trim();
+  if (NOTE_OPEN.test(t)) return true;
+  const fold = (x) => String(x || '').replace(/[’'ʼ]s\b/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
+  const author = canonical(bookAuthor);
+  const words = fold(author).split(/[\s,()\[\]-]+/).filter((w) => w.length >= 3 && !STOP.test(w));
+  const f = fold(t);
+  return words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f)) || !!ALIAS[author]?.test(t);
+}
+
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */
 export const needsEscalation = (l, min) => l.speaker === OTHER || l.quotes === OTHER || l.conf < min;
 
