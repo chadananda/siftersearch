@@ -1,7 +1,7 @@
 // Anís letters: outreach prompts by step, Markdown → email HTML, signed review links.
 import { describe, it, expect } from 'vitest';
 import { outreachPrompt, CAPABILITIES } from '../../api/lib/anis/outreach.js';
-import { toHtml, reviewUrl } from '../../worker/mail/drafting.js';
+import { toHtml, reviewUrl, tidy } from '../../worker/mail/drafting.js';
 
 describe('outreach prompts', () => {
   it('steps 0–1 show a capability on their subject; later steps follow up', () => {
@@ -22,6 +22,9 @@ describe('letters', () => {
     const h = toHtml('Dear friend,\n\n> a passage\n\n[Source](https://oceanlibrary.com/x)');
     expect(h).toContain('<blockquote>');
     expect(h).toContain('<a href="https://oceanlibrary.com/x">Source</a>');
+  });
+  it('footnote markers copied from passages are removed', () => {
+    expect(tidy('Set it then before thine eyes.[^14]\n\nWarmly')).toBe('Set it then before thine eyes.\n\nWarmly');
   });
   it('review links are signed per draft', async () => {
     const a = await reviewUrl(12, 'k'), b = await reviewUrl(13, 'k'), c = await reviewUrl(12, 'other');

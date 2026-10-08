@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T03:19:53.710Z",
+  "generated": "2026-10-08T03:22:03.000Z",
   "entries": [
+    {
+      "hash": "26759e9e",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "POST /_mail/run?job=draft",
+      "scope": "mail"
+    },
     {
       "hash": "0f34e38e",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Derive translation authority from the SOURCE, not from roster membership",
       "scope": null
-    },
-    {
-      "hash": "74767f0b",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Key the CTAI map by WORK, and report coverage of the work as well as of the doc",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "26759e9e",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "POST /_mail/run?job=draft",
+        "scope": "mail"
+      },
       {
         "hash": "0f34e38e",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "Derive translation authority from the SOURCE, not from roster membership",
-        "scope": null
-      },
-      {
-        "hash": "74767f0b",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Key the CTAI map by WORK, and report coverage of the work as well as of the doc",
         "scope": null
       }
     ]

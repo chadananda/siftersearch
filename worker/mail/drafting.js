@@ -14,6 +14,8 @@ const FROM_ADDR = 'anis@oceanlibrary.com';
 const FOOTER_CUT = /\n\n—\nAnís, Ocean AI Research Assistant\.[\s\S]*$/;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 export const toHtml = (md) => `<div style="font:16px/1.6 Georgia,serif;color:#222;max-width:40em">${marked.parse(String(md || ''), { async: false })}</div>`;
+/** Tidy a letter from the research pipeline: footnote markers copied from passages ("[^14]") never reach a reader. */
+export const tidy = (t) => String(t || '').replace(/\[\^\d+\]/g, '').replace(/[ \t]+\n/g, '\n');
 const reSubject = (s) => (/^re:/i.test(s || '') ? s : `Re: ${s || 'your message'}`);
 
 // ── signed review links ──
@@ -75,7 +77,7 @@ export async function draftReplies(env, limit = 4) {
         await db.prepare('INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, ?)').bind(await emailHash(m.from_addr), stop ? 'asked to stop' : 'personal disclosure').run();
       }
       const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key, error)
-        VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, reSubject(m.subject), r.reply, toHtml(r.reply),
+        VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, reSubject(m.subject), tidy(r.reply), toHtml(tidy(r.reply)),
         m.message_id, m.thread_key, `source:${m.id}; anis:${r.status}${r.triage?.stance ? `; stance:${r.triage.stance}` : ''}`).first();
       await db.prepare(`UPDATE mail_messages SET status = 'drafted' WHERE id = ?`).bind(m.id).run();
       await notifyReviewer(env, settings, draft, m);
@@ -107,7 +109,7 @@ export async function planOutreach(env) {
           .bind(p.from_addr, r.reason || 'nothing worth sending').run();
         continue;
       }
-      const body = `${r.opening}\n\n${r.reply}`;
+      const body = tidy(`${r.opening}\n\n${r.reply}`);
       const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, thread_key, error)
         VALUES ('anis', 'outreach', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, p.from_addr, r.subject, body, toHtml(body),
         last.thread_key, `step:${facts.outreachSinceLastInbound}; ${r.capability}`).first();

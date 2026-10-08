@@ -51,7 +51,7 @@ export default async function anisRoutes(fastify) {
     const { messages = [], email = '' } = request.body || {};
     if (!messages.length) return reply.code(400).send({ error: 'messages required' });
     const { anisTurn } = await import('../lib/anis/turn.js');
-    const r = await anisTurn({ messages, channel: 'email', trusted: true, participant: { id: who(email) }, clientKey: who(email) });
+    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email) });
     return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null };
   });
 
@@ -67,7 +67,7 @@ export default async function anisRoutes(fastify) {
     const ask = outreachPrompt(step, lastQ);
     const { anisRespond } = await import('../lib/anis/respond.js');
     const { channelFor } = await import('../lib/anis/channels.js');
-    const r = await anisRespond({ messages: [...messages.slice(-6), { role: 'user', content: ask.question }],
+    const r = await anisRespond({ messages: [...messages.slice(-6), { role: 'user', content: ask.question }], profile: { persona_name: 'Anís' },
       direction: { channel: channelFor('email', { trusted: true }), kind: 'research' } });
     if (!r?.reply || !(r.retrieved?.length)) return { silent: true, reason: 'nothing found worth sending' };
     return { subject: ask.subject, opening: ask.opening, reply: r.reply, capability: ask.capability, retrieved: r.retrieved.length };
