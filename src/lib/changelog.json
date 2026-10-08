@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T12:20:34.685Z",
+  "generated": "2026-10-08T12:26:40.388Z",
   "entries": [
+    {
+      "hash": "74162170",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Official attribution lines end in a note number ('… translated from the Arabic) [1]') — strip it so the line is read as a trailer; without it extracts piled up under the next recognised line",
+      "scope": "authorship"
+    },
     {
       "hash": "feb4c241",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Segment a continuous original to the English, by comprehension — and three guards before the spend",
       "scope": null
-    },
-    {
-      "hash": "040c96d7",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Speak in FILE PATHS, not document ids",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "74162170",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Official attribution lines end in a note number ('… translated from the Arabic) [1]') — strip it so the line is read as a trailer; without it extracts piled up under the next recognised line",
+        "scope": "authorship"
+      },
       {
         "hash": "feb4c241",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Segment a continuous original to the English, by comprehension — and three guards before the spend",
-        "scope": null
-      },
-      {
-        "hash": "040c96d7",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Speak in FILE PATHS, not document ids",
         "scope": null
       }
     ]

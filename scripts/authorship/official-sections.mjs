@@ -59,15 +59,31 @@ export function blocks(xhtml) {
 export const textKey = (t) => String(t || '').replace(/⁅\/?s\d+⁆|\[\^\d+\]|\(\d+(?:, ?\d+)*\)/g, '').normalize('NFC').toLowerCase()
   .replace(/[^\p{L}\p{N}]+/gu, '').slice(0, 70);
 
-/** Official blocks → Map(textKey → { name, on_behalf, basis }). Labels open sections; a trailer claims the extracts above. */
+// A citation that names only a WORK ("(The Kitáb-i-Aqdas, par. 42)") still closes the extracts above it; the work names
+// its writer. Unlisted works fall back to the section heading. Order matters: specific titles first.
+export const WORKS = [
+  [/selections from the writings of the b[aá]b|persian bay[aá]n|qayy[uú]mu[’']l-asm[aá]/i, 'The Báb'],
+  [/selections from the writings of [’'‘]?abdu|some answered questions|paris talks|promulgation of universal peace|secret of divine civilization|tablets of the divine plan|will and testament|memorials of the faithful|tablet to (the )?hague|travell?er[’']s narrative/i, '‘Abdu’l-Bahá'],
+  [/kit[aá]b-i-aqdas|kit[aá]b-i-[ií]q[aá]n|gleanings|epistle to the son of the wolf|prayers and meditations|hidden words|seven valleys|tablets of bah[aá]|summons of the lord|gems of divine|tabernacle of unity|days of remembrance|call of the divine beloved|kit[aá]b-i-[’']?ahd/i, 'Bahá’u’lláh'],
+  [/world order of bah|advent of divine justice|god passes by|promised day is come|dispensation of bah|citadel of faith|messages to america|messages to the bah[aá][’']í world|bah[aá][’']í administration|unfolding destiny|dawn of a new day|arohanui|high endeavours|directives from the guardian|letters from the guardian/i, 'Shoghi Effendi'],
+  [/universal house of justice|ri[dḍ]v[aá]n (\d{4} )?message|messages (from|of) the universal house/i, 'Universal House of Justice'],
+];
+export const workAuthor = (t) => (WORKS.find(([re]) => re.test(t)) || [])[1] || null;
+/** A short line in parentheses: a citation, whether or not it names a person. */
+export const isCitation = (t) => /^\(.{3,300}\)\.?$/.test(String(t).trim());
+
+/** Official blocks → Map(textKey → { name, on_behalf, basis }). Labels open sections; a citation claims the extracts above. */
 export function officialAuthors(bl) {
   const out = new Map(); let section = null; let since = [];
   for (const b of bl) {
     const label = sectionLabel(b);
     if (label) { section = label; since = []; continue; }
-    if (isTrailer(b)) {
-      const p = parseTrailer(b);
-      if (p.name) for (const k of since) out.set(k, { name: p.name, on_behalf: p.on_behalf || undefined, basis: 'official-trailer' });
+    if (isTrailer(b) || isCitation(b)) {
+      const p = isTrailer(b) ? parseTrailer(b) : {};
+      const name = p.name || workAuthor(b);
+      const who = name ? { name, on_behalf: p.on_behalf || undefined, basis: p.name ? 'official-trailer' : 'official-work' }
+        : section ? { ...section, basis: 'official-section' } : null;
+      if (who) for (const k of since) out.set(k, who);
       since = []; continue;
     }
     const k = textKey(b);

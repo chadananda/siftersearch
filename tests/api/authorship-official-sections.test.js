@@ -1,6 +1,6 @@
 // Recovering compilation section authors from the official edition: labels, trailers, text keys.
 import { describe, it, expect } from 'vitest';
-import { sectionLabel, textKey, officialAuthors, blocks } from '../../scripts/authorship/official-sections.mjs';
+import { sectionLabel, textKey, officialAuthors, blocks, workAuthor, isCitation } from '../../scripts/authorship/official-sections.mjs';
 
 describe('section labels', () => {
   it('reads the official labels', () => {
@@ -36,5 +36,25 @@ describe('official authors by text', () => {
   it('our copy matches the official one despite markers, footnotes and punctuation', () => {
     expect(textKey('⁅s1⁆I. We, verily, have set forth[^3] all things in Our Book (12, 13), as a token of grace'))
       .toBe(textKey('I. We, verily, have set forth all things in Our Book, as a token of grace'));
+  });
+});
+
+describe('citations that name only a work', () => {
+  it('close the extracts above them, and the work names its writer', () => {
+    const m = officialAuthors(blocks(`<p>3. From Letters of the Universal House of Justice</p>
+      <p>Endowments dedicated to charity revert to God, the Revealer of Signs, and none hath the right to dispose of them.</p>
+      <p>(The Kitáb-i-Aqdas, par. 42) [7]</p>
+      <p>The Universal House of Justice wishes you to know that the matter has been considered with care and attention.</p>
+      <p>(From a letter dated 1 May 1990 written by the Universal House of Justice to an individual)</p>`));
+    expect(m.get(textKey('Endowments dedicated to charity revert to God, the Revealer of Signs, and none hath the right to dispose of them.'))).toMatchObject({ name: 'Bahá’u’lláh', basis: 'official-work' });
+    expect(m.get(textKey('The Universal House of Justice wishes you to know that the matter has been considered with care and attention.'))).toMatchObject({ name: 'Universal House of Justice' });
+  });
+  it('maps works to writers; an unknown work falls back to the section', () => {
+    expect(workAuthor('(Some Answered Questions, no. 12)')).toBe('‘Abdu’l-Bahá');
+    expect(workAuthor('(The Advent of Divine Justice, p. 30)')).toBe('Shoghi Effendi');
+    expect(workAuthor('(Selections from the Writings of the Báb, 3:2)')).toBe('The Báb');
+    expect(workAuthor('(Compilation of Compilations, vol. I)')).toBeNull();
+    expect(isCitation('(Compilation of Compilations, vol. I)')).toBe(true);
+    expect(isCitation('A whole paragraph of ordinary prose (with an aside) that runs on.')).toBe(false);
   });
 });
