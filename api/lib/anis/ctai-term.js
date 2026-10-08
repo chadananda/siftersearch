@@ -45,6 +45,16 @@ export async function resolveTerm(latin, { complete } = {}) {
   return /^[؀-ۿً-ْٰ\s]{2,30}$/.test(word) ? word.replace(/[ً-ْٰ]/g, '') : null;
 }
 
+/** A few words either side of a span, the span in bold: «… از **عرفان** او …». Null when there is no span. */
+export function phraseWindow(text, span, words = 4) {
+  const t = String(text || '');
+  if (!Array.isArray(span) || !(span[1] > span[0]) || span[1] > t.length) return null;
+  const before = t.slice(0, span[0]).split(/\s+/).filter(Boolean), after = t.slice(span[1]).split(/\s+/).filter(Boolean);
+  const head = before.slice(-words).join(' '), tail = after.slice(0, words).join(' ');
+  const cell = `${before.length > words ? '… ' : ''}${head}${head ? ' ' : ''}**${t.slice(span[0], span[1]).trim()}**${tail ? ' ' : ''}${tail}${after.length > words ? ' …' : ''}`;
+  return cell.replace(/\|/g, '/').replace(/\s+/g, ' ').replace(/(\*\*)?\s+([,.;:!?،؛])/g, '$1$2');
+}
+
 const clip = (text, [s, e] = [0, 0], room = 260) => {
   const t = String(text || '');
   if (t.length <= room * 2) return t;
@@ -57,12 +67,15 @@ const clip = (text, [s, e] = [0, 0], room = 260) => {
  * inflections grouped (recognize · recognition · recognizing). CTAI's own counts are per ROOT — for عرفان they include
  * ʿarf "fragrance", a different word on the same letters — so they are only the fallback.
  */
+const FILLER = new Set(['can', 'may', 'shall', 'will', 'your', 'thy', 'his', 'her', 'its', 'their', 'our', 'my', 'thine', 'and', 'but', 'that', 'which', 'who', 'not', 'yet', 'be']);
+
 /** One rendering as a label: the alignment can carry neighbouring words ("knowledge,” the “heaven"); keep the head. */
 export function renderingLabel(en) {
   let t = String(en || '').toLowerCase().replace(/[“”"‘’]/g, '').split(/[,;:.!?()]/)[0].trim();
   t = t.replace(/^(?:of|the|a|an|to|his|thy|thine|my|its|their|our|her)\s+/g, '').replace(/^(?:of|the|a|an)\s+/, '');
   const words = t.split(/\s+/).filter(Boolean);
-  return words.length > 3 ? '' : words.join(' ');
+  if (words.length > 3 || (words.length === 1 && FILLER.has(words[0]))) return '';   // an alignment on "can", "your"… is noise
+  return words.join(' ');
 }
 
 export function renderingCounts(results = []) {
@@ -105,6 +118,7 @@ export async function ctaiTerm(term, { fetchImpl = fetch, key = config.ctai?.api
     url: p.url ? `${SITE}${p.url}` : null,
     original: clip(p.source_text, p.focus?.source_span), english: clip(p.translation, p.focus?.target_span),
     form: p.focus?.source || term, rendering: p.focus?.translation || null,
+    phrase: phraseWindow(p.source_text, p.focus?.source_span), phraseEn: phraseWindow(p.translation, p.focus?.target_span),
   })).filter((p) => p.url && p.original);
   if (!t && !passages.length) return null;
   return {
@@ -132,26 +146,45 @@ export function renderingsBlock(study, channel = {}) {
   return `**${title}:** ${study.renderings.map((r) => `${r.en} (${r.count})`).join(' · ')}`;
 }
 
+/** The passages, built by CODE (exact bolding from CTAI's spans): a table where the channel shows tables, a list
+ *  elsewhere. Rows chosen to show DIFFERENT renderings first. */
+export function passagesBlock(study, channel = {}, max = 8) {
+  const rows = (study?.passages || []).filter((p) => p.phrase && p.phraseEn && p.url && renderingLabel(p.rendering));
+  const seen = new Set(), first = [], rest = [];
+  for (const p of rows) { const k = renderingLabel(p.rendering).slice(0, 7); (seen.has(k) ? rest : first).push(p); seen.add(k); }
+  const pick = [...first, ...rest].slice(0, max);
+  if (!pick.length) return '';
+  if ((channel.capabilities || []).includes('tables')) {
+    return ['| Original | Shoghi Effendi’s English | Source |', '|---|---|---|',
+      ...pick.map((p) => `| ${p.phrase} | ${p.phraseEn} | [${p.ref}](${p.url}) |`)].join('\n');
+  }
+  return pick.map((p) => `- ${p.phrase} — ${p.phraseEn} — [${p.ref}](${p.url})`).join('\n');
+}
+
 /** Format direction for a term study, by what the channel can show. */
 export function termFormatHow(study, channel = {}) {
-  const tables = (channel.capabilities || []).includes('tables');
   return [
     `TERM STUDY of ${study.term}${study.transliteration ? ` (${study.transliteration})` : ''}${study.root ? `, root ${study.root}` : ''}.`,
     'Open with one sentence naming the word in Arabic script with its transliteration and what its root means.',
     'Then write the token [[RENDERINGS]] on a line of its own (code replaces it with the counts — never write counts yourself).',
-    tables
-      ? 'Then a table with columns: Original (a short phrase of 3–8 words around the word, the word in bold) | Shoghi Effendi’s English (the matching phrase, the rendering in bold) | Source (a link). One row per passage given, 5–8 rows, choosing passages that show DIFFERENT renderings, quoting only the given text.'
-      : 'Then 4–6 short items showing different renderings, each: the original phrase (word in bold) — Shoghi Effendi’s English phrase (rendering in bold) — linked source.',
+    'Then the token [[PASSAGES]] on a line of its own (code replaces it with the passages, original beside English — do not write a table or list of passages yourself).',
     'Then two or three sentences on what the range of renderings shows about the word, marked as your reading.',
     study.researchUrl ? `End with a link to the full concordance: [all renderings on CTAI](${study.researchUrl}).` : '',
   ].filter(Boolean).join(' ');
 }
 
-/** Put the code-built renderings in place of the token (or after the first paragraph if the writer dropped it). */
+/** Put the code-built renderings and passages in place of their tokens (a dropped token: renderings after the first
+ *  paragraph, passages after the renderings). */
 export function placeRenderings(reply, study, channel) {
-  const block = renderingsBlock(study, channel);
-  if (!block) return String(reply).replace(/\[\[RENDERINGS\]\]\n?/g, '');
-  if (reply.includes('[[RENDERINGS]]')) return reply.replace('[[RENDERINGS]]', block);
-  const i = reply.indexOf('\n\n');
-  return i > 0 ? `${reply.slice(0, i)}\n\n${block}${reply.slice(i)}` : `${reply}\n\n${block}`;
+  let out = String(reply);
+  const r = renderingsBlock(study, channel), p = passagesBlock(study, channel);
+  const put = (token, block, afterBlock) => {
+    if (!block) { out = out.replace(new RegExp(`\\[\\[${token}\\]\\]\\n?`, 'g'), ''); return; }
+    if (out.includes(`[[${token}]]`)) { out = out.replace(`[[${token}]]`, block); return; }
+    const at = afterBlock && out.includes(afterBlock) ? out.indexOf(afterBlock) + afterBlock.length : out.indexOf('\n\n');
+    out = at > 0 ? `${out.slice(0, at)}\n\n${block}${out.slice(at)}` : `${out}\n\n${block}`;
+  };
+  put('RENDERINGS', r, null);
+  put('PASSAGES', p, r);
+  return out;
 }

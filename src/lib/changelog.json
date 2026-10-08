@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T04:27:46.740Z",
+  "generated": "2026-10-08T04:34:08.598Z",
   "entries": [
+    {
+      "hash": "54a4db97",
+      "date": "2026-10-07",
+      "type": "Fixed",
+      "description": "Term study searches both ی/ي and ک/ك spellings and merges (CTAI does not fold them: ایقان 6 passages vs ايقان 22); live battery tests/quality/term-study-battery.mjs — 49/49: detection (10 ordinary questions never hijacked), Latin → Arabic, per-word top rendering for 8 terms, never a different word on the same root",
+      "scope": "anis"
+    },
     {
       "hash": "2f369299",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Selections populated (283), and record the works that HAVE no original",
       "scope": null
-    },
-    {
-      "hash": "2cecf841",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "Make the extractor certain WHOSE translation it reads, and count what is still missing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "54a4db97",
+        "date": "2026-10-07",
+        "type": "Fixed",
+        "description": "Term study searches both ی/ي and ک/ك spellings and merges (CTAI does not fold them: ایقان 6 passages vs ايقان 22); live battery tests/quality/term-study-battery.mjs — 49/49: detection (10 ordinary questions never hijacked), Latin → Arabic, per-word top rendering for 8 terms, never a different word on the same root",
+        "scope": "anis"
+      },
       {
         "hash": "2f369299",
         "date": "2026-10-07",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Selections populated (283), and record the works that HAVE no original",
-        "scope": null
-      },
-      {
-        "hash": "2cecf841",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "Make the extractor certain WHOSE translation it reads, and count what is still missing",
         "scope": null
       }
     ]

@@ -1,7 +1,7 @@
 // Anís term study via CTAI: which questions are about a word, the CTAI calls (faked fetch), the code-built renderings,
 // and the respond path end to end with injected deps (no network, no model).
 import { describe, it, expect } from 'vitest';
-import { termQuestion, resolveTerm, ctaiTerm, termEvidence, renderingsBlock, placeRenderings, termFormatHow, renderingCounts } from '../../api/lib/anis/ctai-term.js';
+import { termQuestion, resolveTerm, ctaiTerm, termEvidence, renderingsBlock, placeRenderings, termFormatHow, renderingCounts, phraseWindow, passagesBlock } from '../../api/lib/anis/ctai-term.js';
 import { anisRespond } from '../../api/lib/anis/respond.js';
 import { channelFor } from '../../api/lib/anis/channels.js';
 
@@ -11,7 +11,11 @@ const STUDY = {
   total: 78, researchUrl: 'https://ctai.info/research/root/rf-knowledge-know/',
   passages: [{ work: 'Gleanings', author: 'Bahá’u’lláh', ref: 'Gleanings XXIX.1', url: 'https://ctai.info/models/gleanings/50/',
     original: 'مقصود از آفرینش عرفان حقّ و لقای او بوده و خواهد بود', english: 'The purpose of God in creating man hath been, and will ever be, to enable him to know his Creator',
-    form: 'عرفان', rendering: 'know' }],
+    form: 'عرفان', rendering: 'know', phrase: 'مقصود از آفرینش **عرفان** حقّ و لقای …', phraseEn: '… enable him to **know** his Creator' },
+    { work: 'Gleanings', author: 'Bahá’u’lláh', ref: 'Gleanings LXXXIII.4', url: 'https://ctai.info/models/gleanings/327/', original: 'x', english: 'y',
+      form: 'عرفان', rendering: 'knowledge', phrase: 'از **عرفان** او', phraseEn: 'the **knowledge** of Him' },
+    { work: 'Gleanings', author: 'Bahá’u’lláh', ref: 'Gleanings II.1', url: 'https://ctai.info/models/gleanings/7/', original: 'x', english: 'y',
+      form: 'عرفان', rendering: 'knowledge', phrase: '**عرفان** اللّه', phraseEn: '**knowledge** of God' }],
 };
 
 describe('which questions are about a word', () => {
@@ -63,6 +67,8 @@ describe('counting renderings of the word itself', () => {
     expect(renderingLabel('comprehend thy nature')).toBe('comprehend thy nature');
     expect(renderingLabel('the capacity')).toBe('capacity');
     expect(renderingLabel('a very long aligned phrase that is not a rendering')).toBe('');
+    expect(renderingLabel('can')).toBe('');
+    expect(renderingLabel('Your')).toBe('');
   });
   const r = (t) => ({ focus: { translation: t } });
   it('groups inflections, skips unaligned, sorts by count', () => {
@@ -94,11 +100,32 @@ describe('renderings are built by code, by channel', () => {
   });
   it('replaces the token, or follows the first paragraph if the writer dropped it', () => {
     expect(placeRenderings('Intro.\n\n[[RENDERINGS]]\n\nMore.', STUDY, channelFor('site-chat'))).toContain('Intro.\n\n**How Shoghi Effendi');
-    expect(placeRenderings('Intro.\n\nMore.', STUDY, channelFor('site-chat'))).toMatch(/^Intro\.\n\n\*\*How Shoghi Effendi[^\n]+\n\nMore\.$/);
+    expect(placeRenderings('Intro.\n\nMore.', STUDY, channelFor('site-chat'))).toMatch(/^Intro\.\n\n\*\*How Shoghi Effendi[^\n]+\n\n\| Original[\s\S]+\n\nMore\.$/);
   });
-  it('asks for a table only where the channel shows tables', () => {
-    expect(termFormatHow(STUDY, channelFor('email', { trusted: true }))).toMatch(/a table with columns/);
-    expect(termFormatHow(STUDY, channelFor('widget-chat'))).not.toMatch(/table/);
+  it('the model writes tokens; code writes the counts and the passages', () => {
+    const how = termFormatHow(STUDY, channelFor('email', { trusted: true }));
+    expect(how).toMatch(/\[\[RENDERINGS\]\]/);
+    expect(how).toMatch(/\[\[PASSAGES\]\]/);
+  });
+  it('a phrase window bolds exactly the span', () => {
+    expect(phraseWindow('one two three four five WORD six seven eight nine ten', [24, 28], 2)).toBe('… four five **WORD** six seven …');
+    expect(phraseWindow('WORD here', [0, 4])).toBe('**WORD** here');
+    expect(phraseWindow('no span', null)).toBeNull();
+    expect(phraseWindow('gales of divine knowledge , blowing', [16, 25])).toBe('gales of divine **knowledge**, blowing');
+  });
+  it('the passage table: different renderings first, a list where tables cannot show', () => {
+    const t = passagesBlock(STUDY, channelFor('email', { trusted: true }));
+    const rows = t.split('\n');
+    expect(rows[0]).toBe('| Original | Shoghi Effendi’s English | Source |');
+    expect(rows[2]).toContain('**know**');                 // 'know' and 'knowledge' are different renderings: both first
+    expect(rows[3]).toContain('**knowledge**');
+    expect(rows[2]).toContain('[Gleanings XXIX.1](https://ctai.info/models/gleanings/50/)');
+    expect(passagesBlock(STUDY, channelFor('widget-chat'))).toMatch(/^- مقصود/);
+  });
+  it('passages land after the renderings even if the writer dropped both tokens', () => {
+    const out = placeRenderings('Intro.\n\nReading.', STUDY, channelFor('site-chat'));
+    expect(out.indexOf('**How Shoghi Effendi')).toBeLessThan(out.indexOf('| Original'));
+    expect(out.indexOf('| Original')).toBeLessThan(out.indexOf('Reading.'));
   });
   it('evidence is the paired passages, linked to CTAI', () => {
     expect(termEvidence(STUDY)[0]).toMatchObject({ citation_url: 'https://ctai.info/models/gleanings/50/', via: 'ctai' });
