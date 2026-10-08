@@ -26,6 +26,10 @@ const [OUT, ...IDS] = args;
 const MIN = Number(opt('--min', 0.7)), STEP = Number(opt('--step', 10)), PASSES = Number(opt('--passes', 2));
 const GOLD = opt('--gold', null) ? JSON.parse((await import('fs')).readFileSync(opt('--gold'), 'utf-8')).items : null;
 const TASK = 'paragraph-speaker-window', BACK = 5, AHEAD = 5;
+// --hybrid: a speaker the reader took from evidence on the page is fixed (shown, not asked); only its quotes are asked
+const HYBRID = process.argv.includes('--hybrid');
+const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work']);
+const knownSpeaker = (r) => { if (!HYBRID) return null; const a = JSON.parse(r.authors || '[]').find((e) => e.role === 'author'); return a?.name && STRONG.has(a.basis) ? a.name : null; };
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 mkdirSync(OUT, { recursive: true });
 
@@ -40,19 +44,19 @@ async function escalate(state, flagged, roster) {
 async function pass(book, rows, roster, prior) {
   const labels = new Array(rows.length).fill(null);
   for (let i0 = 0; i0 < rows.length; i0 += STEP) {
-    const targets = rows.slice(i0, i0 + STEP);
+    const targets = rows.slice(i0, i0 + STEP).map((p) => ({ ...p, known: knownSpeaker(p) }));
     const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
     const ahead = rows.slice(i0 + STEP, i0 + STEP + AHEAD);
     const state = windowState({ book, roster, anchors, targets, ahead });
-    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book), { ref: targets[0].id, timeoutMs: 40000 });
+    const r = await ask(TASK, state, windowQuestions(roster, targets.length, book, targets.map((p) => p.known)), { ref: targets[0].id, timeoutMs: 40000 });
     cost.calls++; cost.tokens += r.tokens || 0;
-    const got = parseAnswers(r.answers, targets.length);
+    const got = parseAnswers(r.answers, targets.length).map((l, k) => (targets[k].known ? { ...l, speaker: targets[k].known, fixed: true } : l));
     // escalate: unnamed / unsure, and in pass 2 anything that disagrees with pass 1
     const flagged = got.map((l, k) => (needsEscalation(l, MIN) || (prior && prior[i0 + k] && prior[i0 + k].speaker !== l.speaker) ? k : -1)).filter((k) => k >= 0);
     if (flagged.length) {
       const fix = await escalate(state, flagged, roster);
       for (const [k, v] of Object.entries(fix)) {
-        got[k] = { ...got[k], ...v, via: 'llm' };
+        got[k] = { ...got[k], ...v, ...(got[k].fixed ? { speaker: got[k].speaker } : {}), via: 'llm' };
         for (const n of [v.speaker, v.quotes]) if (n && !roster.includes(n) && n !== OTHER) roster.push(n);   // grows going forward
       }
     }

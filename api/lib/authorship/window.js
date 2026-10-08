@@ -57,14 +57,18 @@ export function windowState({ book, roster, anchors, targets, ahead }) {
   if (anchors.length) lines.push('ALREADY DECIDED:');
   for (const p of anchors) { head(p); lines.push(`[speaker: ${p.label.speaker || '?'}; quotes: ${p.label.quotes || NONE}] ${clip(p.text, 300)}`); }
   lines.push('', 'TO DECIDE:');
-  targets.forEach((p, i) => { head(p); lines.push(`T${i + 1}: ${condense(p.text)}`); });
+  targets.forEach((p, i) => { head(p); lines.push(`T${i + 1}${p.known ? ` [speaker known: ${p.known}]` : ''}: ${condense(p.text)}`); });
   if (ahead.length) lines.push('', 'WHAT FOLLOWS (attribution lines often come AFTER the extracts they name):');
   for (const p of ahead) { head(p); lines.push(clip(p.text, 300)); }
   return lines.join('\n');
 }
 
-/** System-1 questions: per target, speaker and quotes, each a choice over the roster. */
-export function windowQuestions(roster, n, book) {
+// A compiler gathers other people's words — never the speaker of an extract (v2 escalation credited 15 extracts to it).
+export const isCompiler = (n) => /compil|research department/i.test(String(n || ''));
+
+/** System-1 questions: per target, speaker and quotes, each a choice over the roster. `known[i]` = a speaker already fixed
+ *  by evidence (hybrid): only its quotes are asked. */
+export function windowQuestions(roster, n, book, known = []) {
   const who = {};
   for (const r of roster) who[r] = FIGURES.includes(r) ? `words of ${r}${/Shoghi|House/.test(r) ? ' (including letters written on behalf)' : ''}` : r;
   if (!roster.includes(book.author) && book.author) who[book.author] = `${book.author}, the author or compiler, in their own voice`;
@@ -73,7 +77,7 @@ export function windowQuestions(roster, n, book) {
   const quotes = { [NONE]: 'quotes or cites no one', ...who };
   const q = {};
   for (let i = 1; i <= n; i++) {
-    q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Who is writing or speaking T${i} as a whole? A narrator who reports or quotes someone is still the speaker — the person quoted is NOT. Only when T${i} is entirely someone else's words (the body of their letter, an extract from their writings, their talk) are they the speaker. A reference or attribution line belongs to the extracts it names. Use the section heading, the decided paragraphs and the lines that follow.` };
+    if (!known[i - 1]) q[`s${i}`] = { type: 'choice', criteria: who, instructions: `Who is writing or speaking T${i} as a whole? A narrator who reports or quotes someone is still the speaker — the person quoted is NOT. Only when T${i} is entirely someone else's words (the body of their letter, an extract from their writings, their talk) are they the speaker. A reference or attribution line belongs to the extracts it names. Use the section heading, the decided paragraphs and the lines that follow.` };
     q[`q${i}`] = { type: 'choice', criteria: quotes, instructions: `Inside T${i}, whose words are quoted (“…”, "he said", "she wrote") or whose work is cited — someone other than the speaker? If several, the one quoted most.` };
   }
   return q;
@@ -83,7 +87,7 @@ export function windowQuestions(roster, n, book) {
 export function parseAnswers(answers, n) {
   const pick = (a) => ({ v: a?.choice ?? a?.value ?? null, c: +(a?.confidence ?? 0) });
   return Array.from({ length: n }, (_, k) => {
-    const s = pick(answers?.[`s${k + 1}`]), q = pick(answers?.[`q${k + 1}`]);
+    const s = answers?.[`s${k + 1}`] ? pick(answers[`s${k + 1}`]) : { v: null, c: 1 }, q = pick(answers?.[`q${k + 1}`]);
     return { speaker: s.v, quotes: q.v === NONE ? null : q.v, conf: Math.min(s.c, q.c), sconf: s.c };
   });
 }
@@ -93,7 +97,7 @@ export const needsEscalation = (l, min) => l.speaker === OTHER || l.quotes === O
 
 /** Escalation prompt for the flash LLM: same window, only the flagged targets, answer as JSON with real names. */
 export function escalationPrompt(state, flagged) {
-  return `${state}\n\nFor each of ${flagged.map((i) => `T${i + 1}`).join(', ')}, give the speaker — who writes or speaks the paragraph as a whole; a narrator who reports or quotes someone is still the speaker; only a paragraph that is entirely someone else's words (their letter, extract or talk) has them as speaker — and quotes: whose words are quoted inside it or whose work it cites (the one quoted most), or null. Use a name from KNOWN SPEAKERS when it is one of them; otherwise give the person's name as the text gives it. A reference or attribution line ("Shoghi Effendi, The Advent of Divine Justice, p. 30", "From a letter written on behalf of…") names the writer of the extracts above it.\nAnswer ONLY JSON: {"T1": {"speaker": "…", "quotes": null}, …}`;
+  return `${state}\n\nFor each of ${flagged.map((i) => `T${i + 1}`).join(', ')}, give the speaker — who writes or speaks the paragraph as a whole; a narrator who reports or quotes someone is still the speaker; only a paragraph that is entirely someone else's words (their letter, extract or talk) has them as speaker — and quotes: whose words are quoted inside it or whose work it cites (the one quoted most), or null. Use a name from KNOWN SPEAKERS when it is one of them; otherwise give the person's name as the text gives it. A reference or attribution line ("Shoghi Effendi, The Advent of Divine Justice, p. 30", "From a letter written on behalf of…") names the writer of the extracts above it. In a compilation the speaker of an extract is its writer, never the compiler.\nAnswer ONLY JSON: {"T1": {"speaker": "…", "quotes": null}, …}`;
 }
 
 export function parseEscalation(text, flagged, roster) {
@@ -104,7 +108,9 @@ export function parseEscalation(text, flagged, roster) {
   for (const i of flagged) {
     const v = j[`T${i + 1}`];
     if (!v?.speaker) continue;
-    out[i] = { speaker: canonical(v.speaker, roster), quotes: v.quotes ? canonical(v.quotes, roster) : null };
+    const speaker = canonical(v.speaker, roster);
+    if (isCompiler(speaker)) continue;   // keep System-1's answer rather than credit the compiler
+    out[i] = { speaker, quotes: v.quotes ? canonical(v.quotes, roster) : null };
   }
   return out;
 }

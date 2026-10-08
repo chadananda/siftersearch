@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T15:18:53.675Z",
+  "generated": "2026-10-08T15:28:52.653Z",
   "entries": [
+    {
+      "hash": "f36e8d6b",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Window classifier v2 — speaker = the paragraph's narrator unless it is wholly someone's words; long paragraphs condensed around their quotations; eval script + iteration log",
+      "scope": "authorship"
+    },
     {
       "hash": "f65abaac",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Summons + Fountain of Wisdom written; the Súriy-i-Haykal is a citation stub, verified against controls",
       "scope": null
-    },
-    {
-      "hash": "70e659e4",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The compilations, found by probe rather than recalled — and a coverage figure that exceeded 1",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "f36e8d6b",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Window classifier v2 — speaker = the paragraph's narrator unless it is wholly someone's words; long paragraphs condensed around their quotations; eval script + iteration log",
+        "scope": "authorship"
+      },
       {
         "hash": "f65abaac",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Other",
         "description": "Summons + Fountain of Wisdom written; the Súriy-i-Haykal is a citation stub, verified against controls",
-        "scope": null
-      },
-      {
-        "hash": "70e659e4",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The compilations, found by probe rather than recalled — and a coverage figure that exceeded 1",
         "scope": null
       }
     ]
