@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T12:32:11.283Z",
+  "generated": "2026-10-08T13:55:02.723Z",
   "entries": [
+    {
+      "hash": "7092e38c",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "'quoted in <work>' never credits the quoting work; Ḥuqúqu'lláh (our copy's attribution lines demonstrably wrong) takes the official section/work attribution over its own",
+      "scope": "authorship"
+    },
     {
       "hash": "7dc8d999",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "LargestCluster imported into the wrong route",
       "scope": null
-    },
-    {
-      "hash": "c5737495",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "A double line-shift and an outer range that swallowed a neighbouring work",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "7092e38c",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "'quoted in <work>' never credits the quoting work; Ḥuqúqu'lláh (our copy's attribution lines demonstrably wrong) takes the official section/work attribution over its own",
+        "scope": "authorship"
+      },
       {
         "hash": "7dc8d999",
         "date": "2026-10-08",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-26",
         "type": "Fixed",
         "description": "LargestCluster imported into the wrong route",
-        "scope": null
-      },
-      {
-        "hash": "c5737495",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "A double line-shift and an outer range that swallowed a neighbouring work",
         "scope": null
       }
     ]

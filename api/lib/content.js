@@ -196,9 +196,9 @@ async function bulkInsertParagraphs(docId, paragraphs) {
         (doc_id, paragraph_index, text, content_hash, normalized_hash,
          heading, blocktype, embedding, embedding_model,
          hyp_thesis, hyp_questions, context, context_model, enhanced_synced,
-         external_para_id, pdf_page,
+         external_para_id, pdf_page, block_attrs,
          synced, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       args: [
         docId, p.paragraphIndex, p.text,
         computeContentHash(p.text), computeNormalizedHash(p.text),
@@ -209,6 +209,7 @@ async function bulkInsertParagraphs(docId, paragraphs) {
         0,
         p.external_para_id || null,
         typeof p.pdf_page === 'number' ? p.pdf_page : null,
+        p.block_attrs ? JSON.stringify(p.block_attrs) : null,
         ts, ts
       ]
     };

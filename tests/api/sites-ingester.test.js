@@ -136,6 +136,7 @@ const SCHEMA = `
     context_model TEXT,
     enhanced_synced INTEGER DEFAULT 0,
     external_para_id TEXT,
+    block_attrs TEXT,
     is_duplicate INTEGER DEFAULT 0,
     pdf_page INTEGER,
     synced INTEGER DEFAULT 0,

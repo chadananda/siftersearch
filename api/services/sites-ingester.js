@@ -626,7 +626,8 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
       context: bundle?.context || null,
       context_model: bundle?.context_model || null,
       external_para_id: p.external_para_id || null,
-      pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null
+      pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
+      block_attrs: p.block_attrs || null
     };
   });
 
@@ -737,6 +738,13 @@ export async function ingestSite(siteId, opts = {}) {
     files = files.slice(0, opts.limit);
     logger.info({ siteId, limit: opts.limit }, 'Sites-ingester: subset run');
   }
+  // Named files only (paths relative to the site root, NFC). These were just edited, so they skip the Dropbox
+  // cooldown without --force re-ingesting the whole site; the caller has confirmed they finished syncing.
+  const only = opts.files?.length ? new Set(opts.files.map((f) => f.normalize('NFC'))) : null;
+  if (only) {
+    files = files.filter((f) => only.has(relative(siteRoot, f).normalize('NFC')));
+    logger.info({ siteId, requested: only.size, matched: files.length }, 'Sites-ingester: named files');
+  }
   logger.info({ siteId, files: files.length }, 'Sites-ingester: discovered files');
 
   const stats = { new: 0, re_ingested: 0, unchanged: 0, skipped_cooldown: 0, empty: 0, errors: 0, supersedes: 0 };
@@ -754,7 +762,7 @@ export async function ingestSite(siteId, opts = {}) {
     try {
       const result = await ingestOneFile({
         adapter, siteConfig, siteRoot, basePath, absPath: abs,
-        threshold, force: !!opts.force, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing
+        threshold, force: !!opts.force || !!only, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing
       });
       stats[result.status] = (stats[result.status] || 0) + 1;
       if (result.status !== 'unchanged') details.push({ file: result.file, status: result.status, doc_id: result.doc_id ?? null, paragraphs: result.paragraphs ?? null, supersedes: result.supersedes ?? null });
@@ -775,7 +783,7 @@ export async function ingestSite(siteId, opts = {}) {
   // Skip reconciliation when running a subset — would falsely soft-delete the
   // 525 books we didn't process this run.
   // Dry runs and onlyMissing runs never reconcile deletions: they exist to ADD, and must not remove anything.
-  const reconcile = (typeof opts.limit === 'number' && opts.limit > 0)
+  const reconcile = ((typeof opts.limit === 'number' && opts.limit > 0) || only)
     ? { deleted: 0, restored: 0, skipped: 'subset run' }
     : (opts.dryRun || opts.onlyMissing)
       ? { deleted: 0, restored: 0, skipped: opts.dryRun ? 'dry run' : 'onlyMissing run' }

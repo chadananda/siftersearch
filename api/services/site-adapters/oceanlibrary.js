@@ -154,6 +154,8 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
       heading: currentHeading,
       blocktype: type === 'preamble' ? 'preamble' : 'paragraph',
       external_para_id: (attrs && attrs.id) || null,
+      // the site's block id: with the book's bookid it makes data-ilmid, the anchor of a range link (lib/ocean-range.js)
+      ...(attrs?.ilm_id ? { block_attrs: { ilm_id: attrs.ilm_id } } : {}),
       language: (attrs && attrs.language) || frontmatter.language || 'en'
     });
   };

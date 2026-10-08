@@ -30,6 +30,11 @@ export const OFFICIAL = {
   20868: 'institution-mashriqul-adhkar', 20822: 'issues-related-study-bahai-faith', 20823: 'peace',
   20824: 'prayer-devotional-life', 20869: 'significance-formative-age-our-faith', 20827: 'social-action',
   20871: 'set-world-order', 20872: 'trustworthiness', 20870: 'universal-house-of-justice-compilation', 20874: 'women',
+  // restored from the Feb-2026 export (the conversion had dropped them with the editors' test folders), 2026-10-08
+  945899: 'chaste-holy-life', 945903: 'bahai-funds-contributions', 945906: 'consultation', 945907: 'crisis-victory',
+  945910: 'excellence-all-things', 945911: 'family-life', 945922: 'importance-prayer-meditation-devotional-attitude',
+  945915: 'living-life', 945923: 'local-spiritual-assembly', 945917: 'music', 945924: 'national-spiritual-assembly',
+  945926: 'power-divine-assistance', 945927: 'sanctity-nature-bahai-elections', 945921: 'scholarship',
 };
 
 const WHO = [

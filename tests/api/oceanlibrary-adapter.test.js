@@ -161,3 +161,12 @@ describe('compilation authors keep their rank', async () => {
     expect(getAuthority({ author: 'Research Department of the Universal House of Justice (compiler)', religion: "Bahá'í", collection: '' })).toBe(7);
   });
 });
+
+describe('OceanLibrary site block id', () => {
+  it('keeps ilm_id in block_attrs so a range link can name the block', async () => {
+    const md = FM + 'Such a chaste and holy life… {.dropcap id="para_9" ilm_id="bl30" type="par" language="en"}\n\nNo site id here. {id="para_10" type="par" language="en"}\n';
+    const { paragraphs } = await parseDoc('test.md', md, {});
+    expect(paragraphs[0]).toMatchObject({ external_para_id: 'para_9', block_attrs: { ilm_id: 'bl30' } });
+    expect(paragraphs[1].block_attrs).toBeUndefined();
+  });
+});
