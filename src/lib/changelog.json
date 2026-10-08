@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T02:56:12.516Z",
+  "generated": "2026-10-08T03:08:33.257Z",
   "entries": [
+    {
+      "hash": "5aa11bf9",
+      "date": "2026-10-07",
+      "type": "New",
+      "description": "Ignore list (D1 mail_ignore; domain incl. subdomains, or full address) — mail from bnc.org and usbnc.org is dropped unread and unstored",
+      "scope": "mail"
+    },
     {
       "hash": "25fbea1a",
       "date": "2026-10-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "CTAI is the side-by-side paragraph fetch, nothing more",
       "scope": null
-    },
-    {
-      "hash": "197b3377",
-      "date": "2026-08-25",
-      "type": "Other",
-      "description": "Fetch a work's pairs concurrently, and stop probing past the last one",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-07": [
+      {
+        "hash": "5aa11bf9",
+        "date": "2026-10-07",
+        "type": "New",
+        "description": "Ignore list (D1 mail_ignore; domain incl. subdomains, or full address) — mail from bnc.org and usbnc.org is dropped unread and unstored",
+        "scope": "mail"
+      },
       {
         "hash": "25fbea1a",
         "date": "2026-10-07",
@@ -7045,13 +7052,6 @@
         "date": "2026-08-25",
         "type": "Other",
         "description": "CTAI is the side-by-side paragraph fetch, nothing more",
-        "scope": null
-      },
-      {
-        "hash": "197b3377",
-        "date": "2026-08-25",
-        "type": "Other",
-        "description": "Fetch a work's pairs concurrently, and stop probing past the last one",
         "scope": null
       }
     ]

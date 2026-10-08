@@ -1,13 +1,16 @@
 // Anís mail at the edge: anis@oceanlibrary.com through Amazon SES (us-west-2), state in D1 (env.ANIS_DB).
 //   POST /_mail/ses/inbound  SNS → raw MIME from S3 → mail_messages (direction in; mailbox anis, or newsletter = replies to m.oceanlibrary.com)
 //   POST /_mail/ses/events   SNS → mail_events; hard bounce / complaint → mail_suppression
-//   POST /_mail/send         internal key; sends a draft ({id}) or a message ({to, subject, text, html?, inReplyTo?})
+//   POST /_mail/send         internal key; sends a draft ({id}) or a message ({to, subject, text, html?, inReplyTo?, kind?})
+//                            — every letter passes the engagement rules (rules.js) first; refused → status 'blocked'
 //   GET  /_mail/messages     internal key; ?mailbox=anis|newsletter &status=&direction=&limit=
+//   GET|POST /_mail/pause    footer / List-Unsubscribe one-click: stops all outreach to that address (no login)
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 /* global btoa */
 import { AwsClient } from 'aws4fetch';
 import PostalMime from 'postal-mime';
 import { verifySns, isAmazonUrl } from './sns.js';
+import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
 
 const REGION = 'us-west-2';
 const ACCOUNT = '409305238362';
@@ -16,6 +19,7 @@ const TOPIC_EVENTS = `arn:aws:sns:${REGION}:${ACCOUNT}:ses-anis-events`;
 const FROM_ADDR = 'anis@oceanlibrary.com';
 const FROM_NAME = 'Anís — Ocean AI Research Assistant';
 const CONFIG_SET = 'anis';
+const SITE = 'https://siftersearch.com';
 
 const json = (body, status = 200) => Response.json(body, { status });
 const aws = (env, service) => new AwsClient({ accessKeyId: env.AWS_SES_ACCESS_KEY_ID, secretAccessKey: env.AWS_SES_SECRET_ACCESS_KEY, service, region: REGION });
@@ -118,6 +122,9 @@ async function inbound(request, env) {
     mail.inReplyTo ?? null, threadKey(mail), lower(mail.from?.address), mail.from?.name ?? null,
     (mail.to || []).map((t) => lower(t.address)).join(', '), mail.subject ?? '', mail.text ?? '', mail.html ?? null,
     act.objectKey, spam ?? null, virus ?? null).run();
+  if (mailbox === 'anis' && status === 'unsubscribe' && mail.from?.address) {     // "stop writing to me" ends outreach
+    await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, 'asked by email')`).bind(await emailHash(mail.from.address)).run();
+  }
   return json({ stored: true, status });
 }
 
@@ -136,7 +143,10 @@ async function events(request, env) {
 export async function sendMail(env, { to, subject, text, html, inReplyTo, references }) {
   const addr = lower(to);
   if (await env.ANIS_DB.prepare('SELECT 1 FROM mail_suppression WHERE email = ?').bind(addr).first()) return { suppressed: true };
-  const headers = [];
+  const pause = `${SITE}/_mail/pause?t=${await pauseToken(addr, env.MAIL_LINK_SECRET)}`;
+  text = `${text}\n\n—\nAnís, Ocean AI Research Assistant. Rather not hear from me? ${pause}`;
+  if (html) html = `${html}<p style="margin-top:2em;font-size:12px;color:#777">Anís, Ocean AI Research Assistant · <a href="${pause}" style="color:#777">Rather not hear from me?</a></p>`;
+  const headers = [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }];
   if (inReplyTo) headers.push({ Name: 'In-Reply-To', Value: inReplyTo });
   if (references || inReplyTo) headers.push({ Name: 'References', Value: references || inReplyTo });
   const res = await aws(env, 'ses').fetch(`https://email.${REGION}.amazonaws.com/v2/email/outbound-emails`, {
@@ -144,7 +154,7 @@ export async function sendMail(env, { to, subject, text, html, inReplyTo, refere
     body: JSON.stringify({
       FromEmailAddress: mimeName(FROM_NAME, FROM_ADDR), Destination: { ToAddresses: [addr] }, ConfigurationSetName: CONFIG_SET,
       Content: { Simple: { Subject: { Data: subject, Charset: 'UTF-8' }, Body: { Text: { Data: text, Charset: 'UTF-8' }, ...(html ? { Html: { Data: html, Charset: 'UTF-8' } } : {}) },
-        ...(headers.length ? { Headers: headers } : {}) } },
+        Headers: headers } },
     }),
   });
   const out = await res.json().catch(() => ({}));
@@ -162,15 +172,62 @@ async function send(request, env) {
     if (!row) return json({ error: 'no such draft' }, 404);
   } else {
     if (!b.to || !b.subject || !b.text) return json({ error: 'to, subject, text required' }, 400);
-    row = await db.prepare(`INSERT INTO mail_messages (mailbox, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key)
-      VALUES ('anis', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, lower(b.to), b.subject, b.text, b.html ?? null,
+    row = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key)
+      VALUES ('anis', ?, 'out', 'draft', ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(b.kind ?? (b.inReplyTo ? 'reply' : 'outreach'), FROM_ADDR, lower(b.to), b.subject, b.text, b.html ?? null,
       b.inReplyTo ?? null, b.threadKey ?? b.inReplyTo ?? null).first();
+  }
+  const verdict = sendDecision(await sendFacts(db, row), settingsFrom((await db.prepare('SELECT key, value FROM mail_settings').all()).results));
+  if (!verdict.ok) {
+    await db.prepare(`UPDATE mail_messages SET status = 'blocked', error = ? WHERE id = ?`).bind(verdict.reason, row.id).run();
+    return json({ id: row.id, status: 'blocked', reason: verdict.reason }, 409);
   }
   const r = await sendMail(env, { to: row.to_addr, subject: row.subject, text: row.text, html: row.html, inReplyTo: row.in_reply_to, references: row.thread_key });
   const status = r.suppressed ? 'suppressed' : r.error ? 'failed' : 'sent';
   await db.prepare(`UPDATE mail_messages SET status = ?, ses_message_id = ?, error = ?, sent_at = CASE WHEN ? = 'sent' THEN datetime('now') END WHERE id = ?`)
     .bind(status, r.sesMessageId ?? null, r.error ?? null, status, row.id).run();
   return json({ id: row.id, status, ...r }, r.error ? 502 : 200);
+}
+
+/** What the rules need to know about one letter's recipient. */
+async function sendFacts(db, row) {
+  const addr = lower(row.to_addr);
+  const one = (sql, ...a) => db.prepare(sql).bind(...a).first();
+  const { results: rules } = await db.prepare('SELECT pattern FROM mail_ignore').all();
+  const inbound = await one(`SELECT count(*) n, julianday('now') - julianday(max(created_at)) days, max(created_at) last FROM mail_messages
+    WHERE direction = 'in' AND mailbox = 'anis' AND from_addr = ? AND status NOT IN ('spam', 'auto')`, addr);
+  return {
+    kind: row.kind ?? (row.in_reply_to ? 'reply' : 'outreach'),
+    suppressed: !!(await one('SELECT 1 x FROM mail_suppression WHERE email = ?', addr)),
+    ignored: ignoredBy([addr], rules.map((r) => r.pattern)),
+    stopped: !!(await one('SELECT 1 x FROM mail_stop WHERE email_hash = ?', await emailHash(addr))),
+    allowlisted: !!(await one('SELECT 1 x FROM mail_allowlist WHERE email = ?', addr)),
+    inboundCount: inbound?.n ?? 0,
+    daysSinceLastInbound: inbound?.days ?? Infinity,
+    outreachSinceLastInbound: (await one(`SELECT count(*) n FROM mail_messages WHERE direction = 'out' AND kind = 'outreach' AND status = 'sent'
+      AND to_addr = ? AND sent_at > coalesce(?, '')`, addr, inbound?.last ?? null))?.n ?? 0,
+    sentToPersonToday: (await one(`SELECT count(*) n FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND to_addr = ?
+      AND sent_at > datetime('now', '-1 day')`, addr))?.n ?? 0,
+    sentToday: (await one(`SELECT count(*) n FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND sent_at > datetime('now', '-1 day')`))?.n ?? 0,
+  };
+}
+
+const page = (body) => new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anís</title>
+<body style="font:16px/1.6 Georgia,serif;max-width:34em;margin:3em auto;padding:0 1em;color:#222">${body}</body>`, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+
+// GET shows a button (mail scanners prefetch links, so a GET must change nothing); POST stops outreach. The one-click
+// List-Unsubscribe POST (RFC 8058) carries the token in the URL.
+async function pausePage(request, env) {
+  const url = new URL(request.url);
+  let t = url.searchParams.get('t');
+  if (request.method === 'POST' && !t) { try { t = (await request.formData()).get('t'); } catch { /* none */ } }
+  const h = await verifyPauseToken(t, env.MAIL_LINK_SECRET);
+  if (!h) return page('<h1>This link is not valid</h1><p>It may have been copied incompletely.</p>');
+  if (request.method === 'GET') {
+    return page(`<h1>Rather not hear from Anís?</h1><p>Anís will not write to you first again. If you write, you will still get an answer.</p>
+<form method="post"><input type="hidden" name="t" value="${t}"><button style="font:inherit;padding:.5em 1.2em">Stop letters from Anís</button></form>`);
+  }
+  await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, 'pause link')`).bind(h).run();
+  return page('<h1>Done</h1><p>Anís will not write to you first again. You are always welcome to write.</p>');
 }
 
 async function list(request, env) {
@@ -194,5 +251,6 @@ export function mailRoute(request, env) {
   if (request.method === 'POST' && p === '/_mail/ses/events') return events(request, env);
   if (request.method === 'POST' && p === '/_mail/send') return send(request, env);
   if (request.method === 'GET' && p === '/_mail/messages') return list(request, env);
+  if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/pause') return pausePage(request, env);
   return null;
 }
