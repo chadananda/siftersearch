@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T19:03:15.362Z",
+  "generated": "2026-10-09T19:05:21.008Z",
   "entries": [
+    {
+      "hash": "64b8893a",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Secondary — on-behalf rule never re-promotes a paragraph a check handed back to the author",
+      "scope": "authorship"
+    },
     {
       "hash": "28766da2",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "File stack currency work",
       "scope": null
-    },
-    {
-      "hash": "ee7e3a62",
-      "date": "2026-09-05",
-      "type": "Other",
-      "description": "Project state (SKIP_LINT — pre-existing lint warnings, test gate kept)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "64b8893a",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Secondary — on-behalf rule never re-promotes a paragraph a check handed back to the author",
+        "scope": "authorship"
+      },
       {
         "hash": "28766da2",
         "date": "2026-10-09",
@@ -7037,13 +7044,6 @@
         "date": "2026-09-05",
         "type": "Other",
         "description": "File stack currency work",
-        "scope": null
-      },
-      {
-        "hash": "ee7e3a62",
-        "date": "2026-09-05",
-        "type": "Other",
-        "description": "Project state (SKIP_LINT — pre-existing lint warnings, test gate kept)",
         "scope": null
       }
     ]

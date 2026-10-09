@@ -212,6 +212,7 @@ export const isJunk = (text) => {
   if (/\bTAGS:|\bAbstract:/.test(raw)) return true;
   // a citation / note line ("13. From a letter written on behalf of…", "… 18 Mar. 2013. Web.") and a stray fragment
   if (/^\d{1,3}\\?\.\s+(From|See|Cf\.?|Ibid|Quoted|Cited|In)\b/i.test(raw) || /\b(Web|Print)\.\s*\d*\s*$/.test(raw)) return true;
+  if (/\b(Press|Publishing|Publishers|Trust|University),?\s+(19|20)\d\d\.\s+(Print|Web)\./.test(raw)) return true;   // a bibliography entry
   if (raw.length < 40 && /^[a-z]/.test(raw) && !/[.!?]["”’]?$/.test(raw)) return true;
   return t.length >= 8 && (t.match(/\p{L}/gu) || []).length / t.length < 0.6;
 };
@@ -246,7 +247,7 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   if ((inOut || inAll) && !/\b([Yy]ou|[Yy]our|[Tt]hee|[Tt]hou|[Tt]hy)\b/.test(body)) return { ...label, speaker: null, subject: true };
   if (introduces) {
     const tail = p.slice(-400).replace(KIN_OF, ' ');   // see KIN_OF
-    const hits = FIGURES.filter((f) => namerOf(f)(tail));
+    const hits = FIGURES.filter((f) => namerOf(f)(tail) || (ALIAS[f]?.test(tail) ?? false));   // "The Master says:" 
     if (hits.length === 1) return hits[0] === label.speaker ? label : { ...label, speaker: hits[0], leadIn: true };
   }
   const anyOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);

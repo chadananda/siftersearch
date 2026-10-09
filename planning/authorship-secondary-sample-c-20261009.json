@@ -1,0 +1,418 @@
+{
+ "note": "FRESH random 40 (seed 4242) under the rules of commit 64b8893a — never tuned on — judged 2026-10-09: 36 C / 3 W / 1 U ≈ 92%. Used afterwards for the lead-in alias + bibliography fixes.",
+ "sample": [
+  {
+   "n": 1,
+   "doc": 14583,
+   "row": 16977253,
+   "old": null,
+   "old_basis": "system1",
+   "speaker": "Shaykh ibn Babwayhi Sadúq",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 2,
+   "doc": 11275,
+   "row": 16864027,
+   "old": "Muriel Handley, John Handley",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 3,
+   "doc": 14208,
+   "row": 29029144,
+   "old": null,
+   "old_basis": null,
+   "speaker": "The Báb",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 4,
+   "doc": 9526,
+   "row": 7472872,
+   "old": "Arthur S. Agnew",
+   "old_basis": "book",
+   "speaker": "the editor or reporter",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 5,
+   "doc": 2261,
+   "row": 5412019,
+   "old": "John S. Hatcher",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 6,
+   "doc": 10074,
+   "row": 8151267,
+   "old": "Doris McKay",
+   "old_basis": "book",
+   "speaker": "Willard",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 7,
+   "doc": 919273,
+   "row": 28256454,
+   "old": "khanum",
+   "old_basis": "book",
+   "speaker": "Munavvar Khánum",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 8,
+   "doc": 14078,
+   "row": 28989186,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 9,
+   "doc": 12536,
+   "row": 10982353,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [
+    "‘Abdu’l-Bahá"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 10,
+   "doc": 12729,
+   "row": 11604886,
+   "old": "Cora Gray",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá (the Master)",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 11,
+   "doc": 8216,
+   "row": 7495296,
+   "old": "Mírzá Abu'l-Faḍl Gulpáygán",
+   "old_basis": "book",
+   "speaker": "James Murdock",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 12,
+   "doc": 13549,
+   "row": 12099656,
+   "old": "Phyllis Ghim-Lian Chew",
+   "old_basis": "book",
+   "speaker": "the editor or reporter",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 13,
+   "doc": 2233,
+   "row": 1302506,
+   "old": "National Spiritual Assembly of England",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 14,
+   "doc": 14052,
+   "row": 28990705,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 15,
+   "doc": 13000,
+   "row": 11795943,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 16,
+   "doc": 14291,
+   "row": 12601143,
+   "old": "Suresh Sahadevan",
+   "old_basis": "book",
+   "speaker": "Goh C.T.",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 17,
+   "doc": 427,
+   "row": 5075203,
+   "old": "Adib Taherzadeh",
+   "old_basis": "book",
+   "speaker": "Bahíyyih Khánum",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 18,
+   "doc": 14595,
+   "row": 16976743,
+   "old": "Jonah Winters",
+   "old_basis": "book",
+   "speaker": "The Qur'an",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 19,
+   "doc": 15910,
+   "row": 16421214,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "the Bible",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 20,
+   "doc": 14598,
+   "row": 16995250,
+   "old": "Salman Oskooi",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 21,
+   "doc": 4658,
+   "row": 16658599,
+   "old": "Universal House of Justice",
+   "old_basis": "system1",
+   "speaker": "Universal House of Justice",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 22,
+   "doc": 14591,
+   "row": 29009558,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 23,
+   "doc": 12483,
+   "row": 10957021,
+   "old": "Thomas Breakwell, Herbert Hopper, Isabella D. Brittingham",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 24,
+   "doc": 16735,
+   "row": 17039245,
+   "old": "‘Alí-Kuli Khán, John Bosch, Louise Bosch, Marzieh Gail",
+   "old_basis": "book",
+   "speaker": "John Bosch",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 25,
+   "doc": 13125,
+   "row": 16955390,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 26,
+   "doc": 13869,
+   "row": 29003609,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 27,
+   "doc": 15950,
+   "row": 16476926,
+   "old": "Charles Mason Remey",
+   "old_basis": "system1",
+   "speaker": "Charles Mason Remey",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 28,
+   "doc": 13838,
+   "row": 12230401,
+   "old": "Combiz Núrí",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 29,
+   "doc": 11262,
+   "row": 16911564,
+   "old": "Ahang Rabbání",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 30,
+   "doc": 16225,
+   "row": 16487819,
+   "old": "Abe Levy",
+   "old_basis": "book",
+   "speaker": "Anthony Vance",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 31,
+   "doc": 15922,
+   "row": 16906610,
+   "old": "Jonah Winters",
+   "old_basis": "book",
+   "speaker": "Universal House of Justice",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 32,
+   "doc": 11202,
+   "row": 16907138,
+   "old": "Muḥammad-Tahir  Málmírí, Ahang Rabbání",
+   "old_basis": "book",
+   "speaker": "Muḥammad-Tahir Málmírí, Ahang Rabbání",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 33,
+   "doc": 16101,
+   "row": 16486150,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "Dr. C.F. Lathrop",
+   "quoted": [
+    "‘Abdu’l-Bahá"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 34,
+   "doc": 14557,
+   "row": 13100458,
+   "old": "Wolfgang A. Klebel",
+   "old_basis": "continuation",
+   "speaker": "Wolfgang A. Klebel",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 35,
+   "doc": 11194,
+   "row": 16725215,
+   "old": "Margaret Marie Rutledge",
+   "old_basis": "book",
+   "speaker": "Sheridan A. Sims",
+   "quoted": [],
+   "verdict": "W",
+   "why": "an editor’s footnote, not Sheridan Sims"
+  },
+  {
+   "n": 36,
+   "doc": 16570,
+   "row": 16991694,
+   "old": "Various UK Parliament Members",
+   "old_basis": "book",
+   "speaker": "Haroon Yeshaya",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 37,
+   "doc": 12725,
+   "row": 17020188,
+   "old": "Anna Grossmann",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [],
+   "verdict": "W",
+   "why": "introduced by \"The Master says:\" — ‘Abdu’l-Bahá, not Shoghi Effendi",
+   "right": "‘Abdu’l-Bahá"
+  },
+  {
+   "n": 38,
+   "doc": 14444,
+   "row": 13234882,
+   "old": "Michael L. Penn",
+   "old_basis": "book",
+   "speaker": "Taylor",
+   "quoted": [],
+   "verdict": "W",
+   "why": "a bibliography line"
+  },
+  {
+   "n": 39,
+   "doc": 920502,
+   "row": 28280729,
+   "old": "pdf-h-house",
+   "old_basis": "continuation",
+   "speaker": "Lester Thurow",
+   "quoted": [],
+   "verdict": "U",
+   "why": "PDF line fragment"
+  },
+  {
+   "n": 40,
+   "doc": 6525,
+   "row": 3311521,
+   "old": "Universal House of Justice",
+   "old_basis": "book",
+   "speaker": "the editor or reporter",
+   "quoted": [],
+   "verdict": "C"
+  }
+ ]
+}

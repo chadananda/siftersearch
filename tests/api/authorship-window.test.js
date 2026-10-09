@@ -249,3 +249,13 @@ describe('secondaryGuard v3 (held-out sample 10-09)', async () => {
     expect(g('Bahá’u’lláh', '> And when the Cause of God was revealed, they then pushed these aside.', 'in a letter of ‘Abdu’r-Razzaq, referring to the rejection of Baha’u’llah by the Azalis:').speaker).toBeNull();
   });
 });
+
+describe('secondaryGuard v4 (fresh sample c)', async () => {
+  const { secondaryGuard, isJunk } = await import('../../api/lib/authorship/window.js');
+  it('an alias in the introduction decides ("The Master says:")', () => {
+    expect(secondaryGuard({ speaker: 'Shoghi Effendi' }, { text: '"... There is a general and unwritten law in effect throughout Asia. Upon My departure"', prevText: 'concerned with the taking care of the Holy Shrines, as follows: The Master says:', bookAuthor: 'Anna Grossmann' }).speaker).toBe('‘Abdu’l-Bahá');
+  });
+  it('a bibliography entry is junk', () => {
+    expect(isJunk('Clarendon Press, 1985. Print. Zajonc, Arthur. Catching the Light: The Entwined History of Light and Mind. New')).toBe(true);
+  });
+});
