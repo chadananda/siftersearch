@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:21:47.143Z",
+  "generated": "2026-10-09T17:28:54.247Z",
   "entries": [
+    {
+      "hash": "f6bc7fd7",
+      "date": "2026-10-09",
+      "type": "Docs",
+      "description": "Immerse figure pages vs our bio dossiers — we hold the facts, lack the timeline synthesis",
+      "scope": "planning"
+    },
     {
       "hash": "3bb70790",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Lock the proof query to membership AND participated-in — no headcount",
       "scope": "people/search"
-    },
-    {
-      "hash": "badc7ea0",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "The group selects WHO is eligible; the rest of the query is what they did",
-      "scope": "people/search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "f6bc7fd7",
+        "date": "2026-10-09",
+        "type": "Docs",
+        "description": "Immerse figure pages vs our bio dossiers — we hold the facts, lack the timeline synthesis",
+        "scope": "planning"
+      },
       {
         "hash": "3bb70790",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "Lock the proof query to membership AND participated-in — no headcount",
-        "scope": "people/search"
-      },
-      {
-        "hash": "badc7ea0",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "The group selects WHO is eligible; the rest of the query is what they did",
         "scope": "people/search"
       }
     ]

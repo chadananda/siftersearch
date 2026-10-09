@@ -564,7 +564,10 @@ export async function getBioPerson(rawId) {
       }
     }
   } catch { /* citation labels optional */ }
-  return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
+  // life timeline (events · relationships · journeys), synthesized from these facts by scripts/bio/build-timelines.mjs
+  let timeline = null;
+  try { timeline = JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'timelines', `${id}.json`), 'utf8')); } catch { /* not built yet */ }
+  return { timeline, id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
     dates: arr(row.dates), death: notes.death || null, characterizations,
     facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
