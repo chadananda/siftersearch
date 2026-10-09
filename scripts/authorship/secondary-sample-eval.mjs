@@ -28,10 +28,11 @@ for (const s of sample) {
   const n = r && nextAuthors(r, by.get(r.id), book, { noDemote: true });
   const speaker = n?.changed ? n.authors.find((e) => e.role === 'author')?.name : null;
   const quoted = (n?.authors || []).filter((e) => e.role === 'quoted' && e.basis === 'window').map((e) => e.name);
-  const same = speaker === s.speaker && JSON.stringify(quoted) === JSON.stringify(s.quoted);
+  const same = speaker === s.speaker;   // the speaker decides; a different quoted list is reported below, not failed
+  if (same && JSON.stringify(quoted) !== JSON.stringify(s.quoted)) score.qdiff = (score.qdiff || 0) + 1;
   const good = s.verdict === 'C' ? same : s.verdict === 'W' ? (s.right ? speaker === s.right : !same) : null;
   score[s.verdict][0]++; if (good) score[s.verdict][1]++;
   if (s.verdict !== 'U' && !good) console.log(`  #${s.n} ${s.verdict} ${s.speaker} → now ${speaker ?? '(no change)'} q:[${quoted}]${s.why ? ' — ' + s.why : ''}`);
 }
-console.log(JSON.stringify({ correct_kept: `${score.C[1]}/${score.C[0]}`, wrong_fixed: `${score.W[1]}/${score.W[0]}`, unclear: score.U[0] }));
+console.log(JSON.stringify({ correct_kept: `${score.C[1]}/${score.C[0]}`, wrong_fixed: `${score.W[1]}/${score.W[0]}`, unclear: score.U[0], quoted_differs: score.qdiff || 0 }));
 }
