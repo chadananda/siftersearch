@@ -1928,6 +1928,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // transaction (lib/paragraph-dependents.js): FOREIGN KEY failures had aborted re-ingests mid-way (2026-10-09). Saved
   // research quotes are stashed with their paragraph's text and re-attached to its successor after the inserts.
   const { DEPENDENTS, detachStatements, reattachStatements } = await import('../lib/paragraph-dependents.js');
+  // a failure below must not leave the doc carrying the NEW file hash: the next run would call it "unchanged" and keep the
+  // old paragraphs for good (1456 / 4366, 10-09) — the previous hashes are restored before the error is re-thrown
+  try {
   const staleIds = deleteStatements.map((s) => s.args[0]);
   const stash = [];
   const tables = staleIds.length ? new Set((await queryAll("SELECT name FROM sqlite_master WHERE type = 'table'")).map((r) => r.name)) : new Set();
@@ -1975,6 +1978,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const { statements, lost } = reattachStatements(stash, fresh);
     if (statements.length) await transaction(statements);
     logger.info({ documentId: finalDocId, reattached: statements.length, lost: lost.length }, 'Re-attached research quotes after re-ingest');
+  }
+  } catch (err) {
+    if (existingDoc) {
+      try { await query('UPDATE docs SET file_hash = ?, body_hash = ? WHERE id = ?', [existingDoc.file_hash ?? null, existingDoc.body_hash ?? null, finalDocId]); }
+      catch (e) { logger.error({ err: e.message, docId: finalDocId }, 'Could not restore previous hashes after a failed re-ingest'); }
+    }
+    throw err;
   }
 
   logger.info({
