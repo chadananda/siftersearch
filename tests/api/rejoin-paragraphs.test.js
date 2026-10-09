@@ -34,8 +34,8 @@ describe('rejoin', () => {
     const t = '## A heading without a stop\n\nlowercase line after a heading that is long enough to count as prose text here.\n\n- a list item without a stop\n\nanother lowercase line long enough to count as prose for the test here.\n\n[^1]: a footnote\n\nThis paragraph is finished.\n\nThis one too.';
     expect(rejoin(t).body).toBe(t);
   });
-  it('keeps a line-end hyphen and joins without a space', () => {
-    expect(rejoin('This is a long enough line of prose that ends with a hyphenated well-\n\nknown word in the next block of the converted file.').body).toMatch(/well-known word/);
+  it('removes a soft line-end hyphen between lowercase fragments', () => {
+    expect(rejoin('The history of the nineteenth-century Ottoman empire remains compara-\n\ntively little known, and the forms of social organization are obscure.').body).toMatch(/comparatively little known/);
   });
   it('flags the broken share', () => {
     expect(brokenShare(momen).broken).toBe(2);
@@ -59,5 +59,20 @@ describe('rejoin performance', () => {
     const t0 = Date.now();
     rejoin(`${nasty}\n\n${nasty}\n\nand a lowercase continuation that is long enough to count as prose here.`);
     expect(Date.now() - t0).toBeLessThan(500);
+  });
+});
+
+describe('rejoin v3 (second dry-run findings)', () => {
+  it('turns "page vi" lines and running headers into page markers', () => {
+    expect(rejoin('The House of Justice is communicating its guidance to the Bahá’í world through letters and\n\npage vi\n\ncablegrams addressed to the friends everywhere in the world.').body).toMatch(/letters and <pb n="vi"\/> cablegrams/);
+    expect(rejoin('A whole finished paragraph that ends here.\n\nEducation, Scholarship, and Global Civilisation                             1\n\nAnother finished paragraph.').body).toMatch(/<pb n="1"\/>/);
+  });
+  it('does not run a trailing heading line into the next paragraph', () => {
+    const t = 'There is much more to be said about the terms of our possibilities here?\n2) The Nature of Existentialism\n\nBefore proceeding, it is necessary to provide a brief description of existentialism here.';
+    expect(rejoin(t).joins).toBe(0);
+  });
+  it('leaves capital-letter glosses alone in a file that is not line-broken', () => {
+    const glosses = ['Prophecy is only received in happiness, and anger brings sadness in the heart of the prophet who hears it', 'When the minstrel played: when the minstrel began to play, the spirit of prophecy rested on him and he spoke', 'Vessels because she did not move from her place with her oil jug that she had borrowed from the neighbours'].join('\n\n');
+    expect(rejoin(glosses).joins).toBe(0);
   });
 });

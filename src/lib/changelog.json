@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T12:24:30.545Z",
+  "generated": "2026-10-09T12:32:11.125Z",
   "entries": [
+    {
+      "hash": "5a8f1c29",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Rejoin trailing-citation check was an exponential regex (8 h freeze on the library dry run) — bounded token loop + timing test",
+      "scope": "library"
+    },
     {
       "hash": "841e6738",
       "date": "2026-10-08",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Public API is guarded by its KEY, not its origin — and a rejection is not a 500",
       "scope": "api"
-    },
-    {
-      "hash": "59c3e82e",
-      "date": "2026-08-28",
-      "type": "Docs",
-      "description": "Sweep results — 9 books, 143 long-paragraph empties, all pre-v5",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-09": [
+      {
+        "hash": "5a8f1c29",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Rejoin trailing-citation check was an exponential regex (8 h freeze on the library dry run) — bounded token loop + timing test",
+        "scope": "library"
+      }
+    ],
     "2026-10-08": [
       {
         "hash": "841e6738",
@@ -7042,13 +7051,6 @@
         "type": "Fixed",
         "description": "Public API is guarded by its KEY, not its origin — and a rejection is not a 500",
         "scope": "api"
-      },
-      {
-        "hash": "59c3e82e",
-        "date": "2026-08-28",
-        "type": "Docs",
-        "description": "Sweep results — 9 books, 143 long-paragraph empties, all pre-v5",
-        "scope": null
       }
     ]
   }
