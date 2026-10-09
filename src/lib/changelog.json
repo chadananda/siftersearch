@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T15:24:14.084Z",
+  "generated": "2026-10-09T16:02:26.184Z",
   "entries": [
+    {
+      "hash": "4d2566f2",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "OceanLibrary range links everywhere links are generated",
+      "scope": "links"
+    },
     {
       "hash": "edf7568f",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "1+3n values for 1+2n placeholders — entities/search was 500ing in production",
       "scope": "entities"
-    },
-    {
-      "hash": "e5341d74",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Latency, group membership, people/search shape, people/{id} spec — with tests that fail on the old code",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "4d2566f2",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "OceanLibrary range links everywhere links are generated",
+        "scope": "links"
+      },
       {
         "hash": "edf7568f",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "1+3n values for 1+2n placeholders — entities/search was 500ing in production",
-        "scope": "entities"
-      },
-      {
-        "hash": "e5341d74",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Latency, group membership, people/search shape, people/{id} spec — with tests that fail on the old code",
         "scope": "entities"
       }
     ]
