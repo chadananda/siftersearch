@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:37:47.405Z",
+  "generated": "2026-10-09T17:40:56.048Z",
   "entries": [
+    {
+      "hash": "dc3faaff",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Per-person life page — timeline, relationships, journeys, every line cited (pilot)",
+      "scope": "biography"
+    },
     {
       "hash": "3f90d1ca",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "A working \"who was at this event\" page — the page IS the query",
       "scope": "who-was-at"
-    },
-    {
-      "hash": "f8418ef0",
-      "date": "2026-08-28",
-      "type": "Docs",
-      "description": "Retest 2 — ids/reasoning projected from people[], verified live on 2.187.21",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "dc3faaff",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Per-person life page — timeline, relationships, journeys, every line cited (pilot)",
+        "scope": "biography"
+      },
       {
         "hash": "3f90d1ca",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "New",
         "description": "A working \"who was at this event\" page — the page IS the query",
         "scope": "who-was-at"
-      },
-      {
-        "hash": "f8418ef0",
-        "date": "2026-08-28",
-        "type": "Docs",
-        "description": "Retest 2 — ids/reasoning projected from people[], verified live on 2.187.21",
-        "scope": null
       }
     ]
   }

@@ -3,7 +3,7 @@
 // selection, prompt, validated parse. The LLM never invents a citation (unknown keys dropped) or a quote (verbatim only).
 // Built by scripts/bio/build-timelines.mjs; served from BIO_ROOT/timelines/<id>.json by bio.js getBioPerson.
 
-export const TIMELINE_VERSION = 'timeline-v4-2026-10-09';
+export const TIMELINE_VERSION = 'timeline-v5-2026-10-09';
 export const REL_TYPES = ['family', 'teacher', 'student', 'companion', 'guardian', 'protector', 'patron', 'captor', 'adversary', 'persecutor', 'correspondent', 'successor', 'other'];
 
 // The authoritative spine: when sources disagree, these win (GPB, then the narrative it rests on).
@@ -78,6 +78,7 @@ You are now REVIEWING a draft written under these rules. Correct it:
 3. Events with no real content ("she was held in captivity") → merge into the event they belong to, or drop.
 4. A major happening told in AUTHORITATIVE facts but missing from the draft → add it.
 5. Any claim the cited facts do not support → fix or drop.
+6. Facts that cannot belong to THIS person's life as the AUTHORITATIVE facts tell it (another home town, another father's mosque, a place or role the authoritative facts give to someone else) were attached to the wrong person upstream → leave them out. (Quddús was given Ḥujjat's Zanján this way.)
 Return the FULL corrected timeline as JSON in the same shape.` },
   { role: 'user', content: `${user.content}
 
