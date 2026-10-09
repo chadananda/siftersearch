@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T12:32:11.125Z",
+  "generated": "2026-10-09T12:36:38.057Z",
   "entries": [
+    {
+      "hash": "d76386d7",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Rejoin v3 — 'page vi' lines and running headers become page markers, soft line-end hyphens removed, a trailing heading line never runs on, capital-letter joins only in clearly line-broken files",
+      "scope": "library"
+    },
     {
       "hash": "5a8f1c29",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "One absent word deleted every result — match by OR and rank, not AND",
       "scope": "entity_search"
-    },
-    {
-      "hash": "f6b38ee1",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Public API is guarded by its KEY, not its origin — and a rejection is not a 500",
-      "scope": "api"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "d76386d7",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Rejoin v3 — 'page vi' lines and running headers become page markers, soft line-end hyphens removed, a trailing heading line never runs on, capital-letter joins only in clearly line-broken files",
+        "scope": "library"
+      },
       {
         "hash": "5a8f1c29",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Fixed",
         "description": "One absent word deleted every result — match by OR and rank, not AND",
         "scope": "entity_search"
-      },
-      {
-        "hash": "f6b38ee1",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Public API is guarded by its KEY, not its origin — and a rejection is not a 500",
-        "scope": "api"
       }
     ]
   }

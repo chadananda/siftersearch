@@ -21,7 +21,8 @@ const STRUCTURAL = /^(#{1,6}\s|>|[-*+]\s|\||!\[|\d+\.\s|\[\^[^\]]+\]:|<pb\b|<!--
 // "123", "[pg 123]", "page vi", "p. 12", "- 7 -"; a running header "Title of the Paper            12" too
 const PAGE_LINE = /^(?:\[?(?:pg|page|p)\.?\s*)?[-–]?\s*(\d{1,4}|[ivxlc]{1,7})\s*[-–]?\]?$/i;
 const RUNNING_HEAD = /^[^\n]{3,120}?\s{5,}(\d{1,4})$/;
-const pageOf = (t) => { const m = t.match(PAGE_LINE) || (t.includes('\n') ? null : t.match(RUNNING_HEAD)); return m ? m[1] : null; };
+const pageOf = (t) => { if (t === '<pb/>') return ''; const m = t.match(PAGE_LINE) || (t.includes('\n') ? null : t.match(RUNNING_HEAD)); return m ? m[1] : null; };
+const pbTag = (n) => (n ? `<pb n="${n}"/>` : '<pb/>');
 
 // lists, verse, tables of contents, number columns: mostly short lines — not running prose
 const shortLines = (b) => { const ls = String(b).split('\n').map((l) => l.trim()).filter(Boolean); return ls.length >= 3 && ls.filter((l) => l.length < 30).length / ls.length > 0.5; };
@@ -31,6 +32,7 @@ const isProse = (b) => !STRUCTURAL.test(b) && b.length >= 40 && !shortLines(b) &
 const endsWithHeading = (a) => { const ls = String(a).split('\n'); const last = ls[ls.length - 1].trim(); return ls.length > 1 && last.length < 70 && /^(\d+[).]|[IVX]+\.|[A-Z][^.!?,;:]*$)/.test(last); };
 function continues(a, b, { capitals = true } = {}) {
   if (endsWithHeading(a)) return false;
+  if (/-$/.test(a) && !/^[a-z]/.test(b)) return false;           // "insti-" + "Richard Falk…": a footnote, not the rest of the word
   if (!isProse(b) && !/^[a-z]/.test(b)) return false;
   if (/^[a-z(—,;]/.test(b)) return true;                                       // lowercase / continuing punctuation (an opening quote alone is not)
   // mid-sentence before a name — only in files that are clearly line-broken (else commentary glosses, lemma lists merge)
@@ -39,7 +41,18 @@ function continues(a, b, { capitals = true } = {}) {
 
 /** @returns {{ body: string, joins: number, pages: number, seams: string[] }} (seams: the first few joins, for review) */
 export function rejoin(body) {
-  const blocks = String(body).split(/\n\s*\n/);
+  // running headers / footers: a short line repeated ≥3 times ("Lights of ‘Irfán Book Fourteen") is page furniture —
+  // removed, its position kept as a bare page marker
+  const lineCount = new Map();
+  for (const l of String(body).split('\n')) { const k = l.trim(); if (k.length >= 8 && k.length <= 100) lineCount.set(k, (lineCount.get(k) || 0) + 1); }
+  const furniture = new Set([...lineCount].filter(([k, n]) => n >= 3 && !/[.!?:;]$/.test(k) && !/^(#|>|[-*+]\s|\||!\[|<pb)/.test(k)).map(([k]) => k));
+  const stripped = furniture.size ? String(body).split('\n').map((l) => (furniture.has(l.trim()) ? '<pb/>' : l)).join('\n') : String(body);
+  let furnitureRemoved = 0;
+  const blocks = stripped.split(/\n\s*\n/).map((b) => {
+    if (!furniture.size || !b.includes('<pb/>')) return b;
+    const ls = b.split('\n'); const kept = ls.filter((l) => l.trim() !== '<pb/>'); furnitureRemoved += ls.length - kept.length;
+    return kept.length ? kept.join('\n') : '<pb/>';
+  });
   // capital-letter continuations only where lowercase ones show the file really is line-broken (≥10% of prose blocks)
   const lower = blocks.filter((b, i) => i + 1 < blocks.length && isProse(b.trim()) && !END.test(b.trim()) && /^[a-z(—,;]/.test(blocks[i + 1].trim())).length;
   const prose = blocks.filter((b) => isProse(b.trim())).length;
@@ -52,17 +65,17 @@ export function rejoin(body) {
     const t = cur.trim();
     // a bare page number between whole paragraphs is a page marker, not a paragraph
     const lone = pageOf(t);
-    if (lone && out.length && i + 1 < blocks.length) { out.push(`<pb n="${lone}"/>`); pages++; continue; }
+    if (lone != null && out.length && i + 1 < blocks.length) { out.push(pbTag(lone)); pages++; continue; }
     if (!isProse(t) || END.test(t)) { out.push(cur); continue; }
     // absorb following continuations, across a bare page-number line
     let merged = t;
     for (let k = i + 1; k < blocks.length; k++) {
       let next = blocks[k].trim(), marker = ' ';
       const page = pageOf(next);
-      if (page && k + 1 < blocks.length) {                      // "…the West or" / "123" / "Middle East have…"
+      if (page != null && k + 1 < blocks.length) {                      // "…the West or" / "123" / "Middle East have…"
         const after = blocks[k + 1].trim();
         if (!continues(merged, after, { capitals })) break;
-        marker = ` <pb n="${page}"/> `; pages++; k++; next = after;
+        marker = ` ${pbTag(page)} `; pages++; k++; next = after;
       } else if (!continues(merged, next, { capitals })) break;
       if (seams.length < 6) seams.push(`…${merged.slice(-60)} ‖${marker.trim() ? marker.trim() : ''}‖ ${next.slice(0, 60)}…`);
       // a line-end hyphen between lowercase fragments is soft ("compara-" + "tively" → "comparatively"); any other joins as is
@@ -73,7 +86,7 @@ export function rejoin(body) {
     }
     out.push(merged);
   }
-  return { body: out.join('\n\n'), joins, pages, seams };
+  return { body: out.join('\n\n'), joins, pages, seams, furniture: furnitureRemoved };
 }
 
 /** Share of prose blocks that end mid-sentence and are continued — the scan's flag. */

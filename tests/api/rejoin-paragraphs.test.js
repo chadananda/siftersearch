@@ -76,3 +76,17 @@ describe('rejoin v3 (second dry-run findings)', () => {
     expect(rejoin(glosses).joins).toBe(0);
   });
 });
+
+describe('rejoin v4 (third dry-run findings)', () => {
+  it('removes a repeated running header and keeps its place as a page marker', () => {
+    const h = 'Lights of ‘Irfán Book Fourteen';
+    const body = [`First paragraph of the essay is long enough to be prose and it runs on and`, h, 'continues on the next page after the running header with more words.', 'Second paragraph that ends properly here.', h, 'Third paragraph that also ends properly here.', h, 'Fourth paragraph, ending properly.'].join('\n\n');
+    const r = rejoin(body);
+    expect(r.body).not.toContain(h);
+    expect(r.body).toMatch(/runs on and <pb\/> continues on the next page/);
+    expect(r.furniture).toBe(3);
+  });
+  it('does not join a line-end hyphen to a capitalised footnote', () => {
+    expect(rejoin('It is more than a discursive construct with no legal and institutional basis in the insti-\n\nRichard Falk, “The Making of Global Citizenship,” in The Condition of Citizenship, 1994.').joins).toBe(0);
+  });
+});
