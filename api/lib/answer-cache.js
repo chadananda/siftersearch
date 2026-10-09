@@ -19,7 +19,7 @@ import { query, queryOne, queryAll } from './db.js';
 import { logger } from './logger.js';
 
 // ── The search-quality version. Bump when retrieval or crafting changes answers. ──
-export const SEARCH_VERSION = '2026-09-24.1';   // bump: title-tier ranking — the NAMED work outranks authority
+export const SEARCH_VERSION = '2026-10-09.1';   // bump: 'where does X say Y?' searches Y (the question frame matched 'Where is he who…')
 // WHY THIS MUST BE BUMPED WITH EVERY ANSWER-AFFECTING CHANGE.
 // On 2026-09-24 the title-ranking fix went live and the question that motivated it — "What does The
 // Dawn-Breakers say about the Conference of Badasht?" — kept returning the old wrong answer ("does not
