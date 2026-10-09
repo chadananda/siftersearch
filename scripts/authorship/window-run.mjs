@@ -49,12 +49,13 @@ if (process.argv.includes('--oceanlibrary')) {
 }
 const SECONDARY = process.argv.includes('--secondary');
 if (SECONDARY) {
+  const only = ids.length ? new Set(ids) : null;   // explicit ids + --secondary: those books, under the secondary rules
   ids = [];
   for (let offset = 0; ; offset += 1000) {
     const page = await listDocs({ scope: 'canonicalWithProse', fields: ['id', 'title', 'author', 'religion', 'collection', 'source_site'], limit: 1000, offset });
     // several authors: doc-tier's compilation test, plus 'Compilation (…)' / 'Various' authors (not added to doc-tier: it routes enrichment)
     const multi = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.test(d.author || '');
-    for (const d of page.docs) if ((getAuthority(d) < 8 || multi(d)) && (!RELIGION || RELIGION.test(d.religion || ''))) ids.push(d.id);
+    for (const d of page.docs) if ((getAuthority(d) < 8 || multi(d)) && (!RELIGION || RELIGION.test(d.religion || '')) && (!only || only.has(d.id))) ids.push(d.id);
     if (page.docs.length < 1000) break;
   }
 }
