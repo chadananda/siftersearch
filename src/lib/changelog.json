@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T20:15:38.475Z",
+  "generated": "2026-10-09T20:26:58.000Z",
   "entries": [
+    {
+      "hash": "08b4cb0c",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Stale-ingest sweep — books whose stored paragraphs predate a parser fix",
+      "scope": "library"
+    },
     {
       "hash": "5d847058",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Resolve names via original script; token-initial dot-below bug",
       "scope": null
-    },
-    {
-      "hash": "5cc9d8c2",
-      "date": "2026-09-06",
-      "type": "Other",
-      "description": "Episode layer; root cause is prompt design, not a bug",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "08b4cb0c",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Stale-ingest sweep — books whose stored paragraphs predate a parser fix",
+        "scope": "library"
+      },
       {
         "hash": "5d847058",
         "date": "2026-10-09",
@@ -7035,13 +7042,6 @@
         "date": "2026-09-06",
         "type": "Other",
         "description": "Resolve names via original script; token-initial dot-below bug",
-        "scope": null
-      },
-      {
-        "hash": "5cc9d8c2",
-        "date": "2026-09-06",
-        "type": "Other",
-        "description": "Episode layer; root cause is prompt design, not a bug",
         "scope": null
       }
     ]

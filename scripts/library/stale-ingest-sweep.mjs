@@ -3,7 +3,9 @@
 // fix (e.g. 10-03: consecutive "> " lines are one quotation, not one row per printed line) never re-ingests a book by
 // itself — only a file change does — so old ingests keep the old split (10-09: 66 secondary books, 54,955 rows → 23,054).
 // Read-only (runs ON tower). Writes one JSON line per stale book to --out (default /tank/sifter/stale-sweep.jsonl).
-//   node scripts/library/stale-ingest-sweep.mjs [--out file] [--min-extra 20] [--ratio 1.05]
+//   node scripts/library/stale-ingest-sweep.mjs [--out file] [--min-extra 20] [--ratio 1.05] [--after id --docs N]
+// Memory grows across files inside the ingester's parse path (4 GB OOM after ~5,500 books, 10-09): run it in slices —
+// --after <id> --docs 2000 appends to --out and prints {next} — e.g. a bash loop until next is null.
 import Database from 'better-sqlite3';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -15,17 +17,20 @@ import { config } from '../../api/lib/config.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : d);
 const OUT = opt('--out', '/tank/sifter/stale-sweep.jsonl'), MIN = Number(opt('--min-extra', 20)), RATIO = Number(opt('--ratio', 1.05));
+const AFTER = Number(opt('--after', 0)), DOCS = Number(opt('--docs', 0));
 const BASE = config.library.basePath;
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
-writeFileSync(OUT, '');
+if (!AFTER) writeFileSync(OUT, '');
 // library files only (scraped sites have their own adapters); id-ordered pages keep each read short
 const page = db.prepare(`SELECT id, file_path, title, author, religion, collection FROM docs
   WHERE id > ? AND deleted_at IS NULL AND file_path IS NOT NULL AND (source_site IS NULL OR source_site = '') ORDER BY id LIMIT 2000`);
 const count = db.prepare('SELECT COUNT(*) n FROM content WHERE doc_id = ? AND deleted_at IS NULL');
-let seen = 0, stale = 0;
-for (let last = 0; ;) {
+let seen = 0, stale = 0, scanned = 0, next = null;
+for (let last = AFTER; ;) {
+  if (DOCS && scanned >= DOCS) { next = last; break; }
   const docs = page.all(last);
   if (!docs.length) break;
+  scanned += docs.length;
   last = docs[docs.length - 1].id;
   for (const d of docs) {
     const f = join(BASE, d.file_path);
@@ -44,5 +49,5 @@ for (let last = 0; ;) {
     if (seen % 5000 === 0) console.log(JSON.stringify({ seen, stale }));
   }
 }
-console.log(JSON.stringify({ done: true, seen, stale, out: OUT }));
+console.log(JSON.stringify({ done: next == null, next, seen, stale, out: OUT }));
 process.exit(0);
