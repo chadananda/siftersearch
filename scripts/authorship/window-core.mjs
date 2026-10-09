@@ -43,7 +43,7 @@ export function refineLabel(l, row, prevRow, prevLabel, book) {
   if (g.speaker === EDITOR && !g.fixed && !editorHasEvidence(row.text, book.author, { footnote: row.blocktype === 'footnote' || /\{language=/.test(row.text) })) {
     g = { ...g, speaker: book.author, unproven: true };
   }
-  g = onBehalfOfShoghiEffendi(g, row.text);
+  g = onBehalfOfShoghiEffendi(g, row.text, book.author);
   return settle(g);
 }
 

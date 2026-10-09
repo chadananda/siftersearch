@@ -65,3 +65,13 @@ describe('compilations and on-behalf letters (v18)', () => {
     expect(l).toMatchObject({ speaker: 'Shoghi Effendi', on_behalf: true });
   });
 });
+
+describe('Shoghi Effendi secretaries (v18b)', () => {
+  it('in his own books, a secretary\'s letter or "the Guardian’s …" is his, on his behalf', async () => {
+    const { refineLabel } = await import('../../scripts/authorship/window-core.mjs');
+    const se = { author: 'Shoghi Effendi' };
+    expect(refineLabel({ speaker: 'Rúḥí Afnán', conf: 0.8 }, { text: '“As I told you in my previous letter, by law such lands can only be transferred during one’s lifetime.”' }, null, null, se)).toMatchObject({ speaker: 'Shoghi Effendi', on_behalf: true });
+    expect(refineLabel({ speaker: 'R. Rabbání', conf: 0.8 }, { text: '“The Guardian’s motive in giving the believers the promise of one year’s respite was to alleviate the burden.”' }, null, null, se)).toMatchObject({ speaker: 'Shoghi Effendi' });
+    expect(refineLabel({ speaker: 'Public Relations Committee', conf: 0.8 }, { text: '“Though it has been grievous to us to forego our advertising schedule, the Committee recognizes…”' }, null, null, se).speaker).toBe('Public Relations Committee');
+  });
+});

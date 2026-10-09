@@ -211,9 +211,16 @@ export function editorHasEvidence(text, bookAuthor, { footnote = false } = {}) {
 /** A letter written ON BEHALF of Shoghi Effendi is Shoghi Effendi's (Chad: "on behalf of SE IS SE"). v17 credited his
  *  secretaries ("I am directed by Shoghi Effendi to inform you…" → H. Rabbání / Rúḥí Afnán). */
 const ON_BEHALF_SE = /\b(directed by (shoghi effendi|the guardian)|on behalf of (shoghi effendi|the (beloved )?guardian)|(our|the) (beloved )?guardian (wishes|desires|hopes|has (asked|instructed|directed)|was (very )?(pleased|happy|glad|sorry)|greatly values|has been (greatly )?encouraged)|he \(the guardian\)|his \((shoghi effendi|the guardian)['’]?s?\))/i;
-export function onBehalfOfShoghiEffendi(label, text) {
+// his secretaries, whose letters were written for him (Rúḥí Afnán, Ḥusayn / H. Rabbání, R. Rabbání = Rúḥíyyih Khánum as
+// secretary, Soheil Afnán): in Shoghi Effendi's own books their letters are his, on his behalf
+const SE_SECRETARY = /\b(r[uú][ḥh][ií] afn[aá]n|soheil afn[aá]n|(h\.|[ḥh]usayn|r\.) rabb[aá]n[ií])\b/i;
+const SE_POSSESSIVE = /\bthe (beloved )?guardian[’']s\b/i;
+export function onBehalfOfShoghiEffendi(label, text, bookAuthor = '') {
   if (!label?.speaker || label.fixed || label.speaker === EDITOR || FIGURES.includes(canonical(label.speaker))) return label;
-  return ON_BEHALF_SE.test(String(text || '')) ? { ...label, speaker: 'Shoghi Effendi', on_behalf: true } : label;
+  const t = String(text || '');
+  const seBook = canonical(bookAuthor) === 'Shoghi Effendi';
+  if (ON_BEHALF_SE.test(t) || (seBook && (SE_SECRETARY.test(label.speaker) || SE_POSSESSIVE.test(t)))) return { ...label, speaker: 'Shoghi Effendi', on_behalf: true };
+  return label;
 }
 
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */
