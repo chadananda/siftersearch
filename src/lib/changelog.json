@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T12:36:38.057Z",
+  "generated": "2026-10-09T12:46:41.472Z",
   "entries": [
+    {
+      "hash": "6c19ceca",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Rejoin v4 — repeated running headers/footers removed (their place kept as <pb/>), a line-end hyphen only joins a lowercase continuation",
+      "scope": "library"
+    },
     {
       "hash": "d76386d7",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Rank candidates in SQL — an unordered LIMIT discarded the answer",
       "scope": "entity_search"
-    },
-    {
-      "hash": "ecf475c1",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "One absent word deleted every result — match by OR and rank, not AND",
-      "scope": "entity_search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "6c19ceca",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Rejoin v4 — repeated running headers/footers removed (their place kept as <pb/>), a line-end hyphen only joins a lowercase continuation",
+        "scope": "library"
+      },
       {
         "hash": "d76386d7",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "Rank candidates in SQL — an unordered LIMIT discarded the answer",
-        "scope": "entity_search"
-      },
-      {
-        "hash": "ecf475c1",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "One absent word deleted every result — match by OR and rank, not AND",
         "scope": "entity_search"
       }
     ]

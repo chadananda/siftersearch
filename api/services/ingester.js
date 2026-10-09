@@ -1924,10 +1924,23 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // This prevents UNIQUE constraint errors when paragraph positions shift
   const BATCH_SIZE = 100;
 
-  // 1. Delete stale paragraphs first (frees up ids/positions)
+  // 1. Delete stale paragraphs first (frees up ids/positions). Rows elsewhere that reference them are detached IN THE SAME
+  // transaction (lib/paragraph-dependents.js): FOREIGN KEY failures had aborted re-ingests mid-way (2026-10-09). Saved
+  // research quotes are stashed with their paragraph's text and re-attached to its successor after the inserts.
+  const { DEPENDENTS, detachStatements, reattachStatements } = await import('../lib/paragraph-dependents.js');
+  const staleIds = deleteStatements.map((s) => s.args[0]);
+  const stash = [];
+  const tables = staleIds.length ? new Set((await queryAll("SELECT name FROM sqlite_master WHERE type = 'table'")).map((r) => r.name)) : new Set();
+  for (const d of DEPENDENTS.filter((x) => x.action === 'reattach' && tables.has(x.table))) {
+    for (let i = 0; i < staleIds.length; i += 500) {
+      const ids = staleIds.slice(i, i + 500);
+      const rows = await queryAll(`SELECT t.*, c.text AS __old_text FROM ${d.table} t JOIN content c ON c.id = t.${d.col} WHERE t.${d.col} IN (${ids.map(() => '?').join(',')})`, ids);
+      for (const { __old_text: oldText, ...row } of rows) stash.push({ table: d.table, col: d.col, row, oldText });
+    }
+  }
   for (let i = 0; i < deleteStatements.length; i += BATCH_SIZE) {
     const batch = deleteStatements.slice(i, i + BATCH_SIZE);
-    await transaction(batch);
+    await transaction([...detachStatements(batch.map((s) => s.args[0]), tables), ...batch]);
     await new Promise(resolve => setImmediate(resolve));
   }
 
@@ -1954,6 +1967,14 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const batch = insertStatements.slice(i, i + BATCH_SIZE);
     await transaction(batch);
     await new Promise(resolve => setImmediate(resolve));
+  }
+
+  // 4. Re-attach stashed research quotes to the paragraph their text went into
+  if (stash.length) {
+    const fresh = await queryAll('SELECT id, text FROM content WHERE doc_id = ? AND deleted_at IS NULL', [finalDocId]);
+    const { statements, lost } = reattachStatements(stash, fresh);
+    if (statements.length) await transaction(statements);
+    logger.info({ documentId: finalDocId, reattached: statements.length, lost: lost.length }, 'Re-attached research quotes after re-ingest');
   }
 
   logger.info({
