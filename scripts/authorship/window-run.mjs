@@ -93,7 +93,7 @@ async function runBook(id) {
   // the deterministic checks run again on saved labels, so a book classified by an earlier version gets today's rules
   const raw = new Map(saved.labels.map((l) => [l.id, l]));
   const byId = new Map();
-  rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book)); });
+  rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book, { secondary: SECONDARY })); });
   for (const r of rows) {
     stats.paras++;
     const n = nextAuthors(r, byId.get(r.id), book, { noDemote: SECONDARY });

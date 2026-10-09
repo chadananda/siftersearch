@@ -1,7 +1,7 @@
 // Windowed paragraph attribution — the per-book engine shared by the eval (window-classify.mjs) and the production run
 // (window-run.mjs). Defaults = v10, the measured best (planning/window-classifier-log.md): hybrid, one pass, LLM only to
 // name "another person", one LLM brief per book. Runs ON tower (System-1 calls logged per task for Laya, Clef shadowed).
-import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, editorHasEvidence, onBehalfOfShoghiEffendi, isCompiler, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, secondaryGuard, editorHasEvidence, onBehalfOfShoghiEffendi, isCompiler, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
@@ -42,7 +42,7 @@ export function knownSpeaker(r, book) {
  *  them to labels saved by an earlier version: "another person" → unresolved; a quote introduced in the narration stays
  *  the narrator's; an unmarked block leaves the book's author only when introduced; the editor only with editorial
  *  evidence; a paragraph never quotes its own speaker. */
-export function refineLabel(l, row, prevRow, prevLabel, book) {
+export function refineLabel(l, row, prevRow, prevLabel, book, { secondary = false } = {}) {
   if (!l) return l;
   const clean = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes };
   let g = guardNarration(clean, row.text);
@@ -54,6 +54,7 @@ export function refineLabel(l, row, prevRow, prevLabel, book) {
   if (g.speaker === EDITOR && !g.fixed && !editorHasEvidence(row.text, book.author, { footnote: row.blocktype === 'footnote' || /\{language=/.test(row.text) })) {
     g = { ...g, speaker: book.author, unproven: true };
   }
+  if (secondary) g = secondaryGuard(g, { text: row.text, prevText: prevRow?.text, prevSpeaker: prevLabel?.speaker, heading: row.heading, bookAuthor: book.author });
   g = onBehalfOfShoghiEffendi(g, row.text, book.author);
   return settle(g);
 }

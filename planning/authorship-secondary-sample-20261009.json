@@ -1,0 +1,430 @@
+{
+ "note": "Random 40 planned secondary-literature changes (window classifier, noDemote, fragmented books skipped), judged by reading each with its previous paragraph, 2026-10-09. verdict C=correct W=wrong U=unclear. Rerun: node scripts/authorship/secondary-sample-eval.mjs (on tower).",
+ "sample": [
+  {
+   "n": 1,
+   "doc": 14433,
+   "row": 13047464,
+   "old": "Edwin McCloughan",
+   "old_basis": "book",
+   "speaker": "Arthur Hugh Clough",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 2,
+   "doc": 14755,
+   "row": 29047129,
+   "old": null,
+   "old_basis": null,
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 3,
+   "doc": 2459,
+   "row": 10570756,
+   "old": "Aminu'llah Farid",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 4,
+   "doc": 14470,
+   "row": 13490078,
+   "old": "William S. Hatcher",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 5,
+   "doc": 11581,
+   "row": 17032877,
+   "old": "Eugene Flandin",
+   "old_basis": "book",
+   "speaker": "the editor or reporter",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "W",
+   "why": "quoted Bahá’u’lláh on a catalogue/metadata row"
+  },
+  {
+   "n": 6,
+   "doc": 15426,
+   "row": 16182308,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [
+    "the Bible"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 7,
+   "doc": 8961,
+   "row": 11784666,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "W",
+   "why": "a proverb, not Bahá’u’lláh"
+  },
+  {
+   "n": 8,
+   "doc": 920627,
+   "row": 28282890,
+   "old": "pdf-journal-de-constantinople-ocr-ed",
+   "old_basis": "book",
+   "speaker": "narrator/editor of the Journal de Constantinople",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 9,
+   "doc": 2238,
+   "row": 28968605,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 10,
+   "doc": 14586,
+   "row": 13351251,
+   "old": "Nader Saiedi",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 11,
+   "doc": 14698,
+   "row": 13710169,
+   "old": "Justin Scoggin",
+   "old_basis": "book",
+   "speaker": "Michael Linton",
+   "quoted": [],
+   "verdict": "W",
+   "why": "text is ABOUT Michael Linton; the quoted author is not Linton"
+  },
+  {
+   "n": 12,
+   "doc": 15555,
+   "row": 16217468,
+   "old": null,
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 13,
+   "doc": 14705,
+   "row": 29047472,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Shoghi Effendi",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 14,
+   "doc": 14636,
+   "row": 13712672,
+   "old": "Jack McLean",
+   "old_basis": "book",
+   "speaker": "Søren Aabye Kierkegaard",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 15,
+   "doc": 14137,
+   "row": 16978946,
+   "old": "Alison Marshall",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 16,
+   "doc": 14372,
+   "row": 13451370,
+   "old": "Juan Cole",
+   "old_basis": "book",
+   "speaker": "Universal House of Justice",
+   "quoted": [],
+   "verdict": "W",
+   "why": "Shoghi Effendi (introduced by the previous paragraph), not the House of Justice"
+  },
+  {
+   "n": 17,
+   "doc": 12604,
+   "row": 11621252,
+   "old": "Edwin Mattoon, Edna Mattoon",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 18,
+   "doc": 6351,
+   "row": 14110351,
+   "old": "Ella Cooper",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 19,
+   "doc": 5658,
+   "row": 3194610,
+   "old": "Zena Sorabjee, National Spiritual Assembly of India",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "W",
+   "why": "a House of Justice statement, not Bahá’u’lláh"
+  },
+  {
+   "n": 20,
+   "doc": 14352,
+   "row": 16974940,
+   "old": "Nima Hazini",
+   "old_basis": "book",
+   "speaker": "Plotinus",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 21,
+   "doc": 14149,
+   "row": 13017758,
+   "old": "Moojan Momen",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 22,
+   "doc": 12826,
+   "row": 11788834,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 23,
+   "doc": 513,
+   "row": 6566135,
+   "old": "Amatu'l-Bahá Rúḥíyyih Khánum",
+   "old_basis": "continuation",
+   "speaker": "Amatu'l-Bahá Rúḥíyyih Khánum",
+   "quoted": [
+    "Shoghi Effendi"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 24,
+   "doc": 13126,
+   "row": 11800754,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "'Abdu'l-Bahá Abbas",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 25,
+   "doc": 14148,
+   "row": 16988159,
+   "old": "Adam Berry",
+   "old_basis": "book",
+   "speaker": "Samuel Graham Wilson",
+   "quoted": [],
+   "verdict": "U",
+   "why": "Berry summarising Wilson’s book — arguable"
+  },
+  {
+   "n": 26,
+   "doc": 15424,
+   "row": 16181868,
+   "old": null,
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 27,
+   "doc": 919233,
+   "row": 28250702,
+   "old": "inventory-ABU1165",
+   "old_basis": "book",
+   "speaker": "Mirza Ahmad Sohrab",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 28,
+   "doc": 15405,
+   "row": 16179122,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "Temple Unity Board",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 29,
+   "doc": 14296,
+   "row": 12752880,
+   "old": "Albert Cheung",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [
+    "‘Abdu’l-Bahá"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 30,
+   "doc": 1445,
+   "row": 3137442,
+   "old": "‘Alí Nakhjavani, Violette Nakhjavani",
+   "old_basis": "book",
+   "speaker": "Violette Nakhjavani",
+   "quoted": [
+    "Ruhiyyih Khanum"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 31,
+   "doc": 15450,
+   "row": 16185325,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 32,
+   "doc": 14134,
+   "row": 29053477,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Abu’l-Qasim Afnan",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 33,
+   "doc": 15484,
+   "row": 16212603,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 34,
+   "doc": 12535,
+   "row": 10524653,
+   "old": "Dr. Josephine Fallscheer",
+   "old_basis": "book",
+   "speaker": "ʻAbdu’l-Bahá",
+   "quoted": [],
+   "verdict": "U",
+   "why": "Fallscheer’s note or ‘Abdu’l-Bahá’s words — unclear"
+  },
+  {
+   "n": 35,
+   "doc": 13146,
+   "row": 11806096,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 36,
+   "doc": 920338,
+   "row": 28273014,
+   "old": "pdf-c-caton",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "W",
+   "why": "OCR garbage row"
+  },
+  {
+   "n": 37,
+   "doc": 7199,
+   "row": 6427112,
+   "old": "Hitjo Garst",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 38,
+   "doc": 920969,
+   "row": 28286669,
+   "old": "pdf-k-khan",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [
+    "Bahá’u’lláh",
+    "Universal House of Justice"
+   ],
+   "verdict": "W",
+   "why": "Peter Khan’s own words, not Shoghi Effendi"
+  },
+  {
+   "n": 39,
+   "doc": 13957,
+   "row": 29004639,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 40,
+   "doc": 16317,
+   "row": 16900103,
+   "old": "International Teaching Centre",
+   "old_basis": "system1",
+   "speaker": "Universal House of Justice",
+   "quoted": [],
+   "verdict": "U",
+   "why": "International Teaching Centre document vs House of Justice — unclear"
+  }
+ ]
+}

@@ -191,6 +191,56 @@ export function blockHasEvidence(speaker, { text, prevText = '', prevSpeaker = n
   return (named(p.slice(-1500)) && introduces) || (attributes && named(heading)) || named(String(text).slice(-120));
 }
 
+/** SECONDARY literature only (random spot-check 10-09: 31 of 40 changes right — planning/authorship-secondary-sample-20261009.md).
+ *  Marked quotations skip blockHasEvidence, so an un-introduced quotation took whatever source the model guessed. Here:
+ *  1. junk rows (OCR garbage, catalogue metadata) take no speaker and no quoted person;
+ *  2. a person named in the third person inside the paragraph, with no first person, is its subject, not its speaker
+ *     ("Michael Linton sought to…");
+ *  3. an introduction naming exactly ONE of the five figures decides the speaker ("Shoghi Effendi approved of…:");
+ *  4. a WRITTEN source (Bahá’u’lláh, the Báb, Shoghi Effendi, the House of Justice) needs the page to give it — an
+ *     introduction naming them, a citation at the end, an attributing heading, or a quotation still open from the
+ *     previous paragraph (a new quotation after a closed one does not inherit). ‘Abdu’l-Bahá is exempt: His spoken words
+ *     in diaries follow "He said to me:", which names no one. */
+const foldName = (x) => String(x || '').replace(/[’'ʼ]s\b/g, '').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[’‘ʼ`']/g, '').toLowerCase();
+const namerOf = (speaker) => {
+  const words = foldName(speaker).split(/[\s,()[\]-]+/).filter((w) => w.length >= 3 && !STOP.test(w));
+  return (t) => { const f = foldName(t); return words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f)); };
+};
+const WRITTEN = new Set(['Bahá’u’lláh', 'The Báb', 'Shoghi Effendi', 'Universal House of Justice']);
+export const isJunk = (text) => {
+  const t = String(text || '').replace(/\s+/g, '');
+  if (/\bTAGS:|\bAbstract:/.test(String(text || ''))) return true;
+  return t.length >= 8 && (t.match(/\p{L}/gu) || []).length / t.length < 0.6;
+};
+// the full name, or a personal surname of 4+ letters — never one word of an institution ("justice")
+const namesInThirdPerson = (speaker, text) => {
+  const f = foldName(text), s = foldName(speaker);
+  if (f.includes(s)) return true;
+  const parts = s.split(/\s+/);
+  if (FIGURES.includes(speaker) || parts.length < 2 || parts.length > 3) return false;
+  const last = parts[parts.length - 1];
+  return last.length >= 4 && !STOP.test(last) && new RegExp(`\\b${last.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f);
+};
+export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null, heading = '', bookAuthor = '' }) {
+  if (!label) return label;
+  if (isJunk(text)) return { ...label, speaker: null, quotes: null, junk: true };
+  // only a speaker the model gave to SOMEONE ELSE is checked; the book's own author (default or demoted) is left alone
+  if (!label.speaker || label.fixed || label.speaker === EDITOR || label.unproven || foldName(label.speaker) === foldName(bookAuthor)) return label;
+  const p = String(prevText || '').trim();
+  const introduces = /[:—–]\s*[”"]?\s*$/.test(p) || /\b(as follows|the following|thus)\b/i.test(p.slice(-160));
+  if (namesInThirdPerson(label.speaker, text) && !/\b(I|[Mm]e|[Mm]y|[Mm]ine|[Ww]e|[Uu]s|[Oo]ur)\b/.test(String(text))) return { ...label, speaker: null, subject: true };
+  if (introduces) {
+    const hits = FIGURES.filter((f) => namerOf(f)(p.slice(-400)));
+    if (hits.length === 1) return hits[0] === label.speaker ? label : { ...label, speaker: hits[0], leadIn: true };
+  }
+  if (!WRITTEN.has(label.speaker)) return label;
+  const named = namerOf(label.speaker);
+  const attributes = /\b(address|talk|words?|letters?|tablets?|prayers?|writings?|extracts?|by|from|message)\b/i.test(heading || '');
+  const stillOpen = prevSpeaker === label.speaker && !/[”"]\s*\S{0,4}$/.test(p);
+  const given = (named(p.slice(-400)) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
+  return given ? label : { ...label, speaker: null, unproven: true };
+}
+
 /** "The editor or reporter" for a NON-footnote paragraph needs editorial evidence (v17, from the OceanLibrary run: in
  *  Days of Remembrance Bahá’u’lláh speaking of Himself in the third person — "upon Him Who is the Revealer…" — and
  *  ‘Abdu’l-Bahá's "He is God!" went to the editor): the paragraph names the book's author in the third person (or an

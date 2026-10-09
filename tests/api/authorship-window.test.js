@@ -179,3 +179,32 @@ describe('editor evidence (v17)', () => {
     expect(editorHasEvidence('Mírzá Áqá Ján, the amanuensis.', 'Bahá’u’lláh', { footnote: true })).toBe(true);
   });
 });
+
+describe('secondaryGuard (secondary literature, 10-09 random sample)', async () => {
+  const { secondaryGuard, isJunk } = await import('../../api/lib/authorship/window.js');
+  const g = (speaker, text, prevText = '', extra = {}) => secondaryGuard({ speaker, quotes: null }, { text, prevText, bookAuthor: 'Some Scholar', ...extra });
+  it('junk rows take nobody', () => {
+    expect(isJunk(". '\"0- . '\"::> Q, 0: _")).toBe(true);
+    expect(g('Bahá’u’lláh', '. \'"0- . \'"::> Q, 0: _').speaker).toBeNull();
+    expect(isJunk('Voyage en Perse > Books Historical documents TAGS: - E-books ; Iran Abstract: A detailed travel diary')).toBe(true);
+    expect(isJunk('هو الله — ای بندهٔ الهی، نامهٔ تو رسید')).toBe(false);
+  });
+  it('a person named in the third person is the subject, not the speaker', () => {
+    expect(g('Michael Linton', '"In designing the LETS, Michael Linton sought to disconnect the contradictory roles of money. He saw money as an information system."').speaker).toBeNull();
+    expect(g('‘Abdu’l-Bahá', '“Therefore the beloved of God must refer to Me only as ’Abdu’l-Bahá. This is My glorious crown!”').speaker).toBe('‘Abdu’l-Bahá');
+  });
+  it('an introduction naming one figure decides between figures', () => {
+    expect(g('Universal House of Justice', '> "Let us also remember that at the very root of the Cause lies the principle of the undoubted right of the individual to self-expression."',
+      'Shoghi Effendi approved of other provisions of the First Amendment:').speaker).toBe('Shoghi Effendi');
+  });
+  it('a written source needs the page to give it; a new quotation does not inherit', () => {
+    expect(g('Bahá’u’lláh', '"...from a fair-minded examination of the actual utterances of the Founders of the great religions, there is nothing to support the contentions."',
+      'make it not a means for disagreement and discord."', { prevSpeaker: 'Bahá’u’lláh' }).speaker).toBeNull();
+    expect(g('Bahá’u’lláh', 'O Son of Man! Deny not My servant should he ask anything from thee, for his face is My face.', 'Bahá’u’lláh exhorts us to see in the face of the vulnerable His own face:').speaker).toBe('Bahá’u’lláh');
+    expect(g('Bahá’u’lláh', 'ing the nature of the celestial spheres. To comprehend their nature', '"Thou hast, moreover, asked Me concern-', { prevSpeaker: 'Bahá’u’lláh' }).speaker).toBe('Bahá’u’lláh');
+    expect(g('‘Abdu’l-Bahá', '“You must become more patient. It would be well if some others would help you.”', 'Then He turned to me.').speaker).toBe('‘Abdu’l-Bahá');
+  });
+  it('leaves the book author alone', () => {
+    expect(g('Some Scholar', 'Those of us who are interested in scholarly pursuits', 'Shoghi Effendi wrote:').speaker).toBe('Some Scholar');
+  });
+});

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T18:11:25.629Z",
+  "generated": "2026-10-09T18:54:33.498Z",
   "entries": [
+    {
+      "hash": "1b75db8e",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Secondary write skips books of line fragments (listed for a rejoin)",
+      "scope": "authorship"
+    },
     {
       "hash": "c2ac3ad9",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Proof line drops \"once live\" — both surfaces read \"(live)\"",
       "scope": null
-    },
-    {
-      "hash": "2cb44029",
-      "date": "2026-08-28",
-      "type": "Other",
-      "description": "Restore the canonical cheat sheet — \"once live\" stays",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "1b75db8e",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Secondary write skips books of line fragments (listed for a rejoin)",
+        "scope": "authorship"
+      },
       {
         "hash": "c2ac3ad9",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Docs",
         "description": "Proof line drops \"once live\" — both surfaces read \"(live)\"",
-        "scope": null
-      },
-      {
-        "hash": "2cb44029",
-        "date": "2026-08-28",
-        "type": "Other",
-        "description": "Restore the canonical cheat sheet — \"once live\" stays",
         "scope": null
       }
     ]
