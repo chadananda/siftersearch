@@ -20,7 +20,7 @@ import { fileURLToPath } from 'url';
 import { getDoc, listDocs } from '../../api/lib/docs-repo.js';
 import { getAuthority } from '../../api/lib/authority.js';
 import { isCompilation } from '../../api/lib/doc-tier.js';
-import { createClassifier, loadRows, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from './window-core.mjs';
+import { createClassifier, fragmentShare, loadRows, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from './window-core.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(ROOT, f), quiet: true });
@@ -81,6 +81,14 @@ async function runBook(id) {
     const { roster, brief, labels } = await classify(book, rows);
     saved = { id, title: d.title, author: d.author, roster, brief, labels: rows.map((r, i) => ({ id: r.id, ...labels[i] })) };
     writeFileSync(file, JSON.stringify(saved));
+  }
+  // secondary: a book of line fragments is not written — listed for a rejoin instead (10-09: Taherzadeh vol. 2, Covenant)
+  const frag = fragmentShare(rows);
+  if (SECONDARY && frag > 0.25) {
+    stats.fragmented = (stats.fragmented || 0) + 1;
+    appendFileSync(join(OUT, 'fragmented.txt'), `${id}\t${frag.toFixed(2)}\t${d.title}\n`);
+    console.log(JSON.stringify({ id, title: (d.title || '').slice(0, 40), skip: 'fragmented', share: Number(frag.toFixed(2)) }));
+    return;
   }
   // the deterministic checks run again on saved labels, so a book classified by an earlier version gets today's rules
   const raw = new Map(saved.labels.map((l) => [l.id, l]));

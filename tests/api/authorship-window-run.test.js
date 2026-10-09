@@ -1,6 +1,6 @@
 // Write rules of the window classifier's production run (scripts/authorship/window-core.mjs nextAuthors).
 import { describe, it, expect } from 'vitest';
-import { nextAuthors, sameAsAuthor } from '../../scripts/authorship/window-core.mjs';
+import { fragmentShare, nextAuthors, sameAsAuthor } from '../../scripts/authorship/window-core.mjs';
 
 const book = { author: 'Nabil Zarandi' };
 const row = (authors, model = null) => ({ authors: JSON.stringify(authors), authors_model: model });
@@ -86,5 +86,11 @@ describe('Shoghi Effendi secretaries (v18b)', () => {
     expect(nextAuthors(named, { speaker: 'Frances Orr Allen' }, cal, { noDemote: true })?.changed).toBeFalsy();
     const dflt = row([{ name: 'Frances Orr Allen', role: 'author', basis: 'book' }]);
     expect(nextAuthors(dflt, { speaker: '‘Abdu’l-Bahá' }, cal, { noDemote: true }).changed).toBe(true);
+  });
+  it('measures books ingested one printed line per paragraph', () => {
+    const lines = ['They arrested', 'him then. They tortured him and Shaykh Aḥmad until', 'finally, in Tabríz, those two great men drained the cup of', 'death and, martyred, hastened away.'];
+    expect(fragmentShare(lines.map((text) => ({ text })))).toBeGreaterThan(0.5);
+    const prose = ['A whole paragraph that ends properly.', 'Another one, also complete in itself.', '“A quotation that closes.”'];
+    expect(fragmentShare(prose.map((text) => ({ text })))).toBe(0);
   });
 });

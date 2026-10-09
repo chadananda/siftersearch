@@ -18,6 +18,15 @@ export function loadRows(db, docId) {
     .map((r) => { const path = r.block_attrs ? JSON.parse(r.block_attrs).path : null; return { ...r, heading: path?.length ? path.join(' › ') : r.heading }; });
 }
 
+/** Share of prose rows that break mid-sentence into the next row (a book ingested one printed line per paragraph, e.g.
+ *  Taherzadeh's Revelation vol. 2). No speaker can be judged on such fragments — the secondary write skips these books. */
+export function fragmentShare(rows) {
+  const prose = rows.filter((r) => String(r.text || '').trim().length > 20);
+  const broken = rows.filter((r, i) => String(r.text || '').trim().length > 20 && !/[.!?:;"”’)\]*]\s*$/.test(String(r.text).trim())
+    && /^[a-z]/.test(String(rows[i + 1]?.text || '').trim())).length;
+  return prose.length ? broken / prose.length : 0;
+}
+
 /** Speaker already settled by evidence (hybrid): the reader's evidence-backed author, a heading (the book's author or
  *  compiler), or an attribution line (the writer it names). */
 export function knownSpeaker(r, book) {
