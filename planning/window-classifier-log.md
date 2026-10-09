@@ -44,3 +44,11 @@ Speed: ≈0.4 s per 10-¶ window, sequential within a book (anchors), parallel a
 | v15 | guard: no-verb introductions, short tags, third-person narration, 3-letter names; source_link protected | ~87% (prayers in Memorials) | 70/50/45 |
 | v16b | unmarked blocks need an introduction (prev ¶ names AND introduces, attributing heading, continuation) | ~95% (+ trailer-prev protected after) | 70/49/45 |
 Tokens on whole narrative books ≈1,250/¶ (compilations ≈500/¶). God Passes By: 0 changes (all earlier ones were wrong).
+
+## Production (2026-10-08)
+- All 600 OceanLibrary books classified (v16b-v17 engine; 475,367 ¶; ~460M Jev tokens ≈ $20) → /tank/sifter/authorship/wrun-ol/.
+- Further change spot-checks on whole books → v17 (editor needs editorial evidence), v18 (compiler never a paragraph's author;
+  on-behalf of Shoghi Effendi = Shoghi Effendi), v18b (his secretaries' letters in his books). Re-applied to saved labels via refineLabel.
+- WRITTEN: 147 Bahá’í books only — 17,545 rows (3,866 author changes, 14,084 quoted entries), 0 errors; rollback.jsonl beside the labels.
+- Meili: push-meili-authors.mjs --apply → 45,609 paragraph author partial updates (no re-index).
+- NOT written: other traditions (Book of Mormon, Kitab al-Kafi, Mahabharata, Qur’án…) — unvalidated; need their own gold.

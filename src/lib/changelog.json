@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T03:12:24.471Z",
+  "generated": "2026-10-09T03:17:59.196Z",
   "entries": [
+    {
+      "hash": "079681aa",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window v18b — in Shoghi Effendi's books his secretaries' letters and 'the Guardian’s …' letters are his, on his behalf",
+      "scope": "authorship"
+    },
     {
       "hash": "806fbfe1",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "DeepSeek `thinking` was sent as extra_body and never disabled — 69% of SAQ HyPE was empty",
       "scope": null
-    },
-    {
-      "hash": "865449d8",
-      "date": "2026-08-27",
-      "type": "Other",
-      "description": "Bilingual originals, concept extraction, HyPE quality",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "079681aa",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window v18b — in Shoghi Effendi's books his secretaries' letters and 'the Guardian’s …' letters are his, on his behalf",
+        "scope": "authorship"
+      },
       {
         "hash": "806fbfe1",
         "date": "2026-10-08",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-27",
         "type": "Fixed",
         "description": "DeepSeek `thinking` was sent as extra_body and never disabled — 69% of SAQ HyPE was empty",
-        "scope": null
-      },
-      {
-        "hash": "865449d8",
-        "date": "2026-08-27",
-        "type": "Other",
-        "description": "Bilingual originals, concept extraction, HyPE quality",
         "scope": null
       }
     ]
