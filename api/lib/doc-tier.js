@@ -115,7 +115,7 @@ const OTHER_RELIGION_DOCTRINAL = new Set([
 // (c) titles starting with "Compilation" or matching well-known compilations
 //     like "Lights of Guidance".
 // Excludes UHJ letters (administrative correspondence, not doctrinal).
-function isCompilation(doc) {
+export function isCompilation(doc) {
   const author = String(doc.author || '');
   const title = String(doc.title || '');
   if (/Research Department of the Universal House of Justice/i.test(author)) return true;

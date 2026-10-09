@@ -9,13 +9,17 @@
 // authors_model = window-v10-2026-10-08 where the author changed. Every written row's previous authors / authors_model are
 // appended to <out>/rollback.jsonl first, so a run can be undone exactly. synced is NOT reset: push-meili-authors.mjs carries
 // authors to Meili as a two-field partial update afterwards. Dry run unless --write (needs SIFTER_WRITER_URL).
-//   node scripts/authorship/window-run.mjs <out> (<docId> … | --oceanlibrary) [--religion bah] [--concurrency 4] [--write] [--limit N]
+//   node scripts/authorship/window-run.mjs <out> (<docId> … | --oceanlibrary | --secondary) [--religion bah] [--concurrency 4] [--write] [--limit N]
+// --secondary: every canonical book with prose that is secondary literature (authority < 8) or a multi-author compilation —
+// histories, studies, biographies, papers, letters collections: where quoting and citing others is the norm (Chad 10-09).
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { getDoc, listDocs } from '../../api/lib/docs-repo.js';
+import { getAuthority } from '../../api/lib/authority.js';
+import { isCompilation } from '../../api/lib/doc-tier.js';
 import { createClassifier, loadRows, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from './window-core.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -40,6 +44,16 @@ if (process.argv.includes('--oceanlibrary')) {
   for (let offset = 0; ; offset += 1000) {
     const page = await listDocs({ sourceSite: 'oceanlibrary.com', fields: ['id'], limit: 1000, offset });
     ids.push(...page.docs.map((d) => d.id));
+    if (page.docs.length < 1000) break;
+  }
+}
+if (process.argv.includes('--secondary')) {
+  ids = [];
+  for (let offset = 0; ; offset += 1000) {
+    const page = await listDocs({ scope: 'canonicalWithProse', fields: ['id', 'title', 'author', 'religion', 'collection', 'source_site'], limit: 1000, offset });
+    // several authors: doc-tier's compilation test, plus 'Compilation (…)' / 'Various' authors (not added to doc-tier: it routes enrichment)
+    const multi = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.test(d.author || '');
+    for (const d of page.docs) if ((getAuthority(d) < 8 || multi(d)) && (!RELIGION || RELIGION.test(d.religion || ''))) ids.push(d.id);
     if (page.docs.length < 1000) break;
   }
 }

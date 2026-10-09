@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T12:46:41.472Z",
+  "generated": "2026-10-09T12:55:39.069Z",
   "entries": [
+    {
+      "hash": "63503c80",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "A re-ingest detaches rows that reference removed paragraphs in the same transaction (nullable → NULL, derived → deleted, saved research quotes re-attached to the paragraph their text went into) — FOREIGN KEY failures aborted re-ingests mid-way",
+      "scope": "ingest"
+    },
     {
       "hash": "6c19ceca",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Participants on the event node, OpenAPI for the graph, and routing that stops sending \"who was at X\" to passage search",
       "scope": "entities"
-    },
-    {
-      "hash": "b1fef5b8",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Rank candidates in SQL — an unordered LIMIT discarded the answer",
-      "scope": "entity_search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "63503c80",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "A re-ingest detaches rows that reference removed paragraphs in the same transaction (nullable → NULL, derived → deleted, saved research quotes re-attached to the paragraph their text went into) — FOREIGN KEY failures aborted re-ingests mid-way",
+        "scope": "ingest"
+      },
       {
         "hash": "6c19ceca",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "New",
         "description": "Participants on the event node, OpenAPI for the graph, and routing that stops sending \"who was at X\" to passage search",
         "scope": "entities"
-      },
-      {
-        "hash": "b1fef5b8",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Rank candidates in SQL — an unordered LIMIT discarded the answer",
-        "scope": "entity_search"
       }
     ]
   }
