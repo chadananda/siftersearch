@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T13:49:18.321Z",
+  "generated": "2026-10-09T14:05:29.313Z",
   "entries": [
+    {
+      "hash": "566ac720",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Every enrichment stage reads the paragraph's VOICE — who speaks it and whom it quotes",
+      "scope": "enrich"
+    },
     {
       "hash": "5ea759df",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Close the entity-graph ticket — verified results and why the intersection is 6",
       "scope": null
-    },
-    {
-      "hash": "cf05c292",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Score name rarity over the primary name, not a parenthetical alias",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "566ac720",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Every enrichment stage reads the paragraph's VOICE — who speaks it and whom it quotes",
+        "scope": "enrich"
+      },
       {
         "hash": "5ea759df",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Docs",
         "description": "Close the entity-graph ticket — verified results and why the intersection is 6",
         "scope": null
-      },
-      {
-        "hash": "cf05c292",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Score name rarity over the primary name, not a parenthetical alias",
-        "scope": "entities"
       }
     ]
   }
