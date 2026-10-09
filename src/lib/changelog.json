@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T20:11:58.660Z",
+  "generated": "2026-10-09T20:15:38.475Z",
   "entries": [
+    {
+      "hash": "5d847058",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Window-run --secondary accepts explicit doc ids (re-ingested books)",
+      "scope": "authorship"
+    },
     {
       "hash": "7733e248",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Episode layer; root cause is prompt design, not a bug",
       "scope": null
-    },
-    {
-      "hash": "1ee9b04e",
-      "date": "2026-09-06",
-      "type": "Other",
-      "description": "Balyuzi opening scene absent; ~75 paragraphs yield no claims",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "5d847058",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Window-run --secondary accepts explicit doc ids (re-ingested books)",
+        "scope": "authorship"
+      },
       {
         "hash": "7733e248",
         "date": "2026-10-09",
@@ -7035,13 +7042,6 @@
         "date": "2026-09-06",
         "type": "Other",
         "description": "Episode layer; root cause is prompt design, not a bug",
-        "scope": null
-      },
-      {
-        "hash": "1ee9b04e",
-        "date": "2026-09-06",
-        "type": "Other",
-        "description": "Balyuzi opening scene absent; ~75 paragraphs yield no claims",
         "scope": null
       }
     ]
