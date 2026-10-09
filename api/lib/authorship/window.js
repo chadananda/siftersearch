@@ -208,8 +208,11 @@ const namerOf = (speaker) => {
 };
 const WRITTEN = new Set(['Bahá’u’lláh', 'The Báb', 'Shoghi Effendi', 'Universal House of Justice']);
 export const isJunk = (text) => {
-  const t = String(text || '').replace(/\s+/g, '');
-  if (/\bTAGS:|\bAbstract:/.test(String(text || ''))) return true;
+  const raw = String(text || '').trim(), t = raw.replace(/\s+/g, '');
+  if (/\bTAGS:|\bAbstract:/.test(raw)) return true;
+  // a citation / note line ("13. From a letter written on behalf of…", "… 18 Mar. 2013. Web.") and a stray fragment
+  if (/^\d{1,3}\\?\.\s+(From|See|Cf\.?|Ibid|Quoted|Cited|In)\b/i.test(raw) || /\b(Web|Print)\.\s*\d*\s*$/.test(raw)) return true;
+  if (raw.length < 40 && /^[a-z]/.test(raw) && !/[.!?]["”’]?$/.test(raw)) return true;
   return t.length >= 8 && (t.match(/\p{L}/gu) || []).length / t.length < 0.6;
 };
 // the full name, or a personal surname of 4+ letters — never one word of an institution ("justice")
@@ -223,7 +226,11 @@ const namesInThirdPerson = (speaker, rawText) => {
   return last.length >= 4 && !STOP.test(last) && new RegExp(`\\b${last.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f);
 };
 // "the son of Bahá’u’lláh … is:" introduces ‘Abdu’l-Bahá — a name after a kinship word does not introduce its bearer
-const KIN_OF = /\b(sons?|daughters?|wife|husband|brothers?|sisters?|father|mother|grandsons?|granddaughters?|family|household|followers?|believers?|companions?) of\s+(the\s+)?\S+/gi;
+// after "of" only a source introduces ("in the words of Bahá’u’lláh:"); "the son of Bahá’u’lláh", "the rejection of
+// Bahá’u’lláh by the Azalis" do not
+const KIN_OF = /\b(?!(?:words|writings|pen|tablets?|utterances?|prayers?|letters?|statements?|exhortations?|message|counsels?|explanations?)\b)[\p{L}’']+ of\s+(the\s+)?\S+/giu;
+const FIRST_PERSON = /\b(I|[Mm]e|[Mm]y|[Mm]ine|[Ww]e|[Uu]s|[Oo]ur)\b/;
+const multiAuthor = (a) => /,|\band\b|compil|various/i.test(String(a || ''));
 export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null, prevRawSpeaker = null, heading = '', bookAuthor = '' }) {
   if (!label) return label;
   if (isJunk(text)) return { ...label, speaker: null, quotes: null, junk: true };
@@ -231,18 +238,28 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   if (!label.speaker || label.fixed || label.speaker === EDITOR || label.unproven || foldName(label.speaker) === foldName(bookAuthor)) return label;
   const p = String(prevText || '').trim();
   const introduces = /[:—–]\s*[”"]?\s*$/.test(p) || /\b(as follows|the following|thus)\b/i.test(p.slice(-160));
-  if (namesInThirdPerson(label.speaker, text) && !/\b(I|[Mm]e|[Mm]y|[Mm]ine|[Ww]e|[Uu]s|[Oo]ur)\b/.test(String(text))) return { ...label, speaker: null, subject: true };
+  // named in the third person — in the narration (no first person there), or inside a quotation that has no first person
+  // at all ("Michael Linton sought…"); a letter addressed to "you" is exempt (a secretary writes of "the beloved Guardian")
+  const out = outsideQuotes(text), body = String(text || '');
+  const inOut = (namesInThirdPerson(label.speaker, out) || (ALIAS[label.speaker]?.test(out) ?? false)) && !FIRST_PERSON.test(out);
+  const inAll = namesInThirdPerson(label.speaker, body) && !FIRST_PERSON.test(body);
+  if ((inOut || inAll) && !/\b([Yy]ou|[Yy]our|[Tt]hee|[Tt]hou|[Tt]hy)\b/.test(body)) return { ...label, speaker: null, subject: true };
   if (introduces) {
-    const tail = p.slice(-400).replace(KIN_OF, ' ');
+    const tail = p.slice(-400).replace(KIN_OF, ' ');   // see KIN_OF
     const hits = FIGURES.filter((f) => namerOf(f)(tail));
     if (hits.length === 1) return hits[0] === label.speaker ? label : { ...label, speaker: hits[0], leadIn: true };
   }
+  const anyOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);
+  const quotationShaped = /^\s*(>|[“"‘«])/.test(String(text || '')) || introduces || anyOpen;
+  // the author's own prose about someone ("Shoghi Effendi has encouraged the friends…") — held-out sample 10-09: 6 of 10 errors
+  if (multiAuthor(bookAuthor)) return label;   // compilations: each extract stands alone (its citation is reader evidence)
+  if (!quotationShaped) return { ...label, speaker: null, prose: true };
   if (!WRITTEN.has(label.speaker)) return label;
   const named = namerOf(label.speaker);
   const attributes = /\b(address|talk|words?|letters?|tablets?|prayers?|writings?|extracts?|by|from|message)\b/i.test(heading || '');
   // the model's own label for the previous paragraph counts too: a rejection must not cascade down a split quotation
   const stillOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);
-  const given = (named(p.slice(-1500)) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
+  const given = (named(p.slice(-1500).replace(KIN_OF, ' ')) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
   return given ? label : { ...label, speaker: null, unproven: true };
 }
 

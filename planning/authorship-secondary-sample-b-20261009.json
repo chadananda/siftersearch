@@ -1,0 +1,436 @@
+{
+ "note": "HELD-OUT random 40 (seed 777) planned secondary changes under the rules of commit 0f13e568, judged 2026-10-09. C/W/U as in the first sample. Used to tune the v3 rules — the next fresh sample is the honest measure.",
+ "sample": [
+  {
+   "n": 1,
+   "doc": 14778,
+   "row": 17005056,
+   "old": "Unknown",
+   "old_basis": "book",
+   "speaker": "Universal House of Justice",
+   "quoted": [],
+   "verdict": "W",
+   "why": "bibliography line"
+  },
+  {
+   "n": 2,
+   "doc": 8284,
+   "row": 7352701,
+   "old": "Edward Sell",
+   "old_basis": "book",
+   "speaker": "Áká Muḥammad ‘Alí",
+   "quoted": [],
+   "verdict": "U",
+   "why": "source of the quotation unclear"
+  },
+  {
+   "n": 3,
+   "doc": 14112,
+   "row": 12357945,
+   "old": "Graham Hassall",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [],
+   "verdict": "W",
+   "why": "Hassall’s own prose about the International Bahá’í Council"
+  },
+  {
+   "n": 4,
+   "doc": 158,
+   "row": 8022736,
+   "old": "Shoghi Effendi",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "U",
+   "why": "text not shown"
+  },
+  {
+   "n": 5,
+   "doc": 13128,
+   "row": 11801123,
+   "old": "Centenary News",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 6,
+   "doc": 8282,
+   "row": 7665613,
+   "old": "David Hofman",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 7,
+   "doc": 13346,
+   "row": 11892319,
+   "old": "Ruth Eyford, Helgi Eyford",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [
+    "Universal House of Justice"
+   ],
+   "verdict": "W",
+   "why": "numbered citation line"
+  },
+  {
+   "n": 8,
+   "doc": 14340,
+   "row": 29014366,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Adib Taherzadeh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 9,
+   "doc": 14152,
+   "row": 12500123,
+   "old": "Trevor R. J. Finch",
+   "old_basis": "book",
+   "speaker": "Peggy Caton",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 10,
+   "doc": 2263,
+   "row": 2870234,
+   "old": null,
+   "old_basis": "system1",
+   "speaker": "Soetsu Yanagi",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 11,
+   "doc": 16300,
+   "row": 17043704,
+   "old": "‘Abdu’l-Bahá",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 12,
+   "doc": 921289,
+   "row": 28299341,
+   "old": "pdf-t-terry",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [
+    "Shoghi Effendi"
+   ],
+   "verdict": "W",
+   "why": "Terry’s own prose citing Shoghi Effendi"
+  },
+  {
+   "n": 13,
+   "doc": 14788,
+   "row": 13996713,
+   "old": "Mrs. Corinne True",
+   "old_basis": "book",
+   "speaker": "Professor Vambery",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 14,
+   "doc": 12417,
+   "row": 16944045,
+   "old": "Olive McKinley",
+   "old_basis": "book",
+   "speaker": "Universal House of Justice",
+   "quoted": [],
+   "verdict": "U",
+   "why": "could be a House of Justice cable in capitals"
+  },
+  {
+   "n": 15,
+   "doc": 12620,
+   "row": 11652456,
+   "old": "Allen McDaniel",
+   "old_basis": "book",
+   "speaker": "Allen B. McDaniel",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 16,
+   "doc": 14157,
+   "row": 29023175,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Inazo Nitobe",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 17,
+   "doc": 8252,
+   "row": 7485412,
+   "old": "Roger Coe",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [
+    "Shoghi Effendi"
+   ],
+   "verdict": "W",
+   "why": "Coe’s own prose citing Shoghi Effendi"
+  },
+  {
+   "n": 18,
+   "doc": 12598,
+   "row": 10710419,
+   "old": "Ann M. Boylan",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi (the Guardian)",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 19,
+   "doc": 16240,
+   "row": 16488235,
+   "old": "Anton Haddad",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 20,
+   "doc": 13345,
+   "row": 28983779,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Christopher Buck",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "W",
+   "why": "stray fragment"
+  },
+  {
+   "n": 21,
+   "doc": 14258,
+   "row": 29022729,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "W",
+   "why": "a letter of ‘Abdu’r-Razzaq, not Bahá’u’lláh"
+  },
+  {
+   "n": 22,
+   "doc": 12579,
+   "row": 11481614,
+   "old": "Ahmad Sohrab",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 23,
+   "doc": 12715,
+   "row": 17020633,
+   "old": "George O. Latimer",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 24,
+   "doc": 16567,
+   "row": 16976593,
+   "old": "Julio Savi",
+   "old_basis": "continuation",
+   "speaker": "Julio Savi",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 25,
+   "doc": 9201,
+   "row": 17020539,
+   "old": "Inez Cook Greven",
+   "old_basis": "continuation",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 26,
+   "doc": 465,
+   "row": 5517739,
+   "old": null,
+   "old_basis": "system1",
+   "speaker": "Sa'di",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 27,
+   "doc": 5654,
+   "row": 2948729,
+   "old": "Leroy Ioas, B. Buckley",
+   "old_basis": "book",
+   "speaker": "Leroy Ioas",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 28,
+   "doc": 20513,
+   "row": 20735979,
+   "old": "Imam ‘Alí ibn ''Abu-Talib, Khazeh Fananapazir",
+   "old_basis": "book",
+   "speaker": "Imam 'Alí ibn 'Abu-Talib",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 29,
+   "doc": 11342,
+   "row": 16863506,
+   "old": "Michael McMullen",
+   "old_basis": "book",
+   "speaker": "Dorothy Baker",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 30,
+   "doc": 13873,
+   "row": 29012643,
+   "old": null,
+   "old_basis": null,
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 31,
+   "doc": 13770,
+   "row": 17009012,
+   "old": "Ismael Velasco",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 32,
+   "doc": 12220,
+   "row": 10117827,
+   "old": "Richard Francis",
+   "old_basis": "book",
+   "speaker": "Amoz Everett Gibson",
+   "quoted": [],
+   "verdict": "W",
+   "why": "a passage ABOUT Gibson"
+  },
+  {
+   "n": 33,
+   "doc": 5617,
+   "row": 1616775,
+   "old": "Universal House of Justice",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 34,
+   "doc": 14609,
+   "row": 13681264,
+   "old": "Ian Kluge",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [
+    "‘Abdu’l-Bahá"
+   ],
+   "verdict": "W",
+   "why": "Kluge’s own prose (French)"
+  },
+  {
+   "n": 35,
+   "doc": 13989,
+   "row": 28992763,
+   "old": null,
+   "old_basis": null,
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 36,
+   "doc": 919223,
+   "row": 28249935,
+   "old": "inventory-AB04351",
+   "old_basis": "book",
+   "speaker": "Abdul Baha Abbas",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 37,
+   "doc": 11362,
+   "row": 16696190,
+   "old": "Maude Holbach",
+   "old_basis": "book",
+   "speaker": "‘Abdu’l-Bahá",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 38,
+   "doc": 14207,
+   "row": 13059285,
+   "old": "Lynn Echevarria-Howe",
+   "old_basis": "book",
+   "speaker": "Ursula King",
+   "quoted": [],
+   "verdict": "C"
+  },
+  {
+   "n": 39,
+   "doc": 13322,
+   "row": 16965700,
+   "old": "Juan Cole",
+   "old_basis": "book",
+   "speaker": "Bahá’u’lláh",
+   "quoted": [
+    "Bahá’u’lláh"
+   ],
+   "verdict": "C"
+  },
+  {
+   "n": 40,
+   "doc": 15940,
+   "row": 16471795,
+   "old": "Barbara R. Sims",
+   "old_basis": "book",
+   "speaker": "Shoghi Effendi",
+   "quoted": [
+    "Shoghi Effendi"
+   ],
+   "verdict": "W",
+   "why": "Sims’ narration reporting a letter on behalf of the Guardian"
+  }
+ ]
+}

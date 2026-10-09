@@ -58,7 +58,8 @@ export function refineLabel(l, row, prevRow, prevLabel, book, { secondary = fals
     g = { ...g, speaker: book.author, unproven: true };
   }
   if (secondary) g = secondaryGuard(g, { text: row.text, prevText: prevRow?.text, prevSpeaker: prevLabel?.speaker, prevRawSpeaker: prevRaw?.speaker, heading: row.heading, bookAuthor: book.author });
-  g = onBehalfOfShoghiEffendi(g, row.text, book.author);
+  // a narrated paragraph that reports a letter "written on behalf of the Guardian" stays the narrator's (held-out #40)
+  if (!(secondary && (g.narrated || g.prose || g.subject))) g = onBehalfOfShoghiEffendi(g, row.text, book.author);
   return settle(g);
 }
 

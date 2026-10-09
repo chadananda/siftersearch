@@ -217,10 +217,35 @@ describe('secondaryGuard v2 (sample eval misses)', async () => {
   });
   it('a closing signature is not a third-person subject', () => {
     const cable = 'Contract for superstructure awarded after due deliberation; work to begin at once, foundations complete and approved by the architect and engineers in every particular as required by the specifications sent. Temple Unity Board';
-    expect(g('Temple Unity Board', cable).speaker).toBe('Temple Unity Board');
+    expect(g('Temple Unity Board', cable, 'after due deliberation the following cablegram was forwarded to Haifa:').speaker).toBe('Temple Unity Board');
   });
   it('"the son of Bahá’u’lláh …:" does not introduce Bahá’u’lláh', () => {
     expect(g('‘Abdu’l-Bahá', '“Among the teachings of Bahá’u’lláh is that relating to a universal language.”', 'The son of Bahá’u’lláh speaks always of his beliefs as being the teaching of his father. A favorite way of making his statements is:').speaker).toBe('‘Abdu’l-Bahá');
     expect(g('Universal House of Justice', '“Regard man as a mine rich in gems of inestimable value.”', 'In the words of Bahá’u’lláh:').speaker).toBe('Bahá’u’lláh');
+  });
+});
+
+describe('secondaryGuard v3 (held-out sample 10-09)', async () => {
+  const { secondaryGuard, isJunk } = await import('../../api/lib/authorship/window.js');
+  const g = (speaker, text, prevText = '', extra = {}) => secondaryGuard({ speaker, quotes: null }, { text, prevText, bookAuthor: 'Roger Coe', ...extra });
+  it("the author's own prose about a figure stays the author's", () => {
+    expect(g('Shoghi Effendi', 'Shoghi Effendi has encouraged the friends to unite through a "thorough understanding of the basic laws," encouraging Bahá’ís to "deepen their knowledge."', 'Our obligation is to deepen our understanding.').speaker).toBeNull();
+    expect(g('Shoghi Effendi', 'This unitive knowledge may be related to the advice given by Shoghi Effendi: "we cannot get a correct picture by concentrating on just one phrase."', 'the infallibly-guided elucidations.').speaker).toBeNull();
+    expect(g('Shoghi Effendi', 'The International Bahá’í Council, established by the Guardian in January 1951, assisted him in the course of the Crusade.', 'the Hands of the Cause supervised the Crusade goals.').speaker).toBeNull();
+  });
+  it('quotation-shaped paragraphs keep their speaker', () => {
+    expect(g('Ursula King', '[A] different kind of consciousness which takes into account a new order of complexity', 'Ursula King articulates the importance of the global to religion as:').speaker).toBe('Ursula King');
+    expect(g('Soetsu Yanagi', "> 'When he leaves us we shall have lost the one man who knows Japan on its spiritual side.'", 'concludes with these words:').speaker).toBe('Soetsu Yanagi');
+  });
+  it('multi-author compilations are exempt from the prose rule', () => {
+    expect(g('Shoghi Effendi', 'Your letter of March 7th was received, and the beloved Guardian was extremely happy to see the photograph.', '(15 February 1957 to a National Spiritual Assembly) [13]', { bookAuthor: '‘Abdu’l-Bahá, Shoghi Effendi' }).speaker).toBe('Shoghi Effendi');
+  });
+  it('citation lines and stray fragments are junk', () => {
+    expect(isJunk('News Service. Bahá’í International Community. 18 Mar. 2013. Web. 31')).toBe(true);
+    expect(isJunk('13\\. From a letter written on behalf of the Guardian to an individual Bahá’í.')).toBe(true);
+    expect(isJunk('rection.“44 BahP’u’llah’s')).toBe(true);
+  });
+  it('"the rejection of Bahá’u’lláh by the Azalis:" does not introduce Bahá’u’lláh', () => {
+    expect(g('Bahá’u’lláh', '> And when the Cause of God was revealed, they then pushed these aside.', 'in a letter of ‘Abdu’r-Razzaq, referring to the rejection of Baha’u’llah by the Azalis:').speaker).toBeNull();
   });
 });
