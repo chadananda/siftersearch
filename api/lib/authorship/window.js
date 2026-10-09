@@ -229,7 +229,7 @@ const namesInThirdPerson = (speaker, rawText) => {
 // "the son of Bahá’u’lláh … is:" introduces ‘Abdu’l-Bahá — a name after a kinship word does not introduce its bearer
 // after "of" only a source introduces ("in the words of Bahá’u’lláh:"); "the son of Bahá’u’lláh", "the rejection of
 // Bahá’u’lláh by the Azalis" do not
-const KIN_OF = /\b(?!(?:words|writings|pen|tablets?|utterances?|prayers?|letters?|statements?|exhortations?|message|counsels?|explanations?)\b)[\p{L}’']+ of\s+(the\s+)?\S+/giu;
+const KIN_OF = /\b(?!(?:words?|writings?|texts?|verses?|passages?|pen|tablets?|books?|utterances?|prayers?|letters?|statements?|exhortations?|injunctions?|commands?|message|counsels?|explanations?)\b)[\p{L}’']+ of\s+(the\s+)?\S+/giu;
 const FIRST_PERSON = /\b(I|[Mm]e|[Mm]y|[Mm]ine|[Ww]e|[Uu]s|[Oo]ur)\b/;
 const multiAuthor = (a) => /,|\band\b|compil|various/i.test(String(a || ''));
 export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null, prevRawSpeaker = null, heading = '', bookAuthor = '' }) {
@@ -260,7 +260,13 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   const attributes = /\b(address|talk|words?|letters?|tablets?|prayers?|writings?|extracts?|by|from|message)\b/i.test(heading || '');
   // the model's own label for the previous paragraph counts too: a rejection must not cascade down a split quotation
   const stillOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);
-  const given = (named(p.slice(-1500).replace(KIN_OF, ' ')) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
+  const intro = p.slice(-1500).replace(KIN_OF, ' ');
+  // the source given without the name (10-09: 737 rejections after an intro): an epithet ("the Pen of the Most High hath
+  // affirmed:"), a divine pronoun mid-sentence for a Manifestation ("Yet in it He reveals these words:"), a letter's salutation
+  const epithet = ALIAS[label.speaker]?.test(intro.slice(-400)) ?? false;
+  const divine = (label.speaker === 'Bahá’u’lláh' || label.speaker === 'The Báb') && /[\p{Ll},;]\s+(He|His|Him)\b/u.test(intro.slice(-200));
+  const salutation = /^(dear(est)?|beloved|my (dear|beloved))\b[^:\n]{0,70}:\s*$/i.test(p.split(/\n/).pop() || '');
+  const given = ((named(intro) || epithet || divine) && introduces) || salutation || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
   return given ? label : { ...label, speaker: null, unproven: true };
 }
 
@@ -268,7 +274,9 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
  *  Days of Remembrance Bahá’u’lláh speaking of Himself in the third person — "upon Him Who is the Revealer…" — and
  *  ‘Abdu’l-Bahá's "He is God!" went to the editor): the paragraph names the book's author in the third person (or an
  *  alias — the Guardian, the Master, the Blessed Beauty) or opens like a note. */
-const ALIAS = { 'Shoghi Effendi': /\bthe guardian\b/i, '‘Abdu’l-Bahá': /\bthe master\b/i, 'Bahá’u’lláh': /\b(the )?blessed beauty\b|\bthe ancient beauty\b/i };
+const ALIAS = { 'Shoghi Effendi': /\bthe guardian\b/i, '‘Abdu’l-Bahá': /\bthe master\b/i,
+  'Bahá’u’lláh': /\b(the )?blessed beauty\b|\bthe ancient beauty\b|\bthe blessed perfection\b|\bthe abh[aá] beauty\b|\bpen of the most high\b|\bthe supreme pen\b|\btongue of grandeur\b|\bauthor of (this|the|our) (faith|revelation|cause)\b/i,
+  'The Báb': /\bthe primal point\b|\bthe herald of (this|the|our) (faith|revelation)\b/i };
 const NOTE_OPEN = /^(revealed|written|translated|dictated|addressed|this (message|letter|tablet|cable|book|edition|compilation)|excerpts?|extracts?|from (a|the|his|her)|cf\.|see |literally|note:|the (following|above)|introduction|preface|foreword)\b/i;
 export function editorHasEvidence(text, bookAuthor, { footnote = false } = {}) {
   if (footnote) return true;

@@ -33,6 +33,17 @@ export function withoutAuthor(query, prefer) {
   const kept = String(query).split(/\s+/).filter((t) => !foldTok(t).split(' ').every((w) => names.has(w)));
   return kept.join(' ').trim() || query;
 }
+/** The subject of a "where does X say Y?" question: the question frame — and the author it names, which the plan
+ *  already carries as `prefer` — is not the subject. Searching the frame matched "Where is he who held dominion…" for
+ *  "where does Bahá’u’lláh say the earth is but one country" (10-09) and the passage itself never came back. */
+const FRAME = /^\s*(?:(?:and|so|but)\s+)?(?:where|when|what|how|why|did|does|do|has|have|had|is there|are there|in (?:what|which)\b[^?]{0,40}?|which (?:book|tablet|work|passage|text)s?)\b[^?]{0,80}?\b(?:say|says|said|saying|write|writes|wrote|written|state|states|stated|mention|mentions|mentioned|teach|teaches|taught|talk|talks|speak|speaks|spoke|explain|explains|explained|describe|describes|described|refer|refers|referred)\b\s*(?:that|about|of|on|regarding|concerning|to)?\s+/i;
+export function questionSubject(query) {
+  const q = String(query || '').trim();
+  const m = q.match(FRAME);
+  if (!m) return q;
+  const rest = q.slice(m[0].length).replace(/[?？]+\s*$/, '').trim();
+  return /[\p{L}\p{N}]{3,}/u.test(rest) ? rest : q;
+}
 /** Subject terms: content words of the query that are not the author's name. */
 export function subjectTerms(query, prefer) {
   const names = nameWords(prefer);
@@ -128,7 +139,8 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
   const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
-  const search = async (filters, q = query, only = null) => {
+  const subjectQ = questionSubject(query);
+  const search = async (filters, q = subjectQ, only = null) => {
     const res = await run(q, {
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
@@ -150,7 +162,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
-    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(query, plan.prefer)).catch(() => []) : Promise.resolve([]),
+    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer)).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;

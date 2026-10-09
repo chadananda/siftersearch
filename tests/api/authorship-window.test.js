@@ -259,3 +259,18 @@ describe('secondaryGuard v4 (fresh sample c)', async () => {
     expect(isJunk('Clarendon Press, 1985. Print. Zajonc, Arthur. Catching the Light: The Entwined History of Light and Mind. New')).toBe(true);
   });
 });
+
+describe('secondaryGuard v5 — sources introduced without the name (737 cases, 10-09)', async () => {
+  const { secondaryGuard } = await import('../../api/lib/authorship/window.js');
+  const g = (speaker, prevText) => secondaryGuard({ speaker }, { text: '> O ye peoples of the world! The earth is but one country, and mankind its citizens.', prevText, bookAuthor: 'Some Scholar' }).speaker;
+  it('accepts the word/text of, epithets, divine pronouns and salutations', () => {
+    expect(g('Bahá’u’lláh', '(PUP 16) This interprets the word of Bahá’u’lláh:')).toBe('Bahá’u’lláh');
+    expect(g('Bahá’u’lláh', 'In a famous passage the Pen of the Most High hath affirmed:')).toBe('Bahá’u’lláh');
+    expect(g('Bahá’u’lláh', 'Yet in it He reveals these prophetic words, realized decades later:')).toBe('Bahá’u’lláh');
+    expect(g('Shoghi Effendi', 'Dear Bahá’í Sister:')).toBe('Shoghi Effendi');
+  });
+  it('still rejects an unattributed quotation', () => {
+    expect(g('Bahá’u’lláh', 'The rest of the chapter considers the practical consequences of this principle.')).toBeNull();
+    expect(g('Bahá’u’lláh', 'He then quoted these lines:')).toBeNull();   // sentence-initial "He" is a person, not a divine pronoun
+  });
+});

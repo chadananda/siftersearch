@@ -232,3 +232,19 @@ describe('plannedSearch — search target', () => {
     expect(out.map((h) => h.id)).toEqual([2, 3, 1]);
   });
 });
+
+describe('questionSubject — the frame of "where does X say Y?" is not the subject (10-09)', async () => {
+  const { questionSubject } = await import('../../api/lib/planned-search.js');
+  it('strips the question frame and the author it names', () => {
+    expect(questionSubject('where does Bahá’u’lláh say the earth is but one country')).toBe('the earth is but one country');
+    expect(questionSubject('What does ‘Abdu’l-Bahá say about the equality of women and men?')).toBe('the equality of women and men');
+    expect(questionSubject('Did Shoghi Effendi write that the world is in travail')).toBe('the world is in travail');
+    expect(questionSubject('In which Tablet does Bahá’u’lláh say that justice is the best beloved')).toBe('justice is the best beloved');
+  });
+  it('leaves other queries alone', () => {
+    expect(questionSubject('the earth is but one country')).toBe('the earth is but one country');
+    expect(questionSubject('where was the Báb born')).toBe('where was the Báb born');
+    expect(questionSubject('what does Bahá’u’lláh say about justice')).toBe('justice');
+    expect(questionSubject('what does he say about it')).toBe('what does he say about it');
+  });
+});

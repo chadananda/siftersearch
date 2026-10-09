@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T19:05:21.008Z",
+  "generated": "2026-10-09T19:18:36.316Z",
   "entries": [
+    {
+      "hash": "8fc1aa31",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Secondary — aliases introduce ('The Master says:'), bibliography entries are junk; fresh sample c saved (36 C / 3 W / 1 U)",
+      "scope": "authorship"
+    },
     {
       "hash": "64b8893a",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The embeddable companion SifterSearch publishes",
       "scope": null
-    },
-    {
-      "hash": "8e82ee01",
-      "date": "2026-09-05",
-      "type": "Other",
-      "description": "File stack currency work",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "8fc1aa31",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Secondary — aliases introduce ('The Master says:'), bibliography entries are junk; fresh sample c saved (36 C / 3 W / 1 U)",
+        "scope": "authorship"
+      },
       {
         "hash": "64b8893a",
         "date": "2026-10-09",
@@ -7035,15 +7042,6 @@
         "date": "2026-09-06",
         "type": "Other",
         "description": "The embeddable companion SifterSearch publishes",
-        "scope": null
-      }
-    ],
-    "2026-09-05": [
-      {
-        "hash": "8e82ee01",
-        "date": "2026-09-05",
-        "type": "Other",
-        "description": "File stack currency work",
         "scope": null
       }
     ]
