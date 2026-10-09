@@ -88,6 +88,22 @@ email · entity graph with who-met-whom · public API for third parties.
     than duplicating events. Type relationships from kinship plus met / companion / adversary facts, and draw journeys
     from visited / imprisoned places.
 
+- **2026-10-09: answer quality is the real concern.** "Their site seems to answer questions easily that SifterSearch
+  still gets wrong. But it might resolve with more indexing."
+  - **Likely technique gap:** they *pre-compute answers*. Per-book study guides and per-figure timelines,
+    relationships and summaries mean a question like "when did Ṭáhirih go to Badasht" hits one short, finished passage.
+    We search 6.5M raw paragraphs, and the answer is scattered across dozens of them.
+  - **Our response:** the same layer, cited at the passage level, built from facts we already hold. Figure life pages
+    are the first piece (pilot `/biography/<id>`, top 500 built 10-09). These should become *searchable answer units*
+    (indexed beside paragraphs, the way HyPE questions are), not just pages.
+  - **Upstream defects the pilot exposed** (these hurt search answers as much as pages):
+    - Dates in `entity_claims` are mostly guessed: Ṭáhirih has 1,634 `[pin]` against 161 `[stated]`.
+    - Some claims are bound to the wrong person: Ḥujjat's Zanján biography from Ẓuhúru'l-Ḥaqq vol. 3 appears on
+      Quddús.
+  - **Measure, don't guess:** a head-to-head battery of questions they answer well and we miss. Chad collects them
+    while using their site; we run each through Anís and classify every miss as index (passage not retrieved),
+    synthesis (retrieved but answered wrong) or data (fact missing or misattributed). Then fix by class.
+
 ## Top gaps to consider (ranked by user value)
 0. **Recorded talks (YouTube)** — Chad: a must. Curated, labelled as secondary.
 1. **Compilation builder** (gather quotes while searching → arrange → export Word/PDF/Markdown) — their most-developed

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:40:56.048Z",
+  "generated": "2026-10-09T17:45:15.359Z",
   "entries": [
+    {
+      "hash": "9b6f4564",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Timeline v5 — review drops facts that belong to another person's life (Ḥujjat's Zanján on Quddús)",
+      "scope": "bio"
+    },
     {
       "hash": "dc3faaff",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Canonical cheat sheet verbatim at the top of OpenAPI and /docs/api",
       "scope": "api"
-    },
-    {
-      "hash": "2c7ef34c",
-      "date": "2026-08-28",
-      "type": "New",
-      "description": "A working \"who was at this event\" page — the page IS the query",
-      "scope": "who-was-at"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "9b6f4564",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Timeline v5 — review drops facts that belong to another person's life (Ḥujjat's Zanján on Quddús)",
+        "scope": "bio"
+      },
       {
         "hash": "dc3faaff",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Docs",
         "description": "Canonical cheat sheet verbatim at the top of OpenAPI and /docs/api",
         "scope": "api"
-      },
-      {
-        "hash": "2c7ef34c",
-        "date": "2026-08-28",
-        "type": "New",
-        "description": "A working \"who was at this event\" page — the page IS the query",
-        "scope": "who-was-at"
       }
     ]
   }
