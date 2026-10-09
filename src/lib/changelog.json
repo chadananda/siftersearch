@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T16:15:10.638Z",
+  "generated": "2026-10-09T17:21:47.143Z",
   "entries": [
+    {
+      "hash": "3bb70790",
+      "date": "2026-10-09",
+      "type": "Performance",
+      "description": "Window-run starts longest books first and logs the total — parallelism is across books",
+      "scope": "authorship"
+    },
     {
       "hash": "64748967",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The group selects WHO is eligible; the rest of the query is what they did",
       "scope": "people/search"
-    },
-    {
-      "hash": "2dc3f37d",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "A group named in the query BOUNDS the answer",
-      "scope": "people/search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "3bb70790",
+        "date": "2026-10-09",
+        "type": "Performance",
+        "description": "Window-run starts longest books first and logs the total — parallelism is across books",
+        "scope": "authorship"
+      },
       {
         "hash": "64748967",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "The group selects WHO is eligible; the rest of the query is what they did",
-        "scope": "people/search"
-      },
-      {
-        "hash": "2dc3f37d",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "A group named in the query BOUNDS the answer",
         "scope": "people/search"
       }
     ]

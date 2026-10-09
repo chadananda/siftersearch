@@ -66,6 +66,28 @@ email · entity graph with who-met-whom · public API for third parties.
 - **2026-10-09: talks.** "I legitimately want to be careful about secondary materials, but we need to provide youtube
   talks for sure." They have ~600 recorded talks. See `backlog-youtube-talks-20261009.md`.
 
+- **2026-10-09: figure pages.** "They are clearly extracting enough facts to build a summary page with timeline of every
+  character" (`/study/_cross-references?fig=tahirih#figures/tahirih`).
+  - **Theirs:** about 1,000 figures sorted into curated groups (Letters of the Living, Hands, Martyrs, Enemies,
+    Government…). Each has a one-paragraph summary, a dated timeline of about 15 events written as narrative with
+    pull-quotes, typed relationships (family, teacher/student, guardian, companion, adversary) shown as a list and a
+    graph, aliases with their meanings, map and journeys, and "appears in".
+  - **Their sources:** about 6 study-guide books (Dawn-Breakers, GPB, Revelation of Bahá'u'lláh 1–3, Mahmúd's Diary),
+    cited by book only, never by passage.
+  - **Their flaws:** duplicate figures (Zia Bagdádí / Zia Baghdadi; Jahrumí listed twice), many figures with 0 mentions,
+    and conflicting events (Badasht dated both "1848 Jun" and "1848 Jul"; the martyrdom appears twice).
+  - **Ours (Ṭáhirih, id 1247554, `/api/graph/bio/person/:id`):** 576 dossier persons. Ṭáhirih has 1,522 mentions,
+    141 books, 91 aliases, a summary, kinship, a GPB reading path with range links, and **3,522 characterizations with
+    proof quotes, 2,476 of them dated, drawn from 127 sources**.
+  - **What we lack:** we have far more raw material, cited at the passage level, but no *synthesis*. `dates` is empty,
+    there are only 2 typed relations, and we have no curated life timeline, no grouping into categories, and no map or
+    journeys.
+  - **Proposed (not started):** per-person life-timeline synthesis. Cluster the dated facts by event. Prefer stated
+    dates over estimates and authoritative sources (GPB, Dawn-Breakers) over secondary ones. Make one LLM call per
+    person to write 10–25 events, each citing every supporting passage with range links and flagging conflicts rather
+    than duplicating events. Type relationships from kinship plus met / companion / adversary facts, and draw journeys
+    from visited / imprisoned places.
+
 ## Top gaps to consider (ranked by user value)
 0. **Recorded talks (YouTube)** — Chad: a must. Curated, labelled as secondary.
 1. **Compilation builder** (gather quotes while searching → arrange → export Word/PDF/Markdown) — their most-developed
@@ -73,5 +95,6 @@ email · entity graph with who-met-whom · public API for third parties.
 2. **Reading & study loop** — daily reading, position memory, study guides, audio (all already in our backlog).
 3. **Sharing** — share an answer/compilation with specific people; a feed of shared research.
 4. **Bring your own sources** — upload documents / Drive, searched privately beside the library.
-5. **Stories / narratives / concepts as browsable units** (episodes, story threads, concept pages) — see observations.
-6. Quotes-only view, smart copy (quote + citation), quizzes.
+5. **Figure life pages** (timeline, typed relationships, journeys) built from our existing dated facts — see observations.
+6. **Stories / narratives / concepts as browsable units** (episodes, story threads, concept pages) — see observations.
+7. Quotes-only view, smart copy (quote + citation), quizzes.
