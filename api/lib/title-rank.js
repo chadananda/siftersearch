@@ -13,8 +13,8 @@
 // equally well — which is the job it was added for (the canonical Íqán over "Notes on the Íqán"). Re-ranking
 // only reorders: nothing is filtered out, so a weak match is demoted rather than deleted.
 //
-// Deps: none (pure). Consumed by routes/chat.js (find_document_for_citation) and routes/public-api.js
-// (GET /library/documents).
+// Deps: none (pure). Consumed by docs-repo.js findDocuments (every title lookup: documents, library, chat, public API)
+// and routes/chat.js (find_document_for_citation's candidate re-rank).
 
 // Fold diacritics and apostrophe variants — the corpus stores "Bahá’u’lláh" with a curly apostrophe and
 // "Kitáb-i-Íqán" with accents, while a user types neither.

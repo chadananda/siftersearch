@@ -46,7 +46,6 @@ import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billi
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 import { participantId as resolveParticipant, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
-import { rankByTitle } from '../lib/title-rank.js';
 import { resolveLinks, findOriginals, getPassages } from '../lib/passage-links.js';
 
 const SITE_URL = 'https://siftersearch.com';
@@ -1036,12 +1035,10 @@ export default async function publicApiRoutes(fastify) {
 
     // A search term is answered by the document finder (SQLite FTS, docs-repo) — never a search engine's index.
     if (q && q.trim()) {
-      // OVER-FETCH, THEN RANK BY TITLE: the named work must come first ("Paris Talks" once put Paris Talks at rank 3 when
-      // a long description mentioning the words outscored it); the finder weights titles highest, rankByTitle settles ties.
-      const overFetch = Math.min(200, offset + limit + 50);
-      const found = await findDocuments(q, { religion, collection, language, authorLike: author, limit: overFetch,
+      // the finder ranks the NAMED work first (title-rank.js inside findDocuments)
+      const found = await findDocuments(q, { religion, collection, language, authorLike: author, limit, offset,
         fields: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count'] });
-      const hits = rankByTitle(q, found.docs).slice(offset, offset + limit);
+      const hits = found.docs;
       return {
         documents: hits.map(doc => ({
           id: doc.id, title: doc.title, author: doc.author,

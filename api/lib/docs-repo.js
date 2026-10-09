@@ -28,6 +28,7 @@
 // case, or a suggestion that the API interface needs extending." Default to extending this file.
 // Deps: db (query/queryAll/queryOne), content (safeSoftDeleteDocs), logger.
 
+import { titleTier } from './title-rank.js';
 import { query, queryAll, queryOne } from './db.js';
 import { logger } from './logger.js';
 
@@ -137,16 +138,25 @@ export async function findDocuments(text, { scope = 'live', religion, collection
   if (sourceSite === 'canonical') where.push(IS_CANONICAL);
   else if (sourceSite) { where.push('d.source_site = ?'); params.push(sourceSite); }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  // The library's own and OceanLibrary documents first, THEN relevance: scraped pages outnumber them ~128:1 and their short
-  // titles win BM25 ("dawn breakers" → "Tag: Dawn-Breakers (book)", a movie, a novel — before The Dawn-Breakers, 10-09).
-  // bm25 weights follow the column order: title, author, collection, description.
+  // Order: how well the TITLE answers the name typed (title-rank.js — the named work must win), then the library's own and
+  // OceanLibrary documents before scraped pages (they outnumber them ~128:1 and their short titles win BM25 — "dawn
+  // breakers" gave a tag page, a movie and a novel before The Dawn-Breakers, 10-09), then BM25 (title weighted highest;
+  // weights follow the column order title, author, collection, description). SQL does the last two over a window;
+  // the title tier re-orders that window.
   const order = match
     ? `ORDER BY (CASE WHEN ${IS_CANONICAL} THEN 0 ELSE 1 END), (SELECT bm25(docs_fts, 10.0, 4.0, 1.0, 0.5) FROM docs_fts WHERE docs_fts MATCH ? AND rowid = d.id)`
     : 'ORDER BY d.title';
-  const rows = await queryAll(`SELECT ${selectList(fields)} FROM docs d ${clause} ${order} LIMIT ? OFFSET ?`,
-    [...params, ...(match ? [match] : []), Math.min(200, limit), offset], 'docs-repo:find');
+  const cols = selectList(fields);
+  const window = match ? Math.min(250, offset + limit + 50) : Math.min(200, limit);
+  const rows = await queryAll(`SELECT ${cols}${/\bd\.title\b/.test(cols) ? '' : ', d.title AS _title'} FROM docs d ${clause} ${order} LIMIT ? OFFSET ?`,
+    [...params, ...(match ? [match] : []), window, match ? 0 : offset], 'docs-repo:find');
+  const ranked = match
+    ? rows.map((r, i) => ({ r, tier: titleTier(text, r.title ?? r._title), i })).sort((a, b) => (b.tier - a.tier) || (a.i - b.i))
+      .slice(offset, offset + limit).map((x) => x.r)
+    : rows;
+  for (const r of ranked) delete r._title;
   const total = await queryOne(`SELECT COUNT(*) n FROM (SELECT 1 FROM docs d ${clause} LIMIT 1000)`, params, 'docs-repo:find-count');
-  return { docs: rows, total: total?.n ?? 0, scope, limit, offset };
+  return { docs: ranked, total: total?.n ?? 0, scope, limit, offset };
 }
 
 /**

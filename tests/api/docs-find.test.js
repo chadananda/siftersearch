@@ -48,6 +48,12 @@ describe('findDocuments (SQLite FTS)', () => {
     expect(r.docs[0].id).toBe(1);
     expect(r.docs.map((d) => d.id)).toContain(9);
   });
+  it('the NAMED work wins over a canonical title that merely contains the words', async () => {
+    const { findDocuments } = await import('../../api/lib/docs-repo.js');
+    db.prepare("INSERT INTO docs (id, title, author, religion, source_site) VALUES (10, 'Letters of the Living, Dawn-Breakers, Quddús', 'y', 'Baha''i', NULL)").run();
+    expect((await findDocuments('the dawn-breakers', { fields: ['id'] })).docs[0].id).toBe(1);
+    expect((await findDocuments('dawn breakers', { fields: ['id', 'title'], limit: 1 })).docs).toEqual([{ id: 1, title: 'The Dawn-Breakers' }]);
+  });
   it('stays current through the triggers', async () => {
     const { findDocuments } = await import('../../api/lib/docs-repo.js');
     db.prepare('UPDATE docs SET title = ? WHERE id = 3').run('Mount Carmel Notes');
