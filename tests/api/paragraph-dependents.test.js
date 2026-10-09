@@ -4,8 +4,11 @@ import { detachStatements, findSuccessor, reattachStatements } from '../../api/l
 
 describe('paragraph dependents', () => {
   it('nulls nullable links, deletes derived rows, and skips tables that do not exist', () => {
-    const st = detachStatements([7, 8], new Set(['paragraph_extractions', 'set_members']));
-    expect(st.map((s) => s.sql)).toEqual(['DELETE FROM paragraph_extractions WHERE content_id IN (?,?)', 'UPDATE set_members SET source_paragraph_id = NULL WHERE source_paragraph_id IN (?,?)']);
+    const st = detachStatements([7, 8], new Set(['paragraph_extractions', 'extraction_validations', 'set_members']));
+    expect(st.map((s) => s.sql)).toEqual([
+      'DELETE FROM extraction_validations WHERE extraction_id IN (SELECT id FROM paragraph_extractions WHERE content_id IN (?,?))',
+      'DELETE FROM paragraph_extractions WHERE content_id IN (?,?)',
+      'UPDATE set_members SET source_paragraph_id = NULL WHERE source_paragraph_id IN (?,?)']);
     expect(detachStatements([])).toEqual([]);
   });
   it('finds the merged paragraph that now holds a fragment\'s text', () => {

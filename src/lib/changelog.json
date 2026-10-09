@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T12:55:39.069Z",
+  "generated": "2026-10-09T13:21:39.420Z",
   "entries": [
+    {
+      "hash": "ff5b8526",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Window run --secondary — every secondary-literature book (authority < 8) or multi-author compilation; doc-tier exports isCompilation (unchanged)",
+      "scope": "authorship"
+    },
     {
       "hash": "63503c80",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A generic word in an event name pulled in the wrong event",
       "scope": "entities"
-    },
-    {
-      "hash": "991711f7",
-      "date": "2026-08-28",
-      "type": "New",
-      "description": "Participants on the event node, OpenAPI for the graph, and routing that stops sending \"who was at X\" to passage search",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "ff5b8526",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Window run --secondary — every secondary-literature book (authority < 8) or multi-author compilation; doc-tier exports isCompilation (unchanged)",
+        "scope": "authorship"
+      },
       {
         "hash": "63503c80",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "A generic word in an event name pulled in the wrong event",
-        "scope": "entities"
-      },
-      {
-        "hash": "991711f7",
-        "date": "2026-08-28",
-        "type": "New",
-        "description": "Participants on the event node, OpenAPI for the graph, and routing that stops sending \"who was at X\" to passage search",
         "scope": "entities"
       }
     ]

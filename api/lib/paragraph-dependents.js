@@ -10,7 +10,8 @@ export const DEPENDENTS = [
   { table: 'enrichment_pending', col: 'content_id', action: 'delete' },
   { table: 'paragraph_roles', col: 'content_id', action: 'delete' },
   { table: 'quote_instances', col: 'content_id', action: 'delete' },
-  { table: 'paragraph_extractions', col: 'content_id', action: 'delete' },
+  // its validations reference it in turn (removed first: re-ingest of 1456 / 4366 failed on them, 10-09)
+  { table: 'paragraph_extractions', col: 'content_id', action: 'delete', children: [{ table: 'extraction_validations', col: 'extraction_id' }] },
   { table: 'entity_mentions', col: 'content_id', action: 'delete' },
   { table: 'set_members', col: 'source_paragraph_id', action: 'null' },
   { table: 'significance_markers', col: 'source_paragraph_id', action: 'null' },
@@ -23,9 +24,14 @@ export const DEPENDENTS = [
 export function detachStatements(ids, tables = null) {
   if (!ids.length) return [];
   const ph = ids.map(() => '?').join(',');
-  return DEPENDENTS.filter((d) => !tables || tables.has(d.table)).map((d) => (d.action === 'null'
-    ? { sql: `UPDATE ${d.table} SET ${d.col} = NULL WHERE ${d.col} IN (${ph})`, args: ids }
-    : { sql: `DELETE FROM ${d.table} WHERE ${d.col} IN (${ph})`, args: ids }));
+  return DEPENDENTS.filter((d) => !tables || tables.has(d.table)).flatMap((d) => [
+    // rows referencing the dependent rows go first (same transaction)
+    ...(d.children || []).filter((c) => !tables || tables.has(c.table))
+      .map((c) => ({ sql: `DELETE FROM ${c.table} WHERE ${c.col} IN (SELECT id FROM ${d.table} WHERE ${d.col} IN (${ph}))`, args: ids })),
+    d.action === 'null'
+      ? { sql: `UPDATE ${d.table} SET ${d.col} = NULL WHERE ${d.col} IN (${ph})`, args: ids }
+      : { sql: `DELETE FROM ${d.table} WHERE ${d.col} IN (${ph})`, args: ids },
+  ]);
 }
 
 const norm = (t) => String(t || '').normalize('NFC').replace(/<pb[^>]*\/>/g, ' ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().toLowerCase();
