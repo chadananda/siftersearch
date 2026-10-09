@@ -9,7 +9,13 @@
 const END_RE = /[.!?:;”"’'\)\]—…]\s*(\[\^?\d+\]|\d{1,3})?\s*$/;
 // judge the text, not its wrapping: trailing emphasis (**, _), escaped / bracketed citations (**\[16\]**, [12, 17]),
 // footnote refs and page tags are stripped first ("…progress of the soul." **\[16\]** ends a sentence)
-const tail = (t) => String(t).replace(/(\s*(\*{1,2}|_{1,2}|\\?\[[^\]]{0,40}\\?\]|\(\d[\d,\s-]*\)|<pb[^>]*\/>))+\s*$/, '');
+// one bounded token at a time — a nested (\s*(…))+\s*$ pattern backtracked exponentially and froze a 35k-file run for 8 h
+const TAIL_TOKEN = /(\*{1,2}|_{1,2}|\\?\[[^\]\n]{0,40}\\?\]|\(\d[\d, -]{0,20}\)|<pb[^>\n]{0,40}\/>)$/;
+const tail = (t) => {
+  let s = String(t).trimEnd();
+  for (let i = 0; i < 8; i++) { const n = s.replace(TAIL_TOKEN, '').trimEnd(); if (n === s) break; s = n; }
+  return s;
+};
 const END = { test: (t) => END_RE.test(tail(t)) || END_RE.test(String(t)) };
 const STRUCTURAL = /^(#{1,6}\s|>|[-*+]\s|\||!\[|\d+\.\s|\[\^[^\]]+\]:|<pb\b|<!--|---\s*$|\{)/;
 const PAGE_LINE = /^(?:\[?pg\.?\s*)?(\d{1,4})\]?$/i;              // "123", "[pg 123]"

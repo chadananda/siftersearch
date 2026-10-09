@@ -52,3 +52,12 @@ describe('rejoin v2 (dry-run findings)', () => {
     expect(rejoin(`${cols}\n\nthe text that follows the column of numbers and is long enough to be prose.`).joins).toBe(0);
   });
 });
+
+describe('rejoin performance', () => {
+  it('stays linear on pathological tails (8 h freeze, 10-09)', () => {
+    const nasty = 'word '.repeat(2000) + ' *'.repeat(3000) + '   _ _ _'.repeat(500) + ' [x] '.repeat(200);
+    const t0 = Date.now();
+    rejoin(`${nasty}\n\n${nasty}\n\nand a lowercase continuation that is long enough to count as prose here.`);
+    expect(Date.now() - t0).toBeLessThan(500);
+  });
+});

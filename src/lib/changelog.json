@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T03:41:13.898Z",
+  "generated": "2026-10-09T12:24:30.545Z",
   "entries": [
+    {
+      "hash": "841e6738",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Rejoin — trailing bold/bracketed citations end a sentence, an opening quote is not a continuation, number columns and short-line lists are not prose; seams reported for review",
+      "scope": "library"
+    },
     {
       "hash": "b35aba1a",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Sweep results — 9 books, 143 long-paragraph empties, all pre-v5",
       "scope": null
-    },
-    {
-      "hash": "5c8f3d8d",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Extract sweep joined claims on the row id, not the pid",
-      "scope": "audit"
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "841e6738",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Rejoin — trailing bold/bracketed citations end a sentence, an opening quote is not a continuation, number columns and short-line lists are not prose; seams reported for review",
+        "scope": "library"
+      },
       {
         "hash": "b35aba1a",
         "date": "2026-10-08",
@@ -7042,13 +7049,6 @@
         "type": "Docs",
         "description": "Sweep results — 9 books, 143 long-paragraph empties, all pre-v5",
         "scope": null
-      },
-      {
-        "hash": "5c8f3d8d",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Extract sweep joined claims on the row id, not the pid",
-        "scope": "audit"
       }
     ]
   }
