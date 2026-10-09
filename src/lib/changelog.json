@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T03:17:59.196Z",
+  "generated": "2026-10-09T03:24:14.166Z",
   "entries": [
+    {
+      "hash": "20652490",
+      "date": "2026-10-08",
+      "type": "Docs",
+      "description": "Window classifier production log — 147 Bahá'í books written, other traditions held",
+      "scope": "authorship"
+    },
     {
       "hash": "079681aa",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "SAQ re-run at v13 — fix verified, and v12's prompt measured honestly",
       "scope": null
-    },
-    {
-      "hash": "b36862c7",
-      "date": "2026-08-27",
-      "type": "Fixed",
-      "description": "DeepSeek `thinking` was sent as extra_body and never disabled — 69% of SAQ HyPE was empty",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "20652490",
+        "date": "2026-10-08",
+        "type": "Docs",
+        "description": "Window classifier production log — 147 Bahá'í books written, other traditions held",
+        "scope": "authorship"
+      },
       {
         "hash": "079681aa",
         "date": "2026-10-08",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-27",
         "type": "Docs",
         "description": "SAQ re-run at v13 — fix verified, and v12's prompt measured honestly",
-        "scope": null
-      },
-      {
-        "hash": "b36862c7",
-        "date": "2026-08-27",
-        "type": "Fixed",
-        "description": "DeepSeek `thinking` was sent as extra_body and never disabled — 69% of SAQ HyPE was empty",
         "scope": null
       }
     ]

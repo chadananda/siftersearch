@@ -1,0 +1,370 @@
+{
+ "about": "BLIND secondary-literature set (Hatcher, Stockman, Momen), labelled 2026-10-08 from full text BEFORE any classifier run. Momen 13485 is segmented at PDF line ends (mid-sentence ¶) — kept as real data.",
+ "items": [
+  {
+   "doc": 2258,
+   "pidx": 120,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 121,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 122,
+   "speaker": "@author",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 123,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 124,
+   "speaker": "@author",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 125,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 126,
+   "speaker": "@author",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 127,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 128,
+   "speaker": "@author",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 129,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 130,
+   "speaker": "Bah[aá].u.ll[aá]h",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 131,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 2258,
+   "pidx": 132,
+   "speaker": "@author|Bah[aá].u.ll[aá]h",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 133,
+   "speaker": "@author|Bah[aá].u.ll[aá]h",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 2258,
+   "pidx": 134,
+   "speaker": "@author|Bah[aá].u.ll[aá]h",
+   "quotes": [
+    null,
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 300,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 7179,
+   "pidx": 301,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 302,
+   "speaker": "Chase|Thornton",
+   "quotes": []
+  },
+  {
+   "doc": 7179,
+   "pidx": 303,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 304,
+   "speaker": "Chase|Thornton",
+   "quotes": []
+  },
+  {
+   "doc": 7179,
+   "pidx": 305,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 306,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton",
+    "*"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 307,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton",
+    "*"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 308,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "*",
+    "Livinia|Morris"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 309,
+   "speaker": "@author",
+   "quotes": [
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 310,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton",
+    "Cooper"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 311,
+   "speaker": "@author",
+   "quotes": [
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 312,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Fields|Tweed|Vetterling|*"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 313,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 7179,
+   "pidx": 314,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Chase|Thornton"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 40,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 13485,
+   "pidx": 41,
+   "speaker": "@author",
+   "quotes": []
+  },
+  {
+   "doc": 13485,
+   "pidx": 42,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 43,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 44,
+   "speaker": "@author",
+   "quotes": [
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 45,
+   "speaker": "@author",
+   "quotes": [
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 46,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 47,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 48,
+   "speaker": "@author",
+   "quotes": [
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 49,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 50,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 51,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah",
+    "Bah[aá].u.ll[aá]h"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 52,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 53,
+   "speaker": "@author",
+   "quotes": [
+    null,
+    "Abdu.l-Bah"
+   ]
+  },
+  {
+   "doc": 13485,
+   "pidx": 54,
+   "speaker": "@author",
+   "quotes": []
+  }
+ ]
+}
