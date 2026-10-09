@@ -274,3 +274,9 @@ describe('secondaryGuard v5 — sources introduced without the name (737 cases, 
     expect(g('Bahá’u’lláh', 'He then quoted these lines:')).toBeNull();   // sentence-initial "He" is a person, not a divine pronoun
   });
 });
+
+it('Bahá’u’lláh naming Himself "the Supreme Pen" is not a passage about Him (sample c #29)', async () => {
+  const { secondaryGuard } = await import('../../api/lib/authorship/window.js');
+  expect(secondaryGuard({ speaker: 'Bahá’u’lláh' }, { text: 'The station that the Supreme Pen hath decreed for the Afnáns is the remembrance of God, His praise, and teaching of His Cause.',
+    prevText: 'every ear can hear its cry and lamentation.', prevRawSpeaker: 'Bahá’u’lláh', bookAuthor: 'Ahang Rabbání' }).speaker).toBe('Bahá’u’lláh');
+});

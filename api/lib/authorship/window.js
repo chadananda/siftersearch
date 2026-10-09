@@ -247,7 +247,7 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   if ((inOut || inAll) && !/\b([Yy]ou|[Yy]our|[Tt]hee|[Tt]hou|[Tt]hy)\b/.test(body)) return { ...label, speaker: null, subject: true };
   if (introduces) {
     const tail = p.slice(-400).replace(KIN_OF, ' ');   // see KIN_OF
-    const hits = FIGURES.filter((f) => namerOf(f)(tail) || (ALIAS[f]?.test(tail) ?? false));   // "The Master says:" 
+    const hits = FIGURES.filter((f) => namerOf(f)(tail) || (EPITHET[f]?.test(tail) ?? false));   // "The Master says:" 
     if (hits.length === 1) return hits[0] === label.speaker ? label : { ...label, speaker: hits[0], leadIn: true };
   }
   const anyOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);
@@ -263,9 +263,9 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   const intro = p.slice(-1500).replace(KIN_OF, ' ');
   // the source given without the name (10-09: 737 rejections after an intro): an epithet ("the Pen of the Most High hath
   // affirmed:"), a divine pronoun mid-sentence for a Manifestation ("Yet in it He reveals these words:"), a letter's salutation
-  const epithet = ALIAS[label.speaker]?.test(intro.slice(-400)) ?? false;
+  const epithet = EPITHET[label.speaker]?.test(intro.slice(-400)) ?? false;
   const divine = (label.speaker === 'Bahá’u’lláh' || label.speaker === 'The Báb') && /[\p{Ll},;]\s+(He|His|Him)\b/u.test(intro.slice(-200));
-  const salutation = /^(dear(est)?|beloved|my (dear|beloved))\b[^:\n]{0,70}:\s*$/i.test(p.split(/\n/).pop() || '');
+  const salutation = /\b(dear(est)?|beloved)\s+[^:.!?\n]{1,70}:\s*$/i.test(p.slice(-90));   // "October 5, 1950 Dear Bahá’í Sister:" 
   const given = ((named(intro) || epithet || divine) && introduces) || salutation || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
   return given ? label : { ...label, speaker: null, unproven: true };
 }
@@ -274,7 +274,10 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
  *  Days of Remembrance Bahá’u’lláh speaking of Himself in the third person — "upon Him Who is the Revealer…" — and
  *  ‘Abdu’l-Bahá's "He is God!" went to the editor): the paragraph names the book's author in the third person (or an
  *  alias — the Guardian, the Master, the Blessed Beauty) or opens like a note. */
-const ALIAS = { 'Shoghi Effendi': /\bthe guardian\b/i, '‘Abdu’l-Bahá': /\bthe master\b/i,
+const ALIAS = { 'Shoghi Effendi': /\bthe guardian\b/i, '‘Abdu’l-Bahá': /\bthe master\b/i, 'Bahá’u’lláh': /\b(the )?blessed beauty\b|\bthe ancient beauty\b/i };
+// Epithets that INTRODUCE a source ("the Pen of the Most High hath affirmed:"). Only for introductions: Bahá’u’lláh names
+// Himself "the Supreme Pen" in His own Tablets, so they are never evidence that a paragraph is ABOUT Him (sample c #29).
+const EPITHET = { ...ALIAS,
   'Bahá’u’lláh': /\b(the )?blessed beauty\b|\bthe ancient beauty\b|\bthe blessed perfection\b|\bthe abh[aá] beauty\b|\bpen of the most high\b|\bthe supreme pen\b|\btongue of grandeur\b|\bauthor of (this|the|our) (faith|revelation|cause)\b/i,
   'The Báb': /\bthe primal point\b|\bthe herald of (this|the|our) (faith|revelation)\b/i };
 const NOTE_OPEN = /^(revealed|written|translated|dictated|addressed|this (message|letter|tablet|cable|book|edition|compilation)|excerpts?|extracts?|from (a|the|his|her)|cf\.|see |literally|note:|the (following|above)|introduction|preface|foreword)\b/i;

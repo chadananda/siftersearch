@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T19:18:36.316Z",
+  "generated": "2026-10-09T19:21:34.383Z",
   "entries": [
+    {
+      "hash": "5e1778e5",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "'where does X say Y?' searches Y — the question frame matched 'Where is he who…'; authorship: sources introduced by epithet, divine pronoun, 'word of', salutation",
+      "scope": "search"
+    },
     {
       "hash": "8fc1aa31",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Survey what encounter claims already exist before extracting anything",
       "scope": null
-    },
-    {
-      "hash": "7eec5550",
-      "date": "2026-09-06",
-      "type": "Other",
-      "description": "The embeddable companion SifterSearch publishes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "5e1778e5",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "'where does X say Y?' searches Y — the question frame matched 'Where is he who…'; authorship: sources introduced by epithet, divine pronoun, 'word of', salutation",
+        "scope": "search"
+      },
       {
         "hash": "8fc1aa31",
         "date": "2026-10-09",
@@ -7035,13 +7042,6 @@
         "date": "2026-09-06",
         "type": "Other",
         "description": "Survey what encounter claims already exist before extracting anything",
-        "scope": null
-      },
-      {
-        "hash": "7eec5550",
-        "date": "2026-09-06",
-        "type": "Other",
-        "description": "The embeddable companion SifterSearch publishes",
         "scope": null
       }
     ]
