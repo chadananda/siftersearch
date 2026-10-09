@@ -137,8 +137,12 @@ export async function findDocuments(text, { scope = 'live', religion, collection
   if (sourceSite === 'canonical') where.push(IS_CANONICAL);
   else if (sourceSite) { where.push('d.source_site = ?'); params.push(sourceSite); }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  // bm25 weights follow the column order: title, author, collection, description
-  const order = match ? `ORDER BY (SELECT bm25(docs_fts, 10.0, 4.0, 1.0, 0.5) FROM docs_fts WHERE docs_fts MATCH ? AND rowid = d.id)` : 'ORDER BY d.title';
+  // The library's own and OceanLibrary documents first, THEN relevance: scraped pages outnumber them ~128:1 and their short
+  // titles win BM25 ("dawn breakers" → "Tag: Dawn-Breakers (book)", a movie, a novel — before The Dawn-Breakers, 10-09).
+  // bm25 weights follow the column order: title, author, collection, description.
+  const order = match
+    ? `ORDER BY (CASE WHEN ${IS_CANONICAL} THEN 0 ELSE 1 END), (SELECT bm25(docs_fts, 10.0, 4.0, 1.0, 0.5) FROM docs_fts WHERE docs_fts MATCH ? AND rowid = d.id)`
+    : 'ORDER BY d.title';
   const rows = await queryAll(`SELECT ${selectList(fields)} FROM docs d ${clause} ${order} LIMIT ? OFFSET ?`,
     [...params, ...(match ? [match] : []), Math.min(200, limit), offset], 'docs-repo:find');
   const total = await queryOne(`SELECT COUNT(*) n FROM (SELECT 1 FROM docs d ${clause} LIMIT 1000)`, params, 'docs-repo:find-count');

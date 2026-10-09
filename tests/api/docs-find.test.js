@@ -41,6 +41,13 @@ describe('findDocuments (SQLite FTS)', () => {
     const c = await findDocuments('dawn', { scope: 'canonical', fields: ['id'] });
     expect(c.docs.map((d) => d.id)).toEqual([1]);
   });
+  it('ranks the library and OceanLibrary copies ahead of scraped pages with shorter titles', async () => {
+    const { findDocuments } = await import('../../api/lib/docs-repo.js');
+    db.prepare("INSERT INTO docs (id, title, author, religion, source_site) VALUES (9, 'Tag: Dawn-Breakers', 'x', 'Baha''i', 'bahai-library.com')").run();
+    const r = await findDocuments('dawn breakers', { fields: ['id'] });
+    expect(r.docs[0].id).toBe(1);
+    expect(r.docs.map((d) => d.id)).toContain(9);
+  });
   it('stays current through the triggers', async () => {
     const { findDocuments } = await import('../../api/lib/docs-repo.js');
     db.prepare('UPDATE docs SET title = ? WHERE id = 3').run('Mount Carmel Notes');
