@@ -103,7 +103,16 @@ async function runBook(id) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const queue = [...ids];
+  // windows inside a book are sequential (each reads the decided labels + roster), so parallelism is across books: saved
+  // books first (no LLM), then the longest unsaved books, so one 3,000-paragraph history doesn't run alone at the end
+  const size = new Map();
+  for (let i = 0; i < ids.length; i += 500) {
+    const chunk = ids.slice(i, i + 500);
+    for (const r of db.prepare(`SELECT doc_id, COUNT(*) n FROM content WHERE deleted_at IS NULL AND doc_id IN (${chunk.map(() => '?').join(',')}) GROUP BY doc_id`).all(...chunk)) size.set(r.doc_id, r.n);
+  }
+  const saved = (id) => existsSync(join(OUT, `${id}.json`));
+  const queue = [...ids].sort((a, b) => (saved(b) - saved(a)) || ((size.get(b) || 0) - (size.get(a) || 0)));
+  console.log(JSON.stringify({ start: true, books: ids.length, saved: ids.filter(saved).length, concurrency: CONC }));
   await Promise.all(Array.from({ length: CONC }, async () => {
     while (queue.length) {
       const id = queue.shift();
