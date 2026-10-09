@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T03:24:14.166Z",
+  "generated": "2026-10-09T03:35:14.629Z",
   "entries": [
+    {
+      "hash": "f31f447d",
+      "date": "2026-10-08",
+      "type": "Test",
+      "description": "Blind secondary-literature gold (Hatcher, Stockman, Momen) for the window classifier",
+      "scope": "authorship"
+    },
     {
       "hash": "20652490",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Sweep for paragraphs a stage marked processed while producing nothing",
       "scope": "audit"
-    },
-    {
-      "hash": "9c23a767",
-      "date": "2026-08-27",
-      "type": "Docs",
-      "description": "SAQ re-run at v13 — fix verified, and v12's prompt measured honestly",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "f31f447d",
+        "date": "2026-10-08",
+        "type": "Test",
+        "description": "Blind secondary-literature gold (Hatcher, Stockman, Momen) for the window classifier",
+        "scope": "authorship"
+      },
       {
         "hash": "20652490",
         "date": "2026-10-08",
@@ -7042,15 +7049,6 @@
         "type": "New",
         "description": "Sweep for paragraphs a stage marked processed while producing nothing",
         "scope": "audit"
-      }
-    ],
-    "2026-08-27": [
-      {
-        "hash": "9c23a767",
-        "date": "2026-08-27",
-        "type": "Docs",
-        "description": "SAQ re-run at v13 — fix verified, and v12's prompt measured honestly",
-        "scope": null
       }
     ]
   }

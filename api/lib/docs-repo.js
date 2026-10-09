@@ -83,7 +83,7 @@ function selectList(fields) {
  * still applies, so recall never returns tombstones or husks unless asked for by name.
  */
 export async function listDocs({
-  scope = 'live', author, religion, collection, language, sourceSite, title, ids, role,
+  scope = 'live', author, religion, collection, language, sourceSite, title, ids, role, filePath,
   fields, limit = 100, offset = 0,
 } = {}) {
   const where = scopeSql(scope);
@@ -96,6 +96,7 @@ export async function listDocs({
   else if (sourceSite) { where.push('d.source_site = ?'); params.push(sourceSite); }
   if (title) { where.push('d.title LIKE ?'); params.push(`%${title}%`); }
   if (role) { where.push('d.doc_role = ?'); params.push(role); }
+  if (filePath) { where.push('d.file_path = ?'); params.push(filePath); }   // exact: the doc a library file was ingested as
   if (ids?.length) { where.push(`d.id IN (${ids.map(() => '?').join(',')})`); params.push(...ids); }
 
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
