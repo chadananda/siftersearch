@@ -54,3 +54,12 @@ it('prompt carries person, kin and keyed facts', () => {
   expect(user.content).toMatch(/PERSON: Ṭáhirih[\s\S]*father: Mullá Ṣáliḥ[\s\S]*f1 \| 1817/);
   expect(yearOf('c. 1817')).toBe(1817);
 });
+
+it('review prompt carries the rules, facts and the draft without derived fields', async () => {
+  const { reviewPrompt } = await import('../../api/lib/bio-timeline.js');
+  const facts = selectFacts([fact('T — born', '1817 [stated]')]);
+  const [sys, user] = reviewPrompt({ name: 'T' }, facts, { events: [{ date: '1817', year: 1817, title: 'Birth', text: 'Born.', cites: ['f1'] }], relationships: [], journeys: [] });
+  expect(sys.content).toMatch(/REVIEWING[\s\S]*same happening told twice/);
+  expect(user.content).toMatch(/f1 \| 1817[\s\S]*DRAFT:\n\{"events":\[\{"date":"1817","title":"Birth"/);
+  expect(user.content).not.toMatch(/"year"/);
+});

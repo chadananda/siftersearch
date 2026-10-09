@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(ROOT, f), quiet: true });
 const { BIO_ROOT, listBioPersons, getBioPerson } = await import('../../api/lib/bio.js');
-const { selectFacts, timelinePrompt, parseTimeline, citedSources, TIMELINE_VERSION } = await import('../../api/lib/bio-timeline.js');
+const { selectFacts, timelinePrompt, reviewPrompt, parseTimeline, citedSources, TIMELINE_VERSION } = await import('../../api/lib/bio-timeline.js');
 const { linkFor } = await import('../../api/lib/source-links.js');
 const { queryAll } = await import('../../api/lib/db.js');
 const { chatCompletion } = await import('../../api/lib/ai.js');
@@ -52,10 +52,16 @@ async function build(id) {
   await attachLinks(facts);
   const t0 = Date.now();
   let timeline = null, usage = 0;
-  for (let attempt = 1; attempt <= 2 && !timeline; attempt++) {
-    const r = await chatCompletion(timelinePrompt(p, facts), { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0.2, maxTokens: 6000, thinking: false, responseFormat: { type: 'json_object' }, caller: 'bio-timeline' });
+  const call = async (messages) => {
+    const r = await chatCompletion(messages, { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0.2, maxTokens: 6000, thinking: false, responseFormat: { type: 'json_object' }, caller: 'bio-timeline' });
     usage += r?.usage?.totalTokens || 0;
-    timeline = parseTimeline(r?.content ?? r, facts);
+    return parseTimeline(r?.content ?? r, facts);
+  };
+  for (let attempt = 1; attempt <= 2 && !timeline?.events?.length; attempt++) timeline = await call(timelinePrompt(p, facts));
+  // review pass: duplicates, order, empty events, missing authoritative happenings; keep the draft if the review fails
+  if (timeline?.events?.length && !process.argv.includes('--no-review')) {
+    const reviewed = await call(reviewPrompt(p, facts, timeline)).catch(() => null);
+    if (reviewed?.events?.length >= 3) timeline = reviewed;
   }
   if (!timeline?.events?.length) { cost.failed++; console.log(JSON.stringify({ id, name: p.name, error: 'no valid timeline' })); return; }
   cost.people++; cost.tokens += usage;
