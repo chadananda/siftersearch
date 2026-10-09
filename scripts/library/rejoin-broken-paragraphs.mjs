@@ -48,9 +48,10 @@ for (const f of files) {
   if (!r.joins && !r.pages) continue;
   stats.changed++; stats.joins += r.joins; stats.pages += r.pages;
   docs.push(d.id);
-  if (shown < SAMPLE) {
-    const joined = r.body.split('\n\n').filter((b) => b.length > 300).slice(2, 3)[0] || '';
-    console.log(`\n== ${rel} (doc ${d.id}): ${r.joins} joins, ${r.pages} page markers\n${joined.slice(0, 500)}…`);
+  // review sample: a spread of files (every Nth), each with its first seams
+  if (SAMPLE && stats.changed % Math.max(1, Math.floor(600 / SAMPLE)) === 1 && shown < SAMPLE) {
+    console.log(`\n== ${rel} (doc ${d.id}): ${r.joins} joins, ${r.pages} page markers`);
+    for (const seam of r.seams.slice(0, 3)) console.log(`   ${seam}`);
     shown++;
   }
   if (APPLY) {

@@ -41,3 +41,14 @@ describe('rejoin', () => {
     expect(brokenShare(momen).broken).toBe(2);
   });
 });
+
+describe('rejoin v2 (dry-run findings)', () => {
+  it('treats a trailing bold citation as the end of a sentence and an opening quote as a new paragraph', () => {
+    const t = 'The Bahá’í view of life after death does not accord with the idea of reincarnation at all. "We come on to this planet once only." **\\[12, 17\\]**\n\n"The concept of the soul returning to this physical world is erroneous, and an outgrowth of man-made doctrines." **\\[16\\]**';
+    expect(rejoin(t).joins).toBe(0);
+  });
+  it('leaves number columns and short-line lists alone', () => {
+    const cols = '1 2 3 4 5 6 7 8 9 10\n11\n12\n13\n14\n15\n16\n17\n18 19\n20\n21\n22';
+    expect(rejoin(`${cols}\n\nthe text that follows the column of numbers and is long enough to be prose.`).joins).toBe(0);
+  });
+});

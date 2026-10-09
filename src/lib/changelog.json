@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T03:35:14.629Z",
+  "generated": "2026-10-09T03:41:13.898Z",
   "entries": [
+    {
+      "hash": "b35aba1a",
+      "date": "2026-10-08",
+      "type": "New",
+      "description": "Re-join paragraphs broken mid-sentence by PDF conversion — a page number between the pieces becomes <pb n/> (page-breaks.js stores it); secondary literature only; originals backed up. docs-repo listDocs gains an exact filePath filter",
+      "scope": "library"
+    },
     {
       "hash": "f31f447d",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Extract sweep joined claims on the row id, not the pid",
       "scope": "audit"
-    },
-    {
-      "hash": "52e56bc6",
-      "date": "2026-08-28",
-      "type": "New",
-      "description": "Sweep for paragraphs a stage marked processed while producing nothing",
-      "scope": "audit"
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "b35aba1a",
+        "date": "2026-10-08",
+        "type": "New",
+        "description": "Re-join paragraphs broken mid-sentence by PDF conversion — a page number between the pieces becomes <pb n/> (page-breaks.js stores it); secondary literature only; originals backed up. docs-repo listDocs gains an exact filePath filter",
+        "scope": "library"
+      },
       {
         "hash": "f31f447d",
         "date": "2026-10-08",
@@ -7041,13 +7048,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "Extract sweep joined claims on the row id, not the pid",
-        "scope": "audit"
-      },
-      {
-        "hash": "52e56bc6",
-        "date": "2026-08-28",
-        "type": "New",
-        "description": "Sweep for paragraphs a stage marked processed while producing nothing",
         "scope": "audit"
       }
     ]

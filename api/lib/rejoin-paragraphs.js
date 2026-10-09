@@ -6,23 +6,30 @@
 // footnote definitions are never joined. Pure.
 
 // sentence-final, allowing a trailing note number ("…the Bahá’í world.5", "…faith.[^3]")
-const END = /[.!?:;”"’'\)\]—…]\s*(\[\^?\d+\]|\d{1,3})?\s*$/;
+const END_RE = /[.!?:;”"’'\)\]—…]\s*(\[\^?\d+\]|\d{1,3})?\s*$/;
+// judge the text, not its wrapping: trailing emphasis (**, _), escaped / bracketed citations (**\[16\]**, [12, 17]),
+// footnote refs and page tags are stripped first ("…progress of the soul." **\[16\]** ends a sentence)
+const tail = (t) => String(t).replace(/(\s*(\*{1,2}|_{1,2}|\\?\[[^\]]{0,40}\\?\]|\(\d[\d,\s-]*\)|<pb[^>]*\/>))+\s*$/, '');
+const END = { test: (t) => END_RE.test(tail(t)) || END_RE.test(String(t)) };
 const STRUCTURAL = /^(#{1,6}\s|>|[-*+]\s|\||!\[|\d+\.\s|\[\^[^\]]+\]:|<pb\b|<!--|---\s*$|\{)/;
 const PAGE_LINE = /^(?:\[?pg\.?\s*)?(\d{1,4})\]?$/i;              // "123", "[pg 123]"
 
-const isProse = (b) => !STRUCTURAL.test(b) && b.length >= 40;
+// lists, verse, tables of contents, number columns: mostly short lines — not running prose
+const shortLines = (b) => { const ls = String(b).split('\n').map((l) => l.trim()).filter(Boolean); return ls.length >= 3 && ls.filter((l) => l.length < 30).length / ls.length > 0.5; };
+const isProse = (b) => !STRUCTURAL.test(b) && b.length >= 40 && !shortLines(b) && !/^\d+(\s+\d+)+$/.test(b.trim());
 // does b carry on a sentence a left open?
 function continues(a, b) {
   if (!isProse(b) && !/^[a-z]/.test(b)) return false;
-  if (/^[a-z(“"‘'—,;]/.test(b)) return true;                                   // lowercase / punctuation: certainly
+  if (/^[a-z(—,;]/.test(b)) return true;                                       // lowercase / continuing punctuation (an opening quote alone is not)
   return a.length >= 150 && /^[A-Z’']/.test(b) && b.length >= 60 && !/^[A-Z][^.!?]{0,80}$/.test(b);   // mid-sentence before a name
 }
 
-/** @returns {{ body: string, joins: number, pages: number }} */
+/** @returns {{ body: string, joins: number, pages: number, seams: string[] }} (seams: the first few joins, for review) */
 export function rejoin(body) {
   const blocks = String(body).split(/\n\s*\n/);
   const out = [];
   let joins = 0, pages = 0;
+  const seams = [];
   for (let i = 0; i < blocks.length; i++) {
     const cur = blocks[i];
     const t = cur.trim();
@@ -41,13 +48,14 @@ export function rejoin(body) {
         marker = ` <pb n="${page[1]}"/> `; pages++; k++; next = after;
       } else if (!continues(merged, next)) break;
       // a line-end hyphen joins without a space and stays ("well-" + "known"; dropping it would fuse real compounds)
+      if (seams.length < 6) seams.push(`…${merged.slice(-60)} ‖${marker.trim() ? marker.trim() : ''}‖ ${next.slice(0, 60)}…`);
       merged = `${merged}${/-$/.test(merged) ? '' : marker}${next}`.replace(/ {2,}/g, ' ');
       joins++; i = k;
       if (END.test(next)) break;
     }
     out.push(merged);
   }
-  return { body: out.join('\n\n'), joins, pages };
+  return { body: out.join('\n\n'), joins, pages, seams };
 }
 
 /** Share of prose blocks that end mid-sentence and are continued — the scan's flag. */
