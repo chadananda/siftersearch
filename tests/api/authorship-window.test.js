@@ -208,3 +208,19 @@ describe('secondaryGuard (secondary literature, 10-09 random sample)', async () 
     expect(g('Some Scholar', 'Those of us who are interested in scholarly pursuits', 'Shoghi Effendi wrote:').speaker).toBe('Some Scholar');
   });
 });
+
+describe('secondaryGuard v2 (sample eval misses)', async () => {
+  const { secondaryGuard } = await import('../../api/lib/authorship/window.js');
+  const g = (speaker, text, prevText = '', extra = {}) => secondaryGuard({ speaker, quotes: null }, { text, prevText, bookAuthor: 'Some Scholar', ...extra });
+  it('a rejected previous half does not cascade when the model gave both halves', () => {
+    expect(g('Bahá’u’lláh', 'enmity. This is the straight Path, the fixed and immovable foundation.', 'Suffer it not to become a source of dissension and discord, of hate and', { prevSpeaker: null, prevRawSpeaker: 'Bahá’u’lláh' }).speaker).toBe('Bahá’u’lláh');
+  });
+  it('a closing signature is not a third-person subject', () => {
+    const cable = 'Contract for superstructure awarded after due deliberation; work to begin at once, foundations complete and approved by the architect and engineers in every particular as required by the specifications sent. Temple Unity Board';
+    expect(g('Temple Unity Board', cable).speaker).toBe('Temple Unity Board');
+  });
+  it('"the son of Bahá’u’lláh …:" does not introduce Bahá’u’lláh', () => {
+    expect(g('‘Abdu’l-Bahá', '“Among the teachings of Bahá’u’lláh is that relating to a universal language.”', 'The son of Bahá’u’lláh speaks always of his beliefs as being the teaching of his father. A favorite way of making his statements is:').speaker).toBe('‘Abdu’l-Bahá');
+    expect(g('Universal House of Justice', '“Regard man as a mine rich in gems of inestimable value.”', 'In the words of Bahá’u’lláh:').speaker).toBe('Bahá’u’lláh');
+  });
+});

@@ -213,15 +213,18 @@ export const isJunk = (text) => {
   return t.length >= 8 && (t.match(/\p{L}/gu) || []).length / t.length < 0.6;
 };
 // the full name, or a personal surname of 4+ letters — never one word of an institution ("justice")
-const namesInThirdPerson = (speaker, text) => {
-  const f = foldName(text), s = foldName(speaker);
+const namesInThirdPerson = (speaker, rawText) => {
+  const t = String(rawText || '');
+  const f = foldName(t.length > 200 ? t.slice(0, -150) : t), s = foldName(speaker);   // a closing signature is not a subject
   if (f.includes(s)) return true;
   const parts = s.split(/\s+/);
   if (FIGURES.includes(speaker) || parts.length < 2 || parts.length > 3) return false;
   const last = parts[parts.length - 1];
   return last.length >= 4 && !STOP.test(last) && new RegExp(`\\b${last.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f);
 };
-export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null, heading = '', bookAuthor = '' }) {
+// "the son of Bahá’u’lláh … is:" introduces ‘Abdu’l-Bahá — a name after a kinship word does not introduce its bearer
+const KIN_OF = /\b(sons?|daughters?|wife|husband|brothers?|sisters?|father|mother|grandsons?|granddaughters?|family|household|followers?|believers?|companions?) of\s+(the\s+)?\S+/gi;
+export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null, prevRawSpeaker = null, heading = '', bookAuthor = '' }) {
   if (!label) return label;
   if (isJunk(text)) return { ...label, speaker: null, quotes: null, junk: true };
   // only a speaker the model gave to SOMEONE ELSE is checked; the book's own author (default or demoted) is left alone
@@ -230,13 +233,15 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   const introduces = /[:—–]\s*[”"]?\s*$/.test(p) || /\b(as follows|the following|thus)\b/i.test(p.slice(-160));
   if (namesInThirdPerson(label.speaker, text) && !/\b(I|[Mm]e|[Mm]y|[Mm]ine|[Ww]e|[Uu]s|[Oo]ur)\b/.test(String(text))) return { ...label, speaker: null, subject: true };
   if (introduces) {
-    const hits = FIGURES.filter((f) => namerOf(f)(p.slice(-400)));
+    const tail = p.slice(-400).replace(KIN_OF, ' ');
+    const hits = FIGURES.filter((f) => namerOf(f)(tail));
     if (hits.length === 1) return hits[0] === label.speaker ? label : { ...label, speaker: hits[0], leadIn: true };
   }
   if (!WRITTEN.has(label.speaker)) return label;
   const named = namerOf(label.speaker);
   const attributes = /\b(address|talk|words?|letters?|tablets?|prayers?|writings?|extracts?|by|from|message)\b/i.test(heading || '');
-  const stillOpen = prevSpeaker === label.speaker && !/[”"]\s*\S{0,4}$/.test(p);
+  // the model's own label for the previous paragraph counts too: a rejection must not cascade down a split quotation
+  const stillOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);
   const given = (named(p.slice(-400)) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
   return given ? label : { ...label, speaker: null, unproven: true };
 }

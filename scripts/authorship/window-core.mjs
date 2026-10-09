@@ -42,7 +42,7 @@ export function knownSpeaker(r, book) {
  *  them to labels saved by an earlier version: "another person" → unresolved; a quote introduced in the narration stays
  *  the narrator's; an unmarked block leaves the book's author only when introduced; the editor only with editorial
  *  evidence; a paragraph never quotes its own speaker. */
-export function refineLabel(l, row, prevRow, prevLabel, book, { secondary = false } = {}) {
+export function refineLabel(l, row, prevRow, prevLabel, book, { secondary = false, prevRaw = null } = {}) {
   if (!l) return l;
   const clean = { ...l, speaker: l.speaker === OTHER ? null : l.speaker, quotes: l.quotes === OTHER ? null : l.quotes };
   let g = guardNarration(clean, row.text);
@@ -54,7 +54,7 @@ export function refineLabel(l, row, prevRow, prevLabel, book, { secondary = fals
   if (g.speaker === EDITOR && !g.fixed && !editorHasEvidence(row.text, book.author, { footnote: row.blocktype === 'footnote' || /\{language=/.test(row.text) })) {
     g = { ...g, speaker: book.author, unproven: true };
   }
-  if (secondary) g = secondaryGuard(g, { text: row.text, prevText: prevRow?.text, prevSpeaker: prevLabel?.speaker, heading: row.heading, bookAuthor: book.author });
+  if (secondary) g = secondaryGuard(g, { text: row.text, prevText: prevRow?.text, prevSpeaker: prevLabel?.speaker, prevRawSpeaker: prevRaw?.speaker, heading: row.heading, bookAuthor: book.author });
   g = onBehalfOfShoghiEffendi(g, row.text, book.author);
   return settle(g);
 }

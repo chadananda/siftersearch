@@ -21,7 +21,7 @@ for (const s of sample) {
   const book = { title: saved.title, author: saved.author || '', religion: '' };
   const rows = loadRows(db, s.doc);
   const raw = new Map(saved.labels.map((l) => [l.id, l])), by = new Map();
-  rows.forEach((r, i) => by.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], by.get(rows[i - 1]?.id), book, { secondary: true })));
+  rows.forEach((r, i) => by.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], by.get(rows[i - 1]?.id), book, { secondary: true, prevRaw: raw.get(rows[i - 1]?.id) })));
   const r = rows.find((x) => x.id === s.row);
   const n = r && nextAuthors(r, by.get(r.id), book, { noDemote: true });
   const speaker = n?.changed ? n.authors.find((e) => e.role === 'author')?.name : null;

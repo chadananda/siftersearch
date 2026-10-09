@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T18:54:33.498Z",
+  "generated": "2026-10-09T18:56:03.229Z",
   "entries": [
+    {
+      "hash": "2c1276cf",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Secondary-literature guard — junk rows, third-person subjects, one-figure lead-ins, written sources need the page",
+      "scope": "authorship"
+    },
     {
       "hash": "1b75db8e",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Move the /who-was-at/badasht link onto the Letters of the Living card",
       "scope": "docs"
-    },
-    {
-      "hash": "2f5abb52",
-      "date": "2026-08-28",
-      "type": "Docs",
-      "description": "Proof line drops \"once live\" — both surfaces read \"(live)\"",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "2c1276cf",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Secondary-literature guard — junk rows, third-person subjects, one-figure lead-ins, written sources need the page",
+        "scope": "authorship"
+      },
       {
         "hash": "1b75db8e",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Fixed",
         "description": "Move the /who-was-at/badasht link onto the Letters of the Living card",
         "scope": "docs"
-      },
-      {
-        "hash": "2f5abb52",
-        "date": "2026-08-28",
-        "type": "Docs",
-        "description": "Proof line drops \"once live\" — both surfaces read \"(live)\"",
-        "scope": null
       }
     ]
   }
