@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:34:38.898Z",
+  "generated": "2026-10-09T17:37:47.405Z",
   "entries": [
+    {
+      "hash": "3f90d1ca",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Timeline v4 — review pass merges duplicates, fixes order against DB/GPB ¶, adds missing authoritative events",
+      "scope": "bio"
+    },
     {
       "hash": "a454cabc",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Retest 2 — ids/reasoning projected from people[], verified live on 2.187.21",
       "scope": null
-    },
-    {
-      "hash": "8462ae35",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "One answer — ids and reasoning are projections of people[], not a second list",
-      "scope": "people/search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "3f90d1ca",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Timeline v4 — review pass merges duplicates, fixes order against DB/GPB ¶, adds missing authoritative events",
+        "scope": "bio"
+      },
       {
         "hash": "a454cabc",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Docs",
         "description": "Retest 2 — ids/reasoning projected from people[], verified live on 2.187.21",
         "scope": null
-      },
-      {
-        "hash": "8462ae35",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "One answer — ids and reasoning are projections of people[], not a second list",
-        "scope": "people/search"
       }
     ]
   }

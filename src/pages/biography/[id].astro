@@ -1,0 +1,162 @@
+---
+// One person's life page: summary, dated timeline, relationships and journeys — synthesized from the dossier's cited
+// facts (scripts/bio/build-timelines.mjs) — every line linked to the passages it rests on (range links on OceanLibrary).
+// SSR from GET /api/v1/people/:id (server-side: absolute API origin, no key needed). Pilot 2026-10-09 (Immerse parity).
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+
+const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const id = String(Astro.params.id || '').replace(/[^0-9]/g, '');
+if (!id) return new Response(null, { status: 404 });
+
+let p = null;
+try {
+  const res = await fetch(`${API}/api/v1/people/${id}`, { signal: AbortSignal.timeout(20000) });
+  if (res.status === 404) return new Response(null, { status: 404 });
+  if (res.ok) p = await res.json();
+} catch { /* rendered as unavailable below */ }
+
+const t = p?.timeline || null;
+const src = t?.sources || {};
+// one running footnote number per cited fact, in order of first use
+const order = [];
+const num = (k) => { if (!order.includes(k)) order.push(k); return order.indexOf(k) + 1; };
+const notes = (keys = []) => keys.filter((k) => src[k]).map((k) => ({ n: num(k), k, ...src[k] }));
+const events = (t?.events || []).map((e) => ({ ...e, notes: notes(e.cites) }));
+const REL_LABEL = { family: 'Family', teacher: 'Teachers', student: 'Students', companion: 'Companions', guardian: 'Guardians',
+  protector: 'Protectors', patron: 'Patrons', captor: 'Captors', adversary: 'Adversaries', persecutor: 'Persecutors',
+  correspondent: 'Correspondents', successor: 'Successors', other: 'Others' };
+const relGroups = Object.entries((t?.relationships || []).reduce((g, r) => ((g[r.type] ||= []).push({ ...r, notes: notes(r.cites) }), g), {}))
+  .sort(([a], [b]) => Object.keys(REL_LABEL).indexOf(a) - Object.keys(REL_LABEL).indexOf(b));
+const journeys = (t?.journeys || []).map((j) => ({ ...j, notes: notes(j.cites) }));
+const footnotes = order.map((k, i) => ({ n: i + 1, ...src[k] }));
+
+const years = events.map((e) => e.year).filter(Boolean);
+const life = years.length ? `${Math.min(...years)}–${p?.death?.year || Math.max(...years)}` : (p?.death?.year ? `d. ${p.death.year}` : '');
+const aliases = (p?.aliases || []).filter((a) => typeof a === 'string' && a !== p?.name).slice(0, 6);
+const title = p ? `${p.name}${life ? ` (${life})` : ''} — life and sources` : 'Biography';
+const description = p?.summary ? p.summary.slice(0, 220) : `Life timeline of ${p?.name || 'this figure'} with cited sources.`;
+const tip = (f) => `${f.source || 'Source'}${f.cite ? ` · ${f.cite}` : ''}${f.proof ? ` — “${String(f.proof).slice(0, 200)}”` : ''}`;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600');
+---
+
+<Layout title={title} description={description}>
+  <NavBar client:idle currentPage="biography" />
+  <main class="bio">
+    {!p ? (
+      <p class="bio-note">This biography could not be loaded just now. Please try again in a moment.</p>
+    ) : (
+      <>
+        <header class="bio-head">
+          {p.portrait && <img class="bio-portrait" src={p.portrait} alt={`Portrait of ${p.name}`} width="112" height="140" />}
+          <div>
+            <p class="bio-kicker"><a href="/biography">Biographical archive</a>{p.side && <> · {p.side}</>}</p>
+            <h1>{p.name}{life && <span class="bio-life">{life}</span>}</h1>
+            {aliases.length > 0 && <p class="bio-aka">Also known as {aliases.join(' · ')}</p>}
+            <p class="bio-reach">{p.mentionCount?.toLocaleString?.() ?? 0} mentions across {p.books?.length ?? 0} books in the library</p>
+          </div>
+        </header>
+
+        {p.summary && <p class="bio-summary">{p.summary}</p>}
+
+        {!t ? (
+          <p class="bio-note">The timeline for this person has not been written yet.</p>
+        ) : (
+          <>
+            <section class="bio-sec">
+              <h2>Timeline</h2>
+              <ol class="bio-tl">
+                {events.map((e) => (
+                  <li>
+                    <div class="bio-date">{e.date}</div>
+                    <div class="bio-ev">
+                      <h3>{e.title}</h3>
+                      <p>{e.text}{e.notes.map((f) => <a class="bio-fn" href={f.url || `#src-${f.n}`} title={tip(f)} target={f.url ? '_blank' : undefined} rel="noopener">{f.n}</a>)}</p>
+                      {e.quote && <blockquote>“{e.quote}”</blockquote>}
+                      {e.conflict && <p class="bio-conflict"><strong>Sources differ:</strong> {e.conflict}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            {relGroups.length > 0 && (
+              <section class="bio-sec">
+                <h2>Relationships</h2>
+                <div class="bio-rels">
+                  {relGroups.map(([type, rs]) => (
+                    <div>
+                      <h3>{REL_LABEL[type] || type}</h3>
+                      <ul>{rs.map((r) => <li><span class="bio-who">{r.who}</span>{r.note && <span class="bio-how"> — {r.note}</span>}{r.notes.map((f) => <a class="bio-fn" href={f.url || `#src-${f.n}`} title={tip(f)} target={f.url ? '_blank' : undefined} rel="noopener">{f.n}</a>)}</li>)}</ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {journeys.length > 0 && (
+              <section class="bio-sec">
+                <h2>Journeys</h2>
+                <ol class="bio-jn">
+                  {journeys.map((j) => <li><span class="bio-place">{j.place}</span>{j.year && <span class="bio-jy">{j.year}</span>}{j.notes.map((f) => <a class="bio-fn" href={f.url || `#src-${f.n}`} title={tip(f)} target={f.url ? '_blank' : undefined} rel="noopener">{f.n}</a>)}</li>)}
+                </ol>
+              </section>
+            )}
+
+            <section class="bio-sec">
+              <h2>Sources</h2>
+              <ol class="bio-src">
+                {footnotes.map((f) => (
+                  <li id={`src-${f.n}`}>
+                    {f.url ? <a href={f.url} target="_blank" rel="noopener">{f.source || 'Source'}</a> : <span>{f.source || 'Source'}</span>}
+                    {f.cite && <span class="bio-cite"> {f.cite}</span>}
+                    {f.proof && <span class="bio-proof"> — “{String(f.proof).slice(0, 240)}”</span>}
+                  </li>
+                ))}
+              </ol>
+              <p class="bio-note">Written from {t.facts_used} of {t.facts_available?.toLocaleString?.()} cited facts gathered from the library ({t.version}). Every statement links to the passages it rests on.</p>
+            </section>
+          </>
+        )}
+      </>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .bio { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .bio-head { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; }
+  .bio-portrait { width: 112px; height: 140px; object-fit: cover; border-radius: .4rem; border: 1px solid var(--border-subtle); }
+  .bio-kicker { text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; color: var(--text-muted); margin: 0 0 .25rem; }
+  .bio-kicker a { color: inherit; }
+  .bio-head h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.15; margin: 0 0 .35rem; color: var(--text-primary); text-wrap: balance; }
+  .bio-life { margin-left: .6rem; font-size: .5em; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .bio-aka, .bio-reach { color: var(--text-secondary); margin: 0 0 .2rem; font-size: .9rem; }
+  .bio-summary { color: var(--text-primary); line-height: 1.65; margin: 1.25rem 0 0; max-width: 65ch; }
+  .bio-sec h2 { font-size: 1.1rem; color: var(--text-primary); margin: 2.25rem 0 .75rem; }
+  .bio-tl { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border-subtle); }
+  .bio-tl li { display: grid; grid-template-columns: 6.5rem 1fr; gap: .75rem; padding: .7rem 0 .7rem 1rem; position: relative; }
+  .bio-tl li::before { content: ''; position: absolute; left: -6px; top: 1.05rem; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .bio-date { color: var(--text-muted); font-size: .85rem; padding-top: .15rem; font-variant-numeric: tabular-nums; }
+  .bio-ev h3 { margin: 0 0 .2rem; font-size: 1rem; color: var(--text-primary); }
+  .bio-ev p { margin: 0; color: var(--text-secondary); line-height: 1.6; max-width: 65ch; }
+  .bio-ev blockquote { margin: .5rem 0 0; padding: .4rem .8rem; border-left: 3px solid var(--accent); background: var(--surface-1); color: var(--text-primary); font-style: italic; border-radius: 0 .3rem .3rem 0; }
+  .bio-conflict { margin-top: .4rem !important; font-size: .85rem; color: var(--text-muted) !important; }
+  .bio-fn { display: inline-block; margin-left: .2rem; font-size: .7rem; line-height: 1; padding: .15rem .3rem; border-radius: .25rem; background: var(--surface-2); color: var(--accent); text-decoration: none; vertical-align: super; }
+  .bio-fn:hover { background: var(--accent); color: var(--surface-0); }
+  .bio-rels { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem 1.5rem; }
+  .bio-rels h3 { margin: 0 0 .3rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); }
+  .bio-rels ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+  .bio-who { color: var(--text-primary); }
+  .bio-how { color: var(--text-secondary); font-size: .9rem; }
+  .bio-jn { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; margin: 0; padding: 0; }
+  .bio-jn li { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 1rem; padding: .25rem .7rem; color: var(--text-primary); font-size: .9rem; }
+  .bio-jn li + li::before { content: '→ '; color: var(--text-muted); }
+  .bio-jy { margin-left: .35rem; color: var(--text-muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+  .bio-src { padding-left: 1.4rem; color: var(--text-secondary); font-size: .85rem; display: grid; gap: .35rem; }
+  .bio-src a { color: var(--accent); }
+  .bio-cite { color: var(--text-muted); }
+  .bio-proof { color: var(--text-muted); }
+  .bio-note { color: var(--text-muted); font-size: .85rem; margin-top: 1rem; }
+  @media (max-width: 30rem) { .bio-tl li { grid-template-columns: 1fr; gap: .1rem; } }
+</style>
