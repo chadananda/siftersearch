@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T13:37:59.985Z",
+  "generated": "2026-10-09T13:49:18.321Z",
   "entries": [
+    {
+      "hash": "5ea759df",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "A failed re-ingest restores the doc's previous file/body hash — otherwise the next run calls it unchanged and the old paragraphs stay for good",
+      "scope": "ingest"
+    },
     {
       "hash": "b495d981",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Score name rarity over the primary name, not a parenthetical alias",
       "scope": "entities"
-    },
-    {
-      "hash": "a0df70c0",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "The rarest term must be one that still matches somebody",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "5ea759df",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "A failed re-ingest restores the doc's previous file/body hash — otherwise the next run calls it unchanged and the old paragraphs stay for good",
+        "scope": "ingest"
+      },
       {
         "hash": "b495d981",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "Score name rarity over the primary name, not a parenthetical alias",
-        "scope": "entities"
-      },
-      {
-        "hash": "a0df70c0",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "The rarest term must be one that still matches somebody",
         "scope": "entities"
       }
     ]

@@ -9,6 +9,7 @@ import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // centr
 import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
 import { INTERPRETATION_RELATIONS, unknownRelations } from '../rag/concepts/relations.js';
 import { LIVE_SQL, tombstoneFor, retiredStamp } from '../entity-live.js';
+import { voiceLine } from '../authorship/voice.js';   // who speaks a paragraph / whom it quotes (Chad 10-09)
 
 // One record's rows for the lookup index — the SAME keys and folding as scripts/entity-read/build-lookup-index.mjs
 // (nameKeys = transliteration skeletons ∪ Arabic-script keys), so a record indexed here is found exactly as a rebuilt one.
@@ -86,13 +87,16 @@ export function makeStore() {
         `SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, blocktype AS kind, text,
                 context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis, hyp_model AS hypModel,
                 original_text AS original, original_lang AS originalLang, translation_authority AS translationAuthority,
-                translation_text AS translationText
+                translation_text AS translationText, authors
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE} ORDER BY paragraph_index`, [docId]);
       const partners = await partnersOf(docId);
-      return rows.map(({ translationText, ...p }) => {
+      // VOICE: who speaks this paragraph and whom it quotes (content.authors: reader + window classifier), as one line every
+      // stage puts beside the paragraph — disambiguation, claims, concepts and HyPE read speaker/quotes the same way
+      const bookAuthor = rows.some((r) => r.authors) && typeof this?.getDocMeta === 'function' ? (await this.getDocMeta(docId))?.author : null;
+      return rows.map(({ translationText, authors, ...p }) => {
         const partner = partners.get(p.id)
           ?? (translationText ? { kind: 'translation', ids: [], text: translationText, lang: 'en', authority: p.translationAuthority } : null);
-        return { ...p, text: String(p.text).replace(/\s+/g, ' ').trim(), partner };
+        return { ...p, text: String(p.text).replace(/\s+/g, ' ').trim(), partner, voice: voiceLine({ authors, author: bookAuthor }) };
       });
     },
 

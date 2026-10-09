@@ -279,9 +279,10 @@ Rules:
 • proof = a span copied VERBATIM and EXACTLY from the passage (≤200 chars) supporting the claim; if you cannot, OMIT.
 • root = the original-language term behind the concept IF the passage/context makes it identifiable (else omit).
 • ONLY what the passage states — NO outside doctrine. Skip generic words; capture load-bearing doctrinal assertions.
+• A VOICE line, when given, names who speaks the passage and whom it quotes: a teaching belongs to whoever states it — a quoted writer's words are theirs, not the book author's.
 Return ONLY JSON: {"claims":[{"concept":"..","relation":"..","teaching":"..","proof":"..","root":".."}]}`;
 }
 
 export function buildUser(p) {
-  return `NOTE: ${p.context}\n\nPASSAGE [${p.pid}]:\n${p.text}`;
+  return `NOTE: ${p.context}\n\n${p.voice ? `${p.voice}\n` : ''}PASSAGE [${p.pid}]:\n${p.text}`;
 }

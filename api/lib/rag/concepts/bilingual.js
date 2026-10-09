@@ -37,7 +37,7 @@ export function buildBilingualSystem(profile = {}, meta = {}, { translationAutho
   // that a committee's or a provisional rendering "fixes which sense is operative" would grant a translator
   // an interpretive authority they do not have, and bake it into every concept extracted from that book.
   const authoritative = translationAuthority === 'shoghi-effendi';
-  return `You extract DOCTRINAL CONCEPTS from a passage of ${book || 'a sacred text'}, reading the ORIGINAL and Shoghi Effendi's authorised English rendering TOGETHER.
+  return `You extract DOCTRINAL CONCEPTS from a passage of ${book || 'a sacred text'}, reading the ORIGINAL and ${authoritative ? "Shoghi Effendi's authorised English rendering" : 'an English rendering by another translator'} TOGETHER. A VOICE line, when given, names who speaks the passage and whom it quotes: a teaching belongs to whoever states it.
 
 ${authoritative
   ? `TWO SOURCES, TWO DIFFERENT AUTHORITIES. You need both; neither outranks the other, because they answer different questions.`
@@ -84,7 +84,9 @@ Return ONLY JSON: {"claims":[{"concept":"..","relation":"..","teaching":"..","pr
  * labelled, so the model is never left to infer which text is which.
  */
 export function buildBilingualUser(p = {}, aligned = null) {
-  const ctx = `CONTEXT (for resolving references only): ${p.context || '(none)'}`;
+  const ctx = `CONTEXT (for resolving references only): ${p.context || '(none)'}${p.voice ? `\n${p.voice}` : ''}`;
+  // the English is Shoghi Effendi's only when the paragraph's translation authority says so (the label was hard-coded)
+  const se = p.translationAuthority === 'shoghi-effendi';
 
   if (!aligned) {
     // Honest degradation: say the original is missing rather than letting the model supply a root from
@@ -93,7 +95,7 @@ export function buildBilingualUser(p = {}, aligned = null) {
 
 NO ALIGNED ORIGINAL is available for this paragraph — the original text is unavailable. Extract from the English alone, and OMIT the root rather than guessing it.
 
-SHOGHI EFFENDI'S RENDERING [${p.pid}]:
+${se ? "SHOGHI EFFENDI'S RENDERING" : 'ENGLISH RENDERING (not Shoghi Effendi\'s)'} [${p.pid}]:
 ${p.text}`;
   }
 
@@ -102,6 +104,6 @@ ${p.text}`;
 ORIGINAL TEXT:
 ${aligned.source}
 
-SHOGHI EFFENDI'S AUTHORISED RENDERING [${p.pid}] — his word-choice fixes which sense is meant:
+${se ? "SHOGHI EFFENDI'S AUTHORISED RENDERING [${p.pid}] — his word-choice fixes which sense is meant" : 'ENGLISH RENDERING [${p.pid}] — a translator\'s reading; the ORIGINAL decides the sense'}:
 ${aligned.translation || p.text}`;
 }

@@ -175,10 +175,11 @@ Rules:
 • proof = a span copied VERBATIM and EXACTLY from the paragraph (≤130 chars) that supports the claim AND its direction — include the "by …" / negation words; do not cut mid-clause so the meaning flips. If you cannot copy an exact, self-contained supporting span, OMIT the claim.
 • when = copy the note's era for this scene (keep its "[pin: …]"/"[est: …]" tag); a more specific date only if stated.
 • ONLY narrator-asserted FACTS — no outside knowledge, and NOT what a party merely CLAIMS. An accusation, boast, rumour, or assertion ATTRIBUTED to someone (especially an adversary — "the Covenant-breakers claimed…", "his enemies alleged…") is not a fact about the target; skip it, along with negated / hypothetical / questioned statements. Why: a hostile party's slander is evidence of the slander, not of the target's conduct. Capture LOAD-BEARING facts (birth, death/martyrdom w/ place+cause, kinship, conversion, teacher/disciple, office/title, participation, authorship, meetings, journeys), NOT narrative colour. The object must be a CONCRETE named entity or substantive value — skip vague/anaphoric objects. At most ONE characterised-as per person.
+• A VOICE line, when given, names who speaks the paragraph: when it is not the book's author, the paragraph is that person's own words — "I/we" are that speaker, and what they say of themselves is their own testimony.
 RELATIONS: ${relList}
 Return ONLY JSON: {"claims":[{"subject":"..","relation":"..","object":"..","proof":"..","when":".."}]}`;
 }
 
 export function buildUser(p) {
-  return `NOTE: ${p.context}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  return `NOTE: ${p.context}\n\n${p.voice ? `${p.voice}\n` : ''}PARAGRAPH [${p.pid}]:\n${p.text}`;
 }

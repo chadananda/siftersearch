@@ -40,6 +40,7 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
       INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
+      ALTER TABLE content ADD COLUMN authors TEXT;
       CREATE TABLE content_source_links (quote_id INT, source_id INT, quote_doc INT, source_doc INT, coverage REAL, share REAL, basis TEXT, method TEXT);
       INSERT INTO content_source_links VALUES (201, 300, 8, 9, 0.5, 0.5, 'text-arfa', 't');
       UPDATE content SET hyp_questions = '["What is justice?"]', hyp_thesis = 'kept', hyp_model = 'hype-v12' WHERE id = 100;

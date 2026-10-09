@@ -63,7 +63,7 @@ export function buildSystem(meta = {}, profile = {}) {
 
 // Variable tail: the carried argument (tiny) + the one paragraph.
 export function buildUser(para = {}, state = '') {
-  return `${state ? `CARRIED ARGUMENT SO FAR: ${state}\n\n` : ''}PASSAGE:\n${para.text || ''}`;
+  return `${state ? `CARRIED ARGUMENT SO FAR: ${state}\n\n` : ''}${para.voice ? `${para.voice}\n` : ''}PASSAGE:\n${para.text || ''}`;
 }
 
 export async function run(ctx, docId, opts = {}) {
@@ -89,7 +89,8 @@ export async function run(ctx, docId, opts = {}) {
     state = carryState(parsed, state);
     const note = renderNote(parsed);
     if (!note) stats.empty++;
-    if (!opts.dryRun) { await ctx.store.saveContext(p.pid ?? p.id, note, version); stats.written++; }
+    // the numeric content id — p.pid ('para_9' / 'p123') matched no row, so these notes were never saved
+    if (!opts.dryRun) { await ctx.store.saveContext(p.id, note, version); stats.written++; }
   }
   ctx.log?.info?.({ docId, ...stats }, 'concepts/disambiguate');
   return stats;

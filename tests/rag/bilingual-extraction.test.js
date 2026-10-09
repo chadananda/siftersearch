@@ -97,8 +97,14 @@ describe('the user message carries BOTH texts, aligned', () => {
     expect(u).not.toContain('ghmm-cloud');
   });
 
-  it('labels the English explicitly as Shoghi Effendi\'s rendering, not as "the text"', () => {
-    expect(buildBilingualUser(p, aligned)).toMatch(/Shoghi Effendi/i);
+  it('labels the English as Shoghi Effendi\'s rendering only when it is his', () => {
+    expect(buildBilingualUser({ ...p, translationAuthority: 'shoghi-effendi' }, aligned)).toMatch(/SHOGHI EFFENDI'S AUTHORISED RENDERING/);
+    expect(buildBilingualUser({ ...p, translationAuthority: 'committee' }, aligned)).toMatch(/ENGLISH RENDERING .* the ORIGINAL decides/);
+    expect(buildBilingualUser({ ...p, translationAuthority: 'committee' }, aligned)).not.toMatch(/SHOGHI EFFENDI/);
+  });
+
+  it('puts the paragraph\'s voice beside it when known', () => {
+    expect(buildBilingualUser({ ...p, voice: 'VOICE: ‘Abdu’l-Bahá · quotes / cites: Bahá’u’lláh' }, aligned)).toMatch(/VOICE: ‘Abdu’l-Bahá/);
   });
 
   it('degrades honestly when no alignment is available — says so rather than inventing a root', () => {
