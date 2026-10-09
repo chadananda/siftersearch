@@ -57,7 +57,7 @@ async function fileInfo(title) {
 const out = []; const CONC = 3;
 for (let i = 0; i < people.length; i += CONC) {
   const batch = await Promise.all(people.slice(i, i + CONC).map(async p => {
-    let aliases = []; try { aliases = JSON.parse(p.a || '[]'); } catch {}
+    let aliases = []; try { aliases = JSON.parse(p.a || '[]'); } catch { /* best-effort: skip */ }
     const queries = [p.cn.replace(/\s*\([^)]*\)\s*$/, '').trim(), ...aliases.filter(x => /[A-Za-z]/.test(x)).slice(0, 2)];
     const want = new Set(toks(p.cn).concat(...aliases.map(toks)));
     const seen = new Set(), cands = [];

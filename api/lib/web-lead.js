@@ -23,7 +23,7 @@ export function extractQuotedPhrases(text) {
   const out = [];
   for (const re of [/"([^"]{12,300})"/g, /[“]([^”]{12,300})[”]/g]) {
     for (const m of s.matchAll(re)) {
-      const p = m[1].replace(/\s+/g, ' ').trim().replace(/[…\.]+$/, '').trim();
+      const p = m[1].replace(/\s+/g, ' ').trim().replace(/[….]+$/, '').trim();
       // A phrase needs enough words to be a needle rather than a title fragment.
       if (p.split(' ').length >= 4) out.push(p);
     }

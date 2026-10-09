@@ -36,6 +36,7 @@ export const cleanText = (text) => (text || '').replace(/⁅\/?[sp]\d+⁆/g, '')
 // words of the clean text with their offsets; comments and page-break tags are masked out (same length → same offsets)
 const wordsOf = (clean) => {
   const masked = clean.replace(/<!--.*?-->|<pb[^>]*\/>/g, (m) => ' '.repeat(m.length));
+  // eslint-disable-next-line no-control-regex -- \x1c-\x1f + \x85 ARE whitespace in Python's str.split(), the measured splitter
   return [...masked.matchAll(/[^\s\x1c-\x1f\x85]+/g)]   // Python's str.split() whitespace set (the measured splitter)
     .map((m) => ({ w: m[0], start: m.index, end: m.index + m[0].length }));
 };

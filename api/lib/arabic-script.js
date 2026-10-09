@@ -5,7 +5,7 @@
 //        Persian prose is full of Arabic quotation, and Arabic is often typed with Persian ی/ک, so letters alone mislead.
 // Marks: harakat/tanwin/shadda/sukun (064B–065F), superscript alef (0670), Qur'anic annotation (0610–061A, 06D6–06DC,
 // 06DD verse end, 06DE, 06DF–06E8, 06EA–06ED), tatweel (0640), and invisible controls (bidi, ZWJ/ZWNJ, BOM).
-const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭـ​-‏‪-‮⁦-⁩﻿]/g;
+const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭـ\u200B-‏‪-‮⁦-⁩\uFEFF]/g;
 const LETTERS = { 'ي': 'ی', 'ى': 'ی', 'ئ': 'ی', 'ې': 'ی', 'ك': 'ک', 'ڪ': 'ک', 'ة': 'ه', 'ۀ': 'ه', 'ە': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ٲ': 'ا', 'ٳ': 'ا', 'ؤ': 'و' };
 const LETTER_RE = new RegExp(`[${Object.keys(LETTERS).join('')}]`, 'g');
 const DIGITS = /[٠-٩۰-۹]/g;

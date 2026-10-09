@@ -6,6 +6,7 @@ import { segment, unitTexts, anchored, cleanText, SEG_VERSION } from '../../api/
 import { faShare } from '../../api/lib/arabic-script.js';
 
 const golden = JSON.parse(readFileSync(new URL('../fixtures/phrases-golden.json', import.meta.url), 'utf8')).cases;
+// eslint-disable-next-line no-control-regex -- the test mirrors Python's str.split() whitespace set (\x1c-\x1f, \x85)
 const norm = (s) => s.replace(/<!--.*?-->|<pb[^>]*\/>/g, ' ').split(/[\s\x1c-\x1f\x85]+/).filter(Boolean).join(' ');
 
 describe('segment — parity with the measured Python splitter', () => {

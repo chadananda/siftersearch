@@ -711,55 +711,12 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     };
   }
 
-  // MODE: documents or count — search Meilisearch documents index (fuzzy)
-  try {
-    const { getMeili, INDEXES } = await import('../lib/search.js');
-    const meili = getMeili();
-    if (meili) {
-      const meiliFilters = [];
-      if (religion) meiliFilters.push(`religion = "${religion}"`);
-      if (collection) meiliFilters.push(`collection = "${collection}"`);
-
-      const result = await meili.index(INDEXES.DOCUMENTS).search(query || '', {
-        limit: mode === 'count' ? 1 : safeLimit,
-        attributesToRetrieve: mode === 'count' ? ['id'] : ['id', 'title', 'author', 'religion', 'collection', 'year', 'description', 'paragraph_count', 'encumbered', 'slug'],
-        ...(meiliFilters.length > 0 ? { filter: meiliFilters.join(' AND ') } : {})
-      });
-
-      if (mode === 'count') {
-        return { totalMatches: result.estimatedTotalHits || 0, query };
-      }
-
-      return {
-        totalMatches: result.estimatedTotalHits || result.hits.length,
-        showing: result.hits.length,
-        documents: result.hits.map(docResult)
-      };
-    }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Meilisearch search fallback to SQL');
-  }
-
-  // Fallback: SQL
-  const conditions = ['deleted_at IS NULL'];
-  const params = [];
-  if (query) { conditions.push('(title LIKE ? OR author LIKE ?)'); params.push(`%${query}%`, `%${query}%`); }
-  if (religion) { conditions.push('religion = ?'); params.push(religion); }
-  if (collection) { conditions.push('collection LIKE ?'); params.push(`%${collection}%`); }
-
-  if (mode === 'count') {
-    const cnt = await queryOne(`SELECT COUNT(*) as count FROM docs WHERE ${conditions.join(' AND ')}`, params);
-    return { totalMatches: cnt.count, query };
-  }
-
-  const docs = await queryAll(
-    `SELECT id, title, author, religion, collection, year, description, paragraph_count, encumbered, slug
-     FROM docs WHERE ${conditions.join(' AND ')} ORDER BY title LIMIT ?`, [...params, safeLimit]
-  );
-  return {
-    totalMatches: docs.length,
-    documents: docs.map(docResult)
-  };
+  // MODE: documents or count — the document finder (SQLite FTS, docs-repo), never a search engine's index
+  const { findDocuments } = await import('../lib/docs-repo.js');
+  const found = await findDocuments(query || '', { religion, collectionLike: collection, limit: mode === 'count' ? 1 : safeLimit,
+    fields: ['id', 'title', 'author', 'religion', 'collection', 'year', 'description', 'paragraph_count', 'encumbered', 'slug'] });
+  if (mode === 'count') return { totalMatches: found.total, query };
+  return { totalMatches: found.total, showing: found.docs.length, documents: found.docs.map(docResult) };
 }
 
 // ─── Canonical-works hard-resolve for find_document_for_citation ─────────
@@ -1015,13 +972,11 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
   }
 
   try {
-    const { getMeili, INDEXES } = await import('../lib/search.js');
-    const meili = getMeili();
-    if (meili) {
-      const result = await meili.index(INDEXES.DOCUMENTS).search(title || '', {
-        limit: 50, // over-fetch so post-filtering still leaves enough candidates
-        attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'year', 'paragraph_count', 'encumbered', 'slug']
-      });
+    const { findDocuments } = await import('../lib/docs-repo.js');
+    {
+      // candidate pool from the document finder (SQLite FTS) — over-fetch so post-filtering still leaves enough
+      const result = { hits: (await findDocuments(title || '', { limit: 50,
+        fields: ['id', 'title', 'author', 'religion', 'collection', 'year', 'paragraph_count', 'encumbered', 'slug'] })).docs };
       // Normalize apostrophe + diacritic variants — the DB stores Bahá'u'lláh
       // with curly apostrophe (U+2019); a user typing the same name with a
       // straight quote (U+0027) shouldn't break matching.
@@ -1048,7 +1003,7 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
       // equally well, which is what it was for: the canonical Íqán over "Notes on the Íqán".
       hits = rankByTitle(title || '', hits.map((h, idx) => ({ ...h, _authority: authorityScore(h), _idx: idx })))
         .slice(0, safeLimit);
-      const meiliCandidates = hits
+      const titleCandidates = hits
         // Skip the canonical doc if we already prepended it
         .filter(h => !canonicalCandidate || h.id !== canonicalCandidate.document_id)
         .map(h => ({
@@ -1062,7 +1017,7 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
           authority_score: h._authority,
           is_primary: h._authority >= 100,
           slug: h.slug,
-          match_reason: 'meilisearch'
+          match_reason: 'title-search'
         }));
       // Note: named-works detection via heading scan was removed — the heading
       // column data isn't reliable as a section-start marker (headings appear
@@ -1071,7 +1026,7 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
       // sub-sections, which is much more reliable.
       const candidates = [
         ...(canonicalCandidate ? [canonicalCandidate] : []),
-        ...meiliCandidates
+        ...titleCandidates
       ];
       // Liveness gate: dedupe left husk records carrying canonical titles with every
       // paragraph soft-deleted (e.g. the Gleanings doc that sent the subagent into an

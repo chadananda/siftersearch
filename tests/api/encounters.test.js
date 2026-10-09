@@ -1,6 +1,7 @@
 // Who-met-whom fast path (Chad 2026-09-26: "a common search pattern"; 1s budget for the whole search).
 // Only 21.7% of `met` claims carry target_entity_id, so the index keys each claim by its typed target AND by the
 // names its statement carries — joined in memory, never a LIKE scan over 600k claims per request.
+import { performance } from 'node:perf_hooks';
 import { describe, it, expect } from 'vitest';
 import { createEncounterIndex, encounterSearch } from '../../api/lib/encounters.js';
 

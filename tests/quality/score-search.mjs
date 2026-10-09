@@ -484,7 +484,7 @@ if (WRITE_REPORT) {
   // Append summary to history file (no per-result data — just headline metrics)
   const histPath = join(__dirname, MULTI ? 'history-multi.json' : 'history.json');
   let history = [];
-  try { history = JSON.parse(readFileSync(histPath, 'utf8')); } catch {}
+  try { history = JSON.parse(readFileSync(histPath, 'utf8')); } catch { /* unreadable entry: skip */ }
   const snapshot = { run_at: report.run_at, total: report.total, passed: report.passed, pass_rate: report.pass_rate, mrr: report.mrr, latency_p50_ms: report.latency_p50_ms, latency_p95_ms: report.latency_p95_ms, ...(report.hype ? { hype: report.hype } : {}), categories: Object.fromEntries(Object.entries(report.categories).map(([k,v]) => [k, {passed: v.passed, total: v.total, pass_rate: v.pass_rate}])) };
   history.push(snapshot);
   writeFileSync(histPath, JSON.stringify(history, null, 2));
@@ -499,13 +499,13 @@ if (ANALYZE && WRITE_REPORT) {
   const changesPath = join(__dirname, 'changes.json');
 
   let prevAnalysis = null;
-  try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, 'analysis.json'), 'utf8')); } catch {}
+  try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, 'analysis.json'), 'utf8')); } catch { /* unreadable entry: skip */ }
   let analysisHistory = [];
-  try { analysisHistory = JSON.parse(readFileSync(join(__dirname, 'analysis-history.json'), 'utf8')); } catch {}
+  try { analysisHistory = JSON.parse(readFileSync(join(__dirname, 'analysis-history.json'), 'utf8')); } catch { /* unreadable entry: skip */ }
   let histArr = [];
-  try { histArr = JSON.parse(readFileSync(join(__dirname, 'history.json'), 'utf8')); } catch {}
+  try { histArr = JSON.parse(readFileSync(join(__dirname, 'history.json'), 'utf8')); } catch { /* unreadable entry: skip */ }
   let changes = [];
-  try { changes = JSON.parse(readFileSync(changesPath, 'utf8')); } catch {}
+  try { changes = JSON.parse(readFileSync(changesPath, 'utf8')); } catch { /* unreadable entry: skip */ }
 
   // Top failing tests (by category, up to 20)
   const failingSample = results.filter(r => !r.ok).slice(0, 30).map(r => ({

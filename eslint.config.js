@@ -107,6 +107,7 @@ export default [
       '.wrangler/**',
       'data/**',
       'tmp/**',
+      '.work/**',          // gitignored scratch (bundles, backups) — never code we ship
       'scripts/wip/**',
       'planning/**',
       '*.min.js',

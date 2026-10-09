@@ -70,7 +70,7 @@ function classifyExtractionError(msg = '') {
   if (/Could not find the body element|end of central directory|is this a zip file/i.test(m)) {
     return 'legacy .doc format — needs a binary-doc converter, mammoth reads .docx only';
   }
-  if (/fetch 4\d\d/.test(m)) return `source gone (${(m.match(/fetch (4\d\d)/) || [, '4xx'])[1]})`;
+  if (/fetch 4\d\d/.test(m)) return `source gone (${(m.match(/fetch (4\d\d)/) || [null, '4xx'])[1]})`;
   if (/unsupported ext/i.test(m)) return m;
   return null;                                   // transient: 5xx, ECONNRESET, timeouts → retry
 }

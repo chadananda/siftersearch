@@ -1383,7 +1383,21 @@ export async function multiIndexSearch(query, options = {}) {
   // The paragraphs index uses `id` as primary key but doesn't expose `id`
   // as filterable, so we use getDocuments({ ids: [...] }) — primary-key
   // lookup which doesn't require the field to be in filterableAttributes.
-  const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  // Hydrated from SQLite first (the source of truth, same document shape as the index sync — paragraphs-repo.js);
+  // only ids SQLite lacks (site-only stores) still go to Meili. Without this, Qdrant-only search needed Meili to answer.
+  let stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  if (stubIds.length > 0) {
+    try {
+      const { paragraphsByIds } = await import('./paragraphs-repo.js');
+      for (const doc of await paragraphsByIds(stubIds)) {
+        const e = aggregate.get(doc.id) ?? aggregate.get(String(doc.id));
+        if (e) e.paragraph = { ...doc, _stub: false };
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed — Meili fallback');
+    }
+    stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  }
   if (stubIds.length > 0) {
     try {
       const meili = getMeili();

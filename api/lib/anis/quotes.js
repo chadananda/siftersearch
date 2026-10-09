@@ -23,7 +23,7 @@ export function dropUnverified(text, passages) {
   if (!bad.length) return { text, removed: 0 };
   let removed = 0;
   const paragraphs = String(text).split(/\n{2,}/).map((para) => {
-    const sentences = para.split(/(?<=[.!?])\s+(?=[A-Z“"\[*>(])/);
+    const sentences = para.split(/(?<=[.!?])\s+(?=[A-Z“"[*>(])/);
     const kept = sentences.filter((s) => {
       const hit = bad.some((q) => s.includes(q));
       if (hit) removed++;

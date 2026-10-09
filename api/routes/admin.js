@@ -569,28 +569,14 @@ export default async function adminRoutes(fastify) {
   }, async (request) => {
     const { author } = request.params;
     const { dryRun = false } = request.query;
-    const { getMeili, INDEXES } = await import('../lib/search.js');
+    // documents come from SQLite through the document interface, and are removed through its GUARDED soft-delete
+    // (refuses the last live copy of a work and any canonical others point at) — never a search engine, never DELETE.
+    const { listDocs, findDocuments, softDeleteDocs } = await import('../lib/docs-repo.js');
 
     try {
-      const meili = getMeili();
-
-      // Search for all documents by this author
-      const results = await meili.index(INDEXES.DOCUMENTS).search('', {
-        filter: `author = "${author}"`,
-        limit: 1000
-      });
-
-      // If no exact match, try contains
-      let docs = results.hits;
-      if (docs.length === 0) {
-        const allDocs = await meili.index(INDEXES.DOCUMENTS).search(author, {
-          attributesToSearchOn: ['author'],
-          limit: 1000
-        });
-        docs = allDocs.hits.filter(d =>
-          d.author && d.author.toLowerCase().includes(author.toLowerCase())
-        );
-      }
+      const fields = ['id', 'title', 'author'];
+      let docs = (await listDocs({ author, fields, limit: 1000 })).docs;
+      if (docs.length === 0) docs = (await findDocuments(author, { authorLike: author, fields, limit: 200 })).docs;
 
       if (docs.length === 0) {
         return { success: true, message: `No documents found for author: ${author}`, deleted: 0 };
@@ -605,18 +591,9 @@ export default async function adminRoutes(fastify) {
         };
       }
 
-      // Delete all found documents
-      let deleted = 0;
-      const errors = [];
-
-      for (const doc of docs) {
-        try {
-          await removeDocument(doc.id);
-          deleted++;
-        } catch (err) {
-          errors.push({ id: doc.id, error: err.message });
-        }
-      }
+      const r = await softDeleteDocs(docs.map((d) => d.id), { reason: `admin: delete by author ${author}` });
+      const deleted = r.deleted ?? 0;
+      const errors = (r.refused || []).map((x) => ({ id: x.id, error: x.why }));
 
       logger.info({ author, deleted, errors: errors.length }, 'Deleted documents by author');
 

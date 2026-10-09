@@ -5,6 +5,7 @@
 // Prints the catalog JSON to stdout: { generatedAt, source, counts, books:[{id,genre,title}] }. Logs to stderr.
 //   node scripts/classify-bahai-books.mjs > api/lib/bahai-history-catalog.json   (run where the DB + key live)
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
+import fs from 'fs';
 import { queryAll } from '../api/lib/db.js';
 import { chatCompletion } from '../api/lib/ai.js';
 

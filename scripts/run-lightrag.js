@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global AbortController */
 /**
  * LightRAG Entity Extraction v3
  *

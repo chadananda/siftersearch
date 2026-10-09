@@ -43,9 +43,9 @@ export function interpreterOf(line) {
 /** A translator named in a document title: "Ozymandius - tr William McCants", "… (trans. Juan Cole)". */
 export function titleTranslator(title) {
   const t = String(title || '');
-  const m = t.match(/\s[-–—]\s*tr(?:ans(?:lated)?)?\.?\s+(?:by\s+)?([^()\[\]]{3,60})$/i)
+  const m = t.match(/\s[-–—]\s*tr(?:ans(?:lated)?)?\.?\s+(?:by\s+)?([^()[\]]{3,60})$/i)
     || t.match(/\((?:tr|trans|translated)\.?\s+(?:by\s+)?([^()]{3,60})\)/i)
-    || t.match(/\btranslated\s+by\s+([^()\[\],;]{3,60})/i);
+    || t.match(/\btranslated\s+by\s+([^()[\],;]{3,60})/i);
   return m ? canonicalTranslator(m[1]) : null;
 }
 

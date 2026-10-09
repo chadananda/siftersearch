@@ -50,6 +50,7 @@ export const shareKey = (a, b) => { const B = skeletonKeys(b); for (const k of s
 // is unambiguous. Perso-Arabic script already omits short vowels, so the letters ARE the consonantal skeleton — we
 // only normalise script variants (ك↔ک, ي↔ی, ة↔ه, hamza forms) + strip harakat/tatweel/ZWNJ + honorifics/article.
 // RECALL / compare ONLY (like skeletonKeys) — never a binding decision. Keys are `ar:<token>` (namespaced from Latin).
+// eslint-disable-next-line no-misleading-character-class -- a class of standalone Arabic marks; each is meant to match alone
 const AR_MARKS = /[ً-ْٰـ‌‍‎‏ؐ-ؚۖ-ۭ]/g; // harakat, tatweel, ZWNJ/ZWJ, marks
 const AR_HON = new Set(['حضرت', 'آقا', 'آقاى', 'آقای', 'اقا', 'میرزا', 'ميرزا', 'ملا', 'ملّا', 'مولا', 'شیخ', 'شيخ', 'سید', 'سيد', 'سیّد', 'حاجی', 'حاجى', 'حاجّی', 'حاج', 'جناب', 'مولانا', 'خان', 'بیگ', 'بگ', 'امیر', 'امير', 'مير', 'ابن', 'بن', 'ابو', 'ام', 'الحاج', 'کربلایی', 'مشهدی', 'استاد', 'ملّای']);
 function arNorm(s) {

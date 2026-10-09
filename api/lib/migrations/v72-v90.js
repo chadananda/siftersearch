@@ -1505,6 +1505,31 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_translator ON content(translator) WHERE translator IS NOT NULL');
     logger.info('Migration 141 complete');
   },
+
+  142: async () => {
+    // DOCUMENT FINDER IN SQLITE (planning/architecture-data-access-20261009.md): title / author lookups were answered by
+    // searching the search engine's documents index from four routes — data fetched through an engine. An FTS5 index over
+    // docs answers them in SQLite. It stores FOLDED text (apostrophes removed: the tokenizer splits "Bahá’u’lláh" at them,
+    // so "Bahaullah" never matched) and is kept current by triggers; docs-repo ftsQuery() folds queries the same way.
+    logger.info('Starting migration 142: docs_fts');
+    const fold = (col) => `replace(replace(replace(replace(replace(coalesce(${col}, ''), '’', ''), '‘', ''), '''', ''), 'ʼ', ''), '\`', '')`;
+    const cols = (p) => ['title', 'author', 'collection', 'description'].map((c) => fold(`${p}.${c}`)).join(', ');
+    await query(`CREATE VIRTUAL TABLE IF NOT EXISTS docs_fts USING fts5(title, author, collection, description,
+      tokenize = 'unicode61 remove_diacritics 2')`);
+    await query(`CREATE TRIGGER IF NOT EXISTS docs_fts_ai AFTER INSERT ON docs BEGIN
+      INSERT INTO docs_fts(rowid, title, author, collection, description) VALUES (new.id, ${cols('new')});
+    END`);
+    await query(`CREATE TRIGGER IF NOT EXISTS docs_fts_ad AFTER DELETE ON docs BEGIN
+      DELETE FROM docs_fts WHERE rowid = old.id;
+    END`);
+    await query(`CREATE TRIGGER IF NOT EXISTS docs_fts_au AFTER UPDATE OF title, author, collection, description ON docs BEGIN
+      DELETE FROM docs_fts WHERE rowid = old.id;
+      INSERT INTO docs_fts(rowid, title, author, collection, description) VALUES (new.id, ${cols('new')});
+    END`);
+    await query('DELETE FROM docs_fts');
+    await query(`INSERT INTO docs_fts(rowid, title, author, collection, description) SELECT d.id, ${cols('d')} FROM docs d`);
+    logger.info('Migration 142 complete');
+  },
 };
 
 export const graphMigrations = {

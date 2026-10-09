@@ -66,7 +66,7 @@ export function scopeSql(scope = 'live') {
   return base;
 }
 
-const FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year',
+const FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'external_id', 'scope', 'cover_url', 'encumbered',
   'description', 'file_path', 'file_hash', 'paragraph_count', 'source_site', 'duplicate_of', 'deleted_at',
   'slug', 'created_at', 'updated_at']);
 
@@ -83,8 +83,8 @@ function selectList(fields) {
  * still applies, so recall never returns tombstones or husks unless asked for by name.
  */
 export async function listDocs({
-  scope = 'live', author, religion, collection, language, sourceSite, title, ids, role, filePath,
-  fields, limit = 100, offset = 0,
+  scope = 'live', author, religion, collection, language, sourceSite, title, ids, role, filePath, afterId,
+  fields, orderBy = 'id', limit = 100, offset = 0,
 } = {}) {
   const where = scopeSql(scope);
   const params = [];
@@ -93,7 +93,9 @@ export async function listDocs({
   if (collection) { where.push('d.collection = ?'); params.push(collection); }
   if (language) { where.push('d.language = ?'); params.push(language); }
   if (sourceSite === 'canonical') where.push(IS_CANONICAL);
+  else if (sourceSite === 'library') where.push("(d.source_site IS NULL OR d.source_site = '')");   // the main library's own files
   else if (sourceSite) { where.push('d.source_site = ?'); params.push(sourceSite); }
+  if (afterId != null) { where.push('d.id > ?'); params.push(afterId); }   // keyset paging: each page its own short read
   if (title) { where.push('d.title LIKE ?'); params.push(`%${title}%`); }
   if (role) { where.push('d.doc_role = ?'); params.push(role); }
   if (filePath) { where.push('d.file_path = ?'); params.push(filePath); }   // exact: the doc a library file was ingested as
@@ -101,9 +103,45 @@ export async function listDocs({
 
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const rows = await queryAll(
-    `SELECT ${selectList(fields)} FROM docs d ${clause} ORDER BY d.id LIMIT ? OFFSET ?`,
+    `SELECT ${selectList(fields)} FROM docs d ${clause} ORDER BY ${orderBy === 'title' ? 'd.title COLLATE NOCASE, d.id' : 'd.id'} LIMIT ? OFFSET ?`,
     [...params, Math.min(1000, limit), offset], 'docs-repo:list');
   const total = await queryOne(`SELECT COUNT(*) n FROM docs d ${clause}`, params, 'docs-repo:list-count');
+  return { docs: rows, total: total?.n ?? 0, scope, limit, offset };
+}
+
+/** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised. */
+export function ftsQuery(text) {
+  // apostrophes removed first, as docs_fts stores them (migration 142): "Bahá’u’lláh" / "Baha'u'llah" / "Bahaullah" agree
+  const words = String(text || '').normalize('NFKC').replace(/[’‘'ʼ`]/g, '').toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+  return words.slice(0, 12).map((w) => `"${w}"*`).join(' ');
+}
+
+/**
+ * Find documents by title / author / collection / description — in SQLite (docs_fts, migration 142), never through a
+ * search engine. Ranked by BM25 with the title weighted highest; the visibility scope applies as in listDocs.
+ * `fields` as listDocs. Returns { docs, total } (total = matches under the scope, capped at 1000 for speed).
+ */
+export async function findDocuments(text, { scope = 'live', religion, collection, collectionLike, language, sourceSite, author, authorLike, yearFrom, yearTo, fields, limit = 20, offset = 0 } = {}) {
+  const match = ftsQuery(text);
+  const where = scopeSql(scope);
+  const params = [];
+  if (match) { where.push('d.id IN (SELECT rowid FROM docs_fts WHERE docs_fts MATCH ?)'); params.push(match); }
+  if (religion) { where.push('d.religion = ?'); params.push(religion); }
+  if (collection) { where.push('d.collection = ?'); params.push(collection); }
+  if (collectionLike) { where.push('d.collection LIKE ?'); params.push(`%${collectionLike}%`); }
+  if (language) { where.push('d.language = ?'); params.push(language); }
+  if (author) { where.push('d.author = ?'); params.push(author); }
+  if (authorLike) { where.push('d.author LIKE ?'); params.push(`%${authorLike}%`); }
+  if (yearFrom) { where.push('CAST(d.year AS INTEGER) >= ?'); params.push(Number(yearFrom)); }
+  if (yearTo) { where.push('CAST(d.year AS INTEGER) <= ?'); params.push(Number(yearTo)); }
+  if (sourceSite === 'canonical') where.push(IS_CANONICAL);
+  else if (sourceSite) { where.push('d.source_site = ?'); params.push(sourceSite); }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  // bm25 weights follow the column order: title, author, collection, description
+  const order = match ? `ORDER BY (SELECT bm25(docs_fts, 10.0, 4.0, 1.0, 0.5) FROM docs_fts WHERE docs_fts MATCH ? AND rowid = d.id)` : 'ORDER BY d.title';
+  const rows = await queryAll(`SELECT ${selectList(fields)} FROM docs d ${clause} ${order} LIMIT ? OFFSET ?`,
+    [...params, ...(match ? [match] : []), Math.min(200, limit), offset], 'docs-repo:find');
+  const total = await queryOne(`SELECT COUNT(*) n FROM (SELECT 1 FROM docs d ${clause} LIMIT 1000)`, params, 'docs-repo:find-count');
   return { docs: rows, total: total?.n ?? 0, scope, limit, offset };
 }
 

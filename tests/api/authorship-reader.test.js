@@ -123,7 +123,6 @@ describe('bare attribution lines', () => {
   });
 });
 
-import { speakerOf } from '../../api/lib/authorship/reader.js';
 describe('speakerOf: a figure is the speaker only as the speech verb\'s subject', () => {
   const cases = [
     ['Katherine, who was only 9, wrote to the Master on the same day as her older sister:', null],

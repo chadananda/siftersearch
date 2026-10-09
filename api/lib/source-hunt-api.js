@@ -71,7 +71,7 @@ export function pageText(html = '') {
   const s = String(html).replace(/<(script|style|noscript|svg|nav|footer|header|form)[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (m, inner) => `\n⟦BQ⟧${inner.replace(/<[^>]+>/g, ' ')}⟦/BQ⟧\n`)
     .replace(/<(br|\/p|\/div|\/li|\/h\d)[^>]*>/gi, '\n').replace(/<[^>]+>/g, ' ');
-  return decodeEntities(s).replace(/[ \t ]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
+  return decodeEntities(s).replace(/[ \t\u00A0]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
 }
 
 /** The quotations in an article: blockquotes and text in quotation marks, 8–150 words, de-duplicated, in page order. */

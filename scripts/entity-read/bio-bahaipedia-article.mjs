@@ -32,7 +32,7 @@ console.error(`figures without portrait (imp>=${MIN}): ${people.length}`);
 const out = []; const CONC = 4;
 for (let i = 0; i < people.length; i += CONC) {
   const batch = await Promise.all(people.slice(i, i + CONC).map(async (p) => {
-    let aliases = []; try { aliases = JSON.parse(p.a || '[]'); } catch {}
+    let aliases = []; try { aliases = JSON.parse(p.a || '[]'); } catch { /* best-effort: skip */ }
     const want = new Set([...toks(p.cn), ...aliases.flatMap(toks)]);
     const base = p.cn.replace(/\s*\([^)]*\)\s*$/, '').trim();
     try {

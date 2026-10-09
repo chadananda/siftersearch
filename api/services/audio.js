@@ -5,7 +5,8 @@
  * Supports multiple voices and caches results to prevent duplicate work.
  */
 
-import { getMeili, INDEXES } from '../lib/search.js';
+import { getDoc, getParagraphs } from '../lib/docs-repo.js';
+import { countParagraphs } from '../lib/paragraphs-repo.js';
 import { logger } from '../lib/logger.js';
 import {
   JOB_TYPES,
@@ -109,19 +110,10 @@ export async function processAudioJob(job) {
   await updateJobStatus(job.id, JOB_STATUS.PROCESSING);
 
   try {
-    const meili = getMeili();
-
-    // Get document metadata
-    const document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
-
-    // Get all segments
-    const segmentsResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `doc_id = ${documentId}`,  // INTEGER, no quotes
-      limit: 10000,
-      sort: ['paragraph_index:asc']
-    });
-
-    const segments = segmentsResult.hits;
+    // document + its paragraphs from SQLite (the repos) — never from a search engine's index
+    const document = await getDoc(documentId, { follow: false, fields: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year'] });
+    if (!document) throw new Error(`document ${documentId} not found`);
+    const segments = await getParagraphs(documentId, { proseOnly: false });
     const totalSegments = segments.length;
 
     await updateJobStatus(job.id, JOB_STATUS.PROCESSING, { totalItems: totalSegments });
@@ -344,16 +336,8 @@ export async function getAudioSegment(documentId, segmentId, voice) {
  * Check if audio already exists for document/voice
  */
 export async function audioExists(documentId, voice) {
-  const meili = getMeili();
-
   try {
-    // Get segment count
-    const result = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `doc_id = ${documentId}`,  // INTEGER, no quotes
-      limit: 0
-    });
-
-    const totalSegments = result.estimatedTotalHits;
+    const totalSegments = await countParagraphs(documentId);
 
     // Check cache
     const { queryOne } = await import('../lib/db.js');

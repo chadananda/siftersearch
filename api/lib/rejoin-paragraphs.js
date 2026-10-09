@@ -6,7 +6,7 @@
 // footnote definitions are never joined. Pure.
 
 // sentence-final, allowing a trailing note number ("…the Bahá’í world.5", "…faith.[^3]")
-const END_RE = /[.!?:;”"’'\)\]—…]\s*(\[\^?\d+\]|\d{1,3})?\s*$/;
+const END_RE = /[.!?:;”"’')\]—…]\s*(\[\^?\d+\]|\d{1,3})?\s*$/;
 // judge the text, not its wrapping: trailing emphasis (**, _), escaped / bracketed citations (**\[16\]**, [12, 17]),
 // footnote refs and page tags are stripped first ("…progress of the soul." **\[16\]** ends a sentence)
 // one bounded token at a time — a nested (\s*(…))+\s*$ pattern backtracked exponentially and froze a 35k-file run for 8 h

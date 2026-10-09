@@ -33,7 +33,8 @@
  *   GET  /api/v1/health        - API health check
  */
 
-import { hybridSearch, keywordSearch, getStats, getMeili, INDEXES } from '../lib/search.js';
+import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
+import { findDocuments } from '../lib/docs-repo.js';
 import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-analyzer.js';
 import { keywordTradition } from '../lib/search-plan.js';
@@ -1033,53 +1034,30 @@ export default async function publicApiRoutes(fastify) {
   }, async (request) => {
     const { q, author, religion, collection, language, limit = 20, offset = 0 } = request.query;
 
-    // Try Meilisearch for text search
+    // A search term is answered by the document finder (SQLite FTS, docs-repo) — never a search engine's index.
     if (q && q.trim()) {
-      try {
-        const meili = getMeili();
-        const filters = [];
-        const esc = (s) => s.replace(/"/g, '\\"');
-        if (religion) filters.push(`religion = "${esc(religion)}"`);
-        if (collection) filters.push(`collection = "${esc(collection)}"`);
-        if (language) filters.push(`language = "${esc(language)}"`);
-        if (author) filters.push(`author CONTAINS "${esc(author)}"`);
-
-        // OVER-FETCH, THEN RANK BY TITLE. Meilisearch scores title/author/description together, so a long
-        // description mentioning the words beat the actual book: "Dawn-Breakers" put The Dawn-Breakers at
-        // rank 4, "Paris Talks" put Paris Talks at rank 3. A caller taking the top hit gets the wrong book.
-        const overFetch = Math.min(200, offset + limit + 50);
-        const result = await meili.index(INDEXES.DOCUMENTS).search(q, {
-          limit: overFetch, offset: 0,
-          filter: filters.length > 0 ? filters.join(' AND ') : undefined,
-          attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count']
-        });
-        // Only when the caller actually searched — a plain browse keeps the engine's order.
-        result.hits = (q && q.trim() ? rankByTitle(q, result.hits) : result.hits).slice(offset, offset + limit);
-
-        return {
-          documents: result.hits.map(doc => ({
-            id: doc.id, title: doc.title, author: doc.author,
-            religion: doc.religion, collection: doc.collection,
-            language: doc.language, year: doc.year,
-            description: doc.description, paragraphCount: doc.paragraph_count,
-            url: getDocumentUrl(doc)
-          })),
-          total: result.estimatedTotalHits || 0, limit, offset
-        };
-      } catch (meiliErr) {
-        logger.warn('Meilisearch library search failed, falling back to SQLite:', meiliErr.message);
-      }
+      // OVER-FETCH, THEN RANK BY TITLE: the named work must come first ("Paris Talks" once put Paris Talks at rank 3 when
+      // a long description mentioning the words outscored it); the finder weights titles highest, rankByTitle settles ties.
+      const overFetch = Math.min(200, offset + limit + 50);
+      const found = await findDocuments(q, { religion, collection, language, authorLike: author, limit: overFetch,
+        fields: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count'] });
+      const hits = rankByTitle(q, found.docs).slice(offset, offset + limit);
+      return {
+        documents: hits.map(doc => ({
+          id: doc.id, title: doc.title, author: doc.author,
+          religion: doc.religion, collection: doc.collection,
+          language: doc.language, year: doc.year,
+          description: doc.description, paragraphCount: doc.paragraph_count,
+          url: getDocumentUrl(doc)
+        })),
+        total: found.total, limit, offset
+      };
     }
 
-    // SQLite fallback / pure browse
+    // Browse (no search term)
     const conditions = ['deleted_at IS NULL'];
     const params = [];
 
-    if (q && q.trim()) {
-      conditions.push('(title LIKE ? OR author LIKE ? OR description LIKE ?)');
-      const term = `%${q.trim()}%`;
-      params.push(term, term, term);
-    }
     if (author) { conditions.push('author LIKE ?'); params.push(`%${author}%`); }
     if (religion) { conditions.push('religion = ?'); params.push(religion); }
     if (collection) { conditions.push('collection = ?'); params.push(collection); }

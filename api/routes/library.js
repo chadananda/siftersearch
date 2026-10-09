@@ -17,11 +17,12 @@
  * PUT /api/library/documents/:id/raw - Update source file + re-index (admin)
  */
 
-import { getMeili, INDEXES } from '../lib/search.js';
 import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence to a genuinely absent table
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { findDocuments } from '../lib/docs-repo.js';
+import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
 import { slugifyPath, generateDocSlug, parseDocSlug } from '../lib/slug.js';
@@ -1426,60 +1427,19 @@ Return ONLY the description text, no quotes or formatting.`;
       offset = 0
     } = request.query;
 
-    // If there's a search term, try Meilisearch for full-text search
-    // Falls back to SQLite LIKE if Meilisearch is unavailable
+    // A search term is answered by the document finder (SQLite FTS over title / author / collection / description,
+    // ranked by relevance) — never by a search engine's index (planning/architecture-data-access-20261009.md).
     if (search && search.trim()) {
-      try {
-        const meili = getMeili();
-
-        // Build Meilisearch filter array
-        const filters = [];
-        if (religion) filters.push(`religion = "${religion}"`);
-        if (collection) filters.push(`collection = "${collection}"`);
-        if (language) filters.push(`language = "${language}"`);
-        if (author) filters.push(`author = "${author}"`);
-        if (yearFrom) filters.push(`year >= ${yearFrom}`);
-        if (yearTo) filters.push(`year <= ${yearTo}`);
-
-        const searchOptions = {
-          limit,
-          offset,
-          attributesToRetrieve: [
-            'id', 'title', 'author', 'religion', 'collection',
-            'language', 'year', 'description', 'paragraph_count',
-            'authority', 'created_at', 'updated_at', 'cover_url'
-          ]
-        };
-
-        if (filters.length > 0) {
-          searchOptions.filter = filters.join(' AND ');
-        }
-
-        const result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
-
-        return {
-          documents: result.hits.map(doc => ({ ...doc, status: 'indexed' })),
-          total: result.estimatedTotalHits || 0,
-          limit,
-          offset
-        };
-      } catch (meiliErr) {
-        logger.warn('Meilisearch documents search failed, falling back to SQLite:', meiliErr.message);
-        // Fall through to SQLite query below with search added as LIKE filter
-      }
+      const r = await findDocuments(search, { religion, collection, language, author, yearFrom, yearTo, limit, offset,
+        fields: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count', 'created_at', 'updated_at', 'cover_url'] });
+      const documents = r.docs.map((d) => { let authority = null; try { authority = getAuthority(d); } catch { /* none */ } return { ...d, authority, status: 'indexed' }; });
+      return { documents, total: r.total, limit, offset };
     }
 
-    // Pure listing (or Meilisearch fallback) - use SQLite for browsing
+    // Browsing (no search term)
     // Build SQL WHERE clauses (always exclude soft-deleted)
     const conditions = ['deleted_at IS NULL'];
     const params = [];
-
-    // SQLite fallback for text search (when Meilisearch is unavailable or no search term)
-    if (search && search.trim()) {
-      conditions.push('(title LIKE ? OR author LIKE ? OR description LIKE ?)');
-      const term = `%${search.trim()}%`;
-      params.push(term, term, term);
-    }
 
     if (religion) {
       conditions.push('religion = ?');
@@ -2045,42 +2005,11 @@ Return ONLY the description text, no quotes or formatting.`;
       }
     }
 
-    // Also push to Meilisearch for search consistency (immediate update)
-    const meili = getMeili();
-    const updatedDoc = {
-      ...document,
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-
-    try {
-      await meili.index(INDEXES.DOCUMENTS).updateDocuments([updatedDoc]);
-
-      // Update paragraphs with inherited metadata if relevant fields changed
-      if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
-        const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-          filter: `doc_id = ${id}`,  // INTEGER, no quotes
-          limit: 10000,
-          attributesToRetrieve: ['id']
-        });
-
-        const paragraphUpdates = parasResult.hits.map(p => ({
-          id: p.id,
-          ...(updates.title && { title: updates.title }),
-          ...(updates.author && { author: updates.author }),
-          ...(updates.religion && { religion: updates.religion }),
-          ...(updates.collection && { collection: updates.collection }),
-          ...(updates.language && { language: updates.language }),
-          ...(updates.year && { year: updates.year })
-        }));
-
-        if (paragraphUpdates.length > 0) {
-          await meili.index(INDEXES.PARAGRAPHS).updateDocuments(paragraphUpdates);
-        }
-      }
-    } catch (err) {
-      logger.warn({ err: err.message, id }, 'Failed to sync document update to Meilisearch');
-    }
+    // Search indexes are written ONLY by the sync worker (planning/architecture-data-access-20261009.md): mark the doc's
+    // paragraphs dirty and it re-indexes them — doc record included — with the one document builder. (The direct write that
+    // stood here also stamped the BOOK author on every paragraph, overwriting each paragraph's own writer.)
+    const updatedDoc = { ...document, ...updates, updated_at: new Date().toISOString() };
+    await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id]);
 
     logger.info({ documentId: id, updates: Object.keys(updates) }, 'Document metadata updated');
 

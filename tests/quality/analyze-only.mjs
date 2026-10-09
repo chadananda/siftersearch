@@ -25,13 +25,13 @@ const report = JSON.parse(readFileSync(join(__dirname, resultsName), 'utf-8'));
 const results = report.results || [];
 
 let prevAnalysis = null;
-try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, analysisName), 'utf-8')); } catch {}
+try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, analysisName), 'utf-8')); } catch { /* unreadable entry: skip */ }
 let analysisHistory = [];
-try { analysisHistory = JSON.parse(readFileSync(join(__dirname, analysisHistoryName), 'utf-8')); } catch {}
+try { analysisHistory = JSON.parse(readFileSync(join(__dirname, analysisHistoryName), 'utf-8')); } catch { /* unreadable entry: skip */ }
 let histArr = [];
-try { histArr = JSON.parse(readFileSync(join(__dirname, histName), 'utf-8')); } catch {}
+try { histArr = JSON.parse(readFileSync(join(__dirname, histName), 'utf-8')); } catch { /* unreadable entry: skip */ }
 let changes = [];
-try { changes = JSON.parse(readFileSync(changesPath, 'utf-8')); } catch {}
+try { changes = JSON.parse(readFileSync(changesPath, 'utf-8')); } catch { /* unreadable entry: skip */ }
 
 const failingSample = results.filter(r => !r.ok).slice(0, 30).map(r => ({
   id: r.id, query: r.query, category: r.category,

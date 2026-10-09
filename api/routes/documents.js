@@ -11,9 +11,9 @@
  * GET /api/documents/:id/export/:format - Export in specific format
  */
 
-import { getMeili, INDEXES } from '../lib/search.js';
 import { queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { findDocuments, listDocs } from '../lib/docs-repo.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 
@@ -127,33 +127,12 @@ export default async function documentsRoutes(fastify) {
   }, async (request) => {
     const { limit = 20, offset = 0, religion, collection, language, search } = request.query;
 
-    if (search) {
-      // Text search — Meilisearch is appropriate here
-      const meili = getMeili();
-      const index = meili.index(INDEXES.DOCUMENTS);
-      const filters = [];
-      if (religion) filters.push(`religion = "${religion}"`);
-      if (collection) filters.push(`collection = "${collection}"`);
-      if (language) filters.push(`language = "${language}"`);
-      const results = await index.search(search, {
-        limit, offset,
-        filter: filters.length > 0 ? filters.join(' AND ') : undefined
-      });
-      return { documents: results.hits, total: results.estimatedTotalHits, limit, offset };
-    }
-
-    // Listing/browsing — read from SQLite
-    const conditions = ['deleted_at IS NULL'];
-    const params = [];
-    if (religion) { conditions.push('religion = ?'); params.push(religion); }
-    if (collection) { conditions.push('collection = ?'); params.push(collection); }
-    if (language) { conditions.push('language = ?'); params.push(language); }
-    const where = conditions.join(' AND ');
-    const [countRow, documents] = await Promise.all([
-      queryOne(`SELECT COUNT(*) as total FROM docs WHERE ${where}`, params),
-      queryAll(`SELECT id, title, author, religion, collection, language, year, description, paragraph_count, cover_url, created_at, updated_at FROM docs WHERE ${where} ORDER BY title LIMIT ? OFFSET ?`, [...params, limit, offset])
-    ]);
-    return { documents, total: countRow?.total || 0, limit, offset };
+    // search (title / author words) and browsing both come from SQLite through the document interface — never an engine
+    const fields = ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count', 'cover_url', 'created_at', 'updated_at'];
+    const r = search
+      ? await findDocuments(search, { religion, collection, language, fields, limit, offset })
+      : await listDocs({ religion, collection, language, fields, orderBy: 'title', limit, offset });
+    return { documents: r.docs, total: r.total, limit, offset };
   });
 
   // Get document metadata by ID

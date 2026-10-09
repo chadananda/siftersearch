@@ -176,19 +176,6 @@ export function makeStore() {
       return rows.filter((r) => !skip.has(r.id));
     },
 
-    // Cited claims per paragraph — the knowledge feed for fact-informed HyPE (retrieval stage's optional
-    // getParaClaims port). Keyed by the same pid shape getParagraphs uses. Live (non-superseded) claims only;
-    // statements truncated to prompt-friendly length.
-    async getParaClaims(docId) {
-      const rows = await db.queryAll(
-        `SELECT para_id pid, statement FROM entity_claims
-          WHERE doc_id=? AND superseded_at IS NULL AND statement IS NOT NULL AND statement != ''
-          ORDER BY para_id, id`, [docId]);
-      const byPara = {};
-      for (const r of rows) (byPara[r.pid] ||= []).push(String(r.statement).slice(0, 140));
-      return byPara;
-    },
-
     // Persist promoted concept records. FULL REBUILD, not an append: promotion is deterministic, so
     // re-running must converge rather than accumulate duplicates. concept_entities had never held a row
     // before this — nothing wrote it (verified 2026-08-20), which is why entities was 0 and concepts/link
@@ -206,26 +193,6 @@ export function makeStore() {
       }
       await db.transaction(stmts);   // same batch writer every other save port uses; routes to the single writer
       return concepts.length;
-    },
-
-    // Concept claims per paragraph — the CONCEPT twin of getParaClaims, and the port that lets HyPE ask about
-    // what a doctrinal passage MEANS rather than paraphrase its wording (conceptual-track §7). Same keying as
-    // getParagraphs uses, so retrieval can look up by pid. Renders subject/relation/target into one readable
-    // line because that is what the prompt consumes.
-    //
-    // Returns {} until concepts/extract has run on the doc, which is exactly right: the port is optional and
-    // an empty result leaves every existing book's prompt byte-identical.
-    async getParaConceptClaims(docId) {
-      const rows = await db.queryAll(
-        `SELECT para_id pid, subject, relation, target, statement FROM concept_claims
-          WHERE doc_id=? AND para_id IS NOT NULL AND status != 'rejected'
-          ORDER BY para_id, id`, [docId]);
-      const byPara = {};
-      for (const r of rows) {
-        const line = r.subject && r.target ? `${r.subject} ${r.relation || '—'} ${r.target}` : (r.statement || '');
-        if (line) (byPara[r.pid] ||= []).push(String(line).slice(0, 180));
-      }
-      return byPara;
     },
 
     // Persist source-anchored mentions (INSERT OR IGNORE on the stable anchor). entity_id stays NULL —
@@ -455,11 +422,12 @@ export function makeStore() {
     // so higher = more authoritative; GPB/primary highest), plus title + a snippet for the adjudicator.
     async searchCorpus(query, { limit = 6, religion = null } = {}) {
       try {
-        const { getMeili, INDEXES } = await import('../search.js');
+        // through the search interface (keyword layer) — never a raw engine client (planning/architecture-data-access-20261009.md)
+        const { keywordSearch } = await import('../search.js');
         const { getDocTier } = await import('../doc-tier.js');
         // Fetch extra when scoping by tradition (post-filter drops cross-tradition hits — a Bible/Qur'án passage
-        // that merely shares a name is not this figure). doc_id filterable; religion is post-filtered via the DB.
-        const res = await getMeili().index(INDEXES.PARAGRAPHS).search(String(query).slice(0, 120), { limit: religion ? limit * 4 : limit });
+        // that merely shares a name is not this figure); religion is post-filtered via the DB.
+        const res = await keywordSearch(String(query).slice(0, 120), { limit: religion ? limit * 4 : limit });
         const hits = res.hits || [];
         if (!hits.length) return [];
         const docIds = [...new Set(hits.map((h) => h.doc_id).filter(Boolean))];
@@ -488,10 +456,10 @@ export function makeStore() {
       return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv, basis: f.time_basis, proof: f.proof_verbatim })) };
     },
 
-    // Live search-index coverage for the verify gate. Cast + claims come from the DB (bound = grounded); the
-    // "actually searchable" checks (paragraphs, HyPE, and probes that a real cast name / HyPE question RETURNS)
-    // hit Meili. If Meili is unavailable the searchable counts stay 0 → verify reports "not searchable" (the
-    // correct, fail-closed answer). doc_id is the filterable attribute on both indexes.
+    // Live search-index coverage for the verify gate. Cast + claims come from the DB (bound = grounded); indexed counts
+    // are the worker's confirmed-sync flags; the "actually searchable" probes (a real cast name / HyPE question RETURNS
+    // this book) run through the search interface. If search is unavailable the probes stay 0 → verify reports "not
+    // searchable" (the correct, fail-closed answer).
     async getGroundingCoverage(docId, { probeLimit = 3 } = {}) {
       const castCount = (await db.queryAll(
         `SELECT COUNT(*) n FROM (SELECT entity_id FROM entity_mentions_v2 WHERE doc_id=? AND entity_id IS NOT NULL
@@ -499,16 +467,18 @@ export function makeStore() {
       const claimCount = (await db.queryAll(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
       let paragraphsIndexed = 0, hypeIndexed = 0; const probes = [];
       try {
-        const { getMeili, INDEXES } = await import('../search.js');
-        const meili = getMeili();
-        const filt = `doc_id = ${Number(docId)}`;
-        paragraphsIndexed = (await meili.index(INDEXES.PARAGRAPHS).search('', { filter: filt, limit: 1 })).estimatedTotalHits || 0;
-        hypeIndexed = (await meili.index(INDEXES.HYPE_QUESTIONS).search('', { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+        // counts: what the sync worker CONFIRMED indexed (it sets synced=1 only after the index accepts the batch);
+        // probes: real searches through the search interface, scoped to this book
+        const { keywordSearch, searchHypeQuestions } = await import('../search.js');
+        const filters = { documentId: Number(docId) };
+        paragraphsIndexed = (await db.queryAll('SELECT COUNT(*) n FROM content WHERE doc_id=? AND deleted_at IS NULL AND synced=1', [docId]))[0]?.n || 0;
+        const { HYPE_DONE_SQL } = await import('../pipeline/processed.js');   // the ONE definition of "has HyPE"
+        hypeIndexed = (await db.queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${HYPE_DONE_SQL} AND synced=1`, [docId]))[0]?.n || 0;
         const names = (await db.queryAll(
           `SELECT ge.canonical_name name FROM entity_claims c JOIN graph_entities ge ON ge.id=c.entity_id
             WHERE c.doc_id=? AND c.entity_id IS NOT NULL GROUP BY c.entity_id ORDER BY COUNT(*) DESC LIMIT ?`, [docId, probeLimit])).map((r) => r.name);
         for (const name of names) {
-          const hits = (await meili.index(INDEXES.PARAGRAPHS).search(name, { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+          const hits = ((await keywordSearch(name, { filters, limit: 1 })).hits || []).length;
           probes.push({ kind: 'cast', query: name, hits });
         }
         // NOT a completion measure: this reads the questions THEMSELVES, so it legitimately wants rows that
@@ -517,10 +487,10 @@ export function makeStore() {
         if (hq) {
           let q = String(hq);
           try { const a = JSON.parse(hq); if (Array.isArray(a) && a.length) q = typeof a[0] === 'string' ? a[0] : (a[0].question || a[0].q || q); } catch { q = q.split('\n')[0]; }
-          const hits = (await meili.index(INDEXES.HYPE_QUESTIONS).search(q.slice(0, 120), { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+          const hits = ((await searchHypeQuestions(q.slice(0, 120), { filters, limit: 1 })).hits || []).length;
           probes.push({ kind: 'hype', query: q.slice(0, 80), hits });
         }
-      } catch { /* Meili unavailable → 0s → verify fails closed */ }
+      } catch { /* search unavailable → 0s → verify fails closed */ }
       return { castCount, claimCount, hypeIndexed, paragraphsIndexed, probes };
     },
 

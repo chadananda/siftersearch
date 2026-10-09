@@ -18,6 +18,7 @@ export function stripTashkeel(text) {
  * Also handles underline-combining (U+0332) used in Bahá'í scholarly transliteration.
  */
 export function stripDiacritics(text) {
+  // eslint-disable-next-line no-misleading-character-class -- deliberately a class of combining-mark RANGES, stripped one by one
   return text.normalize('NFD').replace(/[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F\u0332]/g, '');
 }
 

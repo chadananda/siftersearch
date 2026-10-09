@@ -12,6 +12,7 @@
 //     --bulk finalize --n TOTAL   turn indexing on, time the graph build, then probe latency
 // Keys come from the environment, never argv (argv shows up in ps and in logs).
 // Output: one JSON line per checkpoint (stdout). Stop with Ctrl-C; --drop deletes the test index at the end.
+import { performance } from 'node:perf_hooks';
 import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
 

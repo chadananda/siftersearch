@@ -23,7 +23,7 @@ const CTRL = new Set(Object.values(VOCAB).flatMap((s) => s.split(' ')));
 const catOf = (k) => Object.entries(VOCAB).find(([, ks]) => ks.split(' ').includes(k))?.[0] || 'characterization';
 const norm = (m) => { if (m.is_event) return 'participated-in'; return CTRL.has(m.key) ? m.key : 'characterized-as'; };
 
-const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.\-]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.-]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 // person resolver: canonical + aliases → id
 const ents = await queryAll(`SELECT ge.id, ge.canonical_name cn, er.aliases FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.entity_type='person'`);
 const byName = new Map();

@@ -27,7 +27,7 @@ export function canonicalSurface(surface) {
     .replace(/[‘’'`ʻʼ"]/g, '')        // apostrophe zoo: Mashriqu’l → Mashriqul
     .toLowerCase()
     .replace(/^\s*(the|a|an)\s+/, '')                     // article: "the Administrative Order"
-    .replace(/[\s ]+/g, ' ')
+    .replace(/[\s\u00A0]+/g, ' ')
     .trim();
 }
 

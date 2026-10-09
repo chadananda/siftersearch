@@ -8,6 +8,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { loadRows } from './window-core.mjs';
 import { secondaryGuard } from '../../api/lib/authorship/window.js';
+import { getDoc } from '../../api/lib/docs-repo.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true });
@@ -17,7 +18,7 @@ let n = 0, rej = 0, rejIntro = 0;
 const ex = [], by = {};
 for (const f of readdirSync(dir).filter((x) => /^\d+\.json$/.test(x))) {
   const s = JSON.parse(readFileSync(join(dir, f), 'utf8'));
-  const rel = db.prepare('SELECT religion FROM docs WHERE id = ?').get(s.id)?.religion || '';
+  const rel = (await getDoc(s.id, { follow: false, fields: ['id', 'religion'] }))?.religion || '';
   if (!/bah/i.test(rel)) continue;
   const rows = loadRows(db, s.id), raw = new Map(s.labels.map((l) => [l.id, l]));
   rows.forEach((r, i) => {

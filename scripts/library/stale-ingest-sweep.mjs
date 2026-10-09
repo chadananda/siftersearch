@@ -12,6 +12,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { parseDocumentWithBlocks, parseMarkdownFrontmatter } from '../../api/services/ingester.js';
 import { getAuthority } from '../../api/lib/authority.js';
+import { listDocs } from '../../api/lib/docs-repo.js';
 import { config } from '../../api/lib/config.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -21,14 +22,14 @@ const AFTER = Number(opt('--after', 0)), DOCS = Number(opt('--docs', 0));
 const BASE = config.library.basePath;
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
 if (!AFTER) writeFileSync(OUT, '');
-// library files only (scraped sites have their own adapters); id-ordered pages keep each read short
-const page = db.prepare(`SELECT id, file_path, title, author, religion, collection FROM docs
-  WHERE id > ? AND deleted_at IS NULL AND file_path IS NOT NULL AND (source_site IS NULL OR source_site = '') ORDER BY id LIMIT 2000`);
+// library files only (scraped sites have their own adapters), through the document interface (docs-repo)
+const page = async (after) => (await listDocs({ sourceSite: 'library', afterId: after, limit: 1000,
+  fields: ['id', 'file_path', 'title', 'author', 'religion', 'collection'] })).docs.filter((d) => d.file_path);
 const count = db.prepare('SELECT COUNT(*) n FROM content WHERE doc_id = ? AND deleted_at IS NULL');
 let seen = 0, stale = 0, scanned = 0, next = null;
 for (let last = AFTER; ;) {
   if (DOCS && scanned >= DOCS) { next = last; break; }
-  const docs = page.all(last);
+  const docs = await page(last);
   if (!docs.length) break;
   scanned += docs.length;
   last = docs[docs.length - 1].id;

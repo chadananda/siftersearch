@@ -48,7 +48,7 @@ const KEY = apiKey();
 fs.mkdirSync(CACHE, { recursive: true });
 async function get(url, { key = false } = {}) {
   const file = path.join(CACHE, encodeURIComponent(url).slice(-180) + '.json');
-  if (fs.existsSync(file)) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch {} }
+  if (fs.existsSync(file)) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* best-effort: skip */ } }
   const r = await fetch(url, {
     headers: key ? { 'X-API-Key': KEY } : {},
     signal: AbortSignal.timeout(45000),
