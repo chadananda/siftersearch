@@ -56,20 +56,40 @@ const onSubject = (hit, terms) => {
 };
 
 /**
- * Preferred author first, everything else KEPT. The author's own words rank ahead; a compilation, biography or
- * newsletter that quotes them still appears — that is often where a half-remembered tablet actually is. Pure.
+ * Preferred author first, everything else KEPT. The author's own words rank ahead; then passages that QUOTE them
+ * (`quotedIds`: Shoghi Effendi citing Bahá’u’lláh — Chad 10-09: "where does Bahá’u’lláh say X?" should bring up the
+ * passage as Shoghi Effendi quotes it), marked `_quotes`; then the rest — a compilation, biography or newsletter that
+ * quotes them still appears, which is often where a half-remembered tablet actually is. Pure.
  */
-export function preferAuthor(authorHits, broadHits, aliases, limit, terms = []) {
+export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], quotedIds = new Set()) {
   const seen = new Set();
-  const mine = [], others = [];
+  const mine = [], quoting = [], others = [];
   // Promoted = BY the author AND on the question's subject; "his words first" means his words on THIS.
   for (const h of [...authorHits.filter((x) => onSubject(x, terms)), ...broadHits]) {
     if (seen.has(h.id)) continue;
     seen.add(h.id);
     const isMine = byAuthor(h, aliases) && onSubject(h, terms);
-    (isMine ? mine : others).push({ ...h, _authorMatch: byAuthor(h, aliases) });
+    if (isMine) mine.push({ ...h, _authorMatch: true });
+    else if (quotedIds.has(h.id) && onSubject(h, terms)) quoting.push({ ...h, _authorMatch: false, _quotes: aliases[0] });
+    else others.push({ ...h, _authorMatch: byAuthor(h, aliases) });
   }
-  return [...mine, ...others].slice(0, limit);
+  return [...mine, ...quoting, ...others].slice(0, limit);
+}
+
+/** Which of these paragraphs quote the author (content.authors role 'quoted' — the attribution reader + window
+ *  classifier). One small read of the hits' rows; folding as byAuthor. */
+export async function quotingParagraphs(ids, aliases) {
+  const want = [...new Set(ids.filter((x) => Number.isInteger(Number(x))).map(Number))];
+  if (!want.length) return new Set();
+  const { queryAll } = await import('./db.js');
+  const rows = await queryAll(`SELECT id, authors FROM content WHERE id IN (${want.map(() => '?').join(',')})`, want, 'planned-search:voices');
+  const out = new Set();
+  for (const r of rows) {
+    let list = [];
+    try { list = JSON.parse(r.authors || '[]'); } catch { /* none */ }
+    if (list.some((e) => e.role === 'quoted' && aliases.some((a) => foldName(e.name).includes(foldName(a))))) out.add(r.id);
+  }
+  return out;
 }
 
 /**
@@ -107,7 +127,7 @@ export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase:
 export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, hype: false, only: false } : v === 'only' ? { phrase: true, keyword: true, hype: true, only: true }
   : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, hype: !!v.hype, only: !!v.only } : v === false ? { phrase: false, keyword: false, hype: false, only: false } : qdrantDefault();
 
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
@@ -165,7 +185,10 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer)).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
-  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
+  const quotedIds = plan.prefer
+    ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
+    : new Set();
+  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer), quotedIds) : r.results;
   // The resolve had the whole passage search to finish in; it waits only until TARGET_MS from the start, so it never
   // adds latency beyond that — and never loses a race it did not need to (a 1s timer from t0 dropped "iderne" on a
   // busy box whose passage search alone took 1.5s, 2026-09-28).

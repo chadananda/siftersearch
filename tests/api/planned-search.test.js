@@ -248,3 +248,21 @@ describe('questionSubject — the frame of "where does X say Y?" is not the subj
     expect(questionSubject('what does he say about it')).toBe('what does he say about it');
   });
 });
+
+describe('preferAuthor — the author, then passages quoting the author, then the rest (10-09)', async () => {
+  const { preferAuthor } = await import('../../api/lib/planned-search.js');
+  const h = (id, author, text) => ({ id, author, text });
+  it('ranks Shoghi Effendi quoting Bahá’u’lláh after Bahá’u’lláh’s own words and before the rest, marked', () => {
+    const own = h(1, 'Bahá’u’lláh', 'The earth is but one country, and mankind its citizens.');
+    const se = h(2, 'Shoghi Effendi', 'these pregnant words: “The earth is but one country, and mankind its citizens.”');
+    const other = h(3, 'Some Scholar', 'On the idea that the earth is but one country.');
+    const out = preferAuthor([own], [other, se], ['Bahá’u’lláh'], 10, ['earth', 'country'], new Set([2]));
+    expect(out.map((x) => x.id)).toEqual([1, 2, 3]);
+    expect(out[1]._quotes).toBe('Bahá’u’lláh');
+    expect(preferAuthor([own], [other, se], ['Bahá’u’lláh'], 10, ['earth', 'country']).map((x) => x.id)).toEqual([1, 3, 2]);
+  });
+  it('a quoting passage off the subject is not promoted', () => {
+    const se = h(2, 'Shoghi Effendi', 'An unrelated paragraph about the Guardianship.');
+    expect(preferAuthor([], [h(3, 'X', 'the earth is one'), se], ['Bahá’u’lláh'], 10, ['earth'], new Set([2])).map((x) => x.id)).toEqual([3, 2]);
+  });
+});
