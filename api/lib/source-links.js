@@ -4,6 +4,7 @@
 // (the importer stores frontmatter `sourceUrl` in the JSON) — reading only the column produced 0 BahaiLibrary links
 // in 435. Every result also carries a paragraph-exact SifterSearch reader link. Pure; deps: slug.js.
 import { generateDocSlug, slugifyPath } from './slug.js';
+import { rangeUrl, quoteUrl } from './ocean-range.js';
 
 const SITE = 'https://siftersearch.com';
 const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
@@ -19,7 +20,7 @@ export function tierOf(url) {
   return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
 }
 
-const paragraphLevel = (url) => /paraId=|#p\d+|[?&]p=\d+/.test(url || '');
+const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+/.test(url || '');
 
 function parseMeta(metadata) {
   if (!metadata) return null;
@@ -51,12 +52,23 @@ export function readerUrl(doc, paragraphIndex) {
  * @param {object} doc  { id|doc_id, source_url, metadata, religion, collection, slug, filename }
  * @returns {{ url, site, tier, paragraph_level, reader_url }}
  */
-export function linkFor(doc, paragraphIndex) {
+export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
   const reader = readerUrl(doc, paragraphIndex);
   // Every OceanLibrary paragraph has a para_id (the site copy's id="para_N"); search carries it as external_para_id.
   // Attach it here, once, so no search path can hand out a book-level OceanLibrary link when the paragraph is known.
-  const withPara = (u) => (doc.external_para_id && tierOf(u).tier === 1 && !/paraId=/.test(u)
-    ? `${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}` : u);
+  // RANGE LINK (Chad 2026-10-09: "our links are still not range links"): with the site block id (block_attrs.ilm_id),
+  // the book id (docs.external_id) and the text, the link highlights the passage — just the quote when one is given,
+  // else the whole paragraph (lib/ocean-range.js; offsets verified on the live site 10-08).
+  const ilm = doc.ilm_id ?? (() => { try { return JSON.parse(doc.block_attrs || '{}').ilm_id; } catch { return null; } })();
+  const range = (u) => {
+    if (!ilm || !doc.external_id || !doc.text) return null;
+    const para = { para_id: doc.external_para_id, ilm_id: ilm, text: doc.text };
+    return (quote && quoteUrl(u, doc.external_id, para, quote)) || rangeUrl(u, doc.external_id, para);
+  };
+  const withPara = (u) => {
+    if (!doc.external_para_id || tierOf(u).tier !== 1 || /paraId=/.test(u)) return u;
+    return range(u.replace(/[?#].*$/, '')) || `${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`;
+  };
   const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .map((u) => withPara(u))

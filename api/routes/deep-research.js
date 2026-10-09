@@ -53,7 +53,13 @@ export default async function deepResearchRoutes(fastify) {
   fastify.get('/deep-research/slug/:slug', async (req, reply) => {
     const result = await getDeepResearchBySlug(req.params.slug);
     if (!result) return reply.code(404).send({ error: 'Not found' });
-    return { ...result.record, quotes: result.quotes };
+    // each OceanLibrary quote carries a ready citation_url marked with its words — the JSON hook (lib/ocean-links.js)
+    // turns it into a range link highlighting exactly the quote; the research page renders it as is
+    const { oceanQuoteMarker } = await import('../lib/ocean-links.js');
+    const quotes = (result.quotes || []).map((q) => (q.source_site === 'oceanlibrary.com' && q.source_url && q.external_para_id
+      ? { ...q, citation_url: oceanQuoteMarker(`${String(q.source_url).replace(/\/$/, '')}/?paraId=${q.external_para_id}`, q.quote || q.text || null) }
+      : q));
+    return { ...result.record, quotes };
   });
 
   // Email notification signup for pending research (public)

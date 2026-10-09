@@ -184,6 +184,8 @@ async function defaultDeps() {
     // Lean Anis prompt by default; ANIS_PROMPT=jafar uses the 12k-token Jafar crafter (comparison / rollback).
     craft: process.env.ANIS_PROMPT === 'jafar' ? craftAnswerStream : anisCraft,
     stripLinks: stripUngroundedLinks,
+    // OceanLibrary paragraph links → range links (lib/ocean-links.js); injected so tests need no database
+    upgradeLinks: async (s) => (await import('../ocean-links.js')).upgradeOceanLinks(s),
     companion: async (ctx) => {
       const store = companion.companionStore;
       const [globalDials, rel, turnsSoFar, connectOfferedRecently] = await Promise.all([
@@ -237,7 +239,10 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const sourced = (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)) ? await huntSource(d, question) : null;
   if (sourced) {
     // "Where is this from?" is answered by the hunt directly (template, no model call, no companion plan).
-    const reply = fillTags(sourced.reply, sourced.tags);
+    // OceanLibrary range links (lib/ocean-links.js): the reply's links and each citation highlight their passage
+    const up = d.upgradeLinks || (async (x) => x);
+    for (const q of sourced.retrieved) if (q.citation_url) q.citation_url = await up(q.citation_url).catch(() => q.citation_url);
+    const reply = await up(fillTags(sourced.reply, sourced.tags)).catch(() => fillTags(sourced.reply, sourced.tags));
     const citations = sourced.retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
       religion: q.religion, document_id: q.doc_id, paragraph_index: null, text: q.text.slice(0, 300) }));
     onEvent({ type: 'sources', sources: citations, plan: { shape: 'source' }, ms: Date.now() - t0 });
@@ -269,6 +274,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned',
   }));
+  // OceanLibrary range links BEFORE the answer is written: the model copies citation_url verbatim, so the streamed answer
+  // carries links that highlight the passage (the whole paragraph; lib/ocean-links.js). Never blocks the answer on failure.
+  if (d.upgradeLinks) await Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); }));
   const citations = retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
     religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index, text: q.text.slice(0, 300) }));
   // Something useful before the first token (backlog 0023): the sources are known in ~0.2s.

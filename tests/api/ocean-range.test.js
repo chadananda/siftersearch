@@ -47,3 +47,15 @@ describe('ocean-range', () => {
     expect(rangeUrl('https://x', 'b', { ...a, ilm_id: null })).toBeNull();
   });
 });
+
+describe('linkFor gives OceanLibrary range links', () => {
+  it('highlights the quote, else the whole paragraph, and falls back to paraId without the anchors', async () => {
+    const { linkFor } = await import('../../api/lib/source-links.js');
+    const doc = { id: 1, source_url: 'https://oceanlibrary.com/dawn-breakers_nabil', external_para_id: 'para_19', external_id: 'dawn-breakers-prod-version_en',
+      block_attrs: JSON.stringify({ ilm_id: '3a' }), text: 'xx the empires of the S̱háh and the Sulṭán, and it did not occur to them' };
+    const q = decodeURIComponent(linkFor(doc, 5, { quote: 'empires of the S̱háh' }).url);
+    expect(q).toMatch(/^https:\/\/oceanlibrary\.com\/dawn-breakers_nabil\/\?paraId=para_19&selectionString=dawn-breakers-prod-version_en_3a\.5~dawn-breakers-prod-version_en_3a\.\d+$/);
+    expect(decodeURIComponent(linkFor(doc, 5).url)).toMatch(/selectionString=dawn-breakers-prod-version_en_3a\.0~/);
+    expect(linkFor({ ...doc, block_attrs: null }, 5).url).toBe('https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_19');
+  });
+});

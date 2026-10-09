@@ -2402,6 +2402,11 @@ export function buildWebQuestion(userMessage, quote_lookup) {
 
 // llm: { provider: 'openai'|'groq', model, reasoning_effort? } — the Anis chat layer passes a fast model; default gpt-4o.
 export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, companion_append, web_context, comparative, quote_lookup, llm }) {
+  // OceanLibrary range links before the model sees the Q-entries: it copies citation_url verbatim (lib/ocean-links.js)
+  if (Array.isArray(retrieved_quotes) && retrieved_quotes.length) {
+    const { upgradeOceanLinks } = await import('./ocean-links.js');
+    await Promise.all(retrieved_quotes.map(async (q) => { if (q?.citation_url) q.citation_url = await upgradeOceanLinks(q.citation_url).catch(() => q.citation_url); }));
+  }
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
@@ -2655,6 +2660,11 @@ Compose the reply now.`;
 }
 
 export async function craftAnswer({ user_question, retrieved_quotes, conversation_summary, user_intent, previous_draft, gate_feedback, _temperature_override }) {
+  // OceanLibrary range links before the model sees the Q-entries: it copies citation_url verbatim (lib/ocean-links.js)
+  if (Array.isArray(retrieved_quotes) && retrieved_quotes.length) {
+    const { upgradeOceanLinks } = await import('./ocean-links.js');
+    await Promise.all(retrieved_quotes.map(async (q) => { if (q?.citation_url) q.citation_url = await upgradeOceanLinks(q.citation_url).catch(() => q.citation_url); }));
+  }
   const quotesPayload = retrieved_quotes.map((q, i) => {
     const cite = q.citation_url
       ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`

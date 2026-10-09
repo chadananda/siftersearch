@@ -1415,9 +1415,9 @@ export default async function publicApiRoutes(fastify) {
     writeSessionCookieRaw(request, reply);   // the cookie plugin never runs on a raw SSE response
     reply.raw.flushHeaders();
 
-    const sendEvent = (data) => {
-      try { reply.raw.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (_) { /* closed */ }
-    };
+    // in order, with OceanLibrary paragraph links upgraded to range links (lib/ocean-links.js)
+    const { rangeLinkSender } = await import('../lib/ocean-links.js');
+    const sendEvent = rangeLinkSender((json) => reply.raw.write('data: ' + json + '\n\n'));
 
     // Always announce the conversation_id up-front so clients can hold onto it
     // for follow-up turns and eventual /chat/save.
@@ -1510,7 +1510,7 @@ export default async function publicApiRoutes(fastify) {
       sendEvent({ type: 'error', message: err.message || 'Chat failed' });
     }
 
-    reply.raw.end();
+    await sendEvent.flush(); reply.raw.end();
     logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'chat', false).catch(() => {});
   });

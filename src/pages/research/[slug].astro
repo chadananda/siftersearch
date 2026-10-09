@@ -281,6 +281,8 @@ const TOPIC_LABELS: Record<string, string> = {
 
 
 function buildOLSourceUrl(q: any): string | null {
+  // the API's citation_url is already an OceanLibrary range link highlighting the quote (api/lib/ocean-links.js)
+  if (q.citation_url) return q.citation_url;
   if (q.source_site === 'oceanlibrary.com' && q.source_url) {
     return q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url;
   }

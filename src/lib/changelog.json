@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T14:05:29.313Z",
+  "generated": "2026-10-09T15:24:14.084Z",
   "entries": [
+    {
+      "hash": "edf7568f",
+      "date": "2026-10-09",
+      "type": "Docs",
+      "description": "Anís feature requests — any language (careful templating), voice in the plugin (exploration), Anís-only app, book study guides at the reader's level, year-long reading plans with OceanLibrary audio",
+      "scope": "backlog"
+    },
     {
       "hash": "566ac720",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Latency, group membership, people/search shape, people/{id} spec — with tests that fail on the old code",
       "scope": "entities"
-    },
-    {
-      "hash": "71b15490",
-      "date": "2026-08-28",
-      "type": "Docs",
-      "description": "Close the entity-graph ticket — verified results and why the intersection is 6",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "edf7568f",
+        "date": "2026-10-09",
+        "type": "Docs",
+        "description": "Anís feature requests — any language (careful templating), voice in the plugin (exploration), Anís-only app, book study guides at the reader's level, year-long reading plans with OceanLibrary audio",
+        "scope": "backlog"
+      },
       {
         "hash": "566ac720",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Fixed",
         "description": "Latency, group membership, people/search shape, people/{id} spec — with tests that fail on the old code",
         "scope": "entities"
-      },
-      {
-        "hash": "71b15490",
-        "date": "2026-08-28",
-        "type": "Docs",
-        "description": "Close the entity-graph ticket — verified results and why the intersection is 6",
-        "scope": null
       }
     ]
   }

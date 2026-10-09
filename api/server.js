@@ -198,6 +198,20 @@ export async function createServer(opts = {}) {
     reply.header('Expires', '0');
   });
 
+  // OceanLibrary RANGE links everywhere (Chad 2026-10-09): any plain "oceanlibrary.com/<slug>/?paraId=para_N" in a JSON
+  // response — search, public API, entity/graph API, Anís drafts — leaves as a range link highlighting that paragraph
+  // (lib/ocean-links.js; one batched lookup, cached). Responses without such a link pass through after one includes().
+  // Callback style on purpose: the common case (no OceanLibrary link) completes synchronously — an async hook here raced a
+  // route that sends its own reply (ERR_HTTP_HEADERS_SENT in public-api-library tests).
+  server.addHook('onSend', (request, reply, payload, done) => {
+    if (reply.raw.headersSent || typeof payload !== 'string' || !payload.includes('oceanlibrary.com') || !payload.includes('paraId=')
+      || !/json/i.test(String(reply.getHeader('content-type') || ''))) return done(null, payload);
+    import('./lib/ocean-links.js')
+      .then(({ upgradeOceanLinks }) => upgradeOceanLinks(payload))
+      .then((out) => done(null, out))
+      .catch((err) => { request.log.warn({ err: err.message }, 'ocean range links: left as paragraph links'); done(null, payload); });
+  });
+
   // Response logging hook - log response status
   server.addHook('onResponse', async (request, reply) => {
     const { method, url } = request;

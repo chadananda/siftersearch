@@ -1460,9 +1460,9 @@ export default async function chatRoutes(fastify) {
     writeSessionCookieRaw(request, reply);   // the cookie plugin never runs on a raw SSE response
     reply.raw.flushHeaders();
 
-    const sendEvent = (data) => {
-      try { reply.raw.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (_) { /* closed */ }
-    };
+    // in order, with OceanLibrary paragraph links upgraded to range links (lib/ocean-links.js)
+    const { rangeLinkSender } = await import('../lib/ocean-links.js');
+    const sendEvent = rangeLinkSender((json) => reply.raw.write('data: ' + json + '\n\n'));
 
     try {
       // ANIS (default): chat is a LAYER over raw search — the Jev plan + planned retrieval (no LLM), then ONE fast
@@ -1555,12 +1555,12 @@ export default async function chatRoutes(fastify) {
           ...(result.timings ? { timings: result.timings } : {})
         }
       });
-      reply.raw.end();
+      await sendEvent.flush(); reply.raw.end();
 
     } catch (err) {
       logger.error({ err: err.message, stack: err.stack, userId }, 'Chat stream error');
       sendEvent({ type: 'error', message: 'An error occurred. Please try again.' });
-      reply.raw.end();
+      await sendEvent.flush(); reply.raw.end();
     }
 
     return reply;
