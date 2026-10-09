@@ -9,7 +9,7 @@
 // authors_model = window-v10-2026-10-08 where the author changed. Every written row's previous authors / authors_model are
 // appended to <out>/rollback.jsonl first, so a run can be undone exactly. synced is NOT reset: push-meili-authors.mjs carries
 // authors to Meili as a two-field partial update afterwards. Dry run unless --write (needs SIFTER_WRITER_URL).
-//   node scripts/authorship/window-run.mjs <out> (<docId> … | --oceanlibrary) [--concurrency 4] [--write] [--limit N]
+//   node scripts/authorship/window-run.mjs <out> (<docId> … | --oceanlibrary) [--religion bah] [--concurrency 4] [--write] [--limit N]
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
@@ -22,10 +22,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(ROOT, f), quiet: true });
 const { ask } = await import('../../api/lib/systemone.js');
 const { chatCompletion } = await import('../../api/lib/ai.js');
-const VALUED = ['--concurrency', '--limit'];
+const VALUED = ['--concurrency', '--limit', '--religion'];
 const args = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && !VALUED.includes(all[i - 1]));
 const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : d);
 const [OUT, ...IDS] = args;
+// --religion <regex>: only books of that tradition (writes are validated on Bahá’í books only, 10-08)
+const RELIGION = opt('--religion', null) ? new RegExp(opt('--religion'), 'i') : null;
 const WRITE = process.argv.includes('--write'), CONC = Number(opt('--concurrency', 4)), LIMIT = Number(opt('--limit', 0));
 if (WRITE && !process.env.SIFTER_WRITER_URL) throw new Error('SIFTER_WRITER_URL is required to write (tower scripts go through the single writer)');
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true, fileMustExist: true });
@@ -55,7 +57,7 @@ const flush = async () => {
 async function runBook(id) {
   const file = join(OUT, `${id}.json`);
   const d = await getDoc(id, { follow: false, fields: ['id', 'title', 'author', 'religion'] });
-  if (!d) return;
+  if (!d || (RELIGION && !RELIGION.test(d.religion || ''))) return;
   const book = { title: d.title, author: d.author, religion: d.religion };
   const rows = loadRows(db, id);
   let saved;

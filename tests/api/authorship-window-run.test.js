@@ -52,3 +52,16 @@ describe('window run skips no-op author changes', () => {
     expect(nextAuthors(row([{ name: 'Bahá’u’lláh', role: 'author', basis: 'system1' }]), { speaker: '‘Abdu’l-Bahá' }, b).changed).toBe(true);
   });
 });
+
+describe('compilations and on-behalf letters (v18)', () => {
+  it('never sets a compilation default over a paragraph', () => {
+    const b = { author: "Compilation (Bahá'í Writings)" };
+    expect(nextAuthors(row([{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'system1' }]), { speaker: "Compilation (Bahá'í Writings)" }, b)).toBeNull();
+  });
+  it('credits a letter written on behalf of Shoghi Effendi to him', async () => {
+    const { refineLabel } = await import('../../scripts/authorship/window-core.mjs');
+    const r = { text: '“I am directed by Shoghi Effendi to inform you that Mr. Yadullah Mobasser came last February”', heading: '' };
+    const l = refineLabel({ speaker: 'H. Rabbání', quotes: null, conf: 0.8 }, r, { text: 'x' }, null, { author: 'Shoghi Effendi' });
+    expect(l).toMatchObject({ speaker: 'Shoghi Effendi', on_behalf: true });
+  });
+});

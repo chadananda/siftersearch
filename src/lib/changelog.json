@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-08T18:37:47.837Z",
+  "generated": "2026-10-09T02:13:03.048Z",
   "entries": [
+    {
+      "hash": "a6b0ca68",
+      "date": "2026-10-08",
+      "type": "Fixed",
+      "description": "Window classifier v17 — 'the editor' needs editorial evidence (footnote, note-like opening, author named in the third person); the deterministic checks are one idempotent refineLabel, re-applied at write time to labels saved by earlier versions",
+      "scope": "authorship"
+    },
     {
       "hash": "923da697",
       "date": "2026-10-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A second model grades the HyPE questions, because I cannot grade them mechanically",
       "scope": null
-    },
-    {
-      "hash": "aa1eb3c4",
-      "date": "2026-08-26",
-      "type": "Other",
-      "description": "The concurrency dial was never connected",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-08": [
+      {
+        "hash": "a6b0ca68",
+        "date": "2026-10-08",
+        "type": "Fixed",
+        "description": "Window classifier v17 — 'the editor' needs editorial evidence (footnote, note-like opening, author named in the third person); the deterministic checks are one idempotent refineLabel, re-applied at write time to labels saved by earlier versions",
+        "scope": "authorship"
+      },
       {
         "hash": "923da697",
         "date": "2026-10-08",
@@ -7043,15 +7050,6 @@
         "date": "2026-08-27",
         "type": "Other",
         "description": "A second model grades the HyPE questions, because I cannot grade them mechanically",
-        "scope": null
-      }
-    ],
-    "2026-08-26": [
-      {
-        "hash": "aa1eb3c4",
-        "date": "2026-08-26",
-        "type": "Other",
-        "description": "The concurrency dial was never connected",
         "scope": null
       }
     ]

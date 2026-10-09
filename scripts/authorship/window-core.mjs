@@ -1,7 +1,7 @@
 // Windowed paragraph attribution — the per-book engine shared by the eval (window-classify.mjs) and the production run
 // (window-run.mjs). Defaults = v10, the measured best (planning/window-classifier-log.md): hybrid, one pass, LLM only to
 // name "another person", one LLM brief per book. Runs ON tower (System-1 calls logged per task for Laya, Clef shadowed).
-import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, editorHasEvidence, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
+import { canonical, EDITOR, initialRoster, relevantRoster, guardNarration, blockHasEvidence, editorHasEvidence, onBehalfOfShoghiEffendi, isCompiler, windowState, windowQuestions, parseAnswers, needsEscalation, escalationPrompt, parseEscalation, settle, briefPrompt, parseBrief, OTHER } from '../../api/lib/authorship/window.js';
 
 export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
@@ -43,6 +43,7 @@ export function refineLabel(l, row, prevRow, prevLabel, book) {
   if (g.speaker === EDITOR && !g.fixed && !editorHasEvidence(row.text, book.author, { footnote: row.blocktype === 'footnote' || /\{language=/.test(row.text) })) {
     g = { ...g, speaker: book.author, unproven: true };
   }
+  g = onBehalfOfShoghiEffendi(g, row.text);
   return settle(g);
 }
 
@@ -141,10 +142,11 @@ export function nextAuthors(row, label, book) {
   if (!locked && label?.speaker) {
     const isBook = sameAsAuthor(label.speaker, book.author);
     const want = isBook ? { name: book.author, role: 'author', basis: 'book', via: 'window' }
-      : { name: label.speaker === EDITOR ? EDITOR : canonical(label.speaker), role: 'author', basis: 'window', confidence: label.conf };
+      : { name: label.speaker === EDITOR ? EDITOR : canonical(label.speaker), role: 'author', basis: 'window', confidence: label.conf, ...(label.on_behalf ? { on_behalf: true } : {}) };
     // the book's own author needs no entry change: a book default stays as it is (its spelling is the doc's anyway), and a
     // paragraph with no author entry already falls back to the book (dry run 10-08: 4,259 of 5,371 "changes" were these)
-    const noop = isBook && (!own || own.basis === 'book');
+    // a compiler is never an extract's speaker: in a compilation the window never sets the book default over anything
+    const noop = isBook && (!own || own.basis === 'book' || isCompiler(book.author) || /^compilation\b/i.test(book.author));
     if (!noop && (!own || own.name !== want.name || (own.basis === 'book') !== (want.basis === 'book'))) { author = want; changed = true; }
   }
   const speakerName = author?.name;

@@ -208,6 +208,14 @@ export function editorHasEvidence(text, bookAuthor, { footnote = false } = {}) {
   return words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(f)) || !!ALIAS[author]?.test(t);
 }
 
+/** A letter written ON BEHALF of Shoghi Effendi is Shoghi Effendi's (Chad: "on behalf of SE IS SE"). v17 credited his
+ *  secretaries ("I am directed by Shoghi Effendi to inform you…" → H. Rabbání / Rúḥí Afnán). */
+const ON_BEHALF_SE = /\b(directed by (shoghi effendi|the guardian)|on behalf of (shoghi effendi|the (beloved )?guardian)|(our|the) (beloved )?guardian (wishes|desires|hopes|has (asked|instructed|directed)|was (very )?(pleased|happy|glad|sorry)|greatly values|has been (greatly )?encouraged)|he \(the guardian\)|his \((shoghi effendi|the guardian)['’]?s?\))/i;
+export function onBehalfOfShoghiEffendi(label, text) {
+  if (!label?.speaker || label.fixed || label.speaker === EDITOR || FIGURES.includes(canonical(label.speaker))) return label;
+  return ON_BEHALF_SE.test(String(text || '')) ? { ...label, speaker: 'Shoghi Effendi', on_behalf: true } : label;
+}
+
 /** Targets that need the LLM: an unnamed speaker or quoted person, or confidence under `min`. */
 export const needsEscalation = (l, min) => l.speaker === OTHER || l.quotes === OTHER || l.conf < min;
 
