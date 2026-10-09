@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:31:22.046Z",
+  "generated": "2026-10-09T17:33:06.639Z",
   "entries": [
+    {
+      "hash": "17a18adb",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Timeline v2 — spine facts first, pinned years never split one happening, journeys only where attested",
+      "scope": "bio"
+    },
     {
       "hash": "30a616e2",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "State the proof query as a rule, not a headcount",
       "scope": null
-    },
-    {
-      "hash": "e59de5d3",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "The verb picks the edge, the remaining words pick the subject",
-      "scope": "people/search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "17a18adb",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Timeline v2 — spine facts first, pinned years never split one happening, journeys only where attested",
+        "scope": "bio"
+      },
       {
         "hash": "30a616e2",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Docs",
         "description": "State the proof query as a rule, not a headcount",
         "scope": null
-      },
-      {
-        "hash": "e59de5d3",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "The verb picks the edge, the remaining words pick the subject",
-        "scope": "people/search"
       }
     ]
   }

@@ -3,7 +3,7 @@
 // selection, prompt, validated parse. The LLM never invents a citation (unknown keys dropped) or a quote (verbatim only).
 // Built by scripts/bio/build-timelines.mjs; served from BIO_ROOT/timelines/<id>.json by bio.js getBioPerson.
 
-export const TIMELINE_VERSION = 'timeline-v2-2026-10-09';
+export const TIMELINE_VERSION = 'timeline-v3-2026-10-09';
 export const REL_TYPES = ['family', 'teacher', 'student', 'companion', 'guardian', 'protector', 'patron', 'captor', 'adversary', 'persecutor', 'correspondent', 'successor', 'other'];
 
 // The authoritative spine: when sources disagree, these win (GPB, then the narrative it rests on).
@@ -43,7 +43,7 @@ export function selectFacts(characterizations, { cap = 260 } = {}) {
   return picked.map((f, i) => ({ ...f, key: `f${i + 1}` }));
 }
 
-const factLine = (f) => `${f.key} | ${f.when || 'undated'}${f.spine ? ' | AUTHORITATIVE' : ''} | ${f.source || '?'} | ${f.quote}`
+const factLine = (f) => `${f.key} | ${f.when || 'undated'}${f.spine ? ' | AUTHORITATIVE' : ''} | ${f.cite || f.source || '?'} | ${f.quote}`
   + (f.proof ? ` | proof: "${String(f.proof).replace(/\s+/g, ' ').slice(0, 220)}"` : '');
 
 /** The one call: system rules + the person + the numbered facts. */
@@ -53,7 +53,7 @@ Rules:
 - 10 to 25 events in date order covering the whole life (birth/origins, turning points, journeys, imprisonments, writings, death and what followed). Merge facts about the same event into ONE event — never list an event twice.
 - Every event, relationship and journey cites the fact keys it rests on ("cites": ["f12","f40"]). Use no knowledge beyond the facts.
 - ONE event per real happening. Her/his death, an imprisonment, a journey is ONE event however many facts describe it and whatever years those facts carry: merge them all into it.
-- Dates: [stated] = the source gives the date. [estimate] and [pin] = a year guessed from the surrounding narrative, OFTEN WRONG — never date an event from them when a [stated] or AUTHORITATIVE fact (or the death given above) dates it, and never split one happening into several years because pins differ. Write dates as the best fact gives them ("1848", "1848 Jun", "c. 1817"). Facts marked AUTHORITATIVE (God Passes By, The Dawn-Breakers, Memorials of the Faithful) carry the story: build the spine of the timeline from them and use the rest to add detail. When [stated] or AUTHORITATIVE facts disagree (a different year or place), keep one event and say so in "conflict" naming both versions.
+- Dates: [stated] = the source gives the date. [estimate] and [pin] = a year guessed from the surrounding narrative, OFTEN WRONG — never date an event from them when a [stated] or AUTHORITATIVE fact (or the death given above) dates it, and never split one happening into several years because pins differ. Write dates as the best fact gives them ("1848", "1848 Jun", "c. 1817"). SEQUENCE: The Dawn-Breakers (DB) and God Passes By (GPB) are narratives told in order, so their paragraph numbers (DB ¶467 comes after DB ¶300) give the TRUE ORDER of events whatever year a pin says; order events by them and date pinned events to fit. Facts marked AUTHORITATIVE (God Passes By, The Dawn-Breakers, Memorials of the Faithful) carry the story: build the spine of the timeline from them and use the rest to add detail. When [stated] or AUTHORITATIVE facts disagree (a different year or place), keep one event and say so in "conflict" naming both versions.
 - "text": 1–3 plain sentences, past tense, no praise beyond what the sources say.
 - "quote" (optional, at most one per event, use sparingly for memorable words): a span copied EXACTLY from one cited fact's proof, with "quote_cite" its key.
 - relationships: the people most important in this life, type one of ${REL_TYPES.join(', ')}; "note" says how (e.g. "uncle and father-in-law").
