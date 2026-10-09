@@ -73,8 +73,12 @@ export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], 
     else if (quotedIds.has(h.id) && onSubject(h, terms)) quoting.push({ ...h, _authorMatch: false, _quotes: aliases[0] });
     else others.push({ ...h, _authorMatch: byAuthor(h, aliases) });
   }
-  return [...mine, ...quoting, ...others].slice(0, limit);
+  // the author's best few, then the quoting passages: a filter-matched list of the author's own paragraphs runs weak fast
+  // ("This Youth hath departed out of this country" for "the earth is but one country") and pushed Shoghi Effendi's
+  // quotation of the very passage off an 8-hit page (10-09)
+  return [...mine.slice(0, OWN_FIRST), ...quoting, ...mine.slice(OWN_FIRST), ...others].slice(0, limit);
 }
+const OWN_FIRST = 3;
 
 /** Which of these paragraphs quote the author (content.authors role 'quoted' — the attribution reader + window
  *  classifier). One small read of the hits' rows; folding as byAuthor. */

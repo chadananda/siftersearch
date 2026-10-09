@@ -261,6 +261,11 @@ describe('preferAuthor — the author, then passages quoting the author, then th
     expect(out[1]._quotes).toBe('Bahá’u’lláh');
     expect(preferAuthor([own], [other, se], ['Bahá’u’lláh'], 10, ['earth', 'country']).map((x) => x.id)).toEqual([1, 3, 2]);
   });
+  it('quoting passages come after the author’s best three, not after all of them', () => {
+    const own = [1, 2, 3, 4, 5].map((i) => h(i, 'Bahá’u’lláh', `the earth ${i}`));
+    const se = h(9, 'Shoghi Effendi', 'quoting: the earth is but one country');
+    expect(preferAuthor(own, [se], ['Bahá’u’lláh'], 5, ['earth'], new Set([9])).map((x) => x.id)).toEqual([1, 2, 3, 9, 4]);
+  });
   it('a quoting passage off the subject is not promoted', () => {
     const se = h(2, 'Shoghi Effendi', 'An unrelated paragraph about the Guardianship.');
     expect(preferAuthor([], [h(3, 'X', 'the earth is one'), se], ['Bahá’u’lláh'], 10, ['earth'], new Set([2])).map((x) => x.id)).toEqual([3, 2]);
