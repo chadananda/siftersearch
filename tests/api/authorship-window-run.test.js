@@ -74,4 +74,17 @@ describe('Shoghi Effendi secretaries (v18b)', () => {
     expect(refineLabel({ speaker: 'R. Rabbání', conf: 0.8 }, { text: '“The Guardian’s motive in giving the believers the promise of one year’s respite was to alleviate the burden.”' }, null, null, se)).toMatchObject({ speaker: 'Shoghi Effendi' });
     expect(refineLabel({ speaker: 'Public Relations Committee', conf: 0.8 }, { text: '“Though it has been grievous to us to forego our advertising schedule, the Committee recognizes…”' }, null, null, se).speaker).toBe('Public Relations Committee');
   });
+  it('never overwrites a byline or dialogue speaker (pilgrim notes, 10-09)', () => {
+    const cal = { author: 'Frances Orr Allen' };
+    expect(nextAuthors(row([{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'byline' }]), { speaker: 'Frances Orr Allen' }, cal)?.changed).toBeFalsy();
+    expect(nextAuthors(row([{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'dialogue' }]), { speaker: 'Frances Orr Allen' }, cal)?.changed).toBeFalsy();
+  });
+  it('noDemote keeps a named speaker instead of the book author, but still promotes book defaults', () => {
+    const cal = { author: 'Frances Orr Allen' };
+    const named = row([{ name: '‘Abdu’l-Bahá', role: 'author', basis: 'system1' }]);
+    expect(nextAuthors(named, { speaker: 'Frances Orr Allen' }, cal).changed).toBe(true);
+    expect(nextAuthors(named, { speaker: 'Frances Orr Allen' }, cal, { noDemote: true })?.changed).toBeFalsy();
+    const dflt = row([{ name: 'Frances Orr Allen', role: 'author', basis: 'book' }]);
+    expect(nextAuthors(dflt, { speaker: '‘Abdu’l-Bahá' }, cal, { noDemote: true }).changed).toBe(true);
+  });
 });

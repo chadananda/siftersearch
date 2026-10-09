@@ -7,7 +7,9 @@ export const TASK = 'paragraph-speaker-window';
 export const WINDOW_MODEL = 'window-v10-2026-10-08';
 // basis of an author entry the reader took from evidence on the page — fixed, never re-asked, never overwritten
 // source_link: the paragraph is the text of a known source (New Era ¶456, ‘Abdu’l-Bahá's prayer, was overwritten without it)
-export const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work', 'source_link', 'trailer-prev']);
+// byline / dialogue: a speaker heading ("ADDRESS BY ‘ABDU’L-BAHÁ") or a Q./A. line — 10-09 secondary spot-check: pilgrim notes
+// lost ‘Abdu’l-Bahá's prayers and talks to the note-taker when these were open to the window
+export const STRONG = new Set(['trailer', 'reference', 'section', 'lead-in', 'identical-text', 'official-section', 'official-work', 'trailer-work', 'source_link', 'trailer-prev', 'byline', 'dialogue']);
 const BACK = 5, AHEAD = 5;
 
 /** A book's paragraphs in order, each with the full heading path (chapter › section › extract) when the ingest kept it. */
@@ -133,7 +135,9 @@ export const sameAsAuthor = (name, author) => {
 
 
 /** The authors list a paragraph should have after this run, or null when nothing changes. */
-export function nextAuthors(row, label, book) {
+// noDemote (secondary literature, 10-09): never hand a paragraph already credited to a named person back to the book's
+// author — the spot-check found those demotions wrong far more often than right (diaries, pilgrim notes); additions only.
+export function nextAuthors(row, label, book, { noDemote = false } = {}) {
   const cur = JSON.parse(row.authors || '[]');
   const own = cur.find((e) => e.role === 'author');
   const structural = !own && cur.some((e) => ['heading', 'reference', 'meta'].includes(e.role));
@@ -146,7 +150,8 @@ export function nextAuthors(row, label, book) {
     // the book's own author needs no entry change: a book default stays as it is (its spelling is the doc's anyway), and a
     // paragraph with no author entry already falls back to the book (dry run 10-08: 4,259 of 5,371 "changes" were these)
     // a compiler is never an extract's speaker: in a compilation the window never sets the book default over anything
-    const noop = isBook && (!own || own.basis === 'book' || isCompiler(book.author) || /^compilation\b/i.test(book.author));
+    const noop = isBook && (!own || own.basis === 'book' || isCompiler(book.author) || /^compilation\b/i.test(book.author)
+      || (noDemote && own && !sameAsAuthor(own.name, book.author)));
     if (!noop && (!own || own.name !== want.name || (own.basis === 'book') !== (want.basis === 'book'))) { author = want; changed = true; }
   }
   const speakerName = author?.name;

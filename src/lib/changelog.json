@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:47:03.307Z",
+  "generated": "2026-10-09T18:06:46.893Z",
   "entries": [
+    {
+      "hash": "4039ebbc",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Verify quick_check gets a 2h cap (42GB copy passed 30min under load), steps timed, a timeout alarms as UNVERIFIED not FAILED",
+      "scope": "backup"
+    },
     {
       "hash": "712a7f09",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Drop \"once live\" — the page exists, so both surfaces name it live",
       "scope": "docs"
-    },
-    {
-      "hash": "10808a24",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Stop rewriting the cheat sheet — verbatim, first, unwrapped; and point entity-search at the app",
-      "scope": "docs"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "4039ebbc",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Verify quick_check gets a 2h cap (42GB copy passed 30min under load), steps timed, a timeout alarms as UNVERIFIED not FAILED",
+        "scope": "backup"
+      },
       {
         "hash": "712a7f09",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "Drop \"once live\" — the page exists, so both surfaces name it live",
-        "scope": "docs"
-      },
-      {
-        "hash": "10808a24",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Stop rewriting the cheat sheet — verbatim, first, unwrapped; and point entity-search at the app",
         "scope": "docs"
       }
     ]

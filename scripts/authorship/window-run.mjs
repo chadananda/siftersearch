@@ -47,7 +47,8 @@ if (process.argv.includes('--oceanlibrary')) {
     if (page.docs.length < 1000) break;
   }
 }
-if (process.argv.includes('--secondary')) {
+const SECONDARY = process.argv.includes('--secondary');
+if (SECONDARY) {
   ids = [];
   for (let offset = 0; ; offset += 1000) {
     const page = await listDocs({ scope: 'canonicalWithProse', fields: ['id', 'title', 'author', 'religion', 'collection', 'source_site'], limit: 1000, offset });
@@ -87,7 +88,7 @@ async function runBook(id) {
   rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book)); });
   for (const r of rows) {
     stats.paras++;
-    const n = nextAuthors(r, byId.get(r.id), book);
+    const n = nextAuthors(r, byId.get(r.id), book, { noDemote: SECONDARY });
     if (!n) continue;
     if (n.changed) stats.author_changed++;
     if (n.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;
