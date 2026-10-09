@@ -48,7 +48,10 @@ export function refineLabel(l, row, prevRow, prevLabel, book, { secondary = fals
   let g = guardNarration(clean, row.text);
   if (g.narrated && !g.speaker) g = { ...g, speaker: book.author };
   if (g.speaker && !g.fixed && g.speaker !== EDITOR && g.speaker !== book.author
-    && !blockHasEvidence(g.speaker, { text: row.text, prevText: prevRow?.text, prevSpeaker: prevLabel?.speaker, heading: row.heading })) {
+    // secondary: the model's own label for the previous paragraph counts as continuation too — otherwise one rejected
+    // half rejects the rest of a quotation split across paragraphs ("…asked Me concern-" / "ing the nature of…")
+    && !blockHasEvidence(g.speaker, { text: row.text, prevText: prevRow?.text, heading: row.heading,
+      prevSpeaker: secondary && prevRaw?.speaker === g.speaker ? g.speaker : prevLabel?.speaker })) {
     g = { ...g, speaker: book.author, unproven: true };
   }
   if (g.speaker === EDITOR && !g.fixed && !editorHasEvidence(row.text, book.author, { footnote: row.blocktype === 'footnote' || /\{language=/.test(row.text) })) {

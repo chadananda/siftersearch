@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T18:56:03.229Z",
+  "generated": "2026-10-09T18:57:18.513Z",
   "entries": [
+    {
+      "hash": "d22db81d",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Secondary guard — no cascade down split quotations, signatures are not subjects, kinship names do not introduce",
+      "scope": "authorship"
+    },
     {
       "hash": "2c1276cf",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Sync outstanding laptop work before boss migration",
       "scope": null
-    },
-    {
-      "hash": "67513752",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Move the /who-was-at/badasht link onto the Letters of the Living card",
-      "scope": "docs"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "d22db81d",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Secondary guard — no cascade down split quotations, signatures are not subjects, kinship names do not introduce",
+        "scope": "authorship"
+      },
       {
         "hash": "2c1276cf",
         "date": "2026-10-09",
@@ -7042,15 +7049,6 @@
         "type": "Chore",
         "description": "Sync outstanding laptop work before boss migration",
         "scope": null
-      }
-    ],
-    "2026-08-28": [
-      {
-        "hash": "67513752",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Move the /who-was-at/badasht link onto the Letters of the Living card",
-        "scope": "docs"
       }
     ]
   }

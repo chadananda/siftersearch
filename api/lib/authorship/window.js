@@ -242,7 +242,7 @@ export function secondaryGuard(label, { text, prevText = '', prevSpeaker = null,
   const attributes = /\b(address|talk|words?|letters?|tablets?|prayers?|writings?|extracts?|by|from|message)\b/i.test(heading || '');
   // the model's own label for the previous paragraph counts too: a rejection must not cascade down a split quotation
   const stillOpen = (prevSpeaker === label.speaker || prevRawSpeaker === label.speaker) && !/[”"]\s*\S{0,4}$/.test(p);
-  const given = (named(p.slice(-400)) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
+  const given = (named(p.slice(-1500)) && introduces) || stillOpen || (attributes && named(heading)) || named(String(text).slice(-160));
   return given ? label : { ...label, speaker: null, unproven: true };
 }
 
