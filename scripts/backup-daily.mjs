@@ -45,7 +45,10 @@ const LIVE_DB = process.env.SIFTER_DB_PATH || join(ROOT, 'data', 'sifter.db');
 const alarm = (subject, text) => (TO ? sendEmail({ to: TO, subject, text }).catch((e) => logger.error({ err: e.message }, 'backup alarm email failed')) : Promise.resolve());
 // argv, not a shell string: BACKUP_DIR and SIFTER_DB_PATH are env-set paths, and this
 // runs unattended every night against the corpus. Matches api/lib/backup.js.
-const sql = (db, q) => execFileSync('sqlite3', [db, q], { stdio: 'pipe', timeout: 30 * 60 * 1000 }).toString().trim();
+// quick_check reads the whole ~42GB copy off /tank: 25-38 min on a quiet box, and it grows daily — 10-09 it passed the
+// old 30-min cap under load and the alarm said "VERIFY failed" for a snapshot that was fine. 2h cap; each step is timed.
+const sql = (db, q, mins = 120) => execFileSync('sqlite3', [db, q], { stdio: 'pipe', timeout: mins * 60 * 1000 }).toString().trim();
+const timed = (label, fn) => { const s = Date.now(); try { return fn(); } finally { verify.secs[label] = Math.round((Date.now() - s) / 1000); } };
 
 const t0 = Date.now();
 const problems = [];
@@ -67,24 +70,27 @@ try {
 // ── 2. VERIFY today's sqlite snapshot ────────────────────────────────────────
 const today = new Date().toISOString().slice(0, 10);
 const snap = join(BACKUP_DIR, `sifter-${today}.db`);
-let verify = { ok: false, quickCheck: null, docsLive: -1, docsSnap: -1 };
+let verify = { ok: false, quickCheck: null, docsLive: -1, docsSnap: -1, secs: {}, timedOut: false };
 try {
   if (!fs.existsSync(snap)) throw new Error(`snapshot missing: ${snap}`);
   const size = fs.statSync(snap).size;
   if (size < 1e9) throw new Error(`snapshot suspiciously small: ${(size / 1e9).toFixed(2)}GB`);
-  verify.quickCheck = sql(snap, 'PRAGMA quick_check(5);');
+  verify.quickCheck = timed('quick_check', () => sql(snap, 'PRAGMA quick_check(5);'));
   if (verify.quickCheck !== 'ok') throw new Error(`quick_check: ${verify.quickCheck.slice(0, 200)}`);
-  verify.docsSnap = Number(sql(snap, 'SELECT COUNT(*) FROM docs;'));
-  verify.docsLive = Number(sql(LIVE_DB, 'SELECT COUNT(*) FROM docs;'));
+  verify.docsSnap = Number(timed('count_snap', () => sql(snap, 'SELECT COUNT(*) FROM docs;', 15)));
+  verify.docsLive = Number(timed('count_live', () => sql(LIVE_DB, 'SELECT COUNT(*) FROM docs;', 15)));
   // The live DB moves during the day; the snapshot must be in the same neighborhood, not identical.
   if (!(verify.docsSnap > 0) || Math.abs(verify.docsLive - verify.docsSnap) / Math.max(verify.docsLive, 1) > 0.02) {
     throw new Error(`doc-count drift: snapshot ${verify.docsSnap} vs live ${verify.docsLive}`);
   }
   verify.ok = true;
 } catch (e) {
-  problems.push(`VERIFY failed: ${e.message}`);
+  verify.timedOut = e.code === 'ETIMEDOUT';
+  problems.push(verify.timedOut
+    ? `snapshot UNVERIFIED — a verify step timed out (${JSON.stringify(verify.secs)}s); the copy may be fine: run PRAGMA quick_check on it by hand`
+    : `VERIFY failed: ${e.message}`);
 }
-crumb(`verify done (ok=${verify.ok} quick_check=${String(verify.quickCheck).slice(0, 20)})`);
+crumb(`verify done (ok=${verify.ok} quick_check=${String(verify.quickCheck).slice(0, 20)} secs=${JSON.stringify(verify.secs)})`);
 
 // ── 2b. Second-drive (vault) copy: verify it landed + prune old copies there ─
 const VAULT = (process.env.BACKUP_NAS_TARGET || '').replace(/\/$/, '');
@@ -122,7 +128,7 @@ console.log(JSON.stringify(summary));
 
 if (problems.length) {
   await alarm(
-    '⚠️ SifterSearch DAILY BACKUP FAILED',
+    problems.length === 1 && verify.timedOut ? '⚠️ SifterSearch daily backup UNVERIFIED (verify timed out)' : '⚠️ SifterSearch DAILY BACKUP FAILED',
     `The daily backup did not fully succeed (${mins}min):\n\n- ${problems.join('\n- ')}\n\n` +
     `Snapshot: ${snap}\nVerification: quick_check=${verify.quickCheck ?? 'n/a'}, docs snapshot=${verify.docsSnap} vs live=${verify.docsLive}\n\n` +
     `Backups are the loss-prevention layer — investigate today. (Runs via cron; rerun manually: node scripts/backup-daily.mjs)`);

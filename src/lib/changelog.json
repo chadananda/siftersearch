@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:45:15.359Z",
+  "generated": "2026-10-09T17:47:03.307Z",
   "entries": [
+    {
+      "hash": "712a7f09",
+      "date": "2026-10-09",
+      "type": "Docs",
+      "description": "Answer-quality gap — pre-computed answer units, upstream fact defects, head-to-head battery plan",
+      "scope": "planning"
+    },
     {
       "hash": "9b6f4564",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Stop rewriting the cheat sheet — verbatim, first, unwrapped; and point entity-search at the app",
       "scope": "docs"
-    },
-    {
-      "hash": "7b35e1bf",
-      "date": "2026-08-28",
-      "type": "Docs",
-      "description": "Canonical cheat sheet verbatim at the top of OpenAPI and /docs/api",
-      "scope": "api"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "712a7f09",
+        "date": "2026-10-09",
+        "type": "Docs",
+        "description": "Answer-quality gap — pre-computed answer units, upstream fact defects, head-to-head battery plan",
+        "scope": "planning"
+      },
       {
         "hash": "9b6f4564",
         "date": "2026-10-09",
@@ -7044,13 +7051,6 @@
         "type": "Fixed",
         "description": "Stop rewriting the cheat sheet — verbatim, first, unwrapped; and point entity-search at the app",
         "scope": "docs"
-      },
-      {
-        "hash": "7b35e1bf",
-        "date": "2026-08-28",
-        "type": "Docs",
-        "description": "Canonical cheat sheet verbatim at the top of OpenAPI and /docs/api",
-        "scope": "api"
       }
     ]
   }
