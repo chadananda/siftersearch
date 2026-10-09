@@ -3,8 +3,8 @@
 // selection, prompt, validated parse. The LLM never invents a citation (unknown keys dropped) or a quote (verbatim only).
 // Built by scripts/bio/build-timelines.mjs; served from BIO_ROOT/timelines/<id>.json by bio.js getBioPerson.
 
-export const TIMELINE_VERSION = 'timeline-v1-2026-10-09';
-export const REL_TYPES = ['family', 'teacher', 'student', 'companion', 'guardian', 'patron', 'adversary', 'persecutor', 'correspondent', 'successor', 'other'];
+export const TIMELINE_VERSION = 'timeline-v2-2026-10-09';
+export const REL_TYPES = ['family', 'teacher', 'student', 'companion', 'guardian', 'protector', 'patron', 'captor', 'adversary', 'persecutor', 'correspondent', 'successor', 'other'];
 
 // The authoritative spine: when sources disagree, these win (GPB, then the narrative it rests on).
 const SPINE = [/^God Passes By$/i, /^The Dawn-Breakers/i, /^Memorials of the Faithful$/i, /^A Traveller's Narrative/i];
@@ -15,8 +15,9 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^\p{L}\p{N} ]/gu, ''
 export const yearOf = (when) => { const m = String(when || '').match(/\b(1[5-9]\d\d|20\d\d)\b/); return m ? Number(m[1]) : null; };
 const basisOf = (when) => (String(when || '').match(/\[(\w+)\]/) || [])[1] || null;
 
-/** Pick the facts worth showing the model: deduped, spine and stated dates first, spread across the years of the life
- *  (round-robin by year) so 600 facts about 1848 cannot crowd out the rest. Returns facts with keys f1…fN. */
+/** Pick the facts worth showing the model: deduped; EVERY spine fact first (up to half the cap — the pilot cited The
+ *  Dawn-Breakers once out of 106 facts when the spine competed by year), then the rest spread across the years
+ *  (round-robin) so 600 facts about 1848 cannot crowd out the rest. Returns facts with keys f1…fN. */
 export function selectFacts(characterizations, { cap = 260 } = {}) {
   const seen = new Set(), pool = [];
   for (const c of characterizations || []) {
@@ -27,13 +28,14 @@ export function selectFacts(characterizations, { cap = 260 } = {}) {
     const spine = SPINE.some((r) => r.test(c.source || ''));
     pool.push({ ...c, year: yearOf(c.when), spine, score: (spine ? 4 : 0) + (BASIS[basisOf(c.when)] || 0) + (c.proof ? 1 : 0) });
   }
+  pool.sort((a, b) => b.score - a.score);
+  const picked = pool.filter((f) => f.spine).slice(0, Math.floor(cap / 2));
   const byYear = new Map();
-  for (const f of pool.sort((a, b) => b.score - a.score)) {
+  for (const f of pool.filter((x) => !picked.includes(x))) {
     const y = f.year ?? 'undated';
     if (!byYear.has(y)) byYear.set(y, []);
     byYear.get(y).push(f);
   }
-  const picked = [];
   const buckets = [...byYear.values()];
   for (let round = 0; picked.length < cap && buckets.some((b) => b.length > round); round++)
     for (const b of buckets) if (b[round] && picked.length < cap) picked.push(b[round]);
@@ -50,11 +52,12 @@ export function timelinePrompt(person, facts) {
 Rules:
 - 10 to 25 events in date order covering the whole life (birth/origins, turning points, journeys, imprisonments, writings, death and what followed). Merge facts about the same event into ONE event — never list an event twice.
 - Every event, relationship and journey cites the fact keys it rests on ("cites": ["f12","f40"]). Use no knowledge beyond the facts.
-- Dates: write them as the facts give them ("1848", "1848 Jun", "c. 1817"). Prefer facts marked AUTHORITATIVE and dates marked [stated] over [estimate]/[pin]. When facts disagree (a different year or place), keep one event and say so in "conflict" naming both versions.
+- ONE event per real happening. Her/his death, an imprisonment, a journey is ONE event however many facts describe it and whatever years those facts carry: merge them all into it.
+- Dates: [stated] = the source gives the date. [estimate] and [pin] = a year guessed from the surrounding narrative, OFTEN WRONG — never date an event from them when a [stated] or AUTHORITATIVE fact (or the death given above) dates it, and never split one happening into several years because pins differ. Write dates as the best fact gives them ("1848", "1848 Jun", "c. 1817"). Facts marked AUTHORITATIVE (God Passes By, The Dawn-Breakers, Memorials of the Faithful) carry the story: build the spine of the timeline from them and use the rest to add detail. When [stated] or AUTHORITATIVE facts disagree (a different year or place), keep one event and say so in "conflict" naming both versions.
 - "text": 1–3 plain sentences, past tense, no praise beyond what the sources say.
 - "quote" (optional, at most one per event, use sparingly for memorable words): a span copied EXACTLY from one cited fact's proof, with "quote_cite" its key.
 - relationships: the people most important in this life, type one of ${REL_TYPES.join(', ')}; "note" says how (e.g. "uncle and father-in-law").
-- journeys: places lived in, travelled to or imprisoned in, in order, with year when known.
+- journeys: places lived in, travelled to or imprisoned in, in order, with year when known — ONLY places a cited fact says this person was actually in.
 Answer with JSON only: {"events":[{"date":"","title":"","text":"","cites":[],"quote":"","quote_cite":"","conflict":""}],"relationships":[{"who":"","type":"","note":"","cites":[]}],"journeys":[{"place":"","year":"","note":"","cites":[]}]}`;
   const head = `PERSON: ${person.name}${person.aliases?.length ? ` (also: ${person.aliases.slice(0, 8).join('; ')})` : ''}`
     + `${person.death?.year ? ` — died ${person.death.year}${person.death.place ? ' in ' + person.death.place : ''}` : ''}`

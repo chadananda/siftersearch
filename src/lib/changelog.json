@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-09T17:28:54.247Z",
+  "generated": "2026-10-09T17:31:22.046Z",
   "entries": [
+    {
+      "hash": "30a616e2",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Life-timeline synthesis per person (events, typed relationships, journeys) from cited dossier facts",
+      "scope": "bio"
+    },
     {
       "hash": "f6bc7fd7",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The verb picks the edge, the remaining words pick the subject",
       "scope": "people/search"
-    },
-    {
-      "hash": "b135b9ca",
-      "date": "2026-08-28",
-      "type": "Fixed",
-      "description": "Lock the proof query to membership AND participated-in — no headcount",
-      "scope": "people/search"
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "30a616e2",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Life-timeline synthesis per person (events, typed relationships, journeys) from cited dossier facts",
+        "scope": "bio"
+      },
       {
         "hash": "f6bc7fd7",
         "date": "2026-10-09",
@@ -7043,13 +7050,6 @@
         "date": "2026-08-28",
         "type": "Fixed",
         "description": "The verb picks the edge, the remaining words pick the subject",
-        "scope": "people/search"
-      },
-      {
-        "hash": "b135b9ca",
-        "date": "2026-08-28",
-        "type": "Fixed",
-        "description": "Lock the proof query to membership AND participated-in — no headcount",
         "scope": "people/search"
       }
     ]
