@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:05:18.648Z",
+  "generated": "2026-10-10T19:11:59.223Z",
   "entries": [
+    {
+      "hash": "aab3f89c",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Laya training plan — short states, distil Jev per task, pilot paragraph-attribution",
+      "scope": "planning"
+    },
     {
       "hash": "621edaf1",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Anis chat layer live; open items (Groq tier, date grounding, chat-path search latency)",
       "scope": "plan"
-    },
-    {
-      "hash": "ef50da70",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Search follow-ups with the question they refer to; never borrow a passage about someone else",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "aab3f89c",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Laya training plan — short states, distil Jev per task, pilot paragraph-attribution",
+        "scope": "planning"
+      },
       {
         "hash": "621edaf1",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Docs",
         "description": "Anis chat layer live; open items (Groq tier, date grounding, chat-path search latency)",
         "scope": "plan"
-      },
-      {
-        "hash": "ef50da70",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Search follow-ups with the question they refer to; never borrow a passage about someone else",
-        "scope": "anis"
       }
     ]
   }
