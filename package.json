@@ -71,6 +71,7 @@
     "changelog": "node scripts/generate-changelog.js",
     "prebuild": "node scripts/generate-changelog.js",
     "deploy": "bash scripts/deploy-site.sh",
+    "check:critical": "node scripts/ops/critical-path.mjs",
     "deploy:worker": "bash scripts/deploy-worker.sh",
     "checks": "node scripts/system-checks.mjs",
     "checks:daily": "node scripts/system-checks.mjs --daily",

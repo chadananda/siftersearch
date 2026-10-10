@@ -44,6 +44,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import http from 'http';
+import { createRequire } from 'module';
 
 const execAsync = promisify(exec);
 
@@ -179,6 +180,12 @@ async function checkForUpdates() {
   if (!fetchResult.success) {
     log('error', `Failed to fetch: ${fetchResult.error}`);
     return { hasUpdates: false, error: 'fetch failed' };
+  }
+
+  if (blockedRemote) {
+    const head = (await run(`git rev-parse ${REMOTE}/${BRANCH}`)).stdout.trim();
+    if (head === blockedRemote) { if (VERBOSE) log('info', `Remote ${head} is blocked (invalid config) — waiting for a new commit`); return { hasUpdates: false }; }
+    blockedRemote = null;
   }
 
   // Check if we're behind
@@ -388,6 +395,77 @@ async function isProcessKnown(name) {
   try { return JSON.parse(res.stdout).some(x => x.name === name); } catch { return true; }
 }
 
+// ── SAFETY RAILS (10-10 outage: an ecosystem.config.cjs PM2 6 rejected — one app's max_restarts: -1 — made every
+// startOrReload fail; the delete+start fallback then left siftersearch-api, -worker and -deep-research DELETED for 30
+// minutes, and nobody was told). Now: validate the config before touching any process; roll back a failed start to the
+// previous commit's config; alert immediately; a watchdog every loop restarts and alerts on a missing/unhealthy API.
+let prevSha = null;          // the commit the running processes were started from (set before each pull)
+let blockedRemote = null;    // a remote commit refused for an invalid config — not retried until a newer one arrives
+let apiHealthFails = 0;
+
+async function ecosystemProblems() {
+  try {
+    const { validateEcosystem } = await import('../api/lib/ops/ecosystem-check.js');
+    const req = createRequire(import.meta.url);
+    const p = join(PROJECT_ROOT, 'ecosystem.config.cjs');
+    delete req.cache[req.resolve(p)];
+    return validateEcosystem(req(p), { root: PROJECT_ROOT });
+  } catch (err) {
+    return [`ecosystem.config.cjs does not load: ${err.message}`];
+  }
+}
+
+/** Immediate [ACTION REQUIRED] email (deduped per key, 30 min). Never throws. */
+async function alertNow(key, subject, text) {
+  try {
+    const dotenv = await import('dotenv');
+    dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets'), quiet: true });
+    dotenv.config({ path: join(PROJECT_ROOT, '.env-public'), quiet: true });
+    const { actionRequired } = await import('../api/lib/ops/alert.js');
+    await actionRequired({ key, subject, text, quietMs: 30 * 60 * 1000 });
+  } catch (err) { log('error', `alert failed: ${err.message}`); }
+}
+async function recovered(key) {
+  try { const { clearAlert } = await import('../api/lib/ops/alert.js'); clearAlert(key); } catch { /* none */ }
+}
+
+/** Start one app from the PREVIOUS commit's ecosystem config (the code on disk may be new; the PM2 settings are known-good). */
+async function rollbackStart(name) {
+  if (!prevSha) return false;
+  const file = '/tmp/siftersearch-rollback.config.cjs';
+  const show = await run(`git show ${prevSha}:ecosystem.config.cjs`);
+  if (!show.success) return false;
+  const { writeFileSync } = await import('fs');
+  writeFileSync(file, show.stdout.replace('const PROJECT_ROOT = __dirname;', `const PROJECT_ROOT = ${JSON.stringify(PROJECT_ROOT)};`));
+  const started = await run(`pm2 start ${file} --only ${name}`);
+  return started.success && await isProcessRunning(name);
+}
+
+/** Watchdog (every loop, deploy or not): critical services present + API answering. Restart what is missing; alert. */
+async function watchdog() {
+  for (const name of ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-research']) {
+    if (await isProcessRunning(name)) { await recovered(`down-${name}`); continue; }
+    log('error', `WATCHDOG: ${name} is not online — restarting`);
+    const problems = await ecosystemProblems();
+    let ok = false;
+    if (!problems.length) { const r = await run(`pm2 start ecosystem.config.cjs --only ${name}`); ok = r.success && await isProcessRunning(name); }
+    if (!ok) ok = await rollbackStart(name);
+    if (ok) await run('pm2 save');
+    await alertNow(`down-${name}`, `SifterSearch: ${name} was down`,
+      `The updater's watchdog found ${name} not running and ${ok ? 'restarted it' : 'COULD NOT restart it'}.\n`
+      + (problems.length ? `\necosystem.config.cjs problems:\n- ${problems.join('\n- ')}\n` : '')
+      + `\nCheck: pm2 list; node scripts/ops/critical-path.mjs --local`);
+  }
+  const h = await httpGet(`http://127.0.0.1:${API_PORT}/api/v1/health`, 5000);
+  if (h.ok) { apiHealthFails = 0; await recovered('api-unhealthy'); return; }
+  apiHealthFails++;
+  log('error', `WATCHDOG: API health failed (${apiHealthFails} in a row)`);
+  if (apiHealthFails >= 2) {
+    await alertNow('api-unhealthy', 'SifterSearch API is not answering',
+      `GET /api/v1/health on tower failed ${apiHealthFails} checks in a row (5 minutes apart). The site's search and Anís depend on it.\n\nCheck: pm2 list; pm2 logs siftersearch-api --lines 100; node scripts/ops/critical-path.mjs --local`);
+  }
+}
+
 /**
  * Swap a PM2 process using graceful reload for zero-downtime deploys.
  * For the API (wait_ready=true), PM2 starts the new process, waits for
@@ -416,11 +494,22 @@ async function swapPm2Process(name) {
     return true;
   }
   log('warn', `startOrReload failed for ${name}, falling back to delete+start`);
+  // never delete a running service on a config PM2 will refuse — that is exactly how 10-10 deleted the API
+  const problems = await ecosystemProblems();
+  if (problems.length) {
+    log('error', `NOT deleting ${name}: ecosystem.config.cjs is invalid — ${problems.join('; ')}`);
+    await alertNow(`start-failed-${name}`, `SifterSearch: deploy could not reload ${name}`,
+      `startOrReload failed and the config is invalid, so ${name} was left running on the previous version.\n\n- ${problems.join('\n- ')}`);
+    return false;
+  }
   await run(`pm2 delete ${name}`);
   const restart = await run(`pm2 start ecosystem.config.cjs --only ${name}`);
-  if (!restart.success) {
-    log('error', `Failed to start ${name}: ${restart.error}`);
-    return false;
+  if (!restart.success || !await isProcessRunning(name)) {
+    log('error', `Failed to start ${name}: ${restart.error || 'not online after start'} — rolling back to the previous config`);
+    const ok = await rollbackStart(name);
+    await alertNow(`start-failed-${name}`, `SifterSearch: ${name} failed to start after a deploy`,
+      `pm2 start ${name} failed (${restart.error || 'not online'}). Rollback to the previous commit's config ${ok ? 'SUCCEEDED — the service is up' : 'FAILED — the service is DOWN'}.`);
+    return ok;
   }
   return true;
 }
@@ -477,6 +566,7 @@ async function applyUpdates() {
     }
   }
 
+  prevSha = (await run('git rev-parse HEAD')).stdout.trim() || prevSha;
   // Pull latest
   const pullResult = await run(`git pull ${REMOTE} ${BRANCH}`);
   if (!pullResult.success) {
@@ -484,6 +574,19 @@ async function applyUpdates() {
     return false;
   }
   log('info', 'Pull successful');
+
+  // The new PM2 config must be one PM2 accepts BEFORE any process is touched (10-10 outage). If not: back to the running
+  // commit, block this one until a newer commit arrives, alert.
+  const ecoProblems = await ecosystemProblems();
+  if (ecoProblems.length) {
+    const bad = (await run('git rev-parse HEAD')).stdout.trim();
+    log('error', `Refusing deploy of ${bad}: invalid ecosystem.config.cjs — ${ecoProblems.join('; ')}`);
+    if (prevSha) await run(`git reset --hard ${prevSha}`);
+    blockedRemote = bad;
+    await alertNow('deploy-blocked', 'SifterSearch deploy refused — invalid PM2 config',
+      `Commit ${bad} was NOT deployed; tower stays on ${prevSha}.\n\nProblems:\n- ${ecoProblems.join('\n- ')}\n\nFix and push a new commit.`);
+    return false;
+  }
 
   // Skip npm ci if package-lock.json didn't change
   const lockChanged = await run(`git diff HEAD~1 --name-only -- package-lock.json`);
@@ -580,6 +683,9 @@ async function applyUpdates() {
   } else {
     log('info', 'Post-deploy health check passed');
   }
+  // The whole critical path, not just /health (scripts/ops/critical-path.mjs --local; it emails on failure)
+  const cp = await run('node scripts/ops/critical-path.mjs --local --alert', { timeout: 180000 });
+  log(cp.success ? 'info' : 'error', `Critical path ${cp.success ? 'passed' : 'FAILED'}:\n${(cp.stdout || cp.error || '').trim()}`);
 
   log('info', 'All PM2 processes recreated');
   return true;
@@ -715,6 +821,7 @@ async function main() {
     // Run continuously
     while (true) {
       await runOnce();
+      await watchdog().catch((err) => log('error', `watchdog error: ${err.message}`));
       await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL));
     }
   } else {

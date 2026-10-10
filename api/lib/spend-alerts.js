@@ -3,12 +3,8 @@
 // recipient, subject flagged [ACTION REQUIRED]. A per-minute rate limit is NOT exhaustion (it clears by itself).
 // Dedup is a stamp file per provider (ALERT_DIR), so the API, the worker and scripts never send duplicates.
 // Deps: services/email.js (sendEmail), logger.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { logger } from './logger.js';
+import { actionRequired } from './ops/alert.js';
 
-const QUIET_MS = 6 * 3600 * 1000;
-const alertDir = () => process.env.ALERT_DIR || '/tank/sifter/alerts';
 
 // What "out of credit" looks like, per vendor wording (checked 10-10). Rate limits per minute are excluded below.
 const EXHAUSTED = [
@@ -35,35 +31,14 @@ export function isExhaustion({ status = null, message = '' } = {}) {
  * Never throws and never blocks the caller. Returns true when an alert was sent.
  */
 export async function noteProviderError(provider, err = {}, deps = {}) {
-  try {
-    if (!isExhaustion(err)) return false;
-    if (process.env.VITEST && !deps.sendEmail) return false;   // a test run never mails Chad
-    const dir = deps.dir || alertDir();
-    const stamp = join(dir, `${String(provider).replace(/[^a-z0-9_-]/gi, '_')}.json`);
-    const now = deps.now ?? Date.now();
-    if (existsSync(stamp)) {
-      try { if (now - JSON.parse(readFileSync(stamp, 'utf8')).at < QUIET_MS) return false; } catch { /* resend */ }
-    }
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(stamp, JSON.stringify({ at: now, status: err.status ?? null, message: String(err.message || '').slice(0, 500) }));
-    const to = deps.to || process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
-    if (!to) { logger.error({ provider }, 'OUT OF CREDIT and no alert recipient (set DIGEST_EMAIL)'); return false; }
-    const send = deps.sendEmail || (await import('../services/email.js')).sendEmail;
-    const msg = String(err.message || '').slice(0, 800);
-    await send({
-      to,
-      subject: `[ACTION REQUIRED] SifterSearch: ${provider} is out of credit`,
-      text: `${provider} refused a call because the account has no credit or quota left.\n\n`
-        + `Status: ${err.status ?? 'n/a'}\nProvider message: ${msg}\nTime: ${new Date(now).toISOString()}\n\n`
-        + `Work that depends on ${provider} is failing until the account is topped up. This alert repeats at most every 6 hours.`,
-      html: `<p><strong>${provider}</strong> refused a call because the account has no credit or quota left.</p>`
-        + `<p>Status: ${err.status ?? 'n/a'}<br>Provider message: <code>${msg.replace(/</g, '&lt;')}</code><br>Time: ${new Date(now).toISOString()}</p>`
-        + `<p>Work that depends on ${provider} is failing until the account is topped up. This alert repeats at most every 6 hours.</p>`,
-    });
-    logger.error({ provider, status: err.status }, 'OUT OF CREDIT — alert sent');
-    return true;
-  } catch (e) {
-    logger.warn({ err: e.message, provider }, 'spend alert failed');
-    return false;
-  }
+  if (!isExhaustion(err)) return false;
+  const msg = String(err.message || '').slice(0, 800);
+  const when = new Date(deps.now ?? Date.now()).toISOString();
+  return actionRequired({
+    key: provider,
+    subject: `SifterSearch: ${provider} is out of credit`,
+    text: `${provider} refused a call because the account has no credit or quota left.\n\nStatus: ${err.status ?? 'n/a'}\n`
+      + `Provider message: ${msg}\nTime: ${when}\n\nWork that depends on ${provider} is failing until the account is topped up. `
+      + 'This alert repeats at most every 6 hours.',
+  }, deps);
 }

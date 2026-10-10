@@ -13,9 +13,11 @@ and `wip/` experimental scripts.
 - `dev.js` — `npm run dev`. Spawns API + Astro dev server.
 - `preflight.js` — env-check before dev/start.
 - `migrate.js` — `npm run migrate`. Calls runMigrations.
-- `bump-version.js` — semver bump (used by pre-commit hook).
+- `bump-version.js` — version bump (used by `deploy-site.sh`).
 - `generate-changelog.js` — generates `src/lib/changelog.json` from `git log` (run by `prebuild`).
-- `deploy.js`, `deploy-hooks.js`, `install-hooks.js` — deploy + git hook installers.
+- `deploy-site.sh` — `npm run deploy`: bump → build → wrangler deploy (no git hooks). `deploy-hooks.js` — the updater's server-side deploy hooks.
+- `ops/critical-path.mjs` — end-to-end production check (public; `--local` on tower adds pm2/writer/search/S3; `--alert` emails). Run after every deploy.
+- `start-s3.sh` — tower S3 gateway (versitygw) for pm2 `siftersearch-s3`.
 - `health-check.mjs` — single-pass operational probe (PM2, ports, paragraph counts, etc.).
 - `watchdog.js` — checks PM2 process health, restarts stuck workers.
 - `setup-systemd.js`, `setup-tunnel.js`, `tunnel.js` — server setup.
@@ -62,4 +64,4 @@ with "MASS RESET DETECTED" — that's the signal to restore from backup, not wai
 - 30+ files for diagnostics, batch tests, and abandoned experiments. Treat as throwaway.
 
 ## Hooks
-- `hooks/` — git hooks installed via `npm run setup:hooks`. The pre-commit hook lives at `.git/hooks/pre-commit` (installed; see CLAUDE.md at repo root for what it does).
+- None. Git hooks were removed 10-10 (Chad: "we have our own pipeline"); see the deploy pipeline in the root CLAUDE.md.
