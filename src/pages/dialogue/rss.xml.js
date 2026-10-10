@@ -4,7 +4,6 @@
 // file, API-published conversations fill in the rest. SSR + edge cache, so a newly published dialog appears
 // without a rebuild.
 
-/* global Response */
 
 export const prerender = false;
 

@@ -8,7 +8,6 @@
 //   GET|POST /_mail/review   Chad's signed review page for one draft: edit, send or discard (drafting.js)
 //   cron → mailCron          drafting, outreach planning, daily digest (drafting.js); POST /_mail/run?job=draft|outreach|welcome|digest runs one now
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
-/* global btoa */
 import { AwsClient } from 'aws4fetch';
 import PostalMime from 'postal-mime';
 import { verifySns, isAmazonUrl } from './sns.js';

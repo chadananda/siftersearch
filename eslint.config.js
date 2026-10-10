@@ -22,6 +22,17 @@ export default [
         fetch: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',
+        // standard Node (18+) runtime globals — missing ones made each new script re-import them (10-09)
+        performance: 'readonly',
+        queueMicrotask: 'readonly',
+        structuredClone: 'readonly',
+        Blob: 'readonly',
+        FormData: 'readonly',
+        Headers: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        atob: 'readonly',
+        btoa: 'readonly',
         // Browser globals
         window: 'readonly',
         document: 'readonly',

@@ -9,7 +9,6 @@
 
 import { getCollection } from 'astro:content';
 
-/* global Response */
 
 export const prerender = false;
 

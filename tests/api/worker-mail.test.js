@@ -1,5 +1,4 @@
 // Worker mail: SNS signature verification (throwaway fixture cert), SES event → rows, threading, From encoding.
-/* global Response */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { createSign } from 'crypto';

@@ -7,7 +7,6 @@
  * Usage: Access via /sitemap-library.xml
  */
 
-/* global Response */
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const SITE_URL = import.meta.env.SITE || 'https://siftersearch.com';

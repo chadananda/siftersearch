@@ -1,7 +1,6 @@
 // SNS message verification for the Worker's mail endpoints (pure + WebCrypto; no deps). Every SNS POST is
 // signature-checked against Amazon's signing cert (host pinned to sns.<region>.amazonaws.com) and its TopicArn
 // must be one of ours — the endpoints are public URLs, so an unsigned or foreign message is dropped.
-/* global atob */
 
 const CERT_HOST = /^sns\.[a-z0-9-]+\.amazonaws\.com(\.cn)?$/;
 
