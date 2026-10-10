@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:30:52.804Z",
+  "generated": "2026-10-10T20:35:15.800Z",
   "entries": [
+    {
+      "hash": "ca44db03",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "OceanLibrary shelves vs multi-part works; parts cite as '<work>, <part>'",
+      "scope": "library"
+    },
     {
       "hash": "fd8a068d",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Keep the navbar and library summary; remove only the chat input — Anís is the one chat",
       "scope": "home"
-    },
-    {
-      "hash": "1f316a98",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Anís is named Anís on the home page (data-name), not the house profile's lab label",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "ca44db03",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "OceanLibrary shelves vs multi-part works; parts cite as '<work>, <part>'",
+        "scope": "library"
+      },
       {
         "hash": "fd8a068d",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "Fixed",
         "description": "Keep the navbar and library summary; remove only the chat input — Anís is the one chat",
-        "scope": "home"
-      },
-      {
-        "hash": "1f316a98",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Anís is named Anís on the home page (data-name), not the house profile's lab label",
         "scope": "home"
       }
     ]

@@ -317,6 +317,26 @@ async function main() {
     }
   }
 
+  // ── Library shelves (data/library-shelves.json) — the /library page's one-request index (api/lib/library/shelves.js).
+  // Out of process by design: the grouped counts scan every live doc (~0.3 s), which must never run in the API.
+  // 10-min refresh gate.
+  try {
+    const SHELVES_PATH = join(ROOT, 'data', 'library-shelves.json');
+    let shelvesAt = null;
+    try { shelvesAt = JSON.parse(readFileSync(SHELVES_PATH, 'utf8'))?.generated_at ?? null; } catch { /* absent */ }
+    if (!shelvesAt || Date.now() - Date.parse(shelvesAt) > 10 * 60 * 1000) {
+      const { listDocs, groupCounts } = await import('../api/lib/docs-repo.js');
+      const { buildShelves } = await import('../api/lib/library/shelves.js');
+      const { docs: olDocs } = await listDocs({ sourceSite: 'oceanlibrary.com', limit: 5000,
+        fields: ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug', 'file_path', 'language'] });
+      const shelves = buildShelves({ olDocs, authorCounts: await groupCounts(['religion', 'author']),
+        collectionCounts: await groupCounts(['religion', 'collection', 'source_site']) });
+      writeFileSync(SHELVES_PATH, JSON.stringify(shelves));
+    }
+  } catch (err) {
+    probeErrors.push({ error: `library shelves: ${String(err?.message || err).slice(0, 200)}` });
+  }
+
   // ── Site activity (search_log) ──────────────────────────────────────────────
   // Test traffic (search_log.is_test — api/lib/test-traffic.js) is excluded everywhere below.
   // search_log is small (tens of thousands of rows, created_at-indexed), so a

@@ -121,6 +121,19 @@ export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {
   return rows.map((r) => r.id);
 }
 
+const GROUPABLE = Object.freeze(['religion', 'collection', 'source_site', 'author', 'language']);
+/** Document counts grouped by metadata columns (religion, collection, source_site, author, language) under a scope —
+ *  the library shelves' "N more" numbers. Metadata-only docs (doc_role 'metadata') are not books and are not counted. */
+export async function groupCounts(groupBy, { scope = 'live', religion } = {}) {
+  const cols = groupBy.filter((c) => GROUPABLE.includes(c));
+  if (!cols.length) throw new Error(`docs-repo.groupCounts: group by one of ${GROUPABLE.join(', ')}`);
+  const where = [...scopeSql(scope), "COALESCE(d.doc_role, '') <> 'metadata'"], params = [];
+  if (religion) { where.push('d.religion = ?'); params.push(religion); }
+  const list = cols.map((c) => `d.${c} AS ${c}`).join(', ');
+  return queryAll(`SELECT ${list}, COUNT(*) AS n FROM docs d WHERE ${where.join(' AND ')} GROUP BY ${cols.map((c) => `d.${c}`).join(', ')}`,
+    params, 'docs-repo:group-counts');
+}
+
 /** Set (or clear) a document's cover — the image-service URL from api/lib/covers.js. Live docs only. */
 export async function setDocCover(docId, url) {
   if (url != null && !/^\/img\/covers\/\d+\?v=[0-9a-f]+$/.test(url)) throw new Error(`setDocCover: not an image-service URL: ${url}`);

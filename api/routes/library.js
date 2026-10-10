@@ -1631,6 +1631,51 @@ Return ONLY the description text, no quotes or formatting.`;
     };
   });
 
+  // ── Shelves (the /library page, 10-10) ───────────────────────────────────────────────────────────────────────────
+  // The index is precomputed out of process (pipeline-snapshot → data/library-shelves.json) and edge-cached here, so the
+  // page renders from one small cached response instead of the 10 s nodes + 3 s documents queries.
+  let shelvesCache = { at: 0, mtime: 0, body: null };
+  fastify.get('/shelves', async (request, reply) => {
+    const { readFileSync, statSync } = await import('fs');
+    const { join } = await import('path');
+    const file = join(process.cwd(), 'data', 'library-shelves.json');
+    try {
+      const m = statSync(file).mtimeMs;
+      if (m !== shelvesCache.mtime) shelvesCache = { mtime: m, body: readFileSync(file, 'utf8') };
+    } catch { return reply.code(503).send({ error: 'shelves not built yet' }); }
+    reply.header('Cache-Control', 'public, max-age=60, s-maxage=300').type('application/json');
+    return shelvesCache.body;
+  });
+
+  // One shelf's further items: an author's other works (?authors=a|b — the raw spellings the index recorded), or a
+  // library collection (?collection=) / site (?site=) of a tradition. Paged, edge-cached.
+  fastify.get('/shelves/items', {
+    schema: { querystring: { type: 'object', properties: {
+      religion: { type: 'string' }, authors: { type: 'string' }, collection: { type: 'string' }, site: { type: 'string' },
+      offset: { type: 'integer', minimum: 0, default: 0 }, limit: { type: 'integer', minimum: 1, maximum: 96, default: 48 },
+    }, required: ['religion'] } },
+  }, async (request, reply) => {
+    const { listDocs } = await import('../lib/docs-repo.js');
+    const { docUrl } = await import('../lib/library/shelves.js');
+    const { religion, authors, collection, site, offset = 0, limit = 48 } = request.query;
+    const fields = ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug', 'source_site'];
+    let docs = [], total = 0;
+    if (authors) {
+      for (const author of authors.split('|').slice(0, 8)) {
+        const r = await listDocs({ religion, author, fields, orderBy: 'title', limit: offset + limit });
+        docs.push(...r.docs.filter((d) => d.source_site !== 'oceanlibrary.com')); total += r.total;
+      }
+      docs = [...new Map(docs.map((d) => [d.id, d])).values()].sort((a, b) => a.title.localeCompare(b.title)).slice(offset, offset + limit);
+    } else {
+      const r = await listDocs({ religion, ...(site ? { sourceSite: site } : { collection: collection || null, sourceSite: 'library' }),
+        fields, orderBy: 'title', limit, offset });
+      docs = r.docs; total = r.total;
+    }
+    reply.header('Cache-Control', 'public, max-age=60, s-maxage=600');
+    return { total, offset, items: docs.map((d) => ({ id: d.id, title: d.title, author: d.author, cover: d.cover_url || null,
+      year: d.year || null, paras: d.paragraph_count || 0, url: docUrl(d) })) };
+  });
+
   /**
    * Get document by semantic URL path
    * GET /api/library/by-path/:religion/:collection/:slug
@@ -1693,8 +1738,14 @@ Return ONLY the description text, no quotes or formatting.`;
     if (document) {
       const docReligionSlug = slugifyPath(document.religion || '');
       const docCollectionSlug = slugifyPath(document.collection || '');
-      if (docReligionSlug !== religionSlug || docCollectionSlug !== collectionSlug) {
-        document = null; // Wrong collection, continue searching
+      if (docReligionSlug !== religionSlug) {
+        document = null; // Wrong tradition, continue searching
+      } else if (docCollectionSlug !== collectionSlug) {
+        // The collection in the URL is stale (10-10: OceanLibrary collections renamed from collection_id hashes to their
+        // folder names) — still the right book when the slug is unique; the page is told its current path.
+        const n = await queryOne('SELECT COUNT(*) AS n FROM docs WHERE slug = ? AND deleted_at IS NULL', [slug]);
+        if ((n?.n ?? 0) === 1) document.moved_from_collection = collection;
+        else document = null; // ambiguous slug → continue searching
       }
     }
 
