@@ -6,7 +6,12 @@
   "compatibility_date": "2025-11-01",
   "routes": [{ "pattern": "siftersearch.com/img/*", "zone_name": "siftersearch.com" }],
   // originals (one fetch from tower per version) + rendered variants (generated once)
-  "r2_buckets": [{ "binding": "IMG_R2", "bucket_name": "siftersearch-img" }],
+  "r2_buckets": [
+    { "binding": "IMG_R2", "bucket_name": "siftersearch-img" },
+    // originals already in R2, read in place: /img/a/<key> and /img/cdn/<key> (cdn.js R2_SOURCES)
+    { "binding": "SITE_R2", "bucket_name": "siftersearch" },
+    { "binding": "CDN_R2", "bucket_name": "cdn-assets" }
+  ],
   // fo-face / fo-auto focal detection (DETR)
   "ai": { "binding": "AI" },
   "vars": { "API_ORIGIN": "https://api.siftersearch.com" }

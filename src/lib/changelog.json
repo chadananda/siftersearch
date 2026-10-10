@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:35:28.336Z",
+  "generated": "2026-10-10T19:39:59.521Z",
   "entries": [
+    {
+      "hash": "caf5b36a",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "AI calls review — spend by caller, current prices, 7 candidates to A/B, Strata on boss",
+      "scope": "planning"
+    },
     {
       "hash": "2c28eb25",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Raw search resolves quoted words to their ORIGINAL source (Jev judges, authority chooses)",
       "scope": "search"
-    },
-    {
-      "hash": "0451dd77",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "Default model Gemini 3.5 Flash-Lite (fastest measured); gemini + anthropic providers",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "caf5b36a",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "AI calls review — spend by caller, current prices, 7 candidates to A/B, Strata on boss",
+        "scope": "planning"
+      },
       {
         "hash": "2c28eb25",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "New",
         "description": "Raw search resolves quoted words to their ORIGINAL source (Jev judges, authority chooses)",
         "scope": "search"
-      },
-      {
-        "hash": "0451dd77",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "Default model Gemini 3.5 Flash-Lite (fastest measured); gemini + anthropic providers",
-        "scope": "anis"
       }
     ]
   }

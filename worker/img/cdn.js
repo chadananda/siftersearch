@@ -1,4 +1,4 @@
-// The image service (Chad 10-10: "imgkit style parameter request caching"): GET /img/<bucket>/<id>?v=<hash>&tr=<ImageKit>
+// The image service (Chad 10-10: "imgkit style parameter request caching"): GET /img/<bucket>/<id|key>?v=<hash>&tr=<ImageKit>
 // Lookup order: edge cache → durable R2 variant (generated once) → R2 original → tower (the ONE origin fetch per
 // original version, then kept in R2 so tower never serves it again) → Photon render. Adapted from blogworks.ai
 // packages/blogworks-image/src/cdn.ts; the origin is tower's /api/<bucket>/<id>/original instead of an R2 source bucket.
@@ -8,28 +8,41 @@ import { resolveFocalPoint } from './focal.js';
 import { renderImage, CONTENT_TYPE } from './render.js';
 
 const VERSION = 2;                                  // bump to invalidate every cached derivative (2: lossy webp)
-const BUCKETS = new Set(['covers']);                // image families served (originals on tower: api/lib/covers.js)
-const PATH = /^\/img\/([a-z]+)\/(\d+)$/;
+// Image families. `covers` = originals on tower (api/lib/covers.js), addressed by doc id. `a` and `cdn` = originals already
+// in R2 (10-10: "all images on a site should always load through a caching request resize service"), addressed by
+// object key: /img/a/<key> → bucket `siftersearch` (pub-e57…r2.dev: research heroes, uploads), /img/cdn/<key> →
+// bucket `cdn-assets` (pub-4445…r2.dev and the old ImageKit path ik.imagekit.io/1260/cdn/<key>).
+const R2_SOURCES = { a: 'SITE_R2', cdn: 'CDN_R2' };
+const PATH = /^\/img\/(?:(covers)\/(\d+)|(a|cdn)\/([A-Za-z0-9._\-/%]+))$/;
 
 export async function handleImage(req, env, ctx) {
   const url = new URL(req.url);
   const m = PATH.exec(url.pathname);
-  if (!m || !BUCKETS.has(m[1])) return new Response('not found', { status: 404 });
-  const [, bucket, id] = m;
-  const v = (url.searchParams.get('v') || '').replace(/[^0-9a-f]/g, '').slice(0, 32);   // content hash of the original
+  if (!m) return new Response('not found', { status: 404 });
+  const bucket = m[1] || m[3];
+  const id = m[2] || decodeURIComponent(m[4]);
+  if (id.includes('..')) return new Response('not found', { status: 404 });
+  const r2src = m[3] ? env[R2_SOURCES[bucket]] : null;
+  if (m[3] && !r2src) return new Response('not found', { status: 404 });
+  let v = (url.searchParams.get('v') || '').replace(/[^0-9a-f]/g, '').slice(0, 32);   // content hash of the original
   const tr = url.searchParams.get('tr') ?? '';
   const specs = parseTransforms(tr);
   const spec = specs[specs.length - 1] ?? defaultSpec();
   const format = resolveFormat(spec, req.headers.get('accept'));
   const recipe = `${tr}|${format}`;
-  const maxAge = v ? 31536000 : 86400;               // unversioned URLs may change; versioned ones never do
+  const maxAge = url.searchParams.get('v') ? 31536000 : 86400;   // a URL without ?v= may change; a versioned one never does
 
   const cache = caches.default;
-  const cacheKey = new Request(`${url.origin}/img/${bucket}/${id}?v=${v}&r=${encodeURIComponent(recipe)}&cv=${VERSION}`, { method: 'GET' });
+  const cacheKey = new Request(`${url.origin}/img/${bucket}/${encodeURIComponent(id)}?v=${url.searchParams.get('v') || ''}&r=${encodeURIComponent(recipe)}&cv=${VERSION}`, { method: 'GET' });
   const edge = await cache.match(cacheKey);
   if (edge) return tag(edge, 'edge');
+  if (r2src && !v) {                                  // an R2 original versions itself by its etag (one HEAD per edge miss)
+    const head = await r2src.head(id);
+    if (!head) return new Response('not found', { status: 404, headers: { 'Cache-Control': 'public, max-age=300' } });
+    v = String(head.etag || '').replace(/[^0-9a-f]/g, '').slice(0, 32);
+  }
 
-  const r2Key = `fx/v${VERSION}/${bucket}/${id}/${v || 'latest'}/${hash(recipe)}.${format}`;
+  const r2Key = `fx/v${VERSION}/${bucket}/${r2src ? hash(id) : id}/${v || 'latest'}/${hash(recipe)}.${format}`;
   const r2hit = v ? await env.IMG_R2?.get(r2Key) : null;
   if (r2hit) {
     const res = image(await r2hit.arrayBuffer(), format, maxAge);
@@ -37,7 +50,7 @@ export async function handleImage(req, env, ctx) {
     return tag(res, 'r2');
   }
 
-  const src = await original(env, ctx, bucket, id, v);
+  const src = r2src ? await r2Original(r2src, id) : await original(env, ctx, bucket, id, v);
   if (!src) return new Response('not found', { status: 404, headers: { 'Cache-Control': 'public, max-age=300' } });
 
   let focal = { fx: 0.5, fy: 0.5 };
@@ -55,6 +68,12 @@ export async function handleImage(req, env, ctx) {
   const res = image(out, format, maxAge);
   ctx.waitUntil(cache.put(cacheKey, res.clone()));
   return tag(res, 'miss');
+}
+
+/** An original that already lives in one of our R2 buckets (no copy: read in place). */
+async function r2Original(bucket, key) {
+  const obj = await bucket.get(key);
+  return obj ? new Uint8Array(await obj.arrayBuffer()) : null;
 }
 
 /** Original bytes: R2 first; else tower once (then stored in R2 under its version). */

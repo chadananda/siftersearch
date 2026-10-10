@@ -5,6 +5,7 @@
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
+import { imgSet } from '../../lib/imagekit.js';
 import ShareButtons from '../../components/common/ShareButtons.svelte';
 import ResearchAdminFooter from '../../components/research/ResearchAdminFooter.svelte';
 
@@ -316,7 +317,7 @@ function buildOLSourceUrl(q: any): string | null {
     <header class="article-hero">
       {record.hero_image && (
         <div class="hero-image-banner">
-          <img src={record.hero_image} alt={`Mandala illustration for: ${record.canonical_question}`} class="hero-mandala" loading="eager" />
+          <img {...imgSet(record.hero_image, [640, 960, 1280, 1600, 1920], { fo: null })} sizes="100vw" alt={`Mandala illustration for: ${record.canonical_question}`} class="hero-mandala" loading="eager" fetchpriority="high" />
           <div class="hero-image-overlay" />
         </div>
       )}

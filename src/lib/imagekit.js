@@ -1,49 +1,65 @@
-// CDN URL helper. Images live in R2 cdn-assets/siftersearch.com/...
-// Served via ImageKit (ik.imagekit.io/1260/cdn/) for URL-based transforms.
-// heroUrl/cardUrl/avatarUrl append ?tr= params for proper sizing.
+// Image URLs for every page (Chad 10-10: "all images on a site should always load through a caching request resize
+// service … properly scaled and sharpened webp … srcset so mobile sizes are loaded correctly the first time").
+// The service is OURS: worker/img/ at siftersearch.com/img/… — ImageKit `tr=` syntax, rendered once, cached at the edge
+// + R2, WebP by default. Never put a raw R2 / CDN URL in an <img>: pass it through imgSet / svcFixed / ikUrl.
 
-const CDN_BASE = 'https://ik.imagekit.io/1260/cdn';
-const KEY_PREFIX = 'siftersearch.com';
+const SVC = 'https://siftersearch.com/img';
+// Public R2 hosts and the old ImageKit path → the service path that reads the same object in place.
+const R2_HOSTS = [
+  [/^https:\/\/pub-e57ab96621a24ba18bcce728b4c51de2\.r2\.dev\//, `${SVC}/a/`],   // bucket `siftersearch`
+  [/^https:\/\/pub-4445d977d3954d72bea3bad656a3fd43\.r2\.dev\//, `${SVC}/cdn/`], // bucket `cdn-assets`
+  [/^https:\/\/ik\.imagekit\.io\/1260\/cdn\//, `${SVC}/cdn/`],                    // ImageKit's origin was cdn-assets
+];
+const KEY_PREFIX = 'siftersearch.com';   // site images in cdn-assets live under this prefix
 
-function toCdnPath(local) {
-  if (!local) return null;
-  if (local.startsWith('http://') || local.startsWith('https://')) return null;
-  return `${KEY_PREFIX}/${local.replace(/^\/+/, '').replace(/^images\//, '')}`;
+/** Any of our image URLs (public R2, old ImageKit, a cdn-assets-relative path, or an /img/ URL) → the service URL
+ *  without a transform. Unknown hosts come back unchanged (null when not transformable). */
+export function toSvc(url) {
+  if (!url) return null;
+  if (url.startsWith('/img/')) return `https://siftersearch.com${url}`;
+  if (url.startsWith(`${SVC}/`)) return url;
+  for (const [re, base] of R2_HOSTS) if (re.test(url)) return url.replace(re, base);
+  if (/^https?:\/\//.test(url) || url.startsWith('data:')) return null;
+  return `${SVC}/cdn/${KEY_PREFIX}/${url.replace(/^\/+/, '').replace(/^images\//, '')}`;   // site-relative asset key
 }
 
-export function ikUrl(local, tr) {
-  const path = toCdnPath(local);
-  if (!path) return local;
-  return `${CDN_BASE}/${path}${tr ? `?tr=${tr}` : ''}`;
-}
-
-export function heroUrl(local)   { return ikUrl(local, 'w-1536,h-600,fo-auto,q-80'); }
-export function cardUrl(local)   { return ikUrl(local, 'w-640,h-400,fo-auto,q-75'); }
-export function avatarUrl(local) { return ikUrl(local, 'w-128,h-128,fo-auto'); }
-
-// srcset builders — the house rule: full-size originals in R2, EXACT display sizes requested per
-// breakpoint via ?tr=, so the browser (almost) never resizes. Returns null for absolute URLs the
-// CDN can't transform (caller falls back to a plain src).
-export function ikSrcset(local, widths, { ratio = null, q = 75, fo = 'auto' } = {}) {
-  const path = toCdnPath(local);
-  if (!path) return null;
-  const tr = (w) => `w-${w}${ratio ? `,h-${Math.round(w / ratio)}` : ''},fo-${fo},q-${q}`;
-  return {
-    src: `${CDN_BASE}/${path}?tr=${tr(widths[Math.floor(widths.length / 2)])}`,
-    srcset: widths.map((w) => `${CDN_BASE}/${path}?tr=${tr(w)} ${w}w`).join(', '),
-  };
-}
-// Hero band (~2.56:1) and card (~1.6:1) presets matching heroUrl/cardUrl crops.
-export const heroSet = (local) => ikSrcset(local, [640, 960, 1280, 1536, 1920], { ratio: 2.56, q: 80 });
-export const cardSet = (local) => ikSrcset(local, [320, 480, 640, 960], { ratio: 1.6, q: 75 });
-
-// OUR OWN image service (worker/img/ → siftersearch.com/img/…): the same `tr=` syntax, rendered in the Worker and
-// cached at the edge + R2 — no third-party CDN. Book covers are stored as `/img/covers/<docId>?v=<hash>` (docs.cover_url).
-// Same house rule: request the exact display size per pixel density.
 export const svcUrl = (url, tr) => (url ? `${url}${url.includes('?') ? '&' : '?'}tr=${tr}` : null);
+const trOf = (w, { ratio = null, h = null, q = 78, fo = 'auto', sharpen = true, dpr = null } = {}) =>
+  [`w-${w}`, h ? `h-${h}` : ratio ? `h-${Math.round(w / ratio)}` : null, fo ? `fo-${fo}` : null, `q-${q}`,
+    dpr ? `dpr-${dpr}` : null, sharpen ? 'e-sharpen' : null].filter(Boolean).join(',');
+
+/**
+ * Responsive image: { src, srcset } for an image that scales with the layout. `widths` are the rendered pixel widths to
+ * offer (include 2× of the largest CSS width); pair with a `sizes` attribute. Falls back to { src: url, srcset: null }
+ * for a URL the service cannot read (a third party), so callers can always spread the result.
+ */
+export function imgSet(url, widths, opts = {}) {
+  const base = toSvc(url);
+  if (!base) return { src: url, srcset: null };
+  const mid = widths[Math.min(widths.length - 1, Math.floor(widths.length / 2))];
+  return { src: svcUrl(base, trOf(mid, opts)), srcset: widths.map((w) => `${svcUrl(base, trOf(w, opts))} ${w}w`).join(', ') };
+}
+
 /** src + 1x/2x srcset for a fixed box, e.g. a cover shown at 120×180 CSS px. */
 export function svcFixed(url, w, h, { q = 78, extra = 'e-sharpen' } = {}) {
-  if (!url) return null;
+  const base = toSvc(url);
+  if (!base) return url ? { src: url, srcset: null } : null;
   const tr = (d) => `w-${w},h-${h},dpr-${d},q-${q}${extra ? `,${extra}` : ''}`;
-  return { src: svcUrl(url, tr(1)), srcset: `${svcUrl(url, tr(1))} 1x, ${svcUrl(url, tr(2))} 2x` };
+  return { src: svcUrl(base, tr(1)), srcset: `${svcUrl(base, tr(1))} 1x, ${svcUrl(base, tr(2))} 2x` };
 }
+
+// Legacy names (were ImageKit) — same signatures, now our service.
+export function ikUrl(local, tr) {
+  const base = toSvc(local);
+  return base ? svcUrl(base, tr ? `${tr},e-sharpen` : 'e-sharpen') : local;
+}
+export const heroUrl = (local) => ikUrl(local, 'w-1536,h-600,fo-auto,q-80');
+export const cardUrl = (local) => ikUrl(local, 'w-640,h-400,fo-auto,q-75');
+export const avatarUrl = (local) => ikUrl(local, 'w-128,h-128,fo-auto');
+export function ikSrcset(local, widths, { ratio = null, q = 75, fo = 'auto' } = {}) {
+  const r = imgSet(local, widths, { ratio, q, fo });
+  return r.srcset ? r : null;
+}
+// Hero band (~2.56:1) and card (~1.6:1) presets.
+export const heroSet = (local) => ikSrcset(local, [640, 960, 1280, 1536, 1920], { ratio: 2.56, q: 80 });
+export const cardSet = (local) => ikSrcset(local, [320, 480, 640, 960], { ratio: 1.6, q: 75 });
