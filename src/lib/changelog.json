@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:56:36.639Z",
+  "generated": "2026-10-10T18:57:37.837Z",
   "entries": [
+    {
+      "hash": "7b0b075c",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Clef is not near-free — $0.24/M input, ~6x Jev",
+      "scope": "dewey"
+    },
     {
       "hash": "b218ed2a",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Jev backstop also reads a NAMED author (as a preference, implying Bahá'í scope)",
       "scope": "search"
-    },
-    {
-      "hash": "23ba8cce",
-      "date": "2026-09-24",
-      "type": "Performance",
-      "description": "Remove two event-loop freezes found in slow_query_log",
-      "scope": "api"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "7b0b075c",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Clef is not near-free — $0.24/M input, ~6x Jev",
+        "scope": "dewey"
+      },
       {
         "hash": "b218ed2a",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Fixed",
         "description": "Jev backstop also reads a NAMED author (as a preference, implying Bahá'í scope)",
         "scope": "search"
-      },
-      {
-        "hash": "23ba8cce",
-        "date": "2026-09-24",
-        "type": "Performance",
-        "description": "Remove two event-loop freezes found in slow_query_log",
-        "scope": "api"
       }
     ]
   }

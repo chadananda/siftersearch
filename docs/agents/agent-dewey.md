@@ -139,7 +139,7 @@ and older scripts — so cost discipline is part of the design:
 
 | Work | Model |
 |---|---|
-| routing, classification, yes/no checks (is this a title page? which tradition? held or not?) | **Clef** (System-1 at the edge — $0.24 per million input tokens, ~6× Jev; cheap per call only when contexts are short) |
+| routing, classification, yes/no checks (is this a title page? which tradition? held or not?) | **Clef** (System-1 at the edge — near-free when used correctly: a short state of a few hundred tokens per decision, no bulk shadowing; it is priced per input token) |
 | everyday reading and extraction, foreign-language included | **Haiku 5.5** (cheap) |
 | English reasoning jobs (comparing editions, writing ingest plans) | **DeepSeek** |
 | strategy (what to look for, how to organize a collection, hard judgment calls) | **Opus 5.5**, sparingly |
