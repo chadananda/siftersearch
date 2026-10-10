@@ -527,7 +527,7 @@ export default async function authRoutes(fastify) {
   // Get current user
   fastify.get('/me', { preHandler: authenticate }, async (request) => {
     const user = await queryOne(
-      'SELECT id, email, name, tier, picture, preferred_language, email_verified, created_at, approved_at FROM users WHERE id = ?',
+      'SELECT id, email, name, tier, picture, preferred_language, email_verified, created_at, approved_at, dewey_access FROM users WHERE id = ?',
       [request.user.sub]
     );
 

@@ -750,6 +750,7 @@ export const admin = {
     if (options.offset) params.set('offset', options.offset);
     if (options.tier) params.set('tier', options.tier);
     if (options.search) params.set('search', options.search);
+    if (options.dewey) params.set('dewey', 'true');
     return request(`/api/admin/users?${params.toString()}`);
   },
 

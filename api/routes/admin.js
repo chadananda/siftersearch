@@ -254,19 +254,21 @@ export default async function adminRoutes(fastify) {
           limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
           offset: { type: 'integer', minimum: 0, default: 0 },
           tier: { type: 'string' },
-          search: { type: 'string' }
+          search: { type: 'string' },
+          dewey: { type: 'boolean' }   // only members with Dewey access
         }
       }
     }
   }, async (request) => {
-    const { limit = 20, offset = 0, tier, search } = request.query;
+    const { limit = 20, offset = 0, tier, search, dewey } = request.query;
 
     let sql = `
-      SELECT id, email, name, tier, preferred_language, created_at, approved_at
+      SELECT id, email, name, tier, preferred_language, created_at, approved_at, dewey_access, dewey_profile
       FROM users
       WHERE ${NOT_TEST_USER}
     `;
     const params = [];
+    if (dewey) sql += ' AND dewey_access = 1';
 
     if (tier) {
       sql += ' AND tier = ?';
@@ -284,7 +286,7 @@ export default async function adminRoutes(fastify) {
     const users = await userQueryAll(sql, params);
 
     // Get total count
-    let countSql = `SELECT COUNT(*) as count FROM users WHERE ${NOT_TEST_USER}`;
+    let countSql = `SELECT COUNT(*) as count FROM users WHERE ${NOT_TEST_USER}${dewey ? ' AND dewey_access = 1' : ''}`;
     const countParams = [];
     if (tier) {
       countSql += ' AND tier = ?';
@@ -332,13 +334,15 @@ export default async function adminRoutes(fastify) {
         type: 'object',
         properties: {
           tier: { type: 'string', enum: ['verified', 'approved', 'patron', 'institutional', 'admin', 'banned'] },
-          name: { type: 'string', maxLength: 100 }
+          name: { type: 'string', maxLength: 100 },
+          dewey_access: { type: 'boolean' },                 // may use Dewey (page + email whitelist)
+          dewey_profile: { type: 'string', maxLength: 1000 } // what they tend to contribute — Dewey's note on them
         }
       }
     }
   }, async (request) => {
     const { id } = request.params;
-    const { tier, name } = request.body;
+    const { tier, name, dewey_access, dewey_profile } = request.body;
 
     // Check user exists
     const user = await userQueryOne('SELECT id FROM users WHERE id = ?', [id]);
@@ -364,6 +368,16 @@ export default async function adminRoutes(fastify) {
       values.push(name);
     }
 
+    if (dewey_access !== undefined) {
+      updates.push('dewey_access = ?');
+      values.push(dewey_access ? 1 : 0);
+    }
+
+    if (dewey_profile !== undefined) {
+      updates.push('dewey_profile = ?');
+      values.push(dewey_profile.trim() || null);
+    }
+
     if (updates.length === 0) {
       throw ApiError.badRequest('No fields to update');
     }
@@ -372,7 +386,7 @@ export default async function adminRoutes(fastify) {
     await userQuery(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
 
     const updatedUser = await userQueryOne(
-      'SELECT id, email, name, tier, created_at, approved_at FROM users WHERE id = ?',
+      'SELECT id, email, name, tier, created_at, approved_at, dewey_access, dewey_profile FROM users WHERE id = ?',
       [id]
     );
 
@@ -398,7 +412,7 @@ export default async function adminRoutes(fastify) {
     );
 
     const updatedUser = await userQueryOne(
-      'SELECT id, email, name, tier, created_at, approved_at FROM users WHERE id = ?',
+      'SELECT id, email, name, tier, created_at, approved_at, dewey_access, dewey_profile FROM users WHERE id = ?',
       [id]
     );
 

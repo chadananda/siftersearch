@@ -211,6 +211,16 @@ export function requireTier(...allowedTiers) {
   };
 }
 
+// Dewey, the AI Librarian: admins plus the members granted access on the users page (users.dewey_access, user migration 8).
+const DEWEY_TIERS = ['admin', 'superadmin'];
+export const canUseDewey = (user) => !!user && user.tier !== 'banned' && (DEWEY_TIERS.includes(user.tier) || Number(user.dewey_access) === 1);
+export async function requireDewey(request, reply) {
+  await authenticate(request, reply);
+  if (DEWEY_TIERS.includes(request.user.tier)) return;
+  const row = await queryOne('SELECT tier, dewey_access FROM users WHERE id = ?', [request.user.sub]);
+  if (!canUseDewey(row)) throw ApiError.forbidden('Dewey access is for invited members');
+}
+
 // Require admin tier
 export async function requireAdmin(request, reply) {
   await authenticate(request, reply);

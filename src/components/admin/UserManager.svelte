@@ -19,6 +19,8 @@
   // Filters
   let searchQuery = $state('');
   let tierFilter = $state('');
+  let deweyOnly = $state(false);   // show only members with Dewey access
+  let profileDrafts = $state({});  // userId → profile text being edited
   let page = $state(0);
   const limit = 20;
 
@@ -45,7 +47,8 @@
         limit,
         offset: page * limit,
         tier: tierFilter || undefined,
-        search: searchQuery || undefined
+        search: searchQuery || undefined,
+        dewey: deweyOnly || undefined
       });
       users = data.users;
       total = data.total;
@@ -63,6 +66,19 @@
       await loadUsers();
     } catch (err) {
       alert(err.message || 'Failed to update user');
+    } finally {
+      actionLoading = null;
+    }
+  }
+
+  // Dewey (the AI Librarian) access: the same list is Dewey's contributor whitelist; the profile says what they contribute.
+  async function updateDewey(userId, updates) {
+    actionLoading = userId;
+    try {
+      await admin.updateUser(userId, updates);
+      await loadUsers();
+    } catch (err) {
+      error = err.message || 'Failed to update Dewey access';
     } finally {
       actionLoading = null;
     }
@@ -134,6 +150,10 @@
           <option value={tier}>{tier}</option>
         {/each}
       </select>
+      <label class="dewey-filter" title="Members who may use Dewey, the AI Librarian (and email dewey@oceanlibrary.com)">
+        <input type="checkbox" bind:checked={deweyOnly} onchange={handleSearch} />
+        Dewey contributors
+      </label>
     </div>
 
     {#if error}
@@ -153,6 +173,7 @@
             <tr>
               <th>User</th>
               <th>Tier</th>
+              <th title="Access to Dewey, the AI Librarian — also his email whitelist">Dewey</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -179,6 +200,33 @@
                       <option value={tier}>{tier}</option>
                     {/each}
                   </select>
+                </td>
+                <td class="dewey-cell">
+                  {#if user.tier === 'admin'}
+                    <span class="dewey-admin" title="Admins always have Dewey">admin</span>
+                  {:else}
+                    <label class="dewey-toggle">
+                      <input
+                        type="checkbox"
+                        checked={!!user.dewey_access}
+                        disabled={actionLoading === user.id || user.tier === 'banned'}
+                        onchange={(e) => updateDewey(user.id, { dewey_access: e.target.checked })}
+                      />
+                      access
+                    </label>
+                  {/if}
+                  {#if user.dewey_access || user.tier === 'admin'}
+                    <input
+                      class="dewey-profile"
+                      type="text"
+                      maxlength="1000"
+                      placeholder="Contributes… (e.g. Persian manuscripts, early pilgrim notes)"
+                      value={profileDrafts[user.id] ?? user.dewey_profile ?? ''}
+                      oninput={(e) => (profileDrafts[user.id] = e.target.value)}
+                      onblur={() => profileDrafts[user.id] !== undefined && profileDrafts[user.id] !== (user.dewey_profile ?? '') && updateDewey(user.id, { dewey_profile: profileDrafts[user.id] })}
+                      disabled={actionLoading === user.id}
+                    />
+                  {/if}
                 </td>
                 <td>
                   <span class="date">{formatDate(user.created_at)}</span>
@@ -450,4 +498,10 @@
       display: none;
     }
   }
+
+  .dewey-filter { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; }
+  .dewey-cell { min-width: 14rem; }
+  .dewey-toggle { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; }
+  .dewey-admin { font-size: 0.75rem; opacity: 0.7; }
+  .dewey-profile { display: block; width: 100%; margin-top: 0.35rem; font-size: 0.8rem; padding: 0.25rem 0.4rem; border: 1px solid var(--border-default); border-radius: 4px; background: transparent; color: var(--text-primary); }
 </style>

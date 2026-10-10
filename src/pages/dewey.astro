@@ -1,0 +1,21 @@
+---
+// Dewey, the AI Librarian — for admins and members granted access on /admin/users (users.dewey_access).
+import Layout from '../layouts/Layout.astro';
+import IslandSkeleton from '../components/common/IslandSkeleton.astro';
+import NavBar from '../components/common/NavBar.svelte';
+import DeweyHome from '../components/dewey/DeweyHome.svelte';
+---
+
+<Layout title="Dewey - SifterSearch" description="Dewey, the AI Librarian for Ocean 2.0.">
+  <NavBar currentPage="dewey" client:load />
+  <main class="dewey-wrapper">
+    <div class="page-container">
+      <DeweyHome client:only="svelte"><IslandSkeleton slot="fallback" /></DeweyHome>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .dewey-wrapper { min-height: calc(100vh - 3.5rem); }
+  .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+</style>

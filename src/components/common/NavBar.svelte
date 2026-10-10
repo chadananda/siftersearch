@@ -101,6 +101,8 @@
   // as roles gain dashboards (Librarian → /librarian, Student → /student, …).
   const ROLE_DASHBOARDS = { admin: '/admin', superadmin: '/admin' };
   let roleDashboard = $derived(ROLE_DASHBOARDS[auth.user?.tier] || null);
+  // Dewey, the AI Librarian: admins + members granted access on /admin/users (users.dewey_access).
+  let canDewey = $derived(isAdmin || Number(auth.user?.dewey_access) === 1);
 
   // User display
   let userInitial = $derived(
@@ -328,6 +330,14 @@
                 </svg>
                 Settings
               </a>
+              {#if canDewey}
+                <a href="/dewey" class="dropdown-item" role="menuitem" onclick={closeNavMenu} title="Dewey, the AI Librarian">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  </svg>
+                  Dewey — Librarian
+                </a>
+              {/if}
               <div class="dropdown-divider"></div>
               <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeNavMenu(); }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

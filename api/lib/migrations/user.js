@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 7;
+export const USER_DB_CURRENT_VERSION = 8;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -392,5 +392,15 @@ export const userMigrations = {
       try { await userQuery(`ALTER TABLE companion_relationship ADD COLUMN ${col}`); } catch { /* exists */ }
     }
     logger.info('User migration 7 complete: companion_relationship consent provenance (consent_source, consent_at, merged_from)');
+  },
+
+  // Version 8: access to Dewey, the AI Librarian (Chad 10-10: "only for certain members … manage those with access from
+  // the users page"). The same flag is Dewey's contributor whitelist (who may email dewey@oceanlibrary.com); the profile
+  // records what the person tends to contribute, so Dewey can engage them about the search for it. Admins always have access.
+  8: async () => {
+    for (const col of ['dewey_access INTEGER DEFAULT 0', 'dewey_profile TEXT']) {
+      try { await userQuery(`ALTER TABLE users ADD COLUMN ${col}`); } catch { /* exists */ }
+    }
+    logger.info('User migration 8 complete: users.dewey_access, users.dewey_profile');
   },
 };

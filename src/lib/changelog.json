@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T16:46:53.456Z",
+  "generated": "2026-10-10T17:05:51.558Z",
   "entries": [
+    {
+      "hash": "380ce040",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "The book page's by-path API returns cover_url (it built its own document object without it)",
+      "scope": "library"
+    },
     {
       "hash": "52165e6b",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Author narrowing returned nothing unless the string was byte-identical",
       "scope": "search"
-    },
-    {
-      "hash": "71372abe",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Bump SEARCH_VERSION for the title-ranking change, and make the bump un-forgettable",
-      "scope": "answer-cache"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "380ce040",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "The book page's by-path API returns cover_url (it built its own document object without it)",
+        "scope": "library"
+      },
       {
         "hash": "52165e6b",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Fixed",
         "description": "Author narrowing returned nothing unless the string was byte-identical",
         "scope": "search"
-      },
-      {
-        "hash": "71372abe",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Bump SEARCH_VERSION for the title-ranking change, and make the bump un-forgettable",
-        "scope": "answer-cache"
       }
     ]
   }
