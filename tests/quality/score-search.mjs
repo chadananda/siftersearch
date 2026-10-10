@@ -80,7 +80,7 @@ function normalize(s) {
 // category — and the report still printed a headline "127/516 (25%)" as though it were a measurement.
 // Retry with backoff so a brief restart costs seconds instead of invalidating the run.
 const TRANSIENT = new Set([429, 500, 502, 503, 504]);
-const RETRIES = 4;
+const RETRIES = 8;   // with the backoff below: ~70 s, longer than a pm2 stop+start (~30 s)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── MATCH-QUALITY GATE (2026-09-24) ─────────────────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ async function runOne(fix) {
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
     last = await runOnce(fix);
     if (!last.transient) return last;
-    if (attempt < RETRIES) await sleep(2000 * (attempt + 1));   // 2s, 4s, 6s, 8s — covers a pm2 restart
+    if (attempt < RETRIES) await sleep(Math.min(15000, 2000 * (attempt + 1)));   // 2,4,…,15 s — covers a pm2 restart
   }
   return last;
 }
@@ -142,7 +142,8 @@ async function runOnce(fix) {
     const isTimeout = err.name === 'TimeoutError' || err.message.includes('timeout') || err.message.includes('abort');
     return { id: fix.id, category: fix.category || 'uncategorized', ok: false,
       error: err.message, errorType: isTimeout ? 'timeout' : 'network',
-      latency_ms: Date.now() - t0, intent: fix.intent };
+      // a refused connection ("fetch failed") is the API restarting (10-10: two runs wrecked by deploys) — retry it
+      transient: !isTimeout, latency_ms: Date.now() - t0, intent: fix.intent };
   }
   const round_trip_ms = Date.now() - t0;
   // Prefer server-reported timing (no network noise) if available

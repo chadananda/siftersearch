@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:12:23.855Z",
+  "generated": "2026-10-10T20:16:13.119Z",
   "entries": [
+    {
+      "hash": "dfb021f5",
+      "date": "2026-10-10",
+      "type": "Chore",
+      "description": "Track the WorkPlan migration (a global *.sql ignore hid it; anis migrations are force-added too)",
+      "scope": "d1"
+    },
     {
       "hash": "237e5678",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A dry run's force only skips the cooldown — it reported every live book as 'changed'",
       "scope": "ingest"
-    },
-    {
-      "hash": "00f70210",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "Sites-ingest via internal API with dryRun + onlyMissing (new files and hollow docs only)",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "dfb021f5",
+        "date": "2026-10-10",
+        "type": "Chore",
+        "description": "Track the WorkPlan migration (a global *.sql ignore hid it; anis migrations are force-added too)",
+        "scope": "d1"
+      },
       {
         "hash": "237e5678",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "Fixed",
         "description": "A dry run's force only skips the cooldown — it reported every live book as 'changed'",
-        "scope": "ingest"
-      },
-      {
-        "hash": "00f70210",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "Sites-ingest via internal API with dryRun + onlyMissing (new files and hollow docs only)",
         "scope": "ingest"
       }
     ]

@@ -47,7 +47,16 @@ export function correct(hitText, target) {
 // run only when executed directly — score-sourcehunt.mjs imports correct() and must not start this battery
 const MAIN = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
+// An API restart (deploy) refuses connections / answers 502 for ~30 s — retry ~70 s instead of recording an error
+// (10-10: every Qdrant-arm case errored inside one restart window).
 async function one(c) {
+  for (let attempt = 0; ; attempt++) {
+    const r = await oneOnce(c);
+    if (!r.error || !/fetch failed|ECONNREFUSED|HTTP 50[234]/.test(r.error) || attempt >= 8) return r;
+    await new Promise((res) => setTimeout(res, Math.min(15000, 2000 * (attempt + 1))));
+  }
+}
+async function oneOnce(c) {
   const t0 = Date.now();
   try {
     const res = await fetch(`${API_BASE}/api/search/multi`, { method: 'POST', signal: AbortSignal.timeout(30000),

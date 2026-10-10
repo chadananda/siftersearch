@@ -54,8 +54,16 @@ async function call(path, { method = 'GET', body, internal = false, keyless = fa
   const headers = { 'X-Sifter-Test': '1', ...(body ? { 'Content-Type': 'application/json' } : {}),
     ...(keyless ? {} : internal ? { 'X-Internal-Key': INTERNAL_KEY } : { 'X-API-Key': API_KEY }) };
   const t0 = Date.now();
-  const res = await fetch(`${API_BASE}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(30000) });
+  // An API restart (deploy) refuses connections / answers 502 for ~30 s: wait it out (~70 s) rather than fail the case.
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await fetch(`${API_BASE}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(30000) });
+      if (![502, 503, 504].includes(res.status) || attempt >= 8) break;
+    } catch (e) { if (e.name === 'TimeoutError' || attempt >= 8) throw e; }
+    await new Promise((r) => setTimeout(r, Math.min(15000, 2000 * (attempt + 1))));
+  }
   if (!res.ok) throw new ApiError(`HTTP ${res.status} ${path.split('?')[0]}`);
   return { data: await res.json(), ms: Date.now() - t0 };
 }
