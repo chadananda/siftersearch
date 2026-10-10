@@ -6,7 +6,7 @@
 // When Laya is as good as Jev, switch over" · "keep the task type separated … Laya training separately for different
 // task types". Deps: better-sqlite3 (log store), fetch. Env: TYPESAFE_API_KEY, LAYA_URL, LAYA_TOKEN(_FILE), SYSTEMONE_DIR.
 // CLEF (Cloudflare Workers AI, Jev-API compatible — Chad 10-05: "test Jev & Clef for every job"): `clef` / `clef-flash` can be
-// a task's primary, and are SHADOWED on every call (after the answer returns, never adding latency) into the `shadow` table
+// a task's primary, and SHADOW a sample of calls (shadowAllowed: 2%, ≤200/task/backend/day; after the answer returns) into the `shadow` table
 // so each task gets an agreement/latency record. Clef runs INSIDE our Cloudflare Worker (Workers AI binding — no API
 // token): POST {CLEF_URL}/_s1/run with the internal key. Env: CLEF_URL (default https://siftersearch.com), INTERNAL_API_KEY,
 // CLEF=off to disable, SYSTEMONE_SHADOW (default "clef,clef-flash"; "" turns shadowing off). Clef is vision-capable: any
@@ -41,6 +41,22 @@ function db() {
 }
 
 const CLEF = new Set(['clef', 'clef-flash']);
+
+// SHADOW BUDGET (10-10). Shadowing EVERY call to both Clef models cost ~$530 in two days (10-08/09: 300k shadow calls on
+// 10k-token windows; Clef lists at $0.24/M input — ~6× Jev's $0.042/M). Parity evidence needs hundreds of comparisons per
+// task, not hundreds of thousands, so a shadow is SAMPLED (SYSTEMONE_SHADOW_RATE, default 0.02) and CAPPED per task ×
+// backend × UTC day per process (SYSTEMONE_SHADOW_DAILY, default 200). A Clef-SERVED answer is unaffected (that is the work).
+const shadowCount = new Map();   // `${day}|${task}|${backend}` → n
+export function shadowAllowed(task, backend, rand = Math.random) {
+  const rate = Number(process.env.SYSTEMONE_SHADOW_RATE ?? 0.02), cap = Number(process.env.SYSTEMONE_SHADOW_DAILY ?? 200);
+  if (!(rand() < rate)) return false;
+  const k = `${new Date().toISOString().slice(0, 10)}|${task}|${backend}`;
+  const n = shadowCount.get(k) || 0;
+  if (n >= cap) return false;
+  if (shadowCount.size > 5000) shadowCount.clear();
+  shadowCount.set(k, n + 1);
+  return true;
+}
 const clefKey = () => process.env.SYSTEMONE_EDGE_KEY || process.env.INTERNAL_API_KEY || '';
 const clefOn = () => process.env.CLEF !== 'off' && !!clefKey();
 
@@ -153,7 +169,7 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
     if (shadow ?? route.shadow) {
       const backends = route.shadow_backends.filter((b) => b !== served);
       if (CLEF.has(served)) backends.push('jev');                                       // a Clef-served answer is always checked against Jev
-      for (const b of [...new Set(backends)]) {
+      for (const b of [...new Set(backends)].filter((x) => shadowAllowed(task, x))) {
         callBackend(b, task, route, state, questions, 20000, 0)
           .then((r) => recordShadow(id, b, r.answers, r.ms, null))
           .catch((e) => recordShadow(id, b, null, null, String(e.message || e).slice(0, 300)));
@@ -179,7 +195,7 @@ export function record(task, state, questions, { answers, ms = null, model = nul
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'jev')`).run(task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions),
       JSON.stringify(answers), tokens, ms, model).lastInsertRowid;
     const route = routeFor(task);
-    if (route.shadow) for (const b of route.shadow_backends) {
+    if (route.shadow) for (const b of route.shadow_backends.filter((x) => shadowAllowed(task, x))) {
       callBackend(b, task, route, st, questions, 20000, 0)
         .then((r) => recordShadow(id, b, r.answers, r.ms, null))
         .catch((e) => recordShadow(id, b, null, null, String(e.message || e).slice(0, 300)));

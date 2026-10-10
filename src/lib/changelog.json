@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:39:31.902Z",
+  "generated": "2026-10-10T18:52:45.461Z",
   "entries": [
+    {
+      "hash": "56ea4dc0",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Technical Reference Manual, shown as the TRM tab in /admin/anis",
+      "scope": "anis"
+    },
     {
       "hash": "7e800ec6",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A planned search that falls back says so (_plan.fallback); scorer counts it",
       "scope": "search"
-    },
-    {
-      "hash": "4e379071",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Planner survives Jev slowness — plan cache, 2.5s timeout, keyword backstop",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "56ea4dc0",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Technical Reference Manual, shown as the TRM tab in /admin/anis",
+        "scope": "anis"
+      },
       {
         "hash": "7e800ec6",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "Fixed",
         "description": "A planned search that falls back says so (_plan.fallback); scorer counts it",
-        "scope": "search"
-      },
-      {
-        "hash": "4e379071",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Planner survives Jev slowness — plan cache, 2.5s timeout, keyword backstop",
         "scope": "search"
       }
     ]

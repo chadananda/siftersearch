@@ -15,6 +15,7 @@ beforeEach(async () => {
   process.env.SYSTEMONE_DIR = dir; process.env.LAYA_TOKEN = 't'; process.env.TYPESAFE_API_KEY = 'k';
   // hermetic: the real .env-secrets may carry the internal key, which would switch Clef shadowing on
   delete process.env.INTERNAL_API_KEY; delete process.env.SYSTEMONE_EDGE_KEY; delete process.env.CLEF; delete process.env.SYSTEMONE_SHADOW;
+  process.env.SYSTEMONE_SHADOW_RATE = '1'; delete process.env.SYSTEMONE_SHADOW_DAILY;   // these tests check shadow wiring, not sampling
   urls = [];
   vi.stubGlobal('fetch', vi.fn(async (url, init) => {
     urls.push(url);
@@ -106,5 +107,12 @@ describe('record() — calls made outside ask()', () => {
     expect(mod._test.db().prepare('SELECT COUNT(*) n FROM shadow WHERE call_id = ?').get(id).n).toBe(2);
     expect(mod.record(null, 's', Q, {})).toBeNull();
     delete process.env.INTERNAL_API_KEY;
+  });
+  it('shadow budget: sampled at SYSTEMONE_SHADOW_RATE and capped per task × backend × day', () => {
+    process.env.SYSTEMONE_SHADOW_RATE = '0.02'; process.env.SYSTEMONE_SHADOW_DAILY = '3';
+    expect(mod.shadowAllowed('t-rate', 'clef', () => 0.5)).toBe(false);            // outside the 2% sample
+    const ok = [1, 2, 3, 4].map(() => mod.shadowAllowed('t-cap', 'clef', () => 0));
+    expect(ok).toEqual([true, true, true, false]);                                   // 4th over the daily cap
+    expect(mod.shadowAllowed('t-cap', 'clef-flash', () => 0)).toBe(true);            // cap is per backend
   });
 });
