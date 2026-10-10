@@ -14,7 +14,8 @@ main.exec(`INSERT INTO chat_sessions VALUES ('s1','p1'),('s2','p2');
     (4,'s1',1,'assistant','old','answered','site-chat','{"gate":"research"}','2020-01-01 00:00:00','2020-01-01 00:00:00');
   INSERT INTO ai_usage VALUES (1,'${now}','anis-craft','google','gemini-3.5-flash-lite',3000,400,0),
     (2,'${now}','system1:anis-triage','typesafe','jev-latest',900,0,0.0000378),
-    (3,'${now}','search','openai','text-embedding-3-large',0,0,0.0001);`);
+    (3,'${now}','search','openai','text-embedding-3-large',0,0,0.0001),
+    (4,'${now}','system1:anis-triage:shadow','cloudflare','clef',900,0,0.0002);`);
 const queryAll = async (sql, p = []) => main.prepare(sql).all(...p);
 
 describe('Anís hub overview', () => {
@@ -28,7 +29,7 @@ describe('Anís hub overview', () => {
   });
   it('costs: only Anís callers + his System-1 tasks; nothing unpriced', async () => {
     const c = await anisCosts({ queryAll }, 30);
-    expect(c.rows.map((r) => r.caller).sort()).toEqual(['anis-craft', 'system1:anis-triage']);
+    expect(c.rows.map((r) => r.caller).sort()).toEqual(['anis-craft', 'system1:anis-triage', 'system1:anis-triage:shadow']);   // Clef shadows count
     expect(c.unpriced).toEqual([]);   // every model Anís uses is priced (10-10)
   });
   it('assessment: tallies verdicts and problems; recent list carries the problems', () => {

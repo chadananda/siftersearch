@@ -1,6 +1,7 @@
 ---
 // The Anís hub (Chad 10-10: "everything about Anís in one place"): deployments (one per host site), personality
-// adjustment (the companion dials), assessment audits, activity, costs, System-1 decisions, and his design page.
+// adjustment (the companion dials), assessment audits, activity, costs, System-1 decisions, the TRM (technical
+// reference manual) and his design page.
 // Tabs are plain buttons + a tiny script (#hash selects a tab: /admin/anis#personality).
 import { getCollection, render } from 'astro:content';
 import AdminLayout from '../../layouts/AdminLayout.astro';
@@ -8,12 +9,13 @@ import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import WidgetManager from '../../components/admin/WidgetManager.svelte';
 import CompanionControls from '../../components/admin/CompanionControls.svelte';
 import AnisInsights from '../../components/admin/AnisInsights.svelte';
+import { Content as TrmContent } from '../../../docs/architecture/anis-trm.md';
 
 const about = (await getCollection('agents')).find((a) => a.id === 'agent-anis');
 const { Content: AboutContent } = about ? await render(about) : { Content: null };
 const TABS = [
   ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
-  ['activity', 'Activity'], ['costs', 'Costs'], ['system1', 'System-1'], ['about', 'About Anís'],
+  ['activity', 'Activity'], ['costs', 'Costs'], ['system1', 'System-1'], ['trm', 'TRM'], ['about', 'About Anís'],
 ];
 ---
 
@@ -40,6 +42,9 @@ const TABS = [
         <AnisInsights view={v} client:only="svelte"><IslandSkeleton slot="fallback" /></AnisInsights>
       </section>
     ))}
+    <section id="panel-trm" role="tabpanel" aria-labelledby="tab-trm" hidden>
+      <article class="about"><p class="trm-note">Technical Reference Manual — how Anís works, as built. Source: <code>docs/architecture/anis-trm.md</code>.</p><TrmContent /></article>
+    </section>
     <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" hidden>
       <article class="about">{AboutContent ? <AboutContent /> : <p>The design page is at <a href="/docs/agents/anis">/docs/agents/anis</a>.</p>}</article>
     </section>
@@ -70,6 +75,8 @@ const TABS = [
   .hub-tabs button[aria-selected='true'] { color: var(--text-primary); border-bottom-color: var(--accent-primary, currentColor); font-weight: 600; }
   .about { max-width: 52rem; color: var(--text-primary); line-height: 1.6; }
   .about :global(h1) { display: none; }
+  .trm-note { color: var(--text-secondary); font-size: 0.85rem; }
+  .about :global(pre) { overflow-x: auto; font-size: 0.8rem; }
   .about :global(h2) { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
   .about :global(table) { display: block; overflow-x: auto; font-size: 0.85rem; }
   .about :global(td), .about :global(th) { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border-default); }

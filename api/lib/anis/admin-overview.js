@@ -34,10 +34,11 @@ export async function anisActivity({ queryAll }, days = 30) {
   return { days, byDay, byPath, byStrategy, recent, people: people[0]?.n ?? 0, replies: byDay.reduce((s, r) => s + r.n, 0) };
 }
 
-/** What Anís costs: his own calls (reply model) + his System-1 tasks, from ai_usage; unpriced models listed. */
+/** What Anís costs: his own calls (reply model) + his System-1 tasks incl. Clef shadows, from ai_usage; unpriced models listed. */
 export async function anisCosts({ queryAll }, days = 30) {
   const since = isoDaysAgo(days);
-  const s1 = ANIS_S1_TASKS.map((t) => `system1:${t}`);
+  // his System-1 tasks, served and Clef-shadowed (`system1:<task>:shadow`, see systemone.callClef)
+  const s1 = ANIS_S1_TASKS.flatMap((t) => [`system1:${t}`, `system1:${t}:shadow`]);
   const rows = await queryAll(`SELECT caller, provider, model, COUNT(*) AS calls, SUM(prompt_tokens) AS input_tokens,
       SUM(completion_tokens) AS output_tokens, ROUND(SUM(estimated_cost_usd), 6) AS usd
     FROM ai_usage WHERE timestamp >= ? AND (caller LIKE 'anis%' OR caller IN (${s1.map(() => '?').join(',')}))

@@ -226,7 +226,7 @@ const keepRetrievedLinks = (text, quotes) => {
  */
 export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, deps }) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
-  const persona = profile.persona_name || 'Anis';
+  const persona = profile.persona_name || 'Anís';
   const question = lastUser(messages);
   const t0 = Date.now();
 

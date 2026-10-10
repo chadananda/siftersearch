@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:35:00.272Z",
+  "generated": "2026-10-10T18:39:31.902Z",
   "entries": [
+    {
+      "hash": "7e800ec6",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Retire Sifter, Analyzer, Translator, Memory, Transcriber — Anís + Dewey are the agents",
+      "scope": "agents"
+    },
     {
       "hash": "9c116fe6",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Planner survives Jev slowness — plan cache, 2.5s timeout, keyword backstop",
       "scope": "search"
-    },
-    {
-      "hash": "b4cbf270",
-      "date": "2026-09-24",
-      "type": "New",
-      "description": "Public /v1/search is Jev-planned; LLM summarises only (2 calls); analyze:false = zero-LLM raw",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "7e800ec6",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Retire Sifter, Analyzer, Translator, Memory, Transcriber — Anís + Dewey are the agents",
+        "scope": "agents"
+      },
       {
         "hash": "9c116fe6",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "Fixed",
         "description": "Planner survives Jev slowness — plan cache, 2.5s timeout, keyword backstop",
-        "scope": "search"
-      },
-      {
-        "hash": "b4cbf270",
-        "date": "2026-09-24",
-        "type": "New",
-        "description": "Public /v1/search is Jev-planned; LLM summarises only (2 calls); analyze:false = zero-LLM raw",
         "scope": "search"
       }
     ]
