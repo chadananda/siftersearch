@@ -10,6 +10,7 @@
 // upgrade dead-ended there. A lazy import does NOT fix that: it only appears to when a stale dist is on disk.
 // Delegating through createExports keeps asset serving, env/session bindings and clientAddress exactly as the
 // adapter intends, on both v12 and v14.
+import { workRoute } from './ops/workplan.js';
 import { App } from 'astro/app';
 import { handle } from '@astrojs/cloudflare/handler';
 import { mailRoute, mailCron } from './mail/index.js';
@@ -52,6 +53,7 @@ export function createExports(manifest) {
         const url = new URL(request.url);
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
+        if (url.pathname.startsWith('/_work/')) return workRoute(request, env);
         if (isApiPath(url.pathname)) {
           const target = API_ORIGIN + url.pathname + url.search;
           // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.

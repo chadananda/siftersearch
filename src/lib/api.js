@@ -761,6 +761,12 @@ export const admin = {
     return request('/api/admin/pending');
   },
 
+  /** The WorkPlan (live feature queue). */
+  async getWorkPlan() { return request('/api/admin/workplan'); },
+  async addWorkItem(item) { return request('/api/admin/workplan', { method: 'POST', body: JSON.stringify(item) }); },
+  async updateWorkItem(id, patch) { return request(`/api/admin/workplan/${id}`, { method: 'POST', body: JSON.stringify(patch) }); },
+  async reorderWorkPlan(ids) { return request('/api/admin/workplan/reorder', { method: 'POST', body: JSON.stringify({ ids }) }); },
+
   /** The Anís hub: activity, costs, assessment, System-1 for the last `days` days. */
   async getAnisOverview(days = 30) {
     return request(`/api/admin/anis/overview?days=${days}`);

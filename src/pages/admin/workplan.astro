@@ -1,0 +1,15 @@
+---
+// The WorkPlan: live feature queue (src/components/admin/WorkPlan.svelte).
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import WorkPlan from '../../components/admin/WorkPlan.svelte';
+---
+<AdminLayout title="WorkPlan">
+  <div class="flex flex-col gap-4 max-w-4xl">
+    <header>
+      <h1 class="text-2xl font-semibold text-primary">WorkPlan</h1>
+      <p class="text-secondary text-sm">What is being built now, what is next, what is waiting on a decision. Reorder the queue to change priorities.</p>
+    </header>
+    <WorkPlan client:only="svelte"><IslandSkeleton slot="fallback" /></WorkPlan>
+  </div>
+</AdminLayout>

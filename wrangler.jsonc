@@ -22,7 +22,9 @@
   "ai": { "binding": "AI" },
   // Anís's one history + mail (worker/mail/). Migrations: wrangler d1 migrations apply anis --remote
   "d1_databases": [
-    { "binding": "ANIS_DB", "database_name": "anis", "database_id": "b7f3d052-7c71-4a0f-aa84-3532c2feb52d", "migrations_dir": "worker/d1/anis" }
+    { "binding": "ANIS_DB", "database_name": "anis", "database_id": "b7f3d052-7c71-4a0f-aa84-3532c2feb52d", "migrations_dir": "worker/d1/anis" },
+    // WorkPlan (worker/ops/workplan.js): the live feature queue behind /admin/workplan
+    { "binding": "OPS_DB", "database_name": "siftersearch-ops", "database_id": "b8075ba4-1916-4284-811c-e6c7faeb643a", "migrations_dir": "worker/d1/ops" }
   ],
   // Anís mail (worker/mail/drafting.js): drafts every 5 min, outreach planning hourly, daily digest 14:00 UTC.
   "triggers": { "crons": ["*/5 * * * *", "0 * * * *", "0 14 * * *"] },

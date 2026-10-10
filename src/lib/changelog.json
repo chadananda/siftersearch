@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:07:25.480Z",
+  "generated": "2026-10-10T20:11:08.463Z",
   "entries": [
+    {
+      "hash": "78c7d1f8",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Immediate [ACTION REQUIRED] email when any AI provider is out of credit",
+      "scope": "alerts"
+    },
     {
       "hash": "c86ac6ab",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A HOLLOW doc is not 'unchanged' — OceanLibrary canonicals never re-ingested for three months",
       "scope": "ingest"
-    },
-    {
-      "hash": "31df550d",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Serve the OceanLibrary site copy (with paragraph ids) over a duplicate of the same book",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "78c7d1f8",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Immediate [ACTION REQUIRED] email when any AI provider is out of credit",
+        "scope": "alerts"
+      },
       {
         "hash": "c86ac6ab",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "Fixed",
         "description": "A HOLLOW doc is not 'unchanged' — OceanLibrary canonicals never re-ingested for three months",
         "scope": "ingest"
-      },
-      {
-        "hash": "31df550d",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Serve the OceanLibrary site copy (with paragraph ids) over a duplicate of the same book",
-        "scope": "search"
       }
     ]
   }
