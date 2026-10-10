@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T07:01:24.719Z",
+  "generated": "2026-10-10T12:37:50.859Z",
   "entries": [
+    {
+      "hash": "5bab0bfb",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "A site paragraph leaves the primary Meili index too",
+      "scope": "index"
+    },
     {
       "hash": "b16a1549",
       "date": "2026-10-09",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Every share card pointed at an og:image that 404s",
       "scope": null
-    },
-    {
-      "hash": "ac5979a7",
-      "date": "2026-09-09",
-      "type": "Security",
-      "description": "No shell in the backup path, 255 ignored files untracked, 641 -> 344",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-10": [
+      {
+        "hash": "5bab0bfb",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "A site paragraph leaves the primary Meili index too",
+        "scope": "index"
+      }
+    ],
     "2026-10-09": [
       {
         "hash": "b16a1549",
@@ -7029,13 +7038,6 @@
         "date": "2026-09-09",
         "type": "Other",
         "description": "Every share card pointed at an og:image that 404s",
-        "scope": null
-      },
-      {
-        "hash": "ac5979a7",
-        "date": "2026-09-09",
-        "type": "Security",
-        "description": "No shell in the backup path, 255 ignored files untracked, 641 -> 344",
         "scope": null
       }
     ]

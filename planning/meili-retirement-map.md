@@ -199,3 +199,14 @@ indexes).
 11. Site-only sites: a Qdrant collection or a site payload, and relax the `scope_config.primary` gate.
 12. Optional: `/server/meili-vector` (dense 3-large@512; only the crosslingual battery uses it).
 13. Last: config/env keys, `getMeili`, `initializeIndexes`/index-library.js.
+
+**Entity layer is DEAD today (verified 10-10 02:00):** Meili `entity_mentions_idx` (161,875 docs) holds entity ids from an old
+id space — 8/8 sampled ids do not exist in `graph_entities` (current ids 1,247,551–1,307,325). `searchByEntity` therefore
+contributes nothing whatever entityIds a plan passes. The current mentions (`entity_mentions_v2`, 218k) cannot be swapped in
+blindly: `para_id 'para_N'` did NOT match `content.paragraph_index` N in a spot check (surface absent; rows missing after
+re-ingests). Needs the entity work's anchor → paragraph mapping first. Not a Meili-parity loss (both arms get nothing).
+
+**Qdrant made current 10-10 (no live writer yet):** keyword catch-up (checkpoint 28,910,865 → 29,083,104; hourly cron since
+10-09 22:40) and phrase catch-up for the 645 docs with paragraphs added since 10-01 (228,015 paragraphs, 651,393 units,
+$4.84). The 42 OL books restored 10-08 went 0 → 20,714 keyword / 65,424 phrase points. Phrase embedding has NO schedule —
+it spends (Gemini; month at $322 of the $400 cap) and needs Chad's call.
