@@ -346,7 +346,7 @@ async function main() {
       GROUP BY day ORDER BY day ASC`, [fmtTs(new Date(Date.now() - 14 * 24 * 3600 * 1000))]).catch(probeFail([]));
     // Top queries (7d) — what people actually ask. Chat prompts excluded (they're prose, not queries).
     const topQueries = await queryAll(`
-      SELECT query, COUNT(*) AS n, AVG(result_count) AS avg_results
+      SELECT query, COUNT(*) AS n, AVG(result_count) AS avg_results, MAX(strategy) AS strategy
       FROM search_log
       WHERE created_at >= ? AND search_type != 'api_chat' AND search_type NOT LIKE 'api_source_hunt%' AND search_type NOT LIKE 'api_original%'
         AND length(trim(query)) > 0 AND COALESCE(is_test, 0) = 0   -- typed searches only; quote lookups are counted as lookups_d7
@@ -367,7 +367,12 @@ async function main() {
       totals.chat_users_all = chatUsersAll;
       totals.saved_conversations = savedConversations;
     }
-    activity = { generated_at: new Date().toISOString(), totals, series, topQueries };
+    // Which strategies the planner chose (7d) — planned searches only; older rows and unplanned endpoints have none.
+    const strategies = await queryAll(`
+      SELECT COALESCE(strategy, '(not planned)') AS strategy, COUNT(*) AS n FROM search_log
+      WHERE created_at >= ? AND search_type != 'api_chat' AND search_type NOT LIKE 'api_source_hunt%' AND search_type NOT LIKE 'api_original%'
+        AND COALESCE(is_test, 0) = 0 GROUP BY 1 ORDER BY n DESC`, [day7]).catch(probeFail([]));
+    activity = { generated_at: new Date().toISOString(), totals, series, topQueries, strategies };
   } catch (err) {
     activity = { error: err.message };
   }

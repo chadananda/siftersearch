@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 9;
+export const USER_DB_CURRENT_VERSION = 10;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -408,5 +408,12 @@ export const userMigrations = {
   9: async () => {
     try { await userQuery('ALTER TABLE search_log ADD COLUMN is_test INTEGER DEFAULT 0'); } catch { /* exists */ }
     logger.info('User migration 9 complete: search_log.is_test');
+  },
+
+  // Version 10: which search strategy the planner chose (plan.shape: quote, topic, fact, define, …) — Chad 10-10:
+  // "show me what search strategies were chosen".
+  10: async () => {
+    try { await userQuery('ALTER TABLE search_log ADD COLUMN strategy TEXT'); } catch { /* exists */ }
+    logger.info('User migration 10 complete: search_log.strategy');
   },
 };

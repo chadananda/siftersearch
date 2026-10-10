@@ -159,9 +159,17 @@
             {#each activity.topQueries as q}
               <div class="row query">
                 <span class="row-name" title={q.query}>{q.query}</span>
-                <span class="row-meta">{q.avg_results != null ? Math.round(q.avg_results) + ' results' : ''}</span>
+                <span class="row-meta">{q.strategy ? q.strategy + ' · ' : ''}{q.avg_results != null ? Math.round(q.avg_results) + ' results' : ''}</span>
                 <span class="row-val">{fmt(q.n)}</span>
               </div>
+            {/each}
+          </div>
+        {/if}
+        {#if activity.strategies?.length}
+          <h3>Search strategies chosen · 7d</h3>
+          <div class="rows">
+            {#each activity.strategies as s}
+              <div class="row"><span class="row-name">{s.strategy}</span><span class="row-val">{fmt(s.n)}</span></div>
             {/each}
           </div>
         {/if}

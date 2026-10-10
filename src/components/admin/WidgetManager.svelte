@@ -165,8 +165,8 @@
   {:else}
     <header class="page-header">
       <div>
-        <h1>Anís</h1>
-        <p class="subtitle">Anís on each host site — the same companion with its own instructions, home tradition and look. <a href="/docs/agents/anis">About Anís</a></p>
+        <h2>Deployments</h2>
+        <p class="subtitle">Anís on each host site — the same companion with its own instructions, home tradition and look.</p>
       </div>
       <button class="btn-primary" onclick={openCreate} aria-label="Create widget profile">New Profile</button>
     </header>
@@ -334,7 +334,7 @@
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
-  .page-header h1 { margin: 0; font-size: 1.75rem; color: var(--text-primary); }
+  .page-header h1, .page-header h2 { margin: 0; font-size: 1.35rem; color: var(--text-primary); }
   .subtitle { margin: 0.5rem 0 0; color: var(--text-secondary); }
 
   .loading { text-align: center; padding: 2rem; }

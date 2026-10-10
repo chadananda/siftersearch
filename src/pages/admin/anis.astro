@@ -1,10 +1,76 @@
 ---
-// Anís deployments: one profile per host site (instructions, home tradition, look). Formerly /admin/widgets.
+// The Anís hub (Chad 10-10: "everything about Anís in one place"): deployments (one per host site), personality
+// adjustment (the companion dials), assessment audits, activity, costs, System-1 decisions, and his design page.
+// Tabs are plain buttons + a tiny script (#hash selects a tab: /admin/anis#personality).
+import { getCollection, render } from 'astro:content';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import WidgetManager from '../../components/admin/WidgetManager.svelte';
+import CompanionControls from '../../components/admin/CompanionControls.svelte';
+import AnisInsights from '../../components/admin/AnisInsights.svelte';
+
+const about = (await getCollection('agents')).find((a) => a.id === 'agent-anis');
+const { Content: AboutContent } = about ? await render(about) : { Content: null };
+const TABS = [
+  ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
+  ['activity', 'Activity'], ['costs', 'Costs'], ['system1', 'System-1'], ['about', 'About Anís'],
+];
 ---
 
 <AdminLayout title="Anís">
-  <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
+  <div class="anis-hub">
+    <header class="hub-head">
+      <h1>Anís</h1>
+      <p>The research companion — on every host site and by email (anis@oceanlibrary.com).</p>
+    </header>
+    <nav class="hub-tabs" role="tablist" aria-label="Anís">
+      {TABS.map(([id, label], i) => (
+        <button role="tab" id={`tab-${id}`} aria-controls={`panel-${id}`} aria-selected={i === 0 ? 'true' : 'false'} data-tab={id}>{label}</button>
+      ))}
+    </nav>
+
+    <section id="panel-deployments" role="tabpanel" aria-labelledby="tab-deployments">
+      <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
+    </section>
+    <section id="panel-personality" role="tabpanel" aria-labelledby="tab-personality" hidden>
+      <CompanionControls client:only="svelte"><IslandSkeleton slot="fallback" /></CompanionControls>
+    </section>
+    {['assessment', 'activity', 'costs', 'system1'].map((v) => (
+      <section id={`panel-${v}`} role="tabpanel" aria-labelledby={`tab-${v}`} hidden>
+        <AnisInsights view={v} client:only="svelte"><IslandSkeleton slot="fallback" /></AnisInsights>
+      </section>
+    ))}
+    <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+      <article class="about">{AboutContent ? <AboutContent /> : <p>The design page is at <a href="/docs/agents/anis">/docs/agents/anis</a>.</p>}</article>
+    </section>
+  </div>
 </AdminLayout>
+
+<script>
+  const tabs = [...document.querySelectorAll('.hub-tabs [data-tab]')];
+  function show(id) {
+    if (!tabs.some((t) => t.dataset.tab === id)) id = tabs[0].dataset.tab;
+    for (const t of tabs) {
+      const on = t.dataset.tab === id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(`panel-${t.dataset.tab}`).hidden = !on;
+    }
+  }
+  for (const t of tabs) t.addEventListener('click', () => { history.replaceState(null, '', `#${t.dataset.tab}`); show(t.dataset.tab); });
+  show(location.hash.slice(1));
+</script>
+
+<style>
+  .anis-hub { display: flex; flex-direction: column; gap: 1rem; }
+  .hub-head h1 { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+  .hub-head p { color: var(--text-secondary); margin: 0.25rem 0 0; }
+  .hub-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid var(--border-default); }
+  .hub-tabs button { padding: 0.5rem 0.85rem; border: none; background: none; color: var(--text-secondary); cursor: pointer;
+    border-bottom: 2px solid transparent; font-size: 0.9rem; }
+  .hub-tabs button[aria-selected='true'] { color: var(--text-primary); border-bottom-color: var(--accent-primary, currentColor); font-weight: 600; }
+  .about { max-width: 52rem; color: var(--text-primary); line-height: 1.6; }
+  .about :global(h1) { display: none; }
+  .about :global(h2) { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+  .about :global(table) { display: block; overflow-x: auto; font-size: 0.85rem; }
+  .about :global(td), .about :global(th) { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border-default); }
+</style>

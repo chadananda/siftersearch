@@ -111,13 +111,13 @@ async function attachLinks(results) {
 }
 
 /** Log search to search_log table (fire-and-forget, fail-fast) */
-function logApiSearch({ query: q, apiKeyId, resultCount, durationMs, searchType, filters, isTest }) {
+function logApiSearch({ query: q, apiKeyId, resultCount, durationMs, searchType, filters, isTest, strategy = null }) {
   setImmediate(() => {
     try {
       telemetryQuery(
-        `INSERT INTO search_log (query, api_key_id, result_count, duration_ms, search_type, filters, is_test, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [q, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'api', filters ? JSON.stringify(filters) : null, isTest ? 1 : 0]
+        `INSERT INTO search_log (query, api_key_id, result_count, duration_ms, search_type, filters, is_test, strategy, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [q, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'api', filters ? JSON.stringify(filters) : null, isTest ? 1 : 0, strategy]
       );
     } catch (err) {
       logger.warn({ err }, 'Failed to log API search');
@@ -622,7 +622,7 @@ export default async function publicApiRoutes(fastify) {
     if (includeLinks) await attachLinks(results);
 
     const durationMs = Date.now() - startTime;
-    logApiSearch({ query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: results.length, durationMs, searchType: 'api', filters });
+    logApiSearch({ query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: results.length, durationMs, searchType: 'api', filters, strategy: planInfo?.shape ?? null });
     if (request.apiKeyUserId) {
       recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
     }

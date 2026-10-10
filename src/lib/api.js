@@ -761,6 +761,11 @@ export const admin = {
     return request('/api/admin/pending');
   },
 
+  /** The Anís hub: activity, costs, assessment, System-1 for the last `days` days. */
+  async getAnisOverview(days = 30) {
+    return request(`/api/admin/anis/overview?days=${days}`);
+  },
+
   /**
    * Update a user
    */

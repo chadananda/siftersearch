@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T17:50:43.115Z",
+  "generated": "2026-10-10T18:09:23.008Z",
   "entries": [
+    {
+      "hash": "ced5c21d",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Every API deploy since 09:39 was aborted — /library/recent too slow for the smoke test",
+      "scope": "deploy"
+    },
     {
       "hash": "3df714b6",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Jev-planned search — one ~200ms classification picks scope, author and layers",
       "scope": "search"
-    },
-    {
-      "hash": "4f9087f6",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Actually enable containsFilter at API boot — initializeIndexes never runs there",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "ced5c21d",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Every API deploy since 09:39 was aborted — /library/recent too slow for the smoke test",
+        "scope": "deploy"
+      },
       {
         "hash": "3df714b6",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "New",
         "description": "Jev-planned search — one ~200ms classification picks scope, author and layers",
-        "scope": "search"
-      },
-      {
-        "hash": "4f9087f6",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Actually enable containsFilter at API boot — initializeIndexes never runs there",
         "scope": "search"
       }
     ]

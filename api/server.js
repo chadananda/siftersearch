@@ -44,6 +44,7 @@ import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
 import tabletAdminRoutes, { tabletPublicRoutes } from './routes/tablets.js';
 import coverRoutes from './routes/covers.js';
+import anisAdminRoutes from './routes/anis-admin.js';
 import widgetRoutes from './routes/widget.js';
 import anisRoutes from './routes/anis.js';
 import ingestRoutes from './routes/ingest.js';
@@ -342,7 +343,8 @@ export async function createServer(opts = {}) {
   await server.register(docsRepoRoutes, { prefix: '/api/admin' });   // the ONE document surface (docs-repo)
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
-await server.register(tabletAdminRoutes, { prefix: '/api/admin' });   // tablet metadata (Phelps + oceanoflights)
+  await server.register(tabletAdminRoutes, { prefix: '/api/admin' });   // tablet metadata (Phelps + oceanoflights)
+  await server.register(anisAdminRoutes, { prefix: '/api/admin' });   // the Anís hub (/admin/anis)
   await server.register(ingestRoutes, { prefix: '/api/admin' });
   await server.register(bookNotesRoutes, { prefix: '/api/admin' });
   await server.register(companionRoutes, { prefix: '/api/admin' });

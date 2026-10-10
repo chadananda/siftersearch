@@ -38,10 +38,10 @@
 </script>
 
 <div class="p-6 max-w-5xl">
-  <h1 class="text-2xl font-semibold text-primary mb-1">Anís Companion</h1>
+  <h2 class="text-xl font-semibold text-primary mb-1">Personality Adjustment</h2>
   <p class="text-muted mb-6">
-    How Anís relates to each person she talks with — on every site and by email (the Seeker Companion layer). The dials
-    tune tactics: how much she challenges, how warm and direct she is, how much she remembers and follows up. Her
+    How Anís relates to each person he talks with — on every site and by email (the Seeker Companion layer). The dials
+    tune tactics: how much he challenges, how warm and direct he is, how much he remembers and follows up. His
     character and the safety invariants are fixed. Policy <code>{config?.policy_version ?? '…'}</code>.
   </p>
 

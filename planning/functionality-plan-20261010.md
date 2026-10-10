@@ -47,7 +47,8 @@ disambiguating Gleanings / Hidden Words / Epistle (the long pole), lexicon seedi
 **Named Dewey (dewey@oceanlibrary.com), signed "Dewey · AI Librarian for Ocean 2.0". Full design: `docs/agents/agent-dewey.md`
 (/docs/agents/dewey). Decided 10-10: budget $300/month; OCR via the searchlayerpdf API (original + upgraded PDF kept on tower,
 the Markdown used; poor output re-processed about yearly); holdings check by title, author, text or emailed phone photo;
-image attachments and Google attachment links; Chad scans raw PDFs when a document isn't held; contributor whitelist with
+image attachments and Google attachment links; Chad scans raw PDFs when a document isn't held; Dewey alone may create/edit/move/delete library source files (prep for
+ingest, improvement for re-ingest — Markdown only in Dropbox, every change versioned + logged); contributor whitelist with
 profiles; weekly report to Chad; models Clef / Haiku 5.5 / DeepSeek / Opus 5.5 with Clef-chosen pre-baked research
 strategies and a monthly analysis of Dewey's own queries.** The sections below are the earlier draft; the page supersedes them.
 
