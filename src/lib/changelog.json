@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:57:00.713Z",
+  "generated": "2026-10-10T21:03:07.987Z",
   "entries": [
+    {
+      "hash": "4b74453f",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "/library is shelves of small cover cards — instant from the edge-cached index",
+      "scope": "library"
+    },
     {
       "hash": "4f584fa0",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Claim-target-coverage — how complete the indexed who-met-whom path is, per relation",
       "scope": "admin"
-    },
-    {
-      "hash": "172ed3a0",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Cited evidence paragraphs actually load; never stream a link that is not a source",
-      "scope": "search,anis"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "4b74453f",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "/library is shelves of small cover cards — instant from the edge-cached index",
+        "scope": "library"
+      },
       {
         "hash": "4f584fa0",
         "date": "2026-10-10",
@@ -7024,15 +7031,6 @@
         "type": "New",
         "description": "Claim-target-coverage — how complete the indexed who-met-whom path is, per relation",
         "scope": "admin"
-      }
-    ],
-    "2026-09-25": [
-      {
-        "hash": "172ed3a0",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Cited evidence paragraphs actually load; never stream a link that is not a source",
-        "scope": "search,anis"
       }
     ]
   }
