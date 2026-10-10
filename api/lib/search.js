@@ -222,7 +222,9 @@ let _olDocIdPromise = null;
  * "The earth is but one country…". Hits further from the best keep their order.
  */
 const NEAR = 0.035;
-const CANON_VERBATIM = 0.86;   // phrase similarity at which a canonical match is the quoted line itself (famous lines ~0.90)
+// A canonical match at this phrase similarity, for a query of at least CANON_MIN_WORDS words, is the quoted line itself.
+// Measured 10-10: famous lines 0.90; topic questions 0.78-0.85, but the short "How should I pray?" reached 0.861.
+const CANON_VERBATIM = 0.875, CANON_MIN_WORDS = 6;
 async function originalFirst(hits) {
   if (hits.length < 2) return hits;
   const top = Math.max(...hits.map((h) => h.score || 0));
@@ -1417,7 +1419,8 @@ export async function multiIndexSearch(query, options = {}) {
       canonResult = { hits: await originalFirst(canonResult.hits || []) };
       // a canonical passage matching near-verbatim IS a quotation, whatever the planner said (the planner classed
       // "The earth is but one country…!" a topic; phrase similarity 0.90 says quote)
-      canonVerbatim = Math.max(0, ...canonResult.hits.map((h) => h.score || 0)) >= CANON_VERBATIM;
+      canonVerbatim = String(query).trim().split(/\s+/).length >= CANON_MIN_WORDS
+        && Math.max(0, ...canonResult.hits.map((h) => h.score || 0)) >= CANON_VERBATIM;
     } catch (err) {
       logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed');
     }

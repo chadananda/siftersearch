@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T22:00:29.260Z",
+  "generated": "2026-10-10T22:09:10.919Z",
   "entries": [
+    {
+      "hash": "30a91d0c",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "A near-verbatim canonical match (phrase sim >= 0.86) is treated as a quote, whatever the planner said",
+      "scope": "search"
+    },
     {
       "hash": "e4f0f38a",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Function-word aliases are not names; planned search reports engine layer timings per pass",
       "scope": "search"
-    },
-    {
-      "hash": "e7474a62",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Encounter names match as unique contiguous phrases, longest name wins; verb picks the edge, leftover words rank; per-stage timings",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "30a91d0c",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "A near-verbatim canonical match (phrase sim >= 0.86) is treated as a quote, whatever the planner said",
+        "scope": "search"
+      },
       {
         "hash": "e4f0f38a",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Fixed",
         "description": "Function-word aliases are not names; planned search reports engine layer timings per pass",
-        "scope": "search"
-      },
-      {
-        "hash": "e7474a62",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Encounter names match as unique contiguous phrases, longest name wins; verb picks the edge, leftover words rank; per-stage timings",
         "scope": "search"
       }
     ]
