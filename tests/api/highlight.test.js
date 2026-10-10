@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { highlightText, queryTerms } from '../../api/lib/search/highlight.js';
+import { highlightText, queryTerms } from '../../api/lib/search/highlighting.js';
 
 describe('highlightText', () => {
   it('folds diacritics and apostrophes, marks the original characters, whole words with prefix match', () => {

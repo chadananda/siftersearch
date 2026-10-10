@@ -146,3 +146,16 @@ describe('metadata documents are not passages', async () => {
     _setExcluded([]);
   });
 });
+
+describe('qdrantHealth', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('reports each collection with its unindexed count; any unreachable collection makes it an error', async () => {
+    const { qdrantHealth } = await import('../../api/lib/search/qdrant-layers.js');
+    vi.stubGlobal('fetch', vi.fn(async (url) => (url.includes('hype') ? { ok: false, status: 404 }
+      : { ok: true, json: async () => ({ result: { status: url.includes('phrases') ? 'yellow' : 'green', points_count: 10, indexed_vectors_count: url.includes('phrases') ? 4 : 10 } }) })));
+    const h = await qdrantHealth();
+    expect(h.status).toBe('error');
+    expect(h.collections.phrases).toEqual({ status: 'yellow', points: 10, unindexed: 6 });
+    expect(h.collections.hype).toEqual({ status: 'http 404' });
+  });
+});

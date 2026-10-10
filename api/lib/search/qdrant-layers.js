@@ -83,6 +83,21 @@ async function qdrant(path, body, timeoutMs = 2500) {
   return (await r.json()).result;
 }
 
+/** Qdrant liveness + each search collection's status (green = fully indexed; yellow = optimizing, searches slower). */
+export async function qdrantHealth(timeoutMs = 3000) {
+  try {
+    const out = {};
+    for (const c of ['phrases', 'paragraphs_kw', 'hype']) {
+      const r = await fetch(`${QD()}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(timeoutMs) });
+      const j = r.ok ? (await r.json()).result : null;
+      out[c] = j ? { status: j.status, points: j.points_count, unindexed: Math.max(0, (j.points_count || 0) - (j.indexed_vectors_count || 0)) } : { status: `http ${r.status}` };
+    }
+    return { status: Object.values(out).every((x) => x.status === 'green' || x.status === 'yellow') ? 'ok' : 'error', collections: out };
+  } catch (err) {
+    return { status: 'error', error: err.message };
+  }
+}
+
 /** Raw request for the index writer (deletes by filter from the outbox) — the only Qdrant WRITE path at runtime. */
 export const qdrantRequest = (path, body, timeoutMs = 15000) => qdrant(path, body, timeoutMs);
 

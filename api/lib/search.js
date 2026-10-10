@@ -10,7 +10,6 @@ import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
 import { searchPhrases, searchKeywordQdrant, searchHypeQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
-import { highlightText } from './search/highlight.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1750,15 +1749,19 @@ export async function getStats() {
  * Health check
  */
 export async function healthCheck() {
+  // Both engines: Qdrant is the retirement target (planning/meili-retirement-map.md); `status` still follows Meili while
+  // production search ranks with it.
+  const { qdrantHealth } = await import('./search/qdrant-layers.js');
+  const qdrant = await qdrantHealth();
   if (!config.search.enabled) {
-    return { status: 'disabled', message: 'Meilisearch is disabled' };
+    return { status: 'disabled', message: 'Meilisearch is disabled', qdrant };
   }
   try {
     const meili = getMeili();
     const health = await meili.health();
-    return { status: 'ok', ...health };
+    return { status: 'ok', ...health, qdrant };
   } catch (err) {
-    return { status: 'error', error: err.message };
+    return { status: 'error', error: err.message, qdrant };
   }
 }
 
@@ -1774,6 +1777,7 @@ import {
   extractMatchingSentences,
   highlightBestSentence,
   enrichHitsWithExcerpts,
+  highlightText,
   STOP_WORDS
 } from './search/highlighting.js';
 export { extractMatchingSentences, highlightBestSentence, enrichHitsWithExcerpts, STOP_WORDS };
