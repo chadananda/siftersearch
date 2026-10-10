@@ -23,6 +23,31 @@ export async function enqueueIndexDeletes(paraIds, docId = null) {
   return ids.length;
 }
 
+/**
+ * BACKLOG: rows that left the corpus BEFORE the triggers existed (migration 143) were never removed from the engines.
+ * Enqueue every non-live row in ONE id window (content.id in (afterId, afterId+span]) — a short primary-key range read,
+ * never a long scan (a long read transaction balloons the WAL). Callers walk the windows and pace on queue depth.
+ * → { enqueued, nextAfterId, done }
+ */
+export async function enqueueBacklogWindow(afterId = 0, span = 50000) {
+  const [{ maxId } = {}] = await queryAll('SELECT MAX(id) AS maxId FROM content', [], 'outbox:backlog-max');
+  const hi = afterId + span;
+  const rows = await queryAll(`SELECT c.id, c.doc_id FROM content c LEFT JOIN docs d ON d.id = c.doc_id
+      WHERE c.id > ? AND c.id <= ? AND (c.deleted_at IS NOT NULL OR COALESCE(c.is_duplicate, 0) = 1
+        OR d.id IS NULL OR d.deleted_at IS NOT NULL OR d.duplicate_of IS NOT NULL)`, [afterId, hi], 'outbox:backlog-window');
+  for (let i = 0; i < rows.length; i += 500) {
+    await transaction(rows.slice(i, i + 500).map((r) => ({
+      sql: 'INSERT OR REPLACE INTO index_outbox (para_id, doc_id) VALUES (?, ?)', args: [r.id, r.doc_id] })), 'outbox:enqueue');
+  }
+  return { enqueued: rows.length, nextAfterId: hi, done: hi >= (maxId || 0) };
+}
+
+/** Rows waiting in the outbox (pacing for backlog walks). */
+export async function outboxDepth() {
+  const [{ n } = {}] = await queryAll('SELECT COUNT(*) AS n FROM index_outbox', [], 'outbox:depth');
+  return n || 0;
+}
+
 export const QDRANT_PARAGRAPH_COLLECTIONS = Object.freeze(['phrases', 'paragraphs_kw', 'hype']);
 
 /**

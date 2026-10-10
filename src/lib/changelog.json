@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T02:22:14.283Z",
+  "generated": "2026-10-10T02:27:27.171Z",
   "entries": [
+    {
+      "hash": "e3c33366",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Clef page-role classifier (work vs metadata vs navigation) + bahai-library cleanup plan",
+      "scope": "library"
+    },
     {
       "hash": "1eb9d648",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "One completion model — entity pipeline lives in scripts",
       "scope": null
-    },
-    {
-      "hash": "fde7facb",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "91% of claim targets unresolved — the structural defect",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "e3c33366",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Clef page-role classifier (work vs metadata vs navigation) + bahai-library cleanup plan",
+        "scope": "library"
+      },
       {
         "hash": "1eb9d648",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Other",
         "description": "One completion model — entity pipeline lives in scripts",
-        "scope": null
-      },
-      {
-        "hash": "fde7facb",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "91% of claim targets unresolved — the structural defect",
         "scope": null
       }
     ]

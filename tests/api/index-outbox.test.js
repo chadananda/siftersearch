@@ -46,6 +46,20 @@ describe('index outbox — triggers', () => {
   });
 });
 
+describe('index outbox — backlog', () => {
+  it('enqueues only the non-live rows of one id window, with their doc; reports when the walk is done', async () => {
+    const { enqueueBacklogWindow } = await import('../../api/lib/index-outbox.js');
+    db.exec(`UPDATE content SET deleted_at = '2026-05-01' WHERE id = 10`);
+    db.exec(`UPDATE content SET is_duplicate = 1 WHERE id = 11`);
+    db.exec(`UPDATE docs SET deleted_at = '2026-08-01' WHERE id = 2`);
+    db.exec('DELETE FROM index_outbox');                                          // as if it all happened before migration 143
+    expect(await enqueueBacklogWindow(0, 15)).toEqual({ enqueued: 2, nextAfterId: 15, done: false });
+    expect(outbox()).toEqual([10, 11]);
+    expect(await enqueueBacklogWindow(15, 15)).toEqual({ enqueued: 2, nextAfterId: 30, done: true });
+    expect(db.prepare('SELECT para_id, doc_id FROM index_outbox WHERE para_id = 20').get()).toEqual({ para_id: 20, doc_id: 2 });
+  });
+});
+
 describe('index outbox — drain', () => {
   it('removes dead rows from their own Meili index and all Qdrant collections, skips live-again rows, clears the queue', async () => {
     const { drainIndexOutbox } = await import('../../api/lib/index-outbox.js');
