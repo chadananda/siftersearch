@@ -7,7 +7,7 @@ import { parseTransforms, resolveFormat, defaultSpec } from './transform.js';
 import { resolveFocalPoint } from './focal.js';
 import { renderImage, CONTENT_TYPE } from './render.js';
 
-const VERSION = 1;                                  // bump to invalidate every cached derivative
+const VERSION = 2;                                  // bump to invalidate every cached derivative (2: lossy webp)
 const BUCKETS = new Set(['covers']);                // image families served (originals on tower: api/lib/covers.js)
 const PATH = /^\/img\/([a-z]+)\/(\d+)$/;
 
@@ -47,7 +47,7 @@ export async function handleImage(req, env, ctx) {
   }
   let out;
   try {
-    out = renderImage(src, { spec, format, focal });
+    out = await renderImage(src, { spec, format, focal });
   } catch {
     return image(src, format, 300);                  // never serve broken: the untransformed original, briefly cached
   }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T16:36:04.713Z",
+  "generated": "2026-10-10T16:39:18.960Z",
   "entries": [
+    {
+      "hash": "54fa5133",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "The Librarian is Dewey — AI Librarian for Ocean 2.0 (dewey@oceanlibrary.com)",
+      "scope": "agents"
+    },
     {
       "hash": "69ce114c",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Status after clearing the post-baseline regressions",
       "scope": null
-    },
-    {
-      "hash": "60e48c78",
-      "date": "2026-09-10",
-      "type": "Other",
-      "description": "Clear the two gate regressions — currency 10 -> 5, elegance 237 -> 235",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "54fa5133",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "The Librarian is Dewey — AI Librarian for Ocean 2.0 (dewey@oceanlibrary.com)",
+        "scope": "agents"
+      },
       {
         "hash": "69ce114c",
         "date": "2026-10-10",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-10",
         "type": "Chore",
         "description": "Status after clearing the post-baseline regressions",
-        "scope": null
-      },
-      {
-        "hash": "60e48c78",
-        "date": "2026-09-10",
-        "type": "Other",
-        "description": "Clear the two gate regressions — currency 10 -> 5, elegance 237 -> 235",
         "scope": null
       }
     ]
