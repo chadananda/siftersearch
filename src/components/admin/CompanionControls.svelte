@@ -38,10 +38,11 @@
 </script>
 
 <div class="p-6 max-w-5xl">
-  <h1 class="text-2xl font-semibold text-primary mb-1">Seeker Companion</h1>
+  <h1 class="text-2xl font-semibold text-primary mb-1">Anís Companion</h1>
   <p class="text-muted mb-6">
-    The relationship-centered chat personality (“The Candid Companion”). Dials tune tactics; the character
-    and safety invariants are fixed. Policy <code>{config?.policy_version ?? '…'}</code>.
+    How Anís relates to each person she talks with — on every site and by email (the Seeker Companion layer). The dials
+    tune tactics: how much she challenges, how warm and direct she is, how much she remembers and follows up. Her
+    character and the safety invariants are fixed. Policy <code>{config?.policy_version ?? '…'}</code>.
   </p>
 
   {#if error}<div class="text-error mb-4">{error}</div>{/if}

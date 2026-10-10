@@ -328,13 +328,14 @@ async function main() {
     const day7 = fmtTs(weekStart);
     const totals = await queryOne(`
       SELECT
-        SUM(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d1,
-        SUM(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d7,
+        SUM(CASE WHEN search_type != 'api_chat' AND search_type NOT LIKE 'api_source_hunt%' AND search_type NOT LIKE 'api_original%' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d1,
+        SUM(CASE WHEN search_type != 'api_chat' AND search_type NOT LIKE 'api_source_hunt%' AND search_type NOT LIKE 'api_original%' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d7,
+        SUM(CASE WHEN (search_type LIKE 'api_source_hunt%' OR search_type LIKE 'api_original%') AND created_at >= ? THEN 1 ELSE 0 END) AS lookups_d7,
         SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d1,
         SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d7,
         AVG(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN duration_ms ELSE NULL END) AS avg_ms_d7,
         SUM(CASE WHEN result_count = 0 AND search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS zero_result_d7
-      FROM search_log WHERE COALESCE(is_test, 0) = 0`, [day1, day7, day1, day7, day7, day7]).catch(probeFail(null));
+      FROM search_log WHERE COALESCE(is_test, 0) = 0`, [day1, day7, day7, day1, day7, day7, day7]).catch(probeFail(null));
     // 14-day daily series (searches vs chat) for the Analytics page sparkline/chart.
     const series = await queryAll(`
       SELECT substr(created_at, 1, 10) AS day,
@@ -347,7 +348,8 @@ async function main() {
     const topQueries = await queryAll(`
       SELECT query, COUNT(*) AS n, AVG(result_count) AS avg_results
       FROM search_log
-      WHERE created_at >= ? AND search_type != 'api_chat' AND length(trim(query)) > 0 AND COALESCE(is_test, 0) = 0
+      WHERE created_at >= ? AND search_type != 'api_chat' AND search_type NOT LIKE 'api_source_hunt%' AND search_type NOT LIKE 'api_original%'
+        AND length(trim(query)) > 0 AND COALESCE(is_test, 0) = 0   -- typed searches only; quote lookups are counted as lookups_d7
       GROUP BY lower(trim(query)) ORDER BY n DESC LIMIT 25`, [day7]).catch(probeFail([]));
     // Chat users: search_log carries no identifier for chat turns, so distinct
     // chat *users* come from the companion exposure log (one row per served turn,

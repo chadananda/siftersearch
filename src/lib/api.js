@@ -886,16 +886,6 @@ export const admin = {
   },
 
   // SEO Analytics
-  async getSEOTraffic(options = {}) {
-    const params = new URLSearchParams();
-    if (options.days) params.set('days', options.days);
-    return request(`/api/admin/seo/traffic?${params.toString()}`);
-  },
-  async getSEOPages(options = {}) {
-    const params = new URLSearchParams();
-    if (options.days) params.set('days', options.days);
-    return request(`/api/admin/seo/pages?${params.toString()}`);
-  },
 
   // API Key Management
   async getApiKeys() {
@@ -1184,42 +1174,6 @@ export const failures = {
 // Oversized Paragraphs API
 // ============================================
 
-export const oversizedParagraphs = {
-  /**
-   * Get list of documents with oversized paragraphs
-   * Sorted by authority (most important first)
-   */
-  async getList() {
-    return request('/api/library/oversized-paragraphs');
-  },
-
-  /**
-   * Delete oversized paragraphs for a specific document
-   */
-  async deleteForDoc(docId) {
-    return request(`/api/library/oversized-paragraphs/${docId}/delete`, {
-      method: 'POST'
-    });
-  },
-
-  /**
-   * Delete all oversized paragraphs across all documents
-   */
-  async deleteAll() {
-    return request('/api/library/oversized-paragraphs/delete-all', {
-      method: 'POST'
-    });
-  },
-
-  /**
-   * Re-ingest a document (queue for reprocessing)
-   */
-  async reindex(docId) {
-    return request(`/api/library/documents/${docId}/reindex`, {
-      method: 'POST'
-    });
-  }
-};
 
 // ============================================
 // Health API

@@ -129,6 +129,7 @@
         <div class="metric-row">
           <div class="metric"><span class="m-val">{fmt(t.searches_d7)}</span><span class="m-lbl">searches · 7d</span></div>
           <div class="metric"><span class="m-val">{fmt(t.chat_d7)}</span><span class="m-lbl">chat turns · 7d</span></div>
+          <div class="metric" title="SourceHunt and find-the-original lookups (quotes pasted in, not typed searches)"><span class="m-val">{fmt(t.lookups_d7)}</span><span class="m-lbl">quote lookups · 7d</span></div>
           <div class="metric"><span class="m-val">{t.avg_ms_d7 ? Math.round(t.avg_ms_d7) + 'ms' : '—'}</span><span class="m-lbl">avg latency</span></div>
           <div class="metric"><span class="m-val">{pct(t.zero_result_d7, t.searches_d7)}</span><span class="m-lbl">zero-result rate</span></div>
         </div>
@@ -153,7 +154,7 @@
         {/if}
 
         {#if activity.topQueries?.length}
-          <h3>Top queries · 7d</h3>
+          <h3>Top searches · 7d <span class="hint">(typed searches; test traffic and quote lookups excluded)</span></h3>
           <div class="rows">
             {#each activity.topQueries as q}
               <div class="row query">

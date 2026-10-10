@@ -3410,108 +3410,11 @@ Provide only the translation, no explanations.`;
     return { success: true, deleted: id };
   });
 
-  // ============================================
-  // Oversized Paragraphs Routes (Admin)
-  // ============================================
+  // (Oversized-paragraph routes removed 10-10: they scanned every soft-deleted row with LENGTH(text) — ~1m46s each,
+  // synchronous, run twice per Doc Failures page load — and froze the whole API for minutes.)
 
-  const MAX_PARAGRAPH_CHARS = 6000;  // Must match embedding-worker.js MAX_CHARS
 
-  /**
-   * Get documents with oversized paragraphs that need re-segmentation
-   * Sorted by authority (highest first) so admins can fix important docs first
-   * GET /api/library/oversized-paragraphs
-   * Returns documents with oversized paragraphs that need re-ingestion
-   * (soft-deleted paragraphs indicate content was removed and document needs re-chunking)
-   */
-  fastify.get('/oversized-paragraphs', {
-    preHandler: [requireInternal]
-  }, async () => {
-    // Get documents with SOFT-DELETED oversized paragraphs (need re-ingestion)
-    const results = await queryAll(`
-      SELECT
-        d.id as doc_id,
-        d.title,
-        d.file_path,
-        d.language,
-        COUNT(c.id) as oversized_count,
-        MAX(LENGTH(c.text)) as max_length,
-        MIN(LENGTH(c.text)) as min_length
-      FROM content c
-      JOIN docs d ON c.doc_id = d.id
-      WHERE c.deleted_at IS NOT NULL
-        AND LENGTH(c.text) > ?
-      GROUP BY d.id
-      ORDER BY oversized_count DESC
-    `, [MAX_PARAGRAPH_CHARS]);
 
-    // Get total counts
-    const totals = await queryOne(`
-      SELECT
-        COUNT(DISTINCT c.doc_id) as total_docs,
-        COUNT(*) as total_paragraphs
-      FROM content c
-      WHERE c.deleted_at IS NOT NULL
-        AND LENGTH(c.text) > ?
-    `, [MAX_PARAGRAPH_CHARS]);
-
-    return {
-      documents: results,
-      totalDocuments: totals?.total_docs || 0,
-      totalParagraphs: totals?.total_paragraphs || 0,
-      maxChars: MAX_PARAGRAPH_CHARS
-    };
-  });
-
-  /**
-   * Delete all oversized paragraphs for a specific document
-   * POST /api/library/oversized-paragraphs/:docId/delete
-   */
-  fastify.post('/oversized-paragraphs/:docId/delete', {
-    preHandler: [requireInternal],
-    schema: {
-      params: {
-        type: 'object',
-        properties: {
-          docId: { type: 'string' }
-        },
-        required: ['docId']
-      }
-    }
-  }, async (request) => {
-    const { docId } = request.params;
-
-    // Soft delete oversized paragraphs for this document
-    const result = await content.softDeleteOversized(MAX_PARAGRAPH_CHARS, docId);
-
-    logger.info({ docId, deleted: result.changes }, 'Deleted oversized paragraphs for document');
-    return { success: true, deleted: result.changes || 0 };
-  });
-
-  /**
-   * Delete ALL oversized paragraphs across all documents
-   * POST /api/library/oversized-paragraphs/delete-all
-   */
-  fastify.post('/oversized-paragraphs/delete-all', {
-    preHandler: [requireInternal]
-  }, async () => {
-    // Get count first
-    const count = await queryOne(`
-      SELECT COUNT(*) as total FROM content
-      WHERE embedding IS NULL
-        AND deleted_at IS NULL
-        AND LENGTH(text) > ?
-    `, [MAX_PARAGRAPH_CHARS]);
-
-    if (!count?.total) {
-      return { success: true, deleted: 0 };
-    }
-
-    // Soft delete all oversized paragraphs
-    const result = await content.softDeleteOversized(MAX_PARAGRAPH_CHARS);
-
-    logger.warn({ deleted: result.changes || count.total }, 'Deleted ALL oversized paragraphs');
-    return { success: true, deleted: result.changes || count.total };
-  });
 
   // ============================================
   // Document Failures Routes (Admin)

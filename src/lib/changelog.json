@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-10T17:21:13.971Z",
+  "generated": "2026-10-10T17:41:30.543Z",
   "entries": [
+    {
+      "hash": "0cf8f9f2",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Doc Failures froze the API for minutes; one Analytics; Companion is Anís's",
+      "scope": "admin"
+    },
+    {
+      "hash": "bbe44486",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Talks as a content category — pipeline, tools, pilot (Hooper Dunbar), decisions",
+      "scope": "planning"
+    },
     {
       "hash": "5530a4d2",
       "date": "2026-10-10",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Author/collection filters returned nothing — enable Meili containsFilter; scope the keyword cache",
       "scope": "search"
-    },
-    {
-      "hash": "d3bd120f",
-      "date": "2026-09-24",
-      "type": "Test",
-      "description": "Search-type battery with independent truth; re-based legacy bank; fix textless timeout fallback",
-      "scope": "search"
-    },
-    {
-      "hash": "9cd0cc8c",
-      "date": "2026-09-24",
-      "type": "Chore",
-      "description": "Pin Node 25.9.0 to match production",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "0cf8f9f2",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Doc Failures froze the API for minutes; one Analytics; Companion is Anís's",
+        "scope": "admin"
+      },
+      {
+        "hash": "bbe44486",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Talks as a content category — pipeline, tools, pilot (Hooper Dunbar), decisions",
+        "scope": "planning"
+      },
       {
         "hash": "5530a4d2",
         "date": "2026-10-10",
@@ -7021,20 +7035,6 @@
         "type": "Fixed",
         "description": "Author/collection filters returned nothing — enable Meili containsFilter; scope the keyword cache",
         "scope": "search"
-      },
-      {
-        "hash": "d3bd120f",
-        "date": "2026-09-24",
-        "type": "Test",
-        "description": "Search-type battery with independent truth; re-based legacy bank; fix textless timeout fallback",
-        "scope": "search"
-      },
-      {
-        "hash": "9cd0cc8c",
-        "date": "2026-09-24",
-        "type": "Chore",
-        "description": "Pin Node 25.9.0 to match production",
-        "scope": null
       }
     ]
   }

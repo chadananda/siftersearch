@@ -2,16 +2,15 @@
   /**
    * DocumentFailures Component
    * Admin view for reviewing and managing document ingestion failures
-   * Also shows documents with oversized paragraphs that need re-ingestion
    */
   import { onMount } from 'svelte';
-  import { failures, oversizedParagraphs } from '../../lib/api.js';
+  import { failures } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
 
   const auth = getAuthState();
 
   // Tab state
-  let activeTab = $state('failures'); // 'failures', 'oversized', or 'auto_chunked'
+  let activeTab = $state('failures'); // 'failures' or 'auto_chunked'
 
   // Failures state
   let items = $state([]);
@@ -26,13 +25,6 @@
   let page = $state(0);
   const limit = 20;
   let total = $state(0);
-
-  // Oversized paragraphs state
-  let oversizedDocs = $state([]);
-  let oversizedLoading = $state(false);
-  let oversizedError = $state(null);
-  let oversizedTotal = $state(0);
-  let oversizedParagraphsTotal = $state(0);
 
   // Auto-chunked state
   let autoChunkedItems = $state([]);
@@ -50,7 +42,7 @@
 
     // Only load data if authenticated admin
     if (auth.isAuthenticated && ['admin', 'superadmin', 'editor'].includes(auth.user?.tier)) {
-      await Promise.all([loadFailures(), loadSummary(), loadOversized(), loadAutoChunked()]);
+      await Promise.all([loadFailures(), loadSummary(), loadAutoChunked()]);
     } else {
       loading = false;
     }
@@ -145,68 +137,9 @@
   }
 
   // Oversized paragraphs functions
-  async function loadOversized() {
-    oversizedLoading = true;
-    oversizedError = null;
 
-    try {
-      const data = await oversizedParagraphs.getList();
-      oversizedDocs = data.documents || [];
-      oversizedTotal = data.totalDocuments || 0;
-      oversizedParagraphsTotal = data.totalParagraphs || 0;
-    } catch (err) {
-      oversizedError = err.message || 'Failed to load oversized paragraphs';
-    } finally {
-      oversizedLoading = false;
-    }
-  }
 
-  async function handleDeleteOversizedForDoc(docId, title) {
-    if (!confirm(`Delete all oversized paragraphs from "${title}"? The document will need to be re-ingested with proper segmentation.`)) return;
 
-    actionLoading = `oversized-${docId}`;
-    try {
-      const result = await oversizedParagraphs.deleteForDoc(docId);
-      if (result.deleted > 0) {
-        alert(`Deleted ${result.deleted} oversized paragraph(s). Re-ingest the document to fix.`);
-      }
-      await loadOversized();
-    } catch (err) {
-      alert(err.message || 'Failed to delete oversized paragraphs');
-    } finally {
-      actionLoading = null;
-    }
-  }
-
-  async function handleDeleteAllOversized() {
-    if (!confirm(`Delete ALL oversized paragraphs across ${oversizedTotal} document(s)? These documents will need to be re-ingested with proper segmentation.`)) return;
-
-    actionLoading = 'delete-all-oversized';
-    try {
-      const result = await oversizedParagraphs.deleteAll();
-      alert(`Deleted ${result.deleted} oversized paragraph(s) across all documents.`);
-      await loadOversized();
-    } catch (err) {
-      alert(err.message || 'Failed to delete oversized paragraphs');
-    } finally {
-      actionLoading = null;
-    }
-  }
-
-  async function handleReindex(docId, title) {
-    if (!confirm(`Re-ingest "${title}"? This will reprocess the document from the source file.`)) return;
-
-    actionLoading = `reindex-${docId}`;
-    try {
-      await oversizedParagraphs.reindex(docId);
-      alert(`Document "${title}" queued for re-ingestion.`);
-      await loadOversized();
-    } catch (err) {
-      alert(err.message || 'Failed to queue document for re-ingestion');
-    } finally {
-      actionLoading = null;
-    }
-  }
 
   async function loadAutoChunked() {
     autoChunkedLoading = true;
@@ -236,9 +169,6 @@
 
   function switchTab(tab) {
     activeTab = tab;
-    if (tab === 'oversized' && oversizedDocs.length === 0 && !oversizedLoading) {
-      loadOversized();
-    }
     if (tab === 'auto_chunked' && autoChunkedItems.length === 0 && !autoChunkedLoading) {
       loadAutoChunked();
     }
@@ -260,15 +190,6 @@
         Ingestion Failures
         {#if summary?.totalUnresolved > 0}
           <span class="tab-badge">{summary.totalUnresolved}</span>
-        {/if}
-      </button>
-      <button
-        class="tab {activeTab === 'oversized' ? 'active' : ''}"
-        onclick={() => switchTab('oversized')}
-      >
-        Oversized Paragraphs
-        {#if oversizedTotal > 0}
-          <span class="tab-badge warning">{oversizedTotal}</span>
         {/if}
       </button>
       <button
@@ -456,87 +377,6 @@
         </div>
       {/if}
     {/if}
-    {:else if activeTab === 'oversized'}
-      <!-- Oversized Paragraphs Tab -->
-      <div class="summary-box">
-        <div class="summary-stat main">
-          <span class="stat-value warning-text">{oversizedTotal}</span>
-          <span class="stat-label">Documents with Oversized Paragraphs</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-value">{oversizedParagraphsTotal}</span>
-          <span class="stat-label">Total Paragraphs</span>
-        </div>
-        {#if oversizedTotal > 0}
-          <button
-            class="btn btn-danger"
-            onclick={handleDeleteAllOversized}
-            disabled={actionLoading === 'delete-all-oversized'}
-          >
-            {actionLoading === 'delete-all-oversized' ? 'Deleting...' : 'Delete All Oversized'}
-          </button>
-        {/if}
-      </div>
-
-      <p class="help-text">
-        These documents have paragraphs exceeding 6,000 characters which cannot be embedded.
-        Edit the source documents to add proper paragraph breaks, then re-ingest.
-        Documents are sorted by authority (most important first).
-      </p>
-
-      {#if oversizedError}
-        <div class="error-banner">{oversizedError}</div>
-      {/if}
-
-      {#if oversizedLoading}
-        <div class="loading">Loading oversized paragraphs...</div>
-      {:else if oversizedDocs.length === 0}
-        <div class="empty-state">
-          <p>No documents with oversized paragraphs found.</p>
-        </div>
-      {:else}
-        <div class="oversized-list">
-          {#each oversizedDocs as doc (doc.doc_id)}
-            <div class="oversized-card">
-              <div class="oversized-header">
-                <span class="doc-title">{doc.title || 'Untitled'}</span>
-                <span class="oversized-count">{doc.oversized_count} oversized</span>
-              </div>
-              <div class="doc-details">
-                {#if doc.file_path}
-                  <span class="file-path" title="Click to copy" onclick={() => navigator.clipboard.writeText(doc.file_path)}>{doc.file_path}</span>
-                {/if}
-                <span class="max-length">Max length: {doc.max_length?.toLocaleString()} chars</span>
-                {#if doc.language}
-                  <span class="language">{doc.language}</span>
-                {/if}
-              </div>
-              <div class="oversized-actions">
-                <a
-                  href="/admin/edit?id={doc.doc_id}"
-                  class="btn btn-primary"
-                >
-                  Edit Document
-                </a>
-                <button
-                  class="btn btn-secondary"
-                  onclick={() => handleReindex(doc.doc_id, doc.title)}
-                  disabled={actionLoading === `reindex-${doc.doc_id}`}
-                >
-                  {actionLoading === `reindex-${doc.doc_id}` ? 'Queuing...' : 'Re-ingest'}
-                </button>
-                <button
-                  class="btn btn-danger"
-                  onclick={() => handleDeleteOversizedForDoc(doc.doc_id, doc.title)}
-                  disabled={actionLoading === `oversized-${doc.doc_id}`}
-                >
-                  {actionLoading === `oversized-${doc.doc_id}` ? 'Deleting...' : 'Delete Oversized'}
-                </button>
-              </div>
-            </div>
-          {/each}
-        </div>
-      {/if}
     {/if}
   </div>
 {/if}

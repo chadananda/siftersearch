@@ -1,9 +1,4 @@
 ---
-import AdminLayout from '../../layouts/AdminLayout.astro';
-import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
-import SEOAnalytics from '../../components/admin/SEOAnalytics.svelte';
+// Removed 10-10: an older Cloudflare traffic page duplicating the Traffic card on /admin/analytics.
+return Astro.redirect('/admin/analytics', 301);
 ---
-
-<AdminLayout title="Analytics">
-  <SEOAnalytics client:only="svelte"><IslandSkeleton slot="fallback" /></SEOAnalytics>
-</AdminLayout>
