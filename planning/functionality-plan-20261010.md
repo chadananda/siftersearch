@@ -62,7 +62,11 @@ disambiguating Gleanings / Hidden Words / Epistle (the long pole), lexicon seedi
    Books, OpenLibrary, bahai.org, OOL). It ranks finds by importance × text quality × rights, and queues them.
 4. **Keeps the collection honest.** Gap reports (canonical works missing per tradition), duplicate and junk detection
    (the page-role classifier, phrase-level duplicate check), editions that should replace weaker copies.
-5. **Talks.** A chat page and an email address: "do we have X?", "find a good text of Y", "what's in the queue?",
+5. **Enriches and corrects existing content** (Chad 10-10): collates new editions against ours to iron out typos (proposed
+   corrections with the other edition's reading as evidence, applied with an audit trail); finds metadata (dates,
+   publisher, translator, ISBN, Tablet recipient/place, provenance) with a source per field; finds cover images we may use
+   (rights noted). A nightly improvement pass rotates through existing books, core and most-read first.
+6. **Talks.** A chat page and an email address: "do we have X?", "find a good text of Y", "what's in the queue?",
    "here's a PDF, ingest it". Same agent, same tools, same memory as the control panel.
 
 ### 3.2 Surfaces

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T15:44:12.727Z",
+  "generated": "2026-10-10T16:10:38.325Z",
   "entries": [
+    {
+      "hash": "e4ce247c",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "A page per interactive agent — Anís and the Librarian (soul, purpose, tools, scenarios, memory)",
+      "scope": "agents"
+    },
     {
       "hash": "ec9e2de2",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Two hung /api/auth/refresh fetches on every page load",
       "scope": "client"
-    },
-    {
-      "hash": "7dfceb12",
-      "date": "2026-09-09",
-      "type": "Chore",
-      "description": "Worker status for the overnight standards pass",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "e4ce247c",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "A page per interactive agent — Anís and the Librarian (soul, purpose, tools, scenarios, memory)",
+        "scope": "agents"
+      },
       {
         "hash": "ec9e2de2",
         "date": "2026-10-10",
@@ -7030,15 +7037,6 @@
         "type": "Fixed",
         "description": "Two hung /api/auth/refresh fetches on every page load",
         "scope": "client"
-      }
-    ],
-    "2026-09-09": [
-      {
-        "hash": "7dfceb12",
-        "date": "2026-09-09",
-        "type": "Chore",
-        "description": "Worker status for the overnight standards pass",
-        "scope": null
       }
     ]
   }

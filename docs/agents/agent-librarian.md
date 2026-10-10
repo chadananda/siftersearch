@@ -44,6 +44,14 @@ Status: **designed, not built.** It starts in earnest after the index work (abou
 3. **Hunt the web.** Nightly research for important works we lack, one tradition at a time, ranked by importance ×
    text quality × rights.
 4. **Keep the collection honest.** Gap reports, duplicate and junk detection, better editions to replace weaker copies.
+5. **Enrich and correct what we already hold** — constantly:
+   - **Collate editions.** When another version of a text turns up, align it with ours paragraph by paragraph and propose
+     corrections (typos, OCR errors, dropped lines, missing footnotes) — each with the other edition's reading as
+     evidence. Corrections are proposed, reviewed and applied with an audit trail; nothing is silently overwritten.
+   - **Find metadata.** Date written and published, publisher, translator, edition, ISBN, recipient and place for
+     Tablets, provenance — from catalogues, the book's own front matter, and scholarly sources; each field with its source.
+   - **Find cover images** we may use when displaying a book (open catalogues, archive.org, publishers), with the rights
+     noted, stored once and shown wherever the book appears.
 
 ## Tools
 
@@ -58,6 +66,9 @@ Status: **designed, not built.** It starts in earnest after the index work (abou
 | `ingest(plan)` | through the ingester and the single writer — never a raw script | ingest routes |
 | `verify(doc)` | sample paragraphs, page-role check (work vs metadata vs navigation), duplicate check, search smoke test | page-role classifier |
 | `report.gaps(tradition)` | important works per tradition vs holdings | missing-books triage |
+| `collate(ours, theirs)` | paragraph-aligned comparison of two editions → proposed corrections with evidence | cross-lingual / paragraph alignment code, SourceHunt matching |
+| `metadata.find(doc)` | candidate metadata fields, each with a source and confidence | tablet_meta merge, catalogue lookups |
+| `cover.find(doc)` | candidate cover images with source and rights | `docs.cover_url`, OpenLibrary covers, R2 storage |
 
 ## Work-item lifecycle
 
@@ -71,6 +82,7 @@ Status: **designed, not built.** It starts in earnest after the index work (abou
 | continuous | intake: new scans in the drop folder and email attachments → triage → ingest plan |
 | nightly | web research for one tradition (rotating), within budget; retry `needs-human` items with new leads |
 | weekly | gap report and acquisition shortlist to Chad; verification sweep of the week's ingests |
+| nightly | improvement pass over a rotating set of existing books (most-read and core works first): metadata gaps, missing covers, editions worth collating |
 | monthly | collection review: editions to replace, junk to retire |
 
 ## Sample scenarios
@@ -87,12 +99,19 @@ Status: **designed, not built.** It starts in earnest after the index work (abou
 5. **By email:** "Do we have the Kitáb-i-Badí'?" → "Yes — the Persian original, with its document link; no published English
    translation exists, and I'm watching for one." (Illustrative.)
 
+6. **Ironing out typos:** a cleaner printing of *Some Answered Questions* turns up. Collating it with ours finds 37
+   differences: 31 OCR slips in our copy, 4 printing differences, 2 where ours is right. It proposes the 31 with both
+   readings side by side; once approved, they are applied and logged. (Illustrative numbers.)
+7. **A book with no cover:** it finds the publisher's cover on OpenLibrary, notes the licence, stores it, and the book
+   shows it in the library and in Anís's answers.
+
 ## Memory strategy
 
 The Librarian's memory is its records, not its chat:
 
 - **The work-item ledger** — every item, every transition and reason. This is what it remembers about a document.
-- **A dossier per work** — editions seen, sources tried, OCR results, why one edition was chosen. Searching the web
+- **A dossier per work** — editions seen, sources tried, OCR results, why one edition was chosen, corrections proposed
+  and applied, metadata fields and where each came from. Searching the web
   twice for the same book starts from the dossier, not from zero.
 - **Lessons** — what worked for a kind of source ("this archive's scans need the handwritten route", "this site's
   texts drop footnotes"), consulted when it plans.
