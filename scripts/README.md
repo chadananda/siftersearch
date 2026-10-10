@@ -148,9 +148,6 @@ npm run migrate create add_column  # Create new migration file
 
 **API equivalent:** `POST /api/admin/server/migrate`
 
-### add-authority-to-index.js
-Add authority weights to indexed documents for ranking.
-
 ### update-ranking-rules.js
 Update Meilisearch ranking rules configuration.
 

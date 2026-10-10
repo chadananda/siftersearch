@@ -12,11 +12,11 @@ via Cloudflare Tunnel as `api.siftersearch.com`.
 - `services/` — long-running content services (ingester, library-watcher, segmenter, translation, sites-ingester, indexer, **site-adapters/**).
 - `routes/` — Fastify HTTP route registrations.
 - `agents/` — AI agent classes (legacy; mostly superseded by lib/jafar-pipeline.js).
-- `workers/` — PM2 worker entry points (sync-processor, unified-worker).
+- `workers/` — PM2 worker entry points (unified-worker).
 
 ## PM2 processes (production)
 - `siftersearch-api` — entry: api/index.js. Read-only DB.
-- `siftersearch-worker` — entry: api/workers/sync-processor.js. Single-writer SQLite.
+- `siftersearch-worker` — entry: api/workers/unified-worker.js. Single-writer SQLite (hosts /write :7849) + index sync + outbox drain.
 - `siftersearch-library-watcher` — entry: scripts/index-library.js --watch (uses api/services/library-watcher.js).
 - `siftersearch-enrichment` — local Qwen disambig + HyPE.
 - `siftersearch-enrichment-api` — Sonnet batch API path.

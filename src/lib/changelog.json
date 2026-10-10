@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T04:41:38.826Z",
+  "generated": "2026-10-10T05:24:20.902Z",
   "entries": [
+    {
+      "hash": "2909ca00",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Bahai-library removal decided by the content classifier, not page-type rules; exact run restore",
+      "scope": "library"
+    },
     {
       "hash": "53a855bb",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Make the test suite runnable — lazy OpenAI clients, two real migration bugs",
       "scope": null
-    },
-    {
-      "hash": "151f941d",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "Link becomes a real stage — module, facade entry, emit; script is a wrapper",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "2909ca00",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Bahai-library removal decided by the content classifier, not page-type rules; exact run restore",
+        "scope": "library"
+      },
       {
         "hash": "53a855bb",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Fixed",
         "description": "Make the test suite runnable — lazy OpenAI clients, two real migration bugs",
-        "scope": null
-      },
-      {
-        "hash": "151f941d",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "Link becomes a real stage — module, facade entry, emit; script is a wrapper",
         "scope": null
       }
     ]

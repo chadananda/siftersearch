@@ -211,7 +211,7 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
   // Format MUST be `_vectors: { default: <flat array> }` to match the rest of
   // the sync workers. The shorthand `{embeddings, regenerate}` form is silently
   // accepted by Meili but doesn't actually populate the vector store
-  // (numberOfEmbeddings stays 0). Verified against sync-processor.js.
+  // (numberOfEmbeddings stays 0). Verified against the sync worker (unified-worker.js).
   const meiliDocs = records.map((r, i) => ({ ...r, _vectors: { default: embeddings[i] } }));
 
   try {

@@ -166,7 +166,7 @@ pm2 list
 - `siftersearch-updater` - Auto-update service (won't revive pm2-stopped workers)
 - `cloudflared-tunnel` - Cloudflare tunnel
 
-**Retired 2026-07-10 (pm2-stopped; superseded by the unified enrichment pipeline — do not restart):** `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor`, `siftersearch-graph-promoter`, `siftersearch-graph-resolver`, `siftersearch-graph-validator`. (`sync-processor.js` is a dead duplicate of `unified-worker.js`; `siftersearch-db` is defined in ecosystem but not running.)
+**Retired 2026-07-10 (pm2-stopped; superseded by the unified enrichment pipeline — do not restart):** `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor`, `siftersearch-graph-promoter`, `siftersearch-graph-resolver`, `siftersearch-graph-validator`. (`siftersearch-db` is defined in ecosystem but not running.)
 
 **External Services:**
 - `meilisearch` - Runs as systemd user service (not PM2)

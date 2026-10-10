@@ -19,22 +19,21 @@ const ALLOWED = new Set([
   'scripts/preflight.js', 'scripts/dev.js',
   // ranking + secondary indexes (behind engine.js — P3)
   'api/lib/search.js', 'api/lib/search/concepts.js', 'api/lib/search/entity.js', 'api/lib/search/hype.js', 'api/lib/deep-research.js',
-  'api/lib/source-resolve.js',
   // data fetched THROUGH the engine — wrong, to repos / findDocuments (P1): all migrated 10-09
   // index writes outside the sync worker — wrong, mark dirty instead (P2)
   'api/routes/admin.js', 'api/routes/tablets.js', 'api/services/library-watcher.js', 'api/services/indexer.js',
   'api/lib/graph-meili-sync.js', 'api/workers/graph-extractor.js', 'api/workers/graph-pipeline.js',
-  // the sync workers (index-writer's caller — P2; sync-processor.js is a dead duplicate to delete)
-  'api/workers/unified-worker.js', 'api/workers/sync-processor.js',
+  // the sync worker (index-writer's caller — P2)
+  'api/workers/unified-worker.js',
   // scripts — one-off / legacy tools: delete or move onto index-writer
-  'scripts/add-authority-to-index.js', 'scripts/authorship/push-meili-authors.mjs', 'scripts/bulk-meili-sync.mjs',
-  'scripts/cleanup-meili-orphans.js', 'scripts/drop-existing-hype.mjs', 'scripts/fix-001-title.js', 'scripts/fix-meili-vectors.js',
-  'scripts/generate-missing-slugs.js', 'scripts/index-library.js', 'scripts/migrate-meili-doc-id.js', 'scripts/push-slugs-to-meili.js',
-  'scripts/rebuild-paragraphs-index.mjs', 'scripts/refresh-authority.js', 'scripts/regenerate-slugs.js', 'scripts/rescue-embeddings.js',
-  'scripts/siftersearch-enable-binary-quant.mjs', 'scripts/siftersearch-meili-stability-check.mjs', 'scripts/sync-frontmatter-metadata.js',
-  'scripts/sync-meili-titles.js', 'scripts/sync-meili-to-content.js', 'scripts/sync-meili.js', 'scripts/update-authority.js',
-  'scripts/update-ranking-rules.js', 'scripts/wip/priority-sync-docs.mjs', 'scripts/wip/purge-bismillah-hype.mjs', 'scripts/wip/resolve-gpb.mjs',
-  'scripts/wip/sync-ol-sura-hype.mjs', 'scripts/wip/upgrade-to-ol-sources.mjs',
+  'scripts/authorship/push-meili-authors.mjs',
+  
+  'scripts/index-library.js',
+  
+  
+  'scripts/sync-meili.js',
+  'scripts/update-ranking-rules.js',
+  
 ]);
 
 function engineFiles() {

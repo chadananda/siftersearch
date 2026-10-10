@@ -32,7 +32,7 @@ and `wip/` experimental scripts.
 - `truncate-embeddings.js`, `regenerate-embeddings.js` — embedding model migration.
 - `resegment-oversized.js` — re-segment paragraphs that exceed embedder context.
 - `fix-corrupt-descriptions.js` — clean up legacy corrupt frontmatter.
-- `sync-frontmatter-metadata.js`, `sync-meili.js`, `sync-library-nodes.js`, `sync-metadata.js` — full re-sync drivers.
+- `sync-meili.js`, `sync-library-nodes.js`, `sync-metadata.js` — full re-sync drivers.
 - `run-enhancement.js`, `run-enrichment.js` — **LEGACY/RETIRED** (old Qwen/Sonnet enrichment triggers; wrote old-format HyPE on raw text). Superseded by `pipeline/` + `entity-read/`. `run-backup-once.mjs`, `run-lightrag.js` — misc manual triggers.
 - `rewrite-descriptions.js`, `scrub-tech-references.js` — content cleanup.
 - `segment-document.js`, `segment-calibrate.js` — segmenter manual runs.

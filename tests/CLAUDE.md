@@ -9,7 +9,7 @@ behavioral tests.
 Critical-path integration tests (added during refactor Phase 1):
 - `sites-ingester.test.js` — full ingest lifecycle for OceanLibrary adapter.
 - `library-watcher.test.js` — religion-root whitelist invariants.
-- `sync-processor.test.js` — duplicate-paragraph + duplicate-doc removal from Meili.
+- `index-outbox.test.js` — every removal (soft delete, duplicate, hard delete) reaches Meili + Qdrant.
 
 Existing high-coverage suites:
 - `ingester.test.js` (1,191 LOC) — paragraph parsing, hashing, metadata.
@@ -23,7 +23,7 @@ Existing high-coverage suites:
 - Smaller: `auth.test.js`, `cors.test.js`, `query-intent.test.js`, `embedding-cache.test.js`, `documents.test.js`, `indexer.test.js`.
 
 ### Patterns
-- In-memory better-sqlite3 + `vi.mock('../../api/lib/db.js', ...)` — see `pipeline.test.js`, `sites-ingester.test.js`, `sync-processor.test.js`.
+- In-memory better-sqlite3 + `vi.mock('../../api/lib/db.js', ...)` — see `pipeline.test.js`, `sites-ingester.test.js`, `index-outbox.test.js`.
 - Real Fastify server via `api/server.js` + `server.inject({...})` — see `library-crud.test.js`.
 - `vi.mock` for AI services / Meili / fs / logger — see `translation.test.js`.
 
