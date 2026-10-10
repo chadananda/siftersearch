@@ -215,6 +215,24 @@ let _olDocIdCache = null;
 let _olDocIdCacheTime = 0;
 let _olDocIdPromise = null;
 
+/**
+ * Canonical phrase hits that match the line about equally well (within NEAR of the best score — the same words, quoted)
+ * are ordered by their author's authority, so Bahá’u’lláh's own text outranks Shoghi Effendi or Esslemont quoting him
+ * ("the original source wins", quote-authority model). Measured 10-10: Gleanings 0.881 vs World Order 0.898 for
+ * "The earth is but one country…". Hits further from the best keep their order.
+ */
+const NEAR = 0.035;
+async function originalFirst(hits) {
+  if (hits.length < 2) return hits;
+  const top = Math.max(...hits.map((h) => h.score || 0));
+  const near = hits.filter((h) => (h.score || 0) >= top - NEAR), rest = hits.filter((h) => (h.score || 0) < top - NEAR);
+  const { listDocs } = await import('./docs-repo.js');
+  const { docs } = await listDocs({ ids: [...new Set(near.map((h) => Number(h.doc_id)))], fields: ['id', 'author', 'religion', 'collection', 'source_site', 'title'], limit: 50 });
+  const auth = new Map(docs.map((d) => [d.id, getAuthority({ ...d, authority: null }) ?? 5]));
+  near.sort((a, b) => (auth.get(Number(b.doc_id)) ?? 5) - (auth.get(Number(a.doc_id)) ?? 5) || (b.score || 0) - (a.score || 0));
+  return [...near, ...rest];
+}
+
 async function getOlDocIdsByReligion() {
   const now = Date.now();
   if (_olDocIdCache && now - _olDocIdCacheTime < 3600000) return _olDocIdCache;
@@ -1394,6 +1412,7 @@ export async function multiIndexSearch(query, options = {}) {
         ids = ids.filter((id) => inRange.has(Number(id)));
       }
       if (ids.length) canonResult = await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 }));
+      canonResult = { hits: await originalFirst(canonResult.hits || []) };
     } catch (err) {
       logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed');
     }

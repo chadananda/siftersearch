@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T21:38:31.641Z",
+  "generated": "2026-10-10T21:47:04.312Z",
   "entries": [
+    {
+      "hash": "4f5e4b09",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "CANON phrase layer — the original of a famous line always gets a candidate slot",
+      "scope": "search"
+    },
     {
       "hash": "febfc7e7",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Encounter names split parentheticals; _plan.people shows the resolved parties",
       "scope": "search"
-    },
-    {
-      "hash": "cf61a4a0",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Who-met-whom from an in-memory encounter index (ms, not a 600k-claim LIKE scan)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "4f5e4b09",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "CANON phrase layer — the original of a famous line always gets a candidate slot",
+        "scope": "search"
+      },
       {
         "hash": "febfc7e7",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Fixed",
         "description": "Encounter names split parentheticals; _plan.people shows the resolved parties",
-        "scope": "search"
-      },
-      {
-        "hash": "cf61a4a0",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Who-met-whom from an in-memory encounter index (ms, not a 600k-claim LIKE scan)",
         "scope": "search"
       }
     ]
