@@ -1559,6 +1559,13 @@ export const migrations = {
     } catch (err) { if (!/no such table/.test(err.message)) throw err; }
     logger.info('Migration 143 complete');
   },
+  144: async () => {
+    // /api/library/recent sorted and filtered on COALESCE(file_mtime, updated_at) over every doc — 1.5 s + 0.5 s count
+    // cold, 5.5 s under load: past the deploy smoke test's 5 s budget, so every deploy since 10-10 09:39 was ABORTED
+    // and the API kept running morning code. A partial expression index serves the filter, the sort and the count.
+    await query(`CREATE INDEX IF NOT EXISTS idx_docs_activity ON docs(COALESCE(file_mtime, updated_at)) WHERE deleted_at IS NULL`);
+    logger.info('Migration 144 complete: idx_docs_activity');
+  },
 };
 
 export const graphMigrations = {

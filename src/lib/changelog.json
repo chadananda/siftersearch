@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T17:41:30.543Z",
+  "generated": "2026-10-10T17:50:43.115Z",
   "entries": [
+    {
+      "hash": "3df714b6",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "The actual changes for 0cf8f9f2 (that commit carried only the SEO component deletion)",
+      "scope": "admin"
+    },
     {
       "hash": "0cf8f9f2",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Actually enable containsFilter at API boot — initializeIndexes never runs there",
       "scope": "search"
-    },
-    {
-      "hash": "eea935a1",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Author/collection filters returned nothing — enable Meili containsFilter; scope the keyword cache",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "3df714b6",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "The actual changes for 0cf8f9f2 (that commit carried only the SEO component deletion)",
+        "scope": "admin"
+      },
       {
         "hash": "0cf8f9f2",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "Fixed",
         "description": "Actually enable containsFilter at API boot — initializeIndexes never runs there",
-        "scope": "search"
-      },
-      {
-        "hash": "eea935a1",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Author/collection filters returned nothing — enable Meili containsFilter; scope the keyword cache",
         "scope": "search"
       }
     ]

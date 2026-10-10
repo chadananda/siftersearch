@@ -470,13 +470,9 @@ export default async function libraryRoutes(fastify) {
       params.push(cutoffISO);
       params.push(cutoffISO);
     } else {
-      // All recent activity based on file_mtime
-      conditions.push(`(
-        (file_mtime IS NOT NULL AND file_mtime >= ?)
-        OR (file_mtime IS NULL AND (created_at >= ? OR updated_at >= ?))
-      )`);
-      params.push(cutoffISO);
-      params.push(cutoffISO);
+      // All recent activity: file_mtime when known, else updated_at (never earlier than created_at, so the old
+      // "created_at OR updated_at" arm is implied). The same expression as the sort → served by idx_docs_activity.
+      conditions.push('COALESCE(file_mtime, updated_at) >= ?');
       params.push(cutoffISO);
     }
 
