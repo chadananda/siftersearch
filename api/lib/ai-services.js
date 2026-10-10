@@ -261,6 +261,11 @@ export function logAIUsage({
   jobId = null,
   documentId = null
 }) {
+  // A failure that means "no credit left" alarms immediately (spend-alerts.js; deduped per provider).
+  if (!success && errorMessage) {
+    const status = Number((/\b(402|403|429)\b/.exec(errorMessage) || [])[1]) || null;
+    import('./spend-alerts.js').then((m) => m.noteProviderError(provider, { status, message: errorMessage })).catch(() => {});
+  }
   // Telemetry write: use dedicated connection with 200ms busy_timeout so WAL
   // contention from the sync worker never freezes the event loop.
   setImmediate(() => {

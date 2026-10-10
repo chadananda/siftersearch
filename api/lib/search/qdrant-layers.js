@@ -3,6 +3,7 @@
 //                   with its span {start, end} for highlighting; searchKeywordQdrant — BM25 sparse on `paragraphs_kw`.
 // Deps: keyword-tokens.js (same tokenizer as the index). Env: QDRANT_URL, QDRANT_KEY, GEMINI_API_KEY.
 // :rules: query prefix "task: search result | query:" (measured; documents were embedded with "title: none | text:").
+import { noteProviderError } from '../spend-alerts.js';
 import { bm25Query } from '../keyword-tokens.js';
 import { excludedDocIds } from './excluded-docs.js';
 import { docIdsInYearRange } from '../docs-repo.js';
@@ -20,7 +21,11 @@ export function geminiQueryVector(text) {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
     body: JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS }),
   }).then(async (r) => {
-    if (!r.ok) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 120)}`);
+    if (!r.ok) {
+      const text = (await r.text()).slice(0, 300);
+      noteProviderError('Gemini', { status: r.status, message: text });
+      throw new Error(`gemini ${r.status} ${text.slice(0, 120)}`);
+    }
     // Spend (every uncached query): the response carries no token count, so estimate ~4 chars/token.
     logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', caller: 'search-query', promptTokens: Math.ceil((key.length + 30) / 4) });
     return (await r.json()).embedding.values;

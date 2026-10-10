@@ -15,6 +15,7 @@
 // $0.042/M (Clef-flash ≈ Jev). Clef is a fallback or a sampled shadow; the way off Jev is a TRAINED Laya (free, local).
 import Database from 'better-sqlite3';
 import { logAIUsage } from './ai-services.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
+import { noteProviderError } from './spend-alerts.js';   // out-of-credit → immediate email
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -93,7 +94,11 @@ async function post(url, token, body, timeoutMs) {
   const t0 = Date.now();
   const r = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(timeoutMs),
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if (!r.ok) throw Object.assign(new Error(`${url.includes('typesafe') ? 'jev' : 'laya'} ${r.status} ${(await r.text()).slice(0, 160)}`), { status: r.status });
+  if (!r.ok) {
+    const text = (await r.text()).slice(0, 300);
+    if (url.includes('typesafe')) noteProviderError('Jev (TypeSafe)', { status: r.status, message: text });
+    throw Object.assign(new Error(`${url.includes('typesafe') ? 'jev' : 'laya'} ${r.status} ${text.slice(0, 160)}`), { status: r.status });
+  }
   return { json: await r.json(), ms: Date.now() - t0 };
 }
 
@@ -114,7 +119,11 @@ async function callClef(model, state, questions, timeoutMs, spendCaller = 'syste
   const t0 = Date.now();
   const r = await fetch(`${process.env.CLEF_URL || 'https://siftersearch.com'}/_s1/run`, { method: 'POST', signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', 'X-Internal-Key': clefKey() }, body: JSON.stringify({ model, state, questions }) });
-  if (!r.ok) throw Object.assign(new Error(`${model} ${r.status} ${(await r.text()).slice(0, 160)}`), { status: r.status });
+  if (!r.ok) {
+    const text = (await r.text()).slice(0, 300);
+    noteProviderError('Cloudflare Workers AI (Clef)', { status: r.status, message: text });
+    throw Object.assign(new Error(`${model} ${r.status} ${text.slice(0, 160)}`), { status: r.status });
+  }
   const json = await r.json();
   const answers = json.answers ?? json.result?.answers;
   if (!answers || typeof answers !== 'object') throw new Error(`${model}: no answers in response`);
@@ -211,6 +220,9 @@ export function record(task, state, questions, { answers, ms = null, model = nul
 export const jevFetch = (task, base = (...a) => globalThis.fetch(...a)) => async (url, init = {}) => {
   const t0 = Date.now();
   const res = await base(url, init);
+  if (res && !res.ok && typeof res.clone === 'function') {
+    res.clone().text().then((t) => noteProviderError('Jev (TypeSafe)', { status: res.status, message: t })).catch(() => {});
+  }
   if (res?.ok && typeof res.clone === 'function') {
     res.clone().json().then((j) => {
       const b = JSON.parse(init.body || '{}');

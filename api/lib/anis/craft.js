@@ -4,6 +4,7 @@
 import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
 import { logAIUsage } from '../ai-services.js';
+import { noteProviderError } from '../spend-alerts.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
 const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
@@ -33,7 +34,13 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     // DeepSeek v4-flash thinks unless told not to — TOP-LEVEL key, not extra_body (see ai-services chatDeepSeek).
     ...(llm.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
   };
-  const stream = await client(llm.provider).chat.completions.create(params, signal ? { signal } : {});
+  let stream;
+  try {
+    stream = await client(llm.provider).chat.completions.create(params, signal ? { signal } : {});
+  } catch (e) {
+    noteProviderError(llm.provider === 'gemini' ? 'Gemini' : llm.provider, { status: e?.status ?? null, message: e?.message || String(e) });
+    throw e;
+  }
   let full = '', usage = null;
   for await (const chunk of stream) {
     const t = chunk.choices?.[0]?.delta?.content || '';

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:01:48.411Z",
+  "generated": "2026-10-10T20:07:25.480Z",
   "entries": [
+    {
+      "hash": "c86ac6ab",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Wire the global footer + Anís button into layouts/Layout.astro (every public page)",
+      "scope": "site"
+    },
     {
       "hash": "ac554980",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Serve the OceanLibrary site copy (with paragraph ids) over a duplicate of the same book",
       "scope": "search"
-    },
-    {
-      "hash": "1aeb8e30",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "OceanLibrary links carry the paragraph id again — attached once, in the link policy",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "c86ac6ab",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Wire the global footer + Anís button into layouts/Layout.astro (every public page)",
+        "scope": "site"
+      },
       {
         "hash": "ac554980",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "Fixed",
         "description": "Serve the OceanLibrary site copy (with paragraph ids) over a duplicate of the same book",
-        "scope": "search"
-      },
-      {
-        "hash": "1aeb8e30",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "OceanLibrary links carry the paragraph id again — attached once, in the link policy",
         "scope": "search"
       }
     ]

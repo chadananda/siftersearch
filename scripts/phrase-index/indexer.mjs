@@ -30,6 +30,7 @@ import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 import { parseStoredHypQuestions } from '../../api/lib/search/hype.js';
 import { logAIUsage } from '../../api/lib/ai-services.js';   // every Gemini batch is ALSO a row in the shared spend ledger
+import { noteProviderError, isExhaustion } from '../../api/lib/spend-alerts.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -84,8 +85,11 @@ async function embedBatch(texts) {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) });
       if (r.ok) return (await r.json()).embeddings.map((e) => e.values);
+      const errText = await r.clone().text();
+      noteProviderError('Gemini', { status: r.status, message: errText });   // out of credit → immediate email (not per-minute 429s)
+      if (isExhaustion({ status: r.status, message: errText })) throw Object.assign(new Error(`gemini out of credit: ${errText.slice(0, 200)}`), { fatal: true });
       if (attempt >= 20 || ![429, 500, 502, 503, 504].includes(r.status)) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 200)}`);
-    } catch (e) { if (attempt >= 20) throw e; }
+    } catch (e) { if (e.fatal || attempt >= 20) throw e; }   // no credit: stop now, don't wait out a 429 that won't clear
     // per-minute quota (429) clears in minutes — wait it out (up to 5 min per try) instead of failing the run
     await new Promise((res) => setTimeout(res, Math.min(300000, 3000 * 2 ** attempt)));
   }
