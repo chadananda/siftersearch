@@ -139,13 +139,6 @@
     <div class="navbar-right">
       <!-- Nav links that progressively appear as space allows -->
       <nav class="navbar-nav" aria-label="Main navigation">
-        <!-- Chat/Search is always visible -->
-        <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <span class="nav-label">Chat</span>
-        </a>
         <!-- Library and Discuss are public -->
         <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -167,13 +160,6 @@
           </svg>
           <span class="nav-label">Biography</span>
         </a>
-        <a href="/research" class="nav-link show-md" class:active={currentPage === 'research'}>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-          </svg>
-          <span class="nav-label">Research</span>
-        </a>
         <a href="/sourcehunt" class="nav-link show-md" class:active={currentPage === 'sourcehunt'} title="Find the source of a quotation">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="10" cy="10" r="7"/><path d="m20 20-4.9-4.9"/>
@@ -189,19 +175,6 @@
           </svg>
           <span class="nav-label">Discuss</span>
         </a>-->
-        <a href="/docs" class="nav-link show-md" class:active={currentPage === 'docs'}>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-          </svg>
-          <span class="nav-label">Docs</span>
-        </a>
-        <a href="/about" class="nav-link show-xl" class:active={currentPage === 'about'}>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-          </svg>
-          <span class="nav-label">About</span>
-        </a>
       </nav>
 
       <!-- Combined menu pill: hamburger + account avatar in one control (one menu for nav + account) -->
@@ -238,19 +211,18 @@
         <!-- Dropdown for collapsed nav items -->
         {#if showNavMenu}
           <div class="nav-dropdown" role="menu" aria-label="Navigation menu">
-            <!-- Chat is always visible in dropdown -->
-            <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-              Chat
-            </a>
             <!-- Library and Discuss are public -->
             <a href="/library" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'library'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
               </svg>
               Library
+            </a>
+            <a href="/dialogue" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'dialog'} role="menuitem" onclick={closeNavMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Dialogue
             </a>
             <a href="/biography" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'biography'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -266,32 +238,12 @@
               </svg>
               Discuss
             </a>-->
-            <a href="/research" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'research'} role="menuitem" onclick={closeNavMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-              </svg>
-              Research
-            </a>
             <a href="/sourcehunt" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'sourcehunt'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="10" cy="10" r="7"/><path d="m20 20-4.9-4.9"/>
             <path d="M7.5 11.5c0-1.6.8-2.6 2-3M10.5 11.5c0-1.6.8-2.6 2-3"/>
               </svg>
               SourceHunt
-            </a>
-            <a href="/docs" class="nav-dropdown-item hide-above-lg" class:active={currentPage === 'docs'} role="menuitem" onclick={closeNavMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
-              Docs
-            </a>
-            <a href="/about" class="nav-dropdown-item hide-above-xl" role="menuitem" onclick={closeNavMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              About
             </a>
 
             <!-- Account section — same menu, below the nav items -->

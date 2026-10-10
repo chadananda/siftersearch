@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:57:06.745Z",
+  "generated": "2026-10-10T20:00:30.297Z",
   "entries": [
+    {
+      "hash": "81fcfdad",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "'Ask Jafar' → 'Ask Anís' on research pages, About, API docs and the chat's copy signature",
+      "scope": "copy"
+    },
     {
       "hash": "c8c5d5a8",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Ideal-source re-ranking — ONE Jev judgment, bounded by OceanLibrary-first policy",
       "scope": "search"
-    },
-    {
-      "hash": "a7490ac8",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Links follow the site order and use each document's own sourceUrl",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "81fcfdad",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "'Ask Jafar' → 'Ask Anís' on research pages, About, API docs and the chat's copy signature",
+        "scope": "copy"
+      },
       {
         "hash": "c8c5d5a8",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "New",
         "description": "Ideal-source re-ranking — ONE Jev judgment, bounded by OceanLibrary-first policy",
-        "scope": "search"
-      },
-      {
-        "hash": "a7490ac8",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Links follow the site order and use each document's own sourceUrl",
         "scope": "search"
       }
     ]

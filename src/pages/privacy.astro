@@ -1,0 +1,28 @@
+---
+import TextPageLayout from '../layouts/TextPageLayout.astro';
+---
+<TextPageLayout title="Privacy" description="What SifterSearch keeps about you, why, and who processes it." updated="October 10, 2026" noindex={true}>
+  <p>We keep as little as the service needs.</p>
+  <h2>Without an account</h2>
+  <ul>
+    <li>Your browser keeps a random identifier and your recent chat with Anís in local storage, so a conversation can continue.</li>
+    <li>Our server keeps the messages you send Anís and his replies, with that identifier, to answer you and to improve him.</li>
+    <li>Searches are logged (the query, not who you are) to measure and improve search.</li>
+  </ul>
+  <h2>If you sign in</h2>
+  <p>Signing in with Google gives us your email address and name. We use them to keep your conversations together across
+    devices and to reply to you. We do not sell or share them for marketing.</p>
+  <h2>Email</h2>
+  <p>If you write to anis@oceanlibrary.com, we keep the letter and the reply. Every letter from us has a link to stop further
+    mail.</p>
+  <h2>How conversations are reviewed</h2>
+  <p>Exchanges with Anís are checked afterwards — by AI models and sometimes by a person — to find wrong answers and weak
+    searches. Conversations are not published without being anonymized.</p>
+  <h2>Who processes data for us</h2>
+  <p>Cloudflare (hosting, delivery, email routing), Amazon SES (email), Google (sign-in and some AI models), and the AI providers
+    that power answers and checks (including Google, DeepSeek, OpenAI, Anthropic and TypeSafe). Payments for supporting the
+    project are handled by Stripe; we never see card numbers.</p>
+  <h2>Your choices</h2>
+  <p>To have your conversations or account deleted, <a href="/contact">contact us</a>. See also the
+    <a href="/terms">Terms of Service</a>.</p>
+</TextPageLayout>

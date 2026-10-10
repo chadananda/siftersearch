@@ -1,0 +1,21 @@
+---
+// A plain reading page (Contact, Terms, Privacy): site chrome + one prose column. Deps: Layout, NavBar.
+import Layout from './Layout.astro';
+import LiquidBackground from '../components/LiquidBackground.svelte';
+import NavBar from '../components/common/NavBar.svelte';
+const { title, description, updated = null, noindex = false } = Astro.props;
+---
+<Layout title={`${title} - SifterSearch`} description={description} noindex={noindex}>
+  <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="" client:load />
+  <main class="mx-auto max-w-2xl px-4 py-12 text-primary">
+    <h1 class="text-3xl font-semibold mb-2">{title}</h1>
+    {updated && <p class="text-sm text-muted mb-8">Last updated {updated}</p>}
+    <div class="text-page flex flex-col gap-4 leading-relaxed text-secondary"><slot /></div>
+  </main>
+</Layout>
+<style>
+  .text-page :global(h2) { color: var(--text-primary); font-size: 1.15rem; font-weight: 600; margin-top: 1rem; }
+  .text-page :global(a) { color: var(--accent-primary); }
+  .text-page :global(ul) { list-style: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+</style>
