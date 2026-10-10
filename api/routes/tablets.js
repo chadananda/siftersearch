@@ -12,7 +12,6 @@ import { ApiError } from '../lib/errors.js';
 import { buildDocMeta, contextLine, indexDoc, ftsRow } from '../lib/doc-meta.js';
 import { getDocMeta, searchDocMeta } from '../lib/doc-meta-store.js';
 import { getAuthority } from '../lib/authority.js';
-import { getMeili } from '../lib/search.js';
 
 const admin = { preHandler: requireInternal };
 const inChunks = (arr, n) => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
@@ -139,11 +138,6 @@ export default async function tabletAdminRoutes(fastify) {
   };
   fastify.post('/docmeta/rebuild', admin, rebuild);
   fastify.post('/tablets/rebuild', admin, rebuild);
-  /** POST /docmeta/cancel-meili — withdraw the doc_meta tasks queued in Meilisearch (the index now lives in SQLite). */
-  fastify.post('/docmeta/cancel-meili', admin, async () => {
-    const t = await getMeili().tasks.cancelTasks({ indexUids: ['doc_meta'], statuses: ['enqueued'] });
-    return { cancellationTask: t.taskUid };
-  });
 }
 
 /** Public: GET /api/documents/:id/about — the document's metadata record (reader box, chat "about this book"). */

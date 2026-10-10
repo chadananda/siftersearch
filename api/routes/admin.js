@@ -60,7 +60,7 @@ const expandTrace = (r) => {
 
 import { getStats as getSearchStats, getMeili, probeSearchEngine } from '../lib/search.js';
 import { EMB_TOTAL_SQL, EMB_MISSING_SQL } from '../lib/pipeline/snapshot-queries.js';
-import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
+import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, getEmbeddingCacheStats } from '../services/indexer.js';
 import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-worker.js';
 import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.js';
 import { spawn } from 'child_process';

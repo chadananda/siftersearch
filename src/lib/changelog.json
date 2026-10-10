@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T05:44:16.565Z",
+  "generated": "2026-10-10T05:46:30.582Z",
   "entries": [
+    {
+      "hash": "86c40d5e",
+      "date": "2026-10-09",
+      "type": "Refactor",
+      "description": "One highlighting module; search health reports Qdrant",
+      "scope": "search"
+    },
     {
       "hash": "048f14c2",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Npm run build failed from a clean install — sharp was unresolvable",
       "scope": "build"
-    },
-    {
-      "hash": "aff2aa19",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "Runtime majors current — openai 7, pino 10, better-sqlite3 13, and six more",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "86c40d5e",
+        "date": "2026-10-09",
+        "type": "Refactor",
+        "description": "One highlighting module; search health reports Qdrant",
+        "scope": "search"
+      },
       {
         "hash": "048f14c2",
         "date": "2026-10-09",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Npm run build failed from a clean install — sharp was unresolvable",
         "scope": "build"
-      },
-      {
-        "hash": "aff2aa19",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "Runtime majors current — openai 7, pino 10, better-sqlite3 13, and six more",
-        "scope": null
       }
     ]
   }

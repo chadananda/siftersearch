@@ -631,22 +631,6 @@ export async function removeDocument(documentId) {
   return { documentId, removed: true };
 }
 
-/**
- * Reindex all documents (rebuild index)
- * Note: This is destructive - use carefully
- */
-export async function reindexAll(documents) {
-  const meili = getMeili();
-
-  // Clear existing indexes
-  await meili.index(INDEXES.DOCUMENTS).deleteAllDocuments();
-  await meili.index(INDEXES.PARAGRAPHS).deleteAllDocuments();
-
-  logger.info('Cleared existing indexes, reindexing...');
-
-  // Reindex all documents
-  return batchIndexDocuments(documents);
-}
 
 /**
  * Get indexing queue status
@@ -672,174 +656,6 @@ export async function getIndexingStatus() {
   };
 }
 
-/**
- * Migrate existing embeddings from Meilisearch to libsql
- * This preserves paid-for OpenAI embeddings so we don't have to regenerate them
- * @param {Object} options
- * @param {number} options.batchSize - Documents per batch (default: 100)
- * @param {boolean} options.dryRun - If true, just count documents
- * @returns {Promise<{documents: number, paragraphs: number, embeddings: number}>}
- */
-export async function migrateEmbeddingsFromMeilisearch(options = {}) {
-  const { batchSize = 100, dryRun = false, onProgress = null } = options;
-  const meili = getMeili();
-  const now = new Date().toISOString();
-
-  const stats = { documents: 0, paragraphs: 0, embeddings: 0, errors: 0 };
-
-  try {
-    // Get all documents from Meilisearch (we need their metadata)
-    const docsIndex = meili.index(INDEXES.DOCUMENTS);
-    const parasIndex = meili.index(INDEXES.PARAGRAPHS);
-
-    // Get total count for progress reporting
-    const docStats = await docsIndex.getStats();
-    const totalDocs = docStats.numberOfDocuments || 0;
-    logger.info({ totalDocs }, 'Starting embedding migration');
-
-    // Fetch documents in batches
-    let offset = 0;
-    let hasMore = true;
-
-    while (hasMore) {
-      // Get batch of documents
-      const docsResponse = await docsIndex.getDocuments({
-        limit: batchSize,
-        offset
-      });
-
-      const docs = docsResponse.results;
-      if (docs.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      logger.info({ offset, count: docs.length, total: totalDocs }, 'Processing document batch');
-
-      for (const doc of docs) {
-        try {
-          // Get paragraphs for this document with vectors
-          const parasResponse = await parasIndex.search('', {
-            filter: `doc_id = ${doc.id}`,  // INTEGER, no quotes
-            limit: 1000,
-            retrieveVectors: true
-          });
-
-          const paragraphs = parasResponse.hits;
-
-          if (dryRun) {
-            stats.documents++;
-            stats.paragraphs += paragraphs.length;
-            stats.embeddings += paragraphs.filter(p => p._vectors?.default).length;
-            if (onProgress) {
-              onProgress({ ...stats, total: totalDocs });
-            }
-            continue;
-          }
-
-          // Store document in libsql (with retry for SQLITE_BUSY)
-          // Uses batch connection to avoid blocking auth
-          await withRetry(() => batchQuery(`
-            INSERT INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              title = excluded.title,
-              author = excluded.author,
-              religion = excluded.religion,
-              collection = excluded.collection,
-              language = excluded.language,
-              year = excluded.year,
-              description = excluded.description,
-              paragraph_count = excluded.paragraph_count,
-              updated_at = excluded.updated_at
-          `, [
-            doc.id,
-            doc.title,
-            doc.author,
-            doc.religion,
-            doc.collection,
-            doc.language,
-            doc.year,
-            doc.description,
-            paragraphs.length,
-            now,
-            now
-          ]));
-
-          stats.documents++;
-
-          // Report progress after each document
-          if (onProgress) {
-            onProgress({ ...stats, total: totalDocs });
-          }
-
-          // Store paragraphs with embeddings
-          for (const para of paragraphs) {
-            const embedding = para._vectors?.default;
-            const embeddingBlob = embedding
-              ? Buffer.from(new Float32Array(embedding).buffer)
-              : null;
-
-            const contentHash = computeContentHash(para.text);
-
-            // Ensure we have valid paragraph ID and text
-            if (!para.id || !para.text) {
-              logger.warn({ docId: doc.id, paraId: para.id }, 'Skipping paragraph with missing id or text');
-              continue;
-            }
-
-            // TODO: Direct SQL — recovery path from Meilisearch, sets synced=1
-            // since data is already confirmed in Meilisearch. No content API equivalent.
-            await withRetry(() => batchQuery(`
-              INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, ?10, ?11)
-              ON CONFLICT(id) DO UPDATE SET
-                doc_id = excluded.doc_id,
-                text = excluded.text,
-                content_hash = excluded.content_hash,
-                heading = excluded.heading,
-                embedding = excluded.embedding,
-                embedding_model = excluded.embedding_model,
-                synced = 1,
-                updated_at = excluded.updated_at
-            `, [
-              para.id,
-              doc.id,
-              para.paragraph_index ?? 0,
-              para.text,
-              contentHash,
-              para.heading || null,
-              'paragraph',
-              embeddingBlob,
-              embedding ? EMBEDDING_MODEL : null,
-              now,
-              now
-            ]));
-
-            stats.paragraphs++;
-            if (embedding) stats.embeddings++;
-          }
-
-          logger.debug({ docId: doc.id, paragraphs: paragraphs.length }, 'Migrated document');
-        } catch (err) {
-          logger.error({ err: err.message, docId: doc.id }, 'Failed to migrate document');
-          stats.errors++;
-        }
-      }
-
-      offset += batchSize;
-      if (docs.length < batchSize) {
-        hasMore = false;
-      }
-    }
-
-    logger.info(stats, 'Migration complete');
-    return stats;
-  } catch (err) {
-    logger.error({ err: err.message }, 'Migration failed');
-    throw err;
-  }
-}
 
 /**
  * Get embedding cache statistics
@@ -874,9 +690,7 @@ export const indexer = {
   batchIndexDocuments,
   indexFromJSON,
   removeDocument,
-  reindexAll,
   getIndexingStatus,
-  migrateEmbeddingsFromMeilisearch,
   getEmbeddingCacheStats
 };
 

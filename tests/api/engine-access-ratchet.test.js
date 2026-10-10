@@ -21,8 +21,8 @@ const ALLOWED = new Set([
   'api/lib/search.js', 'api/lib/search/concepts.js', 'api/lib/search/entity.js', 'api/lib/search/hype.js',
   // data fetched THROUGH the engine — wrong, to repos / findDocuments (P1): all migrated 10-09
   // index writes outside the sync worker — wrong, mark dirty instead (P2)
-  'api/routes/admin.js', 'api/routes/tablets.js', 'api/services/library-watcher.js', 'api/services/indexer.js',
-  'api/lib/graph-meili-sync.js', 'api/workers/graph-extractor.js', 'api/workers/graph-pipeline.js',
+  'api/routes/admin.js', 'api/services/library-watcher.js', 'api/services/indexer.js',
+  'api/lib/graph-meili-sync.js', 'api/workers/graph-extractor.js',
   // the sync worker (index-writer's caller — P2)
   'api/workers/unified-worker.js',
   // scripts — one-off / legacy tools: delete or move onto index-writer
