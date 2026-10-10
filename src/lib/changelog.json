@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:52:45.461Z",
+  "generated": "2026-10-10T18:56:36.639Z",
   "entries": [
+    {
+      "hash": "b218ed2a",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Shadow budget — Clef shadows sampled 2% and capped 200/task/backend/day",
+      "scope": "systemone"
+    },
     {
       "hash": "56ea4dc0",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Remove two event-loop freezes found in slow_query_log",
       "scope": "api"
-    },
-    {
-      "hash": "779e072d",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "A planned search that falls back says so (_plan.fallback); scorer counts it",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "b218ed2a",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Shadow budget — Clef shadows sampled 2% and capped 200/task/backend/day",
+        "scope": "systemone"
+      },
       {
         "hash": "56ea4dc0",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Performance",
         "description": "Remove two event-loop freezes found in slow_query_log",
         "scope": "api"
-      },
-      {
-        "hash": "779e072d",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "A planned search that falls back says so (_plan.fallback); scorer counts it",
-        "scope": "search"
       }
     ]
   }
