@@ -121,6 +121,13 @@ export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {
   return rows.map((r) => r.id);
 }
 
+/** Set (or clear) a document's cover — the image-service URL from api/lib/covers.js. Live docs only. */
+export async function setDocCover(docId, url) {
+  if (url != null && !/^\/img\/covers\/\d+\?v=[0-9a-f]+$/.test(url)) throw new Error(`setDocCover: not an image-service URL: ${url}`);
+  const r = await query('UPDATE docs SET cover_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [url, Number(docId)], 'docs-repo:set-cover');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
 /** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised. */
 export function ftsQuery(text) {
   // apostrophes removed first, as docs_fts stores them (migration 142): "Bahá’u’lláh" / "Baha'u'llah" / "Bahaullah" agree

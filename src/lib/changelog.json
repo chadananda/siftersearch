@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T16:20:11.930Z",
+  "generated": "2026-10-10T16:22:07.086Z",
   "entries": [
+    {
+      "hash": "482dc84a",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "ImageKit-style image service Worker + book-cover originals on tower",
+      "scope": "img"
+    },
     {
       "hash": "961e6554",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Baseline and status after the second sweep",
       "scope": null
-    },
-    {
-      "hash": "9d389fb0",
-      "date": "2026-09-10",
-      "type": "Security",
-      "description": "No shell in the four scripts that run unattended (19 -> 14)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "482dc84a",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "ImageKit-style image service Worker + book-cover originals on tower",
+        "scope": "img"
+      },
       {
         "hash": "961e6554",
         "date": "2026-10-10",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-10",
         "type": "Chore",
         "description": "Baseline and status after the second sweep",
-        "scope": null
-      },
-      {
-        "hash": "9d389fb0",
-        "date": "2026-09-10",
-        "type": "Security",
-        "description": "No shell in the four scripts that run unattended (19 -> 14)",
         "scope": null
       }
     ]

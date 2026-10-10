@@ -1,0 +1,13 @@
+// siftersearch-img — the image service Worker (worker/img/cdn.js). Deploy: npx wrangler deploy -c worker/img/wrangler.jsonc
+// Route /img/* is more specific than the site Worker's /*, so it wins for image URLs only.
+{
+  "name": "siftersearch-img",
+  "main": "index.js",
+  "compatibility_date": "2025-11-01",
+  "routes": [{ "pattern": "siftersearch.com/img/*", "zone_name": "siftersearch.com" }],
+  // originals (one fetch from tower per version) + rendered variants (generated once)
+  "r2_buckets": [{ "binding": "IMG_R2", "bucket_name": "siftersearch-img" }],
+  // fo-face / fo-auto focal detection (DETR)
+  "ai": { "binding": "AI" },
+  "vars": { "API_ORIGIN": "https://api.siftersearch.com" }
+}

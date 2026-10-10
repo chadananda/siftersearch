@@ -75,3 +75,17 @@ describe('docIdsInYearRange', () => {
     expect(await docIdsInYearRange({})).toBeNull();
   });
 });
+
+describe('setDocCover', () => {
+  it('sets an image-service URL on a live doc; refuses other URLs; clears with null', async () => {
+    try { db.exec('ALTER TABLE docs ADD COLUMN cover_url TEXT'); } catch { /* exists */ }
+    const { setDocCover } = await import('../../api/lib/docs-repo.js');
+    await setDocCover(1, '/img/covers/1?v=abc123');
+    expect(db.prepare('SELECT cover_url FROM docs WHERE id = 1').get().cover_url).toBe('/img/covers/1?v=abc123');
+    await expect(setDocCover(1, 'https://elsewhere.example/x.png')).rejects.toThrow('not an image-service URL');
+    await setDocCover(5, '/img/covers/5?v=abc');                                  // deleted doc: untouched
+    expect(db.prepare('SELECT cover_url FROM docs WHERE id = 5').get().cover_url).toBeNull();
+    await setDocCover(1, null);
+    expect(db.prepare('SELECT cover_url FROM docs WHERE id = 1').get().cover_url).toBeNull();
+  });
+});
