@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:13:22.848Z",
+  "generated": "2026-10-10T19:29:28.440Z",
   "entries": [
+    {
+      "hash": "c1f7bfcd",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "System-1 jobs — add designed-not-built jobs (branching, re-rank, concept linking, audit triage, Dewey, talks)",
+      "scope": "planning"
+    },
     {
       "hash": "8d384ec1",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Never show or keep a quote that is in no retrieved passage",
       "scope": "anis"
-    },
-    {
-      "hash": "8062bf1f",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Conversation is not a lookup; chips show only the sources the reply cites",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "c1f7bfcd",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "System-1 jobs — add designed-not-built jobs (branching, re-rank, concept linking, audit triage, Dewey, talks)",
+        "scope": "planning"
+      },
       {
         "hash": "8d384ec1",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "Fixed",
         "description": "Never show or keep a quote that is in no retrieved passage",
-        "scope": "anis"
-      },
-      {
-        "hash": "8062bf1f",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Conversation is not a lookup; chips show only the sources the reply cites",
         "scope": "anis"
       }
     ]

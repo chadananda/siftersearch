@@ -29,6 +29,7 @@ import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerpl
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 import { parseStoredHypQuestions } from '../../api/lib/search/hype.js';
+import { logAIUsage } from '../../api/lib/ai-services.js';   // every Gemini batch is ALSO a row in the shared spend ledger
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -173,6 +174,9 @@ async function embedPending(pending) {
         addSpend.run({ b: BUDGET, t: tokens, u: usd, at: Date.now() });
       })();
       addMonth.run(thisMonth(), BUDGET, tokens, usd);
+      // The shared ledger (ai_usage) is where all spend is read (analytics, Anís costs). gemini-spend.db stays as this
+      // script's own monthly cap counter; until 10-10 it was the ONLY record, so $322 of vectors never showed (Chad 10-10).
+      logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', promptTokens: tokens, caller: `phrase-index:${BUDGET}` });
       done += chunk.length;
     }
   }
