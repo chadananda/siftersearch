@@ -46,6 +46,25 @@ describe('index outbox — triggers', () => {
   });
 });
 
+describe('index outbox — incremental drain', () => {
+  it('clears each slice once the engines took it; a failing slice stays queued, earlier slices stay cleared', async () => {
+    const { drainIndexOutbox } = await import('../../api/lib/index-outbox.js');
+    db.exec(`UPDATE content SET deleted_at = '2026-10-09' WHERE id IN (10, 11, 12)`);
+    let calls = 0;
+    const meili = { index: () => ({ deleteDocuments: async () => { if (++calls === 2) throw new Error('meili down'); } }) };
+    await expect(drainIndexOutbox({ meili, chunk: 1 })).rejects.toThrow('meili down');
+    expect(outbox()).toEqual([11, 12]);
+  });
+  it('stops starting slices after the time budget', async () => {
+    const { drainIndexOutbox } = await import('../../api/lib/index-outbox.js');
+    db.exec(`UPDATE content SET deleted_at = '2026-10-09' WHERE id IN (10, 11, 12)`);
+    const meili = { index: () => ({ deleteDocuments: async () => { await new Promise((r) => setTimeout(r, 30)); } }) };
+    const r = await drainIndexOutbox({ meili, chunk: 1, budgetMs: 20 });
+    expect(r.removed).toBe(1);
+    expect(outbox()).toEqual([11, 12]);
+  });
+});
+
 describe('index outbox — backlog', () => {
   it('enqueues only the non-live rows of one id window, with their doc; reports when the walk is done', async () => {
     const { enqueueBacklogWindow } = await import('../../api/lib/index-outbox.js');

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T02:27:27.171Z",
+  "generated": "2026-10-10T02:50:59.097Z",
   "entries": [
+    {
+      "hash": "790f219b",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Drain the pre-trigger backlog through the outbox (enqueueBacklogWindow + paced runner)",
+      "scope": "index"
+    },
     {
       "hash": "e3c33366",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Implementation plan",
       "scope": null
-    },
-    {
-      "hash": "a0684bd3",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "One completion model — entity pipeline lives in scripts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "790f219b",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Drain the pre-trigger backlog through the outbox (enqueueBacklogWindow + paced runner)",
+        "scope": "index"
+      },
       {
         "hash": "e3c33366",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Other",
         "description": "Implementation plan",
-        "scope": null
-      },
-      {
-        "hash": "a0684bd3",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "One completion model — entity pipeline lives in scripts",
         "scope": null
       }
     ]

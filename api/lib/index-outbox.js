@@ -52,35 +52,40 @@ export const QDRANT_PARAGRAPH_COLLECTIONS = Object.freeze(['phrases', 'paragraph
 
 /**
  * Drain the outbox: paragraphs that are live again are dropped (their upsert wins — ids can be reused); the rest are
- * removed from their Meili index and from every Qdrant paragraph collection, then cleared. An engine failure leaves the
- * rows queued for the next tick. → { removed, skippedLive, meiliJobs, qdrantCalls }
+ * removed from their Meili index and from every Qdrant paragraph collection. Works in slices of `chunk` rows and clears
+ * each slice as soon as every engine took it, so progress survives a slow engine or the caller's timeout; stops starting
+ * slices after `budgetMs`. An engine failure leaves that slice queued for the next tick.
+ * → { removed, skippedLive, meiliJobs, qdrantCalls }
  */
-export async function drainIndexOutbox({ meili = null, qdrant = null, registry = {}, max = 20000, chunk = 5000 } = {}) {
+export async function drainIndexOutbox({ meili = null, qdrant = null, registry = {}, max = 20000, chunk = 5000, budgetMs = 60000 } = {}) {
+  const t0 = Date.now();
   const rows = await queryAll(`SELECT o.para_id, o.doc_id, d.source_site,
       EXISTS (SELECT 1 FROM content c JOIN docs cd ON cd.id = c.doc_id WHERE c.id = o.para_id AND c.deleted_at IS NULL
         AND COALESCE(c.is_duplicate, 0) = 0 AND cd.deleted_at IS NULL AND cd.duplicate_of IS NULL) AS live
       FROM index_outbox o LEFT JOIN docs d ON d.id = o.doc_id ORDER BY o.queued_at LIMIT ?`, [max], 'outbox:read');
-  if (!rows.length) return { removed: 0, skippedLive: 0, meiliJobs: 0, qdrantCalls: 0 };
-  const dead = rows.filter((r) => !r.live);
-  let meiliJobs = 0, qdrantCalls = 0;
-  if (meili && dead.length) {
-    // a doc row already hard-deleted → unknown site: remove from the primary index (where all library paragraphs live)
-    const byIndex = new Map();
-    for (const r of dead) { const ix = paragraphIndexFor({ source_site: r.source_site }, registry); byIndex.set(ix, [...(byIndex.get(ix) || []), r.para_id]); }
-    for (const [ix, ids] of byIndex) for (let i = 0; i < ids.length; i += chunk) { await meili.index(ix).deleteDocuments(ids.slice(i, i + chunk)); meiliJobs++; }
-  }
-  if (qdrant && dead.length) {
-    const ids = dead.map((r) => r.para_id);
-    for (const coll of QDRANT_PARAGRAPH_COLLECTIONS) {
-      for (let i = 0; i < ids.length; i += 1000) {
-        await qdrant(`/collections/${coll}/points/delete?wait=false`, { filter: { must: [{ key: 'paragraph_id', match: { any: ids.slice(i, i + 1000) } }] } });
-        qdrantCalls++;
+  let removed = 0, skippedLive = 0, meiliJobs = 0, qdrantCalls = 0;
+  for (let s = 0; s < rows.length && Date.now() - t0 < budgetMs; s += chunk) {
+    const slice = rows.slice(s, s + chunk), dead = slice.filter((r) => !r.live);
+    if (meili && dead.length) {
+      // a doc row already hard-deleted → unknown site: remove from the primary index (where all library paragraphs live)
+      const byIndex = new Map();
+      for (const r of dead) { const ix = paragraphIndexFor({ source_site: r.source_site }, registry); byIndex.set(ix, [...(byIndex.get(ix) || []), r.para_id]); }
+      for (const [ix, ids] of byIndex) { await meili.index(ix).deleteDocuments(ids); meiliJobs++; }
+    }
+    if (qdrant && dead.length) {
+      const ids = dead.map((r) => r.para_id);
+      for (const coll of QDRANT_PARAGRAPH_COLLECTIONS) {
+        for (let i = 0; i < ids.length; i += 1000) {
+          await qdrant(`/collections/${coll}/points/delete?wait=false`, { filter: { must: [{ key: 'paragraph_id', match: { any: ids.slice(i, i + 1000) } }] } });
+          qdrantCalls++;
+        }
       }
     }
+    const done = slice.map((r) => r.para_id);
+    for (let i = 0; i < done.length; i += 500) {
+      await transaction([{ sql: `DELETE FROM index_outbox WHERE para_id IN (${done.slice(i, i + 500).map(() => '?').join(',')})`, args: done.slice(i, i + 500) }], 'outbox:clear');
+    }
+    removed += dead.length; skippedLive += slice.length - dead.length;
   }
-  const done = rows.map((r) => r.para_id);
-  for (let i = 0; i < done.length; i += 500) {
-    await transaction([{ sql: `DELETE FROM index_outbox WHERE para_id IN (${done.slice(i, i + 500).map(() => '?').join(',')})`, args: done.slice(i, i + 500) }], 'outbox:clear');
-  }
-  return { removed: dead.length, skippedLive: rows.length - dead.length, meiliJobs, qdrantCalls };
+  return { removed, skippedLive, meiliJobs, qdrantCalls };
 }
