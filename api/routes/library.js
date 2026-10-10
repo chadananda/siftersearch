@@ -1688,7 +1688,7 @@ Return ONLY the description text, no quotes or formatting.`;
     // Try direct lookup by stored slug first (efficient)
     let document = await queryOne(`
       SELECT id, title, author, religion, collection, language, year, description,
-             paragraph_count, encumbered, purchase_url, file_path, filename, slug, created_at, updated_at
+             paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
       FROM docs
       WHERE slug = ?
     `, [slug]);
@@ -1708,7 +1708,7 @@ Return ONLY the description text, no quotes or formatting.`;
       const { baseSlug, language: slugLang } = parseDocSlug(slug);
       const candidates = await queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, encumbered, purchase_url, file_path, filename, slug, created_at, updated_at
+               paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
         FROM docs
         WHERE religion IS NOT NULL AND collection IS NOT NULL
       `);
@@ -1760,7 +1760,7 @@ Return ONLY the description text, no quotes or formatting.`;
       const escapedSlug = slug.replace(/_/g, '\\_');
       const partialMatch = await queryOne(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, encumbered, purchase_url, file_path, filename, slug, created_at, updated_at
+               paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
         FROM docs
         WHERE slug LIKE ? ESCAPE '\\' AND slug != ?
       `, [`%\\_${escapedSlug}`, slug]);
@@ -1807,6 +1807,7 @@ Return ONLY the description text, no quotes or formatting.`;
           paragraphCount: document.paragraph_count,
           encumbered: true,
           purchase_url: document.purchase_url || null,
+          cover_url: document.cover_url || null,
           slug: document.slug || generateDocSlug(document)
         },
         paragraphs: [],
@@ -1861,6 +1862,7 @@ Return ONLY the description text, no quotes or formatting.`;
         paragraphCount: total,
         encumbered: isEncumbered,
         purchase_url: document.purchase_url || null,
+        cover_url: document.cover_url || null,
         slug: document.slug || generateDocSlug(document),
         isRTL
       },
