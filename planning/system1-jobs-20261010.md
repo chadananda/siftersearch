@@ -42,6 +42,20 @@ Also running today:
 | Cross-lingual pair verification | `xl-verify` | 1,880 | batch | trim |
 | Search scope extraction | `scope-extract` | — | interactive | |
 
+Designed or named, not built yet:
+
+| Job | Where it was identified | Class |
+|---|---|---|
+| Search branching (#3 above) | `search-strategy-layer.md` (Chad 10-01) | interactive |
+| **Passage re-ranking** (which retrieved passages answer the question; Chad: "Clef to re-rank") | `search-strategy-layer.md`; today re-ranking is arithmetic / `reranker.js`, not System-1 | interactive |
+| **Concept linking** (does this passage express this kernel idea / answer this canonical question) | concept index monthly cycle (09-28) | batch, whole library monthly |
+| **Strategy audit triage** (which logged exchanges are worth a full audit) | strategy audit plan (10-07); the audit itself is an LLM | batch, nightly |
+| Dewey: **holdings verdict**, **title-page / cover photo reading**, **tradition and collection placement**, **OCR quality accept / re-run** | `docs/agents/agent-dewey.md` | intake |
+| Talks: speaker / topic labelling of transcripts | `backlog-youtube-talks-20261009.md` (`talk-speaker` exists) | batch |
+
+Logged earlier, not called by current code: `xl-verify` (cross-lingual pair checks), `sourcehunt-highlight`,
+`attribution-experiments`.
+
 ## Order of work
 
 1. **Registry + budgets** for the jobs that exist (no model cost): every state builder declared and measured.

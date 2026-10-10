@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:11:59.223Z",
+  "generated": "2026-10-10T19:13:22.848Z",
   "entries": [
+    {
+      "hash": "8d384ec1",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "System-1 jobs — one spec per decision (state budget ≤900 tokens, labels, switch rule) + job catalogue",
+      "scope": "planning"
+    },
     {
       "hash": "aab3f89c",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Conversation is not a lookup; chips show only the sources the reply cites",
       "scope": "anis"
-    },
-    {
-      "hash": "6fcb8e6f",
-      "date": "2026-09-24",
-      "type": "Docs",
-      "description": "Anis chat layer live; open items (Groq tier, date grounding, chat-path search latency)",
-      "scope": "plan"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "8d384ec1",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "System-1 jobs — one spec per decision (state budget ≤900 tokens, labels, switch rule) + job catalogue",
+        "scope": "planning"
+      },
       {
         "hash": "aab3f89c",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Fixed",
         "description": "Conversation is not a lookup; chips show only the sources the reply cites",
         "scope": "anis"
-      },
-      {
-        "hash": "6fcb8e6f",
-        "date": "2026-09-24",
-        "type": "Docs",
-        "description": "Anis chat layer live; open items (Groq tier, date grounding, chat-path search latency)",
-        "scope": "plan"
       }
     ]
   }
