@@ -13,7 +13,7 @@ const sortedAgents = allAgents.sort((a, b) => (a.data.order || 99) - (b.data.ord
 
 // Agent metadata for cards
 const agentMeta: Record<string, { color: string; gradient: string }> = {
-  'agent-sifter': {
+  'agent-anis': {
     color: 'var(--accent-primary)',
     gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)'
   },
@@ -21,29 +21,13 @@ const agentMeta: Record<string, { color: string; gradient: string }> = {
     color: 'var(--accent-secondary)',
     gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)'
   },
-  'agent-analyzer': {
-    color: 'var(--accent-tertiary)',
-    gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)'
-  },
-  'agent-translator': {
-    color: 'var(--warning)',
-    gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)'
-  },
   'agent-narrator': {
     color: 'var(--success)',
     gradient: 'linear-gradient(135deg, #10b981, #06b6d4)'
   },
-  'agent-memory': {
-    color: 'var(--accent-primary)',
-    gradient: 'linear-gradient(135deg, #6366f1, #a855f7)'
-  },
   'agent-dewey': {
     color: 'var(--accent-secondary)',
     gradient: 'linear-gradient(135deg, #14b8a6, #22c55e)'
-  },
-  'agent-transcriber': {
-    color: 'var(--warning)',
-    gradient: 'linear-gradient(135deg, #f97316, #fb923c)'
   },
 };
 
@@ -68,12 +52,11 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
 
 <DocsLayout title={title} description={description} activeSection="agents">
   <h1>Agent Architecture</h1>
-  <p class="subtitle">Specialized AI agents working together to deliver intelligent search</p>
+  <p class="subtitle">The agents behind SifterSearch</p>
 
   <p>
-    SifterSearch uses a multi-agent architecture where specialized AI agents collaborate to
-    understand your query, search the library, analyze results, and present findings. Each agent
-    has a specific role and expertise.
+    Two agents are people you talk to — Anís, the research companion, and Dewey, the librarian. A few
+    internal components support them.
   </p>
 
   <!-- Agent Cards Grid -->

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:32:32.492Z",
+  "generated": "2026-10-10T18:35:00.272Z",
   "entries": [
+    {
+      "hash": "9c116fe6",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Price Clef, Flash-Lite, Groq at list rates; costs shown to the cent; 'Today' names its date",
+      "scope": "spend"
+    },
     {
       "hash": "941c22d9",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Public /v1/search is Jev-planned; LLM summarises only (2 calls); analyze:false = zero-LLM raw",
       "scope": "search"
-    },
-    {
-      "hash": "226abc05",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "An inferred author RANKS first, never filters",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "9c116fe6",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Price Clef, Flash-Lite, Groq at list rates; costs shown to the cent; 'Today' names its date",
+        "scope": "spend"
+      },
       {
         "hash": "941c22d9",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "New",
         "description": "Public /v1/search is Jev-planned; LLM summarises only (2 calls); analyze:false = zero-LLM raw",
-        "scope": "search"
-      },
-      {
-        "hash": "226abc05",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "An inferred author RANKS first, never filters",
         "scope": "search"
       }
     ]

@@ -6,7 +6,11 @@ import DocsLayout from '../../../layouts/DocsLayout.astro';
 // SSR (worker-based): resolve the agent doc by slug at request time. (Was getStaticPaths/prerender under Astro 5;
 // Astro 7's prerender-in-Workers path can't bundle the CJS `createRequire` shim, so the whole site renders on-demand.)
 const { slug: slugParam } = Astro.params;
-if (slugParam === 'librarian') return Astro.redirect('/docs/agents/dewey', 301);   // renamed 10-10
+// Renamed or retired pages (10-10): Librarian → Dewey; Sifter, Analyzer, Translator and Memory were replaced by Anís
+// (search strategies + Clef re-ranking, CTAI for translation); Transcriber was never built.
+const MOVED: Record<string, string> = { librarian: '/docs/agents/dewey', sifter: '/docs/agents/anis', analyzer: '/docs/agents/anis',
+  translator: '/docs/agents/anis', memory: '/docs/agents/anis', transcriber: '/docs/agents' };
+if (slugParam && MOVED[slugParam]) return Astro.redirect(MOVED[slugParam], 301);
 const agents = await getCollection('agents');
 const agent = agents.find((a) => a.id.replace('agent-', '') === slugParam);
 if (!agent) return Astro.redirect('/404');
