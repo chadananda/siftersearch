@@ -54,20 +54,55 @@ export async function handleImage(req, env, ctx) {
   if (!src) return new Response('not found', { status: 404, headers: { 'Cache-Control': 'public, max-age=300' } });
 
   let focal = { fx: 0.5, fy: 0.5 };
-  if (spec.focus === 'auto' || spec.focus === 'face') {
-    const { w, h } = probeSize(src);
-    focal = await resolveFocalPoint(spec.focus, src, env.AI, w, h);
-  }
+  if (spec.focus === 'auto' || spec.focus === 'face') focal = await focalFor(env, ctx, spec.focus, src, `${bucket}/${r2src ? hash(id) : id}/${v || 'latest'}`);
   let out;
   try {
-    out = await renderImage(src, { spec, format, focal });
-  } catch {
-    return image(src, format, 300);                  // never serve broken: the untransformed original, briefly cached
+    out = await render(env, src, { spec, format, focal });
+  } catch (e) {
+    const res = image(src, format, 300);             // never serve broken: the untransformed original, briefly cached
+    res.headers.set('x-img-error', String(e?.message || e).slice(0, 200));
+    return res;
   }
   if (v && env.IMG_R2) ctx.waitUntil(env.IMG_R2.put(r2Key, out, { httpMetadata: { contentType: CONTENT_TYPE[format] } }));
   const res = image(out, format, maxAge);
   ctx.waitUntil(cache.put(cacheKey, res.clone()));
   return tag(res, 'miss');
+}
+
+/**
+ * Render one variant. Cloudflare's Images binding does the pixel work OUTSIDE this Worker's 128 MB (10-10: decoding
+ * full-size originals in WASM here ran out of memory whenever a page asked for many cold sizes at once — 31/84 → 503).
+ * Same URL syntax, caching and R2 variants; our focal point becomes the crop gravity. Photon stays only for what the
+ * binding is not given (an explicit extract rectangle) and as the fallback if the binding is missing.
+ */
+const FIT = { cover: 'cover', contain: 'pad', inside: 'scale-down', fill: 'squeeze' };
+async function render(env, src, { spec, format, focal }) {
+  if (!env.IMAGES || spec.extract) return renderImage(src, { spec, format, focal });
+  const dpr = spec.dpr || 1;
+  const t = {};
+  if (spec.width) t.width = Math.min(4000, Math.round(spec.width * dpr));
+  if (spec.height) t.height = Math.min(4000, Math.round(spec.height * dpr));
+  t.fit = t.width && t.height ? (FIT[spec.fit] || 'cover') : 'scale-down';
+  if (t.fit === 'cover') t.gravity = { x: focal.fx, y: focal.fy };
+  if (spec.sharpen) t.sharpen = 1;
+  const result = await env.IMAGES.input(new Blob([src]).stream()).transform(t)
+    .output({ format: CONTENT_TYPE[format], quality: spec.quality || 82 });
+  const res = result.response();
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+/** The focal point for one original + mode, detected ONCE (Workers AI DETR, ~1-2 s) and kept in R2 beside the variants —
+ *  without this every new size of an image re-ran detection, which made first loads slow (Chad 10-10). */
+async function focalFor(env, ctx, mode, src, key) {
+  const k = `focal/v1/${key}/${mode}.json`;
+  const hit = await env.IMG_R2?.get(k);
+  if (hit) { try { return await hit.json(); } catch { /* recompute */ } }
+  let w, h;
+  if (env.IMAGES) { try { const i = await env.IMAGES.info(new Blob([src]).stream()); w = i.width; h = i.height; } catch { /* below */ } }
+  if (!w) ({ w, h } = probeSize(src));
+  const f = await resolveFocalPoint(mode, src, env.AI, w, h);
+  if (env.IMG_R2) ctx.waitUntil(env.IMG_R2.put(k, JSON.stringify(f), { httpMetadata: { contentType: 'application/json' } }));
+  return f;
 }
 
 /** An original that already lives in one of our R2 buckets (no copy: read in place). */

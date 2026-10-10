@@ -14,5 +14,7 @@
   ],
   // fo-face / fo-auto focal detection (DETR)
   "ai": { "binding": "AI" },
+  // Cloudflare Images: resize/crop/sharpen/encode outside the Worker's memory (cdn.js render)
+  "images": { "binding": "IMAGES" },
   "vars": { "API_ORIGIN": "https://api.siftersearch.com" }
 }

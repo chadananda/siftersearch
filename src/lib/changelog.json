@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:42:31.579Z",
+  "generated": "2026-10-10T19:53:29.294Z",
   "entries": [
+    {
+      "hash": "d60bc3f8",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Remaining raw images through the image service; test forbids raw R2/ImageKit URLs in page code",
+      "scope": "images"
+    },
     {
       "hash": "c0d4e580",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Raw data contract results + open data decisions; battery history",
       "scope": "plan"
-    },
-    {
-      "hash": "a6ab3d94",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "Collapse copies of the same text; battery tests the RAW data contract per research pattern",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "d60bc3f8",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Remaining raw images through the image service; test forbids raw R2/ImageKit URLs in page code",
+        "scope": "images"
+      },
       {
         "hash": "c0d4e580",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "Docs",
         "description": "Raw data contract results + open data decisions; battery history",
         "scope": "plan"
-      },
-      {
-        "hash": "a6ab3d94",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "Collapse copies of the same text; battery tests the RAW data contract per research pattern",
-        "scope": "search"
       }
     ]
   }
