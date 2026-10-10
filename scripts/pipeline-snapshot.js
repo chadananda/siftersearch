@@ -288,6 +288,7 @@ async function main() {
   ]);
   const aiUsage = {
     generated_at: new Date().toISOString(),
+    today_since: dayStart.toISOString(),   // local midnight on tower (America/Phoenix) — the page labels "today" with it
     combined: aiCombined,
     byModel: aiByModel, byProvider: aiByProvider, byCaller: aiByCaller, byCallerToday: aiByCallerToday,
     filters: { models: aiModels.map((r) => r.model), callers: aiCallers.map((r) => r.caller) },

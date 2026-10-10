@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
+  import { usd } from '../../lib/money.js';
 
   const { researchId } = $props();
 
@@ -82,7 +83,7 @@
 
     <div class="meta-row">
       {#if data.genMinutes !== null}<span>⏱ {data.genMinutes} min</span>{/if}
-      {#if data.costUsd !== null}<span>💰 ${data.costUsd.toFixed(3)}</span>{/if}
+      {#if data.costUsd !== null}<span>💰 {usd(data.costUsd)}</span>{/if}
       {#if data.record.total_candidates}<span>{data.record.total_candidates} candidates</span>{/if}
       {#if data.record.total_selected}<span>{data.record.total_selected} selected</span>{/if}
     </div>
@@ -99,7 +100,7 @@
                 <td>{b.calls}</td>
                 <td>{(b.inputTokens/1000).toFixed(1)}K</td>
                 <td>{(b.outputTokens/1000).toFixed(1)}K</td>
-                <td>${b.costUsd.toFixed(3)}</td>
+                <td>{usd(b.costUsd)}</td>
               </tr>
             {/each}
           </tbody>

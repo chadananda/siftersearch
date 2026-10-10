@@ -3,6 +3,7 @@
    * AdminDashboard — health + analytics summary (visits, searches, chat, spend)
    * plus users/library at a glance. Deep breakdowns live on /admin/analytics.
    */
+  import { usd } from '../../lib/money.js';
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
   import { getAuthState, initAuth, requireTier } from '../../lib/auth.svelte.js';
@@ -51,10 +52,7 @@
     return n.toString();
   }
   function money(n) {
-    if (n === undefined || n === null) return '$0';
-    if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
-    if (n >= 1) return '$' + n.toFixed(2);
-    return '$' + n.toFixed(3);
+    return n == null ? '$0' : usd(n, { compact: true });
   }
   function ago(s) {
     if (s == null) return 'unknown';

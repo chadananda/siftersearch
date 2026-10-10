@@ -6,6 +6,7 @@
 <script>
   // One tab of the Anís hub (/admin/anis): activity · costs · assessment · system1. All four share ONE fetch of
   // /api/admin/anis/overview (module-level promise), so opening the page costs one request.
+  import { usd } from '../../lib/money.js';
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
@@ -28,7 +29,6 @@
 
   onMount(async () => { await initAuth(); if (['admin', 'superadmin'].includes(auth.user?.tier)) refresh(); });
 
-  const usd = (n) => (n == null ? '—' : n < 0.01 && n > 0 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`);
   const num = (n) => (n == null ? '—' : Number(n).toLocaleString());
   const entries = (o) => Object.entries(o || {}).sort((a, b) => b[1] - a[1]);
   const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '—');

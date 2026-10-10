@@ -60,7 +60,7 @@ export function routeFor(task) {
   return r;
 }
 
-/** One ai_usage row per paid System-1 call (Jev: $42/B input; Clef: unpriced until known — still counted). */
+/** One ai_usage row per paid System-1 call (Jev: $42/B input; Clef: Workers AI list price — model-registry). */
 function spend(provider, model, usage, caller) {
   try {
     logAIUsage({ provider, model, serviceType: 'system1', caller: `system1:${caller}`,

@@ -516,14 +516,18 @@ export const MODEL_REGISTRY = {
     provider: 'typesafe', name: 'Jev (System-1)', type: 'classification',
     pricing: { input: 0.000042, output: 0 },   // Chad 09-28: $42 per BILLION input tokens, output free
   },
-  'clef': { provider: 'cloudflare', name: 'Clef (System-1, Workers AI)', type: 'classification', pricing: { input: 0, output: 0 }, unpriced: true },
-  'clef-flash': { provider: 'cloudflare', name: 'Clef-flash (System-1, Workers AI)', type: 'classification', pricing: { input: 0, output: 0 }, unpriced: true },
+  // Clef: Cloudflare Workers AI list price 2026-10-10 (developers.cloudflare.com/workers-ai/platform/pricing):
+  // input only ($0.011/1k neurons; clef 21,818 neurons/M, clef-flash 3,455/M); no output rate is listed.
+  'clef': { provider: 'cloudflare', name: 'Clef (System-1, Workers AI)', type: 'classification', pricing: { input: 0.00024, output: 0 } },
+  'clef-flash': { provider: 'cloudflare', name: 'Clef-flash (System-1, Workers AI)', type: 'classification', pricing: { input: 0.000038, output: 0 } },
   'gemini-embedding-2': {
     provider: 'google', name: 'Gemini Embedding 2', type: 'embedding',
-    pricing: { input: 0.0002, output: 0 },     // $0.20 / 1M — the rate the phrase indexer has billed against (gemini-spend.db)
+    pricing: { input: 0.0002, output: 0 },     // $0.20 / 1M text (ai.google.dev pricing, checked 10-10)
   },
-  'gemini-3.5-flash-lite': { provider: 'google', name: 'Gemini 3.5 Flash-Lite (Anís replies)', type: 'chat', pricing: { input: 0, output: 0 }, unpriced: true },
-  'llama-3.3-70b-versatile': { provider: 'groq', name: 'Llama 3.3 70B (Groq)', type: 'chat', pricing: { input: 0, output: 0 }, unpriced: true },
+  // $0.30 in / $2.50 out per 1M, standard paid tier (ai.google.dev/gemini-api/docs/pricing, 10-10)
+  'gemini-3.5-flash-lite': { provider: 'google', name: 'Gemini 3.5 Flash-Lite (Anís replies)', type: 'chat', pricing: { input: 0.0003, output: 0.0025 } },
+  // $0.59 / $0.79 per 1M = Groq's last public self-serve rate; since 08-2026 the model is enterprise "contact sales".
+  'llama-3.3-70b-versatile': { provider: 'groq', name: 'Llama 3.3 70B (Groq)', type: 'chat', pricing: { input: 0.00059, output: 0.00079 } },
 };
 
 // =============================================================================

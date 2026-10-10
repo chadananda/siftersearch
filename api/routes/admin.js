@@ -4347,7 +4347,8 @@ Collection: ${paragraph.collection || 'Unknown'}
         byProvider: snapAi.byProvider || [],
         byCaller: snapAi.byCaller || [],
         byCallerToday: snapAi.byCallerToday || [],
-        snapshot_generated_at: snapAi.generated_at
+        snapshot_generated_at: snapAi.generated_at,
+        today_since: snapAi.today_since
       };
     }
 

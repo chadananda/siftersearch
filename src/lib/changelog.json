@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:09:23.008Z",
+  "generated": "2026-10-10T18:32:32.492Z",
   "entries": [
+    {
+      "hash": "941c22d9",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "One Anís hub — deployments, personality, assessment, activity, costs, System-1, about; strategies shown",
+      "scope": "anis"
+    },
     {
       "hash": "ced5c21d",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "An inferred author RANKS first, never filters",
       "scope": "search"
-    },
-    {
-      "hash": "31901947",
-      "date": "2026-09-24",
-      "type": "New",
-      "description": "Jev-planned search — one ~200ms classification picks scope, author and layers",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "941c22d9",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "One Anís hub — deployments, personality, assessment, activity, costs, System-1, about; strategies shown",
+        "scope": "anis"
+      },
       {
         "hash": "ced5c21d",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "Fixed",
         "description": "An inferred author RANKS first, never filters",
-        "scope": "search"
-      },
-      {
-        "hash": "31901947",
-        "date": "2026-09-24",
-        "type": "New",
-        "description": "Jev-planned search — one ~200ms classification picks scope, author and layers",
         "scope": "search"
       }
     ]

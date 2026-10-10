@@ -4,6 +4,7 @@
    * analytics), plus our own search / indexing / AI-spend internals. All data is
    * snapshot-backed via /api/admin/analytics/deep (no heavy live scans).
    */
+  import { usd } from '../../lib/money.js';
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
   import { getAuthState, initAuth, requireTier } from '../../lib/auth.svelte.js';
@@ -42,10 +43,7 @@
     return Math.round(n).toString();
   }
   function money(n) {
-    if (!n) return '$0';
-    if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
-    if (n >= 1) return '$' + n.toFixed(2);
-    return '$' + n.toFixed(4);
+    return !n ? '$0' : usd(n, { compact: true });
   }
   function pct(part, whole) {
     if (!whole) return '0%';

@@ -3,6 +3,7 @@
    * AIUsageDashboard Component
    * Displays AI usage statistics and cost tracking for admins
    */
+  import { usd } from '../../lib/money.js';
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
@@ -87,9 +88,15 @@
     }
   }
 
+  // "Today" = since midnight on the server (tower runs America/Phoenix, MST all year), named with its date.
+  let todayLabel = $derived.by(() => {
+    const since = summary?.today_since ? new Date(summary.today_since) : new Date();
+    const day = since.toLocaleDateString('en-US', { timeZone: 'America/Phoenix', weekday: 'short', month: 'short', day: 'numeric' });
+    return `${day}, since midnight MST`;
+  });
+
   function formatCost(cost) {
-    if (cost === undefined || cost === null) return '$0.00';
-    return '$' + cost.toFixed(4);
+    return cost == null ? '$0.00' : usd(cost);
   }
 
   function formatTokens(n) {
@@ -190,7 +197,7 @@
         </div>
         <div class="stat-content">
           <span class="stat-value">{formatCost(summary?.today?.cost)}</span>
-          <span class="stat-label">Today ({formatTokens(summary?.today?.tokens)} tokens)</span>
+          <span class="stat-label">{todayLabel} ({formatTokens(summary?.today?.tokens)} tokens)</span>
         </div>
       </div>
 
@@ -202,7 +209,7 @@
         </div>
         <div class="stat-content">
           <span class="stat-value">{formatCost(summary?.week?.cost)}</span>
-          <span class="stat-label">This Week ({formatTokens(summary?.week?.tokens)} tokens)</span>
+          <span class="stat-label">Last 7 days ({formatTokens(summary?.week?.tokens)} tokens)</span>
         </div>
       </div>
 
@@ -214,7 +221,7 @@
         </div>
         <div class="stat-content">
           <span class="stat-value">{formatCost(summary?.month?.cost)}</span>
-          <span class="stat-label">30 Days ({formatTokens(summary?.month?.tokens)} tokens)</span>
+          <span class="stat-label">Last 30 days ({formatTokens(summary?.month?.tokens)} tokens)</span>
         </div>
       </div>
 

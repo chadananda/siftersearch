@@ -26,10 +26,10 @@ describe('Anís hub overview', () => {
     expect(Object.fromEntries(a.byStrategy.map((r) => [r.strategy, r.n]))).toEqual({ topic: 1, '(none)': 1 });
     expect(a.recent.find((r) => r.id === 1)).toMatchObject({ strategy: 'topic', format: 'authority_layers', question: 'What does Bahá’u’lláh say about unity?' });
   });
-  it('costs: only Anís callers + his System-1 tasks; unpriced models listed', async () => {
+  it('costs: only Anís callers + his System-1 tasks; nothing unpriced', async () => {
     const c = await anisCosts({ queryAll }, 30);
     expect(c.rows.map((r) => r.caller).sort()).toEqual(['anis-craft', 'system1:anis-triage']);
-    expect(c.unpriced).toEqual(['gemini-3.5-flash-lite']);
+    expect(c.unpriced).toEqual([]);   // every model Anís uses is priced (10-10)
   });
   it('assessment: tallies verdicts and problems; recent list carries the problems', () => {
     const db = new Database(':memory:');
