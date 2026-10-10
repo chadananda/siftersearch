@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:21:48.252Z",
+  "generated": "2026-10-10T20:25:33.773Z",
   "entries": [
+    {
+      "hash": "02b94aa7",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "API in pm2 cluster mode (1 instance) + bounded wait_ready — reloads without the ~30 s of 502s",
+      "scope": "deploy"
+    },
     {
       "hash": "e71f28e6",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Version the Anís bundle URL by content hash so a deploy is live on every host site at once",
       "scope": "widget"
-    },
-    {
-      "hash": "0fe9f26a",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "The home page hosts Anís like any client site — standard embed, no bespoke chat (backlog 0015)",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "02b94aa7",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "API in pm2 cluster mode (1 instance) + bounded wait_ready — reloads without the ~30 s of 502s",
+        "scope": "deploy"
+      },
       {
         "hash": "e71f28e6",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "Fixed",
         "description": "Version the Anís bundle URL by content hash so a deploy is live on every host site at once",
         "scope": "widget"
-      },
-      {
-        "hash": "0fe9f26a",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "The home page hosts Anís like any client site — standard embed, no bespoke chat (backlog 0015)",
-        "scope": "home"
       }
     ]
   }
