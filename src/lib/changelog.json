@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T17:19:17.238Z",
+  "generated": "2026-10-10T17:21:13.971Z",
   "entries": [
+    {
+      "hash": "5530a4d2",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Jev, Clef, per-search Gemini embeddings and Anís replies are now spend (ai_usage)",
+      "scope": "spend"
+    },
     {
       "hash": "6d95a6d0",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Pin Node 25.9.0 to match production",
       "scope": null
-    },
-    {
-      "hash": "37fe821b",
-      "date": "2026-09-24",
-      "type": "Docs",
-      "description": "Trace + forensic API is committed, not pending",
-      "scope": "handoff"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "5530a4d2",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Jev, Clef, per-search Gemini embeddings and Anís replies are now spend (ai_usage)",
+        "scope": "spend"
+      },
       {
         "hash": "6d95a6d0",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Chore",
         "description": "Pin Node 25.9.0 to match production",
         "scope": null
-      },
-      {
-        "hash": "37fe821b",
-        "date": "2026-09-24",
-        "type": "Docs",
-        "description": "Trace + forensic API is committed, not pending",
-        "scope": "handoff"
       }
     ]
   }
