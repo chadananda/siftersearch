@@ -28,8 +28,15 @@ for (let after = 0; ;) {
 const md5 = (s) => createHash('md5').update(s).digest('hex');
 const srcSlug = (u) => String(u || '').replace(/^https?:\/\/(www\.)?oceanlibrary\.com\//, '').replace(/\/+$/, '').toLowerCase();
 const bySource = new Map(BINDERY ? JSON.parse(readFileSync(BINDERY, 'utf8')).project.books.filter((b) => b.source).map((b) => [srcSlug(b.source), b.id]) : []);
-/** The cover URL for a doc: by bookid hash, else (with --bindery) by its OceanLibrary source URL. */
-const coverFor = (d) => (d.external_id && covers[md5(d.external_id)]) || covers[bySource.get(srcSlug(d.source_url))] || null;
+// last resort: the folded title, only when exactly ONE Bindery book carries it (never guess between two)
+const foldT = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const titleCount = new Map(), byTitle = new Map();
+if (BINDERY) for (const b of JSON.parse(readFileSync(BINDERY, 'utf8')).project.books) {
+  const k = foldT(b.title); titleCount.set(k, (titleCount.get(k) || 0) + 1); byTitle.set(k, b.id);
+}
+/** The cover URL for a doc: by bookid hash, else (with --bindery) by its OceanLibrary source URL, else a unique title. */
+const coverFor = (d) => (d.external_id && covers[md5(d.external_id)]) || covers[bySource.get(srcSlug(d.source_url))]
+  || (titleCount.get(foldT(d.title)) === 1 ? covers[byTitle.get(foldT(d.title))] : null) || null;
 const work = docs.filter((d) => coverFor(d) && (REPLACE || !d.cover_url));
 console.log(JSON.stringify({ oceanlibraryDocs: docs.length, coversInMap: Object.keys(covers).length, toImport: work.length,
   alreadyHaveCover: docs.filter((d) => d.cover_url).length, noMatch: docs.filter((d) => !coverFor(d)).map((d) => `${d.id} ${d.title}`).slice(0, 200) }));
