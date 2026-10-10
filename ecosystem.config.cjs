@@ -6,7 +6,7 @@ const path = require('path');
  *
  * Design principles:
  * - NEVER stop trying to restart. max_restarts: -1 (unlimited)
- * - NO wait_ready — it causes death spirals when startup is slow
+ * - wait_ready only with a bounded listen_timeout (the API: cluster-mode zero-downtime reloads, 10-10)
  * - Exponential backoff prevents CPU thrashing on persistent failures
  * - Single-writer: only siftersearch-worker writes to SQLite
  */
@@ -51,8 +51,11 @@ module.exports = {
       // API; the boot reaper (queue.killStrayGroundingProcs) already removes untracked strays and spares tracked runs.
       treekill: false,
       cwd: PROJECT_ROOT,
+      // ZERO-DOWNTIME DEPLOYS (10-10): fork mode reloads = stop then start, ~30 s of 502s on the site per deploy (Chad saw
+      // them in the console). Cluster mode with one instance makes `pm2 reload` / startOrReload start the NEW process,
+      // wait for its 'ready' (api/index.js sends it after listen), then stop the old one. One instance — not a scale-out.
       instances: 1,
-      exec_mode: 'fork',
+      exec_mode: 'cluster',
       watch: false,
       // 188GB RAM box — be generous. The previous 500M (and stale 100M
       // PM2 runtime) caused 30-second restart loops during normal search
@@ -61,8 +64,10 @@ module.exports = {
       // 1.5G was still tight enough that a single chat with reranking +
       // search cache + Jafar pipeline could trip it.
       max_memory_restart: '3G',
-      // NO wait_ready — it caused death spirals when Meilisearch was slow
-      wait_ready: false,
+      // wait_ready is back ON, bounded: the old death spiral (slow Meilisearch) cannot recur because listen_timeout makes
+      // pm2 proceed after 60 s even without 'ready' — a slow boot costs the overlap, never a restart loop.
+      wait_ready: true,
+      listen_timeout: 60000,
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',

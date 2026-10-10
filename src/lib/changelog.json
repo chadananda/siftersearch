@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:16:13.119Z",
+  "generated": "2026-10-10T20:21:48.252Z",
   "entries": [
+    {
+      "hash": "e71f28e6",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "A refused connection during an API restart is retried (~70 s), not scored as a failure",
+      "scope": "battery"
+    },
     {
       "hash": "dfb021f5",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "The home page hosts Anís like any client site — standard embed, no bespoke chat (backlog 0015)",
       "scope": "home"
-    },
-    {
-      "hash": "ee990174",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "A dry run's force only skips the cooldown — it reported every live book as 'changed'",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "e71f28e6",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "A refused connection during an API restart is retried (~70 s), not scored as a failure",
+        "scope": "battery"
+      },
       {
         "hash": "dfb021f5",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "New",
         "description": "The home page hosts Anís like any client site — standard embed, no bespoke chat (backlog 0015)",
         "scope": "home"
-      },
-      {
-        "hash": "ee990174",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "A dry run's force only skips the cooldown — it reported every live book as 'changed'",
-        "scope": "ingest"
       }
     ]
   }
