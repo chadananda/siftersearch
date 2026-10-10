@@ -21,7 +21,7 @@ the tunnel). SSR fetches use the absolute tunnel origin
 ## Architectural invariants (frontend)
 - **Color tokens** — defined in `src/styles/global.css` as CSS variables; Tailwind classes are semantic (`bg-surface-1`, `text-primary`). NEVER use arbitrary values like `bg-[var(--surface-1)]`. See project root CLAUDE.md.
 - **Svelte 5 runes** — use `$state`, `$derived`, `$effect`. `onclick` not `on:click`. `{#snippet}` over slots.
-- **Pre-commit deploy** — every commit runs `npm run build` + `scripts/deploy-worker.sh` (`wrangler deploy`). Frontend changes ONLY land via the pre-commit hook.
+- **Deploy** — `npm run deploy` (`scripts/deploy-site.sh`: bump → build → `wrangler deploy`); no git hooks. Frontend changes ONLY land through it.
 
 ## Refactor status (2026-05)
 - `components/ChatInterface.svelte` (5,371 lines) — split deferred. No automated tests; manual browser verification required.

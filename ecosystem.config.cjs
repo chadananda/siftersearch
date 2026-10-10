@@ -5,7 +5,7 @@ const path = require('path');
  * PM2 Ecosystem Configuration for SifterSearch
  *
  * Design principles:
- * - NEVER stop trying to restart. max_restarts: -1 (unlimited)
+ * - NEVER stop trying to restart: max_restarts 999999 (NOT -1 — PM2 6 rejects the whole file over it, 10-10 outage)
  * - wait_ready only with a bounded listen_timeout (the API: cluster-mode zero-downtime reloads, 10-10)
  * - Exponential backoff prevents CPU thrashing on persistent failures
  * - Single-writer: only siftersearch-worker writes to SQLite
@@ -191,7 +191,7 @@ module.exports = {
       cwd: PROJECT_ROOT,
       interpreter: 'bash',
       autorestart: true,
-      max_restarts: -1,
+      max_restarts: 999999,   // PM2 6 REJECTS -1 ('minimum is 0') — and then starts NOTHING from this file (10-10 outage)
       exp_backoff_restart_delay: 1000,
     },
     {

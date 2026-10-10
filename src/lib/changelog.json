@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T22:41:01.041Z",
+  "generated": "2026-10-10T23:07:11.783Z",
   "entries": [
+    {
+      "hash": "e2e6c6b8",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Covers shown bare (they are transparent — no box behind them); shelves use the full page width",
+      "scope": "library"
+    },
     {
       "hash": "92a443d7",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Main layer reports embedding vs engine ms",
       "scope": "search"
-    },
-    {
-      "hash": "1c838520",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Who-met-whom runs on every query (a slow plan no longer drops it); resolve copy checks bounded by the deadline; target scans memoised",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "e2e6c6b8",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Covers shown bare (they are transparent — no box behind them); shelves use the full page width",
+        "scope": "library"
+      },
       {
         "hash": "92a443d7",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Chore",
         "description": "Main layer reports embedding vs engine ms",
-        "scope": "search"
-      },
-      {
-        "hash": "1c838520",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Who-met-whom runs on every query (a slow plan no longer drops it); resolve copy checks bounded by the deadline; target scans memoised",
         "scope": "search"
       }
     ]

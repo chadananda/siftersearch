@@ -109,27 +109,24 @@ The system runs across **two surfaces** — keep this distinction in mind for ev
 - Zone routes `siftersearch.com/*` + `www.siftersearch.com/*` intercept ahead of the legacy Pages
   project (still exists, dormant) — removing routes + redeploy = instant rollback to Pages
 - External API consumers and third-party widget embeds keep calling `api.siftersearch.com` directly
-- **Deploy path:** `git commit` triggers pre-commit hook → `npm run build` → `scripts/deploy-worker.sh`
-  (`wrangler deploy`). Frontend changes ONLY land via this hook. Preview: siftersearch.chadananda.workers.dev
+- **Deploy path:** `npm run deploy` (`scripts/deploy-site.sh`: bump → build → `wrangler deploy`). Preview:
+  siftersearch.chadananda.workers.dev
 
 **Cloudflare's role (no application logic):** the site worker (SSR + proxy), edge cache, R2 (object storage for uploads), Tunnel (exposes tower-nas API publicly), DNS.
 
-**The pre-commit hook (`.git/hooks/pre-commit` → symlink to `scripts/hooks/pre-commit`)** does, in order:
-1. lint (`npm run lint`) — fail aborts commit
-2. tests (`npm run test`) — fail aborts commit
-3. server-imports check
-4. version bump (`bump-version.js patch`)
-5. build (`npm run build`)
-6. Worker deploy (`scripts/deploy-worker.sh` → `wrangler deploy`)
-- `SKIP_CHECKS=1 git commit` skips steps 1-3 but still builds + deploys (use when lint has pre-existing unrelated errors)
-- `git commit --no-verify` skips the ENTIRE hook — frontend changes will NOT reach the live site
-
-**Three deploy paths in practice:**
+**Deploy pipeline (explicit — NO git hooks, Chad 10-10):**
+1. Change code; run the tests you need (`npm test`).
+2. Frontend changed (.astro, .svelte, layouts, worker/)? `npm run deploy` (= `scripts/deploy-site.sh`: bump version →
+   build → `wrangler deploy`). It never commits or pushes.
+3. `git commit` (include `package.json` + `src/lib/changelog.json` when step 2 ran) — a commit does nothing else.
+4. `git push` → `siftersearch-updater` on tower pulls, smoke-tests, and reloads the API (pm2 cluster mode,
+   zero-downtime). Don't push API code while a search battery is running.
 
 | Change type | How it ships | Time to live |
 |---|---|---|
-| API/backend code | regular commit + push → updater pulls | ~5 min |
-| Frontend (.astro, .svelte, layouts, worker/) | regular commit triggers pre-commit → `wrangler deploy` | ~2-3 min after commit |
+| API/backend code | commit + `git push` → updater pulls | ~5 min |
+| Frontend (.astro, .svelte, layouts, worker/) | `npm run deploy`, then commit + push | ~2-3 min |
+| Image Worker (worker/img) | `npx wrangler deploy -c worker/img/wrangler.jsonc` | ~1 min |
 | DB content (`doc_pages`, conversations, etc.) | admin API PUT (no commit needed) | edge cache TTL (~5 min) |
 
 **Editing site content without deploying code:**

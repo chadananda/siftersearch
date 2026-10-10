@@ -4,7 +4,7 @@
   // ONE edge-cached index (/api/library/shelves, built out of process). Multi-part works (KJV, Qur'an…) are one card.
   // Covers are transparent PNG/WebP art: shown bare (no box behind them); full page width (Chad 10-10).
   import { onMount } from 'svelte';
-  import { svcFixed } from '../../lib/imagekit.js';
+  import { imgSet } from '../../lib/imagekit.js';
 
   const API = import.meta.env.PUBLIC_API_URL || '';
   let data = $state(null);
@@ -40,7 +40,8 @@
   }
   const toggle = (key, params) => { if (extra[key]) { const { [key]: _, ...rest } = extra; extra = rest; } else loadMore(key, params); };
 
-  const cover = (c) => (c ? svcFixed(c, 96, 144) : null);
+  // width only — each cover keeps its own proportions (no crop, no stretch); 1x/2x of the ~120 px card
+  const cover = (c) => (c ? imgSet(c, [120, 240], { fo: null }) : null);
   const fmt = (n) => Number(n || 0).toLocaleString();
   const SHOWN = 12;
 </script>
@@ -49,10 +50,13 @@
   <a href={b.url} class="book group flex flex-col gap-1 min-w-0" title={b.author ? `${b.title} — ${b.author}` : b.title}>
     {#if cover(b.cover)}
       {@const c = cover(b.cover)}
-      <img src={c.src} srcset={c.srcset} width="96" height="144" alt="" loading="lazy" decoding="async"
-        class="w-full aspect-[2/3] object-contain object-bottom transition-transform group-hover:-translate-y-0.5" />
+      <!-- a fixed box; the cover fits inside it at its own proportions, standing on the box's floor (Chad 10-10) -->
+      <div class="w-full h-40 flex items-end justify-center">
+        <img src={c.src} srcset={c.srcset} sizes="120px" alt="" loading="lazy" decoding="async"
+          class="max-w-full max-h-full w-auto h-auto transition-transform group-hover:-translate-y-0.5" />
+      </div>
     {:else}
-      <div class="w-full aspect-[2/3] rounded-md border border-border-subtle bg-surface-2 group-hover:border-accent p-2 flex items-end">
+      <div class="w-full h-40 rounded-md border border-border-subtle bg-surface-2 group-hover:border-accent p-2 flex items-end">
         <span class="text-[0.7rem] leading-tight text-secondary line-clamp-5">{b.title}</span>
       </div>
     {/if}
