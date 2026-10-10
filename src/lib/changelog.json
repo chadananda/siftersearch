@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T16:10:38.325Z",
+  "generated": "2026-10-10T16:20:11.930Z",
   "entries": [
+    {
+      "hash": "961e6554",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Enrich and correct existing content — collate editions, find metadata, find covers",
+      "scope": "librarian"
+    },
     {
       "hash": "e4ce247c",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Security",
       "description": "No shell in the four scripts that run unattended (19 -> 14)",
       "scope": null
-    },
-    {
-      "hash": "9741c9d3",
-      "date": "2026-09-10",
-      "type": "Fixed",
-      "description": "Two hung /api/auth/refresh fetches on every page load",
-      "scope": "client"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "961e6554",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Enrich and correct existing content — collate editions, find metadata, find covers",
+        "scope": "librarian"
+      },
       {
         "hash": "e4ce247c",
         "date": "2026-10-10",
@@ -7030,13 +7037,6 @@
         "type": "Security",
         "description": "No shell in the four scripts that run unattended (19 -> 14)",
         "scope": null
-      },
-      {
-        "hash": "9741c9d3",
-        "date": "2026-09-10",
-        "type": "Fixed",
-        "description": "Two hung /api/auth/refresh fetches on every page load",
-        "scope": "client"
       }
     ]
   }

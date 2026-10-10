@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "2.187.568",
+  "version": "2.187.569",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -96,6 +96,7 @@
     "@astrojs/svelte": "^7.2.2",
     "@aws-sdk/client-s3": "^3.1130.0",
     "@aws-sdk/s3-request-presigner": "^3.1130.0",
+    "@cf-wasm/photon": "^0.3.6",
     "@codemirror/commands": "^6.11.0",
     "@codemirror/lang-markdown": "^6.5.0",
     "@codemirror/lang-yaml": "^6.1.2",
