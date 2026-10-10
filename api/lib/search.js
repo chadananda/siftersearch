@@ -222,6 +222,7 @@ let _olDocIdPromise = null;
  * "The earth is but one country…". Hits further from the best keep their order.
  */
 const NEAR = 0.035;
+const CANON_VERBATIM = 0.86;   // phrase similarity at which a canonical match is the quoted line itself (famous lines ~0.90)
 async function originalFirst(hits) {
   if (hits.length < 2) return hits;
   const top = Math.max(...hits.map((h) => h.score || 0));
@@ -1403,6 +1404,7 @@ export async function multiIndexSearch(query, options = {}) {
   // authority + the OL multiplier then rank it. One extra filtered Qdrant query; the query vector is memoized.
   const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
   let canonResult = { hits: [] };
+  let canonVerbatim = false;
   if (phraseRan && !phraseResult.failed) {
     try {
       const byRel = await getOlDocIdsByReligion();
@@ -1413,6 +1415,9 @@ export async function multiIndexSearch(query, options = {}) {
       }
       if (ids.length) canonResult = await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 }));
       canonResult = { hits: await originalFirst(canonResult.hits || []) };
+      // a canonical passage matching near-verbatim IS a quotation, whatever the planner said (the planner classed
+      // "The earth is but one country…!" a topic; phrase similarity 0.90 says quote)
+      canonVerbatim = Math.max(0, ...canonResult.hits.map((h) => h.score || 0)) >= CANON_VERBATIM;
     } catch (err) {
       logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed');
     }
@@ -1427,7 +1432,7 @@ export async function multiIndexSearch(query, options = {}) {
       // CANON on a quote (planner shape=quote → keywordLayer): a SHARP curve, so the authority-ordered first canonical hit —
       // the original — outweighs a quoting work that also collects phrase-layer credit (10-10: World Order kept beating
       // Gleanings under plain RRF). Elsewhere canon is one more RRF list.
-      cur.score += layer === 'canon' && options.keywordLayer
+      cur.score += layer === 'canon' && (options.keywordLayer || canonVerbatim)
         ? (weights.canon ?? 0.05) / (1 + rank)
         : (weights[layer] ?? 1.0) / (RRF_K + rank);
       cur[`${layer}Rank`] = rank;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T21:52:45.350Z",
+  "generated": "2026-10-10T22:00:29.260Z",
   "entries": [
+    {
+      "hash": "e4f0f38a",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "On a quote, the canon layer's first (authority-ordered) hit carries a sharp weight",
+      "scope": "search"
+    },
     {
       "hash": "14bfcf91",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Encounter names match as unique contiguous phrases, longest name wins; verb picks the edge, leftover words rank; per-stage timings",
       "scope": "search"
-    },
-    {
-      "hash": "24490fe2",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Encounters — places are not people, qualifiers are not names; evidence says why it matched",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "e4f0f38a",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "On a quote, the canon layer's first (authority-ordered) hit carries a sharp weight",
+        "scope": "search"
+      },
       {
         "hash": "14bfcf91",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Fixed",
         "description": "Encounter names match as unique contiguous phrases, longest name wins; verb picks the edge, leftover words rank; per-stage timings",
-        "scope": "search"
-      },
-      {
-        "hash": "24490fe2",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Encounters — places are not people, qualifiers are not names; evidence says why it matched",
         "scope": "search"
       }
     ]
