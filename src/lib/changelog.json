@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T17:10:00.832Z",
+  "generated": "2026-10-10T17:14:27.320Z",
   "entries": [
+    {
+      "hash": "1b5b7dbb",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Test traffic stays out of search statistics (X-Sifter-Test)",
+      "scope": "analytics"
+    },
     {
       "hash": "3dc81c96",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Per-search trace + forensic API — strategy, timings, layer attribution",
       "scope": "search"
-    },
-    {
-      "hash": "5391152f",
-      "date": "2026-09-24",
-      "type": "New",
-      "description": "Conversation-scoped narrowing that relaxes honestly (not yet wired)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "1b5b7dbb",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Test traffic stays out of search statistics (X-Sifter-Test)",
+        "scope": "analytics"
+      },
       {
         "hash": "3dc81c96",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "New",
         "description": "Per-search trace + forensic API — strategy, timings, layer attribution",
-        "scope": "search"
-      },
-      {
-        "hash": "5391152f",
-        "date": "2026-09-24",
-        "type": "New",
-        "description": "Conversation-scoped narrowing that relaxes honestly (not yet wired)",
         "scope": "search"
       }
     ]

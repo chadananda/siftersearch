@@ -1,9 +1,4 @@
 ---
-import AdminLayout from '../../layouts/AdminLayout.astro';
-import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
-import WidgetManager from '../../components/admin/WidgetManager.svelte';
+// Renamed 10-10: the chat widgets are Anís deployments — /admin/anis.
+return Astro.redirect('/admin/anis', 301);
 ---
-
-<AdminLayout title="Chat Widgets">
-  <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
-</AdminLayout>

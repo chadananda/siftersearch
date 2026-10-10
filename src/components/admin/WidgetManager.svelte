@@ -1,5 +1,6 @@
 <script>
-  // Chat widget profile manager. CRUD + per-profile analytics over /api/v1/widget/admin/* (routes/widget.js).
+  // Anís deployments (one profile per host site: instructions, home tradition, look) — formerly 'Chat widgets'.
+// Chat widget profile manager. CRUD + per-profile analytics over /api/v1/widget/admin/* (routes/widget.js).
   // Native replacement for the API-served /widget-admin console — same data, admin-JWT auth, site theme.
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
@@ -46,7 +47,7 @@
   }
 
   function openCreate() {
-    editing = { name: '', domainsText: '', tier: 'free', greeting: '', accent: '#1a6b5e', position: 'bottom-right', placeholder: '', chatbotLocation: '' };
+    editing = { name: '', domainsText: '', tier: 'free', greeting: '', accent: '#1a6b5e', position: 'bottom-right', placeholder: '', chatbotLocation: '', instructions: '', defaultTradition: '', extra: {} };
   }
 
   function openEdit(p) {
@@ -59,7 +60,10 @@
       accent: p.config.accent || '#1a6b5e',
       position: p.config.position || 'bottom-right',
       placeholder: p.config.placeholder || '',
-      chatbotLocation: p.config.chatbotLocation || ''
+      chatbotLocation: p.config.chatbotLocation || '',
+      instructions: p.config.instructions || '',
+      defaultTradition: p.config.default_tradition || '',
+      extra: p.config   // keys this form doesn't show survive a save (a save once wiped default_tradition)
     };
   }
 
@@ -72,6 +76,9 @@
       domains: editing.domainsText.split(',').map((d) => d.trim()).filter(Boolean),
       tier: editing.tier,
       config: {
+        ...(editing.extra || {}),
+        instructions: editing.instructions.trim() || undefined,
+        default_tradition: editing.defaultTradition.trim() || undefined,
         ...(editing.greeting && { greeting: editing.greeting }),
         ...(editing.accent && { accent: editing.accent }),
         ...(editing.position && { position: editing.position }),
@@ -158,8 +165,8 @@
   {:else}
     <header class="page-header">
       <div>
-        <h1>Chat Widgets</h1>
-        <p class="subtitle">Embeddable SifterChat profiles — one per host site</p>
+        <h1>Anís</h1>
+        <p class="subtitle">Anís on each host site — the same companion with its own instructions, home tradition and look. <a href="/docs/agents/anis">About Anís</a></p>
       </div>
       <button class="btn-primary" onclick={openCreate} aria-label="Create widget profile">New Profile</button>
     </header>
@@ -189,6 +196,12 @@
               <input type="color" bind:value={editing.accent} aria-label="Accent color" />
               <code>{editing.accent}</code>
             </span>
+          </label>
+          <label class="wide">Instructions for Anís on this site <span class="hint">(how this deployment differs — audience, emphasis, tone; up to 600 characters)</span>
+            <textarea rows="3" maxlength="600" bind:value={editing.instructions} placeholder="e.g. Visitors are new to the Bahá'í Faith; keep answers short and point to the site's introductory pages." aria-label="Instructions for Anís on this site"></textarea>
+          </label>
+          <label>Home tradition <span class="hint">(answers default to it unless the visitor asks about another)</span>
+            <input type="text" bind:value={editing.defaultTradition} placeholder="e.g. Baha'i" aria-label="Home tradition" />
           </label>
           <label>Greeting
             <input type="text" bind:value={editing.greeting} placeholder="Hello! Ask me anything about the sacred literature." aria-label="Greeting message" />
@@ -539,4 +552,6 @@
     .profile-meta dt { width: auto; }
     .profile-meta > div { flex-direction: column; gap: 0.25rem; }
   }
+  label.wide { grid-column: 1 / -1; }
+  label.wide textarea { width: 100%; font: inherit; }
 </style>

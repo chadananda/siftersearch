@@ -1,0 +1,10 @@
+---
+// Anís deployments: one profile per host site (instructions, home tradition, look). Formerly /admin/widgets.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import WidgetManager from '../../components/admin/WidgetManager.svelte';
+---
+
+<AdminLayout title="Anís">
+  <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
+</AdminLayout>

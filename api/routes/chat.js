@@ -1390,6 +1390,7 @@ export default async function chatRoutes(fastify) {
     const { messages, researchContext, chatbot_location, widget_token, name, mission, engine } = request.body;
     let persona_name = null;
     let default_tradition = null;
+    let profile_instructions = null;
     if (widget_token) {
       const prof = await queryOne('SELECT name, config_json FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
       persona_name = prof?.name?.trim().slice(0, 60) || null;
@@ -1398,10 +1399,12 @@ export default async function chatRoutes(fastify) {
       // questions default to that tradition's domain unless the USER indicates
       // another tradition. Server-side from the token: never client-supplied.
       try { default_tradition = JSON.parse(prof?.config_json || '{}').default_tradition || null; } catch { /* ignore */ }
+      // The site's own instructions for Anís (set on /admin/anis) — the default steering for every page of the site.
+      try { profile_instructions = String(JSON.parse(prof?.config_json || '{}').instructions || '').trim().slice(0, 600) || null; } catch { /* ignore */ }
     }
-    // Per-page data-* overrides win over the profile (display name) + carry the mission.
+    // Per-page data-* overrides win over the profile (display name, instructions).
     if (typeof name === 'string' && name.trim()) persona_name = name.trim().slice(0, 60);
-    const mission_prompt = (typeof mission === 'string' && mission.trim()) ? mission.trim().slice(0, 400) : null;
+    const mission_prompt = (typeof mission === 'string' && mission.trim()) ? mission.trim().slice(0, 400) : profile_instructions;
     const userId = participantId(request);   // account → x-user-id → sifter_sid session cookie
 
     // Set headers directly on raw response — reply.header() doesn't survive flushHeaders()
