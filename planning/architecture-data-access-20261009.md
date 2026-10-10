@@ -124,3 +124,14 @@ CLAUDE.md), `agents/agent-librarian.js` if no caller, retired enrichment worker 
 - File header (1–3 lines): purpose, deps, non-obvious behaviour. No duplicated logic: one builder per shape (`paragraphDoc`).
 - Pure cores + thin I/O shells (as `bio-timeline.js`, `window.js`): testable without a DB.
 - Every phase: tests first for the moved behaviour, batteries before/after for search changes, no deploy during a battery.
+
+## Progress 10-09 night (engine-access ratchet 50 → 21 files)
+- Deleted: 24 dead scripts that wrote Meili directly, sync-processor.js (dead duplicate), graph-pipeline.js, reindexAll,
+  migrateEmbeddingsFromMeilisearch, POST /docmeta/cancel-meili.
+- Off the engine: source-resolve (copy check on Qdrant BM25 + SQLite bodies — measured BETTER than Meili: 32/40 vs 25/40),
+  deep-research (unthresholded Meili fallback removed), tablets.
+- Index outbox drains Qdrant first and without Meili. Qdrant year filters resolve through SQLite doc ids (no payload).
+- Hourly keyword catch-up cron (no live Qdrant writer yet — item 10 of planning/meili-retirement-map.md).
+- Roadmap progress computed in a worker thread (bio.js) — the API no longer freezes on it.
+- Remaining 21: config/env/health (5), ranking + secondary indexes (search.js, concepts, entity, hype), admin, watcher,
+  indexer, graph-meili-sync, graph-extractor, unified-worker, push-meili-authors, sync-meili, update-ranking-rules.

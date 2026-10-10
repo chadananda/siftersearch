@@ -67,3 +67,6 @@ classifier's: remove a page only when Clef AND Jev both call it non-content (met
 (`non-content-20261009.tsv`); keep 13,905 both-content + 1,101 where the models split. The rule run had retired 6,991
 docs (stopped); 1,272 of them are content/split and were restored exactly (`content.restoreRetiredDocs`, run stamp only).
 `retire-ids-v2` / `review-rule-but-document` are superseded.
+**Done 10-09 23:30:** 60,044 non-content pages retired (run `retire-noncontent-bahai-library-20261009` 54,325 + the
+earlier run's 5,719 that the classifier also calls non-content); 15,013 bahai-library docs remain live. Index removal via
+the outbox (Qdrant first).
