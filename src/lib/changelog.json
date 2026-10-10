@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T05:25:24.064Z",
+  "generated": "2026-10-10T05:37:33.447Z",
   "entries": [
+    {
+      "hash": "8624611b",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "API no longer freezes on the grounding roadmap; Qdrant path stops leaning on Meili",
+      "scope": null
+    },
     {
       "hash": "0e51fb20",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Auto/0019 — encounter-claim inventory survey",
       "scope": null
-    },
-    {
-      "hash": "db292e13",
-      "date": "2026-09-09",
-      "type": "Fixed",
-      "description": "Authority cache never returns null; drop a vacuous traversal assertion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "8624611b",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "API no longer freezes on the grounding roadmap; Qdrant path stops leaning on Meili",
+        "scope": null
+      },
       {
         "hash": "0e51fb20",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Other",
         "description": "Auto/0019 — encounter-claim inventory survey",
-        "scope": null
-      },
-      {
-        "hash": "db292e13",
-        "date": "2026-09-09",
-        "type": "Fixed",
-        "description": "Authority cache never returns null; drop a vacuous traversal assertion",
         "scope": null
       }
     ]
