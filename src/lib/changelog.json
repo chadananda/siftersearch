@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T21:47:04.312Z",
+  "generated": "2026-10-10T21:52:45.350Z",
   "entries": [
+    {
+      "hash": "14bfcf91",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Canonical phrase matches of about equal score rank by author authority — the original first",
+      "scope": "search"
+    },
     {
       "hash": "4f5e4b09",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Encounters — places are not people, qualifiers are not names; evidence says why it matched",
       "scope": "search"
-    },
-    {
-      "hash": "a5dd056f",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Encounter names split parentheticals; _plan.people shows the resolved parties",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "14bfcf91",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Canonical phrase matches of about equal score rank by author authority — the original first",
+        "scope": "search"
+      },
       {
         "hash": "4f5e4b09",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Fixed",
         "description": "Encounters — places are not people, qualifiers are not names; evidence says why it matched",
-        "scope": "search"
-      },
-      {
-        "hash": "a5dd056f",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Encounter names split parentheticals; _plan.people shows the resolved parties",
         "scope": "search"
       }
     ]

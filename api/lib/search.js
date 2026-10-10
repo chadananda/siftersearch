@@ -1424,7 +1424,12 @@ export async function multiIndexSearch(query, options = {}) {
     (result.hits || []).forEach((hit, rank) => {
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
-      cur.score += (weights[layer] ?? 1.0) / (RRF_K + rank);
+      // CANON on a quote (planner shape=quote → keywordLayer): a SHARP curve, so the authority-ordered first canonical hit —
+      // the original — outweighs a quoting work that also collects phrase-layer credit (10-10: World Order kept beating
+      // Gleanings under plain RRF). Elsewhere canon is one more RRF list.
+      cur.score += layer === 'canon' && options.keywordLayer
+        ? (weights.canon ?? 0.05) / (1 + rank)
+        : (weights[layer] ?? 1.0) / (RRF_K + rank);
       cur[`${layer}Rank`] = rank;
       if (hit.span && !cur.phraseSpan) cur.phraseSpan = hit.span;
       if (!cur.paragraph) cur.paragraph = { id: pid, doc_id: hit.doc_id, _stub: true };
