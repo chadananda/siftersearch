@@ -68,7 +68,7 @@ export function scopeSql(scope = 'live') {
 }
 
 const FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'external_id', 'scope', 'cover_url', 'encumbered',
-  'description', 'file_path', 'file_hash', 'paragraph_count', 'source_site', 'duplicate_of', 'deleted_at',
+  'description', 'file_path', 'file_hash', 'paragraph_count', 'source_site', 'source_url', 'duplicate_of', 'deleted_at',
   'slug', 'created_at', 'updated_at']);
 
 function selectList(fields) {
