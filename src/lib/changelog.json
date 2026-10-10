@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T16:39:18.960Z",
+  "generated": "2026-10-10T16:42:10.182Z",
   "entries": [
+    {
+      "hash": "3c7ded79",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Lossy WebP via jSquash — Photon's WebP is lossless only",
+      "scope": "img"
+    },
     {
       "hash": "54fa5133",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The work the user NAMED must outrank a more authoritative one",
       "scope": "search"
-    },
-    {
-      "hash": "6bdd285c",
-      "date": "2026-09-10",
-      "type": "Chore",
-      "description": "Status after clearing the post-baseline regressions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "3c7ded79",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Lossy WebP via jSquash — Photon's WebP is lossless only",
+        "scope": "img"
+      },
       {
         "hash": "54fa5133",
         "date": "2026-10-10",
@@ -7028,15 +7035,6 @@
         "type": "Fixed",
         "description": "The work the user NAMED must outrank a more authoritative one",
         "scope": "search"
-      }
-    ],
-    "2026-09-10": [
-      {
-        "hash": "6bdd285c",
-        "date": "2026-09-10",
-        "type": "Chore",
-        "description": "Status after clearing the post-baseline regressions",
-        "scope": null
       }
     ]
   }

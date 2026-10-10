@@ -1,4 +1,5 @@
 <script>
+  import { svcFixed } from '../../lib/imagekit.js';
   import { createEventDispatcher } from 'svelte';
   import { authenticatedFetch } from '../../lib/api.js';
   import ReligionIcon from '../ReligionIcon.svelte';
@@ -428,6 +429,10 @@
         tabindex="0"
       >
         <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
+        {#if doc.cover_url}
+          {@const thumb = svcFixed(doc.cover_url, 32, 48)}
+          <img src={thumb.src} srcset={thumb.srcset} width="32" height="48" alt="" loading="lazy" class="w-8 h-12 shrink-0 rounded-sm object-cover border border-border-subtle" />
+        {/if}
         <div class="flex-1 min-w-0">
           <div class="flex items-baseline gap-2">
             <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>

@@ -1579,7 +1579,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Get document metadata from libsql (source of truth for library management)
     const docRow = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, metadata, created_at, updated_at
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, metadata, cover_url, created_at, updated_at
       FROM docs WHERE id = ?
     `, [id]);
 

@@ -36,3 +36,14 @@ export function ikSrcset(local, widths, { ratio = null, q = 75, fo = 'auto' } = 
 // Hero band (~2.56:1) and card (~1.6:1) presets matching heroUrl/cardUrl crops.
 export const heroSet = (local) => ikSrcset(local, [640, 960, 1280, 1536, 1920], { ratio: 2.56, q: 80 });
 export const cardSet = (local) => ikSrcset(local, [320, 480, 640, 960], { ratio: 1.6, q: 75 });
+
+// OUR OWN image service (worker/img/ → siftersearch.com/img/…): the same `tr=` syntax, rendered in the Worker and
+// cached at the edge + R2 — no third-party CDN. Book covers are stored as `/img/covers/<docId>?v=<hash>` (docs.cover_url).
+// Same house rule: request the exact display size per pixel density.
+export const svcUrl = (url, tr) => (url ? `${url}${url.includes('?') ? '&' : '?'}tr=${tr}` : null);
+/** src + 1x/2x srcset for a fixed box, e.g. a cover shown at 120×180 CSS px. */
+export function svcFixed(url, w, h, { q = 78, extra = 'e-sharpen' } = {}) {
+  if (!url) return null;
+  const tr = (d) => `w-${w},h-${h},dpr-${d},q-${q}${extra ? `,${extra}` : ''}`;
+  return { src: svcUrl(url, tr(1)), srcset: `${svcUrl(url, tr(1))} 1x, ${svcUrl(url, tr(2))} 2x` };
+}

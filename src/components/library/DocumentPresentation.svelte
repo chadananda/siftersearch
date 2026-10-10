@@ -17,6 +17,7 @@
   import { marked } from 'marked';
   import markedFootnote from 'marked-footnote';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
+  import { svcFixed } from '../../lib/imagekit.js';
 
   // Enable footnote extension for markdown
   marked.use(markedFootnote());
@@ -1156,7 +1157,11 @@
           </div>
         </nav>
 
-        <!-- Title and metadata -->
+        <!-- Title and metadata (cover from the image service, exact size per density) -->
+        {#if document.cover_url}
+          {@const cover = svcFixed(document.cover_url, 120, 180)}
+          <img class="doc-cover" src={cover.src} srcset={cover.srcset} width="120" height="180" alt="Cover of {document.title || 'this book'}" />
+        {/if}
         <h1 class="doc-title">{toCurlyQuotes(document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Untitled')}</h1>
 
         {#if document.author}
@@ -2008,6 +2013,19 @@
     border-radius: 0.25rem;
   }
 
+
+  .doc-cover {
+    float: right;
+    width: 120px;
+    height: 180px;
+    margin: 0 0 1rem 1.25rem;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  }
+  @media (max-width: 640px) {
+    .doc-cover { width: 80px; height: 120px; margin-left: 0.75rem; }
+  }
 
   .doc-title {
     margin: 0 0 0.5rem 0;
