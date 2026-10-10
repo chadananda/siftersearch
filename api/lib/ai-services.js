@@ -284,7 +284,8 @@ export function logAIUsage({
       // Residual calibration against the real invoice: token counts are stored per call, so this is a dial,
       // not a guess baked into history — and history can be recosted from the stored tokens at any time.
       const cal = Number(process.env.AI_COST_CALIBRATION || 1);
-      const cost = cal * ((fresh * pricing.input + cachedTokens * pricing.input * 0.1
+      const cacheRead = getModel(model)?.cacheRead ?? 0.1;   // per-model cache-hit share of the input rate (DeepSeek 2%)
+      const cost = cal * ((fresh * pricing.input + cachedTokens * pricing.input * cacheRead
         + cacheWriteTokens * pricing.input * 1.25) * inMult + completionTokens * pricing.output * outMult) / 1000;
       // document_id is a TEXT column, so a bound JS number lands as '15254.0' and `WHERE document_id=15254`
       // then matches NOTHING (int vs text storage classes). Normalise to a clean integer string on write so a

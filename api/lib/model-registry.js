@@ -287,15 +287,16 @@ export const MODEL_REGISTRY = {
                                       // for fast extraction, but reasoning still counts vs max_tokens → give
                                       // large-output stages full maxOutput headroom (see rag/entities/claims.js)
     type: 'chat',
-    pricing: { input: 0.00027, output: 0.0011 },
+    pricing: { input: 0.0003, output: 0.0012 },   // PEAK list $0.30 / $1.20 per 1M (official page, 10-10); off-peak ×0.5
+    cacheRead: 0.02,                               // cache hit $0.006/1M = 2% of the miss rate (not the generic 10%)
     contextWindow: 64000,
     maxOutput: 8192,
     capabilities: ['extraction', 'classification', 'json_schema'],
     quality: 'quality',
     speed: 'fast',
     recommended: ['entity_extraction', 'classification', 'resolution'],
-    // OFF-PEAK: DeepSeek discounts 16:30-00:30 UTC — the window the whole pipeline is scheduled around
-    // (pipeline/peak.js). Multipliers are the published chat rate; override per-model from an invoice via
+    // OFF-PEAK: everything outside 01-04 + 06-10 UTC Mon-Fri, and all weekend (pipeline/peak.js, 10-10) — the window
+    // the pipeline is scheduled around. Multipliers are the published chat rate; override per-model from an invoice via
     // DEEPSEEK_OFFPEAK_INPUT / _OUTPUT rather than editing code, because the vendor changes these.
     // CACHE: hits bill at 10% of the input rate (already applied in logAIUsage). The previous note here
     // claimed "~98% discount", which contradicted the code and overstated how cheap cached input is.
@@ -308,14 +309,16 @@ export const MODEL_REGISTRY = {
     apiModel: 'deepseek-v4-pro',      // DeepSeek V4 pro (thinking) — live API id, v4 only
     name: 'DeepSeek V4 Pro (thinking)',
     type: 'chat',
-    pricing: { input: 0.00055, output: 0.0022 },
+    pricing: { input: 0.00132, output: 0.00396 },  // PEAK list $1.32 / $3.96 per 1M (official page, 10-10); off-peak ×0.5
+    cacheRead: 0.0333,                             // cache hit $0.044/1M
     contextWindow: 64000,
     maxOutput: 8192,
     capabilities: ['reasoning', 'adjudication', 'analysis'],
     quality: 'premium',
     speed: 'medium',
     recommended: ['promotion_adjudication', 'high_stakes_resolution'],
-    notes: 'Use for promotion adjudication. Promo pricing until 2026-05-31.'
+    offPeak: { input: 0.5, output: 0.5 },          // same schedule as flash (pipeline/peak.js)
+    notes: 'Use for promotion adjudication.'
   },
 
   // --- DeepSeek Series (local Ollama) ---

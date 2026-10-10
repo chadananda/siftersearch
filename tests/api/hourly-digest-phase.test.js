@@ -12,8 +12,8 @@ vi.mock('../../api/services/email.js', () => ({ sendEmail: async () => ({ ok: tr
 const { buildIngestDigest, renderIngestDigestText, renderIngestDigestHtml, sendIngestDigest } =
   await import('../../api/lib/pipeline/ingest-digest.js');
 
-// DeepSeek's discount window is 16:30–00:30 UTC, so PEAK (full price, grounding paused) is 00:30–16:30.
-const at = (h, m = 0) => new Date(Date.UTC(2026, 7, 13, h, m));
+// DeepSeek PEAK (full price, grounding paused) = 01:00–04:00 + 06:00–10:00 UTC, Mon–Fri; all else off-peak (10-10).
+const at = (h, m = 0, day = 13) => new Date(Date.UTC(2026, 7, day, h, m));   // 2026-08-13 = Thursday
 
 describe('peak window — which job owns the hour', () => {
   it('treats DeepSeek full-price hours as peak, when ingestion should run', () => {
@@ -21,13 +21,19 @@ describe('peak window — which job owns the hour', () => {
     expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(1, 0))).toBe(true);
   });
   it('treats the discount window as off-peak, when grounding runs instead', () => {
-    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(17, 0))).toBe(false);  // 16:30–00:30 UTC discount
-    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(23, 30))).toBe(false);
+    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(17, 0))).toBe(false);
+    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(4, 30))).toBe(false);   // the gap between the two peak windows
+    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(10, 0))).toBe(false);   // windows end-exclusive
+  });
+  it('weekends are off-peak all day', () => {
+    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(9, 0, 15))).toBe(false);   // Saturday 09:00 UTC
+    expect(nowInPeak(DEFAULT_PEAK_WINDOWS, at(2, 0, 16))).toBe(false);   // Sunday 02:00 UTC
+    expect(peakEndsAt(DEFAULT_PEAK_WINDOWS, at(9, 0, 15))).toBeNull();
   });
   it('reports when the current peak ends, so a paused pipeline never reads as stuck', () => {
     const ends = peakEndsAt(DEFAULT_PEAK_WINDOWS, at(9, 0));
-    expect(ends.getUTCHours()).toBe(16);
-    expect(ends.getUTCMinutes()).toBe(30);
+    expect(ends.getUTCHours()).toBe(10);
+    expect(ends.getUTCMinutes()).toBe(0);
     expect(peakEndsAt(DEFAULT_PEAK_WINDOWS, at(17, 0))).toBeNull();  // not peak → nothing to wait for
   });
 });

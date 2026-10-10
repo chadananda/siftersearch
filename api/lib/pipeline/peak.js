@@ -2,22 +2,26 @@
 // so BOTH the supervisor (queue.js) and the progress endpoint (bio.js) can import it without a circular import.
 // Windows are ["HH:MM","HH:MM"] pairs in UTC; a window may wrap past UTC midnight (e.g. 23:00→03:00).
 
-// DeepSeek pricing (published, UTC): OFF-PEAK discount 16:30-00:30 UTC (~50% off chat, ~75% reasoner); standard
-// (full price) the rest. So "peak" (when offpeak_only pauses) = the full-price window 00:30-16:30 UTC
-// = 5:30 PM-9:30 AM Arizona (MST, UTC-7) → the run grounds only in the cheap 9:30 AM-5:30 PM MST window.
-export const DEFAULT_PEAK_WINDOWS = [['00:30', '16:30']];
+// DeepSeek pricing (api-docs.deepseek.com/quick_start/pricing, checked 2026-10-10): PEAK (full price) = 01:00-04:00
+// and 06:00-10:00 UTC, Monday-Friday; every other hour and all weekend is OFF-PEAK at 50%. (Chinese public holidays
+// are off-peak too — not modelled; they only make us pause when we needn't.) The old schedule (off-peak only
+// 16:30-00:30 UTC, every day) paused the pipeline 16 h a day after DeepSeek had moved to this one.
+export const DEFAULT_PEAK_WINDOWS = [['01:00', '04:00'], ['06:00', '10:00']];
+export const PEAK_DAYS = [1, 2, 3, 4, 5];   // UTC getUTCDay(): Monday..Friday — weekends are off-peak all day
 
 export const hhmmToMin = (s) => { const [h, m] = String(s).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
 
 /** Is `at` (a Date, default now) inside any peak window? Wrap-aware. Pure. */
-export function nowInPeak(windows = DEFAULT_PEAK_WINDOWS, at = new Date()) {
+export function nowInPeak(windows = DEFAULT_PEAK_WINDOWS, at = new Date(), days = PEAK_DAYS) {
+  if (days && !days.includes(at.getUTCDay())) return false;
   const nowMin = at.getUTCHours() * 60 + at.getUTCMinutes();
   return (windows || []).some(([s, e]) => { const a = hhmmToMin(s), b = hhmmToMin(e); return a <= b ? (nowMin >= a && nowMin < b) : (nowMin >= a || nowMin < b); });
 }
 
 /** When does the CURRENT peak window end (→ off-peak resumes)? A Date, or null if not currently peak. Drives the
  *  UI's "waiting for off-hour rates · [countdown]" box so a paused-for-savings pipeline never reads as stuck. */
-export function peakEndsAt(windows = DEFAULT_PEAK_WINDOWS, at = new Date()) {
+export function peakEndsAt(windows = DEFAULT_PEAK_WINDOWS, at = new Date(), days = PEAK_DAYS) {
+  if (days && !days.includes(at.getUTCDay())) return null;
   const nowMin = at.getUTCHours() * 60 + at.getUTCMinutes();
   for (const [s, e] of (windows || [])) {
     const a = hhmmToMin(s), b = hhmmToMin(e);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:29:28.440Z",
+  "generated": "2026-10-10T19:33:57.844Z",
   "entries": [
+    {
+      "hash": "5a4638ea",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Phrase indexer logs every Gemini embedding batch to ai_usage (caller phrase-index:<budget>)",
+      "scope": "spend"
+    },
     {
       "hash": "c1f7bfcd",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Author preference searches without the name and promotes only on-subject author hits",
       "scope": "search"
-    },
-    {
-      "hash": "ea42a9e8",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Never show or keep a quote that is in no retrieved passage",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "5a4638ea",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Phrase indexer logs every Gemini embedding batch to ai_usage (caller phrase-index:<budget>)",
+        "scope": "spend"
+      },
       {
         "hash": "c1f7bfcd",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Fixed",
         "description": "Author preference searches without the name and promotes only on-subject author hits",
         "scope": "search"
-      },
-      {
-        "hash": "ea42a9e8",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Never show or keep a quote that is in no retrieved passage",
-        "scope": "anis"
       }
     ]
   }

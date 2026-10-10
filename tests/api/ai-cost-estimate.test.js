@@ -16,8 +16,8 @@ const cost = ({ fresh = 0, cached = 0, cacheWrite = 0, completion = 0, pricing, 
 
 const DEEPSEEK = { input: 0.00027, output: 0.0011 };
 const OFFPEAK = { input: 0.5, output: 0.5 };
-// 10:00 UTC is inside the full-price window (00:30-16:30); 20:00 UTC is inside the discounted one.
-const PEAK_TIME = new Date('2026-08-13T10:00:00Z');
+// 08:00 UTC Thursday is peak (01-04 + 06-10 UTC, Mon-Fri); 20:00 UTC is off-peak.
+const PEAK_TIME = new Date('2026-08-13T08:00:00Z');   // Thursday, inside 06:00–10:00 UTC peak
 const OFF_TIME = new Date('2026-08-13T20:00:00Z');
 
 describe('the discount the scheduler pauses for is the one we bill', () => {
