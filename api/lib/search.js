@@ -1241,7 +1241,7 @@ export async function multiIndexSearch(query, options = {}) {
   // embedding at all: main runs BM25 and the vector-only HyPE layer is skipped.
   const semanticOff = options.semantic === false;
   // meili:false = Qdrant-only ranking (the swap candidate, P4): the Meili main/HyPE/keyword layers are skipped and the
-  // two Qdrant layers always run. Paragraph bodies for the hits still come from Meili by id until hydration moves to SQLite.
+  // Qdrant layers always run. Hit bodies are hydrated from SQLite (paragraphs-repo), never an engine.
   const meiliOff = options.meili === false;
   const mainSemanticRatio = semanticOff ? 0 : options.semanticRatio != null
     ? options.semanticRatio
@@ -1253,7 +1253,7 @@ export async function multiIndexSearch(query, options = {}) {
   const _t0 = Date.now();
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
-  const [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult] = await Promise.all([
+  let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1286,19 +1286,19 @@ export async function multiIndexSearch(query, options = {}) {
     ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary)
       ? timed('phrase', searchPhrases(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: phrase layer failed');
-          return { hits: [] };
+          return { hits: [], failed: true };
         })
       : Promise.resolve({ hits: [] }),
     ((options.qdrantKeyword || meiliOff) && (!scope_config || scope_config.primary))
       ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
-          return { hits: [] };
+          return { hits: [], failed: true };
         })
       : Promise.resolve({ hits: [] }),
     ((options.qdrantHype || meiliOff) && options.hype !== false && !semanticOff && (!scope_config || scope_config.primary))
       ? timed('qhype', searchHypeQdrant(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant hype failed');
-          return { hits: [] };
+          return { hits: [], failed: true };
         })
       : Promise.resolve({ hits: [] }),
   ]);
@@ -1364,6 +1364,18 @@ export async function multiIndexSearch(query, options = {}) {
     }
     aggregate.set(pid, cur);
   });
+
+  // DEGRADE, DON'T BLANK (10-09: "Satya" returned an EMPTY page when all three Qdrant layers hit their timeout on a busy box):
+  // when Qdrant is the only ranker and every Qdrant layer FAILED, retry the cheap BM25 layer once with a longer timeout.
+  const qdrantLayers = [phraseResult, qkeywordResult, qhypeResult];
+  if (meiliOff && qdrantLayers.some((r) => r.failed) && qdrantLayers.every((r) => r.failed || !(r.hits || []).length)) {
+    try {
+      qkeywordResult = await timed('qkeyword_retry', searchKeywordQdrant(query, { limit: overFetch, filters, timeoutMs: 8000 }));
+      logger.warn({ query: String(query).slice(0, 80), hits: qkeywordResult.hits.length }, 'multiIndexSearch: all Qdrant layers failed — degraded to one BM25 retry');
+    } catch (err) {
+      logger.error({ err: err.message, query: String(query).slice(0, 80) }, 'multiIndexSearch: all Qdrant layers failed, BM25 retry failed too');
+    }
+  }
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.

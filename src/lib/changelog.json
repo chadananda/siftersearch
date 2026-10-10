@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T00:17:35.458Z",
+  "generated": "2026-10-10T01:20:18.472Z",
   "entries": [
+    {
+      "hash": "5ecc87b9",
+      "date": "2026-10-09",
+      "type": "New",
+      "description": "Index outbox — removals reach EVERY search index (P2)",
+      "scope": "index"
+    },
     {
       "hash": "2801f290",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Anis tool battery; API exposes result shapes not retrieval methods",
       "scope": null
-    },
-    {
-      "hash": "92dea377",
-      "date": "2026-09-08",
-      "type": "Other",
-      "description": "Anis tool reachability — data is there, test the conversation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "5ecc87b9",
+        "date": "2026-10-09",
+        "type": "New",
+        "description": "Index outbox — removals reach EVERY search index (P2)",
+        "scope": "index"
+      },
       {
         "hash": "2801f290",
         "date": "2026-10-09",
@@ -7031,13 +7038,6 @@
         "date": "2026-09-08",
         "type": "Other",
         "description": "Anis tool battery; API exposes result shapes not retrieval methods",
-        "scope": null
-      },
-      {
-        "hash": "92dea377",
-        "date": "2026-09-08",
-        "type": "Other",
-        "description": "Anis tool reachability — data is there, test the conversation",
         "scope": null
       }
     ]

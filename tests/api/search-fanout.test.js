@@ -233,4 +233,13 @@ describe('multiIndexSearch propagates scope_config', () => {
     expect(r._layers).toMatchObject({ phrase: 1, qkeyword: 1 });
     expect(getDocuments).not.toHaveBeenCalled();
   });
+
+  it('Qdrant-only: when every Qdrant layer fails, one longer BM25 retry fills the page instead of an empty result', async () => {
+    const layers = await import('../../api/lib/search/qdrant-layers.js');
+    layers.searchPhrases.mockRejectedValueOnce(new Error('The operation was aborted due to timeout'));
+    layers.searchKeywordQdrant.mockRejectedValueOnce(new Error('The operation was aborted due to timeout'));
+    const r = await multiIndexSearch('Satya', { meili: false, hype: false, scope_config: { primary: true, sites: [] } });
+    expect(r.hits.map((h) => String(h.id))).toContain('77');
+    expect(layers.searchKeywordQdrant).toHaveBeenLastCalledWith('Satya', expect.objectContaining({ timeoutMs: 8000 }));
+  });
 });
