@@ -126,7 +126,7 @@ async function runOnce(fix) {
   try {
     res = await fetch(MULTI ? `${API_BASE}/api/search/multi` : `${API_BASE}/api/v1/search`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(MULTI ? { 'X-Internal-Key': INTERNAL_KEY } : { 'X-API-Key': API_KEY }) },
+      headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', ...(MULTI ? { 'X-Internal-Key': INTERNAL_KEY } : { 'X-API-Key': API_KEY }) },
       body: JSON.stringify(reqBody),
       signal: AbortSignal.timeout(25000)
     });
@@ -294,7 +294,7 @@ async function runOnce(fix) {
   try {
     const r = await fetch(`${API_BASE}/api/v1/search`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+      headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-API-Key': API_KEY },
       body: JSON.stringify({ query: 'love', limit: 1 }),
       signal: AbortSignal.timeout(15000)
     });

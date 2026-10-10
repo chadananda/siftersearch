@@ -54,7 +54,7 @@ const API = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 async function build() {
   const out = [];
   for (const p of PACKETS) {
-    const r = await (await fetch(`${API}/api/v1/search`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': process.env.PUBLIC_SIFTER_API_KEY },
+    const r = await (await fetch(`${API}/api/v1/search`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-API-Key': process.env.PUBLIC_SIFTER_API_KEY },
       body: JSON.stringify({ query: p.q, limit: 6, analyze: false }) })).json();
     const passages = (r.results || r.hits || []).slice(0, 6).map((h) => ({ text: String(h.text || '').slice(0, 900), source_title: h.title || '', source_author: h.author || '',
       religion: h.religion || null, collection: h.collection || null, citation_url: h.source_url || h.url || null, source_lang: h.language || null }));

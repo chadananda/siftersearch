@@ -7,6 +7,7 @@
  * GET /api/search/health - Search health check
  */
 
+import { isTestRequest } from '../lib/test-traffic.js';
 import { readFile, stat, realpath } from 'fs/promises';
 import { join } from 'path';
 import { getMeili } from '../lib/search.js';   // /health/pipeline probes Meili's OWN queue (see meili_queue below)
@@ -198,11 +199,11 @@ function findSentenceByAnchors(text, startAnchor, endAnchor) {
 
 
 /** Log search to search_log table (fire-and-forget) */
-function logSearch({ query, userId, anonymousUserId, apiKeyId, resultCount, durationMs, searchType, filters }) {
+function logSearch({ query, userId, anonymousUserId, apiKeyId, resultCount, durationMs, searchType, filters, isTest }) {
   userQuery(
-    `INSERT INTO search_log (query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, filters, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-    [query, userId || null, anonymousUserId || null, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'web', filters ? JSON.stringify(filters) : null]
+    `INSERT INTO search_log (query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, filters, is_test, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [query, userId || null, anonymousUserId || null, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'web', filters ? JSON.stringify(filters) : null, isTest ? 1 : 0]
   ).catch(err => logger.warn({ err }, 'Failed to log search'));
 }
 
@@ -295,6 +296,7 @@ export default async function searchRoutes(fastify) {
     const userId = request.user?.id;
     const anonymousUserId = request.headers['x-user-id'];
     logSearch({
+      isTest: isTestRequest(request),
       query, userId, anonymousUserId,
       resultCount: results.hits?.length || 0,
       durationMs: totalMs,
@@ -359,6 +361,7 @@ export default async function searchRoutes(fastify) {
     // Log search (only first page to avoid spamming on pagination)
     if (offset === 0) {
       logSearch({
+        isTest: isTestRequest(request),
         query: q,
         anonymousUserId: request.headers['x-user-id'],
         resultCount: results.hits?.length || 0,

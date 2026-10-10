@@ -317,6 +317,7 @@ async function main() {
   }
 
   // ── Site activity (search_log) ──────────────────────────────────────────────
+  // Test traffic (search_log.is_test — api/lib/test-traffic.js) is excluded everywhere below.
   // search_log is small (tens of thousands of rows, created_at-indexed), so a
   // 14-day windowed aggregate is cheap. search_type: 'api'/'api_quick'/'keyword'
   // are library searches; 'api_chat' is a Jafar chat turn. Powers the dashboard
@@ -333,20 +334,20 @@ async function main() {
         SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d7,
         AVG(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN duration_ms ELSE NULL END) AS avg_ms_d7,
         SUM(CASE WHEN result_count = 0 AND search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS zero_result_d7
-      FROM search_log`, [day1, day7, day1, day7, day7, day7]).catch(probeFail(null));
+      FROM search_log WHERE COALESCE(is_test, 0) = 0`, [day1, day7, day1, day7, day7, day7]).catch(probeFail(null));
     // 14-day daily series (searches vs chat) for the Analytics page sparkline/chart.
     const series = await queryAll(`
       SELECT substr(created_at, 1, 10) AS day,
              SUM(CASE WHEN search_type = 'api_chat' THEN 0 ELSE 1 END) AS searches,
              SUM(CASE WHEN search_type = 'api_chat' THEN 1 ELSE 0 END) AS chat
       FROM search_log
-      WHERE created_at >= ?
+      WHERE created_at >= ? AND COALESCE(is_test, 0) = 0
       GROUP BY day ORDER BY day ASC`, [fmtTs(new Date(Date.now() - 14 * 24 * 3600 * 1000))]).catch(probeFail([]));
     // Top queries (7d) — what people actually ask. Chat prompts excluded (they're prose, not queries).
     const topQueries = await queryAll(`
       SELECT query, COUNT(*) AS n, AVG(result_count) AS avg_results
       FROM search_log
-      WHERE created_at >= ? AND search_type != 'api_chat' AND length(trim(query)) > 0
+      WHERE created_at >= ? AND search_type != 'api_chat' AND length(trim(query)) > 0 AND COALESCE(is_test, 0) = 0
       GROUP BY lower(trim(query)) ORDER BY n DESC LIMIT 25`, [day7]).catch(probeFail([]));
     // Chat users: search_log carries no identifier for chat turns, so distinct
     // chat *users* come from the companion exposure log (one row per served turn,

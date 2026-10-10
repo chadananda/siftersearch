@@ -61,7 +61,7 @@ export function summarise(rows) {
 async function collect(c) {
   try {
     const res = await fetch(`${BASE}/api/search/source-hunt`, { method: 'POST', signal: AbortSignal.timeout(90000),
-      headers: { 'Content-Type': 'application/json', Origin: 'https://siftersearch.com', Referer: 'https://siftersearch.com/sourcehunt' }, body: JSON.stringify({ quote: c.query }) });
+      headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', Origin: 'https://siftersearch.com', Referer: 'https://siftersearch.com/sourcehunt' }, body: JSON.stringify({ quote: c.query }) });
     const r = await res.json().catch(() => ({}));
     const t = r.tablet || {};
     if (!res.ok || !t.certain || !correct(t.text || '', c.target)) return { id: c.id, skip: res.ok ? 'tablet not certain-right' : `${res.status}` };

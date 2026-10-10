@@ -51,7 +51,7 @@ const re = (p) => new RegExp(p);
 
 class ApiError extends Error {}
 async function call(path, { method = 'GET', body, internal = false, keyless = false } = {}) {
-  const headers = { ...(body ? { 'Content-Type': 'application/json' } : {}),
+  const headers = { 'X-Sifter-Test': '1', ...(body ? { 'Content-Type': 'application/json' } : {}),
     ...(keyless ? {} : internal ? { 'X-Internal-Key': INTERNAL_KEY } : { 'X-API-Key': API_KEY }) };
   const t0 = Date.now();
   const res = await fetch(`${API_BASE}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined,

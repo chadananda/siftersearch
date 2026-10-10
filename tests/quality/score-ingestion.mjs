@@ -55,7 +55,7 @@ function pickSentences(docId) {
 
 async function qdrantCount(collection, docId) {
   if (!QURL) return null;
-  const r = await fetch(`${QURL}/collections/${collection}/points/count`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': QKEY },
+  const r = await fetch(`${QURL}/collections/${collection}/points/count`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'api-key': QKEY },
     body: JSON.stringify({ filter: { must: [{ key: 'doc_id', match: { value: docId } }] }, exact: true }) }).catch(() => null);
   return r?.ok ? (await r.json()).result.count : null;
 }
@@ -64,7 +64,7 @@ async function search(q) {
   for (let a = 0; a < 3; a++) {
     try {
       const res = await fetch(`${API}/api/search/multi`, { method: 'POST', signal: AbortSignal.timeout(30000),
-        headers: { 'Content-Type': 'application/json', 'X-Internal-Key': KEY },
+        headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-Internal-Key': KEY },
         body: JSON.stringify({ query: q, limit: 10, ...(QDRANT ? { qdrant: QDRANT === 'only' ? 'only' : true } : {}) }) });
       if (res.status >= 500) { await new Promise((r) => setTimeout(r, 3000 * (a + 1))); continue; }
       if (!res.ok) return null;                       // refused (auth, bad request): an ERROR, never a miss

@@ -40,7 +40,7 @@ async function one(c) {
   const t0 = Date.now();
   try {
     const res = await fetch(`${BASE}/api/search/source-hunt`, { method: 'POST', signal: AbortSignal.timeout(90000),
-      headers: { 'Content-Type': 'application/json', Origin: 'https://siftersearch.com' }, body: JSON.stringify({ quote: c.query }) });
+      headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', Origin: 'https://siftersearch.com' }, body: JSON.stringify({ quote: c.query }) });
     const r = await res.json().catch(() => ({}));
     if (!res.ok) return { id: c.id, kind: c.kind, work: c.work, error: `${res.status} ${r.message || ''}`.slice(0, 120) };
     const t = r.tablet || {};

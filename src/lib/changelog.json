@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T17:05:51.558Z",
+  "generated": "2026-10-10T17:10:00.832Z",
   "entries": [
+    {
+      "hash": "3dc81c96",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Access managed on the users page; Dewey link in the user menu; /dewey holdings check",
+      "scope": "dewey"
+    },
     {
       "hash": "380ce040",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Conversation-scoped narrowing that relaxes honestly (not yet wired)",
       "scope": "search"
-    },
-    {
-      "hash": "21a7f011",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Author narrowing returned nothing unless the string was byte-identical",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "3dc81c96",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Access managed on the users page; Dewey link in the user menu; /dewey holdings check",
+        "scope": "dewey"
+      },
       {
         "hash": "380ce040",
         "date": "2026-10-10",
@@ -7027,13 +7034,6 @@
         "date": "2026-09-24",
         "type": "New",
         "description": "Conversation-scoped narrowing that relaxes honestly (not yet wired)",
-        "scope": "search"
-      },
-      {
-        "hash": "21a7f011",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Author narrowing returned nothing unless the string was byte-identical",
         "scope": "search"
       }
     ]

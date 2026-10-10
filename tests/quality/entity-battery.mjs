@@ -39,7 +39,7 @@ const CASES = [
 ];
 
 async function search(q) {
-  const r = await fetch(`${API}/api/v1/search`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': KEY },
+  const r = await fetch(`${API}/api/v1/search`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-API-Key': KEY },
     body: JSON.stringify({ query: q, limit: 10, analyze: false }) });
   return r.json();
 }
@@ -50,7 +50,7 @@ for (const c of CASES) {
   let verdict;
   try {
     if (c.kind === 'dossier') {
-      const d = await (await fetch(`${API}/api/v1/entities/${c.entity}`, { headers: { 'X-API-Key': KEY } })).json();
+      const d = await (await fetch(`${API}/api/v1/entities/${c.entity}`, { headers: { 'X-API-Key': KEY, 'X-Sifter-Test': '1' } })).json();
       verdict = c.check(d.entity || d);
     } else {
       const res = await search(c.q);

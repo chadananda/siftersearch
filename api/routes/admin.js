@@ -82,6 +82,8 @@ const PIPELINE_STALE_S = 600; // flag snapshots older than 10 min
 // Test accounts (users.is_test=1, e.g. the QA test-admin) never appear in admin views or analytics.
 const NOT_TEST_USER = 'COALESCE(is_test, 0) = 0';
 const NOT_TEST_EVENT = '(user_id IS NULL OR user_id NOT IN (SELECT id FROM users WHERE is_test = 1))';
+// search_log rows also carry their own flag: requests marked X-Sifter-Test (api/lib/test-traffic.js).
+const NOT_TEST_SEARCH = `${NOT_TEST_EVENT} AND COALESCE(is_test, 0) = 0`;
 
 // Heavy admin rollups (library overview/bottlenecks, ai-usage summary) are precomputed
 // out-of-process by scripts/pipeline-snapshot.js — better-sqlite3 is synchronous, so a
@@ -5096,23 +5098,23 @@ Collection: ${paragraph.collection || 'Unknown'}
       userQueryAll(`
         SELECT id, query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, created_at
         FROM search_log
-        WHERE created_at >= ? AND ${NOT_TEST_EVENT}
+        WHERE created_at >= ? AND ${NOT_TEST_SEARCH}
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
       `, [sinceStr, limit, offset]),
-      userQueryOne(`SELECT COUNT(*) as count FROM search_log WHERE created_at >= ? AND ${NOT_TEST_EVENT}`, [sinceStr]),
+      userQueryOne(`SELECT COUNT(*) as count FROM search_log WHERE created_at >= ? AND ${NOT_TEST_SEARCH}`, [sinceStr]),
       userQueryOne(`
         SELECT
           COUNT(*) as total_searches,
           COUNT(DISTINCT COALESCE(user_id, anonymous_user_id)) as unique_users,
           AVG(duration_ms) as avg_duration,
           AVG(result_count) as avg_results
-        FROM search_log WHERE created_at >= ? AND ${NOT_TEST_EVENT}
+        FROM search_log WHERE created_at >= ? AND ${NOT_TEST_SEARCH}
       `, [sinceStr]),
       userQueryAll(`
         SELECT query, COUNT(*) as count, AVG(result_count) as avg_results
         FROM search_log
-        WHERE created_at >= ? AND ${NOT_TEST_EVENT}
+        WHERE created_at >= ? AND ${NOT_TEST_SEARCH}
         GROUP BY query
         ORDER BY count DESC
         LIMIT 30
@@ -5122,7 +5124,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           COUNT(*) as searches,
           COUNT(DISTINCT COALESCE(user_id, anonymous_user_id)) as unique_users
         FROM search_log
-        WHERE created_at >= ? AND ${NOT_TEST_EVENT}
+        WHERE created_at >= ? AND ${NOT_TEST_SEARCH}
         GROUP BY DATE(created_at)
         ORDER BY day DESC
       `, [sinceStr])

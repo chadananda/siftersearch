@@ -51,7 +51,7 @@ async function one(c) {
   const t0 = Date.now();
   try {
     const res = await fetch(`${API_BASE}/api/search/multi`, { method: 'POST', signal: AbortSignal.timeout(30000),
-      headers: { 'Content-Type': 'application/json', 'X-Internal-Key': KEY },
+      headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-Internal-Key': KEY },
       body: JSON.stringify({ query: c.query, limit: TOP_K, qdrant, ...(LIBRARY ? {} : { filters: { language: c.lang } }), ...(Object.keys(weights).length ? { weights } : {}), ...(args.includes('--no-plan') ? { plan: false } : {}) }) });
     if (!res.ok) return { id: c.id, kind: c.kind, error: `HTTP ${res.status}` };
     const data = await res.json(), hits = (data.hits || []).slice(0, TOP_K);

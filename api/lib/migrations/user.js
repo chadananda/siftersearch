@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 8;
+export const USER_DB_CURRENT_VERSION = 9;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -402,5 +402,11 @@ export const userMigrations = {
       try { await userQuery(`ALTER TABLE users ADD COLUMN ${col}`); } catch { /* exists */ }
     }
     logger.info('User migration 8 complete: users.dewey_access, users.dewey_profile');
+  },
+
+  // Version 9: test traffic stays out of the statistics (api/lib/test-traffic.js). Rows are kept, flagged.
+  9: async () => {
+    try { await userQuery('ALTER TABLE search_log ADD COLUMN is_test INTEGER DEFAULT 0'); } catch { /* exists */ }
+    logger.info('User migration 9 complete: search_log.is_test');
   },
 };

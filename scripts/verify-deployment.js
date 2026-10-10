@@ -94,7 +94,7 @@ async function testSearchEndpoint() {
   try {
     const response = await fetchWithRetry(`${API_URL}/api/search`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1' },
       body: JSON.stringify({ query: 'test', limit: 1 })
     });
     if (!response.ok) {

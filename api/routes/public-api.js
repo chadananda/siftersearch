@@ -33,6 +33,7 @@
  *   GET  /api/v1/health        - API health check
  */
 
+import { isTestRequest } from '../lib/test-traffic.js';
 import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
 import { findDocuments } from '../lib/docs-repo.js';
 import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
@@ -110,13 +111,13 @@ async function attachLinks(results) {
 }
 
 /** Log search to search_log table (fire-and-forget, fail-fast) */
-function logApiSearch({ query: q, apiKeyId, resultCount, durationMs, searchType, filters }) {
+function logApiSearch({ query: q, apiKeyId, resultCount, durationMs, searchType, filters, isTest }) {
   setImmediate(() => {
     try {
       telemetryQuery(
-        `INSERT INTO search_log (query, api_key_id, result_count, duration_ms, search_type, filters, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [q, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'api', filters ? JSON.stringify(filters) : null]
+        `INSERT INTO search_log (query, api_key_id, result_count, duration_ms, search_type, filters, is_test, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [q, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'api', filters ? JSON.stringify(filters) : null, isTest ? 1 : 0]
       );
     } catch (err) {
       logger.warn({ err }, 'Failed to log API search');
@@ -477,7 +478,7 @@ export default async function publicApiRoutes(fastify) {
     }
 
     if (!searchResults.hits || searchResults.hits.length === 0) {
-      logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api', filters });
+      logApiSearch({ query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api', filters });
       if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
       return { results: [], query, totalFound: 0, processingTimeMs: Date.now() - startTime };
     }
@@ -621,7 +622,7 @@ export default async function publicApiRoutes(fastify) {
     if (includeLinks) await attachLinks(results);
 
     const durationMs = Date.now() - startTime;
-    logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api', filters });
+    logApiSearch({ query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: results.length, durationMs, searchType: 'api', filters });
     if (request.apiKeyUserId) {
       recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
     }
@@ -700,7 +701,7 @@ export default async function publicApiRoutes(fastify) {
     if (includeLinks) await attachLinks(results);
 
     const durationMs = Date.now() - startTime;
-    logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api_quick', filters });
+    logApiSearch({ query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: results.length, durationMs, searchType: 'api_quick', filters });
     if (request.apiKeyUserId) {
       recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
     }
@@ -796,7 +797,7 @@ export default async function publicApiRoutes(fastify) {
     const startTime = Date.now();
     const found = await findOriginals(text, { limit, semantic, minOverlap, search: hybridSearch });
     const durationMs = Date.now() - startTime;
-    logApiSearch({ query: text.slice(0, 200), apiKeyId: request.apiKeyId, resultCount: found.matches.length, durationMs, searchType: 'api_original' });
+    logApiSearch({ query: text.slice(0, 200), apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: found.matches.length, durationMs, searchType: 'api_original' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
     return { ...found, processingTimeMs: durationMs };
   });
@@ -822,7 +823,7 @@ export default async function publicApiRoutes(fastify) {
     const { toApi, audit } = await import('../lib/source-hunt-api.js');
     const r = await sourceHunt(quote, {}, { exclude }).catch((err) => ({ failed: err.message }));
     audit({ quote, ms: Date.now() - t0, mode: 'api', apiKeyId: request.apiKeyId || null, result: r });
-    logApiSearch({ query: quote.slice(0, 200), apiKeyId: request.apiKeyId, resultCount: r.origin ? 1 : 0, durationMs: Date.now() - t0, searchType: 'api_source_hunt' });
+    logApiSearch({ query: quote.slice(0, 200), apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: r.origin ? 1 : 0, durationMs: Date.now() - t0, searchType: 'api_source_hunt' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
     if (r.failed) return reply.code(500).send({ error: 'SourceHuntFailed', message: r.failed });
     if (r.error) return reply.code(400).send({ error: 'BadRequest', message: r.error });
@@ -855,7 +856,7 @@ export default async function publicApiRoutes(fastify) {
         return r;
       };
       const out = await huntPage({ url, html, text }, { hunt, max: maxQuotes });
-      logApiSearch({ query: (url || 'inline page').slice(0, 200), apiKeyId: request.apiKeyId, resultCount: out.results.length, durationMs: Date.now() - t0, searchType: 'api_source_hunt_page' });
+      logApiSearch({ query: (url || 'inline page').slice(0, 200), apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: out.results.length, durationMs: Date.now() - t0, searchType: 'api_source_hunt_page' });
       if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
       return { ...out, processingTimeMs: Date.now() - t0 };
     } catch (err) {
@@ -901,7 +902,7 @@ export default async function publicApiRoutes(fastify) {
     };
     await Promise.all(Array.from({ length: 4 }, worker));
     const durationMs = Date.now() - startTime;
-    logApiSearch({ query: `[batch ${items.length}]`, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api_original_batch' });
+    logApiSearch({ query: `[batch ${items.length}]`, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: results.length, durationMs, searchType: 'api_original_batch' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
     return { results, processingTimeMs: durationMs };
   });
@@ -960,7 +961,7 @@ export default async function publicApiRoutes(fastify) {
     const startTime = Date.now();
     const result = await executeSearch(request.body);
     const durationMs = Date.now() - startTime;
-    logApiSearch({ query: request.body.query, apiKeyId: request.apiKeyId, resultCount: result.totalMatches || result.passages?.length || 0, durationMs, searchType: 'tools_search', filters: { mode: request.body.mode, religion: request.body.religion, collection: request.body.collection } });
+    logApiSearch({ query: request.body.query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: result.totalMatches || result.passages?.length || 0, durationMs, searchType: 'tools_search', filters: { mode: request.body.mode, religion: request.body.religion, collection: request.body.collection } });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'tools_search', false).catch(() => {});
     return { ...result, processingTimeMs: durationMs };
   });
@@ -1486,7 +1487,7 @@ export default async function publicApiRoutes(fastify) {
     }
 
     await sendEvent.flush(); reply.raw.end();
-    logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
+    logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'chat', false).catch(() => {});
   });
 
