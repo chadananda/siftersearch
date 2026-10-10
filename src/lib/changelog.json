@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:53:29.294Z",
+  "generated": "2026-10-10T19:57:06.745Z",
   "entries": [
+    {
+      "hash": "c8c5d5a8",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Render through Cloudflare's Images binding — WASM decodes ran out of memory under bursts (503s)",
+      "scope": "images"
+    },
     {
       "hash": "d60bc3f8",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Links follow the site order and use each document's own sourceUrl",
       "scope": "search"
-    },
-    {
-      "hash": "8c72a660",
-      "date": "2026-09-25",
-      "type": "Docs",
-      "description": "Raw data contract results + open data decisions; battery history",
-      "scope": "plan"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "c8c5d5a8",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Render through Cloudflare's Images binding — WASM decodes ran out of memory under bursts (503s)",
+        "scope": "images"
+      },
       {
         "hash": "d60bc3f8",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "Fixed",
         "description": "Links follow the site order and use each document's own sourceUrl",
         "scope": "search"
-      },
-      {
-        "hash": "8c72a660",
-        "date": "2026-09-25",
-        "type": "Docs",
-        "description": "Raw data contract results + open data decisions; battery history",
-        "scope": "plan"
       }
     ]
   }

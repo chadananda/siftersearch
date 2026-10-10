@@ -2025,9 +2025,9 @@
                     <div class="research-msg-text prose">{@html formatResearchText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
                     {#if !msg.isStreaming && msg.content && !msg.error}
                       <button class="copy-btn" title="Copy response" onclick={(e) => {
-                        const suffix = '\n\n— Jafar, Ocean Library research assistant\n   siftersearch.com';
+                        const suffix = '\n\n— Anís, Ocean AI Research Assistant\n   siftersearch.com';
                         const plainText = msg.content + suffix;
-                        const htmlContent = formatResearchText(msg.content) + '<p style="color:#888;font-size:0.85em;margin-top:1em;">— Jafar, Ocean Library research assistant · <a href="https://siftersearch.com">siftersearch.com</a></p>';
+                        const htmlContent = formatResearchText(msg.content) + '<p style="color:#888;font-size:0.85em;margin-top:1em;">— Anís, Ocean AI Research Assistant · <a href="https://siftersearch.com">siftersearch.com</a></p>';
                         const blob = new Blob([htmlContent], { type: 'text/html' });
                         const textBlob = new Blob([plainText], { type: 'text/plain' });
                         navigator.clipboard.write([new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob })]).catch(() => {
