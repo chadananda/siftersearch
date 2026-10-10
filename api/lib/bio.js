@@ -10,6 +10,7 @@ import { logger } from './logger.js';
 import { ADJUDICATOR_VERSION } from './rag/index.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js';
 import fs from 'fs';
+import { Worker } from 'worker_threads';
 import path from 'path';
 import { PROSE_SQL, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './pipeline/processed.js';
 import { LIVE_SQL, isLiveRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
@@ -233,15 +234,29 @@ export function gradedPlanDocIds() {
 // Single-flight + short TTL: a book takes hours to ground, so a 5-min-old roadmap changes nothing.
 const PROGRESS_TTL_MS = Number(process.env.INTEGRATION_PROGRESS_TTL_MS ?? 300000);
 let _progress = null;   // { at, promise }
+// OFF the event loop: the scans are synchronous better-sqlite3 reads, 3.5-8.5 s each under IO contention, and the API ran
+// them in-process — the plan follower's 3-min poll + the public /people/progress froze the whole API every few minutes,
+// for ~2 min after each deploy (cold cache), measured 10-09. A worker thread has its own module graph and its own
+// read connection; the main loop's lag measured 2 ms while it computed (51-57 s). Tests run in-process (mocked db).
+const PROGRESS_IN_WORKER = !process.env.VITEST && process.env.INTEGRATION_PROGRESS_WORKER !== '0';
+function computeInWorker() {
+  return new Promise((resolve, reject) => {
+    const w = new Worker(new URL('./progress-worker.js', import.meta.url));
+    w.once('message', (m) => { w.terminate(); m.error ? reject(new Error(m.error)) : resolve(JSON.parse(m.json)); });
+    w.once('error', reject);
+    w.once('exit', (code) => { if (code !== 0) reject(new Error(`progress worker exited ${code}`)); });
+  });
+}
+
 export function getIntegrationProgress({ fresh = false } = {}) {
   if (!fresh && _progress && (Date.now() - _progress.at < PROGRESS_TTL_MS)) return _progress.promise;
-  const entry = { at: Date.now(), promise: computeIntegrationProgress() };
+  const entry = { at: Date.now(), promise: PROGRESS_IN_WORKER ? computeInWorker() : computeIntegrationProgress() };
   entry.promise.catch(() => { if (_progress === entry) _progress = null; });
   _progress = entry;
   return entry.promise;
 }
 
-async function computeIntegrationProgress() {
+export async function computeIntegrationProgress() {
   // genreOf is DISPLAY-ONLY now (the biographies/histories genre labels) — it no longer decides membership.
   const genreOf = Object.fromEntries(readHistoryCatalog().map(b => [b.id, b.genre]));
   // Membership is EXPLICIT: a doc is in the plan IFF its id is listed in integration-phases.js. No author-routing,

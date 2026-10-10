@@ -66,12 +66,8 @@ export async function drainIndexOutbox({ meili = null, qdrant = null, registry =
   let removed = 0, skippedLive = 0, meiliJobs = 0, qdrantCalls = 0;
   for (let s = 0; s < rows.length && Date.now() - t0 < budgetMs; s += chunk) {
     const slice = rows.slice(s, s + chunk), dead = slice.filter((r) => !r.live);
-    if (meili && dead.length) {
-      // a doc row already hard-deleted → unknown site: remove from the primary index (where all library paragraphs live)
-      const byIndex = new Map();
-      for (const r of dead) { const ix = paragraphIndexFor({ source_site: r.source_site }, registry); byIndex.set(ix, [...(byIndex.get(ix) || []), r.para_id]); }
-      for (const [ix, ids] of byIndex) { await meili.index(ix).deleteDocuments(ids); meiliJobs++; }
-    }
+    // Qdrant first: the engine search is moving to (and its deletes are idempotent, so a retry after a Meili failure
+    // repeats them harmlessly) — Meili down or switched off must never hold Qdrant removals back.
     if (qdrant && dead.length) {
       const ids = dead.map((r) => r.para_id);
       for (const coll of QDRANT_PARAGRAPH_COLLECTIONS) {
@@ -80,6 +76,12 @@ export async function drainIndexOutbox({ meili = null, qdrant = null, registry =
           qdrantCalls++;
         }
       }
+    }
+    if (meili && dead.length) {
+      // a doc row already hard-deleted → unknown site: remove from the primary index (where all library paragraphs live)
+      const byIndex = new Map();
+      for (const r of dead) { const ix = paragraphIndexFor({ source_site: r.source_site }, registry); byIndex.set(ix, [...(byIndex.get(ix) || []), r.para_id]); }
+      for (const [ix, ids] of byIndex) { await meili.index(ix).deleteDocuments(ids); meiliJobs++; }
     }
     const done = slice.map((r) => r.para_id);
     for (let i = 0; i < done.length; i += 500) {

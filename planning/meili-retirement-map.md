@@ -157,3 +157,45 @@ Index names are defined in `api/lib/search/scope.js:12-22` and created or config
 15. **Incremental upserts and deletes driven by the SQLite dirty flags** (`synced`, `enhanced_synced`, `em_synced`), with confirmation and reconciliation — `unified-worker.js:268,112`.
 16. **Ops replacements**: health checks, queue/stats probes, backups and the systemd unit — `health-check.mjs:140`, `backup.js:95`.
 17. **Frontend response shape**: `_formatted.text` and `<mark>` markup, or a frontend change — `ChatInterface.svelte:2557`.
+
+## 2026-10-09 night — re-inventory (code read file by file; supersedes the hydration notes above, now fixed)
+
+**If Meili stopped today, with search on meili:false:**
+- **Breaks outright:** `/api/search` POST, `/quick`, `/analyze(/stream)`; `/api/v1/search/quick`, `/search/original(/batch)`;
+  `/api/v1/search` without the planner; `executeSearch` (public-api:961) and the chat search tool when there's no plan or
+  it's in phrase mode. All of these call hybridSearch/keywordSearch or multiIndexSearch without `meili:false`.
+- **Degrades silently on the planned path:** the entity layer (`searchByEntity` → `entity_mentions_idx`), source-resolve
+  (multiSearch of exact phrases; errors are swallowed), search-target counts, the deep-research keyword fallback, the Jafar
+  HyPE branch (`searchHypeQuestions`), and the rag-adapter "searchable" check.
+- **Site-only scopes** (balib/ool/bt) return nothing: the Qdrant layers require `scope_config.primary`.
+- **Ops:** `/api/search/health` errors. The outbox drain was gated on Meili, with Meili deleted first; FIXED tonight
+  (Qdrant first, drain runs with a null Meili).
+
+**Write side:** no live Qdrant writer exists. `phrases` and `paragraphs_kw` are filled only by the hand-run
+`scripts/phrase-index/indexer.mjs` and `keyword-index.mjs`, and nothing in the repo writes the `hype` collection. The
+worker writes Meili only (`documents`, paragraph indexes, `hype_questions`, `entity_mentions_idx`, synonyms, the site
+indexes).
+
+**Write-only / dead:**
+- `concepts.js` syncs: nothing ever searches `concepts`.
+- graph-extractor / graph-pipeline Meili sync (retired workers).
+- Unused functions: `indexDocument` (imported, never called), `reindexAll`, `migrateEmbeddingsFromMeilisearch`.
+- One-off routes: tablets `cancel-meili`; admin `meili-*`, `cleanup-paragraphs`, `populate-content`.
+- graph-meili-sync / the alias synonyms cycle.
+
+**Ranked work, smallest first:**
+1. Delete the dead code above.
+2. Done tonight: the outbox drain no longer depends on Meili.
+3. Switch the health checks (`/api/search/health`, `/health/pipeline` `meili_queue`, the snapshot check) to Qdrant.
+4. Deep-research fallback → SQLite match on `canonical_question`; drop `syncDeepResearch`.
+5. `searchHypeQuestions` callers (jafar, rag-adapter) → `searchHypeQdrant` + `paragraphsByIds`.
+6. source-resolve → `searchKeywordQdrant` + `paragraphsByIds` (`containsQuote` already re-checks).
+7. `searchByEntity` → a SQLite query on `entity_mentions`.
+8. library-watcher: drop the Meili block (authority is computed at hydrate time).
+9. Point every hybridSearch/keywordSearch caller at Qdrant (routes/search, public-api, executeSearch, grounding,
+   rag-adapter, search-target, deep-research, agents). Needs total counts and paging.
+10. **A live Qdrant writer** in the worker for new and changed paragraphs (phrases, paragraphs_kw) and HyPE (`hype`) —
+    the biggest item. Set payload at write time: a bulk set_payload un-indexed 8.5M phrase points on 10-09.
+11. Site-only sites: a Qdrant collection or a site payload, and relax the `scope_config.primary` gate.
+12. Optional: `/server/meili-vector` (dense 3-large@512; only the crosslingual battery uses it).
+13. Last: config/env keys, `getMeili`, `initializeIndexes`/index-library.js.

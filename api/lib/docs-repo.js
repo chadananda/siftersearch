@@ -110,6 +110,17 @@ export async function listDocs({
   return { docs: rows, total: total?.n ?? 0, scope, limit, offset };
 }
 
+/** Ids of live docs whose year falls in [yearFrom, yearTo] — how a year filter reaches an engine whose points carry no
+ *  year (Qdrant): SQLite is the metadata authority, the engine filters on doc_id. One short read, ids only. */
+export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {}) {
+  if (!yearFrom && !yearTo) return null;
+  const where = scopeSql(scope), params = [];
+  if (yearFrom) { where.push('CAST(d.year AS INTEGER) >= ?'); params.push(Number(yearFrom)); }
+  if (yearTo) { where.push('CAST(d.year AS INTEGER) <= ?'); params.push(Number(yearTo)); }
+  const rows = await queryAll(`SELECT d.id FROM docs d WHERE ${where.join(' AND ')}`, params, 'docs-repo:year-ids');
+  return rows.map((r) => r.id);
+}
+
 /** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised. */
 export function ftsQuery(text) {
   // apostrophes removed first, as docs_fts stores them (migration 142): "Bahá’u’lláh" / "Baha'u'llah" / "Bahaullah" agree

@@ -1,6 +1,20 @@
 // Qdrant search layers: filter mapping, request shapes, and hit shapes (fetch mocked — no network).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey } from '../../api/lib/search/qdrant-layers.js';
+import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey, resolveQdrantFilters } from '../../api/lib/search/qdrant-layers.js';
+
+vi.mock('../../api/lib/docs-repo.js', () => ({
+  docIdsInYearRange: vi.fn(async ({ yearFrom }) => (yearFrom === 3000 ? [] : [5, 8])),
+}));
+
+describe('resolveQdrantFilters', () => {
+  it('a year range becomes the doc ids SQLite holds for it; an empty range matches nothing; documentId wins', async () => {
+    expect(await resolveQdrantFilters({ religion: 'x', yearFrom: 1900, yearTo: 1950 })).toEqual({ religion: 'x', yearFrom: 1900, yearTo: 1950, documentId: [5, 8] });
+    expect((await resolveQdrantFilters({ yearFrom: 3000 })).documentId).toEqual([-1]);
+    expect(await resolveQdrantFilters({ yearFrom: 1900, documentId: 3 })).toEqual({ yearFrom: 1900, documentId: 3 });
+    const plain = { religion: 'x' };
+    expect(await resolveQdrantFilters(plain)).toBe(plain);
+  });
+});
 
 describe('toQdrantFilter', () => {
   it('maps the search filters the payloads carry; ignores the rest', () => {

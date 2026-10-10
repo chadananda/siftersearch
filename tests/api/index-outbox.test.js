@@ -103,3 +103,19 @@ describe('index outbox — drain', () => {
     expect(outbox()).toEqual([12]);
   });
 });
+
+describe('index outbox — Qdrant does not wait for Meili', () => {
+  it('Qdrant deletes run first and without a Meili client', async () => {
+    const { drainIndexOutbox } = await import('../../api/lib/index-outbox.js');
+    db.exec(`UPDATE content SET deleted_at = '2026-10-09' WHERE id = 10`);
+    const order = [];
+    const qdrant = async () => { order.push('qdrant'); };
+    const meili = { index: () => ({ deleteDocuments: async () => { order.push('meili'); throw new Error('meili down'); } }) };
+    await expect(drainIndexOutbox({ meili, qdrant })).rejects.toThrow('meili down');
+    expect(order.slice(0, 1)).toEqual(['qdrant']);
+    expect(outbox()).toEqual([10]);                                        // stays queued for Meili's sake
+    const r = await drainIndexOutbox({ meili: null, qdrant });            // Meili retired: Qdrant alone clears it
+    expect(r.removed).toBe(1);
+    expect(outbox()).toEqual([]);
+  });
+});

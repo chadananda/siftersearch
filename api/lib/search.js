@@ -9,7 +9,8 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
-import { searchPhrases, searchKeywordQdrant, searchHypeQdrant } from './search/qdrant-layers.js';
+import { searchPhrases, searchKeywordQdrant, searchHypeQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
+import { highlightText } from './search/highlight.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1253,6 +1254,7 @@ export async function multiIndexSearch(query, options = {}) {
   const _t0 = Date.now();
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
+  const qfilters = await resolveQdrantFilters(filters);   // a year range → doc ids (Qdrant points carry no year)
   let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
@@ -1284,19 +1286,19 @@ export async function multiIndexSearch(query, options = {}) {
       : Promise.resolve({ hits: [] }),
     // Qdrant layers (P4, planning/phrase-index-plan.md) — opt-in until measured on both batteries.
     ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary)
-      ? timed('phrase', searchPhrases(query, { limit: overFetch, filters })).catch(err => {
+      ? timed('phrase', searchPhrases(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: phrase layer failed');
           return { hits: [], failed: true };
         })
       : Promise.resolve({ hits: [] }),
     ((options.qdrantKeyword || meiliOff) && (!scope_config || scope_config.primary))
-      ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters })).catch(err => {
+      ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
           return { hits: [], failed: true };
         })
       : Promise.resolve({ hits: [] }),
     ((options.qdrantHype || meiliOff) && options.hype !== false && !semanticOff && (!scope_config || scope_config.primary))
-      ? timed('qhype', searchHypeQdrant(query, { limit: overFetch, filters })).catch(err => {
+      ? timed('qhype', searchHypeQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant hype failed');
           return { hits: [], failed: true };
         })
@@ -1370,7 +1372,7 @@ export async function multiIndexSearch(query, options = {}) {
   const qdrantLayers = [phraseResult, qkeywordResult, qhypeResult];
   if (meiliOff && qdrantLayers.some((r) => r.failed) && qdrantLayers.every((r) => r.failed || !(r.hits || []).length)) {
     try {
-      qkeywordResult = await timed('qkeyword_retry', searchKeywordQdrant(query, { limit: overFetch, filters, timeoutMs: 8000 }));
+      qkeywordResult = await timed('qkeyword_retry', searchKeywordQdrant(query, { limit: overFetch, filters: qfilters, timeoutMs: 8000 }));
       logger.warn({ query: String(query).slice(0, 80), hits: qkeywordResult.hits.length }, 'multiIndexSearch: all Qdrant layers failed — degraded to one BM25 retry');
     } catch (err) {
       logger.error({ err: err.message, query: String(query).slice(0, 80) }, 'multiIndexSearch: all Qdrant layers failed, BM25 retry failed too');
@@ -1404,7 +1406,8 @@ export async function multiIndexSearch(query, options = {}) {
       const { paragraphsByIds } = await import('./paragraphs-repo.js');
       for (const doc of await paragraphsByIds(stubIds)) {
         const e = aggregate.get(doc.id) ?? aggregate.get(String(doc.id));
-        if (e) e.paragraph = { ...doc, _stub: false };
+        // no engine highlighted this hit (SQLite hydration) → mark the query terms, as Meili's _formatted did
+        if (e) e.paragraph = { ...doc, _formatted: { text: highlightText(doc.text, query) }, _stub: false };
       }
     } catch (err) {
       logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed');

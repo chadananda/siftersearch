@@ -5,6 +5,7 @@
 // :rules: query prefix "task: search result | query:" (measured; documents were embedded with "title: none | text:").
 import { bm25Query } from '../keyword-tokens.js';
 import { excludedDocIds } from './excluded-docs.js';
+import { docIdsInYearRange } from '../docs-repo.js';
 
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 const MODEL = 'gemini-embedding-2', DIMS = 3072;
@@ -53,6 +54,15 @@ export function toQdrantFilter(filters = {}) {
   if (group) eq('lang_group', group);
   if (!must.length && !must_not.length) return undefined;
   return { ...(must.length ? { must } : {}), ...(must_not.length ? { must_not } : {}) };
+}
+
+/** Filters as search.js gives them → filters Qdrant can apply. A year range becomes a doc_id set from SQLite (points carry
+ *  no year — adding one would mean a bulk payload rewrite of every point, which un-indexes the collection, 10-09). An empty
+ *  range matches nothing. An explicit documentId wins. */
+export async function resolveQdrantFilters(filters = {}) {
+  if ((!filters.yearFrom && !filters.yearTo) || filters.documentId != null) return filters;
+  const ids = await docIdsInYearRange({ yearFrom: filters.yearFrom, yearTo: filters.yearTo });
+  return { ...filters, documentId: ids.length ? ids : [-1] };
 }
 
 // Vector search parameters per collection — ONE place, so latency/accuracy tuning is a change here (measured with

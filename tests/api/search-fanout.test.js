@@ -82,6 +82,7 @@ const qdrantCalls = [];
 vi.mock('../../api/lib/search/qdrant-layers.js', () => ({
   searchPhrases: vi.fn(async (q) => { qdrantCalls.push('phrase'); return { hits: [{ paragraph_id: 77, doc_id: 1, score: 0.9, span: { start: 3, end: 20 } }] }; }),
   searchKeywordQdrant: vi.fn(async () => { qdrantCalls.push('qkeyword'); return { hits: [{ paragraph_id: 77, doc_id: 1, score: 5 }] }; }),
+  resolveQdrantFilters: vi.fn(async (f) => f),
 }));
 
 // Stub hits (Qdrant layers) are hydrated from SQLite through the paragraph repository — never from an engine.

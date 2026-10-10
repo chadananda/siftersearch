@@ -65,3 +65,13 @@ describe('findDocuments (SQLite FTS)', () => {
     expect(ftsQuery('"Dawn" OR NEAR(*)')).toBe('"dawn"* "or"* "near"*');
   });
 });
+
+describe('docIdsInYearRange', () => {
+  it('live docs in the range only; no range → null', async () => {
+    db.exec(`UPDATE docs SET year = '1932' WHERE id = 1; UPDATE docs SET year = '1950' WHERE id = 3; UPDATE docs SET year = '1932' WHERE id IN (4, 5)`);
+    const { docIdsInYearRange } = await import('../../api/lib/docs-repo.js');
+    expect(await docIdsInYearRange({ yearFrom: 1930, yearTo: 1940 })).toEqual([1]);      // 4 is a duplicate, 5 deleted
+    expect((await docIdsInYearRange({ yearFrom: 1940 })).sort()).toEqual([3]);
+    expect(await docIdsInYearRange({})).toBeNull();
+  });
+});

@@ -789,7 +789,8 @@ async function runMeiliReconcileCycle() {
 async function runPeriodicTasks() {
   const T = PERIODIC_TASK_TIMEOUT_MS;
   const now = Date.now();
-  await withTimeout(async () => { const m = await getMeili(); if (m) { const d = await drainIndexOutbox({ meili: m, qdrant: qdrantRequest, registry: siteRegistryByDomain }); if (d.removed) logger.info(d, 'Index outbox drained'); } }, T, 'meiliDeletes');
+  // Removals reach Qdrant whether or not Meili is up or enabled (a null Meili is skipped by the drain).
+  await withTimeout(async () => { const m = await getMeili().catch(() => null); const d = await drainIndexOutbox({ meili: m || null, qdrant: qdrantRequest, registry: siteRegistryByDomain }); if (d.removed) logger.info(d, 'Index outbox drained'); }, T, 'indexOutbox');
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await withTimeout(() => runCleanupCycle(), T, 'cleanupCycle');
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await withTimeout(() => runFullSyncCheck(), T, 'fullSyncCheck');
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await withTimeout(() => runHypeSyncCycle(), T, 'hypeSyncCycle');

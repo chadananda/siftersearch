@@ -6,7 +6,7 @@
 // before compilations".
 // Flow: copies found DETERMINISTICALLY (exact words, verified containment) → ONE Jev call judges every passage and
 // every group of copies → the choice is bounded by policy (an OceanLibrary copy always beats a supplementary one) →
-// deterministic fallback when Jev abstains or fails. Deps (injectable): Jev, hybridSearch, docs-repo getLinkMeta.
+// deterministic fallback when Jev abstains or fails. Deps (injectable): Jev, the Qdrant copy check, docs-repo getLinkMeta.
 import { quoteSpans, containsQuote, foldText } from './quote-text.js';
 import { ENDPOINT as JEV_ENDPOINT } from './scope-extract.js';
 import { linkFor, SIFTER_TIER } from './source-links.js';
@@ -107,28 +107,20 @@ export async function jevJudge({ passages, groups }, { apiKey = process.env.TYPE
   };
 }
 
-// Copy checks, batched: every span asked in the same tick goes to Meili as ONE multiSearch of exact-phrase queries.
-// Each went through the full hybridSearch pipeline (highlights, rerank, SQL enrichment) as its own request — up to
-// 24 per query, ~0.5s (measured 2026-09-26). containsQuote still verifies every candidate.
-let pendingSpans = null;
-function defaultPhraseSearch(span, { religion } = {}) {
-  if (!pendingSpans) { pendingSpans = []; setImmediate(flushSpans); }
-  return new Promise((resolve) => pendingSpans.push({ span, religion, resolve }));
-}
-async function flushSpans() {
-  const batch = pendingSpans; pendingSpans = null;
+/** Copy check: BM25 over Qdrant `paragraphs_kw` (top 40, rank order kept), bodies from SQLite; containsQuote verifies every
+ *  candidate. Replaced a Meili exact-phrase multiSearch — measured 10-09 on 40 spans from real paragraphs: source paragraph
+ *  found 32/40 vs 25/40, verified copies 96 vs 77, same latency (~0.3 s). */
+export async function qdrantPhraseSearch(span, { religion } = {}) {
+  const [{ searchKeywordQdrant }, { paragraphsByIds }] = await Promise.all([import('./search/qdrant-layers.js'), import('./paragraphs-repo.js')]);
   try {
-    const [{ getMeili }, { INDEXES }] = await Promise.all([import('./search.js'), import('./search/scope.js')]);
-    const queries = batch.map(({ span, religion }) => ({
-      indexUid: INDEXES.PARAGRAPHS, q: `"${String(span).replace(/"/g, ' ')}"`, limit: 40,
-      ...(religion ? { filter: `religion = "${String(religion).replace(/"/g, '\\"')}"` } : {}),
-    }));
-    const r = await getMeili().multiSearch({ queries });
-    batch.forEach((b, i) => b.resolve(r.results?.[i]?.hits || []));
+    const { hits } = await searchKeywordQdrant(String(span), { limit: 40, filters: religion ? { religion } : {} });
+    const byId = new Map((await paragraphsByIds(hits.map((h) => h.paragraph_id))).map((p) => [Number(p.id), p]));
+    return hits.map((h) => byId.get(Number(h.paragraph_id))).filter(Boolean);
   } catch {
-    batch.forEach((b) => b.resolve([]));
+    return [];
   }
 }
+
 async function defaultLinkMeta(ids) {
   const { getLinkMeta } = await import('./docs-repo.js');
   return getLinkMeta(ids);
@@ -142,7 +134,7 @@ const opening = (text) => String(text || '').replace(/\s+/g, ' ').trim().split('
  * @param {Array} hits  engine hits (id, doc_id, paragraph_index, text, title, author, authority, source_url, religion…)
  * @returns {{ hits, resolved, error? }}
  */
-export async function resolveSources(hits, { judge = jevJudge, phraseSearch = defaultPhraseSearch, linkMeta = defaultLinkMeta, maxChecks = 8, deadline = null } = {}) {
+export async function resolveSources(hits, { judge = jevJudge, phraseSearch = qdrantPhraseSearch, linkMeta = defaultLinkMeta, maxChecks = 8, deadline = null } = {}) {
   const tiers = new Map();
   const para = new Map();   // id → carries a paragraph-level link
   const tierFor = async (list) => {
@@ -174,7 +166,7 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
     const t = tiers.get(hit.id) ?? SIFTER_TIER;
     const olWithoutPara = t === 1 && !para.get(hit.id);
     if (!spans.length && ((isCentral(hit.author) && t > 1) || olWithoutPara)) spans.push({ span: opening(hit.text), mode: 'copy' });
-    // All spans at once (one batched Meili call), bounded by the deadline: a late check is skipped, not waited for.
+    // All spans at once (parallel Qdrant BM25 checks), bounded by the deadline: a late check is skipped, not waited for.
     const budget = Math.max(300, left());
     await Promise.all([...spans.entries()].filter(([, { span }]) => span.split(' ').length >= 5).map(async ([s, { span, mode }]) => {
       const found = (await Promise.race([phraseSearch(span, { religion: hit.religion }).catch(() => []),

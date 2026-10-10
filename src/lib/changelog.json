@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T05:24:20.902Z",
+  "generated": "2026-10-10T05:25:24.064Z",
   "entries": [
+    {
+      "hash": "0e51fb20",
+      "date": "2026-10-09",
+      "type": "Chore",
+      "description": "Delete 24 dead scripts that wrote Meili directly + the dead sync-processor duplicate",
+      "scope": null
+    },
     {
       "hash": "2909ca00",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Authority cache never returns null; drop a vacuous traversal assertion",
       "scope": null
-    },
-    {
-      "hash": "96f56f83",
-      "date": "2026-09-09",
-      "type": "Fixed",
-      "description": "Make the test suite runnable — lazy OpenAI clients, two real migration bugs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "0e51fb20",
+        "date": "2026-10-09",
+        "type": "Chore",
+        "description": "Delete 24 dead scripts that wrote Meili directly + the dead sync-processor duplicate",
+        "scope": null
+      },
       {
         "hash": "2909ca00",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Fixed",
         "description": "Authority cache never returns null; drop a vacuous traversal assertion",
-        "scope": null
-      },
-      {
-        "hash": "96f56f83",
-        "date": "2026-09-09",
-        "type": "Fixed",
-        "description": "Make the test suite runnable — lazy OpenAI clients, two real migration bugs",
         "scope": null
       }
     ]
