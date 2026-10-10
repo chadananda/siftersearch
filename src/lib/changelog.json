@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T21:03:07.987Z",
+  "generated": "2026-10-10T21:38:31.641Z",
   "entries": [
+    {
+      "hash": "febfc7e7",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "10-10 Meili vs Qdrant-only battery — Qdrant ranks better and wins cross-lingual, loses types + cross-tradition",
+      "scope": "search"
+    },
     {
       "hash": "4b74453f",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Who-met-whom from an in-memory encounter index (ms, not a 600k-claim LIKE scan)",
       "scope": "search"
-    },
-    {
-      "hash": "2439f045",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Claim-target-coverage — how complete the indexed who-met-whom path is, per relation",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "febfc7e7",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "10-10 Meili vs Qdrant-only battery — Qdrant ranks better and wins cross-lingual, loses types + cross-tradition",
+        "scope": "search"
+      },
       {
         "hash": "4b74453f",
         "date": "2026-10-10",
@@ -7024,13 +7031,6 @@
         "type": "New",
         "description": "Who-met-whom from an in-memory encounter index (ms, not a 600k-claim LIKE scan)",
         "scope": "search"
-      },
-      {
-        "hash": "2439f045",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Claim-target-coverage — how complete the indexed who-met-whom path is, per relation",
-        "scope": "admin"
       }
     ]
   }

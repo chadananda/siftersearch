@@ -1378,9 +1378,30 @@ export async function multiIndexSearch(query, options = {}) {
     }
   }
 
+  // CANON layer (10-10): the same phrase query restricted to the OceanLibrary canonical texts. A famous line ("The earth is
+  // but one country…") stands verbatim in hundreds of documents with equal similarity, so the phrase layer's fixed-depth
+  // candidate list filled with QUOTING copies and the original never became a candidate — Qdrant-only lost the
+  // exact_phrase cases Meili won (battery 10-10). Restricted to the ~600 canonical docs, the original always gets a slot;
+  // authority + the OL multiplier then rank it. One extra filtered Qdrant query; the query vector is memoized.
+  const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
+  let canonResult = { hits: [] };
+  if (phraseRan && !phraseResult.failed) {
+    try {
+      const byRel = await getOlDocIdsByReligion();
+      let ids = filters.religion ? (byRel[filters.religion] || []) : Object.values(byRel).flat();
+      if (qfilters?.documentId != null) {   // a year range already arrived as doc ids → keep only canonical ones inside it
+        const inRange = new Set([].concat(qfilters.documentId).map(Number));
+        ids = ids.filter((id) => inRange.has(Number(id)));
+      }
+      if (ids.length) canonResult = await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 }));
+    } catch (err) {
+      logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed');
+    }
+  }
+
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult]]) {
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['canon', canonResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
@@ -1485,7 +1506,7 @@ export async function multiIndexSearch(query, options = {}) {
       _rrfScore: e.score,
       ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
       _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null,
-        phrase: e.phraseRank ?? null, qkeyword: e.qkeywordRank ?? null, qhype: e.qhypeRank ?? null },
+        phrase: e.phraseRank ?? null, qkeyword: e.qkeywordRank ?? null, qhype: e.qhypeRank ?? null, canon: e.canonRank ?? null },
       ...(e.phraseSpan ? { phrase_span: e.phraseSpan } : {}),
     };
     if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;

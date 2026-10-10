@@ -226,7 +226,8 @@ describe('multiIndexSearch propagates scope_config', () => {
     const getDocuments = vi.fn(async () => ({ results: [] }));
     meiliMock.index.mockImplementation(() => ({ search: vi.fn(async () => ({ hits: [], processingTimeMs: 1 })), getDocuments }));
     const r = await multiIndexSearch('test', { scope_config: { primary: true, sites: [] }, phraseLayer: true, qdrantKeyword: true });
-    expect(qdrantCalls.sort()).toEqual(['phrase', 'qkeyword']);
+    // phrase twice: the open phrase query + the CANON pass restricted to OceanLibrary canonical texts (10-10)
+    expect(qdrantCalls.sort()).toEqual(['phrase', 'phrase', 'qkeyword']);
     const hit = r.hits.find(h => String(h.id) === '77');
     expect(hit).toBeTruthy();
     expect(hit.phrase_span).toEqual({ start: 3, end: 20 });
