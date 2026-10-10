@@ -8,11 +8,15 @@
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import LibraryBrowser from '../../components/library/LibraryBrowser.svelte';
+import LibraryShelves from '../../components/library/LibraryShelves.svelte';
 
 export const prerender = false;
 
 // Get view mode and filters from query params
-const view = Astro.url.searchParams.get('view') || 'all';
+// No ?view → the shelves (10-10). ?view=browse (or recent/pending…) → the full search-and-filter browser.
+const viewParam = Astro.url.searchParams.get('view');
+const shelves = !viewParam;
+const view = viewParam === 'browse' ? 'all' : (viewParam || 'all');
 const type = Astro.url.searchParams.get('type') || 'all';
 const days = Astro.url.searchParams.get('days') || '30';
 ---
@@ -22,10 +26,10 @@ const days = Astro.url.searchParams.get('days') || '30';
   description="Browse the SifterSearch interfaith library of sacred texts, scriptures, and scholarly works."
 >
   <NavBar client:load currentPage="library" />
-  <LibraryBrowser
+  {shelves ? <LibraryShelves client:load /> : <LibraryBrowser
     client:load
     initialView={view}
     initialRecentType={type}
     initialRecentDays={parseInt(days)}
-  />
+  />}
 </Layout>

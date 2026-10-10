@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:50:40.140Z",
+  "generated": "2026-10-10T20:57:00.713Z",
   "entries": [
+    {
+      "hash": "4f584fa0",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Multi-part works by explicit list; author shelves by folder; outside-folder OL files to 'More works'",
+      "scope": "library"
+    },
     {
       "hash": "cf3962ec",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Cited evidence paragraphs actually load; never stream a link that is not a source",
       "scope": "search,anis"
-    },
-    {
-      "hash": "ce6fa28a",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Attach claim-cited evidence paragraphs AFTER source resolution (it relabelled them)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "4f584fa0",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Multi-part works by explicit list; author shelves by folder; outside-folder OL files to 'More works'",
+        "scope": "library"
+      },
       {
         "hash": "cf3962ec",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "Fixed",
         "description": "Cited evidence paragraphs actually load; never stream a link that is not a source",
         "scope": "search,anis"
-      },
-      {
-        "hash": "ce6fa28a",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Attach claim-cited evidence paragraphs AFTER source resolution (it relabelled them)",
-        "scope": "search"
       }
     ]
   }
