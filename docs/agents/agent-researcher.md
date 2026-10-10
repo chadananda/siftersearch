@@ -1,9 +1,9 @@
 ---
 title: Researcher Agent
 description: Search strategy specialist that designs comprehensive multi-query search plans
-role: Search Strategy
+role: Internal · Search Strategy
 icon: search
-order: 2
+order: 12
 ---
 
 # Researcher Agent

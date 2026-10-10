@@ -1,9 +1,9 @@
 ---
 title: Translator Agent (CTAI)
 description: Committee Translation AI - Shoghi Effendi style specialist using multi-persona scholarly consultation
-role: Shoghi Effendi Style
+role: Internal · Shoghi Effendi Style
 icon: languages
-order: 4
+order: 14
 ---
 
 # Translator Agent (CTAI)

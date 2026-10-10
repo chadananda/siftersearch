@@ -1,9 +1,9 @@
 ---
 title: Memory Agent
 description: Semantic memory for user conversations, enabling personalized context and recall
-role: User Context
+role: Internal · User Context
 icon: brain
-order: 6
+order: 16
 ---
 
 # Memory Agent

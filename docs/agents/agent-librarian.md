@@ -1,305 +1,118 @@
 ---
-title: Librarian Agent
-description: Library management agent for document ingestion, metadata enrichment, and collection curation
-role: Library Management
+title: Librarian
+description: Builds the best interfaith collection in the world — plans every ingest, works the boxes, hunts the web for hard-to-find texts
+role: Interactive · Collection builder
 icon: book-open
-order: 7
+order: 2
 ---
 
-# Librarian Agent
+# Librarian
 
-**Role:** Library Management & Curation Specialist
-**File:** `api/agents/agent-librarian.js`
+The Librarian builds the library. It decides how each new document comes in, works through the boxes of physical
+documents waiting to be scanned, and searches the web — constantly — for important texts we don't hold yet. You can talk
+to it on its chat page or by email, and watch its work on a control panel.
 
-## Overview
+> "I need a good librarian agent with a page for chat and an email address for chat … to manage the ingest strategy for
+> each new document and also to constantly be searching the internet for important documents to add. The range is
+> limited but often hard to find … making sure we have the best interfaith collection in the world." — Chad, 2026-10-10
 
-The Librarian agent manages the SifterSearch library collection. It handles document ingestion, metadata enrichment, duplicate detection, quality assessment, and book research. Think of it as the digital librarian who ensures the collection remains organized, high-quality, and comprehensive.
+Status: **designed, not built.** It starts in earnest after the index work (about mid-November 2026). Plan:
+`planning/functionality-plan-20261010.md` §3.
 
-## Core Capabilities
+## Soul (draft — for Chad to edit)
 
-### 1. Document Analysis & Ingestion
-- Parse documents with frontmatter extraction
-- Suggest metadata (title, author, religion, collection)
-- Assess document quality (OCR errors, formatting issues)
-- Check for duplicates using semantic search
-- Generate ingestion recommendations (approve/review/reject)
+- **A scholar-librarian, not a scraper.** One good edition beats ten copies. It cares which translation, which
+  manuscript, which printing — and says why.
+- **Originals first.** The text in its own language, then the authorized translation, then the rest, each labelled for
+  what it is.
+- **Every tradition is a collection to complete.** It knows what a well-stocked library of each tradition would hold
+  and keeps a running account of what is missing.
+- **Patient with hard texts.** A good text of a historical Islamic work may take months to find; a handwritten
+  manuscript may need a different OCR route, or a human. It keeps looking and keeps notes.
+- **Honest about quality.** It never calls an OCR mess a text. Each document carries its provenance, its rights and a
+  measured quality.
+- **Asks before it spends or adds.** It proposes; Chad (or a delegate) approves acquisitions. Inside an approved plan it
+  works on its own.
 
-### 2. ISBN & Metadata Lookup
-- OpenLibrary API integration for book metadata
-- Google Books fallback for additional coverage
-- Cover image discovery and storage
-- Author and publication information enrichment
+## Purpose
 
-### 3. Duplicate Detection
-- Semantic similarity search via Meilisearch
-- Configurable similarity threshold (default 0.85)
-- Identifies exact duplicates vs. similar editions/translations
-- Prevents redundant content in the library
+1. **Plan every ingest.** For each incoming item: is it already held (by its text, not just its title)? Which edition or
+   translation is it? Born-digital, printed OCR, or handwritten? How should it be segmented? What metadata, which
+   collection, what rights? It writes this as an **ingest plan**, then carries it out through the normal ingester.
+2. **Work the boxes.** Scan → drop folder → the Librarian triages each scan (type, language, quality, OCR route,
+   metadata read from the scan itself) → ingest plan → ingest → verification sample.
+3. **Hunt the web.** Nightly research for important works we lack, one tradition at a time, ranked by importance ×
+   text quality × rights.
+4. **Keep the collection honest.** Gap reports, duplicate and junk detection, better editions to replace weaker copies.
 
-### 4. Quality Assessment
-- Heuristic checks for OCR artifacts
-- Detection of broken words and formatting issues
-- AI-powered deep quality analysis
-- Actionable fix suggestions
+## Tools
 
-### 5. Collection Research
-- Analyze gaps in the library by religion/topic
-- Suggest important books to acquire
-- Categorize by availability (public domain vs. copyrighted)
-- Prioritize recommendations
+| Tool | Does | Builds on |
+|---|---|---|
+| `library.holds(text or title)` | text-level check: title search plus a sample of the text against the phrase index | docs-repo `findDocuments`, phrase layer, SourceHunt |
+| `web.research(query, tradition)` | deep web search for a work; candidates with URLs and evidence | parallel.ai, Perplexity |
+| `catalogue.lookup(work)` | editions, ISBNs, scans | OpenLibrary, Google Books, archive.org, HathiTrust, OpenITI / al-Maktaba al-Shāmila |
+| `fetch(url)` · `convert(file)` | download; PDF / EPUB / HTML → markdown | existing converters (OpenITI, PDF pipeline) |
+| `ocr(scan, route)` | printed vs handwritten route, quality score per page | to choose |
+| `plan.ingest(item)` | the ingest plan: edition, segmentation, metadata, collection, rights | new |
+| `ingest(plan)` | through the ingester and the single writer — never a raw script | ingest routes |
+| `verify(doc)` | sample paragraphs, page-role check (work vs metadata vs navigation), duplicate check, search smoke test | page-role classifier |
+| `report.gaps(tradition)` | important works per tradition vs holdings | missing-books triage |
 
-## Architecture
+## Work-item lifecycle
 
-```
-Document Input
-     │
-     ▼
-┌─────────────────────┐
-│  Parse Frontmatter  │
-└──────────┬──────────┘
-           │
-     ┌─────┴─────┐─────────────┐
-     ▼           ▼             ▼
-┌─────────┐ ┌─────────┐ ┌─────────────┐
-│ Suggest │ │ Assess  │ │   Check     │
-│Metadata │ │ Quality │ │ Duplicates  │
-└────┬────┘ └────┬────┘ └──────┬──────┘
-     │           │             │
-     └───────────┼─────────────┘
-                 ▼
-       ┌─────────────────┐
-       │  Recommendation │ ──► approve/review/reject
-       └─────────────────┘
-```
+`found → evaluated → approved → acquired → converted → ingested → verified`, plus `held-already`, `rejected` and
+`needs-human`. Every transition is logged with the reason and who (or which tool) made it.
 
-## Database Schema
+## Schedule
 
-```sql
--- Librarian suggestions queue
-CREATE TABLE librarian_suggestions (
-  id INTEGER PRIMARY KEY,
-  type TEXT NOT NULL,           -- new_document, quality_issue, duplicate, etc.
-  data TEXT NOT NULL,           -- JSON with suggestion details
-  priority TEXT DEFAULT 'medium',
-  status TEXT DEFAULT 'pending', -- pending, approved, rejected, deferred
-  admin_notes TEXT,
-  created_at DATETIME,
-  reviewed_at DATETIME
-);
+| Cadence | Task |
+|---|---|
+| continuous | intake: new scans in the drop folder and email attachments → triage → ingest plan |
+| nightly | web research for one tradition (rotating), within budget; retry `needs-human` items with new leads |
+| weekly | gap report and acquisition shortlist to Chad; verification sweep of the week's ingests |
+| monthly | collection review: editions to replace, junk to retire |
 
--- Document assets (originals, covers)
-CREATE TABLE document_assets (
-  id INTEGER PRIMARY KEY,
-  document_id INTEGER,
-  asset_type TEXT NOT NULL,     -- original, converted, cover, thumbnail
-  storage_key TEXT NOT NULL,    -- S3/B2 key
-  storage_url TEXT,
-  file_name TEXT,
-  content_type TEXT,
-  created_at DATETIME
-);
+## Sample scenarios
 
--- Ingestion queue
-CREATE TABLE ingestion_queue (
-  id INTEGER PRIMARY KEY,
-  status TEXT DEFAULT 'pending',
-  source_type TEXT NOT NULL,    -- upload, url, isbn, research
-  source_data TEXT NOT NULL,    -- JSON source info
-  analysis_result TEXT,         -- JSON analysis
-  suggested_metadata TEXT,
-  target_path TEXT,
-  error_message TEXT,
-  created_at DATETIME
-);
-```
+1. **A box scan arrives** — a 1920s pamphlet, typed, English. The Librarian finds no copy by title or by text, reads
+   the title page for metadata, routes it to printed OCR, measures quality (98% words recognised), files it under its
+   tradition and collection, ingests it, and samples three paragraphs in search.
+2. **"Find a good text of al-Ṭabarī's History."** It checks our holdings, finds an OpenITI edition and an archive.org
+   scan, compares them, recommends the OpenITI text (clean, page breaks preserved), and asks for approval.
+3. **Nightly, Zoroastrian:** it notices the Avesta we hold is incomplete, finds a fuller scholarly edition, and files it
+   as `found` with the gap it fills.
+4. **A handwritten manuscript:** printed OCR scores 41%. It marks the item `needs-human`, proposes the handwritten route
+   and drafts the transcription request, and moves on.
+5. **By email:** "Do we have the Kitáb-i-Badí'?" → "Yes — the Persian original, with its document link; no published English
+   translation exists, and I'm watching for one." (Illustrative.)
 
-## Usage Examples
+## Memory strategy
 
-### Analyze a Document
+The Librarian's memory is its records, not its chat:
 
-```javascript
-import { LibrarianAgent } from './api/agents/agent-librarian.js';
+- **The work-item ledger** — every item, every transition and reason. This is what it remembers about a document.
+- **A dossier per work** — editions seen, sources tried, OCR results, why one edition was chosen. Searching the web
+  twice for the same book starts from the dossier, not from zero.
+- **Lessons** — what worked for a kind of source ("this archive's scans need the handwritten route", "this site's
+  texts drop footnotes"), consulted when it plans.
+- **Conversations** (chat and email) live in D1 like Anís's, linked to the work items they mention.
 
-const librarian = new LibrarianAgent();
+## Surfaces
 
-// Analyze a document for potential ingestion
-const analysis = await librarian.analyzeDocument(documentText, {
-  title: 'Some Answered Questions',
-  author: "'Abdu'l-Baha"
-});
+- **Chat:** `/admin/librarian` — tool calls visible, attachments become intake items.
+- **Email:** an address to decide (e.g. librarian@oceanlibrary.com), reusing Anís's mail stack.
+- **Control panel:** queues by state, schedule and last runs, budgets and spend, ingest plans and findings to approve.
 
-// Returns:
-// {
-//   content: "...",
-//   suggestedMetadata: { title, author, religion, collection, confidence },
-//   qualityAssessment: { overallQuality, issues, needsReview },
-//   duplicateCheck: { hasDuplicates, matches, duplicateType },
-//   recommendation: { action: 'approve'|'review'|'reject', reason }
-// }
-```
+## What exists today
 
-### ISBN Lookup
+Legacy code from the first design: `api/agents/agent-librarian.js` and `api/routes/librarian.js` (admin-only) — an
+ingestion queue and suggestions, document analysis, ISBN lookup (OpenLibrary, Google Books), duplicate checks (on
+Meilisearch — to be replaced with the text-level check above), quality issues, and a book-research endpoint. Related:
+`/admin/missing-books`, `/library/acquisitions`. API keys for parallel.ai and Perplexity are on the server.
 
-```javascript
-// Look up book by ISBN
-const bookInfo = await librarian.lookupISBN('978-0877432968');
+## Decisions waiting on Chad
 
-// Returns:
-// {
-//   source: 'openlibrary',
-//   title: 'The Seven Valleys',
-//   authors: ["Baha'u'llah"],
-//   coverUrl: 'https://covers.openlibrary.org/...',
-//   publishDate: '1991',
-//   subjects: ['Bahai Faith', 'Mysticism']
-// }
-```
-
-### Find Cover Images
-
-```javascript
-// Search for cover image by title/author
-const cover = await librarian.findCoverImage(
-  'The Hidden Words',
-  "Baha'u'llah"
-);
-
-// Returns:
-// {
-//   source: 'openlibrary',
-//   url: 'https://covers.openlibrary.org/b/id/...-L.jpg',
-//   thumbnailUrl: 'https://covers.openlibrary.org/b/id/...-M.jpg'
-// }
-```
-
-### Research Books to Add
-
-```javascript
-// Get book suggestions for a religion
-const research = await librarian.researchBooksToAdd('Buddhism', 'meditation', {
-  limit: 10
-});
-
-// Returns:
-// {
-//   suggestions: [
-//     { title, author, year, importance, category, availability, priority },
-//     ...
-//   ],
-//   gaps: ['Early Theravada texts', 'Modern scholarly works'],
-//   notes: 'Collection strong in Zen, needs more Tibetan texts'
-// }
-```
-
-### Find Quality Issues
-
-```javascript
-// Scan library for documents with issues
-const issues = await librarian.findQualityIssues({ limit: 20 });
-
-// Returns documents with:
-// - embedding_errors
-// - low_paragraph_count
-// - missing_author
-// - uncategorized_religion
-```
-
-### Queue Document for Ingestion
-
-```javascript
-// Add document to ingestion queue
-const result = await librarian.queueDocument('upload', {
-  content: documentText,
-  metadata: { title: 'New Document' }
-});
-
-// Returns:
-// {
-//   queueId: 42,
-//   analysis: { ... },
-//   status: 'awaiting_review'
-// }
-```
-
-## Integration with Admin Interface
-
-The Librarian agent is exposed via admin API endpoints:
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/librarian/queue` | GET | Get ingestion queue items |
-| `/api/librarian/queue` | POST | Add document to queue |
-| `/api/librarian/queue/:id/approve` | POST | Approve queued document |
-| `/api/librarian/queue/:id/reject` | POST | Reject queued document |
-| `/api/librarian/suggestions` | GET | Get librarian suggestions |
-| `/api/librarian/suggestions/:id` | PATCH | Update suggestion status |
-| `/api/librarian/analyze` | POST | Analyze document |
-| `/api/librarian/lookup-isbn` | GET | Look up ISBN metadata |
-| `/api/librarian/check-duplicates` | POST | Check for duplicates |
-| `/api/librarian/research` | POST | Research books to add |
-| `/api/librarian/stats` | GET | Get library statistics |
-
-## Configuration
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `model` | gpt-4o | AI model for analysis |
-| `temperature` | 0.3 | Lower temperature for consistent categorization |
-| `similarityThreshold` | 0.85 | Minimum similarity for duplicate detection |
-
-## Cloud Storage Integration
-
-The Librarian supports S3-compatible storage (Backblaze B2, Scaleway) for:
-
-- Original document files (PDFs, EPUBs)
-- Converted markdown documents
-- Cover images and thumbnails
-
-```javascript
-// Store original document
-await librarian.storeOriginalDocument(
-  documentId,
-  fileBuffer,
-  'book.pdf',
-  'application/pdf'
-);
-
-// Store and download cover image
-await librarian.storeCoverImage(documentId, coverUrl);
-```
-
-## Valid Categories
-
-### Collections
-- Pilgrim Notes
-- Essays
-- Tablets
-- Administrative
-- Prayers
-- Translations
-- Scripture
-- Commentary
-- History
-- Biography
-- General
-
-### Religions
-- Baha'i
-- Islam
-- Christianity
-- Judaism
-- Buddhism
-- Hinduism
-- Zoroastrianism
-- Sikhism
-- Interfaith
-- Philosophy
-- General
-
-## Future Enhancements
-
-- [ ] Automated OCR text cleanup
-- [ ] Multi-language content detection
-- [ ] Citation and reference extraction
-- [ ] Automated collection expansion recommendations
-- [ ] Integration with archive.org and public domain sources
+The email address · whether every acquisition needs approval or only above a cost · monthly budgets for web research
+and OCR · which handwritten-OCR route to try first · how and where the boxes get scanned · a starting list of important
+works per tradition, or let the Librarian propose one · rights policy for found texts.

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T15:29:12.193Z",
+  "generated": "2026-10-10T15:44:12.727Z",
   "entries": [
+    {
+      "hash": "ec9e2de2",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "One functionality plan — finish the index, the Librarian (new), reader features",
+      "scope": "planning"
+    },
     {
       "hash": "b726ac83",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Worker status for the overnight standards pass",
       "scope": null
-    },
-    {
-      "hash": "b350e520",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "Pin GATE_BASE_URL, so the gate stops auditing xswarm.ai from this repo",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "ec9e2de2",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "One functionality plan — finish the index, the Librarian (new), reader features",
+        "scope": "planning"
+      },
       {
         "hash": "b726ac83",
         "date": "2026-10-10",
@@ -7031,13 +7038,6 @@
         "date": "2026-09-09",
         "type": "Chore",
         "description": "Worker status for the overnight standards pass",
-        "scope": null
-      },
-      {
-        "hash": "b350e520",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "Pin GATE_BASE_URL, so the gate stops auditing xswarm.ai from this repo",
         "scope": null
       }
     ]

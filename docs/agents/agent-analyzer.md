@@ -1,9 +1,9 @@
 ---
 title: Analyzer Agent
 description: Relevance scoring and reranking specialist that scores results using the research plan
-role: Re-ranking & Scoring
+role: Internal · Re-ranking & Scoring
 icon: bar-chart
-order: 3
+order: 13
 ---
 
 # Analyzer Agent

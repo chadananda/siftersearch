@@ -1,9 +1,9 @@
 ---
 title: Transcriber Agent
 description: Audio and video to Markdown transcription agent using Whisper AI
-role: Audio/Video to Text
+role: Internal · Audio/Video to Text
 icon: microphone
-order: 8
+order: 18
 ---
 
 # Transcriber Agent

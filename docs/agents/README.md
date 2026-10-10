@@ -5,6 +5,19 @@ description: A modular multi-agent AI system for intelligent interfaith library 
 
 # SifterSearch Agent System
 
+## The interactive agents
+
+Two agents are people you talk to, each with its own soul, purpose, tools, schedule and memory:
+
+- **[Anís](/docs/agents/anis)** — the research companion: a chat on many sites and an email address, answering from the
+  library in the reader's interest.
+- **[Librarian](/docs/agents/librarian)** — builds the collection: plans every ingest, works the boxes of documents,
+  hunts the web for hard-to-find texts (designed; building from about mid-November 2026).
+
+The agents below them are **internal** — earlier pipeline components, several superseded by Anís's planned search.
+
+## Internal agents (earlier design)
+
 SifterSearch uses a **multi-agent AI architecture** where specialized agents collaborate to understand, research, analyze, and present search results. Each agent has distinct expertise and personality, working together under Sifter's orchestration to deliver spiritually-grounded insights from the world's sacred texts.
 
 ## Why Multi-Agent?
