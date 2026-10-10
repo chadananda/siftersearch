@@ -317,6 +317,27 @@ async function safeSoftDeleteDocs(docIds, { reason = 'unspecified', runId = null
 }
 
 /**
+ * Undo a soft delete made by ONE run: a doc retired at or after `since` comes back with exactly the paragraphs that were
+ * stamped with the doc's own deleted_at (rows deleted earlier, for other reasons, stay deleted). Rows go back to
+ * synced=0 so the worker re-indexes them. Audited. → { restored }
+ */
+async function restoreRetiredDocs(docIds, { since, reason = 'unspecified', runId = null } = {}) {
+  if (!since) throw new Error('restoreRetiredDocs: since is required (only undo one run)');
+  const ids = [...new Set((docIds || []).map(Number).filter(Boolean))];
+  const ts = now();
+  let restored = 0;
+  for (const id of ids) {
+    const doc = await queryOne('SELECT deleted_at FROM docs WHERE id = ?', [id]);
+    if (!doc?.deleted_at || doc.deleted_at < since) continue;
+    await query('UPDATE content SET deleted_at = NULL, synced = 0, updated_at = ? WHERE doc_id = ? AND deleted_at = ?', [ts, id, doc.deleted_at]);
+    await query('UPDATE docs SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at = ?', [ts, id, doc.deleted_at]);
+    restored++;
+    try { const { audit } = await import('./audit.js'); await audit({ actor: 'restoreRetiredDocs', action: 'doc.restore', target: `doc:${id}`, docId: id, reason, runId }); } catch { /* witness only */ }
+  }
+  return { restored };
+}
+
+/**
  * Restore soft-deleted paragraphs for a document.
  */
 async function restoreByDoc(docId) {
@@ -1183,6 +1204,7 @@ export const content = {
   softDeleteByDoc,
   safeSoftDeleteDocs,
   restoreByDoc,
+  restoreRetiredDocs,
   hardDeleteExpired,
   bulkReplace,
 

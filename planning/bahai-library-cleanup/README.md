@@ -49,3 +49,21 @@ v3's one document→metadata error (22077, an article) is why retirement needs B
 Merge rule (`merge-page-role.py`): numeric-alias / url-variant duplicates retire regardless; listing / inventory rule hits
 retire unless both models say document (→ review queue); pages the rules kept retire only if both say metadata/navigation.
 `doc-classes-20261009.tsv` (8 MB) is not committed — copy at tower `/tank/sifter/bl-doc-classes.tsv`.
+
+## Full run + retirement (10-09 night)
+75,050 pages classified (5 Clef 502s); Clef↔Jev 97.8%. `retire-ids-v2-20261009.tsv` = 62,750 docs: rules 58,466
+(listing 32,178 · inventory 21,779 · numeric-alias 3,498 · url-variant 1,011) + 4,284 pages the rules kept that BOTH
+models call metadata (3,805) or navigation (479). Spot-check of 16 additions: all download/abstract stubs (abstract +
+"Download: x.pdf" + view counter — even Ridván 2016/2022 pages are stubs; the text is in the PDF). 771 pages where the
+models disagree are kept. `review-rule-but-document-20261009.tsv` = 59 rule hits both models call documents (e.g.
+"Loom of Reality" compilation sections) — NOT retired.
+Applied as run `retire-bahai-library-20261009` (audited, `safeSoftDeleteDocs`), batches of 50 / 5 s: 200-doc batches made
+the guard reads (synchronous, in the API) take 4-7 s each and froze /health. Index removal via the outbox.
+Open: the download stubs point at PDFs we may not hold — an acquisition queue, separate from this cleanup.
+
+## CORRECTION 10-09 late — Chad: "classify content vs other and then remove the non-content pages from the index"
+The rule list above was the wrong basis (it retired by page TYPE, incl. duplicate copies with text). The decision is the
+classifier's: remove a page only when Clef AND Jev both call it non-content (metadata/navigation) — 60,044 pages
+(`non-content-20261009.tsv`); keep 13,905 both-content + 1,101 where the models split. The rule run had retired 6,991
+docs (stopped); 1,272 of them are content/split and were restored exactly (`content.restoreRetiredDocs`, run stamp only).
+`retire-ids-v2` / `review-rule-but-document` are superseded.

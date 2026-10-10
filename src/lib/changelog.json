@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T02:50:59.097Z",
+  "generated": "2026-10-10T04:41:38.826Z",
   "entries": [
+    {
+      "hash": "53a855bb",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Outbox drain clears slice by slice under a time budget",
+      "scope": "index"
+    },
     {
       "hash": "790f219b",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Link becomes a real stage — module, facade entry, emit; script is a wrapper",
       "scope": null
-    },
-    {
-      "hash": "49207c04",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "Implementation plan",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "53a855bb",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Outbox drain clears slice by slice under a time budget",
+        "scope": "index"
+      },
       {
         "hash": "790f219b",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Other",
         "description": "Link becomes a real stage — module, facade entry, emit; script is a wrapper",
-        "scope": null
-      },
-      {
-        "hash": "49207c04",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "Implementation plan",
         "scope": null
       }
     ]
