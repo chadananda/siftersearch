@@ -61,74 +61,91 @@ const start = async () => {
     const port = parseInt(process.env.API_PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';
 
+    // Startup work. In pm2 CLUSTER mode (API_PREBOOT=1, ecosystem.config.cjs) a reload keeps the old process serving
+    // until this one is ready, so it does ALL of it BEFORE listening — the cluster master routes connections to a worker
+    // the moment it listens, and requests landing on a process still migrating / building the ~5 s synchronous
+    // encounter index timed out (measured 10-10: 8 failed probes per reload). Fork mode keeps the old order: listen
+    // first so health checks answer during a cold boot.
+    const preboot = process.env.API_PREBOOT === '1';
+    const bootTasks = async () => {
+      // Run database migrations AFTER listening so health checks work during migration.
+      // In single-writer architecture, the unified worker is the authoritative migration runner.
+      // API tolerates SQLITE_BUSY — the worker will complete the migration.
+      try {
+        const migrationResult = await runMigrations();
+        if (migrationResult.applied > 0) {
+          logger.info(migrationResult, 'Database migrations applied');
+        }
+      } catch (err) {
+        if (err.code === 'SQLITE_BUSY') {
+          logger.warn({ err: err.message }, 'Migration blocked by worker (SQLITE_BUSY) — worker will complete it');
+        } else {
+          logger.error({ err }, 'Database migration failed');
+          process.exit(1);
+        }
+      }
+
+      // Load sites.yaml into the search-scope registry. Skipping this is
+      // non-fatal — the search layer falls back to "primary only" scope, which
+      // matches pre-sites behavior. But once the registry is loaded, default
+      // Jafar will include supplementals (bahai-library, oceanoflights) and
+      // site-only chatbots will route to their own indexes.
+      try {
+        const { setSiteRegistry } = await import('./lib/search/scope.js');
+        const { setAuthoritySiteRegistry } = await import('./lib/authority.js');
+        const { loadAllSiteConfigs } = await import('./services/sites-ingester.js');
+        const configs = await loadAllSiteConfigs();
+        setSiteRegistry(configs);
+        setAuthoritySiteRegistry(configs);
+        const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').map(c => c.id);
+        const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').map(c => c.id);
+        logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Site registry loaded');
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Site registry not loaded (no sites.yaml found, scope = primary only)');
+      }
+
+      // Seed admin user if configured
+      try {
+        const adminResult = await seedAdminUser();
+        if (adminResult) {
+          logger.info({
+            email: adminResult.email,
+            action: adminResult.action
+          }, 'Admin user seeded');
+        }
+      } catch (err) {
+        logger.warn({ err }, 'Failed to seed admin user');
+      }
+
+      // Seed the QA/test admin (TEST_ADMIN_EMAIL/PASS) if configured — self-healing test account
+      try {
+        const testResult = await seedTestUser();
+        if (testResult) logger.info({ email: testResult.email, action: testResult.action }, 'Test admin user seeded');
+      } catch (err) {
+        logger.warn({ err }, 'Failed to seed test admin user');
+      }
+
+      // Restore AI processing pause state from database
+      try {
+        await initAIProcessingState();
+      } catch (err) {
+        logger.warn({ err }, 'Failed to restore AI processing state');
+      }
+    };
+    const warmIndexes = async () => {
+      await import('./lib/encounters.js').then((m) => m.getEncounterIndex()).catch((err) =>
+        logger.warn({ err: err.message }, 'encounter index warm-up failed'));
+      await warmOlDocIdCache().catch((err) => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
+    };
+    if (preboot) { await bootTasks(); await warmIndexes(); }
+
     await server.listen({ port, host });
 
-    // Warm the who-met-whom index once, off the request path (a ~5 s synchronous build; searches never wait on it cold).
-    setTimeout(() => import('./lib/encounters.js').then((m) => m.getEncounterIndex()).catch((err) =>
-      logger.warn({ err: err.message }, 'encounter index warm-up failed')), 20000).unref();
-
-    // Run database migrations AFTER listening so health checks work during migration.
-    // In single-writer architecture, the unified worker is the authoritative migration runner.
-    // API tolerates SQLITE_BUSY — the worker will complete the migration.
-    try {
-      const migrationResult = await runMigrations();
-      if (migrationResult.applied > 0) {
-        logger.info(migrationResult, 'Database migrations applied');
-      }
-    } catch (err) {
-      if (err.code === 'SQLITE_BUSY') {
-        logger.warn({ err: err.message }, 'Migration blocked by worker (SQLITE_BUSY) — worker will complete it');
-      } else {
-        logger.error({ err }, 'Database migration failed');
-        process.exit(1);
-      }
-    }
-
-    // Load sites.yaml into the search-scope registry. Skipping this is
-    // non-fatal — the search layer falls back to "primary only" scope, which
-    // matches pre-sites behavior. But once the registry is loaded, default
-    // Jafar will include supplementals (bahai-library, oceanoflights) and
-    // site-only chatbots will route to their own indexes.
-    try {
-      const { setSiteRegistry } = await import('./lib/search/scope.js');
-      const { setAuthoritySiteRegistry } = await import('./lib/authority.js');
-      const { loadAllSiteConfigs } = await import('./services/sites-ingester.js');
-      const configs = await loadAllSiteConfigs();
-      setSiteRegistry(configs);
-      setAuthoritySiteRegistry(configs);
-      const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').map(c => c.id);
-      const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').map(c => c.id);
-      logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Site registry loaded');
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Site registry not loaded (no sites.yaml found, scope = primary only)');
-    }
-
-    // Seed admin user if configured
-    try {
-      const adminResult = await seedAdminUser();
-      if (adminResult) {
-        logger.info({
-          email: adminResult.email,
-          action: adminResult.action
-        }, 'Admin user seeded');
-      }
-    } catch (err) {
-      logger.warn({ err }, 'Failed to seed admin user');
-    }
-
-    // Seed the QA/test admin (TEST_ADMIN_EMAIL/PASS) if configured — self-healing test account
-    try {
-      const testResult = await seedTestUser();
-      if (testResult) logger.info({ email: testResult.email, action: testResult.action }, 'Test admin user seeded');
-    } catch (err) {
-      logger.warn({ err }, 'Failed to seed test admin user');
-    }
-
-    // Restore AI processing pause state from database
-    try {
-      await initAIProcessingState();
-    } catch (err) {
-      logger.warn({ err }, 'Failed to restore AI processing state');
+    if (!preboot) {
+      // Warm the who-met-whom index once, off the request path (a ~5 s synchronous build; searches never wait on it cold).
+      setTimeout(() => import('./lib/encounters.js').then((m) => m.getEncounterIndex()).catch((err) =>
+        logger.warn({ err: err.message }, 'encounter index warm-up failed')), 20000).unref();
+      await bootTasks();
     }
 
     // Stats cache no longer needs prewarm — counter table (migration 39) provides instant counts
@@ -154,9 +171,11 @@ const start = async () => {
         // Author/collection filters depend on this; initializeIndexes() does not run in the API.
         ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
         // OL doc ID cache — pre-warm immediately to prevent thundering-herd on first search wave
-        warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
-        import('./lib/encounters.js').then((m) => m.getEncounterIndex())
-          .catch(err => logger.warn({ err }, 'Failed to pre-warm encounter index'));
+        if (!preboot) {   // preboot already built both before listening
+          warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
+          import('./lib/encounters.js').then((m) => m.getEncounterIndex())
+            .catch(err => logger.warn({ err }, 'Failed to pre-warm encounter index'));
+        }
         try {
           const result = await prewarmCache(POPULAR_QUERIES);
           logger.info({ warmed: result.warmed, elapsedMs: result.elapsedMs }, 'Search cache pre-warmed');

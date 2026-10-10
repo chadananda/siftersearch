@@ -75,6 +75,9 @@ module.exports = {
         // single writer on 7849 instead of opening a direct write txn. Without
         // this the API was the one unrouted writer, so its admin writes
         // contended with the worker and intermittently hit SQLITE_BUSY.
+        // cluster mode: finish migrations + index warm-up BEFORE listening (api/index.js), so a reload never routes a
+        // request to a process that cannot answer yet
+        API_PREBOOT: '1',
         SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
         SQLITE_BUSY_TIMEOUT_MS: '30000',
         // Grounding runs ONE book at a time, fully, in strict roadmap order. The graph tail

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:35:15.800Z",
+  "generated": "2026-10-10T20:40:15.958Z",
   "entries": [
+    {
+      "hash": "9d17a734",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Shelf index — precomputed out of process, edge-cached; stale-collection URLs still resolve",
+      "scope": "library"
+    },
     {
       "hash": "ca44db03",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Jev picks the people pattern; raw search returns the cited-claim graph (who, what, when)",
       "scope": "search"
-    },
-    {
-      "hash": "7f57f751",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Keep the navbar and library summary; remove only the chat input — Anís is the one chat",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "9d17a734",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Shelf index — precomputed out of process, edge-cached; stale-collection URLs still resolve",
+        "scope": "library"
+      },
       {
         "hash": "ca44db03",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "New",
         "description": "Jev picks the people pattern; raw search returns the cited-claim graph (who, what, when)",
         "scope": "search"
-      },
-      {
-        "hash": "7f57f751",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Keep the navbar and library summary; remove only the chat input — Anís is the one chat",
-        "scope": "home"
       }
     ]
   }
