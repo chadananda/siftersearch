@@ -16,5 +16,6 @@
   "ai": { "binding": "AI" },
   // Cloudflare Images: resize/crop/sharpen/encode outside the Worker's memory (cdn.js render)
   "images": { "binding": "IMAGES" },
-  "vars": { "API_ORIGIN": "https://api.siftersearch.com" }
+  // S3_ENDPOINT = tower's versitygw via the tunnel; S3_ACCESS_KEY / S3_SECRET_KEY are Worker secrets (wrangler secret put)
+  "vars": { "API_ORIGIN": "https://api.siftersearch.com", "S3_ENDPOINT": "https://s3.siftersearch.com" }
 }

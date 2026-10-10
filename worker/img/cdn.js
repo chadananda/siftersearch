@@ -3,6 +3,7 @@
 // original version, then kept in R2 so tower never serves it again) → Photon render. Adapted from blogworks.ai
 // packages/blogworks-image/src/cdn.ts; the origin is tower's /api/<bucket>/<id>/original instead of an R2 source bucket.
 import { PhotonImage } from '@cf-wasm/photon';
+import { AwsClient } from 'aws4fetch';
 import { parseTransforms, resolveFormat, defaultSpec } from './transform.js';
 import { resolveFocalPoint } from './focal.js';
 import { renderImage, CONTENT_TYPE } from './render.js';
@@ -111,16 +112,35 @@ async function r2Original(bucket, key) {
   return obj ? new Uint8Array(await obj.arrayBuffer()) : null;
 }
 
-/** Original bytes: R2 first; else tower once (then stored in R2 under its version). */
+/** Original bytes: R2 first; else tower once (then stored in R2 under its version). Tower is read through its S3 gateway
+ *  (versitygw at s3.siftersearch.com, SigV4 — the same way the R2 families are read, Chad 10-10) when the Worker has its
+ *  keys; the API route /api/<bucket>/<id>/original stays as the fallback. */
 async function original(env, ctx, bucket, id, v) {
   const key = `orig/${bucket}/${id}/${v || 'latest'}`;
   const hit = v ? await env.IMG_R2?.get(key) : null;
   if (hit) return new Uint8Array(await hit.arrayBuffer());
-  const res = await fetch(`${env.API_ORIGIN}/api/${bucket}/${id}/original`);
-  if (!res.ok) return null;
-  const bytes = new Uint8Array(await res.arrayBuffer());
+  const bytes = (await towerS3(env, bucket, id)) ?? (await towerApi(env, bucket, id));
+  if (!bytes) return null;
   if (v && env.IMG_R2) ctx.waitUntil(env.IMG_R2.put(key, bytes));
   return bytes;
+}
+
+async function towerS3(env, bucket, id) {
+  if (!env.S3_ENDPOINT || !env.S3_ACCESS_KEY || !env.S3_SECRET_KEY) return null;
+  try {
+    const aws = new AwsClient({ accessKeyId: env.S3_ACCESS_KEY, secretAccessKey: env.S3_SECRET_KEY, service: 's3', region: 'us-east-1' });
+    // the original's extension varies (original.webp / .png / .jpg) — list the one key under <id>/original
+    const list = await aws.fetch(`${env.S3_ENDPOINT}/${bucket}?list-type=2&max-keys=5&prefix=${encodeURIComponent(`${id}/original.`)}`);
+    if (!list.ok) return null;
+    const objKey = /<Key>([^<]+)<\/Key>/.exec(await list.text())?.[1];
+    if (!objKey) return null;
+    const res = await aws.fetch(`${env.S3_ENDPOINT}/${bucket}/${objKey.split('/').map(encodeURIComponent).join('/')}`);
+    return res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
+  } catch { return null; }
+}
+async function towerApi(env, bucket, id) {
+  const res = await fetch(`${env.API_ORIGIN}/api/${bucket}/${id}/original`);
+  return res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
 }
 
 function probeSize(bytes) {

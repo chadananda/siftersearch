@@ -185,6 +185,16 @@ module.exports = {
     // connecting, so stale QUIC connectors from previous runs don't linger
     // in CF's edge and cause 502s after any restart.
     {
+      // Tower S3 gateway (versitygw) — originals for the image Worker (scripts/start-s3.sh; 10-10)
+      name: 'siftersearch-s3',
+      script: './scripts/start-s3.sh',
+      cwd: PROJECT_ROOT,
+      interpreter: 'bash',
+      autorestart: true,
+      max_restarts: -1,
+      exp_backoff_restart_delay: 1000,
+    },
+    {
       name: 'cloudflared-tunnel',
       script: './scripts/start-cloudflared.sh',
       interpreter: 'bash',

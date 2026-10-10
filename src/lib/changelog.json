@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T22:09:10.919Z",
+  "generated": "2026-10-10T22:27:57.240Z",
   "entries": [
+    {
+      "hash": "bbcff6ef",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Verbatim-canon rule needs >= 6 words and sim >= 0.875 ('How should I pray?' hit 0.861)",
+      "scope": "search"
+    },
     {
       "hash": "30a91d0c",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "1s strategy budget — one shared query embedding (prefetched during planning), deadline-bounded source judge, 700ms planner cap",
       "scope": "search"
-    },
-    {
-      "hash": "8c46660f",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Function-word aliases are not names; planned search reports engine layer timings per pass",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "bbcff6ef",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Verbatim-canon rule needs >= 6 words and sim >= 0.875 ('How should I pray?' hit 0.861)",
+        "scope": "search"
+      },
       {
         "hash": "30a91d0c",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Performance",
         "description": "1s strategy budget — one shared query embedding (prefetched during planning), deadline-bounded source judge, 700ms planner cap",
-        "scope": "search"
-      },
-      {
-        "hash": "8c46660f",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Function-word aliases are not names; planned search reports engine layer timings per pass",
         "scope": "search"
       }
     ]
