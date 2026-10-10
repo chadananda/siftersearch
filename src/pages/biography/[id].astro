@@ -2,6 +2,7 @@
 // One person's life page: summary, dated timeline, relationships and journeys — synthesized from the dossier's cited
 // facts (scripts/bio/build-timelines.mjs) — every line linked to the passages it rests on (range links on OceanLibrary).
 // SSR from GET /api/v1/people/:id (server-side: absolute API origin, no key needed). Pilot 2026-10-09 (Immerse parity).
+import { svcFixed } from '../../lib/imagekit.js';
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 
@@ -48,7 +49,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, 
     ) : (
       <>
         <header class="bio-head">
-          {p.portrait && <img class="bio-portrait" src={p.portrait} alt={`Portrait of ${p.name}`} width="112" height="140" />}
+          {p.portrait && <img class="bio-portrait" {...svcFixed(p.portrait, 112, 140, { extra: 'fo-face,e-sharpen' })} alt={`Portrait of ${p.name}`} width="112" height="140" />}
           <div>
             <p class="bio-kicker"><a href="/biography">Biographical archive</a>{p.side && <> · {p.side}</>}</p>
             <h1>{p.name}{life && <span class="bio-life">{life}</span>}</h1>

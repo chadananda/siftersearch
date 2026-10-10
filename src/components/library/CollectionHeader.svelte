@@ -4,6 +4,7 @@
    * Hero header for collection pages - matches ReligionHeader style
    */
   import { authenticatedFetch } from '../../lib/api.js';
+  import { imgSet } from '../../lib/imagekit.js';
 
   let { node = null, documentCount = 0, isAdmin = false, onEdit = null } = $props();
 
@@ -53,7 +54,7 @@
 
 <header class="relative min-h-[160px] rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-accent via-accent/60 to-surface-1">
   {#if node?.cover_image_url}
-    <img src={node.cover_image_url} alt="" class="absolute inset-0 w-full h-full object-cover brightness-[0.4] saturate-[1.2]" />
+    <img {...imgSet(node.cover_image_url, [640, 960, 1280, 1920], { fo: null })} sizes="100vw" alt="" class="absolute inset-0 w-full h-full object-cover brightness-[0.4] saturate-[1.2]" />
   {/if}
   <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-surface-1/50"></div>
 

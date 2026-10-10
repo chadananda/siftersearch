@@ -4,6 +4,7 @@
 // with a collapsible version history. Readers can see the conversations AND
 // the criteria evolving.
 import Layout from '../../layouts/Layout.astro';
+import { imgSet } from '../../lib/imagekit.js';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { readFileSync, readdirSync } from 'fs';
@@ -278,19 +279,19 @@ const description = "How dialogs are assessed: the criteria, the pipeline, Jafar
       </p>
       <div class="avatars">
         <figure>
-          <img src="/images/jafar-avatars/a-calligraphic-jim.jpg" alt="Calligraphic jīm" />
+          <img {...imgSet("/images/jafar-avatars/a-calligraphic-jim.jpg", [240, 480], { ratio: 1 })} sizes="(max-width: 600px) 50vw, 240px" alt="Calligraphic jīm" loading="lazy" />
           <figcaption><strong>A</strong> — Calligraphic <em>jīm</em></figcaption>
         </figure>
         <figure>
-          <img src="/images/jafar-avatars/b-wise-figure-profile.jpg" alt="Wise figure in profile" />
+          <img {...imgSet("/images/jafar-avatars/b-wise-figure-profile.jpg", [240, 480], { ratio: 1 })} sizes="(max-width: 600px) 50vw, 240px" alt="Wise figure in profile" loading="lazy" />
           <figcaption><strong>B</strong> — Wise figure in profile</figcaption>
         </figure>
         <figure>
-          <img src="/images/jafar-avatars/c-illuminated-book.jpg" alt="Illuminated book" />
+          <img {...imgSet("/images/jafar-avatars/c-illuminated-book.jpg", [240, 480], { ratio: 1 })} sizes="(max-width: 600px) 50vw, 240px" alt="Illuminated book" loading="lazy" />
           <figcaption><strong>C</strong> — Illuminated book</figcaption>
         </figure>
         <figure>
-          <img src="/images/jafar-avatars/d-classical-lamp.jpg" alt="Classical lamp" />
+          <img {...imgSet("/images/jafar-avatars/d-classical-lamp.jpg", [240, 480], { ratio: 1 })} sizes="(max-width: 600px) 50vw, 240px" alt="Classical lamp" loading="lazy" />
           <figcaption><strong>D</strong> — Classical lamp</figcaption>
         </figure>
       </div>

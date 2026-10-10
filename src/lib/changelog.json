@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T19:39:59.521Z",
+  "generated": "2026-10-10T19:42:31.579Z",
   "entries": [
+    {
+      "hash": "c0d4e580",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Research images through our image service — sharpened WebP + srcset (card 2.7 MB → 54 KB)",
+      "scope": "images"
+    },
     {
       "hash": "caf5b36a",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Collapse copies of the same text; battery tests the RAW data contract per research pattern",
       "scope": "search"
-    },
-    {
-      "hash": "bc3035b1",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "Raw search resolves quoted words to their ORIGINAL source (Jev judges, authority chooses)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "c0d4e580",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Research images through our image service — sharpened WebP + srcset (card 2.7 MB → 54 KB)",
+        "scope": "images"
+      },
       {
         "hash": "caf5b36a",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "New",
         "description": "Collapse copies of the same text; battery tests the RAW data contract per research pattern",
-        "scope": "search"
-      },
-      {
-        "hash": "bc3035b1",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "Raw search resolves quoted words to their ORIGINAL source (Jev judges, authority chooses)",
         "scope": "search"
       }
     ]
