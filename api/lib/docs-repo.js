@@ -128,6 +128,13 @@ export async function setDocCover(docId, url) {
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 
+/** Set a document's collection (its shelf). Live docs only. Used to replace the OceanLibrary collection_id hashes with
+ *  their folder names (scripts/library/ol-shelves-backfill.mjs). */
+export async function setDocCollection(docId, collection) {
+  const r = await query('UPDATE docs SET collection = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [collection, Number(docId)], 'docs-repo:set-collection');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
 /** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised. */
 export function ftsQuery(text) {
   // apostrophes removed first, as docs_fts stores them (migration 142): "Bahá’u’lláh" / "Baha'u'llah" / "Bahaullah" agree

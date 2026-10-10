@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:25:33.773Z",
+  "generated": "2026-10-10T20:30:52.804Z",
   "entries": [
+    {
+      "hash": "fd8a068d",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Footer sits at the bottom of short pages (body is a full-height flex column, footer margin-top:auto)",
+      "scope": "site"
+    },
     {
       "hash": "02b94aa7",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Anís is named Anís on the home page (data-name), not the house profile's lab label",
       "scope": "home"
-    },
-    {
-      "hash": "7e3dd54c",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "Version the Anís bundle URL by content hash so a deploy is live on every host site at once",
-      "scope": "widget"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "fd8a068d",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Footer sits at the bottom of short pages (body is a full-height flex column, footer margin-top:auto)",
+        "scope": "site"
+      },
       {
         "hash": "02b94aa7",
         "date": "2026-10-10",
@@ -7026,13 +7033,6 @@
         "type": "Fixed",
         "description": "Anís is named Anís on the home page (data-name), not the house profile's lab label",
         "scope": "home"
-      },
-      {
-        "hash": "7e3dd54c",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "Version the Anís bundle URL by content hash so a deploy is live on every host site at once",
-        "scope": "widget"
       }
     ]
   }

@@ -5,6 +5,7 @@
 import { queryAll } from './db.js';
 import { authorAuthority, getAuthority } from './authority.js';
 import { paragraphAuthor } from './authorship/effective.js';
+import { olCiteTitle } from './library/ol-works.js';
 
 /** Paragraph row + its doc row → the search document (no vectors). `authority` = the doc's, when the caller has it. */
 export function paragraphDoc(p, doc, authority = null) {
@@ -19,7 +20,8 @@ export function paragraphDoc(p, doc, authority = null) {
     text: p.text, context: p.context || null,
     text_grounded: p.text_grounded || null,
     translation: p.translation || null, translation_segments: p.translation_segments || null,
-    title: doc.title, author, filename: doc.filename,
+    // a part of a multi-part OceanLibrary work (KJV, Qur'an…) is titled — and so cited — "<work>, <part>" (ol-works.js)
+    title: olCiteTitle(doc), author, filename: doc.filename,
     religion: doc.religion, collection: doc.collection, language: doc.language,
     year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority,
     heading: p.heading || '', blocktype: p.blocktype || 'paragraph',

@@ -23,6 +23,7 @@
 // A baked-in fallback covers the case where someone calls parseDoc directly
 // without going through sites-ingester (tests, ad-hoc scripts).
 
+import { olPlacement } from '../../lib/library/ol-works.js';
 import yaml from 'yaml';
 
 const DEFAULT_RELIGION_MAP = {
@@ -228,7 +229,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
     subtitle: (frontmatter.subtitle || '').trim(),
     author: compilationAuthor(frontmatter, relativePath, ourReligion) || (frontmatter.author || 'Unknown').trim(),
     religion: ourReligion || 'General',
-    collection: frontmatter.collection_id || '',
+    collection: olPlacement(relativePath, frontmatter.author).shelf || '',   // the folder name (was the opaque collection_id hash)
     description: frontmatter.description || frontmatter.description_short || '',
     language: frontmatter.language || 'en',
     source_site: 'oceanlibrary.com',
@@ -240,6 +241,8 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
 
   return { docFields, paragraphs, raw_frontmatter: frontmatter };
 }
+
+// Shelves and multi-part works: api/lib/library/ol-works.js (shared with search hydration).
 
 // ─── Compilations ─────────────────────────────────────────────────────────
 // OceanLibrary files a multi-author Bahá'í compilation under its FIRST author (author, author_2, author_3…), so
@@ -392,3 +395,5 @@ export function detectSupersedee(incomingDoc, hashCandidates, metadataCandidates
 
 // Exported for tests
 export const _internal = { parsePandocAttrs, parseBlock, normalizeForFuzzy, fuzzyTitleMatch, fuzzyAuthorMatch, levenshtein };
+
+export { olPlacement, olCiteTitle, olWorkOf, OL_SHELVES_OF_SEPARATE_WORKS } from '../../lib/library/ol-works.js';
