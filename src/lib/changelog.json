@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:00:30.297Z",
+  "generated": "2026-10-10T20:01:48.411Z",
   "entries": [
+    {
+      "hash": "ac554980",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Toolbar trimmed (no Chat/Research/Docs/About), global footer, Anís button on every public page",
+      "scope": "site"
+    },
     {
       "hash": "81fcfdad",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "OceanLibrary links carry the paragraph id again — attached once, in the link policy",
       "scope": "search"
-    },
-    {
-      "hash": "8631dc1b",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "Ideal-source re-ranking — ONE Jev judgment, bounded by OceanLibrary-first policy",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "ac554980",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Toolbar trimmed (no Chat/Research/Docs/About), global footer, Anís button on every public page",
+        "scope": "site"
+      },
       {
         "hash": "81fcfdad",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "Fixed",
         "description": "OceanLibrary links carry the paragraph id again — attached once, in the link policy",
-        "scope": "search"
-      },
-      {
-        "hash": "8631dc1b",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "Ideal-source re-ranking — ONE Jev judgment, bounded by OceanLibrary-first policy",
         "scope": "search"
       }
     ]

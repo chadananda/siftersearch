@@ -11,8 +11,7 @@ import ChatInterface from '../components/ChatInterface.svelte';
     <!-- Navbar + library summary as before; the chat itself is Anís (below), as on any host site. -->
     <ChatInterface client:only="svelte" showInput={false}><IslandSkeleton slot="fallback" /></ChatInterface>
   </main>
-  <!-- Anís — the same one-line embed every host site uses (backlog 0015). -->
-  <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" async></script>
+  <!-- Anís's button comes from layouts/Layout.astro (every public page), the same embed every host site uses. -->
 </Layout>
 
 <style>

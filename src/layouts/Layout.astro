@@ -1,5 +1,6 @@
 ---
 import { SEO } from 'astro-seo';
+import SiteFooter from '../components/common/SiteFooter.astro';
 
 interface Props {
   title: string;
@@ -7,6 +8,8 @@ interface Props {
   image?: string;
   type?: string;
   noindex?: boolean;
+  footer?: boolean;   // the global footer (off for full-height app views)
+  anis?: boolean;     // Anís's chat button — on every public page (Chad 10-10)
 }
 
 const siteUrl = 'https://siftersearch.com';
@@ -20,7 +23,9 @@ const {
   // icon-512 is a stopgap that at least resolves; a real 1200x630 card is wanted.
   image = '/icon-512.png',
   type = 'website',
-  noindex = false
+  noindex = false,
+  footer = true,
+  anis = true
 } = Astro.props;
 
 // Build canonical URL from current path
@@ -121,6 +126,8 @@ const organizationSchema = {
   </head>
   <body>
     <slot />
+    {footer && <SiteFooter />}
+    {anis && <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" async></script>}
   </body>
 </html>
 
