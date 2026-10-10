@@ -12,14 +12,12 @@
 //   checkDeepResearch(question, embedding)   → curated quotes or null
 //   recordQuestionHit(question, embedding)   → fire-and-forget hit tracking
 //   getDeepResearchQuotes(researchId)        → ordered curated passage array
-//   syncDeepResearch(ids?)            → sync records to Meili index
 //   runDeepResearch(researchId)              → full LLM research pass (worker only)
 
 import crypto from 'crypto';
 import { queryOne, queryAll, query } from './db.js';
 import { logger } from './logger.js';
 import { createEmbedding } from './ai.js';
-import { getMeili, INDEXES } from './search.js';
 import { getAuthority } from './authority.js';
 import { generateSlug } from './slug.js';
 import { initStorage, hasCloudStorage, uploadFile, uploadImageFromUrl, generateAssetKey } from './storage.js';
@@ -106,28 +104,8 @@ export async function checkDeepResearch(question, embedding = null) {
       return { ...full, quotes, similarity: bestScore };
     }
 
-    // Meilisearch keyword fallback: catches paraphrases and synonyms that
-    // embedding similarity misses when threshold isn't met.
-    try {
-      const meili = getMeili();
-      if (meili) {
-        const res = await meili.index(INDEXES.DEEP_RESEARCH).search(question, {
-          limit: 1,
-          attributesToRetrieve: ['id', 'canonical_question', 'slug'],
-        });
-        const hit = res?.hits?.[0];
-        if (hit?.id) {
-          const full = await queryOne('SELECT * FROM deep_research WHERE id = ? AND status = ?', [hit.id, 'complete']);
-          if (full) {
-            const quotes = await getDeepResearchQuotes(full.id);
-            if (quotes.length >= 3) return { ...full, quotes, via: 'meili_keyword' };
-          }
-        }
-      }
-    } catch (meiliErr) {
-      logger.warn({ err: meiliErr.message }, 'checkDeepResearch meili fallback error');
-    }
-
+    // (A Meili keyword fallback used to take the top keyword hit with NO score threshold — unrelated research for any
+    // question sharing a word. Removed 10-09: the embedding check above, with its threshold, is the paraphrase match.)
     return null;
   } catch (err) {
     logger.warn({ err: err.message }, 'checkDeepResearch error');
@@ -1478,7 +1456,6 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
     );
 
     // 8. Sync to Meilisearch
-    await syncDeepResearch([researchId]);
 
     // 9. Hero image (non-blocking — failure doesn't fail the research)
     const traditions = traditionsCovered.split(',').filter(Boolean);
@@ -1667,57 +1644,6 @@ function buildSummaryFallback(sections, traditions) {
     aspect_count: sections.length,
     searchable_text: notes.join(' '),
   };
-}
-
-/**
- * Sync deep research records to Meilisearch.
- *
- * @param {number[]} [ids] - specific IDs to sync; omit to sync all complete records
- */
-export async function syncDeepResearch(ids = null) {
-  const meili = getMeili();
-  if (!meili) return;
-
-  const rows = ids
-    ? await queryAll(`SELECT * FROM deep_research WHERE id IN (${ids.map(() => '?').join(',')})`, ids)
-    : await queryAll("SELECT * FROM deep_research WHERE status = 'complete'");
-
-  if (!rows.length) return;
-
-  const docs = rows.map(r => {
-    const summary = r.summary_json ? JSON.parse(r.summary_json) : {};
-    const convergence = r.convergence_json ? JSON.parse(r.convergence_json) : {};
-    const sections = r.sections_json ? JSON.parse(r.sections_json) : [];
-    // Aggregate searchable text from all JSON sections + contextual notes
-    const sectionText = sections.map(s => s.searchable_text || '').join(' ');
-    return {
-      id: r.id,
-      canonical_question: r.canonical_question,
-      question_hash: r.question_hash,
-      slug: r.slug,
-      status: r.status,
-      topic_tags: r.topic_tags ? JSON.parse(r.topic_tags) : [],
-      question_type: r.question_type,
-      traditions_covered: r.traditions_covered ? r.traditions_covered.split(',') : [],
-      ask_count: r.ask_count,
-      priority: r.priority,
-      created_at: r.created_at,
-      completed_at: r.completed_at,
-      // Searchable content from sections + summary (pre-gauged relevancy baked in)
-      summary_text: summary.searchable_text || '',
-      section_text: sectionText,
-      convergence_text: convergence.searchable_text || '',
-      key_points: summary.key_points || [],
-      traditions_agreement: convergence.broadly_agreed || [],
-    };
-  });
-
-  try {
-    await meili.index(INDEXES.DEEP_RESEARCH).addDocuments(docs, { primaryKey: 'id' });
-    logger.info({ count: docs.length }, 'Deep research synced to Meilisearch');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'syncDeepResearch failed');
-  }
 }
 
 /**

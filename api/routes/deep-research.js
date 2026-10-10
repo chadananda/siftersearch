@@ -23,7 +23,6 @@ import {
   getDeepResearchQuotes,
   getDeepResearchBySlug,
   addNotifyEmail,
-  syncDeepResearch,
   generateResearchHeroImage,
   rerankPassages,
   clusterAndStructure,
@@ -117,7 +116,6 @@ export default async function deepResearchRoutes(fastify) {
       'UPDATE deep_research SET priority = COALESCE(?, priority), topic_tags = COALESCE(?, topic_tags), question_type = COALESCE(?, question_type), reviewed_by = COALESCE(?, reviewed_by), reviewed_at = ? WHERE id = ?',
       [priority, topic_tags ? JSON.stringify(topic_tags) : null, question_type, reviewed_by, reviewed_by ? new Date().toISOString() : record.reviewed_at, record.id]
     );
-    if (record.status === 'complete') await syncDeepResearch([record.id]);
     return { success: true };
   });
 
@@ -169,7 +167,6 @@ export default async function deepResearchRoutes(fastify) {
     updates.push('reviewed_at = ?'); params.push(new Date().toISOString());
     params.push(record.id);
     await query(`UPDATE deep_research SET ${updates.join(', ')} WHERE id = ?`, params);
-    if (record.status === 'complete') await syncDeepResearch([record.id]);
     return { success: true };
   });
 
@@ -368,7 +365,6 @@ export default async function deepResearchRoutes(fastify) {
       [JSON.stringify(sections), totalSelected, traditionsCovered, new Date().toISOString(), record.id]
     );
 
-    await syncDeepResearch([record.id]);
 
     logger.info({ researchId: record.id, kept: toKeep.length, removed: toRemove.length, supplemented: supplemented.length }, 'Reassessment complete');
     } catch (err) { logger.error({ researchId: record.id, err }, 'Reassessment failed'); } });

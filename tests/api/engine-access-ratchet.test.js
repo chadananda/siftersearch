@@ -18,7 +18,7 @@ const ALLOWED = new Set([
   'api/lib/config.js', 'api/lib/env-check.js', 'api/routes/search.js', 'scripts/health-check.mjs', 'scripts/system-checks.mjs',
   'scripts/preflight.js', 'scripts/dev.js',
   // ranking + secondary indexes (behind engine.js — P3)
-  'api/lib/search.js', 'api/lib/search/concepts.js', 'api/lib/search/entity.js', 'api/lib/search/hype.js', 'api/lib/deep-research.js',
+  'api/lib/search.js', 'api/lib/search/concepts.js', 'api/lib/search/entity.js', 'api/lib/search/hype.js',
   // data fetched THROUGH the engine — wrong, to repos / findDocuments (P1): all migrated 10-09
   // index writes outside the sync worker — wrong, mark dirty instead (P2)
   'api/routes/admin.js', 'api/routes/tablets.js', 'api/services/library-watcher.js', 'api/services/indexer.js',
