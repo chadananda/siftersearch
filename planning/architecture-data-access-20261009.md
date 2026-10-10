@@ -101,8 +101,17 @@ CLAUDE.md), `agents/agent-librarian.js` if no caller, retired enrichment worker 
   again. The worker no longer RE-UPSERTS deleted/duplicate rows (the lost sync-processor split — the survey's main finding);
   hydration dropped its Meili fallback (it resurrected deleted rows) and excludes duplicates; `meili-pending.js` retired;
   DELETE /server/document no longer crashes halfway. Survey of every removal path: subagent report 10-09 (24 paths, 9 gaps).
-  **Still to do:** the historical backlog — 807,948 soft-deleted + 1,914 duplicate + 151,164 live-in-deleted-doc paragraphs
-  were never removed from Meili (and some from Qdrant). Enqueue in controlled batches off-peak (Qdrant optimizer at 1 thread —
+  **Historical backlog — MEASURED 10-09** (40-id samples per group, looked up in each engine; control rows found in both):
+  | group | rows | Meili | Qdrant |
+  |---|---|---|---|
+  | May deletions (library; incl. 7 scripture editions whose files were removed) | 89k | gone | gone |
+  | Aug bahai-library duplicates (2,980 docs, all duplicate_of set) | 31k | gone | gone |
+  | Sep oceanoflights scrape retirement (68,498 pages, approved 09-29) | 595k | **present** (ool index) | gone |
+  | Oct Partial Inventory rows (metadata, removed 10-04) | 60k | gone | **present** |
+  | live rows flagged is_duplicate | 1.9k | **present** | gone |
+  | live rows inside deleted documents | 151k | **present** | gone |
+  (The first estimate "≈960k never removed" was inferred from code and was wrong in detail.) Plan: enqueue exactly these
+  groups into the outbox off-peak, with a large Meili chunk (few ~95 s jobs) and the Qdrant optimizer throttled. Enqueue in controlled batches off-peak (Qdrant optimizer at 1 thread —
   see feedback_qdrant_bulk_payload_io), not on deploy. Then: site-only stores (siteDbReplaceContent) enqueue explicitly;
   the orphan sweeps become a read-only check.
 - **P3** — `engine.js` interface; Meili ranking code moved behind it unchanged; Qdrant implementation beside it; secondary

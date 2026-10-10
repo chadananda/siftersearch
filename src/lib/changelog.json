@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T01:23:12.270Z",
+  "generated": "2026-10-10T02:22:14.283Z",
   "entries": [
+    {
+      "hash": "1eb9d648",
+      "date": "2026-10-09",
+      "type": "Performance",
+      "description": "Phrase layer = plain top-(limit x4) query grouped client-side, not /query/groups (2.0-2.3 s -> 0.6-1.1 s, same ranking)",
+      "scope": "search"
+    },
     {
       "hash": "8dac46a9",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "91% of claim targets unresolved — the structural defect",
       "scope": null
-    },
-    {
-      "hash": "a6d80913",
-      "date": "2026-09-08",
-      "type": "Other",
-      "description": "OpenAPI tool surface first, battery downstream; add librarian CRUD",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "1eb9d648",
+        "date": "2026-10-09",
+        "type": "Performance",
+        "description": "Phrase layer = plain top-(limit x4) query grouped client-side, not /query/groups (2.0-2.3 s -> 0.6-1.1 s, same ranking)",
+        "scope": "search"
+      },
       {
         "hash": "8dac46a9",
         "date": "2026-10-09",
@@ -7029,15 +7036,6 @@
         "date": "2026-09-09",
         "type": "Other",
         "description": "91% of claim targets unresolved — the structural defect",
-        "scope": null
-      }
-    ],
-    "2026-09-08": [
-      {
-        "hash": "a6d80913",
-        "date": "2026-09-08",
-        "type": "Other",
-        "description": "OpenAPI tool surface first, battery downstream; add librarian CRUD",
         "scope": null
       }
     ]
