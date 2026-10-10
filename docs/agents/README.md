@@ -11,8 +11,9 @@ Two agents are people you talk to, each with its own soul, purpose, tools, sched
 
 - **[Anís](/docs/agents/anis)** — the research companion: a chat on many sites and an email address, answering from the
   library in the reader's interest.
-- **[Librarian](/docs/agents/librarian)** — builds the collection: plans every ingest, works the boxes of documents,
-  hunts the web for hard-to-find texts (designed; building from about mid-November 2026).
+- **[Dewey](/docs/agents/dewey)** — the AI Librarian for Ocean 2.0 (dewey@oceanlibrary.com): checks holdings, takes in
+  scans and finds, improves and organizes the library, works with contributors (designed; building from about
+  mid-November 2026).
 
 The agents below them are **internal** — earlier pipeline components, several superseded by Anís's planned search.
 
@@ -109,7 +110,7 @@ Manages the SifterSearch library collection. Handles document ingestion, metadat
 
 **Key capability:** AI-powered document analysis with ISBN lookup, cover image discovery, and duplicate detection via semantic search.
 
-[Read Librarian Documentation →](/docs/agents/librarian)
+[Read Dewey's page →](/docs/agents/dewey)
 
 ---
 

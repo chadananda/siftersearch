@@ -42,7 +42,14 @@ disambiguating Gleanings / Hidden Words / Epistle (the long pole), lexicon seedi
 
 ---
 
-## 3. Phase B — the Librarian (new, Chad 10-10)
+## 3. Phase B — Dewey, the AI Librarian (new, Chad 10-10)
+
+**Named Dewey (dewey@oceanlibrary.com), signed "Dewey · AI Librarian for Ocean 2.0". Full design: `docs/agents/agent-dewey.md`
+(/docs/agents/dewey). Decided 10-10: budget $300/month; OCR via the searchlayerpdf API (original + upgraded PDF kept on tower,
+the Markdown used; poor output re-processed about yearly); holdings check by title, author, text or emailed phone photo;
+image attachments and Google attachment links; Chad scans raw PDFs when a document isn't held; contributor whitelist with
+profiles; weekly report to Chad; models Clef / Haiku 5.5 / DeepSeek / Opus 5.5 with Clef-chosen pre-baked research
+strategies and a monthly analysis of Dewey's own queries.** The sections below are the earlier draft; the page supersedes them.
 
 > "I need a good librarian agent with a page for chat and an email address for chat. I want the librarian to manage the
 > ingest strategy for each new document and also to constantly be searching the internet for important documents to add.

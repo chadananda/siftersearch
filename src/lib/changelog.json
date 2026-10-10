@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T16:22:07.086Z",
+  "generated": "2026-10-10T16:36:04.713Z",
   "entries": [
+    {
+      "hash": "69ce114c",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Import script + docs-repo setDocCover; image Worker config",
+      "scope": "covers"
+    },
     {
       "hash": "482dc84a",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Clear the two gate regressions — currency 10 -> 5, elegance 237 -> 235",
       "scope": null
-    },
-    {
-      "hash": "010c69c2",
-      "date": "2026-09-10",
-      "type": "Chore",
-      "description": "Baseline and status after the second sweep",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "69ce114c",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Import script + docs-repo setDocCover; image Worker config",
+        "scope": "covers"
+      },
       {
         "hash": "482dc84a",
         "date": "2026-10-10",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-10",
         "type": "Other",
         "description": "Clear the two gate regressions — currency 10 -> 5, elegance 237 -> 235",
-        "scope": null
-      },
-      {
-        "hash": "010c69c2",
-        "date": "2026-09-10",
-        "type": "Chore",
-        "description": "Baseline and status after the second sweep",
         "scope": null
       }
     ]

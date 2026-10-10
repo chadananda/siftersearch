@@ -6,6 +6,7 @@ import DocsLayout from '../../../layouts/DocsLayout.astro';
 // SSR (worker-based): resolve the agent doc by slug at request time. (Was getStaticPaths/prerender under Astro 5;
 // Astro 7's prerender-in-Workers path can't bundle the CJS `createRequire` shim, so the whole site renders on-demand.)
 const { slug: slugParam } = Astro.params;
+if (slugParam === 'librarian') return Astro.redirect('/docs/agents/dewey', 301);   // renamed 10-10
 const agents = await getCollection('agents');
 const agent = agents.find((a) => a.id.replace('agent-', '') === slugParam);
 if (!agent) return Astro.redirect('/404');
