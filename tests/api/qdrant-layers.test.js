@@ -30,12 +30,41 @@ describe('layers', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('phrases: query prefix, rescoring, one hit per paragraph with its span', async () => {
+  it('phrases: a plain top-(limit×4) query, best phrase per paragraph kept in score order (no /query/groups)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body); calls.push({ url, body });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      return { ok: true, json: async () => ({ result: { points: [
+        { score: 0.9, payload: { paragraph_id: 11, doc_id: 2, start: 5, end: 40 } },
+        { score: 0.8, payload: { paragraph_id: 11, doc_id: 2, start: 50, end: 90 } },   // same paragraph, weaker phrase
+        { score: 0.7, payload: { paragraph_id: 12, doc_id: 3, start: 0, end: 30 } },
+      ] } }) };
+    }));
     const r = await searchPhrases('the light of justice', { limit: 5, filters: { religion: "Baha'i" } });
     expect(calls[0].body.content.parts[0].text).toBe('task: search result | query: the light of justice');
-    const q = calls[1].body;
-    expect(q).toMatchObject({ using: 'literal', group_by: 'paragraph_id', group_size: 1, limit: 5, params: { quantization: { rescore: true } } });
-    expect(r.hits).toEqual([{ paragraph_id: 11, doc_id: 2, score: 0.8, span: { start: 5, end: 40 } }]);
+    expect(calls[1].url).toContain('/collections/phrases/points/query');
+    expect(calls[1].url).not.toContain('/groups');
+    expect(calls[1].body).toMatchObject({ using: 'literal', limit: 20, params: { quantization: { rescore: true } } });
+    expect(calls[1].body.group_by).toBeUndefined();
+    expect(r.hits).toEqual([
+      { paragraph_id: 11, doc_id: 2, score: 0.9, span: { start: 5, end: 40 } },
+      { paragraph_id: 12, doc_id: 3, score: 0.7, span: { start: 0, end: 30 } },
+    ]);
+    expect(calls).toHaveLength(2);   // a short result (fewer points than asked for) needs no fallback
+  });
+
+  it('phrases: a FULL page with fewer distinct paragraphs than the limit falls back to the grouped query', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body); calls.push({ url, body });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      if (url.includes('/query/groups')) return { ok: true, json: async () => ({ result: { groups: [
+        { hits: [{ score: 0.8, payload: { paragraph_id: 11, doc_id: 2, start: 5, end: 40 } }] },
+        { hits: [{ score: 0.6, payload: { paragraph_id: 13, doc_id: 4, start: 1, end: 9 } }] }] } }) };
+      return { ok: true, json: async () => ({ result: { points: Array.from({ length: 8 }, () => ({ score: 0.8, payload: { paragraph_id: 11, doc_id: 2, start: 5, end: 40 } })) } }) };
+    }));
+    const r = await searchPhrases('one paragraph dominates', { limit: 2 });
+    expect(calls.at(-1).url).toContain('/collections/phrases/points/query/groups');
+    expect(r.hits.map((h) => h.paragraph_id)).toEqual([11, 13]);
   });
 
   it('hype: the hype collection, same query vector model, one hit per paragraph', async () => {

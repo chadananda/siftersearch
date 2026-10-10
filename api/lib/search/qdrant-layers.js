@@ -76,17 +76,37 @@ async function qdrant(path, body, timeoutMs = 2500) {
 /** Raw request for the index writer (deletes by filter from the outbox) — the only Qdrant WRITE path at runtime. */
 export const qdrantRequest = (path, body, timeoutMs = 15000) => qdrant(path, body, timeoutMs);
 
-/** → { hits: [{ paragraph_id, doc_id, score, span: {start, end} }] } — best phrase per paragraph. */
+/** Best point per paragraph, in score order — what Qdrant's /query/groups computes, done on a plain top-N result. Pure. */
+export function bestPerParagraph(points, limit) {
+  const seen = new Set(), out = [];
+  for (const p of points) {
+    const pid = p.payload?.paragraph_id;
+    if (pid == null || seen.has(pid)) continue;
+    seen.add(pid); out.push(p);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** → { hits: [{ paragraph_id, doc_id, score, span: {start, end} }] } — best phrase per paragraph.
+ *  A plain top-(limit×4) query grouped here, not Qdrant's /query/groups: measured 10-09 the grouped query cost 2.0–2.3 s
+ *  vs 0.6–1.1 s for the plain one, which already held 60–101 distinct paragraphs for limit 30 (same ranking: best phrase
+ *  per paragraph). Only when fewer than `limit` distinct paragraphs come back does it fall back to the grouped query. */
 export async function searchPhrases(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.phrase } = {}) {
   const vector = await geminiQueryVector(query);
-  const res = await qdrant('/collections/phrases/points/query/groups', {
-    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'start', 'end'],
-    params: searchParams(params), filter: toQdrantFilter(filters),
+  const payload = ['paragraph_id', 'doc_id', 'start', 'end'];
+  const filter = toQdrantFilter(filters);
+  const res = await qdrant('/collections/phrases/points/query', {
+    query: vector, using: 'literal', limit: limit * 4, with_payload: payload, params: searchParams(params), filter,
   }, timeoutMs);
-  return { hits: (res.groups || []).map((g) => {
-    const p = g.hits[0];
-    return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end } };
-  }) };
+  let best = bestPerParagraph(res.points || [], limit);
+  if (best.length < limit && (res.points || []).length >= limit * 4) {
+    const g = await qdrant('/collections/phrases/points/query/groups', {
+      query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: payload, params: searchParams(params), filter,
+    }, timeoutMs);
+    best = (g.groups || []).map((x) => x.hits[0]);
+  }
+  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end } })) };
 }
 
 /** The quote's best-matching PHRASES inside one paragraph: [{ start, end, score }] (character spans of the indexed text) —

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T01:20:18.472Z",
+  "generated": "2026-10-10T01:23:12.270Z",
   "entries": [
+    {
+      "hash": "8dac46a9",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Qdrant-only search degrades to one longer BM25 retry when every Qdrant layer fails (was an empty page)",
+      "scope": "search"
+    },
     {
       "hash": "5ecc87b9",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "OpenAPI tool surface first, battery downstream; add librarian CRUD",
       "scope": null
-    },
-    {
-      "hash": "fe8de97d",
-      "date": "2026-09-08",
-      "type": "Other",
-      "description": "Anis tool battery; API exposes result shapes not retrieval methods",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "8dac46a9",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Qdrant-only search degrades to one longer BM25 retry when every Qdrant layer fails (was an empty page)",
+        "scope": "search"
+      },
       {
         "hash": "5ecc87b9",
         "date": "2026-10-09",
@@ -7031,13 +7038,6 @@
         "date": "2026-09-08",
         "type": "Other",
         "description": "OpenAPI tool surface first, battery downstream; add librarian CRUD",
-        "scope": null
-      },
-      {
-        "hash": "fe8de97d",
-        "date": "2026-09-08",
-        "type": "Other",
-        "description": "Anis tool battery; API exposes result shapes not retrieval methods",
         "scope": null
       }
     ]
