@@ -223,18 +223,16 @@ describe('highlight by SPAN decision (start clause, end clause)', () => {
     const r = await sourceHunt(QUOTE, setup(() => null));
     expect(r.tablet.highlightBy).toBe(null);
   });
-  it('agreeing Clef models answer alone (no Jev call)', async () => {
+  it('Jev decides alone — no Clef call when Jev answers (10-10: Jev first)', async () => {
     const calls = [];
     await sourceHunt(QUOTE, setup((b, cs) => [clauseWith(cs, 'وطن'), clauseWith(cs, 'وطن')], calls));
-    expect(calls.map((c) => c.backend)).not.toContain('jev');
-    expect(new Set(calls.map((c) => c.backend))).toEqual(new Set(['clef', 'clef-flash']));
+    expect(calls.map((c) => c.backend)).toEqual(['jev']);
   });
-  it('disagreement → Jev votes and each end takes the majority', async () => {
+  it('Jev fails → Clef-flash answers', async () => {
     const calls = [];
-    const r = await sourceHunt(QUOTE, setup((b, cs) => (b === 'clef-flash' ? [clauseWith(cs, 'بخدمت'), clauseWith(cs, 'وطن')] : [clauseWith(cs, 'وطن'), clauseWith(cs, 'وطن')]), calls));
-    expect(calls.map((c) => c.backend)).toContain('jev');
+    const r = await sourceHunt(QUOTE, setup((b, cs) => (b === 'jev' ? null : [clauseWith(cs, 'وطن'), clauseWith(cs, 'وطن')]), calls));
+    expect(calls.map((c) => c.backend)).toEqual(['jev', 'clef-flash']);
     expect(marked(r)).toContain('وطن');
-    expect(marked(r)).not.toContain('بخدمت');
   });
   it('an elided quote asks once per run and keeps separate ranges', async () => {
     const r = await sourceHunt('That one indeed is a man who … the earth is but one country, and mankind its citizens',

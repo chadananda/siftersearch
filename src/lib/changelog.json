@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T18:57:37.837Z",
+  "generated": "2026-10-10T19:03:27.379Z",
   "entries": [
+    {
+      "hash": "a2329bd9",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Clef is near-free when used correctly — short states, no bulk shadowing",
+      "scope": "dewey"
+    },
     {
       "hash": "7b0b075c",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Chat is a layer over raw search — plan + zero-LLM retrieval → ONE fast streamed reply",
       "scope": "anis"
-    },
-    {
-      "hash": "3b075e75",
-      "date": "2026-09-24",
-      "type": "Fixed",
-      "description": "Jev backstop also reads a NAMED author (as a preference, implying Bahá'í scope)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "a2329bd9",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Clef is near-free when used correctly — short states, no bulk shadowing",
+        "scope": "dewey"
+      },
       {
         "hash": "7b0b075c",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "New",
         "description": "Chat is a layer over raw search — plan + zero-LLM retrieval → ONE fast streamed reply",
         "scope": "anis"
-      },
-      {
-        "hash": "3b075e75",
-        "date": "2026-09-24",
-        "type": "Fixed",
-        "description": "Jev backstop also reads a NAMED author (as a preference, implying Bahá'í scope)",
-        "scope": "search"
       }
     ]
   }

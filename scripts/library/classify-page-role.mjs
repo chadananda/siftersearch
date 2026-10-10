@@ -18,6 +18,7 @@ const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.inde
 const FILE = opt('--ids'), OUT = opt('--out');
 const PER = Number(opt('--per-class', 0)), CONC = Number(opt('--concurrency', 8)), LIMIT = Number(opt('--limit', 0));
 const JEV = process.argv.includes('--compare-jev');
+const BACKEND = opt('--backend', 'jev');   // Jev first (10-10: Clef lists at ~6x Jev per token); --backend clef|clef-flash to override
 if (!FILE || !OUT) throw new Error('--ids and --out are required');
 
 const lines = readFileSync(FILE, 'utf8').split('\n').filter(Boolean);
@@ -43,7 +44,7 @@ async function one(r) {
     paragraphs: await countParagraphs(r.id) }, text ?? '');
   const rec = { doc_id: r.id, classes: r.classes, file_missing: text == null };
   try {
-    const a = await ask(TASK, state, QUESTIONS, { backend: 'clef', ref: r.id, timeoutMs: 30000 });
+    const a = await ask(TASK, state, QUESTIONS, { backend: BACKEND, ref: r.id, timeoutMs: 30000 });
     Object.assign(rec, parseRole(a.answers) ?? { role: null });
     if (JEV) Object.assign(rec, { jev: parseRole((await ask(TASK, state, QUESTIONS, { backend: 'jev', ref: r.id, log: false })).answers)?.role ?? null });
   } catch (e) { failed++; rec.error = String(e.message || e).slice(0, 200); }

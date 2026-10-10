@@ -370,8 +370,8 @@ async function decideRanges(d, quoteText, text, lang, hint = []) {
   return spans.filter(Boolean).map(([a, b]) => [units[a].start, units[b].end]).sort((x, y) => x[0] - y[0]);
 }
 
-/** Start and end clause of one quoted run: Clef and Clef-flash answer in parallel; if they disagree on either end, Jev's
- *  answer joins and each end takes the majority (Chad 10-05: vote, Jev as the second opinion). [a, b] clause indexes, or null. */
+/** Start and end clause of one quoted run. Jev decides (Chad 10-10: "use Jev first" — Clef lists at ~6x Jev per token);
+ *  Clef-flash only if Jev fails. Was a Clef + Clef-flash vote with Jev on disagreement (10-05). [a, b] clause indexes, or null. */
 async function spanVote(d, quoteText, text, units) {
   const clause = (u) => text.slice(u.start, u.end);
   const state = `QUOTATION (English):\n${quoteText}\n\nPASSAGE — numbered clauses:\n` + units.map((u, i) => `[c${i + 1}] ${clause(u)}`).join('\n');
@@ -382,13 +382,8 @@ async function spanVote(d, quoteText, text, units) {
   };
   const ask = (backend) => d.decide('sourcehunt-span', state, questions, { backend }).then((r) => r?.answers || null).catch(() => null);
   const at = (ans, k) => { const m = /c(\d+)/.exec(String(ans?.[k]?.choice ?? ans?.[k]?.value ?? '')); const i = m ? Number(m[1]) - 1 : -1; return i >= 0 && i < units.length ? i : null; };
-  const [big, flash] = await Promise.all([ask('clef'), ask('clef-flash')]);
-  let s = at(big, 'start'), e = at(big, 'end');
-  if (s == null || s !== at(flash, 'start') || e !== at(flash, 'end')) {
-    const jev = await ask('jev');
-    const maj = (k) => { const v = [at(big, k), at(flash, k), at(jev, k)].filter((x) => x != null); return v.find((x) => v.filter((y) => y === x).length >= 2) ?? at(jev, k) ?? v[0] ?? null; };
-    s = maj('start'); e = maj('end');
-  }
+  const ans = (await ask('jev')) || (await ask('clef-flash'));
+  let s = at(ans, 'start'), e = at(ans, 'end');
   if (s == null && e == null) return null;
   s ??= e; e ??= s;
   return s <= e ? [s, e] : [e, s];

@@ -11,6 +11,8 @@
 // token): POST {CLEF_URL}/_s1/run with the internal key. Env: CLEF_URL (default https://siftersearch.com), INTERNAL_API_KEY,
 // CLEF=off to disable, SYSTEMONE_SHADOW (default "clef,clef-flash"; "" turns shadowing off). Clef is vision-capable: any
 // image input in the request body is passed through to the model.
+// POLICY 10-10 (Chad: "use Jev first"): Jev is the default primary everywhere — Clef lists at $0.24/M input, ~6× Jev's
+// $0.042/M (Clef-flash ≈ Jev). Clef is a fallback or a sampled shadow; the way off Jev is a TRAINED Laya (free, local).
 import Database from 'better-sqlite3';
 import { logAIUsage } from './ai-services.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
 import { existsSync, mkdirSync, readFileSync } from 'fs';
