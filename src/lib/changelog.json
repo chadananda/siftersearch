@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:40:15.958Z",
+  "generated": "2026-10-10T20:50:40.140Z",
   "entries": [
+    {
+      "hash": "cf3962ec",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "In cluster mode the API finishes startup work before listening (API_PREBOOT)",
+      "scope": "deploy"
+    },
     {
       "hash": "9d17a734",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Attach claim-cited evidence paragraphs AFTER source resolution (it relabelled them)",
       "scope": "search"
-    },
-    {
-      "hash": "ea206958",
-      "date": "2026-09-25",
-      "type": "New",
-      "description": "Jev picks the people pattern; raw search returns the cited-claim graph (who, what, when)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "cf3962ec",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "In cluster mode the API finishes startup work before listening (API_PREBOOT)",
+        "scope": "deploy"
+      },
       {
         "hash": "9d17a734",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "Fixed",
         "description": "Attach claim-cited evidence paragraphs AFTER source resolution (it relabelled them)",
-        "scope": "search"
-      },
-      {
-        "hash": "ea206958",
-        "date": "2026-09-25",
-        "type": "New",
-        "description": "Jev picks the people pattern; raw search returns the cited-claim graph (who, what, when)",
         "scope": "search"
       }
     ]

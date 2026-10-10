@@ -10,6 +10,9 @@ const olDocs = [
   ol(2, "Baha'i", "Bahá'í/Bahá’u’lláh/The Kitáb-i-Íqán.md", 'Bahá’u’lláh', 'The Kitáb-i-Íqán', { cover_url: '/img/covers/2?v=a' }),
   ol(3, "Baha'i", "Bahá'í/Bahá’u’lláh/Gleanings.md", 'Bahá’u’lláh', 'Gleanings'),
   ol(4, "Baha'i", "Bahá'í/Rúḥíyyih Rabbání, The Priceless Pearl.md", 'Rúḥíyyih Rabbání', 'The Priceless Pearl'),
+  ol(5, "Baha'i", "Bahá'í/Bahá’u’lláh/Lights of Guidance.md", 'Helen Hornby (compiler)', 'Lights of Guidance'),
+  { id: 6, religion: "Baha'i", author: 'Bahá’u’lláh', title: 'Gleanings', file_path: "Baha'i/Core Publications/Gleanings.md", collection: 'Core Publications' },
+  { id: 7, religion: "Baha'i", author: 'X', title: 'A News Item', file_path: "Baha'i/News/x.md", collection: 'News' },
   ol(10, 'Islam', 'Islam/The Quran (Rodwell)/Sura I.md', 'Muhammad', 'Sura I'),
   ol(11, 'Islam', 'Islam/The Quran (Rodwell)/Sura II.md', 'Muhammad', 'Sura II'),
 ];
@@ -24,12 +27,13 @@ describe('buildShelves', () => {
   it("Bahá'í first; its lead shelves in order, 'More works' last", () => {
     expect(bahai.name).toBe("Baha'i");
     expect(bahai.shelves.map((x) => x.name)).toEqual(['Bahá’u’lláh', 'Research Department Compilations', 'More works']);
+    expect(bahai.shelves[2].items.map((i) => i.title)).toEqual(['A News Item', 'The Priceless Pearl']);   // outside-folder file → More works
   });
   it('author shelf: books as cards, cover kept, "N more" from the folded author spellings', () => {
     const b = bahai.shelves[0];
-    expect(b.items.map((i) => i.title)).toEqual(['Gleanings', 'The Kitáb-i-Íqán']);
-    expect(b.items[1].cover).toBe('/img/covers/2?v=a');
-    expect(b.more).toEqual({ count: 40, authors: ['Bahá’u’lláh', "Baha'u'llah"] });
+    expect(b.items.map((i) => i.title)).toEqual(['Gleanings', 'Lights of Guidance', 'The Kitáb-i-Íqán']);   // compiler-credited book stays; Core Publications copy dropped
+    expect(b.items[2].cover).toBe('/img/covers/2?v=a');
+    expect(b.more).toEqual({ count: 39, authors: ['Bahá’u’lláh', "Baha'u'llah"] });
   });
   it('a multi-part work is one card with its part count', () => {
     const q = s.traditions.find((t) => t.name === 'Islam').shelves[0];

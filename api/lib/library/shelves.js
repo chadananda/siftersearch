@@ -3,7 +3,7 @@
 // index the /library page renders in one request. Built out of process (scripts/pipeline-snapshot.js →
 // data/library-shelves.json), served edge-cached by GET /api/library/shelves; a shelf's "N more" opens through
 // GET /api/library/shelves/items. A multi-part work (KJV, Qur'an…) is ONE card (ol-works.js).
-import { olPlacement } from './ol-works.js';
+import { olPlacement, OL_SHELVES_OF_SEPARATE_WORKS } from './ol-works.js';
 import { slugifyPath, generateDocSlug } from '../slug.js';
 
 export const SHELVES_FILE = 'library-shelves.json';
@@ -33,9 +33,14 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
     return trads.get(name);
   };
   // 1. OceanLibrary shelves
+  // OceanLibrary-labelled files OUTSIDE its folder (old Core Publications copies, restored books) go to "More works",
+  // unless the same title already stands on a shelf from the OceanLibrary folder.
+  const inFolder = (d) => String(d.file_path || '').includes('oceanlibrary.com/');
+  const shelved = new Set(olDocs.filter(inFolder).map((d) => `${d.religion}|${fold(d.title)}`));
   for (const d of olDocs) {
     if (!d.religion) continue;
-    const { shelf, work } = olPlacement(d.file_path, d.author);
+    if (!inFolder(d) && shelved.has(`${d.religion}|${fold(d.title)}`)) continue;
+    const { shelf, work } = inFolder(d) ? olPlacement(d.file_path, d.author) : { shelf: null, work: null };
     const t = trad(d.religion);
     const key = shelf || '';
     if (!t.shelves.has(key)) t.shelves.set(key, { name: shelf || 'More works', key, books: [], works: new Map() });
@@ -64,7 +69,8 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
         cover: w.cover, url: docUrl(w.first), id: w.first.id }));
       const items = [...works, ...s.books.sort((a, b) => a.title.localeCompare(b.title))];
       // "N more": an author shelf opens the rest of that author's works in the library (all sites, any collection)
-      const isAuthor = s.key && fold(s.key) !== 'unknown' && !works.length && s.books.every((b) => fold(b.author) === fold(s.key));
+      // the folder decides (a compilation filed under Bahá'u'lláh is still on his shelf)
+      const isAuthor = s.key && fold(s.key) !== 'unknown' && !works.length && !OL_SHELVES_OF_SEPARATE_WORKS.has(s.key);
       const more = isAuthor ? byAuthor.get(`${t.name}|${fold(s.key)}`) : null;
       const extra = more ? Math.max(0, more.n - s.books.length) : 0;
       return { name: fold(s.name) === 'unknown' ? 'Other works' : s.name, key: s.key, count: items.length,
