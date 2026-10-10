@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T22:27:57.240Z",
+  "generated": "2026-10-10T22:41:01.041Z",
   "entries": [
+    {
+      "hash": "92a443d7",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Tower S3 gateway (versitygw) — the image Worker reads Tower originals the way it reads R2",
+      "scope": "storage"
+    },
     {
       "hash": "bbcff6ef",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Who-met-whom runs on every query (a slow plan no longer drops it); resolve copy checks bounded by the deadline; target scans memoised",
       "scope": "search"
-    },
-    {
-      "hash": "37c0c2a0",
-      "date": "2026-09-26",
-      "type": "Performance",
-      "description": "1s strategy budget — one shared query embedding (prefetched during planning), deadline-bounded source judge, 700ms planner cap",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "92a443d7",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Tower S3 gateway (versitygw) — the image Worker reads Tower originals the way it reads R2",
+        "scope": "storage"
+      },
       {
         "hash": "bbcff6ef",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "Fixed",
         "description": "Who-met-whom runs on every query (a slow plan no longer drops it); resolve copy checks bounded by the deadline; target scans memoised",
-        "scope": "search"
-      },
-      {
-        "hash": "37c0c2a0",
-        "date": "2026-09-26",
-        "type": "Performance",
-        "description": "1s strategy budget — one shared query embedding (prefetched during planning), deadline-bounded source judge, 700ms planner cap",
         "scope": "search"
       }
     ]

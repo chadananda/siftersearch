@@ -2,6 +2,7 @@
   // The library as shelves of small cards (Chad 10-10): OceanLibrary shelves first; under each, "+ N more" opens the rest
   // of that author's works in the library; then the tradition's other collections, each opening on demand. Renders from
   // ONE edge-cached index (/api/library/shelves, built out of process). Multi-part works (KJV, Qur'an…) are one card.
+  // Covers are transparent PNG/WebP art: shown bare (no box behind them); full page width (Chad 10-10).
   import { onMount } from 'svelte';
   import { svcFixed } from '../../lib/imagekit.js';
 
@@ -49,7 +50,7 @@
     {#if cover(b.cover)}
       {@const c = cover(b.cover)}
       <img src={c.src} srcset={c.srcset} width="96" height="144" alt="" loading="lazy" decoding="async"
-        class="w-full aspect-[2/3] object-cover rounded-md border border-border-subtle bg-surface-2 group-hover:border-accent" />
+        class="w-full aspect-[2/3] object-contain object-bottom transition-transform group-hover:-translate-y-0.5" />
     {:else}
       <div class="w-full aspect-[2/3] rounded-md border border-border-subtle bg-surface-2 group-hover:border-accent p-2 flex items-end">
         <span class="text-[0.7rem] leading-tight text-secondary line-clamp-5">{b.title}</span>
@@ -67,7 +68,7 @@
   </div>
 {/snippet}
 
-<div class="mx-auto max-w-6xl px-4 py-6 flex flex-col gap-6">
+<div class="w-full px-4 sm:px-6 py-6 flex flex-col gap-6">
   <header class="flex flex-wrap items-end justify-between gap-3">
     <div>
       <h1 class="text-2xl font-semibold text-primary">Library</h1>
