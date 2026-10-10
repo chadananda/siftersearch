@@ -4,8 +4,13 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
+// Spend ledger mocked: hermetic (no telemetry DB, and importing the real ai-services would load the env files back).
+const spent = [];
+vi.mock('../../api/lib/ai-services.js', () => ({ logAIUsage: (row) => spent.push(row) }));
+
 let dir, mod, urls;
 beforeEach(async () => {
+  spent.length = 0;
   dir = mkdtempSync(join(tmpdir(), 'systemone-'));
   process.env.SYSTEMONE_DIR = dir; process.env.LAYA_TOKEN = 't'; process.env.TYPESAFE_API_KEY = 'k';
   // hermetic: the real .env-secrets may carry the internal key, which would switch Clef shadowing on
@@ -35,6 +40,8 @@ describe('systemone.ask', () => {
     const row = mod._test.db().prepare('SELECT * FROM calls WHERE id = ?').get(r.id);
     expect(row).toMatchObject({ task: 'paragraph-attribution', ref: '42', jev_tokens: 900, laya: null, served_by: 'jev' });
     expect(JSON.parse(row.jev).speaker.distribution['Shoghi Effendi']).toBe(0.97);
+    // every paid call is spend: one ai_usage row, priced as jev-latest, with its tokens and task
+    expect(spent).toEqual([expect.objectContaining({ provider: 'typesafe', model: 'jev-latest', promptTokens: 900, caller: 'system1:paragraph-attribution' })]);
   });
   it('trained task: Laya shadows Jev; when Laya is primary and confident it serves', async () => {
     writeFileSync(join(dir, 'routing.json'), JSON.stringify({ 'paragraph-attribution': { laya_model: 'ckpt-attr-v1' }, 'search-scope': { laya_model: 'ckpt-scope-v1', primary: 'laya' } }));

@@ -507,7 +507,23 @@ export const MODEL_REGISTRY = {
     quality: 'quality',
     local: true,
     notes: 'Optimized for retrieval. Good for search applications.'
-  }
+  },
+
+  // ── Spend-tracking entries (10-10: "make sure all spending is tracked"). Pricing per 1K tokens like the rest.
+  // `unpriced: true` = the rate is not known to us yet: calls and tokens are still logged, and the analytics page lists
+  // these models as UNPRICED instead of silently showing $0. Replace with the invoice rate when known.
+  'jev-latest': {
+    provider: 'typesafe', name: 'Jev (System-1)', type: 'classification',
+    pricing: { input: 0.000042, output: 0 },   // Chad 09-28: $42 per BILLION input tokens, output free
+  },
+  'clef': { provider: 'cloudflare', name: 'Clef (System-1, Workers AI)', type: 'classification', pricing: { input: 0, output: 0 }, unpriced: true },
+  'clef-flash': { provider: 'cloudflare', name: 'Clef-flash (System-1, Workers AI)', type: 'classification', pricing: { input: 0, output: 0 }, unpriced: true },
+  'gemini-embedding-2': {
+    provider: 'google', name: 'Gemini Embedding 2', type: 'embedding',
+    pricing: { input: 0.0002, output: 0 },     // $0.20 / 1M — the rate the phrase indexer has billed against (gemini-spend.db)
+  },
+  'gemini-3.5-flash-lite': { provider: 'google', name: 'Gemini 3.5 Flash-Lite (Anís replies)', type: 'chat', pricing: { input: 0, output: 0 }, unpriced: true },
+  'llama-3.3-70b-versatile': { provider: 'groq', name: 'Llama 3.3 70B (Groq)', type: 'chat', pricing: { input: 0, output: 0 }, unpriced: true },
 };
 
 // =============================================================================

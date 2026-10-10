@@ -12,6 +12,7 @@
 // CLEF=off to disable, SYSTEMONE_SHADOW (default "clef,clef-flash"; "" turns shadowing off). Clef is vision-capable: any
 // image input in the request body is passed through to the model.
 import Database from 'better-sqlite3';
+import { logAIUsage } from './ai-services.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -59,6 +60,14 @@ export function routeFor(task) {
   return r;
 }
 
+/** One ai_usage row per paid System-1 call (Jev: $42/B input; Clef: unpriced until known — still counted). */
+function spend(provider, model, usage, caller) {
+  try {
+    logAIUsage({ provider, model, serviceType: 'system1', caller: `system1:${caller}`,
+      promptTokens: usage?.input_tokens ?? usage?.prompt_tokens ?? 0, completionTokens: usage?.output_tokens ?? usage?.completion_tokens ?? 0 });
+  } catch { /* spend logging must never break a decision */ }
+}
+
 const layaToken = () => process.env.LAYA_TOKEN
   || (existsSync(process.env.LAYA_TOKEN_FILE || `${process.env.HOME}/.laya-token`) ? readFileSync(process.env.LAYA_TOKEN_FILE || `${process.env.HOME}/.laya-token`, 'utf8').trim() : '');
 
@@ -70,10 +79,11 @@ async function post(url, token, body, timeoutMs) {
   return { json: await r.json(), ms: Date.now() - t0 };
 }
 
-async function callJev(state, questions, timeoutMs, retries = 4) {
+async function callJev(state, questions, timeoutMs, retries = 4, spendCaller = 'system1') {
   for (let attempt = 0; ; attempt++) {
     try {
       const { json, ms } = await post(JEV_URL, process.env.TYPESAFE_API_KEY, { model: 'jev-latest', state, questions }, timeoutMs);
+      spend('typesafe', 'jev-latest', json.usage, spendCaller);
       return { answers: json.answers, tokens: json.usage?.input_tokens ?? null, model: json.model, ms };
     } catch (e) {
       if (attempt >= retries || (e.status && ![429, 500, 502, 503, 504].includes(e.status))) throw e;
@@ -82,7 +92,7 @@ async function callJev(state, questions, timeoutMs, retries = 4) {
   }
 }
 /** Clef via our own Worker (Workers AI binding): same {state, questions} body as Jev, plus any image input. */
-async function callClef(model, state, questions, timeoutMs) {
+async function callClef(model, state, questions, timeoutMs, spendCaller = 'system1') {
   const t0 = Date.now();
   const r = await fetch(`${process.env.CLEF_URL || 'https://siftersearch.com'}/_s1/run`, { method: 'POST', signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', 'X-Internal-Key': clefKey() }, body: JSON.stringify({ model, state, questions }) });
@@ -90,10 +100,11 @@ async function callClef(model, state, questions, timeoutMs) {
   const json = await r.json();
   const answers = json.answers ?? json.result?.answers;
   if (!answers || typeof answers !== 'object') throw new Error(`${model}: no answers in response`);
+  spend('cloudflare', model, json.usage, spendCaller);
   return { answers, ms: Date.now() - t0, model, tokens: json.usage?.input_tokens ?? null };
 }
-const callBackend = (backend, task, route, state, questions, timeoutMs, retries) => (backend === 'jev' ? callJev(state, questions, timeoutMs, retries)
-  : CLEF.has(backend) ? callClef(backend, state, questions, timeoutMs) : callLaya(task, route.laya_model, state, questions, timeoutMs));
+const callBackend = (backend, task, route, state, questions, timeoutMs, retries) => (backend === 'jev' ? callJev(state, questions, timeoutMs, retries, `${task}:shadow`)
+  : CLEF.has(backend) ? callClef(backend, state, questions, timeoutMs, `${task}:shadow`) : callLaya(task, route.laya_model, state, questions, timeoutMs));
 
 async function callLaya(task, model, state, questions, timeoutMs) {
   const { json, ms } = await post(LAYA_URL, layaToken(), { task, model, state, questions }, timeoutMs);
@@ -119,15 +130,15 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
   if (route.primary === 'laya') {
     try { laya = await callLaya(task, route.laya_model, state, questions, Math.min(timeoutMs, 8000)); } catch { laya = null; }
     if (laya && minConfidence(laya.answers) >= route.min_conf) served = 'laya';
-    else { jev = await callJev(state, questions, timeoutMs, retries); served = 'jev'; }
+    else { jev = await callJev(state, questions, timeoutMs, retries, task); served = 'jev'; }
   } else if (CLEF.has(route.primary)) {
-    try { primary = await callClef(route.primary, state, questions, timeoutMs); served = route.primary; }
+    try { primary = await callClef(route.primary, state, questions, timeoutMs, task); served = route.primary; }
     catch (e) {
       if (backend) throw e;                                                                    // a forced backend fails honestly
-      jev = await callJev(state, questions, timeoutMs, retries); served = 'jev';                // Clef down → Jev, never no answer
+      jev = await callJev(state, questions, timeoutMs, retries, task); served = 'jev';                // Clef down → Jev, never no answer
     }
   } else {
-    jev = await callJev(state, questions, timeoutMs, retries); served = 'jev';
+    jev = await callJev(state, questions, timeoutMs, retries, task); served = 'jev';
     if (route.laya_model && (shadow ?? route.shadow)) { try { laya = await callLaya(task, route.laya_model, state, questions, 8000); } catch { laya = null; } }
   }
   let id = null;
@@ -162,6 +173,7 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
 export function record(task, state, questions, { answers, ms = null, model = null, tokens = null, ref = null } = {}) {
   try {
     if (!task || !answers) return null;
+    spend('typesafe', 'jev-latest', { input_tokens: tokens || 0 }, task);   // a Jev call made outside ask() is spend too (priced as jev-latest)
     const st = typeof state === 'string' ? state : JSON.stringify(state);
     const id = db().prepare(`INSERT INTO calls (task, at, ref, state, questions, jev, jev_tokens, jev_ms, jev_model, served_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'jev')`).run(task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions),

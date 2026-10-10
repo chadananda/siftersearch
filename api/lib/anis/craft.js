@@ -3,6 +3,7 @@
 // and speed can change without code. Deps: openai SDK, anis/prompt.js.
 import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
+import { logAIUsage } from '../ai-services.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
 const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
@@ -27,15 +28,21 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     // Reasoning models spend completion tokens thinking; leave room so the reply is never truncated.
     max_tokens: llm.reasoning_effort && llm.reasoning_effort !== 'none' ? 1500 : 700,
     stream: true,
+    stream_options: { include_usage: true },   // the final chunk reports tokens → spend (ai_usage)
     ...(llm.reasoning_effort ? { reasoning_effort: llm.reasoning_effort } : {}),
     // DeepSeek v4-flash thinks unless told not to — TOP-LEVEL key, not extra_body (see ai-services chatDeepSeek).
     ...(llm.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
   };
   const stream = await client(llm.provider).chat.completions.create(params, signal ? { signal } : {});
-  let full = '';
+  let full = '', usage = null;
   for await (const chunk of stream) {
     const t = chunk.choices?.[0]?.delta?.content || '';
     if (t) { full += t; onChunk?.(t); }
+    if (chunk.usage) usage = chunk.usage;
   }
+  // Spend: every Anís reply. Providers that don't report usage on a stream get an estimate (~4 chars/token).
+  const promptChars = params.messages.reduce((n, m) => n + String(m.content || '').length, 0);
+  logAIUsage({ provider: llm.provider === 'gemini' ? 'google' : llm.provider, model: llm.model, serviceType: 'chat', caller: 'anis-craft',
+    promptTokens: usage?.prompt_tokens ?? Math.ceil(promptChars / 4), completionTokens: usage?.completion_tokens ?? Math.ceil(full.length / 4) });
   return full;
 }

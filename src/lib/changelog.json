@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T17:14:27.320Z",
+  "generated": "2026-10-10T17:19:17.238Z",
   "entries": [
+    {
+      "hash": "6d95a6d0",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "The chat widgets page is the Anís page — per-site instructions + home tradition",
+      "scope": "anis"
+    },
     {
       "hash": "1b5b7dbb",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Trace + forensic API is committed, not pending",
       "scope": "handoff"
-    },
-    {
-      "hash": "bf269f60",
-      "date": "2026-09-24",
-      "type": "New",
-      "description": "Per-search trace + forensic API — strategy, timings, layer attribution",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "6d95a6d0",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "The chat widgets page is the Anís page — per-site instructions + home tradition",
+        "scope": "anis"
+      },
       {
         "hash": "1b5b7dbb",
         "date": "2026-10-10",
@@ -7028,13 +7035,6 @@
         "type": "Docs",
         "description": "Trace + forensic API is committed, not pending",
         "scope": "handoff"
-      },
-      {
-        "hash": "bf269f60",
-        "date": "2026-09-24",
-        "type": "New",
-        "description": "Per-search trace + forensic API — strategy, timings, layer attribution",
-        "scope": "search"
       }
     ]
   }

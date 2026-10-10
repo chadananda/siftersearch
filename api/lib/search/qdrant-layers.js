@@ -6,6 +6,7 @@
 import { bm25Query } from '../keyword-tokens.js';
 import { excludedDocIds } from './excluded-docs.js';
 import { docIdsInYearRange } from '../docs-repo.js';
+import { logAIUsage } from '../ai-services.js';
 
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 const MODEL = 'gemini-embedding-2', DIMS = 3072;
@@ -20,6 +21,8 @@ export function geminiQueryVector(text) {
     body: JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS }),
   }).then(async (r) => {
     if (!r.ok) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 120)}`);
+    // Spend (every uncached query): the response carries no token count, so estimate ~4 chars/token.
+    logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', caller: 'search-query', promptTokens: Math.ceil((key.length + 30) / 4) });
     return (await r.json()).embedding.values;
   }).catch((err) => { memo.delete(key); throw err; });
   if (memo.size >= 500) memo.delete(memo.keys().next().value);

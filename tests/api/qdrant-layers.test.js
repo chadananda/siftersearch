@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey, resolveQdrantFilters } from '../../api/lib/search/qdrant-layers.js';
 
+vi.mock('../../api/lib/ai-services.js', () => ({ logAIUsage: () => {} }));   // hermetic: no telemetry writes
 vi.mock('../../api/lib/docs-repo.js', () => ({
   docIdsInYearRange: vi.fn(async ({ yearFrom }) => (yearFrom === 3000 ? [] : [5, 8])),
 }));
