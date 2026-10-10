@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T06:35:54.781Z",
+  "generated": "2026-10-10T06:43:49.003Z",
   "entries": [
+    {
+      "hash": "4ae02c5a",
+      "date": "2026-10-09",
+      "type": "Docs",
+      "description": "Bahai-library non-content retirement done (60,044); data-access progress (ratchet 50 → 21)",
+      "scope": "planning"
+    },
     {
       "hash": "03a056fd",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Security",
       "description": "Clear every npm advisory that has a non-breaking fix (15 -> 6)",
       "scope": null
-    },
-    {
-      "hash": "0f649744",
-      "date": "2026-09-09",
-      "type": "Other",
-      "description": "Remaining minors current, and six undeclared dependencies declared",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "4ae02c5a",
+        "date": "2026-10-09",
+        "type": "Docs",
+        "description": "Bahai-library non-content retirement done (60,044); data-access progress (ratchet 50 → 21)",
+        "scope": "planning"
+      },
       {
         "hash": "03a056fd",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Security",
         "description": "Clear every npm advisory that has a non-breaking fix (15 -> 6)",
-        "scope": null
-      },
-      {
-        "hash": "0f649744",
-        "date": "2026-09-09",
-        "type": "Other",
-        "description": "Remaining minors current, and six undeclared dependencies declared",
         "scope": null
       }
     ]
