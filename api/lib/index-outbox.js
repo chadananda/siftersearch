@@ -80,7 +80,11 @@ export async function drainIndexOutbox({ meili = null, qdrant = null, registry =
     if (meili && dead.length) {
       // a doc row already hard-deleted → unknown site: remove from the primary index (where all library paragraphs live)
       const byIndex = new Map();
-      for (const r of dead) { const ix = paragraphIndexFor({ source_site: r.source_site }, registry); byIndex.set(ix, [...(byIndex.get(ix) || []), r.para_id]); }
+      // A site doc's paragraphs may ALSO sit in the primary index (ingested before per-site indexes existed — 10-09: 7/40
+      // retired bahai-library paragraphs were still in `paragraphs`), so they leave both; deleting an absent id is free.
+      for (const r of dead) {
+        for (const ix of new Set([paragraphIndexFor({ source_site: r.source_site }, registry), 'paragraphs'])) byIndex.set(ix, [...(byIndex.get(ix) || []), r.para_id]);
+      }
       for (const [ix, ids] of byIndex) { await meili.index(ix).deleteDocuments(ids); meiliJobs++; }
     }
     const done = slice.map((r) => r.para_id);

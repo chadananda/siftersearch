@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T06:43:49.003Z",
+  "generated": "2026-10-10T07:01:24.719Z",
   "entries": [
+    {
+      "hash": "b16a1549",
+      "date": "2026-10-09",
+      "type": "Fixed",
+      "description": "Periodic tasks threw every 5 s since 8624611b — getMeili() is sync, .catch is not a function",
+      "scope": "worker"
+    },
     {
       "hash": "4ae02c5a",
       "date": "2026-10-09",
@@ -3493,17 +3500,17 @@
       "type": "Security",
       "description": "No shell in the backup path, 255 ignored files untracked, 641 -> 344",
       "scope": null
-    },
-    {
-      "hash": "1b56fb0e",
-      "date": "2026-09-09",
-      "type": "Security",
-      "description": "Clear every npm advisory that has a non-breaking fix (15 -> 6)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-09": [
+      {
+        "hash": "b16a1549",
+        "date": "2026-10-09",
+        "type": "Fixed",
+        "description": "Periodic tasks threw every 5 s since 8624611b — getMeili() is sync, .catch is not a function",
+        "scope": "worker"
+      },
       {
         "hash": "4ae02c5a",
         "date": "2026-10-09",
@@ -7029,13 +7036,6 @@
         "date": "2026-09-09",
         "type": "Security",
         "description": "No shell in the backup path, 255 ignored files untracked, 641 -> 344",
-        "scope": null
-      },
-      {
-        "hash": "1b56fb0e",
-        "date": "2026-09-09",
-        "type": "Security",
-        "description": "Clear every npm advisory that has a non-breaking fix (15 -> 6)",
         "scope": null
       }
     ]

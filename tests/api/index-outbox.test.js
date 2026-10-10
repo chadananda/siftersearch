@@ -90,7 +90,8 @@ describe('index outbox — drain', () => {
     const qdrant = async (path, body) => { qdrantCalls.push([path, body.filter.must[0].match.any]); };
     const r = await drainIndexOutbox({ meili, qdrant, registry: { 'bahai-library.com': { meili_index_prefix: 'balib' } } });
     expect(r).toMatchObject({ removed: 1, skippedLive: 1 });
-    expect(meiliCalls).toEqual([['siftersearch_balib_paragraphs', [20]]]);
+    // a site paragraph leaves its own index AND the primary one (older ingests put site rows there)
+    expect(meiliCalls).toEqual([['siftersearch_balib_paragraphs', [20]], ['paragraphs', [20]]]);
     expect(qdrantCalls.map(([p]) => p.split('/')[2])).toEqual(['phrases', 'paragraphs_kw', 'hype']);
     expect(qdrantCalls.every(([, ids]) => ids.length === 1 && ids[0] === 20)).toBe(true);
     expect(outbox()).toEqual([]);
