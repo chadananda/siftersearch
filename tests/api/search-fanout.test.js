@@ -84,6 +84,11 @@ vi.mock('../../api/lib/search/qdrant-layers.js', () => ({
   searchKeywordQdrant: vi.fn(async () => { qdrantCalls.push('qkeyword'); return { hits: [{ paragraph_id: 77, doc_id: 1, score: 5 }] }; }),
 }));
 
+// Stub hits (Qdrant layers) are hydrated from SQLite through the paragraph repository — never from an engine.
+vi.mock('../../api/lib/paragraphs-repo.js', () => ({
+  paragraphsByIds: vi.fn(async (ids) => (ids.map(Number).includes(77) ? [{ id: 77, doc_id: 1, text: 'the phrase text here' }] : [])),
+}));
+
 vi.mock('meilisearch', () => ({
   MeiliSearch: function () { return meiliMock; },
 }));
@@ -212,15 +217,13 @@ describe('multiIndexSearch propagates scope_config', () => {
     expect(names).toContain('hype_questions');
   });
 
-  it('Qdrant layers are off by default; when on, a phrase-only hit is fetched and carries its span', async () => {
+  it('Qdrant layers are off by default; when on, a phrase-only hit is hydrated from SQLite (never Meili) and carries its span', async () => {
     qdrantCalls.length = 0;
     await multiIndexSearch('test', { scope_config: { primary: true, sites: [] } });
     expect(qdrantCalls).toEqual([]);
 
-    meiliMock.index.mockImplementation((name) => ({
-      search: vi.fn(async () => ({ hits: [], processingTimeMs: 1 })),
-      getDocuments: vi.fn(async () => ({ results: [{ id: 77, paragraph_id: 77, doc_id: 1, text: 'the phrase text here' }] })),
-    }));
+    const getDocuments = vi.fn(async () => ({ results: [] }));
+    meiliMock.index.mockImplementation(() => ({ search: vi.fn(async () => ({ hits: [], processingTimeMs: 1 })), getDocuments }));
     const r = await multiIndexSearch('test', { scope_config: { primary: true, sites: [] }, phraseLayer: true, qdrantKeyword: true });
     expect(qdrantCalls.sort()).toEqual(['phrase', 'qkeyword']);
     const hit = r.hits.find(h => String(h.id) === '77');
@@ -228,5 +231,6 @@ describe('multiIndexSearch propagates scope_config', () => {
     expect(hit.phrase_span).toEqual({ start: 3, end: 20 });
     expect(hit._layerRanks).toMatchObject({ phrase: 0, qkeyword: 0 });
     expect(r._layers).toMatchObject({ phrase: 1, qkeyword: 1 });
+    expect(getDocuments).not.toHaveBeenCalled();
   });
 });

@@ -95,6 +95,16 @@ CLAUDE.md), `agents/agent-librarian.js` if no caller, retired enrichment worker 
   entity: paragraph|doc, key, enqueued_at)`) written in the SAME transaction as the data change (soft-delete, re-ingest,
   merge); the index writer drains it per engine and records acks. Removals become as reliable as updates; the orphan sweep
   becomes a check, not a mechanism; deleting an engine = dropping its consumer.
+  **BUILT 10-09** (migration 143, `api/lib/index-outbox.js`): triggers on content (soft delete · duplicate · DELETE) and
+  docs (deleted / duplicate_of / DELETE → all its paragraphs) fill `index_outbox` in the same transaction; the worker drains
+  it to the doc's Meili index AND Qdrant phrases/paragraphs_kw/hype (the first runtime Qdrant delete), skipping ids live
+  again. The worker no longer RE-UPSERTS deleted/duplicate rows (the lost sync-processor split — the survey's main finding);
+  hydration dropped its Meili fallback (it resurrected deleted rows) and excludes duplicates; `meili-pending.js` retired;
+  DELETE /server/document no longer crashes halfway. Survey of every removal path: subagent report 10-09 (24 paths, 9 gaps).
+  **Still to do:** the historical backlog — 807,948 soft-deleted + 1,914 duplicate + 151,164 live-in-deleted-doc paragraphs
+  were never removed from Meili (and some from Qdrant). Enqueue in controlled batches off-peak (Qdrant optimizer at 1 thread —
+  see feedback_qdrant_bulk_payload_io), not on deploy. Then: site-only stores (siteDbReplaceContent) enqueue explicitly;
+  the orphan sweeps become a read-only check.
 - **P3** — `engine.js` interface; Meili ranking code moved behind it unchanged; Qdrant implementation beside it; secondary
   indexes (entity, concepts, deep-research, HyPE) moved to SQLite/Qdrant.
 - **P4** — switch production to Qdrant once batteries pass (planning/search-ab-20261009.md); keep Meili hot as fallback 1 week.

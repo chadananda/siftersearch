@@ -43,7 +43,8 @@ export async function paragraphsByIds(ids) {
              d.language AS d_language, d.year AS d_year, d.filename AS d_filename,
              d.source_site AS d_source_site, d.source_url AS d_source_url
         FROM content c JOIN docs d ON d.id = c.doc_id
-       WHERE c.id IN (${chunk.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`,
+       WHERE c.id IN (${chunk.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0
+         AND d.deleted_at IS NULL AND d.duplicate_of IS NULL`,
     chunk, 'search:hydrate');
     for (const r of rows) {
       const doc = { title: r.d_title, author: r.d_author, religion: r.d_religion, collection: r.d_collection, language: r.d_language,

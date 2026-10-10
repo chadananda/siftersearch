@@ -1383,9 +1383,10 @@ export async function multiIndexSearch(query, options = {}) {
   // The paragraphs index uses `id` as primary key but doesn't expose `id`
   // as filterable, so we use getDocuments({ ids: [...] }) — primary-key
   // lookup which doesn't require the field to be in filterableAttributes.
-  // Hydrated from SQLite first (the source of truth, same document shape as the index sync — paragraphs-repo.js);
-  // only ids SQLite lacks (site-only stores) still go to Meili. Without this, Qdrant-only search needed Meili to answer.
-  let stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  // Hydrated from SQLite ONLY (the source of truth, same document shape as the index sync — paragraphs-repo.js). A stub
+  // SQLite does not return is a deleted / duplicate paragraph still in an index: it is dropped, never fetched back from
+  // an engine (a Meili fallback here resurrected deleted rows). Stubs only come from main-library ids (Qdrant, HyPE).
+  const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
   if (stubIds.length > 0) {
     try {
       const { paragraphsByIds } = await import('./paragraphs-repo.js');
@@ -1394,23 +1395,7 @@ export async function multiIndexSearch(query, options = {}) {
         if (e) e.paragraph = { ...doc, _stub: false };
       }
     } catch (err) {
-      logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed — Meili fallback');
-    }
-    stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
-  }
-  if (stubIds.length > 0) {
-    try {
-      const meili = getMeili();
-      const fetched = await meili.index(INDEXES.PARAGRAPHS).getDocuments({
-        ids: stubIds,
-        limit: stubIds.length
-      });
-      for (const doc of (fetched.results || fetched.hits || [])) {
-        const e = aggregate.get(doc.id);
-        if (e) e.paragraph = { ...doc, _stub: false };
-      }
-    } catch (err) {
-      logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: stub paragraph fetch failed');
+      logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed');
     }
   }
 

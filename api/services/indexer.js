@@ -514,15 +514,8 @@ export async function indexDocumentFromText(text, metadata = {}) {
   const oldIds = (await queryAll(`SELECT c.id FROM content c JOIN docs d ON d.id = c.doc_id WHERE d.file_path = ?`, [filePath])).map((r) => r.id);
   const { docId, paragraphIds } = await storeInLibsql(document, libsqlParagraphs);
 
-  // Meilisearch is updated by the unified worker IN BULK, never per document here: one job costs ~95 s whatever its
-  // size, and this path used to send a delete + an add for every file (5,000 one-paragraph tablets = 5+ days of queue,
-  // 2026-09-29). Old ids are queued for bulk deletion; the new paragraphs stay synced=0 for the worker's batched sync.
-  try {
-    const { queueMeiliDeletes } = await import('../lib/meili-pending.js');
-    await queueMeiliDeletes(oldIds.filter((id) => !paragraphIds.includes(id)));
-  } catch (err) {
-    logger.warn({ docId, err: err.message }, 'Failed to queue old paragraphs for Meilisearch deletion');
-  }
+  // The search indexes are updated by the unified worker IN BULK, never per document here: the old rows' DELETEs enqueued
+  // their removal in the index outbox by trigger (migration 143); the new paragraphs stay synced=0 for the batched sync.
 
   return {
     documentId: docId,

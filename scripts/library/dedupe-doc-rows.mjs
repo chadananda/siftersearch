@@ -5,7 +5,6 @@
 // Dry run by default.   node scripts/library/dedupe-doc-rows.mjs <docId> [--apply]
 import { writeFileSync } from 'fs';
 import { queryAll, transaction } from '../../api/lib/db.js';
-import { queueMeiliDeletes } from '../../api/lib/meili-pending.js';
 
 const docId = Number(process.argv[2]);
 const APPLY = process.argv.includes('--apply');
@@ -26,6 +25,6 @@ for (let i = 0; i < ids.length; i += 500) {
   await transaction(ids.slice(i, i + 500).map((id) => ({
     sql: 'UPDATE content SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL', args: [now, now, id] })), 'dedupe-doc-rows');
 }
-await queueMeiliDeletes(ids);
-console.log(JSON.stringify({ softDeleted: ids.length, backup, meiliQueued: ids.length }));
+// the soft-delete enqueued their removal from every search index (index outbox, by trigger — migration 143)
+console.log(JSON.stringify({ softDeleted: ids.length, backup }));
 process.exit(0);

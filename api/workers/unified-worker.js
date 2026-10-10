@@ -25,7 +25,8 @@ import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { paragraphDoc } from '../lib/paragraphs-repo.js';
-import { flushMeiliDeletes } from '../lib/meili-pending.js';
+import { drainIndexOutbox, paragraphIndexFor } from '../lib/index-outbox.js';
+import { qdrantRequest } from '../lib/search/qdrant-layers.js';
 import { runMigrations } from '../lib/migrations.js';
 import { setSiteRegistry } from '../lib/search/scope.js';
 import { loadAllSiteConfigs } from '../services/sites-ingester.js';
@@ -199,10 +200,10 @@ async function processSyncJob(job) {
       return;
     }
     const documentsIndex = meili.index('documents');
-    // Queued deletions go first, in bulk (their ids never collide with the fresh rows this job sends — flush skips
-    // ids that are live again).
-    try { const d = await flushMeiliDeletes(meili); if (d.jobs) logger.info(d, 'Meili deletions flushed in bulk'); }
-    catch (err) { logger.warn({ err: err.message }, 'Bulk Meili deletion failed — will retry'); }
+    // Removals go first, in bulk, to every engine (lib/index-outbox.js — queued by SQLite triggers; ids that are live
+    // again are skipped, so they never collide with the fresh rows this job sends).
+    try { const d = await drainIndexOutbox({ meili, qdrant: qdrantRequest, registry: siteRegistryByDomain }); if (d.removed) logger.info(d, 'Index outbox drained'); }
+    catch (err) { logger.warn({ err: err.message }, 'Index outbox drain failed — will retry'); }
     // The documents index gets ONE job per 500 documents, not one per document: a Meili job costs seconds-to-minutes
     // whatever its size (50,552 one-document jobs were queued on 2026-09-29).
     let docBuffer = [];
@@ -216,14 +217,8 @@ async function processSyncJob(job) {
     // route to siftersearch_<prefix>_paragraphs based on sites.yaml. Null
     // prefix (OL pattern) keeps docs in the primary index.
     const indexNameForDoc = (doc) => {
-      if (!doc?.source_site) return 'paragraphs';
-      const cfg = siteRegistryByDomain[doc.source_site];
-      if (!cfg) {
-        logger.warn({ source_site: doc.source_site, doc_id: doc.id }, 'Sync routing: no registry entry, using primary index');
-        return 'paragraphs';
-      }
-      if (!cfg.meili_index_prefix) return 'paragraphs';
-      return `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
+      if (doc?.source_site && !siteRegistryByDomain[doc.source_site]) logger.warn({ source_site: doc.source_site, doc_id: doc.id }, 'Sync routing: no registry entry, using primary index');
+      return paragraphIndexFor(doc, siteRegistryByDomain);   // one routing rule, shared with the outbox's deletes
     };
     // Optimistic sync: submit batches to Meilisearch and mark paragraphs
     // synced=1 immediately — do NOT block waiting for HNSW indexing.
@@ -358,7 +353,12 @@ async function processSyncJob(job) {
             const meiliParas = [];
             const paraIds = [];
             let cacheHits = 0, cacheMisses = 0, dbFallbacks = 0;
+            // a row that LEFT the corpus (soft-deleted / duplicate) is not upserted — its removal is already queued in the
+            // index outbox by trigger; before 10-09 these were re-sent and marked synced, so deletions stayed searchable
+            const leaving = paragraphs.filter((p) => p.deleted_at || p.is_duplicate);
+            if (leaving.length) { for (const p of leaving) pendingIds.add(p.id); await content.markSynced(leaving.map((p) => p.id)); }
             for (const p of paragraphs) {
+              if (p.deleted_at || p.is_duplicate) continue;
               pendingIds.add(p.id);
               let embedding = null;
               if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
@@ -789,7 +789,7 @@ async function runMeiliReconcileCycle() {
 async function runPeriodicTasks() {
   const T = PERIODIC_TASK_TIMEOUT_MS;
   const now = Date.now();
-  await withTimeout(async () => { const m = await getMeili(); if (m) { const d = await flushMeiliDeletes(m); if (d.jobs) logger.info(d, 'Meili deletions flushed in bulk'); } }, T, 'meiliDeletes');
+  await withTimeout(async () => { const m = await getMeili(); if (m) { const d = await drainIndexOutbox({ meili: m, qdrant: qdrantRequest, registry: siteRegistryByDomain }); if (d.removed) logger.info(d, 'Index outbox drained'); } }, T, 'meiliDeletes');
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await withTimeout(() => runCleanupCycle(), T, 'cleanupCycle');
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await withTimeout(() => runFullSyncCheck(), T, 'fullSyncCheck');
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await withTimeout(() => runHypeSyncCycle(), T, 'hypeSyncCycle');

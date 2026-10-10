@@ -233,16 +233,21 @@ async function deleteParagraph(id) {
 
 // Hard-delete all paragraphs for a document in 500-row batches.
 // Batching keeps each transaction under ~1s so concurrent writers can interleave.
+// Hard delete in batches. → { changes } (callers read it; it returned nothing, so DELETE /server/document crashed
+// AFTER the rows were gone). Removal from the search indexes follows via the index outbox trigger (migration 143).
 async function deleteParagraphsByDoc(docId) {
   const BATCH = 500;
+  let changes = 0;
   while (true) {
     const rows = await queryAll(`SELECT id FROM content WHERE doc_id = ? LIMIT ?`, [docId, BATCH]);
     if (rows.length === 0) break;
     const ph = rows.map(() => '?').join(',');
     await query(`DELETE FROM content WHERE id IN (${ph})`, rows.map(r => r.id));
+    changes += rows.length;
     await new Promise(resolve => setImmediate(resolve));
     if (rows.length < BATCH) break;
   }
+  return { changes };
 }
 
 /**

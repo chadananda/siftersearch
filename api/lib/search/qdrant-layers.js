@@ -73,6 +73,9 @@ async function qdrant(path, body, timeoutMs = 2500) {
   return (await r.json()).result;
 }
 
+/** Raw request for the index writer (deletes by filter from the outbox) — the only Qdrant WRITE path at runtime. */
+export const qdrantRequest = (path, body, timeoutMs = 15000) => qdrant(path, body, timeoutMs);
+
 /** → { hits: [{ paragraph_id, doc_id, score, span: {start, end} }] } — best phrase per paragraph. */
 export async function searchPhrases(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.phrase } = {}) {
   const vector = await geminiQueryVector(query);

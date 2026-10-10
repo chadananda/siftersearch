@@ -1144,17 +1144,7 @@ export default async function adminRoutes(fastify) {
       // ALL three hashes: with body_hash intact the ingester takes its "metadata changed only" path and never
       // recreates the paragraphs just deleted — a force re-index would leave the document empty.
       await query('UPDATE docs SET file_hash = NULL, body_hash = NULL, body_hash_normalized = NULL WHERE id = ?', [existing.id]);
-      // Also clear old paragraphs from Meilisearch to prevent orphans
-      try {
-        const meili = getMeili();
-        if (meili) {
-          await meili.index('paragraphs').deleteDocuments({
-            filter: `doc_id = ${existing.id}`
-          });
-        }
-      } catch (err) {
-        logger.warn({ docId: existing.id, err: err.message }, 'Failed to clear old paragraphs from Meilisearch during force re-index');
-      }
+      // old paragraphs leave the search indexes through the index outbox (enqueued by the DELETE's trigger)
       logger.info({ filePath, docId: existing.id }, 'Force re-index: cleared existing content');
     }
 
@@ -1283,14 +1273,13 @@ export default async function adminRoutes(fastify) {
       querystring: {
         type: 'object',
         properties: {
-          keepMeili: { type: 'boolean', default: false, description: 'Keep Meilisearch entries' },
           force: { type: 'boolean', default: false, description: 'Purge even a canonical doc holding live content (IRREVERSIBLE)' }
         }
       }
     }
   }, async (request) => {
     const { documentId } = request.params;
-    const { keepMeili = false, force = false } = request.query || {};
+    const { force = false } = request.query || {};
 
     // Check document exists
     const doc = await queryOne('SELECT id, title FROM docs WHERE id = ?', [documentId]);
@@ -1328,26 +1317,7 @@ export default async function adminRoutes(fastify) {
     const docResult = await query('DELETE FROM docs WHERE id = ?', [documentId]);
     logger.info({ documentId, docDeleted: docResult.changes }, 'Deleted doc row');
 
-    // Delete from Meilisearch (unless keepMeili)
-    let meiliDeleted = false;
-    if (!keepMeili) {
-      try {
-        const meili = getMeili();
-
-        // Delete document from documents index
-        await meili.index('documents').deleteDocument(documentId);
-
-        // Delete paragraphs from paragraphs index
-        await meili.index('paragraphs').deleteDocuments({
-          filter: `doc_id = ${documentId}`
-        });
-
-        meiliDeleted = true;
-        logger.info({ documentId }, 'Deleted from Meilisearch');
-      } catch (err) {
-        logger.warn({ documentId, error: err.message }, 'Failed to delete from Meilisearch');
-      }
-    }
+    // The search indexes follow through the index outbox: the DELETEs above enqueued every paragraph by trigger.
 
     return {
       success: true,
@@ -1356,7 +1326,7 @@ export default async function adminRoutes(fastify) {
       deleted: {
         contentRows: contentResult.changes,
         docRow: docResult.changes,
-        meilisearch: meiliDeleted
+        indexRemoval: 'queued'
       }
     };
   });

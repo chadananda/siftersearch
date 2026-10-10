@@ -1947,16 +1947,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     await new Promise(resolve => setImmediate(resolve));
   }
 
-  // Queue the stale paragraph ids for deletion from Meilisearch — the worker sends them in bulk. One delete job per
-  // document cost ~95 s each in Meili's queue (2026-09-29); thousands of small tablets meant days of backlog.
-  if (deleteStatements.length > 0) {
-    try {
-      const { queueMeiliDeletes } = await import('../lib/meili-pending.js');
-      await queueMeiliDeletes(deleteStatements.map(s => s.args[0]));
-    } catch (err) {
-      logger.warn({ err: err.message, docId: finalDocId }, 'Failed to queue stale paragraphs for Meilisearch deletion');
-    }
-  }
+  // Stale paragraphs reach the search indexes through the index outbox: the DELETEs above enqueue them by trigger in the
+  // same transaction (migration 143), and the worker removes them in bulk from every engine.
 
   // 2. Update existing paragraphs (position changes, preserves embeddings)
   for (let i = 0; i < updateStatements.length; i += BATCH_SIZE) {

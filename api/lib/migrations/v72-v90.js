@@ -1530,6 +1530,35 @@ export const migrations = {
     await query(`INSERT INTO docs_fts(rowid, title, author, collection, description) SELECT d.id, ${cols('d')} FROM docs d`);
     logger.info('Migration 142 complete');
   },
+
+  143: async () => {
+    // INDEX OUTBOX (planning/architecture-data-access-20261009.md, P2): a paragraph that leaves the corpus — soft-deleted,
+    // marked a duplicate, or hard-deleted — is queued HERE by trigger, in the same transaction as the change, whatever code
+    // made it. The sync worker drains it to every engine (lib/index-outbox.js). Replaces meili_pending_deletes (138), which
+    // only some paths wrote, after their transaction, for Meili alone; its queued rows move over.
+    logger.info('Starting migration 143: index_outbox');
+    await query(`CREATE TABLE IF NOT EXISTS index_outbox (
+      para_id INTEGER PRIMARY KEY, doc_id INTEGER, queued_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_index_outbox_queued ON index_outbox(queued_at)`);
+    await query(`CREATE TRIGGER IF NOT EXISTS content_outbox_leave AFTER UPDATE OF deleted_at, is_duplicate ON content
+      WHEN (new.deleted_at IS NOT NULL OR COALESCE(new.is_duplicate, 0) = 1)
+       AND old.deleted_at IS NULL AND COALESCE(old.is_duplicate, 0) = 0
+      BEGIN INSERT OR REPLACE INTO index_outbox (para_id, doc_id) VALUES (new.id, new.doc_id); END`);
+    await query(`CREATE TRIGGER IF NOT EXISTS content_outbox_delete AFTER DELETE ON content
+      BEGIN INSERT OR REPLACE INTO index_outbox (para_id, doc_id) VALUES (old.id, old.doc_id); END`);
+    // a WHOLE document leaving (soft-deleted or marked a duplicate) takes its paragraphs with it — 10-09: 151,164 live
+    // paragraphs sat in deleted documents because the doc was marked and its rows were not
+    await query(`CREATE TRIGGER IF NOT EXISTS docs_outbox_leave AFTER UPDATE OF deleted_at, duplicate_of ON docs
+      WHEN (new.deleted_at IS NOT NULL OR new.duplicate_of IS NOT NULL) AND old.deleted_at IS NULL AND old.duplicate_of IS NULL
+      BEGIN INSERT OR REPLACE INTO index_outbox (para_id, doc_id) SELECT id, doc_id FROM content WHERE doc_id = new.id; END`);
+    await query(`CREATE TRIGGER IF NOT EXISTS docs_outbox_delete AFTER DELETE ON docs
+      BEGIN INSERT OR REPLACE INTO index_outbox (para_id, doc_id) SELECT id, doc_id FROM content WHERE doc_id = old.id; END`);
+    try {
+      await query(`INSERT OR IGNORE INTO index_outbox (para_id, doc_id) SELECT q.para_id, c.doc_id FROM meili_pending_deletes q
+        LEFT JOIN content c ON c.id = q.para_id`);
+    } catch (err) { if (!/no such table/.test(err.message)) throw err; }
+    logger.info('Migration 143 complete');
+  },
 };
 
 export const graphMigrations = {
