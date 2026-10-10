@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-10T20:11:08.463Z",
+  "generated": "2026-10-10T20:12:23.855Z",
   "entries": [
+    {
+      "hash": "237e5678",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "WorkPlan — live feature queue at /admin/workplan (D1 siftersearch-ops on the edge)",
+      "scope": "admin"
+    },
     {
       "hash": "78c7d1f8",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Sites-ingest via internal API with dryRun + onlyMissing (new files and hollow docs only)",
       "scope": "ingest"
-    },
-    {
-      "hash": "cd28a358",
-      "date": "2026-09-25",
-      "type": "Fixed",
-      "description": "A HOLLOW doc is not 'unchanged' — OceanLibrary canonicals never re-ingested for three months",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "237e5678",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "WorkPlan — live feature queue at /admin/workplan (D1 siftersearch-ops on the edge)",
+        "scope": "admin"
+      },
       {
         "hash": "78c7d1f8",
         "date": "2026-10-10",
@@ -7025,13 +7032,6 @@
         "date": "2026-09-25",
         "type": "New",
         "description": "Sites-ingest via internal API with dryRun + onlyMissing (new files and hollow docs only)",
-        "scope": "ingest"
-      },
-      {
-        "hash": "cd28a358",
-        "date": "2026-09-25",
-        "type": "Fixed",
-        "description": "A HOLLOW doc is not 'unchanged' — OceanLibrary canonicals never re-ingested for three months",
         "scope": "ingest"
       }
     ]
