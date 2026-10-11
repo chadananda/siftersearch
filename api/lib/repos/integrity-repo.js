@@ -21,3 +21,11 @@ export async function hollowDocs() {
     GROUP BY d.id
     HAVING with_text IS NULL OR with_text = 0 OR empty_rows > 0`);
 }
+
+/** Live paragraphs with text per doc scope (primary | supplemental) × religion — the denominator for index coverage. */
+export async function liveParagraphsByScope() {
+  return queryAll(`SELECT COALESCE(d.scope, 'primary') AS scope, d.religion, COUNT(*) AS paragraphs
+    FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
+    GROUP BY 1, 2`);
+}
