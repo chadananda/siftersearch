@@ -6,6 +6,7 @@
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com --force
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com --only-missing   # new files + hollow docs only
+//   node scripts/sites-ingest.mjs --site bahai-library.com --only-hollow    # hollow docs ONLY (never a new file)
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com --dry-run        # report, write nothing
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com --files list.txt # only these (one path per line, relative
 //                                                                          # to the site folder); skips the cooldown
@@ -31,7 +32,7 @@ const threshold = thresholdArg ? parseFloat(thresholdArg) : undefined;
 const limitArg = arg('--limit');
 const limit = limitArg ? parseInt(limitArg, 10) : undefined;
 
-const opts = { force, dryRun: args.includes('--dry-run'), onlyMissing: args.includes('--only-missing') };
+const opts = { force, dryRun: args.includes('--dry-run'), onlyMissing: args.includes('--only-missing'), onlyHollow: args.includes('--only-hollow') };
 if (threshold !== undefined) opts.threshold = threshold;
 if (limit !== undefined && !Number.isNaN(limit)) opts.limit = limit;
 const filesArg = arg('--files');

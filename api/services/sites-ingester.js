@@ -483,11 +483,19 @@ export function isUnchanged({ existing, fileHash, force, hasLiveContent }) {
   return !force && !!existing && existing.file_hash === fileHash && !!hasLiveContent;
 }
 
+/** onlyHollow runs repair HOLLOW rows (a doc row whose paragraphs never landed) and nothing else: a NEW file is not
+ *  ingested (Chad 09-25: new texts must wait) and a doc with live text is not touched. → skip status, or null to proceed. */
+export function hollowOnlySkip({ existing, hasLiveContent }) {
+  if (!existing) return 'skipped_new';
+  if (hasLiveContent) return 'kept_live';
+  return null;
+}
+
 // ─── Ingest a single file ───────────────────────────────────────────────
 
 // dryRun: report what WOULD happen, write nothing. onlyMissing: ingest only new files and HOLLOW docs — a doc that
 // already has live text is never touched (its paragraphs, and so any entity claims on them, stay exactly as they are).
-async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false, dryRun = false, onlyMissing = false }) {
+async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false, dryRun = false, onlyMissing = false, onlyHollow = false }) {
   const scope = siteConfig.scope || 'supplemental';
   const isSiteOnly = scope === 'site-only';
   const siteDb = isSiteOnly ? await getSiteDb(siteConfig.id, siteConfig.meili_index_prefix) : null;
@@ -519,6 +527,10 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   // first dry run reported 246 books "changed" whose stored hash equals the file's md5).
   if (isUnchanged({ existing, fileHash, force: force && !dryRun, hasLiveContent })) {
     return { status: 'unchanged', file: relPath, scope };
+  }
+  if (onlyHollow) {
+    const skip = hollowOnlySkip({ existing, hasLiveContent });
+    if (skip) return { status: skip, file: relPath, doc_id: existing?.id ?? null, scope };
   }
   if (onlyMissing && existing && hasLiveContent) {
     return { status: 'kept_live', file: relPath, doc_id: existing.id, scope };
@@ -639,8 +651,16 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     siteDbReplaceContent(siteDb, docId, bulkParagraphs);
   } else {
     docId = await upsertDoc(docFields, fileHash, bodyHash, scope);
-    await content.deleteParagraphsByDoc(docId);
-    await content.bulkInsertParagraphs(docId, bulkParagraphs);
+    // The row (with its file hash) is written before its paragraphs. If the paragraph write fails, clear the hash so
+    // the next run retries this file — a stored hash on an empty row is how 10,124 bahai-library rows stayed hollow
+    // from May to October (the run reported success; every later run called the file "unchanged").
+    try {
+      await content.deleteParagraphsByDoc(docId);
+      await content.bulkInsertParagraphs(docId, bulkParagraphs);
+    } catch (err) {
+      await query('UPDATE docs SET file_hash = NULL, body_hash = NULL WHERE id = ?', [docId]).catch(() => {});
+      throw err;
+    }
     if (supersedes) await markSuperseded(supersedes, docId);
   }
 
@@ -762,10 +782,10 @@ export async function ingestSite(siteId, opts = {}) {
     try {
       const result = await ingestOneFile({
         adapter, siteConfig, siteRoot, basePath, absPath: abs,
-        threshold, force: !!opts.force || !!only, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing
+        threshold, force: !!opts.force || !!only, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing, onlyHollow: !!opts.onlyHollow
       });
       stats[result.status] = (stats[result.status] || 0) + 1;
-      if (result.status !== 'unchanged') details.push({ file: result.file, status: result.status, doc_id: result.doc_id ?? null, paragraphs: result.paragraphs ?? null, supersedes: result.supersedes ?? null });
+      if (!['unchanged', 'kept_live', 'skipped_new'].includes(result.status) || opts.dryRun) details.push({ file: result.file, status: result.status, doc_id: result.doc_id ?? null, paragraphs: result.paragraphs ?? null, supersedes: result.supersedes ?? null });
       if (result.supersedes) stats.supersedes++;
     } catch (err) {
       stats.errors++;
@@ -785,8 +805,8 @@ export async function ingestSite(siteId, opts = {}) {
   // Dry runs and onlyMissing runs never reconcile deletions: they exist to ADD, and must not remove anything.
   const reconcile = ((typeof opts.limit === 'number' && opts.limit > 0) || only)
     ? { deleted: 0, restored: 0, skipped: 'subset run' }
-    : (opts.dryRun || opts.onlyMissing)
-      ? { deleted: 0, restored: 0, skipped: opts.dryRun ? 'dry run' : 'onlyMissing run' }
+    : (opts.dryRun || opts.onlyMissing || opts.onlyHollow)
+      ? { deleted: 0, restored: 0, skipped: opts.dryRun ? 'dry run' : opts.onlyHollow ? 'onlyHollow run' : 'onlyMissing run' }
       : await reconcileDeletes(siteId, basePath, files, !walkState.errored);
 
   logger.info({ siteId, stats, reconcile, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing }, 'Sites-ingester: complete');

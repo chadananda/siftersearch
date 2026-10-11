@@ -21,3 +21,12 @@ describe('isUnchanged', () => {
     expect(isUnchanged({ existing: null, fileHash: 'abc', force: false, hasLiveContent: false })).toBe(false);
   });
 });
+
+describe('onlyHollow runs (repair hollow rows, nothing else)', () => {
+  it('skips new files and docs with live text; proceeds only for a hollow row', async () => {
+    const { hollowOnlySkip } = await import('../../api/services/sites-ingester.js');
+    expect(hollowOnlySkip({ existing: null, hasLiveContent: false })).toBe('skipped_new');
+    expect(hollowOnlySkip({ existing: { id: 1 }, hasLiveContent: true })).toBe('kept_live');
+    expect(hollowOnlySkip({ existing: { id: 1 }, hasLiveContent: false })).toBe(null);
+  });
+});
