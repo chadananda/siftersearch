@@ -117,6 +117,10 @@ if (cmd === 'apply') {
     const path = join(config.library.basePath, d.file_path);
     if (!existsSync(path)) { stats.not_found_in_file += list.length; continue; }
     let text = readFileSync(path, 'utf8'); let touched = false;
+    // hash every block ONCE per file (re-splitting + re-hashing the whole file per result was quadratic: 40+ min)
+    const parts = text.split(/(\n[ \t]*\n)/);
+    const blockAt = new Map();
+    parts.forEach((b, i) => { if (i % 2 === 0 && b.trim()) { const k = hashContentWords(b); if (!blockAt.has(k)) blockAt.set(k, i); } });
     for (const r of list) {
       const [row] = await queryAll('SELECT text FROM content WHERE id = ? AND deleted_at IS NULL', [r.pid]);
       if (!row) continue;
@@ -125,13 +129,13 @@ if (cmd === 'apply') {
       if (!blocks) { stats.verify_failed++; continue; }
       if (blocks.length < 2) { stats.kept_whole++; continue; }
       const h = hashContentWords(row.text);
-      const parts = text.split(/(\n[ \t]*\n)/);
-      const at = parts.findIndex((b, i) => i % 2 === 0 && b.trim() && hashContentWords(b) === h);
-      if (at < 0) { stats.not_found_in_file++; continue; }
-      parts[at] = blocks.join('\n\n'); text = parts.join(''); touched = true;
+      const at = blockAt.get(h);
+      if (at == null) { stats.not_found_in_file++; continue; }
+      blockAt.delete(h); parts[at] = blocks.join('\n\n'); touched = true;
       stats.paragraphs_split++; stats.new_paragraphs += blocks.length;
     }
     if (!touched) continue;
+    text = parts.join('');
     stats.docs++; changed.push(doc);
     if (APPLY) {
       const bk = join('/tank/sifter/segment-backups', `${d.file_path}.${Date.now()}`);
