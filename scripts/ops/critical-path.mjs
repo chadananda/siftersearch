@@ -80,7 +80,10 @@ export function localChecks(o = {}) {
       // an api/index.js PM2 does not manage still shares :7839 or holds the DB (10-11: day-old code answered requests)
       const managed = new Set(JSON.parse(await run('pm2 jlist')).filter((p) => p.name === 'siftersearch-api').map((p) => String(p.pid)));
       const all = String(await run('pgrep -f "node .*api/index.js" || true')).split('\n').map((x) => x.trim()).filter(Boolean);
-      const strays = all.filter((pid) => !managed.has(pid));
+      // a deploy's own test API (port 7899) lives < 1 min — only an unmanaged process older than 3 min is a stray
+      const age = async (pid) => Number(String(await run(`ps -o etimes= -p ${pid} || true`)).trim()) || 0;
+      const strays = [];
+      for (const pid of all.filter((p) => !managed.has(p))) if ((await age(pid)) > 180) strays.push(pid);
       expect(!strays.length, `unmanaged api/index.js: ${strays.join(', ')}`);
       return `${managed.size} managed`;
     }],
