@@ -1124,18 +1124,32 @@ async function detectSentenceEndingsForBatch(paragraphs, language, { strict = fa
     `PARA_${p.id}:\n${p.text}`
   ).join('\n\n---\n\n');
 
-  const systemPrompt = `You are an expert in classical ${languageHint} religious texts. These are UNPUNCTUATED 19th century texts - NO punctuation marks exist.
+  // Rule / why / example (feedback_ai_prompting_pattern). Haiku 5.5 DECLINED the old terse prompt ("I'd be guessing…
+  // a tool built for Arabic sentence segmentation would be more dependable", 10-11) — so the prompt now says plainly that
+  // this judgment IS the task, that a careful approximate answer is what is wanted, and that the reply is JSON only.
+  const systemPrompt = `You segment classical ${languageHint} texts into sentences for a scholarly search index. You are the tool built for this job.
 
-Find ALL sentences by MEANING. Return the LAST 3-4 WORDS of each sentence exactly as written.
+THE TASK IS JUDGMENT. These texts carry no punctuation, so every sentence boundary must be inferred from grammar and meaning.
+That inference is exactly what is needed: there is no verified edition to defer to, and a careful best judgment is far more
+useful than nothing. Never decline, never explain, never give a partial list — answer every paragraph completely.
 
-Sentence boundaries in these texts:
-- Complete invocations (بسم الله الرحمن الرحيم)
-- Divine attributes (هو العزيز الحكيم)
-- Address changes (يا أيها...)
-- Topic/subject shifts
-- Complete commands
+WHAT A SENTENCE IS. One complete statement: a report, a ruling, a verse with its framing, a supplication, a heading.
+Why: each sentence becomes one citable unit, so it must stand on its own when quoted.
 
-Return JSON only.`;
+RULES (with the reason and an example):
+1. A chain of transmission and the report it carries form ONE sentence, ending where the report ends.
+   Why: the isnad is not a statement by itself. Example: «حدثنا فلان عن فلان عن أبي عبد الله عليه السلام قال إذا تفسخ فيها فلا تشرب من مائها» is one sentence.
+2. A new chain (حدثنا / أخبرنا / وعنه / وبهذا الإسناد) or a numbered report («3-») starts a NEW sentence.
+   Why: it is a new report from a new source.
+3. A chapter or section heading («باب كمية الكر», «كتاب الطهارة») is its own sentence.
+4. A complete Qur'anic verse quoted with its framing («قال الله تعالى …») ends a sentence when the quotation ends.
+5. Formulae inside a sentence (صلى الله عليه وآله, رحمه الله, عليه السلام) do NOT end it.
+6. Volume/page labels (e.g. «ج : 1 ص : 8») belong to whatever they touch; never end a sentence on them alone.
+7. The paragraph's last words always end its last sentence, even if the thought continues on the next page.
+
+OUTPUT. JSON only, no prose before or after:
+{"PARA_<id>": ["last 3-4 words of sentence 1", "last 3-4 words of sentence 2", …], …}
+Copy the last words EXACTLY as written — same letters, same diacritics, same order — so they can be found in the text.`;
 
   const userPrompt = `Find ALL sentence endings in these UNPUNCTUATED ${languageHint} paragraphs.
 

@@ -1209,8 +1209,16 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
-  // Check if document content is unchanged
-  if (existingDoc && existingDoc.file_hash === fileHash) {
+  // Check if document content is unchanged. "Unchanged" means the TEXT is there, not merely that the hash matches: a row
+  // whose paragraphs never landed (or were lost) kept its hash and was skipped forever — 366 hollow main-library books
+  // (10-11); the sites ingester learned this in July. A hollow row now re-ingests on the next ordinary run.
+  const hasLiveText = existingDoc
+    ? !!(await queryOne('SELECT 1 AS x FROM content WHERE doc_id = ? AND deleted_at IS NULL LIMIT 1', [existingDoc.id]))
+    : false;
+  if (existingDoc && existingDoc.file_hash === fileHash && !hasLiveText) {
+    logger.warn({ documentId: existingDoc.id, relativePath }, 'HOLLOW document (same hash, no live paragraphs) — re-ingesting');
+  }
+  if (existingDoc && existingDoc.file_hash === fileHash && hasLiveText) {
     // Content unchanged, but check if path-derived metadata changed (file moved)
     const pathChanged = existingDoc.file_path !== relativePath;
 
@@ -1269,7 +1277,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   // NEW: Check if body content unchanged but metadata (frontmatter) changed
   // This allows updating title, author, etc. without re-processing expensive content segmentation
-  if (existingDoc && existingDoc.body_hash === bodyHash) {
+  // (the metadata-only path also requires live text: adding a frontmatter flag to a HOLLOW file took this path, stored the
+  // new hash and left it empty for good — al-Mawa'iz, 10-11)
+  if (existingDoc && existingDoc.body_hash === bodyHash && hasLiveText) {
     // Body unchanged - only update metadata in docs table, skip content processing
     // Religion/collection come ONLY from path (folder structure = library organization)
     // Frontmatter religion/collection is ignored - it refers to archive codes, not library categories

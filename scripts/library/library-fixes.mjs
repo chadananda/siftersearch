@@ -13,6 +13,7 @@ import { join, dirname, resolve, sep } from 'path';
 import { spawnSync } from 'node:child_process';
 import dotenv from 'dotenv';
 import { config } from '../../api/lib/config.js';
+import { queryOne } from '../../api/lib/db.js';
 import { listDocs, markDuplicate, setDocReligion, setDocTitle, relocateDoc } from '../../api/lib/docs-repo.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true });
@@ -36,8 +37,9 @@ for (const id of plan.reingest || []) {
   // OUT of the API process: a 12 MB book ingested inside the API pushed it past its 3 GB limit and PM2 killed it
   // (10-11 06:33, a minute of downtime). scripts/reingest-document.js runs localOnly through the single writer.
   const r = spawnSync('node', ['scripts/reingest-document.js', String(id)], { encoding: 'utf8', env: process.env, maxBuffer: 64 << 20 });
-  const live = (await listDocs({ ids: [id], fields: ['id', 'paragraph_count'], limit: 1 })).docs[0];
-  log({ op: 'reingested', id, exit: r.status, paragraphs: live?.paragraph_count ?? null, error: r.status ? String(r.stderr || '').slice(-300) : null });
+  // LIVE paragraphs, not the row's claimed paragraph_count — a no-op re-ingest (exit 0) reported the claim as success (10-11)
+  const live = (await queryOne('SELECT COUNT(*) AS n FROM content WHERE doc_id = ? AND deleted_at IS NULL', [id]))?.n ?? 0;
+  log({ op: 'reingested', id, exit: r.status, live_paragraphs: live, ok: r.status === 0 && live > 0, error: r.status ? String(r.stderr || '').slice(-300) : null });
 }
 for (const m of plan.move || []) {
   const d = byId.get(m.id); const src = d && join(base, d.file_path), dst = join(base, m.to);
