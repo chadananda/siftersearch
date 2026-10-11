@@ -19,7 +19,7 @@ const get = async (url, { timeoutMs = 15000, headers = {}, method = 'GET', body,
   let r;
   for (let attempt = 1; ; attempt++) {
     try { r = await fetchImpl(url, { method, headers, body, redirect, signal: AbortSignal.timeout(timeoutMs) }); break; }
-    catch (e) { if (attempt >= 3) throw new Error(`network: ${e.cause?.code || e.message}`); await new Promise((res) => setTimeout(res, 2000 * attempt)); }
+    catch (e) { if (attempt >= 3) throw new Error(`network: ${e.cause?.code || e.message}`, { cause: e }); await new Promise((res) => setTimeout(res, 2000 * attempt)); }
   }
   const buf = Buffer.from(await r.arrayBuffer());
   return { status: r.status, type: r.headers.get('content-type') || '', bytes: buf.length, text: () => buf.toString('utf8'), ms: Date.now() - t0 };
@@ -94,6 +94,9 @@ export function localChecks(o = {}) {
   ];
 }
 
+/** A failure visitors feel (the site, its API, images, the library) — paged; tower internals are not. */
+export const isPublicFailure = (name) => /^(site:|API health \((public|through)|library |image service|search stats)/.test(name);
+
 /** Run checks; never throws. → { ok, results: [{ name, ok, detail }] } */
 export async function runChecks(checks) {
   const results = [];
@@ -117,9 +120,15 @@ if (MAIN) {
     const { actionRequired, clearAlert } = await import('../../api/lib/ops/alert.js');
     if (res.ok) clearAlert('critical-path');
     else {
-      const failed = res.results.filter((r) => !r.ok);
-      await actionRequired({ key: 'critical-path', quietMs: 30 * 60 * 1000, subject: `SifterSearch critical path failing (${failed.length})`,
-        text: `${failed.map((r) => `✗ ${r.name}: ${r.detail}`).join('\n')}\n\nAll checks:\n${res.results.map((r) => `${r.ok ? '✓' : '✗'} ${r.name}: ${r.detail}`).join('\n')}\n\nRe-run: node scripts/ops/critical-path.mjs --local` });
+      // A false alarm must never wake anyone (Chad 10-11): re-check the failures a minute later and alert only on what
+      // is STILL failing. Public site/API failures are a [PAGE]; anything else (tower internals) is an [ACTION].
+      await new Promise((r) => setTimeout(r, 60000));
+      const again = await runChecks(checks.filter(([name]) => res.results.some((r) => r.name === name && !r.ok)));
+      const failed = again.results.filter((r) => !r.ok);
+      if (!failed.length) { console.log('failures cleared on re-check — no alert'); process.exit(0); }
+      const severity = failed.some((r) => isPublicFailure(r.name)) ? 'page' : 'action';
+      await actionRequired({ key: 'critical-path', severity, quietMs: 30 * 60 * 1000, subject: `SifterSearch critical path failing (${failed.length})`,
+        text: `Still failing after a re-check 1 minute later:\n${failed.map((r) => `✗ ${r.name}: ${r.detail}`).join('\n')}\n\nAll checks (first run):\n${res.results.map((r) => `${r.ok ? '✓' : '✗'} ${r.name}: ${r.detail}`).join('\n')}\n\nAction: ssh tower-nas; node scripts/ops/critical-path.mjs --local; pm2 list; pm2 logs <failing service> --lines 100` });
     }
   }
   process.exit(res.ok ? 0 : 1);

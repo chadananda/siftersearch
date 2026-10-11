@@ -22,7 +22,7 @@ describe('isExhaustion', () => {
 });
 
 describe('noteProviderError', () => {
-  it('emails once per provider within the quiet window, flagged ACTION REQUIRED', async () => {
+  it('emails once per provider within the quiet window, flagged [ACTION] (not a [PAGE])', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'alerts-'));
     const sent = [];
     const deps = { dir, to: 'chad@example.org', sendEmail: async (m) => sent.push(m), now: 1_000_000 };
@@ -32,7 +32,7 @@ describe('noteProviderError', () => {
     expect(await noteProviderError('Gemini', err, deps)).toBe(true);                                          // other provider
     expect(await noteProviderError('DeepSeek', err, { ...deps, now: 1_000_000 + 7 * 3600_000 })).toBe(true); // 7 h later
     expect(sent).toHaveLength(3);
-    expect(sent[0].subject).toBe('[ACTION REQUIRED] SifterSearch: DeepSeek is out of credit');
+    expect(sent[0].subject).toBe('[ACTION] SifterSearch: DeepSeek is out of credit');
     expect(await noteProviderError('DeepSeek', { status: 429, message: 'requests per minute' }, { ...deps, now: 9e9 })).toBe(false);
   });
 });

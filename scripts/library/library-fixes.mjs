@@ -10,7 +10,7 @@
 // SIFTER_WRITER_URL. Dry run by default.   node scripts/library/library-fixes.mjs --plan <json> [--apply]
 import { readFileSync, appendFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, resolve, sep } from 'path';
-import http from 'node:http';
+import { spawnSync } from 'node:child_process';
 import dotenv from 'dotenv';
 import { config } from '../../api/lib/config.js';
 import { listDocs, markDuplicate, setDocReligion, setDocTitle, relocateDoc } from '../../api/lib/docs-repo.js';
@@ -28,21 +28,16 @@ const ids = [...(plan.reingest || []), ...(plan.move || []).map((m) => m.id), ..
 const docs = async () => new Map((await listDocs({ ids, fields: ['id', 'title', 'religion', 'collection', 'file_path', 'duplicate_of', 'paragraph_count'], limit: ids.length })).docs.map((d) => [d.id, d]));
 const log = (x) => { console.log(JSON.stringify(x)); if (APPLY) appendFileSync('/tank/sifter/library-fixes.jsonl', JSON.stringify({ at: new Date().toISOString(), ...x }) + '\n'); };
 let byId = await docs();
-const postLocal = (path, body) => new Promise((ok, fail) => {
-  const data = JSON.stringify(body);
-  const req = http.request({ host: '127.0.0.1', port: 7839, path, method: 'POST', timeout: 0,
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data), 'X-Internal-Key': process.env.DEPLOY_SECRET } },
-  (res) => { let b = ''; res.on('data', (c) => { b += c; }); res.on('end', () => { try { ok(JSON.parse(b)); } catch { ok({ status: `http ${res.statusCode}`, error: b.slice(0, 200) }); } }); });
-  req.on('error', fail); req.end(data);
-});
 
 for (const id of plan.reingest || []) {
   const d = byId.get(id);
   log({ op: 'reingest', id, title: d?.title?.slice(0, 60), file: d?.file_path, refused: !d ? 'not live' : !existsSync(join(base, d.file_path)) ? 'file missing' : null });
   if (!APPLY || !d) continue;
-  // node:http, not fetch: undici's 5-minute headers timeout killed this client mid-book (a 12 MB Arabic work, 10-11)
-  const r = await postLocal('/api/admin/server/ingest-file', { filePath: join(base, d.file_path), forceReindex: true, localOnly: true });
-  log({ op: 'reingested', id, status: r.status, paragraphs: r.paragraphCount, warning: r.warning || null, error: r.error || null });
+  // OUT of the API process: a 12 MB book ingested inside the API pushed it past its 3 GB limit and PM2 killed it
+  // (10-11 06:33, a minute of downtime). scripts/reingest-document.js runs localOnly through the single writer.
+  const r = spawnSync('node', ['scripts/reingest-document.js', String(id)], { encoding: 'utf8', env: process.env, maxBuffer: 64 << 20 });
+  const live = (await listDocs({ ids: [id], fields: ['id', 'paragraph_count'], limit: 1 })).docs[0];
+  log({ op: 'reingested', id, exit: r.status, paragraphs: live?.paragraph_count ?? null, error: r.status ? String(r.stderr || '').slice(-300) : null });
 }
 for (const m of plan.move || []) {
   const d = byId.get(m.id); const src = d && join(base, d.file_path), dst = join(base, m.to);

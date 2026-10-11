@@ -416,13 +416,13 @@ async function ecosystemProblems() {
 }
 
 /** Immediate [ACTION REQUIRED] email (deduped per key, 30 min). Never throws. */
-async function alertNow(key, subject, text) {
+async function alertNow(key, subject, text, severity = 'action') {
   try {
     const dotenv = await import('dotenv');
     dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets'), quiet: true });
     dotenv.config({ path: join(PROJECT_ROOT, '.env-public'), quiet: true });
     const { actionRequired } = await import('../api/lib/ops/alert.js');
-    await actionRequired({ key, subject, text, quietMs: 30 * 60 * 1000 });
+    await actionRequired({ key, subject, text, severity, quietMs: 30 * 60 * 1000 });
   } catch (err) { log('error', `alert failed: ${err.message}`); }
 }
 async function recovered(key) {
@@ -463,7 +463,7 @@ async function watchdog() {
       (ok
         ? `${name} went down ${recent.length} times in the last hour; the watchdog restarted it each time, but something keeps killing it.\n\nAction: find the cause — pm2 logs ${name} --lines 200 (look for memory / crash before each restart).`
         : `The watchdog could not restart ${name}. The site is degraded until it is started.\n\nAction: ssh tower-nas; pm2 start ecosystem.config.cjs --only ${name}; then node scripts/ops/critical-path.mjs --local`)
-      + (problems.length ? `\n\necosystem.config.cjs problems:\n- ${problems.join('\n- ')}` : ''));
+      + (problems.length ? `\n\necosystem.config.cjs problems:\n- ${problems.join('\n- ')}` : ''), ok ? 'action' : 'page');
   }
   const h = await httpGet(`http://127.0.0.1:${API_PORT}/api/v1/health`, 5000);
   if (h.ok) { apiHealthFails = 0; await recovered('api-unhealthy'); return; }
@@ -471,7 +471,7 @@ async function watchdog() {
   log('error', `WATCHDOG: API health failed (${apiHealthFails} in a row)`);
   if (apiHealthFails >= 2) {
     await alertNow('api-unhealthy', 'SifterSearch API is not answering',
-      `GET /api/v1/health on tower failed ${apiHealthFails} checks in a row (5 minutes apart). The site's search and Anís depend on it.\n\nAction: ssh tower-nas; pm2 logs siftersearch-api --lines 100 (find why it hangs); pm2 reload siftersearch-api; node scripts/ops/critical-path.mjs --local`);
+      `GET /api/v1/health on tower failed ${apiHealthFails} checks in a row (5 minutes apart). The site's search and Anís depend on it.\n\nAction: ssh tower-nas; pm2 logs siftersearch-api --lines 100 (find why it hangs); pm2 reload siftersearch-api; node scripts/ops/critical-path.mjs --local`, 'page');
   }
 }
 
@@ -517,7 +517,7 @@ async function swapPm2Process(name) {
     log('error', `Failed to start ${name}: ${restart.error || 'not online after start'} — rolling back to the previous config`);
     const ok = await rollbackStart(name);
     await alertNow(`start-failed-${name}`, `SifterSearch: ${name} failed to start after a deploy`,
-      `pm2 start ${name} failed (${restart.error || 'not online'}). Rollback to the previous commit's config ${ok ? 'SUCCEEDED — the service is up' : 'FAILED — the service is DOWN'}.`);
+      `pm2 start ${name} failed (${restart.error || 'not online'}). Rollback to the previous commit's config ${ok ? 'SUCCEEDED — the service is up' : 'FAILED — the service is DOWN'}.`, ok ? 'action' : 'page');
     return ok;
   }
   return true;
