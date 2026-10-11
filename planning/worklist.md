@@ -4,13 +4,13 @@ Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not 
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
 ## Now — LIBRARY CLEANUP (Chad 10-11: "get all the library cleanup tasks done so we can start concept extraction, hype and working on Anis and Dewey")
-- [ ] 1. Qdrant has the 72,751 new Arabic ¶ (per-book count vs SQLite)
-- [ ] 2. Language codes normalised (en/En/Eng, fr/Fr/FR, es/Es …) at the source + DB + index; ingest normalises
-- [ ] 3. Segmentation tail: re-plan the ~155 rows replaced during re-ingest / unplaced (small Haiku batch)
-- [ ] 4. Sentence markers for the 7 `sentence_markers: defer` books (Haiku batch, half price) — $ estimate first
+- [~] 1. Qdrant: keyword layer hourly ✅; PHRASE layer was never fed new ¶ → indexer running for the 284 books ($20 cap)
+- [x] 2. Language codes: ONE normaliser (`language-codes.js`), ingest + sites-ingest normalise, 2,414 docs relabelled + re-synced (source files left: ingest normalises)
+- [~] 3. Segmentation tail: 3,843 oversized ¶ in 38 books (mostly the held-9) — batch submitted ($1.77 est); `/tank/sifter/segtail-chain.sh` collects → applies → ingests → phrase-indexes
+- [x] 4. Sentence markers for the 7 deferred hadith books: SKIPPED on value (~$15; markers only serve translation alignment, none exist for these)
 - [ ] 5. ID/pn for every book: `scripts/library/assign-block-ids.mjs` (OL-compatible attrs; `--align-to` English for CTAI)
 - [ ] 6. CTAI audit: originals paragraphed FROM THE ENGLISH, aligned, matching pn, DB links both ways
-- [ ] 7. Rodwell single-volume (21343) probable duplicate; the 1 empty row (doc 14779)
+- [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [ ] 8. Reader check in a browser: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
 
 ## Then — the real value
