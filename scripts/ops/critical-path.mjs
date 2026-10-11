@@ -13,11 +13,14 @@ const COVER_ID = 20760;   // a book with a stored cover (Additional Prayers…)
 
 const get = async (url, { timeoutMs = 15000, headers = {}, method = 'GET', body, redirect = 'manual', fetchImpl = fetch } = {}) => {
   const t0 = Date.now();
-  // one retry for a NETWORK error only (a client's flaky route — seen 10-10 from the Mac — must not read as an outage);
-  // an HTTP status is the server's answer and is never retried
+  // a NETWORK error is retried (a flaky route must not read as an outage); an HTTP status is the server's answer and is not
+  // (10-10: tower's own outbound connects took 0.1-1 s and sometimes hit undici's 10 s connect timeout while the home
+  // uplink was saturated — three tries with backoff, so congestion reads as slow, and only a real outage as down)
   let r;
-  try { r = await fetchImpl(url, { method, headers, body, redirect, signal: AbortSignal.timeout(timeoutMs) }); }
-  catch { r = await fetchImpl(url, { method, headers, body, redirect, signal: AbortSignal.timeout(timeoutMs) }); }
+  for (let attempt = 1; ; attempt++) {
+    try { r = await fetchImpl(url, { method, headers, body, redirect, signal: AbortSignal.timeout(timeoutMs) }); break; }
+    catch (e) { if (attempt >= 3) throw new Error(`network: ${e.cause?.code || e.message}`); await new Promise((res) => setTimeout(res, 2000 * attempt)); }
+  }
   const buf = Buffer.from(await r.arrayBuffer());
   return { status: r.status, type: r.headers.get('content-type') || '', bytes: buf.length, text: () => buf.toString('utf8'), ms: Date.now() - t0 };
 };
