@@ -17,6 +17,7 @@
 import crypto from 'crypto';
 import * as repo from './repos/deep-research-repo.js';
 import { logger } from './logger.js';
+import { modelFor } from './model-roles.js';
 import { createEmbedding } from './ai.js';
 import { getAuthority } from './authority.js';
 import { generateSlug } from './slug.js';
@@ -649,7 +650,7 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
       const response = await chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
-      ], { model: 'deepseek-v4-flash', caller: 'deep-research/rerank' });
+      ], { model: modelFor('deep-research-rerank').model, caller: 'deep-research/rerank' });
       const text = response.content?.[0]?.text || '';
       const json = text.match(/\[[\s\S]*\]/)?.[0];
       if (json) {
@@ -1175,7 +1176,7 @@ Return ONLY valid JSON:
   try {
     const response = await chat(
       [{ role: 'user', content: userPrompt }],
-      { model: 'deepseek-v4-flash', max_tokens: 400, caller: 'deep-research/hero-prompt' }
+      { model: modelFor('deep-research-hero-prompt').model, max_tokens: 400, caller: 'deep-research/hero-prompt' }
     );
     const text = response.content?.[0]?.text || '';
     const json = text.match(/\{[\s\S]*\}/)?.[0];

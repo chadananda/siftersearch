@@ -565,6 +565,23 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Monthly model re-assessment (Chad 10-11): roles × registry × 30-day spend → ONE [ACTION] email listing roles to
+      // re-measure (scripts/ops/model-review.mjs, table in api/lib/model-roles.js). 1st of the month, 08:00.
+      name: 'siftersearch-model-review',
+      script: 'scripts/ops/model-review.mjs',
+      args: '--alert',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '0 8 1 * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/model-review-error.log',
+      out_file: './logs/model-review-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // One-shot snapshot generator: runs every 5 min via cron_restart, computes
       // the pipeline/Meili status in isolation, writes data/pipeline-status.json,
       // then exits. autorestart:false so PM2 only re-runs it on the cron tick —

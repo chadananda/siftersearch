@@ -20,6 +20,7 @@ import { logger } from './logger.js';
 import { query, telemetryQuery } from './db.js';
 import { getModel, effectivePricing } from './model-registry.js';
 import { currentAIContext, withAIContext } from './ai-context.js';
+import { modelFor } from './model-roles.js';
 import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 import { nowInPeak } from './pipeline/peak.js';
 
@@ -992,7 +993,7 @@ export function aiService(serviceType, options = {}) {
  * unmarked text, kept paragraphs).
  */
 const LOCAL_PROVIDERS = new Set(['lmstudio', 'ollama', 'vllm', 'local']);
-export const SEGMENTATION_MODEL = { provider: 'anthropic', model: 'claude-haiku-5-5' };
+export const SEGMENTATION_MODEL = modelFor('segmentation');
 export function segmentationService() {
   const svc = aiService('segmentation', { forceRemote: true });
   return {

@@ -12,14 +12,16 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] Reader: chapter dividers where pn changes chapter; heading rows render as headings
 - [x] DB hard rule: repo-only access ratchet (299 legacy files frozen); writer default on tower; `db_write_stats`
 - [x] deep-research → `api/lib/repos/deep-research-repo.js` (34 named functions; legacy list 299 → 296)
-- [~] Tower follow-up chain (`/tank/sifter/followups-20261011.sh`):
+- [x] Tower follow-up chain (`/tank/sifter/followups-20261011.sh`):
   - [x] 1. re-placed 115 more ¶ (→ 669) in 93 books, re-ingested; 164 left for the re-plan
-  - [~] 2. bahai-library: retry the 3 "database is locked" files
-  - [ ] 3. bahai-library: retire secondary duplicates (≥80% in a primary doc)
-- [ ] Verify the index caught up: unembedded + `synced=0` live rows draining (incl. the 14 Islamic works)
+  - [x] 2. bahai-library: 3 failed files re-ingested, 0 errors
+  - [x] 3. bahai-library: 244 secondary duplicates retired (1,324 candidates were already retired)
+- [~] Index catching up (10-11 12:41: 63k awaiting embeddings, 287 awaiting sync) — verify: unembedded + `synced=0` live rows draining (incl. the 14 Islamic works)
 - [ ] Verify reader visually: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
 
 ## Next
+- [x] Model roles: ONE table `api/lib/model-roles.js` + `modelFor(role)`; monthly review (`siftersearch-model-review`, 1st 08:00, [ACTION] email); literal-model ratchet (34 files frozen)
+- [ ] Re-measure flagged roles vs Haiku 5.5 (anis-answer, anis-term, deep-research ×2, bio, jafar ×2, publish ×2) — small eval each, $ estimate first; a switch to Haiku also needs an anthropic-policy stage entry
 - [ ] deep-research as a SEARCH STRATEGY over `plannedSearch` (HyPE, entities, phrase index, concepts, Qdrant) — today it
       calls legacy Meili `hybridSearch` 6×; keep its LLM steps, swap retrieval; also unblocks Meili retirement
 - [ ] Segmentation tail: re-plan the 143 rows replaced during re-ingest (small Haiku batch)

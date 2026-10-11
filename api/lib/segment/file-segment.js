@@ -10,8 +10,9 @@ import { batchAddSentenceMarkers } from '../../services/segmenter.js';
 import { hasMarkers, validateMarkers, stripMarkers } from '../markers.js';
 import { withAIContext } from '../ai-context.js';
 import { getModel } from '../model-registry.js';
+import { modelFor } from '../model-roles.js';
 
-export const SEGMENT_MODEL = { provider: 'anthropic', model: 'claude-haiku-5-5' };
+export const SEGMENT_MODEL = modelFor('segmentation');   // the role table (lib/model-roles.js)
 const BATCH_CHARS = 12000;       // 40k-char batches made Haiku truncate or wander off JSON (10-11); 12k (~20k tokens in, ~3k out) is reliable
 // Measured on the al-Istibsar pilot (10-11, fully vowelled): 57.8k chars → 93.4k input + 14.9k output tokens over 3 calls.
 // Vowelled Arabic costs ~1.6 tokens per character; the endings the model quotes cost ~0.26 output tokens per character.

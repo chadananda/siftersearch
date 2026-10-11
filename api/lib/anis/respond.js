@@ -4,6 +4,7 @@
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
+import { modelFor } from '../model-roles.js';
 import { dropUnverified, createSentenceGate } from './quotes.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
@@ -15,7 +16,7 @@ import { unmachine } from './lint.js';
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
 // sometimes quotes words not in its passages — the sentence gate (quotes.js) is the protection, not the model.
 // Groq gpt-oss is faster still but its paid tier is unavailable (free = 8k TPM). Switch with ANIS_LLM.
-const DEFAULT_LLM = { provider: 'gemini', model: 'gemini-3.5-flash-lite' };
+const DEFAULT_LLM = modelFor('anis-answer');   // the role table (lib/model-roles.js); ANIS_LLM still overrides
 const PROVIDERS = new Set(['groq', 'openai', 'deepseek', 'gemini', 'anthropic']);
 
 /** "groq:openai/gpt-oss-120b:low" → { provider, model, reasoning_effort? }; nonsense → the default. */

@@ -2,6 +2,7 @@
 // LLM calls are reserved for summarising results — routing, narrowing and layer choice are classification.
 // Pure buildPlan()/layersFor() hold the rules (tested offline); planSearch() is the single network call.
 // Rules: fail open; a comparative is never narrowed; caller-given filters win. Deps: scope-extract.js (TRADITIONS).
+import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 
@@ -180,7 +181,7 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'jev-latest',
+        model: modelFor('search-planner').model,
         state,
         questions: {
           tradition: {

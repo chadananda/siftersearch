@@ -4,6 +4,7 @@
 // data (the model never writes a number); the model writes the table rows and the reading. A Latin spelling
 // ("Irfan") is resolved to the Arabic script by one tiny model call, since CTAI searches the original only.
 // Deps: config (ctai), ai.chatCompletion, global fetch.
+import { modelFor } from '../model-roles.js';
 import { config } from '../config.js';
 
 const SITE = 'https://ctai.info';
@@ -38,7 +39,7 @@ export function termQuestion(text = '') {
 /** "Irfan" → "عرفان" (one tiny call); null when the model does not recognise it as an Arabic/Persian term. */
 export async function resolveTerm(latin, { complete } = {}) {
   const call = complete || (async (messages) => (await import('../ai.js')).chatCompletion(messages,
-    { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 20, thinking: false, caller: 'anis-term' }));
+    { ...modelFor('anis-term'), temperature: 0, maxTokens: 20, thinking: false, caller: 'anis-term' }));
   const out = await call([{ role: 'user', content: `Write the Arabic-script spelling of the Arabic or Persian term used in the Bahá'í writings that is transliterated "${latin}". Reply with that word only, or NONE.` }]);
   const word = String(out?.content ?? out ?? '').trim().replace(/[«»"'.]/g, '');
   // eslint-disable-next-line no-misleading-character-class -- Arabic vowel marks are matched on purpose
