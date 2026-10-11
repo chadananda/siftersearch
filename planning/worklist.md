@@ -11,15 +11,17 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] Reader: margin shows pn; soft-deleted rows hidden; image placeholders removed (915 rows)
 - [x] Reader: chapter dividers where pn changes chapter; heading rows render as headings
 - [x] DB hard rule: repo-only access ratchet (299 legacy files frozen); writer default on tower; `db_write_stats`
-- [~] deep-research → `api/lib/repos/deep-research-repo.js` (agent working) → review, test, commit, deploy, read logs
+- [x] deep-research → `api/lib/repos/deep-research-repo.js` (34 named functions; legacy list 299 → 296)
 - [~] Tower follow-up chain (`/tank/sifter/followups-20261011.sh`):
-  - [~] 1. re-place the 272 joined paragraphs, re-ingest their books
-  - [ ] 2. bahai-library: retry the 3 "database is locked" files
+  - [x] 1. re-placed 115 more ¶ (→ 669) in 93 books, re-ingested; 164 left for the re-plan
+  - [~] 2. bahai-library: retry the 3 "database is locked" files
   - [ ] 3. bahai-library: retire secondary duplicates (≥80% in a primary doc)
 - [ ] Verify the index caught up: unembedded + `synced=0` live rows draining (incl. the 14 Islamic works)
 - [ ] Verify reader visually: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
 
 ## Next
+- [ ] deep-research as a SEARCH STRATEGY over `plannedSearch` (HyPE, entities, phrase index, concepts, Qdrant) — today it
+      calls legacy Meili `hybridSearch` 6×; keep its LLM steps, swap retrieval; also unblocks Meili retirement
 - [ ] Segmentation tail: re-plan the 143 rows replaced during re-ingest (small Haiku batch)
 - [ ] Sentence markers for the 7 `sentence_markers: defer` books (Haiku batch, half price) — estimate $ first
 - [ ] Restart remaining pm2 apps so every writer reports its caller in `db_write_stats`
