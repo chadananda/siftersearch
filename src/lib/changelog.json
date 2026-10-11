@@ -1,6 +1,125 @@
 {
-  "generated": "2026-10-11T14:30:17.879Z",
+  "generated": "2026-10-11T17:11:12.409Z",
   "entries": [
+    {
+      "hash": "6c9fccc3",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Reader/bilingual/content/stats never serve soft-deleted paragraphs; paragraphs carry pn",
+      "scope": "library"
+    },
+    {
+      "hash": "11ff31c0",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Verse-pn backfill numbers sup-less one-verse-per-block books by chapter heading (named docs only)",
+      "scope": "library"
+    },
+    {
+      "hash": "f4ac70fe",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Image-placeholder caption capped (a long alt is real text); verse-pn backfill includes NULL-blocktype rows",
+      "scope": null
+    },
+    {
+      "hash": "e3127f9b",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Backfill verse pn from stored rows (reaches rows with no para_N); image placeholders with nested captions",
+      "scope": "library"
+    },
+    {
+      "hash": "fb968821",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "OL adapter stores verse pn for <sup>c:v</sup> scripture (ILM pn wins); unresolved image placeholders are not paragraphs; majority chapter",
+      "scope": "sites"
+    },
+    {
+      "hash": "8ceb5e27",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Verse pn re-anchors at every marked block — a <sup> missing in the source never shifts other blocks; gaps reported",
+      "scope": "library"
+    },
+    {
+      "hash": "15d3bb4a",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Verse pn for grouped scripture — the chapter:verse a block starts at; <sup> verses are checksums (Chad 10-11)",
+      "scope": "library"
+    },
+    {
+      "hash": "3b4a9965",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Paragraph segmentation of oversized Arabic/Persian paragraphs by phrase index (Haiku 5.5 thinking, Message Batches at half price)",
+      "scope": "segment"
+    },
+    {
+      "hash": "bcaf0198",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Segmentation scale + cost model — tablets ≈$1.7–3.4; classical library 427M chars: $137 naive → ~$15–25 with rules + Laya + batch",
+      "scope": "planning"
+    },
+    {
+      "hash": "6eac920b",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Segmentation job B (paragraph starts) — Jev F1 0.76 vs Haiku-thinking; 64% of decisions at 88% (Laya candidate)",
+      "scope": "planning"
+    },
+    {
+      "hash": "cff14da9",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Arabic segmentation experiments — phrase-index Haiku (thinking) is the quality path; Jev confidently right on ~half the phrase decisions (Laya candidate)",
+      "scope": "planning"
+    },
+    {
+      "hash": "e80c6836",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "12k-char batches (40k made Haiku truncate or leave JSON; 76k chars of al-Istibsar → 202 sentences clean at 12k)",
+      "scope": "segment"
+    },
+    {
+      "hash": "c2a5f1fd",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "A hollow document is never 'unchanged' (main ingester) — same hash or same body with no live text re-ingests",
+      "scope": "ingest"
+    },
+    {
+      "hash": "91ac9dcd",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Arabic files are segmented once as they arrive (Haiku 5.5 file step) instead of sitting paused",
+      "scope": "ingest"
+    },
+    {
+      "hash": "81e05dcf",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "An already-marked file gets needs_segmentation: false so ingest stops pausing it",
+      "scope": "segment"
+    },
+    {
+      "hash": "085157e5",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Cost estimate calibrated on the al-Istibsar pilot (vowelled Arabic ≈1.6 input + 0.26 output tokens per char)",
+      "scope": "segment"
+    },
+    {
+      "hash": "298e691b",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Search no longer loops on 'Searching…' (effect untracked); covered results lead as cards, coverless as tiles",
+      "scope": "library"
+    },
     {
       "hash": "e9e004ac",
       "date": "2026-10-11",
@@ -3381,129 +3500,129 @@
       "type": "Fixed",
       "description": "Scene marker reaches the API; merge-review duplicate rule tightened (canonical names, nisba-consistent)",
       "scope": null
-    },
-    {
-      "hash": "b6d93319",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Scenes link only through their participants; 'before / prior to X' demotes X's evidence",
-      "scope": "search"
-    },
-    {
-      "hash": "cc2b9cec",
-      "date": "2026-09-27",
-      "type": "Chore",
-      "description": "Keep the merge-review page source out of git",
-      "scope": null
-    },
-    {
-      "hash": "fc294e85",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Merge-review export — every candidate identity merge with its textual evidence, for human decision",
-      "scope": "entities"
-    },
-    {
-      "hash": "4d45cb7a",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Merges carry scene participants; admin docs-by-title (copies with claim/mention counts)",
-      "scope": "entities"
-    },
-    {
-      "hash": "f6416f1f",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Scenes v2 — the model binds participants to a numbered candidate list; pronouns/unnamed dropped",
-      "scope": "entities"
-    },
-    {
-      "hash": "e5b080b9",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Title → figure merges with strict name resolution and an independent second check",
-      "scope": "entities"
-    },
-    {
-      "hash": "aed1f41b",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Catalog retype merges a record into its same-named twin of the new type instead of failing",
-      "scope": "entities"
-    },
-    {
-      "hash": "f3181e6e",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Catalog apply defaults to retype-only — title merges wait for strict figure resolution + second check",
-      "scope": "entities"
-    },
-    {
-      "hash": "57c209c8",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Apply catalog review — retype non-people, merge confident titles into their figure, hold the rest",
-      "scope": "entities"
-    },
-    {
-      "hash": "1486b291",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Scene layer (migration 125) — who was physically together, with verbatim proof; scenes feed who-met-whom",
-      "scope": "entities"
-    },
-    {
-      "hash": "ebb166c5",
-      "date": "2026-09-26",
-      "type": "Test",
-      "description": "Entity known-answer battery — rosters, meetings, denials, scenes against production",
-      "scope": "quality"
-    },
-    {
-      "hash": "259a0cfd",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Person-catalog review (migration 124) — classify every 'person' record before binding mentions to it",
-      "scope": "entities"
-    },
-    {
-      "hash": "95e86186",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Mention backfill binds only capitalised, non-generic, nisba-consistent sole names",
-      "scope": "entities"
-    },
-    {
-      "hash": "2c2902cc",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Mention coverage audit + backfill — names written in the text, not only names the note glossed",
-      "scope": "entities"
-    },
-    {
-      "hash": "7a80ec24",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Paragraph-claims — what extraction produced for one paragraph, and the book's claim coverage",
-      "scope": "admin"
-    },
-    {
-      "hash": "bb5e598c",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Verified labels reach the API; a pair's authoritative denial settles both sides; names inside places/possessions are not people",
-      "scope": "search"
-    },
-    {
-      "hash": "1e3ea3e9",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "The claim gate drops a meeting claim whose own proof denies the meeting",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-11": [
+      {
+        "hash": "6c9fccc3",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Reader/bilingual/content/stats never serve soft-deleted paragraphs; paragraphs carry pn",
+        "scope": "library"
+      },
+      {
+        "hash": "11ff31c0",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Verse-pn backfill numbers sup-less one-verse-per-block books by chapter heading (named docs only)",
+        "scope": "library"
+      },
+      {
+        "hash": "f4ac70fe",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Image-placeholder caption capped (a long alt is real text); verse-pn backfill includes NULL-blocktype rows",
+        "scope": null
+      },
+      {
+        "hash": "e3127f9b",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Backfill verse pn from stored rows (reaches rows with no para_N); image placeholders with nested captions",
+        "scope": "library"
+      },
+      {
+        "hash": "fb968821",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "OL adapter stores verse pn for <sup>c:v</sup> scripture (ILM pn wins); unresolved image placeholders are not paragraphs; majority chapter",
+        "scope": "sites"
+      },
+      {
+        "hash": "8ceb5e27",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Verse pn re-anchors at every marked block — a <sup> missing in the source never shifts other blocks; gaps reported",
+        "scope": "library"
+      },
+      {
+        "hash": "15d3bb4a",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Verse pn for grouped scripture — the chapter:verse a block starts at; <sup> verses are checksums (Chad 10-11)",
+        "scope": "library"
+      },
+      {
+        "hash": "3b4a9965",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Paragraph segmentation of oversized Arabic/Persian paragraphs by phrase index (Haiku 5.5 thinking, Message Batches at half price)",
+        "scope": "segment"
+      },
+      {
+        "hash": "bcaf0198",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Segmentation scale + cost model — tablets ≈$1.7–3.4; classical library 427M chars: $137 naive → ~$15–25 with rules + Laya + batch",
+        "scope": "planning"
+      },
+      {
+        "hash": "6eac920b",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Segmentation job B (paragraph starts) — Jev F1 0.76 vs Haiku-thinking; 64% of decisions at 88% (Laya candidate)",
+        "scope": "planning"
+      },
+      {
+        "hash": "cff14da9",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Arabic segmentation experiments — phrase-index Haiku (thinking) is the quality path; Jev confidently right on ~half the phrase decisions (Laya candidate)",
+        "scope": "planning"
+      },
+      {
+        "hash": "e80c6836",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "12k-char batches (40k made Haiku truncate or leave JSON; 76k chars of al-Istibsar → 202 sentences clean at 12k)",
+        "scope": "segment"
+      },
+      {
+        "hash": "c2a5f1fd",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "A hollow document is never 'unchanged' (main ingester) — same hash or same body with no live text re-ingests",
+        "scope": "ingest"
+      },
+      {
+        "hash": "91ac9dcd",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Arabic files are segmented once as they arrive (Haiku 5.5 file step) instead of sitting paused",
+        "scope": "ingest"
+      },
+      {
+        "hash": "81e05dcf",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "An already-marked file gets needs_segmentation: false so ingest stops pausing it",
+        "scope": "segment"
+      },
+      {
+        "hash": "085157e5",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Cost estimate calibrated on the al-Istibsar pilot (vowelled Arabic ≈1.6 input + 0.26 output tokens per char)",
+        "scope": "segment"
+      },
+      {
+        "hash": "298e691b",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Search no longer loops on 'Searching…' (effect untracked); covered results lead as cards, coverless as tiles",
+        "scope": "library"
+      },
       {
         "hash": "e9e004ac",
         "date": "2026-10-11",
@@ -6912,127 +7031,6 @@
         "type": "Fixed",
         "description": "Scene marker reaches the API; merge-review duplicate rule tightened (canonical names, nisba-consistent)",
         "scope": null
-      },
-      {
-        "hash": "b6d93319",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Scenes link only through their participants; 'before / prior to X' demotes X's evidence",
-        "scope": "search"
-      },
-      {
-        "hash": "cc2b9cec",
-        "date": "2026-09-27",
-        "type": "Chore",
-        "description": "Keep the merge-review page source out of git",
-        "scope": null
-      },
-      {
-        "hash": "fc294e85",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Merge-review export — every candidate identity merge with its textual evidence, for human decision",
-        "scope": "entities"
-      },
-      {
-        "hash": "4d45cb7a",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Merges carry scene participants; admin docs-by-title (copies with claim/mention counts)",
-        "scope": "entities"
-      }
-    ],
-    "2026-09-26": [
-      {
-        "hash": "f6416f1f",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Scenes v2 — the model binds participants to a numbered candidate list; pronouns/unnamed dropped",
-        "scope": "entities"
-      },
-      {
-        "hash": "e5b080b9",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Title → figure merges with strict name resolution and an independent second check",
-        "scope": "entities"
-      },
-      {
-        "hash": "aed1f41b",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Catalog retype merges a record into its same-named twin of the new type instead of failing",
-        "scope": "entities"
-      },
-      {
-        "hash": "f3181e6e",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Catalog apply defaults to retype-only — title merges wait for strict figure resolution + second check",
-        "scope": "entities"
-      },
-      {
-        "hash": "57c209c8",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Apply catalog review — retype non-people, merge confident titles into their figure, hold the rest",
-        "scope": "entities"
-      },
-      {
-        "hash": "1486b291",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Scene layer (migration 125) — who was physically together, with verbatim proof; scenes feed who-met-whom",
-        "scope": "entities"
-      },
-      {
-        "hash": "ebb166c5",
-        "date": "2026-09-26",
-        "type": "Test",
-        "description": "Entity known-answer battery — rosters, meetings, denials, scenes against production",
-        "scope": "quality"
-      },
-      {
-        "hash": "259a0cfd",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Person-catalog review (migration 124) — classify every 'person' record before binding mentions to it",
-        "scope": "entities"
-      },
-      {
-        "hash": "95e86186",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Mention backfill binds only capitalised, non-generic, nisba-consistent sole names",
-        "scope": "entities"
-      },
-      {
-        "hash": "2c2902cc",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Mention coverage audit + backfill — names written in the text, not only names the note glossed",
-        "scope": "entities"
-      },
-      {
-        "hash": "7a80ec24",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Paragraph-claims — what extraction produced for one paragraph, and the book's claim coverage",
-        "scope": "admin"
-      },
-      {
-        "hash": "bb5e598c",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Verified labels reach the API; a pair's authoritative denial settles both sides; names inside places/possessions are not people",
-        "scope": "search"
-      },
-      {
-        "hash": "1e3ea3e9",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "The claim gate drops a meeting claim whose own proof denies the meeting",
-        "scope": "entities"
       }
     ]
   }

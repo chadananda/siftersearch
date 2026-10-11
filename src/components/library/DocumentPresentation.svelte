@@ -1250,7 +1250,7 @@
                     onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
                     title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
                   >
-                    {(para.paragraph_index ?? i) + 1}
+                    {para.pn ?? (para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
                 <!-- Original on RIGHT -->
@@ -1291,7 +1291,7 @@
                     onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
                     title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
                   >
-                    ¶ {(para.paragraph_index ?? i) + 1}
+                    ¶ {para.pn ?? (para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
                 <!-- Phrase rows: each row has Arabic LEFT, English RIGHT -->
@@ -1344,7 +1344,7 @@
                 onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
                 title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
               >
-                {(para.paragraph_index ?? i) + 1}
+                {para.pn ?? (para.paragraph_index ?? i) + 1}
               </button>
               <div class="para-text-wrapper">
                 <div class="paragraph-text">{@html renderBlockContent(para.text, para.blocktype)}</div>
@@ -2289,7 +2289,9 @@
    */
   .para-anchor {
     flex-shrink: 0;
-    width: 2.5rem;
+    min-width: 2.5rem;                 /* grows for a verse pn like 119:176 */
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
     font-family: 'Libre Caslon Text', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
@@ -3005,7 +3007,7 @@
     }
 
     .para-anchor {
-      width: 1.5rem;
+      min-width: 1.5rem;
       font-size: 0.625rem;
     }
 
@@ -3196,7 +3198,7 @@
     .para-anchor {
       display: block !important;
       color: #666;
-      width: 1.5rem;
+      min-width: 1.5rem;
       padding: 0;
     }
 
