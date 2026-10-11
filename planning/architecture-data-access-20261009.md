@@ -135,3 +135,32 @@ CLAUDE.md), `agents/agent-librarian.js` if no caller, retired enrichment worker 
 - Roadmap progress computed in a worker thread (bio.js) — the API no longer freezes on it.
 - Remaining 21: config/env/health (5), ranking + secondary indexes (search.js, concepts, entity, hype), admin, watcher,
   indexer, graph-meili-sync, graph-extractor, unified-worker, push-meili-authors, sync-meili, update-ranking-rules.
+
+
+## Database access — the hard rule (2026-10-11)
+
+Chad 10-11: "We need clean internal APIs for database access so that we can prevent contention and log behavior for possible
+improved indexing. Tasks like deep-research should always be built using that internal API. This type of architecture is a
+hard rule!! we cannot grow an application if it is not fully observable with internal contracts for all potential bottlenecks."
+
+**Trigger.** "database is locked" from the single writer: processes started without `SIFTER_WRITER_URL` (deep-research, the
+nightly audit, ad-hoc scripts) wrote SQLite directly, took the file lock, and the writer's queued writes failed.
+
+**Done 10-11**
+- Writer is the default on tower for every process but the writer (`db.js`; escape hatch `SIFTER_DIRECT_WRITE=1`).
+- Write observability: `db_write_stats` (migration 145) per minute × caller (pm2 name / script) × batch name: batches,
+  statements, changes, errors, ms total/max. Live: `GET 127.0.0.1:7849/stats`.
+- Ratchet `tests/api/db-access-ratchet.test.js`: 299 files frozen in `tests/api/db-access-legacy.json`; new direct access fails.
+- First migration: deep-research → `api/lib/repos/deep-research-repo.js`.
+
+**Phases (each = migrate a group onto repos, shrink the list, deploy, read logs)**
+| phase | group | files | note |
+|---|---|---|---|
+| D1 | workers (deep-research ✅, embedding, graph-*, sync) | 6 | contention-critical first |
+| D2 | services (ingester, sites-ingester, library-watcher, indexer, segmenter…) | 13 | ingest = biggest writer |
+| D3 | routes | 27 | most → docs-repo/paragraphs-repo; admin.js/library.js are mega-files |
+| D4 | api/lib (non-repo) | ~75 | many become repos themselves (content.js → repos/content-repo) |
+| D5 | scripts | ~180 | delete dead one-offs (wip/, fix-*, test-*); live ones → repo calls or internal API |
+
+**Read observability (next):** repo functions carry a stable tag into `slow_query_log` (docs-repo already does); extend the tag
+to every repo function and add per-tag call/latency counters, so "which access path should get an index" is a query, not a hunt.
