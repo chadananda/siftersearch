@@ -2,6 +2,7 @@
 // Three separate databases: content (sifter.db), user, graph (graph.db).
 // Exported function signatures are async for backward compatibility.
 
+import os from 'os';
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -15,8 +16,14 @@ import { isWriteSql } from './write-server.js';
 // contention. Reads always stay direct (WAL allows unlimited concurrent
 // readers). The writer process itself sets SIFTER_IS_WRITER=1 so it writes
 // directly and never calls itself. Unset = legacy direct-write (zero change).
-const WRITER_URL = process.env.SIFTER_WRITER_URL || null;
+// ON TOWER every non-writer process routes through the writer by DEFAULT (10-11): a process started without the env
+// var (deep-research, the nightly audit, an ad-hoc script) wrote directly, took SQLite's file lock, and the writer's
+// own queued writes then failed "database is locked". The queue only works if nothing bypasses it.
+// SIFTER_DIRECT_WRITE=1 is the explicit escape hatch (writer down / maintenance).
 const IS_WRITER = process.env.SIFTER_IS_WRITER === '1';
+const ON_TOWER = os.hostname() === 'tower-nas';
+const WRITER_URL = process.env.SIFTER_WRITER_URL
+  || (ON_TOWER && !IS_WRITER && process.env.SIFTER_DIRECT_WRITE !== '1' ? 'http://127.0.0.1:7849' : null);
 const ROUTE_WRITES = !!WRITER_URL && !IS_WRITER;
 
 // A sustained run of write failures means the single writer is DOWN (deadlocked/crashed), not a one-off
