@@ -16,16 +16,24 @@ export function headedToPn(src) {
   return { text: out, verses };
 }
 
-/** Leading "c:v. " verses under "<Book> Chapter N" lines. → { text, verses, mismatched } */
+/** Leading "c:v. " verses under "<Book> Chapter N" lines; all-caps "THE BOOK OF …" lines become book headings.
+ *  → { text, verses, mismatched } (mismatched = a verse's own chapter ≠ the chapter line above it) */
+const CHAPTER = /^([1-4]?[ \t]?[A-Z][A-Za-z]*(?:[ \t]+(?:of[ \t]+)?[A-Z][A-Za-z]*){0,3})[ \t]+Chapter[ \t]+(\d+)\.?(?:[ \t]+(\S[^\n]*))?$/;
+const BOOK_TITLE = /^THE[ \t][A-Z0-9 .,'’\-]{3,}$/;
 export function leadingToPn(src) {
   const text = src.replace(/\r\n/g, '\n');
   if (/\{pn="/.test(text)) return { text, verses: 0, mismatched: 0 };
   let book = null, chapter = null, verses = 0, mismatched = 0;
-  const blocks = text.split(/(\n[ \t]*\n)/);
+  const blocks = text.split(/(\n(?:[ \t]*\n)+)/);                  // runs of blank lines are ONE separator
   for (let i = 0; i < blocks.length; i += 2) {
     const b = blocks[i];
-    const ch = b.match(/^[ \t]*([1-4]?[ \t]?[A-Z][A-Za-z ]*?)[ \t]+Chapter[ \t]+(\d+)[ \t]*$/);
-    if (ch) { book = ch[1].trim(); chapter = Number(ch[2]); blocks[i] = `## ${book} Chapter ${chapter}`; continue; }
+    if (BOOK_TITLE.test(b.trim()) && !b.trim().includes('\n')) { blocks[i] = `# ${b.trim()}`; continue; }
+    const ch = b.trim().match(CHAPTER);
+    if (ch && !b.trim().includes('\n')) {
+      book = ch[1].trim(); chapter = Number(ch[2]);
+      blocks[i] = `## ${book} Chapter ${chapter}${ch[3] ? `\n\n${ch[3]}` : ''}`;
+      continue;
+    }
     const v = b.match(/^(\d+):(\d+)\.[ \t]+([\s\S]*)$/);
     if (!v || !book) continue;
     if (Number(v[1]) !== chapter) mismatched++;
