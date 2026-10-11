@@ -45,6 +45,19 @@ That is what makes Jev cheap now and Laya possible later (it cannot read past 1,
    as they accumulate. Redesign paragraph-speaker-window, source-resolve and sourcehunt-holds to short states first.
 5. **Keep it running:** monthly re-export → re-train → re-evaluate per task; the routing battery decides.
 
+## Progress
+
+**10-10 night: step 1 done.** `scripts/laya/finetune.py` distils Jev's answer distribution into Laya. It uses laya's
+own `_encode_state` + `collate_items(target=…)`, so training sees exactly what inference sees, and it saves a checkpoint
+that `laya.load(<dir>)` reads.
+- Smoke run on tower CPU (8 threads, nice 19): `paragraph-attribution` role task, 200 train records, 25 steps, 4.5 min.
+  Agreement with Jev on 200 held-out went **7% → 93%** (KL 2.08 → 0.17).
+- For comparison, always answering the majority class ("continues") scores 65.6%.
+- The checkpoint reloaded and predicted fine (`/tank/sifter/laya-models/smoke`).
+- venv: `/tank/sifter/laya-venv` (laya 0.3.23 on tower's torch 2.10).
+- Full pilot cost on tower CPU: ~10 s per batch-8 step at 8 threads → one epoch of the 38.7k role set ≈ 13 h. That is
+  the GPU-or-CPU decision below.
+
 ## Decisions for Chad
 
 - **Train on boss's GPU?** Fine-tuning needs a ROCm build of torch on boss and ~6–10 GB of GPU memory for a few hours per
