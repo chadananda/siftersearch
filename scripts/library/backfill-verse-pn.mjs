@@ -14,7 +14,7 @@ if (APPLY && !process.env.SIFTER_WRITER_URL) throw new Error('SIFTER_WRITER_URL 
 const docs = ONLY || (await queryAll(`SELECT DISTINCT doc_id FROM content WHERE deleted_at IS NULL AND text LIKE '%<sup>%:%</sup>%'`)).map((r) => r.doc_id);
 const stats = { docs: docs.length, rows: 0, numbered: 0, set: 0, kept: 0, issues: 0 };
 for (const id of docs) {
-  const rows = await queryAll(`SELECT id, text, heading, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL AND blocktype != 'footnote' ORDER BY paragraph_index`, [id]);
+  const rows = await queryAll(`SELECT id, text, heading, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype, '') != 'footnote' ORDER BY paragraph_index`, [id]);
   if (!rows.some((r) => /<sup>\s*\d+:\d+\s*<\/sup>/.test(r.text))) continue;
   const { pn, issues } = versePn(rows);
   stats.issues += issues.length;

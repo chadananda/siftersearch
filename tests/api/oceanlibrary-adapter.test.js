@@ -224,5 +224,6 @@ describe('OceanLibrary unresolved image placeholders', () => {
     const { isImagePlaceholder } = await import('../../api/services/site-adapters/oceanlibrary.js');
     expect(isImagePlaceholder('![[Illustration: From a drawing by Asit Kumar Haldar]]({{the_crescent_moon_en-blh5_image_hash_key}} "x")')).toBe(true);
     expect(isImagePlaceholder('![Footnote [1]:Another MS of the Muqaddimah in Turkey')).toBe(false);
+    expect(isImagePlaceholder(`![Footnote [1]:${'Another MS of the Muqaddimah in Turkey, which I was unable to examine. '.repeat(4)}]({{al_muqaddimah_en-bl3wg_image_hash_key}} "x")`)).toBe(false);
   });
 });
