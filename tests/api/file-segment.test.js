@@ -46,10 +46,10 @@ describe('file-segment', () => {
     writeFileSync(f, `---\ntitle: B\n---\n${Array(200000).fill('كلمة').join(' ')}\n`);
     expect((await segmentFile(f, { apply: true, maxUsd: 0.01 })).status).toBe('over-budget');
   });
-  it('policy: Anthropic allowed for file-segment only with Haiku 5.5 over Arabic/Persian', () => {
+  it('policy: Anthropic allowed for segmentation only with Haiku 5.5 (any language)', () => {
     expect(isFileSegmentAllowed({ stage: 'file-segment', model: 'claude-haiku-5-5', sourceLang: 'ar' })).toBe(true);
+    expect(isFileSegmentAllowed({ stage: 'file-segment', model: 'claude-haiku-5-5', sourceLang: 'he' })).toBe(true);
     expect(isFileSegmentAllowed({ stage: 'file-segment', model: 'claude-sonnet-5-5', sourceLang: 'ar' })).toBe(false);
-    expect(isFileSegmentAllowed({ stage: 'file-segment', model: 'claude-haiku-5-5', sourceLang: 'en' })).toBe(false);
     expect(isFileSegmentAllowed({ stage: 'grounding', model: 'claude-haiku-5-5', sourceLang: 'ar' })).toBe(false);
   });
 });

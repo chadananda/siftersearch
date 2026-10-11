@@ -89,12 +89,12 @@ export function isOriginalSegmentAllowed({ docId, stage, sourceLang } = {}) {
   return CORE_ROSTER_IDS.has(Number(docId)) || ORIGINALS_TARGET_IDS.has(Number(docId));
 }
 
-// File-level segmentation of Arabic/Persian SOURCE files (Chad 10-11: "a one-time segmentation of all arabic documents
-// at the file level as they arrive" with Haiku 5.5). Any document, but only this stage, only Haiku 5.5, only over
-// Arabic/Persian text: the cheapest model that reads Arabic well, with an index/ending-only output.
+// Segmentation (sentence markers, paragraph breaks) is Haiku 5.5's job in EVERY language (Chad 10-11: "Why are we using
+// LMStudio? We have haiku 5.5 which is fast and cheap" — the LM Studio box is retired). Only this stage, only Haiku
+// 5.5: index/ending-only output, so the spend is bounded by the text being segmented.
 const FILE_SEGMENT_MODELS = new Set(['claude-haiku-5-5']);
-export function isFileSegmentAllowed({ stage, model, sourceLang } = {}) {
-  return String(stage || '') === 'file-segment' && FILE_SEGMENT_MODELS.has(String(model || '')) && ORIGINAL_LANGS.has(String(sourceLang || ''));
+export function isFileSegmentAllowed({ stage, model } = {}) {
+  return String(stage || '') === 'file-segment' && FILE_SEGMENT_MODELS.has(String(model || ''));
 }
 
 /**

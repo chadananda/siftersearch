@@ -138,10 +138,10 @@ const aiConfig = {
     dimensions: getInt('EMBEDDING_DIMENSIONS', 512)
   },
 
-  // Segmentation (Arabic/Farsi/Hebrew AI segmentation via local vLLM)
+  // Segmentation (sentence markers, paragraph breaks) — Haiku 5.5 in every language; LM Studio retired 10-11
   segmentation: {
-    provider: get('SEGMENTATION_LLM_PROVIDER', 'lmstudio'),
-    model: get('SEGMENTATION_LLM_MODEL', 'Qwen/Qwen3-32B-AWQ'),
+    provider: get('SEGMENTATION_LLM_PROVIDER', 'anthropic'),
+    model: get('SEGMENTATION_LLM_MODEL', 'claude-haiku-5-5'),
     temperature: getFloat('SEGMENTATION_LLM_TEMPERATURE', 0.1),
     maxTokens: getInt('SEGMENTATION_LLM_MAX_TOKENS', 16000),
   },

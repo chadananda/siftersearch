@@ -1,25 +1,16 @@
-// A localOnly AI scope must never reach a paid model (10-11: tower's USE_REMOTE_AI=true silently made segmentation's
-// "local" primary GPT-4o, so a localOnly Arabic ingest spent $0.72 before it was stopped).
+// Segmentation is Haiku 5.5 in every language; LM Studio is retired (Chad 10-11). A localOnly scope never spends and no
+// local segmenter exists, so it fails at once — the 10-11 hang (a dead LM Studio host, 2 h per book) cannot recur.
 import { describe, it, expect } from 'vitest';
-import { config } from '../../api/lib/config.js';
-import { aiService, segmentationService } from '../../api/lib/ai-services.js';
+import { segmentationService, SEGMENTATION_MODEL } from '../../api/lib/ai-services.js';
 import { withAIContext } from '../../api/lib/ai-context.js';
 
-describe('segmentation stays local when asked', () => {
-  it('forceLocal beats USE_REMOTE_AI', () => {
-    const was = config.useRemoteAI;
-    config.useRemoteAI = true;
-    try {
-      expect(aiService('segmentation', { forceLocal: true }).name).toBe('segmentation:local');
-      expect(aiService('segmentation').name).toBe('segmentation:remote');
-    } finally { config.useRemoteAI = was; }
+describe('segmentation service', () => {
+  it('is Haiku 5.5', () => {
+    expect(SEGMENTATION_MODEL).toEqual({ provider: 'anthropic', model: 'claude-haiku-5-5' });
+    expect(segmentationService().config.model).toBe('claude-haiku-5-5');
   });
-  it('a localOnly scope refuses a non-local segmentation provider before any call', async () => {
-    const was = config.ai.segmentation.provider;
-    config.ai.segmentation.provider = 'openai';
-    try {
-      await expect(withAIContext({ localOnly: true }, () => segmentationService().chat([{ role: 'user', content: 'x' }])))
-        .rejects.toThrow(/localOnly scope refuses/);
-    } finally { config.ai.segmentation.provider = was; }
+  it('a localOnly scope fails before any call', async () => {
+    await expect(withAIContext({ localOnly: true }, () => segmentationService().chat([{ role: 'user', content: 'x' }])))
+      .rejects.toThrow(/localOnly/);
   });
 });

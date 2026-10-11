@@ -19,7 +19,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { query, telemetryQuery } from './db.js';
 import { getModel, effectivePricing } from './model-registry.js';
-import { currentAIContext } from './ai-context.js';
+import { currentAIContext, withAIContext } from './ai-context.js';
 import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 import { nowInPeak } from './pipeline/peak.js';
 
@@ -400,8 +400,7 @@ const SERVICE_CONFIG = {
     }
   },
 
-  // Segmentation: Arabic/Farsi document segmentation via LM Studio
-  // Use: AI-powered text segmentation for non-Latin scripts
+  // Segmentation: sentence markers + paragraph breaks — Haiku 5.5 (segmentationService); LM Studio retired 10-11
   get segmentation() {
     const segConfig = config.ai.segmentation;
     return {
@@ -412,9 +411,8 @@ const SERVICE_CONFIG = {
         maxTokens: segConfig.maxTokens
       },
       remote: {
-        provider: 'openai',
-        model: 'gpt-4o',
-        temperature: 0.1,
+        provider: 'anthropic',
+        model: 'claude-haiku-5-5',
         maxTokens: 16000
       }
     };
@@ -988,48 +986,29 @@ export function aiService(serviceType, options = {}) {
 // =============================================================================
 
 /**
- * Get segmentation AI service with automatic fallback.
- * Tries LM Studio first (free, local network), falls back to cloud API on error.
+ * Segmentation = Haiku 5.5, every language (Chad 10-11). The retired LM Studio box made every segmenting ingest hang
+ * (local-first, then a cloud fallback after minutes). A run may still name its model in the AI context.
+ * localOnly scopes never spend, and there is no local segmenter any more, so they fail at once (callers fall back:
+ * unmarked text, kept paragraphs).
  */
 const LOCAL_PROVIDERS = new Set(['lmstudio', 'ollama', 'vllm', 'local']);
+export const SEGMENTATION_MODEL = { provider: 'anthropic', model: 'claude-haiku-5-5' };
 export function segmentationService() {
-  // Always try local (LM Studio) first, regardless of USE_REMOTE_AI setting
-  const primary = aiService('segmentation', { forceLocal: true });
-
+  const svc = aiService('segmentation', { forceRemote: true });
   return {
-    name: primary.name,
-    config: primary.config,
+    name: 'segmentation:haiku-5-5',
+    config: { ...svc.config, ...SEGMENTATION_MODEL },
 
     async chat(messages, overrides = {}) {
-      // A run may name its segmentation model (file-segment: Haiku 5.5, Chad 10-11). The system prompt is static, so it
-      // is cached; the anthropic-policy gate still decides whether the call is allowed.
-      const named = currentAIContext().segmentationModel;
-      if (named) {
-        return aiService('segmentation', { forceRemote: true }).chat(messages, {
-          ...overrides, provider: named.provider, model: named.model, cacheSystemPrompt: true,
-          thinking: { type: 'disabled' },        // an endings list needs no reasoning trace; it ate the 8k output budget
-          maxTokens: Math.max(16000, overrides.maxTokens ?? overrides.max_tokens ?? 0),
-        });
-      }
-      // localOnly must never reach a paid model, whatever the primary resolved to
-      if (currentAIContext().localOnly && !LOCAL_PROVIDERS.has(primary.config.provider)) {
-        throw new Error(`segmentation: localOnly scope refuses non-local provider ${primary.config.provider}`);
-      }
-      try {
-        return await primary.chat(messages, overrides);
-      } catch (err) {
-        // If LM Studio fails, fall back to cloud API
-        const primaryProvider = primary.config.provider;
-        // A caller that must not spend (bulk ingest of thousands of originals) opens a `localOnly` AI scope:
-        // the local model's failure then surfaces instead of silently becoming a cloud bill.
-        if (currentAIContext().localOnly) throw err;
-        if (primaryProvider === 'lmstudio') {
-          logger.warn({ err: err.message }, 'LM Studio unreachable, falling back to cloud API for segmentation');
-          const fallback = aiService('segmentation', { forceRemote: true });
-          return await fallback.chat(messages, overrides);
-        }
-        throw err;
-      }
+      const ctx = currentAIContext();
+      if (ctx.localOnly) throw new Error('segmentation: localOnly scope — no local segmenter exists (LM Studio retired)');
+      const named = ctx.segmentationModel || SEGMENTATION_MODEL;
+      const { temperature, ...rest } = overrides;                      // Haiku 5.5 rejects temperature
+      return withAIContext({ stage: 'file-segment' }, () => svc.chat(messages, {
+        ...rest, provider: named.provider, model: named.model, cacheSystemPrompt: true,
+        thinking: { type: 'disabled' },        // an endings list needs no reasoning trace; it ate the 8k output budget
+        maxTokens: Math.max(16000, overrides.maxTokens ?? overrides.max_tokens ?? 0),
+      }));
     }
   };
 }
