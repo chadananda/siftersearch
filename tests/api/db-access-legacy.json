@@ -227,7 +227,6 @@
   "scripts/migrate-embeddings-to-cache.js",
   "scripts/migrate-graph-tables.js",
   "scripts/migrate-translation-segments.js",
-  "scripts/migrate.js",
   "scripts/phrase-index/indexer.mjs",
   "scripts/phrase-index/keyword-index.mjs",
   "scripts/phrase-index/push-qdrant-authors.mjs",

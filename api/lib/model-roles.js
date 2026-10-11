@@ -22,6 +22,9 @@ export const MODEL_ROLES = {
   // ── text processing ──
   'segmentation': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-11', needs: ['arabic', 'index-output', 'batch'],
     why: 'best value for Arabic; batch half price; LM Studio retired (Chad 10-11)' },
+  // ── evaluation ──
+  'bakeoff-judge': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-11', needs: ['multilingual', 'judgement', 'json'],
+    why: 'blind judge must be stronger than every flash candidate and read fa/ar/he/zh (anthropic-policy stage model-eval)' },
   // ── legacy chat / publishing / bios (call sites not yet on modelFor — see tests/api/model-literal-ratchet.test.js) ──
   'jafar-research': { provider: 'openai', model: 'gpt-4o', reviewed: '2026-08-09', needs: ['tool-use'], why: 'legacy Jafar pipeline' },
   'jafar-light': { provider: 'openai', model: 'gpt-4o-mini', reviewed: '2026-08-09', needs: ['fast'], why: 'legacy Jafar pipeline' },

@@ -102,6 +102,14 @@ export function isFileSegmentAllowed({ stage, model } = {}) {
  * plan book. Not an Anthropic call → returns immediately (no effect on deepseek/openai/ollama/local).
  * lang + docId are read from the caller's ambient ai-context; missing/other → refused.
  */
+// MODEL BAKE-OFF JUDGE (Chad 10-11: "collect a set of sample scenarios across languages so that we can run them with
+// each flash model and see which is a better value"). A blind judge must be a STRONGER model than the candidates, and it
+// must read Persian/Arabic/Hebrew/Chinese replies — Sonnet/Opus 5.5. Only the bake-off's own stage; capped by its runner.
+const MODEL_EVAL_JUDGES = new Set(['claude-sonnet-5-5', 'claude-opus-5-5']);
+export function isModelEvalAllowed({ stage, model } = {}) {
+  return String(stage || '') === 'model-eval' && MODEL_EVAL_JUDGES.has(String(model || ''));
+}
+
 export function assertAnthropicAllowed({ provider, model, lang, docId, caller, stage, originalLang, sourceLang } = {}) {
   if (!isAnthropicProvider(provider) && !isAnthropicModel(model)) return;   // not Anthropic → not our concern
   const okLang = lang === 'fa';
@@ -110,7 +118,8 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   if (docId != null && PAID_DOC_ALLOWLIST.has(Number(docId))) return;       // flagship exception (see note above)
   if (isConceptCoreAllowed({ docId, stage, originalLang })) return;         // concept core (see note above)
   if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;       // segmenting an original (see note)
-  if (isFileSegmentAllowed({ stage, model, sourceLang })) return;           // file-level Arabic/Persian segmentation (Haiku 5.5)
+  if (isFileSegmentAllowed({ stage, model, sourceLang })) return;
+  if (isModelEvalAllowed({ stage, model })) return;                          // the bake-off's blind judge           // file-level Arabic/Persian segmentation (Haiku 5.5)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

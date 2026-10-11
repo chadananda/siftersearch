@@ -1,0 +1,19 @@
+{
+ "_comment": "Anís answer role — real-style questions across the corpus's languages (en fa ar he fr zh es). English packets come from tests/anis/soul-packets.json; these are added and get evidence from /api/v1/search at --build.",
+ "questions": [
+  { "id": "fa-education", "lang": "fa", "q": "حضرت عبدالبهاء درباره تعلیم و تربیت کودکان چه فرموده‌اند؟", "stance": "curious" },
+  { "id": "fa-afterlife", "lang": "fa", "q": "روح انسان پس از مرگ چه می‌شود؟", "stance": "grieving_personal" },
+  { "id": "fa-oneness", "lang": "fa", "q": "مقصود از وحدت عالم انسانی چیست؟", "stance": "curious" },
+  { "id": "ar-jesus", "lang": "ar", "q": "ماذا يقول القرآن عن عيسى ابن مريم؟", "stance": "curious" },
+  { "id": "ar-justice", "lang": "ar", "q": "ما معنى العدل في الآثار البهائية؟", "stance": "curious" },
+  { "id": "ar-prayer", "lang": "ar", "q": "لماذا نصلي إذا كان الله يعلم ما نحتاج إليه؟", "stance": "skeptical" },
+  { "id": "he-stranger", "lang": "he", "q": "מה אומרת התורה על אהבת הגר?", "stance": "curious" },
+  { "id": "he-shabbat", "lang": "he", "q": "מהי משמעות השבת?", "stance": "curious" },
+  { "id": "fr-equality", "lang": "fr", "q": "Que disent les écrits bahá'ís sur l'égalité entre les femmes et les hommes ?", "stance": "disputing" },
+  { "id": "fr-prayer", "lang": "fr", "q": "Pourquoi prier si Dieu sait déjà ce dont nous avons besoin ?", "stance": "curious" },
+  { "id": "es-compassion", "lang": "es", "q": "¿Qué enseña el budismo sobre la compasión?", "stance": "curious" },
+  { "id": "es-unity", "lang": "es", "q": "¿Qué dice Bahá'u'lláh sobre la unidad de la humanidad?", "stance": "curious" },
+  { "id": "zh-ren", "lang": "zh", "q": "孔子关于仁的教导是什么？", "stance": "curious" },
+  { "id": "zh-dao", "lang": "zh", "q": "道德经怎样描述道？", "stance": "curious" }
+ ]
+}

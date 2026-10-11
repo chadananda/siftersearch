@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
 import { logAIUsage } from '../ai-services.js';
 import { noteProviderError } from '../spend-alerts.js';
+import { getModel } from '../model-registry.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
 const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
@@ -15,22 +16,27 @@ function client(provider) {
   }));
 }
 
-export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, direction = {}, llm, onChunk, signal }) {
+export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, onUsage = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
   const dir = anisDirection({ channelFrame: direction.channel?.frame ?? null, stance: direction.stance ?? null, guarded: !!direction.guarded,
     conversational, mission, companionAppend: companion_append, formatHow: direction.format?.how ?? null });
+  // Per-model request shape from the registry: Haiku 5.5 and the GPT-5 family reject temperature; GPT-5 counts
+  // max_completion_tokens and should not reason for a chat reply (reasoning_effort minimal).
+  const reg = getModel(llm.model) || {};
+  const effort = llm.reasoning_effort ?? reg.reasoningEffort;
+  const maxTok = effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 700;
   const params = {
     model: llm.model,
     messages: [
       { role: 'system', content: anisSystem({ persona: persona_name || 'Anís' }) },
       { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational, entities, peopleAnswer, target, direction: dir }) },
     ],
-    temperature: 0.3,
+    ...(reg.noTemperature ? {} : { temperature: 0.3 }),
     // Reasoning models spend completion tokens thinking; leave room so the reply is never truncated.
-    max_tokens: llm.reasoning_effort && llm.reasoning_effort !== 'none' ? 1500 : 700,
+    [reg.maxTokensParam || 'max_tokens']: maxTok,
     stream: true,
     stream_options: { include_usage: true },   // the final chunk reports tokens → spend (ai_usage)
-    ...(llm.reasoning_effort ? { reasoning_effort: llm.reasoning_effort } : {}),
+    ...(effort ? { reasoning_effort: effort } : {}),
     // DeepSeek v4-flash thinks unless told not to — TOP-LEVEL key, not extra_body (see ai-services chatDeepSeek).
     ...(llm.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
   };
@@ -49,7 +55,9 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
   }
   // Spend: every Anís reply. Providers that don't report usage on a stream get an estimate (~4 chars/token).
   const promptChars = params.messages.reduce((n, m) => n + String(m.content || '').length, 0);
-  logAIUsage({ provider: llm.provider === 'gemini' ? 'google' : llm.provider, model: llm.model, serviceType: 'chat', caller: 'anis-craft',
-    promptTokens: usage?.prompt_tokens ?? Math.ceil(promptChars / 4), completionTokens: usage?.completion_tokens ?? Math.ceil(full.length / 4) });
+  const promptTokens = usage?.prompt_tokens ?? Math.ceil(promptChars / 4), completionTokens = usage?.completion_tokens ?? Math.ceil(full.length / 4);
+  logAIUsage({ provider: llm.provider === 'gemini' ? 'google' : llm.provider, model: llm.model, serviceType: 'chat', caller: llm.caller || 'anis-craft',
+    promptTokens, completionTokens });
+  onUsage?.({ promptTokens, completionTokens, reported: !!usage });   // the model bake-off prices each reply exactly
   return full;
 }

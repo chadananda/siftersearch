@@ -77,7 +77,18 @@ export function localChecks(o = {}) {
       return `${Object.keys(CRITICAL_APPS).length} online`;
     }],
     ['API health (local)', async () => { const r = await g(`${LOCAL_API}/api/v1/health`, { timeoutMs: 3000 }); expect(r.status === 200, `HTTP ${r.status}`); return `${r.ms} ms`; }],
-    ['single writer', async () => { const r = await g('http://127.0.0.1:7849/health', { timeoutMs: 3000 }); expect(r.status === 200, `HTTP ${r.status}`); return `${r.ms} ms`; }],
+    ['single writer', async () => {
+      try {
+        const r = await g('http://127.0.0.1:7849/health', { timeoutMs: 5000 }); expect(r.status === 200, `HTTP ${r.status}`); return `${r.ms} ms`;
+      } catch (e) {
+        // every deploy recreates the worker; while it boots its startup scans can hold /health past the probe (10-11:
+        // two pushes 7 min apart raised an [ACTION]). A writer up < 5 min is STARTING, not failing.
+        const w = JSON.parse(await run('pm2 jlist')).find((p) => p.name === 'siftersearch-worker');
+        const upS = w?.pm2_env?.pm_uptime ? Math.round((Date.now() - w.pm2_env.pm_uptime) / 1000) : null;
+        if (w?.pm2_env?.status === 'online' && upS != null && upS < 300) return `starting (up ${upS}s after a restart)`;
+        throw e;
+      }
+    }],
     ['search (planned, internal)', async () => {
       const r = await g(`${LOCAL_API}/api/search/multi`, { method: 'POST', timeoutMs: 30000,
         headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-Internal-Key': process.env.DEPLOY_SECRET || '' },
