@@ -14,6 +14,11 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
 
+- [x] HARD RULE tightened: scripts + agents never touch production data → internal ops API (`scripts/ops/ops.mjs`,
+      `/api/admin/ops/reports`), health scans = reports run by `siftersearch-reports`; 195 scripts frozen (shrink-only)
+- [ ] Move the running/legacy data tools behind the API, biggest first: phrase indexer, segment-paragraphs, library-fixes,
+      sites-ingest, reingest-document (each → a server-side job + endpoint; script becomes a client)
+
 ## Then — the real value
 - [ ] Concept extraction · HyPE · Anís · Dewey
 
