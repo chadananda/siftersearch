@@ -18,7 +18,7 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { query, telemetryQuery } from './db.js';
-import { getModel } from './model-registry.js';
+import { getModel, effectivePricing } from './model-registry.js';
 import { currentAIContext } from './ai-context.js';
 import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 import { nowInPeak } from './pipeline/peak.js';
@@ -273,8 +273,9 @@ export function logAIUsage({
       // The REGISTRY is the price source of truth; MODEL_PRICING is a legacy duplicate kept only for ids the
       // registry doesn't carry. It silently lacked the models we actually run (deepseek-v4-flash), so a priced
       // call logged $0 — a zero cost is indistinguishable from "no spend", which is how spend stays invisible.
-      const pricing = getModel(model)?.pricing || MODEL_PRICING[model] || { input: 0, output: 0 };
       const inputTokens = promptTokens || totalTokens;
+      // long-context surcharge (Haiku 5.5: 5× past 100k tokens) comes from the registry, per call size
+      const pricing = getModel(model) ? effectivePricing(model, inputTokens) : (MODEL_PRICING[model] || { input: 0, output: 0 });
       // promptTokens is the WHOLE prompt (clients normalise this), so the cached portion is a subset of it.
       // Cache reads bill ~0.1x; a cache WRITE bills ~1.25x (paid once per prefix, then amortised over the book).
       const fresh = Math.max(0, inputTokens - cachedTokens - cacheWriteTokens);

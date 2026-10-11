@@ -124,6 +124,7 @@ export const MODEL_REGISTRY = {
   // =========================================================================
   'claude-3-opus-20240229': {
     provider: 'anthropic',
+    deprecated: true,   // superseded by the 5.5 family (Chad 10-11)
     name: 'Claude 3 Opus',
     type: 'chat',
     pricing: { input: 0.015, output: 0.075 },
@@ -138,6 +139,7 @@ export const MODEL_REGISTRY = {
 
   'claude-3-sonnet-20240229': {
     provider: 'anthropic',
+    deprecated: true,   // superseded by the 5.5 family (Chad 10-11)
     name: 'Claude 3 Sonnet',
     type: 'chat',
     pricing: { input: 0.003, output: 0.015 },
@@ -152,6 +154,7 @@ export const MODEL_REGISTRY = {
 
   'claude-3-haiku-20240307': {
     provider: 'anthropic',
+    deprecated: true,   // superseded by the 5.5 family (Chad 10-11)
     name: 'Claude 3 Haiku',
     type: 'chat',
     pricing: { input: 0.00025, output: 0.00125 },
@@ -166,6 +169,7 @@ export const MODEL_REGISTRY = {
 
   'claude-haiku-4-5-20251001': {
     provider: 'anthropic',
+    deprecated: true,   // superseded by the 5.5 family (Chad 10-11)
     name: 'Claude Haiku 4.5',
     type: 'chat',
     pricing: { input: 0.001, output: 0.005 },   // Haiku 4.5 = $1/M in, $5/M out (per-1K here). Was Haiku-3 rates ($0.25/$1.25) → 4× undercount that hid a ~$200 drain.
@@ -180,6 +184,7 @@ export const MODEL_REGISTRY = {
 
   'claude-sonnet-4-6': {
     provider: 'anthropic',
+    deprecated: true,   // superseded by the 5.5 family (Chad 10-11)
     name: 'Claude Sonnet 4.6',
     type: 'chat',
     pricing: { input: 0.003, output: 0.015 },
@@ -194,9 +199,10 @@ export const MODEL_REGISTRY = {
 
   'claude-opus-4-7': {
     provider: 'anthropic',
+    deprecated: true,   // superseded by the 5.5 family (Chad 10-11)
     name: 'Claude Opus 4.7',
     type: 'chat',
-    pricing: { input: 0.015, output: 0.075 },
+    pricing: { input: 0.005, output: 0.025 },   // $5/$25 (was Claude-3-Opus $15/$75 — 3× overcount)
     contextWindow: 200000,
     maxOutput: 8192,
     capabilities: ['reasoning', 'analysis', 'coding', 'vision'],
@@ -205,6 +211,48 @@ export const MODEL_REGISTRY = {
     recommended: ['apex_tasks', 'rare_high_stakes'],
     notes: 'Apex model. Reserve for highest-stakes adjudication only.'
   },
+
+  // --- Claude 5.5 family: the ONLY Anthropic models we use (Chad 2026-10-11). Prices per 1K tokens. Live list:
+  // GET https://api.anthropic.com/v1/models (tests/api/model-registry-anthropic.test.js pins this set). Every
+  // Anthropic call still passes api/lib/anthropic-policy.js (fail-closed).
+  'claude-haiku-5-5': {
+    provider: 'anthropic',
+    name: 'Claude Haiku 5.5',
+    type: 'chat',
+    pricing: { input: 0.0001, output: 0.0005 },            // $0.10 / $0.50 per 1M on prompts up to 100k tokens
+    longContext: { threshold: 100000, input: 0.0005, output: 0.0025 },   // 5× above 100k ($0.50 / $2.50) — keep calls under it
+    batch: 0.5,                                             // Message Batches: half price
+    cacheRead: 0.1,
+    contextWindow: 1000000,                                 // accepted; priced 5× past 100k
+    maxOutput: 128000,
+    capabilities: ['classification', 'extraction', 'segmentation', 'multilingual', 'batch'],
+    quality: 'balanced',
+    speed: 'very_fast',
+    recommended: ['arabic_segmentation', 'system1_escalation', 'high_volume_classification'],
+    released: '2026-10-07',
+    notes: 'Best value model for Arabic (Chad 10-11). Segmentation: index/ending-only output, cached system prompt, <100k per call.'
+  },
+  'claude-sonnet-5-5': {
+    provider: 'anthropic', name: 'Claude Sonnet 5.5', type: 'chat',
+    pricing: { input: 0.002, output: 0.010 }, batch: 0.5, cacheRead: 0.1,
+    contextWindow: 1000000, maxOutput: 128000,
+    capabilities: ['reasoning', 'coding', 'analysis', 'vision', 'extraction'], quality: 'quality', speed: 'medium',
+    recommended: ['complex_extraction', 'adjudication'], released: '2026-09-28',
+  },
+  'claude-opus-5-5': {
+    provider: 'anthropic', name: 'Claude Opus 5.5', type: 'chat',
+    pricing: { input: 0.004, output: 0.020 }, batch: 0.5, cacheRead: 0.1,
+    contextWindow: 1000000, maxOutput: 128000,
+    capabilities: ['reasoning', 'analysis', 'coding', 'vision'], quality: 'premium', speed: 'slow',
+    recommended: ['apex_tasks', 'rare_high_stakes'], released: '2026-09-21',
+  },
+  // Listed so a stray call is still PRICED (never logged at $0) — not for use: Chad 10-11, "the anthropic 5.5 models
+  // are the only ones worth using".
+  'claude-fable-5-1': { provider: 'anthropic', name: 'Claude Fable 5.1', type: 'chat', pricing: { input: 0.010, output: 0.050 }, batch: 0.5, contextWindow: 1000000, maxOutput: 128000, deprecated: true, notes: 'Not for use — 5.5 family only.' },
+  'claude-fable-5': { provider: 'anthropic', name: 'Claude Fable 5', type: 'chat', pricing: { input: 0.010, output: 0.050 }, batch: 0.5, contextWindow: 1000000, maxOutput: 128000, deprecated: true, notes: 'Not for use — 5.5 family only.' },
+  'claude-opus-5': { provider: 'anthropic', name: 'Claude Opus 5', type: 'chat', pricing: { input: 0.005, output: 0.025 }, batch: 0.5, contextWindow: 1000000, maxOutput: 128000, deprecated: true, notes: 'Not for use — 5.5 family only.' },
+  'claude-sonnet-5': { provider: 'anthropic', name: 'Claude Sonnet 5', type: 'chat', pricing: { input: 0.003, output: 0.015 }, batch: 0.5, contextWindow: 1000000, maxOutput: 128000, deprecated: true, notes: 'Not for use — 5.5 family only.' },
+  'claude-opus-4-8': { provider: 'anthropic', name: 'Claude Opus 4.8', type: 'chat', pricing: { input: 0.005, output: 0.025 }, batch: 0.5, contextWindow: 1000000, maxOutput: 128000, deprecated: true, notes: 'Not for use — 5.5 family only.' },
 
   // =========================================================================
   // Ollama / Local Models (Free)
@@ -552,11 +600,19 @@ export function getModelPricing(modelId) {
   return model?.pricing || { input: 0, output: 0 };
 }
 
+/** Pricing for a call of this prompt size: a model with a longContext block bills its surcharged rates past the
+ *  threshold (Haiku 5.5: 5× above 100k tokens). */
+export function effectivePricing(modelId, promptTokens = 0) {
+  const m = MODEL_REGISTRY[modelId];
+  const lc = m?.longContext;
+  return lc && promptTokens > lc.threshold ? { ...m.pricing, input: lc.input, output: lc.output } : (m?.pricing || { input: 0, output: 0 });
+}
+
 /**
  * Calculate cost for a request
  */
 export function calculateCost(modelId, promptTokens, completionTokens) {
-  const pricing = getModelPricing(modelId);
+  const pricing = effectivePricing(modelId, promptTokens);
   if (pricing.perChar) {
     // TTS pricing is per character, not tokens
     return 0; // TTS cost calculated separately
