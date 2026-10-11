@@ -43,3 +43,31 @@ splitter also opens a phrase at a numbered report («10-»).
    phrases, and Haiku sees only paragraphs with uncertain phrases. Measure before switching.
 4. Paragraphs (sentences → paragraphs): only for texts with no edition paragraphs; same index pattern. Not yet tested.
    The hadith books keep their edition paragraphs.
+
+## Scale and cost (10-11, after Chad: ">10k tablets … $34 for a few books is not encouraging")
+
+**Workload** (fa/ar text needing a MODEL: unpunctuated, more than 40 words, not already sentence-marked at a plausible density):
+
+| group | docs | chars needing a model | note |
+|---|---:|---:|---|
+| Core Tablets (ar + fa) | ~2,200 | **10.7M** | 93% of tablet text is already marked, punctuated or short |
+| other Persian | 30 | 13.1M | |
+| other Arabic (classical library: Bihar, Wasa'il…) | 289 | **427M** | 178M of it is in 41–150-word paragraphs (1–3 sentences each) |
+
+**Price per million chars** (phrase-index method, undiacritized input ≈ 0.78 tokens per char; measured on 24 paragraphs):
+
+| setting | $ / M chars | Core Tablets | classical library | quality vs reference |
+|---|---:|---:|---:|---|
+| Haiku, thinking at medium effort (default) | 0.32 | $3.4 | $137 | reference |
+| same via **Batch API** (−50%) | 0.16 | $1.7 | $68 | same |
+| Haiku, thinking at **low effort**, batch | 0.085 | $0.9 | $36 | F1 0.75 |
+| no thinking (+ free continuation rules) | 0.06 | $0.6 | $25 | F1 0.57–0.61 (not acceptable) |
+
+**Free and cheap layers that remove decisions before any Haiku call:**
+- strong rules (numbered report, باب/كتاب/فصل): precision 1.0, 27% of sentence starts, $0
+- Jev, confidence ≥ 0.8: ~24–30% of phrase decisions at 95–99%, $0.04/M tokens
+- Laya trained on Haiku labels: target 60–80% of decisions, $0 (boss CPU/GPU), labels ≈ $0.04 per 1,000 decisions
+
+**Cascade estimate for the classical library:** rules + Laya take ~70% of decisions; Haiku (thinking, batch) only on
+paragraphs that still hold an uncertain phrase → roughly **$15–25** once, then ~$0 for new arrivals. Paragraphs of
+41–150 words could also wait (−42% of the volume).
