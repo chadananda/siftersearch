@@ -1,10 +1,12 @@
 // Display numbers (pn) for verse-grouped scripture (KJV, Tanakh, Qur'an). Chad 10-11: "the way we number paragraphs in the
 // Bible and Qur'an (pn) is the current verse number at the start … verses inside each paragraph are labeled with super".
-// A block holds its first verse + one per <sup>c:v</sup>; its pn is the chapter:verse it STARTS at. Deterministic: the
-// first <sup> of a chapter anchors the count (forwards and backwards), every other <sup> is a checksum. A block before
+// A block holds its first verse + one per <sup>c:v</sup>; its pn is the chapter:verse it STARTS at. Deterministic: each
+// marked block re-anchors the count, so a <sup> missing or mistyped in the source stays a local, reported issue. A block before
 // verse 1 (an invocation, a title) gets no pn. ILM's own exported pn, when a file has one, always wins. Pure; no I/O.
 const SUP = /<sup>\s*(\d+):(\d+)\s*<\/sup>/g;
 const sups = (t) => [...String(t || '').matchAll(SUP)].map((m) => ({ c: Number(m[1]), v: Number(m[2]) }));
+// the chapter most of a heading group's <sup>s name — one typo'd <sup> (Rodwell IX has a "4:50" among 9:n) never relabels it
+const majorityChapter = (all) => { const n = new Map(); for (const x of all) n.set(x.c, (n.get(x.c) || 0) + 1); return [...n].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null; };
 const chapterOfHeading = (h) => { const m = String(h || '').match(/(\d+)\s*$/) || String(h || '').match(/Chapter\s+(\d+)/i); return m ? Number(m[1]) : null; };
 
 /**
@@ -23,7 +25,7 @@ export function versePn(paras) {
   paras.forEach((p, i) => { const h = p.heading || ''; if (!groups.length || groups[groups.length - 1].h !== h) groups.push({ h, idx: [] }); groups[groups.length - 1].idx.push(i); });
   for (const g of groups) {
     const anchored = g.idx.find((i) => sups(paras[i].text).length);
-    const chapter = anchored != null ? sups(paras[anchored].text)[0].c : chapterOfHeading(g.h);
+    const chapter = majorityChapter(g.idx.flatMap((i) => sups(paras[i].text))) ?? chapterOfHeading(g.h);
     if (chapter == null) continue;                          // no anchor and no chapter: leave unnumbered
     chapters++;
     // first anchored block may be preceded by unmarked blocks: count them backwards from it

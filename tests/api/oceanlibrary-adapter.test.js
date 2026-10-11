@@ -195,3 +195,29 @@ describe('OceanLibrary tradition', () => {
     expect(docFields.religion).toBe('Jain');
   });
 });
+
+describe('OceanLibrary verse pn', () => {
+  it('verse-marked scripture gets pn = the verse a block starts at; an exported pn wins; footnotes get none', async () => {
+    const md = FM + [
+      '## Genesis 1 {.h2 id="para_1" type="header" language="en"}',
+      'In the beginning… <sup>1:2</sup> And the earth… {id="para_2" type="par" language="en"}',
+      'And God said… {id="para_3" pn="1:3" type="par" language="en"}',
+      'And God saw the light… <sup>1:5</sup> And God called… {id="para_4" type="par" language="en"}',
+      '[^1]: A note.',
+    ].join('\n\n') + '\n';
+    const { paragraphs } = await parseDoc('test.md', md, {});
+    expect(paragraphs.map((p) => p.block_attrs?.pn)).toEqual(['1:1', '1:3', '1:4', undefined]);
+  });
+  it('a book with no verse marks gets no pn', async () => {
+    const { paragraphs } = await parseDoc('test.md', FM + 'Plain prose. {id="para_1" type="par" language="en"}\n', {});
+    expect(paragraphs[0].block_attrs).toBeUndefined();
+  });
+});
+
+describe('OceanLibrary unresolved image placeholders', () => {
+  it('a cover block like ![Genesis]({{…_image_hash_key}} "…") is not stored as a paragraph', async () => {
+    const md = FM + '![Genesis]({{the-genesis-prod_en_2v_image_hash_key}} "the-genesis-prod_en_2v") {id="para_1" type="par" language="en"}\n\nIn the beginning… {id="para_2" type="par" language="en"}\n';
+    const { paragraphs } = await parseDoc('test.md', md, {});
+    expect(paragraphs.map((p) => p.external_para_id)).toEqual(['para_2']);
+  });
+});

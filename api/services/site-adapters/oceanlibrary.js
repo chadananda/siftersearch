@@ -24,6 +24,7 @@
 // without going through sites-ingester (tests, ad-hoc scripts).
 
 import { olPlacement, olReligion } from '../../lib/library/ol-works.js';
+import { versePn } from '../../lib/library/verse-pn.js';
 import yaml from 'yaml';
 
 const DEFAULT_RELIGION_MAP = {
@@ -96,11 +97,25 @@ function cleanParagraphText(text, type) {
  * @param {object} opts - { siteRoot: absolute path to -sites/oceanlibrary.com }
  * @returns {Promise<{ docFields, paragraphs, raw_frontmatter }>}
  */
-/** block_attrs for a paragraph: the site block id and the heading path (only when there is one to keep). */
-export function blockAttrs(ilmId, headStack) {
+/** block_attrs for a paragraph: the site block id, the heading path (only when there is one to keep), and ILM's own
+ *  display number (pn) when the export carries one — it always wins over a computed one. */
+export function blockAttrs(ilmId, headStack, pn = null) {
   const path = headStack.map((h) => h.text).filter(Boolean);
-  const out = { ...(ilmId ? { ilm_id: ilmId } : {}), ...(path.length > 1 ? { path } : {}) };
+  const out = { ...(ilmId ? { ilm_id: ilmId } : {}), ...(path.length > 1 ? { path } : {}), ...(pn ? { pn: String(pn) } : {}) };
   return Object.keys(out).length ? { block_attrs: out } : {};
+}
+
+/** An OL cover/illustration block whose image never resolved: `![Genesis]({{the-genesis-prod_en_2v_image_hash_key}} "…")`.
+ *  Not content — 924 of them were stored as paragraph 1 of 92 books and shown as text (Chad 10-11). */
+export const isImagePlaceholder = (t) => /^!\[[^\]]*\]\(\{\{[^}]*\}\}[^)]*\)$/.test(String(t).trim());
+
+/** Verse-grouped scripture (KJV, Tanakh, Rodwell, Gospels: blocks marked <sup>c:v</sup>) gets pn = the chapter:verse a
+ *  block starts at (lib/library/verse-pn.js). Footnotes are not verses; a pn ILM exported is never overwritten. */
+export function addVersePn(paragraphs) {
+  const body = paragraphs.filter((p) => p.blocktype !== 'footnote');
+  if (!body.some((p) => /<sup>\s*\d+:\d+\s*<\/sup>/.test(p.text))) return;
+  const { pn } = versePn(body);
+  body.forEach((p, i) => { if (pn[i] && !p.block_attrs?.pn) p.block_attrs = { ...(p.block_attrs || {}), pn: pn[i] }; });
 }
 
 export async function parseDoc(relativePath, content, { siteConfig } = {}) {
@@ -163,7 +178,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
       return;
     }
     const cleanText = cleanParagraphText(text, type);
-    if (!cleanText) return;
+    if (!cleanText || isImagePlaceholder(cleanText)) return;
     paragraphs.push({
       paragraph_index: paragraphIndex++,
       text: cleanText,
@@ -171,7 +186,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
       blocktype: type === 'preamble' ? 'preamble' : 'paragraph',
       external_para_id: (attrs && attrs.id) || null,
       // the site's block id: with the book's bookid it makes data-ilmid, the anchor of a range link (lib/ocean-range.js)
-      ...blockAttrs(attrs?.ilm_id, headStack),
+      ...blockAttrs(attrs?.ilm_id, headStack, attrs?.pn),
       language: (attrs && attrs.language) || frontmatter.language || 'en'
     });
   };
@@ -223,6 +238,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
     emit(text, attrs);
   }
   flushPending();
+  addVersePn(paragraphs);
 
   // Doc-level fields
   const docFields = {

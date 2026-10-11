@@ -34,4 +34,12 @@ describe('versePn', () => {
     expect(r.pn).toEqual(['3:11', '3:14', '3:16']);
     expect(r.issues.map((x) => x.kind)).toEqual(['gap']);                        // reported, not propagated
   });
+  it('one mistyped <sup> chapter never relabels the chapter (Rodwell IX: a "4:50" among 9:n)', () => {
+    const r = versePn([
+      { heading: 'Sura IX', text: 'v1 <sup>4:2</sup> v2 <sup>9:3</sup> v3' },        // the FIRST sup is the typo
+      { heading: 'Sura IX', text: 'v4 <sup>9:5</sup> v5' },
+    ]);
+    expect(r.pn).toEqual(['9:1', '9:4']);
+    expect(r.issues.map((x) => x.kind)).toContain('chapter');
+  });
 });
