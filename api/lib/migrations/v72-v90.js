@@ -1576,6 +1576,16 @@ export const migrations = {
       PRIMARY KEY (minute, caller, name))`);
     logger.info('Migration 145 complete: db_write_stats');
   },
+  146: async () => {
+    // Ops reports run SERVER-SIDE by siftersearch-reports, one at a time (Chad 10-11: "We cannot allow scripts and agents
+    // free access to production DB … it will just create unnecessary contention"). Requested and read over the internal API.
+    await query(`CREATE TABLE IF NOT EXISTS ops_report_runs (
+      id INTEGER PRIMARY KEY, name TEXT NOT NULL, params TEXT, status TEXT NOT NULL DEFAULT 'queued',
+      requested_by TEXT, requested_at TEXT NOT NULL, started_at TEXT, finished_at TEXT, ms INTEGER, result TEXT, error TEXT)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ops_report_runs_status ON ops_report_runs(status, id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ops_report_runs_name ON ops_report_runs(name, id)`);
+    logger.info('Migration 146 complete: ops_report_runs');
+  },
 };
 
 export const graphMigrations = {

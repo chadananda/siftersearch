@@ -148,7 +148,7 @@ async function main() {
   try { prevSnapshot = JSON.parse(readFileSync(join(ROOT, 'data', 'pipeline-status.json'), 'utf8')) ?? {}; } catch { /* first run */ }
   const prev = prevSnapshot.integrity ?? {};
   // High-water baseline carries forward; only ratchets UP on healthy growth.
-  // --rebase-integrity: after an EXPLAINED, approved retirement (scripts/ops/deletions-report.mjs shows where the rows
+  // --rebase-integrity: after an EXPLAINED, approved retirement (ops report `deletions` shows where the rows
   // went), restart the high-water mark from today's count. Recorded, so the alert history stays honest.
   const rebase = process.argv.includes('--rebase-integrity') && liveParas != null;
   const baseline = rebase ? liveParas : Math.max(prev.baseline_live_paras ?? 0, liveParas ?? 0);
@@ -162,7 +162,7 @@ async function main() {
     rebased_at: rebase ? new Date().toISOString() : (prev.rebased_at ?? null),
     rebased_from: rebase ? (prev.baseline_live_paras ?? null) : (prev.rebased_from ?? null),
     alert: drop > dropThreshold
-      ? `CONTENT DROP: live paragraphs ${liveParas} is ${drop} below baseline ${baseline} (>${dropThreshold}) — possible gutting. Explain with scripts/ops/deletions-report.mjs; rebase with pipeline-snapshot.js --rebase-integrity only once explained`
+      ? `CONTENT DROP: live paragraphs ${liveParas} is ${drop} below baseline ${baseline} (>${dropThreshold}) — possible gutting. Explain with: node scripts/ops/ops.mjs report deletions --wait; rebase with pipeline-snapshot.js --rebase-integrity only once explained`
       : null,
   };
 

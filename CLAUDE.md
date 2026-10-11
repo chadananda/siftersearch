@@ -32,12 +32,16 @@ substitute the local database and do not estimate.
 ## ⛔ HARD RULE — database access only through repos (Chad 10-11)
 
 "We cannot grow an application if it is not fully observable with internal contracts for all potential bottlenecks."
-* Data is read/written ONLY via named functions in `api/lib/repos/<area>-repo.js` (+ `docs-repo.js`, `paragraphs-repo.js`).
-  Routes, workers, services, scripts — and ad-hoc tmp scripts — are CLIENTS: no `db.js` import, no `better-sqlite3`,
-  no `sqlite3` CLI. Missing a function? Add it to the repo, with a test.
+* Data is read/written ONLY via named functions in `api/lib/repos/<area>-repo.js` (+ `docs-repo.js`, `paragraphs-repo.js`),
+  and repos are used ONLY inside server processes (API routes, workers).
+* **Scripts and agents (Claude included) never touch production data** — no `db.js`, no repo import, no `better-sqlite3`,
+  no `sqlite3` CLI, no `ssh tower 'sqlite3 …'`. They call the internal API: `node scripts/ops/ops.mjs …`
+  (`/api/admin/ops/*`, X-Internal-Key). Whole-table health scans are ops REPORTS (`api/lib/ops/reports.js`) run one at a
+  time by `siftersearch-reports`. Missing an answer? Add a report or an endpoint, with a test — never a direct query.
+  ("We cannot allow scripts and agents free access to production DB — it will just create unnecessary contention.")
 * Writes go through the single writer (default on tower; `SIFTER_DIRECT_WRITE=1` only for maintenance). Every batch is
   attributed in `db_write_stats` (minute × caller × name; live view `GET 127.0.0.1:7849/stats`).
-* Enforced by `tests/api/db-access-ratchet.test.js`; the legacy list only shrinks. Plan: planning/architecture-data-access-20261009.md.
+* Enforced by `tests/api/db-access-ratchet.test.js` + `tests/api/scripts-api-clients-ratchet.test.js`; legacy lists only shrink. Plan: planning/architecture-data-access-20261009.md.
 
 > **Full coding principles**: See [planning/coding-principles-guide.md](planning/coding-principles-guide.md)
 

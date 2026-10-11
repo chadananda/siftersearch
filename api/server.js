@@ -24,6 +24,7 @@ import sessionRoutes from './routes/session.js';
 import userRoutes from './routes/user.js';
 import adminRoutes from './routes/admin.js';
 import docsRepoRoutes from './routes/docs.js';
+import opsReportRoutes from './routes/ops-reports.js';
 import companionRoutes from './routes/companion.js';
 import companionMeRoutes from './routes/companion-me.js';
 import entityReviewRoutes from './routes/entity-review.js';
@@ -342,6 +343,7 @@ export async function createServer(opts = {}) {
   await server.register(userRoutes, { prefix: '/api/user' });
   await server.register(adminRoutes, { prefix: '/api/admin' });
   await server.register(docsRepoRoutes, { prefix: '/api/admin' });   // the ONE document surface (docs-repo)
+  await server.register(opsReportRoutes, { prefix: '/api/admin' });   // ops reports (run by siftersearch-reports)
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
   await server.register(tabletAdminRoutes, { prefix: '/api/admin' });   // tablet metadata (Phelps + oceanoflights)

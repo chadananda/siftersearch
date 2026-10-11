@@ -565,6 +565,22 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Ops reports (hollow / deletions / languages / phrase coverage): the ONLY process that runs whole-table health
+      // scans, one at a time at nice 19; queued + read over the internal API (/api/admin/ops/reports). Chad 10-11.
+      name: 'siftersearch-reports',
+      script: 'api/workers/reports-worker.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 30000,
+      watch: false,
+      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
+      error_file: './logs/reports-error.log',
+      out_file: './logs/reports-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // Monthly model re-assessment (Chad 10-11): roles × registry × 30-day spend → ONE [ACTION] email listing roles to
       // re-measure (scripts/ops/model-review.mjs, table in api/lib/model-roles.js). 1st of the month, 08:00.
       name: 'siftersearch-model-review',
