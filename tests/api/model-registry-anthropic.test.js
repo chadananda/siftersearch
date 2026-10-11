@@ -24,3 +24,9 @@ describe('Anthropic models in the registry', () => {
     expect(effectivePricing('claude-sonnet-5-5', 500000).input).toBe(0.002);          // no surcharge block → flat
   });
 });
+
+describe('5.5 family request shape', () => {
+  it('is flagged noTemperature (the API rejects the parameter)', () => {
+    for (const id of ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5']) expect(MODEL_REGISTRY[id].noTemperature, id).toBe(true);
+  });
+});

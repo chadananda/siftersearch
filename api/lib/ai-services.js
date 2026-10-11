@@ -628,7 +628,8 @@ async function chatAnthropic(messages, opts) {
   const response = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens,
-    temperature: opts.temperature,
+    // the 5.5 family rejects `temperature` (400 "deprecated for this model") — the registry says which models
+    ...(getModel(opts.model)?.noTemperature || opts.temperature == null ? {} : { temperature: opts.temperature }),
     ...(systemParam && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',

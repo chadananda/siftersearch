@@ -72,8 +72,13 @@ export async function segmentFile(absPath, { apply = false, maxUsd = 2, lang = '
   if (est > maxUsd) return { status: 'over-budget', paragraphs: texts.length, estimateUsd: est };
   if (!apply && !pilot) return { status: 'would-segment', paragraphs: texts.length, estimateUsd: est };
 
-  const results = await withAIContext({ stage: 'file-segment', sourceLang: lang, caller: 'file-segment', segmentationModel: SEGMENT_MODEL },
-    () => batchAddSentenceMarkers(texts.map((t, j) => ({ id: String(j), text: t })), lang, { maxCharsPerBatch: BATCH_CHARS }));
+  let results;
+  try {
+    results = await withAIContext({ stage: 'file-segment', sourceLang: lang, caller: 'file-segment', segmentationModel: SEGMENT_MODEL },
+      () => batchAddSentenceMarkers(texts.map((t, j) => ({ id: String(j), text: t })), lang, { maxCharsPerBatch: BATCH_CHARS, strict: true }));
+  } catch (err) {
+    return { status: 'model-failed', paragraphs: texts.length, error: String(err.message || err).slice(0, 300) };   // file untouched
+  }
   let sentences = 0, integrityFailures = 0;
   const out = [...parts];
   results.forEach((r, j) => {

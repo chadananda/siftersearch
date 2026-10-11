@@ -1095,7 +1095,7 @@ export async function detectAllSentenceBoundaries(paragraphs, language, options 
 
   // Process batches (can be parallelized if needed)
   for (const batch of batches) {
-    const batchResults = await detectSentenceEndingsForBatch(batch, language);
+    const batchResults = await detectSentenceEndingsForBatch(batch, language, { strict: !!options.strict });
 
     for (const [id, endings] of batchResults) {
       results.set(id, endings);
@@ -1116,7 +1116,7 @@ export async function detectAllSentenceBoundaries(paragraphs, language, options 
  * @param {string} language - Language code
  * @returns {Promise<Map<string, string[]>>} Map of paragraph ID → sentence ending phrases
  */
-async function detectSentenceEndingsForBatch(paragraphs, language) {
+async function detectSentenceEndingsForBatch(paragraphs, language, { strict = false } = {}) {
   const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
 
   // Build the prompt with all paragraphs
@@ -1238,6 +1238,8 @@ Return JSON with the EXACT last 3-4 words of each sentence:
 
   // All retries exhausted - fall back to single sentence
   logger.error({ err: lastError?.message, batchSize: paragraphs.length }, 'Batch sentence detection failed after all retries');
+  // strict (file-segment): a failed batch must stop the run, not become one-sentence paragraphs written into a source file
+  if (strict) throw lastError || new Error('sentence detection failed');
 
   const fallback = new Map();
   for (const para of paragraphs) {

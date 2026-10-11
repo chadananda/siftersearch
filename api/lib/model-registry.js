@@ -217,6 +217,7 @@ export const MODEL_REGISTRY = {
   // Anthropic call still passes api/lib/anthropic-policy.js (fail-closed).
   'claude-haiku-5-5': {
     provider: 'anthropic',
+    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11)
     name: 'Claude Haiku 5.5',
     type: 'chat',
     pricing: { input: 0.0001, output: 0.0005 },            // $0.10 / $0.50 per 1M on prompts up to 100k tokens
@@ -233,14 +234,16 @@ export const MODEL_REGISTRY = {
     notes: 'Best value model for Arabic (Chad 10-11). Segmentation: index/ending-only output, cached system prompt, <100k per call.'
   },
   'claude-sonnet-5-5': {
-    provider: 'anthropic', name: 'Claude Sonnet 5.5', type: 'chat',
+    provider: 'anthropic',
+    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11) name: 'Claude Sonnet 5.5', type: 'chat',
     pricing: { input: 0.002, output: 0.010 }, batch: 0.5, cacheRead: 0.1,
     contextWindow: 1000000, maxOutput: 128000,
     capabilities: ['reasoning', 'coding', 'analysis', 'vision', 'extraction'], quality: 'quality', speed: 'medium',
     recommended: ['complex_extraction', 'adjudication'], released: '2026-09-28',
   },
   'claude-opus-5-5': {
-    provider: 'anthropic', name: 'Claude Opus 5.5', type: 'chat',
+    provider: 'anthropic',
+    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11) name: 'Claude Opus 5.5', type: 'chat',
     pricing: { input: 0.004, output: 0.020 }, batch: 0.5, cacheRead: 0.1,
     contextWindow: 1000000, maxOutput: 128000,
     capabilities: ['reasoning', 'analysis', 'coding', 'vision'], quality: 'premium', speed: 'slow',
