@@ -1595,13 +1595,14 @@ Return ONLY the description text, no quotes or formatting.`;
     if (includeParagraphs) {
       const [paras, countResult] = await Promise.all([
         queryAll(`
-          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
+          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments,
+                 json_extract(block_attrs, '$.pn') AS pn
           FROM content
-          WHERE doc_id = ?
+          WHERE doc_id = ? AND deleted_at IS NULL
           ORDER BY paragraph_index
           LIMIT ? OFFSET ?
         `, [id, paragraphLimit, paragraphOffset]),
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [id])
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [id])
       ]);
       // Parse translation field - can be plain string (legacy) or JSON object (new)
       paragraphs = paras.map(p => parseTranslationField(p));
@@ -1882,13 +1883,14 @@ Return ONLY the description text, no quotes or formatting.`;
     // Fetch paragraphs
     const [paragraphs, countResult] = await Promise.all([
       effectiveLimit > 0 ? queryAll(`
-        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
+        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments,
+               json_extract(block_attrs, '$.pn') AS pn
         FROM content
-        WHERE doc_id = ?
+        WHERE doc_id = ? AND deleted_at IS NULL     -- soft-deleted rows were served to the reader (10-11)
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
       `, [document.id, effectiveLimit, effectiveOffset]) : [],
-      queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [document.id])
+      queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [document.id])
     ]);
 
     // Parse translation field (handles both legacy string and new JSON format)
@@ -2094,7 +2096,7 @@ Return ONLY the description text, no quotes or formatting.`;
     const paragraphs = await queryAll(`
       SELECT text, heading, blocktype, paragraph_index
       FROM content
-      WHERE doc_id = ?
+      WHERE doc_id = ? AND deleted_at IS NULL
       ORDER BY paragraph_index
     `, [id]);
 
@@ -2193,7 +2195,7 @@ Return ONLY the description text, no quotes or formatting.`;
       paragraphs = await queryAll(`
         SELECT id, paragraph_index, text, translation, translation_segments, blocktype, heading
         FROM content
-        WHERE doc_id = ?
+        WHERE doc_id = ? AND deleted_at IS NULL
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
       `, [id, limit, offset]);
@@ -2281,7 +2283,7 @@ Return ONLY the description text, no quotes or formatting.`;
           THEN 1 ELSE 0
         END) as translated
       FROM content
-      WHERE doc_id = ?
+      WHERE doc_id = ? AND deleted_at IS NULL
     `, [id]);
 
     request.log.info({ docId: id, stats }, '[TranslationStats] Query result');
@@ -2365,7 +2367,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     const para = await queryOne(`
       SELECT id, paragraph_index, text FROM content
-      WHERE doc_id = ?
+      WHERE doc_id = ? AND deleted_at IS NULL
       ORDER BY paragraph_index
       LIMIT 1
     `, [id]);
@@ -2968,7 +2970,7 @@ Provide only the translation, no explanations.`;
     // Get current translation stats
     const stats = await queryOne(`
       SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
-      FROM content WHERE doc_id = ?
+      FROM content WHERE doc_id = ? AND deleted_at IS NULL
     `, [documentId]);
 
     return {
@@ -3056,7 +3058,7 @@ Provide only the translation, no explanations.`;
       const stats = await queryOne(`
         SELECT COUNT(*) as total,
                SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
-        FROM content WHERE doc_id = ?
+        FROM content WHERE doc_id = ? AND deleted_at IS NULL
       `, [doc.id]);
 
       if (!stats?.total || stats.total === 0) continue;
