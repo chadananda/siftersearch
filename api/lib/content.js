@@ -225,6 +225,23 @@ async function bulkInsertParagraphs(docId, paragraphs) {
 }
 
 /**
+ * Replace a document's paragraphs WITHOUT ever leaving it empty: insert the new rows first, then delete the old ones by
+ * id. The old order (delete all, then insert) left 10,124 bahai-library docs with no text from June to October — a run
+ * interrupted between the two steps (a deploy restarting the watcher, a writer error) kept the row and lost every
+ * paragraph. If the insert fails here, the old paragraphs are untouched. → { inserted, removed }
+ */
+async function replaceParagraphsByDoc(docId, paragraphs) {
+  const old = await queryAll('SELECT id FROM content WHERE doc_id = ?', [docId]);
+  await bulkInsertParagraphs(docId, paragraphs);
+  for (let i = 0; i < old.length; i += 500) {
+    const ids = old.slice(i, i + 500).map((r) => r.id);
+    await query(`DELETE FROM content WHERE id IN (${ids.map(() => '?').join(',')})`, ids);
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  return { inserted: paragraphs.length, removed: old.length };
+}
+
+/**
  * Hard-delete a paragraph by ID.
  */
 async function deleteParagraph(id) {
@@ -1201,6 +1218,7 @@ export const content = {
   bulkInsertParagraphs,
   deleteParagraph,
   deleteParagraphsByDoc,
+  replaceParagraphsByDoc,
   softDeleteByDoc,
   safeSoftDeleteDocs,
   restoreByDoc,

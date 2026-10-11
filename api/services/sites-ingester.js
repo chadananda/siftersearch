@@ -515,7 +515,10 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   // Skip if unchanged — query the right DB based on scope.
   const existing = isSiteOnly
     ? await siteDbFindDoc(siteDb, relPath)
-    : await queryOne('SELECT id, file_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relPath]);
+    : await queryOne('SELECT id, file_hash, duplicate_of FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relPath]);
+  // A row retired as a duplicate stays retired: upsertDoc clears duplicate_of, so re-ingesting its file would bring the
+  // duplicate back (10-11). Retiring is deliberate; only an explicit restore undoes it.
+  if (existing?.duplicate_of) return { status: 'retired_duplicate', file: relPath, doc_id: existing.id, scope };
   // "Unchanged" means the TEXT is there, not merely that the hash matches: a doc whose paragraphs were soft-deleted
   // (the June reconcile bug) kept its hash and was skipped on every run for months — ESW, This Decisive Hour…
   const hasLiveContent = existing
@@ -650,17 +653,13 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     docId = await siteDbUpsertDoc(siteDb, docFields, fileHash, bodyHash);
     siteDbReplaceContent(siteDb, docId, bulkParagraphs);
   } else {
-    docId = await upsertDoc(docFields, fileHash, bodyHash, scope);
-    // The row (with its file hash) is written before its paragraphs. If the paragraph write fails, clear the hash so
-    // the next run retries this file — a stored hash on an empty row is how 10,124 bahai-library rows stayed hollow
-    // from May to October (the run reported success; every later run called the file "unchanged").
-    try {
-      await content.deleteParagraphsByDoc(docId);
-      await content.bulkInsertParagraphs(docId, bulkParagraphs);
-    } catch (err) {
-      await query('UPDATE docs SET file_hash = NULL, body_hash = NULL WHERE id = ?', [docId]).catch(() => {});
-      throw err;
-    }
+    // Crash-safe order (10,124 bahai-library docs lost every paragraph in June: delete-all ran, the insert never did, and
+    // the stored file hash made every later run skip the file). 1) the row is written WITHOUT its hashes, 2) the
+    // paragraphs are replaced new-before-old so the doc is never empty, 3) the hashes go in last. An interruption at any
+    // step leaves text in place and a hash that does not match, so the next ordinary run simply does the file again.
+    docId = await upsertDoc(docFields, null, null, scope);
+    await content.replaceParagraphsByDoc(docId, bulkParagraphs);
+    await query('UPDATE docs SET file_hash = ?, body_hash = ? WHERE id = ?', [fileHash, bodyHash, docId], 'sites-ingester:hash-last');
     if (supersedes) await markSuperseded(supersedes, docId);
   }
 
@@ -785,7 +784,7 @@ export async function ingestSite(siteId, opts = {}) {
         threshold, force: !!opts.force || !!only, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing, onlyHollow: !!opts.onlyHollow
       });
       stats[result.status] = (stats[result.status] || 0) + 1;
-      if (!['unchanged', 'kept_live', 'skipped_new'].includes(result.status) || opts.dryRun) details.push({ file: result.file, status: result.status, doc_id: result.doc_id ?? null, paragraphs: result.paragraphs ?? null, supersedes: result.supersedes ?? null });
+      if (!['unchanged', 'kept_live', 'skipped_new', 'retired_duplicate'].includes(result.status)) details.push({ file: result.file, status: result.status, doc_id: result.doc_id ?? null, paragraphs: result.paragraphs ?? null, supersedes: result.supersedes ?? null });
       if (result.supersedes) stats.supersedes++;
     } catch (err) {
       stats.errors++;
