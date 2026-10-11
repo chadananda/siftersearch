@@ -9,7 +9,7 @@
 // Every step is logged to /tank/sifter/library-fixes.jsonl (reversible: files moved, never deleted). Runs ON tower with
 // SIFTER_WRITER_URL. Dry run by default.   node scripts/library/library-fixes.mjs --plan <json> [--apply]
 import { readFileSync, appendFileSync, existsSync, mkdirSync, renameSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve, sep } from 'path';
 import dotenv from 'dotenv';
 import { config } from '../../api/lib/config.js';
 import { listDocs, markDuplicate, setDocReligion, setDocTitle, relocateDoc } from '../../api/lib/docs-repo.js';
@@ -20,6 +20,8 @@ const APPLY = process.argv.includes('--apply');
 if (APPLY && !process.env.SIFTER_WRITER_URL) throw new Error('SIFTER_WRITER_URL is required to write');
 const base = config.library.basePath;
 const RETIRED = '_retired-duplicates/placement-audit-20261010';
+// only files INSIDE the library are ever moved: scrape rows point outside it (../../tank/site2rag/…) and stay put
+const inLibrary = (p) => !!p && resolve(base, p).startsWith(resolve(base) + sep);
 const plan = JSON.parse(readFileSync(opt('--plan'), 'utf8'));
 const ids = [...(plan.reingest || []), ...(plan.move || []).map((m) => m.id), ...(plan.duplicates || []).flatMap((d) => [d.dup, d.keep]), ...(plan.religion || []).map((r) => r.id), ...(plan.title || []).map((t) => t.id)];
 const docs = async () => new Map((await listDocs({ ids, fields: ['id', 'title', 'religion', 'collection', 'file_path', 'duplicate_of', 'paragraph_count'], limit: ids.length })).docs.map((d) => [d.id, d]));
@@ -37,7 +39,7 @@ for (const id of plan.reingest || []) {
 }
 for (const m of plan.move || []) {
   const d = byId.get(m.id); const src = d && join(base, d.file_path), dst = join(base, m.to);
-  const refused = !d ? 'not live' : !existsSync(src) ? 'source missing' : existsSync(dst) ? 'target exists' : !existsSync(dirname(dst)) ? 'target folder missing' : null;
+  const refused = !d ? 'not live' : !inLibrary(d.file_path) || !inLibrary(m.to) ? 'outside the library' : !existsSync(src) ? 'source missing' : existsSync(dst) ? 'target exists' : !existsSync(dirname(dst)) ? 'target folder missing' : null;
   log({ op: 'move', ...m, from: d?.file_path, refused });
   if (!APPLY || refused) continue;
   renameSync(src, dst);
@@ -51,6 +53,7 @@ for (const x of plan.duplicates || []) {
   log({ op: 'duplicate', ...x, dup_where: dup?.file_path, keep_where: keep?.file_path, refused });
   if (!APPLY || refused) continue;
   try { await markDuplicate(x.dup, x.keep, { reason: x.reason }); } catch (e) { log({ op: 'duplicate-refused', ...x, error: e.message }); continue; }
+  if (!inLibrary(dup.file_path)) { log({ op: 'file-kept', id: x.dup, why: 'outside the library (scrape row): row retired, file untouched' }); continue; }
   const src = join(base, dup.file_path), dst = join(base, RETIRED, dup.file_path);
   if (existsSync(src) && !existsSync(dst)) { mkdirSync(dirname(dst), { recursive: true }); renameSync(src, dst); log({ op: 'file-retired', id: x.dup, to: join(RETIRED, dup.file_path) }); }
 }
