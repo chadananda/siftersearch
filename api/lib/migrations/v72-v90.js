@@ -1566,6 +1566,16 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_docs_activity ON docs(COALESCE(file_mtime, updated_at)) WHERE deleted_at IS NULL`);
     logger.info('Migration 144 complete: idx_docs_activity');
   },
+  145: async () => {
+    // Every write batch, attributed (Chad 10-11: "we cannot grow an application if it is not fully observable with
+    // internal contracts for all potential bottlenecks"). The single writer aggregates per minute × caller × batch name.
+    await query(`CREATE TABLE IF NOT EXISTS db_write_stats (
+      minute TEXT NOT NULL, caller TEXT NOT NULL, name TEXT NOT NULL,
+      batches INTEGER NOT NULL DEFAULT 0, statements INTEGER NOT NULL DEFAULT 0, changes INTEGER NOT NULL DEFAULT 0,
+      errors INTEGER NOT NULL DEFAULT 0, ms_total INTEGER NOT NULL DEFAULT 0, ms_max INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (minute, caller, name))`);
+    logger.info('Migration 145 complete: db_write_stats');
+  },
 };
 
 export const graphMigrations = {

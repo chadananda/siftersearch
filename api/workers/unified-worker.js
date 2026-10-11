@@ -19,6 +19,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { createServer } from 'node:http';
 import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
 import { applyWriteBatch } from '../lib/write-server.js';
+import { recordWrite, drainWriteStats, peekWriteStats } from '../lib/write-stats.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
@@ -1031,22 +1032,29 @@ function startWriteServer() {
         .catch((err) => { res.writeHead(500, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: err.message })); });
       return;
     }
+    if (req.method === 'GET' && req.url === '/stats') {
+      res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(peekWriteStats())); return;
+    }
     if (req.method !== 'POST' || req.url !== '/write') {
       res.writeHead(404); res.end(); return;
     }
+    const caller = String(req.headers['x-sifter-caller'] || 'unknown').slice(0, 80);
     // Whole-body UTF-8 decode — per-chunk `body += c` split multi-byte letters into «��» (see http-body.js).
     readUtf8Body(req).then(async (body) => {
+      let statements = [], name;
       try {
-        const { statements, name } = JSON.parse(body);
+        ({ statements, name } = JSON.parse(body));
         const db = await getDb();
         const start = Date.now();
         const results = applyWriteBatch(db, statements);
         const ms = Date.now() - start;
-        if (ms > 1000) logger.warn({ ms, count: statements.length, name }, 'Slow write batch');
+        recordWrite({ caller, name, statements: statements.length, changes: results.reduce((n, r) => n + (r.changes || 0), 0), ms });
+        if (ms > 1000) logger.warn({ ms, count: statements.length, name, caller }, 'Slow write batch');
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ results }));
       } catch (err) {
-        logger.error({ err: err.message }, 'Write batch failed');
+        recordWrite({ caller, name, statements: statements?.length || 0, error: true });
+        logger.error({ err: err.message, caller, name }, 'Write batch failed');
         res.writeHead(500, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
@@ -1070,6 +1078,11 @@ function startWriteServer() {
   // postWriteBatch's retry stays as defence in depth — this removes the race that made it necessary.
   server.keepAliveTimeout = Number(process.env.SIFTER_WRITER_KEEPALIVE_MS || 76000);
   server.headersTimeout = server.keepAliveTimeout + 4000;
+  // flush the per-minute write stats through the writer's own connection (it IS the writer)
+  setInterval(() => {
+    const stmts = drainWriteStats();
+    if (stmts.length) getDb().then((db) => applyWriteBatch(db, stmts)).catch((err) => logger.warn({ err: err.message }, 'write-stats flush failed'));
+  }, 60_000).unref();
   server.listen(port, '127.0.0.1', () => logger.info(
     { port, keepAliveTimeout: server.keepAliveTimeout, headersTimeout: server.headersTimeout },
     'Single-writer HTTP server listening'));

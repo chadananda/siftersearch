@@ -48,6 +48,8 @@ const isTransientWriteError = (e) => {
   const code = e?.cause?.code || e?.code;
   return TRANSIENT.has(code) || e?.name === 'TimeoutError' || /other side closed|socket hang up/i.test(e?.cause?.message || e?.message || '');
 };
+// who is writing: the pm2 app name, else the script file (write stats are grouped by it — db_write_stats)
+const CALLER = process.env.SIFTER_CALLER || process.env.name || path.basename(process.argv[1] || 'node');
 const WRITE_ATTEMPTS = Number(process.env.SIFTER_WRITE_ATTEMPTS || 4);
 
 export async function postWriteBatch(statements, name = '') {
@@ -60,7 +62,7 @@ export async function postWriteBatch(statements, name = '') {
       try {
         res = await fetch(`${WRITER_URL}/write`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', 'x-sifter-caller': CALLER },
           body: JSON.stringify({ statements, name }),
           signal: AbortSignal.timeout(90000),
         });
