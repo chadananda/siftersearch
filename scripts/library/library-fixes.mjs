@@ -10,6 +10,7 @@
 // SIFTER_WRITER_URL. Dry run by default.   node scripts/library/library-fixes.mjs --plan <json> [--apply]
 import { readFileSync, appendFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, resolve, sep } from 'path';
+import http from 'node:http';
 import dotenv from 'dotenv';
 import { config } from '../../api/lib/config.js';
 import { listDocs, markDuplicate, setDocReligion, setDocTitle, relocateDoc } from '../../api/lib/docs-repo.js';
@@ -27,14 +28,20 @@ const ids = [...(plan.reingest || []), ...(plan.move || []).map((m) => m.id), ..
 const docs = async () => new Map((await listDocs({ ids, fields: ['id', 'title', 'religion', 'collection', 'file_path', 'duplicate_of', 'paragraph_count'], limit: ids.length })).docs.map((d) => [d.id, d]));
 const log = (x) => { console.log(JSON.stringify(x)); if (APPLY) appendFileSync('/tank/sifter/library-fixes.jsonl', JSON.stringify({ at: new Date().toISOString(), ...x }) + '\n'); };
 let byId = await docs();
+const postLocal = (path, body) => new Promise((ok, fail) => {
+  const data = JSON.stringify(body);
+  const req = http.request({ host: '127.0.0.1', port: 7839, path, method: 'POST', timeout: 0,
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data), 'X-Internal-Key': process.env.DEPLOY_SECRET } },
+  (res) => { let b = ''; res.on('data', (c) => { b += c; }); res.on('end', () => { try { ok(JSON.parse(b)); } catch { ok({ status: `http ${res.statusCode}`, error: b.slice(0, 200) }); } }); });
+  req.on('error', fail); req.end(data);
+});
 
 for (const id of plan.reingest || []) {
   const d = byId.get(id);
   log({ op: 'reingest', id, title: d?.title?.slice(0, 60), file: d?.file_path, refused: !d ? 'not live' : !existsSync(join(base, d.file_path)) ? 'file missing' : null });
   if (!APPLY || !d) continue;
-  const r = await fetch('http://127.0.0.1:7839/api/admin/server/ingest-file', { method: 'POST', signal: AbortSignal.timeout(600000),
-    headers: { 'Content-Type': 'application/json', 'X-Internal-Key': process.env.DEPLOY_SECRET },
-    body: JSON.stringify({ filePath: join(base, d.file_path), forceReindex: true, localOnly: true }) }).then((x) => x.json());
+  // node:http, not fetch: undici's 5-minute headers timeout killed this client mid-book (a 12 MB Arabic work, 10-11)
+  const r = await postLocal('/api/admin/server/ingest-file', { filePath: join(base, d.file_path), forceReindex: true, localOnly: true });
   log({ op: 'reingested', id, status: r.status, paragraphs: r.paragraphCount, warning: r.warning || null, error: r.error || null });
 }
 for (const m of plan.move || []) {
