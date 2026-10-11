@@ -978,6 +978,15 @@ export function segmentationService() {
     config: primary.config,
 
     async chat(messages, overrides = {}) {
+      // A run may name its segmentation model (file-segment: Haiku 5.5, Chad 10-11). The system prompt is static, so it
+      // is cached; the anthropic-policy gate still decides whether the call is allowed.
+      const named = currentAIContext().segmentationModel;
+      if (named) {
+        return aiService('segmentation', { forceRemote: true }).chat(messages, {
+          ...overrides, provider: named.provider, model: named.model, cacheSystemPrompt: true,
+          maxTokens: overrides.maxTokens ?? overrides.max_tokens ?? 8000,
+        });
+      }
       // localOnly must never reach a paid model, whatever the primary resolved to
       if (currentAIContext().localOnly && !LOCAL_PROVIDERS.has(primary.config.provider)) {
         throw new Error(`segmentation: localOnly scope refuses non-local provider ${primary.config.provider}`);

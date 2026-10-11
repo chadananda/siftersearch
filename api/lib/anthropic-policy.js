@@ -89,6 +89,14 @@ export function isOriginalSegmentAllowed({ docId, stage, sourceLang } = {}) {
   return CORE_ROSTER_IDS.has(Number(docId)) || ORIGINALS_TARGET_IDS.has(Number(docId));
 }
 
+// File-level segmentation of Arabic/Persian SOURCE files (Chad 10-11: "a one-time segmentation of all arabic documents
+// at the file level as they arrive" with Haiku 5.5). Any document, but only this stage, only Haiku 5.5, only over
+// Arabic/Persian text: the cheapest model that reads Arabic well, with an index/ending-only output.
+const FILE_SEGMENT_MODELS = new Set(['claude-haiku-5-5']);
+export function isFileSegmentAllowed({ stage, model, sourceLang } = {}) {
+  return String(stage || '') === 'file-segment' && FILE_SEGMENT_MODELS.has(String(model || '')) && ORIGINAL_LANGS.has(String(sourceLang || ''));
+}
+
 /**
  * Throw (fatal) unless an Anthropic call is the one approved use: grounding a Persian paragraph of an approved
  * plan book. Not an Anthropic call → returns immediately (no effect on deepseek/openai/ollama/local).
@@ -102,6 +110,7 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   if (docId != null && PAID_DOC_ALLOWLIST.has(Number(docId))) return;       // flagship exception (see note above)
   if (isConceptCoreAllowed({ docId, stage, originalLang })) return;         // concept core (see note above)
   if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;       // segmenting an original (see note)
+  if (isFileSegmentAllowed({ stage, model, sourceLang })) return;           // file-level Arabic/Persian segmentation (Haiku 5.5)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

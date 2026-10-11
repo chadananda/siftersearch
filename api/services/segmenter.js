@@ -1577,9 +1577,9 @@ export function insertSentenceMarkersFromEndings(text, endings) {
  * @param {string} language - Language code
  * @returns {Promise<Array<{id: string, text: string, sentenceCount: number}>>}
  */
-export async function batchAddSentenceMarkers(paragraphs, language) {
-  // Get all sentence endings in 1-2 AI calls
-  const endings = await detectAllSentenceBoundaries(paragraphs, language);
+export async function batchAddSentenceMarkers(paragraphs, language, options = {}) {
+  // Get all sentence endings in 1-2 AI calls (options.maxCharsPerBatch: larger batches for file-segment runs)
+  const endings = await detectAllSentenceBoundaries(paragraphs, language, options);
 
   // Insert markers locally (no AI calls)
   const results = [];
