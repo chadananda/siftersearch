@@ -347,15 +347,16 @@
     backdrop-filter: blur(12px);
   }
 
+  /* full width, same side gutter as the pages (Chad 10-11: a centred 1400px bar sat over a full-width library) */
   .navbar-container {
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
     padding: 0.5rem 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
   }
+  @media (min-width: 640px) { .navbar-container { padding: 0.5rem 1.5rem; } }
 
   .navbar-brand {
     display: flex;

@@ -1,6 +1,132 @@
 {
-  "generated": "2026-10-11T03:02:01.318Z",
+  "generated": "2026-10-11T14:23:29.025Z",
   "entries": [
+    {
+      "hash": "1c4c6164",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Anthropic replies read every text block (5.x may lead with thinking); segmentation runs Haiku with thinking off and 16k output headroom",
+      "scope": "ai"
+    },
+    {
+      "hash": "71d82484",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Haiku 5.5 calls drop temperature (the 5.5 API rejects it); a failed batch stops file-segment instead of writing one-sentence paragraphs",
+      "scope": "segment"
+    },
+    {
+      "hash": "4a6d8128",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Alert severity — [PAGE] only when the site is down and automation could not fix it; [ACTION] for daylight work",
+      "scope": "ops"
+    },
+    {
+      "hash": "c1b133c8",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Watchdog no longer emails ACTION REQUIRED for a restart it completed itself",
+      "scope": "ops"
+    },
+    {
+      "hash": "30fe6ec0",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "One-time file-level Arabic/Persian sentence segmentation with Haiku 5.5 (cached prompt, <100k per call)",
+      "scope": "segment"
+    },
+    {
+      "hash": "0dc00171",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Registry current with Anthropic's live list — 5.5 family (Haiku/Sonnet/Opus) the only ones in use; Haiku 5.5's 5× past-100k pricing billed",
+      "scope": "models"
+    },
+    {
+      "hash": "178fe11e",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Library-fixes re-ingest uses node:http (undici's 5-min headers timeout killed it mid-book)",
+      "scope": "library"
+    },
+    {
+      "hash": "d4c695fc",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "A localOnly scope can no longer reach GPT-4o — forceLocal beats USE_REMOTE_AI; segmentation refuses a non-local provider under localOnly",
+      "scope": "ai"
+    },
+    {
+      "hash": "6c77f1b9",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Root cause of the 10,124 empty bahai-library rows — paragraph replacement is crash-safe; retired duplicates stay retired",
+      "scope": "ingest"
+    },
+    {
+      "hash": "67224b92",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "A failed paragraph write no longer leaves a hollow row behind a stored hash; --only-hollow repair mode; bounded agent watchers",
+      "scope": "ingest"
+    },
+    {
+      "hash": "566f382a",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "4k pilot — 14.3% → 79.9% agreement with Jev on the full 4,461 held-out set (majority 65.6%)",
+      "scope": "laya"
+    },
+    {
+      "hash": "d0b201bb",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Overnight battery — Qdrant-only now wins the type battery (65 vs 63) after CANON; Meili still wins quality (458 vs 433)",
+      "scope": "search"
+    },
+    {
+      "hash": "f71d269f",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Library-fixes moves only files inside the library; scrape rows are retired with their files untouched",
+      "scope": "library"
+    },
+    {
+      "hash": "d5994593",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Finetune.py — distil Jev's answer distributions into Laya (smoke: 7% → 93% agreement in 25 CPU steps)",
+      "scope": "laya"
+    },
+    {
+      "hash": "a643cde1",
+      "date": "2026-10-10",
+      "type": "Docs",
+      "description": "Strata on Boss — watched-launch plan (IQ3_S verified on boss; RAM sizing risk)",
+      "scope": "planning"
+    },
+    {
+      "hash": "bf5966f9",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "SetDocTitle + library-fixes title op (repair 'Untitled' rows whose frontmatter did not parse)",
+      "scope": "library"
+    },
+    {
+      "hash": "820085b2",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Jain category trimmed ('Jainism ' split the tradition); library-fixes.mjs applies reviewed audit decisions",
+      "scope": "library"
+    },
+    {
+      "hash": "6e62b0f2",
+      "date": "2026-10-10",
+      "type": "Chore",
+      "description": "Changelog after the 10-10 evening deploy",
+      "scope": null
+    },
     {
       "hash": "985edf6a",
       "date": "2026-10-10",
@@ -3374,136 +3500,138 @@
       "type": "New",
       "description": "Model verdicts drive who-met-whom (met/denied/excluded); verifier v2 (reversed roles = met, intent ≠ met)",
       "scope": "search"
-    },
-    {
-      "hash": "d6d0a865",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Verify meeting claims against their full paragraph (migration 123 claim_verifications)",
-      "scope": "entities"
-    },
-    {
-      "hash": "b8a56eaa",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Encounters/refresh — rebuild the who-met-whom index after an entity write",
-      "scope": "admin"
-    },
-    {
-      "hash": "4e76c307",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Group facts as cited per-member claims; core histories settle conflicting encounter evidence",
-      "scope": "entities"
-    },
-    {
-      "hash": "eb8c6bcb",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Who-met-whom — self-typed targets ignored, canonical names owned by their bearer, roles are not names, tighter negation",
-      "scope": "search"
-    },
-    {
-      "hash": "3e908d30",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Proof decides who-met-whom; API exposes every claim's proof",
-      "scope": "search,api"
-    },
-    {
-      "hash": "c12c83fc",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Tombstone repair deleted repointed relations (either-end test) — correct test + --restore from rollback",
-      "scope": "entities"
-    },
-    {
-      "hash": "3ab00d40",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Merges carry relations + importance to the survivor; survivor = curated record; tombstone repair runner",
-      "scope": "entities"
-    },
-    {
-      "hash": "58de9d77",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Entity-fate — where a person went (row, tombstone, survivor, merge decisions)",
-      "scope": "admin"
-    },
-    {
-      "hash": "f60d440a",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Encounter-evidence — encounter claims between two entities with their verbatim proof",
-      "scope": "admin"
-    },
-    {
-      "hash": "2492cfa5",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Candidate recall offers live entities only — a just-merged duplicate was still a candidate",
-      "scope": "entities"
-    },
-    {
-      "hash": "bbc06ab0",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Merge applies only a reviewed dry-run plan (minus excluded groups) and saves a real rollback first",
-      "scope": "entities"
-    },
-    {
-      "hash": "b1df754a",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Re-link fills and corrects, never erases; merge groups duplicates by core name (+ admin merge runner)",
-      "scope": "entities"
-    },
-    {
-      "hash": "7f77bb23",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Link compares every name both sides carry — core, parenthetical alternates, 'surnamed/known as' names",
-      "scope": "entities"
-    },
-    {
-      "hash": "d38e46b4",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Recall — an exact core name outranks a compound containing it (Muḥammad before Siyyid ‘Alí-Muḥammad)",
-      "scope": "entities"
-    },
-    {
-      "hash": "f3d8b5c6",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Candidate recall puts the core name's most prominent bearer first — descriptors no longer out-vote the name",
-      "scope": "entities"
-    },
-    {
-      "hash": "8b799e20",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Entity-recall — the candidates reconcile's recall returns for a cluster name",
-      "scope": "admin"
-    },
-    {
-      "hash": "1d510edd",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Duplicate-origins diagnostic; link exact-beats-short-form + drop reasons; audit judges the object only",
-      "scope": "entities"
-    },
-    {
-      "hash": "df9f0d33",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Re-link runner — dry-run scores old→new bindings before any write; link writes only changed rows",
-      "scope": "entities"
     }
   ],
   "grouped": {
+    "2026-10-11": [
+      {
+        "hash": "1c4c6164",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Anthropic replies read every text block (5.x may lead with thinking); segmentation runs Haiku with thinking off and 16k output headroom",
+        "scope": "ai"
+      },
+      {
+        "hash": "71d82484",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Haiku 5.5 calls drop temperature (the 5.5 API rejects it); a failed batch stops file-segment instead of writing one-sentence paragraphs",
+        "scope": "segment"
+      },
+      {
+        "hash": "4a6d8128",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Alert severity — [PAGE] only when the site is down and automation could not fix it; [ACTION] for daylight work",
+        "scope": "ops"
+      },
+      {
+        "hash": "c1b133c8",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Watchdog no longer emails ACTION REQUIRED for a restart it completed itself",
+        "scope": "ops"
+      },
+      {
+        "hash": "30fe6ec0",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "One-time file-level Arabic/Persian sentence segmentation with Haiku 5.5 (cached prompt, <100k per call)",
+        "scope": "segment"
+      },
+      {
+        "hash": "0dc00171",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Registry current with Anthropic's live list — 5.5 family (Haiku/Sonnet/Opus) the only ones in use; Haiku 5.5's 5× past-100k pricing billed",
+        "scope": "models"
+      },
+      {
+        "hash": "178fe11e",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Library-fixes re-ingest uses node:http (undici's 5-min headers timeout killed it mid-book)",
+        "scope": "library"
+      },
+      {
+        "hash": "d4c695fc",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "A localOnly scope can no longer reach GPT-4o — forceLocal beats USE_REMOTE_AI; segmentation refuses a non-local provider under localOnly",
+        "scope": "ai"
+      },
+      {
+        "hash": "6c77f1b9",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Root cause of the 10,124 empty bahai-library rows — paragraph replacement is crash-safe; retired duplicates stay retired",
+        "scope": "ingest"
+      },
+      {
+        "hash": "67224b92",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "A failed paragraph write no longer leaves a hollow row behind a stored hash; --only-hollow repair mode; bounded agent watchers",
+        "scope": "ingest"
+      },
+      {
+        "hash": "566f382a",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "4k pilot — 14.3% → 79.9% agreement with Jev on the full 4,461 held-out set (majority 65.6%)",
+        "scope": "laya"
+      }
+    ],
     "2026-10-10": [
+      {
+        "hash": "d0b201bb",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Overnight battery — Qdrant-only now wins the type battery (65 vs 63) after CANON; Meili still wins quality (458 vs 433)",
+        "scope": "search"
+      },
+      {
+        "hash": "f71d269f",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Library-fixes moves only files inside the library; scrape rows are retired with their files untouched",
+        "scope": "library"
+      },
+      {
+        "hash": "d5994593",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Finetune.py — distil Jev's answer distributions into Laya (smoke: 7% → 93% agreement in 25 CPU steps)",
+        "scope": "laya"
+      },
+      {
+        "hash": "a643cde1",
+        "date": "2026-10-10",
+        "type": "Docs",
+        "description": "Strata on Boss — watched-launch plan (IQ3_S verified on boss; RAM sizing risk)",
+        "scope": "planning"
+      },
+      {
+        "hash": "bf5966f9",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "SetDocTitle + library-fixes title op (repair 'Untitled' rows whose frontmatter did not parse)",
+        "scope": "library"
+      },
+      {
+        "hash": "820085b2",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Jain category trimmed ('Jainism ' split the tradition); library-fixes.mjs applies reviewed audit decisions",
+        "scope": "library"
+      },
+      {
+        "hash": "6e62b0f2",
+        "date": "2026-10-10",
+        "type": "Chore",
+        "description": "Changelog after the 10-10 evening deploy",
+        "scope": null
+      },
       {
         "hash": "985edf6a",
         "date": "2026-10-10",
@@ -6905,132 +7033,6 @@
         "type": "New",
         "description": "Model verdicts drive who-met-whom (met/denied/excluded); verifier v2 (reversed roles = met, intent ≠ met)",
         "scope": "search"
-      },
-      {
-        "hash": "d6d0a865",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Verify meeting claims against their full paragraph (migration 123 claim_verifications)",
-        "scope": "entities"
-      },
-      {
-        "hash": "b8a56eaa",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Encounters/refresh — rebuild the who-met-whom index after an entity write",
-        "scope": "admin"
-      },
-      {
-        "hash": "4e76c307",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Group facts as cited per-member claims; core histories settle conflicting encounter evidence",
-        "scope": "entities"
-      },
-      {
-        "hash": "eb8c6bcb",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Who-met-whom — self-typed targets ignored, canonical names owned by their bearer, roles are not names, tighter negation",
-        "scope": "search"
-      },
-      {
-        "hash": "3e908d30",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Proof decides who-met-whom; API exposes every claim's proof",
-        "scope": "search,api"
-      },
-      {
-        "hash": "c12c83fc",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Tombstone repair deleted repointed relations (either-end test) — correct test + --restore from rollback",
-        "scope": "entities"
-      },
-      {
-        "hash": "3ab00d40",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Merges carry relations + importance to the survivor; survivor = curated record; tombstone repair runner",
-        "scope": "entities"
-      },
-      {
-        "hash": "58de9d77",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Entity-fate — where a person went (row, tombstone, survivor, merge decisions)",
-        "scope": "admin"
-      },
-      {
-        "hash": "f60d440a",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Encounter-evidence — encounter claims between two entities with their verbatim proof",
-        "scope": "admin"
-      },
-      {
-        "hash": "2492cfa5",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Candidate recall offers live entities only — a just-merged duplicate was still a candidate",
-        "scope": "entities"
-      },
-      {
-        "hash": "bbc06ab0",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Merge applies only a reviewed dry-run plan (minus excluded groups) and saves a real rollback first",
-        "scope": "entities"
-      },
-      {
-        "hash": "b1df754a",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Re-link fills and corrects, never erases; merge groups duplicates by core name (+ admin merge runner)",
-        "scope": "entities"
-      },
-      {
-        "hash": "7f77bb23",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Link compares every name both sides carry — core, parenthetical alternates, 'surnamed/known as' names",
-        "scope": "entities"
-      },
-      {
-        "hash": "d38e46b4",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Recall — an exact core name outranks a compound containing it (Muḥammad before Siyyid ‘Alí-Muḥammad)",
-        "scope": "entities"
-      },
-      {
-        "hash": "f3d8b5c6",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Candidate recall puts the core name's most prominent bearer first — descriptors no longer out-vote the name",
-        "scope": "entities"
-      },
-      {
-        "hash": "8b799e20",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Entity-recall — the candidates reconcile's recall returns for a cluster name",
-        "scope": "admin"
-      },
-      {
-        "hash": "1d510edd",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Duplicate-origins diagnostic; link exact-beats-short-form + drop reasons; audit judges the object only",
-        "scope": "entities"
-      },
-      {
-        "hash": "df9f0d33",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Re-link runner — dry-run scores old→new bindings before any write; link writes only changed rows",
-        "scope": "entities"
       }
     ]
   }

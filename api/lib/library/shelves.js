@@ -116,7 +116,9 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
     if (!t) { t = { name: r.religion, slug: slugifyPath(r.religion), shelves: [], library: [], ol: 0 }; tmap.set(r.religion, t); traditions.push(t); }
     if (!r.source_site && SPLIT_BY_AUTHOR.includes(r.collection)) { t.library.push(...splitRows(r, splitCounts)); continue; }
     t.library.push({ name: r.source_site ? (SITE_LABEL[r.source_site] || r.source_site) : (r.collection || 'Uncategorized'),
-      collection: r.source_site ? null : (r.collection || null), site: r.source_site || null, count: r.n });
+      collection: r.source_site ? null : (r.collection || null), site: r.source_site || null, count: r.n,
+      // a plain collection opens its own page (the tile is a link); site and author-split rows open inline
+      url: !r.source_site && r.collection ? `/library/${slugifyPath(r.religion)}/${slugifyPath(r.collection)}` : null });
   }
   for (const t of traditions) {
     t.library.sort((a, b) => b.count - a.count);
