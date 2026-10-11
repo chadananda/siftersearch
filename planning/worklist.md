@@ -11,7 +11,8 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [ ] 5. ID/pn for every book: `scripts/library/assign-block-ids.mjs` (OL-compatible attrs; `--align-to` English for CTAI)
 - [ ] 6. CTAI audit: originals paragraphed FROM THE ENGLISH, aligned, matching pn, DB links both ways
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
-- [ ] 8. Reader check in a browser: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
+- [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
+- [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
 
 ## Then — the real value
 - [ ] Concept extraction · HyPE · Anís · Dewey
