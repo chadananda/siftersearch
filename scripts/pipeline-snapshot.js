@@ -148,7 +148,10 @@ async function main() {
   try { prevSnapshot = JSON.parse(readFileSync(join(ROOT, 'data', 'pipeline-status.json'), 'utf8')) ?? {}; } catch { /* first run */ }
   const prev = prevSnapshot.integrity ?? {};
   // High-water baseline carries forward; only ratchets UP on healthy growth.
-  const baseline = Math.max(prev.baseline_live_paras ?? 0, liveParas ?? 0);
+  // --rebase-integrity: after an EXPLAINED, approved retirement (scripts/ops/deletions-report.mjs shows where the rows
+  // went), restart the high-water mark from today's count. Recorded, so the alert history stays honest.
+  const rebase = process.argv.includes('--rebase-integrity') && liveParas != null;
+  const baseline = rebase ? liveParas : Math.max(prev.baseline_live_paras ?? 0, liveParas ?? 0);
   // Alert if live content fell >2% (or >5000 paras) below the baseline high.
   const dropThreshold = Math.max(5000, Math.floor(baseline * 0.02));
   const drop = (liveParas != null && baseline) ? baseline - liveParas : 0;
@@ -156,8 +159,10 @@ async function main() {
     live_paras: liveParas,
     baseline_live_paras: baseline,
     drop_from_baseline: drop,
+    rebased_at: rebase ? new Date().toISOString() : (prev.rebased_at ?? null),
+    rebased_from: rebase ? (prev.baseline_live_paras ?? null) : (prev.rebased_from ?? null),
     alert: drop > dropThreshold
-      ? `CONTENT DROP: live paragraphs ${liveParas} is ${drop} below baseline ${baseline} (>${dropThreshold}) — possible gutting, investigate deletions`
+      ? `CONTENT DROP: live paragraphs ${liveParas} is ${drop} below baseline ${baseline} (>${dropThreshold}) — possible gutting. Explain with scripts/ops/deletions-report.mjs; rebase with pipeline-snapshot.js --rebase-integrity only once explained`
       : null,
   };
 
