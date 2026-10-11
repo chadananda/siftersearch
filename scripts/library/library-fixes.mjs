@@ -5,13 +5,14 @@
 //   duplicates: [{ dup, keep, reason }]                markDuplicate (refuses a target without prose), then the dup's FILE
 //                                                      goes to _retired-duplicates/placement-audit-20261010/<its path>
 //   religion:   [{ id, religion }]                     tradition label fix (paragraphs re-sync)
+//   title:      [{ id, title }]                        title repair ("Untitled" rows; paragraphs re-sync)
 // Every step is logged to /tank/sifter/library-fixes.jsonl (reversible: files moved, never deleted). Runs ON tower with
 // SIFTER_WRITER_URL. Dry run by default.   node scripts/library/library-fixes.mjs --plan <json> [--apply]
 import { readFileSync, appendFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import dotenv from 'dotenv';
 import { config } from '../../api/lib/config.js';
-import { listDocs, markDuplicate, setDocReligion, relocateDoc } from '../../api/lib/docs-repo.js';
+import { listDocs, markDuplicate, setDocReligion, setDocTitle, relocateDoc } from '../../api/lib/docs-repo.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true });
 const opt = (k) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : null);
@@ -20,7 +21,7 @@ if (APPLY && !process.env.SIFTER_WRITER_URL) throw new Error('SIFTER_WRITER_URL 
 const base = config.library.basePath;
 const RETIRED = '_retired-duplicates/placement-audit-20261010';
 const plan = JSON.parse(readFileSync(opt('--plan'), 'utf8'));
-const ids = [...(plan.reingest || []), ...(plan.move || []).map((m) => m.id), ...(plan.duplicates || []).flatMap((d) => [d.dup, d.keep]), ...(plan.religion || []).map((r) => r.id)];
+const ids = [...(plan.reingest || []), ...(plan.move || []).map((m) => m.id), ...(plan.duplicates || []).flatMap((d) => [d.dup, d.keep]), ...(plan.religion || []).map((r) => r.id), ...(plan.title || []).map((t) => t.id)];
 const docs = async () => new Map((await listDocs({ ids, fields: ['id', 'title', 'religion', 'collection', 'file_path', 'duplicate_of', 'paragraph_count'], limit: ids.length })).docs.map((d) => [d.id, d]));
 const log = (x) => { console.log(JSON.stringify(x)); if (APPLY) appendFileSync('/tank/sifter/library-fixes.jsonl', JSON.stringify({ at: new Date().toISOString(), ...x }) + '\n'); };
 let byId = await docs();
@@ -57,5 +58,10 @@ for (const r of plan.religion || []) {
   const d = byId.get(r.id);
   log({ op: 'religion', ...r, title: d?.title?.slice(0, 60), from: d?.religion, refused: d ? null : 'not live' });
   if (APPLY && d && d.religion !== r.religion) await setDocReligion(r.id, r.religion);
+}
+for (const t of plan.title || []) {
+  const d = byId.get(t.id);
+  log({ op: 'title', ...t, from: d?.title, refused: d ? null : 'not live' });
+  if (APPLY && d && d.title !== t.title) await setDocTitle(t.id, t.title);
 }
 process.exit(0);

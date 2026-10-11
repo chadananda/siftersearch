@@ -170,6 +170,17 @@ export async function setDocReligion(docId, religion) {
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 
+/** Set a document's title (paragraphs re-sync: search payloads and citations carry it). Live docs only. Used to repair
+ *  "Untitled" rows whose frontmatter the ingester could not parse (scripts/library/library-fixes.mjs). */
+export async function setDocTitle(docId, title) {
+  const t = String(title || '').trim();
+  if (!t) throw new Error('setDocTitle: empty title');
+  const id = Number(docId);
+  const r = await query('UPDATE docs SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [t, id], 'docs-repo:set-title');
+  await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id], 'docs-repo:set-title-resync');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
 /** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised. */
 export function ftsQuery(text) {
   // apostrophes removed first, as docs_fts stores them (migration 142): "Bahá’u’lláh" / "Baha'u'llah" / "Bahaullah" agree
