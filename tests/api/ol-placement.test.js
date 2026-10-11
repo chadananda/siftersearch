@@ -36,3 +36,22 @@ describe('olCiteTitle from a doc row without a path (search hydration)', () => {
     expect(olCiteTitle({ source_site: 'oceanlibrary.com', collection: 'f113b356e0100619b4261dfd6d9d9116', author: 'Muhammad', title: 'Sura C' })).toBe('Sura C');
   });
 });
+
+describe('a work split across traditions is one work in one tradition', () => {
+  it('KJV Old Testament books belong to Christianity with the New; other files keep the site religion', async () => {
+    const { olReligion } = await import('../../api/lib/library/ol-works.js');
+    expect(olReligion(P('Judaism/The Bible (KJV)/Genesis.md'), 'Judaism')).toBe('Christian');
+    expect(olReligion(P('Judaism/The Tanakh (JPS 1917)/Genesis.md'), 'Judaism')).toBe('Judaism');
+    expect(olReligion(P('Judaism/Talmud.md'), 'Judaism')).toBe('Judaism');
+  });
+});
+
+describe('olWeight', () => {
+  it("reads OceanLibrary's order from stored frontmatter; null when absent or unreadable", async () => {
+    const { olWeight } = await import('../../api/lib/library/ol-works.js');
+    expect(olWeight('{"weight":1.01}')).toBe(1.01);
+    expect(olWeight({ weight: '2' })).toBe(2);
+    expect(olWeight(null)).toBe(null);
+    expect(olWeight('not json')).toBe(null);
+  });
+});

@@ -69,7 +69,7 @@ export function scopeSql(scope = 'live') {
 
 const FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'external_id', 'scope', 'cover_url', 'encumbered',
   'description', 'file_path', 'file_hash', 'paragraph_count', 'source_site', 'source_url', 'duplicate_of', 'deleted_at',
-  'slug', 'created_at', 'updated_at']);
+  'slug', 'created_at', 'updated_at', 'frontmatter']);
 
 function selectList(fields) {
   const asked = (Array.isArray(fields) ? fields : String(fields || '').split(','))
@@ -156,6 +156,15 @@ export async function relocateDoc(docId, { filePath, collection, sourceSite = nu
  *  their folder names (scripts/library/ol-shelves-backfill.mjs). */
 export async function setDocCollection(docId, collection) {
   const r = await query('UPDATE docs SET collection = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [collection, Number(docId)], 'docs-repo:set-collection');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
+/** Move a document to another tradition (same id, file, collection); its paragraphs re-sync, as search payloads carry
+ *  religion. Live docs only. Used for OceanLibrary works split across traditions (scripts/library/ol-work-religion.mjs). */
+export async function setDocReligion(docId, religion) {
+  const id = Number(docId);
+  const r = await query('UPDATE docs SET religion = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [religion, id], 'docs-repo:set-religion');
+  await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id], 'docs-repo:set-religion-resync');
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 

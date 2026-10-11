@@ -3,7 +3,7 @@
 // index the /library page renders in one request. Built out of process (scripts/pipeline-snapshot.js →
 // data/library-shelves.json), served edge-cached by GET /api/library/shelves; a shelf's "N more" opens through
 // GET /api/library/shelves/items. A multi-part work (KJV, Qur'an…) is ONE card (ol-works.js).
-import { olPlacement, OL_SHELVES_OF_SEPARATE_WORKS } from './ol-works.js';
+import { olPlacement, OL_SHELVES_OF_SEPARATE_WORKS, OL_WORK_COVER } from './ol-works.js';
 import { slugifyPath, generateDocSlug } from '../slug.js';
 
 export const SHELVES_FILE = 'library-shelves.json';
@@ -46,11 +46,9 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
     if (!t.shelves.has(key)) t.shelves.set(key, { name: shelf || 'More works', key, books: [], works: new Map() });
     const s = t.shelves.get(key);
     if (work) {
-      if (!s.works.has(work)) s.works.set(work, { kind: 'work', title: work, author: d.author, parts: 0, cover: null, first: null, paras: 0 });
+      if (!s.works.has(work)) s.works.set(work, { title: work, author: d.author, list: [], paras: 0 });
       const w = s.works.get(work);
-      w.parts++; w.paras += d.paragraph_count || 0;
-      if (!w.cover && d.cover_url) w.cover = d.cover_url;
-      if (!w.first || d.id < w.first.id) w.first = d;
+      w.list.push(d); w.paras += d.paragraph_count || 0;
     } else s.books.push(card(d));
   }
   // 2. per-tradition author totals (folded), to count what the library holds beyond the OceanLibrary shelf
@@ -65,8 +63,13 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
   for (const t of trads.values()) {
     const lead = LEAD[fold(t.name).replace(/s$/, '')] || LEAD[fold(t.name)] || [];
     const shelves = [...t.shelves.values()].map((s) => {
-      const works = [...s.works.values()].map((w) => ({ kind: 'work', title: w.title, author: w.author, parts: w.parts, paras: w.paras,
-        cover: w.cover, url: docUrl(w.first), id: w.first.id }));
+      // a work = one card with its own cover; its parts in OceanLibrary's order (weight), all listed so the card opens instantly
+      const works = [...s.works.values()].map((w) => {
+        const list = w.list.sort((a, b) => (a.weight ?? 1e9) - (b.weight ?? 1e9) || a.title.localeCompare(b.title, undefined, { numeric: true }));
+        const lead = list[0];
+        return { kind: 'work', title: w.title, author: w.author, parts: list.length, paras: w.paras, id: lead.id, url: docUrl(lead),
+          cover: OL_WORK_COVER[w.title] || list.find((p) => p.cover_url)?.cover_url || null, list: list.map(card) };
+      });
       const items = [...works, ...s.books.sort((a, b) => a.title.localeCompare(b.title))];
       // "N more": an author shelf opens the rest of that author's works in the library (all sites, any collection)
       // the folder decides (a compilation filed under Bahá'u'lláh is still on his shelf)

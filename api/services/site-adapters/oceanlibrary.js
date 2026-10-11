@@ -23,7 +23,7 @@
 // A baked-in fallback covers the case where someone calls parseDoc directly
 // without going through sites-ingester (tests, ad-hoc scripts).
 
-import { olPlacement } from '../../lib/library/ol-works.js';
+import { olPlacement, olReligion } from '../../lib/library/ol-works.js';
 import yaml from 'yaml';
 
 const DEFAULT_RELIGION_MAP = {
@@ -112,7 +112,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   // Religion map comes from siteConfig (loaded from -sites/sites.yaml). Fall
   // back to the baked-in defaults when called outside the ingester pipeline.
   const religionMap = (siteConfig && siteConfig.religion_map) || DEFAULT_RELIGION_MAP;
-  const ourReligion = religionMap[frontmatter.ocean_category] || frontmatter.ocean_category;
+  const ourReligion = olReligion(relativePath, religionMap[frontmatter.ocean_category] || frontmatter.ocean_category);
 
   // Split body into blocks on blank lines.
   //

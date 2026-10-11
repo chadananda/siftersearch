@@ -15,6 +15,24 @@ export const OL_MULTIPART_WORKS = Object.freeze(new Set([
   'The Bible (KJV)', 'The Quran (Rodwell)', 'The Tanakh (JPS 1917)', 'The Gospels (Greek-titled)',
   'Rig Veda', 'The Mahabharata', 'The Upanishads', 'Avesta', 'Khorda Avesta',
 ]));
+// A work OceanLibrary splits across traditions is ONE work in ONE tradition here (Chad 10-10: KJV Old Testament was filed
+// under Judaism, New Testament under Christianity → two half-Bibles). The KJV is a Christian translation; Judaism has the
+// JPS Tanakh. Applied by the adapter on ingest and by scripts/library/ol-work-religion.mjs to rows already held.
+export const OL_WORK_RELIGION = Object.freeze({ 'The Bible (KJV)': 'Christian' });
+// A work's own cover — the Bindery collection covers (Chad 10-10), stored in R2 cdn-assets under siftersearch.com/collections/.
+const COL = (id) => `/img/cdn/siftersearch.com/collections/${id}.png`;
+export const OL_WORK_COVER = Object.freeze({
+  'The Bible (KJV)': COL('col-bible'), 'The Tanakh (JPS 1917)': COL('col-tanakh'), 'The Quran (Rodwell)': COL('col-quran_muhammad_rodwell_tr'),
+  'The Mahabharata': COL('col-mahabharata_vyasa'), 'Rig Veda': COL('col-rig-veda'), 'The Upanishads': COL('col-upanishads_2'),
+  Avesta: COL('col-avesta'), 'Khorda Avesta': COL('col-khorda-avesta'),
+});
+/** A part's place in its work: OceanLibrary's frontmatter `weight` (Genesis 1.01 … Revelation; Sura I 1.01 … CXIV), from
+ *  docs.frontmatter (JSON). null when absent. */
+export function olWeight(frontmatter) {
+  try { const w = Number((typeof frontmatter === 'string' ? JSON.parse(frontmatter) : frontmatter)?.weight); return Number.isFinite(w) ? w : null; } catch { return null; }
+}
+/** The tradition an OceanLibrary file belongs to: the work's own when it has one, else the site's. */
+export const olReligion = (relativePath, siteReligion) => OL_WORK_RELIGION[olPlacement(relativePath).work] || siteReligion;
 /** {shelf, work} for an OceanLibrary file path ("-sites/oceanlibrary.com/<tradition>/<folder>/<file>.md" or relative to
  *  the site). shelf = the folder (null for a book directly under its tradition); work = the folder when it is one work. */
 export function olPlacement(relativePath, _author) {   // author kept in the signature: callers pass it; the list decides

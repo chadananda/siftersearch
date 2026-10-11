@@ -40,6 +40,14 @@ describe('buildShelves', () => {
     expect(q.items).toHaveLength(1);
     expect(q.items[0]).toMatchObject({ kind: 'work', title: 'The Quran (Rodwell)', parts: 2, id: 10 });
   });
+  it('a work card carries the collection cover and every part in OceanLibrary order (weight)', async () => {
+    const { buildShelves } = await import('../../api/lib/library/shelves.js');
+    const kjv = (id, title, weight) => ({ id, title, weight, author: 'Various', religion: 'Christian', collection: 'The Bible (KJV)', cover_url: `c-${id}`, file_path: `-sites/oceanlibrary.com/Christian/The Bible (KJV)/${title}.md` });
+    const r = buildShelves({ olDocs: [kjv(5, '1 Chronicles', 1.13), kjv(9, 'Genesis', 1.01), kjv(3, 'Romans', 1.45)] });
+    const w = r.traditions[0].shelves[0].items[0];
+    expect(w).toMatchObject({ kind: 'work', parts: 3, id: 9, cover: '/img/cdn/siftersearch.com/collections/col-bible.png' });
+    expect(w.list.map((p) => p.title)).toEqual(['Genesis', '1 Chronicles', 'Romans']);
+  });
   it("the tradition's other collections follow, OceanLibrary excluded, largest first", () => {
     expect(bahai.library.map((l) => [l.name, l.count])).toEqual([['Bahá’í Library Online', 15013], ['Books', 2348]]);
   });

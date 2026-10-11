@@ -1,6 +1,48 @@
 {
-  "generated": "2026-10-10T23:07:11.783Z",
+  "generated": "2026-10-11T02:23:41.902Z",
   "entries": [
+    {
+      "hash": "05849aee",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Move non-catalogue OceanLibrary books into the main library (docs-repo.relocateDoc, ol-to-library.mjs)",
+      "scope": "library"
+    },
+    {
+      "hash": "fa470a4e",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Critical-path retries network errors 3x with backoff (tower's outbound connects hit 10 s timeouts under a saturated uplink)",
+      "scope": "ops"
+    },
+    {
+      "hash": "3dcfbeba",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Critical-path regression suite + updater safety rails — the 10-10 outage cannot recur silently",
+      "scope": "ops"
+    },
+    {
+      "hash": "232b9c82",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Import-covers falls back to a unique folded title (Bindery); 73 more covers imported (586/607)",
+      "scope": "covers"
+    },
+    {
+      "hash": "8bec83cd",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Import-covers matches by Bindery source URL when the bookid hash misses",
+      "scope": "covers"
+    },
+    {
+      "hash": "0a4aee7d",
+      "date": "2026-10-10",
+      "type": "Fixed",
+      "description": "Restore after a 30-min API outage; remove git hooks; explicit deploy pipeline",
+      "scope": "ops"
+    },
     {
       "hash": "e2e6c6b8",
       "date": "2026-10-10",
@@ -3458,52 +3500,52 @@
       "type": "New",
       "description": "Claim-target-audit — which binder produces wrong typed targets, classified per import batch",
       "scope": "admin"
-    },
-    {
-      "hash": "75ace66f",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Claim evidence leads only when the claims layer answered; plain facts skip the 5-12s claim scan",
-      "scope": "search"
-    },
-    {
-      "hash": "e802cd68",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Quotes and people facts keep meaning-match (battery: paraphrases, history facts); recognised who-met-whom skips it",
-      "scope": "search"
-    },
-    {
-      "hash": "eb8baedf",
-      "date": "2026-09-26",
-      "type": "Performance",
-      "description": "Source copy checks batched into one exact-phrase Meili multiSearch; bare names go to the more prominent bearer",
-      "scope": "search"
-    },
-    {
-      "hash": "daff3ca4",
-      "date": "2026-09-26",
-      "type": "Performance",
-      "description": "Each strategy runs only its own layers — no query embedding for quote/lookup/people facts; cross-tradition batches run concurrently",
-      "scope": "search"
-    },
-    {
-      "hash": "49ddc6b4",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Source judge floor 600ms — a starved judge silently stopped quote re-sourcing",
-      "scope": "search"
-    },
-    {
-      "hash": "c3cf9941",
-      "date": "2026-09-26",
-      "type": "Chore",
-      "description": "Main layer reports embedding vs engine ms",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "05849aee",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Move non-catalogue OceanLibrary books into the main library (docs-repo.relocateDoc, ol-to-library.mjs)",
+        "scope": "library"
+      },
+      {
+        "hash": "fa470a4e",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Critical-path retries network errors 3x with backoff (tower's outbound connects hit 10 s timeouts under a saturated uplink)",
+        "scope": "ops"
+      },
+      {
+        "hash": "3dcfbeba",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Critical-path regression suite + updater safety rails — the 10-10 outage cannot recur silently",
+        "scope": "ops"
+      },
+      {
+        "hash": "232b9c82",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Import-covers falls back to a unique folded title (Bindery); 73 more covers imported (586/607)",
+        "scope": "covers"
+      },
+      {
+        "hash": "8bec83cd",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Import-covers matches by Bindery source URL when the bookid hash misses",
+        "scope": "covers"
+      },
+      {
+        "hash": "0a4aee7d",
+        "date": "2026-10-10",
+        "type": "Fixed",
+        "description": "Restore after a 30-min API outage; remove git hooks; explicit deploy pipeline",
+        "scope": "ops"
+      },
       {
         "hash": "e2e6c6b8",
         "date": "2026-10-10",
@@ -6989,48 +7031,6 @@
         "type": "New",
         "description": "Claim-target-audit — which binder produces wrong typed targets, classified per import batch",
         "scope": "admin"
-      },
-      {
-        "hash": "75ace66f",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Claim evidence leads only when the claims layer answered; plain facts skip the 5-12s claim scan",
-        "scope": "search"
-      },
-      {
-        "hash": "e802cd68",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Quotes and people facts keep meaning-match (battery: paraphrases, history facts); recognised who-met-whom skips it",
-        "scope": "search"
-      },
-      {
-        "hash": "eb8baedf",
-        "date": "2026-09-26",
-        "type": "Performance",
-        "description": "Source copy checks batched into one exact-phrase Meili multiSearch; bare names go to the more prominent bearer",
-        "scope": "search"
-      },
-      {
-        "hash": "daff3ca4",
-        "date": "2026-09-26",
-        "type": "Performance",
-        "description": "Each strategy runs only its own layers — no query embedding for quote/lookup/people facts; cross-tradition batches run concurrently",
-        "scope": "search"
-      },
-      {
-        "hash": "49ddc6b4",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Source judge floor 600ms — a starved judge silently stopped quote re-sourcing",
-        "scope": "search"
-      },
-      {
-        "hash": "c3cf9941",
-        "date": "2026-09-26",
-        "type": "Chore",
-        "description": "Main layer reports embedding vs engine ms",
-        "scope": "search"
       }
     ]
   }

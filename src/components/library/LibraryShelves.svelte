@@ -11,6 +11,7 @@
   let error = $state(null);
   let active = $state(null);                      // tradition slug
   let openShelf = $state({});                     // shelf key → show all of its OceanLibrary items
+  let openWork = $state({});                      // shelf key → the work whose parts are open there
   let extra = $state({});                         // key → { items, total, loading }
 
   let tradition = $derived(data?.traditions.find((t) => t.slug === active) ?? data?.traditions[0]);
@@ -46,8 +47,11 @@
   const SHOWN = 12;
 </script>
 
-{#snippet bookCard(b)}
-  <a href={b.url} class="book group flex flex-col gap-1 min-w-0" title={b.author ? `${b.title} — ${b.author}` : b.title}>
+{#snippet bookCard(b, shelfKey = null)}
+  <svelte:element this={b.kind === 'work' && shelfKey != null ? 'button' : 'a'} href={b.kind === 'work' && shelfKey != null ? undefined : b.url}
+    onclick={b.kind === 'work' && shelfKey != null ? () => (openWork[shelfKey] = openWork[shelfKey] === b.title ? null : b.title) : undefined}
+    aria-expanded={b.kind === 'work' && shelfKey != null ? openWork[shelfKey] === b.title : undefined}
+    class="book group flex flex-col gap-1 min-w-0 text-left" title={b.author ? `${b.title} — ${b.author}` : b.title}>
     {#if cover(b.cover)}
       {@const c = cover(b.cover)}
       <!-- a fixed box; the cover fits inside it at its own proportions, standing on the box's floor (Chad 10-10) -->
@@ -63,12 +67,24 @@
     <span class="text-xs leading-snug text-primary line-clamp-2 group-hover:text-accent">{b.title}</span>
     {#if b.kind === 'work'}<span class="text-[0.7rem] text-muted">{fmt(b.parts)} parts</span>
     {:else if b.author}<span class="text-[0.7rem] text-muted truncate">{b.author}</span>{/if}
-  </a>
+  </svelte:element>
 {/snippet}
 
-{#snippet grid(items)}
+<!-- the wider library is mostly coverless (2 of ~53k docs have covers): compact title tiles, not empty cover boxes -->
+{#snippet tiles(items)}
+  <div class="grid gap-2 grid-cols-[repeat(auto-fill,minmax(14rem,1fr))]">
+    {#each items as b (b.id)}
+      <a href={b.url} class="group flex flex-col gap-0.5 min-w-0 rounded-md border border-border-subtle bg-surface-2 hover:border-accent px-3 py-2" title={b.author ? `${b.title} — ${b.author}` : b.title}>
+        <span class="text-sm leading-snug text-primary line-clamp-2 group-hover:text-accent">{b.title}</span>
+        {#if b.author}<span class="text-xs text-muted truncate">{b.author}</span>{/if}
+      </a>
+    {/each}
+  </div>
+{/snippet}
+
+{#snippet grid(items, shelfKey = null)}
   <div class="grid gap-3 grid-cols-[repeat(auto-fill,minmax(96px,1fr))]">
-    {#each items as b (b.id)}{@render bookCard(b)}{/each}
+    {#each items as b (b.id)}{@render bookCard(b, shelfKey)}{/each}
   </div>
 {/snippet}
 
@@ -98,7 +114,16 @@
     {#each tradition.shelves as s (s.key)}
       <section class="flex flex-col gap-3">
         <h2 class="text-lg font-semibold text-primary">{s.name} <span class="text-sm font-normal text-muted">{fmt(s.count)}</span></h2>
-        {@render grid(openShelf[s.key] ? s.items : s.items.slice(0, SHOWN))}
+        {@render grid(openShelf[s.key] ? s.items : s.items.slice(0, SHOWN), s.key)}
+        {#if openWork[s.key]}
+          {@const w = s.items.find((i) => i.kind === 'work' && i.title === openWork[s.key])}
+          {#if w?.list}
+            <div class="pl-3 border-l-2 border-accent flex flex-col gap-2">
+              <h3 class="text-sm font-semibold text-primary">{w.title} <span class="font-normal text-muted">{fmt(w.parts)} parts</span></h3>
+              {@render grid(w.list)}
+            </div>
+          {/if}
+        {/if}
         <div class="flex flex-wrap gap-4 text-sm">
           {#if s.items.length > SHOWN}
             <button class="text-accent hover:text-accent-hover" onclick={() => (openShelf[s.key] = !openShelf[s.key])}>
@@ -112,7 +137,7 @@
         {#if extra[`m:${s.key}`]}
           {@const e = extra[`m:${s.key}`]}
           <div class="pl-3 border-l-2 border-border-subtle flex flex-col gap-3">
-            {@render grid(e.items)}
+            {#if e.items.some((b) => b.cover)}{@render grid(e.items)}{:else}{@render tiles(e.items)}{/if}
             {#if e.loading}<p class="text-sm text-muted">Loading…</p>
             {:else if e.total != null && e.items.length < s.more.count}
               <button class="self-start text-sm text-accent" onclick={() => loadMore(`m:${s.key}`, { authors: s.more.authors.join('|') })}>Load more</button>
@@ -135,7 +160,7 @@
             {#if extra[key]}
               {@const e = extra[key]}
               <div class="px-3 pb-3 flex flex-col gap-3">
-                {@render grid(e.items)}
+                {#if e.items.some((b) => b.cover)}{@render grid(e.items)}{:else}{@render tiles(e.items)}{/if}
                 {#if e.loading}<p class="text-sm text-muted">Loading…</p>
                 {:else if e.items.length < l.count}
                   <button class="self-start text-sm text-accent" onclick={() => loadMore(key, params)}>Load more ({fmt(l.count - e.items.length)} left)</button>
