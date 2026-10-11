@@ -18,7 +18,7 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
   - [x] 3. bahai-library: 244 secondary duplicates retired (1,324 candidates were already retired)
 - [x] Index caught up (20:10 UTC: 714 awaiting embeddings, 6 awaiting sync; Qdrant 7 collections green)
 - [x] Content-drop alarm explained (10-10 approved bahai-library junk retirement, 302k ¶) + rebased; `scripts/ops/deletions-report.mjs`
-- [x] Hollow check: 0 hollow books corpus-wide, 1 empty row (doc 14779); `scripts/ops/hollow-report.mjs`: unembedded + `synced=0` live rows draining (incl. the 14 Islamic works)
+- [x] Hollow check: 0 hollow books corpus-wide, 1 empty row (doc 14779); `scripts/ops/hollow-report.mjs`
 - [ ] Confirm the 72,751 new Arabic ¶ are in Qdrant (per-book check)
 - [ ] Verify reader visually: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
 
