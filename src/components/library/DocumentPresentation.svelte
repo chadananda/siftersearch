@@ -454,6 +454,24 @@
   }
 
   // Check if document has translations
+  // Scripture: a heading row (heading2/heading3 from the source) or, where the book has none, a divider wherever the
+  // chapter in pn changes ("1:31" → "2:1"; Douay "Genesis 1:31" → "Genesis 2:1"). Never before the first chapter.
+  const isHeadingRow = (b) => /^heading/.test(b || '');
+  const chapterOf = (pn) => { const m = String(pn || '').match(/^(?:(.+?) )?(\d+):\d+$/); return m ? { book: m[1] || '', ch: m[2] } : null; };
+  let chapterDividers = $derived.by(() => {
+    const out = new Map(); let prev = null;
+    paragraphs.forEach((p, i) => {
+      const c = chapterOf(p.pn); if (!c) return;
+      const key = `${c.book}|${c.ch}`;
+      if (prev && key !== prev && !isHeadingRow(paragraphs[i - 1]?.blocktype)) {
+        const psalms = /psalm/i.test(c.book || document?.title || '');
+        out.set(i, `${c.book ? `${c.book} ` : ''}${psalms ? 'Psalm' : 'Chapter'} ${c.ch}`.replace(/^Psalms Psalm/, 'Psalm'));
+      }
+      prev = key;
+    });
+    return out;
+  });
+
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
 
   // Check if document has study translations (API returns study_translation field)
@@ -1205,6 +1223,9 @@
         </div>
       {:else}
         {#each paragraphs as para, i}
+          {#if chapterDividers.has(i)}
+            <h3 class="chapter-divider">{chapterDividers.get(i)}</h3>
+          {/if}
           <div
             class="paragraph"
             class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
@@ -1212,12 +1233,14 @@
             id="p{para.paragraph_index}"
             data-index={para.paragraph_index}
           >
-            {#if para.blocktype === 'heading'}
+            {#if isHeadingRow(para.blocktype)}
               <h2 class="paragraph-heading">{@html renderMarkdown(para.text)}</h2>
             {/if}
 
             <!-- SBS Mode: Side-by-side reading translation (English on LEFT) -->
-            {#if viewMode === 'sbs' && parseTranslation(para)?.reading}
+            {#if isHeadingRow(para.blocktype)}
+              <!-- heading rows render once, above, with no paragraph number -->
+            {:else if viewMode === 'sbs' && parseTranslation(para)?.reading}
               {@const trans = parseTranslation(para)}
               {@const segments = parseSegments(para)}
               <div class="bilingual-row">
@@ -2329,6 +2352,19 @@
     margin: 1rem 0 0.5rem 0;
     padding-top: 1rem;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .chapter-divider {
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #777;
+    text-align: center;
+    margin: 2rem 0 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   .paragraph-heading:first-child {

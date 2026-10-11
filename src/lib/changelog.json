@@ -1,6 +1,83 @@
 {
-  "generated": "2026-10-11T17:11:12.409Z",
+  "generated": "2026-10-11T19:12:43.737Z",
   "entries": [
+    {
+      "hash": "b1e01757",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Hard rule — database access only through repos; phases D1–D5",
+      "scope": null
+    },
+    {
+      "hash": "197a2b4c",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Hard rule — SQLite only through repos (shrink-only ratchet, 299 legacy files frozen); single writer records every batch per minute × caller × name (db_write_stats, migr 145, GET :7849/stats)",
+      "scope": "db"
+    },
+    {
+      "hash": "3e25e050",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "On tower every non-writer process routes writes through the single writer by default — processes started without SIFTER_WRITER_URL wrote directly and locked the writer out ('database is locked')",
+      "scope": "db"
+    },
+    {
+      "hash": "a4ac3286",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "--retry-not-found re-places rows the ingester had joined from several file blocks",
+      "scope": "segment"
+    },
+    {
+      "hash": "8c855271",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Douay split on blank-line runs; book-title headings; chapter-line variants",
+      "scope": "library"
+    },
+    {
+      "hash": "2a6545f0",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Verse pn into scripture source files — Tanzil Qur'an (reference headings folded into the verse) + Douay-Rheims (pn names the book)",
+      "scope": "library"
+    },
+    {
+      "hash": "2a6ef8a7",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Segmentation = Haiku 5.5 in every language; LM Studio retired (its dead host hung segmenting ingests; 221/221 calls failed this week)",
+      "scope": "ai"
+    },
+    {
+      "hash": "c8aae491",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Local LLM client fails fast — 120 s timeout, 1 retry, 10-min breaker after a network failure (a retired LM Studio host hung an Arabic re-ingest for 2 h)",
+      "scope": "ai"
+    },
+    {
+      "hash": "7ba8d19c",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Write new paragraph breaks by word-walk splice — inline footnotes/page tags kept, headings in the same block untouched (7,255 of 10,205 never matched by block hash)",
+      "scope": "segment"
+    },
+    {
+      "hash": "108f524d",
+      "date": "2026-10-11",
+      "type": "Performance",
+      "description": "Apply hashes each file's blocks once (was quadratic, 40+ min dry run)",
+      "scope": "segment"
+    },
+    {
+      "hash": "6457dfc1",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Margin shows the verse pn (Bible, Qur'an) where a book has one",
+      "scope": "reader"
+    },
     {
       "hash": "6c9fccc3",
       "date": "2026-10-11",
@@ -3423,87 +3500,87 @@
       "type": "Fixed",
       "description": "Materialize unbinds undecided bindings on abstention handles instead of recording them",
       "scope": "entities"
-    },
-    {
-      "hash": "ee67dbab",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "A mention decision governs its cluster's unless outranked; materialize holds two-entity divergences for adjudication",
-      "scope": "entities"
-    },
-    {
-      "hash": "13ea9b45",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Materialize stage — write the log's replay onto mentions; anchor-keyed mention decisions, unmerge, tier precedence",
-      "scope": "entities"
-    },
-    {
-      "hash": "e20ccbfd",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Cluster decisions bind/unbind only their own document; retire the per-book global evidence-free merge",
-      "scope": "entities"
-    },
-    {
-      "hash": "886c3c69",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Projection treats non-numeric ids as none; plan: increment 1 done",
-      "scope": "entities"
-    },
-    {
-      "hash": "af8dccb0",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Replay check separates other-book bindings, other-book unbinds and lost splits",
-      "scope": "entities"
-    },
-    {
-      "hash": "f52f581e",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Projection honours mention-level split/link decisions; replay check reports who unbound each mention",
-      "scope": "entities"
-    },
-    {
-      "hash": "67c0fa01",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Projection replays merges as ordered cluster unions (ping-pong merges never cycle); classify representative/cross-doc first",
-      "scope": "entities"
-    },
-    {
-      "hash": "af90f778",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Projection — replay mention identity from the decision log; read-only replay check endpoint",
-      "scope": "entities"
-    },
-    {
-      "hash": "4435eca3",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Merge audit — are merged ids recoverable from the decision log; cross-document resolved_as collisions",
-      "scope": "research"
-    },
-    {
-      "hash": "924b1eb5",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Namesake-context — do same-name records separate by shared docs/years/companions? + merge audit (read-only)",
-      "scope": "research"
-    },
-    {
-      "hash": "0fc46933",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Scene marker reaches the API; merge-review duplicate rule tightened (canonical names, nisba-consistent)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-11": [
+      {
+        "hash": "b1e01757",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Hard rule — database access only through repos; phases D1–D5",
+        "scope": null
+      },
+      {
+        "hash": "197a2b4c",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Hard rule — SQLite only through repos (shrink-only ratchet, 299 legacy files frozen); single writer records every batch per minute × caller × name (db_write_stats, migr 145, GET :7849/stats)",
+        "scope": "db"
+      },
+      {
+        "hash": "3e25e050",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "On tower every non-writer process routes writes through the single writer by default — processes started without SIFTER_WRITER_URL wrote directly and locked the writer out ('database is locked')",
+        "scope": "db"
+      },
+      {
+        "hash": "a4ac3286",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "--retry-not-found re-places rows the ingester had joined from several file blocks",
+        "scope": "segment"
+      },
+      {
+        "hash": "8c855271",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Douay split on blank-line runs; book-title headings; chapter-line variants",
+        "scope": "library"
+      },
+      {
+        "hash": "2a6545f0",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Verse pn into scripture source files — Tanzil Qur'an (reference headings folded into the verse) + Douay-Rheims (pn names the book)",
+        "scope": "library"
+      },
+      {
+        "hash": "2a6ef8a7",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Segmentation = Haiku 5.5 in every language; LM Studio retired (its dead host hung segmenting ingests; 221/221 calls failed this week)",
+        "scope": "ai"
+      },
+      {
+        "hash": "c8aae491",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Local LLM client fails fast — 120 s timeout, 1 retry, 10-min breaker after a network failure (a retired LM Studio host hung an Arabic re-ingest for 2 h)",
+        "scope": "ai"
+      },
+      {
+        "hash": "7ba8d19c",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Write new paragraph breaks by word-walk splice — inline footnotes/page tags kept, headings in the same block untouched (7,255 of 10,205 never matched by block hash)",
+        "scope": "segment"
+      },
+      {
+        "hash": "108f524d",
+        "date": "2026-10-11",
+        "type": "Performance",
+        "description": "Apply hashes each file's blocks once (was quadratic, 40+ min dry run)",
+        "scope": "segment"
+      },
+      {
+        "hash": "6457dfc1",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Margin shows the verse pn (Bible, Qur'an) where a book has one",
+        "scope": "reader"
+      },
       {
         "hash": "6c9fccc3",
         "date": "2026-10-11",
@@ -6954,83 +7031,6 @@
         "type": "Fixed",
         "description": "Materialize unbinds undecided bindings on abstention handles instead of recording them",
         "scope": "entities"
-      },
-      {
-        "hash": "ee67dbab",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "A mention decision governs its cluster's unless outranked; materialize holds two-entity divergences for adjudication",
-        "scope": "entities"
-      },
-      {
-        "hash": "13ea9b45",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Materialize stage — write the log's replay onto mentions; anchor-keyed mention decisions, unmerge, tier precedence",
-        "scope": "entities"
-      },
-      {
-        "hash": "e20ccbfd",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Cluster decisions bind/unbind only their own document; retire the per-book global evidence-free merge",
-        "scope": "entities"
-      },
-      {
-        "hash": "886c3c69",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Projection treats non-numeric ids as none; plan: increment 1 done",
-        "scope": "entities"
-      },
-      {
-        "hash": "af8dccb0",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Replay check separates other-book bindings, other-book unbinds and lost splits",
-        "scope": "entities"
-      },
-      {
-        "hash": "f52f581e",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Projection honours mention-level split/link decisions; replay check reports who unbound each mention",
-        "scope": "entities"
-      },
-      {
-        "hash": "67c0fa01",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Projection replays merges as ordered cluster unions (ping-pong merges never cycle); classify representative/cross-doc first",
-        "scope": "entities"
-      },
-      {
-        "hash": "af90f778",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Projection — replay mention identity from the decision log; read-only replay check endpoint",
-        "scope": "entities"
-      },
-      {
-        "hash": "4435eca3",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Merge audit — are merged ids recoverable from the decision log; cross-document resolved_as collisions",
-        "scope": "research"
-      },
-      {
-        "hash": "924b1eb5",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Namesake-context — do same-name records separate by shared docs/years/companions? + merge audit (read-only)",
-        "scope": "research"
-      },
-      {
-        "hash": "0fc46933",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Scene marker reaches the API; merge-review duplicate rule tightened (canonical names, nisba-consistent)",
-        "scope": null
       }
     ]
   }
