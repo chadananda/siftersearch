@@ -631,6 +631,7 @@ async function chatAnthropic(messages, opts) {
     // the 5.5 family rejects `temperature` (400 "deprecated for this model") — the registry says which models
     ...(getModel(opts.model)?.noTemperature || opts.temperature == null ? {} : { temperature: opts.temperature }),
     ...(systemParam && { system: systemParam }),
+    ...(opts.thinking ? { thinking: opts.thinking } : {}),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.content
@@ -641,7 +642,9 @@ async function chatAnthropic(messages, opts) {
   if (opts.stream) return response;
 
   return {
-    content: response.content[0].text,
+    // 5.x replies may open with a thinking block: the answer is the TEXT blocks (content[0].text was undefined → the
+    // caller got the response object and failed with 'content.match is not a function', 10-11)
+    content: (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(''),
     usage: {
       promptTokens: response.usage?.input_tokens,
       completionTokens: response.usage?.output_tokens,
@@ -985,7 +988,8 @@ export function segmentationService() {
       if (named) {
         return aiService('segmentation', { forceRemote: true }).chat(messages, {
           ...overrides, provider: named.provider, model: named.model, cacheSystemPrompt: true,
-          maxTokens: overrides.maxTokens ?? overrides.max_tokens ?? 8000,
+          thinking: { type: 'disabled' },        // an endings list needs no reasoning trace; it ate the 8k output budget
+          maxTokens: Math.max(16000, overrides.maxTokens ?? overrides.max_tokens ?? 0),
         });
       }
       // localOnly must never reach a paid model, whatever the primary resolved to
