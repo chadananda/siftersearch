@@ -187,3 +187,11 @@ describe('OceanLibrary heading path', () => {
     expect(paragraphs[1].heading).toBe('— 1 —');
   });
 });
+
+describe('OceanLibrary tradition', () => {
+  it('trims the category before mapping ("Jainism " → Jain, not a second Jain tradition)', async () => {
+    const md = ['---', 'title: Kalpa Sutra', 'author: Unknown', 'ocean_category: "Jainism "', 'language: en', '---', '', 'Text. {id="para_1" type="par" language="en"}', ''].join('\n');
+    const { docFields } = await parseDoc('Jainism/Unknown/Kalpa Sutra.md', md);
+    expect(docFields.religion).toBe('Jain');
+  });
+});

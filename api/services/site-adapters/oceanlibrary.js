@@ -112,7 +112,8 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   // Religion map comes from siteConfig (loaded from -sites/sites.yaml). Fall
   // back to the baked-in defaults when called outside the ingester pipeline.
   const religionMap = (siteConfig && siteConfig.religion_map) || DEFAULT_RELIGION_MAP;
-  const ourReligion = olReligion(relativePath, religionMap[frontmatter.ocean_category] || frontmatter.ocean_category);
+  const category = String(frontmatter.ocean_category ?? '').trim();   // OL writes "Jainism " (trailing space) — it split Jain in two
+  const ourReligion = olReligion(relativePath, religionMap[category] || category || undefined);
 
   // Split body into blocks on blank lines.
   //
