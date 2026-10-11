@@ -48,6 +48,22 @@ describe('buildShelves', () => {
     expect(w).toMatchObject({ kind: 'work', parts: 3, id: 9, cover: '/img/cdn/siftersearch.com/collections/col-bible.png' });
     expect(w.list.map((p) => p.title)).toEqual(['Genesis', '1 Chronicles', 'Romans']);
   });
+  it('a huge collection (Core Tablets) splits into one row per author; spelling variants fold; small authors pool', async () => {
+    const { buildShelves } = await import('../../api/lib/library/shelves.js');
+    const B = "Baha'i";
+    const r = buildShelves({
+      collectionCounts: [{ religion: B, collection: 'Core Tablets', source_site: null, n: 19100 }],
+      splitCounts: [
+        { religion: B, collection: 'Core Tablets', author: "Bahá'u'lláh", n: 9434 }, { religion: B, collection: 'Core Tablets', author: 'Bahá’u’lláh', n: 2 },
+        { religion: B, collection: 'Core Tablets', author: "'Abdu'l-Bahá", n: 9000 }, { religion: B, collection: 'Core Tablets', author: 'Shoghi Effendi', n: 30 },
+        { religion: B, collection: 'Core Tablets', author: 'oceanoflights (notes)', n: 10 },
+      ] });
+    expect(r.traditions[0].library.map((l) => [l.name, l.count, l.authors])).toEqual([
+      ["Core Tablets · Bahá'u'lláh", 9436, ["Bahá'u'lláh", 'Bahá’u’lláh']],
+      ["Core Tablets · 'Abdu'l-Bahá", 9000, ["'Abdu'l-Bahá"]],
+      ['Core Tablets · other', 40, ['Shoghi Effendi', 'oceanoflights (notes)']],
+    ]);
+  });
   it("the tradition's other collections follow, OceanLibrary excluded, largest first", () => {
     expect(bahai.library.map((l) => [l.name, l.count])).toEqual([['Bahá’í Library Online', 15013], ['Books', 2348]]);
   });

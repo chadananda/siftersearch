@@ -89,7 +89,8 @@ export async function listDocs({
 } = {}) {
   const where = scopeSql(scope);
   const params = [];
-  if (author) { where.push('d.author = ?'); params.push(author); }
+  if (Array.isArray(author)) { if (author.length) { where.push(`d.author IN (${author.map(() => '?').join(',')})`); params.push(...author); } }   // spelling variants
+  else if (author) { where.push('d.author = ?'); params.push(author); }
   if (religion) { where.push('d.religion = ?'); params.push(religion); }
   if (collection) { where.push('d.collection = ?'); params.push(collection); }
   if (language) { where.push('d.language = ?'); params.push(language); }
@@ -124,11 +125,12 @@ export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {
 const GROUPABLE = Object.freeze(['religion', 'collection', 'source_site', 'author', 'language']);
 /** Document counts grouped by metadata columns (religion, collection, source_site, author, language) under a scope —
  *  the library shelves' "N more" numbers. Metadata-only docs (doc_role 'metadata') are not books and are not counted. */
-export async function groupCounts(groupBy, { scope = 'live', religion } = {}) {
+export async function groupCounts(groupBy, { scope = 'live', religion, collections } = {}) {
   const cols = groupBy.filter((c) => GROUPABLE.includes(c));
   if (!cols.length) throw new Error(`docs-repo.groupCounts: group by one of ${GROUPABLE.join(', ')}`);
   const where = [...scopeSql(scope), "COALESCE(d.doc_role, '') <> 'metadata'"], params = [];
   if (religion) { where.push('d.religion = ?'); params.push(religion); }
+  if (collections?.length) { where.push(`d.collection IN (${collections.map(() => '?').join(',')})`); params.push(...collections); }
   const list = cols.map((c) => `d.${c} AS ${c}`).join(', ');
   return queryAll(`SELECT ${list}, COUNT(*) AS n FROM docs d WHERE ${where.join(' AND ')} GROUP BY ${cols.map((c) => `d.${c}`).join(', ')}`,
     params, 'docs-repo:group-counts');

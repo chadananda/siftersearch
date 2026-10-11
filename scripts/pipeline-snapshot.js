@@ -326,13 +326,14 @@ async function main() {
     try { shelvesAt = JSON.parse(readFileSync(SHELVES_PATH, 'utf8'))?.generated_at ?? null; } catch { /* absent */ }
     if (!shelvesAt || Date.now() - Date.parse(shelvesAt) > 10 * 60 * 1000) {
       const { listDocs, groupCounts } = await import('../api/lib/docs-repo.js');
-      const { buildShelves } = await import('../api/lib/library/shelves.js');
+      const { buildShelves, SPLIT_BY_AUTHOR } = await import('../api/lib/library/shelves.js');
       const { olWeight } = await import('../api/lib/library/ol-works.js');
       const { docs } = await listDocs({ sourceSite: 'oceanlibrary.com', limit: 5000,
         fields: ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug', 'file_path', 'language', 'frontmatter'] });
       const olDocs = docs.map(({ frontmatter, ...d }) => ({ ...d, weight: olWeight(frontmatter) }));
       const shelves = buildShelves({ olDocs, authorCounts: await groupCounts(['religion', 'author']),
-        collectionCounts: await groupCounts(['religion', 'collection', 'source_site']) });
+        collectionCounts: await groupCounts(['religion', 'collection', 'source_site']),
+        splitCounts: await groupCounts(['religion', 'collection', 'author'], { collections: SPLIT_BY_AUTHOR }) });
       writeFileSync(SHELVES_PATH, JSON.stringify(shelves));
     }
   } catch (err) {

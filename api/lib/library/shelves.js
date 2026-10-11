@@ -13,6 +13,10 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 const LEAD = { bahai: ['thebab', 'bahaullah', 'abdulbaha', 'shoghieffendi', 'researchdepartmentcompilations'] };
 const SITE_LABEL = { 'bahai-library.com': 'Bahá’í Library Online', 'oceanoflights.org': 'Ocean of Lights (originals)' };
 const LIMIT_CARDS = 60;
+// Library collections too big to browse as one row are split by author (Chad 10-10: "Core Tablets 19,692"); authors with
+// fewer than SPLIT_MIN documents share one "other" row. Spelling variants of a name (’ vs ') fold together.
+export const SPLIT_BY_AUTHOR = Object.freeze(['Core Tablets']);
+const SPLIT_MIN = 50;
 
 export function docUrl(d) {
   const slug = d.slug || generateDocSlug(d);
@@ -25,8 +29,26 @@ const card = (d) => ({ id: d.id, title: d.title, author: d.author, cover: d.cove
  * @param olDocs           live OceanLibrary docs (id,title,author,religion,collection,cover_url,year,paragraph_count,slug,file_path)
  * @param authorCounts     groupCounts(['religion','author']) over ALL live docs
  * @param collectionCounts groupCounts(['religion','collection','source_site']) over all live docs
+ * @param splitCounts      groupCounts(['religion','collection','author'], { collections: SPLIT_BY_AUTHOR })
  */
-export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], now = new Date() }) {
+/** One collection row → one row per author (folded), small authors pooled into "other". */
+function splitRows(r, splitCounts) {
+  const by = new Map();
+  for (const x of splitCounts) {
+    if (x.religion !== r.religion || x.collection !== r.collection) continue;
+    const k = fold(x.author);
+    const e = by.get(k) || { name: x.author, authors: [], count: 0 };
+    e.authors.push(x.author); e.count += x.n;
+    by.set(k, e);
+  }
+  const big = [...by.values()].filter((e) => e.count >= SPLIT_MIN);
+  const small = [...by.values()].filter((e) => e.count < SPLIT_MIN);
+  const rows = big.map((e) => ({ name: `${r.collection} · ${e.name}`, collection: r.collection, authors: e.authors, site: null, count: e.count }));
+  if (small.length) rows.push({ name: `${r.collection} · other`, collection: r.collection, authors: small.flatMap((e) => e.authors), site: null, count: small.reduce((n, e) => n + e.count, 0) });
+  return rows.length ? rows : [{ name: r.collection, collection: r.collection, site: null, count: r.n }];
+}
+
+export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], splitCounts = [], now = new Date() }) {
   const trads = new Map();
   const trad = (name) => {
     if (!trads.has(name)) trads.set(name, { name, slug: slugifyPath(name), shelves: new Map(), library: [], total: 0 });
@@ -92,6 +114,7 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
     if (!r.religion || r.source_site === 'oceanlibrary.com') continue;
     let t = tmap.get(r.religion);
     if (!t) { t = { name: r.religion, slug: slugifyPath(r.religion), shelves: [], library: [], ol: 0 }; tmap.set(r.religion, t); traditions.push(t); }
+    if (!r.source_site && SPLIT_BY_AUTHOR.includes(r.collection)) { t.library.push(...splitRows(r, splitCounts)); continue; }
     t.library.push({ name: r.source_site ? (SITE_LABEL[r.source_site] || r.source_site) : (r.collection || 'Uncategorized'),
       collection: r.source_site ? null : (r.collection || null), site: r.source_site || null, count: r.n });
   }

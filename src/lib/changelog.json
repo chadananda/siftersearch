@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-11T02:23:41.902Z",
+  "generated": "2026-10-11T02:51:25.632Z",
   "entries": [
+    {
+      "hash": "09d0579e",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Inventory-dedupe — retire Partial Inventory tablets that duplicate an oceanoflights tablet, merging the PIN onto it",
+      "scope": "library"
+    },
+    {
+      "hash": "69db356e",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "One KJV under Christianity; work cards carry the Bindery collection cover and open every part in OceanLibrary order",
+      "scope": "library"
+    },
     {
       "hash": "05849aee",
       "date": "2026-10-10",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Link binds a claim name only as the same name or a leading short form — never raw substring",
       "scope": "entities"
-    },
-    {
-      "hash": "90697642",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Claim-target-audit counts any of the target's names; reports names shared by duplicate entities",
-      "scope": "admin"
-    },
-    {
-      "hash": "dfedb66e",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Claim-target-audit — which binder produces wrong typed targets, classified per import batch",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "09d0579e",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Inventory-dedupe — retire Partial Inventory tablets that duplicate an oceanoflights tablet, merging the PIN onto it",
+        "scope": "library"
+      },
+      {
+        "hash": "69db356e",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "One KJV under Christianity; work cards carry the Bindery collection cover and open every part in OceanLibrary order",
+        "scope": "library"
+      },
       {
         "hash": "05849aee",
         "date": "2026-10-10",
@@ -7017,20 +7031,6 @@
         "type": "Fixed",
         "description": "Link binds a claim name only as the same name or a leading short form — never raw substring",
         "scope": "entities"
-      },
-      {
-        "hash": "90697642",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Claim-target-audit counts any of the target's names; reports names shared by duplicate entities",
-        "scope": "admin"
-      },
-      {
-        "hash": "dfedb66e",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Claim-target-audit — which binder produces wrong typed targets, classified per import batch",
-        "scope": "admin"
       }
     ]
   }

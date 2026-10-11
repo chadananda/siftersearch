@@ -151,8 +151,8 @@
       <section class="flex flex-col gap-2">
         <h2 class="text-lg font-semibold text-primary">More in the library</h2>
         {#each tradition.library as l (l.name)}
-          {@const key = `l:${l.site || l.collection}`}
-          {@const params = l.site ? { site: l.site } : { collection: l.collection || '' }}
+          {@const key = `l:${l.name}`}
+          {@const params = l.site ? { site: l.site } : l.authors ? { collection: l.collection, authors: l.authors.join('|') } : { collection: l.collection || '' }}
           <div class="rounded-md border border-border-subtle bg-surface-1">
             <button class="w-full flex justify-between items-center px-3 py-2 text-left" onclick={() => toggle(key, params)} aria-expanded={!!extra[key]}>
               <span class="text-primary">{l.name}</span><span class="text-sm text-muted">{fmt(l.count)} {extra[key] ? '▴' : '▾'}</span>

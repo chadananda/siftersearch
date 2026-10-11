@@ -1660,7 +1660,10 @@ Return ONLY the description text, no quotes or formatting.`;
     const { religion, authors, collection, site, offset = 0, limit = 48 } = request.query;
     const fields = ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug', 'source_site'];
     let docs = [], total = 0;
-    if (authors) {
+    if (authors && collection) {     // an author's part of a split collection (Core Tablets · Bahá'u'lláh): one paged query
+      const r = await listDocs({ religion, collection, author: authors.split('|').slice(0, 20), sourceSite: 'library', fields, orderBy: 'title', limit, offset });
+      docs = r.docs; total = r.total;
+    } else if (authors) {
       for (const author of authors.split('|').slice(0, 8)) {
         const r = await listDocs({ religion, author, fields, orderBy: 'title', limit: offset + limit });
         docs.push(...r.docs.filter((d) => d.source_site !== 'oceanlibrary.com')); total += r.total;
