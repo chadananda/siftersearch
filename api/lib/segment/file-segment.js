@@ -13,8 +13,9 @@ import { getModel } from '../model-registry.js';
 
 export const SEGMENT_MODEL = { provider: 'anthropic', model: 'claude-haiku-5-5' };
 const BATCH_CHARS = 40000;        // ≈16–20k Arabic tokens per call: far below the 100k step, few calls
-const CHARS_PER_TOKEN = 2.5;      // Arabic, measured order of magnitude (estimates only; the ledger records actuals)
-const OUTPUT_TOKENS_PER_SENTENCE = 12, CHARS_PER_SENTENCE = 150;
+// Measured on the al-Istibsar pilot (10-11, fully vowelled): 57.8k chars → 93.4k input + 14.9k output tokens over 3 calls.
+// Vowelled Arabic costs ~1.6 tokens per character; the endings the model quotes cost ~0.26 output tokens per character.
+const INPUT_TOKENS_PER_CHAR = 1.62, OUTPUT_TOKENS_PER_CHAR = 0.26;
 
 const FM = /^---\n([\s\S]*?)\n---\n/;
 /** A body block is TEXT when it carries Arabic-script letters and is not structure (heading, comment, page break). */
@@ -34,8 +35,8 @@ export function isPunctuated(texts) {
 export function estimateUsd(texts) {
   const chars = texts.reduce((n, t) => n + t.length, 0);
   const p = getModel(SEGMENT_MODEL.model).pricing;
-  const inTok = chars / CHARS_PER_TOKEN + (chars / BATCH_CHARS + 1) * 1500;          // text + prompt per call
-  const outTok = (chars / CHARS_PER_SENTENCE) * OUTPUT_TOKENS_PER_SENTENCE;
+  const inTok = chars * INPUT_TOKENS_PER_CHAR + (chars / BATCH_CHARS + 1) * 1500;     // text + prompt per call
+  const outTok = chars * OUTPUT_TOKENS_PER_CHAR;
   return Math.round((inTok * p.input + outTok * p.output) / 1000 * 100) / 100;
 }
 
