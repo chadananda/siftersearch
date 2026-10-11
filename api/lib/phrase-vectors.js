@@ -27,13 +27,9 @@ export function arabicShare(text) {
   return letters ? (String(text).match(ARABIC) || []).length / letters : 0;
 }
 
-// Document language labels are not normalised in the library (en/En/Eng, fr/Fr/FR, de/Ger…).
-const LANG_ALIASES = { eng: 'en', english: 'en', fre: 'fr', fra: 'fr', french: 'fr', ger: 'de', deu: 'de', german: 'de',
-  spa: 'es', esp: 'es', spanish: 'es', ita: 'it', heb: 'he', per: 'fa', fas: 'fa', persian: 'fa', ara: 'ar', arabic: 'ar' };
-export function normLang(code) {
-  const c = String(code || '').trim().toLowerCase();
-  return c ? (LANG_ALIASES[c] || c.slice(0, 2)) : 'und';
-}
+// Language codes: the one normaliser lives in language-codes.js (re-exported for existing callers).
+import { normLang } from './language-codes.js';
+export { normLang };
 
 // Which segmenter a paragraph gets, and the language group it is filed under. Script decides, not the document label:
 // translations carry Arabic-script originals and Arabic works carry English notes.

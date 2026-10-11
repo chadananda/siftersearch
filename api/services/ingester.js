@@ -6,6 +6,7 @@
  * NO embeddings generated here - that's the embedding-worker's job.
  */
 
+import { normLangOrNull } from '../lib/language-codes.js';
 import { createHash } from 'crypto';
 import { readFile, writeFile, rename, copyFile, mkdir } from 'fs/promises';
 import { join, dirname, basename } from 'path';
@@ -1401,7 +1402,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // detectLanguageFeatures returns 'ar' (can't distinguish Arabic script languages).
   // Only override frontmatter when it says 'en' but content is clearly RTL.
   // ───────────────────────────────────────────────────────────────────────────
-  const frontmatterLang = extractedMeta.language || metadata.language;
+  // normalised first: 'En'/'Eng' were trusted as non-English and stored as-is (language-codes.js)
+  const frontmatterLang = normLangOrNull(extractedMeta.language || metadata.language);
   let resolvedLanguage;
 
   if (['ar', 'fa'].includes(String(frontmatterLang).toLowerCase()) && ['ar', 'fa'].includes(detectedLang.language)) {

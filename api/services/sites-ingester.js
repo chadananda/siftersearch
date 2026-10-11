@@ -17,6 +17,7 @@
 //   - removed from disk → soft-delete the import doc, AND auto-restore any of
 //     our docs whose duplicate_of pointed at it
 
+import { normLang } from '../lib/language-codes.js';
 import { readFile, readdir, stat, access } from 'fs/promises';
 import { join, relative } from 'path';
 import yaml from 'yaml';
@@ -389,7 +390,7 @@ async function upsertDoc(docFields, fileHash, bodyHash, scope = 'primary') {
   `, [
     docFields.file_path, fileHash, bodyHash,
     docFields.title, docFields.author, docFields.religion, docFields.collection || '',
-    docFields.language || 'en', docFields.description || '', docFields.paragraph_count || 0,
+    normLang(docFields.language || 'en'), docFields.description || '', docFields.paragraph_count || 0,
     docFields.source_site || null, docFields.source_url || null, docFields.external_id || null,
     scope,
     now, now
@@ -442,7 +443,7 @@ async function siteDbUpsertDoc(siteDb, docFields, fileHash, bodyHash) {
   `).run(
     docFields.file_path, fileHash, bodyHash,
     docFields.title, docFields.author, docFields.religion, docFields.collection || '',
-    docFields.language || 'en', docFields.description || '', docFields.paragraph_count || 0,
+    normLang(docFields.language || 'en'), docFields.description || '', docFields.paragraph_count || 0,
     docFields.source_site || null, docFields.source_url || null, docFields.external_id || null,
     docFields.encumbered ? 1 : 0,
     now, now
@@ -467,7 +468,7 @@ function siteDbReplaceContent(siteDb, docId, paragraphs) {
     for (const p of rows) {
       stmt.run(
         docId, p.paragraphIndex, p.text, p.normalizedHash,
-        p.heading || '', p.blocktype || 'paragraph', p.language || 'en',
+        p.heading || '', p.blocktype || 'paragraph', normLang(p.language || 'en'),
         p.embedding, p.embedding ? p.embeddingModel : null,
         p.external_para_id || null,
         typeof p.pdf_page === 'number' ? p.pdf_page : null,
@@ -632,7 +633,7 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
       text: p.text,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
-      language: p.language || 'en',
+      language: normLang(p.language || 'en'),
       normalizedHash: hashes[i],
       embedding: embeddingBlob,
       embeddingModel: emb ? EMBEDDING_MODEL : null,
