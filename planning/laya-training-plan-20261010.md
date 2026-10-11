@@ -55,6 +55,11 @@ that `laya.load(<dir>)` reads.
 - For comparison, always answering the majority class ("continues") scores 65.6%.
 - The checkpoint reloaded and predicted fine (`/tank/sifter/laya-models/smoke`).
 - venv: `/tank/sifter/laya-venv` (laya 0.3.23 on tower's torch 2.10).
+- **Pilot, measured on the full held-out set (10-11 00:30):** 4,000 train records, 1 epoch (250 steps of 16), 72 min on
+  tower CPU (16 threads, nice 19). Agreement with Jev on all **4,461** eval records went **14.3% → 79.9%**
+  (KL 1.87 → 0.31). The majority baseline is 65.6%, so this is a real gain but not yet Jev-grade; the 200-item smoke
+  number (93%) was an easy slice. Checkpoint: `/tank/sifter/laya-models/role-pilot-4k`. Next lever: all 38.7k records
+  and 2–3 epochs, then a gold set from the disagreements.
 - Full pilot cost on tower CPU: ~10 s per batch-8 step at 8 threads → one epoch of the 38.7k role set ≈ 13 h. That is
   the GPU-or-CPU decision below.
 
