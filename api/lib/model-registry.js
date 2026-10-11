@@ -58,6 +58,7 @@ export const MODEL_REGISTRY = {
   },
 
   'gpt-3.5-turbo': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'openai',
     name: 'GPT-3.5 Turbo',
     type: 'chat',
@@ -235,7 +236,8 @@ export const MODEL_REGISTRY = {
   },
   'claude-sonnet-5-5': {
     provider: 'anthropic',
-    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11) name: 'Claude Sonnet 5.5', type: 'chat',
+    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11)
+    name: 'Claude Sonnet 5.5', type: 'chat',
     pricing: { input: 0.002, output: 0.010 }, batch: 0.5, cacheRead: 0.1,
     contextWindow: 1000000, maxOutput: 128000,
     capabilities: ['reasoning', 'coding', 'analysis', 'vision', 'extraction'], quality: 'quality', speed: 'medium',
@@ -243,7 +245,8 @@ export const MODEL_REGISTRY = {
   },
   'claude-opus-5-5': {
     provider: 'anthropic',
-    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11) name: 'Claude Opus 5.5', type: 'chat',
+    noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11)
+    name: 'Claude Opus 5.5', type: 'chat',
     pricing: { input: 0.004, output: 0.020 }, batch: 0.5, cacheRead: 0.1,
     contextWindow: 1000000, maxOutput: 128000,
     capabilities: ['reasoning', 'analysis', 'coding', 'vision'], quality: 'premium', speed: 'slow',
@@ -265,6 +268,7 @@ export const MODEL_REGISTRY = {
 
   // --- Qwen 2.5 Series (Excellent multilingual, coding) ---
   'qwen2.5:72b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Qwen 2.5 72B',
     type: 'chat',
@@ -281,6 +285,7 @@ export const MODEL_REGISTRY = {
   },
 
   'qwen2.5:32b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Qwen 2.5 32B',
     type: 'chat',
@@ -297,6 +302,7 @@ export const MODEL_REGISTRY = {
   },
 
   'qwen2.5:14b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Qwen 2.5 14B',
     type: 'chat',
@@ -313,6 +319,7 @@ export const MODEL_REGISTRY = {
   },
 
   'qwen2.5:7b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Qwen 2.5 7B',
     type: 'chat',
@@ -374,6 +381,7 @@ export const MODEL_REGISTRY = {
 
   // --- DeepSeek Series (local Ollama) ---
   'deepseek-r1:32b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'DeepSeek R1 32B',
     type: 'chat',
@@ -390,6 +398,7 @@ export const MODEL_REGISTRY = {
   },
 
   'deepseek-coder-v2:16b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'DeepSeek Coder V2 16B',
     type: 'chat',
@@ -407,6 +416,7 @@ export const MODEL_REGISTRY = {
 
   // --- Llama 3.2 Series (Meta, well-rounded) ---
   'llama3.2:90b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Llama 3.2 90B',
     type: 'chat',
@@ -423,6 +433,7 @@ export const MODEL_REGISTRY = {
   },
 
   'llama3.2:11b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Llama 3.2 11B',
     type: 'chat',
@@ -440,6 +451,7 @@ export const MODEL_REGISTRY = {
 
   // --- Mistral Series (Fast, efficient) ---
   'mistral-nemo:12b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Mistral Nemo 12B',
     type: 'chat',
@@ -456,6 +468,7 @@ export const MODEL_REGISTRY = {
   },
 
   'mixtral:8x7b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'ollama',
     name: 'Mixtral 8x7B',
     type: 'chat',
@@ -476,6 +489,7 @@ export const MODEL_REGISTRY = {
   // Server: LM Studio on 100.103.78.63:1234
   // =========================================================================
   'qwen2.5-72b-instruct': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'lmstudio',
     name: 'Qwen 2.5 72B Instruct',
     type: 'chat',
@@ -491,6 +505,7 @@ export const MODEL_REGISTRY = {
   },
 
   'qwen2.5-7b-instruct': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'lmstudio',
     name: 'Qwen 2.5 7B Instruct',
     type: 'chat',
@@ -506,6 +521,7 @@ export const MODEL_REGISTRY = {
   },
 
   'openai/gpt-oss-20b': {
+    deprecated: true,   // retired 10-11: no local LLM host (LM Studio/Ollama gone); obsolete remote
     provider: 'lmstudio',
     name: 'GPT-OSS 20B',
     type: 'chat',
@@ -579,7 +595,17 @@ export const MODEL_REGISTRY = {
     pricing: { input: 0.0002, output: 0 },     // $0.20 / 1M text (ai.google.dev pricing, checked 10-10)
   },
   // $0.30 in / $2.50 out per 1M, standard paid tier (ai.google.dev/gemini-api/docs/pricing, 10-10)
-  'gemini-3.5-flash-lite': { provider: 'google', name: 'Gemini 3.5 Flash-Lite (Anís replies)', type: 'chat', pricing: { input: 0.0003, output: 0.0025 } },
+  // Flash tier, verified on the providers' own pricing pages 2026-10-11 (per 1k tokens; batch = 50% everywhere).
+  'gemini-3.5-flash-lite': { provider: 'google', name: 'Gemini 3.5 Flash-Lite (Anís replies)', type: 'chat', pricing: { input: 0.0003, output: 0.0025 }, batch: 0.5, speed: 'very_fast', quality: 'balanced' },
+  'gemini-3.1-flash-lite': { provider: 'google', name: 'Gemini 3.1 Flash-Lite', type: 'chat', pricing: { input: 0.00025, output: 0.0015 }, batch: 0.5, speed: 'very_fast', quality: 'fast' },
+  'gemini-3.8-flash': { provider: 'google', name: 'Gemini 3.8 Flash', type: 'chat', pricing: { input: 0.00075, output: 0.00375 }, batch: 0.5, speed: 'fast', quality: 'quality',
+    notes: 'introductory price through 2026-12-31; from 2027-01-01 $1.50 / $7.50 per 1M' },
+  'gpt-5-nano': { provider: 'openai', name: 'GPT-5 nano', type: 'chat', pricing: { input: 0.00005, output: 0.0004 }, cacheRead: 0.1, batch: 0.5, speed: 'very_fast', quality: 'fast' },
+  'gpt-5.4-nano': { provider: 'openai', name: 'GPT-5.4 nano', type: 'chat', pricing: { input: 0.0002, output: 0.00125 }, cacheRead: 0.1, batch: 0.5, speed: 'very_fast', quality: 'balanced' },
+  'gpt-5-mini': { provider: 'openai', name: 'GPT-5 mini', type: 'chat', pricing: { input: 0.00025, output: 0.002 }, cacheRead: 0.1, batch: 0.5, speed: 'fast', quality: 'balanced' },
+  'gpt-5.4-mini': { provider: 'openai', name: 'GPT-5.4 mini', type: 'chat', pricing: { input: 0.00075, output: 0.0045 }, cacheRead: 0.1, batch: 0.5, speed: 'fast', quality: 'quality' },
+  'deepseek-flash': { provider: 'deepseek', name: 'DeepSeek V4.1 Flash (current id)', type: 'chat', pricing: { input: 0.0003, output: 0.0012 }, cacheRead: 0.02,
+    notes: 'peak list; off-peak (outside 01-04 & 06-10 UTC weekdays) is half. deepseek-v4-flash is the older id' },
   // $0.59 / $0.79 per 1M = Groq's last public self-serve rate; since 08-2026 the model is enterprise "contact sales".
   'llama-3.3-70b-versatile': { provider: 'groq', name: 'Llama 3.3 70B (Groq)', type: 'chat', pricing: { input: 0.00059, output: 0.00079 } },
 };
