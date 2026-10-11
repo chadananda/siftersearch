@@ -21,9 +21,11 @@ export async function docsWithLanguage(label) {
 /** Apply relabels in batches of `size` statements: [{ table:'docs'|'content', docId, from, to }]. */
 export async function relabel(changes, size = 200) {
   for (let i = 0; i < changes.length; i += size) {
-    await transaction(changes.slice(i, i + size).map((c) => (c.table === 'docs'
-      ? { sql: 'UPDATE docs SET language = ? WHERE id = ? AND language = ?', args: [c.to, c.docId, c.from] }
-      : { sql: 'UPDATE content SET language = ?, synced = 0 WHERE doc_id = ? AND language = ? AND deleted_at IS NULL', args: [c.to, c.docId, c.from] })),
+    await transaction(changes.slice(i, i + size).flatMap((c) => (c.table === 'docs'
+      // the search document carries the DOC's language (paragraphs-repo paragraphDoc) → its paragraphs re-sync too
+      ? [{ sql: 'UPDATE docs SET language = ? WHERE id = ? AND language = ?', args: [c.to, c.docId, c.from] },
+        { sql: 'UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', args: [c.docId] }]
+      : [{ sql: 'UPDATE content SET language = ?, synced = 0 WHERE doc_id = ? AND language = ? AND deleted_at IS NULL', args: [c.to, c.docId, c.from] }])),
     'language:normalise');
   }
 }

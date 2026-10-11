@@ -3,7 +3,9 @@
 const ALIASES = { eng: 'en', english: 'en', fre: 'fr', fra: 'fr', french: 'fr', ger: 'de', deu: 'de', german: 'de',
   spa: 'es', esp: 'es', spanish: 'es', ita: 'it', italian: 'it', heb: 'he', hebrew: 'he', per: 'fa', fas: 'fa', persian: 'fa',
   farsi: 'fa', ara: 'ar', arabic: 'ar', chi: 'zh', zho: 'zh', chinese: 'zh', nor: 'no', nob: 'no', norwegian: 'no',
-  rus: 'ru', por: 'pt', jpn: 'ja', san: 'sa', pli: 'pi', urd: 'ur', tur: 'tr' };
+  rus: 'ru', por: 'pt', jpn: 'ja', san: 'sa', pli: 'pi', urd: 'ur', tur: 'tr', swe: 'sv', swedish: 'sv',
+  // 'se' is ISO for Northern Sami, but in this corpus it labels Swedish news (bahai-library 179855, Umeå) — no Sami is held
+  se: 'sv' };
 
 /** → two-letter lowercase code; '' / null → 'und' (undetermined). Region tags drop: 'en-US' → 'en'. */
 export function normLang(code) {
