@@ -107,7 +107,7 @@ export function blockAttrs(ilmId, headStack, pn = null) {
 
 /** An OL cover/illustration block whose image never resolved: `![Genesis]({{the-genesis-prod_en_2v_image_hash_key}} "…")`.
  *  Not content — 924 of them were stored as paragraph 1 of 92 books and shown as text (Chad 10-11). */
-export const isImagePlaceholder = (t) => /^!\[[^\]]*\]\(\{\{[^}]*\}\}[^)]*\)$/.test(String(t).trim());
+export const isImagePlaceholder = (t) => /^!\[.*\]\(\{\{[^}]*image_hash_key\}\}[^)]*\)$/s.test(String(t).trim());
 
 /** Verse-grouped scripture (KJV, Tanakh, Rodwell, Gospels: blocks marked <sup>c:v</sup>) gets pn = the chapter:verse a
  *  block starts at (lib/library/verse-pn.js). Footnotes are not verses; a pn ILM exported is never overwritten. */

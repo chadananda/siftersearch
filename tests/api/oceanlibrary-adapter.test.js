@@ -220,4 +220,9 @@ describe('OceanLibrary unresolved image placeholders', () => {
     const { paragraphs } = await parseDoc('test.md', md, {});
     expect(paragraphs.map((p) => p.external_para_id)).toEqual(['para_2']);
   });
+  it('nested captions too; real text that merely starts with ![ is kept', async () => {
+    const { isImagePlaceholder } = await import('../../api/services/site-adapters/oceanlibrary.js');
+    expect(isImagePlaceholder('![[Illustration: From a drawing by Asit Kumar Haldar]]({{the_crescent_moon_en-blh5_image_hash_key}} "x")')).toBe(true);
+    expect(isImagePlaceholder('![Footnote [1]:Another MS of the Muqaddimah in Turkey')).toBe(false);
+  });
 });
