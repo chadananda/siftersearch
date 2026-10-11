@@ -343,7 +343,7 @@ async function verifyNewCode() {
   if (!serverReady) {
     log('error', 'Test API failed to start after all retries');
     log('error', `Test output: ${testOutput.slice(-500)}`);
-    child.kill('SIGTERM');
+    await stopChild(child);
     return false;
   }
 
@@ -356,8 +356,7 @@ async function verifyNewCode() {
     log(t.pass ? 'info' : 'error', `  ${t.pass ? '✓' : '✗'} ${t.name}: ${t.detail}`);
   }
 
-  child.kill('SIGTERM');
-  await new Promise(r => setTimeout(r, 500));
+  await stopChild(child);
 
   if (failed.length > 0) {
     log('error', `${failed.length}/${results.length} smoke tests failed — aborting deploy`);
@@ -473,6 +472,33 @@ async function watchdog() {
     await alertNow('api-unhealthy', 'SifterSearch API is not answering',
       `GET /api/v1/health on tower failed ${apiHealthFails} checks in a row (5 minutes apart). The site's search and Anís depend on it.\n\nAction: ssh tower-nas; pm2 logs siftersearch-api --lines 100 (find why it hangs); pm2 reload siftersearch-api; node scripts/ops/critical-path.mjs --local`, 'page');
   }
+}
+
+/** Stop a spawned child for sure: SIGTERM, then SIGKILL after 5 s. A test API whose graceful shutdown hung survived
+ *  a 10-10 deploy for a day, holding the DB open (no WAL checkpoint). */
+async function stopChild(child) {
+  if (!child || child.exitCode != null) return;
+  const gone = new Promise((r) => child.once('exit', r));
+  try { child.kill('SIGTERM'); } catch { /* already gone */ }
+  if (await Promise.race([gone.then(() => true), new Promise((r) => setTimeout(() => r(false), 5000))])) return;
+  try { child.kill('SIGKILL'); } catch { /* already gone */ }
+  await Promise.race([gone, new Promise((r) => setTimeout(r, 2000))]);
+}
+
+/** API processes PM2 does not manage are STRAYS: two cluster workers from the 10-10 incident outlived their PM2 entry
+ *  and kept receiving requests on :7839 with day-old code (10-11: fixes seemed to come and go). Kill them. → killed pids */
+async function killStrayApiProcesses() {
+  const list = JSON.parse((await run('pm2 jlist', { silent: true })).stdout || '[]');
+  const managed = new Set(list.filter((p) => p.name === 'siftersearch-api').map((p) => String(p.pid)));
+  const ps = (await run('pgrep -f "node .*api/index.js"', { silent: true })).stdout || '';
+  const strays = ps.split('\n').map((x) => x.trim()).filter((pid) => pid && !managed.has(pid) && pid !== String(process.pid));
+  for (const pid of strays) { try { process.kill(Number(pid), 'SIGTERM'); } catch { /* gone */ } }
+  if (strays.length) {
+    await new Promise((r) => setTimeout(r, 5000));
+    for (const pid of strays) { try { process.kill(Number(pid), 0); process.kill(Number(pid), 'SIGKILL'); } catch { /* gone */ } }
+    log('warn', `Killed ${strays.length} stray API process(es) PM2 did not manage: ${strays.join(', ')}`);
+  }
+  return strays;
 }
 
 /**
@@ -692,6 +718,7 @@ async function applyUpdates() {
   } else {
     log('info', 'Post-deploy health check passed');
   }
+  await killStrayApiProcesses();
   // The whole critical path, not just /health (scripts/ops/critical-path.mjs --local; it emails on failure)
   const cp = await run('node scripts/ops/critical-path.mjs --local --alert', { timeout: 180000 });
   log(cp.success ? 'info' : 'error', `Critical path ${cp.success ? 'passed' : 'FAILED'}:\n${(cp.stdout || cp.error || '').trim()}`);
@@ -728,6 +755,7 @@ async function reloadPm2Only() {
   if (!await swapPm2Process('siftersearch-api')) return false;
   if (!await swapPm2Process('siftersearch-worker')) return false;
   if (!await swapPm2Process('siftersearch-deep-research')) return false;
+  await killStrayApiProcesses();
   log('info', 'All PM2 processes recreated');
   return true;
 }

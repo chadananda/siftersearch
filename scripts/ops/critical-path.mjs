@@ -76,6 +76,14 @@ export function localChecks(o = {}) {
       expect(api.pm2_env.exec_mode === 'cluster_mode', `API in ${api.pm2_env.exec_mode}, want cluster (zero-downtime reloads)`);
       return `${Object.keys(CRITICAL_APPS).length} online`;
     }],
+    ['no stray API processes', async () => {
+      // an api/index.js PM2 does not manage still shares :7839 or holds the DB (10-11: day-old code answered requests)
+      const managed = new Set(JSON.parse(await run('pm2 jlist')).filter((p) => p.name === 'siftersearch-api').map((p) => String(p.pid)));
+      const all = String(await run('pgrep -f "node .*api/index.js" || true')).split('\n').map((x) => x.trim()).filter(Boolean);
+      const strays = all.filter((pid) => !managed.has(pid));
+      expect(!strays.length, `unmanaged api/index.js: ${strays.join(', ')}`);
+      return `${managed.size} managed`;
+    }],
     ['API health (local)', async () => { const r = await g(`${LOCAL_API}/api/v1/health`, { timeoutMs: 3000 }); expect(r.status === 200, `HTTP ${r.status}`); return `${r.ms} ms`; }],
     ['single writer', async () => {
       try {
