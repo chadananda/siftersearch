@@ -1454,13 +1454,23 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // blocked), so the cost the pause guards against cannot occur there.
   if (finalMeta.language === 'ar' && !declaresParagraphs && !currentAIContext().localOnly) {
     await ensureLibraryNodes(finalMeta.religion, finalMeta.collection);
-    logger.info({ relativePath, title: finalMeta.title }, 'Skipping Arabic document (ingestion paused)');
-    return {
-      documentId: existingDoc?.id ?? null,
-      paragraphCount: 0,
-      status: 'skipped',
-      error: 'Arabic document ingestion is paused'
-    };
+    // As it arrives, an Arabic FILE is segmented once (Chad 10-11): Haiku 5.5 writes ⁅sN⁆ sentence markers and
+    // `needs_segmentation: false` into the source (punctuated text just gets the flag). The file changes, so the next
+    // pass ingests it for the cost of embeddings only. Over the per-file cap it stays paused (an [ACTION] for Chad).
+    try {
+      const { segmentFile } = await import('../lib/segment/file-segment.js');
+      const r = await segmentFile(join(config.library.basePath, relativePath), { apply: true, lang: 'ar', maxUsd: 5, relPath: relativePath });
+      logger.info({ relativePath, ...r }, 'Arabic document segmented at the file level — ingests on the next pass');
+      if (r.status === 'over-budget') {
+        const { actionRequired } = await import('../lib/ops/alert.js');
+        await actionRequired({ key: `segment-budget-${relativePath}`, severity: 'action', subject: `Arabic file needs segmentation over the $5 cap`,
+          text: `${relativePath}: estimate $${r.estimateUsd} for ${r.paragraphs} paragraphs.\n\nAction: approve, then run node scripts/segment/segment-files.mjs --ids <doc id> --apply --max-usd ${Math.ceil(r.estimateUsd)}` });
+      }
+      return { documentId: existingDoc?.id ?? null, paragraphCount: 0, status: r.status === 'segmented' || r.status === 'punctuated' || r.status === 'already-marked' ? 'segmented-pending-ingest' : 'skipped', error: r.error || null };
+    } catch (err) {
+      logger.warn({ relativePath, err: err.message }, 'Arabic file segmentation failed — left paused');
+      return { documentId: existingDoc?.id ?? null, paragraphCount: 0, status: 'skipped', error: `Arabic segmentation failed: ${err.message}` };
+    }
   }
 
   // Validate required fields - error out rather than using fake defaults
