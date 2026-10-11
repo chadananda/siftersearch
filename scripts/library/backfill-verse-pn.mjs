@@ -15,7 +15,9 @@ const docs = ONLY || (await queryAll(`SELECT DISTINCT doc_id FROM content WHERE 
 const stats = { docs: docs.length, rows: 0, numbered: 0, set: 0, kept: 0, issues: 0 };
 for (const id of docs) {
   const rows = await queryAll(`SELECT id, text, heading, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype, '') != 'footnote' ORDER BY paragraph_index`, [id]);
-  if (!rows.some((r) => /<sup>\s*\d+:\d+\s*<\/sup>/.test(r.text))) continue;
+  // a book with no <sup> at all is numbered one verse per block from its chapter headings — only when named in --docs
+  // (checked by hand: JPS Torah, KJV Psalms have exactly the canonical verse count per chapter)
+  if (!ONLY && !rows.some((r) => /<sup>\s*\d+:\d+\s*<\/sup>/.test(r.text))) continue;
   const { pn, issues } = versePn(rows);
   stats.issues += issues.length;
   const writes = [];
