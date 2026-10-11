@@ -18,7 +18,7 @@ const PROJECT_ROOT = join(__dirname, '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { queryOne, queryAll, query } from '../api/lib/db.js';
+import * as repo from '../api/lib/repos/deep-research-repo.js';
 import { runMigrations } from '../api/lib/migrations.js';
 import {
   recordQuestionHit,
@@ -46,15 +46,15 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args[0] === '--list') {
-    const rows = await queryAll("SELECT id, canonical_question, status, ask_count, total_selected FROM deep_research ORDER BY ask_count DESC LIMIT 50");
+    const rows = await repo.listByAskCount(50);
     console.table(rows);
     return;
   }
 
   if (args[0] === '--status') {
-    const stats = await queryAll("SELECT status, COUNT(*) as count FROM deep_research GROUP BY status");
+    const stats = await repo.researchStatusCounts();
     console.table(stats);
-    const queue = await queryAll("SELECT status, COUNT(*) as count FROM deep_research_queue GROUP BY status");
+    const queue = await repo.queueStatusCounts();
     console.log('\nQueue:');
     console.table(queue);
     return;
@@ -62,10 +62,10 @@ async function main() {
 
   if (args[0] === '--run' && args[1]) {
     const id = parseInt(args[1], 10);
-    const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [id]);
+    const record = await repo.getResearchById(id);
     if (!record) { console.error('Record not found:', id); process.exit(1); }
     console.log(`Running deep research for: "${record.canonical_question}"`);
-    await query("UPDATE deep_research SET status = 'queued' WHERE id = ?", [id]);
+    await repo.setStatus(id, 'queued');
     await runDeepResearch(id, { chat, search });
     const quotes = await getDeepResearchQuotes(id);
     console.log(`\nComplete. ${quotes.length} quotes selected.`);
@@ -109,13 +109,11 @@ async function main() {
   console.log(`Queuing research for: "${question}"`);
   await recordQuestionHit(question);
   await recordQuestionHit(question); // two hits to trigger auto-queue
-  const rows = await queryAll("SELECT id, status, ask_count FROM deep_research WHERE canonical_question = ?", [question.trim()]);
+  const rows = await repo.findByQuestion(question.trim());
   if (rows.length) {
     const r = rows[0];
     if (r.status !== 'queued' && r.status !== 'in_progress') {
-      await query("UPDATE deep_research SET status = 'queued' WHERE id = ?", [r.id]);
-      await query('INSERT INTO deep_research_queue (research_id, job_type, status, priority, created_at) VALUES (?, ?, ?, ?, ?)',
-        [r.id, 'research', 'pending', 10, new Date().toISOString()]);
+      await repo.queueResearchTask(r.id, 10);
     }
     console.log(`Queued record id=${r.id}. Run with: node scripts/deep-research-runner.mjs --run ${r.id}`);
   }

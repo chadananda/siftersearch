@@ -16,7 +16,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryOne } from '../lib/db.js';
+import { heartbeat } from '../lib/repos/deep-research-repo.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
 import {
@@ -84,7 +84,7 @@ function startHeartbeat(researchId) {
   currentResearchId = researchId;
   heartbeatTimer = setInterval(async () => {
     if (currentResearchId) {
-      await query('UPDATE deep_research SET heartbeat_at = ? WHERE id = ?', [new Date().toISOString(), currentResearchId]).catch(() => {});
+      await heartbeat(currentResearchId).catch(() => {});
     }
   }, HEARTBEAT_INTERVAL_MS);
 }

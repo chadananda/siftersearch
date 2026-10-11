@@ -15,7 +15,7 @@
 //   runDeepResearch(researchId)              → full LLM research pass (worker only)
 
 import crypto from 'crypto';
-import { queryOne, queryAll, query } from './db.js';
+import * as repo from './repos/deep-research-repo.js';
 import { logger } from './logger.js';
 import { createEmbedding } from './ai.js';
 import { getAuthority } from './authority.js';
@@ -73,20 +73,14 @@ export async function checkDeepResearch(question, embedding = null) {
   try {
     // Fast exact-hash check first
     const hash = questionHash(question);
-    const exact = await queryOne(
-      'SELECT * FROM deep_research WHERE question_hash = ? AND status = ?',
-      [hash, 'complete']
-    );
+    const exact = await repo.findCompleteByHash(hash);
     if (exact) {
       const quotes = await getDeepResearchQuotes(exact.id);
       return { ...exact, quotes };
     }
 
     // Embedding similarity check across completed research
-    const candidates = await queryAll(
-      'SELECT id, canonical_question, question_embedding FROM deep_research WHERE status = ? AND question_embedding IS NOT NULL',
-      ['complete']
-    );
+    const candidates = await repo.listCompleteWithEmbedding();
     if (!candidates.length) return null;
 
     const qEmbed = embedding || (await createEmbedding(question)).embedding;
@@ -99,7 +93,7 @@ export async function checkDeepResearch(question, embedding = null) {
     }
 
     if (bestScore >= SIMILARITY_THRESHOLD && best) {
-      const full = await queryOne('SELECT * FROM deep_research WHERE id = ?', [best.id]);
+      const full = await repo.getResearchById(best.id);
       const quotes = await getDeepResearchQuotes(best.id);
       return { ...full, quotes, similarity: bestScore };
     }
@@ -124,20 +118,13 @@ export async function recordQuestionHit(question, embedding = null) {
   try {
     const hash = questionHash(question);
     const now = new Date().toISOString();
-    const existing = await queryOne('SELECT * FROM deep_research WHERE question_hash = ?', [hash]);
+    const existing = await repo.findByQuestionHash(hash);
 
     if (existing) {
-      await query(
-        'UPDATE deep_research SET ask_count = ask_count + 1, last_asked_at = ? WHERE id = ?',
-        [now, existing.id]
-      );
+      await repo.incrementAskCount(existing.id, now);
       // Auto-queue if threshold crossed and not already queued/complete
       if (existing.ask_count + 1 >= AUTO_QUEUE_THRESHOLD && existing.status === 'pending') {
-        await query('UPDATE deep_research SET status = ? WHERE id = ?', ['queued', existing.id]);
-        await query(
-          'INSERT INTO deep_research_queue (research_id, job_type, status, priority) VALUES (?, ?, ?, ?)',
-          [existing.id, 'research', 'pending', existing.ask_count + 1]
-        );
+        await repo.autoQueueResearch(existing.id, existing.ask_count + 1);
         logger.info({ researchId: existing.id, askCount: existing.ask_count + 1 }, 'Deep research auto-queued');
       }
     } else {
@@ -145,11 +132,7 @@ export async function recordQuestionHit(question, embedding = null) {
       const qEmbed = embedding || (await createEmbedding(question)).embedding;
       const embedBuf = embeddingToBuffer(qEmbed);
       const slug = generateSlug(question.trim()).slice(0, 120);
-      const result = await query(
-        `INSERT INTO deep_research (canonical_question, question_embedding, question_hash, slug, status, ask_count, last_asked_at, created_at)
-         VALUES (?, ?, ?, ?, 'pending', 1, ?, ?)`,
-        [question.trim(), embedBuf, hash, slug, now, now]
-      );
+      const result = await repo.createPendingResearch({ question, embedBuf, hash, slug, now });
       if (result.lastInsertRowid) {
         logger.debug({ researchId: result.lastInsertRowid }, 'New deep research record created');
       }
@@ -167,16 +150,7 @@ export async function recordQuestionHit(question, embedding = null) {
  */
 export async function getDeepResearchQuotes(researchId) {
   try {
-    const quotes = await queryAll(
-      `SELECT drq.*, c.text, c.heading, c.doc_id, c.external_para_id,
-              d.title, d.author, d.religion, d.source_site, d.source_url
-       FROM deep_research_quotes drq
-       JOIN content c ON drq.para_id = c.id
-       JOIN docs d ON c.doc_id = d.id
-       WHERE drq.research_id = ?
-       ORDER BY drq.rank ASC`,
-      [researchId]
-    );
+    const quotes = await repo.listQuotes(researchId);
 
     // Ensure source_url is always populated — internal library docs use doc_id-based URL
     for (const q of quotes) {
@@ -187,7 +161,7 @@ export async function getDeepResearchQuotes(researchId) {
 
     // Quote table is sparse (supplement passages from assessAndSupplement were not persisted).
     // Fall back to sections_json to recover all curated quotes from structured output.
-    const record = await queryOne('SELECT sections_json FROM deep_research WHERE id = ?', [researchId]);
+    const record = await repo.getSectionsJson(researchId);
     if (!record?.sections_json) return quotes;
 
     let sections;
@@ -206,15 +180,7 @@ export async function getDeepResearchQuotes(researchId) {
     }
     if (!supplementIds.length) return quotes;
 
-    const placeholders = supplementIds.map(() => '?').join(',');
-    const supplementRows = await queryAll(
-      `SELECT c.id AS para_id, c.text, c.heading, c.doc_id, c.external_para_id,
-              d.title, d.author, d.religion, d.source_site, d.source_url
-       FROM content c
-       JOIN docs d ON c.doc_id = d.id
-       WHERE c.id IN (${placeholders})`,
-      supplementIds
-    );
+    const supplementRows = await repo.getContentMetaByIds(supplementIds);
 
     const rowMap = new Map(supplementRows.map(r => [r.para_id, r]));
     let rank = quotes.length;
@@ -1173,10 +1139,7 @@ function pickVisualTheme(tags, question, usedSubjects = new Set()) {
 
 // Load subjects already used by other records (to avoid duplicate images).
 async function loadUsedSubjects(excludeId = null) {
-  const rows = await queryAll(
-    'SELECT hero_prompt FROM deep_research WHERE hero_prompt IS NOT NULL AND id != ?',
-    [excludeId || 0]
-  );
+  const rows = await repo.listHeroPrompts(excludeId);
   // Extract subject portion: everything before ". Evoking the spiritual question:"
   const used = new Set();
   for (const { hero_prompt } of rows) {
@@ -1229,10 +1192,7 @@ Return ONLY valid JSON:
 
 // Load dominant color words already used in existing hero prompts.
 async function loadUsedPalettes(excludeId = null) {
-  const rows = await queryAll(
-    'SELECT hero_prompt FROM deep_research WHERE hero_prompt IS NOT NULL AND id != ?',
-    [excludeId || 0]
-  );
+  const rows = await repo.listHeroPrompts(excludeId);
   const colorWords = [];
   for (const { hero_prompt } of rows) {
     const match = hero_prompt.match(/Color palette: ([^.]+)/i);
@@ -1277,7 +1237,7 @@ export async function generateResearchHeroImage(researchId, { question, traditio
     const key = generateAssetKey('research', researchId, 'jpg');
     const result = await uploadFile(key, buffer, { contentType: 'image/jpeg' });
 
-    await query('UPDATE deep_research SET hero_image = ?, hero_prompt = ? WHERE id = ?', [result.url, prompt, researchId]);
+    await repo.setHeroImage(researchId, result.url, prompt);
     logger.info({ researchId, url: result.url }, 'Research hero image stored');
     return result.url;
   } catch (err) {
@@ -1311,15 +1271,12 @@ function balanceSectionDiversity(sections) {
 }
 
 export async function runDeepResearch(researchId, { chat, search, costAcc = null }) {
-  const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [researchId]);
+  const record = await repo.getResearchById(researchId);
   if (!record) throw new Error(`Deep research record ${researchId} not found`);
 
   const workerId = `dr-${process.pid}-${Date.now()}`;
   const startedAt = new Date().toISOString();
-  await query(
-    'UPDATE deep_research SET status = ?, worker_id = ?, heartbeat_at = ?, started_at = ? WHERE id = ?',
-    ['in_progress', workerId, startedAt, startedAt, researchId]
-  );
+  await repo.startResearch(researchId, workerId, startedAt);
 
   try {
     logger.info({ researchId, question: record.canonical_question }, 'Deep research started');
@@ -1329,7 +1286,7 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     // 0. Knowledge brief — map what general knowledge knows, to guide library search
     const brief = await knowledgeBrief(record.canonical_question, taggedChat('knowledgeBrief'));
-    await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ brief }), researchId]);
+    await repo.setAnglesJson(researchId, JSON.stringify({ brief }));
 
     // 1-3. Retrieval — all three strategies run in parallel
     const [targeted, discovered, general] = await Promise.all([
@@ -1355,7 +1312,7 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
       if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
     }
 
-    await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [allCandidates.length, researchId]);
+    await repo.setTotalCandidates(researchId, allCandidates.length);
 
     // 4b. Filter secondary compilations — study books and commentary works that only
     // quote primary sources; prefer the primary source directly.
@@ -1375,24 +1332,12 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
     });
 
     // 6. Validate para_ids exist in content table
-    const validParaIds = new Set(
-      (await queryAll(
-        `SELECT id FROM content WHERE id IN (${selected.map(() => '?').join(',')})`,
-        selected.map(q => q.para_id)
-      )).map(r => r.id)
-    );
+    const validParaIds = new Set(await repo.findExistingContentIds(selected.map(q => q.para_id)));
     const validSelected = selected.filter(q => validParaIds.has(q.para_id));
     const skipped = selected.length - validSelected.length;
     if (skipped > 0) logger.warn({ skipped, total: selected.length }, 'Skipped quotes with para_ids not in content table');
 
-    await query('DELETE FROM deep_research_quotes WHERE research_id = ?', [researchId]);
-    for (const q of validSelected) {
-      await query(
-        `INSERT INTO deep_research_quotes (research_id, para_id, tradition, authority, relevance_score, contextual_note, rank, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [researchId, q.para_id, q.tradition, q.authority, q.relevance_score, q.contextual_note, q.rank, new Date().toISOString()]
-      );
-    }
+    await repo.replaceQuotes(researchId, validSelected);
 
     // 7. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(validSelected.map(q => q.tradition).filter(Boolean))].join(',');
@@ -1416,11 +1361,11 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
       for (const q of (section.quotes || [])) {
         if (!q.para_id || savedParaIds.has(q.para_id)) continue;
         savedParaIds.add(q.para_id);
-        await query(
-          `INSERT OR IGNORE INTO deep_research_quotes (research_id, para_id, tradition, authority, relevance_score, contextual_note, rank, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [researchId, q.para_id, q.tradition || null, q.authority || 0, q.relevance_score || 7, q.contextual_note || section.label || '', ++supplementRank, new Date().toISOString()]
-        );
+        await repo.appendQuote(researchId, {
+          para_id: q.para_id, tradition: q.tradition || null, authority: q.authority || 0,
+          relevance_score: q.relevance_score || 7, contextual_note: q.contextual_note || section.label || '',
+          rank: ++supplementRank,
+        });
       }
     }
 
@@ -1429,31 +1374,13 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     const convergence = { searchable_text: sections.map(s => s.label || '').join(' ') };
 
-    await query(
-      `UPDATE deep_research SET
-         status = 'complete',
-         total_selected = ?,
-         traditions_covered = ?,
-         sections_json = ?,
-         summary_json = ?,
-         convergence_json = ?,
-         llm_input_tokens = ?,
-         llm_output_tokens = ?,
-         llm_cost_usd = ?,
-         cost_breakdown_json = ?,
-         assessment_json = ?,
-         completed_at = ?,
-         heartbeat_at = ?
-       WHERE id = ?`,
-      [
-        validSelected.length, traditionsCovered,
-        JSON.stringify(sections), JSON.stringify(summary), JSON.stringify(convergence),
-        costAcc?.inputTokens || 0, costAcc?.outputTokens || 0,
-        costAcc?.costUsd || 0, costAcc ? JSON.stringify(costAcc.breakdown) : null,
-        JSON.stringify(assessment),
-        new Date().toISOString(), new Date().toISOString(), researchId
-      ]
-    );
+    await repo.completeResearch(researchId, {
+      totalSelected: validSelected.length, traditionsCovered,
+      sectionsJson: JSON.stringify(sections), summaryJson: JSON.stringify(summary), convergenceJson: JSON.stringify(convergence),
+      inputTokens: costAcc?.inputTokens || 0, outputTokens: costAcc?.outputTokens || 0,
+      costUsd: costAcc?.costUsd || 0, costBreakdownJson: costAcc ? JSON.stringify(costAcc.breakdown) : null,
+      assessmentJson: JSON.stringify(assessment),
+    });
 
     // 8. Sync to Meilisearch
 
@@ -1472,10 +1399,7 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     logger.info({ researchId, selected: validSelected.length, traditions: traditionsCovered }, 'Deep research complete');
   } catch (err) {
-    await query(
-      'UPDATE deep_research SET status = ?, error = ?, heartbeat_at = ? WHERE id = ?',
-      ['failed', err.message, new Date().toISOString(), researchId]
-    );
+    await repo.failResearch(researchId, err.message);
     logger.error({ err: err.message, researchId }, 'Deep research failed');
     throw err;
   }
@@ -1655,10 +1579,7 @@ function buildSummaryFallback(sections, traditions) {
 export async function getDeepResearchBySlug(slug) {
   try {
     // Exclude question_embedding blob — it's large and not needed by the frontend.
-    const record = await queryOne(
-      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, angles_json, sections_json, summary_json, convergence_json, qa_json, assessment_json, total_candidates, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, started_at, research_model, ask_count, last_asked_at, created_at, completed_at, hero_image FROM deep_research WHERE slug = ?',
-      [slug]
-    );
+    const record = await repo.getResearchBySlug(slug);
     if (!record) return null;
     // Parse stored JSON fields
     for (const field of ['sections_json', 'summary_json', 'convergence_json', 'angles_json', 'qa_json', 'assessment_json', 'topic_tags']) {
@@ -1679,10 +1600,7 @@ export async function getDeepResearchBySlug(slug) {
  */
 export async function addNotifyEmail(researchId, email) {
   try {
-    await query(
-      'INSERT OR IGNORE INTO deep_research_notify (research_id, email, created_at) VALUES (?, ?, ?)',
-      [researchId, email.trim().toLowerCase(), new Date().toISOString()]
-    );
+    await repo.addNotify(researchId, email);
     return true;
   } catch (err) {
     logger.warn({ err: err.message, researchId, email }, 'addNotifyEmail error');
@@ -1694,10 +1612,7 @@ export async function addNotifyEmail(researchId, email) {
  * Get all pending email notifications for a research record (called by worker after completion).
  */
 export async function getPendingNotifications(researchId) {
-  return queryAll(
-    'SELECT * FROM deep_research_notify WHERE research_id = ? AND notified_at IS NULL',
-    [researchId]
-  );
+  return repo.getPendingNotifications(researchId);
 }
 
 /**
@@ -1705,8 +1620,7 @@ export async function getPendingNotifications(researchId) {
  */
 export async function markNotificationsSent(ids) {
   if (!ids?.length) return;
-  const placeholders = ids.map(() => '?').join(',');
-  await query(`UPDATE deep_research_notify SET notified_at = ? WHERE id IN (${placeholders})`, [new Date().toISOString(), ...ids]);
+  await repo.markNotified(ids);
 }
 
 /**
@@ -1716,34 +1630,19 @@ export async function markNotificationsSent(ids) {
  * @returns {Promise<Array>}
  */
 export async function getPendingResearchTasks(limit = 5) {
-  return queryAll(
-    `SELECT drq.*, dr.canonical_question, dr.question_hash
-     FROM deep_research_queue drq
-     JOIN deep_research dr ON drq.research_id = dr.id
-     WHERE drq.status = 'pending'
-     ORDER BY drq.priority DESC, drq.created_at ASC
-     LIMIT ?`,
-    [limit]
-  );
+  return repo.getPendingResearchTasks(limit);
 }
 
 /**
  * Mark a queue task as started.
  */
 export async function claimQueueTask(taskId) {
-  const result = await query(
-    'UPDATE deep_research_queue SET status = ?, started_at = ?, attempts = attempts + 1 WHERE id = ? AND status = ?',
-    ['in_progress', new Date().toISOString(), taskId, 'pending']
-  );
-  return result.rows[0]?.changes > 0;
+  return repo.claimQueueTask(taskId);
 }
 
 /**
  * Mark a queue task as complete or failed.
  */
 export async function finishQueueTask(taskId, error = null) {
-  await query(
-    'UPDATE deep_research_queue SET status = ?, completed_at = ?, error = ? WHERE id = ?',
-    [error ? 'failed' : 'complete', new Date().toISOString(), error, taskId]
-  );
+  await repo.finishQueueTask(taskId, error);
 }
