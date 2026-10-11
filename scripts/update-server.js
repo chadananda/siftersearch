@@ -442,6 +442,7 @@ async function rollbackStart(name) {
 }
 
 /** Watchdog (every loop, deploy or not): critical services present + API answering. Restart what is missing; alert. */
+const watchdogRestarts = new Map();   // service → restart times (rolling hour), to tell a blip from a crash loop
 async function watchdog() {
   for (const name of ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-research']) {
     if (await isProcessRunning(name)) { await recovered(`down-${name}`); continue; }
@@ -451,10 +452,18 @@ async function watchdog() {
     if (!problems.length) { const r = await run(`pm2 start ecosystem.config.cjs --only ${name}`); ok = r.success && await isProcessRunning(name); }
     if (!ok) ok = await rollbackStart(name);
     if (ok) await run('pm2 save');
-    await alertNow(`down-${name}`, `SifterSearch: ${name} was down`,
-      `The updater's watchdog found ${name} not running and ${ok ? 'restarted it' : 'COULD NOT restart it'}.\n`
-      + (problems.length ? `\necosystem.config.cjs problems:\n- ${problems.join('\n- ')}\n` : '')
-      + `\nCheck: pm2 list; node scripts/ops/critical-path.mjs --local`);
+    // [ACTION REQUIRED] means Chad must act (10-11: "what action was I supposed to take?"). A restart the watchdog
+    // completed itself is not that — it is logged only. Email when the restart FAILED, or when the same service keeps
+    // falling over (≥3 restarts within an hour), which needs a human to find the cause.
+    const now = Date.now();
+    const recent = (watchdogRestarts.get(name) || []).filter((t) => now - t < 3600000).concat(now);
+    watchdogRestarts.set(name, recent);
+    if (ok && recent.length < 3) { log('warn', `WATCHDOG: ${name} restarted and back online (${recent.length} in the last hour) — no alert`); continue; }
+    await alertNow(`down-${name}`, ok ? `SifterSearch: ${name} keeps going down (${recent.length}× in an hour)` : `SifterSearch: ${name} is DOWN and could not be restarted`,
+      (ok
+        ? `${name} went down ${recent.length} times in the last hour; the watchdog restarted it each time, but something keeps killing it.\n\nAction: find the cause — pm2 logs ${name} --lines 200 (look for memory / crash before each restart).`
+        : `The watchdog could not restart ${name}. The site is degraded until it is started.\n\nAction: ssh tower-nas; pm2 start ecosystem.config.cjs --only ${name}; then node scripts/ops/critical-path.mjs --local`)
+      + (problems.length ? `\n\necosystem.config.cjs problems:\n- ${problems.join('\n- ')}` : ''));
   }
   const h = await httpGet(`http://127.0.0.1:${API_PORT}/api/v1/health`, 5000);
   if (h.ok) { apiHealthFails = 0; await recovered('api-unhealthy'); return; }
@@ -462,7 +471,7 @@ async function watchdog() {
   log('error', `WATCHDOG: API health failed (${apiHealthFails} in a row)`);
   if (apiHealthFails >= 2) {
     await alertNow('api-unhealthy', 'SifterSearch API is not answering',
-      `GET /api/v1/health on tower failed ${apiHealthFails} checks in a row (5 minutes apart). The site's search and Anís depend on it.\n\nCheck: pm2 list; pm2 logs siftersearch-api --lines 100; node scripts/ops/critical-path.mjs --local`);
+      `GET /api/v1/health on tower failed ${apiHealthFails} checks in a row (5 minutes apart). The site's search and Anís depend on it.\n\nAction: ssh tower-nas; pm2 logs siftersearch-api --lines 100 (find why it hangs); pm2 reload siftersearch-api; node scripts/ops/critical-path.mjs --local`);
   }
 }
 
