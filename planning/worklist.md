@@ -3,7 +3,20 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
-## Now (10-11)
+## Now — LIBRARY CLEANUP (Chad 10-11: "get all the library cleanup tasks done so we can start concept extraction, hype and working on Anis and Dewey")
+- [ ] 1. Qdrant has the 72,751 new Arabic ¶ (per-book count vs SQLite)
+- [ ] 2. Language codes normalised (en/En/Eng, fr/Fr/FR, es/Es …) at the source + DB + index; ingest normalises
+- [ ] 3. Segmentation tail: re-plan the ~155 rows replaced during re-ingest / unplaced (small Haiku batch)
+- [ ] 4. Sentence markers for the 7 `sentence_markers: defer` books (Haiku batch, half price) — $ estimate first
+- [ ] 5. ID/pn for every book: `scripts/library/assign-block-ids.mjs` (OL-compatible attrs; `--align-to` English for CTAI)
+- [ ] 6. CTAI audit: originals paragraphed FROM THE ENGLISH, aligned, matching pn, DB links both ways
+- [ ] 7. Rodwell single-volume (21343) probable duplicate; the 1 empty row (doc 14779)
+- [ ] 8. Reader check in a browser: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
+
+## Then — the real value
+- [ ] Concept extraction · HyPE · Anís · Dewey
+
+## Done 10-11
 - [x] Paragraph segmentation — 180 Arabic books split (9,682 → 72,751 ¶, $8.36), all re-ingested, 0 failures
 - [x] Held-9 hollow Arabic books ingested (`sentence_markers: defer`)
 - [x] LM Studio retired — segmentation = Haiku 5.5 in every language; dead-host breaker
@@ -19,10 +32,8 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] Index caught up (20:10 UTC: 714 awaiting embeddings, 6 awaiting sync; Qdrant 7 collections green)
 - [x] Content-drop alarm explained (10-10 approved bahai-library junk retirement, 302k ¶) + rebased; `scripts/ops/deletions-report.mjs`
 - [x] Hollow check: 0 hollow books corpus-wide, 1 empty row (doc 14779); `scripts/ops/hollow-report.mjs`
-- [ ] Confirm the 72,751 new Arabic ¶ are in Qdrant (per-book check)
-- [ ] Verify reader visually: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
 
-## Next
+## Parked until cleanup is done
 - [x] Model roles: ONE table `api/lib/model-roles.js` + `modelFor(role)`; monthly review (`siftersearch-model-review`, 1st 08:00, [ACTION] email); literal-model ratchet (34 files frozen)
 - [~] Model bake-off (in SifterSearch, no Claude Code needed): scoring + blind judge + multilingual scenarios DONE;
       next: runner (cost estimate + cap) → results in DB → monthly new-model detection (provider model-list APIs) →
@@ -45,5 +56,6 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [ ] Yusuf Ali Qur'an pn — waits for ILM re-export
 - [ ] Rodwell single-volume (21343) — probable duplicate, check + retire
 
-## Waiting on Chad
-- [ ] Strata launch plan; Laya pilot location (tower CPU vs boss GPU)
+## Waiting
+- [ ] Strata — waits until xswarm moves to another worker (Chad 10-11)
+- [ ] Laya pilot location (tower CPU vs boss GPU)
