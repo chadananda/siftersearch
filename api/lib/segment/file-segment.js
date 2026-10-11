@@ -60,7 +60,11 @@ export async function segmentFile(absPath, { apply = false, maxUsd = 2, lang = '
   const text = await readFile(absPath, 'utf8');
   const fm = text.match(FM);
   const body = fm ? text.slice(fm[0].length) : text;
-  if (hasMarkers(body) && validateMarkers(body).valid) return { status: 'already-marked' };
+  if (hasMarkers(body) && validateMarkers(body).valid) {             // segmented before: just make sure ingest knows
+    const flagged = /^needs_segmentation:\s*false/m.test(fm ? fm[1] : '');
+    if (apply && !flagged) await writeFile(absPath, markFrontmatter(text, null));
+    return { status: 'already-marked', flagged: flagged || apply };
+  }
   const parts = splitBody(body);
   const idx = parts.map((b, i) => (i % 2 === 0 && isTextBlock(b) ? i : -1)).filter((i) => i >= 0);
   const target = pilot ? idx.slice(0, pilot) : idx;
