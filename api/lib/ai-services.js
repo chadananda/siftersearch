@@ -780,7 +780,9 @@ export function aiService(serviceType, options = {}) {
 
   // Determine which config to use (local vs remote)
   // USE_REMOTE_AI flag forces remote providers even in production
-  const useRemote = options.forceRemote || config.useRemoteAI || (config.isDevMode && !options.forceLocal);
+  // forceLocal beats USE_REMOTE_AI: tower sets USE_REMOTE_AI=true, which silently made segmentation's "local" primary
+  // GPT-4o, so a localOnly ingest paid (10-11, $0.72 before it was stopped).
+  const useRemote = options.forceRemote || (!options.forceLocal && (config.useRemoteAI || config.isDevMode));
   const svcConfig = useRemote ? serviceConfig.remote : serviceConfig.local;
 
   const serviceName = `${serviceType}:${useRemote ? 'remote' : 'local'}`;
@@ -965,6 +967,7 @@ export function aiService(serviceType, options = {}) {
  * Get segmentation AI service with automatic fallback.
  * Tries LM Studio first (free, local network), falls back to cloud API on error.
  */
+const LOCAL_PROVIDERS = new Set(['lmstudio', 'ollama', 'vllm', 'local']);
 export function segmentationService() {
   // Always try local (LM Studio) first, regardless of USE_REMOTE_AI setting
   const primary = aiService('segmentation', { forceLocal: true });
@@ -974,6 +977,10 @@ export function segmentationService() {
     config: primary.config,
 
     async chat(messages, overrides = {}) {
+      // localOnly must never reach a paid model, whatever the primary resolved to
+      if (currentAIContext().localOnly && !LOCAL_PROVIDERS.has(primary.config.provider)) {
+        throw new Error(`segmentation: localOnly scope refuses non-local provider ${primary.config.provider}`);
+      }
       try {
         return await primary.chat(messages, overrides);
       } catch (err) {
@@ -1029,7 +1036,9 @@ export function getEmbeddingDimensions(serviceType = 'embedding', options = {}) 
     throw new Error(`Unknown embedding service: ${serviceType}`);
   }
 
-  const useRemote = options.forceRemote || config.useRemoteAI || (config.isDevMode && !options.forceLocal);
+  // forceLocal beats USE_REMOTE_AI: tower sets USE_REMOTE_AI=true, which silently made segmentation's "local" primary
+  // GPT-4o, so a localOnly ingest paid (10-11, $0.72 before it was stopped).
+  const useRemote = options.forceRemote || (!options.forceLocal && (config.useRemoteAI || config.isDevMode));
   const svcConfig = useRemote ? serviceConfig.remote : serviceConfig.local;
 
   return svcConfig.dimensions;
