@@ -9,11 +9,11 @@ const wordsOf = (t) => t.replace(MARK, ' ').split(/\s+/).filter(Boolean);
 const boundary = (file, i) => i === 0 || /[\s⁆>]/.test(file[i - 1]);
 
 /** Walk W from p. → { start, end, kept: [{ k, text }] } or null (mismatch, or the span crosses a blank line). */
-function walk(file, p, W) {
+function walk(file, p, W, acrossBlocks = false) {
   const kept = []; let k = 0; TOKEN.lastIndex = p; let m;
   while (k < W.length && (m = TOKEN.exec(file))) {
     if (m[1]) kept.push({ k, text: m[1] });
-    else if (m[3]) { if (/\n[ \t]*\n/.test(m[3])) return null; }
+    else if (m[3]) { if (!acrossBlocks && /\n[ \t]*\n/.test(m[3])) return null; }
     else if (m[4]) { if (m[4] !== W[k]) return null; k++; }
   }
   if (k < W.length) return null;
@@ -42,16 +42,18 @@ function reinsert(blocks, kept) {
 }
 
 /**
+ * acrossBlocks: the stored row may JOIN several file blocks (the ingester merges short paragraphs), so the span may
+ * cross blank lines; the words must still match one for one.
  * Replace the span of `blocks`' words in `file` (searching from `from`) with the blocks joined by blank lines.
  * → { file, cursor } or null when the words cannot be found intact (the caller counts it; the file is untouched).
  */
-export function spliceBlocks(file, from, blocks) {
+export function spliceBlocks(file, from, blocks, { acrossBlocks = false } = {}) {
   blocks = blocks.map((b) => b.replace(TAGS, ' ').replace(/[ \t]{2,}/g, ' ').trim());   // the file's own copies go back in
   const W = wordsOf(blocks.join(' '));
   if (!W.length) return null;
   for (let i = file.indexOf(W[0], from); i >= 0; i = file.indexOf(W[0], i + 1)) {
     if (!boundary(file, i)) continue;
-    const r = walk(file, i, W);
+    const r = walk(file, i, W, acrossBlocks);
     if (!r) continue;
     const old = file.slice(r.start, r.end);
     if ((old.match(/⁅s\d+⁆/g) || []).length !== (old.match(/⁅\/s\d+⁆/g) || []).length) return null;   // markers would split

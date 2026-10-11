@@ -16,4 +16,7 @@ describe('spliceBlocks — new paragraph breaks into a source file', () => {
     expect(spliceBlocks('xone two', 0, ['one', 'two'])).toBeNull();
     expect(spliceBlocks('one\n\ntwo', 0, ['one', 'two'])).toBeNull();
   });
+  it('acrossBlocks: a row the ingester joined from short file blocks can be re-split', () => {
+    expect(spliceBlocks('one\n\ntwo three', 0, ['one two', 'three'], { acrossBlocks: true }).file).toBe('one two\n\nthree');
+  });
 });

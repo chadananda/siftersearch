@@ -112,6 +112,10 @@ if (cmd === 'apply') {
   const byDoc = new Map();
   for (const res of readJsonl('results.jsonl')) { const q = reqs.get(res.custom_id); if (q) (byDoc.get(q.doc) || byDoc.set(q.doc, []).get(q.doc)).push({ ...q, ...res }); }
   const changed = [], notFound = []; const stats = { docs: 0, paragraphs_split: 0, new_paragraphs: 0, kept_whole: 0, not_found_in_file: 0, verify_failed: 0 };
+  // --retry-not-found: only the rows the last apply could not place, allowing spans across blank lines
+  const RETRY = process.argv.includes('--retry-not-found');
+  const retryPids = RETRY ? new Set(readJsonl('not-found.jsonl').map((x) => x.pid)) : null;
+  if (RETRY) for (const [doc, list] of byDoc) { const keep = list.filter((r) => retryPids.has(r.pid)); if (keep.length) byDoc.set(doc, keep); else byDoc.delete(doc); }
   for (const [doc, list] of byDoc) {
     const [d] = await queryAll('SELECT file_path, language FROM docs WHERE id = ?', [doc]);
     const path = join(config.library.basePath, d.file_path);
@@ -127,7 +131,7 @@ if (cmd === 'apply') {
       const blocks = seg.buildParagraphs(clean, spans, { sentences: new Set(r.sentences), paragraphs: new Set(r.paragraphs) });
       if (!blocks) { stats.verify_failed++; continue; }
       if (blocks.length < 2) { stats.kept_whole++; continue; }
-      const sp = spliceBlocks(text, cursor, blocks) || spliceBlocks(text, 0, blocks);
+      const sp = spliceBlocks(text, cursor, blocks, { acrossBlocks: RETRY }) || spliceBlocks(text, 0, blocks, { acrossBlocks: RETRY });
       if (!sp) { stats.not_found_in_file++; notFound.push({ doc, pid: r.pid, head: clean.slice(0, 80) }); continue; }
       text = sp.file; cursor = sp.cursor; touched = true;
       stats.paragraphs_split++; stats.new_paragraphs += blocks.length;
@@ -142,8 +146,8 @@ if (cmd === 'apply') {
       writeFileSync(path, text);
     }
   }
-  writeFileSync(F('changed-docs.json'), JSON.stringify(changed));
-  writeFileSync(F('not-found.jsonl'), notFound.map((x) => JSON.stringify(x)).join('\n'));
+  writeFileSync(F(RETRY ? 'changed-docs-retry.json' : 'changed-docs.json'), JSON.stringify(changed));
+  writeFileSync(F(RETRY ? 'not-found-retry.jsonl' : 'not-found.jsonl'), notFound.map((x) => JSON.stringify(x)).join('\n'));
   console.log(JSON.stringify({ apply: APPLY, ...stats }));
 }
 
