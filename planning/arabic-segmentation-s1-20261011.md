@@ -20,7 +20,10 @@ Sample: 24 paragraphs (al-Istibsar 12, Dala'il al-Nubuwwah 12); Jev scored again
 | **Jev per phrase, whole paragraph** (job A1) vs reference | conf ≥ 0.7 → **63% of decisions at 93.5%**; confident-YES 100% precise | $0.002 | — |
 | **Jev per phrase, short local state** (job A2, Laya-sized) | conf ≥ 0.7 → 49% at 91.6%; ≥ 0.8 → 24% at **98.7%** | — | — |
 
-Majority baseline ("continues") = 65%. Phrases ARE inside sentences: every reference boundary is a phrase start once the
+| **Job B: paragraph start per sentence**, Jev short local state (previous + this sentence) vs Haiku-thinking | **F1 0.76** (P 0.85, R 0.68); conf ≥ 0.7 → 64% of decisions at 88% | $0.005 Haiku / 134 sentences | — |
+
+Majority baselines: sentence job "continues" 65%; paragraph job "continues" 57%. Haiku's paragraphs vs the edition's
+breaks: F1 0.18. In these hadith books the edition breaks are print-page cuts, not topic shifts. Phrases ARE inside sentences: every reference boundary is a phrase start once the
 splitter also opens a phrase at a numbered report («10-»).
 
 ## Reading
@@ -28,7 +31,8 @@ splitter also opens a phrase at a numbered report («10-»).
   Undiacritized numbered phrases cut Haiku's input ~5× and output ~30× vs the vowelled ending-quoting prompt.
 - Quality needs Haiku's THINKING at the sentence step. Without it Haiku splits quoted speech, answers, exceptions and
   completing clauses off their sentence, and two worked examples do not fix it.
-- **Jev is confidently right on about half of the phrase decisions (≈92–94%), untrained.** That makes "does this phrase
+- **Jev is confidently right on about half of the phrase decisions (≈92–94%), untrained, and on two-thirds of the
+  paragraph decisions (88%).** Both jobs fit Laya's 1,024-token window with a short local state. That makes "does this phrase
   start a sentence?" (job A2, short state) a strong Laya candidate. Every Haiku-thinking run yields labels at ~$0.04 per 1,000 decisions.
 
 ## Recommended pipeline
