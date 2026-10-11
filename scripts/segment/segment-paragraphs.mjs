@@ -107,35 +107,32 @@ if (cmd === 'status' || cmd === 'collect') {
 
 if (cmd === 'apply') {
   const APPLY = process.argv.includes('--apply');
-  const { hashContentWords } = await import('../../api/services/ingester.js');
+  const { spliceBlocks } = await import('../../api/lib/segment/file-splice.js');
   const reqs = new Map(readJsonl('requests.jsonl').map((r) => [r.custom_id, r]));
   const byDoc = new Map();
   for (const res of readJsonl('results.jsonl')) { const q = reqs.get(res.custom_id); if (q) (byDoc.get(q.doc) || byDoc.set(q.doc, []).get(q.doc)).push({ ...q, ...res }); }
-  const changed = []; const stats = { docs: 0, paragraphs_split: 0, new_paragraphs: 0, kept_whole: 0, not_found_in_file: 0, verify_failed: 0 };
+  const changed = [], notFound = []; const stats = { docs: 0, paragraphs_split: 0, new_paragraphs: 0, kept_whole: 0, not_found_in_file: 0, verify_failed: 0 };
   for (const [doc, list] of byDoc) {
     const [d] = await queryAll('SELECT file_path, language FROM docs WHERE id = ?', [doc]);
     const path = join(config.library.basePath, d.file_path);
     if (!existsSync(path)) { stats.not_found_in_file += list.length; continue; }
     let text = readFileSync(path, 'utf8'); let touched = false;
-    // hash every block ONCE per file (re-splitting + re-hashing the whole file per result was quadratic: 40+ min)
-    const parts = text.split(/(\n[ \t]*\n)/);
-    const blockAt = new Map();
-    parts.forEach((b, i) => { if (i % 2 === 0 && b.trim()) { const k = hashContentWords(b); if (!blockAt.has(k)) blockAt.set(k, i); } });
-    for (const r of list) {
-      const [row] = await queryAll('SELECT text FROM content WHERE id = ? AND deleted_at IS NULL', [r.pid]);
-      if (!row) continue;
+    // splice by WORDS, not block hash: files keep inline footnotes/page tags the stored row lacks (lib/segment/file-splice.js)
+    const rows = await queryAll(`SELECT id, paragraph_index, text FROM content WHERE id IN (${list.map(() => '?').join(',')}) AND deleted_at IS NULL`, list.map((r) => r.pid));
+    const byPid = new Map(rows.map((x) => [x.id, x]));
+    let cursor = 0;
+    for (const r of list.filter((x) => byPid.has(x.pid)).sort((a, b) => byPid.get(a.pid).paragraph_index - byPid.get(b.pid).paragraph_index)) {
+      const row = byPid.get(r.pid);
       const clean = cleanText(row.text); const spans = seg.phraseSpans(row.text, r.lang);
       const blocks = seg.buildParagraphs(clean, spans, { sentences: new Set(r.sentences), paragraphs: new Set(r.paragraphs) });
       if (!blocks) { stats.verify_failed++; continue; }
       if (blocks.length < 2) { stats.kept_whole++; continue; }
-      const h = hashContentWords(row.text);
-      const at = blockAt.get(h);
-      if (at == null) { stats.not_found_in_file++; continue; }
-      blockAt.delete(h); parts[at] = blocks.join('\n\n'); touched = true;
+      const sp = spliceBlocks(text, cursor, blocks) || spliceBlocks(text, 0, blocks);
+      if (!sp) { stats.not_found_in_file++; notFound.push({ doc, pid: r.pid, head: clean.slice(0, 80) }); continue; }
+      text = sp.file; cursor = sp.cursor; touched = true;
       stats.paragraphs_split++; stats.new_paragraphs += blocks.length;
     }
     if (!touched) continue;
-    text = parts.join('');
     stats.docs++; changed.push(doc);
     if (APPLY) {
       const bk = join('/tank/sifter/segment-backups', `${d.file_path}.${Date.now()}`);
@@ -146,6 +143,7 @@ if (cmd === 'apply') {
     }
   }
   writeFileSync(F('changed-docs.json'), JSON.stringify(changed));
+  writeFileSync(F('not-found.jsonl'), notFound.map((x) => JSON.stringify(x)).join('\n'));
   console.log(JSON.stringify({ apply: APPLY, ...stats }));
 }
 
