@@ -3,7 +3,7 @@
 // 10-10): fetch each image ONCE, store it as the cover original on tower with provenance (api/lib/covers.js), and set
 // docs.cover_url to its image-service URL. Matching: md5(docs.external_id) for source_site oceanlibrary.com. Runs ON
 // tower (SIFTER_WRITER_URL). Dry run by default.
-//   node scripts/library/import-covers.mjs --map <json> --source <label> --rights "<terms>" [--bindery <project.json>] [--replace] [--apply]
+//   node scripts/library/import-covers.mjs --map <json> --source <label> --rights "<terms>" [--bindery <project.json>] [--ids 1,2] [--replace] [--apply]
 // --bindery: the Bindery library export (GET bindery.lnker.com/api/libraries/oceanlibrary). Its books carry the
 // OceanLibrary source URL, so a doc whose bookid hash misses (ids drifted between exports; copies filed outside the
 // OceanLibrary folder have no bookid) still finds its cover by source URL (10-10: 94 books had none).
@@ -14,6 +14,7 @@ import { storeCover } from '../../api/lib/covers.js';
 
 const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : d);
 const MAP = opt('--map'), SOURCE = opt('--source'), RIGHTS = opt('--rights'), BINDERY = opt('--bindery');
+const ONLY = opt('--ids') ? new Set(opt('--ids').split(',').map(Number)) : null;   // limit to these doc ids (e.g. covers Chad regenerated)
 const APPLY = process.argv.includes('--apply'), REPLACE = process.argv.includes('--replace');
 if (!MAP || !SOURCE || !RIGHTS) throw new Error('--map, --source and --rights are required (provenance is stored with every cover)');
 if (APPLY && !process.env.SIFTER_WRITER_URL) throw new Error('SIFTER_WRITER_URL is required to write');
@@ -37,7 +38,7 @@ if (BINDERY) for (const b of JSON.parse(readFileSync(BINDERY, 'utf8')).project.b
 /** The cover URL for a doc: by bookid hash, else (with --bindery) by its OceanLibrary source URL, else a unique title. */
 const coverFor = (d) => (d.external_id && covers[md5(d.external_id)]) || covers[bySource.get(srcSlug(d.source_url))]
   || (titleCount.get(foldT(d.title)) === 1 ? covers[byTitle.get(foldT(d.title))] : null) || null;
-const work = docs.filter((d) => coverFor(d) && (REPLACE || !d.cover_url));
+const work = docs.filter((d) => (!ONLY || ONLY.has(d.id)) && coverFor(d) && (REPLACE || !d.cover_url));
 console.log(JSON.stringify({ oceanlibraryDocs: docs.length, coversInMap: Object.keys(covers).length, toImport: work.length,
   alreadyHaveCover: docs.filter((d) => d.cover_url).length, noMatch: docs.filter((d) => !coverFor(d)).map((d) => `${d.id} ${d.title}`).slice(0, 200) }));
 if (!APPLY) process.exit(0);

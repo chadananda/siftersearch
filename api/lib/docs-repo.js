@@ -141,6 +141,17 @@ export async function setDocCover(docId, url) {
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 
+/** A document whose FILE moved (e.g. out of -sites/oceanlibrary.com into the main library, 10-10): point the row at the new
+ *  path, collection and source (sourceSite/sourceUrl null = the main library's own file), and mark its live paragraphs
+ *  for re-sync so the search engines drop the old labels. Keeps the doc id, paragraphs, cover. Live docs only. */
+export async function relocateDoc(docId, { filePath, collection, sourceSite = null, sourceUrl = null }) {
+  const id = Number(docId);
+  const r = await query(`UPDATE docs SET file_path = ?, collection = ?, source_site = ?, source_url = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND deleted_at IS NULL`, [filePath, collection, sourceSite, sourceUrl, id], 'docs-repo:relocate');
+  await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id], 'docs-repo:relocate-resync');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
 /** Set a document's collection (its shelf). Live docs only. Used to replace the OceanLibrary collection_id hashes with
  *  their folder names (scripts/library/ol-shelves-backfill.mjs). */
 export async function setDocCollection(docId, collection) {
