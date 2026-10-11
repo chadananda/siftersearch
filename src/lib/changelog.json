@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-11T02:51:25.632Z",
+  "generated": "2026-10-11T03:02:01.318Z",
   "entries": [
+    {
+      "hash": "985edf6a",
+      "date": "2026-10-10",
+      "type": "New",
+      "description": "Split Core Tablets by author (one row per Central Figure; small authors pooled)",
+      "scope": "library"
+    },
     {
       "hash": "09d0579e",
       "date": "2026-10-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Re-link runner — dry-run scores old→new bindings before any write; link writes only changed rows",
       "scope": "entities"
-    },
-    {
-      "hash": "951f8db3",
-      "date": "2026-09-26",
-      "type": "Fixed",
-      "description": "Link binds a claim name only as the same name or a leading short form — never raw substring",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-10": [
+      {
+        "hash": "985edf6a",
+        "date": "2026-10-10",
+        "type": "New",
+        "description": "Split Core Tablets by author (one row per Central Figure; small authors pooled)",
+        "scope": "library"
+      },
       {
         "hash": "09d0579e",
         "date": "2026-10-10",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-26",
         "type": "New",
         "description": "Re-link runner — dry-run scores old→new bindings before any write; link writes only changed rows",
-        "scope": "entities"
-      },
-      {
-        "hash": "951f8db3",
-        "date": "2026-09-26",
-        "type": "Fixed",
-        "description": "Link binds a claim name only as the same name or a leading short form — never raw substring",
         "scope": "entities"
       }
     ]
