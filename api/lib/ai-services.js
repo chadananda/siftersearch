@@ -455,6 +455,17 @@ let clients = {
   lmstudio: null
 };
 
+const localBreaker = { until: 0 };
+/** fetch for local LLM hosts: open the breaker on a network failure (not on an HTTP error, which is the host answering). */
+export async function localBreakerFetch(url, init) {
+  if (Date.now() < localBreaker.until) throw new Error(`local LLM host unreachable — breaker open for ${Math.round((localBreaker.until - Date.now()) / 1000)} s`);
+  try { return await fetch(url, init); } catch (err) {
+    if (err?.name !== 'AbortError') localBreaker.until = Date.now() + 10 * 60_000;
+    throw err;
+  }
+}
+export const _localBreaker = localBreaker;
+
 function getClient(provider) {
   if (clients[provider]) return clients[provider];
 
@@ -480,9 +491,15 @@ function getClient(provider) {
       break;
 
     case 'lmstudio':
+      // A dead local host must fail FAST: with the SDK defaults (600 s × 3 tries) each call to a retired LM Studio box
+      // hung an Arabic re-ingest for hours (10-11). Short timeout, one retry, and a breaker: after a network failure
+      // every call fails at once for 10 min (callers already fall back — unmarked text, kept paragraphs).
       clients.lmstudio = new OpenAI({
         baseURL: `${config.ai.endpoints.lmstudio}/v1`,
-        apiKey: 'lm-studio'  // LM Studio doesn't require a real key
+        apiKey: 'lm-studio',  // LM Studio doesn't require a real key
+        timeout: 120_000,
+        maxRetries: 1,
+        fetch: localBreakerFetch
       });
       break;
 
