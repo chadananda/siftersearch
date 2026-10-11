@@ -16,11 +16,18 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
   - [x] 1. re-placed 115 more ¶ (→ 669) in 93 books, re-ingested; 164 left for the re-plan
   - [x] 2. bahai-library: 3 failed files re-ingested, 0 errors
   - [x] 3. bahai-library: 244 secondary duplicates retired (1,324 candidates were already retired)
-- [~] Index catching up (10-11 12:41: 63k awaiting embeddings, 287 awaiting sync) — verify: unembedded + `synced=0` live rows draining (incl. the 14 Islamic works)
+- [x] Index caught up (20:10 UTC: 714 awaiting embeddings, 6 awaiting sync; Qdrant 7 collections green)
+- [x] Content-drop alarm explained (10-10 approved bahai-library junk retirement, 302k ¶) + rebased; `scripts/ops/deletions-report.mjs`
+- [x] Hollow check: 0 hollow books corpus-wide, 1 empty row (doc 14779); `scripts/ops/hollow-report.mjs`: unembedded + `synced=0` live rows draining (incl. the 14 Islamic works)
+- [ ] Confirm the 72,751 new Arabic ¶ are in Qdrant (per-book check)
 - [ ] Verify reader visually: Genesis (dividers), Douay (headings), Qur'an (Surah headings, pn)
 
 ## Next
 - [x] Model roles: ONE table `api/lib/model-roles.js` + `modelFor(role)`; monthly review (`siftersearch-model-review`, 1st 08:00, [ACTION] email); literal-model ratchet (34 files frozen)
+- [~] Model bake-off (in SifterSearch, no Claude Code needed): scoring + blind judge + multilingual scenarios DONE;
+      next: runner (cost estimate + cap) → results in DB → monthly new-model detection (provider model-list APIs) →
+      role assignments in DB (switch without deploy) → /model-refresh skill as a shortcut
+- [ ] Registry: current flash tier verified 10-11 ✅; anisCraft reaches Anthropic via OpenAI-compat endpoint, bypassing the spend policy — close
 - [ ] Re-measure flagged roles vs Haiku 5.5 (anis-answer, anis-term, deep-research ×2, bio, jafar ×2, publish ×2) — small eval each, $ estimate first; a switch to Haiku also needs an anthropic-policy stage entry
 - [ ] deep-research as a SEARCH STRATEGY over `plannedSearch` (HyPE, entities, phrase index, concepts, Qdrant) — today it
       calls legacy Meili `hybridSearch` 6×; keep its LLM steps, swap retrieval; also unblocks Meili retirement
