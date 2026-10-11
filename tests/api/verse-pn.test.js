@@ -24,8 +24,14 @@ describe('versePn', () => {
     expect(r.pn).toEqual([null, '101:1', '101:4']);
     expect(r.checksum_failures).toBe(0);
   });
-  it('a sup that breaks the sequence is counted as a checksum failure', () => {
-    const r = versePn([{ heading: 'X 3', text: 'a <sup>3:2</sup> b' }, { heading: 'X 3', text: 'c <sup>3:9</sup> d' }]);
-    expect(r.checksum_failures).toBe(1);
+  it('a <sup> missing in the source shifts nothing: each marked block re-anchors (Romans 3)', () => {
+    const h = 'Romans 3';
+    const r = versePn([
+      { heading: h, text: 'v11 <sup>3:12</sup> v12 v13-unmarked' },               // the source forgot <sup>3:13</sup>
+      { heading: h, text: 'v14 <sup>3:15</sup> v15' },                              // starts 3:14 — taken from its own sup
+      { heading: h, text: 'v16' },                                                  // 3:16
+    ]);
+    expect(r.pn).toEqual(['3:11', '3:14', '3:16']);
+    expect(r.issues.map((x) => x.kind)).toEqual(['gap']);                        // reported, not propagated
   });
 });
