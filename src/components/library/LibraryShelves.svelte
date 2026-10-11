@@ -3,7 +3,7 @@
   // of that author's works in the library; then the tradition's other collections, each opening on demand. Renders from
   // ONE edge-cached index (/api/library/shelves, built out of process). Multi-part works (KJV, Qur'an…) are one card.
   // Covers are transparent PNG/WebP art: shown bare (no box behind them); full page width (Chad 10-10).
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { imgSet } from '../../lib/imagekit.js';
 
   const API = import.meta.env.PUBLIC_API_URL || '';
@@ -66,7 +66,9 @@
       found = { items: offset ? [...found.items, ...items] : items, total: j.total || 0, loading: false, q };
     } catch { found = { ...found, loading: false }; }
   }
-  $effect(() => { scope; active; if (query.trim().length >= 2) runSearch(query.trim(), 0); });
+  // re-run only when the scope or tradition chip changes — untracked, so the search's own state can't retrigger it
+  // (reading `found` inside the effect made every result re-run the search: stuck on "Searching…", 10-11)
+  $effect(() => { scope; active; untrack(() => { if (query.trim().length >= 2) runSearch(query.trim(), 0); }); });
 
   // width only — each cover keeps its own proportions (no crop, no stretch); 1x/2x of the ~120 px card
   const cover = (c) => (c ? imgSet(c, [120, 240], { fo: null }) : null);
@@ -154,7 +156,9 @@
     {#if found.q}
       <section class="flex flex-col gap-3" aria-live="polite">
         <h2 class="text-lg font-semibold text-primary">{found.loading && !found.items.length ? 'Searching…' : `${fmt(found.total)} result${found.total === 1 ? '' : 's'} for “${found.q}”`}</h2>
-        {#if found.items.some((b) => b.cover)}{@render grid(found.items)}{:else}{@render tiles(found.items)}{/if}
+        <!-- books with covers (the edited editions) lead as cards; the rest follow as compact title tiles -->
+        {#if found.items.some((b) => b.cover)}{@render grid(found.items.filter((b) => b.cover))}{/if}
+        {#if found.items.some((b) => !b.cover)}{@render tiles(found.items.filter((b) => !b.cover))}{/if}
         {#if found.items.length < found.total}
           <button class="self-start text-sm text-accent hover:text-accent-hover" disabled={found.loading} onclick={() => runSearch(found.q, found.items.length)}>{found.loading ? 'Loading…' : `Show more (${fmt(found.total - found.items.length)} left)`}</button>
         {/if}

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-11T14:23:29.025Z",
+  "generated": "2026-10-11T14:30:17.879Z",
   "entries": [
+    {
+      "hash": "e9e004ac",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Visible search + scope, shelves two full rows wide, collections as a tile grid linking to their pages; navbar full width",
+      "scope": "library"
+    },
     {
       "hash": "1c4c6164",
       "date": "2026-10-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The claim gate drops a meeting claim whose own proof denies the meeting",
       "scope": "entities"
-    },
-    {
-      "hash": "7e67017e",
-      "date": "2026-09-26",
-      "type": "New",
-      "description": "Model verdicts drive who-met-whom (met/denied/excluded); verifier v2 (reversed roles = met, intent ≠ met)",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-11": [
+      {
+        "hash": "e9e004ac",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Visible search + scope, shelves two full rows wide, collections as a tile grid linking to their pages; navbar full width",
+        "scope": "library"
+      },
       {
         "hash": "1c4c6164",
         "date": "2026-10-11",
@@ -7026,13 +7033,6 @@
         "type": "Fixed",
         "description": "The claim gate drops a meeting claim whose own proof denies the meeting",
         "scope": "entities"
-      },
-      {
-        "hash": "7e67017e",
-        "date": "2026-09-26",
-        "type": "New",
-        "description": "Model verdicts drive who-met-whom (met/denied/excluded); verifier v2 (reversed roles = met, intent ≠ met)",
-        "scope": "search"
       }
     ]
   }
