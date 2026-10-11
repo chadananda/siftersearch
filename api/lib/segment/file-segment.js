@@ -12,7 +12,7 @@ import { withAIContext } from '../ai-context.js';
 import { getModel } from '../model-registry.js';
 
 export const SEGMENT_MODEL = { provider: 'anthropic', model: 'claude-haiku-5-5' };
-const BATCH_CHARS = 40000;        // ≈16–20k Arabic tokens per call: far below the 100k step, few calls
+const BATCH_CHARS = 12000;       // 40k-char batches made Haiku truncate or wander off JSON (10-11); 12k (~20k tokens in, ~3k out) is reliable
 // Measured on the al-Istibsar pilot (10-11, fully vowelled): 57.8k chars → 93.4k input + 14.9k output tokens over 3 calls.
 // Vowelled Arabic costs ~1.6 tokens per character; the endings the model quotes cost ~0.26 output tokens per character.
 const INPUT_TOKENS_PER_CHAR = 1.62, OUTPUT_TOKENS_PER_CHAR = 0.26;
