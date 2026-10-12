@@ -231,8 +231,9 @@ export function gradedPlanDocIds() {
 
 // The roadmap grades ~900 plan books with synchronous GROUP BY scans; the plan follower asks every 3 min. Under
 // WAL/IO contention one scan took 62 s and froze the API event loop through the :30 health check (10-05 alerts).
-// Single-flight + short TTL: a book takes hours to ground, so a 5-min-old roadmap changes nothing.
-const PROGRESS_TTL_MS = Number(process.env.INTEGRATION_PROGRESS_TTL_MS ?? 300000);
+// Single-flight + TTL: a book takes hours to ground, so a 30-min-old roadmap changes nothing. 5 min (per API cluster
+// worker) was still ~1,600 slow reads/day at up to 62 s (slow-queries report 10-12) → 30 min.
+const PROGRESS_TTL_MS = Number(process.env.INTEGRATION_PROGRESS_TTL_MS ?? 30 * 60 * 1000);
 let _progress = null;   // { at, promise }
 // OFF the event loop: the scans are synchronous better-sqlite3 reads, 3.5-8.5 s each under IO contention, and the API ran
 // them in-process — the plan follower's 3-min poll + the public /people/progress froze the whole API every few minutes,
