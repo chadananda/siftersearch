@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-12T21:39:46.868Z",
+  "generated": "2026-10-12T21:48:58.777Z",
   "entries": [
+    {
+      "hash": "156a4f2e",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "DB-backed smoke checks retry once after 15 s (transient slowness under re-ingest aborted good deploys 3x on 10-12)",
+      "scope": "deploy"
+    },
+    {
+      "hash": "9fa287f6",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Writing to Anís is consent to engage — the writer joins the list (replies go at once, outreach cadence follows)",
+      "scope": "mail"
+    },
     {
       "hash": "fe39655b",
       "date": "2026-10-12",
@@ -3486,24 +3500,24 @@
       "type": "Docs",
       "description": "Concept index at library scale — kernel catalogue + vector shortlist + Jev sweep + canonical question library",
       "scope": "planning"
-    },
-    {
-      "hash": "02894c22",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Bind verdict — attach unbound mentions a reviewer identified (shadow-link follow-up)",
-      "scope": "entities"
-    },
-    {
-      "hash": "212098bd",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Shadow linking — Jev links every name occurrence in a book beside the pipeline's binding (read-only)",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "156a4f2e",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "DB-backed smoke checks retry once after 15 s (transient slowness under re-ingest aborted good deploys 3x on 10-12)",
+        "scope": "deploy"
+      },
+      {
+        "hash": "9fa287f6",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Writing to Anís is consent to engage — the writer joins the list (replies go at once, outreach cadence follows)",
+        "scope": "mail"
+      },
       {
         "hash": "fe39655b",
         "date": "2026-10-12",
@@ -7017,20 +7031,6 @@
         "type": "Docs",
         "description": "Concept index at library scale — kernel catalogue + vector shortlist + Jev sweep + canonical question library",
         "scope": "planning"
-      },
-      {
-        "hash": "02894c22",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Bind verdict — attach unbound mentions a reviewer identified (shadow-link follow-up)",
-        "scope": "entities"
-      },
-      {
-        "hash": "212098bd",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Shadow linking — Jev links every name occurrence in a book beside the pipeline's binding (read-only)",
-        "scope": "entities"
       }
     ]
   }

@@ -1,5 +1,5 @@
 ---
-// The Anís hub (Chad 10-10: "everything about Anís in one place"): deployments (one per host site), personality
+// The Anís hub (Chad 10-10: "everything about Anís in one place"): threads with each reply's audit (10-12), deployments (one per host site), personality
 // adjustment (the companion dials), assessment audits, activity, costs, System-1 decisions, the TRM (technical
 // reference manual) and his design page.
 // Tabs are plain buttons + a tiny script (#hash selects a tab: /admin/anis#personality).
@@ -9,12 +9,13 @@ import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import WidgetManager from '../../components/admin/WidgetManager.svelte';
 import CompanionControls from '../../components/admin/CompanionControls.svelte';
 import AnisInsights from '../../components/admin/AnisInsights.svelte';
+import AnisThreads from '../../components/admin/AnisThreads.svelte';
 import { Content as TrmContent } from '../../../docs/architecture/anis-trm.md';
 
 const about = (await getCollection('agents')).find((a) => a.id === 'agent-anis');
 const { Content: AboutContent } = about ? await render(about) : { Content: null };
 const TABS = [
-  ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
+  ['threads', 'Threads'], ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
   ['activity', 'Activity'], ['costs', 'Costs'], ['system1', 'System-1'], ['trm', 'TRM'], ['about', 'About Anís'],
 ];
 ---
@@ -31,7 +32,10 @@ const TABS = [
       ))}
     </nav>
 
-    <section id="panel-deployments" role="tabpanel" aria-labelledby="tab-deployments">
+    <section id="panel-threads" role="tabpanel" aria-labelledby="tab-threads">
+      <AnisThreads client:only="svelte"><IslandSkeleton slot="fallback" /></AnisThreads>
+    </section>
+    <section id="panel-deployments" role="tabpanel" aria-labelledby="tab-deployments" hidden>
       <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
     </section>
     <section id="panel-personality" role="tabpanel" aria-labelledby="tab-personality" hidden>
@@ -62,7 +66,7 @@ const TABS = [
     }
   }
   for (const t of tabs) t.addEventListener('click', () => { history.replaceState(null, '', `#${t.dataset.tab}`); show(t.dataset.tab); });
-  show(location.hash.slice(1));
+  show(location.hash.slice(1).split(':')[0]);   // #threads:<id> opens that thread
 </script>
 
 <style>

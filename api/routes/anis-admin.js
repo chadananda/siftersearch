@@ -3,6 +3,8 @@
 import { queryAll } from '../lib/db.js';
 import { requireTier } from '../lib/auth.js';
 import { anisActivity, anisCosts, anisAssessment, anisSystem1 } from '../lib/anis/admin-overview.js';
+import { threadsOverview, threadDetail } from '../lib/anis/admin-threads.js';
+import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
 
 export default async function anisAdminRoutes(fastify) {
   fastify.get('/anis/overview', {
@@ -18,5 +20,18 @@ export default async function anisAdminRoutes(fastify) {
       safe(() => anisSystem1({}, days)),
     ]);
     return { days, activity, costs, assessment, system1 };
+  });
+
+  // Threads (Chad 10-12): every Anís conversation with each reply's audit — filter=strategy shows where a better search
+  // strategy was warranted.
+  fastify.get('/anis/threads', {
+    preHandler: requireTier('admin'),
+    schema: { querystring: { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 365, default: 30 },
+      filter: { type: 'string', enum: ['all', 'strategy', 'problems', 'pending'], default: 'all' } } } },
+  }, async (request) => threadsOverview({ listThreads: listAnisThreads }, { days: request.query.days || 30, filter: request.query.filter || 'all' }));
+
+  fastify.get('/anis/threads/:id', { preHandler: requireTier('admin') }, async (request, reply) => {
+    const t = await threadDetail({ thread: anisThread, messages: anisThreadMessages }, request.params.id);
+    return t || reply.code(404).send({ error: 'no such thread' });
   });
 }

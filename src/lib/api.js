@@ -772,6 +772,16 @@ export const admin = {
     return request(`/api/admin/anis/overview?days=${days}`);
   },
 
+  /** Anís threads with each reply's audit roll-up; filter: all | strategy | problems | pending. */
+  async getAnisThreads(days = 30, filter = 'all') {
+    return request(`/api/admin/anis/threads?days=${days}&filter=${filter}`);
+  },
+
+  /** One Anís thread: every round, the route taken, and its audit. */
+  async getAnisThread(id) {
+    return request(`/api/admin/anis/threads/${encodeURIComponent(id)}`);
+  },
+
   /**
    * Update a user
    */
