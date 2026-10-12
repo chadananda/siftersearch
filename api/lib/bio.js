@@ -202,7 +202,7 @@ let _progCache = null, _progAt = 0;
 // because better-sqlite3 is synchronous. Cumulative spend per book moves slowly and is display-only, so it
 // does not belong on the roadmap's refresh cadence (2026-08-14).
 let _costCache = null, _costAt = 0;
-const COST_TTL_MS = 15 * 60 * 1000;
+const COST_TTL_MS = 60 * 60 * 1000;   // whole-table ai_usage scan (~13 s): hourly is fresh enough for a cost column
 // The curated (non-dynamic) plan doc ids the roadmap grades for "done" — same membership getIntegrationProgress
 // uses (integration-phases.js, curated phases only). Exported so a verifier can compare bulk vs single done-checks.
 // NESTING IS PRESENTATION ONLY (Chad, 2026-08-14): "We nested for UI purposes. That does not in any way

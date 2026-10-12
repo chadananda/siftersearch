@@ -235,10 +235,16 @@ const agoOf = (at) => {
     if (batch) add('Batch scans (24h, ops worker)', true, 'info', `${batch} long reads in siftersearch-reports (night-window health scans)`);
     // A blocking WRITE on the writer is critical (it breaks other processes, not just itself); a blocking
     // read is a warning (slow, but it does not close anyone's socket).
+    // what is slow NOW: the 24h worst can be one stale outlier (10-12: a 292 s scan from the day before headlined the
+    // alert while 80–130 slow reads/hour came from elsewhere)
+    const recent = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 10800 AND duration_ms >= ${blockMs} AND ${BATCH}`) ?? { n: 0 };
+    const top = g(`SELECT proc, kind, name, COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 10800 AND duration_ms >= ${blockMs} AND ${BATCH}
+                    GROUP BY 1, 2, 3 ORDER BY n DESC LIMIT 1`);
     const isWriter = worst && /worker|write/i.test(String(worst.proc || ''));
     add('Blocking queries (24h)', total === 0, worst && worst.kind === 'write' && isWriter ? 'critical' : 'warn',
       total === 0 ? 'none over ' + blockMs + 'ms'
-        : `${total} over ${blockMs}ms — worst ${(worst.worst / 1000).toFixed(1)}s ${worst.kind} in '${worst.proc}' ${agoOf(worst.at)}: ${String(worst.sql || '').slice(0, 90)}`);
+        : `${total} over ${blockMs}ms — last 3h: ${recent.n}${top ? ` (most: ${top.n}× ${top.kind} in '${top.proc}'${top.name ? ' ' + top.name : ''})` : ''}`
+          + ` · worst ${(worst.worst / 1000).toFixed(1)}s ${worst.kind} in '${worst.proc}' ${agoOf(worst.at)}: ${String(worst.sql || '').slice(0, 90)}`);
   } catch { /* table predates migration 109 on an un-upgraded DB */ }
 }
 

@@ -260,44 +260,48 @@ async function main() {
     bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
   }
 
-  // ai_usage rollups (timestamp/caller/model indexed; a few seconds on the big table).
+  // ai_usage rollups: month-wide aggregates over ~1M rows took 24–55 s each and ran every 5 min (914 slow reads/day,
+  // 10-12) → refreshed every 30 min, reused from the previous snapshot in between.
   const fmtTs = (d) => d.toISOString().replace('T', ' ').slice(0, 19);
   const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
-  const monthStart = new Date(); monthStart.setDate(monthStart.getDate() - 30);
-  const [aiCombined, aiByModel, aiByProvider, aiByCaller, aiByCallerToday, aiModels, aiCallers] = await Promise.all([
-    queryOne(`
-      SELECT
-        SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as today_calls,
-        COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as today_tokens,
-        COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as today_cost,
-        SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as week_calls,
-        COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as week_tokens,
-        COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as week_cost,
-        COUNT(*) as month_calls,
-        COALESCE(SUM(total_tokens), 0) as month_tokens,
-        COALESCE(SUM(estimated_cost_usd), 0) as month_cost,
-        SUM(CASE WHEN success = 0 AND timestamp >= ? THEN 1 ELSE 0 END) as failed_week
-      FROM ai_usage WHERE timestamp >= ?`,
-      [fmtTs(dayStart), fmtTs(dayStart), fmtTs(dayStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(monthStart)]).catch(probeFail(null)),
-    queryAll(`SELECT model, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY model ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
-    queryAll(`SELECT provider, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY provider ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
-    queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
-    queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(dayStart)]).catch(probeFail([])),
-    queryAll(`SELECT DISTINCT model FROM ai_usage ORDER BY model`).catch(probeFail([])),
-    queryAll(`SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller`).catch(probeFail([])),
-  ]);
-  const aiUsage = {
-    generated_at: new Date().toISOString(),
-    today_since: dayStart.toISOString(),   // local midnight on tower (America/Phoenix) — the page labels "today" with it
-    combined: aiCombined,
-    byModel: aiByModel, byProvider: aiByProvider, byCaller: aiByCaller, byCallerToday: aiByCallerToday,
-    filters: { models: aiModels.map((r) => r.model), callers: aiCallers.map((r) => r.caller) },
-  };
+  let aiUsage = prevSnapshot.aiUsage ?? null;
+  if (!aiUsage?.generated_at || Date.now() - Date.parse(aiUsage.generated_at) > 30 * 60 * 1000) {
+    const monthStart = new Date(); monthStart.setDate(monthStart.getDate() - 30);
+    const [aiCombined, aiByModel, aiByProvider, aiByCaller, aiByCallerToday, aiModels, aiCallers] = await Promise.all([
+      queryOne(`
+        SELECT
+          SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as today_calls,
+          COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as today_tokens,
+          COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as today_cost,
+          SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as week_calls,
+          COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as week_tokens,
+          COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as week_cost,
+          COUNT(*) as month_calls,
+          COALESCE(SUM(total_tokens), 0) as month_tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as month_cost,
+          SUM(CASE WHEN success = 0 AND timestamp >= ? THEN 1 ELSE 0 END) as failed_week
+        FROM ai_usage WHERE timestamp >= ?`,
+        [fmtTs(dayStart), fmtTs(dayStart), fmtTs(dayStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(monthStart)]).catch(probeFail(null)),
+      queryAll(`SELECT model, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY model ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
+      queryAll(`SELECT provider, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY provider ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
+      queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
+      queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(dayStart)]).catch(probeFail([])),
+      queryAll(`SELECT DISTINCT model FROM ai_usage ORDER BY model`).catch(probeFail([])),
+      queryAll(`SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller`).catch(probeFail([])),
+    ]);
+    aiUsage = {
+      generated_at: new Date().toISOString(),
+      today_since: dayStart.toISOString(),   // local midnight on tower (America/Phoenix) — the page labels "today" with it
+      combined: aiCombined,
+      byModel: aiByModel, byProvider: aiByProvider, byCaller: aiByCaller, byCallerToday: aiByCallerToday,
+      filters: { models: aiModels.map((r) => r.model), callers: aiCallers.map((r) => r.caller) },
+    };
+  }
 
   // Entity-review model (data/entity-review-model.json, separate file — it's MBs):
   // the full build loads every entity_mention (~32s) so it must never run in the API.
