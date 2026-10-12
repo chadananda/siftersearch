@@ -46,6 +46,16 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
       68,794 ¶ / 760 books, but Bahá'í core thin (Shoghi Effendi 22 books; Gleanings rows have none). Add OL frontmatter
       `translated_by:` (the script reads only `translator:`), propagate along translation links + verbatim quote links,
       paced overnight. Then a curated list for the core translations (names from Chad/trusted source).
+- [ ] 15. TERM search strategy (Chad 10-12: "deserves its own search strategy"; Liliane's "What is Irfan?" got 'cannot find'
+      because the term path hid behind a regex in front of English search). One strategy in plannedSearch (so Anís, chat,
+      API, SourceHunt all get it), chosen by the planner, not a regex:
+      1 detect a word/concept question (planner shape 'term'; Latin translit, Arabic script, or an English concept word
+        with a known original); 2 resolve to original spellings (ی/ي, with/without ال and prefixes);
+      3 find the word in OUR originals (Core Tablets / OL Arabic / CTAI Originals; Arabic phrase+keyword layer);
+      4 pair each hit with its English via content_alignment / original_text — authority order (Shoghi Effendi first);
+      5 renderings chart + paired passages, OUR range links (OceanLibrary / Ocean of Lights), CTAI as extra source/fallback.
+      Done 10-12 meanwhile: "what is X" triggers the CTAI path; mixed-script name repair; inbound mail unwrapped.
+- [ ] 16. Liliane's question (10-12): 2 stale drafts in review (ids 28, 30) — discard; re-draft after the fixes deploy
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
