@@ -24,6 +24,11 @@ describe('which questions are about a word', () => {
   });
   it('a transliterated term', () => {
     expect(termQuestion('I would like to understand the meaning of the word Irfan in the Bahá’í writings')).toEqual({ term: 'Irfan', script: 'latin' });
+    // Liliane 10-12: the plain "what is X" shape, one word, optionally "in the Bahá'í Faith"
+    expect(termQuestion("What is Irfan in the Baha'i faith?")).toEqual({ term: 'Irfan', script: 'latin' });
+    expect(termQuestion('What is ʿirfán?')).toEqual({ term: 'ʿirfán', script: 'latin' });
+    expect(termQuestion('What is the Covenant of Bahá’u’lláh?')).toBeNull();          // more than one word: ordinary search
+    expect(termQuestion('What is love?')).toBeNull();                                    // NOT_TERMS
     expect(termQuestion('What does ʿirfán mean?')?.term).toBe('ʿirfán');
     expect(termQuestion('What does Irfan mean?')?.term).toBe('Irfan');
     expect(termQuestion('What is the significance of ʿirfán in the Íqán?')?.term).toBe('ʿirfán');

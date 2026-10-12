@@ -19,6 +19,9 @@ const LATIN_TERMS = [
   new RegExp(`\\b(?:the|this|that) (?:arabic |persian )?(?:word|term)\\s+["“'‘]?${T}`, 'i'),
   new RegExp(`\\bwhat does\\s+["“'‘]?${T}["”'’]?\\s+mean\\b(?!\\s+by\\b)`, 'i'),     // "what does X mean by…" asks about a person
   new RegExp(`\\b(?:meaning|significance|sense|definition) of\\s+["“'‘]?([^\\s"”]*[ʿʾáíúḥṣṭẓḍ][^\\s"”,.?]*)`, 'i'),
+  // "What is Irfan in the Baha'i faith?" (Liliane 10-12 got a "cannot find" reply): the WHOLE question is one capitalised
+  // word, optionally "in the Bahá'í Faith/writings". resolveTerm still decides — an English word comes back NONE.
+  new RegExp(`^\\s*what(?:'s|’s| is| are)\\s+(?:an?\\s+|the\\s+)?["“'‘]?([ʿʾ]?\\p{L}[A-Za-zʿʾ'’áíúÁÍÚḥḤṣṢṭṬẓẒḍḌ-]{2,29})["”'’]?(?:\\s+in\\s+(?:the\\s+)?bah[aá]['’]?[ií](?:\\s+(?:faith|writings|teachings|scripture))?)?\\s*\\??\\s*$`, 'iu'),
 ];
 const NOT_TERMS = new Set(['the', 'this', 'that', 'word', 'term', 'it', 'god', 'love', 'faith', 'justice', 'prayer', 'religion', 'life']);
 
