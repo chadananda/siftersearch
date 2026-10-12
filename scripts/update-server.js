@@ -258,7 +258,10 @@ async function runSmokeTests(port) {
 
   // 3. Library stats (verifies DB access + query works)
   // DB-heavy: ~4 s warm, longer on a cold test server while a bulk re-ingest loads the DB (10-12: 5 s aborted a good deploy)
-  const stats = await httpGet(`${base}/api/library/stats`, 15000);
+  // DB-backed checks get ONE retry after 15 s: a single slow moment (a big re-ingest write on the shared disk) aborted good
+  // deploys three times on 10-12 while the same endpoints answered in 0.7–4 s a minute later.
+  const retry = async (url) => { const r = await httpGet(url, 15000); if (r.ok) return r; await new Promise((ok) => setTimeout(ok, 15000)); return httpGet(url, 15000); };
+  const stats = await retry(`${base}/api/library/stats`);
   let statsOk = false;
   let statsDetail = 'no response';
   if (stats.ok) {
@@ -273,7 +276,7 @@ async function runSmokeTests(port) {
   // 4. Recent documents (verifies route registration + DB read). PASS on a valid empty list:
   // the endpoint windows to 30 days, so a quiet library month returns [] legitimately — requiring
   // length>0 bricked every deploy after 30 ingest-free days (2026-08-09).
-  const recent = await httpGet(`${base}/api/library/recent?limit=1`, 15000);
+  const recent = await retry(`${base}/api/library/recent?limit=1`);
   let recentOk = false;
   let recentDetail = 'no response';
   if (recent.ok) {
