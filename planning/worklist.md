@@ -10,7 +10,11 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] 3. Segmentation tail: 3,425 more oversized ¶ → 16,185 in 34 books, 0 verify failures, all re-ingested
 - [x] 4. Sentence markers for the 7 deferred hadith books: SKIPPED on value (~$15; markers only serve translation alignment, none exist for these)
 - [~] 5. ID/pn for every book: `{id="para_N" pn="M"}` written into 33,996 library files (5.66M ¶, 0.1% ambiguous skipped);
-      ids job: 3.38M of 4.12M rows matched first pass; re-run counts text rows only → re-ingest list for the rest
+      ids job: 3.38M of 4.12M rows matched; 695k drifted rows in 13,060 books (old ingest merged/split/kept markup).
+      reingest-impact: 11,250 books carry NO enrichment on drifted rows → re-ingesting (ops ingest-files, batches of 1000);
+      1,810 books carry enrichment there (HyPE on 42k rows incl. paid Persian Ẓuhúr vols, 26.9k alignment links, 11.8k
+      graph mentions) → NOT re-ingested; drifted rows keep working, just without ids/pn. DECISION for Chad: carry
+      enrichment across a re-ingest (map old→new rows by text) or leave them.
       `block-attrs` ops job copying them onto rows (no re-ingest); files with ids keep their blocks at ingest
 - [~] 6. CTAI audit (ops report `ctai-audit`) FOUND: originals are NOT paragraphed from the English — aligned many-to-one into
       big compilation docs (Íqán original 78 ¶ vs 478 English; Hidden Words/Gleanings inside a 6,354-¶ compilation);
