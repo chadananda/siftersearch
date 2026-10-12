@@ -85,6 +85,9 @@ const titleKey = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').
  *  page's per-paragraph ilmid and are a later step (memory reference_range_links_ocean). Null when there is no range. */
 export function textFragment(url, text, ranges, n = 4, docId = null) {
   if (!url || !text || !ranges?.length) return null;
+  // the quote's range replaces whatever the link already carries (linkFor's whole-paragraph "#~q=" marker): appended to it,
+  // the URL matched none of the forms below and grew a raw text fragment — a ")" in the quote then cut the link (10-12)
+  url = url.replace(/#~.*$/, '');
   // OceanLibrary has its own range links (selectionString): mark the quoted words; the output pass (lib/ocean-links.js)
   // turns the marker into a range highlighting exactly them (a text fragment is not honoured by its reader app)
   if (/oceanlibrary\.com\/[^?#\s]+(\?paraId=[^#\s]*)?$/.test(url)) return `${url}#~q=${encodeMarker(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;

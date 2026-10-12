@@ -257,7 +257,8 @@ async function runSmokeTests(port) {
   tests.push({ name: 'v1-health', pass: v1Health.ok, detail: v1Health.body || 'no response' });
 
   // 3. Library stats (verifies DB access + query works)
-  const stats = await httpGet(`${base}/api/library/stats`);
+  // DB-heavy: ~4 s warm, longer on a cold test server while a bulk re-ingest loads the DB (10-12: 5 s aborted a good deploy)
+  const stats = await httpGet(`${base}/api/library/stats`, 15000);
   let statsOk = false;
   let statsDetail = 'no response';
   if (stats.ok) {
@@ -272,7 +273,7 @@ async function runSmokeTests(port) {
   // 4. Recent documents (verifies route registration + DB read). PASS on a valid empty list:
   // the endpoint windows to 30 days, so a quiet library month returns [] legitimately — requiring
   // length>0 bricked every deploy after 30 ingest-free days (2026-08-09).
-  const recent = await httpGet(`${base}/api/library/recent?limit=1`);
+  const recent = await httpGet(`${base}/api/library/recent?limit=1`, 15000);
   let recentOk = false;
   let recentDetail = 'no response';
   if (recent.ok) {
@@ -399,6 +400,7 @@ async function isProcessKnown(name) {
 // minutes, and nobody was told). Now: validate the config before touching any process; roll back a failed start to the
 // previous commit's config; alert immediately; a watchdog every loop restarts and alerts on a missing/unhealthy API.
 let prevSha = null;          // the commit the running processes were started from (set before each pull)
+let failedVerifications = 0; // consecutive aborted deploys (alert at 3)
 let blockedRemote = null;    // a remote commit refused for an invalid config — not retried until a newer one arrives
 let apiHealthFails = 0;
 
@@ -675,9 +677,19 @@ async function applyUpdates() {
   log('info', 'Verifying new code before deploy...');
   const verified = await verifyNewCode();
   if (!verified) {
-    log('error', 'New code failed verification — aborting deploy, old server stays running');
+    // Back to the RUNNING commit: otherwise the new code sits pulled on disk while the old server runs, the next poll sees
+    // "up to date" and never retries (10-12: two hours of pushes silently not deployed after one slow smoke test).
+    const bad = (await run('git rev-parse HEAD')).stdout.trim();
+    if (prevSha && prevSha !== bad) await run(`git reset --hard ${prevSha}`);
+    failedVerifications++;
+    log('error', `New code failed verification — aborting deploy, old server stays running; ${bad} will be retried next poll (${failedVerifications} in a row)`);
+    if (failedVerifications === 3) {
+      await alertNow('deploy-verification', 'SifterSearch deploy failing verification',
+        `Commit ${bad} failed the pre-deploy smoke tests 3 times in a row; tower stays on ${prevSha}. See logs/updater-out-*.log.`);
+    }
     return false;
   }
+  failedVerifications = 0;
   log('info', 'Verification passed — swapping to new code');
 
   // Swap API first (user-facing), then background workers
