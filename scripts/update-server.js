@@ -491,7 +491,12 @@ async function killStrayApiProcesses() {
   const list = JSON.parse((await run('pm2 jlist', { silent: true })).stdout || '[]');
   const managed = new Set(list.filter((p) => p.name === 'siftersearch-api').map((p) => String(p.pid)));
   const ps = (await run('pgrep -f "node .*api/index.js"', { silent: true })).stdout || '';
-  const strays = ps.split('\n').map((x) => x.trim()).filter((pid) => pid && !managed.has(pid) && pid !== String(process.pid));
+  // an old worker still draining after a graceful reload is unmanaged for a few seconds — only older than 3 min is a stray
+  const age = async (pid) => Number(((await run(`ps -o etimes= -p ${pid}`, { silent: true })).stdout || '0').trim()) || 0;
+  const strays = [];
+  for (const pid of ps.split('\n').map((x) => x.trim()).filter((p) => p && !managed.has(p) && p !== String(process.pid))) {
+    if ((await age(pid)) > 180) strays.push(pid);
+  }
   for (const pid of strays) { try { process.kill(Number(pid), 'SIGTERM'); } catch { /* gone */ } }
   if (strays.length) {
     await new Promise((r) => setTimeout(r, 5000));

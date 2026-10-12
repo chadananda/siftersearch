@@ -14,12 +14,14 @@ const call = async (method, path, body) => {
   if (!r.ok) throw new Error(`${method} ${path} → ${r.status} ${JSON.stringify(j).slice(0, 200)}`);
   return j;
 };
+// stdout to a pipe is async: process.exit() right after console.log cut results at 64 KB (10-11) — flush first
+const out = (obj) => new Promise((r) => process.stdout.write(`${JSON.stringify(obj, null, 1)}\n`, r));
 const [cmd, name] = process.argv.slice(2);
 const flag = (k) => process.argv.includes(k);
 const val = (k) => (flag(k) ? process.argv[process.argv.indexOf(k) + 1] : undefined);
-if (cmd === 'reports') console.log(JSON.stringify(await call('GET', '/ops/reports'), null, 1));
+if (cmd === 'reports') await out(await call('GET', '/ops/reports'));
 else if (cmd === 'report' && name) {
-  if (flag('--latest')) console.log(JSON.stringify(await call('GET', `/ops/reports/${name}/latest`), null, 1));
+  if (flag('--latest')) await out(await call('GET', `/ops/reports/${name}/latest`));
   else {
     const params = val('--days') ? { days: Number(val('--days')) } : null;
     let run = await call('POST', `/ops/reports/${name}`, params ? { params } : {});
@@ -29,7 +31,7 @@ else if (cmd === 'report' && name) {
       await new Promise((r) => setTimeout(r, 10_000));
       run = await call('GET', `/ops/reports/runs/${run.id}`);
     }
-    console.log(JSON.stringify(run, null, 1));
+    await out(run);
   }
 } else { console.error('usage: ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
 process.exit(0);
