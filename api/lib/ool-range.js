@@ -3,7 +3,8 @@
 // `.tablet-content.nuxt-content` by plain indexOf (exact, case-sensitive, any substring), takes occurrence N (default the
 // first) of BOTH fragments, and highlights from the start fragment to the end of the end fragment. So the shortest link
 // is the shortest prefix of the quote whose first occurrence is where the quote starts + the shortest suffix whose first
-// occurrence is where it ends (grown a word at a time); `$N` only when no first-occurrence pair exists. Pure.
+// occurrence is where it ends (grown a word at a time, from TWO words: "#(the knowledge)(and the)", Chad 10-12 — a lone
+// "the" is unreadable and fragile); `$N` only when no first-occurrence pair exists. Pure.
 
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
@@ -63,8 +64,9 @@ export function oolQuoteHash(page, s, e) {
   const quote = page.slice(s, e);
   const words = [...quote.matchAll(/\S+/g)];
   if (!words.length) return null;
-  const prefixes = words.map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
-  const suffixes = words.map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
+  const MIN = Math.min(2, words.length);
+  const prefixes = words.slice(MIN - 1).map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
+  const suffixes = words.slice(0, words.length - MIN + 1).map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
   const best = (frags, at) => {                  // rank → shortest fragment with that rank
     const by = new Map();
     for (const f of frags) { const r = rankOf(page, f, at(f)); if (r && !by.has(r)) by.set(r, f); }
