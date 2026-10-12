@@ -48,6 +48,23 @@ function splitRows(r, splitCounts) {
   return rows.length ? rows : [{ name: r.collection, collection: r.collection, site: null, count: r.n }];
 }
 
+// A shelf holding ONE collection card (KJV, Tanakh, Mormon Texts…) gets no row of its own: the card stands inline in the
+// tradition's general row ("Other works", else "More works", else a new "Collections" row), collections first, and opens
+// its parts below that row (Chad 10-12: "that is the point of collapsing to an icon"). The row leads, after the
+// tradition's lead shelves.
+function inlineCollections(shelves, lead = []) {
+  const lone = (s) => s.items.length === 1 && s.items[0].kind === 'work' && !s.more;
+  const folded = shelves.filter(lone);
+  if (!folded.length) return shelves;
+  const rest = shelves.filter((s) => !lone(s));
+  const target = rest.find((s) => s.name === 'Other works') || rest.find((s) => !s.key)
+    || { name: 'Collections', key: 'collections', count: 0, items: [], more: null };
+  const row = { ...target, items: [...folded.map((s) => s.items[0]), ...target.items], count: target.count + folded.length };
+  const out = shelves.filter((s) => s !== target && !folded.includes(s));
+  out.splice(out.filter((s) => lead.includes(fold(s.key))).length, 0, row);
+  return out;
+}
+
 export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], splitCounts = [], now = new Date() }) {
   const trads = new Map();
   const trad = (name) => {
@@ -84,7 +101,7 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
   const traditions = [];
   for (const t of trads.values()) {
     const lead = LEAD[fold(t.name).replace(/s$/, '')] || LEAD[fold(t.name)] || [];
-    const shelves = [...t.shelves.values()].map((s) => {
+    const shelves = inlineCollections([...t.shelves.values()].map((s) => {
       // a work = one card with its own cover; its parts in OceanLibrary's order (weight), all listed so the card opens instantly
       const works = [...s.works.values()].map((w) => {
         const list = w.list.sort((a, b) => (a.weight ?? 1e9) - (b.weight ?? 1e9) || a.title.localeCompare(b.title, undefined, { numeric: true }));
@@ -114,7 +131,7 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
       if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
       if (!a.key !== !b.key) return a.key ? -1 : 1;            // "More works" last
       return b.count - a.count;
-    });
+    }), lead);
     traditions.push({ name: t.name, slug: t.slug, shelves, library: [], ol: shelves.reduce((n, s) => n + s.count, 0) });
   }
   // 3. the rest of each tradition's library, as collapsed shelves (collection, or the site it came from)

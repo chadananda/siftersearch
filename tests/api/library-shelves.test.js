@@ -60,8 +60,9 @@ describe('buildShelves', () => {
       ol(43, 'Islam', 'Islam/Al-Ghazzali/The Alchemy of Happiness.md', 'Al-Ghazzali', 'The Alchemy of Happiness'),
     ], authorCounts: [{ religion: 'Christian', author: 'Emanuel Swedenborg', n: 8 }] });
     const shelf = (n) => r.traditions.flatMap((t) => t.shelves).find((x) => x.name === n);
-    expect(shelf('Mormon Texts').items).toHaveLength(1);
-    expect(shelf('Mormon Texts').items[0]).toMatchObject({ kind: 'work', collection: true, title: 'Mormon Texts', parts: 2, id: 32,
+    expect(shelf('Mormon Texts')).toBeUndefined();                       // no row of its own: inline in "Collections"
+    expect(shelf('Collections').items).toHaveLength(1);
+    expect(shelf('Collections').items[0]).toMatchObject({ kind: 'work', collection: true, title: 'Mormon Texts', parts: 2, id: 32,
       cover: '/img/cdn/siftersearch.com/collections/col-mormon-texts.png' });
     expect(shelf('Emanuel Swedenborg').items.map((i) => [i.kind, i.title])).toEqual([[undefined, 'Divine Love and Wisdom'], [undefined, 'Heaven and Hell']]);
     expect(shelf('Emanuel Swedenborg').more).toEqual({ count: 6, authors: ['Emanuel Swedenborg'] });
@@ -69,6 +70,21 @@ describe('buildShelves', () => {
     expect(g.map((i) => i.title)).toEqual(['Revival of Religious Learnings', 'The Alchemy of Happiness']);
     expect(g[0]).toMatchObject({ kind: 'work', parts: 2, id: 42, cover: '/img/cdn/siftersearch.com/collections/col-revival-of-religious-learnings.png' });
     expect(g[0].list.map((b) => b.title)).toEqual(['Revival of Religious Learnings Vol-I', 'Revival of Religious Learnings Vol-II']);
+  });
+  it('a shelf holding only a collection card folds inline into the general row, collections first, in its place', async () => {
+    const { buildShelves } = await import('../../api/lib/library/shelves.js');
+    const kjv = (id, title) => ({ id, title, author: 'Various', religion: 'Christian', collection: 'The Bible (KJV)', file_path: `-sites/oceanlibrary.com/Christian/The Bible (KJV)/${title}.md` });
+    const r = buildShelves({ olDocs: [kjv(1, 'Genesis'), kjv(2, 'Exodus'),
+      ol(31, 'Christian', 'Christian/Mormon Texts/The Book of Mormon.md', 'Joseph Smith', 'The Book of Mormon'),
+      ol(32, 'Christian', 'Christian/Mormon Texts/Doctrine and Covenants.md', 'Joseph Smith', 'Doctrine and Covenants'),
+      ol(33, 'Christian', 'Christian/Emanuel Swedenborg/Heaven and Hell.md', 'Emanuel Swedenborg', 'Heaven and Hell'),
+      ol(34, 'Christian', 'Christian/Emanuel Swedenborg/Divine Love.md', 'Emanuel Swedenborg', 'Divine Love'),
+      { id: 50, religion: 'Christian', author: 'X', title: 'Religious Affections', file_path: 'Christian/Books/x.md', collection: 'Books', source_site: 'oceanlibrary.com' },
+    ] });
+    const rows = r.traditions[0].shelves;
+    expect(rows.map((x) => x.name)).toEqual(['More works', 'Emanuel Swedenborg']);
+    expect(rows[0].items.map((i) => [i.kind ?? 'book', i.title])).toEqual([['work', 'The Bible (KJV)'], ['work', 'Mormon Texts'], ['book', 'Religious Affections']]);
+    expect(rows[0].count).toBe(3);
   });
   it('a huge collection (Core Tablets) splits into one row per author; spelling variants fold; small authors pool', async () => {
     const { buildShelves } = await import('../../api/lib/library/shelves.js');
