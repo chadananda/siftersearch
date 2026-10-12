@@ -7,6 +7,7 @@ import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
 import { normLang } from '../language-codes.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
+import { phraseIndexJob } from './phrase-index-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
@@ -72,6 +73,7 @@ REPORTS['block-mismatch'] = blockMismatchReport;   // params: { ids } — why ro
 REPORTS['reingest-impact'] = reingestImpactReport;
 REPORTS['ctai-originals'] = ctaiOriginalsJob;   // write original-language files paragraphed from the English
 REPORTS['ingest-files'] = ingestFilesJob;       // params: { paths?, ids? } — ingest in the ops worker
-REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by align   // enrichment on drifted rows a re-ingest would replace
+REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by align
+REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
 
 export const reportNames = () => Object.keys(REPORTS);
