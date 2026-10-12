@@ -5,6 +5,7 @@ import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/inte
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
 import { normLang } from '../language-codes.js';
+import { blockAttrsJob } from './block-attrs-job.js';
 
 export const REPORTS = {
   /** Live books with no text, or with empty rows — per source, with sample ids. */
@@ -46,5 +47,8 @@ export const REPORTS = {
       est_usd_to_finish: +(missing * perPara).toFixed(0), note: 'upper bound: identical phrase text is embedded once', rows };
   },
 };
+
+// JOBS that write (through the single writer) — same queue, same one-at-a-time worker, same API.
+REPORTS['block-attrs'] = blockAttrsJob;   // params: { ids?, limit? } — copy file ids/pn onto rows
 
 export const reportNames = () => Object.keys(REPORTS);
