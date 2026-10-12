@@ -84,7 +84,7 @@ function selectList(fields) {
  * still applies, so recall never returns tombstones or husks unless asked for by name.
  */
 export async function listDocs({
-  scope = 'live', author, religion, collection, language, sourceSite, title, ids, role, filePath, afterId,
+  scope = 'live', author, religion, collection, language, sourceSite, sourceUrls, title, ids, role, filePath, afterId,
   fields, orderBy = 'id', limit = 100, offset = 0,
 } = {}) {
   const where = scopeSql(scope);
@@ -97,6 +97,7 @@ export async function listDocs({
   if (sourceSite === 'canonical') where.push(IS_CANONICAL);
   else if (sourceSite === 'library') where.push("(d.source_site IS NULL OR d.source_site = '')");   // the main library's own files
   else if (sourceSite) { where.push('d.source_site = ?'); params.push(sourceSite); }
+  if (Array.isArray(sourceUrls)) { where.push(sourceUrls.length ? `d.source_url IN (${sourceUrls.map(() => '?').join(',')})` : '0'); params.push(...sourceUrls); }   // pair with sourceSite (indexed)
   if (afterId != null) { where.push('d.id > ?'); params.push(afterId); }   // keyset paging: each page its own short read
   if (title) { where.push('d.title LIKE ?'); params.push(`%${title}%`); }
   if (role) { where.push('d.doc_role = ?'); params.push(role); }

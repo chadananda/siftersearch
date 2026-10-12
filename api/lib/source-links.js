@@ -20,7 +20,9 @@ export function tierOf(url) {
   return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
 }
 
-const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|~q=|#\(/.test(url || '');
+// a quote marker is paragraph-level on Ocean of Lights (the range is placed in our copy of that page); on an OceanLibrary
+// BOOK link it is only a hope — that copy has no paragraph ids, so the site copy that has them must still win
+const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|#\(/.test(url || '') || (/~q=/.test(url || '') && !/oceanlibrary\.com/.test(url || ''));
 
 function parseMeta(metadata) {
   if (!metadata) return null;
@@ -77,7 +79,9 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
     if (tier !== 1) return u;
     if (/selectionString=/.test(u)) return u;
     if (/paraId=/.test(u)) return marker(u);
-    if (!doc.external_para_id) return u;
+    // no OceanLibrary paragraph id on this copy (e.g. our main-library Gleanings): the quote/paragraph rides along and the
+    // output pass finds it in our copy of the OceanLibrary book (lib/ocean-links.js)
+    if (!doc.external_para_id) return (quote || doc.text) && !u.includes('#') ? `${u}#~q=${encodeURIComponent(String(quote || doc.text).slice(0, 2000))}` : u;
     return range(u.replace(/[?#].*$/, '')) || marker(`${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`);
   };
   const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]

@@ -54,3 +54,22 @@ describe('Ocean of Lights quote markers', () => {
     expect(out).toBe('https://oceanoflights.org/some-page/#:~:text=of%20God');
   });
 });
+
+describe('OceanLibrary book-level link + quote', () => {
+  it('finds the quoted paragraph in our copy of the OceanLibrary book and range-links it', async () => {
+    const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
+    const repo = {
+      listDocs: vi.fn(async () => ({ docs: [{ id: 9, external_id: 'gleanings_en' }] })),
+      getParagraphs: vi.fn(async () => [
+        { external_para_id: 'para_1', text: 'Praise be to God', block_attrs: '{"ilm_id":"bl1"}' },
+        { external_para_id: 'para_2', text: 'The beginning of all things is the knowledge of God', block_attrs: '{"ilm_id":"bl2"}' },
+      ]) };
+    const out = await upgradeOceanLinks(`https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah#~q=${encodeURIComponent('the knowledge of God')}`, { repo });
+    expect(out).toMatch(/^https:\/\/oceanlibrary\.com\/gleanings-from-the-writings-of-bahaullah\/?\?paraId=para_2&selectionString=gleanings_en-bl2\.\d+~gleanings_en-bl2\.\d+$/);
+  });
+  it('leaves the plain book link when the quote is not in the book', async () => {
+    const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
+    const repo = { listDocs: async () => ({ docs: [{ id: 10, external_id: 'x_en' }] }), getParagraphs: async () => [{ external_para_id: 'para_1', text: 'other words' }] };
+    expect(await upgradeOceanLinks(`https://oceanlibrary.com/some-other-book#~q=${encodeURIComponent('not here')}`, { repo })).toBe('https://oceanlibrary.com/some-other-book');
+  });
+});

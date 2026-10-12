@@ -9,7 +9,7 @@
 // Deps: db (read), docs-repo, ocean-range, ool-range.
 import { queryAll } from './db.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
-import { plainText, oolQuoteUrl } from './ool-range.js';
+import { plainText, oolQuoteUrl, locateQuote } from './ool-range.js';
 
 // slug is the first path segment; the paragraph id is para_N or a footnote/fn id. A producer that knows the quoted words
 // appends the private marker "#~q=<encoded quote>" (source-hunt textFragment) → the range covers just those words.
@@ -80,11 +80,51 @@ async function upgradeOolLinks(s, loadParagraphs) {
   });
 }
 
+// ── OceanLibrary book-level link + quote ──
+// "oceanlibrary.com/<slug>#~q=<quote>": the passage came from a copy without OceanLibrary paragraph ids (our main-library
+// Gleanings), but the quote is known → find it in OUR copy of that OceanLibrary book and range-link that paragraph.
+export const OCEAN_BOOK_QUOTE = /https:\/\/(?:www\.)?oceanlibrary\.com\/([^/?#\s"'<>)\]]+)\/?#~q=([^\s"'<>)\]]+)/g;
+const books = new Map();          // slug → { at, doc, rows } | { at, doc: null }
+async function olBook(slug, repo) {
+  const hit = books.get(slug);
+  if (hit && Date.now() - hit.at < DOC_TTL_MS) return hit;
+  let entry = { at: Date.now(), doc: null, rows: [] };
+  try {
+    const r = repo || await import('./docs-repo.js');
+    const urls = [`https://oceanlibrary.com/${slug}`, `https://oceanlibrary.com/${slug}/`];
+    const { docs: found } = await r.listDocs({ sourceSite: 'oceanlibrary.com', sourceUrls: urls, fields: ['id', 'external_id'], limit: 1 });
+    if (found[0]?.external_id) entry = { at: Date.now(), doc: found[0], rows: await r.getParagraphs(found[0].id, { proseOnly: false }) };
+  } catch { /* unreadable: book link stays */ }
+  books.set(slug, entry);
+  if (books.size > DOCS_MAX) books.delete(books.keys().next().value);
+  return entry;
+}
+async function upgradeOlBookLinks(s, repo) {
+  const found = [...s.matchAll(OCEAN_BOOK_QUOTE)];
+  if (!found.length) return s;
+  const slugs = [...new Set(found.map((m) => decodeURIComponent(m[1])))];
+  const book = new Map(await Promise.all(slugs.map(async (sl) => [sl, await olBook(sl, repo)])));
+  return s.replace(OCEAN_BOOK_QUOTE, (whole, slug, q) => {
+    const base = `https://oceanlibrary.com/${slug}`;
+    let quote = null;
+    try { quote = decodeURIComponent(q); } catch { return base; }
+    const b = book.get(decodeURIComponent(slug));
+    const head = plainText(quote).split(/\s+/).filter(Boolean).slice(0, 12).join(' ');   // a quote may run past its paragraph
+    const r = b?.doc && b.rows.find((x) => x.external_para_id && x.text && locateQuote(x.text, head));
+    if (!r) return base;
+    let ilm = null;
+    try { ilm = JSON.parse(r.block_attrs || '{}').ilm_id; } catch { /* no anchors */ }
+    const p = { para_id: r.external_para_id, ilm_id: ilm, text: r.text };
+    return (ilm && (quoteUrl(base, b.doc.external_id, p, quote) || rangeUrl(base, b.doc.external_id, p))) || `${base}/?paraId=${r.external_para_id}`;
+  });
+}
+
 /** Rewrite every plain OceanLibrary paragraph link (and Ocean of Lights quote marker) inside a string. */
-export async function upgradeOceanLinks(text, { loadParagraphs } = {}) {
+export async function upgradeOceanLinks(text, { loadParagraphs, repo } = {}) {
   let s = String(text ?? '');
   if (s.includes('oceanoflights.org') && s.includes('~q=')) s = await upgradeOolLinks(s, loadParagraphs);
   if (!s.includes('oceanlibrary.com')) return s;
+  if (s.includes('~q=')) s = await upgradeOlBookLinks(s, repo);
   const pairs = [...s.matchAll(OCEAN_PARA_URL)].map((m) => [decodeURIComponent(m[1]), m[2]]);
   if (!pairs.length) return s;
   await resolve(pairs);
@@ -103,7 +143,7 @@ export async function upgradeOceanLinks(text, { loadParagraphs } = {}) {
 export const oceanQuoteUrl = (url, quote) => upgradeOceanLinks(oceanQuoteMarker(url, quote));
 
 /** Does this payload carry a link the upgrade rewrites? (cheap gate for every response) */
-export const needsUpgrade = (s) => (s.includes('oceanlibrary.com') && s.includes('paraId=')) || (s.includes('oceanoflights.org') && s.includes('~q='));
+export const needsUpgrade = (s) => (s.includes('oceanlibrary.com') && (s.includes('paraId=') || s.includes('~q='))) || (s.includes('oceanoflights.org') && s.includes('~q='));
 
 /** An SSE event sender that writes in order and upgrades OceanLibrary links in each event (sources, done, citations).
  *  Streamed answer text needs nothing more: its links come from citation URLs already upgraded before the model ran. */
