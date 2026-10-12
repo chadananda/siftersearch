@@ -10,8 +10,14 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] 3. Segmentation tail: 3,425 more oversized ¶ → 16,185 in 34 books, 0 verify failures, all re-ingested
 - [x] 4. Sentence markers for the 7 deferred hadith books: SKIPPED on value (~$15; markers only serve translation alignment, none exist for these)
 - [~] 5. ID/pn for every book: `{id="para_N" pn="M"}` written into 33,996 library files (5.66M ¶, 0.1% ambiguous skipped);
+      ids job: 3.38M of 4.12M rows matched first pass; re-run counts text rows only → re-ingest list for the rest
       `block-attrs` ops job copying them onto rows (no re-ingest); files with ids keep their blocks at ingest
-- [ ] 6. CTAI audit: originals paragraphed FROM THE ENGLISH, aligned, matching pn, DB links both ways
+- [~] 6. CTAI audit (ops report `ctai-audit`) FOUND: originals are NOT paragraphed from the English — aligned many-to-one into
+      big compilation docs (Íqán original 78 ¶ vs 478 English; Hidden Words/Gleanings inside a 6,354-¶ compilation);
+      English sides have no pn yet (OL — ILM export); links exist both ways, stale ≤11 per work.
+      PLAN: per CTAI work, an original-language file built FROM the English paragraphs (CTAI pairs already stored as
+      original_text on each English row) → 1 original ¶ per English ¶, `{id pn align=<English para id>}`, 1:1
+      content_alignment (basis ctai-pair); pn follows the English (re-synced when ILM pn arrives)
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
