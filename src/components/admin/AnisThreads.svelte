@@ -34,7 +34,7 @@
 
   onMount(async () => {
     await initAuth();
-    if (!['admin', 'superadmin'].includes(auth.user?.tier)) return;
+    if (!['admin', 'superadmin'].includes(auth.user?.tier)) { error = auth.user ? 'Admins only.' : 'Sign in as an admin to see the threads.'; return; }
     await loadList();
     const want = location.hash.match(/^#threads:(.+)$/)?.[1];
     if (want) open(decodeURIComponent(want));

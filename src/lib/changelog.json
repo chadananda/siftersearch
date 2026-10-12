@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-12T21:48:58.777Z",
+  "generated": "2026-10-12T22:07:25.119Z",
   "entries": [
+    {
+      "hash": "bfa76eb2",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Term-study counts recorded as audit evidence (auditor called the CTAI chart 'fabricated'); Threads: problems parsed when JSON-encoded, names cached with 10 s timeout",
+      "scope": "anis"
+    },
+    {
+      "hash": "02b9c1e4",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Anís Threads — every conversation, each reply with its strategy audit; filter 'better strategy warranted'",
+      "scope": "admin"
+    },
     {
       "hash": "156a4f2e",
       "date": "2026-10-12",
@@ -3486,24 +3500,24 @@
       "type": "Docs",
       "description": "Concept design — inverted question/idea → paragraphs index; cheap canonical HyPE",
       "scope": "planning"
-    },
-    {
-      "hash": "f0d93144",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Grounding replays the book's own decisions onto every mention after project (re-read mentions stayed unbound: 9,326)",
-      "scope": "pipeline"
-    },
-    {
-      "hash": "e8a4d025",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Concept index at library scale — kernel catalogue + vector shortlist + Jev sweep + canonical question library",
-      "scope": "planning"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "bfa76eb2",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Term-study counts recorded as audit evidence (auditor called the CTAI chart 'fabricated'); Threads: problems parsed when JSON-encoded, names cached with 10 s timeout",
+        "scope": "anis"
+      },
+      {
+        "hash": "02b9c1e4",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Anís Threads — every conversation, each reply with its strategy audit; filter 'better strategy warranted'",
+        "scope": "admin"
+      },
       {
         "hash": "156a4f2e",
         "date": "2026-10-12",
@@ -7016,20 +7030,6 @@
         "date": "2026-09-28",
         "type": "Docs",
         "description": "Concept design — inverted question/idea → paragraphs index; cheap canonical HyPE",
-        "scope": "planning"
-      },
-      {
-        "hash": "f0d93144",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Grounding replays the book's own decisions onto every mention after project (re-read mentions stayed unbound: 9,326)",
-        "scope": "pipeline"
-      },
-      {
-        "hash": "e8a4d025",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Concept index at library scale — kernel catalogue + vector shortlist + Jev sweep + canonical question library",
         "scope": "planning"
       }
     ]
