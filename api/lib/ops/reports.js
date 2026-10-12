@@ -10,11 +10,19 @@ import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './bloc
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
 import { retireDuplicatesJob } from './library-jobs.js';
+import { slowQueriesByHour } from '../repos/query-health-repo.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
 export const REPORTS = {
+  /** Slow statements per hour × process × caller — is a 'Blocking queries' alert live or a stale entry? params: { hours, minMs } */
+  async 'slow-queries'({ hours = 24, minMs = 5000 } = {}) {
+    const rows = await slowQueriesByHour({ hours, minMs });
+    const byProc = {};
+    for (const r of rows) { const k = `${r.proc}/${r.kind}${r.name ? ' ' + r.name : ''}`; byProc[k] = (byProc[k] || 0) + r.n; }
+    return { hours, minMs, total: rows.reduce((n, r) => n + r.n, 0), by_proc: byProc, rows };
+  },
   /** Live books with no text, or with empty rows — per source, with sample ids. */
   async hollow() {
     const rows = await hollowDocs();
@@ -88,7 +96,7 @@ REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, max
 
 /** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
  *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates'] };
+export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'slow-queries'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
 export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
