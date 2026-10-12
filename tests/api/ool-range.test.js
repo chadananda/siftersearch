@@ -18,12 +18,13 @@ describe('Ocean of Lights range links', () => {
     expect(page.startsWith('– II – The beginning of all things')).toBe(true);
     expect(page).not.toContain('Translated by Shoghi Effendi');
   });
-  it("reproduces Chad's example: two-word phrases, first occurrences", () => {
-    const at = locateQuote(page, 'the knowledge of God, and the');
-    const hash = oolQuoteHash(page, ...at);
-    expect(hash).toBe('(the%20knowledge)(and%20the)');
+  it("reproduces Chad's examples: one word when it is the first occurrence, more when it is not", () => {
+    expect(oolQuoteHash(page, ...locateQuote(page, 'The beginning of all things is the knowledge'))).toBe('(The)(knowledge)');
+    // lowercase "the" first occurs at "the knowledge" (indexOf is case-sensitive); the closing "the" is not its first → "and the"
+    const hash = oolQuoteHash(page, ...locateQuote(page, 'the knowledge of God, and the'));
+    expect(hash).toBe('(the)(and%20the)');
     expect(resolve(page, hash)).toBe('the knowledge of God, and the');
-    expect(oolQuoteHash(page, ...locateQuote(page, 'The beginning of all things is the knowledge'))).toBe('(The%20beginning)(the%20knowledge)');
+    expect(resolve(page, '(the%20knowledge)(and%20the)')).toBe('the knowledge of God, and the');   // Chad's longer form: same range
   });
   it('a one-word quote is its own start and end', () => {
     expect(oolQuoteHash(page, ...locateQuote(page, 'empyrean'))).toBe('(empyrean)(empyrean)');
@@ -32,12 +33,12 @@ describe('Ocean of Lights range links', () => {
     const p = 'all that is good. all that is good.';
     const s = p.lastIndexOf('all that is good');
     const hash = oolQuoteHash(p, s, s + 'all that is good'.length);
-    expect(hash).toBe('(all%20that)(is%20good)$2');
+    expect(hash).toBe('(all)(good)$2');
     expect(resolve(p, hash)).toBe('all that is good');
   });
   it('matches our copy loosely (whitespace, curly quotes) and builds the URL', () => {
     expect(oolQuoteUrl('https://oceanoflights.org/bahaullah-pub02-02-en/', page, 'all  that is in the heavens'))
-      .toBe('https://oceanoflights.org/bahaullah-pub02-02-en/#(all%20that)(the%20heavens)');
+      .toBe('https://oceanoflights.org/bahaullah-pub02-02-en/#(all%20that)(heavens)');
     expect(resolve(page, '(all%20that)(heavens)')).toBe('all that is in the heavens');
     expect(oolQuoteUrl('https://oceanoflights.org/x/', page, 'not on this page')).toBeNull();
   });

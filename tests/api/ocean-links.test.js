@@ -45,7 +45,7 @@ describe('Ocean of Lights quote markers', () => {
     const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
     const fetchImpl = vi.fn(async () => ({ ok: true, text: async () => html }));
     const s = JSON.stringify({ url: `https://oceanoflights.org/bahaullah-pub02-02-en/#~q=${encodeURIComponent('The beginning of all things is the knowledge')}` });
-    expect(JSON.parse(await upgradeOceanLinks(s, { fetchImpl })).url).toBe('https://oceanoflights.org/bahaullah-pub02-02-en/#(The%20beginning)(the%20knowledge)');
+    expect(JSON.parse(await upgradeOceanLinks(s, { fetchImpl })).url).toBe('https://oceanoflights.org/bahaullah-pub02-02-en/#(The)(knowledge)');
   });
   it('fall back to a text fragment when the page cannot be read', async () => {
     const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
