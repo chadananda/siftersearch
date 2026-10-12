@@ -8,6 +8,7 @@ vi.mock('../../api/lib/repos/integrity-repo.js', () => ({
 vi.mock('../../api/lib/repos/query-health-repo.js', () => ({ slowQueriesByHour: async () => [
   { hour: '2026-10-12 14:00', proc: 'reports', kind: 'write', name: 'ingest', n: 3, worst_ms: 9000 },
   { hour: '2026-10-11 21:00', proc: 'hollow-report.mjs', kind: 'read', name: '', n: 1, worst_ms: 292800 }] }));
+vi.mock('../../api/lib/repos/translator-repo.js', () => ({ translatorCoverage: async () => ({ byTranslator: [{ translator: 'Shoghi Effendi', basis: 'book', paragraphs: 5 }], translationBy: [], books: { with_translators: 1, docs: 9 } }) }));
 vi.mock('../../api/lib/repos/language-repo.js', () => ({ docLanguageCounts: async () => [{ language: 'en', docs: 5 }, { language: 'En', docs: 2 }] }));
 vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({
   coverageByScope: () => [{ scope: 'primary', religion: "Baha'i", paragraphs: 80 }], monthSpend: () => [{ month: '2026-10', usd: 8 }],
@@ -15,7 +16,7 @@ vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({
 const { REPORTS, reportNames } = await import('../../api/lib/ops/reports.js');
 
 describe('ops reports (server-side)', () => {
-  it('names', () => expect(reportNames()).toEqual(['slow-queries', 'hollow', 'deletions', 'languages', 'phrase-coverage', 'ctai-audit', 'spend', 'block-attrs', 'block-mismatch', 'reingest-impact', 'ctai-originals', 'ingest-files', 'ctai-link', 'carry-verify', 'carry-repair', 'reingest-carry', 'retire-duplicates', 'phrase-index']));
+  it('names', () => expect(reportNames()).toEqual(['translator-coverage', 'slow-queries', 'hollow', 'deletions', 'languages', 'phrase-coverage', 'ctai-audit', 'spend', 'block-attrs', 'block-mismatch', 'reingest-impact', 'ctai-originals', 'ingest-files', 'ctai-link', 'carry-verify', 'carry-repair', 'reingest-carry', 'retire-duplicates', 'phrase-index']));
   it('slow-queries totals per process and caller', async () => {
     const r = await REPORTS['slow-queries']();
     expect(r).toMatchObject({ total: 4, by_proc: { 'reports/write ingest': 3, 'hollow-report.mjs/read': 1 } });

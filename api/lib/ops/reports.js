@@ -11,11 +11,17 @@ import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
 import { retireDuplicatesJob } from './library-jobs.js';
 import { slowQueriesByHour } from '../repos/query-health-repo.js';
+import { translatorCoverage } from '../repos/translator-repo.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
 export const REPORTS = {
+  /** Who-translated-what coverage (content.translator by basis, translation_by, docs.translators). */
+  async 'translator-coverage'() {
+    const r = await translatorCoverage();
+    return { paragraphs_with_translator: r.byTranslator.reduce((n, x) => n + x.paragraphs, 0), ...r };
+  },
   /** Slow statements per hour × process × caller — is a 'Blocking queries' alert live or a stale entry? params: { hours, minMs } */
   async 'slow-queries'({ hours = 24, minMs = 5000 } = {}) {
     const rows = await slowQueriesByHour({ hours, minMs });
@@ -96,7 +102,7 @@ REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, max
 
 /** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
  *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'slow-queries'] };
+export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'slow-queries', 'translator-coverage'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
 export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
