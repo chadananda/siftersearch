@@ -1,15 +1,13 @@
 # Worklist — order of operations
 
-## HANDOFF 10-12 06:30 (session restart) — what is running on tower, unattended
-- `siftersearch-reports` (main + quick + index lanes) and `siftersearch-reports-carry` (OPS_ONLY=reingest-carry). Status:
-  `node scripts/ops/ops.mjs reports` (on tower) · logs: logs/reports-out-*.log, logs/reports-carry-out-*.log
-- reingest-carry: runs 35–53 (1,806 books, ~3 books/min, ETA ~15:00); backups /tank/sifter/carry-backups/carry-2026-10-12.jsonl
-  (303 books at 06:26). VERIFY when done: ops report carry-verify --ids <docs> (sample incl. Ẓuhúr 15255/15256/15254/15257)
-- ingest-files: plain re-ingest batches 15 (slow Arabic tail) then 16–24 (11,250 safe books), paced, localOnly
-- phrase-index: supplemental (run 54, $90 cap, budget supplemental-20261011) running; then primary changed books (run 55, $20)
-- Spend overnight: embeddings ~$2–3/h (re-embedding drifted rows); Gemini $0 so far; no Anthropic since 23:30
-- Don't restart siftersearch-reports while a book is mid-ingest or the indexer is mid-run (kills them; indexer rescans from 0)
-- Next after these: CTAI pn re-sync (ctai-originals + ingest-files once English pn exists); then concepts/HyPE/Anís/Dewey
+## STATUS 10-12 12:55 — running on tower (watched: background stall-check every 20 min)
+- reingest-carry: 1,155 / 1,806 books (run 46 of 35–53), ~115 books/h → done ≈ 19:00
+- ingest-files: batch 15 (the Arabic fiqh tail: Radd al-Muhtar 171,927 ¶, Jawahir 126k ¶ — hours each), 16–24 queued after
+- phrase-index 54 (supplemental, $90 cap) running 12.5 h; ITS PROGRESS IS INVISIBLE (job swallows the indexer's phase lines;
+  Qdrant phrases flat 27.85M — walking already-embedded rows?). Fix: log the phase lines (needs reports-worker restart → wait)
+- Grounding plan queue woke with the 09:53 deploy: 16 complete-book.mjs at once, DeepSeek ~$2.5/h (~$60/day) — ASK CHAD
+- DB WAL 10.5 GB but not growing (checkpoints OK; file not truncated)
+- Deploys: updater now resets + retries an aborted deploy (11:03/11:08 slow smoke → 11:13 deployed)
 
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
