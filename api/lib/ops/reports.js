@@ -6,6 +6,8 @@ import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
 import { normLang } from '../language-codes.js';
 import { blockAttrsJob } from './block-attrs-job.js';
+import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
+import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
 export const REPORTS = {
   /** Live books with no text, or with empty rows — per source, with sample ids. */
@@ -46,6 +48,21 @@ export const REPORTS = {
     return { months, spent_usd: +spent.toFixed(2), covered_paragraphs: coveredTotal, usd_per_paragraph: +perPara.toFixed(6), missing_paragraphs: missing,
       est_usd_to_finish: +(missing * perPara).toFixed(0), note: 'upper bound: identical phrase text is embedded once', rows };
   },
+};
+
+/** CTAI works (Chad 10-11: originals "properly paragraphed FROM THE ENGLISH … aligned … matching display ids … ingested
+ *  with links between aligned paragraphs"): per English host doc, alignment health; per original, coverage + pn match. */
+REPORTS['ctai-audit'] = async () => {
+  const hosts = {};
+  for (const [work, doc] of Object.entries(CTAI_DOC_BY_WORK)) (hosts[doc] ||= []).push(work);
+  const out = [];
+  for (const [doc, works] of Object.entries(hosts)) {
+    const t = await translationAudit(Number(doc));
+    const originals = [];
+    for (const o of t.origDocs) originals.push({ doc_id: o.doc_id, links: o.links, ...(await originalAudit(o.doc_id, Number(doc))) });
+    out.push({ english_doc: Number(doc), works, english: t.paras, alignment: t.links, originals });
+  }
+  return { hosts: out };
 };
 
 // JOBS that write (through the single writer) — same queue, same one-at-a-time worker, same API.
