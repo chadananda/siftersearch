@@ -12,11 +12,15 @@ import { phraseIndexJob } from './phrase-index-job.js';
 import { retireDuplicatesJob } from './library-jobs.js';
 import { slowQueriesByHour } from '../repos/query-health-repo.js';
 import { translatorCoverage } from '../repos/translator-repo.js';
+import { auditsSince } from '../repos/audit-store-repo.js';
+import { strategyGaps } from '../anis/admin-threads.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
 export const REPORTS = {
+  /** The Anís audits as a ranked strategy work queue (also /admin/anis#threads). params: { days } */
+  async 'strategy-gaps'({ days = 30 } = {}) { return { days, ...strategyGaps(auditsSince(days)) }; },
   /** Who-translated-what coverage (content.translator by basis, translation_by, docs.translators). */
   async 'translator-coverage'() {
     const r = await translatorCoverage();
@@ -102,7 +106,7 @@ REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, max
 
 /** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
  *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'slow-queries', 'translator-coverage'] };
+export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
 export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
