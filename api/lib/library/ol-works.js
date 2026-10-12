@@ -12,7 +12,7 @@ export const OL_SHELVES_OF_SEPARATE_WORKS = Object.freeze(new Set([
 // but filed in an author's folder (Lights of Guidance under Bahá’u’lláh) must not turn that folder into a "work". A
 // folder not listed here is a shelf of separate books — the safe default (citations unchanged).
 export const OL_MULTIPART_WORKS = Object.freeze(new Set([
-  'The Bible (KJV)', 'The Quran (Rodwell)', 'The Tanakh (JPS 1917)', 'The Gospels (Greek-titled)',
+  'The Bible (KJV)', 'The Quran (Rodwell)', 'The Tanakh (JPS 1917)',
   'Rig Veda', 'The Mahabharata', 'The Upanishads', 'Avesta', 'Khorda Avesta',
 ]));
 // A work OceanLibrary splits across traditions is ONE work in ONE tradition here (Chad 10-10: KJV Old Testament was filed
@@ -25,6 +25,11 @@ export const OL_WORK_COVER = Object.freeze({
   'The Bible (KJV)': COL('col-bible'), 'The Tanakh (JPS 1917)': COL('col-tanakh'), 'The Quran (Rodwell)': COL('col-quran_muhammad_rodwell_tr'),
   'The Mahabharata': COL('col-mahabharata_vyasa'), 'Rig Veda': COL('col-rig-veda'), 'The Upanishads': COL('col-upanishads_2'),
   Avesta: COL('col-avesta'), 'Khorda Avesta': COL('col-khorda-avesta'),
+});
+// Shelves of separate books shown CLOSED as one boxed collection card, like a work (Chad 10-12: Mormon texts, Swedenborg).
+// Display only: each book keeps its own citation. Value = the collection cover (null → the first book's cover).
+export const OL_COLLECTION_SHELVES = Object.freeze({
+  'Mormon Texts': COL('col-mormon-texts'), 'Deuterocanonical Books': COL('col-deuterocanonical-books'), 'Emanuel Swedenborg': null,
 });
 /** A part's place in its work: OceanLibrary's frontmatter `weight` (Genesis 1.01 … Revelation; Sura I 1.01 … CXIV), from
  *  docs.frontmatter (JSON). null when absent. */

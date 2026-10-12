@@ -12,7 +12,7 @@ vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({
 const { REPORTS, reportNames } = await import('../../api/lib/ops/reports.js');
 
 describe('ops reports (server-side)', () => {
-  it('names', () => expect(reportNames()).toEqual(['hollow', 'deletions', 'languages', 'phrase-coverage', 'ctai-audit', 'spend', 'block-attrs', 'block-mismatch', 'reingest-impact', 'ctai-originals', 'ingest-files', 'ctai-link', 'carry-verify', 'carry-repair', 'reingest-carry', 'phrase-index']));
+  it('names', () => expect(reportNames()).toEqual(['hollow', 'deletions', 'languages', 'phrase-coverage', 'ctai-audit', 'spend', 'block-attrs', 'block-mismatch', 'reingest-impact', 'ctai-originals', 'ingest-files', 'ctai-link', 'carry-verify', 'carry-repair', 'reingest-carry', 'retire-duplicates', 'phrase-index']));
   it('hollow splits no-rows / partly-empty', async () => {
     const r = await REPORTS.hollow();
     expect(r.by_source.library).toMatchObject({ hollow_no_rows: 1, docs_with_some_empty_rows: 1, empty_rows: 1 });

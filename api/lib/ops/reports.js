@@ -9,6 +9,7 @@ import { spendSince } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
+import { retireDuplicatesJob } from './library-jobs.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
@@ -82,11 +83,12 @@ REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by alig
 REPORTS['carry-verify'] = carryVerifyReport;     // params: { ids, backup? } — enrichment before vs after
 REPORTS['carry-repair'] = carryRepairJob;       // params: { ids } — re-apply the carry from the backup
 REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
+REPORTS['retire-duplicates'] = retireDuplicatesJob;   // params: { pairs:[{dup,keep,reason}], batch?, apply? } — dry run by default
 REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
 
 /** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
  *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch'] };
+export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
 export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
