@@ -9,12 +9,12 @@
 // Deps: db (read), docs-repo, ocean-range, ool-range.
 import { queryAll } from './db.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
-import { plainText, oolQuoteUrl, locateQuote } from './ool-range.js';
+import { plainText, oolQuoteUrl, locateQuote, encodeMarker } from './ool-range.js';
 
 // slug is the first path segment; the paragraph id is para_N or a footnote/fn id. A producer that knows the quoted words
 // appends the private marker "#~q=<encoded quote>" (source-hunt textFragment) → the range covers just those words.
 export const OCEAN_PARA_URL = /https:\/\/(?:www\.)?oceanlibrary\.com\/([^/?#\s"'<>)\]]+)\/?\?paraId=([A-Za-z0-9_.-]+)(?![^\s"'<>)\]]*selectionString=)(?:#~q=([^\s"'<>)\]]+))?/g;
-export const oceanQuoteMarker = (url, quote) => (quote ? `${url}#~q=${encodeURIComponent(quote)}` : url);
+export const oceanQuoteMarker = (url, quote) => (quote ? `${url}#~q=${encodeMarker(quote)}` : url);
 
 const cache = new Map();          // `${slug}|${para}` → { external_id, ilm, text } or null (no anchors)
 const CACHE_MAX = 50000;
@@ -92,8 +92,11 @@ async function olBook(slug, repo) {
   try {
     const r = repo || await import('./docs-repo.js');
     const urls = [`https://oceanlibrary.com/${slug}`, `https://oceanlibrary.com/${slug}/`];
-    const { docs: found } = await r.listDocs({ sourceSite: 'oceanlibrary.com', sourceUrls: urls, fields: ['id', 'external_id'], limit: 1 });
-    if (found[0]?.external_id) entry = { at: Date.now(), doc: found[0], rows: await r.getParagraphs(found[0].id, { proseOnly: false }) };
+    // several docs can share the URL (Core Publications' Gleanings 8312 and the OceanLibrary copy 20783): the one with the
+    // OceanLibrary book id is the site copy whose rows carry paraId + block ids
+    const { docs: found } = await r.listDocs({ sourceSite: 'oceanlibrary.com', sourceUrls: urls, fields: ['id', 'external_id'], limit: 10 });
+    const site = found.find((d) => d.external_id);
+    if (site) entry = { at: Date.now(), doc: site, rows: await r.getParagraphs(site.id, { proseOnly: false }) };
   } catch { /* unreadable: book link stays */ }
   books.set(slug, entry);
   if (books.size > DOCS_MAX) books.delete(books.keys().next().value);

@@ -7,6 +7,10 @@
 // first "The"; "#(the knowledge)(and the)" when an earlier "The" makes "the" ambiguous); `$N` only when no such pair exists.
 // Pure.
 
+/** Quote text for a private "~q=" marker: encodeURIComponent leaves ( ) ' ! * ~ alone, and a link inside text or JSON ends
+ *  at ")" or "'" — a quote holding one was cut there (10-12: a broken Divine Philosophy link). */
+export const encodeMarker = (s) => encodeURIComponent(String(s)).replace(/[!'()*~]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+
 // loose match: whitespace runs and typographic quotes/dashes don't break a quote taken from our copy of the text
 const fold = (c) => (/\s/.test(c) ? ' ' : /[‘’ʼ`´]/.test(c) ? "'" : /[“”„]/.test(c) ? '"' : /[–—]/.test(c) ? '-' : c);
 function normalised(s) {

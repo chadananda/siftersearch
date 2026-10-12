@@ -4,6 +4,7 @@
 // quote → source → original. A paragraph COUNTS only when it holds the quote verbatim (word 3-gram overlap).
 // Deps injected (default: the live ones) so the logic is testable without a database.
 import { stripAppendedReference } from './quote-clean.js';
+import { encodeMarker } from './ool-range.js';
 import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
@@ -86,9 +87,9 @@ export function textFragment(url, text, ranges, n = 4, docId = null) {
   if (!url || !text || !ranges?.length) return null;
   // OceanLibrary has its own range links (selectionString): mark the quoted words; the output pass (lib/ocean-links.js)
   // turns the marker into a range highlighting exactly them (a text fragment is not honoured by its reader app)
-  if (/oceanlibrary\.com\/[^?#\s]+(\?paraId=[^#\s]*)?$/.test(url)) return `${url}#~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
+  if (/oceanlibrary\.com\/[^?#\s]+(\?paraId=[^#\s]*)?$/.test(url)) return `${url}#~q=${encodeMarker(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
   // Ocean of Lights has its own range hash "#(start)(end)" built from the page's text at the output pass (Chad 10-12)
-  if (/^https:\/\/(www\.)?oceanoflights\.org\/[^?#\s]+$/.test(url)) return `${url}#${docId ? `~d=${docId}` : ''}~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
+  if (/^https:\/\/(www\.)?oceanoflights\.org\/(?!file\/)[^?#\s]+$/.test(url)) return `${url}#${docId ? `~d=${docId}` : ''}~q=${encodeMarker(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
   const words = text.slice(ranges[0][0], ranges[ranges.length - 1][1]).split(/\s+/).filter((w) => w && !/[[\]^*_#>|]/.test(w));
   if (!words.length) return null;
   const enc = (ws) => encodeURIComponent(ws.join(' ').replace(/^[“"‘'(«]+|[”"’')»,.;:!?]+$/g, '')).replace(/-/g, '%2D').replace(/,/g, '%2C').replace(/&/g, '%26');

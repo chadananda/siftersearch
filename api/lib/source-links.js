@@ -5,6 +5,7 @@
 // in 435. Every result also carries a paragraph-exact SifterSearch reader link. Pure; deps: slug.js.
 import { generateDocSlug, slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
+import { encodeMarker } from './ool-range.js';
 
 const SITE = 'https://siftersearch.com';
 const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
@@ -69,19 +70,19 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
   };
   // Without the block id the link stays "?paraId=…" and the OUTPUT pass (lib/ocean-links.js) makes the range; a known quote
   // rides along as the private "#~q=" marker so that range is just the quote, not the whole paragraph.
-  const marker = (u) => (quote && !u.includes('#') ? `${u}#~q=${encodeURIComponent(quote)}` : u);
+  const marker = (u) => (quote && !u.includes('#') ? `${u}#~q=${encodeMarker(quote)}` : u);
   const withPara = (u) => {
     const tier = tierOf(u).tier;
     // Ocean of Lights (Chad 10-12: Anís and SourceHunt always give range links): the quote, else the paragraph, as a
     // "#~q=" marker → "#(start)(end)" from the page's own text at the output pass (lib/ool-range.js)
     const id = doc.id ?? doc.doc_id ?? doc.document_id;
-    if (tier === 2 && !u.includes('#') && (quote || doc.text)) return `${u}#${id ? `~d=${id}` : ''}~q=${encodeURIComponent(String(quote || doc.text).slice(0, 2000))}`;
+    if (tier === 2 && !u.includes('#') && !/oceanoflights\.org\/file\//.test(u) && (quote || doc.text)) return `${u}#${id ? `~d=${id}` : ''}~q=${encodeMarker(String(quote || doc.text).slice(0, 2000))}`;
     if (tier !== 1) return u;
     if (/selectionString=/.test(u)) return u;
     if (/paraId=/.test(u)) return marker(u);
     // no OceanLibrary paragraph id on this copy (e.g. our main-library Gleanings): the quote/paragraph rides along and the
     // output pass finds it in our copy of the OceanLibrary book (lib/ocean-links.js)
-    if (!doc.external_para_id) return (quote || doc.text) && !u.includes('#') ? `${u}#~q=${encodeURIComponent(String(quote || doc.text).slice(0, 2000))}` : u;
+    if (!doc.external_para_id) return (quote || doc.text) && !u.includes('#') ? `${u}#~q=${encodeMarker(String(quote || doc.text).slice(0, 2000))}` : u;
     return range(u.replace(/[?#].*$/, '')) || marker(`${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`);
   };
   const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]

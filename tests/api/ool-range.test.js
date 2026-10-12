@@ -40,3 +40,11 @@ describe('Ocean of Lights range links', () => {
     expect(oolQuoteUrl('https://oceanoflights.org/x/', page, 'not on this page')).toBeNull();
   });
 });
+
+describe('quote markers', () => {
+  it("escape ( ) ' so a link inside text or JSON is not cut at them", async () => {
+    const { encodeMarker } = await import('../../api/lib/ool-range.js');
+    expect(encodeMarker("God's (true) word!")).toBe('God%27s%20%28true%29%20word%21');
+    expect(decodeURIComponent(encodeMarker("a (b) 'c' ~d"))).toBe("a (b) 'c' ~d");
+  });
+});
