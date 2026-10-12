@@ -38,6 +38,10 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [ ] 10. WAITING on OceanLibrary: Sikh books being added there now (Chad 10-12), not in the ILM export yet. When they land:
       ingest, then box 'The Sikh Religion' + 'Sri Guru Granth Sahib' with their Bindery covers (col-sikh-religion.png not yet
       in R2 — copy it). Swedenborg = author shelf, NOT boxed (Chad 10-12)
+- [x] 11. Slow-query load (Chad 10-12 "why still the hollow warning"): new ops report `slow-queries` (per hour × proc ×
+      caller). Hollow = one stale 10-11 entry; real load ~100/h → fixed: roadmap cache 30 min, spend rollups 30 min, bio
+      cost 1 h, retired graph_enriched count dropped; alert now leads with last-3h top offender. Re-check after 24 h.
+- [ ] 12. Writer TRANSACTIONs 22–44 s during re-ingest of very large books (57/day) — chunk the ingest write per N rows
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
