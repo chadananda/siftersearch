@@ -112,3 +112,12 @@ describe('channel registry', () => {
     for (const c of Object.values(CHANNELS)) expect(c.frame && c.description && c.capabilities).toBeTruthy();
   });
 });
+
+describe('mixed-script repair (10-12 term study: "Bahá’u’لlláh")', async () => {
+  const { mixedScript } = await import('../../api/lib/anis/lint.js');
+  it('drops stray Arabic inside a Latin word; names come back whole; Arabic text and table cells untouched', () => {
+    expect(mixedScript('As Bahá’u’لlláh describes in Gleanings from the Writings of Bahá\'وأlláh')).toBe('As Bahá’u’lláh describes in Gleanings from the Writings of Bahá’u’lláh');
+    expect(mixedScript('… أوّل الأمر **عرفان** اللّه وآخره …')).toBe('… أوّل الأمر **عرفان** اللّه وآخره …');
+    expect(mixedScript('عرفان (*ʿirfān*)')).toBe('عرفان (*ʿirfān*)');
+  });
+});

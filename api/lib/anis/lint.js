@@ -11,6 +11,7 @@ export const LINT = [
   { id: 'urgency', re: /\b(don['’]?t\s+wait|before\s+it['’]?s\s+too\s+late|act\s+now|right\s+away)\b/i, why: 'pressure or urgency' },
   { id: 'method-narration', re: /\b(to understand (this|what)[^.]{0,60}\bwe (must|need)|we must (carefully )?distinguish|let us (first )?(distinguish|consider|look))\b/i, why: 'narrates its method instead of answering' },
   { id: 'machinery', re: /\b(retrieved (sources|passages|texts)|the provided (texts|passages|sources|writings)|the passages (provided|given|above)|our library'?s? (cited )?record|in the (sources|passages) (i was|i've been) given)\b/i, why: 'mentions the pipeline instead of the works' },
+  { id: 'authority-layers', re: /\b(authority layers?|the provided evidence|ground every claim)\b/i, why: 'pipeline vocabulary in a letter' },
   { id: 'human-claim', re: /\bas\s+a\s+(human|person|believer\s+myself)\b|\bi\s+am\s+(a\s+)?human\b/i, why: 'claims to be human' },
 ];
 
@@ -25,5 +26,19 @@ export function lintReply(text) {
 // what slips through. Rewrites only the fixed phrase, never meaning.
 const MACHINERY_PHRASE = /\b(the|these) (provided|retrieved|given) (texts|passages|sources|writings)\b/gi;
 export function unmachine(text) {
-  return String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search'));
+  return mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search')));
+}
+
+// A Latin word with Arabic letters inside it: the model slips script mid-word next to Arabic text (10-12 term study:
+// "Bahá’u’لlláh", "Bahá'وأlláh"). Drop the stray Arabic; the Central Figures' names come back whole. Pure Arabic runs untouched.
+const LAT = "A-Za-zÀ-ÿĀ-žḀ-ỿ’'ʿʾ‘-";
+const MIXED = new RegExp(`[${LAT}]+(?:[\u0600-\u06FF]+[${LAT}]*)+|[\u0600-\u06FF]+[${LAT}]{2,}`, 'g');
+const NAMES = [[/^Bah[aá][’']?u?[’']?l+[aá]h$/i, 'Bahá’u’lláh'], [/^[‘']?Abdu[’']?l-?Bah[aá]$/i, '‘Abdu’l-Bahá']];
+export function mixedScript(text) {
+  return String(text).replace(MIXED, (w) => {
+    if (!/[A-Za-z]/.test(w) || !/[\u0600-\u06FF]/.test(w)) return w;
+    const latin = w.replace(/[\u0600-\u06FF\u064B-\u0652]+/g, '');
+    const hit = NAMES.find(([re]) => re.test(latin));
+    return hit ? hit[1] : latin;
+  });
 }
