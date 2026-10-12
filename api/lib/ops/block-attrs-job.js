@@ -62,3 +62,21 @@ export async function blockAttrsJob({ ids = null, limit = 0 } = {}) {
   }
   return { ...stats, need_reingest: needReingest };
 }
+
+/** Why rows don't match their file blocks — per doc, a few unmatched rows beside the most similar block. params: { ids } */
+export async function blockMismatchReport({ ids = [] } = {}) {
+  const out = [];
+  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'file_path'], limit: ids.length || 1 });
+  for (const d of docs) {
+    const path = d.file_path && join(config.library.basePath, d.file_path);
+    if (!path || !existsSync(path)) { out.push({ id: d.id, error: 'no file' }); continue; }
+    const blocks = parseMarkdownBlocks(readFileSync(path, 'utf8').replace(FM, ''), { splitOversized: false }).filter((b) => b.attrs?.id);
+    const bh = new Set(blocks.map((b) => hashContentWords(b.content)));
+    const rows = (await rowsForDoc(d.id)).filter((r) => !/^heading/.test(r.blocktype || ''));
+    const un = rows.filter((r) => !bh.has(hashContentWords(r.text)));
+    const near = (t) => blocks.find((b) => b.content.slice(0, 30) === t.slice(0, 30)) || blocks.find((b) => b.content.includes(t.slice(5, 40)));
+    out.push({ id: d.id, title: d.title, rows: rows.length, blocks: blocks.length, unmatched: un.length,
+      samples: un.slice(0, 3).map((r) => ({ row: r.text.slice(0, 200), block: near(r.text)?.content.slice(0, 200) ?? null })) });
+  }
+  return { docs: out };
+}

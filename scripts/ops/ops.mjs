@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Ops CLI — an HTTP client of the internal API, never the database (Chad 10-11). Reports run server-side.
 //   node scripts/ops/ops.mjs reports                         list reports + recent runs
-//   node scripts/ops/ops.mjs report <name> [--days 14] [--wait] [--latest]
+//   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3] [--wait] [--latest]
 // Env: SIFTER_API (default http://127.0.0.1:7839 on tower), DEPLOY_SECRET (X-Internal-Key).
 import dotenv from 'dotenv';
 
@@ -23,7 +23,7 @@ if (cmd === 'reports') await out(await call('GET', '/ops/reports'));
 else if (cmd === 'report' && name) {
   if (flag('--latest')) await out(await call('GET', `/ops/reports/${name}/latest`));
   else {
-    const params = val('--days') ? { days: Number(val('--days')) } : null;
+    const params = val('--days') ? { days: Number(val('--days')) } : val('--ids') ? { ids: val('--ids').split(',').map(Number) } : null;
     let run = await call('POST', `/ops/reports/${name}`, params ? { params } : {});
     console.error(`run ${run.id} ${run.status}`);
     const deadline = Date.now() + 60 * 60_000;
