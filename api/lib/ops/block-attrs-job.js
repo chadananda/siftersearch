@@ -22,21 +22,24 @@ export function planDoc(fileText, rows) {
     const h = hashContentWords(b.content);
     if (!want.has(h)) want.set(h, Object.fromEntries(KEYS.filter((k) => b.attrs[k] != null).map((k) => [k, String(b.attrs[k])])));
   }
-  const changes = []; let matched = 0;
+  // headings never get ids (assign-block-ids skips them) — only TEXT rows count toward "unmatched"
+  const isText = (r) => !/^heading/.test(r.blocktype || '') && !/^\s*#{1,6}\s/.test(r.text || '');
+  const changes = []; let matched = 0, textRows = 0, unmatchedText = 0;
   for (const r of rows) {
+    const text = isText(r); if (text) textRows++;
     const w = want.get(hashContentWords(r.text));
-    if (!w) continue;
+    if (!w) { if (text) unmatchedText++; continue; }
     matched++;
     const cur = r.block_attrs ? JSON.parse(r.block_attrs) : {};
     if (KEYS.every((k) => w[k] == null || cur[k] === w[k])) continue;
     changes.push({ id: r.id, attrs: { ...cur, ...w } });
   }
-  return { changes, matched, blocks: want.size };
+  return { changes, matched, blocks: want.size, textRows, unmatchedText };
 }
 
 /** params: { ids?: number[], limit?: number } — default every live main-library doc. */
 export async function blockAttrsJob({ ids = null, limit = 0 } = {}) {
-  const stats = { docs: 0, docs_with_ids: 0, rows: 0, matched: 0, written: 0, docs_unmatched: 0, no_file: 0 };
+  const stats = { docs: 0, docs_with_ids: 0, rows: 0, text_rows: 0, matched: 0, unmatched_text_rows: 0, written: 0, docs_unmatched: 0, no_file: 0 };
   const needReingest = [];
   for (let after = 0; ;) {
     const page = await listDocs({ sourceSite: ids ? undefined : 'library', ids: ids || undefined, afterId: ids ? undefined : after, fields: ['id', 'file_path'], limit: 500 });
@@ -50,9 +53,9 @@ export async function blockAttrsJob({ ids = null, limit = 0 } = {}) {
       stats.docs_with_ids++;
       const rows = await rowsForDoc(d.id);
       const p = planDoc(text, rows);
-      stats.rows += rows.length; stats.matched += p.matched;
+      stats.rows += rows.length; stats.text_rows += p.textRows; stats.matched += p.matched; stats.unmatched_text_rows += p.unmatchedText;
       if (p.changes.length) { await setBlockAttrs(p.changes); stats.written += p.changes.length; }
-      if (p.matched < Math.min(rows.length, p.blocks)) { stats.docs_unmatched++; if (needReingest.length < 500) needReingest.push(d.id); }
+      if (p.unmatchedText > 0) { stats.docs_unmatched++; if (needReingest.length < 20000) needReingest.push(d.id); }
       if (limit && stats.docs_with_ids >= limit) return { ...stats, need_reingest: needReingest };
     }
     if (ids || page.docs.length < 500) break;

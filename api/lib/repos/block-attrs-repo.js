@@ -4,7 +4,7 @@ import { queryAll, transaction } from '../db.js';
 
 /** A doc's live rows with what is needed to match them to file blocks. */
 export const rowsForDoc = (docId) =>
-  queryAll('SELECT id, text, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [docId]);
+  queryAll('SELECT id, text, blocktype, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [docId]);
 
 /** Write merged block_attrs JSON per row, in batches (single writer). changes: [{ id, attrs }] — attrs = full object. */
 export async function setBlockAttrs(changes, size = 500) {

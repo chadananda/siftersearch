@@ -10,7 +10,7 @@ describe('block-attrs job (file ids → rows, by word hash)', () => {
       { id: 12, text: 'Not in the file.', block_attrs: null },
     ];
     const p = planDoc(file, rows);
-    expect(p).toMatchObject({ matched: 2, blocks: 2 });
+    expect(p).toMatchObject({ matched: 2, blocks: 2, textRows: 3, unmatchedText: 1 });
     expect(p.changes).toEqual([{ id: 10, attrs: { id: 'para_1', pn: '1' } }]);
   });
 });
