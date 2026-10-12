@@ -1,9 +1,9 @@
 // Ocean of Lights range links: `#(start)(end)[$N]`, shortest fragments by the site's own matching (indexOf, first occurrence).
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { oolContentText, locateQuote, oolQuoteHash, oolQuoteUrl } from '../../api/lib/ool-range.js';
+import { locateQuote, oolQuoteHash, oolQuoteUrl } from '../../api/lib/ool-range.js';
 
-const html = readFileSync(new URL('../fixtures/ool-bahaullah-pub02-02-en.html', import.meta.url), 'utf8');
+// the text the site searches on oceanoflights.org/bahaullah-pub02-02-en (.tablet-content textContent, read 10-12)
+const PAGE = '– II – The beginning of all things is the knowledge of God, and the end of all things is strict observance of whatsoever hath been sent down from the empyrean of the Divine Will that pervadeth all that is in the heavens and all that is on the earth. ';
 // the site's resolver, reimplemented from its bundle: decode, parse, indexOf occurrence N of both fragments
 const resolve = (page, hash) => {
   const m = decodeURIComponent(hash).match(/^\((.+?)\)(?:\((.+?)\))?(?:\$(\d+))?$/);
@@ -13,10 +13,9 @@ const resolve = (page, hash) => {
 };
 
 describe('Ocean of Lights range links', () => {
-  const page = oolContentText(html);
-  it('reads the text the site searches (.tablet-content, not the page header)', () => {
-    expect(page.startsWith('– II – The beginning of all things')).toBe(true);
-    expect(page).not.toContain('Translated by Shoghi Effendi');
+  const page = PAGE;
+  it('ignores markup our copy keeps (footnote refs, emphasis)', () => {
+    expect(locateQuote(page, 'the _knowledge_ of God[^1]')).toEqual(locateQuote(page, 'the knowledge of God'));
   });
   it("reproduces Chad's examples: one word when it is the first occurrence (ignoring case), more when it is not", () => {
     expect(oolQuoteHash(page, ...locateQuote(page, 'The beginning of all things is the knowledge'))).toBe('(The)(knowledge)');

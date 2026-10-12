@@ -82,13 +82,13 @@ const titleKey = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').
  *  scrolls to and highlights it; a browser without support simply opens the page. Words carrying markup the page does not
  *  render ([^13], [pg 202], [75.1]) are left out of the anchors. OceanLibrary's own selectionString range links need the
  *  page's per-paragraph ilmid and are a later step (memory reference_range_links_ocean). Null when there is no range. */
-export function textFragment(url, text, ranges, n = 4) {
+export function textFragment(url, text, ranges, n = 4, docId = null) {
   if (!url || !text || !ranges?.length) return null;
   // OceanLibrary has its own range links (selectionString): mark the quoted words; the output pass (lib/ocean-links.js)
   // turns the marker into a range highlighting exactly them (a text fragment is not honoured by its reader app)
   if (/oceanlibrary\.com\/[^?#\s]+\?paraId=/.test(url)) return `${url}#~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
   // Ocean of Lights has its own range hash "#(start)(end)" built from the page's text at the output pass (Chad 10-12)
-  if (/^https:\/\/(www\.)?oceanoflights\.org\/[^?#\s]+$/.test(url)) return `${url}#~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
+  if (/^https:\/\/(www\.)?oceanoflights\.org\/[^?#\s]+$/.test(url)) return `${url}#${docId ? `~d=${docId}` : ''}~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
   const words = text.slice(ranges[0][0], ranges[ranges.length - 1][1]).split(/\s+/).filter((w) => w && !/[[\]^*_#>|]/.test(w));
   if (!words.length) return null;
   const enc = (ws) => encodeURIComponent(ws.join(' ').replace(/^[“"‘'(«]+|[”"’')»,.;:!?]+$/g, '')).replace(/-/g, '%2D').replace(/,/g, '%2C').replace(/&/g, '%26');
@@ -260,7 +260,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
-    url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
+    url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight, 4, origin.doc_id), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
   say('origin', { origin: originOut, candidates: ranked.length });
 
   // 3. everything else that holds the quote, plus what the link graph says quotes the origin — grouped by publication
@@ -271,7 +271,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: siteOf(p.url, p.source_site),
       // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
-      url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text)) : null, paragraphs: 0, first: p.id };
+      url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text), 4, p.doc_id) : null, paragraphs: 0, first: p.id };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
   // a CITATION quotes the passage: it holds the wording (a translation variant included), or the link graph says it quotes the
@@ -409,8 +409,8 @@ async function tabletGuess(d, q, links, author = null) {
     const meta = await d.meta(p.documentId).catch(() => null);
     // range links for the original: our copy, and Ocean of Lights (a static page — a text fragment lands on the stretch)
     const ool = meta?.links?.oceanoflights;
-    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...mr, url: p.url, rangeUrl: textFragment(p.url, text, mr.highlight),
-      basis, meta: ool ? { ...meta, links: { ...meta.links, oceanoflightsRange: textFragment(ool, text, mr.highlight) } } : meta };
+    return { id: p.id, documentId: p.documentId, title: p.document?.title, text, ...mr, url: p.url, rangeUrl: textFragment(p.url, text, mr.highlight, 4, p.documentId),
+      basis, meta: ool ? { ...meta, links: { ...meta.links, oceanoflightsRange: textFragment(ool, text, mr.highlight, 4, p.documentId) } } : meta };
   };
   if (links?.original) {
     // The LINK fixes the tablet; the paragraph inside it is re-checked: the quote's closest paragraphs in that tablet by

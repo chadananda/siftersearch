@@ -85,10 +85,10 @@ describe('range-ready links (Chad 10-12: Anís and SourceHunt always give range 
   const base = { id: 5, religion: "Baha'i", collection: 'Core Tablets', slug: 'x' };
   it('Ocean of Lights carries the quote (else the paragraph) as the #~q= marker the output pass turns into #(start)(end)', () => {
     const l = linkFor({ ...base, metadata: '{"bookid":"BH_PUB02_02_EN"}', text: 'The beginning of all things' }, 0);
-    expect(l.url).toBe(`https://oceanoflights.org/bh-pub02-02-en/#~q=${encodeURIComponent('The beginning of all things')}`);
+    expect(l.url).toBe(`https://oceanoflights.org/bh-pub02-02-en/#~d=5~q=${encodeURIComponent('The beginning of all things')}`);
     expect(l.paragraph_level).toBe(true);
     const q = linkFor({ ...base, metadata: '{"bookid":"BH_PUB02_02_EN"}', text: 'The beginning of all things' }, 0, { quote: 'all things' });
-    expect(q.url).toMatch(/#~q=all%20things$/);
+    expect(q.url).toMatch(/#~d=5~q=all%20things$/);
   });
   it('OceanLibrary without a stored block id keeps ?paraId and carries a known quote as the marker', () => {
     const l = linkFor({ ...base, source_url: 'https://oceanlibrary.com/kitab-i-iqan_bahaullah', external_para_id: 'para_7' }, 0, { quote: 'O my brother' });

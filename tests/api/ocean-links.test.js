@@ -40,16 +40,17 @@ describe('ocean range links', () => {
 });
 
 describe('Ocean of Lights quote markers', () => {
-  const html = '<h1>The beginning of all things</h1><div class="tablet-content nuxt-content"><p>– II – The beginning of all things is the knowledge of God</p></div>';
-  it('become the shortest #(start)(end) range from the page text', async () => {
+  const rows = [{ text: '– II –' }, { text: 'The beginning of all things is the knowledge of God, and the end' }];
+  it('become the shortest #(start)(end) range from OUR stored copy of the page (no request to the site)', async () => {
     const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
-    const fetchImpl = vi.fn(async () => ({ ok: true, text: async () => html }));
-    const s = JSON.stringify({ url: `https://oceanoflights.org/bahaullah-pub02-02-en/#~q=${encodeURIComponent('The beginning of all things is the knowledge')}` });
-    expect(JSON.parse(await upgradeOceanLinks(s, { fetchImpl })).url).toBe('https://oceanoflights.org/bahaullah-pub02-02-en/#(The)(knowledge)');
+    const loadParagraphs = vi.fn(async () => rows);
+    const s = JSON.stringify({ url: `https://oceanoflights.org/bahaullah-pub02-02-en/#~d=42~q=${encodeURIComponent('The beginning of all things is the knowledge')}` });
+    expect(JSON.parse(await upgradeOceanLinks(s, { loadParagraphs })).url).toBe('https://oceanoflights.org/bahaullah-pub02-02-en/#(The)(knowledge)');
+    expect(loadParagraphs).toHaveBeenCalledWith(42, { proseOnly: false });
   });
-  it('fall back to a text fragment when the page cannot be read', async () => {
+  it('fall back to a text fragment without a document', async () => {
     const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
-    const out = await upgradeOceanLinks(`https://oceanoflights.org/unreachable-page/#~q=${encodeURIComponent('of God')}`, { fetchImpl: async () => { throw new Error('down'); } });
-    expect(out).toBe('https://oceanoflights.org/unreachable-page/#:~:text=of%20God');
+    const out = await upgradeOceanLinks(`https://oceanoflights.org/some-page/#~q=${encodeURIComponent('of God')}`, { loadParagraphs: async () => [] });
+    expect(out).toBe('https://oceanoflights.org/some-page/#:~:text=of%20God');
   });
 });

@@ -4,12 +4,12 @@
 // any "https://oceanlibrary.com/<slug>/?paraId=para_N" at the OUTPUT boundary with one batched lookup and rewrites it to
 // "?paraId=para_N&selectionString=<ilmid>.0~<ilmid>.<end>" (the whole paragraph highlighted; lib/ocean-range.js). A link
 // that already carries a selection, or whose paragraph lacks a stored block id, is left as it is.
-// Ocean of Lights (Chad 10-12): "oceanoflights.org/<page>/#~q=<quote>" → "#(start)(end)" from the page's own text (fetched
-// once per page, cached; lib/ool-range.js); unreachable page or quote not found → a browser text fragment.
-// Deps: db (read), ocean-range, ool-range, fetch.
+// Ocean of Lights (Chad 10-12): "oceanoflights.org/<page>/#~d=<doc>~q=<quote>" → "#(start)(end)" from our stored copy of
+// that page (lib/ool-range.js); not placeable → a browser text fragment.
+// Deps: db (read), docs-repo, ocean-range, ool-range.
 import { queryAll } from './db.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
-import { oolContentText, oolQuoteUrl } from './ool-range.js';
+import { plainText, oolQuoteUrl } from './ool-range.js';
 
 // slug is the first path segment; the paragraph id is para_N or a footnote/fn id. A producer that knows the quoted words
 // appends the private marker "#~q=<encoded quote>" (source-hunt textFragment) → the range covers just those words.
@@ -42,45 +42,48 @@ async function resolve(pairs) {
 }
 
 // ── Ocean of Lights ──
-export const OOL_QUOTE_URL = /https:\/\/(?:www\.)?oceanoflights\.org\/([^?#\s"'<>)\]]+?)\/?#~q=([^\s"'<>)\]]+)/g;
-const pages = new Map();          // page url → { at, text|null }
-const PAGE_TTL_MS = 24 * 3600 * 1000, PAGES_MAX = 2000;
-async function oolPage(url, fetchImpl = fetch) {
-  const hit = pages.get(url);
-  if (hit && Date.now() - hit.at < PAGE_TTL_MS) return hit.text;
+// Marker "oceanoflights.org/<page>/#~d=<docId>~q=<quote>": the page IS one of our documents (Core Tablets are ingested from
+// Ocean of Lights, one doc per page), so the shortest phrases are computed from OUR stored copy — no request to their
+// site (Chad 10-12). No doc id / quote not placed → a browser text fragment.
+export const OOL_QUOTE_URL = /https:\/\/(?:www\.)?oceanoflights\.org\/([^?#\s"'<>)\]]+?)\/?#(?:~d=(\d+))?~q=([^\s"'<>)\]]+)/g;
+const docs = new Map();           // doc id → { at, text|null }
+const DOC_TTL_MS = 3600 * 1000, DOCS_MAX = 2000;
+async function docText(id, loadParagraphs) {
+  const hit = docs.get(id);
+  if (hit && Date.now() - hit.at < DOC_TTL_MS) return hit.text;
   let text = null;
   try {
-    const r = await fetchImpl(url, { signal: AbortSignal.timeout(2500), headers: { 'user-agent': 'SifterSearch range links (siftersearch.com)' } });
-    if (r.ok) text = oolContentText(await r.text());
-  } catch { /* unreachable: fall back */ }
-  pages.set(url, { at: Date.now(), text });
-  if (pages.size > PAGES_MAX) pages.delete(pages.keys().next().value);
+    const rows = await (loadParagraphs || (await import('./docs-repo.js')).getParagraphs)(id, { proseOnly: false });
+    text = rows.length ? rows.map((r) => plainText(r.text)).join(' ') : null;
+  } catch { /* unreadable: fall back */ }
+  docs.set(id, { at: Date.now(), text });
+  if (docs.size > DOCS_MAX) docs.delete(docs.keys().next().value);
   return text;
 }
-/** A browser text fragment for `quote` (first and last four words) — the fallback when the page can't be read. */
+/** A browser text fragment for `quote` (first and last four words) — the fallback when the range can't be placed. */
 export function textFragmentUrl(url, quote) {
-  const words = String(quote).split(/\s+/).filter(Boolean);
+  const words = plainText(quote).split(/\s+/).filter(Boolean);
   if (!words.length) return url;
   const enc = (ws) => encodeURIComponent(ws.join(' ').replace(/^[“"‘'(«]+|[”"’')»,.;:!?]+$/g, '')).replace(/-/g, '%2D').replace(/,/g, '%2C').replace(/&/g, '%26');
   return `${url}#:~:text=${words.length <= 8 ? enc(words) : `${enc(words.slice(0, 4))},${enc(words.slice(-4))}`}`;
 }
-async function upgradeOolLinks(s, fetchImpl) {
+async function upgradeOolLinks(s, loadParagraphs) {
   const found = [...s.matchAll(OOL_QUOTE_URL)];
   if (!found.length) return s;
-  const urls = [...new Set(found.map((m) => `https://oceanoflights.org/${m[1]}/`))];
-  const text = new Map(await Promise.all(urls.map(async (u) => [u, await oolPage(u, fetchImpl)])));
-  return s.replace(OOL_QUOTE_URL, (whole, slug, q) => {
+  const ids = [...new Set(found.map((m) => m[2]).filter(Boolean))];
+  const text = new Map(await Promise.all(ids.map(async (id) => [id, await docText(Number(id), loadParagraphs)])));
+  return s.replace(OOL_QUOTE_URL, (whole, slug, id, q) => {
     const url = `https://oceanoflights.org/${slug}/`;
     let quote = null;
     try { quote = decodeURIComponent(q); } catch { return url; }
-    return oolQuoteUrl(url, text.get(url), quote) || textFragmentUrl(url, quote);
+    return (id && oolQuoteUrl(url, text.get(id), quote)) || textFragmentUrl(url, quote);
   });
 }
 
 /** Rewrite every plain OceanLibrary paragraph link (and Ocean of Lights quote marker) inside a string. */
-export async function upgradeOceanLinks(text, { fetchImpl } = {}) {
+export async function upgradeOceanLinks(text, { loadParagraphs } = {}) {
   let s = String(text ?? '');
-  if (s.includes('oceanoflights.org') && s.includes('#~q=')) s = await upgradeOolLinks(s, fetchImpl);
+  if (s.includes('oceanoflights.org') && s.includes('~q=')) s = await upgradeOolLinks(s, loadParagraphs);
   if (!s.includes('oceanlibrary.com')) return s;
   const pairs = [...s.matchAll(OCEAN_PARA_URL)].map((m) => [decodeURIComponent(m[1]), m[2]]);
   if (!pairs.length) return s;
@@ -100,7 +103,7 @@ export async function upgradeOceanLinks(text, { fetchImpl } = {}) {
 export const oceanQuoteUrl = (url, quote) => upgradeOceanLinks(oceanQuoteMarker(url, quote));
 
 /** Does this payload carry a link the upgrade rewrites? (cheap gate for every response) */
-export const needsUpgrade = (s) => (s.includes('oceanlibrary.com') && s.includes('paraId=')) || (s.includes('oceanoflights.org') && s.includes('#~q='));
+export const needsUpgrade = (s) => (s.includes('oceanlibrary.com') && s.includes('paraId=')) || (s.includes('oceanoflights.org') && s.includes('~q='));
 
 /** An SSE event sender that writes in order and upgrades OceanLibrary links in each event (sources, done, citations).
  *  Streamed answer text needs nothing more: its links come from citation URLs already upgraded before the model ran. */

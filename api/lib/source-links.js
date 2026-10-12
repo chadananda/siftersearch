@@ -20,7 +20,7 @@ export function tierOf(url) {
   return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
 }
 
-const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|#~q=|#\(/.test(url || '');
+const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|~q=|#\(/.test(url || '');
 
 function parseMeta(metadata) {
   if (!metadata) return null;
@@ -72,7 +72,8 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
     const tier = tierOf(u).tier;
     // Ocean of Lights (Chad 10-12: Anís and SourceHunt always give range links): the quote, else the paragraph, as a
     // "#~q=" marker → "#(start)(end)" from the page's own text at the output pass (lib/ool-range.js)
-    if (tier === 2 && !u.includes('#') && (quote || doc.text)) return `${u}#~q=${encodeURIComponent(String(quote || doc.text).slice(0, 2000))}`;
+    const id = doc.id ?? doc.doc_id ?? doc.document_id;
+    if (tier === 2 && !u.includes('#') && (quote || doc.text)) return `${u}#${id ? `~d=${id}` : ''}~q=${encodeURIComponent(String(quote || doc.text).slice(0, 2000))}`;
     if (tier !== 1) return u;
     if (/selectionString=/.test(u)) return u;
     if (/paraId=/.test(u)) return marker(u);

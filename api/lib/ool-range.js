@@ -1,37 +1,11 @@
 // Ocean of Lights range links (Chad 10-12): `<page>#(<start>)(<end>)[$N]`. The site (parseQuoteHash/highlightQuote in its
-// Nuxt bundle, read 10-12) decodeURIComponent()s the hash, finds each fragment in the textContent of
-// `.tablet-content.nuxt-content` by plain indexOf (exact, case-sensitive, any substring), takes occurrence N (default the
+// Nuxt bundle, read 10-12) decodeURIComponent()s the hash, finds each fragment in the page text (textContent of
+// `.tablet-content.nuxt-content`; we use our stored copy of the page, ocean-links.js) by plain indexOf (exact, case-sensitive, any substring), takes occurrence N (default the
 // first) of BOTH fragments, and highlights from the start fragment to the end of the end fragment. So the shortest link
 // is the shortest prefix of the quote whose first occurrence is where the quote starts + the shortest suffix whose first
 // occurrence is where it ends, grown a word at a time from ONE word, ignoring case (Chad 10-12: "#(The)(knowledge)" for the
 // first "The"; "#(the knowledge)(and the)" when an earlier "The" makes "the" ambiguous); `$N` only when no such pair exists.
 // Pure.
-
-const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
-const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-const decode = (s) => s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => (e[0] === '#'
-  ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENT[e.toLowerCase()] ?? m));
-
-/** textContent of the page's `.tablet-content.nuxt-content` element (what the site searches), or null. */
-export function oolContentText(html) {
-  const s = String(html || '');
-  const tok = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)([^>]*)>|([^<]+)/g;
-  let depth = 0, out = '';
-  for (let m; (m = tok.exec(s));) {
-    const [, close, tag, attrs, text] = m;
-    if (text != null) { if (depth) out += decode(text); continue; }
-    if (!tag) continue;
-    const t = tag.toLowerCase();
-    if (VOID.has(t) || /\/\s*$/.test(attrs || '')) continue;
-    if (close) { if (depth && --depth === 0) return out; continue; }
-    if (depth) depth++;
-    else if (t === 'div') {
-      const cls = (/\bclass\s*=\s*"([^"]*)"/.exec(attrs || '') || [])[1]?.split(/\s+/) || [];
-      if (cls.includes('tablet-content') && cls.includes('nuxt-content')) depth = 1;
-    }
-  }
-  return depth ? out : null;
-}
 
 // loose match: whitespace runs and typographic quotes/dashes don't break a quote taken from our copy of the text
 const fold = (c) => (/\s/.test(c) ? ' ' : /[‘’ʼ`´]/.test(c) ? "'" : /[“”„]/.test(c) ? '"' : /[–—]/.test(c) ? '-' : c);
@@ -46,12 +20,12 @@ function normalised(s) {
 }
 
 // our stored text keeps markup the page doesn't show: sentence markers, footnote refs, page marks, links, emphasis, escapes
-const plain = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\[\^[^\]\s]+\]/g, '').replace(/\[pg [^\]]*\]/g, '')
+export const plainText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\[\^[^\]\s]+\]/g, '').replace(/\[pg [^\]]*\]/g, '')
   .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\(?=[\\`*_{}[\]()#+\-.!])/g, '').replace(/[*_]/g, '');
 
 /** [start, end) of `quote` in `page` (whitespace/typography/markup-insensitive), or null. */
 export function locateQuote(page, quote) {
-  const q = normalised(plain(quote).trim().replace(/^[“"‘'(«\s]+|[”"’')»\s,.;:!?]+$/g, '')).out.trim();
+  const q = normalised(plainText(quote).trim().replace(/^[“"‘'(«\s]+|[”"’')»\s,.;:!?]+$/g, '')).out.trim();
   if (!q) return null;
   const { out, map } = normalised(page);
   const at = out.indexOf(q);
