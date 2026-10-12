@@ -11,17 +11,15 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] 4. Sentence markers for the 7 deferred hadith books: SKIPPED on value (~$15; markers only serve translation alignment, none exist for these)
 - [~] 5. ID/pn for every book: `{id="para_N" pn="M"}` written into 33,996 library files (5.66M ¶, 0.1% ambiguous skipped);
       ids job: 3.38M of 4.12M rows matched; 695k drifted rows in 13,060 books (old ingest merged/split/kept markup).
-      reingest-impact: 11,250 books carry NO enrichment on drifted rows → re-ingesting (ops ingest-files, batches of 1000);
+      reingest-impact: 11,250 books carry NO enrichment on drifted rows → re-ingesting (ops ingest-files, 12 batches queued 10-11);
       1,810 books carry enrichment there (HyPE on 42k rows incl. paid Persian Ẓuhúr vols, 26.9k alignment links, 11.8k
       graph mentions) → NOT re-ingested; drifted rows keep working, just without ids/pn. DECISION for Chad: carry
       enrichment across a re-ingest (map old→new rows by text) or leave them.
       `block-attrs` ops job copying them onto rows (no re-ingest); files with ids keep their blocks at ingest
-- [~] 6. CTAI audit (ops report `ctai-audit`) FOUND: originals are NOT paragraphed from the English — aligned many-to-one into
-      big compilation docs (Íqán original 78 ¶ vs 478 English; Hidden Words/Gleanings inside a 6,354-¶ compilation);
-      English sides have no pn yet (OL — ILM export); links exist both ways, stale ≤11 per work.
-      PLAN: per CTAI work, an original-language file built FROM the English paragraphs (CTAI pairs already stored as
-      original_text on each English row) → 1 original ¶ per English ¶, `{id pn align=<English para id>}`, 1:1
-      content_alignment (basis ctai-pair); pn follows the English (re-synced when ILM pn arrives)
+- [x] 6. CTAI: 8 original-language docs built FROM THE ENGLISH (`Baha'i/CTAI Originals/`, 3,013 ¶ = 1 per English ¶ with a CTAI
+      pair), ingested via ops `ingest-files`, linked 1:1 (`ctai-link`, basis ctai-pair, 0 unresolved); audit: aligned = live,
+      no one-to-many. pn follows the English: re-run ops `ctai-originals` + `ingest-files` once the English has pn
+      (Gleanings/ESW after this re-ingest; the 6 OL hosts after the ILM export)
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
