@@ -274,7 +274,12 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const byDoc = new Map();
   const add = (p) => {
     if (p.doc_id === origin.doc_id || titleKey(p.title) === titleKey(origin.title)) return;   // the source's own other copy is not a citation
-    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, translated_by: p.translated_by !== undefined ? p.translated_by : translatedBy(p), site: siteOf(p.url, p.source_site),
+    // translated_by: the citation's own record; else, when it holds the source's WORDING, the quoted words are the source's
+    // translation (Divine Philosophy quoting Gleanings → Shoghi Effendi). A paraphrase inherits nothing.
+    const own = p.translated_by !== undefined ? p.translated_by : translatedBy(p);
+    const verbatim = !!p.text && overlap(q.match, p.text) >= VERBATIM;
+    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author,
+      translated_by: own || (verbatim ? originOut.translated_by : null) || null, site: siteOf(p.url, p.source_site),
       // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
       url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text), 4, p.doc_id) : null, paragraphs: 0, first: p.id };

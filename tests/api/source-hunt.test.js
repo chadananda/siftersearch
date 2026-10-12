@@ -4,9 +4,9 @@ import { sourceHunt, prepareQuote, rankOrigins, quoteAuthorOf } from '../../api/
 
 const QUOTE = 'The earth is but one country, and mankind its citizens';
 const ROWS = {
-  1: { id: 1, doc_id: 10, text: `${QUOTE}. The best beloved of all things.`, authors: null, book_author: "Bahá'u'lláh", title: 'Gleanings', source_site: 'oceanlibrary.com' },
+  1: { id: 1, doc_id: 10, text: `${QUOTE}. The best beloved of all things.`, authors: null, book_author: "Bahá'u'lláh", title: 'Gleanings', source_site: 'oceanlibrary.com', fm_translated_by: 'Shoghi Effendi' },
   2: { id: 2, doc_id: 20, text: `As Bahá’u’lláh wrote, “${QUOTE}.”`, authors: '[{"name":"Bahá’u’lláh","role":"author"}]', book_author: 'Helen Hornby', title: 'Lights of Guidance', source_site: null },
-  3: { id: 3, doc_id: 30, text: `${QUOTE}`, authors: null, book_author: 'J. E. Esslemont', title: 'Bahá’u’lláh and the New Era', source_site: 'bahai-library.com' },
+  3: { id: 3, doc_id: 30, text: `${QUOTE}`, authors: null, book_author: 'J. E. Esslemont', title: 'Bahá’u’lláh and the New Era', source_site: 'bahai-library.com', fm_translator: 'Ali-Kuli Khan' },
   4: { id: 4, doc_id: 40, text: 'An unrelated paragraph about gardens and rain.', authors: null, book_author: 'X', title: 'Other', source_site: null },
 };
 const deps = (over = {}) => ({
@@ -59,6 +59,10 @@ describe('sourceHunt', () => {
     expect(r.origin).toMatchObject({ id: 1, title: 'Gleanings', author: "Bahá'u'lláh" });
     expect(r.citedBy.map((c) => c.title)).toEqual(['Bahá’u’lláh and the New Era', 'Lights of Guidance']);   // a public copy before a SifterSearch-only one
     expect(r.citedBy.some((c) => c.title === 'Other')).toBe(false);                                          // not verbatim
+    // translated_by: the source's own record; a verbatim citation inherits it unless it records its own translator
+    expect(r.origin.translated_by).toBe('Shoghi Effendi');
+    expect(Object.fromEntries(r.citedBy.map((c) => [c.title, c.translated_by])))
+      .toEqual({ 'Bahá’u’lláh and the New Era': 'Ali-Kuli Khan', 'Lights of Guidance': 'Shoghi Effendi' });
     expect(r.tablet).toMatchObject({ certain: true, id: 77, basis: 'translation', meta: { pin: 'BH00001' } });
     expect(r.tablet.meta.links.oceanoflights).toContain('oceanoflights.org');
   });
