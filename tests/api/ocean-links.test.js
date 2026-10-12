@@ -68,6 +68,13 @@ describe('OceanLibrary book-level link + quote', () => {
     expect(out).toMatch(/^https:\/\/oceanlibrary\.com\/gleanings-from-the-writings-of-bahaullah\/?\?paraId=para_2&selectionString=gleanings_en-bl2\.\d+~gleanings_en-bl2\.\d+$/);
     expect(repo.getParagraphs).toHaveBeenCalledWith(9, { proseOnly: false });   // the site copy, not Core Publications' twin
   });
+  it('finds the paragraph from fewer opening words when the copies differ inside the quote', async () => {
+    const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
+    const repo = { listDocs: async () => ({ docs: [{ id: 11, external_id: 'dp_en' }] }),
+      getParagraphs: async () => [{ external_para_id: 'para_40', text: '"The beginning of all things is the knowledge (irfán) of God, and the end"', block_attrs: '{"ilm_id":"bl40"}' }] };
+    const out = await upgradeOceanLinks(`https://oceanlibrary.com/divine-philosophy_x#~q=${encodeURIComponent('"The beginning of all things is the knowledge (irfán)84 of God, and the end')}`, { repo });
+    expect(out).toMatch(/\?paraId=para_40/);
+  });
   it('leaves the plain book link when the quote is not in the book', async () => {
     const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
     const repo = { listDocs: async () => ({ docs: [{ id: 10, external_id: 'x_en' }] }), getParagraphs: async () => [{ external_para_id: 'para_1', text: 'other words' }] };

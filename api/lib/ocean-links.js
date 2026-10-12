@@ -112,8 +112,15 @@ async function upgradeOlBookLinks(s, repo) {
     let quote = null;
     try { quote = decodeURIComponent(q); } catch { return base; }
     const b = book.get(decodeURIComponent(slug));
-    const head = plainText(quote).split(/\s+/).filter(Boolean).slice(0, 12).join(' ');   // a quote may run past its paragraph
-    const r = b?.doc && b.rows.find((x) => x.external_para_id && x.text && locateQuote(x.text, head));
+    // the quote's opening words find its paragraph (a quote may run past it); fewer words when the copies differ inside it
+    // (10-12: our Divine Philosophy has "knowledge (irfán)84", the site copy prints the note differently)
+    const words = plainText(quote).split(/\s+/).filter(Boolean);
+    let r = null;
+    for (const n of [12, 8, 5]) {
+      const head = words.slice(0, n).join(' ');
+      r = b?.doc && b.rows.find((x) => x.external_para_id && x.text && locateQuote(x.text, head));
+      if (r || words.length <= n) break;
+    }
     if (!r) return base;
     let ilm = null;
     try { ilm = JSON.parse(r.block_attrs || '{}').ilm_id; } catch { /* no anchors */ }
