@@ -55,3 +55,15 @@ export async function moveMentionsV2(moves) {
 export async function moveGraphMentions(moves) {
   for (const m of moves) await graphQuery('UPDATE OR IGNORE entity_mentions SET content_id = ? WHERE id = ?', [Number(m.to), m.id]);
 }
+
+/** Active links the carry created (method ends '+carry') that touch these rows. */
+export async function carryLinksFor(ids) {
+  const out = [];
+  for (const c of chunks(ids)) out.push(...await queryAll(`SELECT id, trans_id, orig_id FROM content_alignment WHERE retired_at IS NULL AND method LIKE '%+carry'
+    AND (trans_id IN (${ph(c)}) OR orig_id IN (${ph(c)}))`, [...c, ...c]));
+  return out;
+}
+export async function retireLinks(linkIds) {
+  const t = Math.floor(Date.now() / 1000);
+  for (const c of chunks(linkIds)) await transaction([{ sql: `UPDATE content_alignment SET retired_at = ? WHERE id IN (${ph(c)})`, args: [t, ...c] }], 'ops:carry-retire');
+}

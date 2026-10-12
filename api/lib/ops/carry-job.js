@@ -8,7 +8,7 @@ import { listDocs } from '../docs-repo.js';
 import { withAIContext } from '../ai-context.js';
 import { mapRows, planColumns, linkTargets, countQuestions, CARRY_COLUMNS } from './carry-map.js';
 import { waitForQuietWriter } from './ctai-jobs.js';
-import { snapshotRows, linksFor, mentionsV2For, graphMentionsFor, applyColumns, relink, moveMentionsV2, moveGraphMentions } from '../repos/carry-repo.js';
+import { snapshotRows, linksFor, mentionsV2For, graphMentionsFor, applyColumns, relink, moveMentionsV2, moveGraphMentions, carryLinksFor, retireLinks } from '../repos/carry-repo.js';
 
 const hasWork = (r) => CARRY_COLUMNS.some((c) => r[c] != null && r[c] !== '');
 
@@ -117,7 +117,17 @@ export async function carryRepairJob({ ids = [], backup = `/tank/sifter/carry-ba
     const replaced = b.rows.filter((r) => !live.has(r.id));
     const gm = await graphMentionsFor(replaced.map((r) => r.id));   // still keyed to the old ids
     const st = await carryOnto({ replaced, fresh: after, after, links: [], m2: [], gm });
-    out.push({ doc, replaced: replaced.length, ...st });
+    // links the first (pre-fix) carry fanned out to every overlapping row: keep only the corrected targets
+    const map = mapRows(replaced, after);
+    const want = new Set();
+    for (const l of b.links || []) {
+      const repl = new Set(replaced.map((r) => r.id));
+      const side = repl.has(l.trans_id) ? 'trans' : repl.has(l.orig_id) ? 'orig' : null; if (!side) continue;
+      for (const t of linkTargets(map.get(side === 'trans' ? l.trans_id : l.orig_id))) want.add(`${side === 'trans' ? t.id : l.trans_id}:${side === 'orig' ? t.id : l.orig_id}`);
+    }
+    const extra = (await carryLinksFor(after.map((r) => r.id))).filter((l) => !want.has(`${l.trans_id}:${l.orig_id}`)).map((l) => l.id);
+    await retireLinks(extra);
+    out.push({ doc, replaced: replaced.length, ...st, extra_links_retired: extra.length });
   }
   return { docs: out };
 }
