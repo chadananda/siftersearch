@@ -49,6 +49,17 @@ export async function ctaiOriginalsJob() {
 }
 
 /** params: { paths?: relPaths[], ids?: docIds[] } — ingest each file in THIS process (never the API). */
+/** Back off while the writer or the API is slow: a bulk job must never be why the site stops processing (Chad 10-11). */
+export async function waitForQuietWriter({ maxWaitMs = 30 * 60_000 } = {}) {
+  const deadline = Date.now() + maxWaitMs;
+  for (;;) {
+    const probe = async (url) => { const t = Date.now(); try { const r = await fetch(url, { signal: AbortSignal.timeout(3000) }); return r.ok ? Date.now() - t : 99999; } catch { return 99999; } };
+    const w = await probe('http://127.0.0.1:7849/health'), a = await probe(`http://127.0.0.1:${process.env.API_PORT || 7839}/api/v1/health`);
+    if ((w < 500 && a < 1500) || Date.now() > deadline) return;
+    await new Promise((r) => setTimeout(r, 30_000));
+  }
+}
+
 export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
   const { ingestDocument } = await import('../../services/ingester.js');
   const rels = [...paths];
@@ -56,15 +67,20 @@ export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
     const { docs } = await listDocs({ ids: ids.slice(i, i + 500), fields: ['id', 'file_path'], limit: 500 });
     rels.push(...docs.map((d) => d.file_path).filter(Boolean));
   }
-  const res = { files: rels.length, ok: 0, failed: [], statuses: {} };
+  const res = { files: rels.length, ok: 0, failed: [], statuses: {}, paced_ms: 0 };
   for (const rel of rels) {
+    await waitForQuietWriter();
     const abs = join(config.library.basePath, rel);
     if (!existsSync(abs)) { res.failed.push({ rel, error: 'no file' }); continue; }
+    const t0 = Date.now();
     try {
       const r = await withAIContext({ caller: 'ops-ingest' }, () => ingestDocument(readFileSync(abs, 'utf8'), {}, rel));
       res.statuses[r.status] = (res.statuses[r.status] || 0) + 1;
       if (r.status === 'error') res.failed.push({ rel, error: r.error }); else res.ok++;
     } catch (err) { res.failed.push({ rel, error: String(err.message || err).slice(0, 200) }); }
+    // duty cycle: rest twice as long as the book took, so bulk ingest holds the single writer ≤ ⅓ of the time
+    const rest = Math.max(1000, 2 * (Date.now() - t0)); res.paced_ms += rest;
+    await new Promise((r) => setTimeout(r, rest));
   }
   res.failed = res.failed.slice(0, 200);
   return res;

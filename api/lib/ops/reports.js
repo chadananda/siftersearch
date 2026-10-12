@@ -76,4 +76,8 @@ REPORTS['ingest-files'] = ingestFilesJob;       // params: { paths?, ids? } — 
 REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by align
 REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
 
+/** Whole-table scans (minutes of I/O): run only in the quiet window, never during the day (Chad 10-11). */
+export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
+export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 2 && h < 6; };
+
 export const reportNames = () => Object.keys(REPORTS);

@@ -224,10 +224,15 @@ const agoOf = (at) => {
     // wrong query to be investigated twice on 2026-08-20/21: a 48.6s language-rollup join was reported
     // under the text of an unrelated 8.5s docs query. Also report WHEN, so a fix can be told from a stale
     // entry still inside the rolling 24h window — that alarm fired for 14h after the cause was gone.
+    // Long READS in the ops worker (siftersearch-reports: night-window health scans) freeze only that process — batch work by
+    // design, reported as info. Writes anywhere, and reads in the API/worker/ingest, still count as blocking.
+    const BATCH = `NOT (kind = 'read' AND proc IN ('reports', 'reports-worker.js'))`;
     const worst = g(`SELECT proc, kind, duration_ms worst, sql_sample sql, at
-                       FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs}
+                       FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND ${BATCH}
                       ORDER BY duration_ms DESC LIMIT 1`);
-    const total = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs}`)?.n ?? 0;
+    const total = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND ${BATCH}`)?.n ?? 0;
+    const batch = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND NOT (${BATCH})`)?.n ?? 0;
+    if (batch) add('Batch scans (24h, ops worker)', true, 'info', `${batch} long reads in siftersearch-reports (night-window health scans)`);
     // A blocking WRITE on the writer is critical (it breaks other processes, not just itself); a blocking
     // read is a warning (slow, but it does not close anyone's socket).
     const isWriter = worst && /worker|write/i.test(String(worst.proc || ''));
