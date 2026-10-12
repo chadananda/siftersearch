@@ -24,7 +24,8 @@ function normalised(s) {
 }
 
 // our stored text keeps markup the page doesn't show: sentence markers, footnote refs, page marks, links, emphasis, escapes
-export const plainText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\[\^[^\]\s]+\]/g, '').replace(/\[pg [^\]]*\]/g, '')
+export const plainText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\[\d+(?:\.\d+)*\]\s*/g, '')   // section markers our copies add: "[93.1] Know thou…" (10-12)
+  .replace(/\[\^[^\]\s]+\]/g, '').replace(/\[pg [^\]]*\]/g, '')
   .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\(?=[\\`*_{}[\]()#+\-.!])/g, '').replace(/[*_]/g, '');
 
 /** [start, end) of `quote` in `page` (whitespace/typography/markup-insensitive), or null. */
