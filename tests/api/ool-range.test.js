@@ -18,13 +18,11 @@ describe('Ocean of Lights range links', () => {
     expect(page.startsWith('– II – The beginning of all things')).toBe(true);
     expect(page).not.toContain('Translated by Shoghi Effendi');
   });
-  it("reproduces Chad's examples: one word when it is the first occurrence, more when it is not", () => {
+  it("reproduces Chad's examples: one word when it is the first occurrence (ignoring case), more when it is not", () => {
     expect(oolQuoteHash(page, ...locateQuote(page, 'The beginning of all things is the knowledge'))).toBe('(The)(knowledge)');
-    // lowercase "the" first occurs at "the knowledge" (indexOf is case-sensitive); the closing "the" is not its first → "and the"
     const hash = oolQuoteHash(page, ...locateQuote(page, 'the knowledge of God, and the'));
-    expect(hash).toBe('(the)(and%20the)');
+    expect(hash).toBe('(the%20knowledge)(and%20the)');
     expect(resolve(page, hash)).toBe('the knowledge of God, and the');
-    expect(resolve(page, '(the%20knowledge)(and%20the)')).toBe('the knowledge of God, and the');   // Chad's longer form: same range
   });
   it('a one-word quote is its own start and end', () => {
     expect(oolQuoteHash(page, ...locateQuote(page, 'empyrean'))).toBe('(empyrean)(empyrean)');

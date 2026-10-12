@@ -3,8 +3,9 @@
 // `.tablet-content.nuxt-content` by plain indexOf (exact, case-sensitive, any substring), takes occurrence N (default the
 // first) of BOTH fragments, and highlights from the start fragment to the end of the end fragment. So the shortest link
 // is the shortest prefix of the quote whose first occurrence is where the quote starts + the shortest suffix whose first
-// occurrence is where it ends, grown a word at a time from ONE word (Chad 10-12: "(The)" when it is the first "The"; a later
-// "The" needs more words to make its first occurrence the selection point); `$N` only when no such pair exists. Pure.
+// occurrence is where it ends, grown a word at a time from ONE word, ignoring case (Chad 10-12: "#(The)(knowledge)" for the
+// first "The"; "#(the knowledge)(and the)" when an earlier "The" makes "the" ambiguous); `$N` only when no such pair exists.
+// Pure.
 
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
@@ -54,7 +55,8 @@ export function locateQuote(page, quote) {
 }
 
 /** 1-based rank of position `pos` among the occurrences of `frag` in `page` (overlapping, as the site counts). */
-function rankOf(page, frag, pos) {
+function rankOf(page, frag, pos, caseless = false) {
+  if (caseless) { page = page.toLowerCase(); frag = frag.toLowerCase(); }
   for (let n = 1, i = page.indexOf(frag); i >= 0; n++, i = page.indexOf(frag, i + 1)) if (i === pos) return n; else if (i > pos) return 0;
   return 0;
 }
@@ -67,12 +69,16 @@ export function oolQuoteHash(page, s, e) {
   const MIN = 1;
   const prefixes = words.slice(MIN - 1).map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
   const suffixes = words.slice(0, words.length - MIN + 1).map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
-  const best = (frags, at) => {                  // rank → shortest fragment with that rank
+  const best = (frags, at, caseless) => {        // rank → shortest fragment with that rank
     const by = new Map();
-    for (const f of frags) { const r = rankOf(page, f, at(f)); if (r && !by.has(r)) by.set(r, f); }
+    for (const f of frags) { const r = rankOf(page, f, at(f), caseless); if (r && !by.has(r)) by.set(r, f); }
     return by;
   };
-  const P = best(prefixes, () => s), Q = best(suffixes, (q) => e - q.length);
+  // First choice: phrases that are the first occurrence IGNORING CASE (Chad 10-12: "the" after a "The" is not unique →
+  // "the knowledge"). A caseless first occurrence is also the site's case-sensitive first, so the link still lands.
+  const p1 = best(prefixes, () => s, true).get(1), q1 = best(suffixes, (q) => e - q.length, true).get(1);
+  if (p1 && q1) return `(${encodeURIComponent(p1)})(${encodeURIComponent(q1)})`;
+  const P = best(prefixes, () => s), Q = best(suffixes, (q) => e - q.length);   // $N: counted as the site counts
   let pick = null;
   for (const [r, p] of P) {
     const q = Q.get(r);
