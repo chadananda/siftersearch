@@ -14,7 +14,7 @@ let stopping = false;
 process.on('SIGTERM', () => { stopping = true; });
 process.on('SIGINT', () => { stopping = true; });
 
-await requeueStale().catch((err) => logger.warn({ err: err.message }, 'reports: requeue failed'));
+if (!process.env.OPS_ONLY) await requeueStale().catch((err) => logger.warn({ err: err.message }, 'reports: requeue failed'));
 logger.info({ reports: Object.keys(REPORTS) }, 'Reports worker started');
 async function lane(name, only, skipAlways) {
   while (!stopping) {
@@ -36,5 +36,9 @@ async function lane(name, only, skipAlways) {
   }
 }
 const laneNames = Object.values(LANES).flat();
-await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, []))]);
+// OPS_ONLY="a,b": a second worker process that runs ONLY these jobs (10-12: carry runs waited hours behind a slow batch;
+// a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
+const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
+if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, []))]);
 process.exit(0);
