@@ -23,6 +23,19 @@ API (ours) may be extended for it (e.g. a "Shoghi Effendi word frequency chart" 
 - [ ] C. CTAI endpoints the strategies need (word frequency / rendering chart over Shoghi Effendi's translations, root
       study, paired passages) — add to CTAI rather than work around
 - [ ] D. Every strategy records its evidence for the auditor (term-study counts done 10-12)
+- [ ] E. SourceHunt fixes from Liliane's BSW review (BH exception.xlsx, 15 items; re-run 10-12 → scratch hunt.json):
+      fixed by now: #30 #57 (Íqán originals via CTAI pairing), #98 (Gleanings XCIII), range links #57 #68 #76 #89;
+      #98/#122 book links → fixed 10-12 ('[93.1]' markers). STILL WRONG:
+      · #44 the BSW book ITSELF (doc 921362, a PDF in Books) wins as "source" → exclude/penalise compilations of the
+        quote under test; original should be Amr va Khalq 3:56 (OOL bahaullah-pub25-056-fa, she: opening chopped)
+      · #86 REGRESSION: "My God, My Master, My Desire!… this atom of dust" → Hidden Words #12 by MEANING; 10-05 had the
+        right Prayer at the Time of Departure from Iran (BH00951) — a meaning-only origin must not beat a verbatim one
+      · #90 a bahai-library article (Savi, Hymn to Love) chosen over God Passes By, where the English is published
+      · #77 source = an oceanoflights /file/…docx; original should be bahaullah-pub17-010-fa
+      · #91 original should be Asrar al-Athar vol. 4 (oceanoflights asrar-ul-athar-jild-4-fa)
+      · #16 #122 #136 catalog (Phelps PIN) wrong while the matched original text is right → check pin assignment per
+        paragraph vs per document (compilation docs carry one pin); #136 timed out on re-run
+      Then re-run all 450 BSW entries and send Liliane the corrected table.
 
 ## Now — LIBRARY CLEANUP (Chad 10-11: "get all the library cleanup tasks done so we can start concept extraction, hype and working on Anis and Dewey")
 - [~] 1. Qdrant phrase layer: primary changed books (run 30, $20 cap) then supplemental scrapes COMPLETE (Chad approved 10-11,
