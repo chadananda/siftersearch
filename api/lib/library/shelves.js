@@ -3,7 +3,7 @@
 // index the /library page renders in one request. Built out of process (scripts/pipeline-snapshot.js →
 // data/library-shelves.json), served edge-cached by GET /api/library/shelves; a shelf's "N more" opens through
 // GET /api/library/shelves/items. A multi-part work (KJV, Qur'an…) is ONE card (ol-works.js).
-import { olPlacement, OL_SHELVES_OF_SEPARATE_WORKS, OL_WORK_COVER, OL_COLLECTION_SHELVES } from './ol-works.js';
+import { olPlacement, OL_SHELVES_OF_SEPARATE_WORKS, OL_WORK_COVER, OL_COLLECTION_SHELVES, OL_TITLE_COLLECTIONS } from './ol-works.js';
 import { slugifyPath, generateDocSlug } from '../slug.js';
 
 export const SHELVES_FILE = 'library-shelves.json';
@@ -92,13 +92,16 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
         return { kind: 'work', title: w.title, author: w.author, parts: list.length, paras: w.paras, id: lead.id, url: docUrl(lead),
           cover: OL_WORK_COVER[w.title] || list.find((p) => p.cover_url)?.cover_url || null, list: list.map(card) };
       });
-      const books = s.books.sort((a, b) => a.title.localeCompare(b.title));
-      // a collection shelf closes into one boxed card (its books keep their own citations)
-      const boxed = s.key in OL_COLLECTION_SHELVES && !works.length && books.length > 1
-        ? [{ kind: 'work', collection: true, title: s.name, author: books[0].author, parts: books.length, paras: books.reduce((n, b) => n + (b.paras || 0), 0),
-          id: books[0].id, url: books[0].url, cover: OL_COLLECTION_SHELVES[s.key] || books.find((b) => b.cover)?.cover || null, list: books }]
-        : null;
-      const items = boxed || [...works, ...books];
+      const box = (title, cover, list) => ({ kind: 'work', collection: true, title, author: list[0].author, parts: list.length,
+        paras: list.reduce((n, b) => n + (b.paras || 0), 0), id: list[0].id, url: list[0].url, cover: cover || list.find((b) => b.cover)?.cover || null, list });
+      let books = s.books.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+      // collections close into one boxed card (their books keep their own citations): a whole shelf, or a title group in it
+      if (s.key in OL_COLLECTION_SHELVES && !works.length && books.length > 1) books = [box(s.name, OL_COLLECTION_SHELVES[s.key], books)];
+      for (const c of OL_TITLE_COLLECTIONS) {
+        const inC = books.filter((b) => !b.kind && b.title.startsWith(c.prefix));
+        if (inC.length > 1) books = [box(c.title, c.cover, inC), ...books.filter((b) => !inC.includes(b))];
+      }
+      const items = [...works, ...books];
       // "N more": an author shelf opens the rest of that author's works in the library (all sites, any collection)
       // the folder decides (a compilation filed under Bahá'u'lláh is still on his shelf)
       const isAuthor = s.key && fold(s.key) !== 'unknown' && !works.length && !OL_SHELVES_OF_SEPARATE_WORKS.has(s.key);

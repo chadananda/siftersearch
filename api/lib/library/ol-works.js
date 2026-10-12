@@ -26,11 +26,17 @@ export const OL_WORK_COVER = Object.freeze({
   'The Mahabharata': COL('col-mahabharata_vyasa'), 'Rig Veda': COL('col-rig-veda'), 'The Upanishads': COL('col-upanishads_2'),
   Avesta: COL('col-avesta'), 'Khorda Avesta': COL('col-khorda-avesta'),
 });
-// Shelves of separate books shown CLOSED as one boxed collection card, like a work (Chad 10-12: Mormon texts, Swedenborg).
-// Display only: each book keeps its own citation. Value = the collection cover (null → the first book's cover).
+// OceanLibrary collections shown CLOSED as one boxed card with their Bindery cover (Chad 10-12). Display only: each book
+// keeps its own citation. Only real OceanLibrary collections — an author's folder (Swedenborg) stays a shelf of books.
+// A whole shelf that IS one collection:
 export const OL_COLLECTION_SHELVES = Object.freeze({
-  'Mormon Texts': COL('col-mormon-texts'), 'Deuterocanonical Books': COL('col-deuterocanonical-books'), 'Emanuel Swedenborg': null,
+  'Mormon Texts': COL('col-mormon-texts'), 'Deuterocanonical Books': COL('col-deuterocanonical-books'),
 });
+// A collection INSIDE a shelf, by title prefix (Sahih Muslim on the Hadith shelf; Revival vols on Al-Ghazzali's):
+export const OL_TITLE_COLLECTIONS = Object.freeze([
+  { title: 'Sahih Muslim', prefix: 'Sahih Muslim (', cover: COL('col-sahih-muslim') },
+  { title: 'Revival of Religious Learnings', prefix: 'Revival of Religious Learnings Vol', cover: COL('col-revival-of-religious-learnings') },
+]);
 /** A part's place in its work: OceanLibrary's frontmatter `weight` (Genesis 1.01 … Revelation; Sura I 1.01 … CXIV), from
  *  docs.frontmatter (JSON). null when absent. */
 export function olWeight(frontmatter) {

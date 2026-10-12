@@ -32,6 +32,9 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
       pair), ingested via ops `ingest-files`, linked 1:1 (`ctai-link`, basis ctai-pair, 0 unresolved); audit: aligned = live,
       no one-to-many. pn follows the English: re-run ops `ctai-originals` + `ingest-files` once the English has pn
       (Gleanings/ESW after this re-ingest; the 6 OL hosts after the ILM export)
+- [x] 9. Shelves (Chad 10-12): Mormon Texts, Deuterocanonical Books, Emanuel Swedenborg close into ONE boxed card (collection
+      covers; Swedenborg = first book's cover, "6 more" kept); citations unchanged. Greek-titled Gospels (20994/20995) were
+      KJV John/Matthew text → marked duplicate_of 20989/20992 via new ops job `retire-duplicates` (dry run default)
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
