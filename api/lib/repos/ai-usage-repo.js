@@ -8,3 +8,10 @@ export async function spendByModel(days = 30) {
       SUM(prompt_tokens) AS prompt_tokens, SUM(completion_tokens) AS completion_tokens, SUM(success = 0) AS failures
     FROM ai_usage WHERE timestamp > datetime('now', ?) GROUP BY model, provider ORDER BY usd DESC`, [`-${Number(days)} days`]);
 }
+
+/** Spend per model × caller over the last `hours` hours. */
+export async function spendSince(hours = 6) {
+  return queryAll(`SELECT model, caller, COUNT(*) AS calls, ROUND(SUM(estimated_cost_usd), 2) AS usd, SUM(success = 0) AS failures,
+      MIN(timestamp) AS first, MAX(timestamp) AS last
+    FROM ai_usage WHERE timestamp > datetime('now', ?) GROUP BY model, caller ORDER BY usd DESC LIMIT 50`, [`-${Number(hours)} hours`]);
+}

@@ -5,6 +5,7 @@ import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/inte
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
 import { normLang } from '../language-codes.js';
+import { spendSince } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
@@ -67,6 +68,9 @@ REPORTS['ctai-audit'] = async () => {
   }
   return { hosts: out };
 };
+
+/** AI spend by model × caller over the last N hours (params: { hours }). */
+REPORTS.spend = async ({ hours = 6 } = {}) => { const rows = await spendSince(hours); return { hours, total_usd: +rows.reduce((n, r) => n + (r.usd || 0), 0).toFixed(2), rows }; };
 
 // JOBS that write (through the single writer) — same queue, same one-at-a-time worker, same API.
 REPORTS['block-attrs'] = blockAttrsJob;   // params: { ids?, limit? } — copy file ids/pn onto rows

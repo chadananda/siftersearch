@@ -23,7 +23,7 @@ if (cmd === 'reports') await out(await call('GET', '/ops/reports'));
 else if (cmd === 'report' && name) {
   if (flag('--latest')) await out(await call('GET', `/ops/reports/${name}/latest`));
   else {
-    const params = val('--days') ? { days: Number(val('--days')) } : val('--ids') ? { ids: val('--ids').split(',').map(Number) } : null;
+    const params = val('--days') ? { days: Number(val('--days')) } : val('--hours') ? { hours: Number(val('--hours')) } : val('--ids') ? { ids: val('--ids').split(',').map(Number) } : null;
     let run = await call('POST', `/ops/reports/${name}`, params ? { params } : {});
     console.error(`run ${run.id} ${run.status}`);
     const deadline = Date.now() + 60 * 60_000;

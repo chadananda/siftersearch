@@ -48,7 +48,8 @@ export async function ctaiOriginalsJob() {
   return { files: out };
 }
 
-/** params: { paths?: relPaths[], ids?: docIds[] } — ingest each file in THIS process (never the API). */
+/** params: { paths?: relPaths[], ids?: docIds[] } — ingest each file in THIS process (never the API). localOnly: a bulk re-ingest
+ *  must NEVER spend — 10-11 the ingester's Arabic branch called Haiku per file (sentence markers) mid-batch, unapproved. */
 /** Back off while the writer or the API is slow: a bulk job must never be why the site stops processing (Chad 10-11). */
 export async function waitForQuietWriter({ maxWaitMs = 30 * 60_000 } = {}) {
   const deadline = Date.now() + maxWaitMs;
@@ -74,7 +75,7 @@ export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
     if (!existsSync(abs)) { res.failed.push({ rel, error: 'no file' }); continue; }
     const t0 = Date.now();
     try {
-      const r = await withAIContext({ caller: 'ops-ingest' }, () => ingestDocument(readFileSync(abs, 'utf8'), {}, rel));
+      const r = await withAIContext({ caller: 'ops-ingest', localOnly: true }, () => ingestDocument(readFileSync(abs, 'utf8'), {}, rel));
       res.statuses[r.status] = (res.statuses[r.status] || 0) + 1;
       if (r.status === 'error') res.failed.push({ rel, error: r.error }); else res.ok++;
     } catch (err) { res.failed.push({ rel, error: String(err.message || err).slice(0, 200) }); }

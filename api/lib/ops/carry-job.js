@@ -30,7 +30,7 @@ export async function reingestCarryJob({ ids = [], backup = `/tank/sifter/carry-
         const [links, m2, gm] = [await linksFor(ids0), await mentionsV2For(ids0), await graphMentionsFor(ids0)];
         appendFileSync(backup, JSON.stringify({ doc: d.id, at: new Date().toISOString(), rows: before.filter(hasWork), links, mentions_v2: m2, graph_mentions: gm }) + '\n');
 
-        const r = await withAIContext({ caller: 'ops-reingest-carry' }, () => ingestDocument(readFileSync(abs, 'utf8'), {}, d.file_path));
+        const r = await withAIContext({ caller: 'ops-reingest-carry', localOnly: true }, () => ingestDocument(readFileSync(abs, 'utf8'), {}, d.file_path));
         if (r.status === 'error') { tot.failed.push({ id: d.id, error: r.error }); continue; }
 
         const after = await snapshotRows(d.id);
