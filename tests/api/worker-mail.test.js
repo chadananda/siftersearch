@@ -110,3 +110,15 @@ describe('ignore rules', () => {
     expect(ignoredBy(['other@x.org'], ['news@x.org'])).toBeNull();
   });
 });
+
+describe('ownText / unwrap (10-12: hard-wrapped mail showed artificial breaks; a wrapped "wrote:" kept the quote)', async () => {
+  const { ownText, unwrap } = await import('../../worker/mail/index.js');
+  it('drops a quote whose attribution line was wrapped', () => {
+    expect(ownText('did you get my question\n\n\nOn Mon, Oct 12, 2026 at 11:06 AM Liliane Saberin <liliane.saberin@gmail.com>\nwrote:\n\n> What is Irfan in the Baha\'i faith?\n>'))
+      .toBe('did you get my question');
+  });
+  it('re-joins hard-wrapped paragraphs, keeps paragraphs, short lines and lists', () => {
+    const wrapped = 'I have been reading the Kitáb-i-Íqán and I keep coming across the word\nirfan, which seems to mean knowledge.\n\nThanks,\nLiliane\n\n- one\n- two';
+    expect(unwrap(wrapped)).toBe('I have been reading the Kitáb-i-Íqán and I keep coming across the word irfan, which seems to mean knowledge.\n\nThanks,\nLiliane\n\n- one\n- two');
+  });
+});

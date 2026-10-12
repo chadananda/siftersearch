@@ -1,6 +1,538 @@
 {
-  "generated": "2026-10-11T19:12:43.737Z",
+  "generated": "2026-10-12T21:18:29.235Z",
   "entries": [
+    {
+      "hash": "44db3b42",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "'What is Irfan in the Baha'i faith?' is a term question → CTAI term study (Liliane 10-12 got 'cannot find')",
+      "scope": "anis"
+    },
+    {
+      "hash": "e0526bc5",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Status 12:55 — carry 1,155/1,806, Arabic tail, phrase-index visibility, grounding spend",
+      "scope": "worklist"
+    },
+    {
+      "hash": "3a6af646",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Range links done; translator mining job queued",
+      "scope": "worklist"
+    },
+    {
+      "hash": "d41f29f3",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Translator-coverage report (content.translator by basis, translation_by, docs.translators)",
+      "scope": "ops"
+    },
+    {
+      "hash": "ce248044",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "A verbatim citation inherits the source's translator unless it records its own",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "3ebbf1a6",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Translated_by on the source and each citing publication (Chad 10-12)",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "488eb2eb",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Book-level OceanLibrary quote lookup falls back to 8 then 5 opening words (copies differ inside the quote)",
+      "scope": "links"
+    },
+    {
+      "hash": "ac1bb240",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Aborted deploy resets to the running commit and retries (alert at 3); smoke DB tests 15 s; textFragment replaces linkFor's marker",
+      "scope": "deploy+links"
+    },
+    {
+      "hash": "7db48689",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Quote markers escape ( ) ' ! * ~; no range hash on Ocean of Lights file downloads; book lookup picks the OceanLibrary site copy",
+      "scope": "links"
+    },
+    {
+      "hash": "e89de3d4",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Book-level OceanLibrary links with a known quote become range links (our main-library Gleanings → OL paragraph)",
+      "scope": "links"
+    },
+    {
+      "hash": "48afe374",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Ocean of Lights ranges from OUR stored copy of the page — no request to oceanoflights.org at search time (Chad 10-12)",
+      "scope": "links"
+    },
+    {
+      "hash": "037c9c3c",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Every OceanLibrary / Ocean of Lights link leaves as a range link (Chad 10-12)",
+      "scope": "links"
+    },
+    {
+      "hash": "112f2d1e",
+      "date": "2026-10-12",
+      "type": "Refactor",
+      "description": "Drop leftover MIN from Ocean of Lights phrase builder",
+      "scope": "links"
+    },
+    {
+      "hash": "9da9abbd",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Ocean of Lights phrase uniqueness ignores case — #(The)(knowledge) and #(the knowledge)(and the) (Chad 10-12)",
+      "scope": "links"
+    },
+    {
+      "hash": "6875305b",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Ocean of Lights phrases grow from ONE word — '(The)' when it is the first occurrence (Chad 10-12)",
+      "scope": "links"
+    },
+    {
+      "hash": "3f5ff378",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Ocean of Lights phrases start at two words — #(the knowledge)(and the) (Chad 10-12)",
+      "scope": "links"
+    },
+    {
+      "hash": "537255dc",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Ocean of Lights range links #(start)(end)[$N] — shortest first-occurrence fragments from the page's own text",
+      "scope": "links"
+    },
+    {
+      "hash": "2eedd83c",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Slow-query fixes; writer transaction follow-up",
+      "scope": "worklist"
+    },
+    {
+      "hash": "a1cb5c5d",
+      "date": "2026-10-12",
+      "type": "Performance",
+      "description": "Roadmap cache 30 min (was 5, per API worker) — ~1,600 slow 'doc_id IN (898)' reads/day at up to 62 s",
+      "scope": "bio"
+    },
+    {
+      "hash": "62d041d0",
+      "date": "2026-10-12",
+      "type": "Performance",
+      "description": "Cut the steady slow-read load (~100/h) — spend rollups every 30 min not 5, bio cost cache 1 h, retired graph_enriched count dropped; alert leads with last-3h top offender",
+      "scope": null
+    },
+    {
+      "hash": "286b7ac9",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Slow-queries report — slow_query_log per hour × process × caller (live cause vs stale 24h entry)",
+      "scope": "ops"
+    },
+    {
+      "hash": "23ba3e04",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "A collection card stands inline in the tradition's general row (no row of its own); opens below it",
+      "scope": "library"
+    },
+    {
+      "hash": "272fa10b",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Sikh books waiting on OceanLibrary export",
+      "scope": "worklist"
+    },
+    {
+      "hash": "90102a3a",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Sikh OL shelf follow-up",
+      "scope": "worklist"
+    },
+    {
+      "hash": "0d88daa3",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Swedenborg back to an author shelf (not an OL collection); Sahih Muslim + Revival of Religious Learnings box inside their shelves with Bindery covers",
+      "scope": "library"
+    },
+    {
+      "hash": "5b63b9ab",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Collection shelves close into one boxed card (Mormon Texts, Deuterocanonical, Swedenborg); ops retire-duplicates job",
+      "scope": "library"
+    },
+    {
+      "hash": "91a56659",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Handoff 10-12 06:30",
+      "scope": "worklist"
+    },
+    {
+      "hash": "33fa8a81",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "OPS_ONLY second worker (siftersearch-reports-carry) — carry runs start beside a slow batch without restarting the main worker",
+      "scope": "ops"
+    },
+    {
+      "hash": "9fb1fd71",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Overnight — carry 1,806 books, phrase indexes",
+      "scope": "worklist"
+    },
+    {
+      "hash": "351139ea",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Repair retires the links the pre-fix carry fanned out (keeps the corrected targets)",
+      "scope": "carry"
+    },
+    {
+      "hash": "f87d04c8",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Carry-repair in the quick lane",
+      "scope": "ops"
+    },
+    {
+      "hash": "947cfe15",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Merges pool HyPE questions (pilot lost 18%); graph mentions matched as INTEGER (were never found); links only to genuine split pieces; carry-repair re-applies from the backup; verify counts questions",
+      "scope": "carry"
+    },
+    {
+      "hash": "912d0c56",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Quick-report lane — a 1000-book batch can no longer hold spend/audit/verify answers for hours",
+      "scope": "ops"
+    },
+    {
+      "hash": "515f940d",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Bulk re-ingest jobs run localOnly — they must never spend (the ingester's Arabic branch called Haiku per file mid-batch, unapproved); spend report; quick reports jump the queue",
+      "scope": "ops"
+    },
+    {
+      "hash": "13511320",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Carry-verify — enrichment per book before (backup) vs after the carry",
+      "scope": "ops"
+    },
+    {
+      "hash": "f89ebe9e",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Reingest-carry runs ahead of plain re-ingest batches",
+      "scope": "ops"
+    },
+    {
+      "hash": "2fb5ce77",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Reingest-carry — re-ingest drifted books and carry HyPE/context/authorship/originals, alignment links and entity mentions to the new rows holding the same words (backup first, paced); ops worker lanes (phrase-index beside the main lane); overnight window 22–07",
+      "scope": "ops"
+    },
+    {
+      "hash": "61076264",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Bulk work never starves the system — ingest-files paces itself (writer ≤ ⅓ busy) and backs off while writer/API are slow; whole-table reports + phrase indexing run only 02:00–06:00; ops-worker batch reads reported as info, not 'blocking'",
+      "scope": "ops"
+    },
+    {
+      "hash": "e5845216",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Phrase-index job — the indexer runs as a child of the ops worker, one at a time (two indexers + a scan locked the vector store and killed a 10-11 run); spend cap required",
+      "scope": "ops"
+    },
+    {
+      "hash": "9e5577ba",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Watchdog stands down for 2 min after a deploy swap and re-checks 45 s before restarting — a [PAGE] fired 19 s into a 10-11 deploy for a worker the deploy brought up itself",
+      "scope": "ops"
+    },
+    {
+      "hash": "dffd19d0",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "CTAI originals from the English — done",
+      "scope": "worklist"
+    },
+    {
+      "hash": "e4cdef4f",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Reingest impact + decision",
+      "scope": "worklist"
+    },
+    {
+      "hash": "d92f628f",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Originals paragraphed FROM THE ENGLISH — ctai-originals writes one original-language library file per CTAI host (1 ¶ per English ¶, align + pn), ingest-files ingests in the ops worker, ctai-link adds 1:1 content_alignment (basis ctai-pair)",
+      "scope": "ctai"
+    },
+    {
+      "hash": "c4a2b8b5",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Reingest-impact report — enrichment (HyPE, translations, originals, alignment, mentions) on the drifted rows a re-ingest would replace; safe list vs at-risk books",
+      "scope": "ops"
+    },
+    {
+      "hash": "c8c7c54c",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Block-mismatch report — sample rows that don't match their file blocks (server-side); ops.mjs --ids",
+      "scope": "ops"
+    },
+    {
+      "hash": "2732021f",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Ops.mjs flushes stdout before exit (results were cut at 64 KB); updater kills only API strays older than 3 min (not a worker draining after reload)",
+      "scope": "ops"
+    },
+    {
+      "hash": "080c8b58",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "CTAI audit findings + plan",
+      "scope": "worklist"
+    },
+    {
+      "hash": "6dfef4c4",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Ctai-audit counts English rows carrying their CTAI original (original_text) + site ids",
+      "scope": "ops"
+    },
+    {
+      "hash": "d0e99901",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Block-attrs counts only TEXT rows as unmatched (headings never get ids); full need-reingest list",
+      "scope": "ops"
+    },
+    {
+      "hash": "1ebf0f8c",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Ctai-audit report — per CTAI English host: pn coverage, alignment rows (stale either side), per original: aligned share, pn match, one-to-many",
+      "scope": "ops"
+    },
+    {
+      "hash": "3af19fb2",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Ids written to library files",
+      "scope": "worklist"
+    },
+    {
+      "hash": "ea2d6ba4",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Block-attrs job — copies file ids/pn onto stored rows by word hash (no re-ingest, no re-embedding), run by siftersearch-reports over the ops API",
+      "scope": "ops"
+    },
+    {
+      "hash": "741d1b8d",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Stable paragraph ids + display numbers in library source files ({id=\"para_N\" pn=\"M\"}, OL-compatible; ids permanent, verse pn kept); a file with ids keeps its blocks at ingest. Pilot: 3 books re-ingested via the API, pn served",
+      "scope": "library"
+    },
+    {
+      "hash": "1446ec91",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Seg tail done; phrase coverage measured",
+      "scope": "worklist"
+    },
+    {
+      "hash": "7c0eeefc",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Ops API + legacy tool migration",
+      "scope": "worklist"
+    },
+    {
+      "hash": "808f36d9",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Scripts and agents never touch production data — internal ops API (/api/admin/ops/reports, ops.mjs CLI); health scans are reports run one at a time by siftersearch-reports (migr 146); ratchet: 195 scripts frozen, shrink-only",
+      "scope": "ops"
+    },
+    {
+      "hash": "0576b9fc",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Coverage report — paragraphs with phrase units vs live, per scope × religion, $ to finish (phrase-store-repo)",
+      "scope": "phrase-index"
+    },
+    {
+      "hash": "c8dbb2b3",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Reader verified; stale API workers found + fixed",
+      "scope": "worklist"
+    },
+    {
+      "hash": "b9541561",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Stray-API check ignores a deploy's own test API (< 3 min old)",
+      "scope": "ops"
+    },
+    {
+      "hash": "806c24bf",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Stale API cluster workers from 10-10 kept serving day-old code on :7839 — updater kills API processes PM2 doesn't manage after every swap, stops the test API for sure (SIGKILL after 5 s); critical path checks for strays",
+      "scope": "deploy"
+    },
+    {
+      "hash": "aa796d03",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Cleanup progress",
+      "scope": "worklist"
+    },
+    {
+      "hash": "ac2e513a",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "'Se' = Swedish here; relabelled docs re-sync their paragraphs",
+      "scope": "library"
+    },
+    {
+      "hash": "7bd1b306",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "ONE language normaliser (ISO 639-1); ingest + sites-ingest normalise; DB backfill script (per-doc, re-sync)",
+      "scope": "library"
+    },
+    {
+      "hash": "6ed455c0",
+      "date": "2026-10-11",
+      "type": "Fixed",
+      "description": "Writer up <5 min after a deploy = starting, not an [ACTION]; retire the legacy SQL migration runner (failed every deploy since 10-10) — npm run migrate = the JS runner. feat(bakeoff): scoring, blind judge (bakeoff-judge role, policy stage model-eval), multilingual scenarios; anisCraft per-model request shape + onUsage",
+      "scope": "ops"
+    },
+    {
+      "hash": "43e64c07",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Library cleanup first, then concepts/HyPE/Anís/Dewey; Strata waits on xswarm move",
+      "scope": "worklist"
+    },
+    {
+      "hash": "456d31f1",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Tidy",
+      "scope": "worklist"
+    },
+    {
+      "hash": "8d26ff90",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Index caught up, drop explained, hollow check clean; bake-off plan",
+      "scope": "worklist"
+    },
+    {
+      "hash": "5f0b844c",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Hollow-report — live books with no text or with empty rows, per source (integrity-repo)",
+      "scope": "ops"
+    },
+    {
+      "hash": "cb27285a",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Content-drop tripwire can be rebased after an explained retirement (--rebase-integrity, recorded)",
+      "scope": "ops"
+    },
+    {
+      "hash": "5b83eafe",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Deletions-report — soft-deleted paragraphs per day × source (integrity-repo), to explain a content-drop alert",
+      "scope": "ops"
+    },
+    {
+      "hash": "ae42f1d3",
+      "date": "2026-10-11",
+      "type": "Chore",
+      "description": "Current flash tier verified on official pricing pages 10-11 (Gemini 3.8 Flash / 3.1 Flash-Lite, GPT-5 nano/mini, GPT-5.4 nano/mini, deepseek-flash); retired local/obsolete models; fix Sonnet/Opus 5.5 name+type that were commented out",
+      "scope": "registry"
+    },
+    {
+      "hash": "73132e38",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "One role table (model-roles.js, modelFor) for search strategies + segmentation; monthly re-assessment (model-review, [ACTION] when a role is stale/deprecated/beaten by a newer cheaper model); hard-coded model ids ratcheted",
+      "scope": "models"
+    },
+    {
+      "hash": "e1801b62",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Deep-research → search strategy over plannedSearch",
+      "scope": "worklist"
+    },
+    {
+      "hash": "09df7fb0",
+      "date": "2026-10-11",
+      "type": "Refactor",
+      "description": "Deep-research reads/writes only through api/lib/repos/deep-research-repo.js (first D1 migration; legacy list 299 → 296)",
+      "scope": "db"
+    },
+    {
+      "hash": "b6819df9",
+      "date": "2026-10-11",
+      "type": "Docs",
+      "description": "Worklist — order of operations, kept current",
+      "scope": "planning"
+    },
+    {
+      "hash": "48cececb",
+      "date": "2026-10-11",
+      "type": "New",
+      "description": "Chapter dividers where a verse pn changes chapter; heading rows (heading2/3) render as headings, unnumbered",
+      "scope": "reader"
+    },
     {
       "hash": "b1e01757",
       "date": "2026-10-11",
@@ -2968,542 +3500,544 @@
       "type": "Fixed",
       "description": "Profile card keeps a one-off relative only when the record has little family data",
       "scope": "entities"
-    },
-    {
-      "hash": "471148d2",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Profile cards — each person by majority of their own facts (names incl. titles/original script, dates, family, places, roles); migration 127",
-      "scope": "entities"
-    },
-    {
-      "hash": "bdde21dc",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Jev in extraction — occurrence linking measured (disagrees with 93% of wrong bindings; 92% right when confident); build order",
-      "scope": "planning"
-    },
-    {
-      "hash": "c6182e27",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Read a book's grounding log over the internal API (failures were diagnosable only over SSH)",
-      "scope": "grounding"
-    },
-    {
-      "hash": "0eb4054a",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Stage-2 audit rule — 'different' ≥0.4 or weak 'profile' <0.6 (the ≥0.75 cut dropped 7 of 9 real errors)",
-      "scope": "entities"
-    },
-    {
-      "hash": "1412552a",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Audit report keeps each flag's stage-2 answer (to measure what stage 2 drops)",
-      "scope": "entities"
-    },
-    {
-      "hash": "744152b5",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Two-stage Jev audit — flags re-asked with wide context; a reader sees only a confident 'different'",
-      "scope": "entities"
-    },
-    {
-      "hash": "6829db6a",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Keep provider names out of the library (comment)",
-      "scope": "rag"
-    },
-    {
-      "hash": "c586505e",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "System-1 identity gate at reconcile — a confident 'different' downgrades a link to uncertain (optional port; Jev in the adapter)",
-      "scope": "entities"
-    },
-    {
-      "hash": "6795265f",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Jev as System 1 — measured strengths/failures and where it goes in the pipeline",
-      "scope": "planning"
-    },
-    {
-      "hash": "b5428ba3",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Cluster audit Jev timeout 20s (the names profile made 8s time out)",
-      "scope": "entities"
-    },
-    {
-      "hash": "9476e5e2",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Cluster audit tells Jev the names the texts use (titles, original script) and retries a failed batch",
-      "scope": "entities"
-    },
-    {
-      "hash": "6d50eb75",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Cluster audit keeps a random sample of passed clusters so recall can be measured",
-      "scope": "entities"
-    },
-    {
-      "hash": "fd2862a2",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Jev cluster audit — flags bindings a reader should check (read-only)",
-      "scope": "entities"
-    },
-    {
-      "hash": "c17fdc18",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Detach — unbind a mention the passage shows is not this person, without guessing who it is",
-      "scope": "entities"
-    },
-    {
-      "hash": "bc312cbf",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Split-mention — move individual mentions (by anchor) when one label covered two people; cluster-passages returns anchors + fuller text",
-      "scope": "entities"
-    },
-    {
-      "hash": "9e46bb4c",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "09-28 afternoon status — target everywhere, 113 splits, lookup holes",
-      "scope": "identity"
-    },
-    {
-      "hash": "f8acbd2c",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "A long name whose consonant skeleton vanishes keeps a key ('Yaḥyá' had none — Mírzá Yaḥyá was unfindable by name); backfill mode adds the missing keys",
-      "scope": "lookup"
-    },
-    {
-      "hash": "5b71c9ae",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "A created or renamed record is indexed for lookup at once; backfill for records the pipeline minted unreachable",
-      "scope": "entities"
-    },
-    {
-      "hash": "b2bcf73d",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Clusters moving to one new person create that record once per batch",
-      "scope": "entities"
-    },
-    {
-      "hash": "bc4a19ed",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Split a mixed record by cluster — repoint verdict (claims follow only from paragraphs the record no longer holds) + read-only cluster-passages",
-      "scope": "entities"
-    },
-    {
-      "hash": "f1274d4b",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Target resolve waits until 1.2s or the passage search ends, whichever is later (a t0 timer dropped 'iderne' on a busy box)",
-      "scope": "search"
-    },
-    {
-      "hash": "aaf98816",
-      "date": "2026-09-28",
-      "type": "Performance",
-      "description": "A target's names are searched by keyword only (was a full embedding+HyPE search per name, 1.8–3.7s)",
-      "scope": "search"
-    },
-    {
-      "hash": "0bf6ebb2",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "/multi reports the resolved target",
-      "scope": "search"
-    },
-    {
-      "hash": "902532ef",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Chat + Anís + public API search the TARGET a name resolves to ('iderne' → Adrianople), passages naming it lead with the target highlighted",
-      "scope": "search"
-    },
-    {
-      "hash": "493e6197",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "2026-09-28 status — review settled, passage-less records retired/rescued, stamp v2",
-      "scope": "identity"
-    },
-    {
-      "hash": "53073c07",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Disambiguation stamp v2 for the every-named-person prompt (notes of v1 and v2 both read); 'retired' state for records no text supports",
-      "scope": "entities"
-    },
-    {
-      "hash": "35037f95",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Read-only record-passages — rescue a passage-less record's paragraphs from graph.db and scenes, with what the current pipeline bound there",
-      "scope": "entities"
-    },
-    {
-      "hash": "3c7c1690",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Chained reviewed merges fold into one survivor per person; a 'different' inside a group is refused",
-      "scope": "entities"
-    },
-    {
-      "hash": "41d5a0cc",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Entity-provenance shows which writer made each alias",
-      "scope": "entities"
-    },
-    {
-      "hash": "3e2e48ff",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Entity-provenance reads the old extractor's mentions in graph.db",
-      "scope": "entities"
-    },
-    {
-      "hash": "3af4d58e",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Entity-provenance reports unreadable tables and the legacy mention table's size",
-      "scope": "entities"
-    },
-    {
-      "hash": "01581f75",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Read-only entity-provenance — where a record came from and what still points at it",
-      "scope": "entities"
-    },
-    {
-      "hash": "912eca7d",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Reviewed identity verdicts become decisions (human tier 3, evidence, reversible); rename a record its passages never name",
-      "scope": "entities"
-    },
-    {
-      "hash": "01278fb8",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Twin records weigh as one place; every sound-alike weighed by its text count ('iderne' vs 'Adrienne D.')",
-      "scope": "search"
-    },
-    {
-      "hash": "3473e704",
-      "date": "2026-09-27",
-      "type": "Chore",
-      "description": "Internal-key explain on /quick shows the target candidates as scored",
-      "scope": "search"
-    },
-    {
-      "hash": "06cc0598",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Records sharing ANY sound-alike spelling are twins ('iderne' via Adirnih and via Edirne is one place)",
-      "scope": "search"
-    },
-    {
-      "hash": "be36be02",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Records reached through the same name are one target, not rivals ('iderne' → Adrianople + the duplicate Edirne record)",
-      "scope": "search"
-    },
-    {
-      "hash": "eb026932",
-      "date": "2026-09-27",
-      "type": "Chore",
-      "description": "Quick search reports target resolve time",
-      "scope": "search"
-    },
-    {
-      "hash": "3275c397",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Target resolution budget 1.2s (a misspelled name needs a text count)",
-      "scope": "search"
-    },
-    {
-      "hash": "a7f829f1",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Sound-alike places weighed by text occurrence; same-name duplicate records searched together",
-      "scope": "search"
-    },
-    {
-      "hash": "0c0bd20e",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "A target must match one of its OWN names — exact, or the whole sound-key set; one shared key is not enough",
-      "scope": "search"
-    },
-    {
-      "hash": "9db9ab08",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Target weight counts claims pointing at a place; lookup takes 30 candidates (Adrianople fell outside 8 'drn' sound-alikes)",
-      "scope": "search"
-    },
-    {
-      "hash": "63a809a4",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Quick search follows the TARGET — every name of the person/place searched, the target highlighted; entity-alias endpoint",
-      "scope": "search"
-    },
-    {
-      "hash": "f6ba7c08",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Entity-top — most-mentioned people with mentions, books, handles (review sizing)",
-      "scope": "research"
-    },
-    {
-      "hash": "83b64424",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Mention breakdown shows what each book's OWN identity decision said",
-      "scope": "research"
-    },
-    {
-      "hash": "60f27e83",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Entity-mention-breakdown (where a record's mentions come from); search-target resolver (not yet wired)",
-      "scope": "research"
-    },
-    {
-      "hash": "9a9d79b8",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Translate a ~400-char window around the target, never a page of footnotes",
-      "scope": "review"
-    },
-    {
-      "hash": "bcdbffb1",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Sentence markers stripped and used to find the target sentence; no-basis candidates labelled and sorted last",
-      "scope": "review"
-    },
-    {
-      "hash": "c5e66bf9",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Merge-review shows full passages from mentions AND claims, the passage that raised each pair, and English translations with the target term bolded",
-      "scope": "review"
-    },
-    {
-      "hash": "542331d5",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Soul — question rather than pronounce; challenge the idea, never the person's dignity",
-      "scope": "anis"
-    },
-    {
-      "hash": "333d62f0",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "P1 done",
-      "scope": "anis"
-    },
-    {
-      "hash": "773713e5",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Soul battery with a calibrated scorer; house style fixes for flattery, method narration, machinery talk",
-      "scope": "anis"
-    },
-    {
-      "hash": "f36c23f6",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Chosen answer format in the stream's complete meta",
-      "scope": "anis"
-    },
-    {
-      "hash": "aa4030ee",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "P1 — typed findings with authority kinds; answer formats chosen from question + evidence + channel",
-      "scope": "anis"
-    },
-    {
-      "hash": "b5f44ab1",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Identity + Anis status 2026-09-27 evening",
-      "scope": "plan"
-    },
-    {
-      "hash": "08acb248",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "'prior to X' is chronology — X is dated by its earliest dated evidence; later meetings sink even when they never mention X",
-      "scope": "search"
-    },
-    {
-      "hash": "91fb7927",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "A hyphenated compound given name (Muḥammad-‘Alí) is not a nisba",
-      "scope": "entities"
-    },
-    {
-      "hash": "c2191afb",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "P1 — soul.md + house style as the constant (cached) system prompt; per-reply DIRECTION from the gate",
-      "scope": "anis"
-    },
-    {
-      "hash": "bd4cbc07",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "SSE chat streams never sent the session cookie — every widget visitor was anonymous with no identity",
-      "scope": "identity"
-    },
-    {
-      "hash": "db5616ed",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "P0 — exchange log before answer, Jev triage gate, canned replies, hidden tarpit, output check, voice lint",
-      "scope": "anis"
-    },
-    {
-      "hash": "b073d824",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Soul battery packets for the convictions",
-      "scope": "anis"
-    },
-    {
-      "hash": "b18a0c3f",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Soul — believer in all traditions; religion as source of order, law as protection; free will and effort",
-      "scope": "anis"
-    },
-    {
-      "hash": "19fc7e8f",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Soul carries no subject facts — calibration is a placeholder pattern",
-      "scope": "anis"
-    },
-    {
-      "hash": "2059bfb6",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Soul.md draft — compact personality and principles: a friend who disagrees for your good, gently",
-      "scope": "anis"
-    },
-    {
-      "hash": "2c90e8e4",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Hyper-engagement PRD — playbook × Seeker Companion × current code, features, test suites, phases, decisions",
-      "scope": "anis"
-    },
-    {
-      "hash": "21cc18d7",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Merge-review export includes pair-judge disagreements with both verdicts",
-      "scope": "review"
-    },
-    {
-      "hash": "7bb440ae",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "A veto must be provable from the claim's own proof; distinct needs both judges",
-      "scope": "entities"
-    },
-    {
-      "hash": "77a45480",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "One surface naming two people in a paragraph yields two mentions (occurrence index); existing anchors unchanged",
-      "scope": "entities"
-    },
-    {
-      "hash": "f9f56fd5",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Disambiguation resolves EVERY named person; a bare name is not given to the most prominent bearer; claims accept any note",
-      "scope": "pipeline"
-    },
-    {
-      "hash": "2b1f41fd",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Dedup-guard searches by fact objects, not statements that begin with the subject's name",
-      "scope": "entities"
-    },
-    {
-      "hash": "9d805a41",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Research-resolve reads the uncertain figure's own passages before other books",
-      "scope": "entities"
-    },
-    {
-      "hash": "bb34fa06",
-      "date": "2026-09-27",
-      "type": "New",
-      "description": "Pair judge — two independent judges decide if two records are one person; merges carry evidence",
-      "scope": "entities"
-    },
-    {
-      "hash": "d91d93df",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Identity doctrine — a name never decides identity; SAME needs a positive tie beyond it, default UNSURE",
-      "scope": "entities"
-    },
-    {
-      "hash": "1963cb07",
-      "date": "2026-09-27",
-      "type": "Docs",
-      "description": "Identity work — increment 2 status, dry-run results, next: evidence dossier + pair judge",
-      "scope": "plan"
-    },
-    {
-      "hash": "5417a107",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Conflict veto rewritten for production-shaped claims; claims record whether a date was stated or inherited",
-      "scope": "entities"
-    },
-    {
-      "hash": "00be9504",
-      "date": "2026-09-27",
-      "type": "Fixed",
-      "description": "Materialize unbinds undecided bindings on abstention handles instead of recording them",
-      "scope": "entities"
     }
   ],
   "grouped": {
+    "2026-10-12": [
+      {
+        "hash": "44db3b42",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "'What is Irfan in the Baha'i faith?' is a term question → CTAI term study (Liliane 10-12 got 'cannot find')",
+        "scope": "anis"
+      },
+      {
+        "hash": "e0526bc5",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Status 12:55 — carry 1,155/1,806, Arabic tail, phrase-index visibility, grounding spend",
+        "scope": "worklist"
+      },
+      {
+        "hash": "3a6af646",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Range links done; translator mining job queued",
+        "scope": "worklist"
+      },
+      {
+        "hash": "d41f29f3",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Translator-coverage report (content.translator by basis, translation_by, docs.translators)",
+        "scope": "ops"
+      },
+      {
+        "hash": "ce248044",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "A verbatim citation inherits the source's translator unless it records its own",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "3ebbf1a6",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Translated_by on the source and each citing publication (Chad 10-12)",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "488eb2eb",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Book-level OceanLibrary quote lookup falls back to 8 then 5 opening words (copies differ inside the quote)",
+        "scope": "links"
+      },
+      {
+        "hash": "ac1bb240",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Aborted deploy resets to the running commit and retries (alert at 3); smoke DB tests 15 s; textFragment replaces linkFor's marker",
+        "scope": "deploy+links"
+      },
+      {
+        "hash": "7db48689",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Quote markers escape ( ) ' ! * ~; no range hash on Ocean of Lights file downloads; book lookup picks the OceanLibrary site copy",
+        "scope": "links"
+      },
+      {
+        "hash": "e89de3d4",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Book-level OceanLibrary links with a known quote become range links (our main-library Gleanings → OL paragraph)",
+        "scope": "links"
+      },
+      {
+        "hash": "48afe374",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Ocean of Lights ranges from OUR stored copy of the page — no request to oceanoflights.org at search time (Chad 10-12)",
+        "scope": "links"
+      },
+      {
+        "hash": "037c9c3c",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Every OceanLibrary / Ocean of Lights link leaves as a range link (Chad 10-12)",
+        "scope": "links"
+      },
+      {
+        "hash": "112f2d1e",
+        "date": "2026-10-12",
+        "type": "Refactor",
+        "description": "Drop leftover MIN from Ocean of Lights phrase builder",
+        "scope": "links"
+      },
+      {
+        "hash": "9da9abbd",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Ocean of Lights phrase uniqueness ignores case — #(The)(knowledge) and #(the knowledge)(and the) (Chad 10-12)",
+        "scope": "links"
+      },
+      {
+        "hash": "6875305b",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Ocean of Lights phrases grow from ONE word — '(The)' when it is the first occurrence (Chad 10-12)",
+        "scope": "links"
+      },
+      {
+        "hash": "3f5ff378",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Ocean of Lights phrases start at two words — #(the knowledge)(and the) (Chad 10-12)",
+        "scope": "links"
+      },
+      {
+        "hash": "537255dc",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Ocean of Lights range links #(start)(end)[$N] — shortest first-occurrence fragments from the page's own text",
+        "scope": "links"
+      },
+      {
+        "hash": "2eedd83c",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Slow-query fixes; writer transaction follow-up",
+        "scope": "worklist"
+      },
+      {
+        "hash": "a1cb5c5d",
+        "date": "2026-10-12",
+        "type": "Performance",
+        "description": "Roadmap cache 30 min (was 5, per API worker) — ~1,600 slow 'doc_id IN (898)' reads/day at up to 62 s",
+        "scope": "bio"
+      },
+      {
+        "hash": "62d041d0",
+        "date": "2026-10-12",
+        "type": "Performance",
+        "description": "Cut the steady slow-read load (~100/h) — spend rollups every 30 min not 5, bio cost cache 1 h, retired graph_enriched count dropped; alert leads with last-3h top offender",
+        "scope": null
+      },
+      {
+        "hash": "286b7ac9",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Slow-queries report — slow_query_log per hour × process × caller (live cause vs stale 24h entry)",
+        "scope": "ops"
+      },
+      {
+        "hash": "23ba3e04",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "A collection card stands inline in the tradition's general row (no row of its own); opens below it",
+        "scope": "library"
+      },
+      {
+        "hash": "272fa10b",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Sikh books waiting on OceanLibrary export",
+        "scope": "worklist"
+      },
+      {
+        "hash": "90102a3a",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Sikh OL shelf follow-up",
+        "scope": "worklist"
+      },
+      {
+        "hash": "0d88daa3",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Swedenborg back to an author shelf (not an OL collection); Sahih Muslim + Revival of Religious Learnings box inside their shelves with Bindery covers",
+        "scope": "library"
+      },
+      {
+        "hash": "5b63b9ab",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Collection shelves close into one boxed card (Mormon Texts, Deuterocanonical, Swedenborg); ops retire-duplicates job",
+        "scope": "library"
+      },
+      {
+        "hash": "91a56659",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Handoff 10-12 06:30",
+        "scope": "worklist"
+      },
+      {
+        "hash": "33fa8a81",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "OPS_ONLY second worker (siftersearch-reports-carry) — carry runs start beside a slow batch without restarting the main worker",
+        "scope": "ops"
+      },
+      {
+        "hash": "9fb1fd71",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Overnight — carry 1,806 books, phrase indexes",
+        "scope": "worklist"
+      },
+      {
+        "hash": "351139ea",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Repair retires the links the pre-fix carry fanned out (keeps the corrected targets)",
+        "scope": "carry"
+      },
+      {
+        "hash": "f87d04c8",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Carry-repair in the quick lane",
+        "scope": "ops"
+      }
+    ],
     "2026-10-11": [
+      {
+        "hash": "947cfe15",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Merges pool HyPE questions (pilot lost 18%); graph mentions matched as INTEGER (were never found); links only to genuine split pieces; carry-repair re-applies from the backup; verify counts questions",
+        "scope": "carry"
+      },
+      {
+        "hash": "912d0c56",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Quick-report lane — a 1000-book batch can no longer hold spend/audit/verify answers for hours",
+        "scope": "ops"
+      },
+      {
+        "hash": "515f940d",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Bulk re-ingest jobs run localOnly — they must never spend (the ingester's Arabic branch called Haiku per file mid-batch, unapproved); spend report; quick reports jump the queue",
+        "scope": "ops"
+      },
+      {
+        "hash": "13511320",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Carry-verify — enrichment per book before (backup) vs after the carry",
+        "scope": "ops"
+      },
+      {
+        "hash": "f89ebe9e",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Reingest-carry runs ahead of plain re-ingest batches",
+        "scope": "ops"
+      },
+      {
+        "hash": "2fb5ce77",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Reingest-carry — re-ingest drifted books and carry HyPE/context/authorship/originals, alignment links and entity mentions to the new rows holding the same words (backup first, paced); ops worker lanes (phrase-index beside the main lane); overnight window 22–07",
+        "scope": "ops"
+      },
+      {
+        "hash": "61076264",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Bulk work never starves the system — ingest-files paces itself (writer ≤ ⅓ busy) and backs off while writer/API are slow; whole-table reports + phrase indexing run only 02:00–06:00; ops-worker batch reads reported as info, not 'blocking'",
+        "scope": "ops"
+      },
+      {
+        "hash": "e5845216",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Phrase-index job — the indexer runs as a child of the ops worker, one at a time (two indexers + a scan locked the vector store and killed a 10-11 run); spend cap required",
+        "scope": "ops"
+      },
+      {
+        "hash": "9e5577ba",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Watchdog stands down for 2 min after a deploy swap and re-checks 45 s before restarting — a [PAGE] fired 19 s into a 10-11 deploy for a worker the deploy brought up itself",
+        "scope": "ops"
+      },
+      {
+        "hash": "dffd19d0",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "CTAI originals from the English — done",
+        "scope": "worklist"
+      },
+      {
+        "hash": "e4cdef4f",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Reingest impact + decision",
+        "scope": "worklist"
+      },
+      {
+        "hash": "d92f628f",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Originals paragraphed FROM THE ENGLISH — ctai-originals writes one original-language library file per CTAI host (1 ¶ per English ¶, align + pn), ingest-files ingests in the ops worker, ctai-link adds 1:1 content_alignment (basis ctai-pair)",
+        "scope": "ctai"
+      },
+      {
+        "hash": "c4a2b8b5",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Reingest-impact report — enrichment (HyPE, translations, originals, alignment, mentions) on the drifted rows a re-ingest would replace; safe list vs at-risk books",
+        "scope": "ops"
+      },
+      {
+        "hash": "c8c7c54c",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Block-mismatch report — sample rows that don't match their file blocks (server-side); ops.mjs --ids",
+        "scope": "ops"
+      },
+      {
+        "hash": "2732021f",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Ops.mjs flushes stdout before exit (results were cut at 64 KB); updater kills only API strays older than 3 min (not a worker draining after reload)",
+        "scope": "ops"
+      },
+      {
+        "hash": "080c8b58",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "CTAI audit findings + plan",
+        "scope": "worklist"
+      },
+      {
+        "hash": "6dfef4c4",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Ctai-audit counts English rows carrying their CTAI original (original_text) + site ids",
+        "scope": "ops"
+      },
+      {
+        "hash": "d0e99901",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Block-attrs counts only TEXT rows as unmatched (headings never get ids); full need-reingest list",
+        "scope": "ops"
+      },
+      {
+        "hash": "1ebf0f8c",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Ctai-audit report — per CTAI English host: pn coverage, alignment rows (stale either side), per original: aligned share, pn match, one-to-many",
+        "scope": "ops"
+      },
+      {
+        "hash": "3af19fb2",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Ids written to library files",
+        "scope": "worklist"
+      },
+      {
+        "hash": "ea2d6ba4",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Block-attrs job — copies file ids/pn onto stored rows by word hash (no re-ingest, no re-embedding), run by siftersearch-reports over the ops API",
+        "scope": "ops"
+      },
+      {
+        "hash": "741d1b8d",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Stable paragraph ids + display numbers in library source files ({id=\"para_N\" pn=\"M\"}, OL-compatible; ids permanent, verse pn kept); a file with ids keeps its blocks at ingest. Pilot: 3 books re-ingested via the API, pn served",
+        "scope": "library"
+      },
+      {
+        "hash": "1446ec91",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Seg tail done; phrase coverage measured",
+        "scope": "worklist"
+      },
+      {
+        "hash": "7c0eeefc",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Ops API + legacy tool migration",
+        "scope": "worklist"
+      },
+      {
+        "hash": "808f36d9",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Scripts and agents never touch production data — internal ops API (/api/admin/ops/reports, ops.mjs CLI); health scans are reports run one at a time by siftersearch-reports (migr 146); ratchet: 195 scripts frozen, shrink-only",
+        "scope": "ops"
+      },
+      {
+        "hash": "0576b9fc",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Coverage report — paragraphs with phrase units vs live, per scope × religion, $ to finish (phrase-store-repo)",
+        "scope": "phrase-index"
+      },
+      {
+        "hash": "c8dbb2b3",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Reader verified; stale API workers found + fixed",
+        "scope": "worklist"
+      },
+      {
+        "hash": "b9541561",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Stray-API check ignores a deploy's own test API (< 3 min old)",
+        "scope": "ops"
+      },
+      {
+        "hash": "806c24bf",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Stale API cluster workers from 10-10 kept serving day-old code on :7839 — updater kills API processes PM2 doesn't manage after every swap, stops the test API for sure (SIGKILL after 5 s); critical path checks for strays",
+        "scope": "deploy"
+      },
+      {
+        "hash": "aa796d03",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Cleanup progress",
+        "scope": "worklist"
+      },
+      {
+        "hash": "ac2e513a",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "'Se' = Swedish here; relabelled docs re-sync their paragraphs",
+        "scope": "library"
+      },
+      {
+        "hash": "7bd1b306",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "ONE language normaliser (ISO 639-1); ingest + sites-ingest normalise; DB backfill script (per-doc, re-sync)",
+        "scope": "library"
+      },
+      {
+        "hash": "6ed455c0",
+        "date": "2026-10-11",
+        "type": "Fixed",
+        "description": "Writer up <5 min after a deploy = starting, not an [ACTION]; retire the legacy SQL migration runner (failed every deploy since 10-10) — npm run migrate = the JS runner. feat(bakeoff): scoring, blind judge (bakeoff-judge role, policy stage model-eval), multilingual scenarios; anisCraft per-model request shape + onUsage",
+        "scope": "ops"
+      },
+      {
+        "hash": "43e64c07",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Library cleanup first, then concepts/HyPE/Anís/Dewey; Strata waits on xswarm move",
+        "scope": "worklist"
+      },
+      {
+        "hash": "456d31f1",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Tidy",
+        "scope": "worklist"
+      },
+      {
+        "hash": "8d26ff90",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Index caught up, drop explained, hollow check clean; bake-off plan",
+        "scope": "worklist"
+      },
+      {
+        "hash": "5f0b844c",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Hollow-report — live books with no text or with empty rows, per source (integrity-repo)",
+        "scope": "ops"
+      },
+      {
+        "hash": "cb27285a",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Content-drop tripwire can be rebased after an explained retirement (--rebase-integrity, recorded)",
+        "scope": "ops"
+      },
+      {
+        "hash": "5b83eafe",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Deletions-report — soft-deleted paragraphs per day × source (integrity-repo), to explain a content-drop alert",
+        "scope": "ops"
+      },
+      {
+        "hash": "ae42f1d3",
+        "date": "2026-10-11",
+        "type": "Chore",
+        "description": "Current flash tier verified on official pricing pages 10-11 (Gemini 3.8 Flash / 3.1 Flash-Lite, GPT-5 nano/mini, GPT-5.4 nano/mini, deepseek-flash); retired local/obsolete models; fix Sonnet/Opus 5.5 name+type that were commented out",
+        "scope": "registry"
+      },
+      {
+        "hash": "73132e38",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "One role table (model-roles.js, modelFor) for search strategies + segmentation; monthly re-assessment (model-review, [ACTION] when a role is stale/deprecated/beaten by a newer cheaper model); hard-coded model ids ratcheted",
+        "scope": "models"
+      },
+      {
+        "hash": "e1801b62",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Deep-research → search strategy over plannedSearch",
+        "scope": "worklist"
+      },
+      {
+        "hash": "09df7fb0",
+        "date": "2026-10-11",
+        "type": "Refactor",
+        "description": "Deep-research reads/writes only through api/lib/repos/deep-research-repo.js (first D1 migration; legacy list 299 → 296)",
+        "scope": "db"
+      },
+      {
+        "hash": "b6819df9",
+        "date": "2026-10-11",
+        "type": "Docs",
+        "description": "Worklist — order of operations, kept current",
+        "scope": "planning"
+      },
+      {
+        "hash": "48cececb",
+        "date": "2026-10-11",
+        "type": "New",
+        "description": "Chapter dividers where a verse pn changes chapter; heading rows (heading2/3) render as headings, unnumbered",
+        "scope": "reader"
+      },
       {
         "hash": "b1e01757",
         "date": "2026-10-11",
@@ -6496,540 +7030,6 @@
         "date": "2026-09-28",
         "type": "Fixed",
         "description": "Profile card keeps a one-off relative only when the record has little family data",
-        "scope": "entities"
-      },
-      {
-        "hash": "471148d2",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Profile cards — each person by majority of their own facts (names incl. titles/original script, dates, family, places, roles); migration 127",
-        "scope": "entities"
-      },
-      {
-        "hash": "bdde21dc",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Jev in extraction — occurrence linking measured (disagrees with 93% of wrong bindings; 92% right when confident); build order",
-        "scope": "planning"
-      },
-      {
-        "hash": "c6182e27",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Read a book's grounding log over the internal API (failures were diagnosable only over SSH)",
-        "scope": "grounding"
-      },
-      {
-        "hash": "0eb4054a",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Stage-2 audit rule — 'different' ≥0.4 or weak 'profile' <0.6 (the ≥0.75 cut dropped 7 of 9 real errors)",
-        "scope": "entities"
-      },
-      {
-        "hash": "1412552a",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Audit report keeps each flag's stage-2 answer (to measure what stage 2 drops)",
-        "scope": "entities"
-      },
-      {
-        "hash": "744152b5",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Two-stage Jev audit — flags re-asked with wide context; a reader sees only a confident 'different'",
-        "scope": "entities"
-      },
-      {
-        "hash": "6829db6a",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Keep provider names out of the library (comment)",
-        "scope": "rag"
-      },
-      {
-        "hash": "c586505e",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "System-1 identity gate at reconcile — a confident 'different' downgrades a link to uncertain (optional port; Jev in the adapter)",
-        "scope": "entities"
-      },
-      {
-        "hash": "6795265f",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Jev as System 1 — measured strengths/failures and where it goes in the pipeline",
-        "scope": "planning"
-      },
-      {
-        "hash": "b5428ba3",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Cluster audit Jev timeout 20s (the names profile made 8s time out)",
-        "scope": "entities"
-      },
-      {
-        "hash": "9476e5e2",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Cluster audit tells Jev the names the texts use (titles, original script) and retries a failed batch",
-        "scope": "entities"
-      },
-      {
-        "hash": "6d50eb75",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Cluster audit keeps a random sample of passed clusters so recall can be measured",
-        "scope": "entities"
-      },
-      {
-        "hash": "fd2862a2",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Jev cluster audit — flags bindings a reader should check (read-only)",
-        "scope": "entities"
-      },
-      {
-        "hash": "c17fdc18",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Detach — unbind a mention the passage shows is not this person, without guessing who it is",
-        "scope": "entities"
-      },
-      {
-        "hash": "bc312cbf",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Split-mention — move individual mentions (by anchor) when one label covered two people; cluster-passages returns anchors + fuller text",
-        "scope": "entities"
-      },
-      {
-        "hash": "9e46bb4c",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "09-28 afternoon status — target everywhere, 113 splits, lookup holes",
-        "scope": "identity"
-      },
-      {
-        "hash": "f8acbd2c",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "A long name whose consonant skeleton vanishes keeps a key ('Yaḥyá' had none — Mírzá Yaḥyá was unfindable by name); backfill mode adds the missing keys",
-        "scope": "lookup"
-      },
-      {
-        "hash": "5b71c9ae",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "A created or renamed record is indexed for lookup at once; backfill for records the pipeline minted unreachable",
-        "scope": "entities"
-      },
-      {
-        "hash": "b2bcf73d",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Clusters moving to one new person create that record once per batch",
-        "scope": "entities"
-      },
-      {
-        "hash": "bc4a19ed",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Split a mixed record by cluster — repoint verdict (claims follow only from paragraphs the record no longer holds) + read-only cluster-passages",
-        "scope": "entities"
-      },
-      {
-        "hash": "f1274d4b",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Target resolve waits until 1.2s or the passage search ends, whichever is later (a t0 timer dropped 'iderne' on a busy box)",
-        "scope": "search"
-      },
-      {
-        "hash": "aaf98816",
-        "date": "2026-09-28",
-        "type": "Performance",
-        "description": "A target's names are searched by keyword only (was a full embedding+HyPE search per name, 1.8–3.7s)",
-        "scope": "search"
-      },
-      {
-        "hash": "0bf6ebb2",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "/multi reports the resolved target",
-        "scope": "search"
-      },
-      {
-        "hash": "902532ef",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Chat + Anís + public API search the TARGET a name resolves to ('iderne' → Adrianople), passages naming it lead with the target highlighted",
-        "scope": "search"
-      },
-      {
-        "hash": "493e6197",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "2026-09-28 status — review settled, passage-less records retired/rescued, stamp v2",
-        "scope": "identity"
-      },
-      {
-        "hash": "53073c07",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Disambiguation stamp v2 for the every-named-person prompt (notes of v1 and v2 both read); 'retired' state for records no text supports",
-        "scope": "entities"
-      },
-      {
-        "hash": "35037f95",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Read-only record-passages — rescue a passage-less record's paragraphs from graph.db and scenes, with what the current pipeline bound there",
-        "scope": "entities"
-      },
-      {
-        "hash": "3c7c1690",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Chained reviewed merges fold into one survivor per person; a 'different' inside a group is refused",
-        "scope": "entities"
-      },
-      {
-        "hash": "41d5a0cc",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Entity-provenance shows which writer made each alias",
-        "scope": "entities"
-      },
-      {
-        "hash": "3e2e48ff",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Entity-provenance reads the old extractor's mentions in graph.db",
-        "scope": "entities"
-      },
-      {
-        "hash": "3af4d58e",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Entity-provenance reports unreadable tables and the legacy mention table's size",
-        "scope": "entities"
-      },
-      {
-        "hash": "01581f75",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Read-only entity-provenance — where a record came from and what still points at it",
-        "scope": "entities"
-      },
-      {
-        "hash": "912eca7d",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Reviewed identity verdicts become decisions (human tier 3, evidence, reversible); rename a record its passages never name",
-        "scope": "entities"
-      }
-    ],
-    "2026-09-27": [
-      {
-        "hash": "01278fb8",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Twin records weigh as one place; every sound-alike weighed by its text count ('iderne' vs 'Adrienne D.')",
-        "scope": "search"
-      },
-      {
-        "hash": "3473e704",
-        "date": "2026-09-27",
-        "type": "Chore",
-        "description": "Internal-key explain on /quick shows the target candidates as scored",
-        "scope": "search"
-      },
-      {
-        "hash": "06cc0598",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Records sharing ANY sound-alike spelling are twins ('iderne' via Adirnih and via Edirne is one place)",
-        "scope": "search"
-      },
-      {
-        "hash": "be36be02",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Records reached through the same name are one target, not rivals ('iderne' → Adrianople + the duplicate Edirne record)",
-        "scope": "search"
-      },
-      {
-        "hash": "eb026932",
-        "date": "2026-09-27",
-        "type": "Chore",
-        "description": "Quick search reports target resolve time",
-        "scope": "search"
-      },
-      {
-        "hash": "3275c397",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Target resolution budget 1.2s (a misspelled name needs a text count)",
-        "scope": "search"
-      },
-      {
-        "hash": "a7f829f1",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Sound-alike places weighed by text occurrence; same-name duplicate records searched together",
-        "scope": "search"
-      },
-      {
-        "hash": "0c0bd20e",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "A target must match one of its OWN names — exact, or the whole sound-key set; one shared key is not enough",
-        "scope": "search"
-      },
-      {
-        "hash": "9db9ab08",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Target weight counts claims pointing at a place; lookup takes 30 candidates (Adrianople fell outside 8 'drn' sound-alikes)",
-        "scope": "search"
-      },
-      {
-        "hash": "63a809a4",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Quick search follows the TARGET — every name of the person/place searched, the target highlighted; entity-alias endpoint",
-        "scope": "search"
-      },
-      {
-        "hash": "f6ba7c08",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Entity-top — most-mentioned people with mentions, books, handles (review sizing)",
-        "scope": "research"
-      },
-      {
-        "hash": "83b64424",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Mention breakdown shows what each book's OWN identity decision said",
-        "scope": "research"
-      },
-      {
-        "hash": "60f27e83",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Entity-mention-breakdown (where a record's mentions come from); search-target resolver (not yet wired)",
-        "scope": "research"
-      },
-      {
-        "hash": "9a9d79b8",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Translate a ~400-char window around the target, never a page of footnotes",
-        "scope": "review"
-      },
-      {
-        "hash": "bcdbffb1",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Sentence markers stripped and used to find the target sentence; no-basis candidates labelled and sorted last",
-        "scope": "review"
-      },
-      {
-        "hash": "c5e66bf9",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Merge-review shows full passages from mentions AND claims, the passage that raised each pair, and English translations with the target term bolded",
-        "scope": "review"
-      },
-      {
-        "hash": "542331d5",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Soul — question rather than pronounce; challenge the idea, never the person's dignity",
-        "scope": "anis"
-      },
-      {
-        "hash": "333d62f0",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "P1 done",
-        "scope": "anis"
-      },
-      {
-        "hash": "773713e5",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Soul battery with a calibrated scorer; house style fixes for flattery, method narration, machinery talk",
-        "scope": "anis"
-      },
-      {
-        "hash": "f36c23f6",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Chosen answer format in the stream's complete meta",
-        "scope": "anis"
-      },
-      {
-        "hash": "aa4030ee",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "P1 — typed findings with authority kinds; answer formats chosen from question + evidence + channel",
-        "scope": "anis"
-      },
-      {
-        "hash": "b5f44ab1",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Identity + Anis status 2026-09-27 evening",
-        "scope": "plan"
-      },
-      {
-        "hash": "08acb248",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "'prior to X' is chronology — X is dated by its earliest dated evidence; later meetings sink even when they never mention X",
-        "scope": "search"
-      },
-      {
-        "hash": "91fb7927",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "A hyphenated compound given name (Muḥammad-‘Alí) is not a nisba",
-        "scope": "entities"
-      },
-      {
-        "hash": "c2191afb",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "P1 — soul.md + house style as the constant (cached) system prompt; per-reply DIRECTION from the gate",
-        "scope": "anis"
-      },
-      {
-        "hash": "bd4cbc07",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "SSE chat streams never sent the session cookie — every widget visitor was anonymous with no identity",
-        "scope": "identity"
-      },
-      {
-        "hash": "db5616ed",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "P0 — exchange log before answer, Jev triage gate, canned replies, hidden tarpit, output check, voice lint",
-        "scope": "anis"
-      },
-      {
-        "hash": "b073d824",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Soul battery packets for the convictions",
-        "scope": "anis"
-      },
-      {
-        "hash": "b18a0c3f",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Soul — believer in all traditions; religion as source of order, law as protection; free will and effort",
-        "scope": "anis"
-      },
-      {
-        "hash": "19fc7e8f",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Soul carries no subject facts — calibration is a placeholder pattern",
-        "scope": "anis"
-      },
-      {
-        "hash": "2059bfb6",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Soul.md draft — compact personality and principles: a friend who disagrees for your good, gently",
-        "scope": "anis"
-      },
-      {
-        "hash": "2c90e8e4",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Hyper-engagement PRD — playbook × Seeker Companion × current code, features, test suites, phases, decisions",
-        "scope": "anis"
-      },
-      {
-        "hash": "21cc18d7",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Merge-review export includes pair-judge disagreements with both verdicts",
-        "scope": "review"
-      },
-      {
-        "hash": "7bb440ae",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "A veto must be provable from the claim's own proof; distinct needs both judges",
-        "scope": "entities"
-      },
-      {
-        "hash": "77a45480",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "One surface naming two people in a paragraph yields two mentions (occurrence index); existing anchors unchanged",
-        "scope": "entities"
-      },
-      {
-        "hash": "f9f56fd5",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Disambiguation resolves EVERY named person; a bare name is not given to the most prominent bearer; claims accept any note",
-        "scope": "pipeline"
-      },
-      {
-        "hash": "2b1f41fd",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Dedup-guard searches by fact objects, not statements that begin with the subject's name",
-        "scope": "entities"
-      },
-      {
-        "hash": "9d805a41",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Research-resolve reads the uncertain figure's own passages before other books",
-        "scope": "entities"
-      },
-      {
-        "hash": "bb34fa06",
-        "date": "2026-09-27",
-        "type": "New",
-        "description": "Pair judge — two independent judges decide if two records are one person; merges carry evidence",
-        "scope": "entities"
-      },
-      {
-        "hash": "d91d93df",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Identity doctrine — a name never decides identity; SAME needs a positive tie beyond it, default UNSURE",
-        "scope": "entities"
-      },
-      {
-        "hash": "1963cb07",
-        "date": "2026-09-27",
-        "type": "Docs",
-        "description": "Identity work — increment 2 status, dry-run results, next: evidence dossier + pair judge",
-        "scope": "plan"
-      },
-      {
-        "hash": "5417a107",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Conflict veto rewritten for production-shaped claims; claims record whether a date was stated or inherited",
-        "scope": "entities"
-      },
-      {
-        "hash": "00be9504",
-        "date": "2026-09-27",
-        "type": "Fixed",
-        "description": "Materialize unbinds undecided bindings on abstention handles instead of recording them",
         "scope": "entities"
       }
     ]

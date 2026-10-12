@@ -74,8 +74,20 @@ export function ignoredBy(senders, patterns) {
 
 /** The reader's own words: quoted history (">" lines, "On … wrote:" and below) removed. */
 export function ownText(text = '') {
-  const cut = String(text).split(/\n(?:On .{0,200}wrote:|-{2,} ?Original Message|From: .+\nSent: )/i)[0];
-  return cut.split('\n').filter((l) => !l.startsWith('>')).join('\n').trim();
+  // "On Mon, Oct 12 … <a@b.com>\nwrote:" — clients hard-wrap the attribution too, so it may span a line (10-12)
+  const cut = String(text).replace(/\r\n/g, '\n').split(/\n(?:On [^\n]{0,200}(?:\n[^\n]{0,120})?wrote:|-{2,} ?Original Message|From: .+\nSent: )/i)[0];
+  return unwrap(cut.split('\n').filter((l) => !l.startsWith('>')).join('\n').trim());
+}
+
+/** Undo plain-text hard wrapping (clients break lines at ~72–78 columns): inside a paragraph, a long line runs on into the
+ *  next one. Blank lines, short lines, lists and quotes keep their breaks. Shown to Chad and handed to Anís (10-12). */
+export function unwrap(text = '') {
+  return String(text).split(/\n{2,}/).map((para) => para.split('\n').reduce((out, line) => {
+    const prev = out[out.length - 1];
+    const joins = prev != null && prev.length >= 60 && !/^\s*(?:[-*•>]|\d+[.)])\s/.test(line) && line.trim();
+    if (joins) out[out.length - 1] = `${prev.replace(/\s+$/, '')} ${line.trim()}`; else out.push(line);
+    return out;
+  }, []).join('\n')).join('\n\n');
 }
 
 /** Inbound status: spam | auto (auto-responders, bounces) | unsubscribe (asks to be removed) | new. */
