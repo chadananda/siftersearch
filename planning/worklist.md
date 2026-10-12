@@ -35,6 +35,9 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] 9. Shelves (Chad 10-12): Mormon Texts, Deuterocanonical Books, Emanuel Swedenborg close into ONE boxed card (collection
       covers; Swedenborg = first book's cover, "6 more" kept); citations unchanged. Greek-titled Gospels (20994/20995) were
       KJV John/Matthew text → marked duplicate_of 20989/20992 via new ops job `retire-duplicates` (dry run default)
+- [ ] 10. Sikh OceanLibrary books: Bindery has 'The Sikh Religion' + 'Sri Guru Granth Sahib' collections, but no Sikh docs sit
+      in the OceanLibrary folder (Sikh shows only main-library collections) → find where they were filed; col-sikh-religion.png
+      missing from R2 (col-guru-granth-sahib present). Swedenborg = author shelf, NOT boxed (Chad 10-12)
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
