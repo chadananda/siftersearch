@@ -23,6 +23,10 @@ rawDb.exec(`
     (31,3,5,'An unlinked paragraph about the Heroic Age.',NULL,NULL,NULL,NULL,NULL,NULL);
   INSERT INTO content_alignment VALUES (10,20,1,2,'published',0.97,'anchor',NULL);
   INSERT INTO content_source_links VALUES (30,10,3,1,0.95,0.6,'exact','ngram');
+  ALTER TABLE docs ADD COLUMN translators TEXT;
+  ALTER TABLE docs ADD COLUMN frontmatter TEXT;
+  ALTER TABLE content ADD COLUMN translator TEXT;
+  UPDATE docs SET frontmatter = '{"translated_by":"Shoghi Effendi"}' WHERE id = 1;
 `);
 
 vi.mock('../../api/lib/db.js', () => ({
@@ -48,6 +52,12 @@ describe('matching helpers', () => {
 });
 
 describe('resolveLinks', () => {
+  it('a passage names who translated it (frontmatter translated_by), an original names no one', async () => {
+    const { getPassages } = await import('../../api/lib/passage-links.js');
+    const m = await getPassages([10, 20]);
+    expect(m.get(10).translated_by).toBe('Shoghi Effendi');
+    expect(m.get(20).translated_by).toBeNull();
+  });
   it('a translation reaches its original directly', async () => {
     const l = (await resolveLinks([10])).get(10);
     expect(l.original.id).toBe(20);

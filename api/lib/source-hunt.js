@@ -5,6 +5,7 @@
 // Deps injected (default: the live ones) so the logic is testable without a database.
 import { stripAppendedReference } from './quote-clean.js';
 import { encodeMarker } from './ool-range.js';
+import { translatedBy } from './authorship/translators.js';
 import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
@@ -263,6 +264,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
   const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
+    translated_by: translatedBy(origin),
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
     url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight, 4, origin.doc_id), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
   say('origin', { origin: originOut, candidates: ranked.length });
@@ -272,7 +274,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const byDoc = new Map();
   const add = (p) => {
     if (p.doc_id === origin.doc_id || titleKey(p.title) === titleKey(origin.title)) return;   // the source's own other copy is not a citation
-    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, site: siteOf(p.url, p.source_site),
+    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author, translated_by: p.translated_by !== undefined ? p.translated_by : translatedBy(p), site: siteOf(p.url, p.source_site),
       // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
       url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text), 4, p.doc_id) : null, paragraphs: 0, first: p.id };
@@ -283,7 +285,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // find the source but is not a citation (Chad 10-05: "why is it in the list of citations then?")
   for (const m of pool) if (m.id !== origin.id && holds(q.match, m.text, m.overlap)) add(m);
   const quoters = (full.quotedBy?.passages || []).map((p) => ({ id: p.id, doc_id: p.documentId, title: p.document.title,
-    book_author: p.document.author, url: p.url, text: p.text || null, source_site: null }));
+    book_author: p.document.author, url: p.url, text: p.text || null, source_site: null, translated_by: p.translated_by || null }));
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
   const citedBy = dedupeCitations([...byDoc.values()]);
   say('cited', { citedBy, citedByLinkCount: full.quotedBy?.count || 0 });
@@ -452,7 +454,10 @@ async function defaultDeps() {
       const uniq = [...new Set(ids.map(Number).filter(Boolean))];
       if (!uniq.length) return [];
       const rs = await queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.authors, c.external_para_id, c.blocktype, d.title, d.author AS book_author,
-          d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year
+          d.source_site, d.source_url, d.metadata, d.slug, d.filename, d.religion, d.collection, d.doc_role, d.year,
+          c.translator, d.translators,
+          CASE WHEN json_valid(d.frontmatter) THEN json_extract(d.frontmatter, '$.translated_by') END AS fm_translated_by,
+          CASE WHEN json_valid(d.frontmatter) THEN json_extract(d.frontmatter, '$.translator') END AS fm_translator
         FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE c.id IN (${uniq.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL`, uniq, 'source-hunt:rows');
       // Core Publications books whose paragraphs are flagged duplicates of their OceanLibrary copy (Gleanings, ESW, Gems, …)

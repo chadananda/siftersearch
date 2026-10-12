@@ -55,3 +55,18 @@ export function frontmatterTranslators(value) {
   const list = Array.isArray(value) ? value : String(value).split(/\s*(?:;|&|\band\b|,\s+(?=[A-Z]))\s*/);
   return [...new Set(list.map(canonicalTranslator).filter(Boolean))];
 }
+
+/** Who translated this text, for display (Chad 10-12: SourceHunt names the translator of a translated publication): the
+ *  paragraph's own translator (a talk's interpreter, a compilation's extract) → the book's recorded translators →
+ *  frontmatter `translated_by` / `translator` → a translator in the title. null when nothing names one — never a guess. */
+export function translatedBy({ translator, translators, fm_translated_by, fm_translator, title } = {}) {
+  if (translator) return canonicalTranslator(translator) || String(translator);
+  try {
+    const names = [...new Set((JSON.parse(translators || '[]') || []).map((t) => t?.name || t).filter(Boolean))];
+    if (names.length) return names.join(', ');
+  } catch { /* not recorded */ }
+  const fm = (v) => { if (typeof v === 'string' && v.startsWith('[')) { try { return JSON.parse(v); } catch { /* text */ } } return v; };
+  const fromFm = frontmatterTranslators(fm(fm_translated_by) || fm(fm_translator));
+  if (fromFm.length) return fromFm.join(', ');
+  return titleTranslator(title);
+}

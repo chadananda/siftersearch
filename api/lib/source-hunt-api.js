@@ -35,11 +35,11 @@ export function toApi(r) {
   };
   return {
     quote: r.quote, writer: r.quoteAuthor || null,
-    source: o ? { title: o.title, author: o.author, bookAuthor: o.bookAuthor || null, site: SITE[o.site] || o.site, url: o.url, rangeUrl: o.rangeUrl || null,
+    source: o ? { title: o.title, author: o.author, bookAuthor: o.bookAuthor || null, translated_by: o.translated_by || null, site: SITE[o.site] || o.site, url: o.url, rangeUrl: o.rangeUrl || null,
       documentId: o.documentId, paragraphId: o.id, excerpt: excerpt(o.text, o.highlight), quotedText: quoted(o.text, o.highlight), matchedBy: o.highlightBy || null } : null,
     original: t?.certain ? original(t, true) : null,
     possibleOriginals: !t?.certain ? (t?.candidates || []).map((c) => original(c, false)) : [],
-    citedBy: (r.citedBy || []).map((c) => ({ title: c.title, author: c.author || null, site: SITE[c.site] || c.site, url: c.url, rangeUrl: c.rangeUrl || null, passages: c.paragraphs })),
+    citedBy: (r.citedBy || []).map((c) => ({ title: c.title, author: c.author || null, translated_by: c.translated_by || null, site: SITE[c.site] || c.site, url: c.url, rangeUrl: c.rangeUrl || null, passages: c.paragraphs })),
     processingTimeMs: r.ms,
   };
 }

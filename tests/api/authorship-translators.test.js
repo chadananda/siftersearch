@@ -36,3 +36,16 @@ describe('translators', () => {
     expect(canonicalTranslator('Dr. Ameen U. Faríd')).toBe('Ameen U. Faríd');
   });
 });
+
+describe('translatedBy (SourceHunt translated_by)', async () => {
+  const { translatedBy } = await import('../../api/lib/authorship/translators.js');
+  it('paragraph translator → book translators → frontmatter → title; null when none names one', () => {
+    expect(translatedBy({ translator: 'Mírzá Aḥmad Sohrab', fm_translated_by: 'Shoghi Effendi' })).toBe('Mírzá Aḥmad Sohrab');
+    expect(translatedBy({ translators: '[{"name":"Marzieh Gail","basis":"frontmatter"}]' })).toBe('Marzieh Gail');
+    expect(translatedBy({ fm_translated_by: 'Shoghi Effendi' })).toBe('Shoghi Effendi');
+    expect(translatedBy({ fm_translator: 'Dr. Ameen Fareed (for most tablets)' })).toBe('Ameen U. Faríd');
+    expect(translatedBy({ title: 'Ozymandius - tr William McCants' })).toBe('William McCants');
+    expect(translatedBy({ fm_translated_by: 'unknown', title: 'Gleanings' })).toBeNull();
+    expect(translatedBy({})).toBeNull();
+  });
+});

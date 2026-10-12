@@ -4,6 +4,7 @@
 // original). A quote resolves THROUGH its source to that source's original. Deps: db, source-links, search.
 import { queryAll } from './db.js';
 import { linkFor } from './source-links.js';
+import { translatedBy } from './authorship/translators.js';
 
 const ph = (a) => a.map(() => '?').join(',');
 const clean = (s) => (s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/[ \t]+/g, ' ').trim();
@@ -50,7 +51,9 @@ export async function getPassages(ids) {
   const rows = await queryAll(
     `SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.external_para_id, c.translation_text,
             c.translation_authority, COALESCE(NULLIF(c.language, ''), d.language) AS language,
-            d.title, d.author, d.religion, d.collection, d.source_url, d.metadata, d.slug, d.filename
+            d.title, d.author, d.religion, d.collection, d.source_url, d.metadata, d.slug, d.filename, c.translator, d.translators,
+            CASE WHEN json_valid(d.frontmatter) THEN json_extract(d.frontmatter, '$.translated_by') END AS fm_translated_by,
+            CASE WHEN json_valid(d.frontmatter) THEN json_extract(d.frontmatter, '$.translator') END AS fm_translator
        FROM content c JOIN docs d ON d.id = c.doc_id
       WHERE c.id IN (${ph(uniq)}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'passage-links:passages');
   return new Map(rows.map((r) => {
@@ -61,6 +64,7 @@ export async function getPassages(ids) {
       text: clean(r.text), heading: r.heading || null,
       english: r.translation_text ? { text: clean(r.translation_text), authority: r.translation_authority || null } : null,
       document: { title: r.title, author: r.author, religion: r.religion, collection: r.collection },
+      translated_by: translatedBy(r),   // who translated THIS text into its language (null: not recorded)
       url: link.url, readerUrl: link.reader_url,
     }];
   }));
