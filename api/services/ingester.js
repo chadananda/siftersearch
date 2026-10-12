@@ -1527,14 +1527,17 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // The source declares its paragraphing sound (oceanoflights: `needs_segmentation: false`). The punctuation
   // heuristic would otherwise send 4,566 of those tablets (16M chars) to paid AI segmentation and REPLACE the
   // published paragraphing — measured 2026-09-28 dry run of Core Tablets.
-  if (String(extractedMeta.needs_segmentation).toLowerCase() === 'false') skipAISegmentation = true;
+  // A file whose blocks carry stable ids (`{id="para_N" …}`, scripts/library/assign-block-ids.mjs) DECLARES its paragraphing:
+  // one block = one addressable row, so no joining of short blocks and no size splits (either would orphan an id).
+  const hasBlockIds = /\{[^}\n]*\bid="para_\d+"/.test(contentToProcess);
+  if (String(extractedMeta.needs_segmentation).toLowerCase() === 'false' || hasBlockIds) skipAISegmentation = true;
 
   // Parse into chunks/paragraphs with blocktype awareness
   // Uses AI segmentation for RTL languages without punctuation (unless skipAISegmentation)
   let { chunks, autoSegmented } = await parseDocumentWithBlocks(contentToProcess, {
     language: finalMeta.language,
     skipAISegmentation,
-    keepParagraphs: String(extractedMeta.needs_segmentation).toLowerCase() === 'false'
+    keepParagraphs: String(extractedMeta.needs_segmentation).toLowerCase() === 'false' || hasBlockIds
   });
   // Print-page breaks (<pb vol n/>) and a page's footnotes (<!-- fn -->) live in the SOURCE only: record each
   // paragraph's page (pdf_page + block_attrs) and take them out of the stored text. See lib/page-breaks.js.
