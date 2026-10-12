@@ -12,6 +12,18 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
+## ⛔ HIGHEST PRIORITY (Chad 10-12) — what the Anís audits identify as a useful search-strategy extension
+"Whatever the audits identify as a useful extension for our search strategies is our highest priority" — and the CTAI
+API (ours) may be extended for it (e.g. a "Shoghi Effendi word frequency chart" tool).
+- [x] Admin Threads view: every conversation + each reply's audit (/admin/anis#threads); 30 of 61 audited replies warranted
+      a better strategy (10-12)
+- [ ] A. Strategy-gap report: cluster the audits' new_strategy needs / best_strategy changes / evidence causes by frequency
+      (Threads page section + ops report) → the ranked work queue
+- [ ] B. Term strategy (item 15 below) — the top gap seen so far (term questions never reaching the originals)
+- [ ] C. CTAI endpoints the strategies need (word frequency / rendering chart over Shoghi Effendi's translations, root
+      study, paired passages) — add to CTAI rather than work around
+- [ ] D. Every strategy records its evidence for the auditor (term-study counts done 10-12)
+
 ## Now — LIBRARY CLEANUP (Chad 10-11: "get all the library cleanup tasks done so we can start concept extraction, hype and working on Anis and Dewey")
 - [~] 1. Qdrant phrase layer: primary changed books (run 30, $20 cap) then supplemental scrapes COMPLETE (Chad approved 10-11,
       $90 cap) — ops index lane, overnight window 22:00–07:00
