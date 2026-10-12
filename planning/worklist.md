@@ -42,6 +42,12 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
       caller). Hollow = one stale 10-11 entry; real load ~100/h → fixed: roadmap cache 30 min, spend rollups 30 min, bio
       cost 1 h, retired graph_enriched count dropped; alert now leads with last-3h top offender. Re-check after 24 h.
 - [ ] 12. Writer TRANSACTIONs 22–44 s during re-ingest of very large books (57/day) — chunk the ingest write per N rows
+- [x] 13. Range links everywhere (Chad 10-12): OL selectionString (checked vs OL reader JS) + Ocean of Lights #(start)(end)
+      from our stored copy; all producers → one output pass (JSON, SSE, SourceHunt stream, Anís). SourceHunt `translated_by`.
+- [ ] 14. Translator mining as an ops job (port scripts/authorship/translators.mjs, legacy direct-DB): coverage 10-12 =
+      68,794 ¶ / 760 books, but Bahá'í core thin (Shoghi Effendi 22 books; Gleanings rows have none). Add OL frontmatter
+      `translated_by:` (the script reads only `translator:`), propagate along translation links + verbatim quote links,
+      paced overnight. Then a curated list for the core translations (names from Chad/trusted source).
 - [x] 7. Rodwell single-volume 21343 retired → Sura I (21104); doc 14779 re-ingested, 0 empty rows corpus-wide
 - [x] 8. Reader verified in a browser (Genesis: pn margin, CHAPTER 2 divider, no image row). FOUND: 2 stale API cluster workers from 10-10 were serving day-old code on :7839 (fixes seemed intermittent) — killed; updater now kills unmanaged API processes; critical path checks for strays
 - [x] Deploy hygiene: legacy SQL migration runner retired (failed every deploy since 10-10); writer-restart false [ACTION] fixed
