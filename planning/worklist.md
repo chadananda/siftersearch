@@ -4,17 +4,18 @@ Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not 
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
 ## Now — LIBRARY CLEANUP (Chad 10-11: "get all the library cleanup tasks done so we can start concept extraction, hype and working on Anis and Dewey")
-- [~] 1. Qdrant phrase layer: coverage report (ops API) — primary library missing ~214k ¶ (~$11, run in progress, $20 cap);
-      supplemental scrapes missing 0.55–1.4M ¶ (~$30–73) — AWAITING Chad's go-ahead
+- [~] 1. Qdrant phrase layer: primary changed books (run 30, $20 cap) then supplemental scrapes COMPLETE (Chad approved 10-11,
+      $90 cap) — ops index lane, overnight window 22:00–07:00
 - [x] 2. Language codes: ONE normaliser (`language-codes.js`), ingest + sites-ingest normalise, 2,414 docs relabelled + re-synced (source files left: ingest normalises)
 - [x] 3. Segmentation tail: 3,425 more oversized ¶ → 16,185 in 34 books, 0 verify failures, all re-ingested
 - [x] 4. Sentence markers for the 7 deferred hadith books: SKIPPED on value (~$15; markers only serve translation alignment, none exist for these)
 - [~] 5. ID/pn for every book: `{id="para_N" pn="M"}` written into 33,996 library files (5.66M ¶, 0.1% ambiguous skipped);
       ids job: 3.38M of 4.12M rows matched; 695k drifted rows in 13,060 books (old ingest merged/split/kept markup).
       reingest-impact: 11,250 books carry NO enrichment on drifted rows → re-ingesting (ops ingest-files, 12 batches queued 10-11);
-      1,810 books carry enrichment there (HyPE on 42k rows incl. paid Persian Ẓuhúr vols, 26.9k alignment links, 11.8k
-      graph mentions) → NOT re-ingested; drifted rows keep working, just without ids/pn. DECISION for Chad: carry
-      enrichment across a re-ingest (map old→new rows by text) or leave them.
+      1,810 books carry enrichment there → `reingest-carry` (Chad 10-12: "try to carry the enrichment across"): backup →
+      re-ingest (localOnly, paced) → map old→new rows by word containment → HyPE questions pooled on merges, columns,
+      links (split pieces / best), mentions (v2 + graph). Pilot 4 books verified: 8,450/8,450 questions, 846/846 graph
+      mentions; 1,806 queued (runs 35–53). Backups: /tank/sifter/carry-backups/
       `block-attrs` ops job copying them onto rows (no re-ingest); files with ids keep their blocks at ingest
 - [x] 6. CTAI: 8 original-language docs built FROM THE ENGLISH (`Baha'i/CTAI Originals/`, 3,013 ¶ = 1 per English ¶ with a CTAI
       pair), ingested via ops `ingest-files`, linked 1:1 (`ctai-link`, basis ctai-pair, 0 unresolved); audit: aligned = live,
