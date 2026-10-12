@@ -85,7 +85,7 @@ REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, max
 
 /** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
  *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'] };
+export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'block-mismatch'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
 export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
