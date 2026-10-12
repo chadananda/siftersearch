@@ -1161,7 +1161,7 @@ export default async function groundingRoutes(fastify) {
     const val = Number(q.quoteId || q.sourceId || q.quoteDoc);
     if (!val) throw ApiError.badRequest('quoteDoc, quoteId or sourceId required');
     const rows = await queryAll(
-      `SELECT l.*, c.paragraph_index AS source_index, c.external_para_id, d.title AS source_title, d.source_url, d.metadata,
+      `SELECT l.*, c.paragraph_index AS source_index, c.external_para_id, c.text AS source_text, d.title AS source_title, d.source_url, d.metadata,
               d.religion, d.collection, d.slug, d.filename
          FROM content_source_links l JOIN content c ON c.id = l.source_id JOIN docs d ON d.id = l.source_doc
         WHERE ${col} = ? ORDER BY l.quote_id, l.coverage DESC LIMIT ?`, [val, Math.min(2000, Number(q.limit) || 200)], 'source-links:read');
@@ -1172,9 +1172,9 @@ export default async function groundingRoutes(fastify) {
         WHERE a.retired_at IS NULL AND a.trans_id IN (${ids.map(() => '?').join(',')})`, ids, 'source-links:originals') : [];
     const byTrans = new Map();
     for (const o of originals) byTrans.set(o.trans_id, [...(byTrans.get(o.trans_id) || []), o]);
-    return { rows: rows.map(({ metadata, source_url, religion, collection, slug, filename, external_para_id, ...r }) => ({
+    return { rows: rows.map(({ metadata, source_url, religion, collection, slug, filename, external_para_id, source_text, ...r }) => ({
       ...r,
-      link: linkFor({ id: r.source_doc, source_url, metadata, religion, collection, slug, filename, external_para_id }, r.source_index),
+      link: linkFor({ id: r.source_doc, source_url, metadata, religion, collection, slug, filename, external_para_id, text: source_text }, r.source_index),
       originals: (byTrans.get(r.source_id) || []).map(({ trans_id, ...o }) => o),
     })) };
   });

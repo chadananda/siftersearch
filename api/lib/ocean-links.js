@@ -50,7 +50,7 @@ async function oolPage(url, fetchImpl = fetch) {
   if (hit && Date.now() - hit.at < PAGE_TTL_MS) return hit.text;
   let text = null;
   try {
-    const r = await fetchImpl(url, { signal: AbortSignal.timeout(5000), headers: { 'user-agent': 'SifterSearch range links (siftersearch.com)' } });
+    const r = await fetchImpl(url, { signal: AbortSignal.timeout(2500), headers: { 'user-agent': 'SifterSearch range links (siftersearch.com)' } });
     if (r.ok) text = oolContentText(await r.text());
   } catch { /* unreachable: fall back */ }
   pages.set(url, { at: Date.now(), text });

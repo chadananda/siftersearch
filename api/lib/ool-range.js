@@ -45,9 +45,13 @@ function normalised(s) {
   return { out, map };
 }
 
-/** [start, end) of `quote` in `page` (whitespace/typography-insensitive), or null. */
+// our stored text keeps markup the page doesn't show: sentence markers, footnote refs, page marks, links, emphasis, escapes
+const plain = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\[\^[^\]\s]+\]/g, '').replace(/\[pg [^\]]*\]/g, '')
+  .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\(?=[\\`*_{}[\]()#+\-.!])/g, '').replace(/[*_]/g, '');
+
+/** [start, end) of `quote` in `page` (whitespace/typography/markup-insensitive), or null. */
 export function locateQuote(page, quote) {
-  const q = normalised(String(quote || '').trim().replace(/^[“"‘'(«\s]+|[”"’')»\s,.;:!?]+$/g, '')).out.trim();
+  const q = normalised(plain(quote).trim().replace(/^[“"‘'(«\s]+|[”"’')»\s,.;:!?]+$/g, '')).out.trim();
   if (!q) return null;
   const { out, map } = normalised(page);
   const at = out.indexOf(q);

@@ -55,7 +55,7 @@ export async function getPassages(ids) {
       WHERE c.id IN (${ph(uniq)}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'passage-links:passages');
   return new Map(rows.map((r) => {
     const link = linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion,
-      collection: r.collection, slug: r.slug, filename: r.filename, external_para_id: r.external_para_id }, r.paragraph_index);
+      collection: r.collection, slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index);
     return [r.id, {
       id: r.id, documentId: r.doc_id, paragraphIndex: r.paragraph_index, language: r.language || null,
       text: clean(r.text), heading: r.heading || null,

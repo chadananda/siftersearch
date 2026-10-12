@@ -20,7 +20,7 @@ export function tierOf(url) {
   return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
 }
 
-const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+/.test(url || '');
+const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|#~q=|#\(/.test(url || '');
 
 function parseMeta(metadata) {
   if (!metadata) return null;
@@ -65,9 +65,19 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
     const para = { para_id: doc.external_para_id, ilm_id: ilm, text: doc.text };
     return (quote && quoteUrl(u, doc.external_id, para, quote)) || rangeUrl(u, doc.external_id, para);
   };
+  // Without the block id the link stays "?paraId=…" and the OUTPUT pass (lib/ocean-links.js) makes the range; a known quote
+  // rides along as the private "#~q=" marker so that range is just the quote, not the whole paragraph.
+  const marker = (u) => (quote && !u.includes('#') ? `${u}#~q=${encodeURIComponent(quote)}` : u);
   const withPara = (u) => {
-    if (!doc.external_para_id || tierOf(u).tier !== 1 || /paraId=/.test(u)) return u;
-    return range(u.replace(/[?#].*$/, '')) || `${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`;
+    const tier = tierOf(u).tier;
+    // Ocean of Lights (Chad 10-12: Anís and SourceHunt always give range links): the quote, else the paragraph, as a
+    // "#~q=" marker → "#(start)(end)" from the page's own text at the output pass (lib/ool-range.js)
+    if (tier === 2 && !u.includes('#') && (quote || doc.text)) return `${u}#~q=${encodeURIComponent(String(quote || doc.text).slice(0, 2000))}`;
+    if (tier !== 1) return u;
+    if (/selectionString=/.test(u)) return u;
+    if (/paraId=/.test(u)) return marker(u);
+    if (!doc.external_para_id) return u;
+    return range(u.replace(/[?#].*$/, '')) || marker(`${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`);
   };
   const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))

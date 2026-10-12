@@ -701,7 +701,8 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
         // Link policy (source-links.js): the document's own origin (source_url or metadata.sourceUrl) by site tier —
         // OceanLibrary → OceanofLights → Phelps collection → BahaiLibrary → publisher — else the SifterSearch paragraph.
         if (meta) {
-          const link = linkFor({ ...meta, source_url: result.source_url?.includes('siftersearch.com') ? meta.source_url : (result.source_url || meta.source_url) }, hit.paragraph_index);
+          const link = linkFor({ ...meta, text: hit.text, external_para_id: extParaId,
+            source_url: result.source_url?.includes('siftersearch.com') ? meta.source_url : (result.source_url || meta.source_url) }, hit.paragraph_index);
           result.source_url = link.url;
           result.link_site = link.site;
           result.reader_url = link.reader_url;

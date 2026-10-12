@@ -464,7 +464,7 @@ async function defaultDeps() {
       }
       return rs.map((r) => ({ ...r, coreTwin: coreTitles.set.has(r.title), text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
         url: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
-          slug: r.slug, filename: r.filename, external_para_id: r.external_para_id }, r.paragraph_index).url }));
+          slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index).url }));
     },
   };
 }

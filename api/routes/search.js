@@ -505,11 +505,22 @@ export default async function searchRoutes(fastify) {
     reply.raw.setHeader('Connection', 'keep-alive');
     reply.raw.setHeader('X-Accel-Buffering', 'no');
     reply.raw.flushHeaders();
-    const send = (event, data) => { try { reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch { /* client gone */ } };
+    // range links (OceanLibrary selectionString, Ocean of Lights #(start)(end)) are made here, at the output, in event order
+    const { upgradeOceanLinks, needsUpgrade } = await import('../lib/ocean-links.js');
+    let chain = Promise.resolve();
+    const send = (event, data) => {
+      const json = JSON.stringify(data);
+      chain = chain.then(async () => {
+        const out = needsUpgrade(json) ? await upgradeOceanLinks(json).catch(() => json) : json;
+        try { reply.raw.write(`event: ${event}\ndata: ${out}\n\n`); } catch { /* client gone */ }
+      });
+      return chain;
+    };
     const t0 = Date.now();
     const r = await sourceHunt(quote, {}, { emit: send }).catch((err) => ({ failed: err.message, stack: String(err.stack || '').slice(0, 2000) }));
     auditSourceHunt(request, quote, t0, r, 'stream');
     send(r.failed || r.error ? 'error' : 'done', r.failed ? { message: r.failed } : r);
+    await chain;
     reply.raw.end();
     return reply;
   });
