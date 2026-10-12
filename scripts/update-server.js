@@ -441,10 +441,16 @@ async function rollbackStart(name) {
 }
 
 /** Watchdog (every loop, deploy or not): critical services present + API answering. Restart what is missing; alert. */
+let lastSwapAt = 0;                    // set by swapPm2Process — the watchdog stands down while a deploy settles
 const watchdogRestarts = new Map();   // service → restart times (rolling hour), to tell a blip from a crash loop
 async function watchdog() {
+  // A deploy recreates these services; one caught mid-swap (starting, or still draining) is NOT down — 10-11 19:35 a
+  // [PAGE] fired 19 s into a deploy for a worker the deploy itself brought up seconds later.
+  if (Date.now() - lastSwapAt < 120000) { log('info', 'WATCHDOG: deploy in the last 2 min — services left to settle'); return; }
   for (const name of ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-research']) {
     if (await isProcessRunning(name)) { await recovered(`down-${name}`); continue; }
+    await new Promise((r) => setTimeout(r, 45000));   // starting / restarting by pm2 itself: give it a moment
+    if (await isProcessRunning(name)) { log('info', `WATCHDOG: ${name} came up on its own`); continue; }
     log('error', `WATCHDOG: ${name} is not online — restarting`);
     const problems = await ecosystemProblems();
     let ok = false;
@@ -513,6 +519,7 @@ async function killStrayApiProcesses() {
  * Falls back to delete+start if reload fails.
  */
 async function swapPm2Process(name) {
+  lastSwapAt = Date.now();
   // CRITICAL: `pm2 reload --update-env` only refreshes env vars — NOT
   // ecosystem.config.cjs settings like max_memory_restart, kill_timeout,
   // exp_backoff_restart_delay. Those changes are silently ignored on reload
