@@ -94,3 +94,30 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
   }
   return { id: t.id, channel: t.channel, title: t.title, started_at: t.started_at, last_activity: t.last_activity, person: personOf(t.participant_id, who), rounds: [...rounds.values()] };
 }
+
+/** The audits as a WORK QUEUE (Chad 10-12: "whatever the audits identify as a useful extension for our search strategies is
+ *  our highest priority"): strategy switches the auditor asked for, unmet needs (new strategies), why answers fell short,
+ *  data gaps and problem kinds — each ranked by frequency, with up to 5 threads to read. Pure over audit rows. */
+export function strategyGaps(rows = []) {
+  const done = rows.filter((r) => r.status === 'done' && r.v);
+  const bump = (m, key, r, extra) => {
+    if (!key) return;
+    const e = m.get(key) || { key, n: 0, threads: [], ...extra };
+    e.n++; if (r.session_id && !e.threads.includes(r.session_id) && e.threads.length < 5) e.threads.push(r.session_id);
+    m.set(key, e);
+  };
+  const switches = new Map(), needs = new Map(), causes = new Map(), gaps = new Map(), problems = new Map();
+  for (const r of done) {
+    const v = r.v;
+    if (v.best_strategy && v.strategy_used && v.best_strategy !== v.strategy_used) bump(switches, `${v.strategy_used} → ${v.best_strategy}`, r);
+    if (v.new_strategy?.suggested) bump(needs, String(v.new_strategy.need || 'unnamed need').trim(), r, { route: v.new_strategy.route || null });
+    if (v.evidence?.answered && !['fully', 'not-applicable'].includes(v.evidence.answered)) bump(causes, v.evidence.cause || 'other', r);
+    if (v.data_gap?.found) bump(gaps, String(v.data_gap.detail || 'unnamed').trim(), r);
+    let ps = v.problems;
+    if (typeof ps === 'string') { try { ps = JSON.parse(ps); } catch { ps = []; } }
+    for (const p of Array.isArray(ps) ? ps : []) bump(problems, `${p.where || '?'} · ${p.kind || 'other'}`, r);
+  }
+  const ranked = (m, n = 15) => [...m.values()].sort((a, b) => b.n - a.n).slice(0, n);
+  return { audited: done.length, warranted: done.filter((r) => strategyFlag(r.v).warranted).length,
+    switches: ranked(switches), needs: ranked(needs, 30), shortfalls: ranked(causes), data_gaps: ranked(gaps, 30), problems: ranked(problems) };
+}

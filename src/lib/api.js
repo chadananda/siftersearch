@@ -777,6 +777,11 @@ export const admin = {
     return request(`/api/admin/anis/threads?days=${days}&filter=${filter}`);
   },
 
+  /** The audits as a ranked work queue: strategy switches, unmet needs, shortfalls, data gaps, problem kinds. */
+  async getAnisStrategyGaps(days = 30) {
+    return request(`/api/admin/anis/strategy-gaps?days=${days}`);
+  },
+
   /** One Anís thread: every round, the route taken, and its audit. */
   async getAnisThread(id) {
     return request(`/api/admin/anis/threads/${encodeURIComponent(id)}`);

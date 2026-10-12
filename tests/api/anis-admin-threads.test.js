@@ -49,3 +49,20 @@ describe('threadDetail', () => {
     expect(t.rounds[0].reply.audit).toMatchObject({ state: 'done', better_strategy_warranted: true, best_strategy: 'term-study', answered: 'no', cause: 'routing' });
   });
 });
+
+describe('strategyGaps (the work queue)', async () => {
+  const { strategyGaps } = await import('../../api/lib/anis/admin-threads.js');
+  it('ranks switches, needs, shortfalls, data gaps and problems by frequency with threads to read', () => {
+    const need = { ...V_BAD, new_strategy: { suggested: true, need: 'Shoghi Effendi word frequency', route: 'CTAI renderings chart' }, data_gap: { found: true, detail: 'Persian Hidden Words missing' } };
+    const g = strategyGaps([
+      { session_id: 'a', status: 'done', v: V_BAD }, { session_id: 'b', status: 'done', v: V_BAD }, { session_id: 'c', status: 'done', v: need },
+      { session_id: 'd', status: 'done', v: V_OK }, { session_id: 'e', status: 'error', v: null },
+    ]);
+    expect(g).toMatchObject({ audited: 4, warranted: 3 });
+    expect(g.switches[0]).toMatchObject({ key: 'passages → term-study', n: 3, threads: ['a', 'b', 'c'] });
+    expect(g.needs[0]).toMatchObject({ key: 'Shoghi Effendi word frequency', n: 1, route: 'CTAI renderings chart' });
+    expect(g.shortfalls[0]).toMatchObject({ key: 'routing', n: 3 });
+    expect(g.data_gaps[0].key).toBe('Persian Hidden Words missing');
+    expect(g.problems[0]).toMatchObject({ key: 'reply · missed-key-passage', n: 3 });
+  });
+});

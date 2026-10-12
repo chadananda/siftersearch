@@ -14,7 +14,10 @@
   let openId = $state(null);
   let thread = $state(null);
   let threadError = $state(null);
+  let gaps = $state(null);
 
+  const GAP_SECTIONS = [['switches', 'Strategy the auditor would have used instead'], ['needs', 'Needs no strategy serves yet (new strategy / tool)'],
+    ['shortfalls', 'Why answers fell short'], ['data_gaps', 'Data gaps'], ['problems', 'Problems by kind']];
   const FILTERS = [['all', 'All'], ['strategy', 'Better strategy warranted'], ['problems', 'Problems'], ['pending', 'Not yet audited']];
   const when = (s) => (s ? new Date(String(s).replace(' ', 'T') + (String(s).includes('Z') ? '' : 'Z')).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
   const who = (p) => p?.name && p?.email ? `${p.name} · ${p.email}` : p?.email || p?.name || 'unknown';
@@ -24,12 +27,20 @@
   async function loadList() {
     error = null;
     try { list = await admin.getAnisThreads(days, filter); } catch (e) { error = e.message || 'Failed to load'; }
+    admin.getAnisStrategyGaps(days).then((g) => { gaps = g; }).catch(() => { gaps = null; });
   }
   async function open(id) {
     if (openId === id) { openId = null; thread = null; history.replaceState(null, '', '#threads'); return; }
     openId = id; thread = null; threadError = null;
     history.replaceState(null, '', `#threads:${id}`);
     try { thread = await admin.getAnisThread(id); } catch (e) { threadError = e.message || 'Failed to load'; }
+  }
+
+  // from the work queue: the thread may be outside the current filter — show All, open it, bring it into view
+  async function openFromGap(id) {
+    if (!list?.threads.some((t) => t.id === id)) { filter = 'all'; await loadList(); }
+    if (openId !== id) await open(id);
+    requestAnimationFrame(() => document.getElementById(`thread-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   onMount(async () => {
@@ -52,6 +63,31 @@
     </select>
   </div>
 
+  {#if gaps && gaps.audited}
+    <details open class="rounded-md border border-border-subtle bg-surface-1 px-4 py-3">
+      <summary class="cursor-pointer font-medium text-primary">What the audits ask for — the strategy work queue
+        <span class="text-sm font-normal text-secondary">({gaps.warranted} of {gaps.audited} audited replies warranted a better strategy)</span></summary>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        {#each GAP_SECTIONS as [key, label] (key)}
+          {#if gaps[key]?.length}
+            <div class="flex flex-col gap-1 min-w-0">
+              <h3 class="text-sm font-semibold text-primary">{label}</h3>
+              <ul class="flex flex-col gap-1 text-sm">
+                {#each gaps[key] as g (g.key)}
+                  <li class="min-w-0">
+                    <span class="text-warning tabular-nums">{g.n}×</span> <span class="text-primary">{g.key}</span>
+                    {#if g.route}<span class="text-secondary"> — {g.route}</span>{/if}
+                    <span class="text-xs">{#each g.threads as id, i (id)} <button class="text-accent hover:text-accent-hover" onclick={() => openFromGap(id)}>#{i + 1}</button>{/each}</span>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+        {/each}
+      </div>
+    </details>
+  {/if}
+
   {#if error}<p class="text-error">{error}</p>
   {:else if !list}<p class="text-muted">Loading…</p>
   {:else}
@@ -63,7 +99,7 @@
     {#if !list.threads.length}<p class="text-muted">Nothing here for this filter.</p>{/if}
     <div class="flex flex-col gap-2">
       {#each list.threads as t (t.id)}
-        <div class="rounded-md border {openId === t.id ? 'border-accent' : 'border-border-subtle'} bg-surface-1">
+        <div id="thread-{t.id}" class="rounded-md border {openId === t.id ? 'border-accent' : 'border-border-subtle'} bg-surface-1">
           <button class="w-full text-left px-4 py-3 flex flex-col gap-1" onclick={() => open(t.id)} aria-expanded={openId === t.id}>
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span class="font-medium text-primary">{who(t.person)}</span>

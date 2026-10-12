@@ -3,7 +3,8 @@
 import { queryAll } from '../lib/db.js';
 import { requireTier } from '../lib/auth.js';
 import { anisActivity, anisCosts, anisAssessment, anisSystem1 } from '../lib/anis/admin-overview.js';
-import { threadsOverview, threadDetail } from '../lib/anis/admin-threads.js';
+import { threadsOverview, threadDetail, strategyGaps } from '../lib/anis/admin-threads.js';
+import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
 
 export default async function anisAdminRoutes(fastify) {
@@ -34,4 +35,10 @@ export default async function anisAdminRoutes(fastify) {
     const t = await threadDetail({ thread: anisThread, messages: anisThreadMessages }, request.params.id);
     return t || reply.code(404).send({ error: 'no such thread' });
   });
+
+  // The audits as a ranked work queue (Chad 10-12: audit-identified strategy extensions are the highest priority).
+  fastify.get('/anis/strategy-gaps', {
+    preHandler: requireTier('admin'),
+    schema: { querystring: { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 365, default: 30 } } } },
+  }, async (request) => ({ days: request.query.days || 30, ...strategyGaps(auditsSince(request.query.days || 30)) }));
 }

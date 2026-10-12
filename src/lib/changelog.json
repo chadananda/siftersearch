@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-12T22:07:25.119Z",
+  "generated": "2026-10-12T23:17:04.317Z",
   "entries": [
+    {
+      "hash": "f4d3620f",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Audit-driven strategy extensions = highest priority (Chad 10-12)",
+      "scope": "worklist"
+    },
+    {
+      "hash": "0bd9f848",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Anís Threads says 'sign in as an admin' instead of loading forever",
+      "scope": "admin"
+    },
     {
       "hash": "bfa76eb2",
       "date": "2026-10-12",
@@ -3486,24 +3500,24 @@
       "type": "Chore",
       "description": "Claims export returns a whole book (≤6000) with statement + semantic key; design: index on ingest",
       "scope": "concepts"
-    },
-    {
-      "hash": "faa316e0",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Concept index economics — monthly cycle, ~$20 per full Jev pass",
-      "scope": "planning"
-    },
-    {
-      "hash": "6096fa5b",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Concept design — inverted question/idea → paragraphs index; cheap canonical HyPE",
-      "scope": "planning"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "f4d3620f",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Audit-driven strategy extensions = highest priority (Chad 10-12)",
+        "scope": "worklist"
+      },
+      {
+        "hash": "0bd9f848",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Anís Threads says 'sign in as an admin' instead of loading forever",
+        "scope": "admin"
+      },
       {
         "hash": "bfa76eb2",
         "date": "2026-10-12",
@@ -7017,20 +7031,6 @@
         "type": "Chore",
         "description": "Claims export returns a whole book (≤6000) with statement + semantic key; design: index on ingest",
         "scope": "concepts"
-      },
-      {
-        "hash": "faa316e0",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Concept index economics — monthly cycle, ~$20 per full Jev pass",
-        "scope": "planning"
-      },
-      {
-        "hash": "6096fa5b",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Concept design — inverted question/idea → paragraphs index; cheap canonical HyPE",
-        "scope": "planning"
       }
     ]
   }

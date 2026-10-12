@@ -22,3 +22,15 @@ export function auditsFor(ids, { auditDb } = {}) {
   return out;
 }
 
+
+/** Every audit verdict in the last `days` (with its thread), newest first. */
+export function auditsSince(days = 30, { auditDb } = {}) {
+  const db = auditDb || (existsSync(AUDIT_DB()) ? new Database(AUDIT_DB(), { readonly: true, fileMustExist: true }) : null);
+  if (!db) return [];
+  try {
+    const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+    return db.prepare(`SELECT message_id, session_id, channel, asked_at, status, verdict_json FROM audits
+      WHERE COALESCE(asked_at, audited_at) >= ? ORDER BY message_id DESC LIMIT 5000`).all(since)
+      .map((r) => ({ ...r, v: safeJson(r.verdict_json) }));
+  } finally { if (!auditDb) db.close(); }
+}
