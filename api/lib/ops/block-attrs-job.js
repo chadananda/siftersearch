@@ -7,6 +7,8 @@ import { join } from 'path';
 import { config } from '../config.js';
 import { listDocs } from '../docs-repo.js';
 import { rowsForDoc, setBlockAttrs } from '../repos/block-attrs-repo.js';
+import { enrichmentOnRows } from '../repos/enrichment-repo.js';
+import { latest } from '../repos/ops-report-repo.js';
 import { parseMarkdownBlocks } from '../../services/block-parser.js';
 import { hashContentWords } from '../../services/ingester.js';
 
@@ -79,4 +81,29 @@ export async function blockMismatchReport({ ids = [] } = {}) {
       samples: un.slice(0, 3).map((r) => ({ row: r.text.slice(0, 200), block: near(r.text)?.content.slice(0, 200) ?? null })) });
   }
   return { docs: out };
+}
+
+/** What a re-ingest of the drifted books would put at risk: enrichment on their UNMATCHED rows (matched rows keep their
+ *  ids). params: { ids? } — default the need_reingest list of the latest block-attrs run. */
+export async function reingestImpactReport({ ids = null } = {}) {
+  const list = ids || (await latest('block-attrs'))?.result?.need_reingest || [];
+  const total = { docs: 0, rows: 0, hype: 0, translation: 0, original_text: 0, alignment_links: 0, mentions_v2: 0, graph_mentions: 0 };
+  const heavy = [];
+  for (let i = 0; i < list.length; i += 200) {
+    const { docs } = await listDocs({ ids: list.slice(i, i + 200), fields: ['id', 'title', 'file_path', 'source_site'], limit: 200 });
+    for (const d of docs) {
+      const path = d.file_path && join(config.library.basePath, d.file_path);
+      if (!path || !existsSync(path)) continue;
+      const blocks = parseMarkdownBlocks(readFileSync(path, 'utf8').replace(FM, ''), { splitOversized: false }).filter((b) => b.attrs?.id);
+      const bh = new Set(blocks.map((b) => hashContentWords(b.content)));
+      const un = (await rowsForDoc(d.id)).filter((r) => !/^heading/.test(r.blocktype || '') && !bh.has(hashContentWords(r.text))).map((r) => r.id);
+      if (!un.length) continue;
+      const e = await enrichmentOnRows(un);
+      total.docs++; for (const k of Object.keys(e)) total[k] += e[k];
+      const weight = e.hype + e.alignment_links + e.mentions_v2 + e.graph_mentions + e.original_text;
+      if (weight) heavy.push({ id: d.id, title: d.title, ...e, weight });
+    }
+  }
+  heavy.sort((a, b) => b.weight - a.weight);
+  return { total, docs_with_enrichment_at_risk: heavy.length, top: heavy.slice(0, 60), safe_ids: list.filter((id) => !heavy.some((h) => h.id === id)) };
 }

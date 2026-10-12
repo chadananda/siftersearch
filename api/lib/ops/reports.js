@@ -5,7 +5,7 @@ import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/inte
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
 import { normLang } from '../language-codes.js';
-import { blockAttrsJob, blockMismatchReport } from './block-attrs-job.js';
+import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
@@ -68,5 +68,6 @@ REPORTS['ctai-audit'] = async () => {
 // JOBS that write (through the single writer) — same queue, same one-at-a-time worker, same API.
 REPORTS['block-attrs'] = blockAttrsJob;   // params: { ids?, limit? } — copy file ids/pn onto rows
 REPORTS['block-mismatch'] = blockMismatchReport;   // params: { ids } — why rows don't match file blocks
+REPORTS['reingest-impact'] = reingestImpactReport;   // enrichment on drifted rows a re-ingest would replace
 
 export const reportNames = () => Object.keys(REPORTS);
