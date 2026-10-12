@@ -4,7 +4,8 @@ import { queryAll, queryOne } from '../db.js';
 
 /** For one translation doc: its live paragraphs, how many carry pn, and its active alignment rows' health. */
 export async function translationAudit(transDoc) {
-  const paras = await queryOne(`SELECT COUNT(*) AS live, SUM(json_extract(block_attrs, '$.pn') IS NOT NULL) AS with_pn
+  const paras = await queryOne(`SELECT COUNT(*) AS live, SUM(json_extract(block_attrs, '$.pn') IS NOT NULL) AS with_pn,
+      SUM(LENGTH(COALESCE(original_text, '')) > 0) AS with_original, SUM(external_para_id IS NOT NULL) AS with_site_id
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype, '') NOT LIKE 'heading%'`, [transDoc]);
   const links = await queryOne(`SELECT COUNT(*) AS rows, COUNT(DISTINCT a.trans_id) AS trans_aligned, COUNT(DISTINCT a.orig_id) AS orig_aligned,
       SUM(t.id IS NULL OR t.deleted_at IS NOT NULL) AS stale_trans, SUM(o.id IS NULL OR o.deleted_at IS NOT NULL) AS stale_orig
