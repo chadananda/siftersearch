@@ -208,7 +208,8 @@ export async function createServer(opts = {}) {
   // Callback style on purpose: the common case (no OceanLibrary link) completes synchronously — an async hook here raced a
   // route that sends its own reply (ERR_HTTP_HEADERS_SENT in public-api-library tests).
   server.addHook('onSend', (request, reply, payload, done) => {
-    if (reply.raw.headersSent || typeof payload !== 'string' || !payload.includes('oceanlibrary.com') || !payload.includes('paraId=')
+    if (reply.raw.headersSent || typeof payload !== 'string'
+      || !((payload.includes('oceanlibrary.com') && payload.includes('paraId=')) || (payload.includes('oceanoflights.org') && payload.includes('#~q=')))
       || !/json/i.test(String(reply.getHeader('content-type') || ''))) return done(null, payload);
     import('./lib/ocean-links.js')
       .then(({ upgradeOceanLinks }) => upgradeOceanLinks(payload))

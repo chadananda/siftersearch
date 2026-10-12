@@ -87,6 +87,8 @@ export function textFragment(url, text, ranges, n = 4) {
   // OceanLibrary has its own range links (selectionString): mark the quoted words; the output pass (lib/ocean-links.js)
   // turns the marker into a range highlighting exactly them (a text fragment is not honoured by its reader app)
   if (/oceanlibrary\.com\/[^?#\s]+\?paraId=/.test(url)) return `${url}#~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
+  // Ocean of Lights has its own range hash "#(start)(end)" built from the page's text at the output pass (Chad 10-12)
+  if (/^https:\/\/(www\.)?oceanoflights\.org\/[^?#\s]+$/.test(url)) return `${url}#~q=${encodeURIComponent(text.slice(ranges[0][0], ranges[ranges.length - 1][1]))}`;
   const words = text.slice(ranges[0][0], ranges[ranges.length - 1][1]).split(/\s+/).filter((w) => w && !/[[\]^*_#>|]/.test(w));
   if (!words.length) return null;
   const enc = (ws) => encodeURIComponent(ws.join(' ').replace(/^[“"‘'(«]+|[”"’')»,.;:!?]+$/g, '')).replace(/-/g, '%2D').replace(/,/g, '%2C').replace(/&/g, '%26');
