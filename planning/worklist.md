@@ -4,9 +4,10 @@ Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not 
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
 ## Now — LIBRARY CLEANUP (Chad 10-11: "get all the library cleanup tasks done so we can start concept extraction, hype and working on Anis and Dewey")
-- [~] 1. Qdrant: keyword layer hourly ✅; PHRASE layer was never fed new ¶ → indexer running for the 284 books ($20 cap)
+- [~] 1. Qdrant phrase layer: coverage report (ops API) — primary library missing ~214k ¶ (~$11, run in progress, $20 cap);
+      supplemental scrapes missing 0.55–1.4M ¶ (~$30–73) — AWAITING Chad's go-ahead
 - [x] 2. Language codes: ONE normaliser (`language-codes.js`), ingest + sites-ingest normalise, 2,414 docs relabelled + re-synced (source files left: ingest normalises)
-- [~] 3. Segmentation tail: 3,843 oversized ¶ in 38 books (mostly the held-9) — batch submitted ($1.77 est); `/tank/sifter/segtail-chain.sh` collects → applies → ingests → phrase-indexes
+- [x] 3. Segmentation tail: 3,425 more oversized ¶ → 16,185 in 34 books, 0 verify failures, all re-ingested
 - [x] 4. Sentence markers for the 7 deferred hadith books: SKIPPED on value (~$15; markers only serve translation alignment, none exist for these)
 - [ ] 5. ID/pn for every book: `scripts/library/assign-block-ids.mjs` (OL-compatible attrs; `--align-to` English for CTAI)
 - [ ] 6. CTAI audit: originals paragraphed FROM THE ENGLISH, aligned, matching pn, DB links both ways
