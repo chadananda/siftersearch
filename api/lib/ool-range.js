@@ -66,9 +66,8 @@ export function oolQuoteHash(page, s, e) {
   const quote = page.slice(s, e);
   const words = [...quote.matchAll(/\S+/g)];
   if (!words.length) return null;
-  const MIN = 1;
-  const prefixes = words.slice(MIN - 1).map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
-  const suffixes = words.slice(0, words.length - MIN + 1).map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
+  const prefixes = words.map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
+  const suffixes = words.map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
   const best = (frags, at, caseless) => {        // rank → shortest fragment with that rank
     const by = new Map();
     for (const f of frags) { const r = rankOf(page, f, at(f), caseless); if (r && !by.has(r)) by.set(r, f); }
