@@ -23,8 +23,9 @@ export function mapRows(oldRows, newRows, { minScore = 0.9, minWords = 3 } = {})
     const cands = [];
     for (const n of nw) {
       if (!n.set.size) continue;
-      const s = Math.max(containment(os, n.set) * Math.min(1, n.set.size / os.size) ** 0.25, containment(n.set, os) * Math.min(1, os.size / n.set.size) ** 0.25);
-      if (s >= minScore) cands.push({ id: n.id, score: +s.toFixed(3) });
+      const inOld = containment(n.set, os);   // the new row is (part of) the old one — a genuine split piece when ≥ 0.95
+      const s = Math.max(containment(os, n.set) * Math.min(1, n.set.size / os.size) ** 0.25, inOld * Math.min(1, os.size / n.set.size) ** 0.25);
+      if (s >= minScore) cands.push({ id: n.id, score: +s.toFixed(3), piece: inOld >= 0.95 && n.set.size < os.size });
     }
     out.set(o.id, cands.sort((a, b) => b.score - a.score));
   }
@@ -45,3 +46,40 @@ export function columnsToCarry(oldRow, newRow) {
   }
   return set;
 }
+
+const parseQs = (raw) => {
+  if (!raw) return [];
+  if (String(raw).startsWith('[')) { try { const a = JSON.parse(raw); if (Array.isArray(a)) return a.map((q) => String(q).trim()).filter(Boolean); } catch { /* text */ } }
+  return String(raw).split('\n').map((q) => q.trim()).filter(Boolean);
+};
+
+/**
+ * Plan the column carry for a doc: every replaced old row → its best new row. Several old rows landing on ONE new row
+ * (a merge) pool their HyPE questions (union, order kept) instead of keeping only the first; other columns take the
+ * first non-empty value, and never overwrite what the new row already has. → [{ id, set }]
+ */
+export function planColumns(replaced, map, newById) {
+  const byTarget = new Map();
+  for (const o of replaced) { const b = map.get(o.id)?.[0]; if (b) (byTarget.get(b.id) || byTarget.set(b.id, []).get(b.id)).push(o); }
+  const out = [];
+  for (const [tid, olds] of byTarget) {
+    const cur = newById.get(tid) || {};
+    const set = {};
+    const qs = [...parseQs(cur.hyp_questions)];
+    for (const o of olds) for (const q of parseQs(o.hyp_questions)) if (!qs.includes(q)) qs.push(q);
+    if (qs.length && qs.length !== parseQs(cur.hyp_questions).length) set.hyp_questions = JSON.stringify(qs);
+    for (const c of CARRY_COLUMNS) {
+      if (c === 'hyp_questions' || set[c] != null) continue;
+      if (cur[c] != null && cur[c] !== '') continue;
+      const v = olds.map((o) => o[c]).find((x) => x != null && x !== '');
+      if (v != null) set[c] = v;
+    }
+    if (Object.keys(set).length) out.push({ id: tid, set });
+  }
+  return out;
+}
+
+/** The new rows an old row's LINKS move to: every genuine split piece, else the single best match. */
+export const linkTargets = (cands = []) => { const pieces = cands.filter((c) => c.piece); return pieces.length > 1 ? pieces : cands.slice(0, 1); };
+
+export const countQuestions = (rows) => rows.reduce((n, r) => n + parseQs(r.hyp_questions).length, 0);

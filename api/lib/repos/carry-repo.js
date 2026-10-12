@@ -22,7 +22,8 @@ export async function mentionsV2For(ids) {
 }
 export async function graphMentionsFor(ids) {
   const out = [];
-  for (const c of chunks(ids)) out.push(...await graphQueryAll(`SELECT id, entity_id, content_id, role FROM entity_mentions WHERE content_id IN (${ph(c)})`, c.map(String)).catch(() => []));
+  // content_id is declared TEXT but holds INTEGER values (10-11: a lookup with strings found none) — match both forms
+  for (const c of chunks(ids, 250)) out.push(...await graphQueryAll(`SELECT id, entity_id, content_id, role FROM entity_mentions WHERE content_id IN (${ph(c)}) OR content_id IN (${ph(c)})`, [...c.map(Number), ...c.map(String)]));
   return out;
 }
 
@@ -52,5 +53,5 @@ export async function moveMentionsV2(moves) {
   for (const c of chunks(moves, 500)) await transaction(c.map((m) => ({ sql: 'UPDATE entity_mentions_v2 SET para_id = ? WHERE id = ?', args: [String(m.to), m.id] })), 'ops:carry-mentions');
 }
 export async function moveGraphMentions(moves) {
-  for (const m of moves) await graphQuery('UPDATE OR IGNORE entity_mentions SET content_id = ? WHERE id = ?', [String(m.to), m.id]).catch(() => {});
+  for (const m of moves) await graphQuery('UPDATE OR IGNORE entity_mentions SET content_id = ? WHERE id = ?', [Number(m.to), m.id]);
 }

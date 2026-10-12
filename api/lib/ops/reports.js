@@ -9,7 +9,7 @@ import { spendSince } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
-import { reingestCarryJob, carryVerifyReport } from './carry-job.js';
+import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
@@ -80,6 +80,7 @@ REPORTS['ctai-originals'] = ctaiOriginalsJob;   // write original-language files
 REPORTS['ingest-files'] = ingestFilesJob;       // params: { paths?, ids? } — ingest in the ops worker
 REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by align
 REPORTS['carry-verify'] = carryVerifyReport;     // params: { ids, backup? } — enrichment before vs after
+REPORTS['carry-repair'] = carryRepairJob;       // params: { ids } — re-apply the carry from the backup
 REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
 REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
 

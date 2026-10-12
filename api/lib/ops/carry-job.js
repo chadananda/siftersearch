@@ -6,11 +6,45 @@ import { join, dirname } from 'path';
 import { config } from '../config.js';
 import { listDocs } from '../docs-repo.js';
 import { withAIContext } from '../ai-context.js';
-import { mapRows, columnsToCarry, CARRY_COLUMNS } from './carry-map.js';
+import { mapRows, planColumns, linkTargets, countQuestions, CARRY_COLUMNS } from './carry-map.js';
 import { waitForQuietWriter } from './ctai-jobs.js';
 import { snapshotRows, linksFor, mentionsV2For, graphMentionsFor, applyColumns, relink, moveMentionsV2, moveGraphMentions } from '../repos/carry-repo.js';
 
 const hasWork = (r) => CARRY_COLUMNS.some((c) => r[c] != null && r[c] !== '');
+
+/** Carry columns, links and mentions from REPLACED old rows onto FRESH new rows. Shared by reingest-carry and carry-repair. */
+export async function carryOnto({ replaced, fresh, after, links, m2, gm }) {
+  const st = { enriched_replaced: 0, carried_rows: 0, links_moved: 0, mentions_v2_moved: 0, graph_moved: 0, unmapped_enriched: 0, unmapped_links: 0, unmapped_mentions: 0 };
+  if (!replaced.length) return st;
+  const map = mapRows(replaced, fresh);
+  const newById = new Map(after.map((x) => [x.id, x]));
+  const enriched = replaced.filter(hasWork);
+  st.enriched_replaced = enriched.length;
+  st.unmapped_enriched = enriched.filter((o) => !map.get(o.id)?.length).length;
+  const cols = planColumns(enriched, map, newById);
+  await applyColumns(cols); st.carried_rows = cols.length;
+  const repl = new Set(replaced.map((o) => o.id));
+  const lm = [];
+  for (const l of links) {
+    const side = repl.has(l.trans_id) ? 'trans' : repl.has(l.orig_id) ? 'orig' : null;
+    if (!side) continue;
+    const targets = linkTargets(map.get(side === 'trans' ? l.trans_id : l.orig_id));
+    if (!targets.length) { st.unmapped_links++; continue; }
+    for (const t of targets) lm.push({ link: l, transId: side === 'trans' ? t.id : l.trans_id, origId: side === 'orig' ? t.id : l.orig_id });
+  }
+  await relink(lm); st.links_moved = lm.length;
+  const mv = [];
+  for (const m of m2) {
+    const cands = map.get(Number(m.para_id)); if (!cands) continue;
+    if (!cands.length) { st.unmapped_mentions++; continue; }
+    mv.push({ id: m.id, to: (cands.find((c) => String(newById.get(c.id)?.text || '').includes(m.surface)) || cands[0]).id });
+  }
+  await moveMentionsV2(mv); st.mentions_v2_moved = mv.length;
+  const gv = [];
+  for (const m of gm) { const cands = map.get(Number(m.content_id)); if (cands?.length) gv.push({ id: m.id, to: cands[0].id }); else if (cands) st.unmapped_mentions++; }
+  await moveGraphMentions(gv); st.graph_moved = gv.length;
+  return st;
+}
 
 export async function reingestCarryJob({ ids = [], backup = `/tank/sifter/carry-backups/carry-${new Date().toISOString().slice(0, 10)}.jsonl` } = {}) {
   const { ingestDocument } = await import('../../services/ingester.js');
@@ -37,42 +71,10 @@ export async function reingestCarryJob({ ids = [], backup = `/tank/sifter/carry-
         const kept = new Set(after.map((x) => x.id));
         const replaced = before.filter((x) => !kept.has(x.id));
         const fresh = after.filter((x) => !ids0.includes(x.id));
-        const byId = new Map(after.map((x) => [x.id, x]));
         tot.docs++; tot.replaced_rows += replaced.length;
         if (!replaced.length) continue;
-        const map = mapRows(replaced, fresh);
-        // columns → the best new row
-        const colChanges = [];
-        for (const o of replaced.filter(hasWork)) {
-          tot.enriched_replaced++;
-          const best = map.get(o.id)?.[0];
-          if (!best) { tot.unmapped_enriched++; continue; }
-          const set = columnsToCarry(o, byId.get(best.id));
-          if (Object.keys(set).length) { colChanges.push({ id: best.id, set }); Object.assign(byId.get(best.id), set); tot.carried_rows++; }
-        }
-        await applyColumns(colChanges);
-        // alignment links → every new row holding the words (a split original stays linked through each piece)
-        const lm = [];
-        for (const l of links) {
-          const side = replaced.some((o) => o.id === l.trans_id) ? 'trans' : replaced.some((o) => o.id === l.orig_id) ? 'orig' : null;
-          if (!side) continue;
-          const cands = map.get(side === 'trans' ? l.trans_id : l.orig_id) || [];
-          if (!cands.length) { tot.unmapped_links++; continue; }
-          for (const c of cands) lm.push({ link: l, transId: side === 'trans' ? c.id : l.trans_id, origId: side === 'orig' ? c.id : l.orig_id });
-        }
-        await relink(lm); tot.links_moved += lm.length;
-        // mentions → the new row whose text holds the surface, else the best
-        const mv = [];
-        for (const m of m2) {
-          const cands = map.get(Number(m.para_id)); if (!cands) continue;
-          if (!cands.length) { tot.unmapped_mentions++; continue; }
-          const hit = cands.find((c) => String(byId.get(c.id)?.text || '').includes(m.surface)) || cands[0];
-          mv.push({ id: m.id, to: hit.id });
-        }
-        await moveMentionsV2(mv); tot.mentions_v2_moved += mv.length;
-        const gv = [];
-        for (const m of gm) { const cands = map.get(Number(m.content_id)); if (cands?.length) gv.push({ id: m.id, to: cands[0].id }); else if (cands) tot.unmapped_mentions++; }
-        await moveGraphMentions(gv); tot.graph_moved += gv.length;
+        const c = await carryOnto({ replaced, fresh, after, links, m2, gm });
+        for (const k of Object.keys(c)) tot[k] = (tot[k] || 0) + c[k];
       } catch (err) { tot.failed.push({ id: d.id, error: String(err.message || err).slice(0, 200) }); }
       const rest = Math.max(1000, 2 * (Date.now() - t0)); tot.paced_ms += rest;
       await new Promise((r) => setTimeout(r, rest));
@@ -89,15 +91,33 @@ export async function carryVerifyReport({ ids = [], backup = `/tank/sifter/carry
   const before = new Map();
   for (const line of readFileSync(backup, 'utf8').split('\n').filter(Boolean)) {
     const b = JSON.parse(line); if (!want.has(b.doc)) continue;
-    before.set(b.doc, { hype: b.rows.filter((r) => r.hyp_questions).length, carried_rows: b.rows.length, links: b.links.length,
+    before.set(b.doc, { hype: b.rows.filter((r) => r.hyp_questions).length, questions: countQuestions(b.rows), carried_rows: b.rows.length, links: b.links.length,
       mentions_v2: b.mentions_v2.length, graph: b.graph_mentions.length });
   }
   const out = [];
   for (const id of want) {
     const rows = await snapshotRows(id); const rid = rows.map((r) => r.id);
-    const after = { hype: rows.filter((r) => r.hyp_questions).length, carried_rows: rows.filter(hasWork).length,
+    const after = { hype: rows.filter((r) => r.hyp_questions).length, questions: countQuestions(rows), carried_rows: rows.filter(hasWork).length,
       links: (await linksFor(rid)).length, mentions_v2: (await mentionsV2For(rid)).length, graph: (await graphMentionsFor(rid)).length };
     out.push({ id, before: before.get(id) || null, after });
+  }
+  return { docs: out };
+}
+
+/** Re-apply the carry for books already re-ingested, from the backup snapshot (old rows + their ids): columns onto the
+ *  current rows, and graph mentions still pointing at the old (now deleted) ids. params: { ids, backup? } */
+export async function carryRepairJob({ ids = [], backup = `/tank/sifter/carry-backups/carry-${new Date().toISOString().slice(0, 10)}.jsonl` } = {}) {
+  const want = new Set(ids.map(Number));
+  const snaps = new Map();
+  for (const line of readFileSync(backup, 'utf8').split('\n').filter(Boolean)) { const b = JSON.parse(line); if (want.has(b.doc)) snaps.set(b.doc, b); }
+  const out = [];
+  for (const [doc, b] of snaps) {
+    const after = await snapshotRows(doc);
+    const live = new Set(after.map((x) => x.id));
+    const replaced = b.rows.filter((r) => !live.has(r.id));
+    const gm = await graphMentionsFor(replaced.map((r) => r.id));   // still keyed to the old ids
+    const st = await carryOnto({ replaced, fresh: after, after, links: [], m2: [], gm });
+    out.push({ doc, replaced: replaced.length, ...st });
   }
   return { docs: out };
 }
