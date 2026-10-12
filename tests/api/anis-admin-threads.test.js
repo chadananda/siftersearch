@@ -15,6 +15,10 @@ describe('strategyFlag', () => {
     expect(strategyFlag({ ...V_OK, new_strategy: { suggested: true, need: 'word study' } }).why).toBe('new strategy: word study');
   });
   it('an unaudited reply is pending', () => expect(auditView(undefined)).toEqual({ state: 'pending' }));
+  it('problems returned JSON-encoded as a string are parsed (not counted as characters)', () => {
+    const a = auditView({ status: 'done', v: { ...V_OK, problems: JSON.stringify([{ where: 'reply', kind: 'tone', detail: 'x' }]) } });
+    expect(a.problems).toHaveLength(1);
+  });
 });
 
 describe('threadsOverview', () => {

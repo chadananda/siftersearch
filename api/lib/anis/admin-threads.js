@@ -23,21 +23,28 @@ export function auditView(a) {
   if (!a) return { state: 'pending' };
   if (a.status !== 'done' || !a.v) return { state: 'error', error: a.error || null };
   const v = a.v, flag = strategyFlag(v);
+  // the model sometimes returns the problems array JSON-encoded as a string (10-12: "2,702 problems" = characters)
+  let problems = v.problems;
+  if (typeof problems === 'string') { try { problems = JSON.parse(problems); } catch { problems = [{ where: 'reply', kind: 'other', detail: problems }]; } }
+  if (!Array.isArray(problems)) problems = [];
   return { state: 'done', audited_at: a.audited_at, summary: v.summary || null, strategy_used: v.strategy_used, strategy_verdict: v.strategy_verdict,
     best_strategy: v.best_strategy, better_strategy_warranted: flag.warranted, why: flag.why, answered: v.evidence?.answered, cause: v.evidence?.cause,
-    format_fit: v.format_verdict?.fit, better_format: v.format_verdict?.better, problems: v.problems || [], new_strategy: v.new_strategy || null,
+    format_fit: v.format_verdict?.fit, better_format: v.format_verdict?.better, problems, new_strategy: v.new_strategy || null,
     data_gap: v.data_gap?.found ? v.data_gap.detail || 'yes' : null, reader_feedback: v.reader_feedback?.present ? v.reader_feedback : null };
 }
 
 /** participant id ("email:<hash>") → { email, name } from the mail store's correspondents. */
-export async function mailPeople({ fetchImpl = fetch, base = 'https://siftersearch.com', key = process.env.INTERNAL_API_KEY } = {}) {
+let peopleCache = { at: 0, map: null };
+export async function mailPeople({ fetchImpl = fetch, base = 'https://siftersearch.com', key = process.env.INTERNAL_API_KEY, fresh = false } = {}) {
+  if (!fresh && peopleCache.map && Date.now() - peopleCache.at < 10 * 60 * 1000) return peopleCache.map;
   const map = new Map();
   if (!key) return map;
   try {
-    const r = await fetchImpl(`${base}/_mail/messages?mailbox=anis&direction=in&limit=500`, { headers: { 'x-internal-key': key }, signal: AbortSignal.timeout(5000) });
+    const r = await fetchImpl(`${base}/_mail/messages?mailbox=anis&direction=in&limit=500`, { headers: { 'x-internal-key': key }, signal: AbortSignal.timeout(10000) });
     const j = await r.json();
-    for (const m of j.messages || j || []) if (m.from_addr) map.set(`email:${emailHash(m.from_addr)}`, { email: m.from_addr, name: m.from_name || null });
-  } catch { /* names are a convenience */ }
+    for (const m of j.messages || (Array.isArray(j) ? j : [])) if (m.from_addr) map.set(`email:${emailHash(m.from_addr)}`, { email: m.from_addr, name: m.from_name || null });
+    if (map.size) peopleCache = { at: Date.now(), map };
+  } catch (err) { console.warn(`anis threads: correspondents' names unavailable (${err.message})`); }   // names are a convenience
   return map;
 }
 

@@ -341,7 +341,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
   // Qabbalah under an answer that used two Bahá'í texts).
   const cited = citations.filter((c) => c.url && reply.includes(c.url));
-  return { reply, quotes_removed: guarded.removed, evidence: evidenceOf(retrieved), citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
+  // A term study's chart comes from the CTAI concordance, not from passages: record its facts so the auditor can check the
+  // counts (10-12: the ʿirfán chart was judged "fabricated, unsupported by any evidence" because the counts were invisible).
+  const studyEvidence = study ? [{ title: `CTAI concordance: ${study.term}${study.root ? ` (root ${study.root})` : ''}`, author: 'CTAI', url: study.researchUrl || null,
+    religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
+      + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
+  return { reply, quotes_removed: guarded.removed, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }
