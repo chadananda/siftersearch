@@ -81,3 +81,23 @@ export async function reingestCarryJob({ ids = [], backup = `/tank/sifter/carry-
   tot.failed = tot.failed.slice(0, 200);
   return { backup, ...tot };
 }
+
+/** Before vs after, per doc: rows with HyPE / any carried column, alignment links, mentions (v2 + graph). Reads the
+ *  backup the carry job wrote. params: { ids, backup } */
+export async function carryVerifyReport({ ids = [], backup = `/tank/sifter/carry-backups/carry-${new Date().toISOString().slice(0, 10)}.jsonl` } = {}) {
+  const want = new Set(ids.map(Number));
+  const before = new Map();
+  for (const line of readFileSync(backup, 'utf8').split('\n').filter(Boolean)) {
+    const b = JSON.parse(line); if (!want.has(b.doc)) continue;
+    before.set(b.doc, { hype: b.rows.filter((r) => r.hyp_questions).length, carried_rows: b.rows.length, links: b.links.length,
+      mentions_v2: b.mentions_v2.length, graph: b.graph_mentions.length });
+  }
+  const out = [];
+  for (const id of want) {
+    const rows = await snapshotRows(id); const rid = rows.map((r) => r.id);
+    const after = { hype: rows.filter((r) => r.hyp_questions).length, carried_rows: rows.filter(hasWork).length,
+      links: (await linksFor(rid)).length, mentions_v2: (await mentionsV2For(rid)).length, graph: (await graphMentionsFor(rid)).length };
+    out.push({ id, before: before.get(id) || null, after });
+  }
+  return { docs: out };
+}
