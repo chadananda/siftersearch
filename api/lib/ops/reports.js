@@ -8,6 +8,7 @@ import { normLang } from '../language-codes.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
+import { reingestCarryJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
@@ -74,10 +75,13 @@ REPORTS['reingest-impact'] = reingestImpactReport;
 REPORTS['ctai-originals'] = ctaiOriginalsJob;   // write original-language files paragraphed from the English
 REPORTS['ingest-files'] = ingestFilesJob;       // params: { paths?, ids? } — ingest in the ops worker
 REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by align
+REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
 REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
 
-/** Whole-table scans (minutes of I/O): run only in the quiet window, never during the day (Chad 10-11). */
+/** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
+ *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
+export const LANES = { index: ['phrase-index'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
-export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 2 && h < 6; };
+export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
 export const reportNames = () => Object.keys(REPORTS);

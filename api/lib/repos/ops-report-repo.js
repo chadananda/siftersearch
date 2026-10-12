@@ -19,11 +19,14 @@ export const latest = async (name) => parse(await queryOne(`SELECT * FROM ops_re
 export const recent = async (limit = 20) => (await queryAll('SELECT id, name, params, status, requested_at, finished_at, ms, error FROM ops_report_runs ORDER BY id DESC LIMIT ?', [limit])).map(parse);
 
 /** Oldest queued run → mark running. → run or null */
-export async function claimNext({ skip = [] } = {}) {
-  const r = await queryOne(`SELECT * FROM ops_report_runs WHERE status = 'queued'${skip.length ? ` AND name NOT IN (${skip.map(() => '?').join(',')})` : ''} ORDER BY id LIMIT 1`, skip);
+export async function claimNext({ skip = [], only = [] } = {}) {
+  const where = [`status = 'queued'`], args = [];
+  if (only.length) { where.push(`name IN (${only.map(() => '?').join(',')})`); args.push(...only); }
+  if (skip.length) { where.push(`name NOT IN (${skip.map(() => '?').join(',')})`); args.push(...skip); }
+  const r = await queryOne(`SELECT * FROM ops_report_runs WHERE ${where.join(' AND ')} ORDER BY id LIMIT 1`, args);
   if (!r) return null;
-  await query(`UPDATE ops_report_runs SET status = 'running', started_at = ? WHERE id = ? AND status = 'queued'`, [now(), r.id]);
-  return parse(r);
+  const u = await query(`UPDATE ops_report_runs SET status = 'running', started_at = ? WHERE id = ? AND status = 'queued'`, [now(), r.id]);
+  return u?.changes === 0 ? null : parse(r);   // another lane took it
 }
 
 export async function finish(id, { result = null, error = null, ms = null }) {
