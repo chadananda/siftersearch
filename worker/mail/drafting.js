@@ -2,7 +2,7 @@
 // to someone outside the invited list is a DRAFT Chad approves on a signed review page; every letter passes the
 // engagement rules (rules.js).
 //   draftReplies   every 5 min: new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → sent at once to invited
-//                  people (auto_send_invited), otherwise a draft + review notice to Chad
+//                  people (auto_send_invited; anyone who writes joins the list — Chad 10-12), otherwise a draft + review notice to Chad
 //   planOutreach   hourly, only while outreach_enabled = on: welcome letters (template) for people added to the list with
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
 //   dailyDigest    once a day: everything that happened, to the reviewer
@@ -93,6 +93,11 @@ export async function draftReplies(env, limit = 4) {
         VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, reSubject(m.subject), tidy(r.reply), toHtml(tidy(r.reply)),
         m.message_id, m.thread_key, `source:${m.id}; anis:${r.status}${r.triage?.stance ? `; stance:${r.triage.stance}` : ''}`).first();
       await db.prepare(`UPDATE mail_messages SET status = 'drafted' WHERE id = ?`).bind(m.id).run();
+      // Writing to Anís IS consent to engage (Chad 10-12: "a hyper-engagement tool … to expand the user base"): the writer
+      // joins the list → this reply goes at once and the outreach cadence follows. Ignored senders never reach here
+      // (dropped at inbound); a pause/stop or a personal disclosure still stops outreach (mail_stop, rules.js).
+      await db.prepare(`INSERT INTO mail_allowlist (email, name, asked_by, note) VALUES (?, ?, NULL, 'wrote to Anís')
+        ON CONFLICT(email) DO NOTHING`).bind(m.from_addr, m.from_name ?? null).run();
       await sendOrReview(env, settings, draft, m);
     } catch (e) {
       await db.prepare(`UPDATE mail_messages SET status = 'new', error = ? WHERE id = ?`).bind(String(e.message).slice(0, 300), m.id).run();

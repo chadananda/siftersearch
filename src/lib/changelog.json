@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-12T21:18:29.235Z",
+  "generated": "2026-10-12T21:39:46.868Z",
   "entries": [
+    {
+      "hash": "fe39655b",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Term search strategy design; Liliane re-draft",
+      "scope": "worklist"
+    },
+    {
+      "hash": "b51be926",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Repair Latin words with stray Arabic letters ('Bahá’u’لlláh'); lint pipeline vocabulary ('authority layers', 'provided evidence')",
+      "scope": "anis"
+    },
+    {
+      "hash": "e8e3f67e",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Inbound mail unwrapped (hard-wrapped plain text showed artificial breaks) and a wrapped 'On … wrote:' quote is cut",
+      "scope": "mail"
+    },
     {
       "hash": "44db3b42",
       "date": "2026-10-12",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Shadow linking — Jev links every name occurrence in a book beside the pipeline's binding (read-only)",
       "scope": "entities"
-    },
-    {
-      "hash": "b64bf50e",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "09-28 evening status",
-      "scope": "identity"
-    },
-    {
-      "hash": "59cf5abd",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Pm2 treekill off for the API — each deploy was killing in-flight grounding runs ('did not reach link', no error logged)",
-      "scope": "ops"
-    },
-    {
-      "hash": "eef81dca",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Profile card keeps a one-off relative only when the record has little family data",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "fe39655b",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Term search strategy design; Liliane re-draft",
+        "scope": "worklist"
+      },
+      {
+        "hash": "b51be926",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Repair Latin words with stray Arabic letters ('Bahá’u’لlláh'); lint pipeline vocabulary ('authority layers', 'provided evidence')",
+        "scope": "anis"
+      },
+      {
+        "hash": "e8e3f67e",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Inbound mail unwrapped (hard-wrapped plain text showed artificial breaks) and a wrapped 'On … wrote:' quote is cut",
+        "scope": "mail"
+      },
       {
         "hash": "44db3b42",
         "date": "2026-10-12",
@@ -7009,27 +7030,6 @@
         "date": "2026-09-28",
         "type": "New",
         "description": "Shadow linking — Jev links every name occurrence in a book beside the pipeline's binding (read-only)",
-        "scope": "entities"
-      },
-      {
-        "hash": "b64bf50e",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "09-28 evening status",
-        "scope": "identity"
-      },
-      {
-        "hash": "59cf5abd",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Pm2 treekill off for the API — each deploy was killing in-flight grounding runs ('did not reach link', no error logged)",
-        "scope": "ops"
-      },
-      {
-        "hash": "eef81dca",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Profile card keeps a one-off relative only when the record has little family data",
         "scope": "entities"
       }
     ]
