@@ -10,6 +10,7 @@ import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './bloc
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { phraseIndexJob } from './phrase-index-job.js';
 import { retireDuplicatesJob } from './library-jobs.js';
+import { sectionAuthorJob } from './section-author.js';
 import { slowQueriesByHour } from '../repos/query-health-repo.js';
 import { translatorCoverage } from '../repos/translator-repo.js';
 import { auditsSince } from '../repos/audit-store-repo.js';
@@ -101,12 +102,13 @@ REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by alig
 REPORTS['carry-verify'] = carryVerifyReport;     // params: { ids, backup? } — enrichment before vs after
 REPORTS['carry-repair'] = carryRepairJob;       // params: { ids } — re-apply the carry from the backup
 REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
+REPORTS['section-author'] = sectionAuthorJob;       // params: { docId, from, to, name, apply? } — dry run by default
 REPORTS['retire-duplicates'] = retireDuplicatesJob;   // params: { pairs:[{dup,keep,reason}], batch?, apply? } — dry run by default
 REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
 
 /** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
  *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
+export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
 export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
 
