@@ -20,7 +20,8 @@ export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hy
   try { outFd = fs.openSync(`${process.cwd()}/logs/grounding-${Number(docId)}.log`, 'a'); } catch { outFd = 'ignore'; }
   const child = spawn(process.execPath, args, {
     cwd: process.cwd(), detached: true, stdio: ['ignore', outFd, outFd],
-    env: { ...process.env, SIFTER_WRITER_URL: process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' },
+    // name: a grounding run is background work even though the API launches it — its DeepSeek calls wait for the cheap hours
+    env: { ...process.env, name: 'siftersearch-grounding', SIFTER_WRITER_URL: process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' },
   });
   child.unref();
   if (typeof outFd === 'number') { try { fs.closeSync(outFd); } catch { /* child keeps its copy */ } }

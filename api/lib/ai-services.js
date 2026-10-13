@@ -12,6 +12,7 @@
  * To swap implementations, update the SERVICE_CONFIG below.
  */
 
+import { offPeakGate } from './pipeline/peak.js';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { Ollama } from 'ollama';
@@ -592,6 +593,7 @@ async function chatGroq(messages, opts) {
 // registry; thinking mode is explicit (v4-flash serves both — non-thinking by default, replacing the deprecated
 // deepseek-chat). See https://api-docs.deepseek.com — deepseek-chat/deepseek-reasoner deprecate 2026-07-24.
 async function chatDeepSeek(messages, opts) {
+  await offPeakGate({ label: 'deepseek' });   // background work waits for the half-price hours (pipeline/peak.js)
   const client = getClient('deepseek');
   const apiModel = getModel(opts.model)?.apiModel || opts.model;
   const reqOpts = opts.signal ? { signal: opts.signal } : {};

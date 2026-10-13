@@ -41,3 +41,30 @@ export function peakEndsAt(windows = DEFAULT_PEAK_WINDOWS, at = new Date(), days
  * estimate sat beside a few-hundred-dollar invoice (2026-08-13).
  */
 export const inOffPeak = (windows = DEFAULT_PEAK_WINDOWS, at = new Date()) => !nowInPeak(windows, at);
+
+// ── the off-peak gate for every DeepSeek call (Chad 10-13: "make sure the use of deepseek, wherever we use it, takes advantage of
+// the cheap hours") ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A person waits on the API and on deep research: those never wait. Every other process (pipeline, report workers, scripts)
+// waits out a peak window before calling DeepSeek. DEEPSEEK_IGNORE_PEAK=1 overrides (an urgent manual run).
+const INTERACTIVE = new Set(['siftersearch-api', 'siftersearch-deep-research']);
+
+/** Pure: should this process wait for off-peak before a DeepSeek call? */
+export function waitsForOffPeak(env = process.env) {
+  if (env.DEEPSEEK_IGNORE_PEAK === '1' || env.VITEST) return false;   // the test runner never waits on the clock
+  return !INTERACTIVE.has(String(env.name || ''));
+}
+
+let announced = 0;
+/** Wait (if this process is background work and it is peak) until the discounted hours resume. */
+export async function offPeakGate({ label = 'deepseek', env = process.env, now = () => new Date(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = console.warn } = {}) {
+  if (!waitsForOffPeak(env)) return 0;
+  let waited = 0;
+  for (;;) {
+    const end = peakEndsAt(DEFAULT_PEAK_WINDOWS, now());
+    if (!end) return waited;
+    const ms = Math.max(1000, end.getTime() - now().getTime() + 5000);
+    if (Date.now() - announced > 600000) { announced = Date.now(); log(`[${label}] DeepSeek peak hours — waiting ${Math.round(ms / 60000)} min for the off-peak rate (DEEPSEEK_IGNORE_PEAK=1 to override)`); }
+    await sleep(Math.min(ms, 15 * 60000));   // re-check at least every 15 min (clock changes, overrides)
+    waited += Math.min(ms, 15 * 60000);
+  }
+}

@@ -5,6 +5,7 @@
  * Provider selection based on config (dev mode = remote, prod = local).
  */
 
+import { offPeakGate } from './pipeline/peak.js';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { Ollama } from 'ollama';
@@ -234,6 +235,7 @@ async function chatLocal(messages, { model, temperature, maxTokens, stream, resp
 }
 
 async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat, thinking = false }) {
+  await offPeakGate({ label: 'deepseek' });   // background work waits for the half-price hours (pipeline/peak.js)
   const client = getDeepSeek();
   // resolve the registry key to its live DeepSeek API id via the registry's `apiModel` (e.g.
   // 'deepseek-v4-flash' → 'deepseek-v4-flash'); pass unknown raw ids straight through. NB: deepseek-chat is
