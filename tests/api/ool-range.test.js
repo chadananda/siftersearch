@@ -48,3 +48,20 @@ describe('quote markers', () => {
     expect(decodeURIComponent(encodeMarker("a (b) 'c' ~d"))).toBe("a (b) 'c' ~d");
   });
 });
+
+describe('bounded work (10-12: whole-book pages froze the API)', () => {
+  it('a 1 MB page and a 350-word quote place a range in well under a second', async () => {
+    const { oolQuoteUrl } = await import('../../api/lib/ool-range.js');
+    const filler = 'and the light of God shineth upon all things '.repeat(20000);   // ~900 KB of repeats
+    const quote = Array.from({ length: 350 }, (_, i) => `word${i}`).join(' ');
+    const page = `${filler} ${quote} ${filler}`;
+    const t0 = Date.now();
+    const u = oolQuoteUrl('https://oceanoflights.org/x/', page, quote);
+    expect(Date.now() - t0).toBeLessThan(1000);
+    expect(u).toMatch(/^https:\/\/oceanoflights\.org\/x\/#\(word0\)\(word349\)$/);
+  });
+  it('a page past the size cap gets no range (the caller falls back to a text fragment)', async () => {
+    const { oolQuoteUrl, OOL_PAGE_MAX } = await import('../../api/lib/ool-range.js');
+    expect(oolQuoteUrl('https://oceanoflights.org/x/', 'a '.repeat(OOL_PAGE_MAX), 'a a')).toBeNull();
+  });
+});

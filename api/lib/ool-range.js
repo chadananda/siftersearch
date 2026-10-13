@@ -14,13 +14,16 @@ export const encodeMarker = (s) => encodeURIComponent(String(s)).replace(/[!'()*
 // loose match: whitespace runs and typographic quotes/dashes don't break a quote taken from our copy of the text
 const fold = (c) => (/\s/.test(c) ? ' ' : /[‘’ʼ`´]/.test(c) ? "'" : /[“”„]/.test(c) ? '"' : /[–—]/.test(c) ? '-' : c);
 function normalised(s) {
-  let out = '', map = [];
+  // an array + the last char, never `out.endsWith` on a growing string: that flattened the rope on every character and
+  // made a whole-book page quadratic (10-12: 31 s for 1.8 MB — the API froze)
+  const chars = [], map = [];
+  let last = '';
   for (let i = 0; i < s.length; i++) {
     const c = fold(s[i]);
-    if (c === ' ' && (out.endsWith(' ') || !out)) continue;
-    out += c; map.push(i);
+    if (c === ' ' && (last === ' ' || last === '')) continue;
+    chars.push(c); map.push(i); last = c;
   }
-  return { out, map };
+  return { out: chars.join(''), map };
 }
 
 // our stored text keeps markup the page doesn't show: sentence markers, footnote refs, page marks, links, emphasis, escapes
@@ -38,8 +41,8 @@ export function locateQuote(page, quote) {
 }
 
 /** 1-based rank of position `pos` among the occurrences of `frag` in `page` (overlapping, as the site counts). */
-function rankOf(page, frag, pos, caseless = false) {
-  if (caseless) { page = page.toLowerCase(); frag = frag.toLowerCase(); }
+function rankOf(page, frag, pos, lowerPage = null) {
+  if (lowerPage) { page = lowerPage; frag = frag.toLowerCase(); }   // caseless: the page lowered ONCE by the caller
   for (let n = 1, i = page.indexOf(frag); i >= 0; n++, i = page.indexOf(frag, i + 1)) if (i === pos) return n; else if (i > pos) return 0;
   return 0;
 }
@@ -49,11 +52,15 @@ export function oolQuoteHash(page, s, e) {
   const quote = page.slice(s, e);
   const words = [...quote.matchAll(/\S+/g)];
   if (!words.length) return null;
-  const prefixes = words.map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
-  const suffixes = words.map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
+  // bounded (10-12: whole-book pages × 350-word quotes × a lowercase of the book per phrase froze the API for minutes):
+  // phrases grow to 15 words at most — a longer one is never needed to be unique; else the $N form
+  const MAX_WORDS = 15;
+  const lower = page.toLowerCase();
+  const prefixes = words.slice(0, MAX_WORDS).map((w) => quote.slice(0, w.index + w[0].length)).filter((p) => !p.includes(')'));
+  const suffixes = words.slice(-MAX_WORDS).map((w) => quote.slice(w.index)).reverse().filter((q) => !q.includes(')'));
   const best = (frags, at, caseless) => {        // rank → shortest fragment with that rank
     const by = new Map();
-    for (const f of frags) { const r = rankOf(page, f, at(f), caseless); if (r && !by.has(r)) by.set(r, f); }
+    for (const f of frags) { const r = rankOf(page, f, at(f), caseless ? lower : null); if (r && !by.has(r)) by.set(r, f); }
     return by;
   };
   // First choice: phrases that are the first occurrence IGNORING CASE (Chad 10-12: "the" after a "The" is not unique →
@@ -71,7 +78,9 @@ export function oolQuoteHash(page, s, e) {
 }
 
 /** Range link for `quote` on an Ocean of Lights page whose content text is `page`, or null when it can't be placed. */
+export const OOL_PAGE_MAX = 2_000_000;   // characters: a longer page gets a text fragment, not a range (bounded work)
 export function oolQuoteUrl(pageUrl, page, quote) {
+  if (!page || page.length > OOL_PAGE_MAX) return null;
   const at = page && locateQuote(page, quote);
   const hash = at && oolQuoteHash(page, at[0], at[1]);
   return hash ? `${String(pageUrl).replace(/#.*$/, '')}#${hash}` : null;

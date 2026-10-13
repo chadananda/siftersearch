@@ -72,11 +72,14 @@ async function upgradeOolLinks(s, loadParagraphs) {
   if (!found.length) return s;
   const ids = [...new Set(found.map((m) => m[2]).filter(Boolean))];
   const text = new Map(await Promise.all(ids.map(async (id) => [id, await docText(Number(id), loadParagraphs)])));
+  // a time budget per response: past it, the remaining links get text fragments (never block the event loop for long)
+  const t0 = Date.now(), BUDGET_MS = 1500;
   return s.replace(OOL_QUOTE_URL, (whole, slug, id, q) => {
     const url = `https://oceanoflights.org/${slug}/`;
     let quote = null;
     try { quote = decodeURIComponent(q); } catch { return url; }
-    return (id && oolQuoteUrl(url, text.get(id), quote)) || textFragmentUrl(url, quote);
+    const ranged = id && Date.now() - t0 < BUDGET_MS ? oolQuoteUrl(url, text.get(id), quote) : null;
+    return ranged || textFragmentUrl(url, quote);
   });
 }
 
