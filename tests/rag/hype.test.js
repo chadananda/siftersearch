@@ -3,7 +3,7 @@
 // Chad, 2026-08-26: "Complete and quality HyPE questions are the main reason we are analyzing concepts and
 // people. We need quality HyPE to locate the right passage during RAG search."
 import { describe, it, expect } from 'vitest';
-import { buildSystem, buildUser, HYPE_VERSION, parseHype, parseHypeSlice, dedupeByAnswer, spanIsPresent } from '../../api/lib/rag/enrich/retrieval.js';
+import { buildSystem, buildUser, HYPE_VERSION, parseHype, parseHypeSlice, dedupeByAnswer, spanIsPresent, questionFault } from '../../api/lib/rag/enrich/retrieval.js';
 
 describe('HyPE asks what a reader asks, not what a quiz asks', () => {
   // Measured on the Kitáb-i-Íqán before this change: ¶2 produced "From what should their ears be cleansed?",
@@ -207,6 +207,21 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
     expect(sys).toMatch(/OBJECTION IT ANSWERS/);
     expect(sys).toMatch(/CHALLENGING IMPLICATION/);
     expect(sys).toMatch(/do not manufacture depth/);
+  });
+});
+
+describe('v14 deep tier + code-enforced question rules', () => {
+  it('reads the deep field after the plain asks', () => {
+    const p = parseHype(JSON.stringify({ questions: [{ q: 'What is certitude?', a: 'x' }], deep: [{ q: 'Why must learning be forgotten to attain certitude?', a: 'y' }], thesis: 't' }));
+    expect(p.items.map((i) => !!i.deep)).toEqual([false, true]);
+  });
+  it('drops yes/no forms and questions naming the book', () => {
+    expect(questionFault('Did Muhammad confirm the Book of Jesus?', 'Kitáb-i-Íqán')).toBe('yesNo');
+    expect(questionFault('What is the remission of sins in the Kitáb-i-Íqán?', 'Kitáb-i-Íqán')).toBe('namedBook');
+    expect(questionFault('What is meant by the most great convulsion in the Kitab-i-Iqan?', 'Kitáb-i-Íqán')).toBe('namedBook');
+    expect(questionFault('How can the Manifestations be one and yet distinct?', 'Kitáb-i-Íqán')).toBe(null);
+    expect(questionFault('Why is Jesus called the Spirit?', 'Some Answered Questions')).toBe(null);
+    expect(questionFault('What does Some Answered Questions teach about the soul?', 'Some Answered Questions')).toBe('namedBook');
   });
 });
 

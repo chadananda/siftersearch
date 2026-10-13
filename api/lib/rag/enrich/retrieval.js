@@ -145,6 +145,8 @@ export async function run(ctx, docId, opts = {}) {
         // a reason to look, never a reason to delete a reader's route to the passage.
         const kept = [];
         for (const it of parsed.items) {
+          const fault = questionFault(it.q, meta.title);
+          if (fault) { stats[fault] = (stats[fault] || 0) + 1; continue; }
           const present = spanIsPresent(it.a, [p.text, p.original, p.partner?.text]);
           if (present === false) { stats.unanswered = (stats.unanswered || 0) + 1; continue; }
           if (present === null) stats.unverified = (stats.unverified || 0) + 1;
@@ -302,13 +304,25 @@ export function parseHype(raw) {
     const j = JSON.parse(m[0]);
     // Accept both shapes: {q,a} objects (current) and bare strings (older recordings, and slices that
     // answer without a span). A mixed array is fine — each item is judged on what it carries.
-    const items = (j.questions || [])
-      .map((x) => (typeof x === 'string' ? { q: x, a: '' } : { q: String(x?.q ?? ''), a: String(x?.a ?? '') }))
+    // v14: the deep tier arrives in its own field so the model has to consider it separately; it joins the
+    // plain asks AFTER them (dedupeByAnswer keeps the first of a shared span, so a plain definition wins its span)
+    const norm = (x, deep) => ({ ...(typeof x === 'string' ? { q: x, a: '' } : { q: String(x?.q ?? ''), a: String(x?.a ?? '') }), ...(deep ? { deep } : {}) });
+    const items = [...(j.questions || []).map((x) => norm(x, false)), ...(j.deep || []).map((x) => norm(x, true))]
       .filter((x) => x.q.trim());
-    if (!items.length) return null;
     if (!items.length) return null;
     return { items, questions: dedupeByAnswer(items).slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
   } catch { return null; }
+}
+
+// Two rules the prompt states and Haiku 5.5 still broke in the v14 sample (Íqán, 10-13): yes/no forms and the book's
+// own title inside the question. Enforced in code, as dedupeByAnswer enforces distinctness. Returns the reason or null.
+const YES_NO = /^(did|does|do|is|was|were|are|has|have|had|can|could|should|would|will|may|must)\b/i;
+const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f’'ʻʼ‘`-]/g, '').toLowerCase();
+export function questionFault(q, title) {
+  if (YES_NO.test(String(q).trim())) return 'yesNo';
+  const t = fold(String(title || '').split(/[:(]/)[0]).replace(/^the\s+/, '').trim();
+  if (t.length >= 6 && fold(q).includes(t)) return 'namedBook';
+  return null;
 }
 
 const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
@@ -357,7 +371,7 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.
 
-  THE DEEP QUESTIONS (Chad 10-13: "nobody is moved by obvious questions"). After the plain asks, write the questions a serious, even skeptical, reader brings to this subject — the ones that make a person stop. Wherever the passage itself supplies the answer, ask:
+  THE DEEP QUESTIONS (Chad 10-13: "nobody is moved by obvious questions") go in their own field, "deep". After the plain asks, write the questions a serious, even skeptical, reader brings to this subject — the ones that make a person stop. Wherever the passage itself supplies the answer, ask:
     • THE ASSUMPTION IT OVERTURNS — what common belief does this teaching contradict? ("Why is suffering not evidence that God has abandoned the believer?", "Why would certitude require forgetting what one has learned?")
     • THE OBJECTION IT ANSWERS — the hard counter-question the passage meets, stated as the objector would put it. ("If God is just, why are the righteous persecuted?")
     • THE UNDERPINNING — the premise about God, the soul, knowledge or society the teaching rests on and makes explicit. ("Why can the essence of God never be known directly?")
@@ -373,7 +387,7 @@ If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extr
 
 If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM — "What does ʿirfán mean in the Kitáb-i-Íqán?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
 
-Return exactly: {"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"thesis":"…"} (as many as the paragraph answers)
+Return exactly: {"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"thesis":"…"} (as many as the paragraph answers; "deep" may be empty for a narrative or transitional passage, never padded)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;
