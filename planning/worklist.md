@@ -13,8 +13,9 @@ Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not 
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
 ## ▶ NOW (Chad 10-13) — CONCEPTS IN BATCH · DEEP HyPE · CONCEPTS INTO QDRANT
-- [ ] Concept extraction on Haiku 5.5 via Message Batches (spawnConcepts ANTHROPIC_BATCH=1) for the missing core books:
-      Gleanings 8312 · Hidden Words 20809 · ESW 8273 · TDP 20914 · Dawn-Breakers 21308 · Aqdas 21307 (partial) — est $1-2
+- [x] Concepts on Haiku batch: Gleanings 8312 · Hidden Words 20809 · ESW 8273 · Aqdas 21307 DONE 10-13 (claims 19,039→28,670)
+- [ ] TDP 20914 · Dawn-Breakers 21308 running (launched 10-13 17:00 PT)
+- [ ] Concepts Qdrant build queued at 22:00 PT reports-worker restart; re-run phrase-index field=concepts after TDP/DB finish
 - [ ] HyPE v14 "deep" tier (assumption overturned · objection answered · underpinning · implication · tension; still
       passage-answered). Review via POST /api/admin/concepts/hype-sample → show Chad → cost core-book rehype (library ≈ $100+, ask)
 - [ ] Concept claims/lexicon → a Qdrant collection + search layer (server-side job, not a script)
