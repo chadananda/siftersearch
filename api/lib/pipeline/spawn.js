@@ -21,7 +21,8 @@ export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hy
   const child = spawn(process.execPath, args, {
     cwd: process.cwd(), detached: true, stdio: ['ignore', outFd, outFd],
     // name: a grounding run is background work even though the API launches it — its DeepSeek calls wait for the cheap hours
-    env: { ...process.env, name: 'siftersearch-grounding', SIFTER_WRITER_URL: process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' },
+    // ANTHROPIC_BATCH: HyPE + concept extraction go through Anthropic Message Batches (half price, ai.js)
+    env: { ...process.env, name: 'siftersearch-grounding', ANTHROPIC_BATCH: process.env.ANTHROPIC_BATCH ?? '1', SIFTER_WRITER_URL: process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' },
   });
   child.unref();
   if (typeof outFd === 'number') { try { fs.closeSync(outFd); } catch { /* child keeps its copy */ } }

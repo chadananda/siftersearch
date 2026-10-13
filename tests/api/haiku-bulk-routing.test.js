@@ -58,3 +58,17 @@ describe('shapeParams', () => {
     expect(p).toMatchObject({ temperature: 0.2, response_format: { type: 'json_object' }, thinking: { type: 'disabled' } });
   });
 });
+
+// Message Batches (half price) for the bulk Haiku stages, only in background grounding
+import { batchEligible } from '../../api/lib/ai.js';
+describe('batch transport', () => {
+  it('only Anthropic, only hype / concept-extract, only when the grounding child turned it on, never streamed', () => {
+    const env = { ANTHROPIC_BATCH: '1' };
+    expect(batchEligible({ provider: 'anthropic', stage: 'hype', env })).toBe(true);
+    expect(batchEligible({ provider: 'anthropic', stage: 'concept-extract', env })).toBe(true);
+    expect(batchEligible({ provider: 'anthropic', stage: 'disambiguate', env })).toBe(false);
+    expect(batchEligible({ provider: 'deepseek', stage: 'hype', env })).toBe(false);
+    expect(batchEligible({ provider: 'anthropic', stage: 'hype', env: {} })).toBe(false);
+    expect(batchEligible({ provider: 'anthropic', stage: 'hype', stream: true, env })).toBe(false);
+  });
+});

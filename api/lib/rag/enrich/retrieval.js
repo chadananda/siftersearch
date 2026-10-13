@@ -93,8 +93,11 @@ export async function run(ctx, docId, opts = {}) {
   // and expensive to re-bill, so one call must populate the cache before the rest follow. That needs a single
   // warm-up, not every paragraph queued behind the one before it. Segments survive for ordering only.
   const flat = segs.flat();
-  if (flat.length) await hypeOne(flat[0]);            // populate the shared prefix, then open the throttle
-  await pool(opts.concurrency ?? 12, flat.slice(1), hypeOne);
+  // BATCH mode (ANTHROPIC_BATCH=1, ai.js): every paragraph goes into one Message Batch — no warm-up call (it would wait a
+  // whole batch round-trip alone), and enough in flight for the batch to fill
+  const batching = process.env.ANTHROPIC_BATCH === '1';
+  if (flat.length && !batching) await hypeOne(flat[0]);            // populate the shared prefix, then open the throttle
+  await pool(opts.concurrency ?? (batching ? 2000 : 12), batching ? flat : flat.slice(1), hypeOne);
 
   async function hypeOne(p) {
     // the spend policy sees which stage pays (Haiku 5.5 is authorised for 'hype' on any book — anthropic-policy.js)

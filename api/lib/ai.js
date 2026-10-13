@@ -126,7 +126,7 @@ export async function chatCompletion(messages, options = {}) {
       provider, model, serviceType, caller: caller || options.caller || null, documentId: docId,
       promptTokens: res.usage?.promptTokens || 0, completionTokens: res.usage?.completionTokens || 0,
       totalTokens: res.usage?.totalTokens || 0, cachedTokens: res.usage?.cachedTokens || 0,
-      cacheWriteTokens: res.usage?.cacheWriteTokens || 0, success: true
+      cacheWriteTokens: res.usage?.cacheWriteTokens || 0, batch: !!res.usage?.batch, success: true
     });
     return res;
   } catch (err) {
@@ -162,8 +162,88 @@ async function chatOpenAI(messages, { model, temperature, maxTokens, stream }) {
   };
 }
 
+// The Anthropic request for a chat, shared by the live call and the batch transport below.
+function anthropicParams(messages, { model, temperature, maxTokens, usePromptCache = false }) {
+  const systemMsg = messages.find(m => m.role === 'system');
+  const otherMsgs = messages.filter(m => m.role !== 'system');
+  const systemParam = systemMsg ? (usePromptCache ? [{ type: 'text', text: systemMsg.content, cache_control: { type: 'ephemeral' } }] : systemMsg.content) : undefined;
+  return {
+    model, max_tokens: maxTokens,
+    ...(getModel(model)?.noTemperature || temperature == null ? {} : { temperature }),
+    ...(systemParam !== undefined && { system: systemParam }),
+    messages: otherMsgs.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+  };
+}
+
+// Anthropic's response → the client's shape. promptTokens = the WHOLE prompt (Anthropic reports input EXCLUSIVE of cache).
+function anthropicResult(response, { batch = false } = {}) {
+  const cacheRead = response.usage?.cache_read_input_tokens || 0;
+  const cacheWrite = response.usage?.cache_creation_input_tokens || 0;
+  const freshIn = response.usage?.input_tokens || 0;
+  const text = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  return { content: text, finishReason: response.stop_reason, model: response.model,
+    usage: { promptTokens: freshIn + cacheRead + cacheWrite, completionTokens: response.usage?.output_tokens, cachedTokens: cacheRead,
+      cacheWriteTokens: cacheWrite, totalTokens: freshIn + cacheRead + cacheWrite + (response.usage?.output_tokens || 0), batch } };
+}
+
+// ── BATCH TRANSPORT (Chad 10-13: "batch mode with the cheaper better Haiku 5.5") ──────────────────────────────────────
+// Background grounding (ANTHROPIC_BATCH=1, set by pipeline/spawn.js) sends its HyPE + concept-extraction calls through
+// Anthropic's Message Batches API — half price. Each call still returns its own result to its own caller, so the stages
+// (prompts, parsers, gates, retries, writes) are unchanged; they just keep many paragraphs in flight. The queue is sent
+// as one batch at 500 requests or after 20 s without a new one; a collector polls every 30 s and settles each caller.
+const BATCH_STAGES = new Set(['hype', 'concept-extract']);
+const batchQueue = [];                       // { id, params, resolve, reject }
+const batchWaiting = new Map();              // custom_id → { resolve, reject }
+let batchTimer = null, batchSeq = 0;
+export const batchEligible = ({ provider, stage, stream, env = process.env }) =>
+  provider === 'anthropic' && !stream && env.ANTHROPIC_BATCH === '1' && BATCH_STAGES.has(String(stage || ''));
+
+function enqueueBatch(params) {
+  return new Promise((resolve, reject) => {
+    batchQueue.push({ id: `r${process.pid}-${++batchSeq}`, params, resolve, reject });
+    if (batchQueue.length >= 500) flushBatch();
+    else { clearTimeout(batchTimer); batchTimer = setTimeout(flushBatch, 20000); }
+  });
+}
+
+async function flushBatch() {
+  clearTimeout(batchTimer); batchTimer = null;
+  const items = batchQueue.splice(0, batchQueue.length);
+  if (!items.length) return;
+  try {
+    const batch = await getAnthropic().messages.batches.create({ requests: items.map((it) => ({ custom_id: it.id, params: it.params })) });
+    for (const it of items) batchWaiting.set(it.id, it);
+    logger.info({ batch: batch.id, requests: items.length }, 'anthropic batch submitted');
+    collectBatch(batch.id, items.map((it) => it.id));
+  } catch (err) { for (const it of items) it.reject(err); }
+}
+
+async function collectBatch(batchId, ids) {
+  const anthropic = getAnthropic();
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 30000));
+    let b;
+    try { b = await anthropic.messages.batches.retrieve(batchId); } catch (err) { logger.warn({ batchId, err: err.message }, 'batch status failed — retrying'); continue; }
+    if (b.processing_status !== 'ended') continue;
+    try {
+      for await (const r of await anthropic.messages.batches.results(batchId)) {
+        const w = batchWaiting.get(r.custom_id); if (!w) continue;
+        batchWaiting.delete(r.custom_id);
+        if (r.result?.type === 'succeeded') w.resolve(anthropicResult(r.result.message, { batch: true }));
+        else { const e = new Error(`batch request ${r.result?.type}: ${r.result?.error?.error?.message || ''}`); e.status = r.result?.type === 'errored' ? 500 : 503; w.reject(e); }
+      }
+    } catch (err) { logger.warn({ batchId, err: err.message }, 'batch results failed'); }
+    for (const id of ids) { const w = batchWaiting.get(id); if (w) { batchWaiting.delete(id); const e = new Error('batch result missing'); e.status = 503; w.reject(e); } }
+    logger.info({ batchId, requests: ids.length }, 'anthropic batch collected');
+    return;
+  }
+}
+
 async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false }) {
   const anthropic = getAnthropic();
+  if (batchEligible({ provider: 'anthropic', stage: currentAIContext().stage, stream })) {
+    return enqueueBatch(anthropicParams(messages, { model, temperature, maxTokens, usePromptCache }));
+  }
 
   // Convert OpenAI message format to Anthropic format
   const systemMsg = messages.find(m => m.role === 'system');
