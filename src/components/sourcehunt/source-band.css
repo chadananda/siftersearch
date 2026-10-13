@@ -1,7 +1,9 @@
 /* Source band (SourceBand.svelte) — imported by SourceHunt.svelte so it ships with the page (a client-only component's own
    <style> never reached the page, 10-12). Compact: ~90 px, so both result boxes fit on one screen (Chad 10-13). */
 .source-band .band {
-  display: flex; align-items: flex-end; gap: 4px; padding: 6px 2px 0; overflow-x: auto; scroll-snap-type: x proximity;
+  /* overflow-x: scroll on EVERY band (a thin track, always there): a band that scrolls and one that does not must be the same
+     height, or the two boxes' spines stop lining up (10-13: 62 spines → an 8 px scrollbar on one side only) */
+  display: flex; align-items: flex-end; gap: 4px; padding: 6px 2px 0; overflow-x: scroll; scrollbar-width: thin; scroll-snap-type: x proximity;
   border-bottom: 4px solid color-mix(in srgb, var(--text-muted) 35%, transparent); min-height: 90px;
 }
 .source-band .spine {

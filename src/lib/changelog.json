@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-13T18:29:57.444Z",
+  "generated": "2026-10-13T18:34:15.716Z",
   "entries": [
+    {
+      "hash": "0d0b34dc",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Results animate English passage → Arabic passage → English band → Arabic band",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "69b5db24",
       "date": "2026-10-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "GET /api/documents/meta/search — find documents by recipient, place, date, subjects in the doc_meta index",
       "scope": "docmeta"
-    },
-    {
-      "hash": "30efe965",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Flexible metadata for ANY document (doc_meta, migr 134) in its own small Meili index — never the paragraphs index",
-      "scope": "docmeta"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "0d0b34dc",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Results animate English passage → Arabic passage → English band → Arabic band",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "69b5db24",
         "date": "2026-10-13",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-29",
         "type": "New",
         "description": "GET /api/documents/meta/search — find documents by recipient, place, date, subjects in the doc_meta index",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "30efe965",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Flexible metadata for ANY document (doc_meta, migr 134) in its own small Meili index — never the paragraphs index",
         "scope": "docmeta"
       }
     ]
