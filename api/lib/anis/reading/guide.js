@@ -80,19 +80,29 @@ async function readerLevel(d, doc, session) {
   return r?.json?.level || `A serious reader of ${doc.title}, already familiar with its main figures and its religious background.`;
 }
 
-/** Bold the first occurrence of each noted name in its paragraph (Chad 10-12: "highlight the noted parts in the text"). Pure. */
-export function highlight(text, names) {
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+export const sup = (n) => String(n).split('').map((c) => SUP[Number(c)]).join('');
+
+/** Where each noted name first stands in its paragraph (longest names first; never inside another's span). Pure.
+ *  → [{ name, start, end }] in text order. */
+export function noteSpans(text, names) {
   const t = String(text), spans = [];
   for (const n of [...new Set(names.filter(Boolean))].sort((a, b) => b.length - a.length)) {
     for (let at = t.indexOf(n); at >= 0; at = t.indexOf(n, at + 1)) {
-      if (spans.some(([a, b]) => at < b && at + n.length > a)) continue;   // inside a longer name already marked
-      spans.push([at, at + n.length]);
+      if (spans.some((s) => at < s.end && at + n.length > s.start)) continue;   // inside a longer name already marked
+      spans.push({ name: n, start: at, end: at + n.length });
       break;
     }
   }
-  spans.sort((a, b) => a[0] - b[0]);
+  return spans.sort((a, b) => a.start - b.start);
+}
+
+/** The paragraph with its noted words highlighted and numbered (Chad 10-13: "tie the highlighted text to the note").
+ *  spans carry their number n. Pure. */
+export function highlight(text, spans) {
+  const t = String(text);
   let out = '', last = 0;
-  for (const [a, b] of spans) { out += `${t.slice(last, a)}**${t.slice(a, b)}**`; last = b; }
+  for (const s of spans) { out += `${t.slice(last, s.start)}<mark>${t.slice(s.start, s.end)}</mark>${sup(s.n)}`; last = s.end; }
   return out + t.slice(last);
 }
 
@@ -125,9 +135,15 @@ export function renumber(notes, sources) {
 export function renderPage({ book, sectionLabel, author, items, notes, sources, pageNo }) {
   const byPid = new Map((notes?.paragraphs || []).map((p) => [p.pid, p.notes || []]));
   const head = `**${book} · ${sectionLabel}**${author ? ` (${author})` : ''} — ${addressOf(items[0])}${items.length > 1 ? `–${items[items.length - 1].n}` : ''}${pageNo ? ` · page ${pageNo}` : ''}`;
+  let num = 0;
   const body = items.map((p) => {
     const ns = byPid.get(p.pid) || [];
-    return [`**${addressOf(p)}** ${highlight(p.text, ns.map((n) => n.name))}`, ...(ns.length ? ['', ...ns.map((n) => `- **${n.name}** — ${n.note}`)] : [])].join('\n');
+    // one number per note, running through the page: the highlight in the text and the note share it
+    const spans = noteSpans(p.text, ns.map((n) => n.name)).map((x) => ({ ...x, n: ++num }));
+    const numOf = (n) => spans.find((x) => x.name === n.name)?.n;
+    const ordered = [...ns].sort((a, b) => (numOf(a) ?? 1e9) - (numOf(b) ?? 1e9));
+    return [`**${addressOf(p)}** ${highlight(p.text, spans)}`,
+      ...(ordered.length ? ['', ...ordered.map((n) => `- ${numOf(n) ? `${sup(numOf(n))} ` : ''}**${n.name}** — ${n.note}`)] : [])].join('\n');
   }).join('\n\n');
   const used = new Set([...JSON.stringify(notes || {}).matchAll(/\[(S\d+)\]/g)].map((m) => m[1]));
   const src = sources.map((s, i) => ({ ...s, label: `S${i + 1}` })).filter((s) => used.has(s.label));
@@ -172,7 +188,7 @@ ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.na
   const byPidNotes = new Map((notes.paragraphs || []).map((p) => [p.pid, p.notes || []]));
   // STRUCTURED page for any caller (web, chat, audio — paragraph voice + notes voice): the email is one rendering of it
   const structured = { book: doc.title, docId: doc.id, section: sectionLabel, author, pageNo, topic: notes.topic || null,
-    paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, highlights: (byPidNotes.get(p.pid) || []).map((n) => n.name).filter((n) => p.text.includes(n)), notes: byPidNotes.get(p.pid) || [] })),
+    paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, highlights: noteSpans(p.text, (byPidNotes.get(p.pid) || []).map((n) => n.name)), notes: byPidNotes.get(p.pid) || [] })),
     lookCloser: notes.look_closer || null, next: notes.next || null, sources: sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
   return { items, next: page.next, notes, explained, page: structured, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources, pageNo }),
     subject: subjectFor(doc.title, items[0], notes.topic) };
@@ -228,7 +244,8 @@ export async function readingTurn({ messages = [], participantId, deps } = {}) {
     return { reply: `I've kept our place in **${doc.title}**. Whenever you'd like to continue, write "help me study ${shortTitle(doc.title)}" and we'll pick up where we left off.`, subject: null };
   }
   if (intent.kind === 'again') return turnPage(d, { participantId, session, doc, from: pages.at(-1)?.from ?? session.cursor, depth: 2, redo: true });
-  if (intent.kind === 'back') return turnPage(d, { participantId, session, doc, from: pages.at(-2)?.from ?? 0 });
+  // back = the page before the last one sent; with only one page sent, that page again (never the front matter)
+  if (intent.kind === 'back') return turnPage(d, { participantId, session, doc, from: pages.at(-2)?.from ?? pages.at(-1)?.from ?? session.cursor });
   if (intent.kind === 'jump') {
     const { outline } = await outlineOf(d, doc);
     let at = startIndex(outline.paragraphs, intent.target);

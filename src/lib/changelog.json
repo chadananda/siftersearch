@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-13T13:40:29.524Z",
+  "generated": "2026-10-13T13:44:42.163Z",
   "entries": [
+    {
+      "hash": "c7cc28fe",
+      "date": "2026-10-13",
+      "type": "Docs",
+      "description": "Reading-guide notes cache plan (3 levels per paragraph; per-reader assembly)",
+      "scope": "worklist"
+    },
+    {
+      "hash": "1779b339",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Letter signature 'Ocean Study Companion AI' (Chad 10-13)",
+      "scope": "anis"
+    },
     {
       "hash": "b4011742",
       "date": "2026-10-13",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "OceanofLights ranks second after OceanLibrary; originals link by bookid (oceanoflights) and pin (Phelps' browser)",
       "scope": "links"
-    },
-    {
-      "hash": "9b3e1c7a",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Neither/untranslated WITHOUT Phelps' provisional renderings — the translation plan's other scenario",
-      "scope": "coverage"
-    },
-    {
-      "hash": "160a23ef",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "CTAI /jafar returns zero terms past ~50 words — ask in 35-word chunks and merge",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "c7cc28fe",
+        "date": "2026-10-13",
+        "type": "Docs",
+        "description": "Reading-guide notes cache plan (3 levels per paragraph; per-reader assembly)",
+        "scope": "worklist"
+      },
+      {
+        "hash": "1779b339",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Letter signature 'Ocean Study Companion AI' (Chad 10-13)",
+        "scope": "anis"
+      },
       {
         "hash": "b4011742",
         "date": "2026-10-13",
@@ -7017,20 +7031,6 @@
         "type": "New",
         "description": "OceanofLights ranks second after OceanLibrary; originals link by bookid (oceanoflights) and pin (Phelps' browser)",
         "scope": "links"
-      },
-      {
-        "hash": "9b3e1c7a",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Neither/untranslated WITHOUT Phelps' provisional renderings — the translation plan's other scenario",
-        "scope": "coverage"
-      },
-      {
-        "hash": "160a23ef",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "CTAI /jafar returns zero terms past ~50 words — ask in 35-word chunks and merge",
-        "scope": "translation"
       }
     ]
   }

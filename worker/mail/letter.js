@@ -46,7 +46,7 @@ export function chartText(c) {
     .filter(Boolean).join('\n');
 }
 /** The plain-text letter: charts drawn with block characters. */
-export const plainText = (md) => String(md || '').replace(CHART_RE, (m, src) => { const c = parseChart(src); return c ? chartText(c) : m; });
+export const plainText = (md) => String(md || '').replace(/<\/?mark>/g, '').replace(CHART_RE, (m, src) => { const c = parseChart(src); return c ? chartText(c) : m; });
 
 /** Markdown → the letter body, styled inline (mail clients ignore stylesheets). Tables get rules and padding. */
 export function bodyHtml(md) {
@@ -54,6 +54,8 @@ export function bodyHtml(md) {
   const withSlots = String(md || '').replace(CHART_RE, (m, src) => { const c = parseChart(src); if (!c) return m; charts.push(chartHtml(c)); return `\n\n@@CHART${charts.length - 1}@@\n\n`; });
   return marked.parse(withSlots, { async: false })
     .replace(/<p>/g, '<p dir="auto" style="margin:0 0 14px">')
+    // the reading guide's noted words: a soft highlight tied to the note by its number (Chad 10-13)
+    .replace(/<mark>/g, '<mark style="background:#f7e9b9;color:inherit;padding:0 2px;border-radius:2px">')
     .replace(/<blockquote>/g, `<blockquote style="margin:16px 0;padding:2px 0 2px 18px;border-left:2px solid ${RULE};color:#3f3a34">`)
     .replace(/<a href=/g, `<a style="color:${SEA};text-decoration:none;border-bottom:1px solid ${SEA}66" href=`)
     .replace(/<li>/g, '<li dir="auto" style="margin:0 0 6px">')

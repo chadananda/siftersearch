@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readingIntent, bookFrom, startFrom } from '../../api/lib/anis/reading/intent.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/anis/reading/outline.js';
-import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight } from '../../api/lib/anis/reading/guide.js';
+import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans } from '../../api/lib/anis/reading/guide.js';
 import { sameName } from '../../api/lib/anis/reading/research.js';
 
 const MD = `# The Book {.off id="para_1" type="title"}
@@ -86,7 +86,7 @@ describe('subject and page', () => {
       notes: { paragraphs: [{ pid: 'para_16', notes: [{ name: 'Nabíl', note: 'Born 1831 [S2].' }] }], look_closer: '', next: 'Next, Persia.' },
       sources: [{ title: 'Unused', url: 'u1' }, { title: 'God Passes By', url: 'https://oceanlibrary.com/x' }], pageNo: 1 });
     expect(md).toContain('(by George Townshend)');
-    expect(md.indexOf('**#Intro.1** Para one.')).toBeLessThan(md.indexOf('- **Nabíl** — Born 1831 [S2].'));
+    expect(md.indexOf('**#Intro.1** Para one.')).toBeLessThan(md.indexOf('- **Nabíl** — Born 1831 [S2].'));   // not in the text: no number
     expect(md).toContain('[S2] [God Passes By](https://oceanlibrary.com/x)');
     expect(md).not.toContain('Unused');
   });
@@ -97,9 +97,13 @@ describe('subject and page', () => {
     expect(r.notes.look_closer).toBe('z [S2]');
     expect(r.sources.map((x) => x.title)).toEqual(['s7', 's2']);
   });
-  it('noted names are bolded at their first occurrence in the paragraph; longer names first', () => {
-    expect(highlight('Mullá Ḥusayn met Ḥusayn’s friend in Shíráz.', ['Ḥusayn', 'Mullá Ḥusayn', 'Shíráz', 'absent']))
-      .toBe('**Mullá Ḥusayn** met **Ḥusayn**’s friend in **Shíráz**.');
+  it('noted names are found at their first occurrence, longer names first, never inside another', () => {
+    expect(noteSpans('Mullá Ḥusayn met Ḥusayn’s friend in Shíráz.', ['Ḥusayn', 'Mullá Ḥusayn', 'Shíráz', 'absent']).map((x) => x.name))
+      .toEqual(['Mullá Ḥusayn', 'Ḥusayn', 'Shíráz']);
+  });
+  it('highlights carry the note’s number', () => {
+    const spans = noteSpans('Nabíl went to Shíráz.', ['Shíráz', 'Nabíl']).map((x, i) => ({ ...x, n: i + 1 }));
+    expect(highlight('Nabíl went to Shíráz.', spans)).toBe('<mark>Nabíl</mark>¹ went to <mark>Shíráz</mark>².');
   });
   it('names match across honorifics and spelling marks', () => {
     expect(sameName('Mullá Ḥusayn', 'Ḥusayn')).toBe(true);
@@ -141,7 +145,9 @@ describe('readingTurn', () => {
       expect(f.saved.at(-1).explained['n:bahai movement']).toMatchObject({ at: '#Intro.1' });
       expect(f.saved.at(-1).explained['n:nabil']).toBeUndefined();   // researched but not noted → still available later
       expect(f.saved.at(-1).explained.__level.text).toContain('Knows the Báb');
-      expect(r1.reply).toContain('The **Bahá’í Movement** is now well known.');
+      expect(r1.reply).toContain('The <mark>Bahá’í Movement</mark>¹ is now well known.');
+      expect(r1.reply).toContain('- ¹ **Bahá’í Movement** — Townshend’s 1932 term.');
+      expect(r1.page.paragraphs[0].highlights).toEqual([{ name: 'Bahá’í Movement', start: 4, end: 19 }]);
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
       expect(r2.subject).toMatch(/^\[Reading\] Dawn-Breakers #1\.1 - /);
       expect(await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps })).toBeNull();
