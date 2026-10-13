@@ -153,3 +153,25 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
   traditions.sort((a, b) => (fold(b.name).startsWith('bahai') - fold(a.name).startsWith('bahai')) || b.total - a.total);
   return { generated_at: now.toISOString(), traditions };
 }
+
+// An author shelf with only a few more works shows them all inline (Chad 10-12: "why show two and hide six?"); "+N more"
+// stays only where the rest is too many to list (Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi…).
+export const INLINE_MORE_MAX = 30;
+/** Shelves whose "more" is small enough to inline → [{ religion, key, authors }] (what the snapshot must fetch). */
+export const smallMoreShelves = (data) => data.traditions.flatMap((t) => t.shelves
+  .filter((s) => s.more && s.more.count <= INLINE_MORE_MAX).map((s) => ({ religion: t.name, key: s.key, authors: s.more.authors })));
+/** Append each small shelf's other works (docsByShelf: "religion|key" → docs) after its OceanLibrary books; drop its "more". */
+export function inlineAuthorWorks(data, docsByShelf) {
+  for (const t of data.traditions) {
+    for (const s of t.shelves) {
+      const docs = s.more && s.more.count <= INLINE_MORE_MAX ? docsByShelf.get(`${t.name}|${s.key}`) : null;
+      if (!docs) continue;
+      const tkey = (x) => fold(String(x).replace(/&/g, ' and '));
+      const have = new Set(s.items.map((i) => i.id)), seen = new Set(s.items.map((i) => tkey(i.title)));
+      const extra = docs.filter((d) => !have.has(d.id) && d.source_site !== 'oceanlibrary.com' && !seen.has(tkey(d.title)) && seen.add(tkey(d.title)))
+        .sort((a, b) => a.title.localeCompare(b.title)).map(card);
+      s.items = [...s.items, ...extra]; s.count = s.items.length; s.more = null;
+    }
+  }
+  return data;
+}

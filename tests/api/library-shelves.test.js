@@ -86,6 +86,20 @@ describe('buildShelves', () => {
     expect(rows[0].items.map((i) => [i.kind ?? 'book', i.title])).toEqual([['work', 'The Bible (KJV)'], ['work', 'Mormon Texts'], ['book', 'Religious Affections']]);
     expect(rows[0].count).toBe(3);
   });
+  it('a small author shelf lists the rest of the author\'s works inline (no "+N more")', async () => {
+    const { buildShelves, smallMoreShelves, inlineAuthorWorks } = await import('../../api/lib/library/shelves.js');
+    const r = buildShelves({ olDocs: [ol(33, 'Christian', 'Christian/Emanuel Swedenborg/Heaven and Hell.md', 'Emanuel Swedenborg', 'Heaven and Hell')],
+      authorCounts: [{ religion: 'Christian', author: 'Emanuel Swedenborg', n: 4 }] });
+    expect(smallMoreShelves(r)).toEqual([{ religion: 'Christian', key: 'Emanuel Swedenborg', authors: ['Emanuel Swedenborg'] }]);
+    inlineAuthorWorks(r, new Map([['Christian|Emanuel Swedenborg', [
+      { id: 33, title: 'Heaven and Hell', author: 'Emanuel Swedenborg', source_site: 'oceanlibrary.com' },
+      { id: 90, title: 'True Christian Religion', author: 'Emanuel Swedenborg' }, { id: 91, title: 'Arcana Coelestia', author: 'Emanuel Swedenborg' },
+      { id: 92, title: 'Heaven & Hell', author: 'Emanuel Swedenborg' }]]]));
+    const s = r.traditions[0].shelves[0];
+    expect(s.items.map((i) => i.title)).toEqual(['Heaven and Hell', 'Arcana Coelestia', 'True Christian Religion']);   // OL first; a same-title copy folded
+    expect(s.more).toBeNull();
+    expect(s.count).toBe(3);
+  });
   it('a huge collection (Core Tablets) splits into one row per author; spelling variants fold; small authors pool', async () => {
     const { buildShelves } = await import('../../api/lib/library/shelves.js');
     const B = "Baha'i";
