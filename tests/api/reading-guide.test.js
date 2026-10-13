@@ -43,6 +43,15 @@ describe('reading intent', () => {
     expect(readingIntent('Where are we?', { active: true }).kind).toBe('where');
     expect(readingIntent('Why did the Shah fear him?', { active: true }).kind).toBe('question');
   });
+  it('conversational replies in a reading thread (10-13: "good. next please…" fell through to an ordinary answer)', () => {
+    expect(readingIntent('good. next please. and use the advanced level of notes', { active: true })).toMatchObject({ kind: 'next', level: 'advanced' });
+    expect(readingIntent('Thanks!', { active: true }).kind).toBe('next');
+    expect(readingIntent('Lovely, please continue', { active: true }).kind).toBe('next');
+    expect(readingIntent('use simpler notes', { active: true })).toMatchObject({ kind: 'again', level: 'introductory', relevel: true });
+    expect(readingIntent('Can you dig deeper on this page?', { active: true }).kind).toBe('question');
+    expect(readingIntent('Who was Mírzá Músá?', { active: true }).kind).toBe('question');
+    expect(readingIntent('dig deeper please', { active: true }).kind).toBe('again');
+  });
   it('with no book open, "next" is not a reading turn', () => {
     expect(readingIntent('next').kind).toBe('none');
   });
@@ -135,12 +144,15 @@ describe('readingTurn', () => {
         researchPage: async ({ items }) => ({ targets: [
           { pid: items[0].pid, name: 'Bahá’í Movement', key: 'n:bahai movement', evidence: { claims: [] } },
           { pid: items[0].pid, name: 'Nabíl', key: 'n:nabil', evidence: { claims: [] } }], sources: [] }),
+        search: async () => ({ hits: [{ title: 'God Passes By', text: 'Nabíl wrote…', url: 'https://oceanlibrary.com/gpb' }] }),
+        links: async (h) => h,
         llmJson: async ({ caller }) => (caller === 'reading-level' ? { json: { level: 'Knows the Báb and Bahá’u’lláh well.' } }
+          : caller === 'reading-answer' ? { json: { answer: 'Nabíl was the chronicler [S1].' } }
           : { json: { topic: 'The record and its writer', paragraphs: [{ pid: 'para_16', notes: [{ name: 'Bahá’í Movement', note: 'Townshend’s 1932 term.' }] }], next: 'Onward.' } }),
       },
     };
   };
-  it('a start with a starting point sends the first page with its subject; next continues; questions fall through', async () => {
+  it('a start with a starting point sends the first page with its subject; next continues; questions are answered in place', async () => {
     const f = fake();
     {
       const msg = (t) => [{ role: 'user', content: t }];
@@ -157,7 +169,11 @@ describe('readingTurn', () => {
       expect(r1.page.paragraphs[0].highlights).toEqual([{ name: 'Bahá’í Movement', start: 4, end: 19 }]);
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
       expect(r2.subject).toMatch(/^\[Reading\] Dawn-Breakers #1\.1 - /);
-      expect(await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps })).toBeNull();
+      const q = await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps });   // answered IN the reading
+      expect(q.reply).toContain('Nabíl was the chronicler [S1].');
+      expect(q.reply).toContain('[S1] [God Passes By](https://oceanlibrary.com/gpb)');
+      expect(q.subject).toBeNull();                                                                   // same thread, bookmark unmoved
+      expect(f.saved.at(-1).cursor).toBe(4);
     }
   });
 });

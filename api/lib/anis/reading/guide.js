@@ -13,9 +13,11 @@ import { effectiveAuthor } from '../../authorship/effective.js';
 const outlines = new Map();   // docId → { at, outline, byPid }
 
 async function defaults() {
-  const [repo, docs, { researchPage }, { llmJson }, { config }] = await Promise.all([
-    import('../../repos/reading-repo.js'), import('../../docs-repo.js'), import('./research.js'), import('./llm.js'), import('../../config.js')]);
-  return { ...repo, listDocs: docs.listDocs, getParagraphs: docs.getParagraphs, researchPage, llmJson, libraryBase: config.library.basePath, readFile };
+  const [repo, docs, { researchPage }, { llmJson }, { config }, { plannedSearch }, { withLinks }] = await Promise.all([
+    import('../../repos/reading-repo.js'), import('../../docs-repo.js'), import('./research.js'), import('./llm.js'), import('../../config.js'),
+    import('../../planned-search.js'), import('../../hit-links.js')]);
+  return { ...repo, listDocs: docs.listDocs, getParagraphs: docs.getParagraphs, researchPage, llmJson, libraryBase: config.library.basePath, readFile,
+    search: plannedSearch, links: withLinks };
 }
 
 /** The reader's own words in an email turn: the last user message, quoted history cut. Pure. */
@@ -74,6 +76,13 @@ say what each says. Spell names exactly as the book does (Nabíl, S̱háh, Ṭih
 2–4 short sentences per note; no headings, no nested bullets. Never invent a fact, a date or a quotation.
 Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragraphs":[{"pid":"para_N","notes":[{"name":"…","note":"…"}]}],
 "look_closer":"one striking detail worth a second look (1–2 sentences, or empty)","next":"one line inviting the next page, no spoilers of its plot"}`;
+
+// The reader's chosen depth of notes (Chad 10-13: three levels; "use the advanced level of notes").
+export const NOTE_LEVELS = {
+  introductory: 'INTRODUCTORY — a newcomer: explain the names and words a first reading needs, simply; 1–2 notes per paragraph; no scholarship.',
+  serious: 'SERIOUS — a well-read reader of this book (the default).',
+  advanced: 'ADVANCED — scholarly: transliteration and roots of Persian/Arabic terms, how other sources tell the same event (Nabíl, God Passes By, Browne, Nicolas, Balyuzi…) and where they differ, both calendars, manuscripts and translations, cross-references in the Writings; up to 4 notes per paragraph, 3–6 sentences each.',
+};
 
 const LEVEL_SYSTEM = `In 3–4 sentences, describe the typical serious reader of this book: what they already know well (so a reading guide
 must NOT explain it — list the obvious people, places, terms and history), and what kind of detail would genuinely deepen their
@@ -177,6 +186,7 @@ export function renderPage({ book, sectionLabel, author, items, notes, sources, 
 }
 
 async function buildPage(d, { session, doc, from, depth = 1 }) {
+  const noteLevel = NOTE_LEVELS[session?.explained?.__prefs?.level] ? session.explained.__prefs.level : 'serious';
   const { outline, byPid } = await outlineOf(d, doc);
   const page = pageFrom(outline.paragraphs, from, { words: 220, max: 4 });   // phone-sized (Chad 10-12: half the first target)
   if (!page.items.length) return { done: true };
@@ -188,10 +198,11 @@ async function buildPage(d, { session, doc, from, depth = 1 }) {
   const explained = { ...(session?.explained || {}) };
   const level = await readerLevel(d, doc, session);
   explained.__level = { text: level };
-  const research = await d.researchPage({ docId: doc.id, title: doc.title, religion: doc.religion || null, items, explained, depth, level });
+  const research = await d.researchPage({ docId: doc.id, title: doc.title, religion: doc.religion || null, items, explained, depth, level: `${level} Notes level: ${NOTE_LEVELS[noteLevel]}` });
   const role = modelFor('reading-notes');
   const user = `BOOK: ${doc.title} — ${sectionLabel}${author ? ` (${author}; this section is NOT by ${doc.author})` : ` (by ${doc.author})`}
 READER: ${level}
+NOTES LEVEL: ${NOTE_LEVELS[noteLevel]}
 ${depth > 1 ? 'The reader asked to go DEEPER on this page: fuller timelines, more context, more connections.\n' : ''}
 PAGE:
 ${items.map((p) => `[${p.pid}] ${addressOf(p)} ${p.text}`).join('\n\n')}
@@ -230,6 +241,10 @@ export async function readingTurn({ messages = [], participantId, reset = false,
   const d = { ...(await defaults()), ...(deps || {}) };
   let session = await d.latestSession(participantId).catch(() => null);
   const intent = readingIntent(text, { active: !!session });
+  // a notes level asked for anywhere ("…and use the advanced level of notes") is kept for the rest of the book
+  if (intent.level && session) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), level: intent.level } } };
+  // a question about the page being read is answered IN the reading (10-13: it fell through to an ordinary answer)
+  if (intent.kind === 'question' && session?.pages?.length) return answerInReading(d, { session, text });
   if (intent.kind === 'none' || intent.kind === 'question') {
     // a session waiting for its starting point: a reply naming one ("the introduction", "chapter 3") starts it
     if (session && !session.pages?.length && intent.kind === 'question') {
@@ -247,6 +262,7 @@ export async function readingTurn({ messages = [], participantId, reset = false,
     session = await d.sessionFor(participantId, doc.id).catch(() => null);
     // reset: begin the book afresh — no pages, nothing explained (a re-read after the guide itself changed)
     if (reset && session) session = { ...session, pages: [], explained: {}, cursor: 0 };
+    if (intent.level) session = { ...(session || { pages: [], explained: {} }), explained: { ...(session?.explained || {}), __prefs: { level: intent.level } } };
     const { outline } = await outlineOf(d, doc);
     const at = intent.from ? startIndex(outline.paragraphs, intent.from) : null;
     if (at == null && !session?.pages?.length) {
@@ -267,7 +283,7 @@ export async function readingTurn({ messages = [], participantId, reset = false,
     await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: session.cursor, pages, explained: session.explained, status: 'paused' });
     return { reply: `I've kept our place in **${doc.title}**. Whenever you'd like to continue, write "help me study ${shortTitle(doc.title)}" and we'll pick up where we left off.`, subject: null };
   }
-  if (intent.kind === 'again') return turnPage(d, { participantId, session, doc, from: pages.at(-1)?.from ?? session.cursor, depth: 2, redo: true });
+  if (intent.kind === 'again') return turnPage(d, { participantId, session, doc, from: pages.at(-1)?.from ?? session.cursor, depth: intent.relevel ? 1 : 2, redo: true });
   // back = the page before the last one sent; with only one page sent, that page again (never the front matter)
   if (intent.kind === 'back') return turnPage(d, { participantId, session, doc, from: pages.at(-2)?.from ?? pages.at(-1)?.from ?? session.cursor });
   if (intent.kind === 'jump') {
@@ -281,6 +297,31 @@ export async function readingTurn({ messages = [], participantId, reset = false,
     return turnPage(d, { participantId, session, doc, from: at });
   }
   return turnPage(d, { participantId, session, doc, from: session.cursor });   // next
+}
+
+const ANSWER_SYSTEM = `You are Anís, reading a book with someone by email, one page at a time. They asked a question about the page they
+just read. Answer it directly and warmly, at the level of the book, from the PAGE and the LIBRARY passages given; cite passages with
+their labels like [S2]. Certain general background needs no label. Never invent a fact, date or quotation; if the library does not
+answer it, say so briefly. 1–3 short paragraphs, speakable. Spell names as the book does.
+Reply with JSON only: {"answer":"…"}`;
+
+/** A question about the page just read — answered in the reading's context; the bookmark does not move. */
+async function answerInReading(d, { session, text }) {
+  const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
+  if (!doc) return null;
+  const { outline } = await outlineOf(d, doc);
+  const last = session.pages.at(-1);
+  const items = outline.paragraphs.slice(last.from, last.to + 1);
+  const r = await d.search(text, { limit: 6, budgetMs: 3000, ...(doc.religion ? { given: { religion: doc.religion } } : {}) }).catch(() => null);
+  const hits = await d.links((r?.hits || []).slice(0, 6)).catch(() => []);
+  const sources = hits.map((h) => ({ title: h.title || 'library', url: h.url || null }));
+  const out = await d.llmJson({ ...modelFor('reading-notes'), caller: 'reading-answer', maxTokens: 1500, system: ANSWER_SYSTEM,
+    user: `BOOK: ${doc.title}\nPAGE:\n${items.map((p) => `${addressOf(p)} ${p.text}`).join('\n\n')}\n\nLIBRARY:\n${hits.map((h, i) => `[S${i + 1}] ${h.title}: ${String(h.text || '').replace(/⁅\/?s\d+⁆/g, '').slice(0, 700)}`).join('\n\n') || 'none'}\n\nQUESTION: ${text}` });
+  const answer = out.json?.answer || out.text || '';
+  const { notes, sources: used } = renumber({ paragraphs: [{ pid: 'a', notes: [{ name: 'a', note: answer }] }] }, sources);
+  const body = notes.paragraphs[0].notes[0].note;
+  return { reply: [body, '', `Reply **next** to read on from ${addressOf(outline.paragraphs[session.cursor] || items.at(-1))}, or ask me anything else.`,
+    ...(used.length ? ['', '**Sources**', ...used.map((x, i) => `[S${i + 1}] ${x.url ? `[${x.title}](${x.url})` : x.title}`)] : [])].join('\n'), subject: null };
 }
 
 async function turnPage(d, { participantId, session, doc, from, depth = 1, redo = false }) {

@@ -28,19 +28,35 @@ export function startFrom(text) {
   return m ? m[1].trim() : null;
 }
 
-/** → { kind, book?, from?, target? }. `active` = the reader has a book open in this thread. */
+/** A notes LEVEL the reader asks for, anywhere in the message (Chad 10-13: "use the advanced level of notes"). Pure. */
+export function levelFrom(text) {
+  const t = String(text || '').toLowerCase();
+  if (/\b(advanced|scholarly|scholar|expert|academic|in[- ]depth|more detailed|deeper)\b[^.?!]{0,30}\b(notes?|level|research)\b|\b(notes?|level)\b[^.?!]{0,20}\b(advanced|scholarly|expert|academic)\b/.test(t)) return 'advanced';
+  if (/\b(simpler|simple|basic|beginner|introductory|lighter|less detail(ed)?)\b[^.?!]{0,30}\b(notes?|level)\b|\b(notes?|level)\b[^.?!]{0,20}\b(simpler|basic|beginner|introductory)\b/.test(t)) return 'introductory';
+  if (/\b(normal|standard|default|regular)\b[^.?!]{0,10}\b(notes?|level)\b/.test(t)) return 'serious';
+  return null;
+}
+
+/** → { kind, book?, from?, target?, level? }. `active` = the reader has a book open. Inside a reading thread replies are
+ *  conversational ("good. next please. and use the advanced level of notes" — 10-13 this fell through to an ordinary
+ *  answer): a navigation word anywhere counts; a bare acknowledgement means "next"; a level request rides along. */
 export function readingIntent(text, { active = false } = {}) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const book = bookFrom(t);
-  if (book) return { kind: 'start', book, from: startFrom(t) };
+  if (book) return { kind: 'start', book, from: startFrom(t), level: levelFrom(t) };
   if (!active) return { kind: 'none' };
-  const low = t.toLowerCase().replace(/[.!…]+$/, '').trim();
-  if (!low || /^(continue|next|next page|go on|keep going|more|ok(ay)?|yes|onward|proceed|carry on|please continue|continue please|next please)$/.test(low)) return { kind: 'next' };
-  if (/^(please )?(try )?again( please)?$|^(dig|go) deeper$|^not deep enough$/.test(low)) return { kind: 'again' };
-  if (/^(go )?back$|^previous( page)?$|^last page$/.test(low)) return { kind: 'back' };
-  if (/^where (are|were) we\b|^what page\b|^bookmark$/.test(low)) return { kind: 'where' };
-  if (/^(stop|pause|end) (reading|the book|the reading)\b/.test(low)) return { kind: 'stop' };
-  const jump = low.match(/^(?:skip|jump|go|move|turn)\s+(?:ahead\s+)?to\s+(.+)$/);
-  if (jump) return { kind: 'jump', target: jump[1] };
+  const low = t.toLowerCase();
+  const level = levelFrom(t);
+  const withLevel = (o) => (level ? { ...o, level } : o);
+  const asks = /\?/.test(low) || /^(who|what|why|how|when|where(?! are we)|which|is|was|were|did|does|do|can|could|tell me|explain)\b/.test(low);
+  if (/\b(stop|pause|end) (reading|the book|the reading)\b/.test(low)) return { kind: 'stop' };
+  if (/\bwhere (are|were) we\b|\bwhat page\b|\bbookmark\b/.test(low)) return { kind: 'where' };
+  const jump = low.match(/\b(?:skip|jump|go|move|turn)\s+(?:ahead\s+)?to\s+([^.?!,;]+)/);
+  if (jump && !/^the next\b/.test(jump[1])) return withLevel({ kind: 'jump', target: jump[1].trim() });
+  if (/\b(try again|again|dig deeper|go deeper|not deep enough|redo)\b/.test(low) && !asks) return withLevel({ kind: 'again' });
+  if (/\b(go back|previous page|last page)\b|^back\b/.test(low)) return withLevel({ kind: 'back' });
+  if (/\b(next|continue|go on|keep going|carry on|proceed|onward|read on|more please)\b/.test(low)) return withLevel({ kind: 'next' });
+  if (level && !asks) return { kind: 'again', level, relevel: true };   // "use simpler notes" alone → this page again at that level
+  if (!low || /^(ok(ay)?|yes|good|great|thanks?|thank you|lovely|wonderful|beautiful|perfect|got it|nice)[\s.!,]*(thanks?|thank you)?[\s.!]*$/.test(low)) return { kind: 'next' };
   return { kind: 'question' };
 }
