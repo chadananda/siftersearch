@@ -1,12 +1,12 @@
 // How an Anís letter looks: Markdown → inline-styled email HTML (Georgia body, quoted passages set off, Arabic/Persian
 // right-to-left), and the signature every letter carries — the name in large italic Palatino (after Jafar's letters at
-// ctai.info) over "AI Research Assistant for Ocean 2.0". Whatever sign-off the writer produced is replaced by it.
+// ctai.info) over "Ocean Study Companion AI". Whatever sign-off the writer produced is replaced by it.
 // Tables are styled; ```chart blocks become bar charts (HTML) and block-character bars (plain text). Pure.
 import { marked } from 'marked';
 
 const INK = '#2b2621', SEA = '#1f6f8b', MIST = '#8fa3ab', RULE = '#a9cbd6';
 export const SIGN_NAME = 'Anís';
-export const SIGN_TITLE = 'AI Research Assistant for Ocean 2.0';
+export const SIGN_TITLE = 'Ocean Study Companion AI';   // Chad 10-13 (was 'AI Research Assistant for Ocean 2.0')
 
 /** Drop a trailing sign-off name ("Anís", "— Anis", "Ocean AI Research Assistant"…); keep "Warmly," and the like. */
 export function stripSignOff(text) {

@@ -1,6 +1,48 @@
 {
-  "generated": "2026-10-13T05:17:44.701Z",
+  "generated": "2026-10-13T13:40:29.524Z",
   "entries": [
+    {
+      "hash": "b4011742",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Notes search the book's own tradition; illuminate, never grade the text; the book's spellings",
+      "scope": "reading"
+    },
+    {
+      "hash": "a005d3c0",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Phone-sized pages, noted words highlighted, notes at the book's level",
+      "scope": "reading"
+    },
+    {
+      "hash": "8ddbae40",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Cited sources renumbered S1, S2 … in order of first citation",
+      "scope": "reading"
+    },
+    {
+      "hash": "432a3efd",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "/api/v1/reading/turn + /session — the reading guide as its own API; sources carry publisher links",
+      "scope": "reading"
+    },
+    {
+      "hash": "474b9c02",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Reading guide start path passes the reader's id (bookmark save failed: participant_id NOT NULL)",
+      "scope": "anis"
+    },
+    {
+      "hash": "dc9b5270",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "READING GUIDE — 'help me study <book>': a page per email, notes after each paragraph",
+      "scope": "anis"
+    },
     {
       "hash": "d5a1ad8e",
       "date": "2026-10-12",
@@ -3458,52 +3500,54 @@
       "type": "Fixed",
       "description": "CTAI /jafar returns zero terms past ~50 words — ask in 35-word chunks and merge",
       "scope": "translation"
-    },
-    {
-      "hash": "e282af13",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Jafar spectrum reached the prompt as \"undefined\" (CTAI returns {en,count}); coverage scope=all + provisional count",
-      "scope": "translation"
-    },
-    {
-      "hash": "f9855b63",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Bulk mode 'ignore' — never overwrite a stricter pairing, only fill its pin/ool_id",
-      "scope": "alignment"
-    },
-    {
-      "hash": "dbd30a92",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "--concurrency=N (reindex {concurrency}) — per-file sentence marking on the local LLM made serial ingest ~8 files/min",
-      "scope": "index-library"
-    },
-    {
-      "hash": "2d2cfd47",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Anchor-v4 / inherit-v3 method versions for the alif/hamza-free key",
-      "scope": "pairing"
-    },
-    {
-      "hash": "98bf3d06",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Drop every alif/hamza form from the letter key — editions spell hamza differently (PM 138: 0.21 -> 1.0)",
-      "scope": "anchor"
-    },
-    {
-      "hash": "acfe70d1",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "GET /concepts/english-coverage — every original paragraph: linked / beside / neither, per author and language",
-      "scope": "coverage"
     }
   ],
   "grouped": {
+    "2026-10-13": [
+      {
+        "hash": "b4011742",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Notes search the book's own tradition; illuminate, never grade the text; the book's spellings",
+        "scope": "reading"
+      },
+      {
+        "hash": "a005d3c0",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Phone-sized pages, noted words highlighted, notes at the book's level",
+        "scope": "reading"
+      }
+    ],
     "2026-10-12": [
+      {
+        "hash": "8ddbae40",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Cited sources renumbered S1, S2 … in order of first citation",
+        "scope": "reading"
+      },
+      {
+        "hash": "432a3efd",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "/api/v1/reading/turn + /session — the reading guide as its own API; sources carry publisher links",
+        "scope": "reading"
+      },
+      {
+        "hash": "474b9c02",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Reading guide start path passes the reader's id (bookmark save failed: participant_id NOT NULL)",
+        "scope": "anis"
+      },
+      {
+        "hash": "dc9b5270",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "READING GUIDE — 'help me study <book>': a page per email, notes after each paragraph",
+        "scope": "anis"
+      },
       {
         "hash": "d5a1ad8e",
         "date": "2026-10-12",
@@ -6987,50 +7031,6 @@
         "type": "Fixed",
         "description": "CTAI /jafar returns zero terms past ~50 words — ask in 35-word chunks and merge",
         "scope": "translation"
-      },
-      {
-        "hash": "e282af13",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Jafar spectrum reached the prompt as \"undefined\" (CTAI returns {en,count}); coverage scope=all + provisional count",
-        "scope": "translation"
-      },
-      {
-        "hash": "f9855b63",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Bulk mode 'ignore' — never overwrite a stricter pairing, only fill its pin/ool_id",
-        "scope": "alignment"
-      }
-    ],
-    "2026-09-28": [
-      {
-        "hash": "dbd30a92",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "--concurrency=N (reindex {concurrency}) — per-file sentence marking on the local LLM made serial ingest ~8 files/min",
-        "scope": "index-library"
-      },
-      {
-        "hash": "2d2cfd47",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Anchor-v4 / inherit-v3 method versions for the alif/hamza-free key",
-        "scope": "pairing"
-      },
-      {
-        "hash": "98bf3d06",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Drop every alif/hamza form from the letter key — editions spell hamza differently (PM 138: 0.21 -> 1.0)",
-        "scope": "anchor"
-      },
-      {
-        "hash": "acfe70d1",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "GET /concepts/english-coverage — every original paragraph: linked / beside / neither, per author and language",
-        "scope": "coverage"
       }
     ]
   }

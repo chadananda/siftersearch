@@ -22,7 +22,7 @@ describe('letters', () => {
     const h = toHtml('Dear friend,\n\n> a passage\n\n[Source](https://oceanlibrary.com/x)');
     expect(h).toMatch(/<blockquote style="[^"]+">/);
     expect(h).toMatch(/<a style="[^"]+" href="https:\/\/oceanlibrary.com\/x">Source<\/a>/);
-    expect(h).toContain('AI Research Assistant for Ocean 2.0');
+    expect(h).toContain('Ocean Study Companion AI');
   });
   it('footnote markers copied from passages are removed', () => {
     expect(tidy('Set it then before thine eyes.[^14]\n\nWarmly')).toBe('Set it then before thine eyes.\n\nWarmly');
@@ -56,9 +56,9 @@ describe('signature', async () => {
   });
   it('every letter: body, the signature, then the pause link', () => {
     const { text, html } = composeLetter('Hello.\n\nWarmly,\nAnis', 'https://x/p');
-    expect(text).toBe('Hello.\n\nWarmly,\n\n— Anís\nAI Research Assistant for Ocean 2.0\n\n—\nRather not hear from me? https://x/p');
+    expect(text).toBe('Hello.\n\nWarmly,\n\n— Anís\nOcean Study Companion AI\n\n—\nRather not hear from me? https://x/p');
     expect(html).toMatch(/font-style:italic;font-size:24px[^>]*>— Anís<\/p>/);
-    expect(html.indexOf('AI Research Assistant for Ocean 2.0')).toBeLessThan(html.indexOf('Rather not hear'));
+    expect(html.indexOf('Ocean Study Companion AI')).toBeLessThan(html.indexOf('Rather not hear'));
   });
 });
 

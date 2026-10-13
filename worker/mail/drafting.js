@@ -14,7 +14,7 @@ import { sendDecision, emailHash } from './rules.js';
 const TOWER = 'https://api.siftersearch.com/api/v1/anis';
 const SITE = 'https://siftersearch.com';
 const FROM_ADDR = 'anis@oceanlibrary.com';
-const FOOTER_CUT = /\n\n—\nAnís, Ocean AI Research Assistant\.[\s\S]*$|\n\n— Anís\nAI Research Assistant for Ocean 2\.0[\s\S]*$/;
+const FOOTER_CUT = /\n\n—\nAnís, Ocean AI Research Assistant\.[\s\S]*$|\n\n— Anís\n(?:AI Research Assistant for Ocean 2\.0|Ocean Study Companion AI)[\s\S]*$/;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 /** The draft as the reader will see it (signature included; the pause footer is added at send). */
 export const toHtml = (md) => wrapHtml(`${bodyHtml(stripSignOff(md))}${signatureHtml()}`);
