@@ -122,7 +122,12 @@ ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.na
   const notes = r.json || { paragraphs: [] };
   for (const t of research.targets) if (!t.seenAt) explained[t.key] = { name: t.canonical || t.name, at: addressOf(items.find((p) => p.pid === t.pid) || items[0]) };
   const pageNo = (session?.pages?.length || 0) + 1;
-  return { items, next: page.next, notes, explained, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources: research.sources, pageNo }),
+  const byPidNotes = new Map((notes.paragraphs || []).map((p) => [p.pid, p.notes || []]));
+  // STRUCTURED page for any caller (web, chat, audio — paragraph voice + notes voice): the email is one rendering of it
+  const structured = { book: doc.title, docId: doc.id, section: sectionLabel, author, pageNo, topic: notes.topic || null,
+    paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, notes: byPidNotes.get(p.pid) || [] })),
+    lookCloser: notes.look_closer || null, next: notes.next || null, sources: research.sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
+  return { items, next: page.next, notes, explained, page: structured, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources: research.sources, pageNo }),
     subject: subjectFor(doc.title, items[0], notes.topic) };
 }
 
@@ -197,7 +202,7 @@ async function turnPage(d, { participantId, session, doc, from, depth = 1, redo 
   if (redo && pages.length) pages.pop();
   pages.push({ from, to: pg.next - 1, subject: pg.subject, depth, at: new Date().toISOString() });
   await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: pg.next, pages: pages.slice(-500), explained: pg.explained });
-  return { reply: pg.reply, subject: pg.subject };
+  return { reply: pg.reply, subject: pg.subject, page: pg.page, bookmark: { docId: doc.id, cursor: pg.next } };
 }
 
 export { bookFrom };

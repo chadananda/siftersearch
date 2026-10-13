@@ -12,7 +12,8 @@ async function defaults() {
   const [{ pageMentions }, { entityLookup, entityDossier }, { plannedSearch }, { llmJson }, { perplexityFallback }, { parallelResearch }] = await Promise.all([
     import('../../repos/reading-repo.js'), import('../../entity-api.js'), import('../../planned-search.js'), import('./llm.js'),
     import('../../perplexity.js'), import('../../parallel-ai.js')]);
-  return { pageMentions, entityLookup, entityDossier, search: (q, o) => plannedSearch(q, o), llmJson, perplexity: perplexityFallback, parallel: parallelResearch };
+  const { withLinks } = await import('../../hit-links.js');
+  return { pageMentions, entityLookup, entityDossier, search: (q, o) => plannedSearch(q, o), links: withLinks, llmJson, perplexity: perplexityFallback, parallel: parallelResearch };
 }
 
 /** Pure: does an entity name match a target name (same folded words, or one contains the other)? */
@@ -70,7 +71,7 @@ export async function researchPage({ docId, title, items, explained = {}, depth 
     if (t.id) {
       const dz = await d.entityDossier(t.id).catch(() => null);
       if (dz) {
-        ev.summary = dz.summary || null;
+        ev.summary = dz.summary ? `${dz.summary} [${cite(`SifterSearch record: ${dz.name}`, null)}]` : null;
         ev.aliases = (dz.aliases || []).slice(0, 12);
         const dated = dz.claims.filter((c) => c.when).concat(dz.claims.filter((c) => !c.when));
         ev.claims = dated.slice(0, claimsN).map((c) => ({ text: c.statement, when: c.when, src: c.source ? cite(c.source, c.url) : null }));
@@ -79,7 +80,8 @@ export async function researchPage({ docId, title, items, explained = {}, depth 
     if (!ev.summary || ev.claims.length < 3 || ['work', 'term', 'event'].includes(t.kind)) {
       const q = t.kind === 'term' ? `What is ${t.name}?` : t.kind === 'work' ? `${t.name} (the work)` : t.canonical || t.name;
       const r = await d.search(q, { limit: passagesN + 2, budgetMs: 2500 }).catch(() => null);
-      ev.passages = (r?.hits || []).filter((h) => h.doc_id !== docId).slice(0, passagesN)
+      const hits = await d.links((r?.hits || []).filter((h) => h.doc_id !== docId).slice(0, passagesN)).catch(() => []);
+      ev.passages = hits
         .map((h) => ({ text: String(h.text || '').replace(/⁅\/?s\d+⁆/g, '').slice(0, 500), src: cite(h.title || 'library', h.url || h.link?.url || null) }));
     }
     // WEB only where the library cannot answer (Chad 10-12): nothing at all on a first pass; thin on "again"

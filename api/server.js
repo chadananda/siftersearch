@@ -49,6 +49,7 @@ import anisAdminRoutes from './routes/anis-admin.js';
 import workplanAdminRoutes from './routes/workplan-admin.js';
 import widgetRoutes from './routes/widget.js';
 import anisRoutes from './routes/anis.js';
+import readingRoutes from './routes/reading.js';
 import ingestRoutes from './routes/ingest.js';
 import bookNotesRoutes from './routes/book-notes.js';
 import { config } from './lib/config.js';
@@ -355,6 +356,7 @@ await server.register(workplanAdminRoutes, { prefix: '/api/admin' });   // the W
   await server.register(companionRoutes, { prefix: '/api/admin' });
   await server.register(companionMeRoutes, { prefix: '/api/v1/companion' });
   await server.register(anisRoutes, { prefix: '/api/v1/anis' });   // Anís letters: footer pause link
+  await server.register(readingRoutes, { prefix: '/api/v1/reading' });   // reading guide: one turn, any channel
   await server.register(documentsRoutes, { prefix: '/api/documents' });
 await server.register(coverRoutes, { prefix: '/api/covers' });   // book covers (api/lib/covers.js), edge-cached by the Worker
 await server.register(tabletPublicRoutes, { prefix: '/api/documents' });   // GET /:id/about

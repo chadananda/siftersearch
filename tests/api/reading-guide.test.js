@@ -122,6 +122,8 @@ describe('readingTurn', () => {
       const r1 = await readingTurn({ messages: msg("Help me study the Dawn-Breakers. Let's start from the introduction"), participantId: 'email:x', deps: f.deps });
       expect(r1.subject).toBe('[Reading] Dawn-Breakers #Intro.1 - The record and its writer');
       expect(r1.reply).toContain('**#Intro.1** The Bahá’í Movement is now well known.');
+      expect(r1.page.paragraphs[0]).toMatchObject({ address: '#Intro.1', pid: 'para_16', text: 'The Bahá’í Movement is now well known.' });
+      expect(r1.bookmark).toEqual({ docId: 21308, cursor: 2 });
       expect(f.saved.at(-1)).toMatchObject({ participantId: 'email:x', docId: 21308, cursor: 2 });
       expect(f.saved.at(-1).explained['n:nabil']).toMatchObject({ name: 'Nabíl', at: '#Intro.1' });
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });

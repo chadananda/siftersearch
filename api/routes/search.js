@@ -447,19 +447,7 @@ export default async function searchRoutes(fastify) {
     const qdrant = qdrantOption(qd);
     // plan:false = the raw engine, kept so the battery can measure what planning adds.
     // Each hit carries the same `link` the public /v1/search returns, so the battery's link checks judge this path too.
-    const withLinks = async (hits = []) => {
-      const { linkFor } = await import('../lib/source-links.js');
-      const { getLinkMeta } = await import('../lib/docs-repo.js');
-      const meta = await getLinkMeta(hits.map((h) => h.doc_id ?? h.document_id)).catch(() => new Map());
-      const own = hits.map((h) => { const m = meta.get(Number(h.doc_id ?? h.document_id)) || {};
-        return linkFor({ ...m, ...h, document_id: h.doc_id ?? h.document_id, source_url: h.source_url || m.source_url || null, metadata: m.metadata }, h.paragraph_index); });
-      // the best publisher of the same words (identical copy on OceanLibrary / Ocean of Lights), not just the copy found
-      const better = await (await import('../lib/citation-links.js')).betterCopyLinks(hits.map((h, i) => ({ id: h.id, title: h.title, text: h.text, link: own[i] }))).catch(() => new Map());
-      return hits.map((h, i) => {
-        const l = better.get(Number(h.id)) || own[i];
-        return { ...h, ...(l.title ? { title: l.title } : {}), url: l.url, link: { site: l.site, tier: l.tier, paragraph_level: l.paragraph_level } };
-      });
-    };
+    const { withLinks } = await import('../lib/hit-links.js');   // shared with Anís's reading guide
     if (plan === false) {
       const r = await multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true,
         phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, qdrantHype: qdrant.hype, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}) });
