@@ -31,6 +31,11 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
   (Chad 10-12) — on a first pass, on "again", or for a question.
 - SUBJECT LINES (Chad 10-12): `[Reading] <Book> #<chapter>.<¶> - <what happens>` — e.g. `[Reading] Dawn-Breakers #5.7 - Bab's
   pilgrimage to Mecca`; introduction = `#Intro.6`. Sortable, scannable: the mailbox reads as the book's table of contents.
+- NOTES CACHE (Chad 10-13 — AFTER the notes are dialled in): a `paragraph_notes` table — per paragraph × target × LEVEL
+  (3 levels, e.g. newcomer · serious reader · scholar), with note text, cited sources, model, prompt version, created_at.
+  Cache NOTES, not pages: a page is assembled per reader from cached notes minus what that reader has already been told
+  (explained set) — so precaching never makes the guide repetitive. Then precache whole books (cost estimated first);
+  "again" writes a deeper note and keeps both; a prompt-version bump invalidates. Same notes serve email, web, audio.
 - Research per ¶: entity graph (disambiguated mentions) → /biography pages + claims → CTAI (name meanings) → gazetteer → Phelps
   (tablets to them) → library search for other passages; ONE model call writes notes from cited evidence only. Measure $/page first.
 
