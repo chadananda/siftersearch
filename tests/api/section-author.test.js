@@ -21,4 +21,12 @@ describe('sectionAuthorChange', () => {
   it('already right → no change', () => {
     expect(sectionAuthorChange(JSON.stringify([{ name: GT, role: 'author', basis: 'section' }]), GT)).toBeNull();
   });
+  it('a reader placeholder ("the editor or reporter") is replaced', () => {
+    expect(sectionAuthorChange(JSON.stringify([{ name: 'the editor or reporter', role: 'author', basis: 'window' }]), GT))
+      .toEqual([{ name: GT, role: 'author', basis: 'section' }]);
+  });
+  it('force corrects a named misattribution', () => {
+    expect(sectionAuthorChange(JSON.stringify([{ name: 'The Báb', role: 'author', basis: 'window' }]), 'Lord Curzon', { force: true }))
+      .toEqual([{ name: 'Lord Curzon', role: 'author', basis: 'section' }]);
+  });
 });
