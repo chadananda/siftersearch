@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readingIntent, bookFrom, startFrom } from '../../api/lib/anis/reading/intent.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/anis/reading/outline.js';
-import { subjectFor, renderPage, readingTurn, ownWords, renumber } from '../../api/lib/anis/reading/guide.js';
+import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight } from '../../api/lib/anis/reading/guide.js';
 import { sameName } from '../../api/lib/anis/reading/research.js';
 
 const MD = `# The Book {.off id="para_1" type="title"}
@@ -97,6 +97,10 @@ describe('subject and page', () => {
     expect(r.notes.look_closer).toBe('z [S2]');
     expect(r.sources.map((x) => x.title)).toEqual(['s7', 's2']);
   });
+  it('noted names are bolded at their first occurrence in the paragraph; longer names first', () => {
+    expect(highlight('Mullá Ḥusayn met Ḥusayn’s friend in Shíráz.', ['Ḥusayn', 'Mullá Ḥusayn', 'Shíráz', 'absent']))
+      .toBe('**Mullá Ḥusayn** met **Ḥusayn**’s friend in **Shíráz**.');
+  });
   it('names match across honorifics and spelling marks', () => {
     expect(sameName('Mullá Ḥusayn', 'Ḥusayn')).toBe(true);
     expect(sameName('Shíráz', 'Tabríz')).toBe(false);
@@ -117,8 +121,11 @@ describe('readingTurn', () => {
         getParagraphs: async () => [],
         libraryBase: '/nonexistent',
         readFile: async () => MD,
-        researchPage: async ({ items }) => ({ targets: [{ pid: items[0].pid, name: 'Nabíl', key: 'n:nabil', evidence: { claims: [] } }], sources: [] }),
-        llmJson: async () => ({ json: { topic: 'The record and its writer', paragraphs: [], next: 'Onward.' } }),
+        researchPage: async ({ items }) => ({ targets: [
+          { pid: items[0].pid, name: 'Bahá’í Movement', key: 'n:bahai movement', evidence: { claims: [] } },
+          { pid: items[0].pid, name: 'Nabíl', key: 'n:nabil', evidence: { claims: [] } }], sources: [] }),
+        llmJson: async ({ caller }) => (caller === 'reading-level' ? { json: { level: 'Knows the Báb and Bahá’u’lláh well.' } }
+          : { json: { topic: 'The record and its writer', paragraphs: [{ pid: 'para_16', notes: [{ name: 'Bahá’í Movement', note: 'Townshend’s 1932 term.' }] }], next: 'Onward.' } }),
       },
     };
   };
@@ -128,11 +135,13 @@ describe('readingTurn', () => {
       const msg = (t) => [{ role: 'user', content: t }];
       const r1 = await readingTurn({ messages: msg("Help me study the Dawn-Breakers. Let's start from the introduction"), participantId: 'email:x', deps: f.deps });
       expect(r1.subject).toBe('[Reading] Dawn-Breakers #Intro.1 - The record and its writer');
-      expect(r1.reply).toContain('**#Intro.1** The Bahá’í Movement is now well known.');
       expect(r1.page.paragraphs[0]).toMatchObject({ address: '#Intro.1', pid: 'para_16', text: 'The Bahá’í Movement is now well known.' });
       expect(r1.bookmark).toEqual({ docId: 21308, cursor: 2 });
       expect(f.saved.at(-1)).toMatchObject({ participantId: 'email:x', docId: 21308, cursor: 2 });
-      expect(f.saved.at(-1).explained['n:nabil']).toMatchObject({ name: 'Nabíl', at: '#Intro.1' });
+      expect(f.saved.at(-1).explained['n:bahai movement']).toMatchObject({ at: '#Intro.1' });
+      expect(f.saved.at(-1).explained['n:nabil']).toBeUndefined();   // researched but not noted → still available later
+      expect(f.saved.at(-1).explained.__level.text).toContain('Knows the Báb');
+      expect(r1.reply).toContain('The **Bahá’í Movement** is now well known.');
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
       expect(r2.subject).toMatch(/^\[Reading\] Dawn-Breakers #1\.1 - /);
       expect(await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps })).toBeNull();

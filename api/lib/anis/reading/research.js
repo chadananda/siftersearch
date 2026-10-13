@@ -22,25 +22,28 @@ export function sameName(a, b) {
   return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
 }
 
-const TARGETS_SYSTEM = `You prepare a reading guide. For each paragraph, list what a thoughtful reader would want explained:
-people, places, works/tablets, events, groups, and unfamiliar terms or titles (e.g. "Shaykhí", "Qá'im", "mujtahid").
-Skip common words and anything in ALREADY_EXPLAINED. At most 6 per paragraph, most important first.
-Reply with JSON only: {"targets":[{"pid":"para_N","name":"exact form used in the text","kind":"person|place|work|event|group|term","why":"<10 words"}]}`;
+const TARGETS_SYSTEM = `You prepare a reading guide for a SERIOUS reader of this book (READER describes what they already know).
+For each paragraph, choose what is genuinely worth a note for THIS reader: lesser-known people, places as they were then,
+works and tablets, events, offices and titles, Persian/Arabic/Turkish terms, period customs, allusions, cross-references.
+NEVER choose what READER already knows (for a Bahá'í history: Persia, the Báb, Bahá'u'lláh, 'Abdu'l-Bahá, the Bahá'í Faith,
+Islam, Muḥammad … unless the paragraph says something unusual about them — then name exactly that).
+Prefer the specific and the surprising over the general. Skip anything in ALREADY_EXPLAINED. 0–3 per paragraph; none is fine.
+"name" must be the EXACT words as they appear in the paragraph (it will be highlighted there).
+Reply with JSON only: {"targets":[{"pid":"para_N","name":"exact words from the text","kind":"person|place|work|event|group|term","why":"<10 words: what is interesting"}]}`;
 
 /** The page's note targets with their evidence. depth 1 = library; depth 2 = deeper library + web where thin. */
-export async function researchPage({ docId, title, items, explained = {}, depth = 1, deps } = {}) {
+export async function researchPage({ docId, title, items, explained = {}, depth = 1, level = '', deps } = {}) {
   const d = { ...(await defaults()), ...(deps || {}) };
   const pids = items.map((p) => p.pid);
   const mentions = await d.pageMentions(docId, pids).catch(() => []);
   const byPid = new Map(pids.map((p) => [p, mentions.filter((m) => m.pid === p)]));
-  const known = Object.values(explained).map((e) => e.name).filter(Boolean);
+  const known = Object.entries(explained).filter(([k]) => !k.startsWith('__')).map(([, e]) => e.name).filter(Boolean);
   const role = modelFor('reading-targets');
   const ask = await d.llmJson({ ...role, caller: 'reading-targets', maxTokens: 1200, system: TARGETS_SYSTEM,
-    user: `BOOK: ${title}\nALREADY_EXPLAINED: ${known.slice(-200).join('; ') || 'none'}\n\n${items.map((p) => `[${p.pid}] ${p.text}\nMENTIONED (resolved): ${(byPid.get(p.pid) || []).map((m) => m.name).join('; ') || '—'}`).join('\n\n')}` })
+    user: `BOOK: ${title}\nREADER: ${level || 'a serious, well-read adult reader of this book'}\nALREADY_EXPLAINED: ${known.slice(-200).join('; ') || 'none'}\n\n${items.map((p) => `[${p.pid}] ${p.text}\nMENTIONED (resolved): ${(byPid.get(p.pid) || []).map((m) => m.name).join('; ') || '—'}`).join('\n\n')}` })
     .catch(() => ({ json: null }));
   const raw = Array.isArray(ask.json?.targets) ? ask.json.targets : [];
-  // add resolved mentions the model skipped (the graph knows them; they are people/places of the story)
-  for (const [pid, ms] of byPid) for (const m of ms.slice(0, 4)) if (!raw.some((t) => t.pid === pid && sameName(t.name, m.name))) raw.push({ pid, name: m.name, kind: m.type, why: 'named here' });
+  // resolved mentions are OFFERED to the model (above), never forced in: forcing them noted "Persia" and "the Báb" (Chad 10-12)
 
   const seen = new Set(), targets = [];
   for (const t of raw) {
@@ -64,8 +67,8 @@ export async function researchPage({ docId, title, items, explained = {}, depth 
     sources.push({ title, url: url || null, kind });
     return `S${sources.length}`;
   };
-  const fresh = targets.filter((t) => !t.seenAt).slice(0, depth > 1 ? 24 : 16);
-  const claimsN = depth > 1 ? 16 : 8, passagesN = depth > 1 ? 4 : 2;
+  const fresh = targets.filter((t) => !t.seenAt).slice(0, depth > 1 ? 16 : 10);
+  const claimsN = depth > 1 ? 20 : 12, passagesN = depth > 1 ? 4 : 3;
   await Promise.all(fresh.map(async (t) => {
     const ev = { summary: null, aliases: [], claims: [], passages: [], web: [] };
     if (t.id) {

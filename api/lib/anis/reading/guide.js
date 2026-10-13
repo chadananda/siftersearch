@@ -52,19 +52,47 @@ const titleCase = (s) => String(s).toLowerCase().replace(/(^|[\s(‘“-])(\p{L}
 /** The subject line: [Reading] Dawn-Breakers #5.7 - Bab's pilgrimage to Mecca (Chad 10-12). Pure. */
 export const subjectFor = (book, first, topic) => `[Reading] ${shortTitle(book)} ${addressOf(first)} - ${String(topic || first.topic || '').replace(/\s+/g, ' ').trim().slice(0, 80)}`;
 
-const NOTES_SYSTEM = `You are Anís, a reading companion helping someone study a book one page at a time by email (later read aloud).
-After each paragraph you add NOTES that drill into what the paragraph names — so the reader understands more deeply.
-Write from the EVIDENCE given; cite it with its labels like [S3]. General background you are certain of (dates, the meaning of a
-Persian/Arabic/Turkish name or word, Hijri↔Gregorian conversion) may be stated without a label.
-For a PERSON: the name in Persian/Arabic script, the literal meaning of each part of the name, other names and titles (and who
-gave them), a compact timeline (birth · key moments · death — later fates are welcome, the reader wants the whole life), and how
-they relate to this story. For a PLACE: modern name and location, what it was like then, why it matters here. For a WORK or
-TABLET: what its title means, when and to whom, where it can be read. For a TERM: what a reader of that time understood by it.
-Someone or something in ALREADY_EXPLAINED gets ONE short line pointing back ("met in #Intro.3") plus anything new.
-Style: compact, warm, precise, speakable — short sentences, no filler, no headings inside notes, no bullet nesting.
-1–4 sentences per note; skip a target that adds nothing. Never invent a fact, a date or a quotation.
+const NOTES_SYSTEM = `You are Anís, a reading companion helping someone study a book one page at a time by email (on a phone; later read aloud).
+After a paragraph you may add NOTES on the words chosen for it — only where a note rewards THIS reader (READER says what they
+already know: never explain that; a paragraph with nothing worth a note gets none).
+Aim at the level of the book: specific, surprising, illuminating — a name's literal meaning and who gave a title, a person's
+arc in two or three dated beats (later fates welcome), what a place or office was in that period, what a term meant to people then,
+where else the Writings or other histories speak of this, a connection the reader would not see. Never a dictionary definition.
+Write from the EVIDENCE; cite its labels like [S3]. Certain general background (dates, name meanings, Hijri↔Gregorian) needs no label.
+Something in ALREADY_EXPLAINED gets at most one short line pointing back ("met in #Intro.3") and only if this paragraph adds to it.
+"name" must be the EXACT words from the paragraph (they are highlighted in the text). Style: compact, warm, precise, speakable;
+2–4 short sentences per note; no headings, no nested bullets. Never invent a fact, a date or a quotation.
 Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragraphs":[{"pid":"para_N","notes":[{"name":"…","note":"…"}]}],
 "look_closer":"one striking detail worth a second look (1–2 sentences, or empty)","next":"one line inviting the next page, no spoilers of its plot"}`;
+
+const LEVEL_SYSTEM = `In 3–4 sentences, describe the typical serious reader of this book: what they already know well (so a reading guide
+must NOT explain it — list the obvious people, places, terms and history), and what kind of detail would genuinely deepen their
+reading. Reply with JSON only: {"level":"…"}`;
+
+/** What a serious reader of this book already knows — computed once per book, kept in the session (Chad 10-12: "establish a
+ *  level of notes based on the book"). */
+async function readerLevel(d, doc, session) {
+  if (session?.explained?.__level?.text) return session.explained.__level.text;
+  const r = await d.llmJson({ ...modelFor('reading-targets'), caller: 'reading-level', maxTokens: 400, system: LEVEL_SYSTEM,
+    user: `BOOK: ${doc.title}${doc.author ? ` by ${doc.author}` : ''}` }).catch(() => null);
+  return r?.json?.level || `A serious reader of ${doc.title}, already familiar with its main figures and its religious background.`;
+}
+
+/** Bold the first occurrence of each noted name in its paragraph (Chad 10-12: "highlight the noted parts in the text"). Pure. */
+export function highlight(text, names) {
+  const t = String(text), spans = [];
+  for (const n of [...new Set(names.filter(Boolean))].sort((a, b) => b.length - a.length)) {
+    for (let at = t.indexOf(n); at >= 0; at = t.indexOf(n, at + 1)) {
+      if (spans.some(([a, b]) => at < b && at + n.length > a)) continue;   // inside a longer name already marked
+      spans.push([at, at + n.length]);
+      break;
+    }
+  }
+  spans.sort((a, b) => a[0] - b[0]);
+  let out = '', last = 0;
+  for (const [a, b] of spans) { out += `${t.slice(last, a)}**${t.slice(a, b)}**`; last = b; }
+  return out + t.slice(last);
+}
 
 function evidenceBlock(targets) {
   return targets.map((t) => {
@@ -97,7 +125,7 @@ export function renderPage({ book, sectionLabel, author, items, notes, sources, 
   const head = `**${book} · ${sectionLabel}**${author ? ` (${author})` : ''} — ${addressOf(items[0])}${items.length > 1 ? `–${items[items.length - 1].n}` : ''}${pageNo ? ` · page ${pageNo}` : ''}`;
   const body = items.map((p) => {
     const ns = byPid.get(p.pid) || [];
-    return [`**${addressOf(p)}** ${p.text}`, ...(ns.length ? ['', ...ns.map((n) => `- **${n.name}** — ${n.note}`)] : [])].join('\n');
+    return [`**${addressOf(p)}** ${highlight(p.text, ns.map((n) => n.name))}`, ...(ns.length ? ['', ...ns.map((n) => `- **${n.name}** — ${n.note}`)] : [])].join('\n');
   }).join('\n\n');
   const used = new Set([...JSON.stringify(notes || {}).matchAll(/\[(S\d+)\]/g)].map((m) => m[1]));
   const src = sources.map((s, i) => ({ ...s, label: `S${i + 1}` })).filter((s) => used.has(s.label));
@@ -110,7 +138,7 @@ export function renderPage({ book, sectionLabel, author, items, notes, sources, 
 
 async function buildPage(d, { session, doc, from, depth = 1 }) {
   const { outline, byPid } = await outlineOf(d, doc);
-  const page = pageFrom(outline.paragraphs, from);
+  const page = pageFrom(outline.paragraphs, from, { words: 220, max: 4 });   // phone-sized (Chad 10-12: half the first target)
   if (!page.items.length) return { done: true };
   const items = page.items;
   const sectionLabel = sectionName(items[0].section, outline.sections);
@@ -118,10 +146,13 @@ async function buildPage(d, { session, doc, from, depth = 1 }) {
   const own = writers.find((w) => !w.fromBook)?.author;
   const author = own && own !== doc.author ? `by ${own}` : null;
   const explained = { ...(session?.explained || {}) };
-  const research = await d.researchPage({ docId: doc.id, title: doc.title, items, explained, depth });
+  const level = await readerLevel(d, doc, session);
+  explained.__level = { text: level };
+  const research = await d.researchPage({ docId: doc.id, title: doc.title, items, explained, depth, level });
   const role = modelFor('reading-notes');
   const user = `BOOK: ${doc.title} — ${sectionLabel}${author ? ` (${author}; this section is NOT by ${doc.author})` : ` (by ${doc.author})`}
-${depth > 1 ? 'The reader asked to go DEEPER on this page: fuller timelines, more context, every name explained.\n' : ''}
+READER: ${level}
+${depth > 1 ? 'The reader asked to go DEEPER on this page: fuller timelines, more context, more connections.\n' : ''}
 PAGE:
 ${items.map((p) => `[${p.pid}] ${addressOf(p)} ${p.text}`).join('\n\n')}
 
@@ -131,12 +162,15 @@ ${evidenceBlock(research.targets)}
 ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.name} (${t.seenAt})`).join('; ') || 'none'}`;
   const r = await d.llmJson({ ...role, caller: 'reading-notes', system: NOTES_SYSTEM, user, maxTokens: depth > 1 ? 5000 : 3500 });
   const { notes, sources } = renumber(r.json || { paragraphs: [] }, research.sources);
-  for (const t of research.targets) if (!t.seenAt) explained[t.key] = { name: t.canonical || t.name, at: addressOf(items.find((p) => p.pid === t.pid) || items[0]) };
+  // explained = what a note actually covered (a researched target the writer skipped stays available for later)
+  const noted = (notes.paragraphs || []).flatMap((p) => (p.notes || []).map((n) => n.name));
+  for (const t of research.targets) if (!t.seenAt && noted.some((n) => n === t.name || (n && t.name && (n.includes(t.name) || t.name.includes(n)))))
+    explained[t.key] = { name: t.canonical || t.name, at: addressOf(items.find((p) => p.pid === t.pid) || items[0]) };
   const pageNo = (session?.pages?.length || 0) + 1;
   const byPidNotes = new Map((notes.paragraphs || []).map((p) => [p.pid, p.notes || []]));
   // STRUCTURED page for any caller (web, chat, audio — paragraph voice + notes voice): the email is one rendering of it
   const structured = { book: doc.title, docId: doc.id, section: sectionLabel, author, pageNo, topic: notes.topic || null,
-    paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, notes: byPidNotes.get(p.pid) || [] })),
+    paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, highlights: (byPidNotes.get(p.pid) || []).map((n) => n.name).filter((n) => p.text.includes(n)), notes: byPidNotes.get(p.pid) || [] })),
     lookCloser: notes.look_closer || null, next: notes.next || null, sources: sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
   return { items, next: page.next, notes, explained, page: structured, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources, pageNo }),
     subject: subjectFor(doc.title, items[0], notes.topic) };
