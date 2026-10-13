@@ -13,7 +13,8 @@ const sameWork = (a, b) => { const x = workKey(a), y = workKey(b); return !!x &&
 // OceanLibrary's book id names the work even when its title differs ("Fountain of Wisdom" = Tablets of Bahá’u’lláh)
 const bookIdWork = (externalId) => String(externalId || '').replace(/_(?:ocean|bahai|prod)\b.*$/i, '').replace(/_/g, ' ');
 
-/** items: [{ id (paragraph), title (its work), link: linkFor result, quote? }] → Map(id → better link) where an identical copy
+/** items: [{ id (paragraph), title (its work), link: linkFor result, quote? }] → Map(id → better link + that copy's `title`,
+ *  which the caller shows: the link and the name must be the same publication — 10-12) where an identical copy
  *  of the same work is published higher. Without a title, any identical copy counts. */
 export async function betterCopyLinks(items, opts = {}) {
   const { copies } = opts;
@@ -27,7 +28,7 @@ export async function betterCopyLinks(items, opts = {}) {
     for (const c of byId.get(Number(x.id)) || []) {
       if (x.title && !sameWork(x.title, c.title)) continue;
       const l = linkFor({ ...c, id: c.doc_id }, c.paragraph_index, { quote: x.quote || null });
-      if (l.tier < (best?.tier ?? x.link.tier) || (best && l.tier === best.tier && l.paragraph_level && !best.paragraph_level)) best = l;
+      if (l.tier < (best?.tier ?? x.link.tier) || (best && l.tier === best.tier && l.paragraph_level && !best.paragraph_level)) best = { ...l, title: c.title || null };
     }
     if (best && best.tier < x.link.tier) { out.set(Number(x.id), best); continue; }
     // no identical copy (our copy adds "[11.12]" markers, spacing…): the SAME WORK on OceanLibrary + the words → the output
@@ -36,7 +37,7 @@ export async function betterCopyLinks(items, opts = {}) {
       const works = await (opts.olWorks || (await import('./repos/copies-repo.js')).oceanLibraryWorks)().catch(() => []);
       const w = works.find((d) => sameWork(x.title, d.title) || sameWork(x.title, bookIdWork(d.external_id)));
       if (w) out.set(Number(x.id), { url: `${String(w.source_url).replace(/[?#].*$/, '')}#~q=${encodeMarker(String(x.quote || x.text).slice(0, 2000))}`,
-        site: 'oceanlibrary.com', tier: 1, paragraph_level: true, reader_url: x.link.reader_url });
+        site: 'oceanlibrary.com', tier: 1, paragraph_level: true, reader_url: x.link.reader_url, title: w.title });
     }
   }
   return out;

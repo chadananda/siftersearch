@@ -36,5 +36,6 @@ describe('same work on OceanLibrary under another title (no identical copy)', ()
       { copies: async () => new Map(), olWorks });
     expect(m.get(9)).toMatchObject({ site: 'oceanlibrary.com', tier: 1 });
     expect(m.get(9).url).toMatch(/^https:\/\/oceanlibrary\.com\/fountain-of-wisdom_bahaullah#~q=/);
+    expect(m.get(9).title).toBe('Fountain of Wisdom');   // the name shown is the publication the link opens
   });
 });

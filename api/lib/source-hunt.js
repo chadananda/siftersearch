@@ -147,10 +147,16 @@ export function quoteAuthorOf(matches) {
  * Rank origin candidates — only a paragraph that HOLDS the quote can be its origin; then the QUOTE'S writer's own text (a UHJ letter quoting Bahá’u’lláh counts as the UHJ's
  * "own work" — paragraph attribution does not split every mixed paragraph); the writer's OWN book beats a compilation or study that quotes it; then the writer's standing,
  * the canonical library (OceanLibrary) over scraped sites, how many matches link to it as their source, and how fully it
- * holds the quote. Between the same writer's own books, the library's Core Publications, then the EARLIEST
+ * holds the quote. A Shoghi Effendi translation first; between the same writer's own books, the library's Core Publications, then the EARLIEST
  * (a later compilation of a writer's extracts — Call to the Nations — quotes the original, The World Order of Bahá’u’lláh),
  * and where years are missing, the paragraph more books are linked as quoting (quotedCount).
  */
+// Works Shoghi Effendi translated himself: his English outranks any committee or later translation of the same words
+// (Chad 10-12: "why would a committee translation come up after a Shoghi Effendi translation. that is awful" —
+// 'The earth is but one country' gave Tablets of Bahá’u’lláh, not Gleanings CXVII).
+const GUARDIAN_WORKS = /^(gleanings from the writings of bah|the kit[aá]b-i-[ií]q[aá]n|kitab-i-iqan|the hidden words|hidden words of bah|prayers and meditations|epistle to the son of the wolf|the dawn-breakers)/i;
+export const guardianTranslation = (c) => translatedBy(c) === 'Shoghi Effendi' || GUARDIAN_WORKS.test(String(c.title || '').trim());
+
 export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
@@ -159,6 +165,7 @@ export function rankOrigins(cands, quoteAuthor = null) {
     // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
     // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.
     (c.overlap || 0) >= VERBATIM ? 1 : 0,
+    guardianTranslation(c) ? 1 : 0,                   // Shoghi Effendi's own translation before any other holding the words
     /core publications/i.test(c.collection || '') || c.coreTwin ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
     -year(c), c.quotedCount || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });
@@ -266,7 +273,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const byMeaning = await meaningRanges(d, q, origin.id, origin.text, 'en');
   const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
-  const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.title, author: origin.writer, bookAuthor: origin.book_author,
+  const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.pubTitle || origin.title, author: origin.writer, bookAuthor: origin.book_author,
     translated_by: translatedBy(origin),
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
     url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight, 4, origin.doc_id), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };
@@ -276,12 +283,14 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const full = await fullP;
   const byDoc = new Map();
   const add = (p) => {
-    if (p.doc_id === origin.doc_id || titleKey(p.title) === titleKey(origin.title)) return;   // the source's own other copy is not a citation
+    // the source's own other copy is not a citation — by either name (our copy's, or the publisher's: Fountain of Wisdom)
+    const names = new Set([titleKey(origin.title), titleKey(origin.pubTitle)].filter(Boolean));
+    if (p.doc_id === origin.doc_id || names.has(titleKey(p.title)) || names.has(titleKey(p.pubTitle))) return;
     // translated_by: the citation's own record; else, when it holds the source's WORDING, the quoted words are the source's
     // translation (Divine Philosophy quoting Gleanings → Shoghi Effendi). A paraphrase inherits nothing.
     const own = p.translated_by !== undefined ? p.translated_by : translatedBy(p);
     const verbatim = !!p.text && overlap(q.match, p.text) >= VERBATIM;
-    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.title, author: p.book_author,
+    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.pubTitle || p.title, author: p.book_author,
       translated_by: own || (verbatim ? originOut.translated_by : null) || null, site: siteOf(p.url, p.source_site),
       // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
@@ -484,7 +493,9 @@ async function defaultDeps() {
       // the best PUBLISHER of the same words (an identical copy on OceanLibrary / Ocean of Lights), not just the copy found
       const better = await (await import('./citation-links.js')).betterCopyLinks(linked).catch(() => new Map());
       return rs.map((r, i) => ({ ...r, coreTwin: coreTitles.set.has(r.title), text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
-        url: (better.get(Number(r.id)) || linked[i].link).url }));
+        url: (better.get(Number(r.id)) || linked[i].link).url,
+        // the publisher's own title for the copy the link opens ("Fountain of Wisdom" on OceanLibrary = Tablets of Bahá’u’lláh)
+        pubTitle: better.get(Number(r.id))?.title || null }));
     },
   };
 }

@@ -66,7 +66,7 @@ export async function getPassages(ids) {
       id: r.id, documentId: r.doc_id, paragraphIndex: r.paragraph_index, language: r.language || null,
       text: clean(r.text), heading: r.heading || null,
       english: r.translation_text ? { text: clean(r.translation_text), authority: r.translation_authority || null } : null,
-      document: { title: r.title, author: r.author, religion: r.religion, collection: r.collection },
+      document: { title: better.get(Number(r.id))?.title || r.title, author: r.author, religion: r.religion, collection: r.collection },
       translated_by: translatedBy(r),   // who translated THIS text into its language (null: not recorded)
       url: link.url, readerUrl: link.reader_url,
     }];

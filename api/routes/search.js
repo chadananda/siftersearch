@@ -457,7 +457,7 @@ export default async function searchRoutes(fastify) {
       const better = await (await import('../lib/citation-links.js')).betterCopyLinks(hits.map((h, i) => ({ id: h.id, title: h.title, text: h.text, link: own[i] }))).catch(() => new Map());
       return hits.map((h, i) => {
         const l = better.get(Number(h.id)) || own[i];
-        return { ...h, url: l.url, link: { site: l.site, tier: l.tier, paragraph_level: l.paragraph_level } };
+        return { ...h, ...(l.title ? { title: l.title } : {}), url: l.url, link: { site: l.site, tier: l.tier, paragraph_level: l.paragraph_level } };
       });
     };
     if (plan === false) {

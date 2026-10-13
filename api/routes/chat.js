@@ -728,7 +728,7 @@ async function withBetterCopies(results) {
   const better = await (await import('../lib/citation-links.js')).betterCopyLinks(items).catch(() => new Map());
   for (const r of results) {
     const b = r._copy && better.get(Number(r._copy.id));
-    if (b) { r.source_url = b.url; r.link_site = b.site; }
+    if (b) { r.source_url = b.url; r.link_site = b.site; if (b.title) r.title = b.title; }   // name the publication the link opens
   }
   return results;
 }
