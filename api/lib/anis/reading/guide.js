@@ -23,7 +23,7 @@ export const ownWords = (t) => String(t || '').split(/\n(?:On .{0,200}wrote:|-{2
 
 /** A book title → its OceanLibrary copy (the reading outline comes from its file). */
 async function findBook(d, name) {
-  const { docs } = await d.listDocs({ title: name, fields: ['id', 'title', 'author', 'file_path', 'source_site'], limit: 50, count: false });
+  const { docs } = await d.listDocs({ title: name, fields: ['id', 'title', 'author', 'religion', 'file_path', 'source_site'], limit: 50, count: false });
   const f = (s) => String(s || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
   const want = f(name);
   const score = (x) => (x.source_site === 'oceanlibrary.com' ? 4 : 0) + (/\.md$/.test(x.file_path || '') ? 1 : 0) + (f(x.title) === want ? 3 : f(x.title).startsWith(want) ? 1 : 0);
@@ -60,6 +60,8 @@ arc in two or three dated beats (later fates welcome), what a place or office wa
 where else the Writings or other histories speak of this, a connection the reader would not see. Never a dictionary definition.
 Write from the EVIDENCE; cite its labels like [S3]. Certain general background (dates, name meanings, Hijri↔Gregorian) needs no label.
 Something in ALREADY_EXPLAINED gets at most one short line pointing back ("met in #Intro.3") and only if this paragraph adds to it.
+Illuminate the text, never grade it: no verdicts that the author exaggerates, is wrong or is "rhetorical"; where sources differ,
+say what each says. Spell names exactly as the book does (Nabíl, S̱háh, Ṭihrán).
 "name" must be the EXACT words from the paragraph (they are highlighted in the text). Style: compact, warm, precise, speakable;
 2–4 short sentences per note; no headings, no nested bullets. Never invent a fact, a date or a quotation.
 Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragraphs":[{"pid":"para_N","notes":[{"name":"…","note":"…"}]}],
@@ -148,7 +150,7 @@ async function buildPage(d, { session, doc, from, depth = 1 }) {
   const explained = { ...(session?.explained || {}) };
   const level = await readerLevel(d, doc, session);
   explained.__level = { text: level };
-  const research = await d.researchPage({ docId: doc.id, title: doc.title, items, explained, depth, level });
+  const research = await d.researchPage({ docId: doc.id, title: doc.title, religion: doc.religion || null, items, explained, depth, level });
   const role = modelFor('reading-notes');
   const user = `BOOK: ${doc.title} — ${sectionLabel}${author ? ` (${author}; this section is NOT by ${doc.author})` : ` (by ${doc.author})`}
 READER: ${level}
@@ -194,7 +196,7 @@ export async function readingTurn({ messages = [], participantId, deps } = {}) {
     // a session waiting for its starting point: a reply naming one ("the introduction", "chapter 3") starts it
     if (session && !session.pages?.length && intent.kind === 'question') {
       const doc = { id: session.doc_id, title: session.title };
-      const full = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'file_path'], limit: 1, count: false })).docs[0];
+      const full = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
       const { outline } = await outlineOf(d, full || doc);
       const at = startIndex(outline.paragraphs, text);
       if (at != null) return turnPage(d, { participantId, session, doc: full, from: at });
@@ -213,7 +215,7 @@ export async function readingTurn({ messages = [], participantId, deps } = {}) {
     }
     return turnPage(d, { participantId, session: session || { pages: [], explained: {} }, doc, from: at ?? session.cursor });
   }
-  const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'file_path'], limit: 1, count: false })).docs[0];
+  const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
   if (!doc) return null;
   const pages = session.pages || [];
   if (intent.kind === 'where') {

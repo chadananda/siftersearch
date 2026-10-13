@@ -32,7 +32,7 @@ Prefer the specific and the surprising over the general. Skip anything in ALREAD
 Reply with JSON only: {"targets":[{"pid":"para_N","name":"exact words from the text","kind":"person|place|work|event|group|term","why":"<10 words: what is interesting"}]}`;
 
 /** The page's note targets with their evidence. depth 1 = library; depth 2 = deeper library + web where thin. */
-export async function researchPage({ docId, title, items, explained = {}, depth = 1, level = '', deps } = {}) {
+export async function researchPage({ docId, title, religion = null, items, explained = {}, depth = 1, level = '', deps } = {}) {
   const d = { ...(await defaults()), ...(deps || {}) };
   const pids = items.map((p) => p.pid);
   const mentions = await d.pageMentions(docId, pids).catch(() => []);
@@ -82,7 +82,8 @@ export async function researchPage({ docId, title, items, explained = {}, depth 
     }
     if (!ev.summary || ev.claims.length < 3 || ['work', 'term', 'event'].includes(t.kind)) {
       const q = t.kind === 'term' ? `What is ${t.name}?` : t.kind === 'work' ? `${t.name} (the work)` : t.canonical || t.name;
-      const r = await d.search(q, { limit: passagesN + 2, budgetMs: 2500 }).catch(() => null);
+      // the book's own tradition only: an open search drew a Dīghanikāya parallel into a Dawn-Breakers note (10-12)
+      const r = await d.search(q, { limit: passagesN + 2, budgetMs: 2500, ...(religion ? { given: { religion } } : {}) }).catch(() => null);
       const hits = await d.links((r?.hits || []).filter((h) => h.doc_id !== docId).slice(0, passagesN)).catch(() => []);
       ev.passages = hits
         .map((h) => ({ text: String(h.text || '').replace(/⁅\/?s\d+⁆/g, '').slice(0, 500), src: cite(h.title || 'library', h.url || h.link?.url || null) }));
