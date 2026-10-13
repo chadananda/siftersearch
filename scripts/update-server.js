@@ -364,6 +364,9 @@ async function verifyNewCode() {
 
   if (failed.length > 0) {
     log('error', `${failed.length}/${results.length} smoke tests failed — aborting deploy`);
+    // the test server's own errors say WHY (10-12: a 40 s boot-time query blocked its event loop — invisible until reproduced)
+    const errs = testOutput.split('\n').filter((l) => /"level":(50|60)|REFUSING|Error/.test(l)).slice(-5).map((l) => l.slice(0, 300));
+    if (errs.length) log('error', `Test server errors:\n${errs.join('\n')}`);
     return false;
   }
 

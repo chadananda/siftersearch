@@ -289,9 +289,12 @@ export async function budgetStatus(deps = {}) {
     // A cached spend skips the SUM; everything below it is recomputed from `now` on every call.
     const cached = cachedSpend ? cachedSpend[b.provider] : undefined;
     const spentRow = cached !== undefined ? { s: cached, _cached: true } : b.baseline_at
+      // `+provider` keeps the planner off the provider-only index: it chose it and scanned every DeepSeek row ever
+      // billed (40 s at a cold start, 10-12 — it blocked the test API so every deploy aborted). caller+timestamp is the
+      // narrow range (idx_ai_usage_caller).
       ? await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
-                   WHERE provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at], 'budget-check')
-      : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider], 'budget-check:unbounded-legacy');
+                   WHERE +provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at], 'budget-check')
+      : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE +provider=? AND caller='corpus-rag'`, [b.provider], 'budget-check:unbounded-legacy');
     const spent = spentRow?._cached
       ? spentRow.s                                    // already baseline-adjusted when it was computed
       : Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));

@@ -25,6 +25,8 @@ const ON_TOWER = os.hostname() === 'tower-nas';
 const WRITER_URL = process.env.SIFTER_WRITER_URL
   || (ON_TOWER && !IS_WRITER && process.env.SIFTER_DIRECT_WRITE !== '1' ? 'http://127.0.0.1:7849' : null);
 const ROUTE_WRITES = !!WRITER_URL && !IS_WRITER;
+/** True when this process's writes go to the shared writer (so its reads and writes may be different databases). */
+export const writesRouted = () => ROUTE_WRITES;
 
 // A sustained run of write failures means the single writer is DOWN (deadlocked/crashed), not a one-off
 // blip. Tracked process-wide so we can distinguish "one flaky write" (tolerated) from "the writer is gone".
