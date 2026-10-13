@@ -212,7 +212,7 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
-   * POST /concepts/hype-sample {docId, pids?, limit=5} — generate HyPE for a few paragraphs at the CURRENT prompt
+   * POST /concepts/hype-sample {docId, pids? (paragraph_index), limit=5} — generate HyPE for a few paragraphs at the CURRENT prompt
    * and return the questions WITHOUT saving them: the review step before any re-hype is paid for (Chad 10-13).
    */
   fastify.post('/concepts/hype-sample', admin, async (req) => {

@@ -70,8 +70,8 @@ export async function run(ctx, docId, opts = {}) {
   // retry instead of restarting from zero (resume:false remains the unconditional full redo).
   const doneP = opts.upgrade ? (p) => p.hypModel === HYPE_VERSION && isDone(p) : isDone;
   let paras = (opts.resume ?? true) ? long.filter((p) => !doneP(p)) : long;
-  // SAMPLE (dryRun review of a prompt change): only the listed paragraph numbers, or the first `limit`
-  if (opts.pids?.length) paras = paras.filter((p) => opts.pids.includes(Number(p.pid)));
+  // SAMPLE (dryRun review of a prompt change): only the listed paragraph indexes, or the first `limit`
+  if (opts.pids?.length) paras = paras.filter((p) => opts.pids.includes(Number(p.pidx)));
   if (opts.limit) paras = paras.slice(0, opts.limit);
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
@@ -153,7 +153,7 @@ export async function run(ctx, docId, opts = {}) {
         parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
       }
       if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
-      if (opts.dryRun) (stats.samples ||= []).push({ pid: p.pid, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
+      if (opts.dryRun) (stats.samples ||= []).push({ pidx: p.pidx, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
       if (!opts.dryRun) {
         await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
         // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
