@@ -6,6 +6,7 @@
   import AynLens from './sourcehunt/AynLens.svelte';
   import ProbeField from './sourcehunt/ProbeField.svelte';
   import CitationShelf from './sourcehunt/CitationShelf.svelte';
+  import './sourcehunt/citation-shelf.css';   // the shelf renders only after a hunt: its styles must ship with the page
   import { stripAppendedReference } from '../../api/lib/quote-clean.js';
 
   const API = import.meta.env.PUBLIC_API_URL || '';
