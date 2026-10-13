@@ -121,6 +121,9 @@ export function gradeCitation(c) {
 export const gradeCitations = (items) => items.map((c) => ({ ...c, grade: gradeCitation(c) }))
   .sort((a, b) => a.grade.rank - b.grade.rank || (SITE_RANK[a.site] ?? 9) - (SITE_RANK[b.site] ?? 9) || b.paragraphs - a.paragraphs);
 
+/** A passage as a reader sees it: entities decoded, sentence markers and our copy's section numbers ("[11.12] ") removed. */
+const displayText = (t) => decodeEntities(String(t || '')).replace(/⁅\/?s\d+⁆/g, '').replace(/\[\d+(?:\.\d+)+\]\s*/g, '').trim();
+
 export function dedupeCitations(items) {
   const best = new Map();
   for (const c of items) {
@@ -315,7 +318,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
       url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text), 4, p.doc_id) : null, paragraphs: 0, first: p.id,
       // the passage itself, so the page can show each citation in place (Chad 10-13); highlight = the quote's wording in it
-      ...(p.text ? { text: decodeEntities(String(p.text)).replace(/⁅\/?s\d+⁆/g, ''), highlight: quoteRanges(decodeEntities(String(p.text)).replace(/⁅\/?s\d+⁆/g, ''), q.text) } : {}) };
+      ...(p.text ? (() => { const t = displayText(p.text); return { text: t, highlight: quoteRanges(t, q.text) }; })() : {}) };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
   // a CITATION quotes the passage: it holds the wording (a translation variant included), or the link graph says it quotes the
