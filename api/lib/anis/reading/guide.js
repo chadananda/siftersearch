@@ -80,6 +80,17 @@ function evidenceBlock(targets) {
   }).join('\n');
 }
 
+/** Cited sources only, renumbered S1, S2 … in order of first citation; the notes' labels rewritten to match. Pure. */
+export function renumber(notes, sources) {
+  const order = [];
+  JSON.stringify(notes || {}).replace(/\[(S\d+)\]/g, (m, l) => { if (!order.includes(l)) order.push(l); return m; });
+  const map = new Map(order.map((l, i) => [l, `S${i + 1}`]));
+  const re = (t) => String(t ?? '').replace(/\[(S\d+)\]/g, (m, l) => (map.has(l) ? `[${map.get(l)}]` : ''));
+  const out = { ...notes, look_closer: re(notes?.look_closer), next: re(notes?.next),
+    paragraphs: (notes?.paragraphs || []).map((p) => ({ ...p, notes: (p.notes || []).map((n) => ({ ...n, note: re(n.note) })) })) };
+  return { notes: out, sources: order.map((l) => sources[Number(l.slice(1)) - 1]).filter(Boolean) };
+}
+
 /** Page + notes → the email body (Markdown, compact and speakable). Pure. */
 export function renderPage({ book, sectionLabel, author, items, notes, sources, pageNo }) {
   const byPid = new Map((notes?.paragraphs || []).map((p) => [p.pid, p.notes || []]));
@@ -119,15 +130,15 @@ ${evidenceBlock(research.targets)}
 
 ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.name} (${t.seenAt})`).join('; ') || 'none'}`;
   const r = await d.llmJson({ ...role, caller: 'reading-notes', system: NOTES_SYSTEM, user, maxTokens: depth > 1 ? 5000 : 3500 });
-  const notes = r.json || { paragraphs: [] };
+  const { notes, sources } = renumber(r.json || { paragraphs: [] }, research.sources);
   for (const t of research.targets) if (!t.seenAt) explained[t.key] = { name: t.canonical || t.name, at: addressOf(items.find((p) => p.pid === t.pid) || items[0]) };
   const pageNo = (session?.pages?.length || 0) + 1;
   const byPidNotes = new Map((notes.paragraphs || []).map((p) => [p.pid, p.notes || []]));
   // STRUCTURED page for any caller (web, chat, audio — paragraph voice + notes voice): the email is one rendering of it
   const structured = { book: doc.title, docId: doc.id, section: sectionLabel, author, pageNo, topic: notes.topic || null,
     paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, notes: byPidNotes.get(p.pid) || [] })),
-    lookCloser: notes.look_closer || null, next: notes.next || null, sources: research.sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
-  return { items, next: page.next, notes, explained, page: structured, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources: research.sources, pageNo }),
+    lookCloser: notes.look_closer || null, next: notes.next || null, sources: sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
+  return { items, next: page.next, notes, explained, page: structured, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources, pageNo }),
     subject: subjectFor(doc.title, items[0], notes.topic) };
 }
 

@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readingIntent, bookFrom, startFrom } from '../../api/lib/anis/reading/intent.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/anis/reading/outline.js';
-import { subjectFor, renderPage, readingTurn, ownWords } from '../../api/lib/anis/reading/guide.js';
+import { subjectFor, renderPage, readingTurn, ownWords, renumber } from '../../api/lib/anis/reading/guide.js';
 import { sameName } from '../../api/lib/anis/reading/research.js';
 
 const MD = `# The Book {.off id="para_1" type="title"}
@@ -89,6 +89,13 @@ describe('subject and page', () => {
     expect(md.indexOf('**#Intro.1** Para one.')).toBeLessThan(md.indexOf('- **Nabíl** — Born 1831 [S2].'));
     expect(md).toContain('[S2] [God Passes By](https://oceanlibrary.com/x)');
     expect(md).not.toContain('Unused');
+  });
+  it('cited sources are renumbered in order of first citation; uncited ones dropped', () => {
+    const r = renumber({ paragraphs: [{ pid: 'p', notes: [{ name: 'a', note: 'x [S7] y [S2] [S7]' }] }], look_closer: 'z [S2]' },
+      [{ title: 's1' }, { title: 's2' }, { title: 's3' }, { title: 's4' }, { title: 's5' }, { title: 's6' }, { title: 's7' }]);
+    expect(r.notes.paragraphs[0].notes[0].note).toBe('x [S1] y [S2] [S1]');
+    expect(r.notes.look_closer).toBe('z [S2]');
+    expect(r.sources.map((x) => x.title)).toEqual(['s7', 's2']);
   });
   it('names match across honorifics and spelling marks', () => {
     expect(sameName('Mullá Ḥusayn', 'Ḥusayn')).toBe(true);
