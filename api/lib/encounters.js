@@ -315,18 +315,20 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
 const TTL = 30 * 60 * 1000;
 let _index = null, _building = null;
 
-const PAGE = 2000;   // ~100 ms per page; the loop yields between pages
+const PAGE = 5000;   // ids per range (~tens of ms each); the loop yields between ranges
 /** Read a large table in id-ordered pages, yielding the event loop between them. fetch(afterId) → rows with .id */
-export async function paged(fetch, prep = null) {
+// By fixed id RANGES, not "the next PAGE matches": where matches are sparse a LIMIT page scanned far (one took 3.7 s, 10-12).
+export async function paged(fetch, prep = null, maxId = null) {
   const out = [];
-  for (let after = 0; ;) {
-    const rows = await fetch(after);
+  const top = maxId == null ? Infinity : maxId;
+  for (let from = 0; from < top; from += PAGE) {
+    const rows = await fetch(from, from + PAGE);
     if (prep) for (const r of rows) prep(r);
     out.push(...rows);
-    if (rows.length < PAGE) return out;
-    after = rows[rows.length - 1].id;
+    if (maxId == null && !rows.length) return out;   // no ceiling given: stop at the first empty range
     await new Promise((ok) => setImmediate(ok));
   }
+  return out;
 }
 
 async function build() {
@@ -338,12 +340,12 @@ async function build() {
     queryAll(`SELECT ge.id, ge.canonical_name name, er.aliases FROM graph_entities ge
       LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type = 'group'`, [], 'encounters:groups'),
     // Paged by id with a yield between pages: one 7 s read froze the API at every 30-minute rebuild (10-12).
-    paged((after) => queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st,
+    queryAll('SELECT MAX(id) m FROM entity_claims', [], 'encounters:claims-top').then(([r]) => paged((from, to) => queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st,
         substr(ec.proof_verbatim, 1, 300) prf, ec.doc_id doc, ec.para_id pid, ec.time_value tv, cv.verdict vd, cv.quote vq
       FROM entity_claims ec LEFT JOIN claim_verifications cv ON cv.claim_id = ec.id
-      WHERE ec.id > ? AND ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
-        AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> '' ORDER BY ec.id LIMIT ${PAGE}`, [after, ...ENCOUNTER_RELATIONS], 'encounters:claims'),
-      (c) => { c.hay = fold(c.st); c.topic = fold(`${c.st} ${c.prf || ''}`); }),
+      WHERE ec.id > ? AND ec.id <= ? AND ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
+        AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> ''`, [from, to, ...ENCOUNTER_RELATIONS], 'encounters:claims'),
+      (c) => { c.hay = fold(c.st); c.topic = fold(`${c.st} ${c.prf || ''}`); }, Number(r?.m) || 0)),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),
   ]);
   // SCENES: every pair of bound participants in one scene was physically together — "present with" evidence, with

@@ -358,11 +358,11 @@ describe('encounterSearch', () => {
 // The index build reads claims in id pages (one 7 s read froze the API at every rebuild, 10-12).
 import { paged } from '../../api/lib/encounters.js';
 describe('paged', () => {
-  it('walks id pages until a short page, keeping every row once', async () => {
+  it('walks fixed id ranges up to the ceiling, keeping every row once', async () => {
     const all = Array.from({ length: 12001 }, (_, i) => ({ id: i + 1 }));
     const seen = [];
-    const rows = await paged(async (after) => { seen.push(after); return all.filter((r) => r.id > after).slice(0, 2000); });
+    const rows = await paged(async (from, to) => { seen.push([from, to]); return all.filter((r) => r.id > from && r.id <= to); }, null, 12001);
     expect(rows).toHaveLength(12001);
-    expect(seen).toEqual([0, 2000, 4000, 6000, 8000, 10000, 12000]);
+    expect(seen).toEqual([[0, 5000], [5000, 10000], [10000, 15000]]);
   });
 });

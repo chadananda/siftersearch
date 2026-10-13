@@ -1586,6 +1586,14 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_ops_report_runs_name ON ops_report_runs(name, id)`);
     logger.info('Migration 146 complete: ops_report_runs');
   },
+
+  147: async () => {
+    // The search exclusion list (search/excluded-docs.js: retired duplicates + metadata docs) scanned all of docs every
+    // 10 minutes — 0.85 s + 0.65 s count, blocking the API (10-12). Partial indexes hold only the few rows it wants.
+    await query(`CREATE INDEX IF NOT EXISTS idx_docs_duplicate_of ON docs(duplicate_of) WHERE duplicate_of IS NOT NULL`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_docs_doc_role ON docs(doc_role) WHERE doc_role IS NOT NULL`);
+    logger.info('Migration 147 complete: partial indexes for duplicates and doc roles');
+  },
 };
 
 export const graphMigrations = {

@@ -85,7 +85,7 @@ function selectList(fields) {
  */
 export async function listDocs({
   scope = 'live', author, religion, collection, language, sourceSite, sourceUrls, title, ids, role, filePath, afterId,
-  fields, orderBy = 'id', limit = 100, offset = 0,
+  fields, orderBy = 'id', limit = 100, offset = 0, count = true,
 } = {}) {
   const where = scopeSql(scope);
   const params = [];
@@ -108,8 +108,9 @@ export async function listDocs({
   const rows = await queryAll(
     `SELECT ${selectList(fields)} FROM docs d ${clause} ORDER BY ${orderBy === 'title' ? 'd.title COLLATE NOCASE, d.id' : 'd.id'} LIMIT ? OFFSET ?`,
     [...params, Math.min(1000, limit), offset], 'docs-repo:list');
-  const total = await queryOne(`SELECT COUNT(*) n FROM docs d ${clause}`, params, 'docs-repo:list-count');
-  return { docs: rows, total: total?.n ?? 0, scope, limit, offset };
+  // count:false skips the COUNT — a second full read when only the rows are wanted
+  const total = count ? await queryOne(`SELECT COUNT(*) n FROM docs d ${clause}`, params, 'docs-repo:list-count') : null;
+  return { docs: rows, total: total?.n ?? (count ? 0 : null), scope, limit, offset };
 }
 
 /** Ids of live docs whose year falls in [yearFrom, yearTo] — how a year filter reaches an engine whose points carry no

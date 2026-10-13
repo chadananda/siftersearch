@@ -6,8 +6,8 @@ let ids = [], at = 0, loading = null;
 
 async function refresh() {
   const { listDocs } = await import('../docs-repo.js');
-  const [meta, dups] = await Promise.all([listDocs({ role: 'metadata', fields: ['id'], limit: 1000 }),
-    listDocs({ scope: 'duplicates', fields: ['id'], limit: 1000 })]);
+  const [meta, dups] = await Promise.all([listDocs({ role: 'metadata', fields: ['id'], limit: 1000, count: false }),
+    listDocs({ scope: 'duplicates', fields: ['id'], limit: 1000, count: false })]);
   ids = [...meta.docs, ...dups.docs].map((d) => Number(d.id));
 }
 
