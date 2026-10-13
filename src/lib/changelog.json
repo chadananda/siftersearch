@@ -1,6 +1,48 @@
 {
-  "generated": "2026-10-13T04:45:05.633Z",
+  "generated": "2026-10-13T05:17:44.701Z",
   "entries": [
+    {
+      "hash": "d5a1ad8e",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Reading guide — web only when the library cannot answer",
+      "scope": "worklist"
+    },
+    {
+      "hash": "7a80a75c",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Reading-guide reply semantics + web depth layer (Perplexity, Parallel.ai)",
+      "scope": "worklist"
+    },
+    {
+      "hash": "05473a2b",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Reading-guide subject format [Reading] <Book> #<ch>.<¶> - <topic>",
+      "scope": "worklist"
+    },
+    {
+      "hash": "5a296756",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "Anís reading guide spec (Chad 10-12) — next build",
+      "scope": "worklist"
+    },
+    {
+      "hash": "51ebfde5",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Section-author replaces reader placeholders ('the editor or reporter'); force corrects a named misattribution",
+      "scope": "ops"
+    },
+    {
+      "hash": "91975565",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "No duplicate 'Read in the library' pill when it opens the same page as a source",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "f1d77f65",
       "date": "2026-10-12",
@@ -3458,52 +3500,52 @@
       "type": "New",
       "description": "GET /concepts/english-coverage — every original paragraph: linked / beside / neither, per author and language",
       "scope": "coverage"
-    },
-    {
-      "hash": "b08a6279",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Both ids on every pairing (pin, ool_id; migr 130), tablet paragraph span on inventory links, bulk alignment/translation write endpoints",
-      "scope": "pairing"
-    },
-    {
-      "hash": "1a190fc0",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Partial Inventory (Phelps) import + verbatim linking to our documents with both PIN and oceanoflights id (migr 129)",
-      "scope": "inventory"
-    },
-    {
-      "hash": "60e16064",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Anchor v3 — short passages located only among their neighbours' original docs; inherit replaces-by-upsert",
-      "scope": "pairing"
-    },
-    {
-      "hash": "da7330c1",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Greedy cover from the best anchored paragraph; membership rule mirrors the anchor stage (pairs were ~9 per paragraph)",
-      "scope": "inherit"
-    },
-    {
-      "hash": "98d74351",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "V2 membership (half of a paragraph inside the passage, or it holds half); skip citation notes; replace-by-upsert, retire what v2 drops",
-      "scope": "anchor"
-    },
-    {
-      "hash": "852bc0e8",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Inherit stage (same English as an anchored paragraph -> same originals) + GET /concepts/alignment",
-      "scope": "pairing"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "d5a1ad8e",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Reading guide — web only when the library cannot answer",
+        "scope": "worklist"
+      },
+      {
+        "hash": "7a80a75c",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Reading-guide reply semantics + web depth layer (Perplexity, Parallel.ai)",
+        "scope": "worklist"
+      },
+      {
+        "hash": "05473a2b",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Reading-guide subject format [Reading] <Book> #<ch>.<¶> - <topic>",
+        "scope": "worklist"
+      },
+      {
+        "hash": "5a296756",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "Anís reading guide spec (Chad 10-12) — next build",
+        "scope": "worklist"
+      },
+      {
+        "hash": "51ebfde5",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Section-author replaces reader placeholders ('the editor or reporter'); force corrects a named misattribution",
+        "scope": "ops"
+      },
+      {
+        "hash": "91975565",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "No duplicate 'Read in the library' pill when it opens the same page as a source",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "f1d77f65",
         "date": "2026-10-12",
@@ -6989,48 +7031,6 @@
         "type": "New",
         "description": "GET /concepts/english-coverage — every original paragraph: linked / beside / neither, per author and language",
         "scope": "coverage"
-      },
-      {
-        "hash": "b08a6279",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Both ids on every pairing (pin, ool_id; migr 130), tablet paragraph span on inventory links, bulk alignment/translation write endpoints",
-        "scope": "pairing"
-      },
-      {
-        "hash": "1a190fc0",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Partial Inventory (Phelps) import + verbatim linking to our documents with both PIN and oceanoflights id (migr 129)",
-        "scope": "inventory"
-      },
-      {
-        "hash": "60e16064",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Anchor v3 — short passages located only among their neighbours' original docs; inherit replaces-by-upsert",
-        "scope": "pairing"
-      },
-      {
-        "hash": "da7330c1",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Greedy cover from the best anchored paragraph; membership rule mirrors the anchor stage (pairs were ~9 per paragraph)",
-        "scope": "inherit"
-      },
-      {
-        "hash": "98d74351",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "V2 membership (half of a paragraph inside the passage, or it holds half); skip citation notes; replace-by-upsert, retire what v2 drops",
-        "scope": "anchor"
-      },
-      {
-        "hash": "852bc0e8",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Inherit stage (same English as an anchored paragraph -> same originals) + GET /concepts/alignment",
-        "scope": "pairing"
       }
     ]
   }

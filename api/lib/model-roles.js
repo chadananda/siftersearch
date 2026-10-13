@@ -19,6 +19,10 @@ export const MODEL_ROLES = {
     why: 'legacy choice — not measured against the 5.5 family' },
   'deep-research-hero-prompt': { provider: 'deepseek', model: 'deepseek-v4-flash', reviewed: '2026-07-01', needs: ['short-writing'],
     why: 'legacy choice' },
+  'reading-targets': { provider: 'deepseek', model: 'deepseek-v4-flash', reviewed: '2026-10-12', needs: ['fast', 'json'],
+    why: 'reading guide: list what on a page deserves a note (people, places, works, terms) — a small JSON list' },
+  'reading-notes': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-12', needs: ['grounded-writing', 'persian-arabic-names', 'json'],
+    why: 'reading guide notes: name meanings + cited timelines; quality over speed (one call per page, ~$0.05)' },
   // ── text processing ──
   'segmentation': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-11', needs: ['arabic', 'index-output', 'batch'],
     why: 'best value for Arabic; batch half price; LM Studio retired (Chad 10-11)' },

@@ -234,6 +234,13 @@ export const MODEL_REGISTRY = {
     released: '2026-10-07',
     notes: 'Best value model for Arabic (Chad 10-11). Segmentation: index/ending-only output, cached system prompt, <100k per call.'
   },
+  // ── web research (reading guide depth layer, Chad 10-12) ──
+  // Perplexity sonar: $1/M in and out + a per-request fee (~$0.005) not modelled here.
+  'sonar': { provider: 'perplexity', name: 'Perplexity Sonar', type: 'chat', pricing: { input: 0.001, output: 0.001 }, contextWindow: 128000, maxOutput: 8000 },
+  // Parallel.ai Task runs are priced PER RUN: logged as completionTokens = 1000 per run, so `output` = $ per run.
+  'task-lite': { provider: 'parallel', name: 'Parallel Task (lite)', type: 'research', pricing: { input: 0, output: 0.005 } },
+  'task-base': { provider: 'parallel', name: 'Parallel Task (base)', type: 'research', pricing: { input: 0, output: 0.01 } },
+  'task-core': { provider: 'parallel', name: 'Parallel Task (core)', type: 'research', pricing: { input: 0, output: 0.025 } },
   'claude-sonnet-5-5': {
     provider: 'anthropic',
     noTemperature: true,   // the API rejects `temperature` ("deprecated for this model", 10-11)

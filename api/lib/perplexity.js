@@ -4,6 +4,7 @@
 // as web information, never dressed up as library citations.
 // Fail-closed: no PERPLEXITY_API_KEY → returns null → behavior unchanged.
 import { logger } from './logger.js';
+import { logAIUsage } from './ai-services.js';
 
 const PPLX_URL = 'https://api.perplexity.ai/chat/completions';
 const TIMEOUT_MS = 20000;
@@ -16,7 +17,7 @@ export function perplexityAvailable() {
  * Ask Perplexity (sonar) the user's question. Returns { text, citations } or null
  * on any failure — the fallback must never break the chat pipeline.
  */
-export async function perplexityFallback(question) {
+export async function perplexityFallback(question, { caller = null, system = null, maxTokens = 600 } = {}) {
   const key = process.env.PERPLEXITY_API_KEY;
   if (!key) return null;
   // Retry once on a TRANSIENT failure ('fetch failed' / timeout / 5xx / 429): the web
@@ -29,10 +30,10 @@ export async function perplexityFallback(question) {
         body: JSON.stringify({
           model: 'sonar',
           messages: [
-            { role: 'system', content: 'Answer concisely and factually. When identifying the source of a quotation, name the work, author, and where it appears.' },
+            { role: 'system', content: system || 'Answer concisely and factually. When identifying the source of a quotation, name the work, author, and where it appears.' },
             { role: 'user', content: String(question).slice(0, 2000) }
           ],
-          max_tokens: 600,
+          max_tokens: maxTokens,
           temperature: 0.2
         }),
         signal: AbortSignal.timeout(TIMEOUT_MS)
@@ -49,6 +50,9 @@ export async function perplexityFallback(question) {
         .concat((j.citations || []).filter((u) => typeof u === 'string').map((u) => ({ title: u, url: u })))
         .filter((c, i, a) => c.url && a.findIndex((x) => x.url === c.url) === i)
         .slice(0, 6);
+      // metered (10-12: Perplexity calls never reached ai_usage — spend nobody could see)
+      logAIUsage({ provider: 'perplexity', model: 'sonar', serviceType: 'chat', caller: caller || 'perplexity',
+        promptTokens: j.usage?.prompt_tokens ?? 0, completionTokens: j.usage?.completion_tokens ?? 0 });
       if (!text.trim()) return null;
       logger.info({ chars: text.length, sources: citations.length }, 'perplexity fallback answered');
       return { text, citations };

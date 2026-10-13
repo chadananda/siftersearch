@@ -50,6 +50,11 @@ export default async function anisRoutes(fastify) {
     if (!internalOnly(request, reply)) return;
     const { messages = [], email = '' } = request.body || {};
     if (!messages.length) return reply.code(400).send({ error: 'messages required' });
+    // READING GUIDE first (Chad 10-12): "help me study <book>", then next / again / back / skip to …; anything else is an
+    // ordinary question and falls through to the usual turn.
+    const { readingTurn } = await import('../lib/anis/reading/guide.js');
+    const rd = await readingTurn({ messages, participantId: who(email) }).catch((err) => { logger.error({ err: err.message }, 'anis: reading turn failed'); return null; });
+    if (rd?.reply) return { reply: rd.reply, subject: rd.subject || null, status: 'reading', triage: null, retrieved: 0, format: 'reading-guide' };
     const { anisTurn } = await import('../lib/anis/turn.js');
     const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email) });
     return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null };

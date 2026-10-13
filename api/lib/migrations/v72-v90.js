@@ -1594,6 +1594,19 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_docs_doc_role ON docs(doc_role) WHERE doc_role IS NOT NULL`);
     logger.info('Migration 147 complete: partial indexes for duplicates and doc roles');
   },
+
+  148: async () => {
+    // Anís reading guide (Chad 10-12): one row per reader × book — the bookmark (next paragraph), the pages sent, and
+    // everything already explained, so facts are never repeated within a book.
+    await query(`CREATE TABLE IF NOT EXISTS reading_sessions (
+      id INTEGER PRIMARY KEY, participant_id TEXT NOT NULL, doc_id INTEGER NOT NULL, title TEXT,
+      cursor INTEGER NOT NULL DEFAULT 0, pages TEXT, explained TEXT, status TEXT NOT NULL DEFAULT 'active',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()), updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (participant_id, doc_id)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_reading_sessions_who ON reading_sessions(participant_id, updated_at)`);
+    logger.info('Migration 148 complete: reading_sessions');
+  },
 };
 
 export const graphMigrations = {
