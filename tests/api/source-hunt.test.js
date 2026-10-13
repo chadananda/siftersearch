@@ -141,6 +141,14 @@ describe('paragraph inside the linked tablet', () => {
     }));
     expect(r.tablet).toMatchObject({ certain: true, id: 78, basis: 'tablet linked; paragraph by similarity', linkedParagraph: { id: 77 } });
   });
+  it('a linked paragraph merely among the top hits loses to a clearly closer one; within 0.02 it stands', async () => {
+    const run = (linkedScore) => sourceHunt(QUOTE, deps({
+      phrases: async (q, { filters }) => (filters?.documentId ? { hits: [{ paragraph_id: 78, score: 0.80 }, { paragraph_id: 77, score: linkedScore }] } : { hits: [{ paragraph_id: 2 }] }),
+      passages: async (ids) => new Map(ids.map((id) => [id, { id, documentId: 700, document: { title: 'Lawh-i-Maqsud (Arabic)' }, text: 'نص', url: `ool/${id}` }])),
+    }));
+    expect((await run(0.70)).tablet).toMatchObject({ id: 78, basis: 'tablet linked; paragraph by similarity' });
+    expect((await run(0.79)).tablet).toMatchObject({ id: 77 });
+  });
 });
 
 describe('decodeEntities', async () => {

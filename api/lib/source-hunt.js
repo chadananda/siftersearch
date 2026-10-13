@@ -444,7 +444,12 @@ async function tabletGuess(d, q, links, author = null) {
     const o = links.original;
     const inDoc = await d.phrases(q.match, { limit: 5, timeoutMs: QD_MS, filters: { documentId: o.documentId } }).catch(() => ({ hits: [] }));
     const ids = inDoc.hits.map((h) => h.paragraph_id);
-    if (!ids.length || ids.includes(o.id)) return { certain: true, ...(await withMeta(o, o.path || 'translation')) };
+    // the linked paragraph stands when it is the closest, or within a hair of it — "among the top 5" kept a neighbour
+    // (10-12: Gleanings CXVII's link reached the Maqṣúd paragraph on one language and script, not "the earth is but one country")
+    const top = inDoc.hits[0], linkedHit = inDoc.hits.find((h) => h.paragraph_id === o.id);
+    if (!ids.length || top.paragraph_id === o.id || (linkedHit && (linkedHit.score ?? 0) >= (top.score ?? 0) - 0.02)) {
+      return { certain: true, ...(await withMeta(o, o.path || 'translation')) };
+    }
     const best = (await d.passages([ids[0]])).get(ids[0]);
     return { certain: true, ...(await withMeta(best || o, best ? 'tablet linked; paragraph by similarity' : (o.path || 'translation'))),
       linkedParagraph: best ? { id: o.id, text: o.text } : undefined };
