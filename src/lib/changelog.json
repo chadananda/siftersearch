@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-13T19:45:34.085Z",
+  "generated": "2026-10-13T21:37:34.762Z",
   "entries": [
+    {
+      "hash": "5bbef66c",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Restore NOTE_LEVELS (dropped with the old prompt text — every page would have thrown)",
+      "scope": "reading"
+    },
+    {
+      "hash": "fddae0f3",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Pages are the text and its notes only; notes extremely terse",
+      "scope": "reading"
+    },
+    {
+      "hash": "34039df5",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Every live call site takes its model from the role table — Haiku 5.5 for routine, Sonnet 5.5 for quality",
+      "scope": "models"
+    },
+    {
+      "hash": "209ce94a",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "The rag-adapter spend gate also allows Haiku 5.5 for hype + concept-extract (it would have aborted grounding runs)",
+      "scope": "models"
+    },
+    {
+      "hash": "5e604a0b",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "HyPE + concept extraction on Haiku 5.5 for every language; 100k long-context guard",
+      "scope": "models"
+    },
+    {
+      "hash": "0fa21073",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Replies understood by meaning (small model), rules only as the fallback",
+      "scope": "reading"
+    },
+    {
+      "hash": "6e65d1c9",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "The per-person daily cap limits only letters Anís starts — never replies",
+      "scope": "anis"
+    },
     {
       "hash": "4ee8f56c",
       "date": "2026-10-13",
@@ -3451,59 +3500,59 @@
       "type": "New",
       "description": "/server/backup runs the daily backup on demand; /server/meili-switchover replaces per-doc Meili jobs with bulk work",
       "scope": "admin"
-    },
-    {
-      "hash": "50bb9dc4",
-      "date": "2026-09-29",
-      "type": "Performance",
-      "description": "Batch across documents — deletions queued and sent in bulk, doc metadata 500 per job, ingest never talks to Meili per document",
-      "scope": "meili"
-    },
-    {
-      "hash": "21a5ff45",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Meili-tasks shows duration, details and filters by index/type/from — to read the queue properly",
-      "scope": "admin"
-    },
-    {
-      "hash": "e5ad19d0",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Disambiguation and HyPE prompts carry the document's catalogue line (doc_meta) — new runs only, no re-run",
-      "scope": "enrich"
-    },
-    {
-      "hash": "799bcab5",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Exact-title tier ignores a leading 'The'",
-      "scope": "docmeta"
-    },
-    {
-      "hash": "ae02ed27",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Exact title first in metadata search (indexed, migr 137) — the canonical work above chapters that mention it",
-      "scope": "docmeta"
-    },
-    {
-      "hash": "25a1e10d",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Rebuild in 200-doc pages with a pause — 2,000-doc pages still slowed the API to 7–18 s",
-      "scope": "docmeta"
-    },
-    {
-      "hash": "72c4d2cf",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Authority-weighted metadata ranking (migr 136) — canonical works above scraped pages",
-      "scope": "docmeta"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "5bbef66c",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Restore NOTE_LEVELS (dropped with the old prompt text — every page would have thrown)",
+        "scope": "reading"
+      },
+      {
+        "hash": "fddae0f3",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Pages are the text and its notes only; notes extremely terse",
+        "scope": "reading"
+      },
+      {
+        "hash": "34039df5",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Every live call site takes its model from the role table — Haiku 5.5 for routine, Sonnet 5.5 for quality",
+        "scope": "models"
+      },
+      {
+        "hash": "209ce94a",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "The rag-adapter spend gate also allows Haiku 5.5 for hype + concept-extract (it would have aborted grounding runs)",
+        "scope": "models"
+      },
+      {
+        "hash": "5e604a0b",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "HyPE + concept extraction on Haiku 5.5 for every language; 100k long-context guard",
+        "scope": "models"
+      },
+      {
+        "hash": "0fa21073",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Replies understood by meaning (small model), rules only as the fallback",
+        "scope": "reading"
+      },
+      {
+        "hash": "6e65d1c9",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "The per-person daily cap limits only letters Anís starts — never replies",
+        "scope": "anis"
+      },
       {
         "hash": "4ee8f56c",
         "date": "2026-10-13",
@@ -6982,55 +7031,6 @@
         "type": "New",
         "description": "/server/backup runs the daily backup on demand; /server/meili-switchover replaces per-doc Meili jobs with bulk work",
         "scope": "admin"
-      },
-      {
-        "hash": "50bb9dc4",
-        "date": "2026-09-29",
-        "type": "Performance",
-        "description": "Batch across documents — deletions queued and sent in bulk, doc metadata 500 per job, ingest never talks to Meili per document",
-        "scope": "meili"
-      },
-      {
-        "hash": "21a5ff45",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Meili-tasks shows duration, details and filters by index/type/from — to read the queue properly",
-        "scope": "admin"
-      },
-      {
-        "hash": "e5ad19d0",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Disambiguation and HyPE prompts carry the document's catalogue line (doc_meta) — new runs only, no re-run",
-        "scope": "enrich"
-      },
-      {
-        "hash": "799bcab5",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Exact-title tier ignores a leading 'The'",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "ae02ed27",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Exact title first in metadata search (indexed, migr 137) — the canonical work above chapters that mention it",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "25a1e10d",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Rebuild in 200-doc pages with a pause — 2,000-doc pages still slowed the API to 7–18 s",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "72c4d2cf",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Authority-weighted metadata ranking (migr 136) — canonical works above scraped pages",
-        "scope": "docmeta"
       }
     ]
   }

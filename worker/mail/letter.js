@@ -70,8 +70,9 @@ export const wrapHtml = (inner) => `<div style="font-family:Georgia,'Times New R
 /** The whole letter as sent: body, signature, then the small footer (pause link). */
 export function composeLetter(md, pauseUrl) {
   const body = stripSignOff(md);
-  const text = `${plainText(body)}\n\n${signatureText()}\n\n—\nRather not hear from me? ${pauseUrl}`;
-  const html = wrapHtml(`${bodyHtml(body)}${signatureHtml()}<p style="margin:28px 0 0;font-size:12px;color:${MIST}"><a href="${pauseUrl}" style="color:${MIST}">Rather not hear from me?</a></p>`);
+  // no pauseUrl (a reply) → no footer at all
+  const text = `${plainText(body)}\n\n${signatureText()}${pauseUrl ? `\n\n—\nRather not hear from me? ${pauseUrl}` : ''}`;
+  const html = wrapHtml(`${bodyHtml(body)}${signatureHtml()}${pauseUrl ? `<p style="margin:28px 0 0;font-size:12px;color:${MIST}"><a href="${pauseUrl}" style="color:${MIST}">Rather not hear from me?</a></p>` : ''}`);
   return { text, html };
 }
 

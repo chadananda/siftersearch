@@ -155,13 +155,16 @@ async function events(request, env) {
 }
 
 /** Send one message through SES v2 (configuration set 'anis' → events). Suppressed addresses are refused. */
-export async function sendMail(env, { to, subject, text, html, inReplyTo, references, system = false }) {
+export async function sendMail(env, { to, subject, text, html, inReplyTo, references, system = false, kind = null }) {
   const addr = lower(to);
   if (await env.ANIS_DB.prepare('SELECT 1 FROM mail_suppression WHERE email = ?').bind(addr).first()) return { suppressed: true };
   if (system) return sesSend(env, { addr, subject, text, html, headers: [] });   // notices to Chad: no footer, no rules
-  const pause = `${SITE}/_mail/pause?t=${await pauseToken(addr, env.MAIL_LINK_SECRET)}`;
-  ({ text, html } = composeLetter(text, pause));          // one look for every letter: body, signature, pause footer
-  const headers = [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }];
+  // A REPLY answers someone who wrote to Anís — not a newsletter, no unsubscribe controls (Chad 10-13). Letters Anís
+  // starts (welcome / outreach) keep the pause link and the List-Unsubscribe headers.
+  const reply = kind === 'reply';
+  const pause = reply ? null : `${SITE}/_mail/pause?t=${await pauseToken(addr, env.MAIL_LINK_SECRET)}`;
+  ({ text, html } = composeLetter(text, pause));          // one look for every letter: body, signature (+ pause footer)
+  const headers = pause ? [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }] : [];
   if (inReplyTo) headers.push({ Name: 'In-Reply-To', Value: inReplyTo });
   if (references || inReplyTo) headers.push({ Name: 'References', Value: references || inReplyTo });
   return sesSend(env, { addr, subject, text, html, headers });
@@ -211,7 +214,7 @@ export async function deliver(env, row) {
     await db.prepare(`UPDATE mail_messages SET status = 'blocked', error = ? WHERE id = ?`).bind(verdict.reason, row.id).run();
     return { id: row.id, status: 'blocked', reason: verdict.reason };
   }
-  const r = await sendMail(env, { to: row.to_addr, subject: row.subject, text: row.text, html: row.html, inReplyTo: row.in_reply_to, references: row.thread_key });
+  const r = await sendMail(env, { to: row.to_addr, subject: row.subject, text: row.text, html: row.html, inReplyTo: row.in_reply_to, references: row.thread_key, kind: row.kind });
   const status = r.suppressed ? 'suppressed' : r.error ? 'failed' : 'sent';
   await db.prepare(`UPDATE mail_messages SET status = ?, ses_message_id = ?, error = ?, sent_at = CASE WHEN ? = 'sent' THEN datetime('now') END WHERE id = ?`)
     .bind(status, r.sesMessageId ?? null, r.error ?? null, status, row.id).run();

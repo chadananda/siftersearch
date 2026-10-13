@@ -56,8 +56,10 @@ const sectionName = (key, sections) => {
 };
 const titleCase = (s) => String(s).toLowerCase().replace(/(^|[\s(‘“-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 
-/** The subject line: [Reading] Dawn-Breakers #5.7 - Bab's pilgrimage to Mecca (Chad 10-12). Pure. */
-export const subjectFor = (book, first, topic) => `[Reading] ${shortTitle(book)} ${addressOf(first)} - ${String(topic || first.topic || '').replace(/\s+/g, ' ').trim().slice(0, 80)}`;
+/** The subject line (Chad 10-13): [📖 Reading] Dawn-Breakers #3.4, Mulla Husayn arrives in Shiraz. Pure. */
+// "[📖 Reading] Dawn-Breakers #3.4, Mulla Husayn arrives in Shiraz" (Chad 10-13: an icon so it stands out in the list)
+export const READING_TAG = '[📖 Reading]';
+export const subjectFor = (book, first, topic) => `${READING_TAG} ${shortTitle(book)} ${addressOf(first)}, ${String(topic || first.topic || '').replace(/\s+/g, ' ').trim().slice(0, 80)}`;
 
 const NOTES_SYSTEM = `You are Anís, a reading companion helping someone study a book one page at a time by email (on a phone; later read aloud).
 After a paragraph you may add NOTES on the words chosen for it — only where a note rewards THIS reader (READER says what they
@@ -271,7 +273,7 @@ export async function readingTurn({ messages = [], participantId, reset = false,
     const at = intent.from ? startIndex(outline.paragraphs, intent.from) : null;
     if (at == null && !session?.pages?.length) {
       await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: 0, pages: [], explained: session?.explained || {} });
-      return { reply: layoutReply(doc, outline), subject: `[Reading] ${shortTitle(doc.title)} - where shall we begin?` };
+      return { reply: layoutReply(doc, outline), subject: `${READING_TAG} ${shortTitle(doc.title)}, where shall we begin?` };
     }
     return turnPage(d, { participantId, session: session || { pages: [], explained: {} }, doc, from: at ?? session.cursor });
   }
@@ -330,7 +332,7 @@ async function answerInReading(d, { session, text }) {
 
 async function turnPage(d, { participantId, session, doc, from, depth = 1, redo = false }) {
   const pg = await buildPage(d, { session, doc, from, depth });
-  if (pg.done) return { reply: `We've reached the end of **${doc.title}**. It has been a joy reading it with you — what would you like to read next?`, subject: `[Reading] ${shortTitle(doc.title)} - the end` };
+  if (pg.done) return { reply: `We've reached the end of **${doc.title}**. It has been a joy reading it with you — what would you like to read next?`, subject: `${READING_TAG} ${shortTitle(doc.title)}, the end` };
   const pages = [...(session.pages || [])];
   if (redo && pages.length) pages.pop();
   pages.push({ from, to: pg.next - 1, subject: pg.subject, depth, at: new Date().toISOString() });

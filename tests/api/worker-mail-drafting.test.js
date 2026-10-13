@@ -98,3 +98,13 @@ describe('tables and charts in letters', async () => {
     expect(h).toMatch(/<td dir="auto" style="padding/);
   });
 });
+
+// a reply answers someone who wrote to Anís — no unsubscribe footer (Chad 10-13); letters Anís starts keep it
+import { composeLetter as compose2 } from '../../worker/mail/letter.js';
+describe('reply letters carry no pause footer', () => {
+  it('no pauseUrl → no footer in text or html', () => {
+    const { text, html } = compose2('Hello.', null);
+    expect(text).not.toMatch(/Rather not hear/);
+    expect(html).not.toMatch(/Rather not hear/);
+  });
+});

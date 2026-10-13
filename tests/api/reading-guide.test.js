@@ -104,8 +104,8 @@ describe('reading outline', () => {
 });
 
 describe('subject and page', () => {
-  it('subject line: [Reading] <Book> #<section>.<¶> - <topic>', () => {
-    expect(subjectFor('The Dawn-Breakers', { section: '5', n: 7 }, "Bab's pilgrimage to Mecca")).toBe("[Reading] Dawn-Breakers #5.7 - Bab's pilgrimage to Mecca");
+  it('subject line: [📖 Reading] <Book> #<section>.<¶>, <topic>', () => {
+    expect(subjectFor('The Dawn-Breakers', { section: '3', n: 4 }, 'Mulla Husayn arrives in Shiraz')).toBe('[📖 Reading] Dawn-Breakers #3.4, Mulla Husayn arrives in Shiraz');
   });
   it('each paragraph is followed by its notes; only cited sources are listed', () => {
     const md = renderPage({ book: 'The Dawn-Breakers', sectionLabel: 'Introduction', author: 'by George Townshend',
@@ -175,7 +175,7 @@ describe('readingTurn', () => {
     {
       const msg = (t) => [{ role: 'user', content: t }];
       const r1 = await readingTurn({ messages: msg("Help me study the Dawn-Breakers. Let's start from the introduction"), participantId: 'email:x', deps: f.deps });
-      expect(r1.subject).toBe('[Reading] Dawn-Breakers #Intro.1 - The record and its writer');
+      expect(r1.subject).toBe('[📖 Reading] Dawn-Breakers #Intro.1, The record and its writer');
       expect(r1.page.paragraphs[0]).toMatchObject({ address: '#Intro.1', pid: 'para_16', text: 'The Bahá’í Movement is now well known.' });
       expect(r1.bookmark).toEqual({ docId: 21308, cursor: 2 });
       expect(f.saved.at(-1)).toMatchObject({ participantId: 'email:x', docId: 21308, cursor: 2 });
@@ -186,7 +186,7 @@ describe('readingTurn', () => {
       expect(r1.reply).toContain('- ¹ **Bahá’í Movement** — Townshend’s 1932 term.');
       expect(r1.page.paragraphs[0].highlights).toEqual([{ name: 'Bahá’í Movement', start: 4, end: 19 }]);
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
-      expect(r2.subject).toMatch(/^\[Reading\] Dawn-Breakers #1\.1 - /);
+      expect(r2.subject).toMatch(/^\[📖 Reading\] Dawn-Breakers #1\.1, /);
       const q = await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps });   // answered IN the reading
       expect(q.reply).toContain('Nabíl was the chronicler [S1].');
       expect(q.reply).toContain('[S1] [God Passes By](https://oceanlibrary.com/gpb)');
