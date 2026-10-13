@@ -72,17 +72,11 @@ Use EVIDENCE only where it illuminates the noted words themselves; never talk ab
 evidence does not help, write from certain knowledge — or leave the words without a note.
 Illuminate the text, never grade it: no verdicts that the author exaggerates, is wrong or is "rhetorical"; where sources differ,
 say what each says. Spell names exactly as the book does (Nabíl, S̱háh, Ṭihrán).
-"name" must be the EXACT words from the paragraph (they are highlighted in the text). Style: compact, warm, precise, speakable;
-2–4 short sentences per note; no headings, no nested bullets. Never invent a fact, a date or a quotation.
-Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragraphs":[{"pid":"para_N","notes":[{"name":"…","note":"…"}]}],
-"look_closer":"one striking detail worth a second look (1–2 sentences, or empty)","next":"one line inviting the next page, no spoilers of its plot"}`;
-
-// The reader's chosen depth of notes (Chad 10-13: three levels; "use the advanced level of notes").
-export const NOTE_LEVELS = {
-  introductory: 'INTRODUCTORY — a newcomer: explain the names and words a first reading needs, simply; 1–2 notes per paragraph; no scholarship.',
-  serious: 'SERIOUS — a well-read reader of this book (the default).',
-  advanced: 'ADVANCED — scholarly: transliteration and roots of Persian/Arabic terms, how other sources tell the same event (Nabíl, God Passes By, Browne, Nicolas, Balyuzi…) and where they differ, both calendars, manuscripts and translations, cross-references in the Writings; up to 4 notes per paragraph, 3–6 sentences each.',
-};
+"name" must be the EXACT words from the paragraph (they are highlighted in the text).
+STYLE (Chad 10-13: "extremely clear and terse, not verbose"): 1–2 short sentences per note, facts only — no framing ("This
+is…", "Townshend means…"), no commentary on the author, no summary of the paragraph. Dates and names carry the weight.
+Never invent a fact, a date or a quotation.
+Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragraphs":[{"pid":"para_N","notes":[{"name":"…","note":"…"}]}]}`;
 
 const LEVEL_SYSTEM = `In 3–4 sentences, describe the typical serious reader of this book: what they already know well (so a reading guide
 must NOT explain it — list the obvious people, places, terms and history), and what kind of detail would genuinely deepen their
@@ -178,9 +172,9 @@ export function renderPage({ book, sectionLabel, author, items, notes, sources, 
   }).join('\n\n');
   const used = new Set([...JSON.stringify(notes || {}).matchAll(/\[(S\d+)\]/g)].map((m) => m[1]));
   const src = sources.map((s, i) => ({ ...s, label: `S${i + 1}` })).filter((s) => used.has(s.label));
+  // the page and its notes only (Chad 10-13: "do not do this part. keep it to notes for now" — no look-closer, teaser
+  // or reply instructions)
   return [head, '', body,
-    ...(notes?.look_closer ? ['', `**Look closer** — ${notes.look_closer}`] : []),
-    '', `${notes?.next ? `${notes.next} ` : ''}Reply **next** to read on, **again** if you want me to dig deeper on this page, or ask me anything about it.`,
     ...(src.length ? ['', '**Sources**', ...src.map((s) => `[${s.label}] ${s.url ? `[${s.title}](${s.url})` : s.title}${s.kind === 'web' ? ' (web)' : ''}`)] : []),
   ].join('\n');
 }
@@ -222,7 +216,7 @@ ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.na
   // STRUCTURED page for any caller (web, chat, audio — paragraph voice + notes voice): the email is one rendering of it
   const structured = { book: doc.title, docId: doc.id, section: sectionLabel, author, pageNo, topic: notes.topic || null,
     paragraphs: items.map((p) => ({ address: addressOf(p), pid: p.pid, topic: p.topic || null, text: p.text, highlights: noteSpans(p.text, (byPidNotes.get(p.pid) || []).map((n) => n.name)), notes: byPidNotes.get(p.pid) || [] })),
-    lookCloser: notes.look_closer || null, next: notes.next || null, sources: sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
+    sources: sources.map((x, i) => ({ label: `S${i + 1}`, ...x })) };
   return { items, next: page.next, notes, explained, page: structured, reply: renderPage({ book: doc.title, sectionLabel, author, items, notes, sources, pageNo }),
     subject: subjectFor(doc.title, items[0], notes.topic) };
 }
@@ -323,7 +317,7 @@ async function answerInReading(d, { session, text }) {
   const answer = out.json?.answer || out.text || '';
   const { notes, sources: used } = renumber({ paragraphs: [{ pid: 'a', notes: [{ name: 'a', note: answer }] }] }, sources);
   const body = notes.paragraphs[0].notes[0].note;
-  return { reply: [body, '', `Reply **next** to read on from ${addressOf(outline.paragraphs[session.cursor] || items.at(-1))}, or ask me anything else.`,
+  return { reply: [body,
     ...(used.length ? ['', '**Sources**', ...used.map((x, i) => `[S${i + 1}] ${x.url ? `[${x.title}](${x.url})` : x.title}`)] : [])].join('\n'), subject: null };
 }
 

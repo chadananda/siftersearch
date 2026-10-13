@@ -116,6 +116,7 @@ describe('subject and page', () => {
     expect(md.indexOf('**#Intro.1** Para one.')).toBeLessThan(md.indexOf('- **Nabíl** — Born 1831 [S2].'));   // not in the text: no number
     expect(md).toContain('[S2] [God Passes By](https://oceanlibrary.com/x)');
     expect(md).not.toContain('Unused');
+    expect(md).not.toMatch(/Reply \*\*next|Look closer|Next, Persia/);   // notes only (Chad 10-13)
   });
   it('cited sources are renumbered in order of first citation; uncited ones dropped', () => {
     const r = renumber({ paragraphs: [{ pid: 'p', notes: [{ name: 'a', note: 'x [S7] y [S2] [S7]' }] }], look_closer: 'z [S2]' },
