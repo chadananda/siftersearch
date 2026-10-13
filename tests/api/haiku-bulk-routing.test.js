@@ -72,3 +72,11 @@ describe('batch transport', () => {
     expect(batchEligible({ provider: 'anthropic', stage: 'hype', stream: true, env })).toBe(false);
   });
 });
+
+describe('background runs the API launches', () => {
+  it('route writes through the single writer and batch their Haiku stages', async () => {
+    const { backgroundEnv } = await import('../../api/lib/pipeline/spawn.js');
+    const env = backgroundEnv('siftersearch-concepts', {});
+    expect(env).toMatchObject({ name: 'siftersearch-concepts', ANTHROPIC_BATCH: '1', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' });
+  });
+});
