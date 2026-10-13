@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readingIntent, bookFrom, startFrom } from '../../api/lib/anis/reading/intent.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/anis/reading/outline.js';
-import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans } from '../../api/lib/anis/reading/guide.js';
+import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations } from '../../api/lib/anis/reading/guide.js';
 import { sameName } from '../../api/lib/anis/reading/research.js';
 
 const MD = `# The Book {.off id="para_1" type="title"}
@@ -105,6 +105,12 @@ describe('subject and page', () => {
   it('highlights carry the note’s number', () => {
     const spans = noteSpans('Nabíl went to Shíráz.', ['Shíráz', 'Nabíl']).map((x, i) => ({ ...x, n: i + 1 }));
     expect(highlight('Nabíl went to Shíráz.', spans)).toBe('<mark>Nabíl</mark>¹ went to <mark>Shíráz</mark>².');
+  });
+  it('a note keeps only citations from its own target’s evidence', () => {
+    const out = ownCitations({ paragraphs: [{ pid: 'p', notes: [{ name: 'Nabíl’s unique narrative', note: 'Pilgrimage [S1] and pen name [S3].' }] }], look_closer: 'x [S2]' },
+      [{ name: 'Nabíl’s unique narrative', labels: new Set(['S3']) }, { name: 'Revelation', labels: new Set(['S1']) }]);
+    expect(out.paragraphs[0].notes[0].note).toBe('Pilgrimage and pen name [S3].');
+    expect(out.look_closer).toBe('x');
   });
   it('names match across honorifics and spelling marks', () => {
     expect(sameName('Mullá Ḥusayn', 'Ḥusayn')).toBe(true);

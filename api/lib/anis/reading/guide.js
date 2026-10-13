@@ -128,6 +128,20 @@ function evidenceBlock(targets) {
   }).join('\n');
 }
 
+/** A note may cite only the sources gathered for ITS target (10-13: a fact about Nabíl's pilgrimage came back labelled with the
+ *  Book of Revelation). Labels outside the target's evidence are removed; a note matching no target keeps none. Pure. */
+export function ownCitations(notes, targets) {
+  const fold = (x) => String(x || '').toLowerCase();
+  const labelsFor = (name) => {
+    const t = targets.find((x) => x.name === name) || targets.find((x) => fold(x.name).includes(fold(name)) || fold(name).includes(fold(x.name)));
+    return t?.labels || new Set();
+  };
+  return { ...notes, paragraphs: (notes.paragraphs || []).map((p) => ({ ...p, notes: (p.notes || []).map((n) => {
+    const ok = labelsFor(n.name);
+    return { ...n, note: String(n.note || '').replace(/\s*\[(S\d+)\]/g, (m, l) => (ok.has(l) ? m : '')) };
+  }) })), look_closer: String(notes.look_closer || '').replace(/\s*\[S\d+\]/g, '') };
+}
+
 /** Cited sources only, renumbered S1, S2 … in order of first citation; the notes' labels rewritten to match. Pure. */
 export function renumber(notes, sources) {
   const order = [];
@@ -187,7 +201,7 @@ ${evidenceBlock(research.targets)}
 
 ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.name} (${t.seenAt})`).join('; ') || 'none'}`;
   const r = await d.llmJson({ ...role, caller: 'reading-notes', system: NOTES_SYSTEM, user, maxTokens: depth > 1 ? 5000 : 3500 });
-  const { notes, sources } = renumber(r.json || { paragraphs: [] }, research.sources);
+  const { notes, sources } = renumber(ownCitations(r.json || { paragraphs: [] }, research.targets), research.sources);
   // explained = what a note actually covered (a researched target the writer skipped stays available for later)
   const noted = (notes.paragraphs || []).flatMap((p) => (p.notes || []).map((n) => n.name));
   for (const t of research.targets) if (!t.seenAt && noted.some((n) => n === t.name || (n && t.name && (n.includes(t.name) || t.name.includes(n)))))

@@ -61,7 +61,7 @@ export async function researchPage({ docId, title, religion = null, items, expla
   }
 
   const sources = [];
-  const cite = (title, url, kind = 'library') => {
+  const citeAll = (title, url, kind = 'library') => {
     const i = sources.findIndex((s) => s.url && s.url === url && s.title === title);
     if (i >= 0) return `S${i + 1}`;
     sources.push({ title, url: url || null, kind });
@@ -71,6 +71,8 @@ export async function researchPage({ docId, title, religion = null, items, expla
   const claimsN = depth > 1 ? 20 : 12, passagesN = depth > 1 ? 4 : 3;
   await Promise.all(fresh.map(async (t) => {
     const ev = { summary: null, aliases: [], claims: [], passages: [], web: [] };
+    t.labels = new Set();   // the only sources a note on this target may cite (guide.js strips any other label)
+    const cite = (title, url, kind) => { const l = citeAll(title, url, kind); t.labels.add(l); return l; };
     if (t.id) {
       const dz = await d.entityDossier(t.id).catch(() => null);
       if (dz) {
@@ -100,7 +102,9 @@ export async function researchPage({ docId, title, religion = null, items, expla
       t.kind === 'place' ? d.parallel(q, { processor: 'base', timeoutS: 75, caller: 'reading-web' }).catch(() => null) : Promise.resolve(null)]);
     for (const r of [px, pa].filter(Boolean)) {
       const c = r.citations?.[0];
-      t.evidence.web.push({ text: r.text.slice(0, 1200), src: cite(c?.title || 'web search', c?.url || null, 'web') });
+      const l = citeAll(c?.title || 'web search', c?.url || null, 'web');
+      t.labels.add(l);
+      t.evidence.web.push({ text: r.text.slice(0, 1200), src: l });
     }
   }));
   return { targets, sources };
