@@ -292,6 +292,10 @@ describe('holds-the-quote by DECISION (cross-translation)', () => {
 
 describe('textFragment (range links)', async () => {
   const { textFragment } = await import('../../api/lib/source-hunt.js');
+  it('keeps the Ocean of Lights document a better-copy link names (its page text places the range)', () => {
+    const u = textFragment('https://oceanoflights.org/bahaullah-pub02-93-fa/#~d=700~q=whole', 'Know thou that every created thing', [[0, 15]], 4, 5);
+    expect(u).toBe(`https://oceanoflights.org/bahaullah-pub02-93-fa/#~d=700~q=${encodeURIComponent('Know thou that ')}`);
+  });
   it("narrows a link that already carries linkFor's paragraph marker (no raw fragment appended; parens escaped)", () => {
     const T = '"The beginning of all things is the knowledge (irfán)84 of God, and the end of all things." GWB 5';
     const u = textFragment('https://oceanlibrary.com/divine-philosophy_abdul-baha#~q=whole%20paragraph', T, [[1, 60]]);

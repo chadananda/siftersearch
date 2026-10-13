@@ -88,6 +88,9 @@ export function textFragment(url, text, ranges, n = 4, docId = null) {
   if (!url || !text || !ranges?.length) return null;
   // the quote's range replaces whatever the link already carries (linkFor's whole-paragraph "#~q=" marker): appended to it,
   // the URL matched none of the forms below and grew a raw text fragment — a ")" in the quote then cut the link (10-12)
+  // an Ocean of Lights link from a better copy (citation-links.js) names ITS document — that page's text places the range
+  const linkedDoc = Number((String(url).match(/#~d=(\d+)~/) || [])[1]) || null;
+  if (linkedDoc) docId = linkedDoc;
   url = url.replace(/#~.*$/, '');
   // OceanLibrary has its own range links (selectionString): mark the quoted words; the output pass (lib/ocean-links.js)
   // turns the marker into a range highlighting exactly them (a text fragment is not honoured by its reader app)
@@ -476,9 +479,12 @@ async function defaultDeps() {
         }
         coreTitles = { at: Date.now(), set };
       }
-      return rs.map((r) => ({ ...r, coreTwin: coreTitles.set.has(r.title), text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
-        url: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
-          slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index).url }));
+      const linked = rs.map((r) => ({ id: r.id, link: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
+        slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index) }));
+      // the best PUBLISHER of the same words (an identical copy on OceanLibrary / Ocean of Lights), not just the copy found
+      const better = await (await import('./citation-links.js')).betterCopyLinks(linked).catch(() => new Map());
+      return rs.map((r, i) => ({ ...r, coreTwin: coreTitles.set.has(r.title), text: decodeEntities(String(r.text || '').replace(/⁅\/?s\d+⁆/g, '')),
+        url: (better.get(Number(r.id)) || linked[i].link).url }));
     },
   };
 }

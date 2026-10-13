@@ -56,9 +56,12 @@ export async function getPassages(ids) {
             CASE WHEN json_valid(d.frontmatter) THEN json_extract(d.frontmatter, '$.translator') END AS fm_translator
        FROM content c JOIN docs d ON d.id = c.doc_id
       WHERE c.id IN (${ph(uniq)}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL`, uniq, 'passage-links:passages');
+  const links = new Map(rows.map((r) => [r.id, linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion,
+    collection: r.collection, slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index)]));
+  // the best publisher of the same words (identical copy on OceanLibrary / Ocean of Lights) wins (citation-links.js)
+  const better = await (await import('./citation-links.js')).betterCopyLinks([...links].map(([id, link]) => ({ id, link }))).catch(() => new Map());
   return new Map(rows.map((r) => {
-    const link = linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion,
-      collection: r.collection, slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index);
+    const link = better.get(Number(r.id)) || links.get(r.id);
     return [r.id, {
       id: r.id, documentId: r.doc_id, paragraphIndex: r.paragraph_index, language: r.language || null,
       text: clean(r.text), heading: r.heading || null,

@@ -592,7 +592,10 @@ export default async function publicApiRoutes(fastify) {
     const linkOf = (result) => linkFor({ ...(linkMeta.get(Number(result.document_id)) || {}), ...result,
       source_url: result.source_url || linkMeta.get(Number(result.document_id))?.source_url || null,
       metadata: linkMeta.get(Number(result.document_id))?.metadata }, result.paragraph_index);
-    const results = rankedResults.slice(0, limit).map(result => { const link = linkOf(result); return {
+    const ownLinks = new Map(rankedResults.slice(0, limit).map((r) => [r.id, linkOf(r)]));
+    // the best publisher of the same words (identical copy on OceanLibrary / Ocean of Lights) — citation-links.js
+    const betterLinks = await (await import('../lib/citation-links.js')).betterCopyLinks([...ownLinks].map(([id, link]) => ({ id, link }))).catch(() => new Map());
+    const results = rankedResults.slice(0, limit).map(result => { const link = betterLinks.get(Number(result.id)) || ownLinks.get(result.id); return {
       id: result.id,
       documentId: result.document_id,
       paragraphIndex: result.paragraph_index,

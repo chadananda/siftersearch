@@ -663,7 +663,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       ...(planInfo ? { _plan: planInfo } : {}),
       ...(entitiesOut ? { entities: entitiesOut } : {}),
       ...(peopleAnswerOut ? { peopleAnswer: peopleAnswerOut } : {}),
-      passages: top.map(hit => {
+      passages: await withBetterCopies(top.map(hit => {
         const docId = hit.doc_id || hit.document_id;
         const meta = docMeta.get(docId);
         const extParaId = paraExtIds.get(`${docId}:${hit.paragraph_index}`);
@@ -706,9 +706,10 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           result.source_url = link.url;
           result.link_site = link.site;
           result.reader_url = link.reader_url;
+          Object.defineProperty(result, '_copy', { value: { id: hit.id, link }, enumerable: false });
         }
         return result;
-      })
+      }))
     };
   }
 
@@ -718,6 +719,18 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     fields: ['id', 'title', 'author', 'religion', 'collection', 'year', 'description', 'paragraph_count', 'encumbered', 'slug'] });
   if (mode === 'count') return { totalMatches: found.total, query };
   return { totalMatches: found.total, showing: found.docs.length, documents: found.docs.map(docResult) };
+}
+
+// Citation links go to the best PUBLISHER of the words (Chad 10-12, universal): an identical copy on OceanLibrary / Ocean of
+// Lights beats the copy search found (citation-links.js). Anís cites these passages' source_url verbatim.
+async function withBetterCopies(results) {
+  const items = results.filter((r) => r._copy).map((r) => r._copy);
+  const better = await (await import('../lib/citation-links.js')).betterCopyLinks(items).catch(() => new Map());
+  for (const r of results) {
+    const b = r._copy && better.get(Number(r._copy.id));
+    if (b) { r.source_url = b.url; r.link_site = b.site; }
+  }
+  return results;
 }
 
 // ─── Canonical-works hard-resolve for find_document_for_citation ─────────
