@@ -5,8 +5,6 @@
   import { onMount, tick } from 'svelte';
   import AynLens from './sourcehunt/AynLens.svelte';
   import ProbeField from './sourcehunt/ProbeField.svelte';
-  import CitationShelf from './sourcehunt/CitationShelf.svelte';
-  import './sourcehunt/citation-shelf.css';   // the shelf renders only after a hunt: its styles must ship with the page
   import { stripAppendedReference } from '../../api/lib/quote-clean.js';
 
   const API = import.meta.env.PUBLIC_API_URL || '';
@@ -183,12 +181,11 @@
     else if (beat === 2 && (cited || final)) after(tablet?.certain ? penDone(tablet.text, tablet.highlight, 650, 140) : 700, 3);
   });
   const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
-  let copied = $state(false);
+  let copiedKey = $state(null);
   const sameTarget = (a, b) => String(a).replace(/#.*$/, '') === String(b).replace(/#.*$/, '');
-  // "Copy all sources": one line per copy of the tablet — title, PIN, Ocean of Lights range link, Phelps link
-  async function copySources() {
-    const lines = (tablet?.sources || []).map((x) => [x.title, x.pin, x.oceanoflights, x.inventory].filter(Boolean).join(' — '));
-    try { await navigator.clipboard.writeText(lines.join('\n')); copied = true; setTimeout(() => { copied = false; }, 1800); } catch { /* clipboard refused */ }
+  // "Copy all sources": one line per source, best first — title, who, links
+  async function copyList(key, rows) {
+    try { await navigator.clipboard.writeText(rows.map((r) => r.filter(Boolean).join(' — ')).join('\n')); copiedKey = key; setTimeout(() => { copiedKey = null; }, 1800); } catch { /* clipboard refused */ }
   }
   const tabletLinks = (meta) => [
     meta?.links?.oceanoflights && { href: meta.links.oceanoflightsRange || meta.links.oceanoflights, label: 'Ocean of Lights' },
@@ -330,6 +327,23 @@
         {:else}
           <p class="text-secondary">No publication in the library holds this wording verbatim — it may be a paraphrase or another translation. The originals are matched by meaning.</p>
         {/if}
+        {#if cited?.citedBy?.length && beat >= 3}
+          <!-- every English publication holding the passage, graded by how primary it is to the tradition (Chad 10-13) -->
+          <div class="flex flex-col gap-2 border-t border-border-subtle pt-3 mt-1">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs text-secondary">Also published in {cited.citedBy.length} {cited.citedBy.length === 1 ? 'source' : 'sources'}{cited.citedByLinkCount > cited.citedBy.length ? ` · quoted in ${cited.citedByLinkCount} passages` : ''}</span>
+              <button class="linkchip" onclick={() => copyList('en', cited.citedBy.map((c) => [c.title, c.author, c.translated_by ? `tr. ${c.translated_by}` : null, c.rangeUrl || c.url]))}>{copiedKey === 'en' ? 'Copied' : 'Copy all sources'}</button>
+            </div>
+            {#each cited.citedBy as c, i (c.documentId)}
+              <div class="cite-row flex flex-wrap items-center gap-2" style="--d: {i * 70}ms">
+                <span class="chip" class:chip-ok={c.grade?.rank === 0}>{c.grade?.label || 'Source'}</span>
+                <span class="text-xs text-primary truncate max-w-full">{c.title}</span>
+                {#if c.author}<span class="text-xs text-muted truncate">{c.author}{#if c.translated_by} · tr. {c.translated_by}{/if}</span>{/if}
+                {#if c.url}<a href={c.rangeUrl || c.url} target="_blank" rel="noopener" class="linkchip">{siteName(c.site)} ↗</a>{/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
       </article>
 
       {#if beat >= 2}
@@ -360,7 +374,7 @@
               {#if tablet.sources.length > 1}
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <span class="text-xs text-secondary">Held in {tablet.sources.length} sources</span>
-                  <button class="linkchip" onclick={copySources}>{copied ? 'Copied' : 'Copy all sources'}</button>
+                  <button class="linkchip" onclick={() => copyList('orig', tablet.sources.map((x) => [x.title, x.pin, x.oceanoflights, x.inventory]))}>{copiedKey === 'orig' ? 'Copied' : 'Copy all sources'}</button>
                 </div>
               {/if}
               {#each tablet.sources as src, i (src.documentId)}
@@ -398,11 +412,6 @@
     </div>
   {/if}
 
-  {#if cited && beat >= 3}
-    <div class="sh-card rounded-2xl border border-border bg-surface-1 p-5 sm:p-6">
-      <CitationShelf items={cited.citedBy || []} linkCount={cited.citedByLinkCount} />
-    </div>
-  {/if}
 </section>
 
 <style>
@@ -436,6 +445,7 @@
   .stage.done .pip { background: var(--accent-primary); border-color: var(--accent-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 18%, transparent); }
 
   .sh-card { animation: rise 600ms var(--rise) both; }
+  .cite-row { animation: rise 420ms var(--rise) both; animation-delay: var(--d, 0ms); }
   .sh-orig { animation-delay: 120ms; }
   .sh-book { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.25; }
   .sh-passage { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.08rem; line-height: 1.75; border-left: 3px solid var(--accent-primary); padding-left: 1rem; }
@@ -475,7 +485,7 @@
   @keyframes shimmer { to { background-position: -200% 0; } }
   @keyframes flow { to { stroke-dashoffset: 0; } }
   @media (prefers-reduced-motion: reduce) {
-    .sh-console, .sh-card, .sh-ticker li, .sh-input.is-hunting, .live.on, .stage.active .pip, .skel, .bridge.on .flow { animation: none; }
+    .sh-console, .sh-card, .cite-row, .sh-ticker li, .sh-input.is-hunting, .live.on, .stage.active .pip, .skel, .bridge.on .flow { animation: none; }
     .pen { animation: none; background-size: 100% 88%; }
   }
 </style>

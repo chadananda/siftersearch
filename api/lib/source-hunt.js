@@ -104,6 +104,19 @@ export function textFragment(url, text, ranges, n = 4, docId = null) {
   return url.includes('#') ? `${url}:~:${directive}` : `${url}#:~:${directive}`;
 }
 
+/** How primary a citing publication is to the tradition (Chad 10-13: one graded list per box, best first). Pure.
+ *  0 Authoritative (the work's own author is a Central Figure or the Guardian — quoting his translation is not enough) · 1 Institutional (House of Justice,
+ *  compilations) · 2 Secondary (books and articles); within a grade the best publisher first (OceanLibrary → … → our library). */
+const INSTITUTIONAL = /universal house of justice|research department|compil|national spiritual assembly|international teaching centre/i;
+export function gradeCitation(c) {
+  const who = `${c.author || ''} ${c.title || ''}`;
+  if ([...DOCTRINAL].some((a) => (c.author || '').includes(a.replace(/^The /, '')))) return { rank: 0, label: 'Authoritative' };
+  if (INSTITUTIONAL.test(who)) return { rank: 1, label: 'Institutional' };
+  return { rank: 2, label: 'Secondary' };   // books and articles alike — the host is not the grade; within a grade, best publisher first
+}
+export const gradeCitations = (items) => items.map((c) => ({ ...c, grade: gradeCitation(c) }))
+  .sort((a, b) => a.grade.rank - b.grade.rank || (SITE_RANK[a.site] ?? 9) - (SITE_RANK[b.site] ?? 9) || b.paragraphs - a.paragraphs);
+
 export function dedupeCitations(items) {
   const best = new Map();
   for (const c of items) {
@@ -306,7 +319,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const quoters = (full.quotedBy?.passages || []).map((p) => ({ id: p.id, doc_id: p.documentId, title: p.document.title,
     book_author: p.document.author, url: p.url, text: p.text || null, source_site: null, translated_by: p.translated_by || null }));
   for (const p of quoters) if (!pool.some((m) => m.id === p.id)) add(p);
-  const citedBy = dedupeCitations([...byDoc.values()]);
+  const citedBy = gradeCitations(dedupeCitations([...byDoc.values()]));
   say('cited', { citedBy, citedByLinkCount: full.quotedBy?.count || 0 });
   const tablet = await tabletP;
   say('tablet', { tablet });

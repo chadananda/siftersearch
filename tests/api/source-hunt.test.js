@@ -366,3 +366,22 @@ describe('tablet copies', () => {
     expect(tabletRank({ pin: 'BH02035' })).toBeGreaterThan(tabletRank({ kind: 'book' }));
   });
 });
+
+// One graded list per box (Chad 10-13): citing publications best-first by how primary they are to the tradition.
+import { gradeCitation, gradeCitations } from '../../api/lib/source-hunt.js';
+describe('graded citations', () => {
+  it('Central Figures and the Guardian first; institutions; then secondary works', () => {
+    expect(gradeCitation({ author: 'Bahá’u’lláh', site: 'oceanlibrary.com' }).rank).toBe(0);
+    expect(gradeCitation({ author: 'J. E. Esslemont', translated_by: 'Shoghi Effendi', site: 'library' }).rank).toBe(2);   // quoting his translation is not authorship
+    expect(gradeCitation({ author: 'Universal House of Justice', site: 'oceanlibrary.com' }).rank).toBe(1);
+    expect(gradeCitation({ author: 'Research Department', title: 'Compilation on Prayer', site: 'library' }).rank).toBe(1);
+    expect(gradeCitation({ author: 'Adib Taherzadeh', site: 'library' }).rank).toBe(2);
+    expect(gradeCitation({ author: 'troxel', site: 'bahai-library.com' }).rank).toBe(2);   // the host is not the grade
+  });
+  it('sorts by grade, then publisher', () => {
+    const out = gradeCitations([{ title: 'Ours', author: 'x', site: 'library', paragraphs: 1 },
+      { title: 'Gleanings', author: 'Bahá’u’lláh', site: 'oceanlibrary.com', paragraphs: 1 },
+      { title: 'Public', author: 'y', site: 'bahai-library.com', paragraphs: 1 }]);
+    expect(out.map((c) => c.title)).toEqual(['Gleanings', 'Public', 'Ours']);
+  });
+});

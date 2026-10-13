@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-13T13:59:40.214Z",
+  "generated": "2026-10-13T14:14:50.436Z",
   "entries": [
+    {
+      "hash": "fc341475",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "A note cites only its own target's evidence (a Nabíl fact came back labelled 'Revelation')",
+      "scope": "reading"
+    },
+    {
+      "hash": "74949743",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Replies drafted every minute — the next page right away, ≥3 min after Anís's last letter",
+      "scope": "anis"
+    },
     {
       "hash": "dc562579",
       "date": "2026-10-13",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "One merged metadata record per tablet — Phelps' inventory + oceanoflights frontmatter + linked notes (migr 132)",
       "scope": "tablets"
-    },
-    {
-      "hash": "eff9ce44",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Record translator + version beside every English (migr 131) — CTAI api/pipeline/model, Phelps PI v6.01",
-      "scope": "translation"
-    },
-    {
-      "hash": "53fde026",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "POST /concepts/alignment/twin — a duplicate original inherits its twin's English (never retranslate)",
-      "scope": "alignment"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "fc341475",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "A note cites only its own target's evidence (a Nabíl fact came back labelled 'Revelation')",
+        "scope": "reading"
+      },
+      {
+        "hash": "74949743",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Replies drafted every minute — the next page right away, ≥3 min after Anís's last letter",
+        "scope": "anis"
+      },
       {
         "hash": "dc562579",
         "date": "2026-10-13",
@@ -7017,20 +7031,6 @@
         "type": "New",
         "description": "One merged metadata record per tablet — Phelps' inventory + oceanoflights frontmatter + linked notes (migr 132)",
         "scope": "tablets"
-      },
-      {
-        "hash": "eff9ce44",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Record translator + version beside every English (migr 131) — CTAI api/pipeline/model, Phelps PI v6.01",
-        "scope": "translation"
-      },
-      {
-        "hash": "53fde026",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "POST /concepts/alignment/twin — a duplicate original inherits its twin's English (never retranslate)",
-        "scope": "alignment"
       }
     ]
   }
