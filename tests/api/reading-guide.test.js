@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readingIntent, bookFrom, startFrom, understandReply } from '../../api/lib/assistant/reading.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/assistant/reading.js';
-import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations } from '../../api/lib/assistant/reading.js';
+import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations, msg } from '../../api/lib/assistant/reading.js';
 import { sameName } from '../../api/lib/assistant/reading.js';
 
 const MD = `# The Book {.off id="para_1" type="title"}
@@ -70,10 +70,15 @@ describe('understandReply — by meaning, not by keyword (Chad 10-13)', () => {
     expect(await understandReply('next please', { active: true, llm: async () => ({ json: { kind: 'dance' } }) })).toMatchObject({ kind: 'next' });
     expect(await understandReply('skip ahead', { active: true, llm: async () => ({ json: { kind: 'jump', target: null } }) }).then((r) => r.by)).toBeUndefined();
   });
-  it('outside a reading, nothing is asked of the model', async () => {
-    let called = false;
-    expect(await understandReply('hello', { active: false, llm: async () => { called = true; return {}; } })).toMatchObject({ kind: 'none' });
-    expect(called).toBe(false);
+  it('outside a reading, only a request to read a book opens one — in any language (Chad 10-13)', async () => {
+    const llm = async () => ({ json: { kind: 'start', book: 'The Dawn-Breakers', language: 'es' } });
+    expect(await understandReply('Ayúdame a estudiar Los Rompedores del Alba, desde la introducción', { active: false, llm }))
+      .toMatchObject({ kind: 'start', book: 'The Dawn-Breakers', language: 'es' });
+    expect(await understandReply('hola, ¿qué tal?', { active: false, llm: async () => ({ json: { kind: 'none', language: 'es' } }) })).toMatchObject({ kind: 'none', language: 'es' });
+    expect(await understandReply('hola', { active: false, llm: async () => ({ json: { kind: 'next', language: 'es' } }) })).toMatchObject({ kind: 'none' });   // nothing to continue
+  });
+  it('without a model, the script still tells Persian / Arabic', async () => {
+    expect((await understandReply('لطفاً ادامه بدهید', { active: true })).language).toBe('fa');   // ی: Persian-only letter
   });
 });
 
@@ -138,6 +143,11 @@ describe('subject and page', () => {
       [{ name: 'Nabíl’s unique narrative', labels: new Set(['S3']) }, { name: 'Revelation', labels: new Set(['S1']) }]);
     expect(out.paragraphs[0].notes[0].note).toBe('Pilgrimage and pen name [S3].');
     expect(out.look_closer).toBe('x');
+  });
+  it('fixed sentences come from the per-language catalogue; an unlisted language falls back to English', () => {
+    expect(msg('es', 'end', { book: 'X' })).toBe('Hemos llegado al final de **X**.');
+    expect(msg('fa', 'where')).toBe('از کجا شروع کنیم؟');
+    expect(msg('xx', 'end', { book: 'X' })).toBe("We've reached the end of **X**.");
   });
   it('names match across honorifics and spelling marks', () => {
     expect(sameName('Mullá Ḥusayn', 'Ḥusayn')).toBe(true);

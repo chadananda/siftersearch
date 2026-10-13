@@ -186,33 +186,52 @@ export function readingIntent(text, { active = false } = {}) {
 
 // ── understanding a reply by MEANING (Chad 10-13: "you cannot control how a person responds and force them to use exactly
 // one word") ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-export const UNDERSTAND_SYSTEM = `Someone is reading a book with a companion by email, one page at a time. They just replied to a page.
-Decide what they want. Reply with JSON only:
-{"kind":"next|again|back|jump|where|stop|question|start","level":"introductory|serious|advanced|null","target":"chapter/section/event to jump to, or null","book":"a different book to start, or null"}
-- next: they want to keep reading (any wording: "carry on", "lovely, more", "ok", "thanks, onward", a comment with no request)
-- again: the same page redone deeper or differently ("not enough detail", "dig deeper", "redo with more on X")
+export const UNDERSTAND_SYSTEM = `Someone writes to a reading companion by email. They may be in the middle of reading a book with it (READING
+says which), and they may write in ANY language. Decide what they want. Reply with JSON only:
+{"kind":"next|again|back|jump|where|stop|question|start|none","level":"introductory|serious|advanced|null","target":"chapter/section/event to jump to, or null","book":"the book's title, or null","language":"ISO 639-1 code of the language THEY wrote in"}
+- start: they ask to read or study a book with you (any wording, any language) — "book" = its title (its usual English title when you know it)
+- none: not reading-related at all (only when READING is "none")
+- next: keep reading (any wording: "carry on", "lovely, more", "ok", "seguir", "ادامه", a comment with no request)
+- again: the same page redone deeper or differently
 - back / where / stop: previous page / where are we / pause the reading
 - jump: go to a named chapter, section or event
 - question: they ask something about what they read (answer it; do not move on) — if they ALSO ask to continue, choose next
-- start: they ask to read a different book
 - level: only if they ask for simpler / more scholarly notes.`;
 
-/** The reply's meaning, from a small model; falls back to the rules if the model is unavailable. Never throws. */
+// a script tells the language without a model (fallback when the model is unavailable)
+const scriptLang = (t) => (/[پچژگی]/.test(t) ? 'fa' : /[\u0600-\u06FF]/.test(t) ? 'ar' : /[\u0590-\u05FF]/.test(t) ? 'he' : null);
+
+/** The message's meaning (and its language) from a small model — in or out of a reading, any language; the keyword
+ *  rules are the fallback. Never throws. */
 export async function understandReply(text, { active = false, page = '', llm } = {}) {
-  const rules = readingIntent(text, { active });
-  if (!active || rules.kind === 'start' || !llm) return rules;
+  const rules = { ...readingIntent(text, { active }), language: scriptLang(String(text)) };
+  if (!llm || (!active && rules.kind === 'start')) return rules;
   try {
-    const r = await llm({ system: UNDERSTAND_SYSTEM, user: `PAGE THEY JUST READ: ${page || 'unknown'}\nTHEIR REPLY: ${String(text).slice(0, 1500)}` });
+    const r = await llm({ system: UNDERSTAND_SYSTEM, user: `READING: ${active ? page || 'a book' : 'none'}\nTHEIR MESSAGE: ${String(text).slice(0, 1500)}` });
     const j = r?.json;
-    const kinds = ['next', 'again', 'back', 'jump', 'where', 'stop', 'question', 'start'];
+    const language = /^[a-z]{2}$/.test(j?.language || '') ? j.language : rules.language;
+    const kinds = ['next', 'again', 'back', 'jump', 'where', 'stop', 'question', 'start', 'none'];
     if (!j || !kinds.includes(j.kind)) return rules;
-    if (j.kind === 'start') return j.book ? { kind: 'start', book: j.book, from: startFrom(text) } : rules;
+    if (j.kind === 'start') return j.book ? { kind: 'start', book: j.book, from: startFrom(text), language, by: 'model' } : rules;
+    if (!active) return { kind: 'none', language };                      // only a start can open a reading
+    if (j.kind === 'none') return { ...rules, language };
     const level = ['introductory', 'serious', 'advanced'].includes(j.level) ? j.level : rules.level || null;
-    const out = { kind: j.kind, ...(level ? { level } : {}), ...(j.kind === 'jump' && j.target ? { target: j.target } : {}), by: 'model' };
-    if (out.kind === 'jump' && !out.target) return rules;
+    const out = { kind: j.kind, ...(level ? { level } : {}), ...(j.kind === 'jump' && j.target ? { target: j.target } : {}), language, by: 'model' };
+    if (out.kind === 'jump' && !out.target) return { ...rules, language };
     return out;
   } catch { return rules; }
 }
+
+// The guide's few fixed sentences, per language (the message-catalogue rule: no user-facing literal in code — planning/
+// backlog-anis-any-language-20261009.md). Model-written text (notes, answers, topics) follows the reader's language on its
+// own; an unlisted language falls back to English here only.
+const MESSAGES = {
+  en: { welcome: "Gladly — let's read **{book}** together, a page at a time, with notes on the people, places, works and words it mentions.", where: 'Where would you like to begin?', recommend: "For a first reading I'd start with the **Introduction**. Just reply with where you'd like to start.", at: "We're in **{book}**, at {address} ({section}).", end: "We've reached the end of **{book}**.", paused: "I've kept our place in **{book}** — write whenever you'd like to continue.", notFound: 'I couldn\'t find "{book}" in the library. Could you give me its exact title or author?' },
+  es: { welcome: 'Con gusto: leamos **{book}** juntos, una página a la vez, con notas sobre las personas, lugares, obras y palabras que menciona.', where: '¿Por dónde quieres empezar?', recommend: 'Para una primera lectura empezaría por la **Introducción**. Responde con el punto de partida que prefieras.', at: 'Estamos en **{book}**, en {address} ({section}).', end: 'Hemos llegado al final de **{book}**.', paused: 'He guardado nuestro lugar en **{book}**; escríbeme cuando quieras continuar.', notFound: 'No encontré «{book}» en la biblioteca. ¿Me das el título exacto o el autor?' },
+  fa: { welcome: 'با کمال میل — **{book}** را با هم صفحه به صفحه می‌خوانیم، با یادداشت‌هایی دربارهٔ اشخاص، مکان‌ها، آثار و واژه‌ها.', where: 'از کجا شروع کنیم؟', recommend: 'برای خواندن نخست پیشنهاد می‌کنم از **مقدمه** آغاز کنیم. بنویسید از کجا شروع کنیم.', at: 'در **{book}** هستیم، در {address} ({section}).', end: 'به پایان **{book}** رسیدیم.', paused: 'جای ما در **{book}** را نگه داشتم؛ هر وقت خواستید ادامه دهیم بنویسید.', notFound: '«{book}» را در کتابخانه نیافتم. لطفاً عنوان دقیق یا نام نویسنده را بنویسید.' },
+  ar: { welcome: 'بكل سرور — لنقرأ **{book}** معًا صفحةً صفحة، مع ملاحظات عن الأشخاص والأماكن والآثار والكلمات.', where: 'من أين تحب أن نبدأ؟', recommend: 'للقراءة الأولى أقترح أن نبدأ بـ**المقدمة**. اكتب من أين تريد البدء.', at: 'نحن في **{book}**، عند {address} ({section}).', end: 'وصلنا إلى نهاية **{book}**.', paused: 'حفظت مكاننا في **{book}**؛ اكتب متى شئت أن نتابع.', notFound: 'لم أجد «{book}» في المكتبة. هل تذكر العنوان الدقيق أو اسم المؤلف؟' },
+};
+export const msg = (lang, key, vars = {}) => String((MESSAGES[lang] || MESSAGES.en)[key] ?? MESSAGES.en[key]).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
 
 // ════ 4. RESEARCH ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -519,6 +538,7 @@ async function buildPage(d, { session, doc, from, depth = 1 }) {
   const user = `BOOK: ${doc.title} — ${sectionLabel}${author ? ` (${author}; this section is NOT by ${doc.author})` : ` (by ${doc.author})`}
 READER: ${level}
 NOTES LEVEL: ${NOTE_LEVELS[noteLevel]}
+WRITE THE NOTES AND THE TOPIC IN: ${langName(session?.explained?.__prefs?.language || 'en')} (the reader's language; book text and quotations stay as published, names as the book spells them)
 ${depth > 1 ? 'The reader asked to go DEEPER on this page: fuller timelines, more context, more connections.\n' : ''}
 PAGE:
 ${items.map((p) => `[${p.pid}] ${addressOf(p)} ${p.text}`).join('\n\n')}
@@ -543,11 +563,14 @@ ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.na
     subject: subjectFor(doc.title, items[0], notes.topic) };
 }
 
-function layoutReply(doc, outline) {
+function layoutReply(doc, outline, lang = 'en') {
   const s = outline.sections.filter((x) => x.key !== 'Front');
-  const list = s.map((x) => `- ${/^\d+$/.test(x.key) ? `Chapter ${x.key}` : x.key}${x.title && !/^\d+$/.test(x.key) ? '' : x.title ? ` — ${titleCase(x.title)}` : ''}`);
-  return `Gladly — let's read **${doc.title}** together, a page at a time, with notes after each paragraph on the people, places, works and words it mentions.\n\nWhere would you like to begin?\n\n${list.slice(0, 40).join('\n')}\n\nFor a first reading I'd start with the **Introduction** — it sets the scene of Persia and Islam in the 1840s that the whole story moves through. Just reply with where you'd like to start.`;
+  const list = s.map((x) => `- ${/^\d+$/.test(x.key) ? `${x.key}` : x.key}${x.title && !/^\d+$/.test(x.key) ? '' : x.title ? ` — ${titleCase(x.title)}` : ''}`);
+  return `${msg(lang, 'welcome', { book: doc.title })}\n\n${msg(lang, 'where')}\n\n${list.slice(0, 40).join('\n')}\n\n${msg(lang, 'recommend')}`;
 }
+
+// a language code → its name, for the model's instruction (Intl knows them all)
+const langName = (code) => { try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code; } catch { return code; } };
 
 /** One reading turn. → null (not reading: ordinary Anís) | { reply, subject } */
 export async function readingTurn({ messages = [], participantId, reset = false, deps } = {}) {
@@ -562,6 +585,10 @@ export async function readingTurn({ messages = [], participantId, reset = false,
     llm: d.understand ?? ((m) => d.llmJson({ ...modelFor('reading-targets'), caller: 'reading-understand', maxTokens: 200, ...m })) });
   // a notes level asked for anywhere ("…and use the advanced level of notes") is kept for the rest of the book
   if (intent.level && session) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), level: intent.level } } };
+  // the reader's language follows them (Chad 10-13: "some users might speak Spanish or Farsi and the interaction should
+  // easily switch") — the latest message decides; kept per book for the pages that follow
+  const lang = intent.language || session?.explained?.__prefs?.language || 'en';
+  if (session && intent.language) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), language: intent.language } } };
   // a question about the page being read is answered IN the reading (10-13: it fell through to an ordinary answer)
   if (intent.kind === 'question' && session?.pages?.length) return answerInReading(d, { session, text });
   if (intent.kind === 'none' || intent.kind === 'question') {
@@ -577,7 +604,7 @@ export async function readingTurn({ messages = [], participantId, reset = false,
   }
   if (intent.kind === 'start') {
     const doc = await findBook(d, intent.book);
-    if (!doc) return { reply: `I couldn't find "${intent.book}" in the library. Could you give me its exact title (or the author)?`, subject: null };
+    if (!doc) return { reply: msg(lang, 'notFound', { book: intent.book }), subject: null };
     session = await d.sessionFor(participantId, doc.id).catch(() => null);
     // reset: begin the book afresh — no pages, nothing explained (a re-read after the guide itself changed)
     if (reset && session) session = { ...session, pages: [], explained: {}, cursor: 0 };
@@ -585,10 +612,11 @@ export async function readingTurn({ messages = [], participantId, reset = false,
     const { outline } = await outlineOf(d, doc);
     const at = intent.from ? startIndex(outline.paragraphs, intent.from) : null;
     if (at == null && !session?.pages?.length) {
-      await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: 0, pages: [], explained: session?.explained || {} });
-      return { reply: layoutReply(doc, outline), subject: `${READING_TAG} ${shortTitle(doc.title)}, where shall we begin?` };
+      await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: 0, pages: [], explained: { ...(session?.explained || {}), __prefs: { ...(session?.explained?.__prefs || {}), language: lang } } });
+      return { reply: layoutReply(doc, outline, lang), subject: `${READING_TAG} ${shortTitle(doc.title)}, where shall we begin?` };
     }
-    return turnPage(d, { participantId, session: session || { pages: [], explained: {} }, doc, from: at ?? session.cursor });
+    const fresh = session || { pages: [], explained: {} };
+    return turnPage(d, { participantId, session: { ...fresh, explained: { ...(fresh.explained || {}), __prefs: { ...(fresh.explained?.__prefs || {}), language: lang } } }, doc, from: at ?? fresh.cursor ?? 0 });
   }
   const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
   if (!doc) return null;
@@ -596,11 +624,11 @@ export async function readingTurn({ messages = [], participantId, reset = false,
   if (intent.kind === 'where') {
     const { outline } = await outlineOf(d, doc);
     const p = outline.paragraphs[session.cursor];
-    return { reply: p ? `We're in **${doc.title}**, at ${addressOf(p)} (${sectionName(p.section, outline.sections)}${p.topic ? ` · ${p.topic}` : ''}). Reply **next** to continue.` : `We've reached the end of **${doc.title}**.`, subject: null };
+    return { reply: p ? msg(lang, 'at', { book: doc.title, address: addressOf(p), section: `${sectionName(p.section, outline.sections)}${p.topic ? ` · ${p.topic}` : ''}` }) : msg(lang, 'end', { book: doc.title }), subject: null };
   }
   if (intent.kind === 'stop') {
     await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: session.cursor, pages, explained: session.explained, status: 'paused' });
-    return { reply: `I've kept our place in **${doc.title}**. Whenever you'd like to continue, write "help me study ${shortTitle(doc.title)}" and we'll pick up where we left off.`, subject: null };
+    return { reply: msg(lang, 'paused', { book: doc.title }), subject: null };
   }
   if (intent.kind === 'again') return turnPage(d, { participantId, session, doc, from: pages.at(-1)?.from ?? session.cursor, depth: intent.relevel ? 1 : 2, redo: true });
   // back = the page before the last one sent; with only one page sent, that page again (never the front matter)
@@ -635,7 +663,7 @@ async function answerInReading(d, { session, text }) {
   const hits = await d.links((r?.hits || []).slice(0, 6)).catch(() => []);
   const sources = hits.map((h) => ({ title: h.title || 'library', url: h.url || null }));
   const out = await d.llmJson({ ...modelFor('reading-notes'), caller: 'reading-answer', maxTokens: 1500, system: ANSWER_SYSTEM,
-    user: `BOOK: ${doc.title}\nPAGE:\n${items.map((p) => `${addressOf(p)} ${p.text}`).join('\n\n')}\n\nLIBRARY:\n${hits.map((h, i) => `[S${i + 1}] ${h.title}: ${String(h.text || '').replace(/⁅\/?s\d+⁆/g, '').slice(0, 700)}`).join('\n\n') || 'none'}\n\nQUESTION: ${text}` });
+    user: `ANSWER IN: ${langName(session?.explained?.__prefs?.language || 'en')} (the reader's language; quotations stay as published)\nBOOK: ${doc.title}\nPAGE:\n${items.map((p) => `${addressOf(p)} ${p.text}`).join('\n\n')}\n\nLIBRARY:\n${hits.map((h, i) => `[S${i + 1}] ${h.title}: ${String(h.text || '').replace(/⁅\/?s\d+⁆/g, '').slice(0, 700)}`).join('\n\n') || 'none'}\n\nQUESTION: ${text}` });
   const answer = out.json?.answer || out.text || '';
   const { notes, sources: used } = renumber({ paragraphs: [{ pid: 'a', notes: [{ name: 'a', note: answer }] }] }, sources);
   const body = notes.paragraphs[0].notes[0].note;
@@ -645,7 +673,7 @@ async function answerInReading(d, { session, text }) {
 
 async function turnPage(d, { participantId, session, doc, from, depth = 1, redo = false }) {
   const pg = await buildPage(d, { session, doc, from, depth });
-  if (pg.done) return { reply: `We've reached the end of **${doc.title}**. It has been a joy reading it with you — what would you like to read next?`, subject: `${READING_TAG} ${shortTitle(doc.title)}, the end` };
+  if (pg.done) return { reply: msg(session?.explained?.__prefs?.language || 'en', 'end', { book: doc.title }), subject: `${READING_TAG} ${shortTitle(doc.title)}, the end` };
   const pages = [...(session.pages || [])];
   if (redo && pages.length) pages.pop();
   pages.push({ from, to: pg.next - 1, subject: pg.subject, depth, at: new Date().toISOString() });
