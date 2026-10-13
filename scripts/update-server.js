@@ -546,6 +546,12 @@ async function swapPm2Process(name) {
   // config changes.
   const result = await run(`pm2 startOrReload ecosystem.config.cjs --only ${name} --update-env`);
   if (result.success) {
+    // A deploy is not done until the service is back: the writer can take minutes to stop (a long synchronous write) and
+    // restart, and the watchdog used to call that a crash — "keeps going down (3× in an hour)" for routine deploys (10-13).
+    // Wait (≤4 min) for it to be online, then start the watchdog's settle window from THAT moment.
+    for (let i = 0; i < 48 && !(await isProcessRunning(name)); i++) await new Promise((r) => setTimeout(r, 5000));
+    lastSwapAt = Date.now();
+    if (!(await isProcessRunning(name))) log('warn', `${name} not back online 4 min after the deploy — the watchdog will take over`);
     return true;
   }
   log('warn', `startOrReload failed for ${name}, falling back to delete+start`);
