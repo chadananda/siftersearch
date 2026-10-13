@@ -9,14 +9,14 @@ export default async function readingRoutes(fastify) {
     return true;
   };
 
-  /** POST /turn { participant, message } or { participant, messages:[{role,content}] }
+  /** POST /turn { participant, message, reset? } or { participant, messages:[{role,content}] } — reset: a start begins the book afresh
    *  → { reading:false } (not a reading message — answer it elsewhere) | { reading:true, reply, subject, page, bookmark } */
   fastify.post('/turn', async (request, reply) => {
     if (!internalOnly(request, reply)) return;
-    const { participant, message, messages } = request.body || {};
+    const { participant, message, messages, reset = false } = request.body || {};
     if (!participant || !(message || messages?.length)) return reply.code(400).send({ error: 'participant and message required' });
     const { readingTurn } = await import('../lib/anis/reading/guide.js');
-    const r = await readingTurn({ messages: messages?.length ? messages : [{ role: 'user', content: String(message) }], participantId: String(participant) });
+    const r = await readingTurn({ messages: messages?.length ? messages : [{ role: 'user', content: String(message) }], participantId: String(participant), reset: !!reset });
     return r?.reply ? { reading: true, ...r } : { reading: false };
   });
 

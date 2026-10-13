@@ -65,6 +65,9 @@ arc in two or three dated beats (later fates welcome), what a place or office wa
 where else the Writings or other histories speak of this, a connection the reader would not see. Never a dictionary definition.
 Write from the EVIDENCE; cite its labels like [S3]. Certain general background (dates, name meanings, Hijri↔Gregorian) needs no label.
 Something in ALREADY_EXPLAINED gets at most one short line pointing back ("met in #Intro.3") and only if this paragraph adds to it.
+Use EVIDENCE only where it illuminates the noted words themselves; never talk about the evidence ("a letter calls it…",
+"the sources say…"); never cite a source for something it does not say; never pad a note with loosely related works. If the
+evidence does not help, write from certain knowledge — or leave the words without a note.
 Illuminate the text, never grade it: no verdicts that the author exaggerates, is wrong or is "rhetorical"; where sources differ,
 say what each says. Spell names exactly as the book does (Nabíl, S̱háh, Ṭihrán).
 "name" must be the EXACT words from the paragraph (they are highlighted in the text). Style: compact, warm, precise, speakable;
@@ -206,7 +209,7 @@ function layoutReply(doc, outline) {
 }
 
 /** One reading turn. → null (not reading: ordinary Anís) | { reply, subject } */
-export async function readingTurn({ messages = [], participantId, deps } = {}) {
+export async function readingTurn({ messages = [], participantId, reset = false, deps } = {}) {
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
   const text = ownWords(lastUser?.content);
   if (!text || !participantId) return null;
@@ -228,6 +231,8 @@ export async function readingTurn({ messages = [], participantId, deps } = {}) {
     const doc = await findBook(d, intent.book);
     if (!doc) return { reply: `I couldn't find "${intent.book}" in the library. Could you give me its exact title (or the author)?`, subject: null };
     session = await d.sessionFor(participantId, doc.id).catch(() => null);
+    // reset: begin the book afresh — no pages, nothing explained (a re-read after the guide itself changed)
+    if (reset && session) session = { ...session, pages: [], explained: {}, cursor: 0 };
     const { outline } = await outlineOf(d, doc);
     const at = intent.from ? startIndex(outline.paragraphs, intent.from) : null;
     if (at == null && !session?.pages?.length) {
