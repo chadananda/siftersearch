@@ -155,7 +155,9 @@ export function quoteAuthorOf(matches) {
 // (Chad 10-12: "why would a committee translation come up after a Shoghi Effendi translation. that is awful" —
 // 'The earth is but one country' gave Tablets of Bahá’u’lláh, not Gleanings CXVII).
 const GUARDIAN_WORKS = /^(gleanings from the writings of bah|the kit[aá]b-i-[ií]q[aá]n|kitab-i-iqan|the hidden words|hidden words of bah|prayers and meditations|epistle to the son of the wolf|the dawn-breakers)/i;
-export const guardianTranslation = (c) => translatedBy(c) === 'Shoghi Effendi' || GUARDIAN_WORKS.test(String(c.title || '').trim());
+// 2 = a work he translated (Gleanings); 1 = his English reused elsewhere (the committee's Tablets volume keeps his rendering of
+// a passage he had translated — true, but the source to cite is his own publication); 0 = another translation.
+export const guardianTranslation = (c) => (GUARDIAN_WORKS.test(String(c.title || '').trim()) ? 2 : translatedBy(c) === 'Shoghi Effendi' ? 1 : 0);
 
 export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
@@ -165,7 +167,7 @@ export function rankOrigins(cands, quoteAuthor = null) {
     // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
     // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.
     (c.overlap || 0) >= VERBATIM ? 1 : 0,
-    guardianTranslation(c) ? 1 : 0,                   // Shoghi Effendi's own translation before any other holding the words
+    guardianTranslation(c),                           // Shoghi Effendi's own publication, then his English elsewhere, then others
     /core publications/i.test(c.collection || '') || c.coreTwin ? 1 : 0, c.authority ?? 0, isCanonical(c) ? 1 : 0, c.linkedFrom || 0,
     -year(c), c.quotedCount || 0, c.overlap || 0];
   return [...cands].sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i]; return a.id - b.id; });

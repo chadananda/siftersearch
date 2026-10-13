@@ -46,7 +46,7 @@ describe('rankOrigins', () => {
   });
   it("Shoghi Effendi's translation beats a committee translation holding the same words (Gleanings CXVII over Tablets)", () => {
     const w = { writer: 'Bahá’u’lláh', ownWork: true, holds: true, overlap: 1, collection: 'Core Publications' };
-    const r = rankOrigins([{ ...w, id: 1, title: 'Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', year: 1978 },
+    const r = rankOrigins([{ ...w, id: 1, title: 'Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', year: 1978, fm_translated_by: 'Shoghi Effendi' },
       { ...w, id: 2, title: 'Gleanings from the Writings of Bahá’u’lláh', collection: null, year: 1935 }], 'Bahá’u’lláh');
     expect(r[0].id).toBe(2);
   });
