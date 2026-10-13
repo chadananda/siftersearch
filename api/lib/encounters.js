@@ -4,6 +4,7 @@
 // spot ("Mullá ‘Alí" inside "Mullá ‘Alí Mardan", "Bahá" inside "‘Abdu’l-Bahá"). Loaded once (~100k rows), refreshed
 // stale-while-revalidate; a query is milliseconds. Returns null when the question is not who-met-whom.
 // Deps: db, entity-live, source-links.
+import { logger } from './logger.js';
 import { queryAll } from './db.js';
 import { LIVE_SQL } from './entity-live.js';
 import { linkFor } from './source-links.js';
@@ -342,8 +343,6 @@ async function build() {
         AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> '' ORDER BY ec.id LIMIT ${PAGE}`, [after, ...ENCOUNTER_RELATIONS], 'encounters:claims')),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),
   ]);
-  // The core histories whose word settles a conflict (see encounterSearch). By title: every copy of them counts.
-  const authoritative = (await queryAll(`SELECT id FROM docs WHERE title IN ('God Passes By', 'The Dawn-Breakers')`, [], 'encounters:authority')).map((r) => r.id);
   // SCENES: every pair of bound participants in one scene was physically together — "present with" evidence, with
   // the scene's summary and verbatim proof. (A four-person gathering yields six pairs; claims gave one or two.)
   let sceneRows = [];
@@ -362,11 +361,22 @@ async function build() {
       }
     }
   } catch { sceneRows = []; }   // tables absent before migration 125
+  // The core histories whose word settles a conflict (see encounterSearch). By title: every copy of them counts.
+  // Asked of the docs the claims cite, by primary key: a title scan of docs blocked 1.2 s at every build (10-12).
+  const citedDocs = [...new Set([...claims, ...sceneRows].map((c) => c.doc).filter(Boolean).map(Number))];
+  const authoritative = [];
+  for (let i = 0; i < citedDocs.length; i += 500) {
+    const ids = citedDocs.slice(i, i + 500);
+    for (const r of await queryAll(`SELECT id, title FROM docs WHERE id IN (${ids.map(() => '?').join(',')})`, ids, 'encounters:authority'))
+      if (r.title === 'God Passes By' || r.title === 'The Dawn-Breakers') authoritative.push(r.id);
+  }
   const gids = groups.map((g) => g.id);
   const members = gids.length ? await queryAll(`SELECT gr.target_entity_id "group", gr.source_entity_id id
     FROM graph_relations gr WHERE gr.target_entity_id IN (${gids.map(() => '?').join(',')})`, gids, 'encounters:members') : [];
   const live = new Set(persons.map((p) => p.id));
-  return createEncounterIndex({ persons, groups, members, claims: [...claims, ...sceneRows].filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative });
+  const t = Date.now();
+  try { return createEncounterIndex({ persons, groups, members, claims: [...claims, ...sceneRows].filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative }); }
+  finally { logger.info({ ms: Date.now() - t }, 'encounter index: in-memory build'); }
 }
 
 /** Rebuild now (after an entity write — merges, re-link, group facts) instead of waiting out the 30-minute TTL. */

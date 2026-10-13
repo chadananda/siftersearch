@@ -137,9 +137,13 @@ const start = async () => {
         logger.warn({ err: err.message }, 'encounter index warm-up failed'));
       await warmOlDocIdCache().catch((err) => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
     };
-    if (preboot) { await bootTasks(); await warmIndexes(); }
+    // Preboot runs only the fast boot tasks (~0.5 s) before listening. The warm-ups (encounter index, OL doc ids — ~6 s)
+    // run AFTER listening, paged and yielding: Chad 10-12 "restarting the server must not take more than a second or two
+    // before the API is available". Until the index is built, encounter questions fall back to passage search.
+    if (preboot) await bootTasks();
 
     await server.listen({ port, host });
+    if (preboot) warmIndexes().catch(() => {});
 
     if (!preboot) {
       // Warm the who-met-whom index once, off the request path (a ~5 s synchronous build; searches never wait on it cold).
