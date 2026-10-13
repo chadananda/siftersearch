@@ -560,7 +560,33 @@ export const batchQueryAll = queryAll;
 // Uses a dedicated connection with 200ms busy_timeout — if the WAL is contended
 // (sync worker holding write lock), the write fails quickly rather than freezing
 // the Node.js event loop for up to SQLITE_BUSY_TIMEOUT_MS (up to 120s).
+/** Telemetry rows batched to the writer: push() queues, a batch goes when `max` rows wait or `delayMs` after the first.
+ *  Fire-and-forget — a failed batch is logged, never thrown into the caller. Pure over `post`, so it is testable. */
+export function createTelemetryQueue(post, { max = 200, delayMs = 2000 } = {}) {
+  const buf = [];
+  let timer = null;
+  const flush = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    const batch = buf.splice(0, buf.length);
+    if (!batch.length) return Promise.resolve(0);
+    return Promise.resolve().then(() => post(batch, 'telemetry'))
+      .then(() => batch.length, (e) => { logger.warn({ err: e.message, rows: batch.length }, 'telemetry batch dropped'); return 0; });
+  };
+  const push = (sql, args) => {
+    buf.push({ sql, args });
+    if (buf.length >= max) flush();
+    else if (!timer) { timer = setTimeout(flush, delayMs); timer.unref?.(); }
+  };
+  return { push, flush, pending: () => buf.length };
+}
+const telemetryQueue = createTelemetryQueue((statements, name) => postWriteBatch(statements, name));
+process.once('beforeExit', () => { telemetryQueue.flush(); });
+
+// ai_usage rows. In a process whose writes are ROUTED they go to the writer in batches: the direct 50 ms-busy connection
+// below lost them whenever the writer held the lock — 87,495 usage rows from background runs on 10-13 alone, so the
+// spend ledger (and the budget gate reading it) undercounted grounding and concept spend.
 export function telemetryQuery(sql, params = []) {
+  if (ROUTE_WRITES) return telemetryQueue.push(sql, params);
   const db = getTelemetryDb();
   db.prepare(sql).run(...params);
 }

@@ -3,7 +3,7 @@
 // (→ auto-retry requeue) instead of spinning through every paragraph dropping writes as "per-item flakes".
 // Regression guard for the 2026-07-18 writer-deadlock incident (25-min silent spin + queue freeze).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { postWriteBatch } from '../../api/lib/db.js';
+import { postWriteBatch, createTelemetryQueue } from '../../api/lib/db.js';
 
 const okResponse = () => ({ ok: true, json: async () => ({ results: [] }) });
 const failFetch = () => { throw new Error('fetch failed'); };
@@ -43,5 +43,19 @@ describe('postWriteBatch — writer-down fail-fast', () => {
     fetch.mockImplementation(failFetch);
     const e = await postWriteBatch([]).then(() => null, (err) => err);   // 1 fail after reset
     expect(e.fatal).toBeUndefined();                 // not fatal — the reset cleared the prior 5
+  });
+});
+
+describe('telemetry queue — usage rows reach the writer in batches', () => {
+  it('a full batch goes at once; the rest on flush; a failed post is swallowed', async () => {
+    const sent = [];
+    const q = createTelemetryQueue(async (batch) => { sent.push(batch.length); }, { max: 3, delayMs: 60000 });
+    for (let i = 0; i < 4; i++) q.push('INSERT INTO ai_usage (x) VALUES (?)', [i]);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(sent).toEqual([3]);
+    expect(await q.flush()).toBe(1);
+    const bad = createTelemetryQueue(async () => { throw new Error('writer down'); }, { max: 1 });
+    bad.push('INSERT', []);
+    expect(await bad.flush()).toBe(0);
   });
 });
