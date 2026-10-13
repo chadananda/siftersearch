@@ -13,7 +13,7 @@ export async function identicalCopies(paragraphIds) {
   const hashes = [...new Set(own.map((r) => r.h))];
   if (!hashes.length) return new Map();
   const rows = await queryAll(`SELECT c.id, c.normalized_hash h, c.doc_id, c.paragraph_index, c.text, c.external_para_id, c.block_attrs,
-      d.source_url, d.metadata, d.external_id, d.religion, d.collection, d.slug, d.filename, d.source_site
+      d.title, d.source_url, d.metadata, d.external_id, d.religion, d.collection, d.slug, d.filename, d.source_site
     FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE c.normalized_hash IN (${hashes.map(() => '?').join(',')}) AND c.embedding IS NOT NULL
       AND c.deleted_at IS NULL AND d.deleted_at IS NULL LIMIT ${Math.min(40 * hashes.length, 4000)}`, hashes, 'copies:identical');

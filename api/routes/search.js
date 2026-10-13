@@ -454,7 +454,7 @@ export default async function searchRoutes(fastify) {
       const own = hits.map((h) => { const m = meta.get(Number(h.doc_id ?? h.document_id)) || {};
         return linkFor({ ...m, ...h, document_id: h.doc_id ?? h.document_id, source_url: h.source_url || m.source_url || null, metadata: m.metadata }, h.paragraph_index); });
       // the best publisher of the same words (identical copy on OceanLibrary / Ocean of Lights), not just the copy found
-      const better = await (await import('../lib/citation-links.js')).betterCopyLinks(hits.map((h, i) => ({ id: h.id, link: own[i] }))).catch(() => new Map());
+      const better = await (await import('../lib/citation-links.js')).betterCopyLinks(hits.map((h, i) => ({ id: h.id, title: h.title, link: own[i] }))).catch(() => new Map());
       return hits.map((h, i) => {
         const l = better.get(Number(h.id)) || own[i];
         return { ...h, url: l.url, link: { site: l.site, tier: l.tier, paragraph_level: l.paragraph_level } };

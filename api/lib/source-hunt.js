@@ -479,7 +479,7 @@ async function defaultDeps() {
         }
         coreTitles = { at: Date.now(), set };
       }
-      const linked = rs.map((r) => ({ id: r.id, link: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
+      const linked = rs.map((r) => ({ id: r.id, title: r.title, link: linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion, collection: r.collection,
         slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index) }));
       // the best PUBLISHER of the same words (an identical copy on OceanLibrary / Ocean of Lights), not just the copy found
       const better = await (await import('./citation-links.js')).betterCopyLinks(linked).catch(() => new Map());
