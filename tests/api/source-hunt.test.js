@@ -63,7 +63,7 @@ describe('sourceHunt', () => {
   it('finds the book, the citing publications, and the linked tablet with its links', async () => {
     const r = await sourceHunt(QUOTE, deps());
     expect(r.origin).toMatchObject({ id: 1, title: 'Gleanings', author: "Bahá'u'lláh" });
-    expect(r.citedBy.map((c) => c.title)).toEqual(['Bahá’u’lláh and the New Era', 'Lights of Guidance']);   // a public copy before a SifterSearch-only one
+    expect(r.citedBy.map((c) => c.title)).toEqual(['Lights of Guidance', 'Bahá’u’lláh and the New Era']);   // graded (10-13): the passage AS the Writings before a book quoting it
     expect(r.citedBy.some((c) => c.title === 'Other')).toBe(false);                                          // not verbatim
     // translated_by: the source's own record; a verbatim citation inherits it unless it records its own translator
     expect(r.origin.translated_by).toBe('Shoghi Effendi');
@@ -377,6 +377,9 @@ describe('graded citations', () => {
     expect(gradeCitation({ author: 'Research Department', title: 'Compilation on Prayer', site: 'library' }).rank).toBe(1);
     expect(gradeCitation({ author: 'Adib Taherzadeh', site: 'library' }).rank).toBe(2);
     expect(gradeCitation({ author: 'troxel', site: 'bahai-library.com' }).rank).toBe(2);   // the host is not the grade
+    expect(gradeCitation({ author: 'writings-bahaullah-slh-haykal', site: 'bahai-library.com' }).rank).toBe(0);   // a slug author, read by name
+    expect(gradeCitation({ author: 'Helen Hornby', writer: 'Bahá’u’lláh', site: 'library' }).rank).toBe(0);   // the passage's own writer
+    expect(gradeCitation({ author: 'babylon studies', site: 'x' }).rank).toBe(2);
   });
   it('sorts by grade, then publisher', () => {
     const out = gradeCitations([{ title: 'Ours', author: 'x', site: 'library', paragraphs: 1 },

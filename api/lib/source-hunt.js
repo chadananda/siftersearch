@@ -105,12 +105,16 @@ export function textFragment(url, text, ranges, n = 4, docId = null) {
 }
 
 /** How primary a citing publication is to the tradition (Chad 10-13: one graded list per box, best first). Pure.
- *  0 Authoritative (the work's own author is a Central Figure or the Guardian — quoting his translation is not enough) · 1 Institutional (House of Justice,
+ *  0 Writings (the passage is a Central Figure's or the Guardian's own words — quoting his translation is not enough) · 1 Institutional (House of Justice,
  *  compilations) · 2 Secondary (books and articles); within a grade the best publisher first (OceanLibrary → … → our library). */
 const INSTITUTIONAL = /universal house of justice|research department|compil|national spiritual assembly|international teaching centre/i;
 export function gradeCitation(c) {
   const who = `${c.author || ''} ${c.title || ''}`;
-  if ([...DOCTRINAL].some((a) => (c.author || '').includes(a.replace(/^The /, '')))) return { rank: 0, label: 'Authoritative' };
+  // the passage's own writer (content.authors) or the work's author; a scraped site's slug author counts by its name
+  // ("writings-bahaullah-slh-haykal" is Bahá'u'lláh's Súriy-i-Haykal)
+  const names = [c.writer, c.author].filter(Boolean).join(' ');
+  if ([...DOCTRINAL].some((a) => names.includes(a.replace(/^The /, '')))
+    || /(^|[-_ ])(bahaullah|baha-u-llah|abdul-?baha|abdu-l-baha|shoghi-?effendi)([-_ ]|$)|(^|[-_ ])bab([-_ ]|$)/i.test(String(c.author || ''))) return { rank: 0, label: 'Writings' };
   if (INSTITUTIONAL.test(who)) return { rank: 1, label: 'Institutional' };
   return { rank: 2, label: 'Secondary' };   // books and articles alike — the host is not the grade; within a grade, best publisher first
 }
@@ -305,7 +309,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     // translation (Divine Philosophy quoting Gleanings → Shoghi Effendi). A paraphrase inherits nothing.
     const own = p.translated_by !== undefined ? p.translated_by : translatedBy(p);
     const verbatim = !!p.text && overlap(q.match, p.text) >= VERBATIM;
-    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.pubTitle || p.title, author: p.book_author,
+    const cur = byDoc.get(p.doc_id) || { documentId: p.doc_id, title: p.pubTitle || p.title, author: p.book_author, writer: p.writer || null,
       translated_by: own || (verbatim ? originOut.translated_by : null) || null, site: siteOf(p.url, p.source_site),
       // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)

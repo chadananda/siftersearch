@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-13T14:14:50.436Z",
+  "generated": "2026-10-13T14:23:34.444Z",
   "entries": [
+    {
+      "hash": "f512703c",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Graded source lists at the bottom of each box — no separate citation shelf",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "fc341475",
       "date": "2026-10-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Phelps' compound codes (BRL_DAK, SW_v08) resolve by stem — 99.4% of references cited",
       "scope": "tablets"
-    },
-    {
-      "hash": "598cdcaa",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "One merged metadata record per tablet — Phelps' inventory + oceanoflights frontmatter + linked notes (migr 132)",
-      "scope": "tablets"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "f512703c",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Graded source lists at the bottom of each box — no separate citation shelf",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "fc341475",
         "date": "2026-10-13",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-29",
         "type": "Fixed",
         "description": "Phelps' compound codes (BRL_DAK, SW_v08) resolve by stem — 99.4% of references cited",
-        "scope": "tablets"
-      },
-      {
-        "hash": "598cdcaa",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "One merged metadata record per tablet — Phelps' inventory + oceanoflights frontmatter + linked notes (migr 132)",
         "scope": "tablets"
       }
     ]

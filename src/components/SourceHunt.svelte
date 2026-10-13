@@ -336,7 +336,7 @@
             </div>
             {#each cited.citedBy as c, i (c.documentId)}
               <div class="cite-row flex flex-wrap items-center gap-2" style="--d: {i * 70}ms">
-                <span class="chip" class:chip-ok={c.grade?.rank === 0}>{c.grade?.label || 'Source'}</span>
+                <span class="chip" class:chip-ok={c.grade?.rank === 0} title={c.grade?.rank === 0 ? 'The passage is the words of a Central Figure or the Guardian' : c.grade?.rank === 1 ? 'An institution or a compilation' : 'A book or article quoting it'}>{c.grade?.label || 'Source'}</span>
                 <span class="text-xs text-primary truncate max-w-full">{c.title}</span>
                 {#if c.author}<span class="text-xs text-muted truncate">{c.author}{#if c.translated_by} · tr. {c.translated_by}{/if}</span>{/if}
                 {#if c.url}<a href={c.rangeUrl || c.url} target="_blank" rel="noopener" class="linkchip">{siteName(c.site)} ↗</a>{/if}
