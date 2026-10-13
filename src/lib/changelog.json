@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-13T18:29:08.913Z",
+  "generated": "2026-10-13T18:29:57.444Z",
   "entries": [
+    {
+      "hash": "69b5db24",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Band header one fixed line — spines of both boxes start at the same height",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "51bfa1f6",
       "date": "2026-10-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Flexible metadata for ANY document (doc_meta, migr 134) in its own small Meili index — never the paragraphs index",
       "scope": "docmeta"
-    },
-    {
-      "hash": "1cb062c4",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Tablet box reads left-to-right on RTL pages, short citations; strip sentence markers in the view?doc reader",
-      "scope": "reader"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "69b5db24",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Band header one fixed line — spines of both boxes start at the same height",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "51bfa1f6",
         "date": "2026-10-13",
@@ -7024,13 +7031,6 @@
         "type": "New",
         "description": "Flexible metadata for ANY document (doc_meta, migr 134) in its own small Meili index — never the paragraphs index",
         "scope": "docmeta"
-      },
-      {
-        "hash": "1cb062c4",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Tablet box reads left-to-right on RTL pages, short citations; strip sentence markers in the view?doc reader",
-        "scope": "reader"
       }
     ]
   }

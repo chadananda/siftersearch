@@ -170,7 +170,7 @@
 
   // Results stream in ONE BEAT AT A TIME (Chad 10-12): the source card → its phrase highlighted → the tablet card → its
   // phrase → the citations, spines rising one by one. Each beat waits for its data AND for the previous highlight to finish.
-  let beat = $state(0);                   // 0 none · 1 source · 2 tablet · 3 citations
+  let beat = $state(0);                   // 0 none · 1 English source · 2 tablet · 3 English band · 4 original band (Chad 10-13)
   let beatTimer = null;
   const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   // when the last highlight of a passage finishes: its delay base + one step per highlighted run + the pen stroke (950 ms)
@@ -181,6 +181,8 @@
     if (beat === 0 && (ev.origin || final)) beat = 1;
     else if (beat === 1 && (tablet || final)) after(origin ? penDone(origin.text, origin.highlight, 350, 120) : 500, 2);
     else if (beat === 2 && (cited || final)) after(tablet?.certain ? penDone(tablet.text, tablet.highlight, 650, 140) : 700, 3);
+    // the English band's spines finish rising (120 ms + 60 ms each + 460 ms), then the originals' band rises
+    else if (beat === 3) after(120 + Math.min(enBand.length, 40) * 60 + 460, 4);
   });
   const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
   let copiedKey = $state(null);
@@ -342,8 +344,8 @@
         {:else}
           <p class="text-secondary">No publication in the library holds this wording verbatim — it may be a paraphrase or another translation. The originals are matched by meaning.</p>
         {/if}
-        {#if origin && beat >= 3}
-          <SourceBand label="Read it in {enBand.length} {enBand.length === 1 ? 'place' : 'places'} — the Writings first" items={enBand}
+        {#if origin}
+          <SourceBand pending={beat < 3} label="Read it in {enBand.length} {enBand.length === 1 ? 'place' : 'places'} — the Writings first" items={enBand}
             onCopy={() => copyList('en', enBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'en'} />
         {/if}
       </article>
@@ -371,7 +373,7 @@
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           {#if tablet.compiledIn}<p class="text-xs text-muted">Linked through its translation in {tablet.compiledIn.title}; shown in its own tablet.</p>{/if}
           {#if origBand.length}
-            <SourceBand label="The original in {origBand.length} {origBand.length === 1 ? 'place' : 'places'} — tablets first" items={origBand}
+            <SourceBand pending={beat < 4} label="The original in {origBand.length} {origBand.length === 1 ? 'place' : 'places'} — tablets first" items={origBand}
               onCopy={() => copyList('orig', origBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'orig'} />
           {/if}
         {:else if tablet.candidates?.length}
