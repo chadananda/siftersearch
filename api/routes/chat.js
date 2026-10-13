@@ -706,7 +706,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           result.source_url = link.url;
           result.link_site = link.site;
           result.reader_url = link.reader_url;
-          Object.defineProperty(result, '_copy', { value: { id: hit.id, title: hit.title, link }, enumerable: false });
+          Object.defineProperty(result, '_copy', { value: { id: hit.id, title: hit.title, text: hit.text, link }, enumerable: false });
         }
         return result;
       }))

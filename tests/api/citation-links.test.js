@@ -26,3 +26,15 @@ describe('betterCopyLinks', () => {
     expect((await betterCopyLinks([{ id: 2, link: top }], { copies: async () => { throw new Error('not asked'); } })).size).toBe(0);
   });
 });
+
+describe('same work on OceanLibrary under another title (no identical copy)', () => {
+  it("Core Publications 'Tablets of Bahá’u’lláh' → OceanLibrary's 'Fountain of Wisdom' (its book id names the work) + the words", async () => {
+    const own = linkFor({ id: 8270, religion: "Baha'i", collection: 'Core Publications', slug: 'tablets' }, 491);
+    const olWorks = async () => [{ id: 20790, title: 'Fountain of Wisdom', external_id: 'tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69',
+      source_url: 'https://oceanlibrary.com/fountain-of-wisdom_bahaullah' }];
+    const m = await betterCopyLinks([{ id: 9, title: 'Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', text: '[11.12] The earth is but one country', link: own }],
+      { copies: async () => new Map(), olWorks });
+    expect(m.get(9)).toMatchObject({ site: 'oceanlibrary.com', tier: 1 });
+    expect(m.get(9).url).toMatch(/^https:\/\/oceanlibrary\.com\/fountain-of-wisdom_bahaullah#~q=/);
+  });
+});

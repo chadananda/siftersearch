@@ -133,12 +133,12 @@ async function upgradeOlBookLinks(s, repo) {
 export async function upgradeOceanLinks(text, { loadParagraphs, repo } = {}) {
   let s = String(text ?? '');
   if (s.includes('oceanoflights.org') && s.includes('~q=')) s = await upgradeOolLinks(s, loadParagraphs);
-  if (!s.includes('oceanlibrary.com')) return s;
+  if (!s.includes('oceanlibrary.com')) return dropMarkers(s);
   if (s.includes('~q=')) s = await upgradeOlBookLinks(s, repo);
   const pairs = [...s.matchAll(OCEAN_PARA_URL)].map((m) => [decodeURIComponent(m[1]), m[2]]);
-  if (!pairs.length) return s;
+  if (!pairs.length) return dropMarkers(s);
   await resolve(pairs);
-  return s.replace(OCEAN_PARA_URL, (whole, slug, para, q) => {
+  return dropMarkers(s.replace(OCEAN_PARA_URL, (whole, slug, para, q) => {
     const a = cache.get(`${decodeURIComponent(slug)}|${para}`);
     const plain = whole.replace(/#~q=.*$/, '');                       // the private marker never leaves un-upgraded
     if (!a) return plain;
@@ -146,11 +146,15 @@ export async function upgradeOceanLinks(text, { loadParagraphs, repo } = {}) {
     let quote = null;
     try { quote = q ? decodeURIComponent(q) : null; } catch { /* malformed marker: whole paragraph */ }
     return (quote && quoteUrl(base, a.external_id, p, quote)) || rangeUrl(base, a.external_id, p) || plain;
-  });
+  }));
 }
 
 /** A single link narrowed to the quoted words, when the caller knows them. */
 export const oceanQuoteUrl = (url, quote) => upgradeOceanLinks(oceanQuoteMarker(url, quote));
+
+// The last line of defence: a private marker never reaches a reader, whatever shape the link took (10-12: a
+// "…selectionString=…#~q=…" link leaked and OceanLibrary's router echoed it into "?~q=").
+const dropMarkers = (s) => String(s).replace(/#~(?:d=\d+~)?q=[^\s"'<>)\]]*/g, '');
 
 /** Does this payload carry a link the upgrade rewrites? (cheap gate for every response) */
 export const needsUpgrade = (s) => (s.includes('oceanlibrary.com') && (s.includes('paraId=') || s.includes('~q='))) || (s.includes('oceanoflights.org') && s.includes('~q='));

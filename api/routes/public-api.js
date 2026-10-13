@@ -594,7 +594,7 @@ export default async function publicApiRoutes(fastify) {
       metadata: linkMeta.get(Number(result.document_id))?.metadata }, result.paragraph_index);
     const ownLinks = new Map(rankedResults.slice(0, limit).map((r) => [r.id, linkOf(r)]));
     // the best publisher of the same words (identical copy on OceanLibrary / Ocean of Lights) — citation-links.js
-    const betterLinks = await (await import('../lib/citation-links.js')).betterCopyLinks(rankedResults.slice(0, limit).map((r) => ({ id: r.id, title: r.title, link: ownLinks.get(r.id) }))).catch(() => new Map());
+    const betterLinks = await (await import('../lib/citation-links.js')).betterCopyLinks(rankedResults.slice(0, limit).map((r) => ({ id: r.id, title: r.title, text: r.text, link: ownLinks.get(r.id) }))).catch(() => new Map());
     const results = rankedResults.slice(0, limit).map(result => { const link = betterLinks.get(Number(result.id)) || ownLinks.get(result.id); return {
       id: result.id,
       documentId: result.document_id,

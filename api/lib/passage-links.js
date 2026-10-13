@@ -59,7 +59,7 @@ export async function getPassages(ids) {
   const links = new Map(rows.map((r) => [r.id, linkFor({ id: r.doc_id, source_url: r.source_url, metadata: r.metadata, religion: r.religion,
     collection: r.collection, slug: r.slug, filename: r.filename, external_para_id: r.external_para_id, text: r.text }, r.paragraph_index)]));
   // the best publisher of the same words (identical copy on OceanLibrary / Ocean of Lights) wins (citation-links.js)
-  const better = await (await import('./citation-links.js')).betterCopyLinks(rows.map((r) => ({ id: r.id, title: r.title, link: links.get(r.id) }))).catch(() => new Map());
+  const better = await (await import('./citation-links.js')).betterCopyLinks(rows.map((r) => ({ id: r.id, title: r.title, text: r.text, link: links.get(r.id) }))).catch(() => new Map());
   return new Map(rows.map((r) => {
     const link = better.get(Number(r.id)) || links.get(r.id);
     return [r.id, {

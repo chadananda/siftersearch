@@ -88,3 +88,11 @@ describe('OceanLibrary book-level link + quote', () => {
     expect(await upgradeOceanLinks(`https://oceanlibrary.com/some-other-book#~q=${encodeURIComponent('not here')}`, { repo })).toBe('https://oceanlibrary.com/some-other-book');
   });
 });
+
+describe('no private marker ever reaches a reader', () => {
+  it('a marker on a link that already carries a selection is dropped', async () => {
+    const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
+    const out = await upgradeOceanLinks('https://oceanlibrary.com/x/?paraId=para_1&selectionString=a.0~a.5#~q=The%20earth', { repo: { listDocs: async () => ({ docs: [] }), getParagraphs: async () => [] } });
+    expect(out).toBe('https://oceanlibrary.com/x/?paraId=para_1&selectionString=a.0~a.5');
+  });
+});

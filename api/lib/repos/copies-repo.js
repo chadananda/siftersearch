@@ -21,3 +21,14 @@ export async function identicalCopies(paragraphIds) {
   for (const r of rows) { const list = byHash.get(r.h) || []; if (list.length < 40) list.push(r); byHash.set(r.h, list); }
   return new Map(own.map((o) => [o.id, (byHash.get(o.h) || []).filter((c) => c.id !== o.id)]));
 }
+
+let olWorks = { at: 0, rows: null };
+/** OceanLibrary's books (≈600): id, title, its book id (which names the work: "tablets_of_baha_u_llah_revealed_after…" is
+ *  OceanLibrary's "Fountain of Wisdom"), and its page. Cached an hour. */
+export async function oceanLibraryWorks() {
+  if (olWorks.rows && Date.now() - olWorks.at < 3600000) return olWorks.rows;
+  const rows = await queryAll(`SELECT id, title, external_id, source_url FROM docs WHERE source_site = 'oceanlibrary.com' AND deleted_at IS NULL
+    AND duplicate_of IS NULL AND external_id IS NOT NULL AND source_url LIKE 'https://oceanlibrary.com/%'`, [], 'copies:ol-works');
+  olWorks = { at: Date.now(), rows };
+  return rows;
+}
