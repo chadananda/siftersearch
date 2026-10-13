@@ -354,3 +354,15 @@ describe('encounterSearch', () => {
     expect(r.people.find((p) => p.name === 'Mullá Ḥusayn').evidence[0].scene).toBe(9);
   });
 });
+
+// The index build reads claims in id pages (one 7 s read froze the API at every rebuild, 10-12).
+import { paged } from '../../api/lib/encounters.js';
+describe('paged', () => {
+  it('walks id pages until a short page, keeping every row once', async () => {
+    const all = Array.from({ length: 12001 }, (_, i) => ({ id: i + 1 }));
+    const seen = [];
+    const rows = await paged(async (after) => { seen.push(after); return all.filter((r) => r.id > after).slice(0, 5000); });
+    expect(rows).toHaveLength(12001);
+    expect(seen).toEqual([0, 5000, 10000]);
+  });
+});

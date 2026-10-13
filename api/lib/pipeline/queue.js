@@ -15,6 +15,7 @@ import { spawnGrounding } from './spawn.js';
 import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
+import { spendSince as ledgerSpend } from './spend-ledger.js';
 import fs from 'node:fs';
 import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL, meetsReconcileBar } from './processed.js';
 
@@ -288,16 +289,21 @@ export async function budgetStatus(deps = {}) {
     // subtract baseline_usd as well; without it (pre-migration row) fall back to the old arithmetic.
     // A cached spend skips the SUM; everything below it is recomputed from `now` on every call.
     const cached = cachedSpend ? cachedSpend[b.provider] : undefined;
-    const spentRow = cached !== undefined ? { s: cached, _cached: true } : b.baseline_at
-      // `+provider` keeps the planner off the provider-only index: it chose it and scanned every DeepSeek row ever
-      // billed (40 s at a cold start, 10-12 — it blocked the test API so every deploy aborted). caller+timestamp is the
-      // narrow range (idx_ai_usage_caller).
-      ? await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
-                   WHERE +provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at], 'budget-check')
-      : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE +provider=? AND caller='corpus-rag'`, [b.provider], 'budget-check:unbounded-legacy');
-    const spent = spentRow?._cached
-      ? spentRow.s                                    // already baseline-adjusted when it was computed
-      : Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
+    // Production reads the running LEDGER (spend-ledger.js): re-summing ai_usage froze a fresh API 18–40 s at every
+    // boot (10-12). null = the ledger is still filling → this provider's launches wait (pending), nothing alerts.
+    // Injected sources (tests) keep the direct SUM.
+    let spent, pending = false;
+    if (cached !== undefined) spent = cached;      // already baseline-adjusted when it was computed
+    else if (!injected) {
+      const raw = await (deps.ledger || ledgerSpend)(b.provider, b.baseline_at || null);
+      if (raw == null) { pending = true; spent = 0; } else spent = Math.max(0, raw - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
+    } else {
+      const spentRow = b.baseline_at
+        ? await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
+                     WHERE +provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at], 'budget-check')
+        : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE +provider=? AND caller='corpus-rag'`, [b.provider], 'budget-check:unbounded-legacy');
+      spent = Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
+    }
     const frac = b.ceiling_usd > 0 ? spent / b.ceiling_usd : 0;
     let windows = DEFAULT_PEAK_WINDOWS;
     try { if (b.peak_windows) windows = JSON.parse(b.peak_windows); } catch { /* keep default */ }
@@ -306,12 +312,12 @@ export async function budgetStatus(deps = {}) {
     const peakBlocked = offpeakOnly && inPeak;                    // peakBlocked → won't launch this provider's books now
     const endsAt = peakBlocked ? peakEndsAt(windows, now) : null;
     out.push({ provider: b.provider, spent: Math.round(spent * 100) / 100, ceiling: b.ceiling_usd,
-      frac: Math.round(frac * 1000) / 1000, over: spent >= b.ceiling_usd, warn: frac >= (b.warn_frac ?? 0.8),
+      frac: Math.round(frac * 1000) / 1000, over: !pending && spent >= b.ceiling_usd, warn: !pending && frac >= (b.warn_frac ?? 0.8), pending,
       offpeakOnly, inPeak, peakBlocked,
       offPeakResumesAt: endsAt ? Math.floor(endsAt.getTime() / 1000) : null });  // epoch s → the UI's countdown target
   }
   // Cached only for the idle production path above; a live run recomputes every tick regardless.
-  if (!injected) { _budgetCache = out; _budgetAt = Date.now(); }
+  if (!injected && !out.some((r) => r.pending)) { _budgetCache = out; _budgetAt = Date.now(); }
   return out;
 }
 
@@ -412,7 +418,7 @@ async function _tick() {
   //  • OVER its ceiling (budget backstop — never overspend), or
   //  • PEAK-BLOCKED (offpeak_only set AND currently a peak-pricing window — hold DeepSeek books for the cheap hours).
   // Blocked books stay queued; the next tick launches them once the wall clears. Computed once per tick.
-  const blockedProviders = new Set((await budgetStatus()).filter((b) => b.over || b.peakBlocked).map((b) => b.provider));
+  const blockedProviders = new Set((await budgetStatus()).filter((b) => b.over || b.peakBlocked || b.pending).map((b) => b.provider));
   const started = [];
   // Skip rows still in retry-backoff (next_attempt_at in the future) so a just-requeued book waits its cooldown.
   for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' AND (next_attempt_at IS NULL OR next_attempt_at <= unixepoch()) ORDER BY position ASC, id ASC`)) {

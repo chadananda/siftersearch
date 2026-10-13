@@ -20,6 +20,8 @@ vi.mock('../../api/lib/db.js', async (orig) => ({
     calls.sum++; return { s: spend };
   },
 }));
+// Production spend comes from the running ledger (spend-ledger.js, 10-12); count its reads as the "sum".
+vi.mock('../../api/lib/pipeline/spend-ledger.js', () => ({ spendSince: async () => { calls.sum++; return spend; } }));
 const { budgetStatus, resetBudgetCache } = await import('../../api/lib/pipeline/queue.js');
 
 const setup = ({ live: l = 0, spend: sp = 1 } = {}) => { live = l; spend = sp; calls.sum = 0; calls.probe = 0; };

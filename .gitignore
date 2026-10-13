@@ -84,3 +84,6 @@ data/siftersearch-gazetteer.json
 # --- standard hygiene ---
 *conflicted copy*
 planning/merge-review/
+
+# spend ledger checkpoint (api/lib/pipeline/spend-ledger.js)
+data/spend-ledger.json*

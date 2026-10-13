@@ -313,6 +313,19 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
 const TTL = 30 * 60 * 1000;
 let _index = null, _building = null;
 
+const PAGE = 5000;
+/** Read a large table in id-ordered pages, yielding the event loop between them. fetch(afterId) → rows with .id */
+export async function paged(fetch) {
+  const out = [];
+  for (let after = 0; ;) {
+    const rows = await fetch(after);
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+    after = rows[rows.length - 1].id;
+    await new Promise((ok) => setImmediate(ok));
+  }
+}
+
 async function build() {
   const rels = ENCOUNTER_RELATIONS.map(() => '?').join(',');
   const [persons, groups, claims, places] = await Promise.all([
@@ -321,11 +334,12 @@ async function build() {
       WHERE ge.entity_type = 'person' AND ${LIVE_SQL('ge.')}`, [], 'encounters:persons'),
     queryAll(`SELECT ge.id, ge.canonical_name name, er.aliases FROM graph_entities ge
       LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type = 'group'`, [], 'encounters:groups'),
-    queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st,
+    // Paged by id with a yield between pages: one 7 s read froze the API at every 30-minute rebuild (10-12).
+    paged((after) => queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st,
         substr(ec.proof_verbatim, 1, 300) prf, ec.doc_id doc, ec.para_id pid, ec.time_value tv, cv.verdict vd, cv.quote vq
       FROM entity_claims ec LEFT JOIN claim_verifications cv ON cv.claim_id = ec.id
-      WHERE ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
-        AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> ''`, ENCOUNTER_RELATIONS, 'encounters:claims'),
+      WHERE ec.id > ? AND ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
+        AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> '' ORDER BY ec.id LIMIT ${PAGE}`, [after, ...ENCOUNTER_RELATIONS], 'encounters:claims')),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),
   ]);
   // The core histories whose word settles a conflict (see encounterSearch). By title: every copy of them counts.
