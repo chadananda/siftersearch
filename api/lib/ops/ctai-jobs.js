@@ -61,6 +61,8 @@ export async function waitForQuietWriter({ maxWaitMs = 30 * 60_000 } = {}) {
   }
 }
 
+const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // same window as ops/reports.js
+
 export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
   const { ingestDocument } = await import('../../services/ingester.js');
   const rels = [...paths];
@@ -79,8 +81,10 @@ export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
       res.statuses[r.status] = (res.statuses[r.status] || 0) + 1;
       if (r.status === 'error') res.failed.push({ rel, error: r.error }); else res.ok++;
     } catch (err) { res.failed.push({ rel, error: String(err.message || err).slice(0, 200) }); }
-    // duty cycle: rest twice as long as the book took, so bulk ingest holds the single writer ≤ ⅓ of the time
-    const rest = Math.max(1000, 2 * (Date.now() - t0)); res.paced_ms += rest;
+    // duty cycle: by day rest twice as long as the book took (bulk ingest holds the single writer ≤ ⅓ of the time); overnight
+    // (22:00–07:00, the quiet window) rest half as long — heavy work belongs to the night (10-13: a 1,000-file batch took 30 h,
+    // 20 of them resting)
+    const rest = Math.max(1000, (inQuietWindow() ? 0.5 : 2) * (Date.now() - t0)); res.paced_ms += rest;
     await new Promise((r) => setTimeout(r, rest));
   }
   res.failed = res.failed.slice(0, 200);
