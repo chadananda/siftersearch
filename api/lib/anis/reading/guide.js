@@ -161,7 +161,7 @@ export async function readingTurn({ messages = [], participantId, deps } = {}) {
       await d.saveSession({ participantId, docId: doc.id, title: doc.title, cursor: 0, pages: [], explained: session?.explained || {} });
       return { reply: layoutReply(doc, outline), subject: `[Reading] ${shortTitle(doc.title)} - where shall we begin?` };
     }
-    return turnPage(d, { session: session || { pages: [], explained: {} }, doc, from: at ?? session.cursor });
+    return turnPage(d, { participantId, session: session || { pages: [], explained: {} }, doc, from: at ?? session.cursor });
   }
   const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'file_path'], limit: 1, count: false })).docs[0];
   if (!doc) return null;
