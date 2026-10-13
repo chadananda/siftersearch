@@ -4,6 +4,7 @@
 // orchestrator, and UI drive grounding through this ONE surface instead of ad-hoc SSH/SQL.
 // Mounted at /api/admin (requireInternal — X-Internal-Key === DEPLOY_SECRET or admin JWT). Writes route to the
 // single writer (the API process sets SIFTER_WRITER_URL), so no direct-write contention.
+import { modelFor } from '../lib/model-roles.js';
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as state from '../lib/pipeline/state.js';
@@ -223,7 +224,7 @@ export default async function groundingRoutes(fastify) {
    * is responsible for picking one that did not write them.
    */
   fastify.post('/concepts/judge-hype', admin, async (req) => {
-    const { docId, provider = 'anthropic', model = 'claude-sonnet-4-6', system, user,
+    const { docId, provider = modelFor('grounding-judge').provider, model = modelFor('grounding-judge').model, system, user,
       temperature = 0, maxTokens = 4000 } = req.body || {};
     if (!docId || !system || !user) throw ApiError.badRequest('docId, system and user required');
     const { withAIContext } = await import('../lib/ai-context.js');

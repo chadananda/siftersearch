@@ -17,11 +17,13 @@ describe('routing', () => {
 });
 
 describe('spend policy', () => {
-  it('Haiku 5.5 is allowed for hype and concept-extract on any book; nothing else widens', () => {
+  it('Haiku 5.5 is allowed for any stage on any book (10-13: "update all model use"); Sonnet only where gated', () => {
     expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', docId: 21310, stage: 'hype' })).not.toThrow();
     expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'ar', docId: 1, stage: 'concept-extract' })).not.toThrow();
     expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-sonnet-5-5', lang: 'en', docId: 21310, stage: 'hype' })).toThrow(/REFUSED/);
-    expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', docId: 21310, stage: 'disambiguate' })).toThrow(/REFUSED/);
+    expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', docId: 21310, stage: 'disambiguate' })).not.toThrow();
+    expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-sonnet-5-5', stage: 'interactive:jafar-research' })).not.toThrow();
+    expect(() => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-opus-5-5', stage: 'interactive:jafar-research' })).toThrow(/REFUSED/);
     expect(isBulkHaikuAllowed({ stage: 'hype', model: 'claude-haiku-5-5' })).toBe(true);
   });
   it('a prompt near the 100k long-context threshold is refused; a normal one passes', () => {
@@ -34,10 +36,25 @@ describe('spend policy', () => {
 // the rag adapter's own gate (it aborts a grounding run fatally) must agree with anthropic-policy
 import { assertSpendAllowed } from '../../api/lib/rag-adapter/usage.js';
 describe('rag-adapter spend gate', () => {
-  it('lets Haiku 5.5 run hype / concept-extract in English and Arabic; still refuses other paid calls', () => {
+  it('lets Haiku 5.5 run in English and Arabic; still refuses other paid models', () => {
     expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', stage: 'hype', docId: 21310 })).not.toThrow();
     expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'ar', stage: 'concept-extract', docId: 5 })).not.toThrow();
     expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-sonnet-5-5', lang: 'en', stage: 'hype', docId: 21310 })).toThrow(/Persian-only/);
-    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', stage: 'disambiguate', docId: 21310 })).toThrow();
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', stage: 'disambiguate', docId: 21310 })).not.toThrow();
+  });
+});
+
+// role-client: every legacy call site gets its model from the role table, shaped for that model's API
+import { shapeParams } from '../../api/lib/role-client.js';
+describe('shapeParams', () => {
+  it('drops temperature for 5.5 models, keeps max_tokens, drops response_format on Anthropic', () => {
+    const p = shapeParams({ messages: [], temperature: 0.4, max_tokens: 700, response_format: { type: 'json_object' } }, { provider: 'anthropic', model: 'claude-haiku-5-5' });
+    expect(p).toMatchObject({ model: 'claude-haiku-5-5', max_tokens: 700 });
+    expect(p.temperature).toBeUndefined();
+    expect(p.response_format).toBeUndefined();
+  });
+  it('keeps temperature and JSON mode where the model takes them; DeepSeek thinking off', () => {
+    const p = shapeParams({ messages: [], temperature: 0.2, max_tokens: 100, response_format: { type: 'json_object' } }, { provider: 'deepseek', model: 'deepseek-v4-flash' });
+    expect(p).toMatchObject({ temperature: 0.2, response_format: { type: 'json_object' }, thinking: { type: 'disabled' } });
   });
 });

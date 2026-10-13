@@ -110,11 +110,14 @@ export function isModelEvalAllowed({ stage, model } = {}) {
   return String(stage || '') === 'model-eval' && MODEL_EVAL_JUDGES.has(String(model || ''));
 }
 
-// HyPE + CONCEPT EXTRACTION on Haiku 5.5, any book, any language (Chad 10-13: the registry's cheapest capable model for
-// these stages). Only that model, only those stages — Sonnet/Opus stay behind the narrower gates above.
-const BULK_HAIKU_STAGES = new Set(['hype', 'concept-extract']);
-export function isBulkHaikuAllowed({ stage, model } = {}) {
-  return BULK_HAIKU_STAGES.has(String(stage || '')) && String(model || '') === 'claude-haiku-5-5';
+// HAIKU 5.5 ANYWHERE (Chad 10-13: "update all model use" — the registry's cheapest capable model is the default for routine
+// work, every language). Sonnet 5.5 for INTERACTIVE roles (role-client.js: stage 'interactive:<role>'), where gpt-4o was —
+// similar price, a person is waiting. Opus and older models stay behind the narrow gates above.
+const HAIKU = 'claude-haiku-5-5';
+export function isHaikuAllowed({ model } = {}) { return String(model || '') === HAIKU; }
+export const isBulkHaikuAllowed = isHaikuAllowed;   // the name the rag adapter's gate imports
+export function isInteractiveAllowed({ stage, model } = {}) {
+  return String(stage || '').startsWith('interactive:') && ['claude-sonnet-5-5', HAIKU].includes(String(model || ''));
 }
 
 /** Refuse a prompt near a model's long-context threshold (Haiku 5.5: 5× price past 100k tokens). ~3.5 chars/token,
@@ -140,7 +143,8 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;       // segmenting an original (see note)
   if (isFileSegmentAllowed({ stage, model, sourceLang })) return;
   if (isModelEvalAllowed({ stage, model })) return;                          // the bake-off's blind judge
-  if (isBulkHaikuAllowed({ stage, model })) return;                          // HyPE + concept extraction on Haiku 5.5           // file-level Arabic/Persian segmentation (Haiku 5.5)
+  if (isHaikuAllowed({ model })) return;                                      // Haiku 5.5: any stage, any language
+  if (isInteractiveAllowed({ stage, model })) return;                         // Sonnet 5.5 for interactive roles           // file-level Arabic/Persian segmentation (Haiku 5.5)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

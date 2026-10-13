@@ -361,8 +361,7 @@ const SERVICE_CONFIG = {
       maxTokens: 1000
     },
     remote: {
-      provider: 'openai',
-      model: 'gpt-3.5-turbo',      // USER-FACING fast path
+      ...modelFor('ai-balanced'),   // the role table (was openai gpt-3.5-turbo) — USER-FACING
       temperature: 0.3,
       maxTokens: 1000
     }
@@ -378,8 +377,7 @@ const SERVICE_CONFIG = {
       maxTokens: 2000
     },
     remote: {
-      provider: 'deepseek',
-      model: 'deepseek-v4-flash',  // USER-FACING quality path — DeepSeek (Anthropic locked to Persian-plan grounding only)
+      ...modelFor('ai-quality'),   // the role table (was deepseek-v4-flash) — USER-FACING quality path
       temperature: 0.7,
       maxTokens: 2000
     }
@@ -395,8 +393,7 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'deepseek',
-      model: 'deepseek-v4-flash',  // USER-FACING conversational path — DeepSeek (Anthropic locked to Persian-plan grounding only)
+      ...modelFor('ai-creative'),   // the role table (was deepseek-v4-flash) — USER-FACING conversational path
       temperature: 0.8,
       maxTokens: 500
     }

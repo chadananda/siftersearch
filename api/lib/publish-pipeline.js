@@ -11,6 +11,7 @@
 //   description = the overview answer summary, NOT topic phrasing
 //   each round → {question, answer} for FAQPage JSON-LD on the rendered page
 
+import { roleCreate, roleModel } from './role-client.js';
 import OpenAI from 'openai';
 import { execFile } from 'child_process';
 import { createRequire } from 'module';
@@ -72,8 +73,7 @@ ${topic_hint ? `Topic hint from caller: ${topic_hint}\n\n` : ''}Transcript:
 
 ${transcript.length > 18000 ? transcript.slice(0, 18000) + '\n\n[truncated]' : transcript}`;
 
-  const resp = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+  const resp = await roleCreate('publish-review', {
     messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
     temperature: 0.4,
     max_tokens: 700,
@@ -115,8 +115,7 @@ Output ONLY JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTL
 
   const user = rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${(r.user || '').slice(0, 800)}\nJAFAR: ${(r.jafar || '').slice(0, 1000)}`).join('\n\n');
 
-  const resp = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+  const resp = await roleCreate('publish-review', {
     messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
     temperature: 0.3,
     max_tokens: 800,
@@ -246,8 +245,7 @@ export async function anonymizeUserTurns(messages) {
 Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${userTexts.length} entries in order.`;
 
   try {
-    const resp = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
+    const resp = await roleCreate('publish-light', {
       messages: [{ role: 'system', content: sys }, { role: 'user', content: JSON.stringify(userTexts) }],
       temperature: 0.1,
       max_tokens: 4000,

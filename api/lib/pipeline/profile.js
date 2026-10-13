@@ -9,7 +9,7 @@
 //   (returns reasoning_content) so extraction stages MUST give it maxTokens headroom for reasoning+answer
 //   (see claims.js) — under-budgeting truncates → continuation thrash. That is a CALL bug to fix, not a model
 //   failure to escalate around. Persian is the ONLY language flash can't do (silently empty).
-// claude-haiku-4-5 = the ONE haiku: PERSIAN ONLY. NEVER an English/Arabic/Hebrew fallback — too expensive.
+// claude-haiku-5-5 = HyPE + concept extraction for every language (10-13); Persian disambiguation stays on Sonnet.
 // Fallback = the SAME model retried (runLadder: primary===fallback → 4 tries). No pro, no sonnet, no
 // cross-provider hop. Fix the deepseek call; do not escalate to haiku.
 const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-5-5';
@@ -17,7 +17,7 @@ const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-5-5';
 // registry — so we never use the wrong model"): $0.10/$0.50 per 1M against flash's $0.30/$1.20 ($0.15/$0.60 off-peak), no
 // peak window, reads Persian. Per-paragraph prompts stay far under its 100k long-context threshold (5× price above it);
 // ai.js / ai-services.js refuse any Anthropic prompt near it. Disambiguation and historical extraction are unchanged.
-const SONNET = 'claude-sonnet-4-6'; // Persian DISAMBIGUATION (make-or-break identity stage) + the doctrinal/CONCEPTUAL override (Gate of the Heart)
+const SONNET = 'claude-sonnet-5-5';   // 10-13: the current Sonnet (was 4-6) // Persian DISAMBIGUATION (make-or-break identity stage) + the doctrinal/CONCEPTUAL override (Gate of the Heart)
 const LANG_ROUTING = {
   en: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH },
   ar: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH }, // flash handles Arabic

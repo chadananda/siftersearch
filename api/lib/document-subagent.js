@@ -4,6 +4,7 @@
 // and runs a small tool-calling loop until it can answer.
 // Deps: openai, executeSearch (passages+read modes), queryOne, queryAll
 
+import { roleCreate, roleModel } from './role-client.js';
 import OpenAI from 'openai';
 import { logger } from './logger.js';
 import { config } from './config.js';
@@ -22,7 +23,7 @@ function getOpenAI() {
   return openaiClient;
 }
 
-const SUBAGENT_MODEL = process.env.DOC_SUBAGENT_MODEL || 'gpt-4o-mini';
+const SUBAGENT_MODEL = roleModel('doc-subagent');   // the role table (model-roles.js); MODEL_ROLE_DOC_SUBAGENT overrides
 const MAX_ITERATIONS = 8;
 
 const SUBAGENT_TOOLS = [
@@ -296,8 +297,7 @@ export async function answerFromDocument({
     iterations++;
     let resp;
     try {
-      resp = await getOpenAI().chat.completions.create({
-        model: SUBAGENT_MODEL,
+      resp = await roleCreate('doc-subagent', {
         messages,
         tools: SUBAGENT_TOOLS,
         tool_choice: 'required',

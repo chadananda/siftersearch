@@ -5,6 +5,7 @@
 // reader already has the reply. Daily budget (AUDIT_DAILY_USD, default $25): once spent, it waits for the next day; nothing
 // is skipped, only delayed. Reads chat_messages read-only, paged by id (no long read transaction).
 //   node scripts/audit/audit-exchanges.mjs [--once] [--limit=N]
+import { modelFor } from '../../api/lib/model-roles.js';
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
@@ -19,7 +20,7 @@ for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(join
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ONCE = process.argv.includes('--once');
 const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit=')) || '--limit=0').split('=')[1]) || Infinity;
-const MODEL = process.env.AUDIT_MODEL || 'claude-sonnet-4-6';
+const MODEL = process.env.AUDIT_MODEL || modelFor('exchange-audit').model;   // the role table (was sonnet-4-6)
 const PRICING = MODEL_REGISTRY[MODEL]?.pricing || { input: 0.003, output: 0.015 };
 const DAILY_USD = Number(process.env.AUDIT_DAILY_USD || 25);
 const STORE = process.env.AUDIT_DB || '/tank/sifter/audit/audits.db';

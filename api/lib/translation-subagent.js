@@ -17,6 +17,7 @@
 //   concordance produces translations that read like SE's voice for terms
 //   he handled, and like the corpus consensus for terms he didn't.
 
+import { roleCreate, roleModel } from './role-client.js';
 import { createHash } from 'crypto';
 import OpenAI from 'openai';
 import { logger } from './logger.js';
@@ -34,7 +35,7 @@ function getOpenAI() {
   }
   return openaiClient;
 }
-const TRANSLATION_MODEL = process.env.TRANSLATION_MODEL || 'gpt-4o-mini';
+const TRANSLATION_MODEL = roleModel('translation-polish');   // the role table; MODEL_ROLE_TRANSLATION_POLISH overrides
 
 // ─── CTAI JAFAR ───────────────────────────────────────────────────────────
 
@@ -212,8 +213,7 @@ export async function translatePassage({
     + (jafarHints ? `\n\nJAFAR concordance for this passage:\n${jafarHints}` : '')
     + (work_context ? `\n\nWork context: ${work_context}` : '');
 
-  const completion = await getOpenAI().chat.completions.create({
-    model: TRANSLATION_MODEL,
+  const completion = await roleCreate('translation-polish', {
     max_tokens: Math.max(1500, Math.ceil(text.length / 2)),
     temperature: 0.3,
     messages: [

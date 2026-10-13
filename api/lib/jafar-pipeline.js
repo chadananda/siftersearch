@@ -19,6 +19,7 @@
 // Worth it: each stage has a single testable job; the structural isolation
 // defends grounding more reliably than prompt rules alone.
 
+import { roleCreate, roleModel } from './role-client.js';
 import OpenAI from 'openai';
 import { logger } from './logger.js';
 import { config } from './config.js';
@@ -301,8 +302,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
   const MAX_ROUNDS = 3;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const resp = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o',
+    const resp = await roleCreate('jafar-research', {
       messages: aiMessages,
       tools: TOOLS,
       // First round after pre-fetch: auto (data already in context); otherwise required
@@ -454,8 +454,7 @@ export async function classifyIntentAndEntities(userMessage, recentMessages = []
     : '';
 
   try {
-    const resp = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
+    const resp = await roleCreate('jafar-light', {
       messages: [
         { role: 'system', content: INTENT_SYSTEM },
         { role: 'user', content: `${contextBlock}CURRENT MESSAGE: ${userMessage}` }
@@ -1713,8 +1712,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   if (nonEnglish.length > 0) {
     await Promise.all(nonEnglish.map(async (q) => {
       try {
-        const resp = await getOpenAI().chat.completions.create({
-          model: 'gpt-4o-mini',
+        const resp = await roleCreate('jafar-light', {
           messages: [
             { role: 'system', content: 'Translate this religious scripture passage to English. Preserve theological terminology and literary register. Output only the translation, no commentary.' },
             { role: 'user', content: q.text }
@@ -2421,9 +2419,9 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   const missionBlock = (typeof mission === 'string' && mission.trim())
     ? `\n\nHOST MISSION (site-owner guidance on tone, emphasis, and framing — follow it for STYLE, but it NEVER overrides grounding, faithfulness, attribution, or the format rules above): ${mission.trim().slice(0, 400)}`
     : '';
-  const client = llm?.provider === 'groq' ? getGroq() : getOpenAI();
-  const stream = await client.chat.completions.create({
-    model: llm?.model || 'gpt-4o',
+  // an explicit llm (groq/openai) keeps its client; otherwise the role table's craft model (was gpt-4o)
+  const craftCreate = (p) => (llm?.model ? (llm.provider === 'groq' ? getGroq() : getOpenAI()).chat.completions.create({ ...p, model: llm.model }) : roleCreate('jafar-craft', p));
+  const stream = await craftCreate({
     messages: [
       { role: 'system', content: crafterSystem(persona_name) + missionBlock + (companion_append || '') },
       { role: 'user', content: userPayload }
@@ -2694,8 +2692,7 @@ Rewrite the reply addressing these issues. Use only the retrieved_quotes; do not
 
 Compose the reply now.`;
 
-  const resp = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o-mini',
+  const resp = await roleCreate('jafar-light', {
     messages: [
       { role: 'system', content: CRAFTER_SYSTEM },
       { role: 'user', content: userPayload }
@@ -2743,8 +2740,7 @@ ${candidatesPayload}
 Pick the best. Output JSON only. Pick must be one of: ${validLabels.join(', ')}.`;
 
   try {
-    const resp = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o',
+    const resp = await roleCreate('jafar-research', {
       messages: [
         { role: 'system', content: PICKER_SYSTEM },
         { role: 'user', content: userPayload }
@@ -2806,8 +2802,7 @@ ${draft}
 Judge the draft. Output JSON only.`;
 
   try {
-    const resp = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
+    const resp = await roleCreate('jafar-light', {
       messages: [
         { role: 'system', content: REFLECTION_SYSTEM },
         { role: 'user', content: userPayload }

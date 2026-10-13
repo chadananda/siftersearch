@@ -1,5 +1,6 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
+import { modelFor } from './model-roles.js';
 import { queryAll, queryOne } from './db.js';
 import { swallow } from './swallow.js';
 import { INTEGRATION_PHASES } from './integration-phases.js';
@@ -759,7 +760,7 @@ export async function bioSearch(rawQ) {
       let lead = ''; const byId = {};
       try {
         const res = await chatCompletion([{ role: 'system', content: CSYS }, { role: 'user', content: `QUESTION: ${q}\n\n${body}` }],
-          { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
+          { ...modelFor('bio-timeline'), temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
         const mm = (res.content || '').match(/\{[\s\S]*\}/); const p = mm ? JSON.parse(mm[0]) : {};
         lead = cl(p.lead || '');
         for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = { i: Number.isInteger(+c.i) ? +c.i : 0, clause: cl(c.clause).slice(0, 140) };
@@ -828,7 +829,7 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
           // 6000, NOT less: v4-flash burns a ~4k hidden-reasoning floor on judge-shaped prompts
           // REGARDLESS of ask size (measured — a 4-person chunk at 1400 returned empty content).
           // The chunk bounds the JSON; the cap must clear reasoning + JSON or content never arrives.
-          { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 6000, responseFormat: { type: 'json_object' } });
+          { ...modelFor('bio-timeline'), temperature: 0, maxTokens: 6000, responseFormat: { type: 'json_object' } });
         if (!res.content || !res.content.trim()) logger.warn({ q, chunk: ids.length }, 'bioSearch judge returned EMPTY content (reasoning balloon?)');
         return looseParse(res.content);
       } catch (e) { logger.warn({ q, err: e.message }, 'bioSearch judge chunk failed'); return {}; }
