@@ -313,7 +313,9 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
       translated_by: own || (verbatim ? originOut.translated_by : null) || null, site: siteOf(p.url, p.source_site),
       // a range link only where the citation holds the WORDING: a passage saying the same thing in other words (SAQ on the
       // Supreme Tribunal) shares a few words at most, and a fragment on those marked "governments and peoples" (Chad 10-05)
-      url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text), 4, p.doc_id) : null, paragraphs: 0, first: p.id };
+      url: p.url, rangeUrl: p.text && overlap(q.match, p.text) >= VERBATIM ? textFragment(p.url, p.text, quoteRanges(p.text, q.text), 4, p.doc_id) : null, paragraphs: 0, first: p.id,
+      // the passage itself, so the page can show each citation in place (Chad 10-13); highlight = the quote's wording in it
+      ...(p.text ? { text: decodeEntities(String(p.text)).replace(/⁅\/?s\d+⁆/g, ''), highlight: quoteRanges(decodeEntities(String(p.text)).replace(/⁅\/?s\d+⁆/g, ''), q.text) } : {}) };
     cur.paragraphs++; byDoc.set(p.doc_id, cur);
   };
   // a CITATION quotes the passage: it holds the wording (a translation variant included), or the link graph says it quotes the
@@ -509,11 +511,15 @@ async function tabletGuess(d, q, links, author = null) {
     }
     const main = await withMeta(chosen, basis);
     const quoted = main.highlight?.length ? main.text.slice(main.highlight[0][0], main.highlight[main.highlight.length - 1][1]) : null;
+    // each copy's own words, the quoted stretch located in them, so the page can show every copy in place (Chad 10-13)
+    const textOf = (p) => decodeEntities(String(p.text || ''));
+    const rangeIn = (t) => { if (!quoted) return []; const at = t.indexOf(quoted); return at >= 0 ? [[at, at + quoted.length]] : []; };
     const sourceOf = (p, m) => {
       const ool = m?.links?.oceanoflights || null;
+      const t = p === chosen ? main.text : textOf(p);
       return { documentId: p.documentId, title: m?.title_generated || p.document?.title || null, pin: m?.pin || null,
         oceanoflights: ool && quoted ? textFragment(ool, quoted, [[0, quoted.length]], 4, p.documentId) || ool : ool,
-        inventory: m?.links?.inventory || null };
+        inventory: m?.links?.inventory || null, text: t || null, highlight: p === chosen ? main.highlight || [] : rangeIn(t) };
     };
     const all = [{ p: chosen, meta: chosen === o || !compiledIn ? ownMeta : tablets[0].meta }, ...tablets.filter((t) => t.p !== chosen)];
     const sources = all.map((c) => sourceOf(c.p, c.meta)).filter((x) => x.oceanoflights || x.inventory);

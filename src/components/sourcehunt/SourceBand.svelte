@@ -2,7 +2,7 @@
   // A compact, sideways-scrolling band of book spines at the foot of a SourceHunt box (Chad 10-13): every place the words
   // can be read, best first (the Writings / tablets, then citations). Colour = publisher; a gold cap = the Writings.
   // Short on purpose: both boxes must fit on one screen. Styles: ./source-band.css, imported by SourceHunt.svelte.
-  let { label = '', items = [], onCopy = null, copied = false, pending = false } = $props();   // pending: frame kept, spines wait their beat
+  let { label = '', items = [], onCopy = null, copied = false, pending = false, selected = 0, onSelect = null } = $props();   // pending: frame kept, spines wait their beat
   const SITE = {
     'oceanlibrary.com': { label: 'OceanLibrary', cls: 'site-ol' }, 'oceanoflights.org': { label: 'Ocean of Lights', cls: 'site-oo' },
     phelps: { label: 'Phelps Inventory', cls: 'site-ph' }, 'bahai-library.com': { label: 'Bahá’í Library Online', cls: 'site-bl' },
@@ -23,7 +23,11 @@
     </div>
     <div class="band" role="list">
       {#if !pending}{#each items as c, i (c.key)}
-        <a href={c.url} target="_blank" rel="noopener" role="listitem" class="spine {site(c.site).cls}" class:writ={c.top}
+        <!-- a click SHOWS the item in its box (Chad 10-13: view each in place, open from the box's corner link);
+             ⌘/ctrl/middle-click still opens it in a new tab -->
+        <a href={c.url} target="_blank" rel="noopener" role="listitem" class="spine {site(c.site).cls}" class:writ={c.top} class:sel={i === selected}
+          aria-current={i === selected ? 'true' : undefined}
+          onclick={(e) => { if (!onSelect || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); onSelect(i); }}
           style="--d: {120 + Math.min(i, 40) * 60}ms"
           title="{c.title}{c.sub ? ` — ${c.sub}` : ''} · {site(c.site).label}{c.grade ? ` · ${c.grade}` : ''}">
           <span class="spine-title">{c.title}</span>

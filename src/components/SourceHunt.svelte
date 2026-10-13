@@ -40,7 +40,7 @@
   // the button shows the quote's opening words — never the answer (the source is what the demo finds)
   const opening = (q, n = 5) => q.split(/\s+/).slice(0, n).join(' ').replace(/[,.;:!?]+$/, '');
 
-  const SITE = { 'oceanlibrary.com': 'OceanLibrary', 'bahai-library.com': 'Bahá’í Library Online', 'oceanoflights.org': 'Ocean of Lights', library: 'SifterSearch library' };
+  const SITE = { 'oceanlibrary.com': 'OceanLibrary', 'bahai-library.com': 'Bahá’í Library Online', 'oceanoflights.org': 'Ocean of Lights', phelps: 'Phelps Inventory', library: 'SifterSearch' };
   const siteName = (s) => SITE[s] || s || 'SifterSearch library';
   const fmt = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n));
 
@@ -184,20 +184,22 @@
     // the English band's spines finish rising (120 ms + 60 ms each + 460 ms), then the originals' band rises
     else if (beat === 3) after(120 + Math.min(enBand.length, 40) * 60 + 460, 4);
   });
-  const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
+  const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; selEn = 0; selOr = 0; };
   let copiedKey = $state(null);
+  let selEn = $state(0), selOr = $state(0);   // the band item each box is showing (0 = the source / the tablet)
+  const favicon = (u) => { try { return `https://${new URL(u).host}/favicon.ico`; } catch { return ''; } };
   // the foot bands (Chad 10-13): every place to read the words, best first — the Writings / tablets, then citations
   const enBand = $derived(origin ? [
-    { key: `o${origin.id}`, title: origin.title, sub: origin.author, url: origin.rangeUrl || origin.url, site: origin.site, top: true, grade: 'Primary source' },
+    { key: `o${origin.id}`, title: origin.title, sub: origin.author, url: origin.rangeUrl || origin.url, site: origin.site, top: true, grade: 'Primary source', text: origin.text, highlight: origin.highlight },
     ...((cited?.citedBy) || []).map((c) => ({ key: `c${c.documentId}`, title: c.title, sub: [c.author, c.translated_by && `tr. ${c.translated_by}`].filter(Boolean).join(' · '),
-      url: c.rangeUrl || c.url, site: c.site, top: c.grade?.rank === 0, grade: c.grade?.label })),
+      url: c.rangeUrl || c.url, site: c.site, top: c.grade?.rank === 0, grade: c.grade?.label, text: c.text || null, highlight: c.highlight || [] })),
   ].filter((x) => x.url) : []);
   const origBand = $derived(tablet?.certain ? [
-    ...(tablet.sources || []).filter((x) => x.oceanoflights).map((x) => ({ key: `oo${x.documentId}`, title: x.title, sub: x.pin, url: x.oceanoflights, site: 'oceanoflights.org', top: true, grade: 'Tablet' })),
-    ...(tablet.sources || []).filter((x) => x.inventory).map((x) => ({ key: `ph${x.documentId}`, title: x.pin ? `${x.pin} · ${x.title}` : x.title, sub: 'Phelps Partial Inventory', url: x.inventory, site: 'phelps', top: true, grade: 'Catalogued tablet' })),
-    ...(!tablet.sources?.length ? tabletLinks(tablet.meta).map((l, i) => ({ key: `m${i}`, title: tablet.meta?.title || tablet.title, sub: l.label, url: l.href, site: /oceanoflights/.test(l.href) ? 'oceanoflights.org' : 'phelps', top: true })) : []),
+    ...(tablet.sources || []).filter((x) => x.oceanoflights).map((x) => ({ key: `oo${x.documentId}`, title: x.title, sub: x.pin, url: x.oceanoflights, site: 'oceanoflights.org', top: true, grade: 'Tablet', text: x.text, highlight: x.highlight || [] })),
+    ...(tablet.sources || []).filter((x) => x.inventory).map((x) => ({ key: `ph${x.documentId}`, title: x.pin ? `${x.pin} · ${x.title}` : x.title, sub: 'Phelps Partial Inventory', url: x.inventory, site: 'phelps', top: true, grade: 'Catalogued tablet', text: x.text, highlight: x.highlight || [] })),
+    ...(!tablet.sources?.length ? tabletLinks(tablet.meta).map((l, i) => ({ key: `m${i}`, title: tablet.meta?.title || tablet.title, sub: l.label, url: l.href, site: /oceanoflights/.test(l.href) ? 'oceanoflights.org' : 'phelps', top: true, text: tablet.text, highlight: tablet.highlight })) : []),
     ...(tablet.url && !(tablet.sources || []).some((x) => [x.inventory, x.oceanoflights].some((h) => h && sameTarget(h, tablet.rangeUrl || tablet.url)))
-      ? [{ key: 'lib', title: tablet.meta?.title || tablet.title, sub: 'our copy', url: tablet.rangeUrl || tablet.url, site: 'library' }] : []),
+      ? [{ key: 'lib', title: tablet.meta?.title || tablet.title, sub: 'our copy', url: tablet.rangeUrl || tablet.url, site: 'library', text: tablet.text, highlight: tablet.highlight }] : []),
   ] : []);
   const sameTarget = (a, b) => String(a).replace(/#.*$/, '') === String(b).replace(/#.*$/, '');
   // "Copy all sources": one line per source, best first — title, who, links
@@ -225,6 +227,15 @@
     return () => { abort?.abort(); clearInterval(tickTimer); };
   });
 </script>
+
+{#snippet openLink(x)}
+  <!-- the box's open link (Chad 10-13): whatever the box is showing, opened at its publisher, with that site's icon -->
+  <a href={x.url} target="_blank" rel="noopener" class="openlink inline-flex items-center gap-1.5 rounded-full border border-accent px-3 py-1 text-xs font-medium text-accent hover:bg-accent hover:text-white">
+    {#if favicon(x.url)}<img src={favicon(x.url)} alt="" width="14" height="14" class="rounded-sm" onerror={(e) => e.currentTarget.remove()} />{/if}
+    Open in {siteName(x.site)} <span aria-hidden="true">↗</span>
+  </a>
+{/snippet}
+
 
 <section class="sh flex flex-col gap-6">
   <!-- ── header: the mark, the claim, the scale of the library ── -->
@@ -316,10 +327,16 @@
     <div id="sh-results" class="grid scroll-mt-24 gap-4 xl:grid-cols-[minmax(0,7fr)_56px_minmax(0,5fr)]">
       <article class="sh-card flex flex-col gap-3 rounded-2xl border border-border bg-surface-1 p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="sh-label">Published source</h2>
-          {#if origin}<span class="chip">{siteName(origin.site)}</span>{/if}
+          <h2 class="sh-label">{selEn ? (enBand[selEn]?.grade === 'Writings' ? 'Also in the Writings' : 'Cited in') : 'Published source'}</h2>
+          {#if enBand[selEn]}{@render openLink(enBand[selEn])}{/if}
         </div>
-        {#if origin}
+        {#if origin && selEn > 0 && enBand[selEn]}
+          {@const c = enBand[selEn]}
+          <p class="sh-book text-primary">{c.title}</p>
+          {#if c.sub}<p class="text-sm text-secondary">{c.sub}</p>{/if}
+          {#if c.text}{#key c.key}<blockquote class="sh-passage text-primary">{#each shown_(c.text, c.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {80 + i * 90}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>{/key}
+          {:else}<p class="text-sm text-muted">This publication quotes the passage. Open it to read it in place.</p>{/if}
+        {:else if origin}
           <a href={origin.rangeUrl || origin.url} target="_blank" rel="noopener" class="sh-book text-accent hover:text-accent-hover">{origin.title}</a>
           <p class="text-sm text-secondary">{origin.author}{#if origin.bookAuthor && origin.bookAuthor !== origin.author} · in a book by {origin.bookAuthor}{/if}</p>
           <blockquote class="sh-passage text-primary">{#each shown_(origin.text, origin.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {350 + i * 120}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
@@ -345,7 +362,7 @@
           <p class="text-secondary">No publication in the library holds this wording verbatim — it may be a paraphrase or another translation. The originals are matched by meaning.</p>
         {/if}
         {#if origin}
-          <SourceBand pending={beat < 3} label="Read it in {enBand.length} {enBand.length === 1 ? 'place' : 'places'} — the Writings first" items={enBand}
+          <SourceBand pending={beat < 3} selected={selEn} onSelect={(i) => { selEn = i; }} label="Read it in {enBand.length} {enBand.length === 1 ? 'place' : 'places'} — the Writings first" items={enBand}
             onCopy={() => copyList('en', enBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'en'} />
         {/if}
       </article>
@@ -361,11 +378,20 @@
 
       <article class="sh-card sh-orig flex flex-col gap-3 rounded-2xl border border-border bg-surface-1 p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="sh-label">{tablet && !tablet.certain ? 'Possible originals' : 'Original tablet'}</h2>
-          {#if tablet}<span class="chip" class:chip-ok={tablet.certain}>{tablet.certain ? 'Linked translation' : 'By meaning · verify'}</span>{/if}
+          <h2 class="sh-label flex items-center gap-2">{tablet && !tablet.certain ? 'Possible originals' : 'Original tablet'}
+            {#if tablet}<span class="chip normal-case tracking-normal" class:chip-ok={tablet.certain}>{tablet.certain ? 'Linked translation' : 'By meaning · verify'}</span>{/if}</h2>
+          {#if tablet?.certain && origBand[selOr]}{@render openLink(origBand[selOr])}{/if}
         </div>
         {#if !tablet}
           <div class="flex flex-col gap-2" aria-busy="true"><div class="skel w-2/3"></div><div class="skel"></div><div class="skel w-5/6"></div></div>
+        {:else if tablet.certain && selOr > 0 && origBand[selOr]}
+          {@const c = origBand[selOr]}
+          <p class="sh-book text-primary">{c.title}</p>
+          {#if c.sub}<p class="text-sm text-secondary">{c.sub}</p>{/if}
+          {#if c.text}{#key c.key}<blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each shown_(c.text, c.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {80 + i * 90}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>{/key}
+          {:else}<p class="text-sm text-muted">Open it to read this copy in place.</p>{/if}
+          <SourceBand pending={beat < 4} selected={selOr} onSelect={(i) => { selOr = i; }} label="The original in {origBand.length} {origBand.length === 1 ? 'place' : 'places'} — tablets first" items={origBand}
+            onCopy={() => copyList('orig', origBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'orig'} />
         {:else if tablet.certain}
           <p class="sh-book text-primary">{tablet.meta?.title || tablet.title}</p>
           {#if tablet.meta?.first_line_en}<p class="text-sm italic text-secondary">{tablet.meta.first_line_en}</p>{/if}
@@ -373,7 +399,7 @@
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           {#if tablet.compiledIn}<p class="text-xs text-muted">Linked through its translation in {tablet.compiledIn.title}; shown in its own tablet.</p>{/if}
           {#if origBand.length}
-            <SourceBand pending={beat < 4} label="The original in {origBand.length} {origBand.length === 1 ? 'place' : 'places'} — tablets first" items={origBand}
+            <SourceBand pending={beat < 4} selected={selOr} onSelect={(i) => { selOr = i; }} label="The original in {origBand.length} {origBand.length === 1 ? 'place' : 'places'} — tablets first" items={origBand}
               onCopy={() => copyList('orig', origBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'orig'} />
           {/if}
         {:else if tablet.candidates?.length}

@@ -16,6 +16,7 @@
   transition: transform 160ms, filter 160ms;
 }
 .source-band .spine.writ { height: 88px; box-shadow: inset 0 3px 0 #d9b44a, inset -2px 0 0 color-mix(in srgb, black 18%, transparent), 0 1px 4px color-mix(in srgb, black 18%, transparent); }
+.source-band .spine.sel { transform: translateY(-8px); filter: brightness(1.18); outline: 2px solid var(--text-primary); outline-offset: 1px; }
 .source-band .spine:hover, .source-band .spine:focus-visible { transform: translateY(-6px); filter: brightness(1.12); outline: none; }
 .source-band .spine-title {
   writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Libre Caslon Text', Georgia, serif; font-size: 10px;

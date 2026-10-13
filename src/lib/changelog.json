@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-13T18:34:15.716Z",
+  "generated": "2026-10-13T18:43:09.158Z",
   "entries": [
+    {
+      "hash": "e4e5d19a",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Every band keeps a thin scrollbar track so scrolling and non-scrolling bands line up",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "0d0b34dc",
       "date": "2026-10-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Search document metadata in SQLite FTS5 (migr 135), not Meilisearch — its queue is ~65k tasks deep",
       "scope": "docmeta"
-    },
-    {
-      "hash": "9f3afabc",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "GET /api/documents/meta/search — find documents by recipient, place, date, subjects in the doc_meta index",
-      "scope": "docmeta"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "e4e5d19a",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Every band keeps a thin scrollbar track so scrolling and non-scrolling bands line up",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "0d0b34dc",
         "date": "2026-10-13",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-29",
         "type": "New",
         "description": "Search document metadata in SQLite FTS5 (migr 135), not Meilisearch — its queue is ~65k tasks deep",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "9f3afabc",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "GET /api/documents/meta/search — find documents by recipient, place, date, subjects in the doc_meta index",
         "scope": "docmeta"
       }
     ]
