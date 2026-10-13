@@ -12,6 +12,21 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
+## ▶ NEXT BUILD — Anís READING GUIDE ("notes" strategy, Chad 10-12) — proof of concept: The Dawn-Breakers (doc 21308)
+- Trigger: mail "help me study <book>" / "read <book> with me" → Anís resolves the book, shows its layout, ASKS where to start
+  (Introduction by **George Townshend** — recommend for a first read · Nabíl's narrative ch. 1 · any chapter/event). DONE: intro ¶6–46 credited to Townshend, ¶20 Curzon.
+- Each email ≈ one page in whole ¶s, numbered ¶N (guessed OceanLibrary numbering, marked as a guess); notes AFTER EACH ¶.
+- Notes: persons (script, literal meaning of each name part, titles + who gave them, compact timeline incl. FATES — spoilers OK,
+  relations, other library mentions), places (modern name, 1840s, why here), tablets (title meaning, when/whom, range link),
+  terms; Hijri↔Gregorian dates; "How Nabíl knew this" (informant chain); "In the Writings" (quotes, range links); one "Look closer"; teaser line.
+- COMPACT + speakable: later audio = OceanLibrary reading voice for ¶ + ElevenLabs voice for notes; may pause mid-¶ at strategic points.
+- State per reader+book: position, ¶s read, entities already explained (never repeat facts within a book; one-line "met in ¶14").
+- Commands: next · back · skip to chapter N / event · where are we? · questions answered in-thread (audited like every exchange).
+- SUBJECT LINES name the starting point + activity so the mailbox reads as a table of contents, e.g.
+  "Dawn-Breakers · Introduction ¶6–11 — Persia in the 1840s" / "Dawn-Breakers · Ch. 1 ¶1–5 — Shaykh Aḥmad sets out".
+- Research per ¶: entity graph (disambiguated mentions) → /biography pages + claims → CTAI (name meanings) → gazetteer → Phelps
+  (tablets to them) → library search for other passages; ONE model call writes notes from cited evidence only. Measure $/page first.
+
 ## ⛔ HIGHEST PRIORITY (Chad 10-12) — what the Anís audits identify as a useful search-strategy extension
 "Whatever the audits identify as a useful extension for our search strategies is our highest priority" — and the CTAI
 API (ours) may be extended for it (e.g. a "Shoghi Effendi word frequency chart" tool).
