@@ -42,12 +42,13 @@ One-line index for AI navigation. Open the file for full documentation.
 ## AI / LLM pipeline
 - `ai.js` — base OpenAI / Anthropic clients.
 - `ai-services.js` — `aiService(name).embed/chat/segment` — provider-routed AI calls with usage logging.
+- `model-roles.js` — WHICH model each job uses (the only place); `role-client.js` — `roleCreate(role, params)`, a drop-in for openai chat.completions on any provider.
 - `model-registry.js` — `MODEL_REGISTRY` of all models with pricing + capabilities; helpers like `getModel`, `getModelsByType`.
 - `enhancement-ai.js` — **LEGACY** (local-Qwen disambig+HyPE prompt builders; old newline HyPE format). Retired 2026-07-10.
 - `enrichment-prompts.js` — **LEGACY** prompts for the retired enrichment workers.
 - `enrichment-runner.js` — **LEGACY** enrichment kicker.
 - `sonnet-enrichment.js` — **LEGACY** Sonnet batch path (wrote old newline-joined HyPE). Retired 2026-07-10; superseded by `pipeline/` + `scripts/entity-read/hype-book.mjs` (JSON-array HyPE).
-- `jafar-pipeline.js` — three-stage Jafar chat pipeline (research → craft → reflect). **Mega-file (1100+ lines).**
+- `chat-pipeline.js` — the original site chat pipeline (research → craft → reflect); LEGACY: its public endpoint is unused since May, the assistant borrows its research helpers. **Mega-file.**
 - `document-subagent.js` — single-document QA sub-agent for Jafar.
 - `translation-subagent.js` — JAFAR-grounded translation via CTAI API + LLM polish.
 - `parallel-analyzer.js` — batched LLM result re-rank.
@@ -72,7 +73,7 @@ One-line index for AI navigation. Open the file for full documentation.
 - `storage.js` — R2 / S3 file storage.
 
 ## Subdirectories
-- `anis/` — the Anís companion: `turn.js` (one turn: log → Jev triage gate → canned/tarpit/research → output check), `respond.js` (research answer), `ctai-term.js` (word questions → CTAI concordance term study: renderings chart + paired passages), `triage.js`, `canned.js`, `strikes.js`, `lint.js`, `channels.js`, `exchange-log.js`, `pause-link.js`, `soul.md`. Plan: planning/anis-hyper-engagement-prd.md.
+- `assistant/` — the assistant (persona Anís; code is named by function, personas are config): `turn.js` (one turn: log → Jev triage gate → canned/tarpit/research → output check), `respond.js` (research answer), `ctai-term.js` (word questions → CTAI concordance term study: renderings chart + paired passages), `triage.js`, `canned.js`, `strikes.js`, `lint.js`, `channels.js`, `exchange-log.js`, `pause-link.js`, `soul.md`, `reading.js` (the reading guide: outline · replies · research · notes, one workflow, one file). Plan: planning/anis-hyper-engagement-prd.md.
 - `pipeline/` — **unified enrichment pipeline v2** (the ONE gated orchestrator replacing the six legacy pollers): `state.js` (doc_pipeline), `profile.js`, `orchestrator.js`. Design: `docs/architecture/unified-enrichment-pipeline.md`. See `pipeline/CLAUDE.md`.
 - `constants/` — shared enums + lookups (one file per concern).
 - `migrations/` — `v1-v25.js`, `v26-v45.js`, `v46-v58.js`, `v72-v90.js` (latest; migration 89 = doc_pipeline), `user.js`, `runner.js`. Combined dispatch via runner.

@@ -3,7 +3,7 @@
 // replay queue.
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { openExchange, closeExchange, failExchange, pendingExchanges, pickThread, IDLE_MS } from '../../api/lib/anis/exchange-log.js';
+import { openExchange, closeExchange, failExchange, pendingExchanges, pickThread, IDLE_MS } from '../../api/lib/assistant/exchange-log.js';
 
 let raw, db;
 beforeEach(() => {

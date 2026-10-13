@@ -2,7 +2,7 @@
 // pauses exactly that address.
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import Fastify from 'fastify';
-import { pauseToken, verifyPauseToken, pauseUrl, emailHash } from '../../api/lib/anis/pause-link.js';
+import { pauseToken, verifyPauseToken, pauseUrl, emailHash } from '../../api/lib/assistant/pause-link.js';
 
 const rows = [{ id: 1, email: 'Seeker@Example.com', unsubscribed_at: null }, { id: 2, email: 'other@example.com', unsubscribed_at: null }];
 vi.mock('../../api/lib/db.js', () => ({
@@ -25,7 +25,7 @@ describe('pause token', () => {
 describe('pause routes', () => {
   let app;
   beforeAll(async () => {
-    const { default: anisRoutes } = await import('../../api/routes/anis.js');
+    const { default: anisRoutes } = await import('../../api/routes/assistant-mail.js');
     app = Fastify(); await app.register(anisRoutes, { prefix: '/api/v1/anis' }); await app.ready();
   });
   it('GET shows a confirm page and changes nothing', async () => {

@@ -2,8 +2,8 @@
 // Each section fails on its own (a missing store shows as unavailable, never breaks the page).
 import { queryAll } from '../lib/db.js';
 import { requireTier } from '../lib/auth.js';
-import { anisActivity, anisCosts, anisAssessment, anisSystem1 } from '../lib/anis/admin-overview.js';
-import { threadsOverview, threadDetail, strategyGaps } from '../lib/anis/admin-threads.js';
+import { anisActivity, anisCosts, anisAssessment, anisSystem1 } from '../lib/assistant/admin-overview.js';
+import { threadsOverview, threadDetail, strategyGaps } from '../lib/assistant/admin-threads.js';
 import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
 

@@ -153,7 +153,7 @@ function init(){
     } catch (e) { logger.warn({ err: e.message }, 'widget One Tap: account connect failed (connection row still saved)'); }
     try {
       const { sendEmail } = await import('../services/email.js');
-      const { pauseUrl } = await import('../lib/anis/pause-link.js');
+      const { pauseUrl } = await import('../lib/assistant/pause-link.js');
       await sendEmail({
         to: email,
         subject: `You're connected to ${profile.name}`,

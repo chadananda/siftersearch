@@ -1,11 +1,11 @@
 // Anis P0 gate (planning/anis-hyper-engagement-prd.md F2): Jev triage routing, canned replies, strikes + the hidden
 // tarpit, the voice lint (the Companion FORBIDDEN validator that never existed), and the channel registry.
 import { describe, it, expect } from 'vitest';
-import { routeTriage, triageMessage, outputBreaksPersona, T } from '../../api/lib/anis/triage.js';
-import { CANNED, NOTHING_FOUND, cannedReply } from '../../api/lib/anis/canned.js';
-import { makeStrikes, tarpitResponse } from '../../api/lib/anis/strikes.js';
-import { lintReply, unmachine } from '../../api/lib/anis/lint.js';
-import { channelFor, supports, CHANNELS } from '../../api/lib/anis/channels.js';
+import { routeTriage, triageMessage, outputBreaksPersona, T } from '../../api/lib/assistant/triage.js';
+import { CANNED, NOTHING_FOUND, cannedReply } from '../../api/lib/assistant/canned.js';
+import { makeStrikes, tarpitResponse } from '../../api/lib/assistant/strikes.js';
+import { lintReply, unmachine } from '../../api/lib/assistant/lint.js';
+import { channelFor, supports, CHANNELS } from '../../api/lib/assistant/channels.js';
 
 const tri = (o = {}) => ({ malicious: 0.01, complete: 0.99, stop_request: 0.01, kind: { choice: 'research', confidence: 0.9 }, ...o });
 
@@ -114,7 +114,7 @@ describe('channel registry', () => {
 });
 
 describe('mixed-script repair (10-12 term study: "Bahá’u’لlláh")', async () => {
-  const { mixedScript } = await import('../../api/lib/anis/lint.js');
+  const { mixedScript } = await import('../../api/lib/assistant/lint.js');
   it('drops stray Arabic inside a Latin word; names come back whole; Arabic text and table cells untouched', () => {
     expect(mixedScript('As Bahá’u’لlláh describes in Gleanings from the Writings of Bahá\'وأlláh')).toBe('As Bahá’u’lláh describes in Gleanings from the Writings of Bahá’u’lláh');
     expect(mixedScript('… أوّل الأمر **عرفان** اللّه وآخره …')).toBe('… أوّل الأمر **عرفان** اللّه وآخره …');

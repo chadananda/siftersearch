@@ -3,7 +3,7 @@
 // proof (anis/pause-link.js). POST /draft and /outreach (internal key) write letters for the Worker's mail system —
 // research only; the Worker stores them as drafts for Chad's approval. Deps: db, anis/pause-link, anis/turn, anis/respond.
 import { query, queryAll } from '../lib/db.js';
-import { verifyPauseToken, emailHash } from '../lib/anis/pause-link.js';
+import { verifyPauseToken, emailHash } from '../lib/assistant/pause-link.js';
 import { logger } from '../lib/logger.js';
 
 const page = (body) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -52,10 +52,10 @@ export default async function anisRoutes(fastify) {
     if (!messages.length) return reply.code(400).send({ error: 'messages required' });
     // READING GUIDE first (Chad 10-12): "help me study <book>", then next / again / back / skip to …; anything else is an
     // ordinary question and falls through to the usual turn.
-    const { readingTurn } = await import('../lib/anis/reading/guide.js');
+    const { readingTurn } = await import('../lib/assistant/reading.js');
     const rd = await readingTurn({ messages, participantId: who(email) }).catch((err) => { logger.error({ err: err.message }, 'anis: reading turn failed'); return null; });
     if (rd?.reply) return { reply: rd.reply, subject: rd.subject || null, status: 'reading', triage: null, retrieved: 0, format: 'reading-guide' };
-    const { anisTurn } = await import('../lib/anis/turn.js');
+    const { anisTurn } = await import('../lib/assistant/turn.js');
     const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email) });
     return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null };
   });
@@ -68,10 +68,10 @@ export default async function anisRoutes(fastify) {
     const { messages = [], step = 0 } = request.body || {};
     const lastQ = [...messages].reverse().find((m) => m.role === 'user')?.content?.slice(0, 600);
     if (!lastQ) return { silent: true, reason: 'no question to follow' };
-    const { outreachPrompt } = await import('../lib/anis/outreach.js');
+    const { outreachPrompt } = await import('../lib/assistant/outreach.js');
     const ask = outreachPrompt(step, lastQ);
-    const { anisRespond } = await import('../lib/anis/respond.js');
-    const { channelFor } = await import('../lib/anis/channels.js');
+    const { anisRespond } = await import('../lib/assistant/respond.js');
+    const { channelFor } = await import('../lib/assistant/channels.js');
     const r = await anisRespond({ messages: [...messages.slice(-6), { role: 'user', content: ask.question }], profile: { persona_name: 'Anís' },
       direction: { channel: channelFor('email', { trusted: true }), kind: 'research' } });
     if (!r?.reply || !(r.retrieved?.length)) return { silent: true, reason: 'nothing found worth sending' };

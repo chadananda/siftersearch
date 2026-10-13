@@ -2,8 +2,8 @@
 // (one cached prefix); everything about this reply — stance, channel frame, conversation, mission, Companion steering —
 // is DIRECTION in the user message. The soul carries no subject facts (a fact there would bypass retrieval).
 import { describe, it, expect } from 'vitest';
-import { anisSystem, anisDirection, anisUserPayload, soul, STANCE_NOTES, HOUSE_STYLE } from '../../api/lib/anis/prompt.js';
-import { STANCES } from '../../api/lib/anis/triage.js';
+import { anisSystem, anisDirection, anisUserPayload, soul, STANCE_NOTES, HOUSE_STYLE } from '../../api/lib/assistant/prompt.js';
+import { STANCES } from '../../api/lib/assistant/triage.js';
 
 describe('soul + house style = the constant system prompt', () => {
   it('loads soul.md and states the core convictions and the friend\'s stance', () => {

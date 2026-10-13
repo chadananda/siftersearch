@@ -1,7 +1,7 @@
 // The Anís hub data: activity, costs (unpriced flagged), assessment tallies, and Clef↔Jev agreement — in-memory stores.
 import { describe, it, expect } from 'vitest';
 import Database from 'better-sqlite3';
-import { anisActivity, anisCosts, anisAssessment, anisSystem1 } from '../../api/lib/anis/admin-overview.js';
+import { anisActivity, anisCosts, anisAssessment, anisSystem1 } from '../../api/lib/assistant/admin-overview.js';
 
 const main = new Database(':memory:');
 main.exec(`CREATE TABLE chat_sessions (id TEXT PRIMARY KEY, participant_id TEXT);

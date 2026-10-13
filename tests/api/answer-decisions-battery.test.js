@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { isQuoteMiss, buildWebQuestion } from '../../api/lib/jafar-pipeline.js';
+import { isQuoteMiss, buildWebQuestion } from '../../api/lib/chat-pipeline.js';
 
 const CASES = JSON.parse(readFileSync(join(process.cwd(), 'tests/quality/answer-decisions.json'), 'utf8'));
 

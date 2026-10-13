@@ -2,9 +2,9 @@
 // formats (no timeline without dates, no comparison without two traditions, no table in the chat widget, absence forces
 // the honest reply); Jev chooses among the rest; a shape default covers Jev being down.
 import { describe, it, expect } from 'vitest';
-import { toFindings, dataProfile, describeProfile } from '../../api/lib/anis/findings.js';
-import { FORMATS, feasibleFormats, defaultFormat, chooseFormat } from '../../api/lib/anis/formats.js';
-import { channelFor } from '../../api/lib/anis/channels.js';
+import { toFindings, dataProfile, describeProfile } from '../../api/lib/assistant/findings.js';
+import { FORMATS, feasibleFormats, defaultFormat, chooseFormat } from '../../api/lib/assistant/formats.js';
+import { channelFor } from '../../api/lib/assistant/channels.js';
 
 const q = (title, author, religion = "Baha'i", lang = 'en') => ({ source_title: title, source_author: author, religion, source_lang: lang, citation_url: `https://x/${title}` });
 const chat = channelFor('widget-chat'), email = channelFor('email', { trusted: true });

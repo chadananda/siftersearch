@@ -1,6 +1,6 @@
 // Anís letters: outreach prompts by step, Markdown → email HTML, signed review links.
 import { describe, it, expect } from 'vitest';
-import { outreachPrompt, CAPABILITIES } from '../../api/lib/anis/outreach.js';
+import { outreachPrompt, CAPABILITIES } from '../../api/lib/assistant/outreach.js';
 import { toHtml, reviewUrl, tidy, fillTemplate } from '../../worker/mail/drafting.js';
 
 describe('outreach prompts', () => {

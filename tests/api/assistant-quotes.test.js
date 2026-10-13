@@ -1,7 +1,7 @@
 // A companion that presents invented words as scripture has failed at the one thing it must never do.
 // Live 2026-09-24: gpt-4o-mini quoted three lines "Bahá'u'lláh states" that appear in no retrieved passage.
 import { describe, it, expect } from 'vitest';
-import { unverifiedQuotes, dropUnverified } from '../../api/lib/anis/quotes.js';
+import { unverifiedQuotes, dropUnverified } from '../../api/lib/assistant/quotes.js';
 
 const passages = [
   { text: 'O Son of Spirit! The best beloved of all things in My sight is Justice; turn not away therefrom if thou desirest Me.' },
@@ -49,7 +49,7 @@ describe('dropUnverified', () => {
 });
 
 // Streaming must never SHOW an invented quote, even for the moment before the final text replaces it.
-import { createSentenceGate } from '../../api/lib/anis/quotes.js';
+import { createSentenceGate } from '../../api/lib/assistant/quotes.js';
 describe('createSentenceGate', () => {
   const run = (chunks) => { const out = []; const g = createSentenceGate(passages, (t) => out.push(t)); chunks.forEach((c) => g.push(c)); g.flush(); return out.join(''); };
 

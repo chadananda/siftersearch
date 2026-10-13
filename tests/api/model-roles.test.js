@@ -12,7 +12,7 @@ describe('model roles', () => {
   });
   it('env override per role', () => {
     process.env.MODEL_ROLE_ANIS_TERM = 'anthropic:claude-haiku-5-5';
-    expect(modelFor('anis-term')).toEqual({ provider: 'anthropic', model: 'claude-haiku-5-5' });
+    expect(modelFor('assistant-term')).toEqual({ provider: 'anthropic', model: 'claude-haiku-5-5' });
   });
   it('review flags stale reviews, deprecated models and newer cheaper candidates', () => {
     const registry = {

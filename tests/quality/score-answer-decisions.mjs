@@ -17,7 +17,7 @@
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { isQuoteMiss, buildWebQuestion } from '../../api/lib/jafar-pipeline.js';
+import { isQuoteMiss, buildWebQuestion } from '../../api/lib/chat-pipeline.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CASES = JSON.parse(readFileSync(join(HERE, 'answer-decisions.json'), 'utf8'));

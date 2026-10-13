@@ -42,7 +42,7 @@ export function termQuestion(text = '') {
 /** "Irfan" → "عرفان" (one tiny call); null when the model does not recognise it as an Arabic/Persian term. */
 export async function resolveTerm(latin, { complete } = {}) {
   const call = complete || (async (messages) => (await import('../ai.js')).chatCompletion(messages,
-    { ...modelFor('anis-term'), temperature: 0, maxTokens: 20, thinking: false, caller: 'anis-term' }));
+    { ...modelFor('assistant-term'), temperature: 0, maxTokens: 20, thinking: false, caller: 'anis-term' }));
   const out = await call([{ role: 'user', content: `Write the Arabic-script spelling of the Arabic or Persian term used in the Bahá'í writings that is transliterated "${latin}". Reply with that word only, or NONE.` }]);
   const word = String(out?.content ?? out ?? '').trim().replace(/[«»"'.]/g, '');
   // eslint-disable-next-line no-misleading-character-class -- Arabic vowel marks are matched on purpose

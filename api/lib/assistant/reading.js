@@ -220,8 +220,8 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 export const explainedKey = (t) => (t.id ? `e${t.id}` : `n:${fold(t.name)}`);
 
 async function researchDefaults() {
-  const [{ pageMentions }, { entityLookup, entityDossier }, { plannedSearch }, { llmJson }, { perplexityFallback }, { parallelResearch }] = await Promise.all([
-    import('../repos/reading-repo.js'), import('../entity-api.js'), import('../planned-search.js'), Promise.resolve({ llmJson }),
+  const [{ pageMentions }, { entityLookup, entityDossier }, { plannedSearch }, { perplexityFallback }, { parallelResearch }] = await Promise.all([
+    import('../repos/reading-repo.js'), import('../entity-api.js'), import('../planned-search.js'),
     import('../perplexity.js'), import('../parallel-ai.js')]);
   const { withLinks } = await import('../hit-links.js');
   return { pageMentions, entityLookup, entityDossier, search: (q, o) => plannedSearch(q, o), links: withLinks, llmJson, perplexity: perplexityFallback, parallel: parallelResearch };
@@ -326,9 +326,9 @@ export async function researchPage({ docId, title, religion = null, items, expla
 const outlines = new Map();   // docId → { at, outline, byPid }
 
 async function defaults() {
-  const [repo, docs, { researchPage }, { llmJson }, { config }, { plannedSearch }, { withLinks }] = await Promise.all([
-    import('../repos/reading-repo.js'), import('../docs-repo.js'), Promise.resolve({ researchPage }), Promise.resolve({ llmJson }), import('../config.js'),
-    import('../planned-search.js'), import('../hit-links.js')]);
+  const [repo, docs, { config }, { plannedSearch }, { withLinks }] = await Promise.all([
+    import('../repos/reading-repo.js'), import('../docs-repo.js'), import('../config.js'), import('../planned-search.js'), import('../hit-links.js')]);
+  // researchPage + llmJson are this file's own (sections 4 and 1)
   return { ...repo, listDocs: docs.listDocs, getParagraphs: docs.getParagraphs, researchPage, llmJson, libraryBase: config.library.basePath, readFile,
     search: plannedSearch, links: withLinks };
 }

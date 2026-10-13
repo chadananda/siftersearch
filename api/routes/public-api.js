@@ -1405,7 +1405,7 @@ export default async function publicApiRoutes(fastify) {
     try {
       // Three-stage Jafar pipeline (research → craft → reflection-gate).
       // Replaces the prior single-LLM-with-tools flow. See api/lib/jafar-pipeline.js.
-      const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
+      const { runJafarPipeline } = await import('../lib/chat-pipeline.js');
       const debug = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
 
       sendEvent({ type: 'status', message: 'Searching sacred texts...' });

@@ -1,9 +1,9 @@
 // Anís reading guide (Chad 10-12): "help me study X" → a page per email with notes; next / again / back / skip / questions.
 import { describe, it, expect } from 'vitest';
-import { readingIntent, bookFrom, startFrom, understandReply } from '../../api/lib/anis/reading/intent.js';
-import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/anis/reading/outline.js';
-import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations } from '../../api/lib/anis/reading/guide.js';
-import { sameName } from '../../api/lib/anis/reading/research.js';
+import { readingIntent, bookFrom, startFrom, understandReply } from '../../api/lib/assistant/reading.js';
+import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/assistant/reading.js';
+import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations } from '../../api/lib/assistant/reading.js';
+import { sameName } from '../../api/lib/assistant/reading.js';
 
 const MD = `# The Book {.off id="para_1" type="title"}
 

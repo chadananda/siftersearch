@@ -7,7 +7,7 @@
 //
 // Chad: "there was NO verbatim hit. we discarded the semantic hit for no reason."
 import { describe, it, expect } from 'vitest';
-import { isQuoteMiss, spanIsContained } from '../../api/lib/jafar-pipeline.js';
+import { isQuoteMiss, spanIsContained } from '../../api/lib/chat-pipeline.js';
 
 const SAQ = { text: 'KNOW THAT JUSTICE consists in rendering to each his due. For example, when a workman labours from morning till evening, justice requires that he be paid his wage.' };
 const SPAN = 'justice as every man receiving his due';

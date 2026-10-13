@@ -1,9 +1,9 @@
 // Anís term study via CTAI: which questions are about a word, the CTAI calls (faked fetch), the code-built renderings,
 // and the respond path end to end with injected deps (no network, no model).
 import { describe, it, expect } from 'vitest';
-import { termQuestion, resolveTerm, ctaiTerm, termEvidence, renderingsBlock, placeRenderings, termFormatHow, renderingCounts, phraseWindow, passagesBlock } from '../../api/lib/anis/ctai-term.js';
-import { anisRespond } from '../../api/lib/anis/respond.js';
-import { channelFor } from '../../api/lib/anis/channels.js';
+import { termQuestion, resolveTerm, ctaiTerm, termEvidence, renderingsBlock, placeRenderings, termFormatHow, renderingCounts, phraseWindow, passagesBlock } from '../../api/lib/assistant/ctai-term.js';
+import { anisRespond } from '../../api/lib/assistant/respond.js';
+import { channelFor } from '../../api/lib/assistant/channels.js';
 
 const STUDY = {
   term: 'عرفان', root: 'ع-ر-ف', transliteration: 'ʿ-r-f', meaning: 'knowledge; know',
@@ -55,7 +55,7 @@ describe('resolving a spelling', () => {
 });
 
 describe('spellings', async () => {
-  const { spellings } = await import('../../api/lib/anis/ctai-term.js');
+  const { spellings } = await import('../../api/lib/assistant/ctai-term.js');
   it('searches the Persian and the Arabic letters', () => {
     expect(spellings('ایقان')).toEqual(['ایقان', 'ايقان']);
     expect(spellings('عرفان')).toEqual(['عرفان']);
@@ -65,7 +65,7 @@ describe('spellings', async () => {
 
 describe('counting renderings of the word itself', () => {
   it('a label is the rendering itself, not the words the alignment dragged along', async () => {
-    const { renderingLabel } = await import('../../api/lib/anis/ctai-term.js');
+    const { renderingLabel } = await import('../../api/lib/assistant/ctai-term.js');
     expect(renderingLabel('knowledge,” the “heaven')).toBe('knowledge');
     expect(renderingLabel('of knowledge, above the horizon of the prison-city')).toBe('knowledge');
     expect(renderingLabel('understanding, and love; whilst')).toBe('understanding');

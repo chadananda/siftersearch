@@ -1,6 +1,6 @@
 // Anís Threads admin view: thread list with audit roll-ups, the "better strategy warranted" flag, one thread in rounds.
 import { describe, it, expect } from 'vitest';
-import { strategyFlag, auditView, threadsOverview, threadDetail } from '../../api/lib/anis/admin-threads.js';
+import { strategyFlag, auditView, threadsOverview, threadDetail } from '../../api/lib/assistant/admin-threads.js';
 
 const V_OK = { strategy_used: 'passages', strategy_verdict: 'right', best_strategy: 'passages', evidence: { answered: 'fully', cause: 'none' }, format_verdict: { fit: 'right' }, problems: [], new_strategy: { suggested: false }, data_gap: { found: false }, reader_feedback: { present: false }, summary: 'fine' };
 const V_BAD = { ...V_OK, strategy_used: 'passages', strategy_verdict: 'wrong', best_strategy: 'term-study', evidence: { answered: 'no', cause: 'routing' },
@@ -51,7 +51,7 @@ describe('threadDetail', () => {
 });
 
 describe('strategyGaps (the work queue)', async () => {
-  const { strategyGaps } = await import('../../api/lib/anis/admin-threads.js');
+  const { strategyGaps } = await import('../../api/lib/assistant/admin-threads.js');
   it('ranks switches, needs, shortfalls, data gaps and problems by frequency with threads to read', () => {
     const need = { ...V_BAD, new_strategy: { suggested: true, need: 'Shoghi Effendi word frequency', route: 'CTAI renderings chart' }, data_gap: { found: true, detail: 'Persian Hidden Words missing' } };
     const g = strategyGaps([

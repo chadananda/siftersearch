@@ -16,7 +16,7 @@ import { unmachine } from './lint.js';
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
 // sometimes quotes words not in its passages — the sentence gate (quotes.js) is the protection, not the model.
 // Groq gpt-oss is faster still but its paid tier is unavailable (free = 8k TPM). Switch with ANIS_LLM.
-const DEFAULT_LLM = modelFor('anis-answer');   // the role table (lib/model-roles.js); ANIS_LLM still overrides
+const DEFAULT_LLM = modelFor('assistant-answer');   // the role table (lib/model-roles.js); ANIS_LLM still overrides
 const PROVIDERS = new Set(['groq', 'openai', 'deepseek', 'gemini', 'anthropic']);
 
 /** "groq:openai/gpt-oss-120b:low" → { provider, model, reasoning_effort? }; nonsense → the default. */
@@ -175,7 +175,7 @@ function conversationSummary(messages, persona) {
 
 async function defaultDeps() {
   const [{ executeSearch }, { craftAnswerStream, stripUngroundedLinks }, companion, { anisCraft }, { planSearch }] = await Promise.all([
-    import('../../routes/chat.js'), import('../jafar-pipeline.js'), import('../companion/index.js'), import('./craft.js'),
+    import('../../routes/chat.js'), import('../chat-pipeline.js'), import('../companion/index.js'), import('./craft.js'),
     import('../search-plan.js'),
   ]);
   return {

@@ -1,9 +1,9 @@
 // One Anis turn (PRD §2) on fakes: log first, triage, canned/tarpit/research, output check, lint — and the hidden
 // tarpit must look like the paths it imitates (same event types, no field that says "gated").
 import { describe, it, expect } from 'vitest';
-import { anisTurn } from '../../api/lib/anis/turn.js';
-import { makeStrikes } from '../../api/lib/anis/strikes.js';
-import { CANNED, NOTHING_FOUND } from '../../api/lib/anis/canned.js';
+import { anisTurn } from '../../api/lib/assistant/turn.js';
+import { makeStrikes } from '../../api/lib/assistant/strikes.js';
+import { CANNED, NOTHING_FOUND } from '../../api/lib/assistant/canned.js';
 
 function harness({ triage = null, reply = 'The passage reads…', broken = 0.01, strikes = makeStrikes(), respondThrows = false } = {}) {
   const calls = { open: [], close: [], fail: [], respond: [], triage: 0 };

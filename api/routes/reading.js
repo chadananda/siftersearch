@@ -15,7 +15,7 @@ export default async function readingRoutes(fastify) {
     if (!internalOnly(request, reply)) return;
     const { participant, message, messages, reset = false } = request.body || {};
     if (!participant || !(message || messages?.length)) return reply.code(400).send({ error: 'participant and message required' });
-    const { readingTurn } = await import('../lib/anis/reading/guide.js');
+    const { readingTurn } = await import('../lib/assistant/reading.js');
     const r = await readingTurn({ messages: messages?.length ? messages : [{ role: 'user', content: String(message) }], participantId: String(participant), reset: !!reset });
     return r?.reply ? { reading: true, ...r } : { reading: false };
   });

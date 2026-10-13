@@ -45,10 +45,10 @@ import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
 import tabletAdminRoutes, { tabletPublicRoutes } from './routes/tablets.js';
 import coverRoutes from './routes/covers.js';
-import anisAdminRoutes from './routes/anis-admin.js';
+import assistantAdminRoutes from './routes/assistant-admin.js';
 import workplanAdminRoutes from './routes/workplan-admin.js';
 import widgetRoutes from './routes/widget.js';
-import anisRoutes from './routes/anis.js';
+import assistantMailRoutes from './routes/assistant-mail.js';
 import readingRoutes from './routes/reading.js';
 import ingestRoutes from './routes/ingest.js';
 import bookNotesRoutes from './routes/book-notes.js';
@@ -349,13 +349,13 @@ export async function createServer(opts = {}) {
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
   await server.register(tabletAdminRoutes, { prefix: '/api/admin' });   // tablet metadata (Phelps + oceanoflights)
-  await server.register(anisAdminRoutes, { prefix: '/api/admin' });   // the Anís hub (/admin/anis)
+  await server.register(assistantAdminRoutes, { prefix: '/api/admin' });   // the Anís hub (/admin/anis)
 await server.register(workplanAdminRoutes, { prefix: '/api/admin' });   // the WorkPlan page (D1 via the edge)
   await server.register(ingestRoutes, { prefix: '/api/admin' });
   await server.register(bookNotesRoutes, { prefix: '/api/admin' });
   await server.register(companionRoutes, { prefix: '/api/admin' });
   await server.register(companionMeRoutes, { prefix: '/api/v1/companion' });
-  await server.register(anisRoutes, { prefix: '/api/v1/anis' });   // Anís letters: footer pause link
+  await server.register(assistantMailRoutes, { prefix: '/api/v1/anis' });   // Anís letters: footer pause link
   await server.register(readingRoutes, { prefix: '/api/v1/reading' });   // reading guide: one turn, any channel
   await server.register(documentsRoutes, { prefix: '/api/documents' });
 await server.register(coverRoutes, { prefix: '/api/covers' });   // book covers (api/lib/covers.js), edge-cached by the Worker

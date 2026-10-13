@@ -1,7 +1,7 @@
 // Anís must see the people answer as the search decided it — met / did not meet / contested / no evidence — with
 // every claim's verbatim proof (2026-09-27: "Ṭáhirih met the Báb" was served from proofs saying she never did).
 import { describe, it, expect } from 'vitest';
-import { anisUserPayload } from '../../api/lib/anis/prompt.js';
+import { anisUserPayload } from '../../api/lib/assistant/prompt.js';
 
 describe('anisUserPayload people answer', () => {
   it('renders the four lists and the proofs', () => {

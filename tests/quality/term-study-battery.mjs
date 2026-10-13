@@ -5,7 +5,7 @@
 //   node tests/quality/term-study-battery.mjs
 import dotenv from 'dotenv';
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: f, quiet: true });
-const { termQuestion, resolveTerm, ctaiTerm } = await import('../../api/lib/anis/ctai-term.js');
+const { termQuestion, resolveTerm, ctaiTerm } = await import('../../api/lib/assistant/ctai-term.js');
 
 const TERMS = [   // question → the Arabic word, renderings that may lead, and one that must not appear
   { q: 'I would like to understand the meaning of the word Irfan in the Bahá’í writings', word: 'عرفان', top: ['knowledge', 'recogni'], never: 'fragrance' },

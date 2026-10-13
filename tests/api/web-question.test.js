@@ -8,7 +8,7 @@
 // Chad saw the Roman-law answer and reasonably concluded our search was worse than Perplexity. It was our
 // PROMPT that was worse; Perplexity answered the question we actually asked it.
 import { describe, it, expect } from 'vitest';
-import { buildWebQuestion } from '../../api/lib/jafar-pipeline.js';
+import { buildWebQuestion } from '../../api/lib/chat-pipeline.js';
 
 const USER_Q = `Abdu'l-Baha defines "justice" as every man receiving his due. Where?`;
 const LOOKUP = { span: 'justice as every man receiving his due', confidence: 'likely' };

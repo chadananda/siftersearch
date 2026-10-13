@@ -4,13 +4,13 @@
 // Run from repo root: node scripts/wip/anis-model-race.mjs [spec,spec,...]
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
-const { craftAnswerStream } = await import('../../api/lib/jafar-pipeline.js');
-const { anisCraft } = await import('../../api/lib/anis/craft.js');
-const { parseLlm } = await import('../../api/lib/anis/respond.js');
+const { craftAnswerStream } = await import('../../api/lib/chat-pipeline.js');
+const { anisCraft } = await import('../../api/lib/assistant/craft.js');
+const { parseLlm } = await import('../../api/lib/assistant/respond.js');
 
 const MODELS = (process.argv[2] || 'jafar:openai:gpt-4o,openai:gpt-4o,openai:gpt-4o-mini,deepseek:deepseek-v4-flash,groq:openai/gpt-oss-120b:low,groq:openai/gpt-oss-20b:low').split(',');
 // Quote fidelity (api/lib/anis/quotes.js): a quoted span of ≥5 words must appear in a retrieved passage.
-const { quoteSpans, unverifiedQuotes } = await import('../../api/lib/anis/quotes.js');
+const { quoteSpans, unverifiedQuotes } = await import('../../api/lib/assistant/quotes.js');
 const fidelity = (text, retrieved) => { const n = quoteSpans(text).length; return { quotes: n, verified: n - unverifiedQuotes(text, retrieved).length }; };
 const QUESTIONS = [
   'What does Bahá’u’lláh say about justice?',

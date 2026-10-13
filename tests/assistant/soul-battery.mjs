@@ -2,12 +2,12 @@
 // packets (built once from real search results, so replies are comparable across soul edits) × stance × channel →
 // the real formatter (anisCraft, ANIS_LLM) → scored by Jev on the soul's commitments + the voice lint. Live: costs one
 // LLM call and one Jev call per packet; NOT part of CI. Run after every soul.md / house-style change.
-//   node tests/anis/soul-battery.mjs --build     fetch evidence for the packets → tests/anis/soul-packets.json
-//   node tests/anis/soul-battery.mjs             run → tests/anis/reports/soul-<ts>.json + a summary table
+//   node tests/assistant/soul-battery.mjs --build     fetch evidence for the packets → tests/assistant/soul-packets.json
+//   node tests/assistant/soul-battery.mjs             run → tests/assistant/reports/soul-<ts>.json + a summary table
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 
-const PACKETS_FILE = 'tests/anis/soul-packets.json';
+const PACKETS_FILE = 'tests/assistant/soul-packets.json';
 // Each packet: the person's message, their stance (as the triage gate would read it), channel, and which commitments
 // it exercises. `conviction` = the soul's beliefs are in play (causation, coercion, free will, surface likeness).
 const PACKETS = [
@@ -78,14 +78,14 @@ async function jevScore(p, reply) {
 async function run() {
   if (!existsSync(PACKETS_FILE)) { console.error('build the packets first: --build'); process.exit(1); }
   const packets = JSON.parse(readFileSync(PACKETS_FILE, 'utf8'));
-  const { anisCraft } = await import('../../api/lib/anis/craft.js');
-  const { parseLlm } = await import('../../api/lib/anis/respond.js');
-  const { channelFor } = await import('../../api/lib/anis/channels.js');
-  const { lintReply } = await import('../../api/lib/anis/lint.js');
+  const { anisCraft } = await import('../../api/lib/assistant/craft.js');
+  const { parseLlm } = await import('../../api/lib/assistant/respond.js');
+  const { channelFor } = await import('../../api/lib/assistant/channels.js');
+  const { lintReply } = await import('../../api/lib/assistant/lint.js');
   const results = [];
   for (const p of packets) {
     const t0 = Date.now();
-    const { unmachine } = await import('../../api/lib/anis/lint.js');
+    const { unmachine } = await import('../../api/lib/assistant/lint.js');
     const reply = unmachine(await anisCraft({ user_question: p.q, retrieved_quotes: p.passages, conversation_summary: '', persona_name: 'Anís',
       direction: { stance: p.stance, channel: channelFor(p.channel, { trusted: true }) }, llm: parseLlm(process.env.ANIS_LLM) }));   // as respond.js finalises
     const scores = await jevScore(p, reply);
@@ -98,8 +98,8 @@ async function run() {
   const summary = Object.fromEntries(Object.keys(JEV_QUESTIONS).map((k) => [k, rate(k)]));
   summary.lint_clean = results.filter((r) => !r.lint.length).length / results.length;
   summary.all_met = results.filter((r) => !r.failed.length && !r.lint.length).length / results.length;
-  mkdirSync('tests/anis/reports', { recursive: true });
-  const file = `tests/anis/reports/soul-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  mkdirSync('tests/assistant/reports', { recursive: true });
+  const file = `tests/assistant/reports/soul-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
   writeFileSync(file, JSON.stringify({ llm: parseLlm(process.env.ANIS_LLM), summary, results }, null, 1));
   console.log('\nSUMMARY', JSON.stringify(summary), '\nREPORT', file);
 }

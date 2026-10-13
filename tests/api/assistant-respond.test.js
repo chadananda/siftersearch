@@ -1,7 +1,7 @@
 // Anis chat layer: conversation + Jev-planned RAW search → ONE fast streamed answer in the site's persona, with
 // the Seeker Companion plan. Transport-neutral (web component streams; email uses the finished text).
 import { describe, it, expect, vi } from 'vitest';
-import { anisRespond, parseLlm, linkMarkers, searchQueryFor } from '../../api/lib/anis/respond.js';
+import { anisRespond, parseLlm, linkMarkers, searchQueryFor } from '../../api/lib/assistant/respond.js';
 
 const passages = [
   { text: 'The earth is but one country, and mankind its citizens.', title: 'Gleanings', author: 'Bahá’u’lláh', religion: "Baha'i", document_id: 8312, paragraph_index: 117, source_url: 'https://x/g#117' },
@@ -167,7 +167,7 @@ describe('anisRespond', () => {
 });
 
 describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
-  const { quotationIn } = await import('../../api/lib/anis/respond.js');
+  const { quotationIn } = await import('../../api/lib/assistant/respond.js');
   const HUNT = {
     quoteAuthor: 'Bahá’u’lláh', ms: 900,
     origin: { title: 'Gleanings', author: 'Bahá’u’lláh', documentId: 20783, text: 'The earth is but one country, and mankind its citizens.', highlight: [[0, 55]],
@@ -207,7 +207,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
 });
 
 describe('exactLinks', async () => {
-  const { exactLinks } = await import('../../api/lib/anis/respond.js');
+  const { exactLinks } = await import('../../api/lib/assistant/respond.js');
   const OOL = 'https://oceanoflights.org/abdul-baha-bkw03-fa/#:~:text=%D8%A7%DA%AF,%D9%86%D9%85%D8%A7%D9%8A%D8%AF';
   it('a miscopied link to a page we gave is replaced by our exact URL', () => {
     expect(exactLinks('[T](https://oceanoflights.org/abdul-baha-bkw03-fa/#:~:text=%D8%A7%DA%AF,%D9%86%D9%85%D8%A7%D9%8A%D8%AD)', [OOL])).toBe(`[T](${OOL})`);
@@ -218,7 +218,7 @@ describe('exactLinks', async () => {
 });
 
 describe('source replies: tags → exact links; source questions without triage', async () => {
-  const { fillTags, looksLikeSourceQuestion } = await import('../../api/lib/anis/respond.js');
+  const { fillTags, looksLikeSourceQuestion } = await import('../../api/lib/assistant/respond.js');
   const tags = { book: { title: 'Gleanings', url: 'https://ol/g#:~:text=a' }, tablet: { title: 'Lawh-i-Nasir', url: 'https://ool/n' },
     inventory: { title: 'Phelps Inventory BH1', url: 'https://pi/BH1', plain: true } };
   it('fills tags with the exact links, tolerating brackets/asterisks; unknown tags vanish', () => {
@@ -237,7 +237,7 @@ describe('source replies: tags → exact links; source questions without triage'
 });
 
 describe('how Anís describes itself', async () => {
-  const { cannedReply, ANIS_SELF } = await import('../../api/lib/anis/canned.js');
+  const { cannedReply, ANIS_SELF } = await import('../../api/lib/assistant/canned.js');
   it('Anís: an experimental AI research assistant with its own email address', () => {
     for (const seed of ['a', 'b', 'c', 'd']) expect(cannedReply('about_anis', { name: 'Anís', seed })).toContain(ANIS_SELF);
   });

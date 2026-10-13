@@ -1,7 +1,7 @@
 // stripUngroundedLinks must stay linear: an unclosed markdown link with a long URL (a streamed sentence cut before its ")")
 // backtracked exponentially and froze the API (2026-10-06).
 import { describe, it, expect } from 'vitest';
-import { stripUngroundedLinks } from '../../api/lib/jafar-pipeline.js';
+import { stripUngroundedLinks } from '../../api/lib/chat-pipeline.js';
 
 const LONG = 'https://oceanoflights.org/abdul-baha-bkw03-fa/#:~:text=' + '%D8%A7%DA%AF%D8%B1%20'.repeat(30);
 describe('stripUngroundedLinks', () => {

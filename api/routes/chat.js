@@ -1349,7 +1349,7 @@ export default async function chatRoutes(fastify) {
     const inflight = [..._prewarm.values()].filter((v) => v.promise).length;
     if (!settled || inflight >= PREWARM_MAX_INFLIGHT) return { status: 'noop' };
 
-    const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
+    const { runJafarPipeline } = await import('../lib/chat-pipeline.js');
     const promise = runJafarPipeline({
       messages: [{ role: 'user', content: text }],
       sendEvent: null, debug: false, chatbot_location: undefined,
@@ -1443,7 +1443,7 @@ export default async function chatRoutes(fastify) {
       let anisResult = null;
       if (useAnis) {
         // One Anis TURN: log first → Jev triage gate (canned replies, hidden tarpit) → research answer → output check.
-        const { anisTurn } = await import('../lib/anis/turn.js');
+        const { anisTurn } = await import('../lib/assistant/turn.js');
         const { getScopeForLocation } = await import('../lib/search/scope.js');
         let scope_config;
         try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
@@ -1464,7 +1464,7 @@ export default async function chatRoutes(fastify) {
       }
       // Three-stage Jafar pipeline: research → craft → reflection-gate.
       // See api/lib/jafar-pipeline.js for the architecture rationale.
-      const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
+      const { runJafarPipeline } = await import('../lib/chat-pipeline.js');
 
       const debug = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
       // Attach to a prewarmed speculative run when one matches this exact question

@@ -14,7 +14,7 @@ import { sectionAuthorJob } from './section-author.js';
 import { slowQueriesByHour } from '../repos/query-health-repo.js';
 import { translatorCoverage } from '../repos/translator-repo.js';
 import { auditsSince } from '../repos/audit-store-repo.js';
-import { strategyGaps } from '../anis/admin-threads.js';
+import { strategyGaps } from '../assistant/admin-threads.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
