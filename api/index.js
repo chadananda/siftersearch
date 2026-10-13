@@ -143,7 +143,8 @@ const start = async () => {
     if (preboot) await bootTasks();
 
     await server.listen({ port, host });
-    if (preboot) warmIndexes().catch(() => {});
+    // a few seconds' grace first: the cluster routes requests here the moment it listens
+    if (preboot) setTimeout(() => warmIndexes().catch(() => {}), 3000).unref();
 
     if (!preboot) {
       // Warm the who-met-whom index once, off the request path (a ~5 s synchronous build; searches never wait on it cold).

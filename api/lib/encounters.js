@@ -124,7 +124,8 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
   for (const c of claims) {
     // A target typed to its own SUBJECT is a mis-bind (the object "the Báb" bound to the man who met Him): drop the
     // type, keep the claim — its statement can still name the real object.
-    const row = { ...c, tid: c.tid === c.eid ? null : c.tid, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || ''),
+    // hay/topic may arrive pre-folded (the paged loader folds each page between yields — 10-12, a 2 s synchronous build)
+    const row = { ...c, tid: c.tid === c.eid ? null : c.tid, hay: c.hay ?? fold(c.st), topic: c.topic ?? fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || ''),
       auth: authDocs.has(c.doc) };
     // A model verdict from re-reading the whole paragraph (claim_verifications) overrides the proof-span guess:
     // denied → evidence against; not_stated / wrong_person → no evidence at all; met → verified evidence.
@@ -314,12 +315,13 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
 const TTL = 30 * 60 * 1000;
 let _index = null, _building = null;
 
-const PAGE = 5000;
+const PAGE = 2000;   // ~100 ms per page; the loop yields between pages
 /** Read a large table in id-ordered pages, yielding the event loop between them. fetch(afterId) → rows with .id */
-export async function paged(fetch) {
+export async function paged(fetch, prep = null) {
   const out = [];
   for (let after = 0; ;) {
     const rows = await fetch(after);
+    if (prep) for (const r of rows) prep(r);
     out.push(...rows);
     if (rows.length < PAGE) return out;
     after = rows[rows.length - 1].id;
@@ -340,7 +342,8 @@ async function build() {
         substr(ec.proof_verbatim, 1, 300) prf, ec.doc_id doc, ec.para_id pid, ec.time_value tv, cv.verdict vd, cv.quote vq
       FROM entity_claims ec LEFT JOIN claim_verifications cv ON cv.claim_id = ec.id
       WHERE ec.id > ? AND ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
-        AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> '' ORDER BY ec.id LIMIT ${PAGE}`, [after, ...ENCOUNTER_RELATIONS], 'encounters:claims')),
+        AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> '' ORDER BY ec.id LIMIT ${PAGE}`, [after, ...ENCOUNTER_RELATIONS], 'encounters:claims'),
+      (c) => { c.hay = fold(c.st); c.topic = fold(`${c.st} ${c.prf || ''}`); }),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),
   ]);
   // SCENES: every pair of bound participants in one scene was physically together — "present with" evidence, with

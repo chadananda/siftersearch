@@ -361,8 +361,8 @@ describe('paged', () => {
   it('walks id pages until a short page, keeping every row once', async () => {
     const all = Array.from({ length: 12001 }, (_, i) => ({ id: i + 1 }));
     const seen = [];
-    const rows = await paged(async (after) => { seen.push(after); return all.filter((r) => r.id > after).slice(0, 5000); });
+    const rows = await paged(async (after) => { seen.push(after); return all.filter((r) => r.id > after).slice(0, 2000); });
     expect(rows).toHaveLength(12001);
-    expect(seen).toEqual([0, 5000, 10000]);
+    expect(seen).toEqual([0, 2000, 4000, 6000, 8000, 10000, 12000]);
   });
 });
