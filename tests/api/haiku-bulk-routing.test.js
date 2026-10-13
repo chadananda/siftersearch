@@ -30,3 +30,14 @@ describe('spend policy', () => {
     expect(assertUnderLongContext({ model: 'x', chars: 9e9, threshold: undefined })).toBe(0);
   });
 });
+
+// the rag adapter's own gate (it aborts a grounding run fatally) must agree with anthropic-policy
+import { assertSpendAllowed } from '../../api/lib/rag-adapter/usage.js';
+describe('rag-adapter spend gate', () => {
+  it('lets Haiku 5.5 run hype / concept-extract in English and Arabic; still refuses other paid calls', () => {
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', stage: 'hype', docId: 21310 })).not.toThrow();
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'ar', stage: 'concept-extract', docId: 5 })).not.toThrow();
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-sonnet-5-5', lang: 'en', stage: 'hype', docId: 21310 })).toThrow(/Persian-only/);
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-haiku-5-5', lang: 'en', stage: 'disambiguate', docId: 21310 })).toThrow();
+  });
+});

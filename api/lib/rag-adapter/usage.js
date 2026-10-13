@@ -10,7 +10,7 @@ import { withAIContext, currentAIContext } from '../ai-context.js';
 // the case the allowance exists for — was refused here with "lang=unknown". Two policies that must agree is
 // the open-producer/closed-consumer shape that has cost this project a night at a time; importing removes the
 // second copy instead of updating it.
-import { isConceptCoreAllowed, isOriginalSegmentAllowed } from '../anthropic-policy.js';
+import { isConceptCoreAllowed, isOriginalSegmentAllowed, isBulkHaikuAllowed } from '../anthropic-policy.js';
 import { getModel } from '../model-registry.js';
 
 /** Open a metering/policy scope for a stage. Everything awaited inside (incl. pool concurrency) inherits it. */
@@ -41,6 +41,7 @@ export function assertSpendAllowed({ provider, model, lang, stage, docId, origin
   // a concept stage + an Arabic/Persian ORIGINAL) and neither widens what this gate refuses otherwise.
   if (isConceptCoreAllowed({ docId, stage, originalLang })) return;
   if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;
+  if (isBulkHaikuAllowed({ stage, model })) return;   // HyPE + concept extraction on Haiku 5.5, any language (10-13)
   // Reuse the kernel's fatal contract: a policy breach is not per-item bad luck, so it must abort the run
   // loudly instead of being swallowed into partial work.
   const e = new Error(
