@@ -87,3 +87,6 @@ planning/merge-review/
 
 # spend ledger checkpoint (api/lib/pipeline/spend-ledger.js)
 data/spend-ledger.json*
+
+# generated soul-battery reports
+tests/assistant/reports/
