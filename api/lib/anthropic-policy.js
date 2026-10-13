@@ -110,6 +110,26 @@ export function isModelEvalAllowed({ stage, model } = {}) {
   return String(stage || '') === 'model-eval' && MODEL_EVAL_JUDGES.has(String(model || ''));
 }
 
+// HyPE + CONCEPT EXTRACTION on Haiku 5.5, any book, any language (Chad 10-13: the registry's cheapest capable model for
+// these stages). Only that model, only those stages — Sonnet/Opus stay behind the narrower gates above.
+const BULK_HAIKU_STAGES = new Set(['hype', 'concept-extract']);
+export function isBulkHaikuAllowed({ stage, model } = {}) {
+  return BULK_HAIKU_STAGES.has(String(stage || '')) && String(model || '') === 'claude-haiku-5-5';
+}
+
+/** Refuse a prompt near a model's long-context threshold (Haiku 5.5: 5× price past 100k tokens). ~3.5 chars/token,
+ *  so the estimate errs high. → throws, or returns the estimate. */
+export function assertUnderLongContext({ model, chars, threshold, margin = 0.95 }) {
+  if (!threshold) return 0;
+  const est = Math.ceil(chars / 3.5);
+  if (est > threshold * margin) {
+    const e = new Error(`prompt ~${est} tokens is past ${Math.round(margin * 100)}% of ${model}'s ${threshold}-token long-context price threshold — split the request`);
+    e.fatal = false; e.code = 'LONG_CONTEXT';
+    throw e;
+  }
+  return est;
+}
+
 export function assertAnthropicAllowed({ provider, model, lang, docId, caller, stage, originalLang, sourceLang } = {}) {
   if (!isAnthropicProvider(provider) && !isAnthropicModel(model)) return;   // not Anthropic → not our concern
   const okLang = lang === 'fa';
@@ -119,7 +139,8 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   if (isConceptCoreAllowed({ docId, stage, originalLang })) return;         // concept core (see note above)
   if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;       // segmenting an original (see note)
   if (isFileSegmentAllowed({ stage, model, sourceLang })) return;
-  if (isModelEvalAllowed({ stage, model })) return;                          // the bake-off's blind judge           // file-level Arabic/Persian segmentation (Haiku 5.5)
+  if (isModelEvalAllowed({ stage, model })) return;                          // the bake-off's blind judge
+  if (isBulkHaikuAllowed({ stage, model })) return;                          // HyPE + concept extraction on Haiku 5.5           // file-level Arabic/Persian segmentation (Haiku 5.5)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

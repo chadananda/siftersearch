@@ -78,7 +78,8 @@ export async function run(ctx, docId, opts = {}) {
   };
   // TWO routes, chosen PER PARAGRAPH below. A book is not uniformly bilingual — the Íqán is fa 272 / ar 18,
   // and paragraphs with no aligned original at all stay on the cheap English path.
-  const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
+  // concept extraction has its own model (Haiku 5.5, profile.js) — no longer the historical-extraction model
+  const route = { model: opts.model ?? profile.models.concept ?? profile.models.extract, fallback: opts.fallback ?? profile.models.concept ?? profile.fallback };
   const bilingualRoute = { model: opts.bilingualModel ?? profile.models.bilingualExtract ?? route.model,
     fallback: opts.bilingualModel ?? profile.models.bilingualExtract ?? route.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);

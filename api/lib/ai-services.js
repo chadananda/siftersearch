@@ -22,7 +22,7 @@ import { query, telemetryQuery } from './db.js';
 import { getModel, effectivePricing } from './model-registry.js';
 import { currentAIContext, withAIContext } from './ai-context.js';
 import { modelFor } from './model-roles.js';
-import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
+import { assertAnthropicAllowed, assertUnderLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 import { nowInPeak } from './pipeline/peak.js';
 
 // =============================================================================
@@ -624,6 +624,8 @@ async function chatAnthropic(messages, opts) {
   // call that isn't the approved grounding-Persian-plan use (mirrors the ai.js chatCompletion gate).
   const g = currentAIContext() || {};
   assertAnthropicAllowed({ provider: 'anthropic', model: opts.model, lang: g.lang, docId: g.docId, caller: g.caller || opts.caller, stage: g.stage, originalLang: g.originalLang, sourceLang: g.sourceLang });
+  // never cross a model's long-context price threshold (Haiku 5.5: 5× past 100k) — refuse rather than pay 5×
+  assertUnderLongContext({ model: opts.model, chars: messages.reduce((n, m) => n + String(typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')).length, 0), threshold: getModel(opts.model)?.longContext?.threshold });
   const client = getClient('anthropic');
 
   // Convert to Anthropic format

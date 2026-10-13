@@ -12,12 +12,16 @@
 // claude-haiku-4-5 = the ONE haiku: PERSIAN ONLY. NEVER an English/Arabic/Hebrew fallback — too expensive.
 // Fallback = the SAME model retried (runLadder: primary===fallback → 4 tries). No pro, no sonnet, no
 // cross-provider hop. Fix the deepseek call; do not escalate to haiku.
-const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-4-5-20251001';
+const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-5-5';
+// HyPE + CONCEPT EXTRACTION → Haiku 5.5 for EVERY language (Chad 10-13: "that was the point of having an updated model
+// registry — so we never use the wrong model"): $0.10/$0.50 per 1M against flash's $0.30/$1.20 ($0.15/$0.60 off-peak), no
+// peak window, reads Persian. Per-paragraph prompts stay far under its 100k long-context threshold (5× price above it);
+// ai.js / ai-services.js refuse any Anthropic prompt near it. Disambiguation and historical extraction are unchanged.
 const SONNET = 'claude-sonnet-4-6'; // Persian DISAMBIGUATION (make-or-break identity stage) + the doctrinal/CONCEPTUAL override (Gate of the Heart)
 const LANG_ROUTING = {
-  en: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH },
-  ar: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH }, // flash handles Arabic
-  he: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH }, // flash handles Hebrew
+  en: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH },
+  ar: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH }, // flash handles Arabic
+  he: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH }, // flash handles Hebrew
   // Persian: flash can't read it. DISAMBIGUATE on SONNET — it reads the Persian, resolves identity, and sets the
   // transliteration everything downstream inherits, so its quality gates the densest, highest-value books; the
   // bulk stages (hype/extract, which work off the English notes) stay on cheaper HAIKU. Fallback = HAIKU.
@@ -196,7 +200,7 @@ export function detectProfile(doc, sampleText = '') {
   // the spend is gated separately and narrowly by anthropic-policy.js (core roster + concept stage + a
   // stored ar/fa original), so this cannot widen beyond the paragraphs that genuinely need it.
   const models = { disambig: disambigModel, hype: ov.model || route.hype, extract: ov.model || route.extract,
-    bilingualExtract: SONNET };
+    concept: HAIKU, bilingualExtract: SONNET };
   const priority = ov.priority ?? (Number.isFinite(doc.doc_priority) ? 1000 - doc.doc_priority : 1000);
   return {
     name: `${genre}-${lang}`, lang, script, genre, domain, priority, enrichable,
@@ -204,7 +208,7 @@ export function detectProfile(doc, sampleText = '') {
     extract: EXTRACT_GENRES.has(genre),
     eraAnchors: DOMAIN_ANCHORS[domain] || '',
     models,
-    providers: { disambig: providerOf(models.disambig), hype: providerOf(models.hype), extract: providerOf(models.extract),
+    providers: { disambig: providerOf(models.disambig), hype: providerOf(models.hype), extract: providerOf(models.extract), concept: providerOf(models.concept),
       bilingualExtract: providerOf(models.bilingualExtract) },
     fallback: route.fallback, fallbackProvider: providerOf(route.fallback),
   };

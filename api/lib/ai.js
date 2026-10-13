@@ -14,7 +14,7 @@ import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
 import { currentAIContext } from './ai-context.js';   // ambient doc/stage attribution for every logged call
 import { getModel } from './model-registry.js';
-import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
+import { assertAnthropicAllowed, assertUnderLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 
 // Lazy-initialized clients
 let openaiClient = null;
@@ -91,6 +91,8 @@ export async function chatCompletion(messages, options = {}) {
   if (provider === 'anthropic') {
     const g = currentAIContext() || {};
     assertAnthropicAllowed({ provider, model, lang: g.lang, docId: g.docId, caller: g.caller || options.caller, stage: g.stage, originalLang: g.originalLang, sourceLang: g.sourceLang });
+  // never cross a model's long-context price threshold (Haiku 5.5: 5× past 100k) — refuse rather than pay 5×
+  assertUnderLongContext({ model: model, chars: messages.reduce((n, m) => n + String(typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')).length, 0), threshold: getModel(model)?.longContext?.threshold });
   }
 
   const dispatch = () => {
@@ -179,7 +181,8 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
   const response = await anthropic.messages.create({
     model,
     max_tokens: maxTokens,
-    temperature,
+    // the 5.5 family rejects `temperature` ("deprecated for this model") — the registry says which (10-13)
+    ...(getModel(model)?.noTemperature || temperature == null ? {} : { temperature }),
     ...(systemParam !== undefined && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',

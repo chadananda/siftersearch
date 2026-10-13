@@ -97,6 +97,11 @@ export async function run(ctx, docId, opts = {}) {
   await pool(opts.concurrency ?? 12, flat.slice(1), hypeOne);
 
   async function hypeOne(p) {
+    // the spend policy sees which stage pays (Haiku 5.5 is authorised for 'hype' on any book — anthropic-policy.js)
+    const { withAIContext } = await import('../../ai-context.js');
+    return withAIContext({ stage: 'hype' }, () => hypeOneInner(p));
+  }
+  async function hypeOneInner(p) {
     // Per-PARAGRAPH guard: pool()'s guard is per ITEM = per SEGMENT here, so an unguarded throw would drop every
     // remaining paragraph of the segment while the stage still reported success. Fatal (credit/key/policy) aborts.
     try {
