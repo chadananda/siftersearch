@@ -184,6 +184,7 @@
   });
   const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
   let copied = $state(false);
+  const sameTarget = (a, b) => String(a).replace(/#.*$/, '') === String(b).replace(/#.*$/, '');
   // "Copy all sources": one line per copy of the tablet — title, PIN, Ocean of Lights range link, Phelps link
   async function copySources() {
     const lines = (tablet?.sources || []).map((x) => [x.title, x.pin, x.oceanoflights, x.inventory].filter(Boolean).join(' — '));
@@ -369,7 +370,8 @@
                   {#if src.inventory}<a href={src.inventory} target="_blank" rel="noopener" class="linkchip">Phelps Inventory{src.pin ? ` · ${src.pin}` : ''} ↗</a>{/if}
                 </div>
               {/each}
-              {#if tablet.url}<div><a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a></div>{/if}
+              <!-- only when it opens somewhere else: a Core Tablets copy's library link IS its Phelps page (Chad 10-12: "both link to the same location") -->
+              {#if tablet.url && !tablet.sources.some((x) => [x.inventory, x.oceanoflights].some((h) => h && sameTarget(h, tablet.rangeUrl || tablet.url)))}<div><a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a></div>{/if}
             </div>
           {:else}
           <div class="flex flex-wrap gap-2 pt-1">

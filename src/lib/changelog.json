@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-13T04:30:26.467Z",
+  "generated": "2026-10-13T04:45:05.633Z",
   "entries": [
+    {
+      "hash": "f1d77f65",
+      "date": "2026-10-12",
+      "type": "Performance",
+      "description": "No multi-second freezes after start — claims read by id range; exclusion list via partial indexes, no count",
+      "scope": "boot"
+    },
+    {
+      "hash": "02956729",
+      "date": "2026-10-12",
+      "type": "Performance",
+      "description": "Warm-ups start 3 s after listen; claim text folded per page (2 s synchronous index build → paged)",
+      "scope": "boot"
+    },
+    {
+      "hash": "82edfe95",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "A compilation's original resolves to its standalone tablet, every copy listed; Arabic never linked to an English OL book",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "839d0f37",
       "date": "2026-10-12",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Inherit stage (same English as an anchored paragraph -> same originals) + GET /concepts/alignment",
       "scope": "pairing"
-    },
-    {
-      "hash": "d44becf7",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Keep paragraphs that lie mostly inside the passage (editions with one printed line per paragraph: Madaniyyih 12 -> 202/210)",
-      "scope": "anchor"
-    },
-    {
-      "hash": "ad871432",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Rank candidate documents by passage coverage, not total votes (large volumes won on size); keep only paragraphs carrying the passage",
-      "scope": "anchor"
-    },
-    {
-      "hash": "33231ba2",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Content_alignment (migr 128) + anchor stage — locate CTAI/bahai.org originals verbatim in the ingested originals",
-      "scope": "pairing"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "f1d77f65",
+        "date": "2026-10-12",
+        "type": "Performance",
+        "description": "No multi-second freezes after start — claims read by id range; exclusion list via partial indexes, no count",
+        "scope": "boot"
+      },
+      {
+        "hash": "02956729",
+        "date": "2026-10-12",
+        "type": "Performance",
+        "description": "Warm-ups start 3 s after listen; claim text folded per page (2 s synchronous index build → paged)",
+        "scope": "boot"
+      },
+      {
+        "hash": "82edfe95",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "A compilation's original resolves to its standalone tablet, every copy listed; Arabic never linked to an English OL book",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "839d0f37",
         "date": "2026-10-12",
@@ -7009,27 +7030,6 @@
         "date": "2026-09-28",
         "type": "New",
         "description": "Inherit stage (same English as an anchored paragraph -> same originals) + GET /concepts/alignment",
-        "scope": "pairing"
-      },
-      {
-        "hash": "d44becf7",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Keep paragraphs that lie mostly inside the passage (editions with one printed line per paragraph: Madaniyyih 12 -> 202/210)",
-        "scope": "anchor"
-      },
-      {
-        "hash": "ad871432",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Rank candidate documents by passage coverage, not total votes (large volumes won on size); keep only paragraphs carrying the passage",
-        "scope": "anchor"
-      },
-      {
-        "hash": "33231ba2",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Content_alignment (migr 128) + anchor stage — locate CTAI/bahai.org originals verbatim in the ingested originals",
         "scope": "pairing"
       }
     ]
