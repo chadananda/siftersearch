@@ -1,6 +1,7 @@
 <script>
   // The publications that cite the quote, as a shelf of book spines — colour by where the copy lives, height by how many
-  // of its passages hold the quote. Spines rise in one after another; on narrow screens the shelf scrolls sideways.
+  // of its passages hold the quote. Spines rise in one after another once the panel is up (70 ms apart — the results stream
+  // in a beat at a time, 10-12); on narrow screens the shelf scrolls sideways.
   let { items = [], linkCount = 0 } = $props();
   const SITE = {
     'oceanlibrary.com': { label: 'OceanLibrary', cls: 'site-ol' },
@@ -23,7 +24,7 @@
     <div class="shelf" role="list">
       {#each items as c, i (c.documentId)}
         <a href={c.rangeUrl || c.url} target="_blank" rel="noopener" role="listitem" class="spine {site(c.site).cls}"
-          style="--h: {118 + Math.min(c.paragraphs, 8) * 10}px; --d: {Math.min(i, 40) * 35}ms"
+          style="--h: {118 + Math.min(c.paragraphs, 8) * 10}px; --d: {280 + Math.min(i, 40) * 70}ms"
           title="{c.title}{c.author ? ` — ${c.author}` : ''} · {site(c.site).label}{c.paragraphs > 1 ? ` · ${c.paragraphs} passages` : ''}">
           <span class="spine-title">{c.title}</span>
           {#if c.paragraphs > 1}<span class="spine-count">{c.paragraphs}</span>{/if}

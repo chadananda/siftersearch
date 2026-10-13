@@ -1,6 +1,90 @@
 {
-  "generated": "2026-10-12T23:17:04.317Z",
+  "generated": "2026-10-13T01:55:39.617Z",
   "entries": [
+    {
+      "hash": "d9d4f7ae",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "The linked original paragraph stands only if it is the closest (±0.02) — 'among the top 5' kept a neighbour",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "f3cb4220",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "A work Shoghi Effendi translated (Gleanings) outranks a committee volume reusing his rendering of the passage",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "49744b77",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Shoghi Effendi's translation ranks first among copies holding the words; the shown title is the publication the link opens",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "8f71d2d2",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "OceanLibrary copy of the same work under another title ('Fountain of Wisdom' = Tablets of Bahá’u’lláh) gets the range link; markers can never leak",
+      "scope": "links"
+    },
+    {
+      "hash": "13a5425e",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Best-publisher copy only for the SAME work (a compilation quoting the words keeps its own link)",
+      "scope": "links"
+    },
+    {
+      "hash": "15005c2d",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Every citation links the best PUBLISHER of the words — identical copy on OceanLibrary (range) → Ocean of Lights (page + range) → Phelps → bahai-library → siftersearch",
+      "scope": "links"
+    },
+    {
+      "hash": "1f00295e",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Ocean of Lights .docx sources link to their PAGE with a range, never the download (SourceHunt, Anís, search, API)",
+      "scope": "links"
+    },
+    {
+      "hash": "084413f1",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Small author shelves list all the author's works inline (≤30) instead of '+N more' (Chad 10-12: 'why show two and hide six?')",
+      "scope": "library"
+    },
+    {
+      "hash": "cb6841ac",
+      "date": "2026-10-12",
+      "type": "Docs",
+      "description": "SourceHunt fixes from Liliane's BSW review",
+      "scope": "worklist"
+    },
+    {
+      "hash": "70b1cef9",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Section markers ('[93.1] Know thou…') no longer stop the OceanLibrary range lookup (Liliane's BSW #98, #122 got book links)",
+      "scope": "links"
+    },
+    {
+      "hash": "528b7e9f",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Strategy-gaps report (the Anís audit work queue, server-side)",
+      "scope": "ops"
+    },
+    {
+      "hash": "30cda6e3",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Anís strategy work queue — audits ranked into strategy switches, unmet needs, shortfalls, data gaps, problems",
+      "scope": "admin"
+    },
     {
       "hash": "f4d3620f",
       "date": "2026-10-12",
@@ -3416,94 +3500,94 @@
       "type": "Fixed",
       "description": "Key documents by library-relative path (absolute path failed every ingest: religion=null, collection=home)",
       "scope": "ingest-file"
-    },
-    {
-      "hash": "dccaed4e",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Originals that declare their paragraphing bypass the Arabic pause; text decides ar/fa; localOnly ingest never falls back to paid cloud",
-      "scope": "ingest"
-    },
-    {
-      "hash": "ab9b9367",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Persian vs Arabic by grammar words; honour needs_segmentation:false",
-      "scope": "ingest"
-    },
-    {
-      "hash": "51135cd7",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Subset-mode cross-lingual spans are candidates, never written without review",
-      "scope": "bilingual"
-    },
-    {
-      "hash": "da45eb5b",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Subset mode for cross-lingual alignment (our book inside a much larger source compilation); concurrent embedding",
-      "scope": "bilingual"
-    },
-    {
-      "hash": "41657e40",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Cross-lingual align — sourceRange (exclude UHJ apparatus), reviewer exclude list, fold answers before length floor",
-      "scope": "bilingual"
-    },
-    {
-      "hash": "14f2e443",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Cross-lingual embedding alignment to bahai.org originals (/concepts/align-crosslingual)",
-      "scope": "bilingual"
-    },
-    {
-      "hash": "d8dabe10",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Recover paragraphs the editions split differently (extend/gap-run/gap-merge)",
-      "scope": "bilingual"
-    },
-    {
-      "hash": "5aeecea1",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "GetParagraphs returns external_para_id (claims cite it; without it they could not be joined to text)",
-      "scope": "docs-repo"
-    },
-    {
-      "hash": "b63bfe18",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Íqán idea catalogue draft (51 ideas, 4 themes, mapped to claim groups); design: English extraction, originals via Jev + bilingual links",
-      "scope": "concepts"
-    },
-    {
-      "hash": "a4ba4a4a",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Concept kernel excludes the House of Justice's letters and the Aqdas Notes (not doctrinal)",
-      "scope": "planning"
-    },
-    {
-      "hash": "0e9dbbfd",
-      "date": "2026-09-28",
-      "type": "Docs",
-      "description": "Concept kernel roster with the corpus copies to use",
-      "scope": "planning"
-    },
-    {
-      "hash": "20f6ab86",
-      "date": "2026-09-28",
-      "type": "Chore",
-      "description": "Claims export returns a whole book (≤6000) with statement + semantic key; design: index on ingest",
-      "scope": "concepts"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "d9d4f7ae",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "The linked original paragraph stands only if it is the closest (±0.02) — 'among the top 5' kept a neighbour",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "f3cb4220",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "A work Shoghi Effendi translated (Gleanings) outranks a committee volume reusing his rendering of the passage",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "49744b77",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Shoghi Effendi's translation ranks first among copies holding the words; the shown title is the publication the link opens",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "8f71d2d2",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "OceanLibrary copy of the same work under another title ('Fountain of Wisdom' = Tablets of Bahá’u’lláh) gets the range link; markers can never leak",
+        "scope": "links"
+      },
+      {
+        "hash": "13a5425e",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Best-publisher copy only for the SAME work (a compilation quoting the words keeps its own link)",
+        "scope": "links"
+      },
+      {
+        "hash": "15005c2d",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Every citation links the best PUBLISHER of the words — identical copy on OceanLibrary (range) → Ocean of Lights (page + range) → Phelps → bahai-library → siftersearch",
+        "scope": "links"
+      },
+      {
+        "hash": "1f00295e",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Ocean of Lights .docx sources link to their PAGE with a range, never the download (SourceHunt, Anís, search, API)",
+        "scope": "links"
+      },
+      {
+        "hash": "084413f1",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Small author shelves list all the author's works inline (≤30) instead of '+N more' (Chad 10-12: 'why show two and hide six?')",
+        "scope": "library"
+      },
+      {
+        "hash": "cb6841ac",
+        "date": "2026-10-12",
+        "type": "Docs",
+        "description": "SourceHunt fixes from Liliane's BSW review",
+        "scope": "worklist"
+      },
+      {
+        "hash": "70b1cef9",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Section markers ('[93.1] Know thou…') no longer stop the OceanLibrary range lookup (Liliane's BSW #98, #122 got book links)",
+        "scope": "links"
+      },
+      {
+        "hash": "528b7e9f",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Strategy-gaps report (the Anís audit work queue, server-side)",
+        "scope": "ops"
+      },
+      {
+        "hash": "30cda6e3",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Anís strategy work queue — audits ranked into strategy switches, unmet needs, shortfalls, data gaps, problems",
+        "scope": "admin"
+      },
       {
         "hash": "f4d3620f",
         "date": "2026-10-12",
@@ -6947,90 +7031,6 @@
         "type": "Fixed",
         "description": "Key documents by library-relative path (absolute path failed every ingest: religion=null, collection=home)",
         "scope": "ingest-file"
-      },
-      {
-        "hash": "dccaed4e",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Originals that declare their paragraphing bypass the Arabic pause; text decides ar/fa; localOnly ingest never falls back to paid cloud",
-        "scope": "ingest"
-      },
-      {
-        "hash": "ab9b9367",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Persian vs Arabic by grammar words; honour needs_segmentation:false",
-        "scope": "ingest"
-      },
-      {
-        "hash": "51135cd7",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Subset-mode cross-lingual spans are candidates, never written without review",
-        "scope": "bilingual"
-      },
-      {
-        "hash": "da45eb5b",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Subset mode for cross-lingual alignment (our book inside a much larger source compilation); concurrent embedding",
-        "scope": "bilingual"
-      },
-      {
-        "hash": "41657e40",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Cross-lingual align — sourceRange (exclude UHJ apparatus), reviewer exclude list, fold answers before length floor",
-        "scope": "bilingual"
-      },
-      {
-        "hash": "14f2e443",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Cross-lingual embedding alignment to bahai.org originals (/concepts/align-crosslingual)",
-        "scope": "bilingual"
-      },
-      {
-        "hash": "d8dabe10",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Recover paragraphs the editions split differently (extend/gap-run/gap-merge)",
-        "scope": "bilingual"
-      },
-      {
-        "hash": "5aeecea1",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "GetParagraphs returns external_para_id (claims cite it; without it they could not be joined to text)",
-        "scope": "docs-repo"
-      },
-      {
-        "hash": "b63bfe18",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Íqán idea catalogue draft (51 ideas, 4 themes, mapped to claim groups); design: English extraction, originals via Jev + bilingual links",
-        "scope": "concepts"
-      },
-      {
-        "hash": "a4ba4a4a",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Concept kernel excludes the House of Justice's letters and the Aqdas Notes (not doctrinal)",
-        "scope": "planning"
-      },
-      {
-        "hash": "0e9dbbfd",
-        "date": "2026-09-28",
-        "type": "Docs",
-        "description": "Concept kernel roster with the corpus copies to use",
-        "scope": "planning"
-      },
-      {
-        "hash": "20f6ab86",
-        "date": "2026-09-28",
-        "type": "Chore",
-        "description": "Claims export returns a whole book (≤6000) with statement + semantic key; design: index on ingest",
-        "scope": "concepts"
       }
     ]
   }

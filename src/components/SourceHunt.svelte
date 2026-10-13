@@ -84,7 +84,7 @@
     q = stripAppendedReference(String(q || '')); if (!q || phase === 'hunting') return;
     quote = q; abort?.abort(); abort = new AbortController();
     tick().then(grow);
-    phase = 'hunting'; error = null; ev = {}; result = null; ticker = []; field?.reset();
+    phase = 'hunting'; error = null; ev = {}; result = null; ticker = []; field?.reset(); resetBeats();
     try {
       const res = await fetch(`${API}/api/search/source-hunt/stream`, { method: 'POST', signal: abort.signal,
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quote: q }) });
@@ -166,6 +166,22 @@
   const origin = $derived(ev.origin?.origin || result?.origin || null);
   const cited = $derived(ev.cited || (result && { citedBy: result.citedBy, citedByLinkCount: result.citedByLinkCount }) || null);
   const tablet = $derived(ev.tablet?.tablet || result?.tablet || null);
+
+  // Results stream in ONE BEAT AT A TIME (Chad 10-12): the source card → its phrase highlighted → the tablet card → its
+  // phrase → the citations, spines rising one by one. Each beat waits for its data AND for the previous highlight to finish.
+  let beat = $state(0);                   // 0 none · 1 source · 2 tablet · 3 citations
+  let beatTimer = null;
+  const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // when the last highlight of a passage finishes: its delay base + one step per highlighted run + the pen stroke (950 ms)
+  const penDone = (text, ranges, base, step) => base + Math.max(0, shown_(text, ranges).filter((g) => g.q).length - 1) * step + 950;
+  function after(ms, to) { if (beatTimer) return; beatTimer = setTimeout(() => { beatTimer = null; beat = to; }, reduced() ? 0 : ms); }
+  $effect(() => {
+    const final = !!result;
+    if (beat === 0 && (ev.origin || final)) beat = 1;
+    else if (beat === 1 && (tablet || final)) after(origin ? penDone(origin.text, origin.highlight, 350, 120) : 500, 2);
+    else if (beat === 2 && (cited || final)) after(tablet?.certain ? penDone(tablet.text, tablet.highlight, 650, 140) : 700, 3);
+  });
+  const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
   const tabletLinks = (meta) => [
     meta?.links?.oceanoflights && { href: meta.links.oceanoflightsRange || meta.links.oceanoflights, label: 'Ocean of Lights' },
     meta?.links?.inventory && { href: meta.links.inventory, label: `Phelps Inventory${meta.pin ? ` · ${meta.pin}` : ''}` },
@@ -274,7 +290,7 @@
   {/if}
 
   <!-- ── results across the full width ── -->
-  {#if origin || tablet}
+  {#if beat >= 1}
     <div id="sh-results" class="grid scroll-mt-24 gap-4 xl:grid-cols-[minmax(0,7fr)_56px_minmax(0,5fr)]">
       <article class="sh-card flex flex-col gap-3 rounded-2xl border border-border bg-surface-1 p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -308,6 +324,7 @@
         {/if}
       </article>
 
+      {#if beat >= 2}
       <div class="bridge" class:on={!!tablet} aria-hidden="true">
         <svg viewBox="0 0 56 200" preserveAspectRatio="none" class="hidden h-full w-full xl:block">
           <path d="M2 100 C 20 100, 36 100, 54 100" class="track" />
@@ -345,10 +362,13 @@
           <p class="text-secondary">No original found.</p>
         {/if}
       </article>
+      {:else}
+        <div aria-hidden="true"></div><div aria-hidden="true"></div>   <!-- the tablet's column, reserved until its beat -->
+      {/if}
     </div>
   {/if}
 
-  {#if cited}
+  {#if cited && beat >= 3}
     <div class="sh-card rounded-2xl border border-border bg-surface-1 p-5 sm:p-6">
       <CitationShelf items={cited.citedBy || []} linkCount={cited.citedByLinkCount} />
     </div>
