@@ -78,6 +78,13 @@ is…", "Townshend means…"), no commentary on the author, no summary of the pa
 Never invent a fact, a date or a quotation.
 Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragraphs":[{"pid":"para_N","notes":[{"name":"…","note":"…"}]}]}`;
 
+// The reader's chosen depth of notes (Chad 10-13: three levels; "use the advanced level of notes"). All levels stay terse.
+export const NOTE_LEVELS = {
+  introductory: 'INTRODUCTORY — a newcomer: only the names and words a first reading needs; 1–2 notes per paragraph.',
+  serious: 'SERIOUS — a well-read reader of this book (the default).',
+  advanced: 'ADVANCED — scholarly: transliteration and roots of Persian/Arabic terms, where other sources (God Passes By, Browne, Nicolas, Balyuzi…) differ, both calendars, cross-references in the Writings; up to 4 notes per paragraph — still terse: dense facts, not longer prose.',
+};
+
 const LEVEL_SYSTEM = `In 3–4 sentences, describe the typical serious reader of this book: what they already know well (so a reading guide
 must NOT explain it — list the obvious people, places, terms and history), and what kind of detail would genuinely deepen their
 reading. Reply with JSON only: {"level":"…"}`;
