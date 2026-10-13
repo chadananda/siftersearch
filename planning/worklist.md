@@ -27,7 +27,8 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - WEB DEPTH layer: Perplexity (api/lib/perplexity.js, key on tower) + Parallel.ai (PARALLELAI_API_KEY on tower; client to
   write) for context the library lacks — e.g. the economic/social background of a town in the 1840s, a governor's career,
   trade routes. Web findings are cited as WEB sources, kept apart from library citations (web-lead.js rule: web = lead +
-  context, never dressed as library text). Default pass = library only; "again" (and named depth topics) add the web layer.
+  context, never dressed as library text). LIBRARY FIRST, always: the web is consulted ONLY when the library cannot answer
+  (Chad 10-12) — on a first pass, on "again", or for a question.
 - SUBJECT LINES (Chad 10-12): `[Reading] <Book> #<chapter>.<¶> - <what happens>` — e.g. `[Reading] Dawn-Breakers #5.7 - Bab's
   pilgrimage to Mecca`; introduction = `#Intro.6`. Sortable, scannable: the mailbox reads as the book's table of contents.
 - Research per ¶: entity graph (disambiguated mentions) → /biography pages + claims → CTAI (name meanings) → gazetteer → Phelps
