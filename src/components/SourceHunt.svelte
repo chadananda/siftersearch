@@ -3,6 +3,8 @@
   // original Arabic/Persian tablet. Streams the hunt's REAL stages (POST /api/search/source-hunt/stream) into a live
   // console — probe field, stage rail, document ticker — then lays the results across the full width. JSON fallback.
   import { onMount, tick } from 'svelte';
+  import SourceBand from './sourcehunt/SourceBand.svelte';
+  import './sourcehunt/source-band.css';   // ships with the page (the band renders only after a hunt)
   import AynLens from './sourcehunt/AynLens.svelte';
   import ProbeField from './sourcehunt/ProbeField.svelte';
   import { stripAppendedReference } from '../../api/lib/quote-clean.js';
@@ -182,6 +184,19 @@
   });
   const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
   let copiedKey = $state(null);
+  // the foot bands (Chad 10-13): every place to read the words, best first — the Writings / tablets, then citations
+  const enBand = $derived(origin ? [
+    { key: `o${origin.id}`, title: origin.title, sub: origin.author, url: origin.rangeUrl || origin.url, site: origin.site, top: true, grade: 'Primary source' },
+    ...((cited?.citedBy) || []).map((c) => ({ key: `c${c.documentId}`, title: c.title, sub: [c.author, c.translated_by && `tr. ${c.translated_by}`].filter(Boolean).join(' · '),
+      url: c.rangeUrl || c.url, site: c.site, top: c.grade?.rank === 0, grade: c.grade?.label })),
+  ].filter((x) => x.url) : []);
+  const origBand = $derived(tablet?.certain ? [
+    ...(tablet.sources || []).filter((x) => x.oceanoflights).map((x) => ({ key: `oo${x.documentId}`, title: x.title, sub: x.pin, url: x.oceanoflights, site: 'oceanoflights.org', top: true, grade: 'Tablet' })),
+    ...(tablet.sources || []).filter((x) => x.inventory).map((x) => ({ key: `ph${x.documentId}`, title: x.pin ? `${x.pin} · ${x.title}` : x.title, sub: 'Phelps Partial Inventory', url: x.inventory, site: 'phelps', top: true, grade: 'Catalogued tablet' })),
+    ...(!tablet.sources?.length ? tabletLinks(tablet.meta).map((l, i) => ({ key: `m${i}`, title: tablet.meta?.title || tablet.title, sub: l.label, url: l.href, site: /oceanoflights/.test(l.href) ? 'oceanoflights.org' : 'phelps', top: true })) : []),
+    ...(tablet.url && !(tablet.sources || []).some((x) => [x.inventory, x.oceanoflights].some((h) => h && sameTarget(h, tablet.rangeUrl || tablet.url)))
+      ? [{ key: 'lib', title: tablet.meta?.title || tablet.title, sub: 'our copy', url: tablet.rangeUrl || tablet.url, site: 'library' }] : []),
+  ] : []);
   const sameTarget = (a, b) => String(a).replace(/#.*$/, '') === String(b).replace(/#.*$/, '');
   // "Copy all sources": one line per source, best first — title, who, links
   async function copyList(key, rows) {
@@ -327,22 +342,9 @@
         {:else}
           <p class="text-secondary">No publication in the library holds this wording verbatim — it may be a paraphrase or another translation. The originals are matched by meaning.</p>
         {/if}
-        {#if cited?.citedBy?.length && beat >= 3}
-          <!-- every English publication holding the passage, graded by how primary it is to the tradition (Chad 10-13) -->
-          <div class="flex flex-col gap-2 border-t border-border-subtle pt-3 mt-1">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs text-secondary">Also published in {cited.citedBy.length} {cited.citedBy.length === 1 ? 'source' : 'sources'}{cited.citedByLinkCount > cited.citedBy.length ? ` · quoted in ${cited.citedByLinkCount} passages` : ''}</span>
-              <button class="linkchip" onclick={() => copyList('en', cited.citedBy.map((c) => [c.title, c.author, c.translated_by ? `tr. ${c.translated_by}` : null, c.rangeUrl || c.url]))}>{copiedKey === 'en' ? 'Copied' : 'Copy all sources'}</button>
-            </div>
-            {#each cited.citedBy as c, i (c.documentId)}
-              <div class="cite-row flex flex-wrap items-center gap-2" style="--d: {i * 70}ms">
-                <span class="chip" class:chip-ok={c.grade?.rank === 0} title={c.grade?.rank === 0 ? 'The passage is the words of a Central Figure or the Guardian' : c.grade?.rank === 1 ? 'An institution or a compilation' : 'A book or article quoting it'}>{c.grade?.label || 'Source'}</span>
-                <span class="text-xs text-primary truncate max-w-full">{c.title}</span>
-                {#if c.author}<span class="text-xs text-muted truncate">{c.author}{#if c.translated_by} · tr. {c.translated_by}{/if}</span>{/if}
-                {#if c.url}<a href={c.rangeUrl || c.url} target="_blank" rel="noopener" class="linkchip">{siteName(c.site)} ↗</a>{/if}
-              </div>
-            {/each}
-          </div>
+        {#if origin && beat >= 3}
+          <SourceBand label="Read it in {enBand.length} {enBand.length === 1 ? 'place' : 'places'} — the Writings first" items={enBand}
+            onCopy={() => copyList('en', enBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'en'} />
         {/if}
       </article>
 
@@ -368,30 +370,9 @@
           <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each shown_(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
           {#if tablet.compiledIn}<p class="text-xs text-muted">Linked through its translation in {tablet.compiledIn.title}; shown in its own tablet.</p>{/if}
-          {#if tablet.sources?.length}
-            <!-- every copy of the tablet (Chad 10-12): Ocean of Lights pages by range, Phelps-catalogued tablets -->
-            <div class="flex flex-col gap-2 pt-1">
-              {#if tablet.sources.length > 1}
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <span class="text-xs text-secondary">Held in {tablet.sources.length} sources</span>
-                  <button class="linkchip" onclick={() => copyList('orig', tablet.sources.map((x) => [x.title, x.pin, x.oceanoflights, x.inventory]))}>{copiedKey === 'orig' ? 'Copied' : 'Copy all sources'}</button>
-                </div>
-              {/if}
-              {#each tablet.sources as src, i (src.documentId)}
-                <div class="flex flex-wrap items-center gap-2">
-                  {#if tablet.sources.length > 1}<span class="text-xs text-muted truncate max-w-full">{src.title}</span>{/if}
-                  {#if src.oceanoflights}<a href={src.oceanoflights} target="_blank" rel="noopener" class="linkchip">Ocean of Lights ↗</a>{/if}
-                  {#if src.inventory}<a href={src.inventory} target="_blank" rel="noopener" class="linkchip">Phelps Inventory{src.pin ? ` · ${src.pin}` : ''} ↗</a>{/if}
-                </div>
-              {/each}
-              <!-- only when it opens somewhere else: a Core Tablets copy's library link IS its Phelps page (Chad 10-12: "both link to the same location") -->
-              {#if tablet.url && !tablet.sources.some((x) => [x.inventory, x.oceanoflights].some((h) => h && sameTarget(h, tablet.rangeUrl || tablet.url)))}<div><a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a></div>{/if}
-            </div>
-          {:else}
-          <div class="flex flex-wrap gap-2 pt-1">
-            {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
-            {#if tablet.url}<a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a>{/if}
-          </div>
+          {#if origBand.length}
+            <SourceBand label="The original in {origBand.length} {origBand.length === 1 ? 'place' : 'places'} — tablets first" items={origBand}
+              onCopy={() => copyList('orig', origBand.map((c) => [c.title, c.sub, c.url]))} copied={copiedKey === 'orig'} />
           {/if}
         {:else if tablet.candidates?.length}
           <p class="text-sm text-secondary">No translation link yet — these originals are the closest in meaning. Verify before citing.</p>

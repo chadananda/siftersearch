@@ -1,0 +1,30 @@
+/* Source band (SourceBand.svelte) — imported by SourceHunt.svelte so it ships with the page (a client-only component's own
+   <style> never reached the page, 10-12). Compact: ~90 px, so both result boxes fit on one screen (Chad 10-13). */
+.source-band .band {
+  display: flex; align-items: flex-end; gap: 4px; padding: 6px 2px 0; overflow-x: auto; scroll-snap-type: x proximity;
+  border-bottom: 4px solid color-mix(in srgb, var(--text-muted) 35%, transparent); min-height: 90px;
+}
+.source-band .spine {
+  --c: var(--accent-primary);
+  position: relative; flex: 0 0 auto; width: 24px; height: 82px; border-radius: 3px 3px 1px 1px; scroll-snap-align: start;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 82%, black) 0 2px, color-mix(in srgb, var(--c) 72%, var(--surface-1)) 2px 100%);
+  box-shadow: inset -2px 0 0 color-mix(in srgb, black 18%, transparent), 0 1px 4px color-mix(in srgb, black 18%, transparent);
+  display: flex; align-items: center; justify-content: center; padding: 6px 0;
+  animation: sb-rise 460ms cubic-bezier(.2,.9,.25,1.15) both; animation-delay: var(--d);
+  transition: transform 160ms, filter 160ms;
+}
+.source-band .spine.writ { height: 88px; box-shadow: inset 0 3px 0 #d9b44a, inset -2px 0 0 color-mix(in srgb, black 18%, transparent), 0 1px 4px color-mix(in srgb, black 18%, transparent); }
+.source-band .spine:hover, .source-band .spine:focus-visible { transform: translateY(-6px); filter: brightness(1.12); outline: none; }
+.source-band .spine-title {
+  writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Libre Caslon Text', Georgia, serif; font-size: 10px;
+  color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-height: 72px;
+  text-shadow: 0 1px 2px color-mix(in srgb, black 40%, transparent);
+}
+.source-band .site-ol { --c: var(--accent-primary); }
+.source-band .site-oo { --c: var(--accent-secondary); }
+.source-band .site-ph { --c: var(--info); }
+.source-band .site-bl { --c: var(--accent-tertiary); }
+.source-band .site-lib { --c: var(--warning); }
+.source-band .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+@keyframes sb-rise { from { transform: translateY(24px) scaleY(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .source-band .spine { animation: none; } }
