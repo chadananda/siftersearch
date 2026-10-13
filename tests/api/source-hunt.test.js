@@ -350,3 +350,19 @@ describe('a footnote is never the writer\'s own text', () => {
     expect(r[0].id).toBe(2);
   });
 });
+
+// Tablet copies (Chad 10-12: the Arabic of Gleanings is a compilation; the source is the tablet, every copy listed).
+import { sharedWords, tabletRank } from '../../api/lib/source-hunt.js';
+describe('tablet copies', () => {
+  const t = 'ذكر حزنى و همّى و غمّى و بلائى و ابتلائى و غربتى و بكائى و حرقتى و سجنى فى هذه الأرض البعيد ان يا مصطفى تالله لو تطّلع بما ورد على';
+  it('the same words (diacritics and letter variants aside) count as one text', () => {
+    expect(sharedWords(t, t.replace(/ّ/g, '').replace(/ى/g, 'ی'))).toBe(1);
+  });
+  it('a different passage does not', () => {
+    expect(sharedWords(t, 'قل يا قوم اتقوا الله و لا تتبعوا كل مشرك بعيد ان اقبلوا الى الحق و لا تكونوا من الغافلين فى هذا اليوم')).toBeLessThan(0.3);
+  });
+  it('an Ocean of Lights page outranks a catalogued tablet, which outranks a compilation', () => {
+    expect(tabletRank({ links: { oceanoflights: 'x' } })).toBeGreaterThan(tabletRank({ pin: 'BH02035' }));
+    expect(tabletRank({ pin: 'BH02035' })).toBeGreaterThan(tabletRank({ kind: 'book' }));
+  });
+});

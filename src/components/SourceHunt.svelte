@@ -183,6 +183,12 @@
     else if (beat === 2 && (cited || final)) after(tablet?.certain ? penDone(tablet.text, tablet.highlight, 650, 140) : 700, 3);
   });
   const resetBeats = () => { clearTimeout(beatTimer); beatTimer = null; beat = 0; };
+  let copied = $state(false);
+  // "Copy all sources": one line per copy of the tablet — title, PIN, Ocean of Lights range link, Phelps link
+  async function copySources() {
+    const lines = (tablet?.sources || []).map((x) => [x.title, x.pin, x.oceanoflights, x.inventory].filter(Boolean).join(' — '));
+    try { await navigator.clipboard.writeText(lines.join('\n')); copied = true; setTimeout(() => { copied = false; }, 1800); } catch { /* clipboard refused */ }
+  }
   const tabletLinks = (meta) => [
     meta?.links?.oceanoflights && { href: meta.links.oceanoflightsRange || meta.links.oceanoflights, label: 'Ocean of Lights' },
     meta?.links?.inventory && { href: meta.links.inventory, label: `Phelps Inventory${meta.pin ? ` · ${meta.pin}` : ''}` },
@@ -346,10 +352,31 @@
           {#if tablet.meta?.first_line_en}<p class="text-sm italic text-secondary">{tablet.meta.first_line_en}</p>{/if}
           <blockquote dir="rtl" lang="ar" class="sh-arabic text-primary">{#each shown_(tablet.text, tablet.highlight) as seg, i}{#if seg.q}<span class="pen" style="--d: {650 + i * 140}ms">{seg.t}</span>{:else}{seg.t}{/if}{/each}</blockquote>
           {#if tablet.highlight?.length}<p class="text-[11px] text-muted">{tablet.highlightBy === 'decision' ? 'Highlighted by meaning — the clause judged to say what your quote says, whatever its translation.' : 'Highlighted by meaning — the phrases nearest your quote, whatever its translation.'}</p>{/if}
+          {#if tablet.compiledIn}<p class="text-xs text-muted">Linked through its translation in {tablet.compiledIn.title}; shown in its own tablet.</p>{/if}
+          {#if tablet.sources?.length}
+            <!-- every copy of the tablet (Chad 10-12): Ocean of Lights pages by range, Phelps-catalogued tablets -->
+            <div class="flex flex-col gap-2 pt-1">
+              {#if tablet.sources.length > 1}
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs text-secondary">Held in {tablet.sources.length} sources</span>
+                  <button class="linkchip" onclick={copySources}>{copied ? 'Copied' : 'Copy all sources'}</button>
+                </div>
+              {/if}
+              {#each tablet.sources as src, i (src.documentId)}
+                <div class="flex flex-wrap items-center gap-2">
+                  {#if tablet.sources.length > 1}<span class="text-xs text-muted truncate max-w-full">{src.title}</span>{/if}
+                  {#if src.oceanoflights}<a href={src.oceanoflights} target="_blank" rel="noopener" class="linkchip">Ocean of Lights ↗</a>{/if}
+                  {#if src.inventory}<a href={src.inventory} target="_blank" rel="noopener" class="linkchip">Phelps Inventory{src.pin ? ` · ${src.pin}` : ''} ↗</a>{/if}
+                </div>
+              {/each}
+              {#if tablet.url}<div><a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a></div>{/if}
+            </div>
+          {:else}
           <div class="flex flex-wrap gap-2 pt-1">
             {#each tabletLinks(tablet.meta) as l (l.href)}<a href={l.href} target="_blank" rel="noopener" class="linkchip">{l.label} ↗</a>{/each}
             {#if tablet.url}<a href={tablet.rangeUrl || tablet.url} target="_blank" rel="noopener" class="linkchip">Read in the library ↗</a>{/if}
           </div>
+          {/if}
         {:else if tablet.candidates?.length}
           <p class="text-sm text-secondary">No translation link yet — these originals are the closest in meaning. Verify before citing.</p>
           {#each tablet.candidates as t (t.id)}

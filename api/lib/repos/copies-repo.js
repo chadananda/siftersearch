@@ -27,7 +27,7 @@ let olWorks = { at: 0, rows: null };
  *  OceanLibrary's "Fountain of Wisdom"), and its page. Cached an hour. */
 export async function oceanLibraryWorks() {
   if (olWorks.rows && Date.now() - olWorks.at < 3600000) return olWorks.rows;
-  const rows = await queryAll(`SELECT id, title, external_id, source_url FROM docs WHERE source_site = 'oceanlibrary.com' AND deleted_at IS NULL
+  const rows = await queryAll(`SELECT id, title, external_id, source_url, language FROM docs WHERE source_site = 'oceanlibrary.com' AND deleted_at IS NULL
     AND duplicate_of IS NULL AND external_id IS NOT NULL AND source_url LIKE 'https://oceanlibrary.com/%'`, [], 'copies:ol-works');
   olWorks = { at: Date.now(), rows };
   return rows;

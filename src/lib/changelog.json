@@ -1,6 +1,69 @@
 {
-  "generated": "2026-10-13T02:00:22.719Z",
+  "generated": "2026-10-13T04:30:26.467Z",
   "entries": [
+    {
+      "hash": "839d0f37",
+      "date": "2026-10-12",
+      "type": "Performance",
+      "description": "API answers within ~1 s of start — warm-ups after listen; encounter authority by PK, not a docs title scan",
+      "scope": "boot"
+    },
+    {
+      "hash": "cda5aaf9",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Section-author job — credit a book section to its real writer (Dawn-Breakers intro = George Townshend)",
+      "scope": "ops"
+    },
+    {
+      "hash": "9ad2a5e8",
+      "date": "2026-10-12",
+      "type": "Performance",
+      "description": "No event-loop freezes at restart — running spend ledger; encounter index read in pages",
+      "scope": "boot"
+    },
+    {
+      "hash": "9bd05640",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Refuse migrating prod from the wrong DB; budget-check off the provider-only index; updater logs test-server errors",
+      "scope": "deploy"
+    },
+    {
+      "hash": "38813640",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Entity-mention + concept-lexicon layers in planned search — every index we build is read",
+      "scope": "search"
+    },
+    {
+      "hash": "483b1a29",
+      "date": "2026-10-12",
+      "type": "New",
+      "description": "Qdrant phrase + keyword layers ON for planned search (Anís, site search, API) — type battery 72% → 77%",
+      "scope": "search"
+    },
+    {
+      "hash": "29d1919d",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Scale counts never cache a Qdrant timeout (page showed 0 phrase vectors for 10 min); 8 s timeout",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "5a445563",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Ocean of Lights range building froze the API — quadratic text normaliser (31 s → 0.13 s on 1.8 MB) + bounded phrases/budget",
+      "scope": "links"
+    },
+    {
+      "hash": "974a0506",
+      "date": "2026-10-12",
+      "type": "Fixed",
+      "description": "Citation shelf styles ship with the page (a plain CSS imported by SourceHunt) — the spines rendered as a wall of links",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "c2740d32",
       "date": "2026-10-12",
@@ -3437,73 +3500,73 @@
       "type": "New",
       "description": "Content_alignment (migr 128) + anchor stage — locate CTAI/bahai.org originals verbatim in the ingested originals",
       "scope": "pairing"
-    },
-    {
-      "hash": "439f8e2d",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Arabic pause does not apply under localOnly (no paid model reachable); forceReindex reports a document it left empty",
-      "scope": "ingest"
-    },
-    {
-      "hash": "1d94b8eb",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "New files go through ingestDocument (one ingest path); never delete an existing doc to re-index it",
-      "scope": "index-library"
-    },
-    {
-      "hash": "e4c39535",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "A failed batch names the statement that failed (index + SQL prefix)",
-      "scope": "writer"
-    },
-    {
-      "hash": "87445c5e",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "A directory inside the library resolves metadata against the library root and finds its religion root among ancestors (found 0 files)",
-      "scope": "index-library"
-    },
-    {
-      "hash": "818ab185",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Background library job takes a directory, dryRun and localOnly (--path was never read: the job scanned the whole library)",
-      "scope": "reindex"
-    },
-    {
-      "hash": "7a08a3ce",
-      "date": "2026-09-28",
-      "type": "New",
-      "description": "Range-scan for U+FFFD in paragraph text/originals (measure writer UTF-8 damage)",
-      "scope": "integrity"
-    },
-    {
-      "hash": "02666dea",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Decode request bodies as whole UTF-8 — per-chunk decoding corrupted multi-byte letters into U+FFFD",
-      "scope": "writer"
-    },
-    {
-      "hash": "bfaa1830",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Re-ingest of an existing document threw (content TDZ); forceReindex left documents empty",
-      "scope": "ingest"
-    },
-    {
-      "hash": "419f6708",
-      "date": "2026-09-28",
-      "type": "Fixed",
-      "description": "Short blocks join their neighbour instead of being dropped",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-12": [
+      {
+        "hash": "839d0f37",
+        "date": "2026-10-12",
+        "type": "Performance",
+        "description": "API answers within ~1 s of start — warm-ups after listen; encounter authority by PK, not a docs title scan",
+        "scope": "boot"
+      },
+      {
+        "hash": "cda5aaf9",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Section-author job — credit a book section to its real writer (Dawn-Breakers intro = George Townshend)",
+        "scope": "ops"
+      },
+      {
+        "hash": "9ad2a5e8",
+        "date": "2026-10-12",
+        "type": "Performance",
+        "description": "No event-loop freezes at restart — running spend ledger; encounter index read in pages",
+        "scope": "boot"
+      },
+      {
+        "hash": "9bd05640",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Refuse migrating prod from the wrong DB; budget-check off the provider-only index; updater logs test-server errors",
+        "scope": "deploy"
+      },
+      {
+        "hash": "38813640",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Entity-mention + concept-lexicon layers in planned search — every index we build is read",
+        "scope": "search"
+      },
+      {
+        "hash": "483b1a29",
+        "date": "2026-10-12",
+        "type": "New",
+        "description": "Qdrant phrase + keyword layers ON for planned search (Anís, site search, API) — type battery 72% → 77%",
+        "scope": "search"
+      },
+      {
+        "hash": "29d1919d",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Scale counts never cache a Qdrant timeout (page showed 0 phrase vectors for 10 min); 8 s timeout",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "5a445563",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Ocean of Lights range building froze the API — quadratic text normaliser (31 s → 0.13 s on 1.8 MB) + bounded phrases/budget",
+        "scope": "links"
+      },
+      {
+        "hash": "974a0506",
+        "date": "2026-10-12",
+        "type": "Fixed",
+        "description": "Citation shelf styles ship with the page (a plain CSS imported by SourceHunt) — the spines rendered as a wall of links",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "c2740d32",
         "date": "2026-10-12",
@@ -6968,69 +7031,6 @@
         "type": "New",
         "description": "Content_alignment (migr 128) + anchor stage — locate CTAI/bahai.org originals verbatim in the ingested originals",
         "scope": "pairing"
-      },
-      {
-        "hash": "439f8e2d",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Arabic pause does not apply under localOnly (no paid model reachable); forceReindex reports a document it left empty",
-        "scope": "ingest"
-      },
-      {
-        "hash": "1d94b8eb",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "New files go through ingestDocument (one ingest path); never delete an existing doc to re-index it",
-        "scope": "index-library"
-      },
-      {
-        "hash": "e4c39535",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "A failed batch names the statement that failed (index + SQL prefix)",
-        "scope": "writer"
-      },
-      {
-        "hash": "87445c5e",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "A directory inside the library resolves metadata against the library root and finds its religion root among ancestors (found 0 files)",
-        "scope": "index-library"
-      },
-      {
-        "hash": "818ab185",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Background library job takes a directory, dryRun and localOnly (--path was never read: the job scanned the whole library)",
-        "scope": "reindex"
-      },
-      {
-        "hash": "7a08a3ce",
-        "date": "2026-09-28",
-        "type": "New",
-        "description": "Range-scan for U+FFFD in paragraph text/originals (measure writer UTF-8 damage)",
-        "scope": "integrity"
-      },
-      {
-        "hash": "02666dea",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Decode request bodies as whole UTF-8 — per-chunk decoding corrupted multi-byte letters into U+FFFD",
-        "scope": "writer"
-      },
-      {
-        "hash": "bfaa1830",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Re-ingest of an existing document threw (content TDZ); forceReindex left documents empty",
-        "scope": "ingest"
-      },
-      {
-        "hash": "419f6708",
-        "date": "2026-09-28",
-        "type": "Fixed",
-        "description": "Short blocks join their neighbour instead of being dropped",
-        "scope": "ingest"
       }
     ]
   }

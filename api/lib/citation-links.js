@@ -16,6 +16,9 @@ const bookIdWork = (externalId) => String(externalId || '').replace(/_(?:ocean|b
 /** items: [{ id (paragraph), title (its work), link: linkFor result, quote? }] → Map(id → better link + that copy's `title`,
  *  which the caller shows: the link and the name must be the same publication — 10-12) where an identical copy
  *  of the same work is published higher. Without a title, any identical copy counts. */
+const arabicScript = (t) => { const s = String(t || ''); const a = (s.match(/[\u0600-\u06FF]/g) || []).length; return a > 0 && a >= (s.match(/[A-Za-z]/g) || []).length; };
+const rtlLang = (l) => /^(ar|fa|ur|ara|per|fas)/i.test(String(l || ''));
+
 export async function betterCopyLinks(items, opts = {}) {
   const { copies } = opts;
   const need = (items || []).filter((x) => x?.id && x.link && x.link.tier > 1);
@@ -35,7 +38,10 @@ export async function betterCopyLinks(items, opts = {}) {
     // pass finds the paragraph by its opening words and writes the range (ocean-links.js, OCEAN_BOOK_QUOTE)
     if (x.link.tier > 1 && x.title && (x.quote || x.text)) {
       const works = await (opts.olWorks || (await import('./repos/copies-repo.js')).oceanLibraryWorks)().catch(() => []);
-      const w = works.find((d) => sameWork(x.title, d.title) || sameWork(x.title, bookIdWork(d.external_id)));
+      // the SAME LANGUAGE too: an Arabic original titled like its English compilation ("Gleanings") was sent to the English
+      // book on OceanLibrary (Chad 10-12: "the link for the Arabic is to the english of oceanlibrary.com")
+      const rtl = arabicScript(x.quote || x.text);
+      const w = works.find((d) => (sameWork(x.title, d.title) || sameWork(x.title, bookIdWork(d.external_id))) && rtl === rtlLang(d.language));
       if (w) out.set(Number(x.id), { url: `${String(w.source_url).replace(/[?#].*$/, '')}#~q=${encodeMarker(String(x.quote || x.text).slice(0, 2000))}`,
         site: 'oceanlibrary.com', tier: 1, paragraph_level: true, reader_url: x.link.reader_url, title: w.title });
     }

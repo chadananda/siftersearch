@@ -426,6 +426,35 @@ async function meaningRanges(d, q, id, text, lang) {
   return dec && dec.length ? { highlight: dec, highlightBy: 'decision' } : { highlight: vec, highlightBy: vec.length ? 'vectors' : null };
 }
 
+// Arabic-script words, folded (diacritics off, letter variants unified) — for "does this copy hold the same words".
+const arWords = (t) => String(t || '').replace(/[\u064B-\u065F\u0670\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/[يى]/g, 'ی')
+  .replace(/ك/g, 'ک').replace(/ة/g, 'ه').split(/[^\u0600-\u06FF]+/).filter((w) => w.length > 2);
+/** Pure: share of the shorter passage's words found in the other (0 when either is too short to judge). */
+export function sharedWords(a, b) {
+  const A = new Set(arWords(a)), B = new Set(arWords(b));
+  if (Math.min(A.size, B.size) < 8) return 0;
+  const [small, big] = A.size <= B.size ? [A, B] : [B, A];
+  let n = 0; for (const w of small) if (big.has(w)) n++;
+  return n / small.size;
+}
+/** Pure: rank tablet copies — an Ocean of Lights page first, then a catalogued (Phelps PIN) tablet, then the rest. */
+export const tabletRank = (m) => (m?.links?.oceanoflights ? 2 : 0) + (m?.pin || m?.links?.inventory ? 1 : 0);
+
+/** Every OTHER document holding the original's words (Chad 10-12: Gleanings' Arabic sits in a CTAI compilation — the
+ *  source is the standalone tablet; list each Ocean of Lights / Phelps copy). Exact words (BM25), then a word check. */
+async function tabletCopies(d, o) {
+  const kw = await d.keyword(String(o.text || '').slice(0, 400), { limit: 20, timeoutMs: QD_MS, filters: { langGroup: 'ar-fa' } }).catch(() => ({ hits: [] }));
+  const ps = await d.passages(kw.hits.map((h) => h.paragraph_id));
+  const out = [], seen = new Set([o.documentId]);
+  for (const h of kw.hits) {
+    const p = ps.get(h.paragraph_id);
+    if (!p || seen.has(p.documentId) || sharedWords(o.text, p.text) < 0.6) continue;
+    seen.add(p.documentId);
+    out.push({ p, meta: await d.meta(p.documentId).catch(() => null) });
+  }
+  return out;
+}
+
 async function tabletGuess(d, q, links, author = null) {
   const withMeta = async (p, basis) => {
     if (!p) return p;
@@ -447,12 +476,31 @@ async function tabletGuess(d, q, links, author = null) {
     // the linked paragraph stands when it is the closest, or within a hair of it — "among the top 5" kept a neighbour
     // (10-12: Gleanings CXVII's link reached the Maqṣúd paragraph on one language and script, not "the earth is but one country")
     const top = inDoc.hits[0], linkedHit = inDoc.hits.find((h) => h.paragraph_id === o.id);
-    if (!ids.length || top.paragraph_id === o.id || (linkedHit && (linkedHit.score ?? 0) >= (top.score ?? 0) - 0.02)) {
-      return { certain: true, ...(await withMeta(o, o.path || 'translation')) };
+    let chosen = o, basis = o.path || 'translation', linkedParagraph;
+    if (!(!ids.length || top.paragraph_id === o.id || (linkedHit && (linkedHit.score ?? 0) >= (top.score ?? 0) - 0.02))) {
+      const best = (await d.passages([ids[0]])).get(ids[0]);
+      if (best) { chosen = best; basis = 'tablet linked; paragraph by similarity'; linkedParagraph = { id: o.id, text: o.text }; }
     }
-    const best = (await d.passages([ids[0]])).get(ids[0]);
-    return { certain: true, ...(await withMeta(best || o, best ? 'tablet linked; paragraph by similarity' : (o.path || 'translation'))),
-      linkedParagraph: best ? { id: o.id, text: o.text } : undefined };
+    // A compilation's original (CTAI's Arabic of Gleanings) is not a tablet: show the standalone tablet holding the same
+    // words, and every copy of it (Ocean of Lights pages, Phelps-catalogued tablets) as sources.
+    const [ownMeta, copies] = await Promise.all([d.meta(chosen.documentId).catch(() => null), tabletCopies(d, chosen)]);
+    const tablets = copies.filter((c) => tabletRank(c.meta) > 0).sort((a, b) => tabletRank(b.meta) - tabletRank(a.meta));
+    let compiledIn;
+    if (tabletRank(ownMeta) === 0 && tablets.length) {
+      compiledIn = { id: chosen.id, documentId: chosen.documentId, title: chosen.document?.title };
+      chosen = tablets[0].p; basis = 'tablet holding the compilation\'s original';
+    }
+    const main = await withMeta(chosen, basis);
+    const quoted = main.highlight?.length ? main.text.slice(main.highlight[0][0], main.highlight[main.highlight.length - 1][1]) : null;
+    const sourceOf = (p, m) => {
+      const ool = m?.links?.oceanoflights || null;
+      return { documentId: p.documentId, title: m?.title_generated || p.document?.title || null, pin: m?.pin || null,
+        oceanoflights: ool && quoted ? textFragment(ool, quoted, [[0, quoted.length]], 4, p.documentId) || ool : ool,
+        inventory: m?.links?.inventory || null };
+    };
+    const all = [{ p: chosen, meta: chosen === o || !compiledIn ? ownMeta : tablets[0].meta }, ...tablets.filter((t) => t.p !== chosen)];
+    const sources = all.map((c) => sourceOf(c.p, c.meta)).filter((x) => x.oceanoflights || x.inventory);
+    return { certain: true, ...main, ...(linkedParagraph ? { linkedParagraph } : {}), ...(compiledIn ? { compiledIn } : {}), ...(sources.length ? { sources } : {}) };
   }
   // only the quote's own writer's originals: an ‘Abdu’l-Bahá talk near in meaning is not the source of a Bahá’u’lláh line
   const near = await d.phrases(q.match, { limit: 8, timeoutMs: QD_MS, filters: { langGroup: 'ar-fa', religion: "Baha'i", ...(author ? { author } : {}) } }).catch(() => ({ hits: [] }));
