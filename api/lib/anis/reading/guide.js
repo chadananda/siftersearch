@@ -5,7 +5,7 @@
 // Deps: reading/{intent,outline,research,llm}, repos/reading-repo, docs-repo, config (library path). Injectable.
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { readingIntent, bookFrom } from './intent.js';
+import { readingIntent, bookFrom, understandReply } from './intent.js';
 import { parseOutline, pageFrom, startIndex, addressOf } from './outline.js';
 import { modelFor } from '../../model-roles.js';
 import { effectiveAuthor } from '../../authorship/effective.js';
@@ -240,7 +240,10 @@ export async function readingTurn({ messages = [], participantId, reset = false,
   if (!text || !participantId) return null;
   const d = { ...(await defaults()), ...(deps || {}) };
   let session = await d.latestSession(participantId).catch(() => null);
-  const intent = readingIntent(text, { active: !!session });
+  // a reply in a reading is understood by meaning (a small model, in the API: no waiting); the rules are the fallback
+  const lastPage = session?.pages?.at(-1)?.subject || '';
+  const intent = await understandReply(text, { active: !!session, page: lastPage,
+    llm: d.understand ?? ((m) => d.llmJson({ ...modelFor('reading-targets'), caller: 'reading-understand', maxTokens: 200, ...m })) });
   // a notes level asked for anywhere ("…and use the advanced level of notes") is kept for the rest of the book
   if (intent.level && session) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), level: intent.level } } };
   // a question about the page being read is answered IN the reading (10-13: it fell through to an ordinary answer)

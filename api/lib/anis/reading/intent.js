@@ -60,3 +60,33 @@ export function readingIntent(text, { active = false } = {}) {
   if (!low || /^(ok(ay)?|yes|good|great|thanks?|thank you|lovely|wonderful|beautiful|perfect|got it|nice)[\s.!,]*(thanks?|thank you)?[\s.!]*$/.test(low)) return { kind: 'next' };
   return { kind: 'question' };
 }
+
+// ── understanding a reply by MEANING (Chad 10-13: "you cannot control how a person responds and force them to use exactly
+// one word") ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+export const UNDERSTAND_SYSTEM = `Someone is reading a book with a companion by email, one page at a time. They just replied to a page.
+Decide what they want. Reply with JSON only:
+{"kind":"next|again|back|jump|where|stop|question|start","level":"introductory|serious|advanced|null","target":"chapter/section/event to jump to, or null","book":"a different book to start, or null"}
+- next: they want to keep reading (any wording: "carry on", "lovely, more", "ok", "thanks, onward", a comment with no request)
+- again: the same page redone deeper or differently ("not enough detail", "dig deeper", "redo with more on X")
+- back / where / stop: previous page / where are we / pause the reading
+- jump: go to a named chapter, section or event
+- question: they ask something about what they read (answer it; do not move on) — if they ALSO ask to continue, choose next
+- start: they ask to read a different book
+- level: only if they ask for simpler / more scholarly notes.`;
+
+/** The reply's meaning, from a small model; falls back to the rules if the model is unavailable. Never throws. */
+export async function understandReply(text, { active = false, page = '', llm } = {}) {
+  const rules = readingIntent(text, { active });
+  if (!active || rules.kind === 'start' || !llm) return rules;
+  try {
+    const r = await llm({ system: UNDERSTAND_SYSTEM, user: `PAGE THEY JUST READ: ${page || 'unknown'}\nTHEIR REPLY: ${String(text).slice(0, 1500)}` });
+    const j = r?.json;
+    const kinds = ['next', 'again', 'back', 'jump', 'where', 'stop', 'question', 'start'];
+    if (!j || !kinds.includes(j.kind)) return rules;
+    if (j.kind === 'start') return j.book ? { kind: 'start', book: j.book, from: startFrom(text) } : rules;
+    const level = ['introductory', 'serious', 'advanced'].includes(j.level) ? j.level : rules.level || null;
+    const out = { kind: j.kind, ...(level ? { level } : {}), ...(j.kind === 'jump' && j.target ? { target: j.target } : {}), by: 'model' };
+    if (out.kind === 'jump' && !out.target) return rules;
+    return out;
+  } catch { return rules; }
+}

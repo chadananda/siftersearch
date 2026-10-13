@@ -1,6 +1,6 @@
 // Anís reading guide (Chad 10-12): "help me study X" → a page per email with notes; next / again / back / skip / questions.
 import { describe, it, expect } from 'vitest';
-import { readingIntent, bookFrom, startFrom } from '../../api/lib/anis/reading/intent.js';
+import { readingIntent, bookFrom, startFrom, understandReply } from '../../api/lib/anis/reading/intent.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/anis/reading/outline.js';
 import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations } from '../../api/lib/anis/reading/guide.js';
 import { sameName } from '../../api/lib/anis/reading/research.js';
@@ -57,6 +57,23 @@ describe('reading intent', () => {
   });
   it('the reader’s own words: quoted history is cut', () => {
     expect(ownWords('next\n\nOn Mon, Anís wrote:\n> old page')).toBe('next');
+  });
+});
+
+describe('understandReply — by meaning, not by keyword (Chad 10-13)', () => {
+  it('a free-form reply the rules cannot read is understood by the model', async () => {
+    const llm = async () => ({ json: { kind: 'next', level: 'advanced', target: null, book: null } });
+    expect(await understandReply('Wonderful page! Keep them coming, but go heavier on the scholarship', { active: true, llm })).toMatchObject({ kind: 'next', level: 'advanced', by: 'model' });
+  });
+  it('a model failure or nonsense falls back to the rules', async () => {
+    expect(await understandReply('next please', { active: true, llm: async () => { throw new Error('down'); } })).toMatchObject({ kind: 'next' });
+    expect(await understandReply('next please', { active: true, llm: async () => ({ json: { kind: 'dance' } }) })).toMatchObject({ kind: 'next' });
+    expect(await understandReply('skip ahead', { active: true, llm: async () => ({ json: { kind: 'jump', target: null } }) }).then((r) => r.by)).toBeUndefined();
+  });
+  it('outside a reading, nothing is asked of the model', async () => {
+    let called = false;
+    expect(await understandReply('hello', { active: false, llm: async () => { called = true; return {}; } })).toMatchObject({ kind: 'none' });
+    expect(called).toBe(false);
   });
 });
 
