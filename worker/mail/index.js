@@ -323,11 +323,11 @@ async function runJob(request, env) {
   return json({ ran: job });
 }
 
-/** Cron (wrangler.jsonc triggers): drafts every 5 min, outreach hourly, the digest daily at 14:00 UTC (7 am Pacific). */
+/** Cron (wrangler.jsonc triggers): drafts every MINUTE (Chad 10-13: read, reply, get the next page right away), outreach hourly, the digest daily at 14:00 UTC (7 am Pacific). */
 export async function mailCron(cron, env) {
   if (cron === '0 14 * * *') return dailyDigest(env);
   if (cron === '0 * * * *') return planOutreach(env);
-  return draftReplies(env);                      // */5 (also fires at :00 — each cron has one job, so nothing runs twice)
+  return draftReplies(env);                      // * * * * * (also fires at :00 — each cron has one job, so nothing runs twice)
 }
 
 

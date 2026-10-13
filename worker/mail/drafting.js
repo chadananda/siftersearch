@@ -1,7 +1,7 @@
 // Anís's letters, end to end, on Cloudflare (cron in worker/index.js). Tower only researches and writes; every letter
 // to someone outside the invited list is a DRAFT Chad approves on a signed review page; every letter passes the
 // engagement rules (rules.js).
-//   draftReplies   every 5 min: new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → sent at once to invited
+//   draftReplies   every minute (≥3 min after Anís's last letter to that person): new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → sent at once to invited
 //                  people (auto_send_invited; anyone who writes joins the list — Chad 10-12), otherwise a draft + review notice to Chad
 //   planOutreach   hourly, only while outreach_enabled = on: welcome letters (template) for people added to the list with
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
@@ -71,6 +71,7 @@ async function notifyReviewer(env, settings, draft, source) {
 }
 
 /** New inbound mail to anis@ → a reply draft for review. A few per tick; failures are retried next tick. */
+export const REPLY_GAP_MIN = 3;
 export async function draftReplies(env, limit = 4) {
   const db = env.ANIS_DB;
   const settings = await loadSettings(db);
@@ -81,6 +82,10 @@ export async function draftReplies(env, limit = 4) {
       await db.prepare(`UPDATE mail_messages SET status = 'handled' WHERE id = ?`).bind(m.id).run();   // nothing to answer
       continue;
     }
+    // answered at once — unless Anís wrote to this person under 3 minutes ago (Chad 10-13: a reader who reads, then replies,
+    // gets the next page right away; a rapid volley waits out the 3 minutes)
+    if (await db.prepare(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND to_addr = ? AND created_at > datetime('now', ?)`)
+      .bind(m.from_addr, `-${REPLY_GAP_MIN} minutes`).first()) continue;
     const claim = await db.prepare(`UPDATE mail_messages SET status = 'drafting' WHERE id = ? AND status = ?`).bind(m.id, m.status).run();
     if (!claim.meta?.changes) continue;                                  // another tick has it
     try {

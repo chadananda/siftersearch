@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-13T13:44:42.163Z",
+  "generated": "2026-10-13T13:59:40.214Z",
   "entries": [
+    {
+      "hash": "dc562579",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Evidence only where it illuminates the noted words (no meta-commentary, no padding); reset option",
+      "scope": "reading"
+    },
+    {
+      "hash": "0972241f",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "'Dawn-Breakers, start from…' resolved to a letter naming it — strip the clause; skip books with no readable outline",
+      "scope": "reading"
+    },
+    {
+      "hash": "23e7f935",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Noted words highlighted and numbered — the note carries the same number",
+      "scope": "reading"
+    },
     {
       "hash": "c7cc28fe",
       "date": "2026-10-13",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "POST /concepts/alignment/twin — a duplicate original inherits its twin's English (never retranslate)",
       "scope": "alignment"
-    },
-    {
-      "hash": "41c1bec2",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "GET /concepts/untranslated — the Core Tablets paragraphs with no English anywhere (the translation queue)",
-      "scope": "translation"
-    },
-    {
-      "hash": "65c8a6c8",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Repair «��» in place from the source file — same row id, so claims and alignments survive",
-      "scope": "integrity"
-    },
-    {
-      "hash": "a0fbb9e1",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "OceanofLights ranks second after OceanLibrary; originals link by bookid (oceanoflights) and pin (Phelps' browser)",
-      "scope": "links"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "dc562579",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Evidence only where it illuminates the noted words (no meta-commentary, no padding); reset option",
+        "scope": "reading"
+      },
+      {
+        "hash": "0972241f",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "'Dawn-Breakers, start from…' resolved to a letter naming it — strip the clause; skip books with no readable outline",
+        "scope": "reading"
+      },
+      {
+        "hash": "23e7f935",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Noted words highlighted and numbered — the note carries the same number",
+        "scope": "reading"
+      },
       {
         "hash": "c7cc28fe",
         "date": "2026-10-13",
@@ -7010,27 +7031,6 @@
         "type": "New",
         "description": "POST /concepts/alignment/twin — a duplicate original inherits its twin's English (never retranslate)",
         "scope": "alignment"
-      },
-      {
-        "hash": "41c1bec2",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "GET /concepts/untranslated — the Core Tablets paragraphs with no English anywhere (the translation queue)",
-        "scope": "translation"
-      },
-      {
-        "hash": "65c8a6c8",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Repair «��» in place from the source file — same row id, so claims and alignments survive",
-        "scope": "integrity"
-      },
-      {
-        "hash": "a0fbb9e1",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "OceanofLights ranks second after OceanLibrary; originals link by bookid (oceanoflights) and pin (Phelps' browser)",
-        "scope": "links"
       }
     ]
   }
