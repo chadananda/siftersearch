@@ -12,7 +12,7 @@
 </script>
 
 {#if items.length}
-  <div class="source-band flex flex-col gap-1.5 border-t border-border-subtle pt-2.5 mt-1">
+  <div class="source-band mt-auto flex flex-col gap-1.5 border-t border-border-subtle pt-2.5">   <!-- mt-auto: pinned to the box foot so both bands line up (Chad 10-13) -->
     <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <span class="text-xs text-secondary">{label}</span>
       <span class="flex flex-wrap items-center gap-2.5 text-[11px] text-muted">

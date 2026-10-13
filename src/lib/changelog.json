@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-13T18:02:08.185Z",
+  "generated": "2026-10-13T18:26:52.998Z",
   "entries": [
+    {
+      "hash": "b7264b26",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "A compact spine band at the foot of each box — English and originals, best first",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "9b3baca7",
       "date": "2026-10-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "'About this tablet' in the view?doc reader too",
       "scope": "reader"
-    },
-    {
-      "hash": "0a622dbd",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Collapsible 'About this tablet' — recipient, date, place, manuscripts, publications, translations, subjects, recitation, notes; links to Ocean of Lights and the Partial Inventory",
-      "scope": "reader"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "b7264b26",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "A compact spine band at the foot of each box — English and originals, best first",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "9b3baca7",
         "date": "2026-10-13",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-29",
         "type": "New",
         "description": "'About this tablet' in the view?doc reader too",
-        "scope": "reader"
-      },
-      {
-        "hash": "0a622dbd",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Collapsible 'About this tablet' — recipient, date, place, manuscripts, publications, translations, subjects, recitation, notes; links to Ocean of Lights and the Partial Inventory",
         "scope": "reader"
       }
     ]
