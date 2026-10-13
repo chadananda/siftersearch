@@ -21,7 +21,13 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
   terms; Hijri↔Gregorian dates; "How Nabíl knew this" (informant chain); "In the Writings" (quotes, range links); one "Look closer"; teaser line.
 - COMPACT + speakable: later audio = OceanLibrary reading voice for ¶ + ElevenLabs voice for notes; may pause mid-¶ at strategic points.
 - State per reader+book: position, ¶s read, entities already explained (never repeat facts within a book; one-line "met in ¶14").
-- Commands: next · back · skip to chapter N / event · where are we? · questions answered in-thread (audited like every exchange).
+- REPLIES (Chad 10-12): "continue"/"next" (or an empty-ish reply) = next page · "again"/"try again" = the research was NOT
+  deep enough → redo the same page with a deeper pass (more sources, web layer, longer timelines) · anything else = a question,
+  answered in-thread (audited) without moving the bookmark · also back / skip to chapter N or an event / where are we?
+- WEB DEPTH layer: Perplexity (api/lib/perplexity.js, key on tower) + Parallel.ai (PARALLELAI_API_KEY on tower; client to
+  write) for context the library lacks — e.g. the economic/social background of a town in the 1840s, a governor's career,
+  trade routes. Web findings are cited as WEB sources, kept apart from library citations (web-lead.js rule: web = lead +
+  context, never dressed as library text). Default pass = library only; "again" (and named depth topics) add the web layer.
 - SUBJECT LINES (Chad 10-12): `[Reading] <Book> #<chapter>.<¶> - <what happens>` — e.g. `[Reading] Dawn-Breakers #5.7 - Bab's
   pilgrimage to Mecca`; introduction = `#Intro.6`. Sortable, scannable: the mailbox reads as the book's table of contents.
 - Research per ¶: entity graph (disambiguated mentions) → /biography pages + claims → CTAI (name meanings) → gazetteer → Phelps
