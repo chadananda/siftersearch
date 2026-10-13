@@ -84,6 +84,7 @@ let lastMeiliReconcileTime = 0;
 let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
 let lastWalCheckpointTime = 0;
+let lastPassiveCheckpointTime = 0;
 let activeHeartbeatInterval = null;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -826,6 +827,14 @@ async function runPeriodicTasks() {
   // mid-backup, interrupting the rsync and re-triggering the cycle on next boot (the morning restart-loop behind
   // this process's 600+ lifetime restarts). withTimeout() could not guard it: execSync blocks the thread, so no
   // timer can fire. The cron script also VERIFIES the snapshot and emails on failure. Do not re-add here.
+  // PASSIVE checkpoint every minute (10-13): copies only the last minute's pages and never waits on readers, so the WAL
+  // never piles up GBs between the 15-minute TRUNCATEs below — a TRUNCATE over a 4.6 GB WAL froze this (single-writer)
+  // event loop for tens of seconds, and a deploy landing then had to SIGKILL it ("keeps going down 3x in an hour").
+  if (now - lastPassiveCheckpointTime >= 60000) {
+    lastPassiveCheckpointTime = now;
+    try { const t0 = Date.now(); const [r] = (await getDb()).pragma('wal_checkpoint(PASSIVE)'); const ms = Date.now() - t0;
+      if (ms > 2000) logger.warn({ ms, ...r }, 'WAL checkpoint (PASSIVE) slow'); } catch (err) { logger.warn({ err: err.message }, 'WAL checkpoint (PASSIVE) failed'); }
+  }
   // WAL checkpoint — TRUNCATE every 15 min to prevent WAL from growing to GB-scale.
   // Restarts the API on block (API holds perpetual read marks; stateless, restarts in <5s).
   if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
