@@ -42,7 +42,9 @@ export function spawnConcepts(docId, { only, from, limit, dry } = {}) {
   if (limit) args.push(`--limit=${limit}`);
   if (dry) args.push('--dry');
   const out = fs.openSync(`${process.cwd()}/logs/concepts-${docId}.log`, 'a');
-  const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out] });
+  // background work like grounding: Message Batches for the Haiku stages, DeepSeek's half-price hours for the rest
+  const env = { ...process.env, name: 'siftersearch-concepts', ANTHROPIC_BATCH: process.env.ANTHROPIC_BATCH ?? '1' };
+  const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out], env });
   child.unref();
   logger.info({ docId, pid: child.pid, args: args.slice(1) }, 'concepts run launched');
   return child.pid;

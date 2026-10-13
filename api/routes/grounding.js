@@ -212,6 +212,18 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/hype-sample {docId, pids?, limit=5} — generate HyPE for a few paragraphs at the CURRENT prompt
+   * and return the questions WITHOUT saving them: the review step before any re-hype is paid for (Chad 10-13).
+   */
+  fastify.post('/concepts/hype-sample', admin, async (req) => {
+    const { docId, pids, limit = 5 } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    const { rag } = await import('../lib/rag-adapter/index.js');
+    const stats = await rag.retrieval.index(Number(docId), { dryRun: true, resume: false, pids: pids?.map(Number), limit: Math.min(Number(limit) || 5, 20) });
+    return { docId, version: stats.version, samples: stats.samples || [], unanswered: stats.unanswered || 0 };
+  });
+
+  /**
    * POST /concepts/judge-hype — a SECOND MODEL grades generated questions against their passage.
    *
    * Chad, 2026-08-26: "you cannot test this mechanically. Maybe we use another model to validate?"

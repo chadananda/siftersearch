@@ -34,7 +34,10 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // questions. Those artifacts are not v12's prompt working badly, they are no output at all, so they must
 // not keep a stamp that says "processed at the current version". Bumping is what makes `rehype` regenerate
 // them; leaving it at v12 would skip all 778.
-export const HYPE_VERSION = 'hype-v13-thinking-fixed';
+// v14 adds THE DEEP QUESTIONS (assumption overturned · objection answered · underpinning · implication · tension),
+// still bound by the one rule. Books are upgraded explicitly (rehype / upgrade); the book-level orchestrator stamp
+// (pipeline/state.js) is unchanged, so this bump does not queue a library-wide re-hype.
+export const HYPE_VERSION = 'hype-v14-deep';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -66,7 +69,10 @@ export async function run(ctx, docId, opts = {}) {
   // paragraphs already upgraded and redoes the rest. A killed upgrade run therefore RESUMES where it died on
   // retry instead of restarting from zero (resume:false remains the unconditional full redo).
   const doneP = opts.upgrade ? (p) => p.hypModel === HYPE_VERSION && isDone(p) : isDone;
-  const paras = (opts.resume ?? true) ? long.filter((p) => !doneP(p)) : long;
+  let paras = (opts.resume ?? true) ? long.filter((p) => !doneP(p)) : long;
+  // SAMPLE (dryRun review of a prompt change): only the listed paragraph numbers, or the first `limit`
+  if (opts.pids?.length) paras = paras.filter((p) => opts.pids.includes(Number(p.pid)));
+  if (opts.limit) paras = paras.slice(0, opts.limit);
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
@@ -147,6 +153,7 @@ export async function run(ctx, docId, opts = {}) {
         parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
       }
       if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
+      if (opts.dryRun) (stats.samples ||= []).push({ pid: p.pid, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
       if (!opts.dryRun) {
         await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
         // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
@@ -349,6 +356,14 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • At least ONE question phrased WITHOUT naming any person — by theme, event, place or period — so topic searches also retrieve this paragraph.
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.
+
+  THE DEEP QUESTIONS (Chad 10-13: "nobody is moved by obvious questions"). After the plain asks, write the questions a serious, even skeptical, reader brings to this subject — the ones that make a person stop. Wherever the passage itself supplies the answer, ask:
+    • THE ASSUMPTION IT OVERTURNS — what common belief does this teaching contradict? ("Why is suffering not evidence that God has abandoned the believer?", "Why would certitude require forgetting what one has learned?")
+    • THE OBJECTION IT ANSWERS — the hard counter-question the passage meets, stated as the objector would put it. ("If God is just, why are the righteous persecuted?")
+    • THE UNDERPINNING — the premise about God, the soul, knowledge or society the teaching rests on and makes explicit. ("Why can the essence of God never be known directly?")
+    • THE CHALLENGING IMPLICATION — what follows that a reader may not want to hear: what it demands of them, what it rules out, whom it indicts. ("Why are learned clergy often the first to reject a new Messenger?")
+    • THE TENSION IT RESOLVES — two truths that seem to collide and how the passage reconciles them. ("How can every Prophet be the same and yet one be greater?")
+  Phrase them as a person wrestling with the question would type them — direct, pointed, usually "why" or "how can" — never academic ("What is the epistemological significance of…"). THE ONE RULE STILL GOVERNS: a deep question is written only where this passage's own words answer it, and its "a" span must carry that answer. A narrative or transitional paragraph may have none; do not manufacture depth. A doctrinal passage usually has several, and they are the questions most worth finding.
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
 If a HEADING is given, it names the question or subject this passage is part of answering. Use it to know WHICH discussion the passage belongs to and to phrase questions a reader of that subject would ask — but write questions about what THIS paragraph says, not about the heading's subject in general, and never quote the heading as if the passage answered all of it.

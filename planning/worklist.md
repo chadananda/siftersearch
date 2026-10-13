@@ -12,6 +12,15 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
+## ▶ NOW (Chad 10-13) — CONCEPTS IN BATCH · DEEP HyPE · CONCEPTS INTO QDRANT
+- [ ] Concept extraction on Haiku 5.5 via Message Batches (spawnConcepts ANTHROPIC_BATCH=1) for the missing core books:
+      Gleanings 8312 · Hidden Words 20809 · ESW 8273 · TDP 20914 · Dawn-Breakers 21308 · Aqdas 21307 (partial) — est $1-2
+- [ ] HyPE v14 "deep" tier (assumption overturned · objection answered · underpinning · implication · tension; still
+      passage-answered). Review via POST /api/admin/concepts/hype-sample → show Chad → cost core-book rehype (library ≈ $100+, ask)
+- [ ] Concept claims/lexicon → a Qdrant collection + search layer (server-side job, not a script)
+- [ ] Entity extraction bake-off Haiku 5.5 vs DeepSeek → re-process if Haiku wins (Chad expects it will)
+- [ ] LATER: concept + person-entity extraction become NORMAL INGESTION stages once seeding is dialled in (Chad 10-13)
+
 ## ▶ NEXT BUILD — Anís READING GUIDE ("notes" strategy, Chad 10-12) — proof of concept: The Dawn-Breakers (doc 21308)
 - Trigger: mail "help me study <book>" / "read <book> with me" → Anís resolves the book, shows its layout, ASKS where to start
   (Introduction by **George Townshend** — recommend for a first read · Nabíl's narrative ch. 1 · any chapter/event). DONE: intro ¶6–46 credited to Townshend, ¶20 Curzon.

@@ -196,7 +196,17 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   // done with zero questions). Output that differs materially must not share a stamp with output that does
   // not — the stamp is what `rehype` resumes on.
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v13-thinking-fixed');
+    expect(HYPE_VERSION).toBe('hype-v14-deep');
+  });
+
+  // v14 (Chad 10-13): "nobody is moved by obvious questions" — the prompt asks for the deep tier, still bound
+  // by the one rule (the passage must answer it; no manufactured depth on narrative paragraphs).
+  it('asks for the deep questions without loosening the one rule', () => {
+    expect(sys).toMatch(/THE DEEP QUESTIONS/);
+    expect(sys).toMatch(/ASSUMPTION IT OVERTURNS/);
+    expect(sys).toMatch(/OBJECTION IT ANSWERS/);
+    expect(sys).toMatch(/CHALLENGING IMPLICATION/);
+    expect(sys).toMatch(/do not manufacture depth/);
   });
 });
 
