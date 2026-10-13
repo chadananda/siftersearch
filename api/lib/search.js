@@ -9,7 +9,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
-import { searchPhrases, searchKeywordQdrant, searchHypeQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
+import { searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1182,7 +1182,8 @@ const DEFAULT_WEIGHTS = {
   phrase: 1.0,  // Qdrant phrase vectors (opt-in: options.phraseLayer) — not yet tuned on the batteries
   qkeyword: 1.0, // Qdrant BM25 with our folding (opt-in: options.qdrantKeyword) — not yet tuned
   qhype: 1.5,   // Qdrant HyPE (options.qdrantHype, always with meili:false) — the same weight as Meili's HyPE layer
-  concept: 1.5  // concept lexicon proof (options.conceptLayer) — the cited interpretation of a symbol the question names
+  concept: 1.5, // concept lexicon proof (options.conceptLayer) — the cited interpretation of a symbol the question names
+  qconcept: 1.0 // Qdrant concept claims (options.conceptLayer) — a doctrinal claim the question is about; not yet tuned
 };
 
 /**
@@ -1276,7 +1277,7 @@ export async function multiIndexSearch(query, options = {}) {
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
   const qfilters = await resolveQdrantFilters(filters);   // a year range → doc ids (Qdrant points carry no year)
-  let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult, conceptResult] = await Promise.all([
+  let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult, conceptResult, qconceptResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1330,6 +1331,14 @@ export async function multiIndexSearch(query, options = {}) {
       ? timed('concept', import('./search/concepts.js').then((m) => m.searchConceptProofs({ getMeili, INDEXES }, query, { limit: 8 }))).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: concept layer failed');
           return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] }),
+    // Concept CLAIMS in Qdrant (Chad 10-13: concepts into the Qdrant search): what a passage teaches, as extracted claims —
+    // reaches a doctrinal passage by its idea even when the question names no symbol.
+    (options.conceptLayer && !semanticOff && (!scope_config || scope_config.primary))
+      ? timed('qconcept', searchConceptsQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: qdrant concept layer failed');
+          return { hits: [], failed: true };
         })
       : Promise.resolve({ hits: [] }),
   ]);
@@ -1447,7 +1456,7 @@ export async function multiIndexSearch(query, options = {}) {
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['canon', canonResult]]) {
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
@@ -1585,6 +1594,7 @@ export async function multiIndexSearch(query, options = {}) {
       qkeyword: (qkeywordResult.hits || []).length,
       qhype: (qhypeResult.hits || []).length,
       concept: (conceptResult.hits || []).length,
+      qconcept: (qconceptResult.hits || []).length,
     },
     // Emitted for the trace. Retrieval layers run in parallel, so these are completion offsets from the
     // start of the fan-out, not additive costs; `merge` is the RRF + diversity work after them.

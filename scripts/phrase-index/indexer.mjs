@@ -18,6 +18,9 @@
 //        --collection hype --budget-key hype-build --embed --qdrant --max-usd 40
 //        (HyPE: each stored question + the thesis is a unit; point id = paragraph × 1000 + k, thesis k = 999. Own store and
 //         collection — ids would collide with phrase units, and the phrase build holds that store's write lock.)
+//   node scripts/phrase-index/indexer.mjs --field concepts --scope library --store /tank/sifter/concept-vectors/vectors.db \
+//        --collection concepts --budget-key concepts-build --embed --qdrant --max-usd 5
+//        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
 import { mkdirSync } from 'fs';
@@ -41,7 +44,7 @@ const STORE = arg('store', '/tank/sifter/phrase-vectors/vectors.db');
 const SCOPE = arg('scope', 'originals');                  // originals | library | supplemental
 const SCRIPT = arg('script', 'all');                      // library only: arabic | other | all
 const RELIGION = arg('religion', 'all');                  // library only: bahai | other | all (plan order: Bahá'í first)
-const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions
+const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions; 'concepts' = concept claims
 const DOCS = (arg('docs', '') || '').split(',').map(Number).filter(Boolean);
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const CHUNK = +arg('chunk', 20000);                       // paragraphs per embed→upsert cycle
@@ -101,13 +104,14 @@ function source() {
   // so translation and original stay linked; point ids cannot collide (those paragraphs' own text is not Arabic-script).
   const col = FIELD === 'original' ? 'c.original_text' : 'c.text';
   const rel = RELIGION === 'bahai' ? " AND d.religion = 'Baha''i'" : RELIGION === 'other' ? " AND d.religion <> 'Baha''i'" : '';
-  const where = DOCS.length ? `d.id IN (${DOCS.join(',')})`
+  const claimsOf = "(SELECT json_group_array(cc.statement) FROM concept_claims cc WHERE cc.doc_id = c.doc_id AND cc.para_id = COALESCE(c.external_para_id, 'p' || c.id) AND cc.proof_ok = 1)";
+  const where = FIELD === 'concepts' && !DOCS.length ? 'd.id IN (SELECT DISTINCT doc_id FROM concept_claims)' : DOCS.length ? `d.id IN (${DOCS.join(',')})`
     : SCOPE === 'library' ? `d.scope = 'primary'${rel}` : SCOPE === 'supplemental' ? `d.scope = 'supplemental'${rel}` : "d.religion = 'Baha''i'";
   // PAGED by content.id, each page its own short read: ONE .iterate() over the whole scope held a single read transaction
   // for the entire build (12–27 h), so the WAL could never be checkpointed — it grew to 12 GB, and the worker restarted the
   // API every 15 min trying to free it (the 2026-10-03 "restart storm"). Never stream a long build through one statement.
   const page = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
-      c.authors, d.author, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''} FROM content c JOIN docs d ON d.id = c.doc_id
+      c.authors, d.author, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''}${FIELD === 'concepts' ? `, ${claimsOf} AS claims` : ''} FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE ${where} AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
       ${FIELD === 'hype' ? "AND (COALESCE(c.hyp_questions, '') <> '' OR COALESCE(c.hyp_thesis, '') <> '')" : ''}
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
@@ -137,21 +141,36 @@ const haveVec = store.prepare('SELECT 1 FROM vec WHERE key = ?');
 const putVec = store.prepare('INSERT OR IGNORE INTO vec (key, model, dims, v, at) VALUES (?, ?, ?, ?, ?)');
 const tx = store.transaction((list) => { for (const u of list) putUnit.run(u); });
 
-// The units of one paragraph: its phrases, or (--field hype) its HyPE questions + thesis.
+// The units of one paragraph: its phrases, (--field hype) its HyPE questions + thesis, or (--field concepts) its claims.
 const HYPE_SEG = 'hype-v1';
 function unitsFor(p, seg) {
+  if (FIELD === 'concepts') {
+    let claims = []; try { claims = JSON.parse(p.claims || '[]').filter(Boolean); } catch { /* none */ }
+    return claims.slice(0, 998).map((text, k) => ({ pointId: p.id * 1000 + k, k, start: null, end: null, segV: 'concept-v1', embedText: text }));
+  }
   if (FIELD !== 'hype') return unitsOf({ id: p.id, text: p.text, lang: seg });
   const qs = parseStoredHypQuestions(p.hyp_questions).slice(0, 998), thesis = String(p.hyp_thesis || '').trim();
   const u = (k, text) => ({ pointId: p.id * 1000 + k, k, start: null, end: null, segV: HYPE_SEG, embedText: text });
   return [...qs.map((q, k) => u(k, q)), ...(thesis ? [u(999, thesis)] : [])];
 }
 
+// Points a paragraph no longer has (re-hyped to fewer questions, claims re-extracted): hype/concepts units are numbered
+// k = 0..n, so anything past the new set in the paragraph's id block is stale and must leave the store and the collection.
+const unitsInBlock = store.prepare('SELECT point_id FROM units WHERE point_id BETWEEN ? AND ?');
+const dropUnit = store.prepare('DELETE FROM units WHERE point_id = ?');
+const stale = [];
+
 // Paragraphs → units (stored) + texts still needing a vector. Returns the pending map for this chunk.
 function unitize(paras) {
   const pending = new Map(), buf = [];
   for (const p of paras) {
     const { seg, group } = paragraphLang(p.text, p.language);
-    for (const u of unitsFor(p, seg)) {
+    const units = unitsFor(p, seg);
+    if (FIELD === 'hype' || FIELD === 'concepts') {
+      const keep = new Set(units.map((u) => u.pointId));
+      for (const { point_id: id } of unitsInBlock.all(p.id * 1000, p.id * 1000 + 999)) if (!keep.has(id)) { dropUnit.run(id); stale.push(id); }
+    }
+    for (const u of units) {
       const key = vecKey(MODEL, DIMS, u.embedText), old = haveUnit.get(u.pointId);
       if (!old || old.seg_v !== u.segV || old.key !== key)
         buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
@@ -219,6 +238,7 @@ const page = store.prepare(`SELECT u.*, v.v FROM units u JOIN vec v ON v.key = u
 const mark = store.prepare('UPDATE units SET upserted = 1 WHERE point_id = ?');
 async function upsert() {
   let sent = 0;
+  while (stale.length) await qd('POST', `/collections/${COLL}/points/delete?wait=true`, { points: stale.splice(0, 1000) });
   for (;;) {
     const rows = page.all(); if (!rows.length) break;
     await qd('PUT', `/collections/${COLL}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },

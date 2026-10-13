@@ -79,6 +79,7 @@ export async function resolveQdrantFilters(filters = {}) {
 export const SEARCH_PARAMS = Object.freeze({
   phrase: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
   hype: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
+  concept: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });
 
@@ -165,6 +166,17 @@ export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs, 
     const p = g.hits[0];
     return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999 };
   }) };
+}
+
+/** → { hits: [{ paragraph_id, doc_id, score }] } — CONCEPT CLAIMS ("the clouds — symbolizes the human limitations…"), one
+ *  point per cited claim, best per paragraph; same Gemini vector as phrases/HyPE. Built by the phrase indexer --field concepts. */
+export async function searchConceptsQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.concept } = {}) {
+  const vector = await geminiQueryVector(query);
+  const res = await qdrant('/collections/concepts/points/query/groups', {
+    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id'],
+    params: searchParams(params), filter: toQdrantFilter(filters),
+  }, timeoutMs);
+  return { hits: (res.groups || []).map((g) => ({ paragraph_id: g.hits[0].payload.paragraph_id, doc_id: g.hits[0].payload.doc_id, score: g.hits[0].score })) };
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — BM25 over whole paragraphs with our folding. */
