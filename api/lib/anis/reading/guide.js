@@ -27,7 +27,12 @@ async function findBook(d, name) {
   const f = (s) => String(s || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
   const want = f(name);
   const score = (x) => (x.source_site === 'oceanlibrary.com' ? 4 : 0) + (/\.md$/.test(x.file_path || '') ? 1 : 0) + (f(x.title) === want ? 3 : f(x.title).startsWith(want) ? 1 : 0);
-  return docs.filter((x) => x.file_path).sort((a, b) => score(b) - score(a))[0] || null;
+  // the best-scoring copy whose file actually reads as a book (a title LIKE can match a letter that merely names it)
+  for (const x of docs.filter((y) => y.file_path).sort((a, b) => score(b) - score(a)).slice(0, 5)) {
+    const o = await outlineOf(d, x).catch(() => null);
+    if (o?.outline.paragraphs.length) return x;   // a plain file (no OceanLibrary paragraph ids) reads as nothing
+  }
+  return null;
 }
 
 async function outlineOf(d, doc) {

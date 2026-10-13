@@ -33,6 +33,7 @@ describe('reading intent', () => {
     expect(startFrom(t)).toBe('introduction');
     expect(readingIntent(t)).toMatchObject({ kind: 'start', book: 'Dawn-Breakers', from: 'introduction' });
     expect(readingIntent('Can you read God Passes By with me?')).toMatchObject({ kind: 'start', book: 'God Passes By' });
+    expect(readingIntent('Help me study the Dawn-Breakers, start from the introduction')).toMatchObject({ kind: 'start', book: 'Dawn-Breakers', from: 'introduction' });
   });
   it('continue/next → next page; again → deeper; others → navigation or a question', () => {
     for (const t of ['continue', 'Next', 'next please', 'ok', '']) expect(readingIntent(t, { active: true }).kind).toBe('next');
