@@ -22,8 +22,8 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - COMPACT + speakable: later audio = OceanLibrary reading voice for ¶ + ElevenLabs voice for notes; may pause mid-¶ at strategic points.
 - State per reader+book: position, ¶s read, entities already explained (never repeat facts within a book; one-line "met in ¶14").
 - Commands: next · back · skip to chapter N / event · where are we? · questions answered in-thread (audited like every exchange).
-- SUBJECT LINES name the starting point + activity so the mailbox reads as a table of contents, e.g.
-  "Dawn-Breakers · Introduction ¶6–11 — Persia in the 1840s" / "Dawn-Breakers · Ch. 1 ¶1–5 — Shaykh Aḥmad sets out".
+- SUBJECT LINES (Chad 10-12): `[Reading] <Book> #<chapter>.<¶> - <what happens>` — e.g. `[Reading] Dawn-Breakers #5.7 - Bab's
+  pilgrimage to Mecca`; introduction = `#Intro.6`. Sortable, scannable: the mailbox reads as the book's table of contents.
 - Research per ¶: entity graph (disambiguated mentions) → /biography pages + claims → CTAI (name meanings) → gazetteer → Phelps
   (tablets to them) → library search for other passages; ONE model call writes notes from cited evidence only. Measure $/page first.
 
