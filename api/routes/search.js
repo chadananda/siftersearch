@@ -533,15 +533,17 @@ export default async function searchRoutes(fastify) {
   fastify.get('/source-hunt/scale', async () => {
     if (scaleCache.data && Date.now() - scaleCache.at < 600000) return scaleCache.data;
     const QD = process.env.QDRANT_URL || 'http://127.0.0.1:6333';
-    const count = (c) => fetch(`${QD}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(3000) })
+    const count = (c) => fetch(`${QD}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(8000) })
       .then((r) => r.json()).then((j) => j.result?.points_count ?? null).catch(() => null);
     const { listDocs } = await import('../lib/docs-repo.js');
     const { queryOne } = await import('../lib/db.js');
     const [phrases, keyword, hype, docs, tablets] = await Promise.all([count('phrases'), count('paragraphs_kw'), count('hype'),
       listDocs({ limit: 1, fields: ['id'] }).then((x) => x.total).catch(() => null),
       queryOne('SELECT COUNT(*) n FROM tablet_meta', [], 'source-hunt:scale').then((x) => x?.n ?? null).catch(() => null)]);
-    scaleCache = { at: Date.now(), data: { phraseVectors: phrases, paragraphs: keyword, hypeQuestions: hype, documents: docs, tablets } };
-    return scaleCache.data;
+    const data = { phraseVectors: phrases, paragraphs: keyword, hypeQuestions: hype, documents: docs, tablets };
+    // only a complete answer is cached: a Qdrant timeout under load cached nulls for 10 min (the page showed "0", 10-12)
+    if (phrases != null && keyword != null) scaleCache = { at: Date.now(), data };
+    return scaleCache.data && phrases == null ? { ...scaleCache.data, documents: docs, tablets } : data;
   });
 
   fastify.get('/stats', async (request) => {
