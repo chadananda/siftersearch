@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-13T18:43:09.158Z",
+  "generated": "2026-10-13T19:45:34.085Z",
   "entries": [
+    {
+      "hash": "4ee8f56c",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Conversational replies advance the reading; notes levels; questions answered in the reading",
+      "scope": "reading"
+    },
+    {
+      "hash": "b3273452",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Citation passages shown without our copy's section numbers ([11.12])",
+      "scope": "sourcehunt"
+    },
+    {
+      "hash": "cf858994",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Click a spine to view that source in its box; the box's corner link opens it",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "e4e5d19a",
       "date": "2026-10-13",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Authority-weighted metadata ranking (migr 136) — canonical works above scraped pages",
       "scope": "docmeta"
-    },
-    {
-      "hash": "0bb962e0",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Chat tools document_info + find_documents_by_metadata; phrase-first metadata search; paged rebuild that yields",
-      "scope": "docmeta"
-    },
-    {
-      "hash": "c5d0c3f7",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Metadata search prefers documents matching every word, then any",
-      "scope": "docmeta"
-    },
-    {
-      "hash": "7f098f1c",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "Search document metadata in SQLite FTS5 (migr 135), not Meilisearch — its queue is ~65k tasks deep",
-      "scope": "docmeta"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "4ee8f56c",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Conversational replies advance the reading; notes levels; questions answered in the reading",
+        "scope": "reading"
+      },
+      {
+        "hash": "b3273452",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Citation passages shown without our copy's section numbers ([11.12])",
+        "scope": "sourcehunt"
+      },
+      {
+        "hash": "cf858994",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Click a spine to view that source in its box; the box's corner link opens it",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "e4e5d19a",
         "date": "2026-10-13",
@@ -7009,27 +7030,6 @@
         "date": "2026-09-29",
         "type": "New",
         "description": "Authority-weighted metadata ranking (migr 136) — canonical works above scraped pages",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "0bb962e0",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Chat tools document_info + find_documents_by_metadata; phrase-first metadata search; paged rebuild that yields",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "c5d0c3f7",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Metadata search prefers documents matching every word, then any",
-        "scope": "docmeta"
-      },
-      {
-        "hash": "7f098f1c",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "Search document metadata in SQLite FTS5 (migr 135), not Meilisearch — its queue is ~65k tasks deep",
         "scope": "docmeta"
       }
     ]

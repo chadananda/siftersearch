@@ -16,8 +16,8 @@ describe('replies', () => {
     expect(sendDecision({ ...base, ignored: 'bnc.org' }).reason).toMatch(/ignored/);
     expect(sendDecision({ ...base, inboundCount: 0 }).reason).toMatch(/needs a message/);
   });
-  it('daily caps apply to replies too', () => {
-    expect(sendDecision({ ...base, sentToPersonToday: 3 }).reason).toMatch(/this person/);
+  it('a reply is never stopped by the per-person cap (a reader asking for the next page); the global cap still applies', () => {
+    expect(sendDecision({ ...base, sentToPersonToday: 30 }).ok).toBe(true);
     expect(sendDecision({ ...base, sentToday: 200 }).reason).toMatch(/global/);
   });
 });

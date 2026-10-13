@@ -7,7 +7,7 @@
 //   outreach — Anís writes first. Off unless the switch is on; only to people who have written at least once (D1 hybrid:
 //              a relationship they took part in); never after a pause/stop; alpha allowlist; cadence 3·5·12·25·44 days
 //              after their last message, then silence.
-// Both: per-person and global daily caps. Settings live in D1 mail_settings (no deploy to change them).
+// Caps: a global daily cap on everything; a per-person daily cap on what Anís starts (welcome, outreach) — never on replies. Settings live in D1 mail_settings (no deploy to change them).
 
 export const DEFAULTS = {
   outreach_enabled: 'off',            // global kill switch for anything Anís starts
@@ -29,7 +29,9 @@ export function sendDecision(f, s = DEFAULTS) {
   if (f.suppressed) return { ok: false, reason: 'suppressed: this address bounced or complained' };
   if (f.ignored) return { ok: false, reason: `ignored sender (${f.ignored})` };
   if (f.sentToday >= Number(s.global_daily_cap)) return { ok: false, reason: 'global daily cap reached' };
-  if (f.sentToPersonToday >= Number(s.per_person_daily_cap)) return { ok: false, reason: 'daily cap for this person reached' };
+  // the per-person cap limits letters ANÍS starts; a reply answers a message they just sent (10-13: a reader asking for the
+  // next page of a book was blocked after three pages). The global cap still bounds everything.
+  if (f.kind !== 'reply' && f.sentToPersonToday >= Number(s.per_person_daily_cap)) return { ok: false, reason: 'daily cap for this person reached' };
   if (f.kind === 'welcome') {                  // once, to someone Chad added to the list (the list is the consent)
     // Chad asking for it IS the approval (invite-only, 2026-10-08): the outreach switch governs only what Anís starts
     if (!f.askedBy && s.outreach_enabled !== 'on') return { ok: false, reason: 'outreach is switched off' };
