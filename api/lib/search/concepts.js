@@ -10,6 +10,7 @@
 // the romanization.
 import { getMeili, INDEXES } from '../search.js';
 import { queryAll } from '../db.js';
+import { rowsForDoc } from '../repos/block-attrs-repo.js';
 
 export const CONCEPT_SELECT = `
   SELECT id, canonical, root, renderings, concept_type, tradition, importance, summary
@@ -85,7 +86,46 @@ export function lexiconDoc(row) {
     proof_doc_id: row.proof_doc_id ?? null,
     proof_para_id: row.proof_para_id ?? null,
     proof_verbatim: row.proof_verbatim || null,
+    paragraph_id: row.paragraph_id ?? null,
   };
+}
+
+const flat = (s) => String(s || '').replace(/⁅[^⁆]*⁆/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[’‘`]/g, "'").toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** The content row a lexicon proof points at: the block id (para_N) when the rows carry it, else the row whose text
+ *  holds the verbatim proof. Pure over the doc's rows. */
+export function proofParagraph(rows, { proof_para_id, proof_verbatim }) {
+  const byBlock = proof_para_id && rows.find((r) => { try { return JSON.parse(r.block_attrs || '{}').id === proof_para_id; } catch { return false; } });
+  const v = flat(proof_verbatim).slice(0, 80);
+  if (byBlock && (!v || flat(byBlock.text).includes(v))) return byBlock.id;
+  return (v && rows.find((r) => flat(r.text).includes(v))?.id) || byBlock?.id || null;
+}
+
+/** A lexicon symbol is NAMED by the question when every content word of it appears there ("the sun" in "what does
+ *  the sun symbolise"; "Sun of Truth" is not named by it). Pure. */
+const STOP = new Set(['the', 'of', 'a', 'an', 'and', 'his', 'her', 'its', 'my', 'thy', 'in', 'to', 'god', "god's"]);
+export function symbolNamed(symbol, query) {
+  const words = flat(symbol).split(/[^a-z0-9'á-ž]+/).filter((w) => w.length > 2 && !STOP.has(w));
+  if (!words.length) return false;
+  const q = new Set(flat(query).split(/[^a-z0-9'á-ž]+/).flatMap((w) => [w, w.replace(/'s$/, ''), w.replace(/s$/, '')]));
+  return words.every((w) => q.has(w) || q.has(w.replace(/s$/, '')));
+}
+
+/** CONCEPT LAYER: the authoritative interpretation of a symbol the question names (concept_lexicon, cited) → its proof
+ *  paragraph, as a ranked list for multiIndexSearch. Empty unless a symbol is actually named. */
+export async function searchConceptProofs({ getMeili: meili = getMeili, INDEXES: ix = INDEXES } = {}, query, { limit = 8 } = {}) {
+  const m = meili();
+  if (!m || !query) return { hits: [] };
+  const r = await m.index(ix.CONCEPTS).search(String(query).slice(0, 200), {
+    limit: 30, filter: 'kind = "lexicon"',
+    attributesToRetrieve: ['id', 'symbol', 'interpretation', 'authority', 'authority_tier', 'paragraph_id', 'proof_doc_id'],
+  });
+  const seen = new Set();
+  const hits = (r.hits || []).filter((h) => h.paragraph_id && symbolNamed(h.symbol, query))
+    .sort((a, b) => (a.authority_tier ?? 99) - (b.authority_tier ?? 99))
+    .filter((h) => !seen.has(h.paragraph_id) && seen.add(h.paragraph_id)).slice(0, limit);
+  return { hits: hits.map((h) => ({ paragraph_id: h.paragraph_id, doc_id: h.proof_doc_id, concept: { symbol: h.symbol, interpretation: h.interpretation, authority: h.authority } })) };
 }
 
 /** Push lexicon entries into the concepts index. Full refresh, same reasoning as syncConcepts. */
@@ -97,7 +137,10 @@ export async function syncLexicon({ limit = 50000 } = {}) {
     if (!/already exists|index_already_exists/i.test(err?.message || '')) throw err;
   }
   if (!rows.length) return { indexed: 0, skipped: 'no lexicon entries yet', indexReady: true };
-  const docs = rows.map(lexiconDoc);
+  // Resolve each proof to its content row once, here (a handful of interpreter works), so search reads ids only.
+  const byDoc = new Map();
+  for (const d of new Set(rows.map((r) => r.proof_doc_id).filter(Boolean))) byDoc.set(d, await rowsForDoc(d).catch(() => []));
+  const docs = rows.map((r) => lexiconDoc({ ...r, paragraph_id: r.proof_doc_id ? proofParagraph(byDoc.get(r.proof_doc_id) || [], r) : null }));
   const task = await getMeili().index(INDEXES.CONCEPTS).addDocuments(docs, { primaryKey: 'id' });
-  return { indexed: docs.length, taskUid: task?.taskUid };
+  return { indexed: docs.length, located: docs.filter((d) => d.paragraph_id).length, taskUid: task?.taskUid };
 }

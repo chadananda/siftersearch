@@ -145,6 +145,9 @@ export function layersFor(plan) {
     // facts: passages + HyPE answer "When was the Báb martyred?", and the claim LIKE-scan (peopleSearch) cost 5-12s
     // there while blocking the API (battery 2026-09-26). Who-met-whom facts go to the encounter index regardless.
     claims: shape === 'enumerate' || (plan.about === 'people' && shape !== 'fact'),
+    // The cited concept lexicon answers what a symbol means, in the interpreter's words; it fires only when the
+    // question names a symbol, so it is safe on every shape but a remembered quote (a wording hunt).
+    concept: shape !== 'quote',
     // Spread across traditions only when the question named none and is not hunting one passage.
     diversify: !scoped && shape !== 'quote',
   };

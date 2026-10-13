@@ -211,6 +211,16 @@ describe('plannedSearch — search target', () => {
     expect(named.length).toBeGreaterThan(0);
     expect(named.every((c) => c.opts.semantic === false && c.opts.hype === false && c.opts.keywordLayer === true)).toBe(true);
   });
+  it('the resolved entity’s disambiguated mentions are searched too (entity_mentions_idx), keyword-only', async () => {
+    const calls = [];
+    const e3 = async (q, opts) => { calls.push({ q, opts }); return opts.entityIds ? { hits: [{ id: 9, text: 'The city of the far-off exile.' }] } : eng(q); };
+    const r = await plannedSearch('iderne', { planner: planOf({}), engine: e3, targeter: async () => adrianople });
+    const ent = calls.filter((c) => c.opts.entityIds);
+    expect(ent).toHaveLength(1);
+    expect(ent[0].opts.entityIds).toEqual([1247884]);
+    expect(ent[0].opts.semantic).toBe(false);
+    expect(r.hits.map((h) => h.id)).toContain(9);   // reached only through the mention, never through a name
+  });
   it('a resolver slower than its window still counts when the passage search took longer', async () => {
     const slowEng = async (q) => { await new Promise((ok) => setTimeout(ok, 150)); return eng(q); };
     const r = await plannedSearch('iderne', { planner: planOf({}), engine: slowEng, budgetMs: 50, targeter: () => new Promise((ok) => setTimeout(() => ok(adrianople), 80)) });

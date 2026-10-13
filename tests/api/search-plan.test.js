@@ -57,6 +57,10 @@ describe('buildPlan — scope', () => {
 });
 
 describe('layersFor — which indexes a shape uses', () => {
+  it('the concept lexicon serves every shape but a remembered quote', () => {
+    expect(layersFor(buildPlan(ans({ shape: 'topic', about: 'texts' }))).concept).toBe(true);
+    expect(layersFor(buildPlan(ans({ shape: 'quote', about: 'texts' }))).concept).toBe(false);
+  });
   // Chad: "JEV should be selecting a search pattern that provides the Anis LLM with the information it needs".
   // "Who were the Letters of the Living who met Bahá'u'lláh, and when?" is about PEOPLE: the cited-claim graph
   // answers it (who, with evidence and dates); passages alone could not.

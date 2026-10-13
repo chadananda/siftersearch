@@ -168,7 +168,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const res = await run(q, {
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
-      keywordLayer: layers.keyword, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
+      keywordLayer: layers.keyword, conceptLayer: layers.concept, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
       phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, qdrantHype: qdrant.hype, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}),
       ...(only || {}),
     });
@@ -201,7 +201,10 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const { markTarget } = await import('./search-target.js');
     const names = tgt.names.filter((n) => !/[\u0600-\u06FF]/.test(n) && fold(n) !== fold(query)).slice(0, 3);
     // A NAME needs only the keyword layer: the full engine embedded each name and ran HyPE (1.8–3.7s measured live).
-    const per = await Promise.all(names.map((n) => search(r.scope || plan.filters, n, KEYWORD_ONLY).catch(() => [])));
+    // ENTITY LAYER: the resolved entity's disambiguated mentions (entity_mentions_idx) — paragraphs that name it by
+    // ANY form (title, epithet, kunya), which the name keywords cannot reach. Chad 10-12: use every index we build.
+    const mentioned = tgt.id ? search(r.scope || plan.filters, subjectQ, { ...KEYWORD_ONLY, entityIds: [tgt.id] }).catch(() => []) : Promise.resolve([]);
+    const per = await Promise.all([...names.map((n) => search(r.scope || plan.filters, n, KEYWORD_ONLY).catch(() => [])), mentioned]);
     hits = leadWithTarget([hits, ...per], (h) => markTarget(h.text, tgt), limit);
     stages.target_ms = Date.now() - t1;
   }

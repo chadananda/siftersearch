@@ -2,7 +2,7 @@
 // reads that table can never fill. The lexicon DOES exist — 1,651 cited interpretations — and is what makes
 // §6's "query one concept across traditions" possible today. RED-FIRST.
 import { describe, it, expect } from 'vitest';
-import { lexiconDoc } from '../../api/lib/search/concepts.js';
+import { lexiconDoc, proofParagraph, symbolNamed } from '../../api/lib/search/concepts.js';
 
 const row = {
   id: 7, symbol: 'the clouds', interpretation: 'that which veils people from recognizing the Manifestation',
@@ -28,5 +28,37 @@ describe('lexiconDoc', () => {
   });
   it('does not invent a layer it was not given', () => {
     expect(lexiconDoc({ ...row, layer: null }).layer).toBeNull();
+  });
+});
+
+// Concept layer (Chad 10-12: "make sure we use all the indexes we create").
+describe('symbolNamed — a lexicon entry fires only for a symbol the question names', () => {
+  it('names it by its content words', () => {
+    expect(symbolNamed('the sun', 'What does the sun symbolize?')).toBe(true);
+    expect(symbolNamed('the clouds', 'what are the clouds in the Íqán')).toBe(true);
+    expect(symbolNamed('the Covenant', "What is the Covenant of Bahá'u'lláh?")).toBe(true);
+  });
+  it('a partial name is not a match', () => {
+    expect(symbolNamed('Sun of Truth', 'What does the sun symbolize?')).toBe(false);
+    expect(symbolNamed('light', 'What does the sun symbolize?')).toBe(false);
+  });
+  it('a symbol of only stop words never fires', () => {
+    expect(symbolNamed('the', 'the the the')).toBe(false);
+  });
+});
+
+describe('proofParagraph — a proof resolves to its content row', () => {
+  const rows = [
+    { id: 10, text: 'Unrelated.', block_attrs: '{"id":"para_1"}' },
+    { id: 11, text: 'He stubbornly ⁅s1⁆refuses⁅/s1⁆ to embrace the light.', block_attrs: '{"id":"para_2"}' },
+  ];
+  it('by block id when the text agrees', () => {
+    expect(proofParagraph(rows, { proof_para_id: 'para_2', proof_verbatim: 'stubbornly refuses to embrace' })).toBe(11);
+  });
+  it('by verbatim when the block id points elsewhere', () => {
+    expect(proofParagraph(rows, { proof_para_id: 'para_1', proof_verbatim: 'stubbornly refuses to embrace' })).toBe(11);
+  });
+  it('null when neither is found', () => {
+    expect(proofParagraph(rows, { proof_para_id: 'para_9', proof_verbatim: 'not here' })).toBeNull();
   });
 });
