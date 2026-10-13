@@ -13,9 +13,10 @@
 
 {#if items.length}
   <div class="source-band mt-auto flex flex-col gap-1.5 border-t border-border-subtle pt-2.5">   <!-- mt-auto: pinned to the box foot so both bands line up (Chad 10-13) -->
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <span class="text-xs text-secondary">{label}</span>
-      <span class="flex flex-wrap items-center gap-2.5 text-[11px] text-muted">
+    <!-- one fixed-height line, so the spines of both boxes start at the same height -->
+    <div class="flex h-6 items-center justify-between gap-3 overflow-hidden whitespace-nowrap">
+      <span class="truncate text-xs text-secondary">{label}</span>
+      <span class="flex shrink-0 items-center gap-2.5 text-[11px] text-muted">
         {#each legend as l (l.cls)}<span class="flex items-center gap-1"><i class="dot {l.cls}"></i>{l.label}</span>{/each}
         {#if onCopy}<button class="linkchip" onclick={onCopy}>{copied ? 'Copied' : 'Copy all'}</button>{/if}
       </span>

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-13T18:26:52.998Z",
+  "generated": "2026-10-13T18:29:08.913Z",
   "entries": [
+    {
+      "hash": "51bfa1f6",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Source bands pinned to the foot of each box so they line up",
+      "scope": "sourcehunt"
+    },
     {
       "hash": "b7264b26",
       "date": "2026-10-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Tablet box reads left-to-right on RTL pages, short citations; strip sentence markers in the view?doc reader",
       "scope": "reader"
-    },
-    {
-      "hash": "f1403ef4",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "'About this tablet' in the view?doc reader too",
-      "scope": "reader"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "51bfa1f6",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Source bands pinned to the foot of each box so they line up",
+        "scope": "sourcehunt"
+      },
       {
         "hash": "b7264b26",
         "date": "2026-10-13",
@@ -7023,13 +7030,6 @@
         "date": "2026-09-29",
         "type": "Fixed",
         "description": "Tablet box reads left-to-right on RTL pages, short citations; strip sentence markers in the view?doc reader",
-        "scope": "reader"
-      },
-      {
-        "hash": "f1403ef4",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "'About this tablet' in the view?doc reader too",
         "scope": "reader"
       }
     ]
