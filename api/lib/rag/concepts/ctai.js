@@ -42,8 +42,8 @@ const MIN_OVERLAP = 0.5;         // below this we HOLD rather than bind to the w
  */
 export const CTAI_DOC_BY_WORK = Object.freeze({
   'kitab-i-iqan': 20810,                    // 290/292 · fa 272 / ar 18
-  gleanings: 8312,                          // 699/746
-  'epistle-to-the-son-of-the-wolf': 8273,   // 258/317
+  gleanings: 20783,                         // 717/717 (OceanLibrary canonical; 8312 was the old copy, 699/746)
+  'epistle-to-the-son-of-the-wolf': 20780,  // 269/269 (OceanLibrary canonical; 8273 was the old copy, 258/317)
   'the-hidden-words': 20809,                // 157/163 after the lead-in merge · ar 78 / fa 79
   'prayers-and-meditations': 20805,         // 846/878 · ar 834 / fa 12
   'will-and-testament': 20920,              // 57/57 — the WHOLE work. ⚠ NOT 8202: that is a duplicate whose
@@ -62,7 +62,7 @@ export const CTAI_DOC_BY_WORK = Object.freeze({
  * confirmed hosts, every one verified by alignment coverage rather than by title.
  */
 export const CTAI_EXTRA_HOSTS = Object.freeze([
-  { work: 'tablet-of-carmel', docId: 8312 },            // 5/5 in Gleanings
+  { work: 'tablet-of-carmel', docId: 20783 },           // in Gleanings (re-verify coverage on the OceanLibrary copy)
   { work: 'will-and-testament', docId: 20777 },         // 28/59 in Bahá'í Sacred Writings
 ]);
 

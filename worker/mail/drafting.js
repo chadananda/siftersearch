@@ -21,6 +21,11 @@ export const toHtml = (md) => wrapHtml(`${bodyHtml(stripSignOff(md))}${signature
 /** Tidy a letter from the research pipeline: footnote markers copied from passages ("[^14]") never reach a reader. */
 export const tidy = (t) => String(t || '').replace(/\[\^\d+\]/g, '').replace(/[ \t]+\n/g, '\n');
 const reSubject = (s) => (/^re:/i.test(s || '') ? s : `Re: ${s || 'your message'}`);
+// A reply stays in the reader's thread: Gmail starts a NEW thread when the subject changes, so a reading page sent under its
+// own "[📖 Reading] …" subject looked like no answer at all (10-13 — it sat unread in a separate thread). Only a reply that
+// OPENS a reading (their subject is not yet a reading thread) takes the guide's descriptive subject.
+const READING_THREAD = /\[(📖\s*)?Reading\]/i;
+export const replySubject = (theirs, guide) => (guide && !READING_THREAD.test(theirs || '') ? guide : reSubject(theirs));
 
 // ── signed review links ──
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -95,7 +100,7 @@ export async function draftReplies(env, limit = 4) {
         await db.prepare('INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, ?)').bind(await emailHash(m.from_addr), stop ? 'asked to stop' : 'personal disclosure').run();
       }
       const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key, error)
-        VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, r.subject || reSubject(m.subject), tidy(r.reply), toHtml(tidy(r.reply)),
+        VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, replySubject(m.subject, r.subject), tidy(r.reply), toHtml(tidy(r.reply)),
         m.message_id, m.thread_key, `source:${m.id}; anis:${r.status}${r.triage?.stance ? `; stance:${r.triage.stance}` : ''}`).first();
       await db.prepare(`UPDATE mail_messages SET status = 'drafted' WHERE id = ?`).bind(m.id).run();
       // Writing to Anís IS consent to engage (Chad 10-12: "a hyper-engagement tool … to expand the user base"): the writer

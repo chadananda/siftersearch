@@ -1,7 +1,7 @@
 // Anís letters: outreach prompts by step, Markdown → email HTML, signed review links.
 import { describe, it, expect } from 'vitest';
 import { outreachPrompt, CAPABILITIES } from '../../api/lib/assistant/outreach.js';
-import { toHtml, reviewUrl, tidy, fillTemplate } from '../../worker/mail/drafting.js';
+import { toHtml, reviewUrl, tidy, fillTemplate, replySubject } from '../../worker/mail/drafting.js';
 
 describe('outreach prompts', () => {
   it('steps 0–1 show a capability on their subject; later steps follow up', () => {
@@ -106,5 +106,16 @@ describe('reply letters carry no pause footer', () => {
     const { text, html } = compose2('Hello.', null);
     expect(text).not.toMatch(/Rather not hear/);
     expect(html).not.toMatch(/Rather not hear/);
+  });
+});
+
+describe('replySubject — a reading stays in its thread', () => {
+  it('a reply inside a reading thread keeps Re: <their subject>', () => {
+    expect(replySubject('Re: [Reading] Dawn-Breakers #Intro.3 - Townshend', '[📖 Reading] Dawn-Breakers #Intro.4, Next')).toBe('Re: [Reading] Dawn-Breakers #Intro.3 - Townshend');
+    expect(replySubject('[📖 Reading] Dawn-Breakers #1.1, Start', '[📖 Reading] Dawn-Breakers #1.2, Next')).toBe('Re: [📖 Reading] Dawn-Breakers #1.1, Start');
+  });
+  it('the reply that opens a reading takes the descriptive subject; ordinary replies are Re:', () => {
+    expect(replySubject('study help', '[📖 Reading] Dawn-Breakers, where shall we begin?')).toBe('[📖 Reading] Dawn-Breakers, where shall we begin?');
+    expect(replySubject('a question', null)).toBe('Re: a question');
   });
 });

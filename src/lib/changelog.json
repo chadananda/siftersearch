@@ -1,6 +1,146 @@
 {
-  "generated": "2026-10-13T21:37:34.762Z",
+  "generated": "2026-10-14T01:14:39.660Z",
   "entries": [
+    {
+      "hash": "4a0aefda",
+      "date": "2026-10-13",
+      "type": "Test",
+      "description": "Seeker battery + HyPE A/B scorer; worklist: HyPE authority, interfaith, canonical copies",
+      "scope": "quality"
+    },
+    {
+      "hash": "abadf2c9",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Seeker questions keep the yes/no form people type; tiers survive the sliced path",
+      "scope": "hype"
+    },
+    {
+      "hash": "b2fe9443",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "V15 seeker questions in everyday words, spiritual root of social teachings, no echo of the passage; code gates for self-reference, Arabic-script and short-title book naming",
+      "scope": "hype"
+    },
+    {
+      "hash": "d6fb6559",
+      "date": "2026-10-13",
+      "type": "Chore",
+      "description": "Hype regen + backup check",
+      "scope": "worklist"
+    },
+    {
+      "hash": "87939911",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Verify the daily snapshot on NVMe (fold + quick_check in a stage dir), then byte-compare the /tank copy — quick_check on the spinning disk passed its 2h cap three days running",
+      "scope": "backup"
+    },
+    {
+      "hash": "803ca0b1",
+      "date": "2026-10-13",
+      "type": "Chore",
+      "description": "Concept runs status",
+      "scope": "worklist"
+    },
+    {
+      "hash": "0fc9e075",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Ai_usage rows from routed processes go to the writer in batches — the direct 50ms connection dropped 87k usage rows today",
+      "scope": "spend"
+    },
+    {
+      "hash": "0c566e68",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "API-launched concept runs write through the single writer (one backgroundEnv for both launchers)",
+      "scope": "concepts"
+    },
+    {
+      "hash": "36596f36",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Concept claims in Qdrant — indexer --field concepts, qconcept layer beside the lexicon layer; stale hype/concept points removed on re-index",
+      "scope": "search"
+    },
+    {
+      "hash": "ec62a0ec",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Deep questions in their own field; yes/no and book-named questions dropped in code (Haiku broke both in the v14 sample)",
+      "scope": "hype"
+    },
+    {
+      "hash": "731622ad",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Select paragraphs by paragraph_index",
+      "scope": "hype-sample"
+    },
+    {
+      "hash": "e0518f16",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "V14 deep questions (assumption · objection · underpinning · implication · tension); concept runs batch on Haiku; /concepts/hype-sample dry-run review",
+      "scope": "hype"
+    },
+    {
+      "hash": "6e88bb62",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "HyPE + concept extraction through Anthropic Message Batches (half price) in background grounding",
+      "scope": "cost"
+    },
+    {
+      "hash": "2fbecf12",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Any language — the reader's language is detected per message and kept per book",
+      "scope": "reading"
+    },
+    {
+      "hash": "87b886aa",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Passive WAL checkpoint every minute so a 15-min TRUNCATE never faces GBs",
+      "scope": "writer"
+    },
+    {
+      "hash": "d524d2ad",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "A deploy waits for each restarted service to be back online; the watchdog's settle window starts then",
+      "scope": "deploy"
+    },
+    {
+      "hash": "51ca97fa",
+      "date": "2026-10-13",
+      "type": "Chore",
+      "description": "Generated assistant test reports stay out of git (swept in by the folder rename)",
+      "scope": null
+    },
+    {
+      "hash": "4c0060b1",
+      "date": "2026-10-13",
+      "type": "Refactor",
+      "description": "The edited contents of the rename (import paths, roles, merged reading.js) — 73bcea0f staged only the moves",
+      "scope": null
+    },
+    {
+      "hash": "73bcea0f",
+      "date": "2026-10-13",
+      "type": "Refactor",
+      "description": "Name code by function, not persona; the reading guide is one file",
+      "scope": null
+    },
+    {
+      "hash": "bb5fb41b",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Replies carry no unsubscribe footer; reading subjects '[📖 Reading] <Book> #3.4, <topic>'",
+      "scope": "anis"
+    },
     {
       "hash": "5bbef66c",
       "date": "2026-10-13",
@@ -3360,150 +3500,150 @@
       "type": "Fixed",
       "description": "Exact re-rank of binary-quantized semantic results; never cut paragraphs by length anywhere",
       "scope": "search"
-    },
-    {
-      "hash": "6c7bb0bf",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "POST /search/original/batch — up to 50 texts per request",
-      "scope": "api"
-    },
-    {
-      "hash": "6e6320e8",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Look up the linked original of any passage — paragraph/document links, English text → original, an author's quotations",
-      "scope": "api"
-    },
-    {
-      "hash": "d5e7073d",
-      "date": "2026-09-30",
-      "type": "Fixed",
-      "description": "Smart diff keeps every paragraph sharing a text hash (no stale duplicates); paginator heading walk skips comments/page tags",
-      "scope": "ingest"
-    },
-    {
-      "hash": "6182eb2a",
-      "date": "2026-09-30",
-      "type": "Fixed",
-      "description": "A source that declares its paragraphing is never re-cut or re-joined by size",
-      "scope": "ingest"
-    },
-    {
-      "hash": "9e63a567",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Semantic paragraph segmentation written INTO the markdown (paid once) + exact-text builds for derived Arabic sources",
-      "scope": "sources"
-    },
-    {
-      "hash": "749479b1",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Sentence_markers: defer; a source with its own markers is never re-marked; derived-source scripts split only semantically",
-      "scope": "ingest"
-    },
-    {
-      "hash": "6e62a8b8",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Force option clears stored hashes — a cancelled run can leave the doc claiming 'unchanged' with old paragraphs",
-      "scope": "reingest"
-    },
-    {
-      "hash": "0bef9444",
-      "date": "2026-09-30",
-      "type": "Fixed",
-      "description": "Punctuated Arabic/Persian reads its own sentence endings (no model); manual re-ingest runs local-only",
-      "scope": "ingest"
-    },
-    {
-      "hash": "669b077d",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Print-page breaks — <pb vol n/> + footnote comments stay in the SOURCE, out of paragraph text",
-      "scope": "ingest"
-    },
-    {
-      "hash": "dbd85708",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Questions MERGE into every linked paragraph — translation partner (all), quotes/duplicates via source links (only questions answered in their text)",
-      "scope": "hype"
-    },
-    {
-      "hash": "4e0b8e69",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Extraction + HyPE read the LINKED passage — one generation per pair",
-      "scope": "enrich"
-    },
-    {
-      "hash": "ff7beffc",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "/server/meili-vector — batch pure-vector nearest paragraphs (cross-lingual linking of originals to English)",
-      "scope": "admin"
-    },
-    {
-      "hash": "3d296262",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Source-links read returns the chain — reference link by policy (OceanLibrary first, paragraph-exact) + the original paragraph(s) via translation links",
-      "scope": "links"
-    },
-    {
-      "hash": "34dc4f9a",
-      "date": "2026-09-30",
-      "type": "New",
-      "description": "Content_source_links (migr 139) — a quoting paragraph → the paragraph it quotes, for reference links; bulk upsert + read endpoints",
-      "scope": "links"
-    },
-    {
-      "hash": "1433edcb",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Meili-coverage reports site indexes without a filterable doc_id instead of failing",
-      "scope": "admin"
-    },
-    {
-      "hash": "43075551",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Meili-coverage audits each doc in the index the worker routes it to (supplemental sites have their own) — the first run counted 1.9M site paragraphs as missing",
-      "scope": "admin"
-    },
-    {
-      "hash": "d9e35478",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "/server/meili-coverage — paged audit of live paragraphs vs the Meili index (missing/stale), optional fix",
-      "scope": "admin"
-    },
-    {
-      "hash": "ff3c9fcc",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Manual backup runs detached with a log file (an API restart killed the piped child mid-backup); GET /server/backup/status",
-      "scope": "admin"
-    },
-    {
-      "hash": "22bbca1c",
-      "date": "2026-09-29",
-      "type": "Fixed",
-      "description": "Meili-switchover measures the index — removes only entries whose paragraph no longer exists; live ones overwritten in place (no search gap)",
-      "scope": "admin"
-    },
-    {
-      "hash": "1a14d002",
-      "date": "2026-09-29",
-      "type": "New",
-      "description": "/server/backup runs the daily backup on demand; /server/meili-switchover replaces per-doc Meili jobs with bulk work",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-10-13": [
+      {
+        "hash": "4a0aefda",
+        "date": "2026-10-13",
+        "type": "Test",
+        "description": "Seeker battery + HyPE A/B scorer; worklist: HyPE authority, interfaith, canonical copies",
+        "scope": "quality"
+      },
+      {
+        "hash": "abadf2c9",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Seeker questions keep the yes/no form people type; tiers survive the sliced path",
+        "scope": "hype"
+      },
+      {
+        "hash": "b2fe9443",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "V15 seeker questions in everyday words, spiritual root of social teachings, no echo of the passage; code gates for self-reference, Arabic-script and short-title book naming",
+        "scope": "hype"
+      },
+      {
+        "hash": "d6fb6559",
+        "date": "2026-10-13",
+        "type": "Chore",
+        "description": "Hype regen + backup check",
+        "scope": "worklist"
+      },
+      {
+        "hash": "87939911",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Verify the daily snapshot on NVMe (fold + quick_check in a stage dir), then byte-compare the /tank copy — quick_check on the spinning disk passed its 2h cap three days running",
+        "scope": "backup"
+      },
+      {
+        "hash": "803ca0b1",
+        "date": "2026-10-13",
+        "type": "Chore",
+        "description": "Concept runs status",
+        "scope": "worklist"
+      },
+      {
+        "hash": "0fc9e075",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Ai_usage rows from routed processes go to the writer in batches — the direct 50ms connection dropped 87k usage rows today",
+        "scope": "spend"
+      },
+      {
+        "hash": "0c566e68",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "API-launched concept runs write through the single writer (one backgroundEnv for both launchers)",
+        "scope": "concepts"
+      },
+      {
+        "hash": "36596f36",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Concept claims in Qdrant — indexer --field concepts, qconcept layer beside the lexicon layer; stale hype/concept points removed on re-index",
+        "scope": "search"
+      },
+      {
+        "hash": "ec62a0ec",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Deep questions in their own field; yes/no and book-named questions dropped in code (Haiku broke both in the v14 sample)",
+        "scope": "hype"
+      },
+      {
+        "hash": "731622ad",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Select paragraphs by paragraph_index",
+        "scope": "hype-sample"
+      },
+      {
+        "hash": "e0518f16",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "V14 deep questions (assumption · objection · underpinning · implication · tension); concept runs batch on Haiku; /concepts/hype-sample dry-run review",
+        "scope": "hype"
+      },
+      {
+        "hash": "6e88bb62",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "HyPE + concept extraction through Anthropic Message Batches (half price) in background grounding",
+        "scope": "cost"
+      },
+      {
+        "hash": "2fbecf12",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Any language — the reader's language is detected per message and kept per book",
+        "scope": "reading"
+      },
+      {
+        "hash": "87b886aa",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Passive WAL checkpoint every minute so a 15-min TRUNCATE never faces GBs",
+        "scope": "writer"
+      },
+      {
+        "hash": "d524d2ad",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "A deploy waits for each restarted service to be back online; the watchdog's settle window starts then",
+        "scope": "deploy"
+      },
+      {
+        "hash": "51ca97fa",
+        "date": "2026-10-13",
+        "type": "Chore",
+        "description": "Generated assistant test reports stay out of git (swept in by the folder rename)",
+        "scope": null
+      },
+      {
+        "hash": "4c0060b1",
+        "date": "2026-10-13",
+        "type": "Refactor",
+        "description": "The edited contents of the rename (import paths, roles, merged reading.js) — 73bcea0f staged only the moves",
+        "scope": null
+      },
+      {
+        "hash": "73bcea0f",
+        "date": "2026-10-13",
+        "type": "Refactor",
+        "description": "Name code by function, not persona; the reading guide is one file",
+        "scope": null
+      },
+      {
+        "hash": "bb5fb41b",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Replies carry no unsubscribe footer; reading subjects '[📖 Reading] <Book> #3.4, <topic>'",
+        "scope": "anis"
+      },
       {
         "hash": "5bbef66c",
         "date": "2026-10-13",
@@ -6889,148 +7029,6 @@
         "type": "Fixed",
         "description": "Exact re-rank of binary-quantized semantic results; never cut paragraphs by length anywhere",
         "scope": "search"
-      },
-      {
-        "hash": "6c7bb0bf",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "POST /search/original/batch — up to 50 texts per request",
-        "scope": "api"
-      },
-      {
-        "hash": "6e6320e8",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Look up the linked original of any passage — paragraph/document links, English text → original, an author's quotations",
-        "scope": "api"
-      },
-      {
-        "hash": "d5e7073d",
-        "date": "2026-09-30",
-        "type": "Fixed",
-        "description": "Smart diff keeps every paragraph sharing a text hash (no stale duplicates); paginator heading walk skips comments/page tags",
-        "scope": "ingest"
-      },
-      {
-        "hash": "6182eb2a",
-        "date": "2026-09-30",
-        "type": "Fixed",
-        "description": "A source that declares its paragraphing is never re-cut or re-joined by size",
-        "scope": "ingest"
-      },
-      {
-        "hash": "9e63a567",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Semantic paragraph segmentation written INTO the markdown (paid once) + exact-text builds for derived Arabic sources",
-        "scope": "sources"
-      },
-      {
-        "hash": "749479b1",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Sentence_markers: defer; a source with its own markers is never re-marked; derived-source scripts split only semantically",
-        "scope": "ingest"
-      },
-      {
-        "hash": "6e62a8b8",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Force option clears stored hashes — a cancelled run can leave the doc claiming 'unchanged' with old paragraphs",
-        "scope": "reingest"
-      },
-      {
-        "hash": "0bef9444",
-        "date": "2026-09-30",
-        "type": "Fixed",
-        "description": "Punctuated Arabic/Persian reads its own sentence endings (no model); manual re-ingest runs local-only",
-        "scope": "ingest"
-      },
-      {
-        "hash": "669b077d",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Print-page breaks — <pb vol n/> + footnote comments stay in the SOURCE, out of paragraph text",
-        "scope": "ingest"
-      },
-      {
-        "hash": "dbd85708",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Questions MERGE into every linked paragraph — translation partner (all), quotes/duplicates via source links (only questions answered in their text)",
-        "scope": "hype"
-      },
-      {
-        "hash": "4e0b8e69",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Extraction + HyPE read the LINKED passage — one generation per pair",
-        "scope": "enrich"
-      },
-      {
-        "hash": "ff7beffc",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "/server/meili-vector — batch pure-vector nearest paragraphs (cross-lingual linking of originals to English)",
-        "scope": "admin"
-      },
-      {
-        "hash": "3d296262",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Source-links read returns the chain — reference link by policy (OceanLibrary first, paragraph-exact) + the original paragraph(s) via translation links",
-        "scope": "links"
-      },
-      {
-        "hash": "34dc4f9a",
-        "date": "2026-09-30",
-        "type": "New",
-        "description": "Content_source_links (migr 139) — a quoting paragraph → the paragraph it quotes, for reference links; bulk upsert + read endpoints",
-        "scope": "links"
-      }
-    ],
-    "2026-09-29": [
-      {
-        "hash": "1433edcb",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Meili-coverage reports site indexes without a filterable doc_id instead of failing",
-        "scope": "admin"
-      },
-      {
-        "hash": "43075551",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Meili-coverage audits each doc in the index the worker routes it to (supplemental sites have their own) — the first run counted 1.9M site paragraphs as missing",
-        "scope": "admin"
-      },
-      {
-        "hash": "d9e35478",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "/server/meili-coverage — paged audit of live paragraphs vs the Meili index (missing/stale), optional fix",
-        "scope": "admin"
-      },
-      {
-        "hash": "ff3c9fcc",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Manual backup runs detached with a log file (an API restart killed the piped child mid-backup); GET /server/backup/status",
-        "scope": "admin"
-      },
-      {
-        "hash": "22bbca1c",
-        "date": "2026-09-29",
-        "type": "Fixed",
-        "description": "Meili-switchover measures the index — removes only entries whose paragraph no longer exists; live ones overwritten in place (no search gap)",
-        "scope": "admin"
-      },
-      {
-        "hash": "1a14d002",
-        "date": "2026-09-29",
-        "type": "New",
-        "description": "/server/backup runs the daily backup on demand; /server/meili-switchover replaces per-doc Meili jobs with bulk work",
-        "scope": "admin"
       }
     ]
   }

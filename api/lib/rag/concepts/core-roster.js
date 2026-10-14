@@ -46,16 +46,20 @@ export const CORE_ROSTER = Object.freeze([
   // ── Guardian translations. Íqán at the centre.
   { docId: 20810, work: 'The Kitáb-i-Íqán', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 100,
     prose: 292, rejected: [{ id: 542080, why: 'scraped copy, 0 disambiguated' }] },
-  { docId: 8312, work: 'Gleanings from the Writings of Bahá’u’lláh', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 95,
-    prose: 746, rejected: [{ id: 542083, why: 'scraped copy, 0 disambiguated' }] },
+  // 10-13: moved to the OceanLibrary copies (20783, 20780). When this roster was built (08-23) those were HOLLOW — gutted
+  // by the June reconcile bug and skipped by the hash check until the 09-25 re-ingest — so the old library-file copies
+  // (8312, 8273: Core Publications, "[1.1]" markers) were the only text. The OceanLibrary site copies are the canonical
+  // primary texts (Chad); originals re-aligned onto them 10-13 (Gleanings 717/717, ESW 269/269).
+  { docId: 20783, work: 'Gleanings from the Writings of Bahá’u’lláh', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 95,
+    prose: 717, provenance: 'oceanlibrary.com',
+    rejected: [{ id: 542083, why: 'scraped copy, 0 disambiguated' }, { id: 8312, why: 'old library-file duplicate (Core Publications)' }] },
   { docId: 20809, work: 'The Hidden Words', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 90,
     prose: 314, provenance: 'oceanlibrary.com',
     rejected: [{ id: 28628, why: 'SCRAPED from oceanoflights.org — and the 218 concept claims we hold came from it, so that extraction must be redone against 20809' },
                { id: 614078, why: 'scraped, 960¶ but only 10 disambiguated' }] },
-  { docId: 8273, work: 'Epistle to the Son of the Wolf', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 85,
-    prose: 317, provenance: 'oceanlibrary.com', blocked: 'SOFT-DELETED',
-    note: 'all 317¶ soft-deleted at a single timestamp 2026-06-12 15:18:20 — between the 06-09 dedupe that gutted 155 canonical docs and the 06-13 safeSoftDeleteDocs guard. The text is intact; it needs deleted_at cleared before extraction.',
-    rejected: [{ id: 20780, why: 'empty duplicate record, 0 content rows' },
+  { docId: 20780, work: 'Epistle to the Son of the Wolf', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 85,
+    prose: 269, provenance: 'oceanlibrary.com',
+    rejected: [{ id: 8273, why: 'old library-file duplicate (Core Publications); restored 08-25 when 20780 was still hollow' },
                { id: 614089, why: 'SCRAPED from oceanoflights.org' }] },
   { docId: 21308, work: 'The Dawn-Breakers', cls: CLASS.GUARDIAN_TRANSLATION, anchorRank: 60,
     prose: 1424, rejected: [{ id: 614092, why: '7,232¶ but only 202 disambiguated' }],
