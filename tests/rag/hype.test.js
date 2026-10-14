@@ -243,6 +243,9 @@ describe('v15 seeker tier + spiritual root', () => {
   it('drops self-reference, Arabic-script and short-title book naming', () => {
     expect(questionFault('What is detachment according to this passage?', 'X')).toBe('selfReference');
     expect(questionFault('What does وجود mean?', 'Some Answered Questions')).toBe('nonLatin');
+    expect(questionFault('Who holds all power and strength, according to this prayer?', 'x')).toBe('selfReference');
+    expect(questionFault('What are the ties that bind us, according to this teaching?', 'x')).toBe('selfReference');
+    expect(questionFault('What is the prayer for the dead?', 'x')).toBe(null);
     expect(questionFault('Is there life after death?', 'Some Answered Questions', { seeker: true })).toBe(null);
     expect(questionFault('Is there life after death?', 'Some Answered Questions')).toBe('yesNo');
     expect(questionFault('How is man addressed in the Hidden Words?', "The Hidden Words of Bahá'u'lláh")).toBe('namedBook');

@@ -358,7 +358,10 @@ const titleForms = (title) => {
   const head = t.split(/\s+(?:of|from)\s+/)[0].trim();
   return [t, ...(head !== t && (head.includes(' ') || head.length >= 8) ? [head] : [])].filter((x) => x.length >= 6);
 };
-const SELF_REFERENCE = /\b(this|the|that) (passage|paragraph|text|verse|tablet|excerpt|extract)\b|\bthe author\b/i;
+// "this prayer / according to this teaching" slipped through on the tablets and interfaith runs (10-14); "the prayer" alone
+// is a legitimate ask ("What is the prayer for the dead?"), so only "this|that …" and "according to the …" are refused.
+const SELF_REF_NOUNS = 'passage|paragraph|text|verse|tablet|excerpt|extract|prayer|teaching|letter|epistle|sermon|discourse|chapter|section|writing';
+const SELF_REFERENCE = new RegExp(`\\bthe (passage|paragraph|text|excerpt|extract)\\b|\\b(this|that) (${SELF_REF_NOUNS})\\b|\\baccording to (this|that|the) (${SELF_REF_NOUNS})\\b|\\bthe author\\b`, 'i');
 const NON_LATIN = /[\u0590-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/;   // Hebrew/Arabic/Persian script: retrieval is in English
 // Seeker questions keep the yes/no form: it is how people type ("is there life after death", "do all religions worship the
 // same God" — the 10-13 battery), and the gate dropped exactly those (9 on one Íqán paragraph).
