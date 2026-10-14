@@ -31,8 +31,12 @@ const llm = {
     // the gate cannot see the capability case and refuses the very calls the allowance was written for.
     const { lang, stage, docId, originalLang, sourceLang } = currentScope();
     assertSpendAllowed({ provider, model, lang, stage, docId, originalLang, sourceLang });
+    // Haiku writes fuller JSON than DeepSeek did; stage caps tuned for DeepSeek (research 450, concept disambiguation 500)
+    // truncated it into unparseable replies — 496/500 research verdicts failed on one book the night of the switch (10-13).
+    // A cap is only a ceiling (output is billed as generated), so Anthropic calls get at least 1,500.
+    const cap = provider === 'anthropic' ? Math.max(maxTokens || 0, 1500) : maxTokens;
     return chatCompletion(messages, {
-      provider, model, temperature, maxTokens, caller: 'corpus-rag',
+      provider, model, temperature, maxTokens: cap, caller: 'corpus-rag',
       ...(json && JSON_CAPABLE.has(provider) ? { responseFormat: { type: 'json_object' } } : {}),
       ...(thinking ? { thinking: true } : {}),
       ...(provider === 'anthropic' ? { usePromptCache: true } : {}),
