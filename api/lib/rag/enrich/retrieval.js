@@ -366,7 +366,8 @@ export function buildSystem(profile, meta, cast = '') {
   const lang = LANG_NAME[profile.lang] || profile.lang;
   const foreign = profile.lang !== 'en'
     ? `\nThe paragraph is in ${lang} (${profile.script} script) — READ it, but write ALL questions and the thesis in ENGLISH so an English query can retrieve this ${lang} passage.\n` : '';
-  const registers = REGISTERS[profile.genre] || REGISTERS.history;
+  // scripture, poetry, law and commentary are read for what they TEACH — the doctrinal register, not the history one
+  const registers = REGISTERS[profile.genre] || (['scripture', 'poetry', 'commentary', 'legal'].includes(profile.genre) ? REGISTERS.doctrinal : REGISTERS.history);
   const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : '', meta.catalogue ? `Catalogue: ${meta.catalogue}` : ''].filter(Boolean).join('\n');
   return `You generate Hypothetical Prompt Embeddings (HyPE) for ONE paragraph, to power semantic search. A reader searches with a QUESTION; write the questions THIS paragraph answers, so it is retrievable by anyone asking about its content in their own words. Output JSON ONLY.
 ${foreign}

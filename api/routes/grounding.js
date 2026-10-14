@@ -1459,6 +1459,7 @@ export default async function groundingRoutes(fastify) {
     let signalled = false;
     try { process.kill(run.pid, 'SIGTERM'); signalled = true; } catch { /* already gone */ }
     await state.setRun(Number(docId), null);
+    await queue.cancelDoc(docId);   // a stop is final — never auto-retried
     logger.info({ docId: Number(docId), pid: run.pid, signalled }, 'grounding stopped via control API');
     return { stopped: true, docId: Number(docId), pid: run.pid, signalled };
   });

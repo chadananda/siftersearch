@@ -238,6 +238,13 @@ export async function list({ limit = 50 } = {}) {
 }
 
 /** Drop a queued item (or mark a running one cancelled — the proc itself is stopped via /grounding/stop). */
+/** An operator STOP is final: the doc's running/queued rows become 'cancelled' so auto-retry (which reads a dead pid as a
+ *  transient crash) does not relaunch it — 10-13: a stopped duplicate's run came straight back. */
+export async function cancelDoc(docId) {
+  await query(`UPDATE grounding_queue SET status='cancelled', finished_at=unixepoch(), error='stopped by operator'
+                WHERE doc_id=? AND status IN ('running','queued')`, [Number(docId)]);
+}
+
 export async function cancel(id) {
   await query(`UPDATE grounding_queue SET status='cancelled', finished_at=unixepoch() WHERE id=? AND status='queued'`, [Number(id)]);
   return queryOne(`SELECT * FROM grounding_queue WHERE id=?`, [Number(id)]);

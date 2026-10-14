@@ -93,3 +93,15 @@ describe('DeepSeek retired (10-13)', () => {
     expect(retireDeepSeek({ provider: 'deepseek', model: 'deepseek-v4-flash' }, { env: { DEEPSEEK_ALLOWED: '1' } }).provider).toBe('deepseek');
   });
 });
+
+describe('interfaith scripture is recognised as scripture (10-13)', () => {
+  it('core texts of every tradition → genre scripture', async () => {
+    const { detectProfile } = await import('../../api/lib/pipeline/profile.js');
+    for (const [title, collection] of [['The Dhammapada', 'Siddhartha Buddha'], ['The Bhagavad-Gita', ''], ['Chandogya Upanishad', 'The Upanishads'],
+      ['The Analects', 'Confucius'], ['Tao Te Ching (tr. Gia-fu Feng and Jane English)', 'Foundational Classics'], ['The Gathas', ''],
+      ['Guru Granth Sahib - Japji Sahib', 'Guru Granth Sahib'], ['1 Corinthians', 'The Bible (KJV)'], ['Sura CI. The Blow', 'The Quran (Rodwell)']]) {
+      expect(detectProfile({ id: 1, title, collection, lang: 'en' }).genre, title).toBe('scripture');
+    }
+    expect(detectProfile({ id: 1, title: 'Diary of a pilgrim', collection: '', lang: 'en' }).genre).toBe('history');
+  });
+});

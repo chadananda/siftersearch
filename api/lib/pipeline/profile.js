@@ -160,7 +160,8 @@ function detectGenre(doc) {
   if (/commentary|sharh|tafsir|zohar|beur|on shulchan|on zohar/.test(t)) return 'commentary';
   if (/fiqh|jawahir|shulchan arukh|halakh|jurisprud/.test(t)) return 'legal';
   if (/history|táríkh|tarikh|dawn-breakers|zuhur|memoir|biograph|diary|account/.test(t)) return 'history';
-  if (/qur.?an|bible|tanakh|torah|gospel|sutra|veda|tablet|kitáb|lawḥ|prayer/.test(t)) return 'scripture';
+  // 10-13 interfaith: the other traditions' core scripture was falling through to 'narrative' (Dhammapada, Gita, Analects…)
+  if (/qur.?an|sura\b|bible|\(kjv\)|tanakh|torah|gospel|psalm|sutra|sutta|nipata|dhammapada|veda|upanishad|gita|analects|mencius|great learning|doctrine of the mean|tao te ching|chuang tzu|zhuangzi|gathas|yasna|avesta|guru granth|japji|sukhmani|agama|tablet|kitáb|lawḥ|prayer/.test(t)) return 'scripture';
   return 'narrative';
 }
 
