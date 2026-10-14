@@ -16,7 +16,9 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] Concepts on Haiku batch: Gleanings 8312 · Hidden Words 20809 · ESW 8273 · Aqdas 21307 DONE 10-13 (claims 19,039→28,670)
 - [ ] TDP 20914 · Dawn-Breakers 21308 running (launched 10-13 17:00 PT)
 - [ ] Concepts Qdrant build queued at 22:00 PT reports-worker restart; re-run phrase-index field=concepts after TDP/DB finish
-- [ ] HyPE v14 "deep" tier (assumption overturned · objection answered · underpinning · implication · tension; still
+- [ ] HyPE v14 deep REGEN approved (Chad 10-13): 12 core books queued (grounding queue only=hype rehype); TDP 20914 + DB 21308 after their concept runs; then phrase-index field=hype for those docs → Qdrant
+- [ ] CHECK 10-14 ~12:30 PT: daily backup verified on NVMe stage (87939911) — expect no 'UNVERIFIED' email; DB grew 41.5→53GB 10-10..13, find out why (night scan)
+- [x] HyPE v14 "deep" tier (assumption overturned · objection answered · underpinning · implication · tension; still
       passage-answered). Review via POST /api/admin/concepts/hype-sample → show Chad → cost core-book rehype (library ≈ $100+, ask)
 - [ ] Concept claims/lexicon → a Qdrant collection + search layer (server-side job, not a script)
 - [ ] Entity extraction bake-off Haiku 5.5 vs DeepSeek → re-process if Haiku wins (Chad expects it will)
