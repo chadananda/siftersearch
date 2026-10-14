@@ -71,8 +71,10 @@ export async function run(ctx, docId, opts = {}) {
   // them without a disambiguation pass ($0.44 of ~$1.02 per 1,000 paragraphs). History/narrative keep the gate.
   if (!opts.noDisambig) await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
   const profile = await profileFor(ctx, docId);
+  // noDisambig runs (scripture, prayers, tablets) skip the book cast: a 4 s graph query per document that, over 22k small
+  // tablets, was a day of heavy reads for texts that name few people (10-14)
   const [meta, all, cast, facts, conceptClaims] = await Promise.all([
-    ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId), conceptsOf(ctx, docId)]);
+    ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), opts.noDisambig ? '' : castOf(ctx, docId), factsOf(ctx, docId), conceptsOf(ctx, docId)]);
   const long = all.filter((p) => p.text.length >= (opts.minLen ?? MIN_LEN));
   // upgrade: version-aware resume — "done" means at the CURRENT generator version, so re-hyping a book skips
   // paragraphs already upgraded and redoes the rest. A killed upgrade run therefore RESUMES where it died on
