@@ -12,6 +12,11 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
+## OVERNIGHT 10-13→14 (Chad asleep; watchers armed)
+- Fixed tonight: HyPE batches were 8 requests (cc override) → full batches; writer restart crashed runs (read-only err.message); rehype "done" now version-checked; Haiku real-time replies empty (content[0].text) → joined blocks; DeepSeek-tuned maxTokens truncated Haiku JSON (floor 1500); concept parse fenced JSON; runLadder surfaces errors; digest window server-owned; queue dedupe; operator stop final.
+- Watchers: night-restart (22:00 reports restart + concepts Qdrant index), night-index (phrase-coverage + HyPE index refresh 5), hype-after-concepts (20783/20780 v15), wave2-when-ready, overnight-check (15 min: failures/budget/checkpoints), stall-check.
+- MORNING: review phrase-coverage report → fill Qdrant gaps; second HyPE index refresh for books finished after 22:00; books whose research/reconcile failed under the empty-reply bug re-run via queue retries — check failed rows.
+
 ## ▶ NOW (Chad 10-13) — CONCEPTS IN BATCH · DEEP HyPE · CONCEPTS INTO QDRANT
 - [x] Concepts on Haiku batch: Gleanings 8312 · Hidden Words 20809 · ESW 8273 · Aqdas 21307 DONE 10-13 (claims 19,039→28,670)
 - [ ] TDP 20914 · Dawn-Breakers 21308 running (launched 10-13 17:00 PT)
