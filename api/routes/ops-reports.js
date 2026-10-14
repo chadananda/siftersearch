@@ -1,7 +1,7 @@
 // Ops reports over the internal API — the ONLY way scripts and agents ask production about library health. Runs are
 // queued here and executed by siftersearch-reports; nothing in this route scans a table. Auth: requireInternal.
 import { requireInternal } from '../lib/auth.js';
-import { enqueue, getRun, latest, recent } from '../lib/repos/ops-report-repo.js';
+import { enqueue, getRun, latest, recent, cancel } from '../lib/repos/ops-report-repo.js';
 import { reportNames } from '../lib/ops/reports.js';
 import { ApiError } from '../lib/errors.js';
 
@@ -14,4 +14,5 @@ export default async function opsReportRoutes(fastify) {
   });
   fastify.get('/ops/reports/:name/latest', { preHandler: requireInternal }, async (req) => { known(req.params.name); return (await latest(req.params.name)) || { status: 'none' }; });
   fastify.get('/ops/reports/runs/:id', { preHandler: requireInternal }, async (req) => (await getRun(Number(req.params.id))) || { status: 'none' });
+  fastify.delete('/ops/reports/runs/:id', { preHandler: requireInternal }, async (req) => (await cancel(Number(req.params.id))) || { status: 'none' });
 }

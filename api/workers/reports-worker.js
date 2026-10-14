@@ -5,7 +5,7 @@ import os from 'os';
 import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
 import { claimNext, finish, requeueStale } from '../lib/repos/ops-report-repo.js';
-import { REPORTS, HEAVY, LANES, inQuietWindow } from '../lib/ops/reports.js';
+import { REPORTS, LANES } from '../lib/ops/reports.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 try { os.setPriority(19); } catch { /* not permitted — runs at normal priority */ }
@@ -18,8 +18,8 @@ if (!process.env.OPS_ONLY) await requeueStale().catch((err) => logger.warn({ err
 logger.info({ reports: Object.keys(REPORTS) }, 'Reports worker started');
 async function lane(name, only, skipAlways) {
   while (!stopping) {
-    // heavy work waits for the overnight window; everything else runs now (paced jobs throttle themselves)
-    const skip = [...skipAlways, ...(inQuietWindow() ? [] : [...HEAVY])];
+    // no time-of-day gate (10-14): every job runs when claimed; heavy ones are serialised in their own lane and paced
+    const skip = skipAlways;
     const run = await claimNext({ only, skip }).catch((err) => { logger.warn({ err: err.message, lane: name }, 'reports: claim failed'); return null; });
     if (!run) { await new Promise((r) => setTimeout(r, IDLE_MS)); continue; }
     const t0 = Date.now();

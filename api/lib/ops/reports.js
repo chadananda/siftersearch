@@ -105,11 +105,17 @@ REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest
 REPORTS['section-author'] = sectionAuthorJob;       // params: { docId, from, to, name, apply? } — dry run by default
 REPORTS['retire-duplicates'] = retireDuplicatesJob;   // params: { pairs:[{dup,keep,reason}], batch?, apply? } — dry run by default
 REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
+// HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build
+REPORTS['hype-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'hype' });
+REPORTS['concept-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'concepts' });
 
-/** Whole-table scans + long index builds: only in the overnight quiet window (Chad 10-11). LANES run side by side, each one
- *  job at a time: phrase indexing never touches the writer, so it need not wait behind a paced re-ingest. */
-export const LANES = { index: ['phrase-index'], quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
-export const HEAVY = new Set(['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact', 'phrase-index']);
-export const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // overnight, 22:00–07:00
+/** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
+ *  there is no day or night. The rule is to ingest correctly so as to not block queries"): heavy work is kept from
+ *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
+ *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
+export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact'],
+  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
+export const HEAVY = new Set(LANES.heavy);
 
 export const reportNames = () => Object.keys(REPORTS);

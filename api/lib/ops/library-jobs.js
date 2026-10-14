@@ -12,12 +12,17 @@ export async function retireDuplicatesJob({ pairs = [], batch = `ops-${new Date(
   if (!pairs.length) throw new Error('retire-duplicates: pairs required');
   const base = config.library.basePath, retired = join('_retired-duplicates', batch);
   const out = [];
+  const FIELDS = ['id', 'title', 'file_path', 'duplicate_of'];   // the default select omitted file_path → no file was ever moved (10-14)
   for (const { dup, keep, reason = 'duplicate' } of pairs) {
-    const d = await getDoc(dup, { follow: false }), k = await getDoc(keep, { follow: false });
-    const refused = !d ? 'dup not live' : !k ? 'keep not live' : d.duplicate_of ? `already duplicate_of ${d.duplicate_of}` : null;
-    const row = { dup, keep, reason, dup_title: d?.title, keep_title: k?.title, dup_path: d?.file_path, refused };
+    const d = await getDoc(dup, { follow: false, scope: 'all', fields: FIELDS }), k = await getDoc(keep, { follow: false, fields: FIELDS });
+    // already retired INTO this keep → only its file still needs to leave the library (re-run after the 10-14 fix)
+    const filedOnly = d?.duplicate_of != null && Number(d.duplicate_of) === Number(keep);
+    const refused = !d ? 'dup not found' : !k ? 'keep not live' : (d.duplicate_of && !filedOnly) ? `already duplicate_of ${d.duplicate_of}` : null;
+    const row = { dup, keep, reason, dup_title: d?.title, keep_title: k?.title, dup_path: d?.file_path, refused, ...(filedOnly ? { alreadyMarked: true } : {}) };
     if (!apply || refused) { out.push(row); continue; }
-    try { await markDuplicate(dup, keep, { reason }); } catch (e) { out.push({ ...row, refused: e.message }); continue; }
+    if (!filedOnly) {
+      try { await markDuplicate(dup, keep, { reason }); } catch (e) { out.push({ ...row, refused: e.message }); continue; }
+    }
     row.marked = true;
     if (inLibrary(base, d.file_path)) {
       const src = join(base, d.file_path), dst = join(base, retired, d.file_path);

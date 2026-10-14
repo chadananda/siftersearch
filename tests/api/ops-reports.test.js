@@ -16,7 +16,7 @@ vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({
 const { REPORTS, reportNames } = await import('../../api/lib/ops/reports.js');
 
 describe('ops reports (server-side)', () => {
-  it('names', () => expect(reportNames()).toEqual(['strategy-gaps', 'translator-coverage', 'slow-queries', 'hollow', 'deletions', 'languages', 'phrase-coverage', 'ctai-audit', 'spend', 'block-attrs', 'block-mismatch', 'reingest-impact', 'ctai-originals', 'ingest-files', 'ctai-link', 'carry-verify', 'carry-repair', 'reingest-carry', 'section-author', 'retire-duplicates', 'phrase-index']));
+  it('names', () => expect(reportNames()).toEqual(['strategy-gaps', 'translator-coverage', 'slow-queries', 'hollow', 'deletions', 'languages', 'phrase-coverage', 'ctai-audit', 'spend', 'block-attrs', 'block-mismatch', 'reingest-impact', 'ctai-originals', 'ingest-files', 'ctai-link', 'carry-verify', 'carry-repair', 'reingest-carry', 'section-author', 'retire-duplicates', 'phrase-index', 'hype-index', 'concept-index']));
   it('slow-queries totals per process and caller', async () => {
     const r = await REPORTS['slow-queries']();
     expect(r).toMatchObject({ total: 4, by_proc: { 'reports/write ingest': 3, 'hollow-report.mjs/read': 1 } });

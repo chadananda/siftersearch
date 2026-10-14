@@ -32,6 +32,12 @@ export async function claimNext({ skip = [], only = [] } = {}) {
   return u?.changes === 0 ? null : parse(r);   // another lane took it
 }
 
+/** Drop a QUEUED run (a running one is left to finish). → the run row */
+export async function cancel(id) {
+  await query(`UPDATE ops_report_runs SET status = 'cancelled', finished_at = ? WHERE id = ? AND status = 'queued'`, [now(), id]);
+  return getRun(id);
+}
+
 export async function finish(id, { result = null, error = null, ms = null }) {
   await query('UPDATE ops_report_runs SET status = ?, finished_at = ?, ms = ?, result = ?, error = ? WHERE id = ?',
     [error ? 'failed' : 'done', now(), ms, result == null ? null : JSON.stringify(result), error, id]);
