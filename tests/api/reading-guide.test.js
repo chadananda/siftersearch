@@ -170,13 +170,13 @@ describe('readingTurn', () => {
         libraryBase: '/nonexistent',
         readFile: async () => MD,
         researchPage: async ({ items }) => ({ targets: [
-          { pid: items[0].pid, name: 'Bahá’í Movement', key: 'n:bahai movement', evidence: { claims: [] } },
-          { pid: items[0].pid, name: 'Nabíl', key: 'n:nabil', evidence: { claims: [] } }], sources: [] }),
+          { pid: items[0].pid, name: 'Bahá’í Movement', key: 'n:bahai movement', evidence: { claims: [] }, labels: new Set(['S1']) },
+          { pid: items[0].pid, name: 'Nabíl', key: 'n:nabil', evidence: { claims: [] } }], sources: [{ title: 'God Passes By', url: 'https://oceanlibrary.com/gpb' }] }),
         search: async () => ({ hits: [{ title: 'God Passes By', text: 'Nabíl wrote…', url: 'https://oceanlibrary.com/gpb' }] }),
         links: async (h) => h,
         llmJson: async ({ caller }) => (caller === 'reading-level' ? { json: { level: 'Knows the Báb and Bahá’u’lláh well.' } }
           : caller === 'reading-answer' ? { json: { answer: 'Nabíl was the chronicler [S1].' } }
-          : { json: { topic: 'The record and its writer', paragraphs: [{ pid: 'para_16', notes: [{ name: 'Bahá’í Movement', note: 'Townshend’s 1932 term.' }] }], next: 'Onward.' } }),
+          : { json: { topic: 'The record and its writer', paragraphs: [{ pid: 'para_16', notes: [{ name: 'Bahá’í Movement', note: 'Townshend’s 1932 term [S1].' }] }], next: 'Onward.' } }),
       },
     };
   };
@@ -193,7 +193,7 @@ describe('readingTurn', () => {
       expect(f.saved.at(-1).explained['n:nabil']).toBeUndefined();   // researched but not noted → still available later
       expect(f.saved.at(-1).explained.__level.text).toContain('Knows the Báb');
       expect(r1.reply).toContain('The <mark>Bahá’í Movement</mark>¹ is now well known.');
-      expect(r1.reply).toContain('- ¹ **Bahá’í Movement** — Townshend’s 1932 term.');
+      expect(r1.reply).toContain('- ¹ **Bahá’í Movement** — Townshend’s 1932 term [S1].');
       expect(r1.page.paragraphs[0].highlights).toEqual([{ name: 'Bahá’í Movement', start: 4, end: 19 }]);
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
       expect(r2.subject).toMatch(/^\[📖 Reading\] Dawn-Breakers #1\.1, /);
@@ -203,5 +203,15 @@ describe('readingTurn', () => {
       expect(q.subject).toBeNull();                                                                   // same thread, bookmark unmoved
       expect(f.saved.at(-1).cursor).toBe(4);
     }
+  });
+});
+
+describe('groundedOnly — no note without a source', () => {
+  it('drops a note with no surviving citation, keeps cited ones', async () => {
+    const { groundedOnly } = await import('../../api/lib/assistant/reading.js');
+    const out = groundedOnly({ paragraphs: [{ pid: 'para_3', notes: [
+      { name: 'rehearsing the beginnings of the Bahá’í Revelation', note: 'The Persian title is Maṭáliʻu\'l-Anwár.' },
+      { name: 'Nabíl', note: 'Nabíl-i-Aʻẓam (d. 1892), who drowned himself after Bahá’u’lláh’s passing [S2].' }] }] });
+    expect(out.paragraphs[0].notes.map((n) => n.name)).toEqual(['Nabíl']);
   });
 });

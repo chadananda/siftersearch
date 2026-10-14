@@ -396,14 +396,18 @@ export const subjectFor = (book, first, topic) => `${READING_TAG} ${shortTitle(b
 const NOTES_SYSTEM = `You are Anís, a reading companion helping someone study a book one page at a time by email (on a phone; later read aloud).
 After a paragraph you may add NOTES on the words chosen for it — only where a note rewards THIS reader (READER says what they
 already know: never explain that; a paragraph with nothing worth a note gets none).
-Aim at the level of the book: specific, surprising, illuminating — a name's literal meaning and who gave a title, a person's
-arc in two or three dated beats (later fates welcome), what a place or office was in that period, what a term meant to people then,
-where else the Writings or other histories speak of this, a connection the reader would not see. Never a dictionary definition.
-Write from the EVIDENCE; cite its labels like [S3]. Certain general background (dates, name meanings, Hijri↔Gregorian) needs no label.
+THE TEST FOR EVERY NOTE (Chad 10-13: "notes like this are just wasting everybody's time"): would a thoughtful adult reading
+this book in English miss something real without it — who a named person was and what became of them, what a named place or
+office was then, an event or allusion the text assumes, where the Writings or another history speak of the same thing, a
+connection the reader would not see? If not, NO NOTE. Never: gloss plain English ("rehearsing the beginnings…" needs nothing),
+translate or explain a book's title, give a word's etymology, a name's literal meaning or its abjad value, or any trivia the
+passage does not turn on. A page with no notes is a good page when nothing needs one.
+EVERY NOTE RESTS ON THE EVIDENCE and cites its label like [S3]. A note the EVIDENCE does not support is not written — never
+from memory or "general knowledge": a confident fact with no source is how wrong notes reach the reader.
 Something in ALREADY_EXPLAINED gets at most one short line pointing back ("met in #Intro.3") and only if this paragraph adds to it.
 Use EVIDENCE only where it illuminates the noted words themselves; never talk about the evidence ("a letter calls it…",
 "the sources say…"); never cite a source for something it does not say; never pad a note with loosely related works. If the
-evidence does not help, write from certain knowledge — or leave the words without a note.
+evidence does not help, leave the words without a note.
 Illuminate the text, never grade it: no verdicts that the author exaggerates, is wrong or is "rhetorical"; where sources differ,
 say what each says. Spell names exactly as the book does (Nabíl, S̱háh, Ṭihrán).
 "name" must be the EXACT words from the paragraph (they are highlighted in the text).
@@ -416,7 +420,9 @@ Reply with JSON only: {"topic":"what happens on this page, ≤8 words","paragrap
 export const NOTE_LEVELS = {
   introductory: 'INTRODUCTORY — a newcomer: only the names and words a first reading needs; 1–2 notes per paragraph.',
   serious: 'SERIOUS — a well-read reader of this book (the default).',
-  advanced: 'ADVANCED — scholarly: transliteration and roots of Persian/Arabic terms, where other sources (God Passes By, Browne, Nicolas, Balyuzi…) differ, both calendars, cross-references in the Writings; up to 4 notes per paragraph — still terse: dense facts, not longer prose.',
+  // advanced was "transliteration and roots of Persian/Arabic terms…" — it produced title-translation trivia (10-13). Depth is
+  // insight — connections and significance — not philology.
+  advanced: 'ADVANCED — a reader who knows the book well: fewer, weightier notes — where the Writings or other histories (God Passes By, Balyuzi, Browne…) illuminate or differ on THIS point, the significance of an event the text passes over quickly, what a person later did or suffered. Never philology or name meanings unless the passage turns on the word. Up to 3 notes per paragraph, still terse.',
 };
 
 const LEVEL_SYSTEM = `In 3–4 sentences, describe the typical serious reader of this book: what they already know well (so a reading guide
@@ -486,6 +492,12 @@ export function ownCitations(notes, targets) {
   }) })), look_closer: String(notes.look_closer || '').replace(/\s*\[S\d+\]/g, '') };
 }
 
+/** Notes that kept a valid citation after ownCitations — an uncited note is unsourced and is dropped (10-13: an uncited
+ *  "general knowledge" note told the reader the Persian title was the original; it is a translation of the English). Pure. */
+export function groundedOnly(notes) {
+  return { ...notes, paragraphs: (notes?.paragraphs || []).map((p) => ({ ...p, notes: (p.notes || []).filter((n) => /\[S\d+\]/.test(String(n.note || ''))) })) };
+}
+
 /** Cited sources only, renumbered S1, S2 … in order of first citation; the notes' labels rewritten to match. Pure. */
 export function renumber(notes, sources) {
   const order = [];
@@ -548,7 +560,7 @@ ${evidenceBlock(research.targets)}
 
 ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.name} (${t.seenAt})`).join('; ') || 'none'}`;
   const r = await d.llmJson({ ...role, caller: 'reading-notes', system: NOTES_SYSTEM, user, maxTokens: depth > 1 ? 5000 : 3500 });
-  const { notes, sources } = renumber(ownCitations(r.json || { paragraphs: [] }, research.targets), research.sources);
+  const { notes, sources } = renumber(groundedOnly(ownCitations(r.json || { paragraphs: [] }, research.targets)), research.sources);
   // explained = what a note actually covered (a researched target the writer skipped stays available for later)
   const noted = (notes.paragraphs || []).flatMap((p) => (p.notes || []).map((n) => n.name));
   for (const t of research.targets) if (!t.seenAt && noted.some((n) => n === t.name || (n && t.name && (n.includes(t.name) || t.name.includes(n)))))
