@@ -42,6 +42,20 @@ export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hy
  * sequential, so a whole book cannot finish inside an HTTP request (a 292-paragraph Íqán run died on a
  * Cloudflare 524). Returns the pid.
  */
+/** Launch HyPE over MANY documents in one detached process (scripts/hype-many.mjs) so small documents share full batches.
+ *  The id list is written beside its log. Returns { pid, log }. */
+export function spawnHypeMany(docIds, { noDisambig = false, rehype = false, cc = 60, tag = `t${Date.now()}` } = {}) {
+  const dir = `${process.cwd()}/logs`;
+  const list = `${dir}/hype-many-${tag}.json`, log = `${dir}/hype-many-${tag}.log`;
+  fs.writeFileSync(list, JSON.stringify(docIds.map(Number)));
+  const args = [`${process.cwd()}/scripts/hype-many.mjs`, list, `--cc=${Number(cc) || 60}`, ...(noDisambig ? ['--no-disambig'] : []), ...(rehype ? ['--rehype'] : [])];
+  const out = fs.openSync(log, 'a');
+  const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out], env: backgroundEnv('siftersearch-hype-many') });
+  child.unref();
+  logger.info({ docs: docIds.length, pid: child.pid, tag, noDisambig, rehype }, 'hype-many launched');
+  return { pid: child.pid, log: `logs/hype-many-${tag}.log` };
+}
+
 export function spawnConcepts(docId, { only, from, limit, dry } = {}) {
   const args = [`${process.cwd()}/scripts/complete-concepts.mjs`, String(docId)];
   if (only) args.push(`--only=${only}`);

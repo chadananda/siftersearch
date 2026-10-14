@@ -211,6 +211,15 @@ export default async function groundingRoutes(fastify) {
       first_at: ages?.first_at ?? null, last_at: ages?.last_at ?? null, byDoc, sample };
   });
 
+  // POST /grounding/hype-many {docIds, noDisambig, rehype, cc, tag} — HyPE for many small documents in ONE process so their
+  // paragraphs share full Message Batches (the Core Tablets: 22k documents of a few paragraphs). Stops at the Anthropic budget.
+  fastify.post('/grounding/hype-many', admin, async (req) => {
+    const { docIds, noDisambig = false, rehype = false, cc = 60, tag } = req.body || {};
+    if (!Array.isArray(docIds) || !docIds.length) throw ApiError.badRequest('docIds required');
+    const { spawnHypeMany } = await import('../lib/pipeline/spawn.js');
+    return { started: true, docs: docIds.length, ...spawnHypeMany(docIds, { noDisambig, rehype, cc, tag: tag ? String(tag).replace(/[^\w-]/g, '') : undefined }) };
+  });
+
   // GET /spend/by-stage?hours=12 — what each pipeline stage cost (the basis for library-wide estimates). Read-only.
   fastify.get('/spend/by-stage', admin, async (req) => {
     const { spendByStage } = await import('../lib/repos/ai-usage-repo.js');
