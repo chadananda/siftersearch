@@ -138,7 +138,7 @@ export function findHiddenWord(paras, { part, n }) {
 }
 
 const HIDDEN_WORDS_DOC = 20809;   // the OceanLibrary canonical (concepts/ctai.js CTAI_DOC_BY_WORK['the-hidden-words'])
-const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question (in their own script), give a transliteration and the English rendering beside each, and name where it is. Do not interpret, explain the meaning, or add background unless asked. If the original given does not contain what was asked, say so in one sentence.';
+const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question (in their own script), give a transliteration and the English rendering beside each, and name where it is. Do not interpret, explain the meaning, or add background unless asked — no closing remarks about authority, scholarship or doctrine. If the original given does not contain what was asked, say so in one sentence.';
 
 /** → { retrieved, how, plan } or null: the canonical English paragraph(s) with their aligned originals as evidence. */
 async function originalWording(d, question, messages) {
@@ -148,11 +148,14 @@ async function originalWording(d, question, messages) {
     const p = findHiddenWord(await (d.getParagraphs || getParagraphs)(HIDDEN_WORDS_DOC), ref);
     if (p?.original_text) {
       const lang = p.original_lang === 'ar' || ref.part === 'Arabic' ? 'Arabic' : 'Persian';
+      // the paragraph's own link (OceanLibrary range) by the universal citation rule — without it the reply cited a bare title
+      let url = null;
+      try { const { withLinks } = await import('../hit-links.js'); url = (await withLinks([{ id: p.id, doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, text: p.text, title: 'The Hidden Words' }]))[0]?.url || null; } catch { /* no link */ }
       return { plan: { shape: 'original', ref }, how: ORIGINAL_HOW, retrieved: [
-        { text: p.text, source_title: `The Hidden Words, ${ref.part} no. ${ref.n}`, source_author: 'Bahá’u’lláh', citation_url: null,
+        { text: p.text, source_title: `The Hidden Words, ${ref.part} no. ${ref.n}`, source_author: 'Bahá’u’lláh', citation_url: url,
           doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, religion: "Baha'i", collection: null, source_lang: 'en', via: 'original' },
         { text: p.original_text, source_title: `The Hidden Words, ${ref.part} no. ${ref.n} (original, ${lang})`, source_author: 'Bahá’u’lláh',
-          citation_url: null, doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, religion: "Baha'i", collection: null,
+          citation_url: url, doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, religion: "Baha'i", collection: null,
           source_lang: lang === 'Arabic' ? 'ar' : 'fa', via: 'original' }] };
     }
   }
