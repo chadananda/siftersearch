@@ -53,17 +53,19 @@ export function makeModelEngine({ llm, catalog }) {
     const primary = route.model, fallback = route.fallback;
     const tok = (m) => (typeof maxTokens === 'function' ? maxTokens(m) : maxTokens);
     const rungs = primary === fallback ? [[primary, 4]] : [[primary, 3], [fallback, 2]];
-    let parsed = null, raw = null, escalated = false;
+    let parsed = null, raw = null, escalated = false, error = null;
     for (const [model, tries] of rungs) {
       for (let attempt = 0; attempt < tries && !parsed; attempt++) {
         const sys = attempt < 1 && model === primary ? system : system + (denseHint ? `\n\n${denseHint}` : '');
         try { raw = await retry(() => callModel({ model, system: sys, user, maxTokens: tok(model), json, temperature })); }
-        catch (e) { if (e?.fatal) throw e; break; } // fatal (credit/key) → abort loudly; else rung exhausted → next rung
+        catch (e) { if (e?.fatal) throw e; error = e; break; } // fatal (credit/key) → abort loudly; else rung exhausted → next rung
         parsed = parse(raw.content || '');
       }
       if (parsed) { escalated = model !== primary; break; }
     }
-    return { parsed, escalated, finishReason: raw?.finishReason || null, raw };
+    // `error`: the last call error when no rung produced a reply — a swallowed non-HTTP throw (a policy refusal, a
+    // long-context guard) used to read as "unparseable" and was invisible (10-13: concept disambiguation failed 2/2)
+    return { parsed, escalated, finishReason: raw?.finishReason || null, raw, error: parsed ? null : (error?.message || null) };
   };
 
   return { callModel, runLadder, resolveProvider, retry };
