@@ -3,6 +3,7 @@
 // (anis-threads-repo) with the strategy auditor's verdicts (audit-store-repo; written by scripts/audit/audit-exchanges.mjs)
 // and names email correspondents from the mail store (participant ids are address hashes). Deps injected for tests.
 import { auditsFor } from '../repos/audit-store-repo.js';
+import fs from 'fs';
 import { emailHash } from './pause-link.js';
 
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } };
@@ -33,22 +34,39 @@ export function auditView(a) {
     data_gap: v.data_gap?.found ? v.data_gap.detail || 'yes' : null, reader_feedback: v.reader_feedback?.present ? v.reader_feedback : null };
 }
 
-/** participant id ("email:<hash>") → { email, name } from the mail store's correspondents. */
+/** participant id ("email:<hash>") → { email, name } from the mail store's correspondents.
+ *  10-14 (Chad: "you show each item as 'email correspondent' but do not say who"): one slow fetch under load left the
+ *  whole list nameless, because a failure cached nothing. Now the last good list is kept — in memory and on disk — and a
+ *  failed refresh serves it; only a never-seen address falls back to its short hash. */
 let peopleCache = { at: 0, map: null };
-export async function mailPeople({ fetchImpl = fetch, base = 'https://siftersearch.com', key = process.env.INTERNAL_API_KEY, fresh = false } = {}) {
-  if (!fresh && peopleCache.map && Date.now() - peopleCache.at < 10 * 60 * 1000) return peopleCache.map;
-  const map = new Map();
-  if (!key) return map;
-  try {
-    const r = await fetchImpl(`${base}/_mail/messages?mailbox=anis&direction=in&limit=500`, { headers: { 'x-internal-key': key }, signal: AbortSignal.timeout(10000) });
-    const j = await r.json();
-    for (const m of j.messages || (Array.isArray(j) ? j : [])) if (m.from_addr) map.set(`email:${emailHash(m.from_addr)}`, { email: m.from_addr, name: m.from_name || null });
-    if (map.size) peopleCache = { at: Date.now(), map };
-  } catch (err) { console.warn(`anis threads: correspondents' names unavailable (${err.message})`); }   // names are a convenience
-  return map;
+const PEOPLE_FILE = process.env.ANIS_PEOPLE_CACHE || 'data/anis-correspondents.json';
+function loadPeopleFile() {
+  try { return new Map(Object.entries(JSON.parse(fs.readFileSync(PEOPLE_FILE, 'utf8')))); } catch { return null; }
 }
+function savePeopleFile(map) {
+  try { fs.writeFileSync(PEOPLE_FILE, JSON.stringify(Object.fromEntries(map))); } catch { /* the in-memory copy still serves */ }
+}
+export async function mailPeople({ fetchImpl = fetch, base = 'https://siftersearch.com', key = process.env.INTERNAL_API_KEY, fresh = false, persist = true } = {}) {
+  if (!fresh && peopleCache.map && Date.now() - peopleCache.at < 10 * 60 * 1000) return peopleCache.map;
+  const known = peopleCache.map || (persist ? loadPeopleFile() : null) || new Map();
+  if (!key) return known;
+  try {
+    const r = await fetchImpl(`${base}/_mail/messages?mailbox=anis&direction=in&limit=500`, { headers: { 'x-internal-key': key }, signal: AbortSignal.timeout(20000) });
+    const j = await r.json();
+    const map = new Map(known);                              // addresses that aged out of the last 500 keep their names
+    for (const m of j.messages || (Array.isArray(j) ? j : [])) if (m.from_addr) map.set(`email:${emailHash(m.from_addr)}`, { email: m.from_addr, name: m.from_name || null });
+    if (map.size) { peopleCache = { at: Date.now(), map }; if (persist) savePeopleFile(map); }
+    return map;
+  } catch (err) {
+    console.warn(`anis threads: correspondents' names unavailable (${err.message}); serving the last known list`);
+    if (known.size) peopleCache = { at: Date.now() - 9 * 60 * 1000, map: known };   // retry in a minute, not on every view
+    return known;
+  }
+}
+export const _resetPeople = () => { peopleCache = { at: 0, map: null }; };
 
-const personOf = (pid, people) => (pid && people.get(pid)) || (pid?.startsWith('email:') ? { email: null, name: 'email correspondent' } : { email: null, name: pid ? 'web visitor' : 'unknown' });
+export const personOf = (pid, people) => (pid && people.get(pid))
+  || (pid?.startsWith('email:') ? { email: null, name: `unknown address ${pid.slice(6, 12)}` } : { email: null, name: pid ? 'web visitor' : 'unknown' });
 
 /** The thread list with each thread's audit roll-up. filter: all | strategy (better strategy warranted) | problems | pending */
 export async function threadsOverview({ listThreads, audits = auditsFor, people = mailPeople }, { days = 30, filter = 'all' } = {}) {

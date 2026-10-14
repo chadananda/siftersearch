@@ -1,7 +1,7 @@
 <script>
   // Anís Threads (/admin/anis#threads; Chad 10-12): every conversation, each reply with the strategy auditor's verdict —
   // "audit each interaction to determine if a better search strategy was warranted". List + the open thread, round by round.
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { marked } from 'marked';
   import { admin } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
@@ -29,18 +29,26 @@
     try { list = await admin.getAnisThreads(days, filter); } catch (e) { error = e.message || 'Failed to load'; }
     admin.getAnisStrategyGaps(days).then((g) => { gaps = g; }).catch(() => { gaps = null; });
   }
+  // 10-14 (Chad: "the accordion opening of one item jumps badly so I cannot see if it was opened"): opening a row closed
+  // the one above it and the page reflowed under the pointer. Now the opened row is brought to the top of the view at
+  // once (no smooth scroll), its header stays pinned while reading, and the open row is marked unmistakably.
   async function open(id) {
-    if (openId === id) { openId = null; thread = null; history.replaceState(null, '', '#threads'); return; }
+    if (openId === id) { openId = null; thread = null; history.replaceState(null, '', '#threads'); await tick(); toTop(id); return; }
     openId = id; thread = null; threadError = null;
     history.replaceState(null, '', `#threads:${id}`);
+    await tick(); toTop(id);
     try { thread = await admin.getAnisThread(id); } catch (e) { threadError = e.message || 'Failed to load'; }
+  }
+  function toTop(id) {
+    const el = document.getElementById(`thread-${id}`);
+    if (el && (el.getBoundingClientRect().top < 0 || el.getBoundingClientRect().top > window.innerHeight * 0.4)) el.scrollIntoView({ block: 'start' });
   }
 
   // from the work queue: the thread may be outside the current filter — show All, open it, bring it into view
   async function openFromGap(id) {
     if (!list?.threads.some((t) => t.id === id)) { filter = 'all'; await loadList(); }
     if (openId !== id) await open(id);
-    requestAnimationFrame(() => document.getElementById(`thread-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    else toTop(id);
   }
 
   onMount(async () => {
@@ -99,9 +107,12 @@
     {#if !list.threads.length}<p class="text-muted">Nothing here for this filter.</p>{/if}
     <div class="flex flex-col gap-2">
       {#each list.threads as t (t.id)}
-        <div id="thread-{t.id}" class="rounded-md border {openId === t.id ? 'border-accent' : 'border-border-subtle'} bg-surface-1">
-          <button class="w-full text-left px-4 py-3 flex flex-col gap-1" onclick={() => open(t.id)} aria-expanded={openId === t.id}>
+        {@const isOpen = openId === t.id}
+        <div id="thread-{t.id}" class="thread rounded-md border {isOpen ? 'border-accent border-2' : 'border-border-subtle'} bg-surface-1">
+          <button class="w-full text-left px-4 py-3 flex flex-col gap-1 {isOpen ? 'sticky top-0 z-10 bg-surface-2 rounded-t-md border-b border-border' : 'hover:bg-surface-2'}"
+            onclick={() => open(t.id)} aria-expanded={isOpen}>
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span class="chev text-accent" class:open={isOpen} aria-hidden="true">▸</span>
               <span class="font-medium text-primary">{who(t.person)}</span>
               <span class="text-xs text-muted uppercase tracking-wide">{t.channel || '—'}</span>
               <span class="text-xs text-muted">{when(t.last_at)} · {t.replies} {t.replies === 1 ? 'reply' : 'replies'}</span>
@@ -112,55 +123,62 @@
                 {#if t.pending}<span class="px-2 py-0.5 rounded-full bg-surface-2 text-muted">{t.pending} awaiting audit</span>{/if}
               </span>
             </div>
-            <span class="text-sm text-secondary line-clamp-2">{t.title || t.first_question || '(no question)'}</span>
-            {#if t.latest_summary}<span class="text-sm {t.latest_summary === 'fine' ? 'text-success' : 'text-primary'}">Audit: {t.latest_summary}</span>{/if}
+            <span class="text-sm text-secondary {isOpen ? 'line-clamp-1' : 'line-clamp-2'}">{t.title || t.first_question || '(no question)'}</span>
+            {#if isOpen}<span class="text-xs text-accent">Open — click here to close</span>
+            {:else if t.latest_summary}<span class="text-sm {t.latest_summary === 'fine' ? 'text-success' : 'text-primary'}">Latest audit: {t.latest_summary}</span>{/if}
           </button>
 
-          {#if openId === t.id}
-            <div class="border-t border-border-subtle px-4 py-4 flex flex-col gap-6">
+          {#if isOpen}
+            <div class="px-4 py-4 flex flex-col gap-6">
               {#if threadError}<p class="text-error">{threadError}</p>
               {:else if !thread}<p class="text-muted">Loading thread…</p>
               {:else}
-                {#each thread.rounds as r (r.round)}
-                  <div class="flex flex-col gap-3">
-                    {#if r.question}
-                      <div class="rounded-md bg-surface-2 px-3 py-2">
-                        <div class="text-xs text-muted mb-1">{who(thread.person)} · {when(r.question.at)}</div>
-                        <div class="text-primary whitespace-pre-wrap">{r.question.text}</div>
-                      </div>
-                    {/if}
-                    {#if r.reply}
-                      <div class="pl-3 border-l-2 border-accent">
-                        <div class="text-xs text-muted mb-1">Anís · {when(r.reply.at)} · {r.reply.status}
-                          {#if r.reply.route.gate} · {r.reply.route.gate}{/if}{#if r.reply.route.strategy} · strategy <b>{r.reply.route.strategy}</b>{/if}{#if r.reply.route.format} · format {r.reply.route.format}{/if}{#if r.reply.route.retrieved != null} · {r.reply.route.retrieved} passages{/if}
+                {#each thread.rounds as r, i (r.round)}
+                  <section class="round grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] {i ? 'pt-6 border-t border-border-subtle' : ''}">
+                    <div class="flex flex-col gap-3 min-w-0">
+                      <div class="text-xs font-semibold uppercase tracking-wide text-muted">Exchange {i + 1} of {thread.rounds.length}</div>
+                      {#if r.question}
+                        <div class="rounded-md bg-surface-2 px-3 py-2">
+                          <div class="text-xs text-muted mb-1"><b class="text-secondary">{who(thread.person)}</b> wrote · {when(r.question.at)}</div>
+                          <div class="text-primary whitespace-pre-wrap">{r.question.text}</div>
                         </div>
-                        <div class="reply text-primary text-sm">{@html md(r.reply.text)}</div>
-                      </div>
+                      {/if}
+                      {#if r.reply}
+                        <div class="pl-3 border-l-2 border-accent">
+                          <div class="text-xs text-muted mb-1"><b class="text-secondary">Anís</b> replied · {when(r.reply.at)} · {r.reply.status}</div>
+                          <div class="reply text-primary text-sm">{@html md(r.reply.text)}</div>
+                        </div>
+                      {:else}<p class="text-sm text-muted">No reply in this exchange.</p>{/if}
+                    </div>
+                    {#if r.reply}
                       {@const a = r.reply.audit}
-                      <div class="rounded-md border border-border-subtle bg-surface-0 px-3 py-2 text-sm flex flex-col gap-1">
+                      <aside class="audit rounded-md border border-border-subtle bg-surface-0 px-3 py-2 text-sm flex flex-col gap-1 self-start lg:sticky lg:top-28">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-muted">Audit of this reply</div>
+                        <div class="text-xs text-muted">
+                          {#if r.reply.route.gate}{r.reply.route.gate} · {/if}{#if r.reply.route.strategy}strategy <b>{r.reply.route.strategy}</b> · {/if}{#if r.reply.route.format}format {r.reply.route.format} · {/if}{#if r.reply.route.retrieved != null}{r.reply.route.retrieved} passages{/if}
+                        </div>
                         {#if a.state === 'pending'}<span class="text-muted">Not audited yet.</span>
                         {:else if a.state === 'error'}<span class="text-error">Audit failed{a.error ? `: ${a.error}` : ''}</span>
                         {:else}
                           <div class="font-medium {a.summary === 'fine' ? 'text-success' : 'text-primary'}">{a.summary || '—'}</div>
-                          <div class="text-secondary">
-                            Strategy <span class={tone(a.strategy_verdict)}>{a.strategy_used} ({a.strategy_verdict})</span>
-                            {#if a.best_strategy && a.best_strategy !== a.strategy_used} → best: <b class="text-warning">{a.best_strategy}</b>{/if}
-                            · answered <span class={tone(a.answered)}>{a.answered}</span>{#if a.cause && a.cause !== 'none'} ({a.cause}){/if}
-                            · format <span class={tone(a.format_fit)}>{a.format_fit}</span>{#if a.better_format && a.better_format !== 'none'} → {a.better_format}{/if}
-                          </div>
-                          {#if a.better_strategy_warranted}<div class="text-warning">Better search strategy warranted: {a.why}</div>{/if}
+                          <dl class="grid grid-cols-[auto_1fr] gap-x-2 text-secondary">
+                            <dt>Strategy</dt><dd><span class={tone(a.strategy_verdict)}>{a.strategy_used} ({a.strategy_verdict})</span>{#if a.best_strategy && a.best_strategy !== a.strategy_used} → <b class="text-warning">{a.best_strategy}</b>{/if}</dd>
+                            <dt>Answered</dt><dd><span class={tone(a.answered)}>{a.answered}</span>{#if a.cause && a.cause !== 'none'} ({a.cause}){/if}</dd>
+                            <dt>Format</dt><dd><span class={tone(a.format_fit)}>{a.format_fit}</span>{#if a.better_format && a.better_format !== 'none'} → {a.better_format}{/if}</dd>
+                          </dl>
+                          {#if a.better_strategy_warranted}<div class="text-warning">Better strategy warranted: {a.why}</div>{/if}
                           {#if a.new_strategy?.suggested}<div class="text-warning">New strategy needed: {a.new_strategy.need}{#if a.new_strategy.route} — {a.new_strategy.route}{/if}</div>{/if}
                           {#if a.problems.length}
                             <ul class="list-disc pl-5 text-error">
-                              {#each a.problems as p, i (i)}<li><span class="text-xs uppercase tracking-wide">{p.where} · {p.kind}</span> — {p.detail}</li>{/each}
+                              {#each a.problems as p, j (j)}<li><span class="text-xs uppercase tracking-wide">{p.where} · {p.kind}</span> — {p.detail}</li>{/each}
                             </ul>
                           {/if}
                           {#if a.data_gap}<div class="text-secondary">Data gap: {a.data_gap}</div>{/if}
                           {#if a.reader_feedback}<div class="text-secondary">Reader feedback ({a.reader_feedback.justified || '?'}): {a.reader_feedback.summary}{#if a.reader_feedback.fix && a.reader_feedback.fix !== 'none'} → {a.reader_feedback.fix}{/if}</div>{/if}
                         {/if}
-                      </div>
+                      </aside>
                     {/if}
-                  </div>
+                  </section>
                 {/each}
               {/if}
             </div>
@@ -172,6 +190,9 @@
 </div>
 
 <style>
+  .thread { scroll-margin-top: 0.5rem; }
+  .chev { display: inline-block; transition: transform 0.15s; }
+  .chev.open { transform: rotate(90deg); }
   .reply :global(p) { margin: 0 0 0.6rem; }
   .reply :global(blockquote) { margin: 0.5rem 0; padding-left: 0.75rem; border-left: 2px solid var(--border-default); color: var(--text-secondary); }
   .reply :global(table) { font-size: 0.8rem; border-collapse: collapse; display: block; overflow-x: auto; }

@@ -1,6 +1,181 @@
 {
-  "generated": "2026-10-14T01:14:39.660Z",
+  "generated": "2026-10-14T15:23:57.613Z",
   "entries": [
+    {
+      "hash": "7ebdcb0e",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "The 'authority layers' lecture paragraph is removed deterministically (it survived the prompt; Lal objected three times)",
+      "scope": "anis"
+    },
+    {
+      "hash": "ee118457",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "Original-wording answers link the paragraph and carry no authority lecture",
+      "scope": "anis"
+    },
+    {
+      "hash": "45dd0ae5",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "Original-language questions answered from the original — numbered Hidden Words resolve to the canonical paragraph with its aligned Persian/Arabic; quotations go to SourceHunt; other hits carry their originals (Lal asked 4× for the Persian of PHW #19)",
+      "scope": "anis"
+    },
+    {
+      "hash": "5f2a66d2",
+      "date": "2026-10-14",
+      "type": "Performance",
+      "description": "Spend totals are incremental rollups by rowid — the per-poll full GROUP BYs on ai_usage (~5 s each, now that rows are no longer dropped) stalled the Anís admin pages 37 s",
+      "scope": "api"
+    },
+    {
+      "hash": "f33635cd",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "Refuse 'this prayer/teaching…' and 'according to the …' self-references; keep 'the prayer for…'",
+      "scope": "hype"
+    },
+    {
+      "hash": "6d49a3f4",
+      "date": "2026-10-14",
+      "type": "Performance",
+      "description": "NoDisambig runs skip the per-document cast query (4s each; 22k tablets)",
+      "scope": "hype"
+    },
+    {
+      "hash": "c4f6311b",
+      "date": "2026-10-14",
+      "type": "New",
+      "description": "Hype-many — one process HyPEs many small documents so their paragraphs share full batches (Core Tablets: 22k docs); POST /api/admin/grounding/hype-many, budget-stopped",
+      "scope": "hype"
+    },
+    {
+      "hash": "15bdf2ca",
+      "date": "2026-10-14",
+      "type": "New",
+      "description": "HyPE without disambiguation for scripture/tablets (noDisambig); identical-text twins reuse current questions (no model call); a translation partner given current questions is stamped current",
+      "scope": "cost"
+    },
+    {
+      "hash": "eec8395e",
+      "date": "2026-10-14",
+      "type": "New",
+      "description": "GET /api/admin/spend/by-stage — spend per pipeline stage for library-wide estimates",
+      "scope": "ops"
+    },
+    {
+      "hash": "af6f0b2b",
+      "date": "2026-10-14",
+      "type": "New",
+      "description": "No time-of-day gate — heavy jobs run paced in their own lane; hype/concept indexing in a lane beside phrases; ops runs cancellable; retire-duplicates reads file_path (no file had ever moved) and files already-retired docs on re-run",
+      "scope": "ops"
+    },
+    {
+      "hash": "ba90c9c1",
+      "date": "2026-10-14",
+      "type": "Chore",
+      "description": "Overnight results",
+      "scope": "worklist"
+    },
+    {
+      "hash": "abbf6267",
+      "date": "2026-10-13",
+      "type": "Chore",
+      "description": "Overnight 10-13 status",
+      "scope": "worklist"
+    },
+    {
+      "hash": "e8833011",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Real-time Anthropic replies join every text block (content[0].text was empty when the first block is not text); diagnostics carry finishReason + block types",
+      "scope": "ai"
+    },
+    {
+      "hash": "2685ff80",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "RunLadder reports the swallowed call error; concept disambiguation surfaces it as lastError",
+      "scope": "kernel"
+    },
+    {
+      "hash": "fabbb74c",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Anthropic stage calls get ≥1500 output tokens — DeepSeek-tuned caps (450/500) truncated Haiku's JSON into failed verdicts",
+      "scope": "pipeline"
+    },
+    {
+      "hash": "fd0d0c77",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Disambiguation reads the JSON object, not the raw reply — Haiku fences its JSON and 267/269 Epistle paragraphs failed to parse",
+      "scope": "concepts"
+    },
+    {
+      "hash": "2d922087",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Batches always fill (cc=8 made 8-request batches, ~13h per book); a writer restart no longer crashes a run (read-only error message); a rehype is done only at the current HyPE version",
+      "scope": "grounding"
+    },
+    {
+      "hash": "81ddae7b",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Enqueue refuses identical pending work atomically — two instances racing the plan follower during a reload queued books 2-3×, so they re-ran",
+      "scope": "queue"
+    },
+    {
+      "hash": "8b5e52e8",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "The server owns the reported window — a cron curl timeout (90s) under load left the window un-advanced and the same books were re-sent every hour",
+      "scope": "digest"
+    },
+    {
+      "hash": "1d24ef94",
+      "date": "2026-10-13",
+      "type": "Chore",
+      "description": "Interfaith HyPE waves under the $80 Anthropic ceiling",
+      "scope": "worklist"
+    },
+    {
+      "hash": "cb6aaa3d",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "Other traditions' core scripture recognised as scripture (doctrinal HyPE register); an operator stop is final (no auto-retry)",
+      "scope": "interfaith"
+    },
+    {
+      "hash": "e10af1ce",
+      "date": "2026-10-13",
+      "type": "New",
+      "description": "DeepSeek retired — every bulk stage, every language on Haiku 5.5 (claims + reconcile batched); any deepseek request served by Haiku at the call chokepoints; Persian disambig + bilingual extract off Sonnet; fr/es/de/it/la now enrichable; queue no longer peak-gates for DeepSeek",
+      "scope": "models"
+    },
+    {
+      "hash": "cac57674",
+      "date": "2026-10-13",
+      "type": "Chore",
+      "description": "Canonical copies plan, interfaith HyPE approved",
+      "scope": "worklist"
+    },
+    {
+      "hash": "cb9f619a",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Every note rests on cited library evidence (uncited notes dropped in code); a 'worth a note' test bans glossing plain English, title translations, etymology and abjad trivia; advanced = weightier connections, not philology",
+      "scope": "reading"
+    },
+    {
+      "hash": "b2b60b51",
+      "date": "2026-10-13",
+      "type": "Fixed",
+      "description": "Replies stay in the reader's Gmail thread (a new subject split the thread and looked like no answer); concepts roster + CTAI map move to the canonical OceanLibrary Gleanings 20783 / ESW 20780",
+      "scope": "anis"
+    },
     {
       "hash": "4a0aefda",
       "date": "2026-10-13",
@@ -3325,185 +3500,187 @@
       "type": "New",
       "description": "Talk records — interpreters are never speakers; ‘Abdu’l-Bahá's talks found by headings, Q&A lines, System-1",
       "scope": "authorship"
-    },
-    {
-      "hash": "c5297645",
-      "date": "2026-10-02",
-      "type": "Fixed",
-      "description": "Speaker = subject of the speech verb; whole-quote links need share; only evidence propagates",
-      "scope": "authorship"
-    },
-    {
-      "hash": "e74411e9",
-      "date": "2026-10-02",
-      "type": "Fixed",
-      "description": "Library-audit fixes — no low-confidence guesses, no \"another person\" names, tighter dash references",
-      "scope": "authorship"
-    },
-    {
-      "hash": "0f6bfcc3",
-      "date": "2026-10-02",
-      "type": "New",
-      "description": "Effective paragraph author for search/chat; resumable library runner; reingest guard",
-      "scope": "authorship"
-    },
-    {
-      "hash": "d7174bcc",
-      "date": "2026-10-02",
-      "type": "Fixed",
-      "description": "A blockquote is one block per quoted paragraph, not one per printed line",
-      "scope": "ingest"
-    },
-    {
-      "hash": "19ebd07b",
-      "date": "2026-10-02",
-      "type": "New",
-      "description": "Paragraph authors — migration 140 + forward-reading attribution reader",
-      "scope": "authorship"
-    },
-    {
-      "hash": "3e8e5f5a",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Also exclude non-translations (spoken/reported words, other authors, fragments)",
-      "scope": "citations"
-    },
-    {
-      "hash": "7b0275d0",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Quotations awaiting verification are listed in held.json, not dropped",
-      "scope": "citations"
-    },
-    {
-      "hash": "1abba6f2",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Exclude quotations that duplicate a book CTAI already holds (by original span or English overlap)",
-      "scope": "citations"
-    },
-    {
-      "hash": "d7315cc4",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "--ids to verify a chosen list of quotations",
-      "scope": "citations"
-    },
-    {
-      "hash": "a0f62f6b",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "Index the bilingual layer (original_text on translation paragraphs); citations judge/send that original, --redo-held",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "f04a094c",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Keep quoted_author; source_author when the source work differs; attribution_check only for a different Central Figure's own work",
-      "scope": "citations"
-    },
-    {
-      "hash": "7deaf024",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Quoted_author from the matched source document (stated_author kept when it differs); coverage on matched records",
-      "scope": "citations"
-    },
-    {
-      "hash": "5f0f573d",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Realistic verify estimate (250 output tokens) + hard stop when actual spend reaches --max-usd",
-      "scope": "citations"
-    },
-    {
-      "hash": "e0817211",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Wait out Gemini per-minute quota (429) instead of failing the run",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "f868d30e",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Send a window around the matching phrase (cost ~halved); unmatched quotations are held for review, never auto not_found",
-      "scope": "citations"
-    },
-    {
-      "hash": "a417ccf0",
-      "date": "2026-10-01",
-      "type": "Fixed",
-      "description": "Realign spans to the paragraph's own spelling (ى/ی, ك/ک, marks) so src is verbatim in text; hold spans that cannot be found",
-      "scope": "citations"
-    },
-    {
-      "hash": "d058e97f",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "--docs scope (Arabic Qur'an); citations: Qur'an quotes search only the Qur'an, same-paragraph spans merged",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "a567eadb",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "Source Shoghi Effendi citations to originals in CTAI's handoff format (tower-nas)",
-      "scope": "citations"
-    },
-    {
-      "hash": "a8d97168",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "Spend guard (--max-usd) and --scan-only",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "a35178be",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "Phrase indexer for tower-nas — originals → Gemini-2 → /tank store → Qdrant",
-      "scope": "search"
-    },
-    {
-      "hash": "e8ed564f",
-      "date": "2026-10-01",
-      "type": "Docs",
-      "description": "Engine comparison, strategy layer, research patterns, metadata plan",
-      "scope": "search"
-    },
-    {
-      "hash": "c03cd195",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "One Arabic+Persian phrase rule set, Persian rules on local evidence",
-      "scope": "search"
-    },
-    {
-      "hash": "392c3c76",
-      "date": "2026-10-01",
-      "type": "New",
-      "description": "Phrase units + canonical Arabic-script folding (phrase index P1)",
-      "scope": "search"
-    },
-    {
-      "hash": "7cac9296",
-      "date": "2026-09-30",
-      "type": "Other",
-      "description": "Remove the exact re-score of quantized results — measured no gain",
-      "scope": "search"
-    },
-    {
-      "hash": "aaf1556e",
-      "date": "2026-09-30",
-      "type": "Fixed",
-      "description": "Exact re-rank of binary-quantized semantic results; never cut paragraphs by length anywhere",
-      "scope": "search"
     }
   ],
   "grouped": {
+    "2026-10-14": [
+      {
+        "hash": "7ebdcb0e",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "The 'authority layers' lecture paragraph is removed deterministically (it survived the prompt; Lal objected three times)",
+        "scope": "anis"
+      },
+      {
+        "hash": "ee118457",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "Original-wording answers link the paragraph and carry no authority lecture",
+        "scope": "anis"
+      },
+      {
+        "hash": "45dd0ae5",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "Original-language questions answered from the original — numbered Hidden Words resolve to the canonical paragraph with its aligned Persian/Arabic; quotations go to SourceHunt; other hits carry their originals (Lal asked 4× for the Persian of PHW #19)",
+        "scope": "anis"
+      },
+      {
+        "hash": "5f2a66d2",
+        "date": "2026-10-14",
+        "type": "Performance",
+        "description": "Spend totals are incremental rollups by rowid — the per-poll full GROUP BYs on ai_usage (~5 s each, now that rows are no longer dropped) stalled the Anís admin pages 37 s",
+        "scope": "api"
+      },
+      {
+        "hash": "f33635cd",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "Refuse 'this prayer/teaching…' and 'according to the …' self-references; keep 'the prayer for…'",
+        "scope": "hype"
+      },
+      {
+        "hash": "6d49a3f4",
+        "date": "2026-10-14",
+        "type": "Performance",
+        "description": "NoDisambig runs skip the per-document cast query (4s each; 22k tablets)",
+        "scope": "hype"
+      },
+      {
+        "hash": "c4f6311b",
+        "date": "2026-10-14",
+        "type": "New",
+        "description": "Hype-many — one process HyPEs many small documents so their paragraphs share full batches (Core Tablets: 22k docs); POST /api/admin/grounding/hype-many, budget-stopped",
+        "scope": "hype"
+      },
+      {
+        "hash": "15bdf2ca",
+        "date": "2026-10-14",
+        "type": "New",
+        "description": "HyPE without disambiguation for scripture/tablets (noDisambig); identical-text twins reuse current questions (no model call); a translation partner given current questions is stamped current",
+        "scope": "cost"
+      },
+      {
+        "hash": "eec8395e",
+        "date": "2026-10-14",
+        "type": "New",
+        "description": "GET /api/admin/spend/by-stage — spend per pipeline stage for library-wide estimates",
+        "scope": "ops"
+      },
+      {
+        "hash": "af6f0b2b",
+        "date": "2026-10-14",
+        "type": "New",
+        "description": "No time-of-day gate — heavy jobs run paced in their own lane; hype/concept indexing in a lane beside phrases; ops runs cancellable; retire-duplicates reads file_path (no file had ever moved) and files already-retired docs on re-run",
+        "scope": "ops"
+      },
+      {
+        "hash": "ba90c9c1",
+        "date": "2026-10-14",
+        "type": "Chore",
+        "description": "Overnight results",
+        "scope": "worklist"
+      }
+    ],
     "2026-10-13": [
+      {
+        "hash": "abbf6267",
+        "date": "2026-10-13",
+        "type": "Chore",
+        "description": "Overnight 10-13 status",
+        "scope": "worklist"
+      },
+      {
+        "hash": "e8833011",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Real-time Anthropic replies join every text block (content[0].text was empty when the first block is not text); diagnostics carry finishReason + block types",
+        "scope": "ai"
+      },
+      {
+        "hash": "2685ff80",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "RunLadder reports the swallowed call error; concept disambiguation surfaces it as lastError",
+        "scope": "kernel"
+      },
+      {
+        "hash": "fabbb74c",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Anthropic stage calls get ≥1500 output tokens — DeepSeek-tuned caps (450/500) truncated Haiku's JSON into failed verdicts",
+        "scope": "pipeline"
+      },
+      {
+        "hash": "fd0d0c77",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Disambiguation reads the JSON object, not the raw reply — Haiku fences its JSON and 267/269 Epistle paragraphs failed to parse",
+        "scope": "concepts"
+      },
+      {
+        "hash": "2d922087",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Batches always fill (cc=8 made 8-request batches, ~13h per book); a writer restart no longer crashes a run (read-only error message); a rehype is done only at the current HyPE version",
+        "scope": "grounding"
+      },
+      {
+        "hash": "81ddae7b",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Enqueue refuses identical pending work atomically — two instances racing the plan follower during a reload queued books 2-3×, so they re-ran",
+        "scope": "queue"
+      },
+      {
+        "hash": "8b5e52e8",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "The server owns the reported window — a cron curl timeout (90s) under load left the window un-advanced and the same books were re-sent every hour",
+        "scope": "digest"
+      },
+      {
+        "hash": "1d24ef94",
+        "date": "2026-10-13",
+        "type": "Chore",
+        "description": "Interfaith HyPE waves under the $80 Anthropic ceiling",
+        "scope": "worklist"
+      },
+      {
+        "hash": "cb6aaa3d",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "Other traditions' core scripture recognised as scripture (doctrinal HyPE register); an operator stop is final (no auto-retry)",
+        "scope": "interfaith"
+      },
+      {
+        "hash": "e10af1ce",
+        "date": "2026-10-13",
+        "type": "New",
+        "description": "DeepSeek retired — every bulk stage, every language on Haiku 5.5 (claims + reconcile batched); any deepseek request served by Haiku at the call chokepoints; Persian disambig + bilingual extract off Sonnet; fr/es/de/it/la now enrichable; queue no longer peak-gates for DeepSeek",
+        "scope": "models"
+      },
+      {
+        "hash": "cac57674",
+        "date": "2026-10-13",
+        "type": "Chore",
+        "description": "Canonical copies plan, interfaith HyPE approved",
+        "scope": "worklist"
+      },
+      {
+        "hash": "cb9f619a",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Every note rests on cited library evidence (uncited notes dropped in code); a 'worth a note' test bans glossing plain English, title translations, etymology and abjad trivia; advanced = weightier connections, not philology",
+        "scope": "reading"
+      },
+      {
+        "hash": "b2b60b51",
+        "date": "2026-10-13",
+        "type": "Fixed",
+        "description": "Replies stay in the reader's Gmail thread (a new subject split the thread and looked like no answer); concepts roster + CTAI map move to the canonical OceanLibrary Gleanings 20783 / ESW 20780",
+        "scope": "anis"
+      },
       {
         "hash": "4a0aefda",
         "date": "2026-10-13",
@@ -6848,187 +7025,6 @@
         "type": "New",
         "description": "Talk records — interpreters are never speakers; ‘Abdu’l-Bahá's talks found by headings, Q&A lines, System-1",
         "scope": "authorship"
-      }
-    ],
-    "2026-10-02": [
-      {
-        "hash": "c5297645",
-        "date": "2026-10-02",
-        "type": "Fixed",
-        "description": "Speaker = subject of the speech verb; whole-quote links need share; only evidence propagates",
-        "scope": "authorship"
-      },
-      {
-        "hash": "e74411e9",
-        "date": "2026-10-02",
-        "type": "Fixed",
-        "description": "Library-audit fixes — no low-confidence guesses, no \"another person\" names, tighter dash references",
-        "scope": "authorship"
-      },
-      {
-        "hash": "0f6bfcc3",
-        "date": "2026-10-02",
-        "type": "New",
-        "description": "Effective paragraph author for search/chat; resumable library runner; reingest guard",
-        "scope": "authorship"
-      },
-      {
-        "hash": "d7174bcc",
-        "date": "2026-10-02",
-        "type": "Fixed",
-        "description": "A blockquote is one block per quoted paragraph, not one per printed line",
-        "scope": "ingest"
-      },
-      {
-        "hash": "19ebd07b",
-        "date": "2026-10-02",
-        "type": "New",
-        "description": "Paragraph authors — migration 140 + forward-reading attribution reader",
-        "scope": "authorship"
-      }
-    ],
-    "2026-10-01": [
-      {
-        "hash": "3e8e5f5a",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Also exclude non-translations (spoken/reported words, other authors, fragments)",
-        "scope": "citations"
-      },
-      {
-        "hash": "7b0275d0",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Quotations awaiting verification are listed in held.json, not dropped",
-        "scope": "citations"
-      },
-      {
-        "hash": "1abba6f2",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Exclude quotations that duplicate a book CTAI already holds (by original span or English overlap)",
-        "scope": "citations"
-      },
-      {
-        "hash": "d7315cc4",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "--ids to verify a chosen list of quotations",
-        "scope": "citations"
-      },
-      {
-        "hash": "a0f62f6b",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "Index the bilingual layer (original_text on translation paragraphs); citations judge/send that original, --redo-held",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "f04a094c",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Keep quoted_author; source_author when the source work differs; attribution_check only for a different Central Figure's own work",
-        "scope": "citations"
-      },
-      {
-        "hash": "7deaf024",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Quoted_author from the matched source document (stated_author kept when it differs); coverage on matched records",
-        "scope": "citations"
-      },
-      {
-        "hash": "5f0f573d",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Realistic verify estimate (250 output tokens) + hard stop when actual spend reaches --max-usd",
-        "scope": "citations"
-      },
-      {
-        "hash": "e0817211",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Wait out Gemini per-minute quota (429) instead of failing the run",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "f868d30e",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Send a window around the matching phrase (cost ~halved); unmatched quotations are held for review, never auto not_found",
-        "scope": "citations"
-      },
-      {
-        "hash": "a417ccf0",
-        "date": "2026-10-01",
-        "type": "Fixed",
-        "description": "Realign spans to the paragraph's own spelling (ى/ی, ك/ک, marks) so src is verbatim in text; hold spans that cannot be found",
-        "scope": "citations"
-      },
-      {
-        "hash": "d058e97f",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "--docs scope (Arabic Qur'an); citations: Qur'an quotes search only the Qur'an, same-paragraph spans merged",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "a567eadb",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "Source Shoghi Effendi citations to originals in CTAI's handoff format (tower-nas)",
-        "scope": "citations"
-      },
-      {
-        "hash": "a8d97168",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "Spend guard (--max-usd) and --scan-only",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "a35178be",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "Phrase indexer for tower-nas — originals → Gemini-2 → /tank store → Qdrant",
-        "scope": "search"
-      },
-      {
-        "hash": "e8ed564f",
-        "date": "2026-10-01",
-        "type": "Docs",
-        "description": "Engine comparison, strategy layer, research patterns, metadata plan",
-        "scope": "search"
-      },
-      {
-        "hash": "c03cd195",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "One Arabic+Persian phrase rule set, Persian rules on local evidence",
-        "scope": "search"
-      },
-      {
-        "hash": "392c3c76",
-        "date": "2026-10-01",
-        "type": "New",
-        "description": "Phrase units + canonical Arabic-script folding (phrase index P1)",
-        "scope": "search"
-      }
-    ],
-    "2026-09-30": [
-      {
-        "hash": "7cac9296",
-        "date": "2026-09-30",
-        "type": "Other",
-        "description": "Remove the exact re-score of quantized results — measured no gain",
-        "scope": "search"
-      },
-      {
-        "hash": "aaf1556e",
-        "date": "2026-09-30",
-        "type": "Fixed",
-        "description": "Exact re-rank of binary-quantized semantic results; never cut paragraphs by length anywhere",
-        "scope": "search"
       }
     ]
   }

@@ -66,3 +66,24 @@ describe('strategyGaps (the work queue)', async () => {
     expect(g.problems[0]).toMatchObject({ key: 'reply · missed-key-passage', n: 3 });
   });
 });
+
+describe('mailPeople (correspondent names survive a failed refresh)', async () => {
+  const { mailPeople, personOf, _resetPeople } = await import('../../api/lib/assistant/admin-threads.js');
+  const { emailHash } = await import('../../api/lib/assistant/pause-link.js');
+  const ok = async () => ({ json: async () => ({ messages: [{ from_addr: 'lal@example.org', from_name: 'Lal' }] }) });
+  const down = async () => { throw new Error('The operation was aborted due to timeout'); };
+
+  it('a timeout after a good fetch still names the person (10-14: every row read "email correspondent")', async () => {
+    _resetPeople();
+    const pid = `email:${emailHash('lal@example.org')}`;
+    expect((await mailPeople({ fetchImpl: ok, key: 'k', persist: false })).get(pid).name).toBe('Lal');
+    const after = await mailPeople({ fetchImpl: down, key: 'k', persist: false, fresh: true });
+    expect(after.get(pid)).toEqual({ email: 'lal@example.org', name: 'Lal' });
+  });
+
+  it('an unknown address is distinguishable, never the generic label', () => {
+    const p = personOf('email:abcdef1234', new Map());
+    expect(p.name).toBe('unknown address abcdef');
+    expect(personOf(null, new Map()).name).toBe('unknown');
+  });
+});
