@@ -1498,9 +1498,11 @@ export default async function groundingRoutes(fastify) {
   fastify.post('/grounding/digest', admin, async (req) => {
     const b = req.body || {};
     const now = (await queryOne('SELECT unixepoch() n'))?.n ?? Math.floor(Date.now() / 1000);
-    const since = Number(b.since) || (now - 3600);
-    if (b.preview) { const d = await digest.buildDigest(since); return { since, now, count: d.books.length, processing: d.processing.length, html: digest.renderDigestHtml(d) }; }
+    const asked = Number(b.since) || (now - 3600);
+    if (b.preview) { const d = await digest.buildDigest(asked); return { since: asked, now, count: d.books.length, processing: d.processing.length, html: digest.renderDigestHtml(d) }; }
+    const since = (b.test || b.force) ? asked : digest.windowStart(asked);   // never re-report a window already sent
     const r = await digest.sendDigest(since, { force: !!(b.test || b.force) });   // test/force → always send (verify email)
+    if (!(b.test || b.force)) digest.markSent(now);
     return { since, now, ...r };
   });
 

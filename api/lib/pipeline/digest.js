@@ -3,6 +3,7 @@
 // net-new people added to the graph) plus where the whole plan stands (documents + paragraphs done/remaining).
 // Sent only when ≥1 book completed in the window. Data: grounding_queue (what finished) + bio.getIntegrationProgress
 // (per-book people counts + plan totals) + docs (descriptions). Delivery: the app email service.
+import { readFileSync, writeFileSync } from 'node:fs';
 import { queryAll, queryOne } from '../db.js';
 import { logger } from '../logger.js';
 import { sendEmail } from '../../services/email.js';
@@ -177,6 +178,20 @@ export function renderDigestText({ books, processing = [], plan }) {
   }
   lines.push(`Cumulative unique people grounded: ${commas(plan.peopleTotal)}.`);
   return lines.join('\n');
+}
+
+// The SERVER owns the reported window (10-13: the same four books came every hour). Building a digest under load took
+// longer than the cron's 90 s curl timeout; the email still went out, but the cron never saw the reply, never advanced its
+// window, and re-sent the same window next hour. So the upper bound of every window actually sent is kept here, and a
+// window never starts before it, whatever the caller asks. Pure over the file path (tests pass a temp file).
+export const DIGEST_STATE = process.env.DIGEST_STATE_FILE || `${process.cwd()}/data/digest-window.json`;
+export function windowStart(requested, file = DIGEST_STATE) {
+  let last = 0;
+  try { last = Number(JSON.parse(readFileSync(file, 'utf8')).sentThrough) || 0; } catch { /* first run */ }
+  return Math.max(Number(requested) || 0, last);
+}
+export function markSent(through, file = DIGEST_STATE) {
+  try { writeFileSync(file, JSON.stringify({ sentThrough: through, at: new Date().toISOString() })); } catch { /* best effort */ }
 }
 
 // Build + send the digest for (sinceEpoch, now]. Returns {count, sentTo|null}. Sends nothing when no book finished.

@@ -13,7 +13,7 @@ mkdir -p "$(dirname "$LOG")"
 SINCE=$(cat "$STATE" 2>/dev/null)
 [ -z "$SINCE" ] && SINCE=$(( $(date +%s) - 3600 ))   # first run → cover the last hour
 
-RESP=$(curl -s --max-time 90 -X POST -H "X-Internal-Key: $SEC" -H "content-type: application/json" \
+RESP=$(curl -s --max-time 600 -X POST -H "X-Internal-Key: $SEC" -H "content-type: application/json" \
   -d "{\"since\":$SINCE}" http://127.0.0.1:7839/api/admin/grounding/digest 2>/dev/null)
 NOW=$(echo "$RESP" | python3 -c "import json,sys;print(json.load(sys.stdin).get('now',''))" 2>/dev/null)
 
