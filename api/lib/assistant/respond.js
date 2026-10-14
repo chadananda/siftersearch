@@ -110,6 +110,55 @@ export function looksLikeSourceQuestion(text) {
   return asks && q !== t.trim() && q.split(/\s+/).length >= 8;   // a quotation SEPARATE from the question (quoted, or after it)
 }
 
+// ── ORIGINAL WORDING ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// Lal asked four times (10-08…10-13) for the Persian of the "three most holy words" in Persian Hidden Word #19 and got
+// secondary works and "I cannot find the Persian" — while the canonical paragraph carries its aligned Persian original.
+// Chad: "Anís should have 1) linked original 2) sourceHunt tools and 3) access to CTAI API. There is no world in which Anís
+// should not have been able to answer this question." So a question about original-language wording is answered from the
+// ORIGINAL: a numbered reference resolves to the canonical paragraph, a quotation goes to SourceHunt, and otherwise the
+// ordinary search's hits are given their aligned originals.
+
+/** Asks for the ORIGINAL-language wording ("in Persian", "in the original", "what is the Arabic for …"). Pure. */
+export function looksLikeOriginalQuestion(text) {
+  return /\b(in (the )?(original|persian|farsi|arabic)\b|(persian|arabic|farsi|original)[- ](word|words|phrase|term|terms|text|wording|version|language|original)\b|what (is|are|was|were) the (persian|arabic|original)\b|original[- ]language)/i.test(String(text || ''));
+}
+
+/** "Persian Hidden Word #19", "Arabic Hidden Words no. 5", "PHW 19", "AHW 5" → { part, n }. Pure. */
+export function hiddenWordRef(text) {
+  const t = String(text || '');
+  const m = t.match(/\b(persian|arabic)\s+hidden\s+words?\s*(?:#|no\.?|number)?\s*(\d{1,3})\b/i) || t.match(/\b([pa])\.?\s?h\.?\s?w\.?\s*#?\s*(\d{1,3})\b/i);
+  return m ? { part: /^p/i.test(m[1]) ? 'Persian' : 'Arabic', n: Number(m[2]) } : null;
+}
+
+const EASTERN_DIGITS = (n) => String(n).replace(/\d/g, (c) => '٠١٢٣٤٥٦٧٨٩'[Number(c)]);
+/** The Hidden Word numbered n in its part — the aligned original begins «(n)». Pure over the document's paragraphs. */
+export function findHiddenWord(paras, { part, n }) {
+  return (paras || []).find((p) => (p.heading || '').includes(part)
+    && new RegExp(`^\\s*\\((${n}|${EASTERN_DIGITS(n)})\\)`).test(p.original_text || '')) || null;
+}
+
+const HIDDEN_WORDS_DOC = 20809;   // the OceanLibrary canonical (concepts/ctai.js CTAI_DOC_BY_WORK['the-hidden-words'])
+const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question (in their own script), give a transliteration and the English rendering beside each, and name where it is. Do not interpret, explain the meaning, or add background unless asked. If the original given does not contain what was asked, say so in one sentence.';
+
+/** → { retrieved, how, plan } or null: the canonical English paragraph(s) with their aligned originals as evidence. */
+async function originalWording(d, question, messages) {
+  const ref = hiddenWordRef(question) || hiddenWordRef(messages.map((m) => m.content).join('\n'));
+  if (ref) {
+    const { getParagraphs } = await import('../docs-repo.js');
+    const p = findHiddenWord(await (d.getParagraphs || getParagraphs)(HIDDEN_WORDS_DOC), ref);
+    if (p?.original_text) {
+      const lang = p.original_lang === 'ar' || ref.part === 'Arabic' ? 'Arabic' : 'Persian';
+      return { plan: { shape: 'original', ref }, how: ORIGINAL_HOW, retrieved: [
+        { text: p.text, source_title: `The Hidden Words, ${ref.part} no. ${ref.n}`, source_author: 'Bahá’u’lláh', citation_url: null,
+          doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, religion: "Baha'i", collection: null, source_lang: 'en', via: 'original' },
+        { text: p.original_text, source_title: `The Hidden Words, ${ref.part} no. ${ref.n} (original, ${lang})`, source_author: 'Bahá’u’lláh',
+          citation_url: null, doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, religion: "Baha'i", collection: null,
+          source_lang: lang === 'Arabic' ? 'ar' : 'fa', via: 'original' }] };
+    }
+  }
+  return null;
+}
+
 /** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
  *  passages the reply is written from (so the sentence gate still holds). The model never sees a URL — it writes tags
  *  ({book}, {tablet}, …) that become exact links; it once copied a 400-char text-fragment URL into a repeating loop. */
@@ -237,7 +286,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
 
   onEvent({ type: 'stage', stage: 'search' });
   // "Where is this from?" → SourceHunt (published source + original tablet); nothing found → the ordinary search
-  const sourced = (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)) ? await huntSource(d, question) : null;
+  const wantsOriginal = looksLikeOriginalQuestion(question);
+  const quoted = quotationIn(question);
+  const sourced = (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)
+    || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await huntSource(d, question) : null;
+  // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
+  const original = !sourced && wantsOriginal ? await originalWording(d, question, messages).catch(() => null) : null;
   if (sourced) {
     // "Where is this from?" is answered by the hunt directly (template, no model call, no companion plan).
     // OceanLibrary range links (lib/ocean-links.js): the reply's links and each citation highlight their passage
@@ -256,7 +310,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // "What does ʿirfán mean?" → a TERM STUDY from the CTAI concordance: Shoghi Effendi's renderings of the word and
   // passages pairing the original with his English (api/lib/anis/ctai-term.js). Nothing found → the ordinary search.
   let study = null;
-  const termQ = !sourced && !conversational ? (d.termQuestion || termQuestion)(question) : null;
+  const termQ = !sourced && !original && !conversational ? (d.termQuestion || termQuestion)(question) : null;
   if (termQ) {
     try {
       const word = termQ.script === 'arabic' ? termQ.term : await (d.resolveTerm || resolveTerm)(termQ.term);
@@ -264,17 +318,27 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (!study?.passages?.length) study = null;
     } catch { study = null; }
   }
-  const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : conversational ? { passages: [], _plan: plan }
+  const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
+    : conversational ? { passages: [], _plan: plan }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   });
   const searchMs = Date.now() - t0;
-  const retrieved = sourced ? sourced.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
+  const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned',
   }));
+  // An original-language question answered by the ordinary search: each hit that has an aligned original carries it too
+  if (wantsOriginal && !sourced && !original && !study && res?.passages?.length) {
+    const { originalsByIds } = await import('../paragraphs-repo.js');
+    const origs = await (d.originalsByIds || originalsByIds)(res.passages.map((p) => p.id).filter(Boolean)).catch(() => new Map());
+    res.passages.forEach((p, i) => {
+      const o = origs.get(Number(p.id));
+      if (o) retrieved.splice(retrieved.length, 0, { ...retrieved[i], text: o.original, source_title: `${retrieved[i].source_title} (original)`, source_lang: o.lang, via: 'original' });
+    });
+  }
   // OceanLibrary range links BEFORE the answer is written: the model copies citation_url verbatim, so the streamed answer
   // carries links that highlight the passage (the whole paragraph; lib/ocean-links.js). Never blocks the answer on failure.
   if (d.upgradeLinks) await Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); }));
@@ -295,6 +359,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
   const formatP = sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
+    : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: ORIGINAL_HOW })
     : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })
     : conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
 

@@ -57,6 +57,20 @@ export async function paragraphsByIds(ids) {
   return out;
 }
 
+/** The aligned ORIGINAL of each paragraph (original_text — Shoghi Effendi's source text beside his English), for answers
+ *  about original-language wording. → Map(id → { original, lang }) for the ids that carry one. */
+export async function originalsByIds(ids) {
+  const want = [...new Set((ids || []).map(Number).filter(Number.isInteger))];
+  const out = new Map();
+  for (let i = 0; i < want.length; i += 500) {
+    const chunk = want.slice(i, i + 500);
+    const rows = await queryAll(`SELECT id, original_text, original_lang FROM content WHERE id IN (${chunk.map(() => '?').join(',')})
+       AND deleted_at IS NULL AND original_text IS NOT NULL AND original_text <> ''`, chunk, 'search:originals');
+    for (const r of rows) out.set(r.id, { original: r.original_text, lang: r.original_lang || null });
+  }
+  return out;
+}
+
 /** Live paragraphs of a document (all block types — headings included, as the search index holds them). */
 export async function countParagraphs(docId) {
   const r = await queryAll('SELECT COUNT(*) n FROM content WHERE doc_id = ? AND deleted_at IS NULL', [Number(docId)], 'paragraphs:count');
