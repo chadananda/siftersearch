@@ -88,7 +88,7 @@ export async function run(ctx, docId, opts = {}) {
   let state = '';
   for (const p of todo) {
     const { parsed, error, raw } = await ctx.model.runLadder({ route, system, user: buildUser(p, state), parse: parseNote, maxTokens: 500 });
-    if (!parsed) { stats.failed++; stats.lastError = error || `unparseable: ${String(raw?.content ?? '').slice(0, 160)}`; continue; }
+    if (!parsed) { stats.failed++; stats.lastError = error || `unparseable (${raw?.finishReason || '?'}; blocks ${(raw?.blocks || []).join(',') || '?'}): ${String(raw?.content ?? '').slice(0, 160)}`; continue; }
     state = carryState(parsed, state);
     const note = renderNote(parsed);
     if (!note) stats.empty++;

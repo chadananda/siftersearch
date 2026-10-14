@@ -183,7 +183,7 @@ function anthropicResult(response, { batch = false } = {}) {
   const cacheWrite = response.usage?.cache_creation_input_tokens || 0;
   const freshIn = response.usage?.input_tokens || 0;
   const text = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
-  return { content: text, finishReason: response.stop_reason, model: response.model,
+  return { content: text, finishReason: response.stop_reason, model: response.model, blocks: (response.content || []).map((b) => b.type),
     usage: { promptTokens: freshIn + cacheRead + cacheWrite, completionTokens: response.usage?.output_tokens, cachedTokens: cacheRead,
       cacheWriteTokens: cacheWrite, totalTokens: freshIn + cacheRead + cacheWrite + (response.usage?.output_tokens || 0), batch } };
 }
@@ -279,25 +279,10 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
     return response; // Return stream
   }
 
-  // Anthropic reports input_tokens EXCLUSIVE of cache reads/writes, while OpenAI/DeepSeek report a prompt total
-  // that INCLUDES its cached portion. Normalise to one meaning — promptTokens = the WHOLE prompt — so a single
-  // cost formula (fresh = prompt - cached) is right for every provider instead of silently under-billing the
-  // fresh tokens of a cached Anthropic call. cacheWriteTokens is surfaced separately: it bills at ~1.25x.
-  const cacheRead = response.usage?.cache_read_input_tokens || 0;
-  const cacheWrite = response.usage?.cache_creation_input_tokens || 0;
-  const freshIn = response.usage?.input_tokens || 0;
-  return {
-    content: response.content[0].text,
-    finishReason: response.stop_reason,
-    usage: {
-      promptTokens: freshIn + cacheRead + cacheWrite,
-      completionTokens: response.usage?.output_tokens,
-      cachedTokens: cacheRead,
-      cacheWriteTokens: cacheWrite,
-      totalTokens: freshIn + cacheRead + cacheWrite + (response.usage?.output_tokens || 0)
-    },
-    model: response.model
-  };
+  // ONE result shape for real-time and batch (anthropicResult: every TEXT block joined; promptTokens = the WHOLE prompt,
+  // cache included). `content[0].text` read only the first block, which is not always text — concept disambiguation on
+  // Haiku came back empty on every paragraph (10-13).
+  return anthropicResult(response);
 }
 
 async function chatLocal(messages, { model, temperature, maxTokens, stream, responseFormat }) {
