@@ -16,7 +16,10 @@ import { isDisambiguated } from '../../pipeline/processed.js';
 // REQUIRED field: argument. A note without it has not done this stage's one job, so it is not a note.
 export function parseNote(content) {
   try {
-    const j = JSON.parse(String(content));
+    // the object, not the raw reply: Haiku (no json response_format on Anthropic) wraps JSON in a ``` fence, and the raw
+    // parse failed 267/269 paragraphs of the Epistle the night the stage moved off DeepSeek (10-13)
+    const m = String(content).match(/\{[\s\S]*\}/);
+    const j = m ? JSON.parse(m[0]) : null;
     if (!j || typeof j.argument !== 'string') return null;
     const resolve = Array.isArray(j.resolve)
       ? j.resolve.filter((r) => r && r.phrase && r.refersTo).map((r) => ({ phrase: String(r.phrase), refersTo: String(r.refersTo) }))

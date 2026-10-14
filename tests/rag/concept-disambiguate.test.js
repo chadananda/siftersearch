@@ -70,3 +70,12 @@ describe('concepts/disambiguate — run() on fake ports', () => {
     expect(saved).toHaveLength(0);
   });
 });
+
+describe('parseNote — a fenced reply (Haiku) parses', () => {
+  it('reads the JSON object inside a ``` fence or after prose', () => {
+    const raw = '```json\n{"argument":"The Epistle opens by praising God.","resolve":[{"phrase":"He","refersTo":"God"}]}\n```';
+    expect(parseNote(raw)).toEqual({ argument: 'The Epistle opens by praising God.', resolve: [{ phrase: 'He', refersTo: 'God' }] });
+    expect(parseNote('Here is the note: {"argument":"x","resolve":[]}')).toEqual({ argument: 'x', resolve: [] });
+    expect(parseNote('no json')).toBe(null);
+  });
+});
