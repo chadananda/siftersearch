@@ -142,7 +142,7 @@ const keep = (text) => {
   return true;
 };
 
-const haveUnit = store.prepare('SELECT seg_v, key FROM units WHERE point_id = ?');
+const haveUnit = store.prepare('SELECT seg_v, key, upserted FROM units WHERE point_id = ?');
 const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", seg_v, key, fa_share, religion, author, lang_label, field, lang_group, collection, scope, upserted)
   VALUES (@pointId, @pid, @doc, @k, @start, @end, @segV, @key, @fa, @religion, @author, @lang, @field, @group, @collection, @scope, 0)
   ON CONFLICT(point_id) DO UPDATE SET start=@start, "end"=@end, seg_v=@segV, key=@key, fa_share=@fa, religion=@religion, author=@author,
@@ -182,10 +182,14 @@ function unitize(paras) {
     }
     for (const u of units) {
       const key = vecKey(MODEL, DIMS, u.embedText), old = haveUnit.get(u.pointId);
-      if (!old || old.seg_v !== u.segV || old.key !== key)
+      const same = old && old.seg_v === u.segV && old.key === key;
+      if (!same)
         buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
           lang: p.language, field: FIELD, group, collection: p.collection || null, scope: p.scope || 'primary' });
-      if (!haveVec.get(key)) pending.set(key, u.embedText);
+      // An unchanged unit already UPSERTED had its vector (the upsert joins vec), so skip the lookup: vec's key index is
+      // gigabytes on /tank's spinning disk and one random seek per unit held a re-run of already-indexed documents to a
+      // crawl (10-14, job 92: 36 s CPU in 15 min, sdc 93% busy). A stored-but-never-upserted unit is still checked.
+      if (!(same && old.upserted) && !haveVec.get(key)) pending.set(key, u.embedText);
     }
   }
   tx(buf);
