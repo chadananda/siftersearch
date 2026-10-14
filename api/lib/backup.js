@@ -3,7 +3,7 @@
 // :rules: Never use db.js here — backup must be independent of the ORM/client layer
 
 import { execFileSync } from 'child_process';
-import { mkdirSync, readdirSync, unlinkSync, readFileSync, writeFileSync, existsSync } from 'fs';
+import { mkdirSync, readdirSync, unlinkSync, readFileSync, writeFileSync, existsSync, statSync, statfsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config.js';
@@ -163,6 +163,41 @@ function pruneOldEmbeddingCacheBackups(retentionDays) {
   return pruned;
 }
 
+// STAGED VERIFY (10-13): quick_check on the /tank copy is random I/O on one spinning disk — 25-38 min at 41GB, then past
+// its 2-hour cap three days running at 44-53GB ("daily backup UNVERIFIED"). On the NVMe pool the same check is minutes.
+// So the snapshot is copied to a stage dir there, its WAL folded and quick_check'ed, then copied to /tank and compared
+// byte for byte (sequential read) — the /tank file is then the verified file. Needs ~1.15× the db free (+30GB headroom
+// for the pool); without it the old path runs and the caller's quick_check on /tank stands.
+export function stageFor(dir, needBytes, freeBytes = null) {
+  if (!dir) return null;
+  try {
+    mkdirSync(dir, { recursive: true });
+    const free = freeBytes ?? (() => { const f = statfsSync(dir); return f.bavail * f.bsize; })();
+    return free > needBytes * 1.15 + 30e9 ? dir : null;
+  } catch { return null; }
+}
+
+function stageAndVerify({ snapDir, dbFile, stage, backupPath }) {
+  const staged = join(stage, `stage-${dbFile}`);
+  const t = Date.now(), secs = {};
+  const step = (label, fn) => { const s = Date.now(); try { return fn(); } finally { secs[label] = Math.round((Date.now() - s) / 1000); } };
+  try {
+    step('copy_stage', () => {
+      execFileSync('cp', [`${snapDir}/${dbFile}`, staged], { stdio: 'pipe', timeout: 3600_000 });
+      if (existsSync(`${snapDir}/${dbFile}-wal`)) execFileSync('cp', [`${snapDir}/${dbFile}-wal`, `${staged}-wal`], { stdio: 'pipe', timeout: 600_000 });
+    });
+    step('fold_wal', () => execFileSync('sqlite3', [staged, 'PRAGMA journal_mode=DELETE;'], { stdio: 'pipe', timeout: 1800_000 }));
+    const quickCheck = step('quick_check', () => execFileSync('sqlite3', [staged, 'PRAGMA quick_check(5);'], { stdio: 'pipe', timeout: 3600_000 }).toString().trim());
+    step('copy_tank', () => execFileSync('cp', [staged, backupPath], { stdio: 'pipe', timeout: 3600_000 }));
+    let identical = false;
+    step('compare', () => { try { execFileSync('cmp', ['-s', staged, backupPath], { stdio: 'pipe', timeout: 3600_000 }); identical = true; } catch { identical = false; } });
+    logger.info({ quickCheck, identical, secs, mins: Math.round((Date.now() - t) / 6000) / 10 }, 'backup staged + verified on NVMe');
+    return { quickCheck, identical, secs };
+  } finally {
+    for (const f of [staged, `${staged}-wal`, `${staged}-shm`]) { try { unlinkSync(f); } catch { /* not there */ } }
+  }
+}
+
 export async function runBackup() {
   ensureBackupDir();
   const dbPath = resolveDbPath();
@@ -184,6 +219,7 @@ export async function runBackup() {
   // (sqlite recovers the WAL on first open; we fold it in with wal_checkpoint and the caller's quick_check
   // verifies the result). Set BACKUP_ZFS_DATASET (e.g. fast/siftersearch-db) to enable; empty → legacy .backup.
   const components = [];
+  let verified = null;
   const zfsDataset = process.env.BACKUP_ZFS_DATASET || '';
   try {
     logger.info({ dbPath, backupPath, strategy: zfsDataset ? 'zfs-snapshot' : 'sqlite-backup' }, 'Starting SQLite backup');
@@ -195,10 +231,16 @@ export async function runBackup() {
         const mount = execFileSync('zfs', ['get', '-H', '-o', 'value', 'mountpoint', zfsDataset], { stdio: 'pipe' }).toString().trim();
         const snapDir = `${mount}/.zfs/snapshot/${snapName}`;
         const dbFile = dbPath.split('/').pop();
-        execFileSync('cp', [`${snapDir}/${dbFile}`, backupPath], { stdio: 'pipe', timeout: 3600_000 });
-        if (existsSync(`${snapDir}/${dbFile}-wal`)) execFileSync('cp', [`${snapDir}/${dbFile}-wal`, `${backupPath}-wal`], { stdio: 'pipe', timeout: 600_000 });
-        // Fold the WAL into the copy → clean single-file snapshot (removes -wal/-shm side files).
-        execFileSync('sqlite3', [backupPath, 'PRAGMA journal_mode=DELETE;'], { stdio: 'pipe', timeout: 1800_000 });
+        const need = statSync(`${snapDir}/${dbFile}`).size + (existsSync(`${snapDir}/${dbFile}-wal`) ? statSync(`${snapDir}/${dbFile}-wal`).size : 0);
+        const stage = stageFor(process.env.BACKUP_STAGE_DIR, need);
+        if (stage) {
+          verified = stageAndVerify({ snapDir, dbFile, stage, backupPath });
+        } else {
+          execFileSync('cp', [`${snapDir}/${dbFile}`, backupPath], { stdio: 'pipe', timeout: 3600_000 });
+          if (existsSync(`${snapDir}/${dbFile}-wal`)) execFileSync('cp', [`${snapDir}/${dbFile}-wal`, `${backupPath}-wal`], { stdio: 'pipe', timeout: 600_000 });
+          // Fold the WAL into the copy → clean single-file snapshot (removes -wal/-shm side files).
+          execFileSync('sqlite3', [backupPath, 'PRAGMA journal_mode=DELETE;'], { stdio: 'pipe', timeout: 1800_000 });
+        }
       } finally {
         try { zfs(['destroy', `${zfsDataset}@${snapName}`]); } catch (e) { logger.warn({ err: e.message, snapName }, 'backup snapshot destroy failed — clean up manually'); }
       }
@@ -206,7 +248,7 @@ export async function runBackup() {
       execFileSync('sqlite3', [dbPath, `.backup ${backupPath}`], { stdio: 'pipe', timeout: 3600_000 });
     }
     logger.info({ backupPath }, 'SQLite backup complete');
-    components.push({ component: 'sqlite_content', success: true, dest: backupPath });
+    components.push({ component: 'sqlite_content', success: true, dest: backupPath, ...(verified ? { verified } : {}) });
   } catch (err) {
     const error = `sqlite3 backup failed: ${err.message}`;
     logger.error({ err: err.message }, 'SQLite backup failed');

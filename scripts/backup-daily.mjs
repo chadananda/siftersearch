@@ -33,6 +33,8 @@ process.env.BACKUP_DIR ||= '/tank/backups/siftersearch';
 process.env.BACKUP_NAS_TARGET ||= '/vault/siftersearch/';
 // ZFS-snapshot copy strategy — immune to the .backup-vs-active-writes livelock (see backup.js).
 process.env.BACKUP_ZFS_DATASET ||= 'fast/siftersearch-db';
+// Verify on the NVMe pool (backup.js stageFor): quick_check on the /tank copy outgrew its 2-hour cap at 44-53GB (10-11..13).
+process.env.BACKUP_STAGE_DIR ||= '/fast/backup-stage';
 const crumb = (m) => console.error(`[backup-daily ${new Date().toISOString()}] ${m}`);   // unbuffered breadcrumbs — pino's first lines sit in a buffer while execSync blocks, so a killed run used to look like it never started
 
 const { runBackup } = await import('../api/lib/backup.js');
@@ -75,7 +77,16 @@ try {
   if (!fs.existsSync(snap)) throw new Error(`snapshot missing: ${snap}`);
   const size = fs.statSync(snap).size;
   if (size < 1e9) throw new Error(`snapshot suspiciously small: ${(size / 1e9).toFixed(2)}GB`);
-  verify.quickCheck = timed('quick_check', () => sql(snap, 'PRAGMA quick_check(5);'));
+  // Staged on NVMe by runBackup: checked there and byte-compared to the /tank copy — the copy IS the checked file.
+  const staged = result?.components?.find((c) => c.component === 'sqlite_content')?.verified;
+  if (staged) {
+    Object.assign(verify.secs, staged.secs);
+    if (!staged.identical) throw new Error('the /tank copy differs from the checked NVMe stage copy');
+    verify.quickCheck = staged.quickCheck;
+    verify.staged = true;
+  } else {
+    verify.quickCheck = timed('quick_check', () => sql(snap, 'PRAGMA quick_check(5);'));
+  }
   if (verify.quickCheck !== 'ok') throw new Error(`quick_check: ${verify.quickCheck.slice(0, 200)}`);
   verify.docsSnap = Number(timed('count_snap', () => sql(snap, 'SELECT COUNT(*) FROM docs;', 15)));
   verify.docsLive = Number(timed('count_live', () => sql(LIVE_DB, 'SELECT COUNT(*) FROM docs;', 15)));
