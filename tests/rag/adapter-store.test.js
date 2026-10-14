@@ -352,7 +352,7 @@ describe('merge survivor', () => {
     const byId = Object.fromEntries(updateHype.mock.calls.map((c) => [c[0], c]));
     expect(byId[100][1]).toEqual(['What is justice?', 'Who are the kings of the earth?']);   // dup (case/punct) dropped
     expect(byId[100][2]).toBe('kept');                     // its own thesis survives
-    expect(byId[100][3]).toBe('hype-v12');                 // and its own stamp
+    expect(byId[100][3]).toBe('hype-v13');                 // same passage now holds current questions → current stamp (10-14)
     expect(byId[200][3]).toBe('hype-v13');                 // same passage, never hyped → done at this version
     updateHype.mockClear();
     await store.mergeHype([201], ['Q?'], null, 'hype-v13', { samePassage: false });

@@ -23,7 +23,7 @@ export async function runGrounding(docId, opts = {}) {
   // rehype: regenerate HyPE from scratch (resume=false on the hype stage) — the explicit path for upgrading a
   // book's questions to the current HYPE_VERSION (e.g. v1 fixed-5 → v2 fact-informed adaptive). Only meaningful
   // with only:'hype' or a range covering hype; every other stage still resumes.
-  const { from, only, to, readjudicate, rehype = false, hypeModel, cc = 8, onStage, onResult, report = true } = opts;
+  const { from, only, to, readjudicate, rehype = false, hypeModel, cc = 8, noDisambig = false, onStage, onResult, report = true } = opts;
   const writer = opts.writer || process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
   const fromI = only ? GROUNDING_STAGES.indexOf(only) : (from ? GROUNDING_STAGES.indexOf(from) : 0);
   // `to` bounds the last stage (used by an incremental re-adjudication sweep to run reconcile..link and skip a
@@ -102,7 +102,7 @@ export async function runGrounding(docId, opts = {}) {
     // concurrency: cc — HyPE was the ONE stage that never received it, so --cc did nothing here at all and
     // every run used the stage default. That is why cc=6 and cc=32 produced the same throughput (Chad,
     // 2026-08-26: "5 par/minute is painfully slow", then "parallelizing so we don't take a year").
-    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { upgrade: rehype, concurrency: cc, ...(hypeModel ? { model: hypeModel } : {}), onProgress })); }   // rehype = version-aware upgrade; hypeModel = flagship model override
+    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { upgrade: rehype, concurrency: cc, noDisambig, ...(hypeModel ? { model: hypeModel } : {}), onProgress })); }   // rehype = version-aware upgrade; hypeModel = flagship model override
 
     if (want('verify')) {
       await enter('verify');

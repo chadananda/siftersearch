@@ -14,7 +14,7 @@ export const backgroundEnv = (name, env = process.env) => ({ ...env, name, ANTHR
   SIFTER_WRITER_URL: env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' });
 
 /** Launch a detached grounding run. Returns the pid. Opts map 1:1 to the CLI flags. */
-export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hypeModel, cc } = {}) {
+export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hypeModel, cc, noDisambig } = {}) {
   const args = [`${process.cwd()}/scripts/complete-book.mjs`, String(docId)];
   if (from) args.push(`--from=${from}`);
   if (only) args.push(`--only=${only}`);
@@ -23,6 +23,7 @@ export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hy
   if (rehype) args.push('--rehype');   // regenerate HyPE (version-aware upgrade on the hype stage)
   if (hypeModel) args.push(`--hype-model=${hypeModel}`);   // model override for the hype stage (flagship runs)
   if (cc) args.push(`--cc=${cc}`);
+  if (noDisambig) args.push('--no-disambig');   // scripture/prayers/tablets: HyPE without the disambiguation gate (10-14)
   // Send output to a per-doc log — stdio:'ignore' once hid a silent mid-stage exit and made it undiagnosable.
   let outFd = 'ignore';
   try { outFd = fs.openSync(`${process.cwd()}/logs/grounding-${Number(docId)}.log`, 'a'); } catch { outFd = 'ignore'; }

@@ -134,3 +134,20 @@ describe('retrieval — run() on fake ports', () => {
     expect(store.hyped[0].paragraphId).toBe(2);
   });
 });
+
+describe('retrieval — cost cuts (10-14)', () => {
+  it('noDisambig: scripture is hyped without a disambiguation pass', async () => {
+    const { rag, store } = makeRag({ seed: { paras: { 9: [para] }, coverage: { 9: 0 } }, llm: fakeLLM([{ content: NOTE }]) });
+    const stats = await rag.retrieval.index(9, { noDisambig: true });
+    expect(stats.done).toBe(1);
+    expect(store.hyped).toHaveLength(1);
+  });
+  it('twin reuse: an identical paragraph already hyped at this version gives its questions — no model call', async () => {
+    const llm = fakeLLM([]);   // any call would fail the test
+    const { rag, store } = makeRag({ seed: { paras: { 9: [para] }, coverage: { 9: 1 } }, llm });
+    store.hypeTwins = async (ids, version) => new Map(ids.map((id) => [id, { hyp: JSON.stringify(['What happened in Shíráz?']), thesis: 't', version }]));
+    const stats = await rag.retrieval.index(9);
+    expect(stats.twinCopied).toBe(1);
+    expect(store.hyped[0]).toMatchObject({ paragraphId: 1, questions: ['What happened in Shíráz?'], version: HYPE_VERSION });
+  });
+});

@@ -81,7 +81,8 @@ export const boundStageOf = (opts = {}) => opts.only || opts.to || 'verify';
 //   "did not reach verify" forever. An EMPTY note ('' — examined, nothing to resolve) is a complete result.
 export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0, extracted = 0 } = {}, opts = {}) {
   if (prose === 0) return false;
-  if (!meetsDisambBar(disamb, prose)) return false;                          // the disambiguation floor for EVERY bound
+  // the disambiguation floor for every bound — except a run that skips disambiguation by design (opts.noDisambig)
+  if (!opts.noDisambig && !meetsDisambBar(disamb, prose)) return false;
   const artifactOk = {
     // EXTRACTION is a PROCESSING gate, measured by its version stamp — not by mention rows. Its yield stays
     // ungated (a paragraph naming nobody is still extracted); what is gated is whether the pass RAN. Before

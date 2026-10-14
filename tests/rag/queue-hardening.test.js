@@ -187,3 +187,12 @@ describe('reachedBound — a rehype is done only at the current HyPE version (10
     expect(await reachedBound(1, { only: 'hype' }, deps(0))).toBe(true);
   });
 });
+
+describe('noDisambig — a HyPE-only run on scripture is done without a disambiguation pass (10-14)', () => {
+  it('the disambiguation floor is waived only when the run asked to skip it', async () => {
+    const { isDoneFromArtifacts } = await import('../../api/lib/pipeline/queue.js');
+    const cov = { prose: 100, disamb: 0, hyped: 95, hypeable: 100 };
+    expect(isDoneFromArtifacts(cov, { only: 'hype' })).toBe(false);
+    expect(isDoneFromArtifacts(cov, { only: 'hype', noDisambig: true })).toBe(true);
+  });
+});

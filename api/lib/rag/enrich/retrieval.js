@@ -67,7 +67,9 @@ const SLICE_CHARS = 4000;       // paragraphs longer than this get sliced
 const SLICE_TARGET = 1500;      // aim ~this many chars of focus text per slice call
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
+  // noDisambig (Chad 10-14, cost cut 1): scripture, prayers and short tablets name few people to resolve — HyPE reads
+  // them without a disambiguation pass ($0.44 of ~$1.02 per 1,000 paragraphs). History/narrative keep the gate.
+  if (!opts.noDisambig) await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
   const profile = await profileFor(ctx, docId);
   const [meta, all, cast, facts, conceptClaims] = await Promise.all([
     ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId), conceptsOf(ctx, docId)]);
@@ -80,6 +82,21 @@ export async function run(ctx, docId, opts = {}) {
   // SAMPLE (dryRun review of a prompt change): only the listed paragraph indexes, or the first `limit`
   if (opts.pids?.length) paras = paras.filter((p) => opts.pids.includes(Number(p.pidx)));
   if (opts.limit) paras = paras.slice(0, opts.limit);
+  // TWIN REUSE (cost cut 4): a paragraph whose identical text elsewhere already carries current questions takes them —
+  // no model call. Supplemental-site copies, duplicate editions and whole-passage quotations are most of these.
+  let twinCopied = 0;
+  if (!opts.dryRun && ctx.store.hypeTwins && paras.length) {
+    const twins = await ctx.store.hypeTwins(paras.map((p) => p.id), HYPE_VERSION).catch(() => new Map());
+    for (const p of paras) {
+      const t = twins.get(p.id);
+      if (!t) continue;
+      let qs = []; try { qs = JSON.parse(t.hyp); } catch { /* legacy text */ }
+      if (!Array.isArray(qs) || !qs.length) continue;
+      await ctx.store.saveHype(p.id, qs, t.thesis, HYPE_VERSION);
+      twinCopied++;
+    }
+    if (twinCopied) paras = paras.filter((p) => !twins.has(p.id));
+  }
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
@@ -89,7 +106,7 @@ export async function run(ctx, docId, opts = {}) {
   // ~11 full-cost retries per paragraph. Reasoning scales with question count (planning 20-40 questions can
   // burn 2-3k thinking tokens) + up to ~3k of JSON → 8000 floor for everything; 12000 for explicit reasoners.
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 12000 : 8000);
-  const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, factFed: 0, version: HYPE_VERSION };
+  const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, factFed: 0, version: HYPE_VERSION, ...(twinCopied ? { twinCopied } : {}) };
   // Report per PARAGRAPH, ABSOLUTE: total = all HyPE-eligible paras (long), already-done = resume-skipped (base),
   // so a resumed hype run's bar shows true progress not just the remaining slice.
   const base = long.length - paras.length;

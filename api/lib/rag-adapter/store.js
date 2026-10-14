@@ -136,6 +136,23 @@ export function makeStore() {
       return new Set(rows.map((r) => r.id));
     },
 
+    // IDENTICAL-TEXT TWINS already hyped at `version` (Chad 10-14, cost cut 4): a supplemental-site copy, a second edition or
+    // a compilation quoting a whole passage gets its twin's questions instead of a model call. Same normalized_hash, another
+    // live row, stamped at the current version. Uses idx_content_hype_hash. → Map(id → { hyp, thesis })
+    async hypeTwins(paragraphIds, version) {
+      const out = new Map();
+      for (let i = 0; i < (paragraphIds || []).length; i += 500) {
+        const ids = paragraphIds.slice(i, i + 500);
+        const rows = await db.queryAll(
+          `SELECT c.id, t.hyp_questions AS hyp, t.hyp_thesis AS thesis FROM content c
+             JOIN content t ON t.normalized_hash = c.normalized_hash AND t.id <> c.id
+            WHERE c.id IN (${ids.map(() => '?').join(',')}) AND c.normalized_hash IS NOT NULL AND LENGTH(c.text) >= 60
+              AND t.hyp_questions IS NOT NULL AND t.hyp_model = ? AND t.deleted_at IS NULL`, [...ids, version]);
+        for (const r of rows) if (!out.has(r.id) && r.hyp && r.hyp !== '[]') out.set(r.id, { hyp: r.hyp, thesis: r.thesis || '' });
+      }
+      return out;
+    },
+
     // MERGE questions into LINKED paragraphs (Chad, 2026-09-30: "when we do this, we update the hype for all linked
     // paragraphs"). A paragraph's existing questions are kept and the new ones appended (case/punctuation-insensitive
     // dedupe, ceiling 40); its own thesis and version stamp are kept. A paragraph never hyped: `samePassage` (a translation
@@ -156,7 +173,9 @@ export function makeStore() {
         const seen = new Set(have.map(key));
         const add = questions.filter((q) => { const k = key(q); if (!k || seen.has(k)) return false; seen.add(k); return true; });
         if (!add.length) continue;
-        const stamp = r.model || (samePassage ? version : `linked:${version}`);
+        // a translation partner (same passage) now holds CURRENT questions → stamp the current version even if it had older
+        // ones, so its own run does not pay to regenerate them (Chad 10-14, cost cut 5: original + translation share a call)
+        const stamp = samePassage ? version : (r.model || `linked:${version}`);
         await content.updateHype(r.id, [...have, ...add].slice(0, 40), r.thesis || thesis || '', stamp);
         changed++;
       }

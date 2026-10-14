@@ -76,6 +76,7 @@ const res = await runGrounding(doc, {
   rehype: opt.rehype ? true : undefined,               // regenerate HyPE from scratch (upgrade to current HYPE_VERSION)
   hypeModel: typeof opt['hype-model'] === 'string' ? opt['hype-model'] : undefined,   // hype-stage model override
   cc: Number(opt.cc) || 8,
+  noDisambig: opt['no-disambig'] ? true : undefined,   // HyPE without the disambiguation gate (scripture, prayers, tablets)
   onResult: (stage, r) => console.log(`\n▶ ${stage}(${doc}) → ${JSON.stringify(r)}`),
 }).catch((e) => fail(e, 'grounding run'));
 
