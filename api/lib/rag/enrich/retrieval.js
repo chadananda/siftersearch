@@ -110,7 +110,9 @@ export async function run(ctx, docId, opts = {}) {
   // whole batch round-trip alone), and enough in flight for the batch to fill
   const batching = process.env.ANTHROPIC_BATCH === '1';
   if (flat.length && !batching) await hypeOne(flat[0]);            // populate the shared prefix, then open the throttle
-  await pool(opts.concurrency ?? (batching ? 2000 : 12), batching ? flat : flat.slice(1), hypeOne);
+  // batching: always fill the batch — the grounding runner passes its cc (8), which made 8-request batches and a
+  // ~13 h rehype for one book (10-13)
+  await pool(batching ? Math.max(2000, opts.concurrency || 0) : (opts.concurrency ?? 12), batching ? flat : flat.slice(1), hypeOne);
 
   async function hypeOne(p) {
     // the spend policy sees which stage pays (Haiku 5.5 is authorised for 'hype' on any book — anthropic-policy.js)

@@ -17,7 +17,7 @@ import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 import { spendSince as ledgerSpend } from './spend-ledger.js';
 import fs from 'node:fs';
-import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL, meetsReconcileBar } from './processed.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL, meetsReconcileBar, PROSE_SQL } from './processed.js';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
@@ -162,7 +162,16 @@ export function blockingGate(row = {}, opts = {}) {
 }
 
 export async function reachedBound(docId, opts = {}, deps = {}) {
-  return isDoneFromArtifacts(await coverageOf(docId, deps), opts);
+  const cov = await coverageOf(docId, deps);
+  if (!isDoneFromArtifacts(cov, opts)) return false;
+  if (!opts.rehype) return true;
+  // A REHYPE is done only when the questions are at the CURRENT version — "hyped at all" was already true before it
+  // started (10-13: SAQ crashed at 63/789 regenerated and was marked done).
+  const q = deps.queryOne || queryOne;
+  const version = deps.hypeVersion ?? (await import('../rag/enrich/retrieval.js')).HYPE_VERSION;
+  const r = await q(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND length(trim(text)) >= ${Number(HYPE_MINLEN)} AND hyp_model=?`,
+    [docId, version], 'grounding:coverage-hype-version');
+  return meetsHypeBar(r?.n || 0, cov.hypeable);
 }
 
 // Batched reachedBound over MANY docs — the roadmap (bio.js getIntegrationProgress) grades ~898 plan docs, and doing

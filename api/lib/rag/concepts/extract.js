@@ -97,7 +97,7 @@ export async function run(ctx, docId, opts = {}) {
   const rows = [];   // dry-run review buffer only
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
   // BATCH mode (ANTHROPIC_BATCH=1, ai.js): enough in flight for one Message Batch to fill
-  await pool(opts.concurrency ?? (process.env.ANTHROPIC_BATCH === '1' ? 2000 : 5), paras, async (p) => {
+  await pool(process.env.ANTHROPIC_BATCH === '1' ? Math.max(2000, opts.concurrency || 0) : (opts.concurrency ?? 5), paras, async (p) => {
     const pair = pairOf(p);
     const hasOriginal = Boolean(pair);
     // Declare the ORIGINAL's language for this paragraph, so the spend policy can see the actual capability

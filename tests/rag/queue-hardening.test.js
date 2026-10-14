@@ -177,3 +177,13 @@ describe('budgetStatus.peakBlocked — the off-peak launch wall', () => {
     expect(b.peakBlocked).toBe(false);
   });
 });
+
+describe('reachedBound — a rehype is done only at the current HyPE version (10-13)', () => {
+  const cov = { prose: 100, disamb: 100, hyped: 100, hypeable: 100, extracted: 0, clusters: 0, decisions: 0 };
+  const deps = (atVersion) => ({ hypeVersion: 'v-now', queryOne: async (sql) => (sql.includes('hyp_model=?') ? { n: atVersion } : cov) });
+  it('hyped at an older version does not finish a rehype', async () => {
+    expect(await reachedBound(1, { only: 'hype', rehype: true }, deps(8))).toBe(false);
+    expect(await reachedBound(1, { only: 'hype', rehype: true }, deps(95))).toBe(true);
+    expect(await reachedBound(1, { only: 'hype' }, deps(0))).toBe(true);
+  });
+});

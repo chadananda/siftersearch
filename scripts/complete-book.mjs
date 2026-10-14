@@ -19,7 +19,9 @@ globalThis.fetch = async function namedFetch(input, init) {
   } catch (err) {
     const code = err?.cause?.code || err?.code || err?.name;
     // Attach to the message so it survives into the crash dump, the .exit verdict and the queue error.
-    err.message = `${err.message} [${(init?.method || 'GET').toUpperCase()} ${url}${code ? ` — ${code}` : ''}]`;
+    // undici/DOMException errors have a read-only `message`: assigning threw a TypeError that REPLACED the retryable
+    // ECONNREFUSED, so a writer restart aborted the book instead of being retried (10-13, SAQ). Never let naming fail.
+    try { err.message = `${err.message} [${(init?.method || 'GET').toUpperCase()} ${url}${code ? ` — ${code}` : ''}]`; } catch { /* read-only */ }
     err.failedUrl = url;
     console.error(`\n⚠ fetch failed: ${(init?.method || 'GET').toUpperCase()} ${url} — ${code || err.message}`);
     throw err;
