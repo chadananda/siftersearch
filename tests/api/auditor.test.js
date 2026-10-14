@@ -39,3 +39,23 @@ describe('reader feedback reaches the audit', () => {
     expect(plain.user).not.toMatch(/NOTE: the gate/);
   });
 });
+
+describe('verifyHoldings (the auditor cannot see the catalogue)', async () => {
+  const { verifyHoldings } = await import('../../api/lib/audit/auditor.js');
+  const find = async (t) => (/dawn-breakers/i.test(t) ? { id: 21308, title: 'The Dawn-Breakers' } : null);
+  it('a held work the reply lacked is a retrieval failure, not a library gap (10-14)', async () => {
+    const v = await verifyHoldings({ needed_works: ['The Dawn-Breakers'], problems: [],
+      data_gap: { found: true, detail: 'The Dawn-Breakers is not present as a retrievable primary text in the library' } }, find);
+    expect(v.data_gap.found).toBe(false);
+    expect(v.problems[0]).toMatchObject({ kind: 'not-retrieved' });
+    expect(v.problems[0].detail).toMatch(/doc 21308/);
+  });
+  it('an unheld work is the gap, named as checked', async () => {
+    const v = await verifyHoldings({ needed_works: ['Some Unheld Book'], problems: [], data_gap: { found: false } }, find);
+    expect(v.data_gap).toEqual({ found: true, detail: expect.stringMatching(/catalogue title search found nothing\): Some Unheld Book/) });
+  });
+  it('a visible defect (bad OCR) stands', async () => {
+    const v = await verifyHoldings({ problems: [], data_gap: { found: true, detail: 'passage [2] has garbled OCR' } }, find);
+    expect(v.data_gap.found).toBe(true);
+  });
+});

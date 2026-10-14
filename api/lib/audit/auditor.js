@@ -48,7 +48,7 @@ export const AUDIT_TOOL = {
       problems: { type: 'array', description: 'every concrete mistake seen, WHEREVER it lies — not only Anís\'s', items: { type: 'object', required: ['where', 'kind', 'detail'], properties: {
         where: { type: 'string', enum: ['reply', 'library-data', 'source-text', 'reader-premise'],
           description: "reply = Anís's answer; library-data = our catalogue/metadata/links (wrong author, wrong original, a passage credited to the wrong writer); source-text = an error in the published source itself; reader-premise = the reader's assumption (e.g. a quote they attribute wrongly)" },
-        kind: { type: 'string', enum: ['misquote', 'misattribution', 'wrong-authority-level', 'wrong-original', 'wrong-metadata', 'overreach', 'unsupported-claim', 'missed-key-passage', 'tone', 'other'] },
+        kind: { type: 'string', enum: ['misquote', 'misattribution', 'wrong-authority-level', 'wrong-original', 'wrong-metadata', 'overreach', 'unsupported-claim', 'missed-key-passage', 'not-retrieved', 'tone', 'other'] },
         detail: { type: 'string', description: 'name the passage, the work and what is wrong' },
       } } },
       new_strategy: { type: 'object', required: ['suggested'], properties: {
@@ -56,9 +56,10 @@ export const AUDIT_TOOL = {
         need: { type: 'string', description: 'the unmet need, in one sentence' },
         route: { type: 'string', description: 'how a strategy could serve it: which layers, steps, format' },
       } },
+      needed_works: { type: 'array', items: { type: 'string' }, description: "titles of works the reply needed but the evidence did not contain (e.g. 'The Dawn-Breakers'). You cannot see the catalogue: these are CHECKED against it afterwards — held ones become 'not retrieved' search failures, only unheld ones become library gaps" },
       data_gap: { type: 'object', required: ['found'], properties: {
-        found: { type: 'boolean' },
-        detail: { type: 'string', description: 'missing work, bad OCR, missing original, wrong metadata — name it' },
+        found: { type: 'boolean', description: 'only a defect VISIBLE in the evidence shown. Never "the library lacks X" — put X in needed_works' },
+        detail: { type: 'string', description: 'bad OCR, missing original text, wrong metadata — in a passage shown; name it' },
       } },
       reader_feedback: { type: 'object', required: ['present'], description: "the reader's own feedback, when the question IS feedback (on an earlier reply, on Anís, or on the library)", properties: {
         present: { type: 'boolean' },
@@ -82,7 +83,7 @@ export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
     gate: p.gate, triage_kind: p.kind ?? p.triage?.kind, stance: p.triage?.stance, strategy: p.recipe, format: p.format?.id,
     passages: p.retrieved, timings_ms: p.timings, output_check: p.output_check, replaced: p.replaced,
   };
-  const system = `You audit one exchange of Anís, a study companion that answers questions about the world's sacred texts from a library of primary texts, interpretation, history and scholarship. Judge the SEARCH STRATEGY and the use of evidence, not the prose style. Be strict and concrete: name the passage or the missing passage. Strategies available:\n${Object.entries(STRATEGIES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\nSuggest a new strategy only when none of these fits the kind of request — not when an existing one was merely executed badly. Report EVERY mistake you can see, wherever it lies — in the reply, in the library's own data (a passage credited to the wrong writer, a wrong original, wrong metadata), in a published source, or in the reader's premise (e.g. a saying attributed to Bahá'u'lláh that is not his). Catching mistakes of any source is the point of watching. When the reader's message is FEEDBACK — praise, a complaint, "that's not what I asked", "I don't see how these quotes relate" — it is the most valuable signal there is: judge the EARLIER reply in its light, say whether it is justified, and name the concrete fix (record it in reader_feedback; record the earlier reply's mistakes in problems).`;
+  const system = `You audit one exchange of Anís, a study companion that answers questions about the world's sacred texts from a library of primary texts, interpretation, history and scholarship. Judge the SEARCH STRATEGY and the use of evidence, not the prose style. Be strict and concrete: name the passage or the missing passage. Strategies available:\n${Object.entries(STRATEGIES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\nSuggest a new strategy only when none of these fits the kind of request — not when an existing one was merely executed badly. Report EVERY mistake you can see, wherever it lies — in the reply, in the library's own data (a passage credited to the wrong writer, a wrong original, wrong metadata), in a published source, or in the reader's premise (e.g. a saying attributed to Bahá'u'lláh that is not his). Catching mistakes of any source is the point of watching. You see ONLY the passages this reply retrieved, never the library's catalogue: a work missing from the evidence was NOT RETRIEVED — it may well be held (10-14: an audit declared The Dawn-Breakers and its introduction absent; both are in the library). Name such works in needed_works; never call them missing from the library. When the reader's message is FEEDBACK — praise, a complaint, "that's not what I asked", "I don't see how these quotes relate" — it is the most valuable signal there is: judge the EARLIER reply in its light, say whether it is justified, and name the concrete fix (record it in reader_feedback; record the earlier reply's mistakes in problems).`;
   const user = [
     earlier.length ? `EARLIER IN THE CONVERSATION:\n${earlier.map((m) => `${m.role === 'user' ? 'Reader' : 'Anís'}: ${clip(m.content, 400)}`).join('\n')}` : '',
     (p.triage?.kind === 'feedback' || ['confused', 'disagreed'].includes(p.triage?.reaction))
@@ -99,4 +100,26 @@ export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
 /** USD for one call from token usage and a per-1k price ({ input, output } as in the model registry). */
 export function costOf(usage = {}, pricing = { input: 0.003, output: 0.015 }) {
   return ((usage.input_tokens || 0) / 1000) * pricing.input + ((usage.output_tokens || 0) / 1000) * pricing.output;
+}
+
+const ABSENCE = /\b(not (present|held|available|retrievable|found|in the library)|absent|missing from the library|lacks?|no (copy|text) of)\b/i;
+
+/** After the call: check every work the auditor said the reply needed against the catalogue (`find(title)` → the held doc or
+ *  null). Held → a 'not-retrieved' problem (a search failure, the useful finding); unheld → the library gap. A data_gap
+ *  that only asserts absence is dropped — the auditor cannot see the catalogue. Pure over the injected lookup. */
+export async function verifyHoldings(v, find) {
+  if (!v) return v;
+  const out = { ...v, problems: Array.isArray(v.problems) ? [...v.problems] : [], holdings_checked: true };
+  const unheld = [], unchecked = [];
+  for (const title of (Array.isArray(v.needed_works) ? v.needed_works : []).slice(0, 8)) {
+    let doc;
+    try { doc = await find(title); } catch { unchecked.push(title); continue; }   // lookup failed: unknown, never 'unheld'
+    if (doc) out.problems.push({ where: 'reply', kind: 'not-retrieved', detail: `held but not retrieved: "${doc.title}" (doc ${doc.id}) — needed for "${title}"` });
+    else unheld.push(title);
+  }
+  const asserted = v.data_gap?.found && ABSENCE.test(String(v.data_gap.detail || ''));
+  if (unchecked.length) out.holdings_unchecked = unchecked;
+  if (unheld.length) out.data_gap = { found: true, detail: `not in the library (catalogue title search found nothing): ${unheld.join('; ')}` };
+  else if (asserted) out.data_gap = { found: false, detail: `dropped unverified claim: ${v.data_gap.detail}` };
+  return out;
 }

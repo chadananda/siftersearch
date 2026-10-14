@@ -4,6 +4,7 @@
 // research only; the Worker stores them as drafts for Chad's approval. Deps: db, anis/pause-link, anis/turn, anis/respond.
 import { query, queryAll } from '../lib/db.js';
 import { verifyPauseToken, emailHash } from '../lib/assistant/pause-link.js';
+import { rememberCorrespondent } from '../lib/assistant/admin-threads.js';
 import { logger } from '../lib/logger.js';
 
 const page = (body) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -43,7 +44,7 @@ export default async function anisRoutes(fastify) {
     if (!process.env.INTERNAL_API_KEY || k !== process.env.INTERNAL_API_KEY) { reply.code(401).send({ error: 'unauthorized' }); return false; }
     return true;
   };
-  const who = (email) => `email:${emailHash(email)}`;
+  const who = (email) => { rememberCorrespondent(email); return `email:${emailHash(email)}`; };   // admin Threads names them
 
   // A reply to an inbound email: one ordinary Anís turn on the email channel (triage gate, research, output check).
   fastify.post('/draft', async (request, reply) => {

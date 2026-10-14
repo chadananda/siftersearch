@@ -47,21 +47,34 @@ function savePeopleFile(map) {
   try { fs.writeFileSync(PEOPLE_FILE, JSON.stringify(Object.fromEntries(map))); } catch { /* the in-memory copy still serves */ }
 }
 export async function mailPeople({ fetchImpl = fetch, base = 'https://siftersearch.com', key = process.env.INTERNAL_API_KEY, fresh = false, persist = true } = {}) {
-  if (!fresh && peopleCache.map && Date.now() - peopleCache.at < 10 * 60 * 1000) return peopleCache.map;
-  const known = peopleCache.map || (persist ? loadPeopleFile() : null) || new Map();
+  // the file is shared by every API process (pm2 cluster) and fed by rememberCorrespondent, so read it on every call
+  const known = new Map([...(persist ? loadPeopleFile() || [] : []), ...(peopleCache.map || [])]);
+  if (!fresh && peopleCache.map && Date.now() - peopleCache.at < 10 * 60 * 1000) return known;
   if (!key) return known;
   try {
     const r = await fetchImpl(`${base}/_mail/messages?mailbox=anis&direction=in&limit=500`, { headers: { 'x-internal-key': key }, signal: AbortSignal.timeout(20000) });
     const j = await r.json();
     const map = new Map(known);                              // addresses that aged out of the last 500 keep their names
-    for (const m of j.messages || (Array.isArray(j) ? j : [])) if (m.from_addr) map.set(`email:${emailHash(m.from_addr)}`, { email: m.from_addr, name: m.from_name || null });
+    for (const m of j.messages || (Array.isArray(j) ? j : [])) if (m.from_addr) map.set(`email:${emailHash(m.from_addr)}`, { email: m.from_addr, name: m.from_name || known.get(`email:${emailHash(m.from_addr)}`)?.name || null });
     if (map.size) { peopleCache = { at: Date.now(), map }; if (persist) savePeopleFile(map); }
     return map;
   } catch (err) {
     console.warn(`anis threads: correspondents' names unavailable (${err.message}); serving the last known list`);
-    if (known.size) peopleCache = { at: Date.now() - 9 * 60 * 1000, map: known };   // retry in a minute, not on every view
+    peopleCache = { at: Date.now() - 9 * 60 * 1000, map: known };   // retry in a minute, not on every view
     return known;
   }
+}
+
+/** Record an email correspondent locally when Anís answers them (routes/assistant-mail.js) — names never wait on the
+ *  network (10-14: the tower→mail-store fetch timed out and a whole list read "unknown address"). */
+export function rememberCorrespondent(email, name = null, { persist = true } = {}) {
+  if (!email) return;
+  const pid = `email:${emailHash(email)}`;
+  const map = new Map([...(persist ? loadPeopleFile() || [] : []), ...(peopleCache.map || [])]);
+  if (map.get(pid)?.email === email && (map.get(pid)?.name || !name)) return;
+  map.set(pid, { email: String(email).trim().toLowerCase(), name: name || map.get(pid)?.name || null });
+  peopleCache = { at: peopleCache.at, map };
+  if (persist) savePeopleFile(map);
 }
 export const _resetPeople = () => { peopleCache = { at: 0, map: null }; };
 

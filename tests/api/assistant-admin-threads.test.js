@@ -87,3 +87,15 @@ describe('mailPeople (correspondent names survive a failed refresh)', async () =
     expect(personOf(null, new Map()).name).toBe('unknown');
   });
 });
+
+describe('rememberCorrespondent', async () => {
+  const { mailPeople, rememberCorrespondent, _resetPeople } = await import('../../api/lib/assistant/admin-threads.js');
+  const { emailHash } = await import('../../api/lib/assistant/pause-link.js');
+  it('a correspondent Anís answered is named even when the mail store never answers', async () => {
+    _resetPeople();
+    rememberCorrespondent('Seeker@Example.org', null, { persist: false });
+    const down = async () => { throw new Error('timeout'); };
+    const m = await mailPeople({ fetchImpl: down, key: 'k', persist: false, fresh: true });
+    expect(m.get(`email:${emailHash('seeker@example.org')}`).email).toBe('seeker@example.org');
+  });
+});
