@@ -92,7 +92,7 @@ export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
     `WHAT THE SYSTEM DID:\n${JSON.stringify(route)}`,
     `EVIDENCE THE REPLY WAS WRITTEN FROM:\n${evidence || '(not logged for this exchange)'}`,
     `REPLY:\n${clip(reply, 4000)}`,
-    'Audit this exchange with the record_audit tool.',
+    'Audit this exchange by calling the record_audit tool (exactly one call; no prose).',
   ].filter(Boolean).join('\n\n');
   return { system, user };
 }

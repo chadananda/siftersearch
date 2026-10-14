@@ -70,8 +70,8 @@ async function audit(row) {
   const { system, user } = buildAuditPrompt({ earlier, question, reply: row.content, path });
   const base = { message_id: row.id, session_id: row.session_id, round: row.round_index, channel: row.channel, asked_at: row.answered_at, model: MODEL };
   try {
-    const res = await anthropic.messages.create({ model: MODEL, max_tokens: 1500, system, tools: [AUDIT_TOOL],
-      tool_choice: { type: 'tool', name: AUDIT_TOOL.name }, messages: [{ role: 'user', content: user }] });
+    const res = await anthropic.messages.create({ model: MODEL, max_tokens: 4000, system, tools: [AUDIT_TOOL],
+      tool_choice: { type: 'auto' }, messages: [{ role: 'user', content: user }] });
     const call = res.content.find((b) => b.type === 'tool_use');
     if (call) call.input = await verifyHoldings(call.input, findHeld);
     put.run({ ...base, usd: costOf(res.usage, PRICING), input_tokens: res.usage?.input_tokens ?? 0, output_tokens: res.usage?.output_tokens ?? 0,
