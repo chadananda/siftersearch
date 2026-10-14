@@ -243,6 +243,8 @@ describe('v15 seeker tier + spiritual root', () => {
   it('drops self-reference, Arabic-script and short-title book naming', () => {
     expect(questionFault('What is detachment according to this passage?', 'X')).toBe('selfReference');
     expect(questionFault('What does وجود mean?', 'Some Answered Questions')).toBe('nonLatin');
+    expect(questionFault('Is there life after death?', 'Some Answered Questions', { seeker: true })).toBe(null);
+    expect(questionFault('Is there life after death?', 'Some Answered Questions')).toBe('yesNo');
     expect(questionFault('How is man addressed in the Hidden Words?', "The Hidden Words of Bahá'u'lláh")).toBe('namedBook');
     expect(questionFault('What do the Gleanings say about the soul?', "Gleanings from the Writings of Bahá’u’lláh")).toBe('namedBook');
     expect(questionFault('What is the advent of the Kingdom?', 'The Advent of Divine Justice')).toBe(null);

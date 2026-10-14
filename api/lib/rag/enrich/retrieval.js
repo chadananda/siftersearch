@@ -140,7 +140,7 @@ export async function run(ctx, docId, opts = {}) {
           if (si === 0) thesis = r.parsed.thesis;
           for (const it of r.parsed.items || []) {
             const k = String(it.q).toLowerCase().replace(/[^a-z0-9 ]/g, '');
-            if (!items.some((e) => e.k === k)) items.push({ q: it.q, a: it.a, k });
+            if (!items.some((e) => e.k === k)) items.push({ ...it, k });   // keep the tier (seeker/deep) for the gates + dedupe
           }
         }
         if (items.length && thesis) parsed = { items, thesis };
@@ -152,7 +152,7 @@ export async function run(ctx, docId, opts = {}) {
         // a reason to look, never a reason to delete a reader's route to the passage.
         const kept = [];
         for (const it of parsed.items) {
-          const fault = questionFault(it.q, meta.title);
+          const fault = questionFault(it.q, meta.title, { seeker: it.seeker });
           if (fault) { stats[fault] = (stats[fault] || 0) + 1; continue; }
           const present = spanIsPresent(it.a, [p.text, p.original, p.partner?.text]);
           if (present === false) { stats.unanswered = (stats.unanswered || 0) + 1; continue; }
@@ -339,9 +339,11 @@ const titleForms = (title) => {
 };
 const SELF_REFERENCE = /\b(this|the|that) (passage|paragraph|text|verse|tablet|excerpt|extract)\b|\bthe author\b/i;
 const NON_LATIN = /[\u0590-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/;   // Hebrew/Arabic/Persian script: retrieval is in English
-export function questionFault(q, title) {
+// Seeker questions keep the yes/no form: it is how people type ("is there life after death", "do all religions worship the
+// same God" — the 10-13 battery), and the gate dropped exactly those (9 on one Íqán paragraph).
+export function questionFault(q, title, { seeker = false } = {}) {
   const s = String(q).trim();
-  if (YES_NO.test(s)) return 'yesNo';
+  if (!seeker && YES_NO.test(s)) return 'yesNo';
   if (SELF_REFERENCE.test(s)) return 'selfReference';
   if (NON_LATIN.test(s)) return 'nonLatin';
   const fq = fold(s);
@@ -386,7 +388,7 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • IF THE PASSAGE DEFINES A TERM, the plain definitional questions are MANDATORY and come first. A passage saying "Know that justice consists in rendering to each his due" is THE answer to "What is justice?" and "What is meant by justice?" — those exact ordinary forms must be present, not only a subtler question about its application. Definitions are the highest-value thing a reader searches for and the easiest to miss, because the passage states them so plainly that they look like they need no question. Ask it ONCE — "What is X?" or "What is meant by X?", whichever reads better, never both: they are the same ask and a search embedding cannot tell them apart. Where the concept has an ORIGINAL term, that term gets its own question, since a reader searching it would otherwise miss this passage entirely.
     AND ONLY WHERE THE PASSAGE ANSWERS IT. If a phrase is merely used or quoted without being explained — a passage that says someone gave "my tired moments" is not explaining what tired moments ARE — then this passage is not the answer to "what does that mean", and asking it sends readers here for nothing.
     Define a term ONLY where the passage gives that term its own content — says what it IS, or draws a line between it and something else. A word the passage merely uses, as one of several ways of naming a single idea, does not get its own definition.
-  • NO YES/NO QUESTIONS. "Does nature have consciousness?" and "Is nature in the grasp of God?" retrieve badly — a reader asks "what does X teach about Y", and a yes/no phrasing sits far from that in embedding space while adding no distinct ask. Turn each into the open form it is hiding: "What does ‘Abdu'l-Bahá teach about nature's lack of consciousness?"
+  • NO YES/NO QUESTIONS (outside the "seeker" field). "Does nature have consciousness?" and "Is nature in the grasp of God?" retrieve badly — a reader asks "what does X teach about Y", and a yes/no phrasing sits far from that in embedding space while adding no distinct ask. Turn each into the open form it is hiding: "What does ‘Abdu'l-Bahá teach about nature's lack of consciousness?"
   • EVERY QUESTION CARRIES THE SPAN THAT ANSWERS IT. Give "a" — the words from the passage a reader would be shown as the answer, copied verbatim. Two questions answered by the SAME words are one question, however differently worded, and only one will be kept. This is not a limit on how many: a paragraph answering thirty distinct things gets thirty. It is a test of whether an ask is really distinct, and the span is how you check your own work before writing it down.
   • NO CATCH-ALL QUESTIONS. "What did ‘Abdu'l-Bahá say about nature in Some Answered Questions?" is not a question, it is the paragraph's topic with a question mark. It matches everything about the topic and so distinguishes nothing.
   • NEVER NAME THE BOOK OR WORK IN A QUESTION. Not "in Some Answered Questions", not "in the Kitáb-i-Íqán", not "according to this book". The purpose of these questions is to TIE A CONCEPT ACROSS THE WHOLE CORPUS: the same concept is developed in many works, and a reader asking "what is meant by justice" should reach every passage that answers it, not only the one whose title they happened to name. Scoping to a book or a religion is done by a FILTER at search time and needs no help from the question text. A title inside the question only narrows what it can match, and a page of questions all ending in the same title matches little but itself.
@@ -398,7 +400,8 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   THE SEEKER QUESTIONS go in their own field, "seeker". Most people who will ever reach this passage know nothing of this text or its tradition, and they search in their own plain words. The questions people type most, worldwide, are the big ones: what is love, sin, evil, happiness, the soul, heaven, prayer, faith; who is God and can I know Him; why does God allow suffering; what happens when we die; does life have a purpose; do all religions come from the same God; how do I find peace, forgive, face grief or illness. Where THIS passage answers such a question, write it the way that person would type it:
     • everyday words only — no terms of art from this tradition ("Manifestation", "Dispensation", "station", "Covenant", "rational soul", "Kingdom of Names"): "What happens to the soul after death?", not "How does the rational soul progress after departing this mortal world?"; "Do all religions come from the same God?", not "What is the unity of the Manifestations?"
     • no names of books, and names of people only where a seeker would use them (Jesus, Muhammad, Buddha, Moses)
-    • short and direct, as typed into a search box; a need may be phrased as one ("What gives hope when someone you love dies?")
+    • short and direct, in the most COMMON wording people use, as typed into a search box — including yes/no forms, which are exactly how people ask these ("Is there life after death?", "Do all religions come from the same God?", "Can I know God?"); a need may be phrased as one ("What gives hope when someone you love dies?")
+    • where the passage answers several such questions, write each (typically 2-6)
     • only where the passage truly answers it — a passage that merely touches the subject is not the answer, and a historical or administrative passage usually has none. Never force a popular question onto a passage.
 
   THE SPIRITUAL ROOT. When a passage speaks of society — equality, unity, peace, justice, education, prosperity, the role of women, world order — do not frame the teaching as a social opinion or a policy ("What is the Bahá'í position on X?", "What does X say about gender equality?"). That framing is shallow and misleads: it presents a spiritual teaching as a political program. Ask about the SPIRITUAL REASON the passage gives — the nature of the soul, man's spiritual reality, God's purpose, the stage of humanity's spiritual growth — wherever the passage states it. If it states none, ask what it actually says, plainly.
