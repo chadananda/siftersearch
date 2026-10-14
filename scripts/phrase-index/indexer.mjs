@@ -115,7 +115,17 @@ function source() {
     WHERE ${where} AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
       ${FIELD === 'hype' ? "AND (COALESCE(c.hyp_questions, '') <> '' OR COALESCE(c.hyp_thesis, '') <> '')" : ''}
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
-  const rows = { *iterate() { for (let last = 0; ;) { const got = page.all(last); if (!got.length) return; yield* got; last = got[got.length - 1].id; } } };
+  // An explicit --docs list is read ONE DOCUMENT AT A TIME on the doc_id index (10-14): as `d.id IN (<thousands>) …
+  // c.id > ? ORDER BY c.id` SQLite walked the whole content table in id order for every 5,000-row page — job 91 read 47 GB
+  // in 6 h and wrote nothing after its first hour.
+  const perDoc = DOCS.length ? src.prepare(page.source.replace(where, 'd.id = ?')) : null;
+  const rows = { *iterate() {
+    if (perDoc) {
+      for (const id of DOCS) for (let last = 0; ;) { const got = perDoc.all(id, last); if (!got.length) break; yield* got; last = got[got.length - 1].id; }
+      return;
+    }
+    for (let last = 0; ;) { const got = page.all(last); if (!got.length) return; yield* got; last = got[got.length - 1].id; }
+  } };
   return { src, rows };
 }
 
