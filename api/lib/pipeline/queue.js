@@ -216,8 +216,16 @@ export const ownsTail = (opts = {}) => {
 /** Add a book to the work order. Returns the queued row. */
 export async function enqueue({ docId, note = null, position = null, ...opts }) {
   const pos = position ?? (((await queryOne(`SELECT MAX(position) m FROM grounding_queue WHERE status='queued'`))?.m ?? 0) + 1);
-  const res = await query(`INSERT INTO grounding_queue (doc_id, opts_json, position, note) VALUES (?, ?, ?, ?)`,
-    [Number(docId), JSON.stringify(opts), pos, note]);
+  // ATOMIC DEDUPE (10-13): during a cluster reload two API instances run the plan follower at once; each saw the book
+  // as not-yet-queued and both inserted (rows 2-3× at the same second → books re-ran and the digest repeated them).
+  // The writer serialises statements, so INSERT…WHERE NOT EXISTS lets exactly one identical pending row in.
+  const optsJson = JSON.stringify(opts);
+  const res = await query(`INSERT INTO grounding_queue (doc_id, opts_json, position, note)
+      SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM grounding_queue WHERE doc_id = ? AND opts_json = ? AND status IN ('queued','running'))`,
+    [Number(docId), optsJson, pos, note, Number(docId), optsJson]);
+  if ((res?.rows?.[0]?.changes ?? res?.changes ?? 1) === 0) {
+    return queryOne(`SELECT * FROM grounding_queue WHERE doc_id=? AND opts_json=? AND status IN ('queued','running') ORDER BY id LIMIT 1`, [Number(docId), optsJson]);
+  }
   // `query` routes writes to the SINGLE WRITER — a different connection — so last_insert_rowid() read back here
   // sees nothing. Use the id the writer itself reports; fall back to the newest row for this doc.
   const id = res?.lastInsertRowid ?? res?.rows?.[0]?.lastInsertRowid;
