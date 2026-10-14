@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-14T15:23:57.613Z",
+  "generated": "2026-10-14T16:50:17.155Z",
   "entries": [
+    {
+      "hash": "87b49c1c",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "Threads name every correspondent and read as one exchange",
+      "scope": "anis-admin"
+    },
     {
       "hash": "7ebdcb0e",
       "date": "2026-10-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "A paragraph's Meili `author` is its own writer — author filters find quotations in any book",
       "scope": "search"
-    },
-    {
-      "hash": "755921d3",
-      "date": "2026-10-03",
-      "type": "New",
-      "description": "Talk records — interpreters are never speakers; ‘Abdu’l-Bahá's talks found by headings, Q&A lines, System-1",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-14": [
+      {
+        "hash": "87b49c1c",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "Threads name every correspondent and read as one exchange",
+        "scope": "anis-admin"
+      },
       {
         "hash": "7ebdcb0e",
         "date": "2026-10-14",
@@ -7018,13 +7025,6 @@
         "type": "New",
         "description": "A paragraph's Meili `author` is its own writer — author filters find quotations in any book",
         "scope": "search"
-      },
-      {
-        "hash": "755921d3",
-        "date": "2026-10-03",
-        "type": "New",
-        "description": "Talk records — interpreters are never speakers; ‘Abdu’l-Bahá's talks found by headings, Q&A lines, System-1",
-        "scope": "authorship"
       }
     ]
   }

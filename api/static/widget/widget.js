@@ -11,6 +11,10 @@
   if (!script) return;
   var key = script.getAttribute('data-key');
   if (!key) { console.warn('[sifter-chat] missing data-key on the embed script tag'); return; }
+  // Included twice (10-14: AdminLayout and Layout both embedded it) the bundle registered <sifter-chat> twice and threw
+  // "the name has already been used". Host sites can make the same mistake, so the loader runs once per page.
+  if (window.__sifterChatLoader) return;
+  window.__sifterChatLoader = true;
   var api = new URL(script.src).origin;
   function mount() {
     if (document.querySelector('sifter-chat')) return;
@@ -23,6 +27,10 @@
       if (v) el.setAttribute(a, v);
     });
     document.body.appendChild(el);
+  }
+  if (window.customElements && customElements.get('sifter-chat')) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
+    return;
   }
   var bundle = document.createElement('script');
   bundle.src = api + '/widget/sifter-chat.js';
