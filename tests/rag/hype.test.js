@@ -3,7 +3,7 @@
 // Chad, 2026-08-26: "Complete and quality HyPE questions are the main reason we are analyzing concepts and
 // people. We need quality HyPE to locate the right passage during RAG search."
 import { describe, it, expect } from 'vitest';
-import { buildSystem, buildUser, HYPE_VERSION, parseHype, parseHypeSlice, dedupeByAnswer, spanIsPresent, questionFault } from '../../api/lib/rag/enrich/retrieval.js';
+import { buildSystem, buildUser, HYPE_VERSION, parseHype, parseHypeSlice, dedupeByAnswer, dedupeTiers, spanIsPresent, questionFault } from '../../api/lib/rag/enrich/retrieval.js';
 
 describe('HyPE asks what a reader asks, not what a quiz asks', () => {
   // Measured on the Kitáb-i-Íqán before this change: ¶2 produced "From what should their ears be cleansed?",
@@ -196,7 +196,7 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   // done with zero questions). Output that differs materially must not share a stamp with output that does
   // not — the stamp is what `rehype` resumes on.
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v14-deep');
+    expect(HYPE_VERSION).toBe('hype-v15-seeker');
   });
 
   // v14 (Chad 10-13): "nobody is moved by obvious questions" — the prompt asks for the deep tier, still bound
@@ -222,6 +222,31 @@ describe('v14 deep tier + code-enforced question rules', () => {
     expect(questionFault('How can the Manifestations be one and yet distinct?', 'Kitáb-i-Íqán')).toBe(null);
     expect(questionFault('Why is Jesus called the Spirit?', 'Some Answered Questions')).toBe(null);
     expect(questionFault('What does Some Answered Questions teach about the soul?', 'Some Answered Questions')).toBe('namedBook');
+  });
+});
+
+describe('v15 seeker tier + spiritual root', () => {
+  const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
+  it('asks for seeker questions in everyday words and the spiritual reason behind social teachings', () => {
+    expect(sys).toMatch(/THE SEEKER QUESTIONS/);
+    expect(sys).toMatch(/everyday words only/);
+    expect(sys).toMatch(/THE SPIRITUAL ROOT/);
+    expect(sys).toMatch(/DO NOT ECHO THE PASSAGE/);
+    expect(sys).not.toMatch(/mean in the Kitáb-i-Íqán\?/);   // the prompt's own example named the book
+  });
+  it('seeker questions lead and survive sharing a span with a plain ask', () => {
+    const p = parseHype(JSON.stringify({ seeker: [{ q: 'What happens to the soul after death?', a: 'the spirit of man progresses after death' }],
+      questions: [{ q: 'How does the rational soul progress after death?', a: 'the spirit of man progresses after death' }], deep: [], thesis: 't' }));
+    expect(p.questions).toEqual(['What happens to the soul after death?', 'How does the rational soul progress after death?']);
+    expect(dedupeTiers([{ q: 'a?', a: 'same span here ok', seeker: true }, { q: 'b?', a: 'same span here ok', seeker: true }])).toEqual(['a?']);
+  });
+  it('drops self-reference, Arabic-script and short-title book naming', () => {
+    expect(questionFault('What is detachment according to this passage?', 'X')).toBe('selfReference');
+    expect(questionFault('What does وجود mean?', 'Some Answered Questions')).toBe('nonLatin');
+    expect(questionFault('How is man addressed in the Hidden Words?', "The Hidden Words of Bahá'u'lláh")).toBe('namedBook');
+    expect(questionFault('What do the Gleanings say about the soul?', "Gleanings from the Writings of Bahá’u’lláh")).toBe('namedBook');
+    expect(questionFault('What is the advent of the Kingdom?', 'The Advent of Divine Justice')).toBe(null);
+    expect(questionFault('What is the mark of a true seeker?', "The Hidden Words of Bahá'u'lláh")).toBe(null);
   });
 });
 

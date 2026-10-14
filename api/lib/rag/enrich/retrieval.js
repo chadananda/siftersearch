@@ -37,7 +37,14 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // v14 adds THE DEEP QUESTIONS (assumption overturned · objection answered · underpinning · implication · tension),
 // still bound by the one rule. Books are upgraded explicitly (rehype / upgrade); the book-level orchestrator stamp
 // (pipeline/state.js) is unchanged, so this bump does not queue a library-wide re-hype.
-export const HYPE_VERSION = 'hype-v14-deep';
+// v15 (Chad 10-13: "answer [what people ask], but take the user deeper into philosophy and the spiritual dimension
+// instead of the shallow, misleading social dimension"). Measured on a battery of the most-searched faith questions
+// (Google Keyword Planner 2025: what is sin/love/life/happiness/heaven/prayer/evil, why does God allow suffering, does
+// life have a purpose, is there life after death…): the questions answered those asks in the TEXT'S vocabulary
+// ("the rational soul… departs this mortal world", "the unity of the Manifestations") — words no seeker types. v15
+// adds SEEKER questions in everyday words, roots social teachings in their spiritual reason, stops echoing the
+// passage's own phrases (its words already find it), and gates Arabic-script and "this passage" questions in code.
+export const HYPE_VERSION = 'hype-v15-seeker';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -152,7 +159,7 @@ export async function run(ctx, docId, opts = {}) {
           if (present === null) stats.unverified = (stats.unverified || 0) + 1;
           kept.push(it);
         }
-        parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
+        parsed = kept.length ? { questions: dedupeTiers(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
       }
       if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
       if (opts.dryRun) (stats.samples ||= []).push({ pidx: p.pidx, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
@@ -284,6 +291,9 @@ export function spanIsPresent(span, texts) {
   return false;
 }
 
+/** dedupeByAnswer per vocabulary: seeker questions among themselves, the rest among themselves; seeker first. */
+export const dedupeTiers = (items) => [...dedupeByAnswer(items.filter((i) => i.seeker)), ...dedupeByAnswer(items.filter((i) => !i.seeker))];
+
 export function dedupeByAnswer(items) {
   const seen = new Map();
   const out = [];
@@ -306,11 +316,13 @@ export function parseHype(raw) {
     // answer without a span). A mixed array is fine — each item is judged on what it carries.
     // v14: the deep tier arrives in its own field so the model has to consider it separately; it joins the
     // plain asks AFTER them (dedupeByAnswer keeps the first of a shared span, so a plain definition wins its span)
-    const norm = (x, deep) => ({ ...(typeof x === 'string' ? { q: x, a: '' } : { q: String(x?.q ?? ''), a: String(x?.a ?? '') }), ...(deep ? { deep } : {}) });
-    const items = [...(j.questions || []).map((x) => norm(x, false)), ...(j.deep || []).map((x) => norm(x, true))]
+    // v15: SEEKER questions (everyday words) lead; they share spans with the plain asks by design — the same answer reached
+    // from a seeker's vocabulary — so they are deduplicated among themselves, never against the plain asks.
+    const norm = (x, tier) => ({ ...(typeof x === 'string' ? { q: x, a: '' } : { q: String(x?.q ?? ''), a: String(x?.a ?? '') }), ...(tier ? { [tier]: true } : {}) });
+    const items = [...(j.seeker || []).map((x) => norm(x, 'seeker')), ...(j.questions || []).map((x) => norm(x, null)), ...(j.deep || []).map((x) => norm(x, 'deep'))]
       .filter((x) => x.q.trim());
     if (!items.length) return null;
-    return { items, questions: dedupeByAnswer(items).slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
+    return { items, questions: dedupeTiers(items).slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
   } catch { return null; }
 }
 
@@ -318,10 +330,22 @@ export function parseHype(raw) {
 // own title inside the question. Enforced in code, as dedupeByAnswer enforces distinctness. Returns the reason or null.
 const YES_NO = /^(did|does|do|is|was|were|are|has|have|had|can|could|should|would|will|may|must)\b/i;
 const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f’'ʻʼ‘`-]/g, '').toLowerCase();
-export function questionFault(q, title) {
-  if (YES_NO.test(String(q).trim())) return 'yesNo';
+// v15 sample: "…in the Hidden Words" passed because only the FULL title ("the hidden words of bahaullah") was checked. The
+// title's head — before " of "/" from " — is the name readers use, when it is distinctive enough (2+ words or 8+ letters).
+const titleForms = (title) => {
   const t = fold(String(title || '').split(/[:(]/)[0]).replace(/^the\s+/, '').trim();
-  if (t.length >= 6 && fold(q).includes(t)) return 'namedBook';
+  const head = t.split(/\s+(?:of|from)\s+/)[0].trim();
+  return [t, ...(head !== t && (head.includes(' ') || head.length >= 8) ? [head] : [])].filter((x) => x.length >= 6);
+};
+const SELF_REFERENCE = /\b(this|the|that) (passage|paragraph|text|verse|tablet|excerpt|extract)\b|\bthe author\b/i;
+const NON_LATIN = /[\u0590-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/;   // Hebrew/Arabic/Persian script: retrieval is in English
+export function questionFault(q, title) {
+  const s = String(q).trim();
+  if (YES_NO.test(s)) return 'yesNo';
+  if (SELF_REFERENCE.test(s)) return 'selfReference';
+  if (NON_LATIN.test(s)) return 'nonLatin';
+  const fq = fold(s);
+  if (titleForms(title).some((t) => fq.includes(t))) return 'namedBook';
   return null;
 }
 
@@ -371,7 +395,17 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.
 
-  THE DEEP QUESTIONS (Chad 10-13: "nobody is moved by obvious questions") go in their own field, "deep". After the plain asks, write the questions a serious, even skeptical, reader brings to this subject — the ones that make a person stop. Wherever the passage itself supplies the answer, ask:
+  THE SEEKER QUESTIONS go in their own field, "seeker". Most people who will ever reach this passage know nothing of this text or its tradition, and they search in their own plain words. The questions people type most, worldwide, are the big ones: what is love, sin, evil, happiness, the soul, heaven, prayer, faith; who is God and can I know Him; why does God allow suffering; what happens when we die; does life have a purpose; do all religions come from the same God; how do I find peace, forgive, face grief or illness. Where THIS passage answers such a question, write it the way that person would type it:
+    • everyday words only — no terms of art from this tradition ("Manifestation", "Dispensation", "station", "Covenant", "rational soul", "Kingdom of Names"): "What happens to the soul after death?", not "How does the rational soul progress after departing this mortal world?"; "Do all religions come from the same God?", not "What is the unity of the Manifestations?"
+    • no names of books, and names of people only where a seeker would use them (Jesus, Muhammad, Buddha, Moses)
+    • short and direct, as typed into a search box; a need may be phrased as one ("What gives hope when someone you love dies?")
+    • only where the passage truly answers it — a passage that merely touches the subject is not the answer, and a historical or administrative passage usually has none. Never force a popular question onto a passage.
+
+  THE SPIRITUAL ROOT. When a passage speaks of society — equality, unity, peace, justice, education, prosperity, the role of women, world order — do not frame the teaching as a social opinion or a policy ("What is the Bahá'í position on X?", "What does X say about gender equality?"). That framing is shallow and misleads: it presents a spiritual teaching as a political program. Ask about the SPIRITUAL REASON the passage gives — the nature of the soul, man's spiritual reality, God's purpose, the stage of humanity's spiritual growth — wherever the passage states it. If it states none, ask what it actually says, plainly.
+
+  DO NOT ECHO THE PASSAGE. The passage's own words already find it — a reader who types its phrase is matched by the phrase itself. "What is the ocean of eternal grace?", "What are the showers of everlasting mercy?" spend a question on words the passage already holds. Spend questions on the words a reader would use INSTEAD. The one exception: a key term the passage DEFINES gets its definitional question.
+
+  THE DEEP QUESTIONS (Chad 10-13: "nobody is moved by obvious questions") go in their own field, "deep". They take the reader into the spiritual and philosophical dimension the passage opens. After the plain asks, write the questions a serious, even skeptical, reader brings to this subject — the ones that make a person stop. Wherever the passage itself supplies the answer, ask:
     • THE ASSUMPTION IT OVERTURNS — what common belief does this teaching contradict? ("Why is suffering not evidence that God has abandoned the believer?", "Why would certitude require forgetting what one has learned?")
     • THE OBJECTION IT ANSWERS — the hard counter-question the passage meets, stated as the objector would put it. ("If God is just, why are the righteous persecuted?")
     • THE UNDERPINNING — the premise about God, the soul, knowledge or society the teaching rests on and makes explicit. ("Why can the essence of God never be known directly?")
@@ -385,9 +419,9 @@ In a work of answers, one passage often addresses SEVERAL related questions at o
 
 If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extracted from THIS paragraph — the knowledge researchers seek here. EVERY listed fact must be reachable by at least one question (closely related facts may share a question). Prefer fact-bearing questions over generic ones.
 
-If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM — "What does ʿirfán mean in the Kitáb-i-Íqán?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
+If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM, in transliteration (never Arabic or Persian script) — "What does ʿirfán mean?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
 
-Return exactly: {"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"thesis":"…"} (as many as the paragraph answers; "deep" may be empty for a narrative or transitional passage, never padded)
+Return exactly: {"seeker":[{"q":"…?","a":"verbatim answering words"}],"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"thesis":"…"} (as many as the paragraph answers; "seeker" and "deep" may be empty for a narrative or transitional passage, never padded; "questions" are the distinct things taught, not a quota)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;

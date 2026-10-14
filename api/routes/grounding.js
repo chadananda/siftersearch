@@ -220,7 +220,8 @@ export default async function groundingRoutes(fastify) {
     if (!docId) throw ApiError.badRequest('docId required');
     const { rag } = await import('../lib/rag-adapter/index.js');
     const stats = await rag.retrieval.index(Number(docId), { dryRun: true, resume: false, pids: pids?.map(Number), limit: Math.min(Number(limit) || 5, 20) });
-    return { docId, version: stats.version, samples: stats.samples || [], unanswered: stats.unanswered || 0, yesNo: stats.yesNo || 0, namedBook: stats.namedBook || 0 };
+    const dropped = Object.fromEntries(['unanswered', 'yesNo', 'namedBook', 'selfReference', 'nonLatin'].map((k) => [k, stats[k] || 0]));
+    return { docId, version: stats.version, samples: stats.samples || [], ...dropped };
   });
 
   /**
