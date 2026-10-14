@@ -1397,10 +1397,7 @@ export default async function groundingRoutes(fastify) {
     const [runs, items, spend, bandHolder, budget] = await Promise.all([
       state.activeRuns(),
       queue.list({ limit: 12 }),
-      queryAll(`SELECT CAST(document_id AS INT) docId, provider, COUNT(*) calls,
-                  ROUND(SUM(estimated_cost_usd), 4) usd
-                FROM ai_usage WHERE caller='corpus-rag' AND document_id IS NOT NULL
-                GROUP BY docId, provider ORDER BY usd DESC`),
+      import('../lib/repos/ai-usage-repo.js').then((m) => m.pipelineSpendByBook()),   // incremental (was a 5 s full GROUP BY per poll)
       graphBandHolder().catch(() => null),
       queue.budgetStatus().catch(() => []),
     ]);

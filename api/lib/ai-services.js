@@ -100,14 +100,9 @@ export function isAIProcessingPaused() {
  */
 async function getDailySpending(serviceType) {
   try {
-    const result = await query(
-      `SELECT SUM(estimated_cost_usd) as total
-       FROM ai_usage
-       WHERE service_type = ?
-       AND timestamp >= date('now') AND timestamp < date('now', '+1 day')`,
-      [serviceType]
-    );
-    return result.rows?.[0]?.total || 0;
+    // incremental rollup (ai-usage-repo) — this ran a full-day SUM on EVERY budget-checked call (~5 s under load, 10-14)
+    const { dailySpendByService } = await import('./repos/ai-usage-repo.js');
+    return (await dailySpendByService())[serviceType] || 0;
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to check daily spending');
     return 0;  // Don't block on error
@@ -119,17 +114,8 @@ async function getDailySpending(serviceType) {
  */
 export async function getAllDailySpending() {
   try {
-    const result = await query(
-      `SELECT service_type, SUM(estimated_cost_usd) as total
-       FROM ai_usage
-       WHERE timestamp >= date('now') AND timestamp < date('now', '+1 day')
-       GROUP BY service_type`
-    );
-    const spending = {};
-    for (const row of result.rows || []) {
-      spending[row.service_type] = row.total || 0;
-    }
-    return spending;
+    const { dailySpendByService } = await import('./repos/ai-usage-repo.js');
+    return await dailySpendByService();   // incremental (was a full-day GROUP BY per call)
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to get all daily spending');
     return {};
