@@ -15,7 +15,9 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 ## OVERNIGHT 10-13→14 (Chad asleep; watchers armed)
 - Fixed tonight: HyPE batches were 8 requests (cc override) → full batches; writer restart crashed runs (read-only err.message); rehype "done" now version-checked; Haiku real-time replies empty (content[0].text) → joined blocks; DeepSeek-tuned maxTokens truncated Haiku JSON (floor 1500); concept parse fenced JSON; runLadder surfaces errors; digest window server-owned; queue dedupe; operator stop final.
 - Watchers: night-restart (22:00 reports restart + concepts Qdrant index), night-index (phrase-coverage + HyPE index refresh 5), hype-after-concepts (20783/20780 v15), wave2-when-ready, overnight-check (15 min: failures/budget/checkpoints), stall-check.
-- MORNING: review phrase-coverage report → fill Qdrant gaps; second HyPE index refresh for books finished after 22:00; books whose research/reconcile failed under the empty-reply bug re-run via queue retries — check failed rows.
+- RESULTS 10-14 03:40: $80 used. v15 at 99–100% on 12 core books + Gleanings 20783 + ESW 20780; interfaith wave 1 COMPLETE (195 docs, v15 100%: KJV, Qur'an, Dhammapada, Sutta Nipata, Gita, Upanishads, Four Books, TTC, Gathas, GGS small). Wave 2 NOT queued (budget). Seeker battery on stored v15: 17/17 top-1 among sample (v14 15/17).
+- v16 TODO: gate "according to this teaching/this text"; one question per teaching for enumerations (Upanishad list ¶ padded 12 item-questions).
+- MORNING: phrase-coverage report is stuck behind ingest batches in the main lane → measure coverage via Qdrant counts vs docs.paragraph_count instead; review phrase-coverage report → fill Qdrant gaps; second HyPE index refresh for books finished after 22:00; books whose research/reconcile failed under the empty-reply bug re-run via queue retries — check failed rows.
 
 ## ▶ NOW (Chad 10-13) — CONCEPTS IN BATCH · DEEP HyPE · CONCEPTS INTO QDRANT
 - [x] Concepts on Haiku batch: Gleanings 8312 · Hidden Words 20809 · ESW 8273 · Aqdas 21307 DONE 10-13 (claims 19,039→28,670)
