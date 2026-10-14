@@ -16,7 +16,11 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - [x] Concepts on Haiku batch: Gleanings 8312 · Hidden Words 20809 · ESW 8273 · Aqdas 21307 DONE 10-13 (claims 19,039→28,670)
 - [ ] TDP 20914 · Dawn-Breakers 21308 running (launched 10-13 17:00 PT)
 - [ ] Concepts Qdrant build queued at 22:00 PT reports-worker restart; re-run phrase-index field=concepts after TDP/DB finish
-- [ ] HyPE v14 deep REGEN approved (Chad 10-13): 12 core books queued (grounding queue only=hype rehype); TDP 20914 + DB 21308 after their concept runs; then phrase-index field=hype for those docs → Qdrant
+- [ ] HyPE v15 (seeker + spiritual root) REGEN queued 10-13 for 12 indexed core books (queue 4805-4816); then phrase-index field=hype docs → Qdrant
+- [ ] HyPE AUTHORITY: on the seeker battery, scripture loses to PILGRIM NOTES/biographies (rival best-sim 0.85-0.93; 9/17 rivals = Pilgrim Notes). Weight the HyPE layer by authority (scripture > interpretation > talks > pilgrim notes), measure with tests/quality/score-seeker.py + seeker battery, THEN add hype to SEARCH_QDRANT (Qdrant HyPE layer is OFF in prod)
+- [ ] HyPE INTERFAITH: hype collection is 100% Bahá'í (1.35M; other traditions 12 pts). Cost + approve v15 HyPE for other traditions' core scripture
+- [ ] HyPE index hygiene: drop legacy "this passage"/Arabic-script questions at index time (questionFault)
+- [ ] CANONICAL COPIES (Chad decision): Gleanings 8312 (enriched, NOT indexed) vs 20783 (indexed); ESW 8273 not indexed; several live HW/SDC copies
 - [ ] CHECK 10-14 ~12:30 PT: daily backup verified on NVMe stage (87939911) — expect no 'UNVERIFIED' email; DB grew 41.5→53GB 10-10..13, find out why (night scan)
 - [x] HyPE v14 "deep" tier (assumption overturned · objection answered · underpinning · implication · tension; still
       passage-answered). Review via POST /api/admin/concepts/hype-sample → show Chad → cost core-book rehype (library ≈ $100+, ask)
