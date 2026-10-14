@@ -49,3 +49,12 @@ describe("Lal's question end to end", () => {
     expect(evidence).toContain('ORIGINAL-language wording');
   });
 });
+
+describe('dropAuthorityLecture', () => {
+  it('removes the authority-layers paragraph and nothing else', async () => {
+    const { dropAuthorityLecture } = await import('../../api/lib/assistant/lint.js');
+    const t = 'The three words are A, B and C.\n\nTo be entirely clear about the authority layers here: this passage is Scripture.\n\nWarmly,\nAnís';
+    expect(dropAuthorityLecture(t)).toBe('The three words are A, B and C.\n\nWarmly,\nAnís');
+    expect(dropAuthorityLecture('Nothing to remove.')).toBe('Nothing to remove.');
+  });
+});

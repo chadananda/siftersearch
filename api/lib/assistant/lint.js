@@ -26,7 +26,17 @@ export function lintReply(text) {
 // what slips through. Rewrites only the fixed phrase, never meaning.
 const MACHINERY_PHRASE = /\b(the|these) (provided|retrieved|given) (texts|passages|sources|writings)\b/gi;
 export function unmachine(text) {
-  return mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search')));
+  return dropAuthorityLecture(mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search'))));
+}
+
+// The AUTHORITY LECTURE — a paragraph explaining "authority layers" nobody asked about. Lal objected to it in three letters
+// ("NO interpretations please"; "I raised ONE question"), and it survived a prompt instruction against it (10-14). The
+// prompt asks; this guarantees: such a paragraph is removed whole. Pure.
+const AUTHORITY_LECTURE = /\b(authority layers?|layers? of authority|to be (entirely |completely |fully )?clear about (the )?authorit)/i;
+export function dropAuthorityLecture(text) {
+  const paras = String(text || '').split(/\n{2,}/);
+  const kept = paras.filter((p) => !AUTHORITY_LECTURE.test(p));
+  return kept.length && kept.length < paras.length ? kept.join('\n\n') : String(text || '');
 }
 
 // A Latin word with Arabic letters inside it: the model slips script mid-word next to Arabic text (10-12 term study:
