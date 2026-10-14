@@ -211,6 +211,12 @@ export default async function groundingRoutes(fastify) {
       first_at: ages?.first_at ?? null, last_at: ages?.last_at ?? null, byDoc, sample };
   });
 
+  // GET /spend/by-stage?hours=12 — what each pipeline stage cost (the basis for library-wide estimates). Read-only.
+  fastify.get('/spend/by-stage', admin, async (req) => {
+    const { spendByStage } = await import('../lib/repos/ai-usage-repo.js');
+    return { hours: Number(req.query?.hours) || 12, rows: await spendByStage(Number(req.query?.hours) || 12) };
+  });
+
   /**
    * POST /concepts/hype-sample {docId, pids? (paragraph_index), limit=5} — generate HyPE for a few paragraphs at the CURRENT prompt
    * and return the questions WITHOUT saving them: the review step before any re-hype is paid for (Chad 10-13).

@@ -16,6 +16,14 @@ export async function spendSince(hours = 6) {
     FROM ai_usage WHERE timestamp > datetime('now', ?) GROUP BY model, caller ORDER BY usd DESC LIMIT 50`, [`-${Number(hours)} hours`]);
 }
 
+/** Spend per stage (service_type) × model over the last `hours` hours, with token totals — the per-paragraph cost basis
+ *  for library-wide estimates (10-14). Bounded by timestamp like spendSince. */
+export async function spendByStage(hours = 12) {
+  return queryAll(`SELECT service_type AS stage, model, COUNT(*) AS calls, ROUND(SUM(estimated_cost_usd), 3) AS usd,
+      SUM(prompt_tokens) AS prompt_tokens, SUM(completion_tokens) AS completion_tokens, SUM(cached_tokens) AS cached_tokens
+    FROM ai_usage WHERE timestamp > datetime('now', ?) GROUP BY service_type, model ORDER BY usd DESC LIMIT 60`, [`-${Number(hours)} hours`]);
+}
+
 /** Highest ai_usage id (the rowid — instant). */
 export async function maxUsageId() {
   return Number((await queryOne('SELECT MAX(id) m FROM ai_usage', [], 'spend-ledger:top'))?.m) || 0;
