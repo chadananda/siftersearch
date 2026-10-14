@@ -12,6 +12,7 @@
  * To swap implementations, update the SERVICE_CONFIG below.
  */
 
+import { retireDeepSeek } from './model-roles.js';
 import { offPeakGate } from './pipeline/peak.js';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
@@ -827,6 +828,7 @@ export function aiService(serviceType, options = {}) {
      */
     async chat(messages, overrides = {}) {
       const opts = { ...svcConfig, ...overrides };
+      Object.assign(opts, (({ provider, model }) => ({ provider, model }))(retireDeepSeek(opts, { log: (m) => logger.warn(m) })));   // model-roles.js
       const startTime = Date.now();
       const { caller, userId, jobId, documentId } = overrides;
 

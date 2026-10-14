@@ -124,8 +124,8 @@ const aiConfig = {
 
   // Document processing (summarization, extraction)
   doc: {
-    provider: get('DOC_LLM_PROVIDER', useRemoteProviders ? 'deepseek' : 'ollama'),
-    model: get('DOC_LLM_MODEL', useRemoteProviders ? 'deepseek-v4-flash' : 'qwen2.5:14b'),
+    provider: get('DOC_LLM_PROVIDER', useRemoteProviders ? 'anthropic' : 'ollama'),
+    model: get('DOC_LLM_MODEL', useRemoteProviders ? 'claude-haiku-5-5' : 'qwen2.5:14b'),
     temperature: getFloat('DOC_LLM_TEMPERATURE', 0.1),
     maxTokens: getInt('DOC_LLM_MAX_TOKENS', 2000)
   },

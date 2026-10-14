@@ -132,21 +132,9 @@ describe('budgetStatus — per-provider ceiling measured incrementally over base
   });
 });
 
-describe('providerForDoc — routes the spend/off-peak gate to the right ceiling', () => {
-  // queryOne is called twice: first ai_usage (ground truth), then language (fallback).
-  const deps = ({ used = null, lang = null } = {}) => ({
-    queryOne: async (sql) => (sql.includes('ai_usage') ? (used ? { provider: used } : null) : (lang == null ? null : { lang })),
-  });
-  it('uses the provider the doc ACTUALLY billed to (fixes the Mázindarání Persian→deepseek misroute)', async () => {
-    // Vol 8: content.language NULL, docs.language 'ar' — but it bills anthropic. Ground truth wins.
-    expect(await providerForDoc(1, deps({ used: 'anthropic', lang: 'ar' }))).toBe('anthropic');
-    expect(await providerForDoc(1, deps({ used: 'deepseek', lang: 'fa' }))).toBe('deepseek');
-  });
-  it('falls back to language only when the doc has no spend history', async () => {
-    expect(await providerForDoc(1, deps({ lang: 'fa' }))).toBe('anthropic');
-    expect(await providerForDoc(1, deps({ lang: 'fa-IR' }))).toBe('anthropic');
-    expect(await providerForDoc(1, deps({ lang: 'en' }))).toBe('deepseek');
-    expect(await providerForDoc(1, deps({ lang: null }))).toBe('deepseek');   // unknown → deepseek (never mis-charge anthropic)
+describe('providerForDoc — every book bills Anthropic (DeepSeek retired 10-13)', () => {
+  it('ignores a DeepSeek spend history and the language', async () => {
+    expect(await providerForDoc(1)).toBe('anthropic');
   });
 });
 

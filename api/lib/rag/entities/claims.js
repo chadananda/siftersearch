@@ -53,7 +53,8 @@ export async function run(ctx, docId, opts = {}) {
     try { stats.written += await ctx.store.saveClaims(rows); }
     catch (e) { if (e?.fatal) throw e; stats.writeFailed = (stats.writeFailed || 0) + rows.length; ctx.log.warn?.({ err: e?.message, rows: rows.length }, 'claims write failed — paragraphs left for --resume'); }
   };
-  await pool(opts.concurrency ?? 5, paras, async (p) => {
+  // BATCH mode (ai.js): every call goes into one Message Batch, so enough must be in flight to fill it
+  await pool(process.env.ANTHROPIC_BATCH === '1' ? 2000 : (opts.concurrency ?? 5), paras, async (p) => {
     const { claims, escalated, continued, errored } = await extractAll(ctx, { system, baseUser: buildUser(p), route, maxTokens });
     if (escalated) stats.escalated++;
     stats.continued += continued;

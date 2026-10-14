@@ -58,3 +58,17 @@ export function modelFor(role) {
   if (o && o.includes(':')) { const [provider, ...m] = o.split(':'); return { provider, model: m.join(':') }; }
   return { provider: r.provider, model: r.model };
 }
+
+// DEEPSEEK IS RETIRED (Chad 10-13: "give me an explanation for any use of deepseek? … Do I have to beg?"). Haiku 5.5 is
+// cheaper ($0.10/$0.50, half that batched, vs flash $0.15/$0.60 off-peak + hidden reasoning output) and better. Dozens of
+// workers and scripts still name a deepseek model, so the rule lives at the call chokepoints (ai.js chatCompletion,
+// ai-services chat, role-client, the rag adapter): any deepseek request is served by Haiku and logged once per process.
+// DEEPSEEK_ALLOWED=1 is the explicit escape hatch (none set anywhere).
+export const RETIRED_TO = { provider: 'anthropic', model: 'claude-haiku-5-5' };
+const warned = new Set();
+export function retireDeepSeek({ provider, model } = {}, { env = process.env, log = null } = {}) {
+  const isDs = String(provider || '') === 'deepseek' || String(model || '').startsWith('deepseek');
+  if (!isDs || env.DEEPSEEK_ALLOWED === '1') return { provider, model, retired: false };
+  if (log && !warned.has(model)) { warned.add(model); log(`deepseek retired: ${model || provider} → ${RETIRED_TO.model}`); }
+  return { ...RETIRED_TO, retired: true };
+}

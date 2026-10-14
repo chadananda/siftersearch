@@ -18,14 +18,19 @@ const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-5-5';
 // peak window, reads Persian. Per-paragraph prompts stay far under its 100k long-context threshold (5× price above it);
 // ai.js / ai-services.js refuse any Anthropic prompt near it. Disambiguation and historical extraction are unchanged.
 const SONNET = 'claude-sonnet-5-5';   // 10-13: the current Sonnet (was 4-6) // Persian DISAMBIGUATION (make-or-break identity stage) + the doctrinal/CONCEPTUAL override (Gate of the Heart)
+// 10-13 (Chad: "why are we still spending on deepseek if it is more expensive and poorer quality than haiku 5.5?" · "we
+// should be doing bulk work with haiku for reduced price"): EVERY bulk stage, every language, on Haiku 5.5 — $0.10/$0.50
+// real-time and $0.05/$0.25 through Message Batches (claims, reconcile, hype, concept-extract) against flash's
+// $0.15/$0.60 off-peak plus its hidden reasoning output. Measured the 6 h before the switch: flash $10.14 (109,567 calls),
+// Sonnet $9.01 (Persian disambiguation + bilingual concept extraction), Haiku $2.85. FLASH stays defined for explicit
+// per-doc overrides only.
+const HAIKU_ALL = { disambig: HAIKU, hype: HAIKU, extract: HAIKU, fallback: HAIKU };
 const LANG_ROUTING = {
-  en: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH },
-  ar: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH }, // flash handles Arabic
-  he: { disambig: FLASH, hype: HAIKU, extract: FLASH, fallback: FLASH }, // flash handles Hebrew
-  // Persian: flash can't read it. DISAMBIGUATE on SONNET — it reads the Persian, resolves identity, and sets the
-  // transliteration everything downstream inherits, so its quality gates the densest, highest-value books; the
-  // bulk stages (hype/extract, which work off the English notes) stay on cheaper HAIKU. Fallback = HAIKU.
-  fa: { disambig: SONNET, hype: HAIKU, extract: HAIKU, fallback: HAIKU },
+  en: HAIKU_ALL,
+  ar: HAIKU_ALL,
+  he: HAIKU_ALL,
+  fa: HAIKU_ALL,   // was disambig: SONNET — Haiku reads Persian; Sonnet stays available as a per-doc override
+  fr: HAIKU_ALL, es: HAIKU_ALL, de: HAIKU_ALL, it: HAIKU_ALL, la: HAIKU_ALL,
 };
 const providerOf = (model) => model.startsWith('claude') ? 'anthropic' : model.startsWith('gpt') ? 'openai' : 'deepseek';
 
@@ -98,10 +103,9 @@ export const PROFILE_OVERRIDES = {
 
 const SCRIPT = { hebrew: /[֐-׿]/, arabicPersian: /[؀-ۿ]/, persianOnly: /[پچژگی]/ };
 
-// The languages our extraction models can actually process: deepseek-v4-flash does en/ar/he; haiku does fa.
-// Anything else (German, French, Italian, Latin, …) has NO capable model — feeding it to the English
-// deepseek path yields garbage and burns tokens, so such docs must be PARKED, never enriched.
-export const SUPPORTED_LANGS = new Set(['en', 'ar', 'he', 'fa']);
+// The languages the pipeline enriches. Until 10-13 only en/ar/he/fa — flash could not read the rest, so German, French,
+// Italian, Spanish and Latin books were PARKED. Haiku reads them all; anything still unlisted stays parked.
+export const SUPPORTED_LANGS = new Set(['en', 'ar', 'he', 'fa', 'fr', 'es', 'de', 'it', 'la']);
 
 // Distinctive high-frequency function words per Latin-script language. Used ONLY to catch non-English
 // Latin text (books mislabeled `en`); English is the default and we override only on a clear margin, so
@@ -200,7 +204,7 @@ export function detectProfile(doc, sampleText = '') {
   // the spend is gated separately and narrowly by anthropic-policy.js (core roster + concept stage + a
   // stored ar/fa original), so this cannot widen beyond the paragraphs that genuinely need it.
   const models = { disambig: disambigModel, hype: ov.model || route.hype, extract: ov.model || route.extract,
-    concept: HAIKU, bilingualExtract: SONNET };
+    concept: HAIKU, bilingualExtract: HAIKU };   // bilingual was SONNET because flash could not read Persian; Haiku can
   const priority = ov.priority ?? (Number.isFinite(doc.doc_priority) ? 1000 - doc.doc_priority : 1000);
   return {
     name: `${genre}-${lang}`, lang, script, genre, domain, priority, enrichable,
@@ -217,6 +221,6 @@ export function detectProfile(doc, sampleText = '') {
 // The ONE name for the model that reads an original alongside its translation. Exported so a caller outside
 // detectProfile() (segmenting an original, where there is no doc profile yet) uses the same id rather than a
 // second literal that can drift from `models.bilingualExtract`.
-export const BILINGUAL_MODEL = SONNET;
+export const BILINGUAL_MODEL = HAIKU;
 
 export { providerOf };

@@ -57,7 +57,8 @@ export async function run(ctx, docId, opts = {}) {
     const chunk = decisions.splice(0, decisions.length);   // sync splice before await → concurrency-safe
     stats.proposed += await ctx.store.saveDecisions(chunk);
   };
-  await pool(opts.concurrency ?? 5, clusters, async (cluster) => {
+  // BATCH mode (ai.js): every call goes into one Message Batch, so enough must be in flight to fill it
+  await pool(process.env.ANTHROPIC_BATCH === '1' ? 2000 : (opts.concurrency ?? 5), clusters, async (cluster) => {
     // arabicForm (Persian docs) = the cluster's original Arabic-script name — the stable identity key. Recall
     // candidates by it too (matches an entity's Arabic alias across transliteration divergence).
     const candidates = await ctx.store.findCandidateEntities(cluster.resolvedAs, { type: 'person', limit: 6, arabicForm: cluster.arabicForm });

@@ -5,6 +5,7 @@
  * Provider selection based on config (dev mode = remote, prod = local).
  */
 
+import { retireDeepSeek } from './model-roles.js';
 import { offPeakGate } from './pipeline/peak.js';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
@@ -75,7 +76,7 @@ export function getLocalLLM() {
  * Chat completion with any provider
  */
 export async function chatCompletion(messages, options = {}) {
-  const {
+  let {
     provider = config.ai.chat.provider,
     model = config.ai.chat.model,
     temperature = config.ai.chat.temperature,
@@ -83,6 +84,7 @@ export async function chatCompletion(messages, options = {}) {
     stream = false
   } = options;
 
+  ({ provider, model } = retireDeepSeek({ provider, model }, { log: (m) => logger.warn(m) }));   // model-roles.js
   logger.debug({ provider, model, messageCount: messages.length }, 'Chat completion');
 
   // SPEND GATE (fail-closed): this is the one client every caller funnels through, so refusing here guarantees
@@ -191,7 +193,9 @@ function anthropicResult(response, { batch = false } = {}) {
 // Anthropic's Message Batches API — half price. Each call still returns its own result to its own caller, so the stages
 // (prompts, parsers, gates, retries, writes) are unchanged; they just keep many paragraphs in flight. The queue is sent
 // as one batch at 500 requests or after 20 s without a new one; a collector polls every 30 s and settles each caller.
-const BATCH_STAGES = new Set(['hype', 'concept-extract']);
+// stages whose calls are INDEPENDENT (a pool over paragraphs/clusters) — never disambiguation, which reads paragraph by
+// paragraph and would wait a batch round-trip per step
+const BATCH_STAGES = new Set(['hype', 'concept-extract', 'claims', 'reconcile']);
 const batchQueue = [];                       // { id, params, resolve, reject }
 const batchWaiting = new Map();              // custom_id → { resolve, reject }
 let batchTimer = null, batchSeq = 0;

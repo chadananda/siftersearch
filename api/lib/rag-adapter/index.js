@@ -2,6 +2,7 @@
 // the injected ports (llm · models · store · profiler · log) from the application's own modules and hands
 // them to createCorpusRAG. The library core imports NONE of this; a different host would write its own
 // adapter. Use `rag` (a ready instance) or `createSifterRAG()` for a custom config.
+import { retireDeepSeek } from '../model-roles.js';
 import { DISAMBIG_WRITE, DISAMBIG_ACCEPTED } from '../pipeline/processed.js';
 import { createCorpusRAG } from '../rag/index.js';
 import { makeStore } from './store.js';                       // Store port over the SifterSearch schema
@@ -24,7 +25,8 @@ import { logger } from '../logger.js';
 // the dominant cost of a Persian book (~10x).
 const JSON_CAPABLE = new Set(['deepseek', 'openai']);
 const llm = {
-  chat: (messages, { model, provider, maxTokens, temperature = 0, json, thinking }) => {
+  chat: (messages, { model: m0, provider: p0, maxTokens, temperature = 0, json, thinking }) => {
+    const { provider, model } = retireDeepSeek({ provider: p0, model: m0 });   // DeepSeek retired 10-13 (model-roles.js)
     // originalLang/sourceLang ride the same ambient scope the stages already stamp; without forwarding them
     // the gate cannot see the capability case and refuses the very calls the allowance was written for.
     const { lang, stage, docId, originalLang, sourceLang } = currentScope();
@@ -58,7 +60,7 @@ const config = {
   // a paid `mergeFallback` reachable from EVERY language, English included (the one path that could bill Anthropic
   // for an English book). These stages read English summaries/facts, so deepseek is correct for every language;
   // the fallback is the SAME model retried, matching LANG_ROUTING's "no cross-provider hop" rule.
-  models: { merge: 'deepseek-v4-flash', mergeFallback: 'deepseek-v4-flash' },
+  models: { merge: 'claude-haiku-5-5', mergeFallback: 'claude-haiku-5-5' },   // was deepseek-v4-flash (retired 10-13)
 };
 
 // Assemble the full dependency set. Any field can be overridden by a caller (e.g. tests inject fakes).

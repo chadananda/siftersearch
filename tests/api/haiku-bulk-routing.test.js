@@ -4,15 +4,18 @@ import { assertAnthropicAllowed, isBulkHaikuAllowed, assertUnderLongContext } fr
 import { detectProfile } from '../../api/lib/pipeline/profile.js';
 
 describe('routing', () => {
-  it('HyPE and concept extraction use Haiku 5.5 in every language; disambiguation and historical extraction are unchanged', () => {
+  it('every bulk stage uses Haiku 5.5 in every language (10-13: no DeepSeek, no Sonnet in bulk)', () => {
     for (const id of [21310]) {
       const p = detectProfile({ id, lang: 'en' });
       expect(p.models.hype).toBe('claude-haiku-5-5');
       expect(p.models.concept).toBe('claude-haiku-5-5');
-      expect(p.models.disambig).toBe('deepseek-v4-flash');
-      expect(p.models.extract).toBe('deepseek-v4-flash');
+      expect(p.models.disambig).toBe('claude-haiku-5-5');
+      expect(p.models.extract).toBe('claude-haiku-5-5');
+      expect(p.models.bilingualExtract).toBe('claude-haiku-5-5');
+      expect(p.fallback).toBe('claude-haiku-5-5');
     }
     expect(detectProfile({ id: 15228 }).models.hype).toBe('claude-haiku-5-5');   // Persian
+    expect(detectProfile({ id: 15228 }).models.disambig).toBe('claude-haiku-5-5');
   });
 });
 
@@ -78,5 +81,15 @@ describe('background runs the API launches', () => {
     const { backgroundEnv } = await import('../../api/lib/pipeline/spawn.js');
     const env = backgroundEnv('siftersearch-concepts', {});
     expect(env).toMatchObject({ name: 'siftersearch-concepts', ANTHROPIC_BATCH: '1', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' });
+  });
+});
+
+describe('DeepSeek retired (10-13)', () => {
+  it('any deepseek request is served by Haiku 5.5 unless DEEPSEEK_ALLOWED=1', async () => {
+    const { retireDeepSeek } = await import('../../api/lib/model-roles.js');
+    expect(retireDeepSeek({ provider: 'deepseek', model: 'deepseek-v4-pro' }, { env: {} })).toMatchObject({ provider: 'anthropic', model: 'claude-haiku-5-5', retired: true });
+    expect(retireDeepSeek({ provider: 'whatever', model: 'deepseek-v4-flash' }, { env: {} }).model).toBe('claude-haiku-5-5');
+    expect(retireDeepSeek({ provider: 'anthropic', model: 'claude-sonnet-5-5' }, { env: {} }).model).toBe('claude-sonnet-5-5');
+    expect(retireDeepSeek({ provider: 'deepseek', model: 'deepseek-v4-flash' }, { env: { DEEPSEEK_ALLOWED: '1' } }).provider).toBe('deepseek');
   });
 });

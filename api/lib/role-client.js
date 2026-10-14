@@ -4,7 +4,7 @@
 // model. Per-model quirks come from the registry (noTemperature, maxTokensParam); every Anthropic call passes the spend
 // policy as stage `interactive:<role>`. Usage is logged for non-streamed calls. Deps: openai SDK, model-roles, registry.
 import OpenAI from 'openai';
-import { modelFor } from './model-roles.js';
+import { modelFor, retireDeepSeek } from './model-roles.js';
 import { getModel } from './model-registry.js';
 import { assertAnthropicAllowed } from './anthropic-policy.js';
 import { logAIUsage } from './ai-services.js';
@@ -32,7 +32,7 @@ export function shapeParams(params, { provider, model }) {
 }
 
 export async function roleCreate(role, params, opts = {}) {
-  const { provider, model } = modelFor(role);
+  const { provider, model } = retireDeepSeek(modelFor(role));
   if (provider === 'anthropic') assertAnthropicAllowed({ provider, model, stage: `interactive:${role}`, caller: role });
   const res = await clientFor(provider).chat.completions.create(shapeParams(params, { provider, model }), opts);
   if (!params.stream && res?.usage) {
