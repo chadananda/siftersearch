@@ -62,6 +62,20 @@ operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bot
 - Research per ¶: entity graph (disambiguated mentions) → /biography pages + claims → CTAI (name meanings) → gazetteer → Phelps
   (tablets to them) → library search for other passages; ONE model call writes notes from cited evidence only. Measure $/page first.
 
+## ▶ NOW (Chad 10-15) — SUB-DOCUMENTS IN THE DOCUMENT INDEX
+"It is simply ineffective to have an index of book names only. Many people don't even know which book their sub-document
+was published inside." (Foundations of Unity's tablets, God Passes By's Foreword/Epilogue, the Gospel of John, the
+Dispensation inside The World Order of Bahá'u'lláh.)
+- [x] Phase 1: doc_sections + doc_sections_fts (migration 149), sections-repo, section-index job (index2 lane);
+  GET /api/documents?search returns `sections` (with their book), GET /api/documents/:id/sections = table of contents;
+  citation finder + auditor holdings check use them. (91684326)
+- [x] Phase 2: nested parts from the source file's outline (heading level + para id → rows via block_attrs) (6bc325a9)
+- [ ] Run section-index library-wide once job 94 finishes (reports worker restart needed); check WOB 20894 shows
+  "The Dispensation of Bahá'u'lláh" + "The Goal of a New World Order"
+- [ ] Anís: the search plan names the WORK asked about ("what does the Dispensation say about…") → resolve through
+  findDocuments + findSections → scope the search to that book / section's paragraph range (search-scope gains a range)
+- [ ] Library page + /library search: show sections under their book
+
 ## ⛔ HIGHEST PRIORITY (Chad 10-12) — what the Anís audits identify as a useful search-strategy extension
 "Whatever the audits identify as a useful extension for our search strategies is our highest priority" — and the CTAI
 API (ours) may be extended for it (e.g. a "Shoghi Effendi word frequency chart" tool).
