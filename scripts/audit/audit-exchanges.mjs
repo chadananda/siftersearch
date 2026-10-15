@@ -43,7 +43,8 @@ const anthropic = new Anthropic({ maxRetries: 2 });
 // The catalogue check for works the auditor says the reply needed (auditor.verifyHoldings): the API's title search
 // (docs-repo findDocuments) over each way the phrase can name a title; held when a found title matches (titleMatches).
 // 2 (10-15): portions of a book count as the book, title matching over glosses/lists, excerpts not judged truncated
-const AUDIT_V = 2;
+// 3 (10-15): numbering ('First Epistle of John' = '1 John'), partial names, a seen defect kept beside unheld works
+const AUDIT_V = 3;
 const API = process.env.AUDIT_API || 'http://127.0.0.1:7839';
 async function findHeld(phrase) {
   for (const cand of titleCandidates(phrase)) {
@@ -87,6 +88,20 @@ async function audit(row) {
 }
 
 let done = 0;
+// --recheck-holdings: re-run ONLY the catalogue check over stored verdicts that list needed_works (no model call).
+if (process.argv.includes('--recheck-holdings')) {
+  const rows = store.prepare(`SELECT message_id, verdict_json FROM audits WHERE status = 'done' AND json_extract(verdict_json, '$.needed_works') IS NOT NULL
+    AND COALESCE(json_extract(verdict_json, '$.audit_v'), 1) < ?`).all(AUDIT_V);
+  const save = store.prepare('UPDATE audits SET verdict_json = ? WHERE message_id = ?');
+  let gaps = 0;
+  for (const r of rows) {
+    const v = { ...(await verifyHoldings(JSON.parse(r.verdict_json), findHeld)), audit_v: AUDIT_V };
+    if (v.data_gap?.found) gaps++;
+    save.run(JSON.stringify(v), r.message_id);
+  }
+  console.log(JSON.stringify({ rechecked: rows.length, with_gap: gaps }));
+  process.exit(0);
+}
 // --reaudit-gaps: stored audits from before AUDIT_V whose findings this version changes — a library gap, or a passage
 // judged truncated from its clipped excerpt — are audited again, then the process exits.
 if (process.argv.includes('--reaudit-gaps')) {

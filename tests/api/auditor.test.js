@@ -81,3 +81,22 @@ describe('catalogue title matching (10-15: fifteen held works reported as gaps)'
     expect(held('Bahá’í scholarship on irfán and Islamic mysticism', 'Islam')).toBe(false);
   });
 });
+
+describe('matching v3 + recheck (10-15)', async () => {
+  const { titleCandidates, titleMatches, verifyHoldings } = await import('../../api/lib/audit/auditor.js');
+  const held = (phrase, title) => titleCandidates(phrase).some((c) => titleMatches(c, title));
+  it('numbering and partial names', () => {
+    expect(held('First Epistle of John', '1 John')).toBe(true);
+    expect(held('Karaniya Metta Sutta', 'Sutta Nipata 1.8 - Metta Sutta (Discourse on Loving-kindness)')).toBe(true);
+    expect(held('First Epistle of John', '3 John')).toBe(false);
+    expect(held('Lotus Sutra', 'Theragatha 15.2 - Udayin Thera: The Blooming Lotus')).toBe(false);
+  });
+  it('a visible defect survives beside unheld works; a recheck starts from the model\'s own gap', async () => {
+    const none = async () => null;
+    const v = await verifyHoldings({ needed_works: ['Lotus Sutra'], problems: [], data_gap: { found: true, detail: 'passage [2] has garbled OCR' } }, none);
+    expect(v.data_gap.detail).toMatch(/garbled OCR · not in the library .*Lotus Sutra/);
+    const again = await verifyHoldings(v, async () => ({ id: 1, title: 'The Lotus Sutra' }));
+    expect(again.data_gap).toEqual({ found: true, detail: 'passage [2] has garbled OCR' });
+    expect(again.problems.filter((p) => p.kind === 'not-retrieved')).toHaveLength(1);
+  });
+});

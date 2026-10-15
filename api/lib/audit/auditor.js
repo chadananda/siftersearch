@@ -109,7 +109,9 @@ const ABSENCE = /\b(not (present|held|available|retrievable|found|in the library
  *  that only asserts absence is dropped — the auditor cannot see the catalogue. Pure over the injected lookup. */
 export async function verifyHoldings(v, find) {
   if (!v) return v;
-  const out = { ...v, problems: Array.isArray(v.problems) ? [...v.problems] : [], holdings_checked: true };
+  // a recheck starts clean: earlier 'held but not retrieved' findings were this function's own output
+  const out = { ...v, holdings_checked: true,
+    problems: (Array.isArray(v.problems) ? v.problems : []).filter((p) => !(p?.kind === 'not-retrieved' && /^held but not retrieved/.test(p.detail || ''))) };
   const unheld = [], unchecked = [];
   for (const title of (Array.isArray(v.needed_works) ? v.needed_works : []).slice(0, 8)) {
     let doc;
@@ -117,10 +119,15 @@ export async function verifyHoldings(v, find) {
     if (doc) out.problems.push({ where: 'reply', kind: 'not-retrieved', detail: `held but not retrieved: "${doc.title}" (doc ${doc.id}) — needed for "${title}"` });
     else unheld.push(title);
   }
-  const asserted = v.data_gap?.found && ABSENCE.test(String(v.data_gap.detail || ''));
+  // the model's own data_gap is kept (data_gap_model) so a recheck starts from it; a defect it SAW in the evidence stands
+  // beside any unheld works (10-15: it was overwritten), an absence claim it could not see is dropped
+  const model = v.data_gap_model || v.data_gap || { found: false };
+  out.data_gap_model = model;
+  const seen = model.found && !ABSENCE.test(String(model.detail || '')) ? model.detail : null;
   if (unchecked.length) out.holdings_unchecked = unchecked;
-  if (unheld.length) out.data_gap = { found: true, detail: `not in the library (catalogue title search found nothing): ${unheld.join('; ')}` };
-  else if (asserted) out.data_gap = { found: false, detail: `dropped unverified claim: ${v.data_gap.detail}` };
+  const parts = [seen, unheld.length ? `not in the library (catalogue title search found nothing): ${unheld.join('; ')}` : null].filter(Boolean);
+  out.data_gap = parts.length ? { found: true, detail: parts.join(' · ') }
+    : { found: false, ...(model.found ? { detail: `dropped unverified claim: ${model.detail}` } : {}) };
   return out;
 }
 
@@ -128,8 +135,11 @@ export async function verifyHoldings(v, find) {
 // "Introduction to The Dawn-Breakers (Shoghi Effendi)" missed "The Dawn-breakers---Introduction", "Qur'an (ḥūr al-ʿayn)"
 // missed the Qur'an — and fifteen held works were reported as library gaps).
 const STOP = new Set(['the', 'of', 'and', 'a', 'an', 'to', 'on', 'in', 'by', 'for', 'with', 'from', 'al', 'el', 'introduction', 'intro', 'notes', 'note', 'book', 'volume', 'vol']);
+const ORDINAL = { first: '1', second: '2', third: '3', fourth: '4', fifth: '5', i: '1', ii: '2', iii: '3' };
 export const titleWords = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’'‘`ʿʾ]/g, '').toLowerCase()
-  .split(/[^a-z0-9]+/).filter((w) => w && !STOP.has(w)).map((w) => (w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w));
+  .split(/[^a-z0-9]+/).filter((w) => w && !STOP.has(w)).map((w) => ORDINAL[w] || w)
+  .filter((w) => !['epistle', 'letter', 'gospel'].includes(w))                       // "First Epistle of John" = "1 John"
+  .map((w) => (w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w));
 
 /** The ways a needed-work phrase can name a title: whole, without its (gloss), each (gloss), each part of a / or ; list. */
 export function titleCandidates(phrase) {
@@ -152,5 +162,6 @@ export function titleMatches(candidate, docTitle) {
   const a = new Set(titleWords(candidate)), b = new Set(titleWords(docTitle));
   if (!a.size || !b.size) return false;
   const aInB = [...a].every((w) => b.has(w)), bInA = [...b].every((w) => a.has(w));
-  return aInB || (bInA && b.size / a.size >= 0.5);
+  const shared = [...a].filter((w) => b.has(w)).length;          // "Karaniya Metta Sutta" ~ "Sutta Nipata 1.8 - Metta Sutta"
+  return aInB || (bInA && b.size / a.size >= 0.5) || (shared >= 2 && shared / a.size >= 2 / 3);
 }
