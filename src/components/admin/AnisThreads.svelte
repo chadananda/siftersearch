@@ -39,9 +39,11 @@
     await tick(); toTop(id);
     try { thread = await admin.getAnisThread(id); } catch (e) { threadError = e.message || 'Failed to load'; }
   }
+  // Scroll ONLY when the row's header is out of view (Chad 10-15: "the active block should not move so long as it is
+  // within the viewport") — on a refresh the browser restores the position and the row stays where it is.
   function toTop(id) {
-    const el = document.getElementById(`thread-${id}`);
-    if (el && (el.getBoundingClientRect().top < 0 || el.getBoundingClientRect().top > window.innerHeight * 0.4)) el.scrollIntoView({ block: 'start' });
+    const top = document.getElementById(`thread-${id}`)?.getBoundingClientRect().top;
+    if (top != null && (top < 0 || top > window.innerHeight - 48)) document.getElementById(`thread-${id}`).scrollIntoView({ block: 'start' });
   }
 
   // from the work queue: the thread may be outside the current filter — show All, open it, bring it into view

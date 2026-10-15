@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-14T16:50:17.155Z",
+  "generated": "2026-10-15T15:48:48.641Z",
   "entries": [
+    {
+      "hash": "41a3ef83",
+      "date": "2026-10-15",
+      "type": "Fixed",
+      "description": "A portion of a book is held when the book is; no false 'truncated'; titles matched over glosses",
+      "scope": "anis-audit"
+    },
+    {
+      "hash": "4dd3017a",
+      "date": "2026-10-14",
+      "type": "Docs",
+      "description": "4 TB NVMe arrives ~10-24 — move the phrase indexer cache and Qdrant then",
+      "scope": "worklist"
+    },
+    {
+      "hash": "94b3b6ce",
+      "date": "2026-10-14",
+      "type": "Performance",
+      "description": "No vector lookup for an unchanged, already-upserted unit",
+      "scope": "phrase-index"
+    },
+    {
+      "hash": "b44c09a9",
+      "date": "2026-10-14",
+      "type": "Performance",
+      "description": "An explicit --docs list is read one document at a time",
+      "scope": "phrase-index"
+    },
+    {
+      "hash": "08f48aa0",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "The audit model refuses forced tool_choice — ask for the tool call instead",
+      "scope": "anis-audit"
+    },
+    {
+      "hash": "8763225f",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "No 'library gap' without a catalogue check; correspondents named without the network",
+      "scope": "anis-audit"
+    },
+    {
+      "hash": "f2fdc4f8",
+      "date": "2026-10-14",
+      "type": "Fixed",
+      "description": "Admin pages loaded the chat widget twice ('sifter-chat' already defined)",
+      "scope": "widget"
+    },
     {
       "hash": "87b49c1c",
       "date": "2026-10-14",
@@ -3451,59 +3500,61 @@
       "type": "Fixed",
       "description": "Compare canonical writer names; linker gains pair mode, inheritance, fair eval",
       "scope": "translators,linking"
-    },
-    {
-      "hash": "bcd1ee9d",
-      "date": "2026-10-03",
-      "type": "Fixed",
-      "description": "Match known names on the whole string first; cut a trailing place (\"… Kahn. Pittsburgh\"), never a title",
-      "scope": "translators"
-    },
-    {
-      "hash": "29d53565",
-      "date": "2026-10-03",
-      "type": "Fixed",
-      "description": "Interpreter names are people — reject prose and Central Figures, strip dates; fold Faríd/Baghdádí variants feat(linking): scripts/linking/xl-link.mjs — cross-language paragraph linker (phrase voting → anchors → order/window fill)",
-      "scope": "translators"
-    },
-    {
-      "hash": "d2f6f2e0",
-      "date": "2026-10-03",
-      "type": "New",
-      "description": "Migration 141 — content.translator(+basis), docs.translators; interpreters of talks, book translators",
-      "scope": "translators"
-    },
-    {
-      "hash": "d3da5604",
-      "date": "2026-10-03",
-      "type": "New",
-      "description": "Qdrant phrase + keyword layers (opt-in), source-link precedence, scraped-site junk filter, paged phrase indexer",
-      "scope": "search"
-    },
-    {
-      "hash": "0c6a016f",
-      "date": "2026-10-03",
-      "type": "Fixed",
-      "description": "Meili_vs_db sums every index sifter.db feeds; pm2 stops alarming on retired / deliberately-off apps",
-      "scope": "health"
-    },
-    {
-      "hash": "bb0b5658",
-      "date": "2026-10-03",
-      "type": "Fixed",
-      "description": "Don't await the entity-review flag-table DDL at startup — every deploy caused a restart storm",
-      "scope": "api"
-    },
-    {
-      "hash": "871c05a7",
-      "date": "2026-10-03",
-      "type": "New",
-      "description": "A paragraph's Meili `author` is its own writer — author filters find quotations in any book",
-      "scope": "search"
     }
   ],
   "grouped": {
+    "2026-10-15": [
+      {
+        "hash": "41a3ef83",
+        "date": "2026-10-15",
+        "type": "Fixed",
+        "description": "A portion of a book is held when the book is; no false 'truncated'; titles matched over glosses",
+        "scope": "anis-audit"
+      }
+    ],
     "2026-10-14": [
+      {
+        "hash": "4dd3017a",
+        "date": "2026-10-14",
+        "type": "Docs",
+        "description": "4 TB NVMe arrives ~10-24 — move the phrase indexer cache and Qdrant then",
+        "scope": "worklist"
+      },
+      {
+        "hash": "94b3b6ce",
+        "date": "2026-10-14",
+        "type": "Performance",
+        "description": "No vector lookup for an unchanged, already-upserted unit",
+        "scope": "phrase-index"
+      },
+      {
+        "hash": "b44c09a9",
+        "date": "2026-10-14",
+        "type": "Performance",
+        "description": "An explicit --docs list is read one document at a time",
+        "scope": "phrase-index"
+      },
+      {
+        "hash": "08f48aa0",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "The audit model refuses forced tool_choice — ask for the tool call instead",
+        "scope": "anis-audit"
+      },
+      {
+        "hash": "8763225f",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "No 'library gap' without a catalogue check; correspondents named without the network",
+        "scope": "anis-audit"
+      },
+      {
+        "hash": "f2fdc4f8",
+        "date": "2026-10-14",
+        "type": "Fixed",
+        "description": "Admin pages loaded the chat widget twice ('sifter-chat' already defined)",
+        "scope": "widget"
+      },
       {
         "hash": "87b49c1c",
         "date": "2026-10-14",
@@ -6976,55 +7027,6 @@
         "type": "Fixed",
         "description": "Compare canonical writer names; linker gains pair mode, inheritance, fair eval",
         "scope": "translators,linking"
-      },
-      {
-        "hash": "bcd1ee9d",
-        "date": "2026-10-03",
-        "type": "Fixed",
-        "description": "Match known names on the whole string first; cut a trailing place (\"… Kahn. Pittsburgh\"), never a title",
-        "scope": "translators"
-      },
-      {
-        "hash": "29d53565",
-        "date": "2026-10-03",
-        "type": "Fixed",
-        "description": "Interpreter names are people — reject prose and Central Figures, strip dates; fold Faríd/Baghdádí variants feat(linking): scripts/linking/xl-link.mjs — cross-language paragraph linker (phrase voting → anchors → order/window fill)",
-        "scope": "translators"
-      },
-      {
-        "hash": "d2f6f2e0",
-        "date": "2026-10-03",
-        "type": "New",
-        "description": "Migration 141 — content.translator(+basis), docs.translators; interpreters of talks, book translators",
-        "scope": "translators"
-      },
-      {
-        "hash": "d3da5604",
-        "date": "2026-10-03",
-        "type": "New",
-        "description": "Qdrant phrase + keyword layers (opt-in), source-link precedence, scraped-site junk filter, paged phrase indexer",
-        "scope": "search"
-      },
-      {
-        "hash": "0c6a016f",
-        "date": "2026-10-03",
-        "type": "Fixed",
-        "description": "Meili_vs_db sums every index sifter.db feeds; pm2 stops alarming on retired / deliberately-off apps",
-        "scope": "health"
-      },
-      {
-        "hash": "bb0b5658",
-        "date": "2026-10-03",
-        "type": "Fixed",
-        "description": "Don't await the entity-review flag-table DDL at startup — every deploy caused a restart storm",
-        "scope": "api"
-      },
-      {
-        "hash": "871c05a7",
-        "date": "2026-10-03",
-        "type": "New",
-        "description": "A paragraph's Meili `author` is its own writer — author filters find quotations in any book",
-        "scope": "search"
       }
     ]
   }
