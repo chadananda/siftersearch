@@ -12,8 +12,46 @@ export function isNoiseHeading(title) {
   if (!t || t.length > 160) return true;
   if (!/\p{L}/u.test(t)) return true;                                        // "* * *", "12", "—"
   if (/^(page|p\.)\s*\d+$/i.test(t)) return true;
+  if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}$/i.test(t)) return true;
   return false;
 }
+
+/**
+ * Phase 2 — the source file's OUTLINE: every heading with its level and paragraph id ({.toc1 … id="para_72"}), so parts
+ * whose own heading the ingest did not store ("The Dispensation of Bahá'u'lláh", "The Goal of a New World Order") become
+ * sections, NESTED: a part spans every paragraph until the next heading of the same or a higher level.
+ * md: the file; rows: [{ id, paragraph_index, para_num }] (para_num from the row's block_attrs id="para_N"), in order.
+ */
+export function outlineSections(md, rows = []) {
+  const heads = [];
+  for (const line of String(md || '').split('\n')) {
+    const h = line.match(/^(#{1,6})\s+(.*?)\s*\{([^{}]*)\}\s*$/);
+    if (!h) continue;
+    const attrs = h[3];
+    if (/\btype="title"/.test(attrs)) continue;                         // the book's own title / author / copyright block
+    const num = Number(attrs.match(/\bid="para_(\d+)"/)?.[1]);
+    if (!num) continue;
+    const level = Number(attrs.match(/\.toc(\d)\b/)?.[1]) || h[1].length;
+    const title = fold(h[2]);
+    if (isNoiseHeading(title)) continue;
+    heads.push({ num, level, title });
+  }
+  const numbered = rows.filter((r) => Number.isFinite(r.para_num));
+  const out = [];
+  heads.forEach((hd, i) => {
+    const next = heads.slice(i + 1).find((x) => x.level <= hd.level);
+    const inside = numbered.filter((r) => r.para_num > hd.num && (!next || r.para_num < next.num));
+    if (!inside.length) return;
+    out.push({ ord: out.length, level: hd.level, title: hd.title, start_index: inside[0].paragraph_index,
+      end_index: inside[inside.length - 1].paragraph_index, paragraphs: inside.length, first_para_id: inside[0].id });
+  });
+  return out;
+}
+
+/** para_N of a row from its block_attrs JSON (copied from the file by the block-attrs job), or null. */
+export const paraNum = (blockAttrs) => {
+  try { const m = String(JSON.parse(blockAttrs || '{}').id || '').match(/^para_(\d+)$/); return m ? Number(m[1]) : null; } catch { return null; }
+};
 
 /** rows: [{ id, paragraph_index, heading }] in paragraph order → [{ ord, title, start_index, end_index, paragraphs, first_para_id }]. */
 export function sectionsFromRows(rows = []) {

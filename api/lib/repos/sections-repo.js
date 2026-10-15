@@ -7,9 +7,9 @@ import { ftsQuery } from '../docs-repo.js';
 // folded as docs_fts (migration 142): the tokenizer splits "Bahá’u’lláh" at apostrophes, so they are removed
 const foldText = (s) => String(s || '').replace(/[’‘'ʼ`]/g, '');
 
-/** A document's live paragraphs with their stored heading, in order (input to sections.js sectionsFromRows). */
+/** A document's live paragraphs with their stored heading and block_attrs (file paragraph id), in order (sections.js). */
 export const headingRowsForDoc = (docId) =>
-  queryAll('SELECT id, paragraph_index, heading FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [Number(docId)], 'sections:rows');
+  queryAll('SELECT id, paragraph_index, heading, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [Number(docId)], 'sections:rows');
 
 /** Replace a document's sections (and their FTS rows) in one transaction. sections from sections.js. */
 export async function replaceSections(docId, bookTitle, sections, source = 'heading-run') {

@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 let raw;
 const SCHEMA = `
 CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, source_site TEXT, deleted_at TEXT, duplicate_of INTEGER);
-CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, heading TEXT, deleted_at TEXT);
+CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, heading TEXT, block_attrs TEXT, deleted_at TEXT);
 CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER NOT NULL, ord INTEGER NOT NULL, level INTEGER, title TEXT NOT NULL,
   start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, paragraphs INTEGER NOT NULL, first_para_id INTEGER,
   source TEXT NOT NULL DEFAULT 'heading-run', UNIQUE (doc_id, ord));
