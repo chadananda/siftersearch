@@ -186,3 +186,6 @@ API (ours) may be extended for it (e.g. a "Shoghi Effendi word frequency chart" 
 ## Waiting
 - [ ] Strata — waits until xswarm moves to another worker (Chad 10-11)
 - [ ] Laya pilot location (tower CPU vs boss GPU)
+- [ ] **4 TB NVMe + Dell Quad card arrives ~10-24** (Chad 10-14: wait, don't crowd /fast). On arrival: move the phrase
+  indexer cache `/tank/sifter/phrase-vectors/vectors.db` (184 GB, on the HDD — every new phrase = one random seek,
+  ~100/s) and Qdrant onto it; move the 970 EVO to Slot1; then supplemental phrase indexing (1.41M ¶) can start.
