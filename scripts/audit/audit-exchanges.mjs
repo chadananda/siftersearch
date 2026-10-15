@@ -50,9 +50,12 @@ async function findHeld(phrase) {
   for (const cand of titleCandidates(phrase)) {
     const r = await fetch(`${API}/api/documents?search=${encodeURIComponent(cand)}&limit=8`, { signal: AbortSignal.timeout(15000) });
     if (!r.ok) throw new Error(`catalogue ${r.status}`);            // unknown ≠ unheld: the claim is then left unchecked
-    const { documents = [] } = await r.json();
+    const { documents = [], sections = [] } = await r.json();
     const hit = documents.find((d) => titleMatches(cand, d.title));
     if (hit) return hit;
+    // a sub-document (Chad 10-15): the work published inside a book — held as that book's section
+    const part = sections.find((x) => titleMatches(cand, x.title) || titleMatches(cand, `${x.title} ${x.book}`));
+    if (part) return { id: part.doc_id, title: `${part.title}, in ${part.book} (¶${part.start_index}–${part.end_index})` };
   }
   return null;
 }

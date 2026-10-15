@@ -14,6 +14,7 @@
 import { queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { findDocuments, listDocs } from '../lib/docs-repo.js';
+import { findSections, sectionsOfDoc } from '../lib/repos/sections-repo.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 
@@ -132,8 +133,14 @@ export default async function documentsRoutes(fastify) {
     const r = search
       ? await findDocuments(search, { religion, collection, language, fields, limit, offset })
       : await listDocs({ religion, collection, language, fields, orderBy: 'title', limit, offset });
-    return { documents: r.docs, total: r.total, limit, offset };
+    // sub-documents (Chad 10-15): a searched name may be a part of a book — its introduction, a talk, a tablet in a
+    // compilation — so matching sections come back beside the books, each with the book it was published in
+    const sections = search && !offset ? await findSections(search, { limit: 10 }).catch(() => []) : undefined;
+    return { documents: r.docs, total: r.total, limit, offset, ...(sections ? { sections } : {}) };
   });
+
+  // A book's table of contents: its sections with paragraph ranges
+  fastify.get('/:id/sections', async (request) => ({ sections: await sectionsOfDoc(request.params.id) }));
 
   // Get document metadata by ID
   fastify.get('/:id', async (request) => {

@@ -1,6 +1,7 @@
 // Ops reports — the named, server-side answers to "is the library healthy?". Each runs inside siftersearch-reports (never
 // the API: they scan whole tables), one at a time, and returns plain JSON stored in ops_report_runs. Add a report here,
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
+import { sectionIndexJob } from './section-index-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
@@ -108,12 +109,13 @@ REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, max
 // HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build
 REPORTS['hype-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'hype' });
 REPORTS['concept-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'concepts' });
+REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
  *  there is no day or night. The rule is to ingest correctly so as to not block queries"): heavy work is kept from
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
-export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index'],
+export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'],
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact'],
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(LANES.heavy);

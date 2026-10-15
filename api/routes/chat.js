@@ -1061,8 +1061,14 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
       } catch (liveErr) {
         logger.warn({ err: liveErr.message }, 'find_document liveness check failed — returning unfiltered');
       }
+      // sub-documents (Chad 10-15): the name may be a part of a book — an introduction, a talk, a tablet in a compilation
+      const { findSections } = await import('../lib/repos/sections-repo.js');
+      const sections = (await findSections(title || '', { limit: 5 }).catch(() => [])).map((s) => ({
+        section: s.title, in_book: s.book, document_id: s.doc_id, start_paragraph: s.start_index, end_paragraph: s.end_index,
+        read_hint: `read_document_for_question with document_id=${s.doc_id}, start_paragraph=${s.start_index}, end_paragraph=${s.end_index}` }));
       return {
         candidates: live.slice(0, safeLimit),
+        ...(sections.length ? { sections } : {}),
         searched: title,
         religion_filter: religion || null,
         author_filter: author || null

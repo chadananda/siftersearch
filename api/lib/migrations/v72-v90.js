@@ -1607,6 +1607,22 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_reading_sessions_who ON reading_sessions(participant_id, updated_at)`);
     logger.info('Migration 148 complete: reading_sessions');
   },
+
+  149: async () => {
+    // SUB-DOCUMENTS (Chad 10-15: "it is simply ineffective to have an index of book names only. Many people don't even
+    // know which book their sub-document was published inside"): one row per section (a run of paragraphs under one
+    // heading — God Passes By's Foreword, a talk, a tablet in a compilation), with its paragraph range. doc_sections_fts
+    // indexes the section title beside its BOOK's title, folded like docs_fts (142), so "God Passes By epilogue" and "The
+    // Dispensation of Bahá'u'lláh" both find their place. Written per document by sections-repo (ops job section-index).
+    await query(`CREATE TABLE IF NOT EXISTS doc_sections (
+      id INTEGER PRIMARY KEY, doc_id INTEGER NOT NULL, ord INTEGER NOT NULL, level INTEGER, title TEXT NOT NULL,
+      start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, paragraphs INTEGER NOT NULL, first_para_id INTEGER,
+      source TEXT NOT NULL DEFAULT 'heading-run', UNIQUE (doc_id, ord)
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_sections_doc ON doc_sections(doc_id)');
+    await query(`CREATE VIRTUAL TABLE IF NOT EXISTS doc_sections_fts USING fts5(title, book, tokenize = 'unicode61 remove_diacritics 2')`);
+    logger.info('Migration 149 complete: doc_sections + doc_sections_fts');
+  },
 };
 
 export const graphMigrations = {
