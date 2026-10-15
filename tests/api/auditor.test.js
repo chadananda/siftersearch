@@ -59,3 +59,25 @@ describe('verifyHoldings (the auditor cannot see the catalogue)', async () => {
     expect(v.data_gap.found).toBe(true);
   });
 });
+
+describe('catalogue title matching (10-15: fifteen held works reported as gaps)', async () => {
+  const { titleCandidates, titleMatches } = await import('../../api/lib/audit/auditor.js');
+  const held = (phrase, title) => titleCandidates(phrase).some((c) => titleMatches(c, title));
+  it('a portion of a book is held when the book is (Chad 10-15)', () => {
+    expect(held('Introduction to The Dawn-Breakers (Shoghi Effendi)', 'The Dawn-Breakers')).toBe(true);
+    expect(held('Introduction to The Dawn-Breakers (Shoghi Effendi)', 'The Dawn-breakers---Introduction')).toBe(true);
+    expect(held('Kitáb-i-Aqdas (introduction/notes)', 'The Kitáb-i-Aqdas')).toBe(true);
+    expect(held('Days of Remembrance footnotes on the Maid of Paradise', 'Days of Remembrance')).toBe(true);
+    expect(held('Tablet to the Hague (Selections from the Writings of \'Abdu\'l-Bahá)', 'Selections from the Writings of ‘Abdu’l-Bahá')).toBe(true);
+  });
+  it('glosses, lists and transliteration do not hide a held work', () => {
+    expect(held("Qur'an (ḥūr al-ʿayn)", 'The Qur’án')).toBe(true);
+    expect(held("Qur'an (ḥūr al-ʿayn)", 'The Quran')).toBe(true);
+    expect(held('Bible (Gospels); Karaniya Metta Sutta; Lotus Sutra', 'The Lotus Sutra')).toBe(true);
+    expect(held('Shoghi Effendi, The Greatest Name / God Passes By', 'God Passes By')).toBe(true);
+  });
+  it('an unrelated title is not a match', () => {
+    expect(held('Lotus Sutra', 'The Dawn-Breakers')).toBe(false);
+    expect(held('Bahá’í scholarship on irfán and Islamic mysticism', 'Islam')).toBe(false);
+  });
+});

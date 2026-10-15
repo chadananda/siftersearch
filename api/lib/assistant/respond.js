@@ -69,7 +69,7 @@ export function searchQueryFor(messages) {
 
 /** The passages a reply was written from, compact, for the exchange log (the strategy auditor reads them). */
 export const evidenceOf = (retrieved) => (retrieved || []).slice(0, 10).map((q) => ({ title: q.source_title || null,
-  author: q.source_author || null, url: q.citation_url || null, religion: q.religion || null, text: String(q.text || '').slice(0, 300) }));
+  author: q.source_author || null, url: q.citation_url || null, religion: q.religion || null, text: String(q.text || '').slice(0, 1200) }));   // for the auditor (300 read as 'truncated')
 
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 

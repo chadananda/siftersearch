@@ -12,7 +12,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { buildAuditPrompt, AUDIT_TOOL, costOf, verifyHoldings } from '../../api/lib/audit/auditor.js';
+import { buildAuditPrompt, AUDIT_TOOL, costOf, verifyHoldings, titleCandidates, titleMatches } from '../../api/lib/audit/auditor.js';
 import { MODEL_REGISTRY } from '../../api/lib/model-registry.js';
 
 // PM2 does not pass the env files to every app: load them here (as the other tower scripts do)
@@ -41,17 +41,19 @@ content.pragma('busy_timeout = 10000');
 const anthropic = new Anthropic({ maxRetries: 2 });
 
 // The catalogue check for works the auditor says the reply needed (auditor.verifyHoldings): the API's title search
-// (docs-repo findDocuments), held only when every significant word of the title is in the found title.
+// (docs-repo findDocuments) over each way the phrase can name a title; held when a found title matches (titleMatches).
+// 2 (10-15): portions of a book count as the book, title matching over glosses/lists, excerpts not judged truncated
+const AUDIT_V = 2;
 const API = process.env.AUDIT_API || 'http://127.0.0.1:7839';
-const words = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f’'‘`]/g, '').split(/[^a-z0-9]+/)
-  .filter((w) => w.length > 2 && !['the', 'and', 'for', 'with', 'from', 'book', 'introduction', 'intro'].includes(w));
-async function findHeld(title) {
-  const want = words(title);
-  if (!want.length) return null;
-  const r = await fetch(`${API}/api/documents?search=${encodeURIComponent(title)}&limit=5`, { signal: AbortSignal.timeout(15000) });
-  if (!r.ok) throw new Error(`catalogue ${r.status}`);              // unknown ≠ unheld: the claim is then left unverified
-  const { documents = [] } = await r.json();
-  return documents.find((d) => { const have = new Set(words(d.title)); return want.every((w) => have.has(w)); }) || null;
+async function findHeld(phrase) {
+  for (const cand of titleCandidates(phrase)) {
+    const r = await fetch(`${API}/api/documents?search=${encodeURIComponent(cand)}&limit=8`, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error(`catalogue ${r.status}`);            // unknown ≠ unheld: the claim is then left unchecked
+    const { documents = [] } = await r.json();
+    const hit = documents.find((d) => titleMatches(cand, d.title));
+    if (hit) return hit;
+  }
+  return null;
 }
 
 const spentToday = () => store.prepare(`SELECT COALESCE(SUM(usd), 0) s FROM audits WHERE date(audited_at) = date('now')`).get().s;
@@ -73,7 +75,7 @@ async function audit(row) {
     const res = await anthropic.messages.create({ model: MODEL, max_tokens: 4000, system, tools: [AUDIT_TOOL],
       tool_choice: { type: 'auto' }, messages: [{ role: 'user', content: user }] });
     const call = res.content.find((b) => b.type === 'tool_use');
-    if (call) call.input = await verifyHoldings(call.input, findHeld);
+    if (call) call.input = { ...(await verifyHoldings(call.input, findHeld)), audit_v: AUDIT_V };
     put.run({ ...base, usd: costOf(res.usage, PRICING), input_tokens: res.usage?.input_tokens ?? 0, output_tokens: res.usage?.output_tokens ?? 0,
       status: call ? 'done' : 'error', verdict_json: call ? JSON.stringify(call.input) : null, error: call ? null : `no tool call (${res.stop_reason})` });
   } catch (e) {
@@ -85,11 +87,11 @@ async function audit(row) {
 }
 
 let done = 0;
-// --reaudit-gaps (10-14): audits stored before the catalogue check whose data_gap may be an unverified "not in the
-// library" claim are audited again (needed_works → verifyHoldings), then the process exits.
+// --reaudit-gaps: stored audits from before AUDIT_V whose findings this version changes — a library gap, or a passage
+// judged truncated from its clipped excerpt — are audited again, then the process exits.
 if (process.argv.includes('--reaudit-gaps')) {
-  const ids = store.prepare(`SELECT message_id FROM audits WHERE status = 'done' AND json_extract(verdict_json, '$.data_gap.found') = 1
-    AND json_extract(verdict_json, '$.holdings_checked') IS NULL ORDER BY message_id`).all().map((r) => r.message_id);
+  const ids = store.prepare(`SELECT message_id FROM audits WHERE status = 'done' AND COALESCE(json_extract(verdict_json, '$.audit_v'), 1) < ?
+    AND (json_extract(verdict_json, '$.data_gap.found') = 1 OR verdict_json LIKE '%truncat%') ORDER BY message_id`).all(AUDIT_V).map((r) => r.message_id);
   const byId = content.prepare(`SELECT id, session_id, round_index, content, channel, path_json, answered_at FROM chat_messages WHERE id = ?`);
   console.log(JSON.stringify({ reaudit: ids.length }));
   for (const id of ids) { const row = byId.get(id); if (row && (await audit(row))) done++; }

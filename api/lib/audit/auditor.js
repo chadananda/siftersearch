@@ -56,7 +56,7 @@ export const AUDIT_TOOL = {
         need: { type: 'string', description: 'the unmet need, in one sentence' },
         route: { type: 'string', description: 'how a strategy could serve it: which layers, steps, format' },
       } },
-      needed_works: { type: 'array', items: { type: 'string' }, description: "titles of works the reply needed but the evidence did not contain (e.g. 'The Dawn-Breakers'). You cannot see the catalogue: these are CHECKED against it afterwards — held ones become 'not retrieved' search failures, only unheld ones become library gaps" },
+      needed_works: { type: 'array', items: { type: 'string' }, description: "works the reply needed but the evidence did not contain — each the work's PUBLISHED TITLE alone, one per item (e.g. 'The Dawn-Breakers', 'Kitáb-i-Aqdas', 'Lotus Sutra'): no author, no '(…)' glosses, no 'notes on…', never a topic ('scholarship on irfán' is not a work). You cannot see the catalogue: each is CHECKED against it afterwards — held ones become 'not retrieved' search failures, only unheld ones become library gaps" },
       data_gap: { type: 'object', required: ['found'], properties: {
         found: { type: 'boolean', description: 'only a defect VISIBLE in the evidence shown. Never "the library lacks X" — put X in needed_works' },
         detail: { type: 'string', description: 'bad OCR, missing original text, wrong metadata — in a passage shown; name it' },
@@ -78,12 +78,12 @@ const clip = (s, n) => { const t = String(s ?? ''); return t.length > n ? `${t.s
 /** The audit request for one exchange: earlier turns (context), the question, the logged path, the evidence, the reply. */
 export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
   const p = path || {};
-  const evidence = (p.evidence || []).map((e, i) => `[${i + 1}] ${e.title || '?'} — ${e.author || '?'}${e.religion ? ` (${e.religion})` : ''}\n${clip(e.text, 300)}`).join('\n\n');
+  const evidence = (p.evidence || []).map((e, i) => `[${i + 1}] ${e.title || '?'} — ${e.author || '?'}${e.religion ? ` (${e.religion})` : ''}\n${clip(e.text, 1200)}`).join('\n\n');
   const route = {
     gate: p.gate, triage_kind: p.kind ?? p.triage?.kind, stance: p.triage?.stance, strategy: p.recipe, format: p.format?.id,
     passages: p.retrieved, timings_ms: p.timings, output_check: p.output_check, replaced: p.replaced,
   };
-  const system = `You audit one exchange of Anís, a study companion that answers questions about the world's sacred texts from a library of primary texts, interpretation, history and scholarship. Judge the SEARCH STRATEGY and the use of evidence, not the prose style. Be strict and concrete: name the passage or the missing passage. Strategies available:\n${Object.entries(STRATEGIES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\nSuggest a new strategy only when none of these fits the kind of request — not when an existing one was merely executed badly. Report EVERY mistake you can see, wherever it lies — in the reply, in the library's own data (a passage credited to the wrong writer, a wrong original, wrong metadata), in a published source, or in the reader's premise (e.g. a saying attributed to Bahá'u'lláh that is not his). Catching mistakes of any source is the point of watching. You see ONLY the passages this reply retrieved, never the library's catalogue: a work missing from the evidence was NOT RETRIEVED — it may well be held (10-14: an audit declared The Dawn-Breakers and its introduction absent; both are in the library). Name such works in needed_works; never call them missing from the library. When the reader's message is FEEDBACK — praise, a complaint, "that's not what I asked", "I don't see how these quotes relate" — it is the most valuable signal there is: judge the EARLIER reply in its light, say whether it is justified, and name the concrete fix (record it in reader_feedback; record the earlier reply's mistakes in problems).`;
+  const system = `You audit one exchange of Anís, a study companion that answers questions about the world's sacred texts from a library of primary texts, interpretation, history and scholarship. Judge the SEARCH STRATEGY and the use of evidence, not the prose style. Be strict and concrete: name the passage or the missing passage. Strategies available:\n${Object.entries(STRATEGIES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\nSuggest a new strategy only when none of these fits the kind of request — not when an existing one was merely executed badly. Report EVERY mistake you can see, wherever it lies — in the reply, in the library's own data (a passage credited to the wrong writer, a wrong original, wrong metadata), in a published source, or in the reader's premise (e.g. a saying attributed to Bahá'u'lláh that is not his). Catching mistakes of any source is the point of watching. You see ONLY the passages this reply retrieved, never the library's catalogue: a work missing from the evidence was NOT RETRIEVED — it may well be held (10-14: an audit declared The Dawn-Breakers and its introduction absent; both are in the library). Name such works in needed_works; never call them missing from the library. A PORTION of a book (its introduction, notes, a chapter, a tablet inside a compilation) is held when the book is: name the BOOK in needed_works. The EXCERPTS below are clipped for this audit (older logs at 300 characters): the reply was written from the full passages, so an excerpt ending mid-word is never a defect — do not report truncation. When the reader's message is FEEDBACK — praise, a complaint, "that's not what I asked", "I don't see how these quotes relate" — it is the most valuable signal there is: judge the EARLIER reply in its light, say whether it is justified, and name the concrete fix (record it in reader_feedback; record the earlier reply's mistakes in problems).`;
   const user = [
     earlier.length ? `EARLIER IN THE CONVERSATION:\n${earlier.map((m) => `${m.role === 'user' ? 'Reader' : 'Anís'}: ${clip(m.content, 400)}`).join('\n')}` : '',
     (p.triage?.kind === 'feedback' || ['confused', 'disagreed'].includes(p.triage?.reaction))
@@ -122,4 +122,35 @@ export async function verifyHoldings(v, find) {
   if (unheld.length) out.data_gap = { found: true, detail: `not in the library (catalogue title search found nothing): ${unheld.join('; ')}` };
   else if (asserted) out.data_gap = { found: false, detail: `dropped unverified claim: ${v.data_gap.detail}` };
   return out;
+}
+
+// ── Catalogue title matching for verifyHoldings (10-15: the first matcher demanded every word of the auditor's phrase —
+// "Introduction to The Dawn-Breakers (Shoghi Effendi)" missed "The Dawn-breakers---Introduction", "Qur'an (ḥūr al-ʿayn)"
+// missed the Qur'an — and fifteen held works were reported as library gaps).
+const STOP = new Set(['the', 'of', 'and', 'a', 'an', 'to', 'on', 'in', 'by', 'for', 'with', 'from', 'al', 'el', 'introduction', 'intro', 'notes', 'note', 'book', 'volume', 'vol']);
+export const titleWords = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’'‘`ʿʾ]/g, '').toLowerCase()
+  .split(/[^a-z0-9]+/).filter((w) => w && !STOP.has(w)).map((w) => (w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w));
+
+/** The ways a needed-work phrase can name a title: whole, without its (gloss), each (gloss), each part of a / or ; list. */
+export function titleCandidates(phrase) {
+  const s = String(phrase || '');
+  const out = [s, s.replace(/\([^)]*\)/g, ' '), ...[...s.matchAll(/\(([^)]*)\)/g)].map((m) => m[1])];
+  for (const part of s.replace(/\([^)]*\)/g, ' ').split(/\s+\/\s+|;|\s+—\s+/)) out.push(part);
+  // A PORTION of a book lives inside the book (Chad 10-15): "Introduction to The Dawn-Breakers", "Notes to the Aqdas",
+  // "Chapter 3 of …", "Days of Remembrance footnotes on …" are held when the book is.
+  for (const x of [...out]) {
+    const m = x.match(/^\s*(?:the\s+)?(?:introduction|intro|preface|foreword|prologue|epilogue|afterword|notes?|footnotes?|endnotes?|glossary|annotations?|appendix|chapter\s+\S+|part\s+\S+|section\s+\S+|volume\s+\S+)\s+(?:to|of|on|in|for)\s+(.+)$/i);
+    if (m) out.push(m[1]);
+    const n = x.match(/^(.+?)\s+(?:introduction|preface|foreword|notes?|footnotes?|endnotes?|glossary|appendix)\b/i);
+    if (n) out.push(n[1]);
+  }
+  return [...new Set(out.map((x) => x.replace(/\s+/g, ' ').trim()))].filter((x) => titleWords(x).length);
+}
+
+/** Does a catalogue title name the work in `candidate`? Either word set contains the other (the shorter covering ≥ half). */
+export function titleMatches(candidate, docTitle) {
+  const a = new Set(titleWords(candidate)), b = new Set(titleWords(docTitle));
+  if (!a.size || !b.size) return false;
+  const aInB = [...a].every((w) => b.has(w)), bInA = [...b].every((w) => a.has(w));
+  return aInB || (bInA && b.size / a.size >= 0.5);
 }
