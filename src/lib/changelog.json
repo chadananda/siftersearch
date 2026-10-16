@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-16T19:51:34.512Z",
+  "generated": "2026-10-16T20:10:29.481Z",
   "entries": [
+    {
+      "hash": "49caa0a8",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "A 15-second pulse — live I/O load, CPU, vector counts, writer rows/min",
+      "scope": "observatory"
+    },
+    {
+      "hash": "dec8a89a",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "/search/multi returns what spell-correction changed (corrected: {from, to, corrections})",
+      "scope": "search"
+    },
+    {
+      "hash": "b8297dd2",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Dial above the fold on every screen, liquid glass, a living terminal",
+      "scope": "home"
+    },
     {
       "hash": "0fcad4ac",
       "date": "2026-10-16",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Every direct Jev caller logged per task (jevFetch → record) — search-plan, scope-extract, source-resolve, anis triage/persona/format, identity audit/link",
       "scope": "systemone"
-    },
-    {
-      "hash": "308f7408",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Compare-clef.mjs — replay logged calls per task through Clef / Clef-flash; agreement with Jev, Δp, latency, gold accuracy",
-      "scope": "systemone"
-    },
-    {
-      "hash": "9dbe9bfb",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Clef / Clef-flash via our Worker's Workers AI binding (POST /_s1/run, internal key) — primary per task or SHADOWED after every answer",
-      "scope": "systemone"
-    },
-    {
-      "hash": "31df2bd6",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "--monthly-usd cap over a shared Gemini spend ledger (/tank/sifter/gemini-spend.db); $400/month total (Chad 10-05)",
-      "scope": "phrase-index"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "49caa0a8",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "A 15-second pulse — live I/O load, CPU, vector counts, writer rows/min",
+        "scope": "observatory"
+      },
+      {
+        "hash": "dec8a89a",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "/search/multi returns what spell-correction changed (corrected: {from, to, corrections})",
+        "scope": "search"
+      },
+      {
+        "hash": "b8297dd2",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Dial above the fold on every screen, liquid glass, a living terminal",
+        "scope": "home"
+      },
       {
         "hash": "0fcad4ac",
         "date": "2026-10-16",
@@ -7004,27 +7025,6 @@
         "type": "New",
         "description": "Every direct Jev caller logged per task (jevFetch → record) — search-plan, scope-extract, source-resolve, anis triage/persona/format, identity audit/link",
         "scope": "systemone"
-      },
-      {
-        "hash": "308f7408",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Compare-clef.mjs — replay logged calls per task through Clef / Clef-flash; agreement with Jev, Δp, latency, gold accuracy",
-        "scope": "systemone"
-      },
-      {
-        "hash": "9dbe9bfb",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Clef / Clef-flash via our Worker's Workers AI binding (POST /_s1/run, internal key) — primary per task or SHADOWED after every answer",
-        "scope": "systemone"
-      },
-      {
-        "hash": "31df2bd6",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "--monthly-usd cap over a shared Gemini spend ledger (/tank/sifter/gemini-spend.db); $400/month total (Chad 10-05)",
-        "scope": "phrase-index"
       }
     ]
   }

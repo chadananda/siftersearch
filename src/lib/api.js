@@ -1518,6 +1518,7 @@ async function observatoryGet(path) {
 }
 export const observatory = {
   telemetry: () => observatoryGet('/api/observatory/telemetry'),
+  pulse: () => observatoryGet('/api/observatory/pulse'),   // every 15 s: I/O load, CPU, vector counts, writer rows/min
   // one shared URL for every visitor (edge-cached 5 s); the page keeps only lines newer than the last it showed
   activity: (limit = 80) => observatoryGet(`/api/observatory/activity?limit=${limit}`),
 };

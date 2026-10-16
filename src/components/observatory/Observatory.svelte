@@ -15,6 +15,7 @@
   let now = $state(Date.now());
   let fetchedAt = $state(Date.now());
   let tip = $state(null);
+  let pulse = $state(null);   // every 15 s: I/O load per device, CPU, vector counts, writer rows/min (worker → /pulse)
 
   const snap = $derived(tel?.snapshot || null);
   const rates = $derived(tel?.rates || {});
@@ -27,9 +28,9 @@
   const KPIS = [
     { label: 'Paragraphs', value: () => snap?.corpus?.paragraphs, key: 'text', hint: 'every paragraph, in 11 traditions' },
     { label: 'Documents', value: () => snap?.corpus?.documents, hint: 'books, tablets, letters, talks' },
-    { label: 'Phrase vectors', value: () => snap?.vectors?.phrases, key: 'v_phrases', hint: 'meaning of every clause' },
-    { label: 'Keyword terms', value: () => snap?.vectors?.paragraphs_kw, key: 'v_paragraphs_kw', hint: 'BM25 over every paragraph' },
-    { label: 'Questions', value: () => snap?.vectors?.hype, key: 'v_hype', hint: 'what each paragraph answers' },
+    { label: 'Phrase vectors', value: () => pulse?.vectors?.phrases ?? snap?.vectors?.phrases, key: 'v_phrases', hint: 'meaning of every clause', fresh: true },
+    { label: 'Keyword terms', value: () => pulse?.vectors?.paragraphs_kw ?? snap?.vectors?.paragraphs_kw, key: 'v_paragraphs_kw', hint: 'BM25 over every paragraph', fresh: true },
+    { label: 'Questions', value: () => pulse?.vectors?.hype ?? snap?.vectors?.hype, key: 'v_hype', hint: 'what each paragraph answers', fresh: true },
     { label: 'People', value: () => snap?.counts?.people, key: 'people', hint: 'identified across history' },
     { label: 'Concept claims', value: () => snap?.counts?.concept_claims, key: 'claims', hint: 'proof-checked ideas' },
     { label: 'Sub-documents', value: () => snap?.counts?.sections, key: 'sections', hint: 'chapters, tablets, talks' },
@@ -40,10 +41,30 @@
     { id: 'typo3', label: 'Three words, misspelled', note: 'accents dropped, one slip each' },
     { id: 'recall', label: 'Half-remembered', note: 'two words + one synonym' },
   ];
-  const activeRings = $derived([...new Set((snap?.jobs?.running || []).map((j) => ringOfJob(j.name, j.label)).filter(Boolean))]);
+  // live readings the terminal types when no new log lines are waiting (all from telemetry — real numbers)
+  const status = $derived.by(() => {
+    if (!snap) return [];
+    const out = [];
+    const v = pulse?.vectors || snap.vectors || {};
+    out.push(`vectors · phrases ${exact(v.phrases)} · keyword ${exact(v.paragraphs_kw)} · questions ${exact(v.hype)} · concepts ${exact(v.concepts)}`);
+    if (pulse?.writer) out.push(`writer · ${exact(pulse.writer.rows)} rows in the last minute · ${exact(pulse.writer.batches)} batches`);
+    const io = pulse?.io || {};
+    const busy = (d) => (io[d] ? `${io[d].busy_pct}%` : '—');
+    out.push(`io · index NVMe ${busy('nvme0n1')} busy · bulk HDD ${busy('sdc')} · system SSD ${busy('sdb')} · cpu ${pulse?.cpu?.load_pct ?? snap.health?.cpu?.load_pct ?? '—'}% load`);
+    out.push(`index · ${snap.rings.filter((r) => !r.planned).map((r) => `${r.short.toLowerCase()} ${pct(r.done, r.total)}`).join(' · ')}`);
+    const c = snap.capability?.variants;
+    if (c) out.push(`findability · 10 words ${Math.round((c.exact10?.production?.at10 || 0) * 100)}% · 3 words ${Math.round((c.words3?.production?.at10 || 0) * 100)}% · misspelled ${Math.round((c.typo3?.production?.at10 || 0) * 100)}% (top 10)`);
+    out.push(`library · ${exact(snap.corpus.paragraphs)} paragraphs · ${exact(snap.corpus.documents)} documents · ${snap.corpus.traditions} traditions · ${exact(snap.counts?.sections)} sub-documents`);
+    return out;
+  });
+  // running/queued jobs: the pulse (15 s) when present, else the snapshot
+  const jobs = $derived(pulse?.jobs || (snap?.jobs ? { running: snap.jobs.running, queued: 0 } : null));
+  const jobsAt = $derived(pulse?.at ? pulse.at * 1000 : fetchedAt);
+  const activeRings = $derived([...new Set((jobs?.running || []).map((j) => ringOfJob(j.name, j.label)).filter(Boolean))]);
   const ago = (sec) => (sec < 90 ? `${Math.round(sec)} s ago` : sec < 5400 ? `${Math.round(sec / 60)} min ago` : `${(sec / 3600).toFixed(1)} h ago`);
   const levelOf = (p) => (p == null ? '' : p >= 85 ? 'hot' : p >= 60 ? 'warm' : 'cool');
 
+  async function loadPulse() { try { pulse = (await observatory.pulse()).data; } catch { /* keep the last reading */ } }
   async function load() {
     try { const r = await observatory.telemetry(); tel = r.data; fetchedAt = Date.now(); error = null; }
     catch (err) { error = err.message; }
@@ -59,14 +80,15 @@
     window.dispatchEvent(new CustomEvent('liquid-focus', { detail: { x: (r.left + r.width / 2) / window.innerWidth, y: (r.top + side / 2) / window.innerHeight } }));
   }
   onMount(() => {
-    load();
+    load(); loadPulse();
     const poll = setInterval(load, 60000);
+    const pulsePoll = setInterval(loadPulse, 15000);
     const tick = setInterval(() => { now = Date.now(); }, 1000);
     const onMove = () => requestAnimationFrame(focusBackground);
     window.addEventListener('scroll', onMove, { passive: true });
     window.addEventListener('resize', onMove);
     const settle = setInterval(focusBackground, 1000);   // layout settles as fonts and data arrive
-    return () => { clearInterval(poll); clearInterval(tick); clearInterval(settle); window.removeEventListener('scroll', onMove); window.removeEventListener('resize', onMove); };
+    return () => { clearInterval(poll); clearInterval(pulsePoll); clearInterval(tick); clearInterval(settle); window.removeEventListener('scroll', onMove); window.removeEventListener('resize', onMove); };
   });
 </script>
 
@@ -81,10 +103,11 @@
     <div class="kicker"><span class="led"></span>OBSERVATORY <span class="sep">/</span> LIVE <span class="sep">/</span>
       <span class="mono">{new Date(now).toISOString().slice(11, 19)} UTC</span>
       {#if snap}<span class="sep">/</span> <span class="mono">snapshot {ago(since)}</span>{/if}
-      {#if snap?.jobs}
+      {#if pulse?.writer?.rows}<span class="proc mono writing"><span class="bolt">⚡</span>{exact(pulse.writer.rows)} rows/min written</span>{/if}
+      {#if jobs}
         <span class="procs">
-          {#each snap.jobs.running as j (j.id)}<span class="proc mono"><span class="spin"></span>{j.label}<span class="mute">· {duration((j.elapsed_s || 0) + (now - fetchedAt) / 1000)}</span></span>
-          {:else}<span class="proc mono mute">idle between jobs</span>{/each}
+          {#each jobs.running as j (j.id)}<span class="proc mono"><span class="spin"></span>{j.label}<span class="mute">· {duration((j.elapsed_s || 0) + (now - jobsAt) / 1000)}</span></span>{/each}
+          {#if jobs.queued}<span class="proc mono">{jobs.queued} queued{jobs.queued_names?.length ? ` · ${jobs.queued_names.join(', ')}` : ''}</span>{/if}
         </span>
       {/if}
     </div>
@@ -100,7 +123,7 @@
       <h2>Index state <span class="h-sub">stage by stage, centre outward</span></h2>
       {#each snap?.rings || [] as r, i (r.id)}
         {@const p = r.total ? (100 * r.done) / r.total : 0}
-        <div class="stage" class:planned={r.planned}>
+        <div class="stage" class:planned={r.planned} class:grow={rates[r.id] > 0}>
           <div class="stage-top"><span class="stage-n mono">{String(i + 1).padStart(2, '0')}</span><span class="stage-name">{r.label}</span>
             <span class="stage-pct mono">{r.planned ? 'planned' : pct(r.done, r.total)}</span></div>
           <div class="bar"><span style={`width:${Math.max(r.done ? 0.6 : 0, Math.min(100, p))}%`}></span></div>
@@ -123,7 +146,7 @@
 
     <!-- right: capability + health -->
     <div class="right">
-      <ObservatoryTerminal />
+      <ObservatoryTerminal {status} />
       <section class="panel" aria-label="Findability">
         <h2>Findability <span class="h-sub">can it find what a reader remembers?</span></h2>
         {#if snap?.capability?.variants}
@@ -149,10 +172,11 @@
         <h2>System health <span class="h-sub">the machine itself</span></h2>
         {#if snap?.health}
           {@const h = snap.health}
-          {#each h.storage.filter((s) => s.size_gb) as s (s.dev)}
+          {#each h.storage.filter((s) => s.size_gb).map((s) => ({ ...s, io: pulse?.io?.[s.dev] || s.io })) as s (s.dev)}
             <div class="disk">
               <div class="disk-top"><span>{s.label} <span class="mute mono">{s.mount}</span></span><span class="mono">{s.used_pct}% of {s.size_gb >= 1000 ? `${(s.size_gb / 1000).toFixed(0)} TB` : `${s.size_gb} GB`}</span></div>
               <div class="bar thin"><span style={`width:${s.used_pct}%`}></span></div>
+              <div class="iometer" aria-hidden="true"><span class={levelOf(s.io?.busy_pct)} style={`width:${Math.max(2, s.io?.busy_pct ?? 0)}%`}></span></div>
               <div class="disk-io mono">
                 <span class={`io ${levelOf(s.io?.busy_pct)}`}>I/O {s.io ? `${s.io.busy_pct}% busy` : '—'}</span>
                 {#if s.io}<span class="mute">↓{s.io.read_mb_s} ↑{s.io.write_mb_s} MB/s</span>{/if}
@@ -161,7 +185,7 @@
             </div>
           {/each}
           <div class="vitals mono">
-            <div><span class="mute">CPU</span> {h.cpu.cores} cores · load {h.cpu.load_pct}%</div>
+            <div><span class="mute">CPU</span> {h.cpu.cores} cores · load {pulse?.cpu?.load_pct ?? h.cpu.load_pct}%</div>
             <div><span class="mute">RAM</span> {h.memory.total_gb} GB · {h.memory.used_pct}% used</div>
             {#if h.services}<div><span class="mute">Services</span> {h.services.online} online{h.services.errored ? ` · ${h.services.errored} errored` : ''}</div>{/if}
             <div><span class="mute">Vector indexes</span> {#each Object.entries(h.vectors || {}) as [c, st] (c)}<span class={`dot ${st}`} title={`${c}: ${st}`}></span>{/each}</div>
@@ -179,7 +203,7 @@
       {@const v = k.key ? live(k.value(), k.key) : k.value()}
       <div class="kpi">
         <div class="kpi-label">{k.label}</div>
-        <div class="kpi-num mono">{snap ? exact(v) : '—'}</div>
+        {#key k.value()}<div class="kpi-num mono flash">{snap ? exact(v) : '—'}</div>{/key}
         <div class="kpi-foot"><span class="kpi-hint">{k.hint}</span>{#if k.key && rates[k.key] > 0}<span class="kpi-rate mono">{rate(rates[k.key])}</span>{/if}</div>
       </div>
     {/each}
@@ -287,8 +311,9 @@
   .dial-wrap { position: relative; min-width: 0; width: min(100%, calc(100svh - var(--obs-chrome))); justify-self: center; }
   /* the dial sits on a disc of liquid glass (bezel radius 440/500 of the half-width) */
   .dial-wrap::before { content: ''; position: absolute; left: 6%; top: 0; width: 88%; aspect-ratio: 1; margin-top: 6%; border-radius: 50%;
-    background: radial-gradient(circle at 32% 26%, var(--glass-shine), transparent 42%), var(--obs-panel);
-    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    /* translucent (Chad: "give the round graph a bit of translucency so the animation behind it sparkles through") */
+    background: radial-gradient(circle at 32% 26%, var(--glass-shine), transparent 40%), light-dark(rgba(255, 255, 255, 0.2), rgba(14, 22, 40, 0.16));
+    backdrop-filter: blur(5px) saturate(160%); -webkit-backdrop-filter: blur(5px) saturate(160%);
     border: 1px solid var(--glass-edge); box-shadow: inset 0 2px 1px var(--glass-shine), inset 0 -10px 30px var(--glass-rim), var(--glass-shadow); }
   .dial-wrap > :global(svg) { position: relative; }
   .dial-skel { aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--obs-line-strong); display: grid; place-items: center; color: var(--obs-text-faint); }
@@ -328,6 +353,22 @@
   .tip-h { font-weight: 600; }
   .tip-p { font-size: 15px; font-weight: 600; color: var(--obs-accent); }
 
+  /* ── motion: something alive in every box (Chad 10-16: "some part of each box needs to be moving and alive") ── */
+  .kpis::after, .panel::after, .road-wrap::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, var(--glass-shine) 50%, transparent 62%); background-size: 260% 100%;
+    animation: sheen 9s ease-in-out infinite; opacity: 0.45; }
+  .right > :nth-child(2)::after { animation-delay: 2.2s; } .right > :nth-child(3)::after { animation-delay: 4.4s; }
+  .stages::after { animation-delay: 1.1s; } .road-wrap::after { animation-delay: 3.3s; }
+  .flash { animation: flash 1.4s ease-out; }
+  .stage.grow .bar span { background-size: 200% 100%; background-image: linear-gradient(90deg, var(--obs-sweep), var(--obs-islam), var(--obs-sweep)); animation: flow 2.4s linear infinite; }
+  .iometer { height: 3px; border-radius: 2px; background: var(--obs-line); overflow: hidden; }
+  .iometer span { display: block; height: 100%; transition: width 1.2s ease; background: var(--success); box-shadow: 0 0 8px currentColor; }
+  .iometer span.warm { background: var(--warning); } .iometer span.hot { background: var(--error); }
+  .dot.green { animation: blink 2.4s ease-in-out infinite; } .dot:nth-child(3) { animation-delay: 0.6s; } .dot:nth-child(4) { animation-delay: 1.2s; } .dot:nth-child(5) { animation-delay: 1.8s; }
+  .writing { color: var(--success); } .bolt { animation: blink 1.2s ease-in-out infinite; }
+  @keyframes sheen { 0%, 55% { background-position: 130% 0; } 100% { background-position: -130% 0; } }
+  @keyframes flash { from { color: var(--obs-accent); text-shadow: 0 0 14px var(--obs-accent); } to { color: inherit; text-shadow: none; } }
+  @keyframes flow { to { background-position: -200% 0; } }
   @keyframes blink { 50% { opacity: 0.3; } }
   @keyframes spin { to { transform: rotate(360deg); } }
   /* medium: the dial + one side column (terminal, findability, health); index state drops below */
@@ -350,5 +391,5 @@
     .kpi { border-left: 0 !important; border-top: 0 !important; } .kpi:nth-child(even) { border-left: 1px solid var(--obs-line) !important; } .kpi:nth-child(n + 3) { border-top: 1px solid var(--obs-line) !important; }
     .roadmap { grid-template-columns: minmax(0, 1fr); } .road + .road { border-left: 0; border-top: 1px solid var(--obs-line); }
   }
-  @media (prefers-reduced-motion: reduce) { .led, .spin { animation: none; } .bar span { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .led, .spin, .flash, .bolt, .dot, .stage.grow .bar span, .kpis::after, .panel::after, .road-wrap::after { animation: none; } .bar span { transition: none; } }
 </style>

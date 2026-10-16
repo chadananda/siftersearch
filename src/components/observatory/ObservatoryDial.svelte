@@ -116,8 +116,8 @@
   .bezel { fill: none; stroke: var(--obs-line); stroke-width: 1; }
   .tick { stroke: var(--obs-line); stroke-width: 1; }
   .tick.long { stroke: var(--obs-line-strong); stroke-width: 1.4; }
-  .track { fill: var(--c); opacity: 0.1; transition: opacity 0.2s; }
-  .fill { fill: var(--c); opacity: 0.92; transition: d 1.2s ease; }
+  .track { fill: var(--c); opacity: 0.08; transition: opacity 0.2s; }
+  .fill { fill: var(--c); opacity: 0.78; transition: d 1.2s ease; }
   .cell { cursor: crosshair; }
   .cell:hover .track { opacity: 0.28; }
   .cell.planned .track { opacity: 0.05; }

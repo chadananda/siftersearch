@@ -110,7 +110,7 @@ async function pulseLoop() {
       const done = new Date(Date.now() - 60000).toISOString().slice(0, 16);   // the last COMPLETE minute
       if (done > reported) {
         const rows = await fetch(WRITER, { signal: AbortSignal.timeout(5000) }).then((r) => r.json()).catch(() => []);
-        const fresh = rows.filter((r) => r.minute > reported && r.minute <= done && r.name !== 'activity:log' && (r.changes > 0 || r.errors > 0));
+        const fresh = rows.filter((r) => r.minute > reported && r.minute <= done && r.name !== 'activity:log' && (r.changes >= 10 || r.errors > 0));   // trivial single-row writes are noise
         for (const r of fresh.sort((a, b) => b.changes - a.changes).slice(0, 8)) {
           logActivity('writer', `${r.caller.replace(/^siftersearch-/, '')}/${r.name} · ${fmt(r.batches)} batches · ${fmt(r.changes)} rows${r.errors ? ` · ${r.errors} errors` : ''} · ${(r.ms_total / 1000).toFixed(1)} s`);
         }
@@ -137,7 +137,12 @@ async function pulseLoop() {
       const os = await import('os');
       const [load1] = os.loadavg();
       const tel = await import('../lib/repos/telemetry-repo.js');
-      await tel.savePulse(Math.floor(Date.now() / 1000), { io, vectors, writer, cpu: { load_pct: Math.round((load1 / os.cpus().length) * 100) } });
+      // jobs from here, every 15 s — the 5-minute snapshot missed a job re-queued by a restart and the page said "idle"
+      const { shapeJobs } = await import('../lib/telemetry.js');
+      const live = await tel.liveJobs().catch(() => []);
+      const jobs = { running: shapeJobs(live.filter((j) => j.status === 'running')).running, queued: live.filter((j) => j.status === 'queued').length,
+        queued_names: [...new Set(live.filter((j) => j.status === 'queued').map((j) => j.name))] };
+      await tel.savePulse(Math.floor(Date.now() / 1000), { io, vectors, writer, jobs, cpu: { load_pct: Math.round((load1 / os.cpus().length) * 100) } });
     } catch (err) { logger.warn({ err: err.message }, 'pulse failed'); }
     await new Promise((r) => setTimeout(r, 15000));
   }

@@ -41,3 +41,6 @@ export const seriesSince = (sinceEpoch) => queryAll('SELECT at, series FROM tele
 export const savePulse = (at, data) =>
   query('INSERT INTO telemetry_pulse (id, at, data) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET at = excluded.at, data = excluded.data', [at, JSON.stringify(data)], 'telemetry:pulse-save');
 export const latestPulse = () => queryOne('SELECT at, data FROM telemetry_pulse WHERE id = 1', [], 'telemetry:pulse');
+
+/** Ops jobs running or queued right now (the 15-second pulse: the status line must never say "idle" while work waits). */
+export const liveJobs = () => queryAll(`SELECT id, name, status, params, started_at FROM ops_report_runs WHERE status IN ('running', 'queued') ORDER BY id`, [], 'telemetry:live-jobs');
