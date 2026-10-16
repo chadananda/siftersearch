@@ -48,9 +48,13 @@ export function outlineSections(md, rows = []) {
   return out;
 }
 
-/** para_N of a row from its block_attrs JSON (copied from the file by the block-attrs job), or null. */
-export const paraNum = (blockAttrs) => {
-  try { const m = String(JSON.parse(blockAttrs || '{}').id || '').match(/^para_(\d+)$/); return m ? Number(m[1]) : null; } catch { return null; }
+/** para_N of a row: its block_attrs id (copied from a library file by the block-attrs job) or its external_para_id (the
+ *  OceanLibrary site adapter stores the page's para id there), or null. */
+export const paraNum = (blockAttrs, externalId = null) => {
+  let id = externalId;
+  try { id = JSON.parse(blockAttrs || '{}').id || id; } catch { /* malformed attrs: the external id stands */ }
+  const m = String(id || '').match(/^para_(\d+)$/);
+  return m ? Number(m[1]) : null;
 };
 
 /** rows: [{ id, paragraph_index, heading }] in paragraph order → [{ ord, title, start_index, end_index, paragraphs, first_para_id }]. */

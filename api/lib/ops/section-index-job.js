@@ -14,7 +14,7 @@ function fileOutline(doc, rows) {
   if (!path || !existsSync(path)) return [];
   const md = readFileSync(path, 'utf8');
   if (!/^#{1,6}\s.*\bid="para_\d+"/m.test(md)) return [];
-  return outlineSections(md, rows.map((r) => ({ ...r, para_num: paraNum(r.block_attrs) })));
+  return outlineSections(md, rows.map((r) => ({ ...r, para_num: paraNum(r.block_attrs, r.external_para_id) })));
 }
 
 export async function sectionIndexJob({ ids = null, limit = 0 } = {}) {

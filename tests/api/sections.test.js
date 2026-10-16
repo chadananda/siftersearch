@@ -52,5 +52,7 @@ describe('outlineSections (phase 2: the source file’s heading levels)', async 
   it('para numbers come from block_attrs', () => {
     expect(paraNum('{"id":"para_72","ilm_id":"4n"}')).toBe(72);
     expect(paraNum(null)).toBe(null);
+    expect(paraNum(null, 'para_244')).toBe(244);          // OceanLibrary site documents keep it in external_para_id
+    expect(paraNum(null, 'fn_12')).toBe(null);
   });
 });
