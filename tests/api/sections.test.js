@@ -56,3 +56,17 @@ describe('outlineSections (phase 2: the source file’s heading levels)', async 
     expect(paraNum(null, 'fn_12')).toBe(null);
   });
 });
+
+describe('heading clean-up (10-15 rollout)', async () => {
+  const { sectionsFromRows, isNoiseHeading } = await import('../../api/lib/sections.js');
+  it('page markup and item numbers come out of titles', () => {
+    const s = sectionsFromRows([{ id: 1, paragraph_index: 0, heading: '11 -<br><br>Lawḥ-i-Maqṣúd<br>**(Tablet of Maqṣúd)' }]);
+    expect(s[0].title).toBe('Lawḥ-i-Maqṣúd (Tablet of Maqṣúd)');
+    expect(sectionsFromRows([{ id: 1, paragraph_index: 0, heading: '15 -<br><br>Kitáb-i-‘Ahd<br>**(Book of the Covenant)**' }])[0].title).toBe('Kitáb-i-‘Ahd (Book of the Covenant)');
+    expect(sectionsFromRows([{ id: 1, paragraph_index: 0, heading: 'John 6' }])[0].title).toBe('John 6');
+  });
+  it('day-first dates are noise', () => {
+    expect(isNoiseHeading('17 December 1919')).toBe(true);
+    expect(isNoiseHeading('First Tablet to The Hague')).toBe(false);
+  });
+});

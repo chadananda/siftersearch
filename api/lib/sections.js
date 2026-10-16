@@ -4,7 +4,10 @@
 // Phase 1 reads the per-paragraph `heading` the ingesters stored (nearest heading, no level); phase 2 adds levels from the
 // source files so top-level parts whose own heading was not stored ("The Dispensation of Bahá'u'lláh") appear too.
 
-const fold = (s) => String(s || '').replace(/^[\s\\\-–—#*_]+|[\s\\\-–—#*_]+$/g, '').replace(/\s+/g, ' ').trim();
+// A heading as a reader would name it: page markup out ("11 -<br><br>Lawḥ-i-Maqṣúd<br>**(Tablet of Maqṣúd)" →
+// "Lawḥ-i-Maqṣúd (Tablet of Maqṣúd)"), a leading item number dropped, edge punctuation trimmed.
+const fold = (s) => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\*\*|__|(?<!\w)[*_](?=\S)|(?<=\S)[*_](?!\w)/g, '')
+  .replace(/^[\s\\\-–—#*_]+|[\s\\\-–—#*_]+$/g, '').replace(/^\d{1,4}\s*[-–—.:)]\s+(?=\p{L})/u, '').replace(/\s+/g, ' ').trim();
 
 /** A heading that names nothing a reader would look for: page numbers, bare dates or numerals, separators, runaway text. */
 export function isNoiseHeading(title) {
@@ -12,7 +15,8 @@ export function isNoiseHeading(title) {
   if (!t || t.length > 160) return true;
   if (!/\p{L}/u.test(t)) return true;                                        // "* * *", "12", "—"
   if (/^(page|p\.)\s*\d+$/i.test(t)) return true;
-  if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}$/i.test(t)) return true;
+  const MONTH = '(january|february|march|april|may|june|july|august|september|october|november|december)';
+  if (new RegExp(`^${MONTH}\\s+\\d{1,2},?\\s+\\d{4}$`, 'i').test(t) || new RegExp(`^\\d{1,2}\\s+${MONTH},?\\s+\\d{4}$`, 'i').test(t)) return true;
   return false;
 }
 
