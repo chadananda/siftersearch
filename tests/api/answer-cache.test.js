@@ -26,7 +26,7 @@ describe('answer-cache question keying', () => {
   // bump SEARCH_VERSION in the SAME commit and update this assertion. Bumping never drops the cache; it marks
   // entries stale, so they stream instantly and revalidate in the background at the new version.
   it('SEARCH_VERSION is exactly the current answering-engine version', () => {
-    expect(SEARCH_VERSION).toBe('2026-10-09.3');
+    expect(SEARCH_VERSION).toBe('2026-10-16.1');
   });
 
   it('SEARCH_VERSION is a dated string (bump intentionally with quality changes)', () => {
