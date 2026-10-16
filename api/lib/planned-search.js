@@ -5,6 +5,7 @@
 // Deps: search-plan, search-scope; search.js + answer-cache.js + search-target.js loaded lazily so this stays unit-testable.
 import { planSearch, layersFor } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
+import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
@@ -183,10 +184,15 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const peopleFn = async (q) => (encounterFn ? await encounterFn(q) : null) ?? (layers.claims && searchPeople ? searchPeople(q) : { people: [] });
   const claimsP = (layers.claims && searchPeople) || encounterFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
     .finally(() => { stages.claims_ms = Date.now() - t1; }) : null;
+  // A QUOTATION (6+ words, not a question) is also searched verbatim — keyword only, unscoped, the whole text — beside the
+  // planned search: the plan's subject-stripping, scope and author preference were built for questions and lost exact
+  // matches (known-item test 10-16: production found a passage's own words first 73% vs the engine's 86%).
+  const quotation = isVerbatimQuery(query, 6) && !/\?\s*$/.test(query);
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
-  const [r, authorHits] = await Promise.all([
+  const [r, authorHits, verbatimHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
     plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer)).catch(() => []) : Promise.resolve([]),
+    quotation ? search({}, query, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
   const quotedIds = plan.prefer
@@ -269,6 +275,14 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
       const shown = new Set(passages.map((h) => h.id));
       hits = [...passages, ...evidenceHits.filter((h) => !shown.has(h.id)).slice(0, 6)];
     }
+  }
+
+  // Passages containing the quotation verbatim lead (not over a people answer, whose cited paragraphs ARE the answer).
+  if (quotation && !pr?.pattern) {
+    const q = foldVerbatim(query);
+    const exact = [], seen = new Set();
+    for (const h of [...hits, ...verbatimHits]) if (!seen.has(h.id) && foldVerbatim(h.text).includes(q)) { seen.add(h.id); exact.push(h); }
+    if (exact.length) hits = [...exact, ...hits.filter((h) => !seen.has(h.id))].slice(0, Math.max(limit, exact.length));
   }
 
   const value = {

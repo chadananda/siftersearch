@@ -281,3 +281,20 @@ describe('preferAuthor — the author, then passages quoting the author, then th
     expect(preferAuthor([], [h(3, 'X', 'the earth is one'), se], ['Bahá’u’lláh'], 10, ['earth'], new Set([2])).map((x) => x.id)).toEqual([3, 2]);
   });
 });
+
+describe('plannedSearch — quotations (known-item test 10-16)', () => {
+  beforeEach(() => clearPlannedCache());
+  it('a passage containing the quoted words leads, even outside the plan’s scope', async () => {
+    const quote = 'the earth is but one country and mankind its citizens';
+    const e = engine((f) => (Object.keys(f || {}).length ? [{ id: 1, text: 'unrelated' }, { id: 2, text: 'other' }]
+      : [{ id: 9, text: `Bahá’u’lláh: “The Earth is but one country, and mankind its citizens.”` }]));
+    const r = await plannedSearch(quote, { planner: planOf({ tradition: 'Buddhist' }), engine: e.fn, minResults: 1 });
+    expect(r.hits[0].id).toBe(9);
+    expect(e.calls.some((c) => c.semantic === false && !Object.keys(c.filters || {}).length)).toBe(true);   // the verbatim pass
+  });
+  it('a question is not a quotation', async () => {
+    const e = engine(() => many(3));
+    await plannedSearch('what does the earth is but one country mean for us?', { planner: planOf({}), engine: e.fn });
+    expect(e.calls.every((c) => c.semantic !== false || Object.keys(c.filters || {}).length)).toBe(true);
+  });
+});
