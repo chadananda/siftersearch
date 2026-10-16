@@ -28,7 +28,7 @@ export async function qdrantCount(collection, docId, { fetchImpl = fetch } = {})
 /** Every layer's numbers for one document → [{ layer, total, generated, current, indexed, version }]. */
 export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {}) {
   const id = Number(docId);
-  const doc = await queryOne('SELECT language, title, author, religion, collection, source_site, authority FROM docs WHERE id = ?', [id]);
+  const doc = await queryOne('SELECT language, title, author, religion, collection, source_site FROM docs WHERE id = ?', [id]);
   if (!doc) return [];
   const c = await queryOne(`SELECT COUNT(*) AS total, SUM(synced = 1) AS synced, SUM(embedding IS NOT NULL) AS embedded,
       SUM(LENGTH(COALESCE(context, '')) > 0) AS context, SUM(LENGTH(COALESCE(hyp_questions, '')) > 2) AS hype,

@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 
 let raw;
 const SCHEMA = `
-CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, language TEXT, religion TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, author TEXT, collection TEXT, source_site TEXT, authority INTEGER);
+CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, language TEXT, religion TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, author TEXT, collection TEXT, source_site TEXT);  -- production docs has no authority column
 CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
   extract_model TEXT, translation TEXT, deleted_at TEXT, is_duplicate INTEGER);
 CREATE TABLE entity_mentions_v2 (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, status TEXT);
@@ -26,7 +26,7 @@ const count = async (c) => counts[c];
 
 beforeEach(() => {
   raw = new Database(':memory:'); raw.exec(SCHEMA);
-  raw.prepare("INSERT INTO docs VALUES (1, 'Book', 'en', 'Baha''i', 'primary', NULL, NULL, 'Some Pilgrim', NULL, NULL, 3), (2, 'Lawh', 'fa', 'Baha''i', 'primary', NULL, NULL, 'Bahá’u’lláh', NULL, NULL, 10)").run();
+  raw.prepare("INSERT INTO docs VALUES (1, 'Book', 'en', 'Baha''i', 'primary', NULL, NULL, 'Some Pilgrim', 'Pilgrim Notes', NULL), (2, 'Lawh', 'fa', 'Baha''i', 'primary', NULL, NULL, 'Bahá’u’lláh', NULL, NULL)").run();
   const ins = raw.prepare('INSERT INTO content (id, doc_id, synced, embedding, context, hyp_questions, hyp_model, extract_model, translation) VALUES (?,?,?,?,?,?,?,?,?)');
   ins.run(1, 1, 1, Buffer.from([1]), 'ctx', '["q1","q2"]', 'v15', 'x', null);
   ins.run(2, 1, 1, Buffer.from([1]), null, '["q"]', 'v14', null, null);
