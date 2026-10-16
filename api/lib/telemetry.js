@@ -19,7 +19,7 @@ export const RINGS = [
 ];
 // Developed in public (Chad 10-16): what is being built now and next — edited here, shipped with the code.
 export const ROADMAP = [
-  { state: 'now', text: 'Findability: every passage found from a few remembered words — tested continuously below' },
+  { state: 'now', text: 'Findability: every paragraph found from a few remembered words — tested continuously below' },
   { state: 'now', text: 'Phrase vectors for the Islamic, Arabic and secondary literature' },
   { state: 'next', text: 'Indexing stores move from a hard disk to a 4 TB NVMe (~Oct 24)' },
   { state: 'next', text: 'Questions (HyPE) for the doctrinal core of every tradition' },

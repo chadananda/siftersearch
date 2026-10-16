@@ -25,11 +25,11 @@
   const series = (key) => (tel?.series || []).filter((p) => p.series?.text > 0).map((p) => p.series?.[key]);
 
   const KPIS = [
-    { label: 'Paragraphs', value: () => snap?.corpus?.paragraphs, key: 'text', hint: 'every passage, in 11 traditions' },
+    { label: 'Paragraphs', value: () => snap?.corpus?.paragraphs, key: 'text', hint: 'every paragraph, in 11 traditions' },
     { label: 'Documents', value: () => snap?.corpus?.documents, hint: 'books, tablets, letters, talks' },
     { label: 'Phrase vectors', value: () => snap?.vectors?.phrases, key: 'v_phrases', hint: 'meaning of every clause' },
     { label: 'Keyword terms', value: () => snap?.vectors?.paragraphs_kw, key: 'v_paragraphs_kw', hint: 'BM25 over every paragraph' },
-    { label: 'Questions', value: () => snap?.vectors?.hype, key: 'v_hype', hint: 'what each passage answers' },
+    { label: 'Questions', value: () => snap?.vectors?.hype, key: 'v_hype', hint: 'what each paragraph answers' },
     { label: 'People', value: () => snap?.counts?.people, key: 'people', hint: 'identified across history' },
     { label: 'Concept claims', value: () => snap?.counts?.concept_claims, key: 'claims', hint: 'proof-checked ideas' },
     { label: 'Sub-documents', value: () => snap?.counts?.sections, key: 'sections', hint: 'chapters, tablets, talks' },
@@ -89,7 +89,7 @@
       {/if}
     </div>
     <h1 id="obs-title">The world’s largest <em>deeply AI-indexed</em> interfaith library.</h1>
-    <p class="lede">{snap ? `${compact(snap.corpus.paragraphs)} passages` : 'Millions of passages'} of sacred and scholarly text, {snap?.corpus?.traditions ?? 11} traditions — searched, questioned and studied by machine, in the open.</p>
+    <p class="lede">{snap ? `${compact(snap.corpus.paragraphs)} paragraphs` : 'Millions of paragraphs'} of sacred and scholarly text, {snap?.corpus?.traditions ?? 11} traditions — searched, questioned and studied by machine, in the open.</p>
   </header>
 
   {#if error && !snap}<p class="err">Telemetry unavailable right now ({error}). The library itself is unaffected.</p>{/if}
@@ -139,7 +139,7 @@
               </div>
             {/if}
           {/each}
-          <p class="fine mono">known-item test #{snap.capability.run} · {snap.capability.paragraphs} real passages, doctrinal core sampled 3× · {snap.capability.finished_at?.slice(0, 16).replace('T', ' ')} UTC</p>
+          <p class="fine mono">known-item test #{snap.capability.run} · {snap.capability.paragraphs} real paragraphs, doctrinal core sampled 3× · {snap.capability.finished_at?.slice(0, 16).replace('T', ' ')} UTC</p>
         {:else}
           <p class="fine">The first run of the findability test is in progress — watch its probes stream through the terminal below.</p>
         {/if}

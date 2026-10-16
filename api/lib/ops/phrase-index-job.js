@@ -26,7 +26,7 @@ export function phraseIndexJob(params = {}) {
         if (!line.includes('"phase"')) continue;
         try { last = JSON.parse(line); } catch { continue; }
         // the Observatory's terminal: one progress line per ≥45 s (activity-repo; content-free)
-        if (last.phase === 'chunk' && Date.now() - logged > 45000) {
+        if (last.phase === 'chunk' && Date.now() - logged > 20000) {
           logged = Date.now();
           import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('index', `${field} · ${fmt(last.paragraphs)} ¶ read · ${fmt(last.embedded)} embedded · ${fmt(last.upserted)} upserted${last.paras_per_hour ? ` · ${fmt(last.paras_per_hour)} ¶/h` : ''}${last.spent?.usd != null ? ` · $${last.spent.usd.toFixed(2)}` : ''}`)).catch(() => {});
         }

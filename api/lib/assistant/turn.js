@@ -65,7 +65,7 @@ export async function anisTurn({ messages, channel: channelName = 'widget-chat',
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop, ...extra };
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
     // the Observatory terminal: that a turn happened, how it was routed — never its text or who asked
-    import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('anis', `${channel.id} · ${status}${route.kind ? ` · ${route.kind}` : ''}${extra.recipe ? ` · ${extra.recipe}` : ''}${extra.retrieved != null ? ` · ${extra.retrieved} passages` : ''} · ${((Date.now() - t0) / 1000).toFixed(1)} s`)).catch(() => {});
+    import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('anis', `${channel.id} · ${status}${route.kind ? ` · ${route.kind}` : ''}${extra.recipe ? ` · ${extra.recipe}` : ''}${extra.retrieved != null ? ` · ${extra.retrieved} paragraphs` : ''} · ${((Date.now() - t0) / 1000).toFixed(1)} s`)).catch(() => {});
     return path;
   };
 

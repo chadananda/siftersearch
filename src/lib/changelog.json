@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-16T19:40:32.283Z",
+  "generated": "2026-10-16T19:51:34.512Z",
   "entries": [
+    {
+      "hash": "0fcad4ac",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Dial above the fold on every screen; liquid glass; background centred on the dial; GPU-less guard",
+      "scope": "home"
+    },
     {
       "hash": "bf3e2f23",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "--monthly-usd cap over a shared Gemini spend ledger (/tank/sifter/gemini-spend.db); $400/month total (Chad 10-05)",
       "scope": "phrase-index"
-    },
-    {
-      "hash": "07205921",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Decode HTML entities in stored text (&quot; in 96k paragraphs, mostly bahai-library.com copies); sample buttons show the quote's opening words, not the answer",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "0fcad4ac",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Dial above the fold on every screen; liquid glass; background centred on the dial; GPU-less guard",
+        "scope": "home"
+      },
       {
         "hash": "bf3e2f23",
         "date": "2026-10-16",
@@ -7018,15 +7025,6 @@
         "type": "New",
         "description": "--monthly-usd cap over a shared Gemini spend ledger (/tank/sifter/gemini-spend.db); $400/month total (Chad 10-05)",
         "scope": "phrase-index"
-      }
-    ],
-    "2026-10-04": [
-      {
-        "hash": "07205921",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Decode HTML entities in stored text (&quot; in 96k paragraphs, mostly bahai-library.com copies); sample buttons show the quote's opening words, not the answer",
-        "scope": "sourcehunt"
       }
     ]
   }

@@ -95,10 +95,44 @@ async function telemetryLoop() {
     await new Promise((r) => setTimeout(r, 5 * 60_000));
   }
 }
+// PULSE (Chad 10-16: "the console is a bit dead … there is a ton of indexing activity going on"): the machinery's real
+// activity, from the two places everything passes through — the single writer's per-minute stats (every write batch,
+// attributed to its process and statement) and the vector collections' growth. One line per active writer caller per
+// completed minute; one line per collection that grew, every 30 s. Content-free; the activity log's own writes excluded.
+async function pulseLoop() {
+  const WRITER = process.env.WRITER_STATS_URL || 'http://127.0.0.1:7849/stats';
+  const QD = process.env.QDRANT_URL || 'http://127.0.0.1:6333';
+  const fmt = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e4 ? `${(n / 1e3).toFixed(1)}K` : Math.round(n).toLocaleString('en-US'));
+  let reported = new Date(Date.now() - 60000).toISOString().slice(0, 16);   // minutes up to and including this are done
+  let last = {}, tick = 0;
+  while (!stopping) {
+    try {
+      const done = new Date(Date.now() - 60000).toISOString().slice(0, 16);   // the last COMPLETE minute
+      if (done > reported) {
+        const rows = await fetch(WRITER, { signal: AbortSignal.timeout(5000) }).then((r) => r.json()).catch(() => []);
+        const fresh = rows.filter((r) => r.minute > reported && r.minute <= done && r.name !== 'activity:log' && (r.changes > 0 || r.errors > 0));
+        for (const r of fresh.sort((a, b) => b.changes - a.changes).slice(0, 8)) {
+          logActivity('writer', `${r.caller.replace(/^siftersearch-/, '')}/${r.name} · ${fmt(r.batches)} batches · ${fmt(r.changes)} rows${r.errors ? ` · ${r.errors} errors` : ''} · ${(r.ms_total / 1000).toFixed(1)} s`);
+        }
+        reported = done;
+      }
+      if (tick++ % 2 === 0) {
+        for (const c of ['phrases', 'paragraphs_kw', 'hype', 'concepts']) {
+          const n = await fetch(`${QD}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(5000) })
+            .then((r) => r.json()).then((j) => j?.result?.points_count).catch(() => null);
+          if (n == null) continue;
+          if (last[c] != null && n !== last[c]) logActivity('qdrant', `${c} ${n > last[c] ? '+' : '−'}${fmt(Math.abs(n - last[c]))} points · ${fmt(n)} total`);
+          last[c] = n;
+        }
+      }
+    } catch (err) { logger.warn({ err: err.message }, 'pulse failed'); }
+    await new Promise((r) => setTimeout(r, 15000));
+  }
+}
 const laneNames = Object.values(LANES).flat();
 // OPS_ONLY="a,b": a second worker process that runs ONLY these jobs (10-12: carry runs waited hours behind a slow batch;
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, [])), rollingCoverage(), telemetryLoop()]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, [])), rollingCoverage(), telemetryLoop(), pulseLoop()]);
 process.exit(0);
