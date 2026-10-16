@@ -45,19 +45,24 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     queryOne('SELECT COUNT(*) AS n, COALESCE(SUM(paragraphs), 0) AS paras FROM doc_sections WHERE doc_id = ?', [id], 'coverage:sections'),
     count('paragraphs_kw', id), count('phrases', id), count('hype', id), count('concepts', id),
   ]);
+  // a count that failed (Qdrant busy, timeout) is UNKNOWN, not zero: keep the document's last good figure (10-16: zeros
+  // from timed-out counts made phrase/keyword coverage appear to shrink by ~66K paragraphs an hour)
+  const prev = Object.fromEntries((await queryAll('SELECT layer, indexed FROM index_coverage WHERE doc_id = ?', [id], 'coverage:prev')).map((r) => [r.layer, r.indexed]));
+  const known = (n, layer) => (n == null ? prev[layer] ?? null : n);
+  const [kwN, phraseN, hypeN, conceptN] = [known(kw, 'keyword'), known(phrase, 'phrase'), known(hype, 'hype'), known(conceptPts, 'concepts')];
   const nonEnglish = !/^en/i.test(String(doc.language || 'en'));
   const core = isCore(doc) ? 1 : 0;
   const row = (layer, generated, current, indexed, version = null, t = total) => ({ layer, total: t, generated: generated || 0, current: current ?? generated ?? 0, indexed: indexed ?? 0, version, core });
   return [
     row('text', total, total, c?.synced),
     row('embedding', c?.embedded, c?.embedded, c?.synced),
-    row('keyword', total, total, kw),                                   // Qdrant points ≈ paragraphs
-    row('phrase', total, total, phrase),                                // points = phrase units (several per paragraph)
+    row('keyword', total, total, kwN),                                   // Qdrant points ≈ paragraphs
+    row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
     row('sections', sections?.n, sections?.n, sections?.n, null, sections?.n || 0),
     row('context', c?.context, c?.context, null),                       // feeds HyPE/extraction; not searched itself
-    row('hype', c?.hype, c?.hype_current, hype, hypeVersion),           // points = questions
+    row('hype', c?.hype, c?.hype_current, hypeN, hypeVersion),           // points = questions
     row('entities', c?.extracted, c?.extracted, mentions?.n),
-    row('concepts', concepts?.n, concepts?.n, conceptPts),              // points = claims
+    row('concepts', concepts?.n, concepts?.n, conceptN),              // points = claims
     row('alignment', aligned?.n, aligned?.n, 0),                        // not indexed as a layer yet
     row('translation', nonEnglish ? c?.translated : 0, nonEnglish ? c?.translated : 0, 0, null, nonEnglish ? total : 0),
   ];

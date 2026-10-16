@@ -88,3 +88,13 @@ describe('coverage totals move by deltas (Chad 10-16: only query changes, never 
     expect(snapshot()).toEqual([]);
   });
 });
+
+describe('a failed vector count is unknown, not zero', () => {
+  it('keeps the last good figure when Qdrant does not answer', async () => {
+    await repo.saveCoverage(1, await repo.measureDoc(1, { hypeVersion: 'v15', count }));
+    const down = async () => null;
+    const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count: down })).map((r) => [r.layer, r]));
+    expect(m.phrase.indexed).toBe(9);
+    expect(m.keyword.indexed).toBe(3);
+  });
+});
