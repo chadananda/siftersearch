@@ -75,7 +75,7 @@ export async function knownItemTest({ perBucket = 15, words = 10, rand = Math.ra
           try { return { l, ids: (await deps.layers[l](q)).slice(0, 10), ms: Date.now() - t0 }; } catch (err) { return { l, error: String(err.message).slice(0, 120), ms: Date.now() - t0 }; }
         }));
         const hashes = await deps.hashesByIds(lists.flatMap((x) => x.ids || []));
-        for (const x of lists) row.layers[x.l] = x.error ? { error: x.error, ms: x.ms } : { rank: rankOf(x.ids, p, hashes), ms: x.ms };
+        for (const x of lists) row.layers[x.l] = x.error ? { error: x.error, ms: x.ms } : { rank: rankOf(x.ids, p, hashes), ms: x.ms, top: x.ids.slice(0, 3) };
         results.push(row);
       }
     }
@@ -83,6 +83,7 @@ export async function knownItemTest({ perBucket = 15, words = 10, rand = Math.ra
   const misses = results.filter((r) => layerNames.every((l) => !(r.layers[l]?.rank > 0))).slice(0, 40)
     .map((r) => ({ religion: r.religion, core: r.core, title: r.title, paragraph_id: r.paragraph_id, query: r.query }));
   const weak = results.filter((r) => r.layers.production && !(r.layers.production.rank > 0) && layerNames.some((l) => r.layers[l]?.rank > 0)).slice(0, 40)
-    .map((r) => ({ religion: r.religion, title: r.title, paragraph_id: r.paragraph_id, query: r.query, found_by: layerNames.filter((l) => r.layers[l]?.rank > 0) }));
+    .map((r) => ({ religion: r.religion, title: r.title, paragraph_id: r.paragraph_id, query: r.query, found_by: layerNames.filter((l) => r.layers[l]?.rank > 0),
+      production_top: r.layers.production.top, production_error: r.layers.production.error || null }));
   return { per_bucket: perBucket, words, queries: results.length, summary: summarize(results, layerNames), missed_everywhere: misses, production_missed_but_a_layer_found: weak };
 }

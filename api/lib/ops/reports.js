@@ -123,13 +123,19 @@ REPORTS['known-item'] = async ({ perBucket = 15, words = 10, religions } = {}) =
   const [{ knownItemTest }, repo, search, q] = await Promise.all([import('./known-item.js'), import('../repos/retrieval-eval-repo.js'),
     import('../search.js'), import('../search/qdrant-layers.js')]);
   const ids = (hits) => (hits || []).map((h) => h.paragraph_id ?? h.id);
+  const { plannedSearch, qdrantOption } = await import('../planned-search.js');
+  const qd = qdrantOption(undefined);
   const all = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Zoroastrian', 'Tao', 'Confucian', 'Sikh', 'Jain'];
   return knownItemTest({ perBucket, words }, { religions: religions || all, ...repo, layers: {
     meili_keyword: async (t) => ids((await search.keywordSearch(t, { limit: 10 })).hits),
     meili_hybrid: async (t) => ids((await search.hybridSearch(t, { limit: 10 })).hits),
     qdrant_keyword: async (t) => ids((await q.searchKeywordQdrant(t, { limit: 10 })).hits),
     qdrant_phrase: async (t) => ids((await q.searchPhrases(t, { limit: 10 })).hits),
-    production: async (t) => ids((await search.multiIndexSearch(t, { limit: 10 })).hits),
+    // exactly as POST /api/search/multi calls them: the raw engine with production's Qdrant layers, and the PLANNED search
+    // Anís and the public API use (first run called the bare engine without the Qdrant layers — not what users get)
+    engine: async (t) => ids((await search.multiIndexSearch(t, { limit: 10, includeMatchedHype: true, phraseLayer: qd.phrase, qdrantKeyword: qd.keyword,
+      qdrantHype: qd.hype, ...(qd.only ? { meili: false } : {}) })).hits),
+    production: async (t) => ids((await plannedSearch(t, { limit: 10, qdrant: qd })).hits),
   } });
 };
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
