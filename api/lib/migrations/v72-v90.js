@@ -1623,6 +1623,21 @@ export const migrations = {
     await query(`CREATE VIRTUAL TABLE IF NOT EXISTS doc_sections_fts USING fts5(title, book, tokenize = 'unicode61 remove_diacritics 2')`);
     logger.info('Migration 149 complete: doc_sections + doc_sections_fts');
   },
+
+  150: async () => {
+    // INDEX COVERAGE LEDGER (Chad 10-16: "all types of data indexing should be clear and visible and easily observed
+    // without long-running queries"): one row per document × layer (text, embedding, keyword, phrase, sections, context,
+    // hype, entities, concepts, alignment, translation) — total paragraphs, generated, current-version, indexed. Measured
+    // per document (cheap: doc_id indexes + Qdrant counts) by coverage-refresh; dashboards GROUP BY this, never scan.
+    // planning/index-coverage-plan.md
+    await query(`CREATE TABLE IF NOT EXISTS index_coverage (
+      doc_id INTEGER NOT NULL, layer TEXT NOT NULL, total INTEGER NOT NULL DEFAULT 0, generated INTEGER NOT NULL DEFAULT 0,
+      current INTEGER NOT NULL DEFAULT 0, indexed INTEGER NOT NULL DEFAULT 0, version TEXT, updated_at INTEGER NOT NULL,
+      PRIMARY KEY (doc_id, layer)
+    ) WITHOUT ROWID`);
+    await query('CREATE INDEX IF NOT EXISTS idx_index_coverage_age ON index_coverage(updated_at)');
+    logger.info('Migration 150 complete: index_coverage');
+  },
 };
 
 export const graphMigrations = {

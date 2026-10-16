@@ -56,10 +56,19 @@ async function lane(name, only, skipAlways) {
     }
   }
 }
+// Rolling coverage refresh (planning/index-coverage-plan.md): the 300 stalest documents re-measured every minute, so the
+// ledger converges even when a producer forgets to ask. Cheap per document (doc_id indexes + Qdrant counts).
+async function rollingCoverage() {
+  const { coverageRefreshJob } = await import('../lib/ops/coverage-job.js');
+  while (!stopping) {
+    await coverageRefreshJob({ limit: 300 }).catch((err) => logger.warn({ err: err.message }, 'coverage: rolling refresh failed'));
+    await new Promise((r) => setTimeout(r, 60_000));
+  }
+}
 const laneNames = Object.values(LANES).flat();
 // OPS_ONLY="a,b": a second worker process that runs ONLY these jobs (10-12: carry runs waited hours behind a slow batch;
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, []))]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, [])), rollingCoverage()]);
 process.exit(0);

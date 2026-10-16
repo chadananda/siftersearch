@@ -7,6 +7,10 @@ import { ApiError } from '../lib/errors.js';
 
 export default async function opsReportRoutes(fastify) {
   const known = (name) => { if (!reportNames().includes(name)) throw ApiError.notFound?.(`unknown report ${name}`) ?? Object.assign(new Error(`unknown report ${name}`), { statusCode: 404 }); };
+  // Index coverage (planning/index-coverage-plan.md): every layer by tradition × scope, or one document — ledger reads only
+  fastify.get('/ops/coverage', { preHandler: requireInternal }, async () => (await import('../lib/repos/coverage-repo.js')).coverageSummary());
+  fastify.get('/ops/coverage/:docId', { preHandler: requireInternal }, async (req) => ({ doc_id: Number(req.params.docId),
+    layers: await (await import('../lib/repos/coverage-repo.js')).docCoverage(req.params.docId) }));
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {
     known(req.params.name);
