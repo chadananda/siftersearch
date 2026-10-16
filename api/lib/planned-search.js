@@ -6,6 +6,7 @@
 import { planSearch, layersFor } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
 import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
+import { correctQuery, vocabulary } from './search/spell.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
@@ -132,9 +133,14 @@ export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase:
 export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, hype: false, only: false } : v === 'only' ? { phrase: true, keyword: true, hype: true, only: true }
   : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, hype: !!v.hype, only: !!v.only } : v === false ? { phrase: false, keyword: false, hype: false, only: false } : qdrantDefault();
 
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
+  // A reader's misspellings are corrected against the library's own vocabulary BEFORE anything searches (search/spell.js):
+  // one slip cut Meili's matches from 50,000+ to 19 (10-16). The result says what was corrected ("showing results for …").
+  const original = query;
+  const spelled = correctQuery(query, vocab ?? vocabulary());
+  query = spelled.query;
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
   if (!engine) import('./query-embedding.js').then((m) => m.queryEmbedding(query)).catch(() => {});
   // Resolved BESIDE the plan, inside the same budget; a slow or failed resolve means no target, never a slower search.
@@ -287,6 +293,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   const value = {
     hits, plan, layers, resolution, entities, peopleAnswer,
+    corrected: spelled.corrections.length ? { from: original, to: query, corrections: spelled.corrections } : null,
     target: tgt ? { id: tgt.id, name: tgt.name, type: tgt.type, names: tgt.names } : null,
     widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowResults.length, scopeUsed: r.scope,
   };

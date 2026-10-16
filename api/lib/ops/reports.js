@@ -3,6 +3,7 @@
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
 import { sectionIndexJob } from './section-index-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
+import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
@@ -129,7 +130,8 @@ REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, vari
   // a reader's half-memory of the passage (Chad: "two or three, often misspelled, often one semantically correct and two
   // literally correct") — written by Haiku from the passage itself
   const recall = async (text) => {
-    const r = await roleCreate('eval-recall', { max_tokens: 40, temperature: 0.9, messages: [
+    // Haiku 5.5 reasons before it answers on this endpoint: 40 tokens returned '' (finish 'length') for 161 of 166 passages
+    const r = await roleCreate('eval-recall', { max_tokens: 600, temperature: 0.9, messages: [
       { role: 'system', content: 'You simulate a reader who half-remembers a passage and types it into a search box. Reply with ONLY the search words: 2 to 4 words in the passage\'s own language — two copied literally from the passage, one replaced by a word of similar meaning that is NOT in the passage; one may be misspelled. No quotes, no explanation.' },
       { role: 'user', content: text }] });
     return String(r.choices?.[0]?.message?.content || '').replace(/["“”«»]/g, '').trim().split('\n')[0].slice(0, 80) || null;
@@ -145,6 +147,7 @@ REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, vari
     production: async (t, n) => ids((await plannedSearch(t, { limit: n, qdrant: qd })).hits),
   } });
 };
+REPORTS['vocab-build'] = vocabBuildJob;   // params { minFreq?, maxWords? } — the library vocabulary for query spell-correction
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
 REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
@@ -153,7 +156,7 @@ REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — 
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
 export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'block-attrs', 'reingest-impact'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact'],
   coverage: ['coverage-refresh'],
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(LANES.heavy);

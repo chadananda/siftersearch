@@ -298,3 +298,15 @@ describe('plannedSearch — quotations (known-item test 10-16)', () => {
     expect(e.calls.every((c) => c.semantic !== false || Object.keys(c.filters || {}).length)).toBe(true);
   });
 });
+
+describe('plannedSearch — misspellings (spell.js)', () => {
+  beforeEach(() => clearPlannedCache());
+  it('searches the corrected words and says so', async () => {
+    const vocab = new Map([['prayer', 9000], ['change', 7000], ['allows', 800]]);
+    const seen = [];
+    const e = { fn: async (q) => { seen.push(q); return { hits: many(3) }; } };
+    const r = await plannedSearch('prayr alloows chnge', { planner: planOf({}), engine: e.fn, vocab });
+    expect(seen[0]).toBe('prayer allows change');
+    expect(r.corrected).toMatchObject({ from: 'prayr alloows chnge', to: 'prayer allows change' });
+  });
+});
