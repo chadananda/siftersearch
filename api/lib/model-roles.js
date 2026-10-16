@@ -38,6 +38,8 @@ export const MODEL_ROLES = {
   'segmentation': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-11', needs: ['arabic', 'index-output', 'batch'],
     why: 'best value for Arabic; batch half price; LM Studio retired (Chad 10-11)' },
   // ── evaluation ──
+  'eval-recall': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-16', needs: ['fast', 'multilingual'],
+    why: 'known-item test: writes the 2–4 words a reader half-remembers from a passage (one synonym, maybe a misspelling); ~300 calls/run' },
   'bakeoff-judge': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-11', needs: ['multilingual', 'judgement', 'json'],
     why: 'blind judge must be stronger than every flash candidate and read fa/ar/he/zh (anthropic-policy stage model-eval)' },
   // ── legacy chat / publishing / bios (call sites not yet on modelFor — see tests/api/model-literal-ratchet.test.js) ──

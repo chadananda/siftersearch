@@ -119,23 +119,28 @@ REPORTS['hype-coverage'] = async ({ religion = "Baha'i" } = {}) => {
 };
 // KNOWN-ITEM test (priority 1, Chad 10-16): can each retrieval layer find a real paragraph from its own fragment?
 // params { perBucket?, words?, religions? } — ~2 searches/s; costs a few cents of query embeddings.
-REPORTS['known-item'] = async ({ perBucket = 15, words = 10, religions } = {}) => {
-  const [{ knownItemTest }, repo, search, q] = await Promise.all([import('./known-item.js'), import('../repos/retrieval-eval-repo.js'),
-    import('../search.js'), import('../search/qdrant-layers.js')]);
+REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, variants, religions } = {}) => {
+  const [{ knownItemTest }, repo, search, q, { roleCreate }] = await Promise.all([import('./known-item.js'), import('../repos/retrieval-eval-repo.js'),
+    import('../search.js'), import('../search/qdrant-layers.js'), import('../role-client.js')]);
   const ids = (hits) => (hits || []).map((h) => h.paragraph_id ?? h.id);
   const { plannedSearch, qdrantOption } = await import('../planned-search.js');
   const qd = qdrantOption(undefined);
   const all = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Zoroastrian', 'Tao', 'Confucian', 'Sikh', 'Jain'];
-  return knownItemTest({ perBucket, words }, { religions: religions || all, ...repo, layers: {
-    meili_keyword: async (t) => ids((await search.keywordSearch(t, { limit: 10 })).hits),
-    meili_hybrid: async (t) => ids((await search.hybridSearch(t, { limit: 10 })).hits),
-    qdrant_keyword: async (t) => ids((await q.searchKeywordQdrant(t, { limit: 10 })).hits),
-    qdrant_phrase: async (t) => ids((await q.searchPhrases(t, { limit: 10 })).hits),
-    // exactly as POST /api/search/multi calls them: the raw engine with production's Qdrant layers, and the PLANNED search
-    // Anís and the public API use (first run called the bare engine without the Qdrant layers — not what users get)
-    engine: async (t) => ids((await search.multiIndexSearch(t, { limit: 10, includeMatchedHype: true, phraseLayer: qd.phrase, qdrantKeyword: qd.keyword,
+  // a reader's half-memory of the passage (Chad: "two or three, often misspelled, often one semantically correct and two
+  // literally correct") — written by Haiku from the passage itself
+  const recall = async (text) => {
+    const r = await roleCreate('eval-recall', { max_tokens: 40, temperature: 0.9, messages: [
+      { role: 'system', content: 'You simulate a reader who half-remembers a passage and types it into a search box. Reply with ONLY the search words: 2 to 4 words in the passage\'s own language — two copied literally from the passage, one replaced by a word of similar meaning that is NOT in the passage; one may be misspelled. No quotes, no explanation.' },
+      { role: 'user', content: text }] });
+    return String(r.choices?.[0]?.message?.content || '').replace(/["“”«»]/g, '').trim().split('\n')[0].slice(0, 80) || null;
+  };
+  return knownItemTest({ perBucket, coreWeight, depth, ...(variants ? { variants } : {}) }, { religions: religions || all, ...repo, recall, layers: {
+    meili_keyword: async (t, n) => ids((await search.keywordSearch(t, { limit: n })).hits),
+    qdrant_keyword: async (t, n) => ids((await q.searchKeywordQdrant(t, { limit: n })).hits),
+    qdrant_phrase: async (t, n) => ids((await q.searchPhrases(t, { limit: n })).hits),
+    engine: async (t, n) => ids((await search.multiIndexSearch(t, { limit: n, includeMatchedHype: true, phraseLayer: qd.phrase, qdrantKeyword: qd.keyword,
       qdrantHype: qd.hype, ...(qd.only ? { meili: false } : {}) })).hits),
-    production: async (t) => ids((await plannedSearch(t, { limit: 10, qdrant: qd })).hits),
+    production: async (t, n) => ids((await plannedSearch(t, { limit: n, qdrant: qd })).hits),
   } });
 };
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
