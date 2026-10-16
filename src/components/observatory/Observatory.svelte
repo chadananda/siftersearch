@@ -21,7 +21,8 @@
   const since = $derived(snap ? Math.max(0, now / 1000 - snap.at) : 0);
   const live = (v, key) => interpolate(v, rates[key], since);
   const ring = (id) => snap?.rings?.find((r) => r.id === id) || null;
-  const series = (key) => (tel?.series || []).map((p) => p.series?.[key]);
+  // snapshots taken before the incremental totals were filled read zero for everything — not data, so not drawn
+  const series = (key) => (tel?.series || []).filter((p) => p.series?.text > 0).map((p) => p.series?.[key]);
 
   const KPIS = [
     { label: 'Paragraphs', value: () => snap?.corpus?.paragraphs, key: 'text', hint: 'every passage, in 11 traditions' },
@@ -47,11 +48,25 @@
     try { const r = await observatory.telemetry(); tel = r.data; fetchedAt = Date.now(); error = null; }
     catch (err) { error = err.message; }
   }
+  // the background's flow converges on the dial's core (Chad 10-16: "the background animation should be at the very
+  // center of the graph"): tell LiquidBackground where the core is, on scroll and resize
+  let dialEl = $state(null);
+  function focusBackground() {
+    if (!dialEl) return;
+    const r = dialEl.getBoundingClientRect();
+    if (!r.width) return;
+    const side = Math.min(r.width, r.height || r.width);
+    window.dispatchEvent(new CustomEvent('liquid-focus', { detail: { x: (r.left + r.width / 2) / window.innerWidth, y: (r.top + side / 2) / window.innerHeight } }));
+  }
   onMount(() => {
     load();
     const poll = setInterval(load, 60000);
     const tick = setInterval(() => { now = Date.now(); }, 1000);
-    return () => { clearInterval(poll); clearInterval(tick); };
+    const onMove = () => requestAnimationFrame(focusBackground);
+    window.addEventListener('scroll', onMove, { passive: true });
+    window.addEventListener('resize', onMove);
+    const settle = setInterval(focusBackground, 1000);   // layout settles as fonts and data arrive
+    return () => { clearInterval(poll); clearInterval(tick); clearInterval(settle); window.removeEventListener('scroll', onMove); window.removeEventListener('resize', onMove); };
   });
 </script>
 
@@ -66,25 +81,18 @@
     <div class="kicker"><span class="led"></span>OBSERVATORY <span class="sep">/</span> LIVE <span class="sep">/</span>
       <span class="mono">{new Date(now).toISOString().slice(11, 19)} UTC</span>
       {#if snap}<span class="sep">/</span> <span class="mono">snapshot {ago(since)}</span>{/if}
+      {#if snap?.jobs}
+        <span class="procs">
+          {#each snap.jobs.running as j (j.id)}<span class="proc mono"><span class="spin"></span>{j.label}<span class="mute">· {duration((j.elapsed_s || 0) + (now - fetchedAt) / 1000)}</span></span>
+          {:else}<span class="proc mono mute">idle between jobs</span>{/each}
+        </span>
+      {/if}
     </div>
-    <h1 id="obs-title">An interfaith library, <em>learning in public.</em></h1>
-    <p class="lede">Every passage of {snap?.corpus?.traditions ?? 11} traditions — searched, questioned and studied by machine, in the open.
-      Each ring below is a stage of understanding; each sector, a tradition. Watch it grow.</p>
+    <h1 id="obs-title">The world’s largest <em>deeply AI-indexed</em> interfaith library.</h1>
+    <p class="lede">{snap ? `${compact(snap.corpus.paragraphs)} passages` : 'Millions of passages'} of sacred and scholarly text, {snap?.corpus?.traditions ?? 11} traditions — searched, questioned and studied by machine, in the open.</p>
   </header>
 
   {#if error && !snap}<p class="err">Telemetry unavailable right now ({error}). The library itself is unaffected.</p>{/if}
-
-  <!-- figures -->
-  <div class="kpis">
-    {#each KPIS as k (k.label)}
-      {@const v = k.key ? live(k.value(), k.key) : k.value()}
-      <div class="kpi">
-        <div class="kpi-label">{k.label}</div>
-        <div class="kpi-num mono">{snap ? exact(v) : '—'}</div>
-        <div class="kpi-foot"><span class="kpi-hint">{k.hint}</span>{#if k.key && rates[k.key] > 0}<span class="kpi-rate mono">{rate(rates[k.key])}</span>{/if}</div>
-      </div>
-    {/each}
-  </div>
 
   <div class="grid">
     <!-- left: index state, stage by stage -->
@@ -107,7 +115,7 @@
     </aside>
 
     <!-- centre: the dial -->
-    <div class="dial-wrap">
+    <div class="dial-wrap" bind:this={dialEl}>
       {#if snap}<ObservatoryDial snapshot={snap} {activeRings} {now} onhover={(t) => (tip = t)} />
       {:else}<div class="dial-skel"><span class="mono">calibrating…</span></div>{/if}
       {#if activeRings.length}<div class="dial-note mono">◉ live: {activeRings.join(' · ')}</div>{/if}
@@ -115,6 +123,7 @@
 
     <!-- right: capability + health -->
     <div class="right">
+      <ObservatoryTerminal />
       <section class="panel" aria-label="Findability">
         <h2>Findability <span class="h-sub">can it find what a reader remembers?</span></h2>
         {#if snap?.capability?.variants}
@@ -163,28 +172,29 @@
     </div>
   </div>
 
-  <!-- running now -->
-  {#if snap?.jobs}
-    <div class="procs">
-      <h2>Running now</h2>
-      {#each snap.jobs.running as j (j.id)}
-        <div class="proc mono"><span class="spin"></span>{j.label}<span class="mute">· {duration((j.elapsed_s || 0) + (now - fetchedAt) / 1000)}</span></div>
-      {:else}<div class="proc mono mute">idle between jobs</div>{/each}
-    </div>
-  {/if}
 
-  <ObservatoryTerminal />
+  <!-- figures -->
+  <div class="kpis">
+    {#each KPIS as k (k.label)}
+      {@const v = k.key ? live(k.value(), k.key) : k.value()}
+      <div class="kpi">
+        <div class="kpi-label">{k.label}</div>
+        <div class="kpi-num mono">{snap ? exact(v) : '—'}</div>
+        <div class="kpi-foot"><span class="kpi-hint">{k.hint}</span>{#if k.key && rates[k.key] > 0}<span class="kpi-rate mono">{rate(rates[k.key])}</span>{/if}</div>
+      </div>
+    {/each}
+  </div>
 
   <!-- developed in public -->
   {#if snap?.roadmap}
-    <div class="roadmap">
+    <div class="road-wrap"><div class="roadmap">
       {#each ['now', 'next', 'later'] as st (st)}
         <div class="road">
           <h3>{st === 'now' ? 'Building now' : st === 'next' ? 'Next' : 'Later'}</h3>
           {#each snap.roadmap.filter((x) => x.state === st) as x, i (i)}<p>{x.text}</p>{/each}
         </div>
       {/each}
-    </div>
+    </div></div>
   {/if}
 
   {#if tip}
@@ -211,37 +221,53 @@
     --obs-judaism: light-dark(#1d4ed8, #60a5fa); --obs-zoroastrian: light-dark(#c2410c, #fb923c); --obs-hindu: light-dark(#be185d, #f472b6);
     --obs-buddhist: light-dark(#6d28d9, #a78bfa); --obs-jain: light-dark(#0f766e, #2dd4bf); --obs-sikh: light-dark(#4338ca, #818cf8);
     --obs-tao: light-dark(#0e7490, #22d3ee); --obs-confucian: light-dark(#4d7c0f, #a3e635); --obs-other: light-dark(#64748b, #94a3b8);
-    --obs-panel: light-dark(rgba(255, 255, 255, 0.72), rgba(9, 15, 28, 0.62));
-    position: relative; max-width: 1600px; margin: 0 auto; padding: 88px 20px 64px; display: flex; flex-direction: column; gap: 22px;
+    --obs-panel: light-dark(rgba(255, 255, 255, 0.46), rgba(14, 22, 40, 0.34));
+    /* liquid glass (Chad 10-16: 'a slightly "liquid glass" effect on all elements') */
+    --glass-blur: blur(20px) saturate(170%);
+    --glass-edge: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.14));
+    --glass-rim: light-dark(rgba(15, 23, 42, 0.08), rgba(0, 0, 0, 0.35));
+    --glass-shine: light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.11));
+    --glass-shadow: light-dark(0 18px 40px -22px rgba(15, 23, 42, 0.35), 0 22px 50px -24px rgba(0, 0, 0, 0.7));
+    position: relative; max-width: 1680px; margin: 0 auto; padding: 54px 20px 48px; display: flex; flex-direction: column; gap: 12px;
+    /* the dial must fit the first screen: viewport height minus navbar (~56) + header (~96) + gaps */
+    --obs-chrome: 162px;
     color: var(--obs-text); font-family: var(--obs-sans);
   }
   .mono { font-family: var(--obs-mono); font-variant-numeric: tabular-nums; }
   .mute { color: var(--obs-text-faint); }
-  .mast { display: flex; flex-direction: column; gap: 10px; }
+  .mast { display: flex; flex-direction: column; gap: 6px; }
   .kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 600 11.5px/1 var(--obs-mono); letter-spacing: 0.16em; color: var(--obs-accent); }
   .kicker .sep { color: var(--obs-text-faint); }
   .led { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; animation: blink 1.8s ease-in-out infinite; }
-  h1 { margin: 0; font: 600 clamp(28px, 4.2vw, 52px)/1.08 var(--obs-sans); letter-spacing: -0.025em; text-wrap: balance; }
+  h1 { margin: 0; font: 600 clamp(21px, 2.4vw, 34px)/1.1 var(--obs-sans); letter-spacing: -0.025em; text-wrap: balance; }
   h1 em { font-style: normal; background: linear-gradient(90deg, var(--obs-bahai), var(--obs-islam), var(--obs-judaism), var(--obs-buddhist));
     -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .lede { margin: 0; max-width: 62ch; color: var(--obs-text-dim); font-size: 16px; line-height: 1.55; }
+  .lede { margin: 0; max-width: 100ch; color: var(--obs-text-dim); font-size: 13.5px; line-height: 1.4; }
   .err { color: var(--error); }
 
-  .kpis { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 1px; background: var(--obs-line); border: 1px solid var(--obs-line); border-radius: 14px; overflow: hidden; }
-  .kpi { background: var(--obs-panel); backdrop-filter: blur(14px); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  /* ── liquid glass: translucent tint + blur/saturate, a lit top edge, a sheen from the upper left, a soft deep shadow ── */
+  .glass, .kpis, .panel, .road-wrap, .proc { position: relative; background: var(--obs-panel); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-shine), inset 0 -1px 0 var(--glass-rim), var(--glass-shadow); }
+  .kpis::before, .panel::before, .road-wrap::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(120% 70% at 0% 0%, var(--glass-shine), transparent 55%); opacity: 0.55; }
+  .kpis { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border-radius: 18px; overflow: hidden; }
+  .kpi { position: relative; padding: 10px 12px 9px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .kpi + .kpi { border-left: 1px solid var(--obs-line); }
   .kpi-label { font: 600 10.5px/1 var(--obs-sans); letter-spacing: 0.16em; text-transform: uppercase; color: var(--obs-text-dim); }
   .kpi-num { font-size: clamp(17px, 1.6vw, 24px); font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-foot { display: flex; justify-content: space-between; gap: 6px; font-size: 11px; color: var(--obs-text-faint); min-height: 14px; }
   .kpi-hint { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .kpi-rate { color: var(--success); white-space: nowrap; }
 
-  .grid { display: grid; grid-template-columns: minmax(250px, 300px) minmax(0, 1fr) minmax(270px, 330px); gap: 22px; align-items: start; }
-  .panel { background: var(--obs-panel); backdrop-filter: blur(14px); border: 1px solid var(--obs-line); border-radius: 14px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .grid { display: grid; grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(320px, 420px); grid-template-areas: 'stages dial right'; gap: 16px; align-items: start; }
+  .stages { grid-area: stages; } .dial-wrap { grid-area: dial; } .right { grid-area: right; }
+  .panel { border-radius: 18px; padding: 13px 14px 12px; display: flex; flex-direction: column; gap: 9px; }
+  .panel > * { position: relative; }
   h2 { margin: 0; font: 600 12px/1.2 var(--obs-sans); letter-spacing: 0.16em; text-transform: uppercase; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
   .h-sub { font: 400 11.5px/1.2 var(--obs-sans); letter-spacing: 0; text-transform: none; color: var(--obs-text-faint); }
-  .right { display: flex; flex-direction: column; gap: 22px; }
+  .right { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
-  .stage { display: flex; flex-direction: column; gap: 5px; }
+  .stage { display: flex; flex-direction: column; gap: 3px; }
   .stage-top { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
   .stage-n { color: var(--obs-text-faint); font-size: 11px; }
   .stage-name { flex: 1; min-width: 0; font-weight: 500; }
@@ -257,7 +283,14 @@
   .bar span { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--obs-sweep), var(--obs-islam)); transition: width 1.2s ease; }
   .bar .b10 { background: linear-gradient(90deg, var(--obs-buddhist), var(--obs-judaism)); }
 
-  .dial-wrap { position: relative; min-width: 0; }
+  /* the dial is as large as the column allows AND as tall as the first screen allows — always above the fold */
+  .dial-wrap { position: relative; min-width: 0; width: min(100%, calc(100svh - var(--obs-chrome))); justify-self: center; }
+  /* the dial sits on a disc of liquid glass (bezel radius 440/500 of the half-width) */
+  .dial-wrap::before { content: ''; position: absolute; left: 6%; top: 0; width: 88%; aspect-ratio: 1; margin-top: 6%; border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, var(--glass-shine), transparent 42%), var(--obs-panel);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-edge); box-shadow: inset 0 2px 1px var(--glass-shine), inset 0 -10px 30px var(--glass-rim), var(--glass-shadow); }
+  .dial-wrap > :global(svg) { position: relative; }
   .dial-skel { aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--obs-line-strong); display: grid; place-items: center; color: var(--obs-text-faint); }
   .dial-note { text-align: center; margin-top: 6px; font-size: 11px; color: var(--obs-accent); letter-spacing: 0.08em; }
 
@@ -279,13 +312,14 @@
   .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 5px; background: var(--obs-text-faint); }
   .dot.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; } .dot.yellow { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; } .dot.red, .dot.unreachable { background: #ef4444; }
 
-  .procs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-  .procs h2 { margin-right: 4px; }
-  .proc { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 12px; border-radius: 999px; background: var(--obs-panel); border: 1px solid var(--obs-line); }
+  .procs { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: 6px; letter-spacing: 0; }
+  .proc { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 999px; color: var(--obs-text); }
   .spin { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--obs-accent); border-right-color: transparent; animation: spin 0.9s linear infinite; }
 
-  .roadmap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--obs-line); border: 1px solid var(--obs-line); border-radius: 14px; overflow: hidden; }
-  .road { background: var(--obs-panel); backdrop-filter: blur(14px); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .road-wrap { border-radius: 18px; overflow: hidden; }
+  .roadmap { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .road { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .road + .road { border-left: 1px solid var(--obs-line); }
   .road h3 { margin: 0; font: 600 11px/1 var(--obs-sans); letter-spacing: 0.16em; text-transform: uppercase; color: var(--obs-accent); }
   .road p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--obs-text-dim); }
 
@@ -296,17 +330,25 @@
 
   @keyframes blink { 50% { opacity: 0.3; } }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @media (max-width: 1180px) {
-    .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .dial-wrap { grid-column: 1 / -1; grid-row: 1; max-width: 760px; width: 100%; margin: 0 auto; }
+  /* medium: the dial + one side column (terminal, findability, health); index state drops below */
+  @media (max-width: 1279px) {
+    .grid { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); grid-template-areas: 'dial right' 'stages stages'; }
+    .stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 18px; }
+    .stages h2 { grid-column: 1 / -1; }
     .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi:nth-child(4n + 1) { border-left: 0; } .kpi:nth-child(n + 5) { border-top: 1px solid var(--obs-line); }
   }
-  @media (max-width: 720px) {
-    .obs { padding: 76px 16px 48px; }
-    .grid { grid-template-columns: minmax(0, 1fr); }
-    .right { gap: 16px; }
+  /* narrow (tablets, phones): the dial first at full width (width is the limit here, so it fits), then the terminal */
+  @media (max-width: 899px) {
+    .obs { padding: 62px 14px 40px; --obs-chrome: 150px; }
+    .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'dial' 'right' 'stages'; }
+    .procs { display: none; }
+  }
+  @media (max-width: 560px) {
+    .lede { display: none; }
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .roadmap { grid-template-columns: minmax(0, 1fr); }
+    .kpi { border-left: 0 !important; border-top: 0 !important; } .kpi:nth-child(even) { border-left: 1px solid var(--obs-line) !important; } .kpi:nth-child(n + 3) { border-top: 1px solid var(--obs-line) !important; }
+    .roadmap { grid-template-columns: minmax(0, 1fr); } .road + .road { border-left: 0; border-top: 1px solid var(--obs-line); }
   }
   @media (prefers-reduced-motion: reduce) { .led, .spin { animation: none; } .bar span { transition: none; } }
 </style>

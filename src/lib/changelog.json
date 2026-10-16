@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-16T18:14:05.306Z",
+  "generated": "2026-10-16T19:40:32.283Z",
   "entries": [
+    {
+      "hash": "bf3e2f23",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Misspellings corrected against the library's own vocabulary before search",
+      "scope": "search"
+    },
+    {
+      "hash": "1e236657",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "The Observatory — a live dashboard of the library being indexed and studied, in public",
+      "scope": "home"
+    },
     {
       "hash": "5418783a",
       "date": "2026-10-16",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Decode HTML entities in stored text (&quot; in 96k paragraphs, mostly bahai-library.com copies); sample buttons show the quote's opening words, not the answer",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "ed126be4",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Six one-click demo samples (each scored fully right on the battery)",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "11a681ba",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Re-check the paragraph inside the linked tablet by cross-lingual similarity; battery scores tablet vs paragraph, accent-folded titles",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "bf3e2f23",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Misspellings corrected against the library's own vocabulary before search",
+        "scope": "search"
+      },
+      {
+        "hash": "1e236657",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "The Observatory — a live dashboard of the library being indexed and studied, in public",
+        "scope": "home"
+      },
       {
         "hash": "5418783a",
         "date": "2026-10-16",
@@ -7012,20 +7026,6 @@
         "date": "2026-10-04",
         "type": "Fixed",
         "description": "Decode HTML entities in stored text (&quot; in 96k paragraphs, mostly bahai-library.com copies); sample buttons show the quote's opening words, not the answer",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "ed126be4",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Six one-click demo samples (each scored fully right on the battery)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "11a681ba",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Re-check the paragraph inside the linked tablet by cross-lingual similarity; battery scores tablet vs paragraph, accent-folded titles",
         "scope": "sourcehunt"
       }
     ]

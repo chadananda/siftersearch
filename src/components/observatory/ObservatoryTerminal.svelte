@@ -74,9 +74,10 @@
 </div>
 
 <style>
-  .term { border-radius: 12px; overflow: hidden; background: #070b12; border: 1px solid rgba(148, 163, 184, 0.18);
-    box-shadow: 0 20px 60px -20px rgba(2, 6, 23, 0.65), inset 0 0 0 1px rgba(56, 189, 248, 0.05); color: #cbd5e1; }
-  .bar { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: linear-gradient(#0f1622, #0b111b); border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  /* smoked liquid glass: always dark (a terminal), translucent over the background, lit top edge */
+  .term { container-type: inline-size; border-radius: 18px; overflow: hidden; background: rgba(5, 9, 16, 0.78); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 24px 60px -24px rgba(2, 6, 23, 0.8); color: #cbd5e1; }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01)); border-bottom: 1px solid rgba(148, 163, 184, 0.12);
     font: 500 11.5px/1 var(--obs-mono); color: #64748b; }
   .dots { display: flex; gap: 6px; }
   .dots i { width: 10px; height: 10px; border-radius: 50%; background: #1e293b; }
@@ -84,7 +85,7 @@
   .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .live { display: flex; align-items: center; gap: 6px; color: #22c55e; letter-spacing: 0.12em; }
   .led { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: blink 1.6s ease-in-out infinite; }
-  .body { height: 340px; overflow-y: auto; overflow-x: hidden; padding: 10px 14px 12px; font: 400 12.5px/1.65 var(--obs-mono);
+  .body { height: 300px; overflow-y: auto; overflow-x: hidden; padding: 10px 14px 12px; font: 400 12.5px/1.65 var(--obs-mono);
     scrollbar-width: thin; scrollbar-color: #1e293b transparent;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 36px); mask-image: linear-gradient(to bottom, transparent 0, #000 36px); }
   .line { display: grid; grid-template-columns: 64px 74px minmax(0, 1fr); gap: 10px; animation: rise 0.35s ease-out; }
@@ -105,6 +106,6 @@
   .cursor { color: #22c55e; animation: blink 1s steps(2) infinite; }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @keyframes blink { 50% { opacity: 0.25; } }
-  @media (max-width: 640px) { .line { grid-template-columns: 58px minmax(0, 1fr); } .tag { display: none; } .body { height: 280px; font-size: 11.5px; } }
+  @container (max-width: 520px) { .line { grid-template-columns: 56px minmax(0, 1fr); gap: 8px; } .tag { display: none; } .body { font-size: 11.5px; } }
   @media (prefers-reduced-motion: reduce) { .line { animation: none; } .led, .cursor { animation: none; } }
 </style>

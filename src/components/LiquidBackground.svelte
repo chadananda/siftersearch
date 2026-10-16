@@ -11,6 +11,14 @@
   let isDarkMode = $state(true);
   let themeLocation;
   let thinkingLocation;
+  let centerLocation;
+  // The focal point the flow streams toward. A page can move it with a 'liquid-focus' event ({ x, y } as fractions of the
+  // viewport, top-left origin) — the home page's Observatory points it at the dial's core (Chad 10-16). It glides there.
+  let center = [0.5, 0.5], targetCenter = [0.5, 0.5];
+  // FRAME WATCHDOG (10-16: without GPU acceleration the full-screen shader took seconds per frame and froze the whole page):
+  // slow frames halve the resolution; below a quarter, the background settles to a still frame.
+  let quality = 0.75, slowFrames = 0, lastFrame = 0, frozen = false;
+  function onFocus(e) { const d = e.detail || {}; if (Number.isFinite(d.x) && Number.isFinite(d.y)) targetCenter = [d.x, 1 - d.y]; }
 
   // Get thinking state from shared store
   const thinkingState = getThinkingState();
@@ -35,6 +43,7 @@
     uniform vec2 u_resolution;
     uniform float u_darkMode;
     uniform float u_thinking;
+    uniform vec2 u_center;   // focal point in 0..1 viewport coords (GL: y up); 0.5,0.5 unless a page asks otherwise
 
     out vec4 fragColor;
 
@@ -77,7 +86,7 @@
       float aspect = u_resolution.x / u_resolution.y;
 
       // Center the coordinates
-      vec2 p = vec2((uv.x - 0.5) * aspect, uv.y - 0.5);
+      vec2 p = vec2((uv.x - u_center.x) * aspect, uv.y - u_center.y);
       float distFromCenter = length(p);
 
       float time = u_time * 0.3;
@@ -228,6 +237,7 @@
     // Get uniform locations
     themeLocation = gl.getUniformLocation(program, 'u_darkMode');
     thinkingLocation = gl.getUniformLocation(program, 'u_thinking');
+    centerLocation = gl.getUniformLocation(program, 'u_center');
 
     return true;
   }
@@ -235,9 +245,10 @@
   function resize() {
     if (!canvas) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = canvas.clientWidth * dpr;
-    const height = canvas.clientHeight * dpr;
+    // a soft glow needs no retina pixels: ≤1× density at `quality` resolution (lowered by the frame watchdog in render)
+    const dpr = Math.min(window.devicePixelRatio || 1, 1) * quality;
+    const width = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    const height = Math.max(1, Math.round(canvas.clientHeight * dpr));
 
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
@@ -273,6 +284,16 @@
     currentThinking += (targetThinking - currentThinking) * smoothingFactor;
 
     const time = (timestamp - startTime) / 1000;
+    if (lastFrame) {
+      const gap = timestamp - lastFrame;
+      slowFrames = gap > 70 ? slowFrames + (gap > 400 ? 12 : 1) : Math.max(0, slowFrames - 1);   // one very slow frame acts at once
+      if (slowFrames > 12) {
+        slowFrames = 0;
+        if (quality > 0.25) { quality /= 2; resize(); }
+        else frozen = true;                                   // one last frame below, then no more animation
+      }
+    }
+    lastFrame = timestamp;
 
     gl.useProgram(program);
 
@@ -283,9 +304,12 @@
     gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
     gl.uniform1f(themeLocation, isDarkMode ? 1.0 : 0.0);
     gl.uniform1f(thinkingLocation, currentThinking);
+    center = [center[0] + (targetCenter[0] - center[0]) * 0.12, center[1] + (targetCenter[1] - center[1]) * 0.12];
+    gl.uniform2f(centerLocation, center[0], center[1]);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
+    if (frozen) return;                                       // too slow to animate here: keep the still frame
     animationId = requestAnimationFrame(render);
   }
 
@@ -300,6 +324,7 @@
     if (initWebGL()) {
       resize();
       window.addEventListener('resize', resize);
+      window.addEventListener('liquid-focus', onFocus);
       document.addEventListener('visibilitychange', handleVisibilityChange);
       animationId = requestAnimationFrame(render);
     }
@@ -310,6 +335,7 @@
       cancelAnimationFrame(animationId);
     }
     window.removeEventListener('resize', resize);
+    window.removeEventListener('liquid-focus', onFocus);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
   });
 </script>

@@ -114,8 +114,11 @@ export async function buildSnapshot() {
   const [rows, counts, vectors, ops, ki] = await Promise.all([repo.coverageRollup(), repo.libraryCounts(), qdrantCounts(), repo.opsActivity(), repo.latestKnownItem()]);
   // people change slowly and the count is not cheap: measured at most hourly
   if (!peopleMemo.value || Date.now() - peopleMemo.at > 3600000) {
-    const v = await Promise.race([import('./bio.js').then((m) => m.getIntegrationProgress()).then((p) => p?.cumulativeUnique ?? null).catch(() => null),
-      new Promise((ok) => setTimeout(() => ok(null), 20000))]);
+    // through the API (its contract and cache — Chad 10-16), not by calling bio.js in this worker: there it returned
+    // nothing and the home page showed People as '—'
+    const v = await fetch(`${process.env.INTERNAL_API_URL || 'http://127.0.0.1:7839'}/api/admin/grounding/status`, {
+      headers: { 'x-internal-key': process.env.DEPLOY_SECRET || '' }, signal: AbortSignal.timeout(20000) })
+      .then((r) => (r.ok ? r.json() : null)).then((p) => p?.cumulativeUnique ?? null).catch(() => null);
     if (v != null) peopleMemo = { at: Date.now(), value: v };
   }
   const people = peopleMemo.value ?? null;
