@@ -4,6 +4,11 @@
 // the dashboard reads only this table. Callers: ops coverage-refresh + the reports worker's rolling refresh, admin route.
 // Deps: db.js; Qdrant over HTTP (QDRANT_URL/QDRANT_KEY).
 import { queryOne, queryAll, transaction } from '../db.js';
+import { getAuthority } from '../authority.js';
+
+/** Doctrinal core (Chad 10-16: "probably doctrinal core first"): scripture and authoritative interpretation, authority ≥ 8. */
+export const CORE_AUTHORITY = 8;
+export const isCore = (doc) => { try { return getAuthority(doc) >= CORE_AUTHORITY; } catch { return false; } };
 
 export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
@@ -23,7 +28,7 @@ export async function qdrantCount(collection, docId, { fetchImpl = fetch } = {})
 /** Every layer's numbers for one document → [{ layer, total, generated, current, indexed, version }]. */
 export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {}) {
   const id = Number(docId);
-  const doc = await queryOne('SELECT language FROM docs WHERE id = ?', [id]);
+  const doc = await queryOne('SELECT language, title, author, religion, collection, source_site, authority FROM docs WHERE id = ?', [id]);
   if (!doc) return [];
   const c = await queryOne(`SELECT COUNT(*) AS total, SUM(synced = 1) AS synced, SUM(embedding IS NOT NULL) AS embedded,
       SUM(LENGTH(COALESCE(context, '')) > 0) AS context, SUM(LENGTH(COALESCE(hyp_questions, '')) > 2) AS hype,
@@ -41,7 +46,8 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     count('paragraphs_kw', id), count('phrases', id), count('hype', id), count('concepts', id),
   ]);
   const nonEnglish = !/^en/i.test(String(doc.language || 'en'));
-  const row = (layer, generated, current, indexed, version = null, t = total) => ({ layer, total: t, generated: generated || 0, current: current ?? generated ?? 0, indexed: indexed ?? 0, version });
+  const core = isCore(doc) ? 1 : 0;
+  const row = (layer, generated, current, indexed, version = null, t = total) => ({ layer, total: t, generated: generated || 0, current: current ?? generated ?? 0, indexed: indexed ?? 0, version, core });
   return [
     row('text', total, total, c?.synced),
     row('embedding', c?.embedded, c?.embedded, c?.synced),
@@ -60,10 +66,10 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
 /** Write one document's rows (replace). */
 export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 1000)) {
   if (!rows.length) return 0;
-  await transaction(rows.map((r) => ({ sql: `INSERT INTO index_coverage (doc_id, layer, total, generated, current, indexed, version, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(doc_id, layer) DO UPDATE SET total = excluded.total, generated = excluded.generated,
-      current = excluded.current, indexed = excluded.indexed, version = excluded.version, updated_at = excluded.updated_at`,
-  args: [Number(docId), r.layer, r.total, r.generated, r.current, r.indexed, r.version, at] })), 'coverage:save');
+  await transaction(rows.map((r) => ({ sql: `INSERT INTO index_coverage (doc_id, layer, total, generated, current, indexed, version, core, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(doc_id, layer) DO UPDATE SET total = excluded.total, generated = excluded.generated,
+      current = excluded.current, indexed = excluded.indexed, version = excluded.version, core = excluded.core, updated_at = excluded.updated_at`,
+  args: [Number(docId), r.layer, r.total, r.generated, r.current, r.indexed, r.version, r.core ? 1 : 0, at] })), 'coverage:save');
   return rows.length;
 }
 
@@ -79,11 +85,11 @@ export async function stalestDocs(limit = 300) {
 
 /** The dashboard: per tradition × scope × layer sums, plus how fresh the measurements are. Reads only the ledger. */
 export async function coverageSummary() {
-  const rows = await queryAll(`SELECT d.religion, COALESCE(d.scope, 'primary') AS scope, i.layer, COUNT(*) AS docs,
+  const rows = await queryAll(`SELECT d.religion, COALESCE(d.scope, 'primary') AS scope, i.core, i.layer, COUNT(*) AS docs,
       SUM(i.total) AS total, SUM(i.generated) AS generated, SUM(i.current) AS current, SUM(i.indexed) AS indexed,
       MIN(i.updated_at) AS oldest, MAX(i.updated_at) AS newest
     FROM index_coverage i JOIN docs d ON d.id = i.doc_id WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
-    GROUP BY 1, 2, 3`, [], 'coverage:summary');
+    GROUP BY 1, 2, 3, 4`, [], 'coverage:summary');
   const live = await queryOne('SELECT COUNT(*) AS n FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL', [], 'coverage:live');
   const measured = await queryOne(`SELECT COUNT(*) AS n FROM index_coverage WHERE layer = 'text'`, [], 'coverage:measured');
   return { live_docs: live?.n || 0, measured_docs: measured?.n || 0, rows };

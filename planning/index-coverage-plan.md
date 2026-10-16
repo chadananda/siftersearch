@@ -10,6 +10,10 @@
 2. **Exploration by questions** — disambiguation, then HyPE.
 3. **Scholarly analysis** — concept extraction and historical (entity) extraction.
 
+Within every tier: **doctrinal core first** ("Probably doctrinal core first") — each tradition's scripture and its
+authoritative interpretation (Bahá'í: the Báb, Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi, the Universal House of Justice;
+Qur'an; Bible; Gita/Upanishads; Pali canon; …) before secondary literature. The ledger reports the core as its own row.
+
 ## The ledger
 `index_coverage` (migration 150): one row per **document × layer** — `total` paragraphs, `generated` (the derived data
 exists), `current` (at the current version), `indexed` (searchable: in Meili / Qdrant / FTS), `version`, `updated_at`.

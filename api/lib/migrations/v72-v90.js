@@ -1638,6 +1638,13 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_index_coverage_age ON index_coverage(updated_at)');
     logger.info('Migration 150 complete: index_coverage');
   },
+
+  151: async () => {
+    // Doctrinal core first (Chad 10-16): the ledger flags each document's authority tier (authority.js ≥ 8 = scripture
+    // and authoritative interpretation) so the dashboard shows the core as its own slice.
+    try { await query('ALTER TABLE index_coverage ADD COLUMN core INTEGER NOT NULL DEFAULT 0'); } catch { /* already there */ }
+    logger.info('Migration 151 complete: index_coverage.core');
+  },
 };
 
 export const graphMigrations = {
