@@ -117,6 +117,21 @@ REPORTS['hype-coverage'] = async ({ religion = "Baha'i" } = {}) => {
   const tot = (state) => rows.filter((r) => r.state === state).reduce((n, r) => n + r.paragraphs, 0);
   return { religion, version: HYPE_VERSION, totals: { none: tot('none'), older: tot('older'), current: tot('current') }, rows };
 };
+// KNOWN-ITEM test (priority 1, Chad 10-16): can each retrieval layer find a real paragraph from its own fragment?
+// params { perBucket?, words?, religions? } — ~2 searches/s; costs a few cents of query embeddings.
+REPORTS['known-item'] = async ({ perBucket = 15, words = 10, religions } = {}) => {
+  const [{ knownItemTest }, repo, search, q] = await Promise.all([import('./known-item.js'), import('../repos/retrieval-eval-repo.js'),
+    import('../search.js'), import('../search/qdrant-layers.js')]);
+  const ids = (hits) => (hits || []).map((h) => h.paragraph_id ?? h.id);
+  const all = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Zoroastrian', 'Tao', 'Confucian', 'Sikh', 'Jain'];
+  return knownItemTest({ perBucket, words }, { religions: religions || all, ...repo, layers: {
+    meili_keyword: async (t) => ids((await search.keywordSearch(t, { limit: 10 })).hits),
+    meili_hybrid: async (t) => ids((await search.hybridSearch(t, { limit: 10 })).hits),
+    qdrant_keyword: async (t) => ids((await q.searchKeywordQdrant(t, { limit: 10 })).hits),
+    qdrant_phrase: async (t) => ids((await q.searchPhrases(t, { limit: 10 })).hits),
+    production: async (t) => ids((await search.multiIndexSearch(t, { limit: 10 })).hits),
+  } });
+};
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
 REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
