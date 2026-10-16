@@ -63,15 +63,44 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
   ];
 }
 
-/** Write one document's rows (replace). */
+// One document's ledger rows as totals contributions (live, non-duplicate documents only — the same on both sides).
+const DOC_ROWS = `SELECT COALESCE(d.religion, 'Other') AS religion, i.layer, i.core, i.total, i.generated, i.current, i.indexed
+  FROM index_coverage i JOIN docs d ON d.id = i.doc_id WHERE i.doc_id = ? AND d.deleted_at IS NULL AND d.duplicate_of IS NULL`;
+const REACHED = 'CASE WHEN o.indexed > 0 THEN o.total ELSE 0 END', WITH_DATA = 'CASE WHEN o.generated > 0 THEN 1 ELSE 0 END';
+
+/** Write one document's rows (replace) AND move coverage_totals by the difference, in one transaction: its old rows
+ *  are subtracted, the new ones added — the totals never need the whole ledger re-summed (Chad 10-16). */
 export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 1000)) {
   if (!rows.length) return 0;
-  await transaction(rows.map((r) => ({ sql: `INSERT INTO index_coverage (doc_id, layer, total, generated, current, indexed, version, core, updated_at)
+  const id = Number(docId);
+  await transaction([
+    { sql: `UPDATE coverage_totals SET docs = coverage_totals.docs - 1, total = coverage_totals.total - o.total, generated = coverage_totals.generated - o.generated,
+        current = coverage_totals.current - o.current, indexed = coverage_totals.indexed - o.indexed, reached = coverage_totals.reached - (${REACHED}),
+        docs_with = coverage_totals.docs_with - (${WITH_DATA})
+      FROM (${DOC_ROWS}) AS o WHERE coverage_totals.religion = o.religion AND coverage_totals.layer = o.layer AND coverage_totals.core = o.core`, args: [id] },
+    ...rows.map((r) => ({ sql: `INSERT INTO index_coverage (doc_id, layer, total, generated, current, indexed, version, core, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(doc_id, layer) DO UPDATE SET total = excluded.total, generated = excluded.generated,
       current = excluded.current, indexed = excluded.indexed, version = excluded.version, core = excluded.core, updated_at = excluded.updated_at`,
-  args: [Number(docId), r.layer, r.total, r.generated, r.current, r.indexed, r.version, r.core ? 1 : 0, at] })), 'coverage:save');
+    args: [id, r.layer, r.total, r.generated, r.current, r.indexed, r.version, r.core ? 1 : 0, at] })),
+    { sql: `INSERT INTO coverage_totals (religion, layer, core, docs, total, generated, current, indexed, reached, docs_with)
+      SELECT o.religion, o.layer, o.core, 1, o.total, o.generated, o.current, o.indexed, ${REACHED}, ${WITH_DATA} FROM (${DOC_ROWS}) AS o WHERE true
+      ON CONFLICT(religion, layer, core) DO UPDATE SET docs = docs + excluded.docs, total = total + excluded.total, generated = generated + excluded.generated,
+        current = current + excluded.current, indexed = indexed + excluded.indexed, reached = reached + excluded.reached, docs_with = docs_with + excluded.docs_with`, args: [id] },
+  ], 'coverage:save');
   return rows.length;
 }
+
+/** Rebuild coverage_totals from the whole ledger (daily, and when empty) — corrects drift the deltas cannot see. */
+export async function rebuildCoverageTotals() {
+  await transaction([
+    { sql: 'DELETE FROM coverage_totals', args: [] },
+    { sql: `INSERT INTO coverage_totals (religion, layer, core, docs, total, generated, current, indexed, reached, docs_with)
+      SELECT COALESCE(d.religion, 'Other'), i.layer, i.core, COUNT(*), SUM(i.total), SUM(i.generated), SUM(i.current), SUM(i.indexed),
+        SUM(CASE WHEN i.indexed > 0 THEN i.total ELSE 0 END), SUM(CASE WHEN i.generated > 0 THEN 1 ELSE 0 END)
+      FROM index_coverage i JOIN docs d ON d.id = i.doc_id WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL GROUP BY 1, 2, 3`, args: [] },
+  ], 'coverage:rebuild-totals');
+}
+export const coverageTotalsEmpty = async () => !(await queryOne('SELECT 1 AS x FROM coverage_totals LIMIT 1', [], 'coverage:totals-empty'));
 
 /** Live documents never measured, then the stalest measured — the rolling refresh's next batch. */
 export async function stalestDocs(limit = 300) {

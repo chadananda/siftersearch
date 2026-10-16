@@ -1658,6 +1658,18 @@ export const migrations = {
     await query(`CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY, at INTEGER NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL)`);
     logger.info('Migration 152 complete: telemetry_snapshots + activity_log');
   },
+
+  153: async () => {
+    // COVERAGE TOTALS, kept incrementally (Chad 10-16: "Totaling things up … might be cached by time so updating the cache
+    // only queries changes instead of the entire DB"): tradition × layer × core sums of index_coverage. saveCoverage
+    // subtracts a document's old rows and adds its new ones in the same transaction; a daily rebuild corrects drift
+    // (a document's tradition changed, a document retired). The telemetry snapshot reads ~260 rows, not 590k.
+    await query(`CREATE TABLE IF NOT EXISTS coverage_totals (
+      religion TEXT NOT NULL, layer TEXT NOT NULL, core INTEGER NOT NULL, docs INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 0,
+      generated INTEGER NOT NULL DEFAULT 0, current INTEGER NOT NULL DEFAULT 0, indexed INTEGER NOT NULL DEFAULT 0,
+      reached INTEGER NOT NULL DEFAULT 0, docs_with INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (religion, layer, core)) WITHOUT ROWID`);
+    logger.info('Migration 153 complete: coverage_totals (filled by the first rebuild)');
+  },
 };
 
 export const graphMigrations = {

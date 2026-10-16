@@ -4,25 +4,21 @@
 // Deps: db.js.
 import { query, queryOne, queryAll } from '../db.js';
 
-/** index_coverage by tradition × layer: paragraphs, generated, current, indexed (points/rows), and `reached` = paragraphs
- *  in documents with anything indexed (the paragraph coverage of a point layer such as phrases, whose count is units). */
-export const coverageRollup = () => queryAll(`SELECT COALESCE(d.religion, 'Other') AS religion, i.layer, COUNT(*) AS docs,
-    SUM(i.total) AS total, SUM(i.generated) AS generated, SUM(i.current) AS current, SUM(i.indexed) AS indexed,
-    SUM(CASE WHEN i.indexed > 0 THEN i.total ELSE 0 END) AS reached, SUM(CASE WHEN i.generated > 0 THEN 1 ELSE 0 END) AS docs_with,
-    SUM(i.core * i.total) AS core_total, SUM(i.core * i.generated) AS core_generated,
-    SUM(CASE WHEN i.core = 1 AND i.indexed > 0 THEN i.total ELSE 0 END) AS core_reached
-  FROM index_coverage i JOIN docs d ON d.id = i.doc_id WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
-  GROUP BY 1, 2`, [], 'telemetry:rollup');
+/** Tradition × layer totals — read from coverage_totals (kept incrementally by coverage-repo saveCoverage), ~260 rows. */
+export const coverageRollup = () => queryAll(`SELECT religion, layer, SUM(docs) AS docs, SUM(total) AS total, SUM(generated) AS generated,
+    SUM(current) AS current, SUM(indexed) AS indexed, SUM(reached) AS reached, SUM(docs_with) AS docs_with,
+    SUM(core * total) AS core_total, SUM(core * generated) AS core_generated, SUM(core * reached) AS core_reached
+  FROM coverage_totals GROUP BY 1, 2`, [], 'telemetry:rollup');
 
-/** Small whole-library counts. */
+/** Whole-library counts — from the incremental totals (sections, concept claims in the index, documents measured); only
+ *  the live-document count reads docs, which is small and indexed. No full scans. */
 export async function libraryCounts() {
-  const [docs, sections, claims, measured] = await Promise.all([
+  const [docs, t] = await Promise.all([
     queryOne('SELECT COUNT(*) AS n FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL', [], 'telemetry:docs'),
-    queryOne('SELECT COUNT(*) AS n FROM doc_sections', [], 'telemetry:sections'),
-    queryOne('SELECT COUNT(*) AS n FROM concept_claims WHERE proof_ok = 1', [], 'telemetry:claims'),
-    queryOne(`SELECT COUNT(*) AS n, MIN(updated_at) AS oldest FROM index_coverage WHERE layer = 'text'`, [], 'telemetry:measured'),
+    queryOne(`SELECT SUM(CASE WHEN layer = 'sections' THEN generated ELSE 0 END) AS sections, SUM(CASE WHEN layer = 'concepts' THEN indexed ELSE 0 END) AS claims,
+      SUM(CASE WHEN layer = 'text' THEN docs ELSE 0 END) AS measured FROM coverage_totals`, [], 'telemetry:totals'),
   ]);
-  return { documents: docs?.n || 0, sections: sections?.n || 0, concept_claims: claims?.n || 0, measured_docs: measured?.n || 0, ledger_oldest: measured?.oldest || null };
+  return { documents: docs?.n || 0, sections: t?.sections || 0, concept_claims: t?.claims || 0, measured_docs: t?.measured || 0 };
 }
 
 /** Ops jobs running now and finished in the last day (names + params summary only — no results beyond a short tail). */

@@ -65,7 +65,14 @@ async function lane(name, only, skipAlways) {
 // ledger converges even when a producer forgets to ask. Cheap per document (doc_id indexes + Qdrant counts).
 async function rollingCoverage() {
   const { coverageRefreshJob } = await import('../lib/ops/coverage-job.js');
+  const totals = await import('../lib/repos/coverage-repo.js');
+  let rebuilt = 0;
   while (!stopping) {
+    // the totals move by deltas; a full rebuild when empty and once a day corrects drift (retired docs, tradition changes)
+    if (Date.now() - rebuilt > 86400000 || await totals.coverageTotalsEmpty().catch(() => false)) {
+      await totals.rebuildCoverageTotals().then(() => { rebuilt = Date.now(); logActivity('ledger', 'coverage totals rebuilt from the full ledger (daily)'); })
+        .catch((err) => logger.warn({ err: err.message }, 'coverage: totals rebuild failed'));
+    }
     const r = await coverageRefreshJob({ limit: 300 }).catch((err) => { logger.warn({ err: err.message }, 'coverage: rolling refresh failed'); return null; });
     if (r?.measured) logActivity('ledger', `re-measured ${r.measured} documents × 11 layers · index coverage ledger`);
     await new Promise((r) => setTimeout(r, 60_000));

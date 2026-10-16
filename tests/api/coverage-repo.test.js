@@ -13,6 +13,9 @@ CREATE TABLE content_alignment (id INTEGER PRIMARY KEY, trans_id INTEGER, orig_i
 CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraphs INTEGER);
 CREATE TABLE index_coverage (doc_id INTEGER NOT NULL, layer TEXT NOT NULL, total INTEGER NOT NULL DEFAULT 0, generated INTEGER NOT NULL DEFAULT 0,
   current INTEGER NOT NULL DEFAULT 0, indexed INTEGER NOT NULL DEFAULT 0, version TEXT, core INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL, PRIMARY KEY (doc_id, layer)) WITHOUT ROWID;
+CREATE TABLE coverage_totals (religion TEXT NOT NULL, layer TEXT NOT NULL, core INTEGER NOT NULL, docs INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 0,
+  generated INTEGER NOT NULL DEFAULT 0, current INTEGER NOT NULL DEFAULT 0, indexed INTEGER NOT NULL DEFAULT 0, reached INTEGER NOT NULL DEFAULT 0,
+  docs_with INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (religion, layer, core)) WITHOUT ROWID;
 `;
 vi.mock('../../api/lib/db.js', () => ({
   query: vi.fn(async (sql, p = []) => { raw.prepare(sql).run(...p); return {}; }),
@@ -61,5 +64,27 @@ describe('coverage ledger', () => {
     const s = await repo.coverageSummary();
     expect(s).toMatchObject({ live_docs: 2, measured_docs: 1 });
     expect(s.rows.find((r) => r.layer === 'hype')).toMatchObject({ total: 3, generated: 2, current: 1 });
+  });
+});
+
+describe('coverage totals move by deltas (Chad 10-16: only query changes, never re-sum the DB)', () => {
+  const snapshot = () => raw.prepare('SELECT * FROM coverage_totals ORDER BY religion, layer, core').all();
+  it('re-measuring a document moves the totals exactly as a full rebuild would', async () => {
+    await repo.saveCoverage(1, await repo.measureDoc(1, { hypeVersion: 'v15', count }));
+    await repo.saveCoverage(2, await repo.measureDoc(2, { hypeVersion: 'v15', count }));
+    raw.prepare("UPDATE content SET hyp_model = 'v15', synced = 1 WHERE id IN (2, 3)").run();      // the document changes
+    await repo.saveCoverage(1, await repo.measureDoc(1, { hypeVersion: 'v15', count }));           // re-measured: delta
+    const byDelta = snapshot();
+    await repo.rebuildCoverageTotals();
+    expect(snapshot()).toEqual(byDelta);
+    const text = byDelta.find((r) => r.layer === 'text' && r.religion === "Baha'i" && r.core === 0);
+    expect(text).toMatchObject({ docs: 1, total: 3, indexed: 3 });
+  });
+  it('empty until the first rebuild; a retired document leaves the totals at the rebuild', async () => {
+    expect(await repo.coverageTotalsEmpty()).toBe(true);
+    await repo.saveCoverage(1, await repo.measureDoc(1, { hypeVersion: 'v15', count }));
+    raw.prepare('UPDATE docs SET duplicate_of = 2 WHERE id = 1').run();
+    await repo.rebuildCoverageTotals();
+    expect(snapshot()).toEqual([]);
   });
 });

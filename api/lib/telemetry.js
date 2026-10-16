@@ -107,12 +107,18 @@ async function qdrantCounts() {
   return out;
 }
 
+let peopleMemo = { at: 0, value: null };
 /** One snapshot (reports worker). */
 export async function buildSnapshot() {
   const repo = await import('./repos/telemetry-repo.js');
   const [rows, counts, vectors, ops, ki] = await Promise.all([repo.coverageRollup(), repo.libraryCounts(), qdrantCounts(), repo.opsActivity(), repo.latestKnownItem()]);
-  const people = await Promise.race([import('./bio.js').then((m) => m.getIntegrationProgress()).then((p) => p?.cumulativeUnique ?? null).catch(() => null),
-    new Promise((ok) => setTimeout(() => ok(null), 20000))]);
+  // people change slowly and the count is not cheap: measured at most hourly
+  if (!peopleMemo.value || Date.now() - peopleMemo.at > 3600000) {
+    const v = await Promise.race([import('./bio.js').then((m) => m.getIntegrationProgress()).then((p) => p?.cumulativeUnique ?? null).catch(() => null),
+      new Promise((ok) => setTimeout(() => ok(null), 20000))]);
+    if (v != null) peopleMemo = { at: Date.now(), value: v };
+  }
+  const people = peopleMemo.value ?? null;
   const { systemHealth } = await import('./system-health.js');
   const { slowQueryCount } = await import('./repos/query-health-repo.js');
   const health = await systemHealth({ slowCount: () => slowQueryCount() }).catch(() => null);
