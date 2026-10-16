@@ -134,7 +134,9 @@ REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, vari
       { role: 'user', content: text }] });
     return String(r.choices?.[0]?.message?.content || '').replace(/["“”«»]/g, '').trim().split('\n')[0].slice(0, 80) || null;
   };
-  return knownItemTest({ perBucket, coreWeight, depth, ...(variants ? { variants } : {}) }, { religions: religions || all, ...repo, recall, layers: {
+  const { logActivity } = await import('../repos/activity-repo.js');
+  return knownItemTest({ perBucket, coreWeight, depth, ...(variants ? { variants } : {}) }, { religions: religions || all, ...repo, recall,
+    log: (line) => logActivity('probe', line), layers: {
     meili_keyword: async (t, n) => ids((await search.keywordSearch(t, { limit: n })).hits),
     qdrant_keyword: async (t, n) => ids((await q.searchKeywordQdrant(t, { limit: n })).hits),
     qdrant_phrase: async (t, n) => ids((await q.searchPhrases(t, { limit: n })).hits),

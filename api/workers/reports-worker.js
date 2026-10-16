@@ -7,6 +7,7 @@ import { logger } from '../lib/logger.js';
 import { claimNext, finish, requeueStale } from '../lib/repos/ops-report-repo.js';
 import { REPORTS, LANES } from '../lib/ops/reports.js';
 import { sendEmail } from '../services/email.js';
+import { logActivity } from '../lib/repos/activity-repo.js';
 
 // A job that FAILS or STOPS SHORT (budget cap, monthly cap) is mailed at once (10-16: a phrase run stopped at its $20 cap
 // and went unnoticed for 11 hours; Chad: "you were supposed to be watching it closely"). Never throws.
@@ -35,6 +36,8 @@ async function lane(name, only, skipAlways) {
     const run = await claimNext({ only, skip }).catch((err) => { logger.warn({ err: err.message, lane: name }, 'reports: claim failed'); return null; });
     if (!run) { await new Promise((r) => setTimeout(r, IDLE_MS)); continue; }
     const t0 = Date.now();
+    const what = (() => { const p = run.params || {}; return p.budgetKey || p.field || (p.docs?.length ? `${p.docs.length} documents` : p.ids?.length ? `${p.ids.length} documents` : ''); })();
+    logActivity('job', `▶ ${run.name}${what ? ` · ${what}` : ''} · #${run.id} started`);
     try {
       const fn = REPORTS[run.name];
       if (!fn) throw new Error(`unknown report "${run.name}"`);
@@ -42,6 +45,7 @@ async function lane(name, only, skipAlways) {
       await finish(run.id, { result, ms: Date.now() - t0 });
       logger.info({ id: run.id, name: run.name, lane: name, ms: Date.now() - t0 }, 'report done');
       const short = stoppedShort(result);
+      logActivity('job', `${short ? '■' : '✓'} ${run.name}${what ? ` · ${what}` : ''} · #${run.id} ${short ? `stopped: ${short}` : 'done'} · ${Math.round((Date.now() - t0) / 1000)} s`);
       if (short) await alert(run, 'stopped short', `Reason: ${short}\nIt is not finished: raise the cap and re-queue it to continue (finished work is kept).`);
     } catch (err) {
       // A restart kills the job's child process (indexer) before this process exits: that is NOT a failure. Leave the run
@@ -52,6 +56,7 @@ async function lane(name, only, skipAlways) {
       if (stopping) { logger.warn({ id: run.id, name: run.name, lane: name }, 'report interrupted by shutdown — requeued on next start'); break; }
       await finish(run.id, { error: String(err.message || err).slice(0, 500), ms: Date.now() - t0 }).catch(() => {});
       await alert(run, 'FAILED', String(err.message || err).slice(0, 1500));
+      logActivity('job', `✗ ${run.name} · #${run.id} failed`);
       logger.error({ id: run.id, name: run.name, lane: name, err: err.message }, 'report failed');
     }
   }
@@ -61,8 +66,26 @@ async function lane(name, only, skipAlways) {
 async function rollingCoverage() {
   const { coverageRefreshJob } = await import('../lib/ops/coverage-job.js');
   while (!stopping) {
-    await coverageRefreshJob({ limit: 300 }).catch((err) => logger.warn({ err: err.message }, 'coverage: rolling refresh failed'));
+    const r = await coverageRefreshJob({ limit: 300 }).catch((err) => { logger.warn({ err: err.message }, 'coverage: rolling refresh failed'); return null; });
+    if (r?.measured) logActivity('ledger', `re-measured ${r.measured} documents × 11 layers · index coverage ledger`);
     await new Promise((r) => setTimeout(r, 60_000));
+  }
+}
+
+// Library telemetry for the home-page Observatory: one snapshot every 5 minutes (api/lib/telemetry.js); 7 days kept.
+async function telemetryLoop() {
+  const { buildSnapshot, seriesOf } = await import('../lib/telemetry.js');
+  const repo = await import('../lib/repos/telemetry-repo.js');
+  const fmt = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
+  while (!stopping) {
+    try {
+      const snap = await buildSnapshot();
+      await repo.saveSnapshot(snap.at, snap, seriesOf(snap));
+      await repo.pruneSnapshots();
+      const v = snap.vectors || {}, h = snap.health;
+      logActivity('telemetry', `snapshot · ${fmt(snap.corpus.paragraphs)} ¶ · phrase ${fmt(v.phrases)} · hype ${fmt(v.hype)} · concepts ${fmt(v.concepts)}${h ? ` · load ${h.cpu.load_pct}% · tank ${h.storage.find((s) => s.dev === 'sdc')?.io?.busy_pct ?? '—'}% busy` : ''}`);
+    } catch (err) { logger.warn({ err: err.message }, 'telemetry: snapshot failed'); }
+    await new Promise((r) => setTimeout(r, 5 * 60_000));
   }
 }
 const laneNames = Object.values(LANES).flat();
@@ -70,5 +93,5 @@ const laneNames = Object.values(LANES).flat();
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, [])), rollingCoverage()]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, [])), rollingCoverage(), telemetryLoop()]);
 process.exit(0);

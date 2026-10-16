@@ -18,9 +18,19 @@ export function phraseIndexJob(params = {}) {
   const args = indexerArgs(params);
   return new Promise((resolve, reject) => {
     const child = spawn('nice', ['-n', '10', process.execPath, ...args], { cwd: process.cwd(), env: process.env });
-    let last = null, tail = '';
+    let last = null, tail = '', logged = 0;
+    const field = params.field || 'phrases';
+    const fmt = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n ?? 0));
     const take = (buf) => {
-      for (const line of String(buf).split('\n')) { if (line.includes('"phase"')) { try { last = JSON.parse(line); } catch { /* partial */ } } }
+      for (const line of String(buf).split('\n')) {
+        if (!line.includes('"phase"')) continue;
+        try { last = JSON.parse(line); } catch { continue; }
+        // the Observatory's terminal: one progress line per ≥45 s (activity-repo; content-free)
+        if (last.phase === 'chunk' && Date.now() - logged > 45000) {
+          logged = Date.now();
+          import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('index', `${field} · ${fmt(last.paragraphs)} ¶ read · ${fmt(last.embedded)} embedded · ${fmt(last.upserted)} upserted${last.paras_per_hour ? ` · ${fmt(last.paras_per_hour)} ¶/h` : ''}${last.spent?.usd != null ? ` · $${last.spent.usd.toFixed(2)}` : ''}`)).catch(() => {});
+        }
+      }
       tail = (tail + buf).slice(-2000);
     };
     child.stdout.on('data', take); child.stderr.on('data', take);

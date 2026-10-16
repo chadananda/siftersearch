@@ -50,6 +50,7 @@ import workplanAdminRoutes from './routes/workplan-admin.js';
 import widgetRoutes from './routes/widget.js';
 import assistantMailRoutes from './routes/assistant-mail.js';
 import readingRoutes from './routes/reading.js';
+import observatoryRoutes from './routes/observatory.js';
 import ingestRoutes from './routes/ingest.js';
 import bookNotesRoutes from './routes/book-notes.js';
 import { config } from './lib/config.js';
@@ -373,6 +374,7 @@ await server.register(tabletPublicRoutes, { prefix: '/api/documents' });   // GE
   await server.register(donationRoutes, { prefix: '/api/donations' });
   await server.register(apiKeyRoutes, { prefix: '/api/api-keys' });
   await server.register(libraryRoutes, { prefix: '/api/library' });
+  await server.register(observatoryRoutes, { prefix: '/api/observatory' });   // home-page Observatory: telemetry + activity (public)
   await server.register(chatRoutes, { prefix: '/api/chat' });
   await server.register(graphRoutes, { prefix: '/api/graph' });
   await server.register(peopleRoutes, { prefix: '/api/v1' });

@@ -10,3 +10,10 @@ export async function slowQueriesByHour({ hours = 24, minMs = 5000 } = {}) {
     FROM slow_query_log WHERE at > unixepoch() - ? * 3600 AND duration_ms >= ?
     GROUP BY 1, 2, 3, 4 ORDER BY 1 DESC, n DESC`, [Number(hours), Number(minMs)], 'query-health:slow-by-hour');
 }
+
+/** How many statements blocked ≥ minMs in the last `hours`, and the worst (Observatory health). */
+export async function slowQueryCount({ hours = 24, minMs = 5000 } = {}) {
+  const r = (await queryAll(`SELECT COUNT(*) AS n, MAX(duration_ms) AS worst_ms FROM slow_query_log WHERE at > unixepoch() - ? * 3600 AND duration_ms >= ?`,
+    [Number(hours), Number(minMs)], 'query-health:count'))[0] || {};
+  return { n: r.n || 0, worst_ms: r.worst_ms || 0, min_ms: minMs };
+}

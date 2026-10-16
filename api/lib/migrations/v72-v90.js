@@ -1645,6 +1645,19 @@ export const migrations = {
     try { await query('ALTER TABLE index_coverage ADD COLUMN core INTEGER NOT NULL DEFAULT 0'); } catch { /* already there */ }
     logger.info('Migration 151 complete: index_coverage.core');
   },
+
+  152: async () => {
+    // LIBRARY TELEMETRY (Chad 10-16: the home page as "a super impressive and dynamic dashboard of facts about the library,
+    // constantly moving and updating based on index and testing going on"): the reports worker writes one snapshot every
+    // 5 minutes (index ledger roll-up, vector counts, running jobs, latest findability test); the public endpoint reads the
+    // latest + a compact series. A page view never runs a heavy query. `series` is the small per-layer row for sparklines.
+    await query(`CREATE TABLE IF NOT EXISTS telemetry_snapshots (at INTEGER PRIMARY KEY, data TEXT NOT NULL, series TEXT NOT NULL)`);
+    // ACTIVITY LOG ("a computer terminal looking window with the logging of our activity constantly scrolling"): short,
+    // content-free lines from the machinery — jobs, indexer progress, ledger, findability probes, Anís turns (no text, no
+    // person). Public; pruned to the newest few thousand.
+    await query(`CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY, at INTEGER NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL)`);
+    logger.info('Migration 152 complete: telemetry_snapshots + activity_log');
+  },
 };
 
 export const graphMigrations = {

@@ -117,6 +117,9 @@ export async function knownItemTest({ perBucket = 10, coreWeight = 3, depth = 30
           }));
           const hashes = await deps.hashesByIds(lists.flatMap((x) => x.ids || []));
           row.variants[v] = { query: q, layers: Object.fromEntries(lists.map((x) => [x.l, x.error ? { error: x.error, ms: x.ms } : { rank: rankOf(x.ids, p, hashes), ms: x.ms }])) };
+          // one line per probe for the Observatory terminal (queries come from library text, never from readers)
+          const pr = row.variants[v].layers.production;
+          deps.log?.(`${v} "${String(q).slice(0, 48)}" → ${pr?.rank ? `#${pr.rank}` : pr?.error ? 'error' : `not in top ${depth}`} · ${String(d.title || '').slice(0, 40)} · ${pr?.ms ?? '—'} ms`);
         }
         results.push(row);
       }
