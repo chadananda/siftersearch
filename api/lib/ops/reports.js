@@ -109,6 +109,13 @@ REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, max
 // HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build
 REPORTS['hype-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'hype' });
 REPORTS['concept-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'concepts' });
+// HyPE coverage of a tradition (params { religion? }): paragraphs none / older version / current, by scope × language
+REPORTS['hype-coverage'] = async ({ religion = "Baha'i" } = {}) => {
+  const [{ hypeCoverage }, { HYPE_VERSION }] = await Promise.all([import('../repos/enrichment-repo.js'), import('../rag/enrich/retrieval.js')]);
+  const rows = await hypeCoverage({ religion, current: HYPE_VERSION });
+  const tot = (state) => rows.filter((r) => r.state === state).reduce((n, r) => n + r.paragraphs, 0);
+  return { religion, version: HYPE_VERSION, totals: { none: tot('none'), older: tot('older'), current: tot('current') }, rows };
+};
 REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
@@ -116,7 +123,7 @@ REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — 
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
 export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'block-attrs', 'reingest-impact'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'block-attrs', 'reingest-impact'],
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(LANES.heavy);
 
