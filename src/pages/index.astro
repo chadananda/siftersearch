@@ -1,23 +1,20 @@
 ---
+// Home page = the Observatory (Chad 10-16): a live dashboard of the library being indexed and studied, in public.
+// Keeps the site chrome — navbar, the liquid background, Anís's chat button (from Layout) and the footer.
 import Layout from '../layouts/Layout.astro';
-import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
-import ChatInterface from '../components/ChatInterface.svelte';
+import NavBar from '../components/common/NavBar.svelte';
+import Observatory from '../components/observatory/Observatory.svelte';
 ---
 
-<Layout title="SifterSearch - AI-Powered Interfaith Library" description="Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha'i writings, pilgrim notes, and interfaith literature instantly.">
+<Layout title="SifterSearch — An interfaith library, learning in public" description="A live observatory of an interfaith library of sacred texts: every passage of eleven traditions searched, questioned and studied by machine, in the open.">
   <LiquidBackground client:only="svelte" />
+  <NavBar client:load currentPage="home" />
   <main class="main-container">
-    <!-- Navbar + library summary as before; the chat itself is Anís (below), as on any host site. -->
-    <ChatInterface client:only="svelte" showInput={false}><IslandSkeleton slot="fallback" /></ChatInterface>
+    <Observatory client:only="svelte" />
   </main>
-  <!-- Anís's button comes from layouts/Layout.astro (every public page), the same embed every host site uses. -->
 </Layout>
 
 <style>
-  .main-container {
-    min-height: 100vh;
-    min-height: 100dvh;
-    position: relative;
-  }
+  .main-container { min-height: 100vh; min-height: 100dvh; position: relative; }
 </style>

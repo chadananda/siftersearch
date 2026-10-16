@@ -1503,3 +1503,21 @@ export default {
   getSessionId,
   isNewSession
 };
+
+/**
+ * The Observatory (home page) — public, edge-cached reads of /api/observatory/*. Plain GETs, no user/auth headers, so
+ * Cloudflare can serve them from cache; each result carries the round-trip time and the edge cache status, which the
+ * page's terminal prints (Chad 10-16: "the API gives us a contractual interface we can measure and optimize").
+ */
+async function observatoryGet(path) {
+  const t0 = performance.now();
+  const res = await fetch(`${API_URL}${path}`, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`${path} ${res.status}`);
+  const data = await res.json();
+  return { data, ms: Math.round(performance.now() - t0), cache: res.headers.get('cf-cache-status') || null };
+}
+export const observatory = {
+  telemetry: () => observatoryGet('/api/observatory/telemetry'),
+  // one shared URL for every visitor (edge-cached 5 s); the page keeps only lines newer than the last it showed
+  activity: (limit = 80) => observatoryGet(`/api/observatory/activity?limit=${limit}`),
+};

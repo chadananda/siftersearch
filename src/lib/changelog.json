@@ -1,6 +1,153 @@
 {
-  "generated": "2026-10-15T15:48:48.641Z",
+  "generated": "2026-10-16T18:14:05.306Z",
   "entries": [
+    {
+      "hash": "5418783a",
+      "date": "2026-10-16",
+      "type": "Performance",
+      "description": "Coverage totals kept by deltas — snapshots never re-sum the ledger",
+      "scope": "observatory"
+    },
+    {
+      "hash": "6a363958",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Library telemetry + activity log for a live public home page",
+      "scope": "observatory"
+    },
+    {
+      "hash": "fac36fe2",
+      "date": "2026-10-16",
+      "type": "Performance",
+      "description": "Two blocking reads from the 10-16 system check",
+      "scope": null
+    },
+    {
+      "hash": "31fed0db",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Known-item tests what readers actually bring — 3 words, misspelled, half-remembered",
+      "scope": "eval"
+    },
+    {
+      "hash": "57948cb1",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "Planned search finds a quotation's own passage — verbatim pass beside the plan",
+      "scope": "search"
+    },
+    {
+      "hash": "8a02d09b",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "A passage containing the query verbatim leads, ahead of diversity",
+      "scope": "search"
+    },
+    {
+      "hash": "c91a26ae",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "Known-item measures what users get — planned search and the engine as /search/multi calls it",
+      "scope": "eval"
+    },
+    {
+      "hash": "dafa8721",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Known-item test — can each retrieval layer find a real paragraph from its own words?",
+      "scope": "eval"
+    },
+    {
+      "hash": "a4b6cb05",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "Production docs has no authority column — authority.js derives it",
+      "scope": "coverage"
+    },
+    {
+      "hash": "046522e9",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Coverage ledger flags the doctrinal core (authority ≥ 8)",
+      "scope": "ops"
+    },
+    {
+      "hash": "f6e40217",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Index coverage ledger — every layer visible per document, no long queries",
+      "scope": "ops"
+    },
+    {
+      "hash": "eda3b61c",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Hype-coverage report — a tradition's paragraphs with no / older / current HyPE",
+      "scope": "ops"
+    },
+    {
+      "hash": "266a44b9",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "A restart re-queues the running job instead of failing it; failures and budget stops are mailed",
+      "scope": "ops"
+    },
+    {
+      "hash": "a9d9f36f",
+      "date": "2026-10-15",
+      "type": "Fixed",
+      "description": "Clean titles (page markup, item numbers) and drop day-first dates",
+      "scope": "sections"
+    },
+    {
+      "hash": "93139f53",
+      "date": "2026-10-15",
+      "type": "Fixed",
+      "description": "Rank by how well the section title answers, then by size",
+      "scope": "sections"
+    },
+    {
+      "hash": "225e458c",
+      "date": "2026-10-15",
+      "type": "Fixed",
+      "description": "OceanLibrary site documents keep the para id in external_para_id",
+      "scope": "sections"
+    },
+    {
+      "hash": "4ecdf5f0",
+      "date": "2026-10-15",
+      "type": "Docs",
+      "description": "Sub-documents — phases done, rollout + Anís work-scoping next",
+      "scope": "worklist"
+    },
+    {
+      "hash": "6bc325a9",
+      "date": "2026-10-15",
+      "type": "New",
+      "description": "Sub-documents phase 2 — nested parts from the source file's outline",
+      "scope": "library"
+    },
+    {
+      "hash": "91684326",
+      "date": "2026-10-15",
+      "type": "New",
+      "description": "Sub-documents — sections of books are indexed and found (phase 1)",
+      "scope": "library"
+    },
+    {
+      "hash": "9e09efd0",
+      "date": "2026-10-15",
+      "type": "Fixed",
+      "description": "'1 John' is the First Epistle of John; partial names match; a seen defect is kept",
+      "scope": "anis-audit"
+    },
+    {
+      "hash": "b4e429b4",
+      "date": "2026-10-15",
+      "type": "Fixed",
+      "description": "The open thread never moves while its header is in view (refresh included)",
+      "scope": "anis-admin"
+    },
     {
       "hash": "41a3ef83",
       "date": "2026-10-15",
@@ -3353,157 +3500,159 @@
       "type": "Fixed",
       "description": "Re-check the paragraph inside the linked tablet by cross-lingual similarity; battery scores tablet vs paragraph, accent-folded titles",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "6d1dda8c",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Highlight the quote inside the published passage (word-level, accent/apostrophe-blind; one range per elided run)",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "fe3a40d7",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Complete audit log (JSONL: quote + full response per query) + GET /source-hunt/log; battery over the verified cross-lingual cases",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "cdbed1c4",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Years missing → the candidate more books quote is the original; one tablet candidate per document",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "cf09f433",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Qdrant calls get a 10 s timeout (per-call option; search keeps 2.5 s) — under build load they timed out silently",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "f0f5d309",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Origin must hold the quote; same writer → Core Publications, then the earliest publication",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "8e95e7c5",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "The quote's writer by vote (writers of the matches 2, marked quotations 1; mentions never); return the candidates considered",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "e19b351b",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Unlinked tablet candidates come only from the quote's own writer's originals",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "014c6eac",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Infer the quote's doctrinal writer from the matches and search that writer's own texts; rank the writer's text first",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "0580c929",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Paste an English quote → its published book, every publication citing it, the likely original tablet",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "38085e67",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "HyPE in Qdrant (indexer --field hype, qhype layer); metadata documents never returned as passages",
-      "scope": "search"
-    },
-    {
-      "hash": "ab143ce1",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Push-qdrant-authors sets author_fold with author",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "f7ec871b",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Standard abbreviation trailers (\"…\" PRP 159, GWB 141-2, AHW #64) name the quotation's writer",
-      "scope": "authorship"
-    },
-    {
-      "hash": "b203b9dd",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Author_fold backfill uses node:http (fetch's 5-min headers timeout killed it) and ≤50k-point batches",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "de16cdba",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Qdrant layer timeout 5 s → 2.5 s (a stalled layer cost 5 s per relax rung)",
-      "scope": "search"
-    },
-    {
-      "hash": "797e23dc",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Qdrant author filter folds spelling variants (author_fold), as Meili's CONTAINS does; indexers write it, backfill per distinct author",
-      "scope": "search"
-    },
-    {
-      "hash": "fcb3c9e7",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Scripture never waits on a cold encounter-index build (the ~13 s p95 tail); warm the index after startup",
-      "scope": "search"
-    },
-    {
-      "hash": "146cf711",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Push-qdrant-authors splits Qdrant (--qdrant-only) from the vector store (--store-only); a running build locks the store",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "43d0ca8b",
-      "date": "2026-10-04",
-      "type": "Fixed",
-      "description": "Qdrant points carry the paragraph's own author (one paragraphAuthor for Meili + Qdrant); A/B results",
-      "scope": "search"
-    },
-    {
-      "hash": "d53bbee0",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Qdrant-only arm (meili:false) for the swap A/B; /multi hits carry links; language filter maps to lang_group; end-to-end cross-lingual battery",
-      "scope": "search"
-    },
-    {
-      "hash": "fbd93caf",
-      "date": "2026-10-04",
-      "type": "New",
-      "description": "Per-request Qdrant layer switch + RRF weights on /api/search/multi; batteries gain --qdrant / --weights",
-      "scope": "search"
-    },
-    {
-      "hash": "6017aa28",
-      "date": "2026-10-03",
-      "type": "Fixed",
-      "description": "Compare canonical writer names; linker gains pair mode, inheritance, fair eval",
-      "scope": "translators,linking"
     }
   ],
   "grouped": {
+    "2026-10-16": [
+      {
+        "hash": "5418783a",
+        "date": "2026-10-16",
+        "type": "Performance",
+        "description": "Coverage totals kept by deltas — snapshots never re-sum the ledger",
+        "scope": "observatory"
+      },
+      {
+        "hash": "6a363958",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Library telemetry + activity log for a live public home page",
+        "scope": "observatory"
+      },
+      {
+        "hash": "fac36fe2",
+        "date": "2026-10-16",
+        "type": "Performance",
+        "description": "Two blocking reads from the 10-16 system check",
+        "scope": null
+      },
+      {
+        "hash": "31fed0db",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Known-item tests what readers actually bring — 3 words, misspelled, half-remembered",
+        "scope": "eval"
+      },
+      {
+        "hash": "57948cb1",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "Planned search finds a quotation's own passage — verbatim pass beside the plan",
+        "scope": "search"
+      },
+      {
+        "hash": "8a02d09b",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "A passage containing the query verbatim leads, ahead of diversity",
+        "scope": "search"
+      },
+      {
+        "hash": "c91a26ae",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "Known-item measures what users get — planned search and the engine as /search/multi calls it",
+        "scope": "eval"
+      },
+      {
+        "hash": "dafa8721",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Known-item test — can each retrieval layer find a real paragraph from its own words?",
+        "scope": "eval"
+      },
+      {
+        "hash": "a4b6cb05",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "Production docs has no authority column — authority.js derives it",
+        "scope": "coverage"
+      },
+      {
+        "hash": "046522e9",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Coverage ledger flags the doctrinal core (authority ≥ 8)",
+        "scope": "ops"
+      },
+      {
+        "hash": "f6e40217",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Index coverage ledger — every layer visible per document, no long queries",
+        "scope": "ops"
+      },
+      {
+        "hash": "eda3b61c",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Hype-coverage report — a tradition's paragraphs with no / older / current HyPE",
+        "scope": "ops"
+      },
+      {
+        "hash": "266a44b9",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "A restart re-queues the running job instead of failing it; failures and budget stops are mailed",
+        "scope": "ops"
+      }
+    ],
     "2026-10-15": [
+      {
+        "hash": "a9d9f36f",
+        "date": "2026-10-15",
+        "type": "Fixed",
+        "description": "Clean titles (page markup, item numbers) and drop day-first dates",
+        "scope": "sections"
+      },
+      {
+        "hash": "93139f53",
+        "date": "2026-10-15",
+        "type": "Fixed",
+        "description": "Rank by how well the section title answers, then by size",
+        "scope": "sections"
+      },
+      {
+        "hash": "225e458c",
+        "date": "2026-10-15",
+        "type": "Fixed",
+        "description": "OceanLibrary site documents keep the para id in external_para_id",
+        "scope": "sections"
+      },
+      {
+        "hash": "4ecdf5f0",
+        "date": "2026-10-15",
+        "type": "Docs",
+        "description": "Sub-documents — phases done, rollout + Anís work-scoping next",
+        "scope": "worklist"
+      },
+      {
+        "hash": "6bc325a9",
+        "date": "2026-10-15",
+        "type": "New",
+        "description": "Sub-documents phase 2 — nested parts from the source file's outline",
+        "scope": "library"
+      },
+      {
+        "hash": "91684326",
+        "date": "2026-10-15",
+        "type": "New",
+        "description": "Sub-documents — sections of books are indexed and found (phase 1)",
+        "scope": "library"
+      },
+      {
+        "hash": "9e09efd0",
+        "date": "2026-10-15",
+        "type": "Fixed",
+        "description": "'1 John' is the First Epistle of John; partial names match; a seen defect is kept",
+        "scope": "anis-audit"
+      },
+      {
+        "hash": "b4e429b4",
+        "date": "2026-10-15",
+        "type": "Fixed",
+        "description": "The open thread never moves while its header is in view (refresh included)",
+        "scope": "anis-admin"
+      },
       {
         "hash": "41a3ef83",
         "date": "2026-10-15",
@@ -6878,155 +7027,6 @@
         "type": "Fixed",
         "description": "Re-check the paragraph inside the linked tablet by cross-lingual similarity; battery scores tablet vs paragraph, accent-folded titles",
         "scope": "sourcehunt"
-      },
-      {
-        "hash": "6d1dda8c",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Highlight the quote inside the published passage (word-level, accent/apostrophe-blind; one range per elided run)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "fe3a40d7",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Complete audit log (JSONL: quote + full response per query) + GET /source-hunt/log; battery over the verified cross-lingual cases",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "cdbed1c4",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Years missing → the candidate more books quote is the original; one tablet candidate per document",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "cf09f433",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Qdrant calls get a 10 s timeout (per-call option; search keeps 2.5 s) — under build load they timed out silently",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "f0f5d309",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Origin must hold the quote; same writer → Core Publications, then the earliest publication",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "8e95e7c5",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "The quote's writer by vote (writers of the matches 2, marked quotations 1; mentions never); return the candidates considered",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "e19b351b",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Unlinked tablet candidates come only from the quote's own writer's originals",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "014c6eac",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Infer the quote's doctrinal writer from the matches and search that writer's own texts; rank the writer's text first",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "0580c929",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Paste an English quote → its published book, every publication citing it, the likely original tablet",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "38085e67",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "HyPE in Qdrant (indexer --field hype, qhype layer); metadata documents never returned as passages",
-        "scope": "search"
-      },
-      {
-        "hash": "ab143ce1",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Push-qdrant-authors sets author_fold with author",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "f7ec871b",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Standard abbreviation trailers (\"…\" PRP 159, GWB 141-2, AHW #64) name the quotation's writer",
-        "scope": "authorship"
-      },
-      {
-        "hash": "b203b9dd",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Author_fold backfill uses node:http (fetch's 5-min headers timeout killed it) and ≤50k-point batches",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "de16cdba",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Qdrant layer timeout 5 s → 2.5 s (a stalled layer cost 5 s per relax rung)",
-        "scope": "search"
-      },
-      {
-        "hash": "797e23dc",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Qdrant author filter folds spelling variants (author_fold), as Meili's CONTAINS does; indexers write it, backfill per distinct author",
-        "scope": "search"
-      },
-      {
-        "hash": "fcb3c9e7",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Scripture never waits on a cold encounter-index build (the ~13 s p95 tail); warm the index after startup",
-        "scope": "search"
-      },
-      {
-        "hash": "146cf711",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Push-qdrant-authors splits Qdrant (--qdrant-only) from the vector store (--store-only); a running build locks the store",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "43d0ca8b",
-        "date": "2026-10-04",
-        "type": "Fixed",
-        "description": "Qdrant points carry the paragraph's own author (one paragraphAuthor for Meili + Qdrant); A/B results",
-        "scope": "search"
-      },
-      {
-        "hash": "d53bbee0",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Qdrant-only arm (meili:false) for the swap A/B; /multi hits carry links; language filter maps to lang_group; end-to-end cross-lingual battery",
-        "scope": "search"
-      },
-      {
-        "hash": "fbd93caf",
-        "date": "2026-10-04",
-        "type": "New",
-        "description": "Per-request Qdrant layer switch + RRF weights on /api/search/multi; batteries gain --qdrant / --weights",
-        "scope": "search"
-      }
-    ],
-    "2026-10-03": [
-      {
-        "hash": "6017aa28",
-        "date": "2026-10-03",
-        "type": "Fixed",
-        "description": "Compare canonical writer names; linker gains pair mode, inheritance, fair eval",
-        "scope": "translators,linking"
       }
     ]
   }
