@@ -53,3 +53,16 @@ describe('sections-repo', () => {
     expect(await repo.findSections('foreword')).toEqual([]);
   });
 });
+
+describe('ranking', () => {
+  it('the whole part named outranks a one-paragraph mention elsewhere (10-15)', async () => {
+    raw.prepare("INSERT INTO docs (id, title, source_site) VALUES (1, 'Directives from the Guardian', NULL)").run();
+    raw.prepare('INSERT INTO content (id, doc_id, paragraph_index, heading) VALUES (1, 1, 0, ?)').run('Dispensation of Bahá’u’lláh');
+    for (let i = 1; i < 40; i++) raw.prepare('INSERT INTO content (id, doc_id, paragraph_index, heading) VALUES (?, 20894, ?, ?)').run(900 + i, i, 'The Dispensation of Bahá’u’lláh');
+    await repo.replaceSections(1, 'Directives from the Guardian', sectionsFromRows(await repo.headingRowsForDoc(1)));
+    await repo.replaceSections(20894, 'The World Order of Bahá’u’lláh', sectionsFromRows(await repo.headingRowsForDoc(20894)));
+    const hits = await repo.findSections('Dispensation of Bahaullah');
+    expect(hits[0]).toMatchObject({ doc_id: 20894, paragraphs: 40 });
+    expect(hits[0]._site).toBeUndefined();
+  });
+});
