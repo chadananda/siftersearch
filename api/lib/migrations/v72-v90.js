@@ -1670,6 +1670,14 @@ export const migrations = {
       reached INTEGER NOT NULL DEFAULT 0, docs_with INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (religion, layer, core)) WITHOUT ROWID`);
     logger.info('Migration 153 complete: coverage_totals (filled by the first rebuild)');
   },
+
+  154: async () => {
+    // THE PULSE (Chad 10-16: "we need to show action constantly … things that are being updated should somehow show that"):
+    // one small row, rewritten every 15 s by the reports worker — per-device I/O load, CPU load, vector counts, writer rows
+    // in the last minute. The home page polls it (edge-cached) so its meters and counters move with the machine.
+    await query(`CREATE TABLE IF NOT EXISTS telemetry_pulse (id INTEGER PRIMARY KEY CHECK (id = 1), at INTEGER NOT NULL, data TEXT NOT NULL)`);
+    logger.info('Migration 154 complete: telemetry_pulse');
+  },
 };
 
 export const graphMigrations = {

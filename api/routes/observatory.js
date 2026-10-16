@@ -1,7 +1,7 @@
 // The Observatory (home page) — PUBLIC, read-only, cheap: the latest library telemetry snapshot (written every 5 minutes by
 // the reports worker), a 24-hour series for sparklines + rates, and the activity log the terminal scrolls. Edge-cached.
 // Deps: telemetry-repo, activity-repo, telemetry (pure shaping).
-import { latestSnapshot, seriesSince } from '../lib/repos/telemetry-repo.js';
+import { latestSnapshot, seriesSince, latestPulse } from '../lib/repos/telemetry-repo.js';
 import { recentActivity } from '../lib/repos/activity-repo.js';
 import { ratesOf } from '../lib/telemetry.js';
 
@@ -18,6 +18,13 @@ export default async function observatoryRoutes(fastify) {
     const series = points.filter((_, i) => i % step === 0 || i === points.length - 1);
     memo = { at: Date.now(), body: { snapshot: JSON.parse(snap.data), series, rates: ratesOf(points, 1), rates_24h: ratesOf(points, 24) } };
     return memo.body;
+  });
+
+  // the 15-second pulse: I/O load per device, CPU load, vector counts, writer rows in the last minute
+  fastify.get('/pulse', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=8, s-maxage=10');
+    const p = await latestPulse();
+    return p ? { at: p.at, ...JSON.parse(p.data) } : { at: null };
   });
 
   fastify.get('/activity', async (request, reply) => {

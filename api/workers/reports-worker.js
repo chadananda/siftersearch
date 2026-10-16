@@ -116,15 +116,28 @@ async function pulseLoop() {
         }
         reported = done;
       }
-      if (tick++ % 2 === 0) {
-        for (const c of ['phrases', 'paragraphs_kw', 'hype', 'concepts']) {
-          const n = await fetch(`${QD}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(5000) })
-            .then((r) => r.json()).then((j) => j?.result?.points_count).catch(() => null);
-          if (n == null) continue;
-          if (last[c] != null && n !== last[c]) logActivity('qdrant', `${c} ${n > last[c] ? '+' : '−'}${fmt(Math.abs(n - last[c]))} points · ${fmt(n)} total`);
-          last[c] = n;
-        }
+      const vectors = {};
+      for (const c of ['phrases', 'paragraphs_kw', 'hype', 'concepts']) {
+        const n = await fetch(`${QD}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(5000) })
+          .then((r) => r.json()).then((j) => j?.result?.points_count).catch(() => null);
+        if (n == null) continue;
+        vectors[c] = n;
+        if (tick % 2 === 0 && last[c] != null && n !== last[c]) logActivity('qdrant', `${c} ${n > last[c] ? '+' : '−'}${fmt(Math.abs(n - last[c]))} points · ${fmt(n)} total`);
+        if (tick % 2 === 0) last[c] = n;
       }
+      tick++;
+      // the pulse row the home page polls (migration 154): I/O over a 1.5 s sample, load, vectors, writer rows/min
+      const { ioBetween } = await import('../lib/system-health.js');
+      const { readFileSync } = await import('fs');
+      let io = {};
+      try { const a = readFileSync('/proc/diskstats', 'utf8'); await new Promise((r) => setTimeout(r, 1500)); io = ioBetween(a, readFileSync('/proc/diskstats', 'utf8'), 1500); } catch { /* not Linux */ }
+      const minute = new Date(Date.now() - 60000).toISOString().slice(0, 16);
+      const wrows = await fetch(WRITER, { signal: AbortSignal.timeout(5000) }).then((r) => r.json()).catch(() => []);
+      const writer = wrows.filter((r) => r.minute >= minute && r.name !== 'activity:log').reduce((a, r) => ({ rows: a.rows + r.changes, batches: a.batches + r.batches }), { rows: 0, batches: 0 });
+      const os = await import('os');
+      const [load1] = os.loadavg();
+      const tel = await import('../lib/repos/telemetry-repo.js');
+      await tel.savePulse(Math.floor(Date.now() / 1000), { io, vectors, writer, cpu: { load_pct: Math.round((load1 / os.cpus().length) * 100) } });
     } catch (err) { logger.warn({ err: err.message }, 'pulse failed'); }
     await new Promise((r) => setTimeout(r, 15000));
   }

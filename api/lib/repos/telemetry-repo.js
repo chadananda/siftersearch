@@ -36,3 +36,8 @@ export const pruneSnapshots = (keepSeconds = 7 * 86400) =>
   query('DELETE FROM telemetry_snapshots WHERE at < ?', [Math.floor(Date.now() / 1000) - keepSeconds], 'telemetry:prune');
 export const latestSnapshot = () => queryOne('SELECT at, data FROM telemetry_snapshots ORDER BY at DESC LIMIT 1', [], 'telemetry:latest');
 export const seriesSince = (sinceEpoch) => queryAll('SELECT at, series FROM telemetry_snapshots WHERE at >= ? ORDER BY at', [sinceEpoch], 'telemetry:series');
+
+/** The 15-second pulse (migration 154): one row, replaced each time. */
+export const savePulse = (at, data) =>
+  query('INSERT INTO telemetry_pulse (id, at, data) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET at = excluded.at, data = excluded.data', [at, JSON.stringify(data)], 'telemetry:pulse-save');
+export const latestPulse = () => queryOne('SELECT at, data FROM telemetry_pulse WHERE id = 1', [], 'telemetry:pulse');
