@@ -8,10 +8,11 @@ export const docsOfReligion = (religion) =>
   queryAll(`SELECT id, title, author, religion, collection, source_site, paragraph_count FROM docs
     WHERE religion = ? AND deleted_at IS NULL AND duplicate_of IS NULL AND paragraph_count > 0`, [religion], 'eval:docs');
 
-/** The paragraph at a position in a document (live, not a duplicate row). */
-export const paragraphAt = async (docId, offset) => (await queryAll(`SELECT id, doc_id, text, normalized_hash, blocktype FROM content
-    WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0 ORDER BY paragraph_index LIMIT 1 OFFSET ?`,
-  [Number(docId), Math.max(0, Number(offset) || 0)], 'eval:paragraph'))[0] || null;
+/** The first live paragraph at or after a position in a document — a seek on (doc_id, paragraph_index), never an OFFSET
+ *  (OFFSET read and discarded every earlier row: 8.4 s measured on a large book, 10-16). */
+export const paragraphAt = async (docId, position) => (await queryAll(`SELECT id, doc_id, text, normalized_hash, blocktype FROM content
+    WHERE doc_id = ? AND paragraph_index >= ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0 ORDER BY paragraph_index LIMIT 1`,
+  [Number(docId), Math.max(0, Number(position) || 0)], 'eval:paragraph'))[0] || null;
 
 /** id → normalized_hash for hit ids. */
 export async function hashesByIds(ids) {

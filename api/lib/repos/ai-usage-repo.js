@@ -37,7 +37,9 @@ export async function rollupSpend(name, { key, where = '1=1', dayBound = false }
   let r = rollups.get(name);
   if (!r || (dayBound && r.day !== day)) {
     const top = (await qo('SELECT MAX(rowid) m FROM ai_usage'))?.m ?? 0;
-    const first = dayBound ? (await qo(`SELECT MIN(rowid) m FROM ai_usage WHERE timestamp >= date('now')`))?.m : 1;
+    // today's first row through the timestamp index — MIN(rowid) … WHERE timestamp walked the table from its oldest row
+    // until today's (11.7 s measured 10-16)
+    const first = dayBound ? (await qo(`SELECT rowid AS m FROM ai_usage INDEXED BY idx_ai_usage_timestamp WHERE timestamp >= date('now') ORDER BY timestamp LIMIT 1`))?.m : 1;
     r = { day, lastId: (first ?? top + 1) - 1, sums: new Map() };
     rollups.set(name, r);
   }
