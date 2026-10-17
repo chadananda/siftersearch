@@ -32,4 +32,65 @@ export function hiddenWords(paras) {
   return { pn, counts: count, issues };
 }
 
-export const SCHEMES = { 'hidden-words': hiddenWords };
+const ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+/** "CXXV" → 125 (null when not a Roman numeral). */
+export function romanToInt(r) {
+  const s = String(r || '').toUpperCase();
+  if (!/^[IVXLCDM]+$/.test(s)) return null;
+  let n = 0;
+  for (let i = 0; i < s.length; i++) n += ROMAN[s[i]] < (ROMAN[s[i + 1]] || 0) ? -ROMAN[s[i]] : ROMAN[s[i]];
+  return n;
+}
+const isInvocation = (t) => /^\s*(In the name of|He is|He Is)\b/i.test(String(t || '')) && String(t).length < 160;
+const isNote = (p) => /\{language="[a-z-]+"\}\s*$/.test(String(p.text || '')) || /^(END|Notes?)$/i.test(String(p.heading || '').trim());
+
+/** Gleanings from the Writings of Bahá'u'lláh: sections I–CLXVI (the headings, "– CXXV –"); a section's first paragraph is
+ *  "CXXV", later ones "CXXV.2", "CXXV.3". Sections must run I…CLXVI in order, none missing. */
+export function gleanings(paras) {
+  const pn = new Array(paras.length).fill(null);
+  let sec = null, k = 0, last = 0;
+  const issues = [];
+  for (let i = 0; i < paras.length; i++) {
+    const m = String(paras[i].heading || '').match(/\b([IVXLC]+)\b/);
+    const n = m ? romanToInt(m[1]) : null;
+    if (!n) continue;
+    if (n !== sec) {
+      if (n !== last + 1) issues.push(`section ${m[1]} follows ${last}`);
+      sec = n; last = n; k = 0;
+    }
+    pn[i] = ++k === 1 ? m[1] : `${m[1]}.${k}`;
+  }
+  if (last !== 166) issues.push(`last section ${last}, expected 166 (CLXVI)`);
+  return { pn, counts: { sections: last }, issues: issues.slice(0, 10) };
+}
+
+/** The Kitáb-i-Aqdas: its text ¶1–190 and the Questions and Answers Q&A 1–107 (by heading); the invocation and any
+ *  note rows have none. Each part must come to exactly its total. */
+export function aqdas(paras) {
+  const pn = new Array(paras.length).fill(null);
+  const count = { text: 0, qa: 0 };
+  for (let i = 0; i < paras.length; i++) {
+    const p = paras[i], h = String(p.heading || '');
+    if (isNote(p)) continue;
+    if (/questions and answers/i.test(h)) pn[i] = `Q&A ${++count.qa}`;
+    else if (/most holy book|aqdas/i.test(h)) { if (count.text === 0 && isInvocation(p.text)) continue; pn[i] = String(++count.text); }
+  }
+  const issues = [];
+  if (count.text !== 190) issues.push(`text paragraphs ${count.text}, expected 190`);
+  if (count.qa !== 107) issues.push(`questions ${count.qa}, expected 107`);
+  return { pn, counts: count, issues };
+}
+
+/** The Kitáb-i-Íqán: ¶1–290 in reading order across both parts; the opening invocation and note rows have none. */
+export function iqan(paras) {
+  const pn = new Array(paras.length).fill(null);
+  let n = 0;
+  for (let i = 0; i < paras.length; i++) {
+    const p = paras[i];
+    if (isNote(p) || (n === 0 && isInvocation(p.text))) continue;
+    pn[i] = String(++n);
+  }
+  return { pn, counts: { paragraphs: n }, issues: n === 290 ? [] : [`paragraphs ${n}, expected 290`] };
+}
+
+export const SCHEMES = { 'hidden-words': hiddenWords, gleanings, aqdas, iqan };

@@ -1,7 +1,7 @@
 // Traditional references — the Hidden Words numbering and the refs-assign guard: a scheme that does not reproduce the
 // work's totals writes nothing.
 import { describe, it, expect } from 'vitest';
-import { hiddenWords } from '../../api/lib/refs/schemes.js';
+import { hiddenWords, gleanings, aqdas, iqan, romanToInt } from '../../api/lib/refs/schemes.js';
 import { refsAssignJob } from '../../api/lib/ops/refs-assign-job.js';
 
 const A = 'Part One: From the Arabic', P = 'Part Two: From the Persian';
@@ -32,6 +32,32 @@ describe('Hidden Words numbering', () => {
     expect([at(488), at(489)]).toEqual(['Persian 45', 'Persian 45']);
   });
   it('a copy that does not reproduce 71/82 is reported', () => expect(hiddenWords(book(70)).issues).toEqual(['Arabic sayings 70, expected 71']));
+});
+
+const toRoman = (n) => [[100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']].reduce((s, [v, r]) => { while (n >= v) { s += r; n -= v; } return s; }, '');
+describe('Gleanings, Aqdas, Íqán numbering', () => {
+  it('Roman numerals', () => expect([romanToInt('CXXV'), romanToInt('CLXVI'), romanToInt('XLIX'), romanToInt('abc')]).toEqual([125, 166, 49, null]));
+  it('Gleanings: section on its first paragraph, .2/.3 after; I…CLXVI in order', () => {
+    const paras = Array.from({ length: 166 }, (_, k) => Array.from({ length: k === 124 ? 3 : 1 }, () => ({ heading: `– ${toRoman(k + 1)} –`, text: 'x' }))).flat();
+    const r = gleanings(paras);
+    expect(r.issues).toEqual([]);
+    expect(r.pn.slice(124, 127)).toEqual(['CXXV', 'CXXV.2', 'CXXV.3']);
+    expect(gleanings(paras.filter((p) => p.heading !== '– XL –')).issues[0]).toBe('section XLI follows 39');
+  });
+  it('Aqdas: invocation none, text 1–190, Q&A 1–107; notes skipped', () => {
+    const paras = [{ heading: 'The Most Holy Book', text: 'In the name of Him Who is the Supreme Ruler over all that hath been and all that is to be' },
+      ...Array.from({ length: 190 }, () => ({ heading: 'The Most Holy Book', text: 'law' })),
+      ...Array.from({ length: 107 }, () => ({ heading: 'Questions and Answers', text: 'Question: … Answer: …' })),
+      { heading: 'Questions and Answers', text: 'Adrianople {language="en"}' }];
+    const r = aqdas(paras);
+    expect(r.issues).toEqual([]);
+    expect([r.pn[0], r.pn[1], r.pn[190], r.pn[191], r.pn[297], r.pn[298]]).toEqual([null, '1', '190', 'Q&A 1', 'Q&A 107', null]);
+  });
+  it('Íqán: 1–290 after the invocation; notes skipped; a short copy refused', () => {
+    const paras = [{ heading: 'Part One', text: 'In the name of our Lord, the Exalted, the Most High.' }, ...Array.from({ length: 290 }, () => ({ heading: 'Part One', text: 'p' })), { heading: 'END', text: 'Qur’án 43:36. {language="en"}' }];
+    expect(iqan(paras)).toMatchObject({ issues: [], counts: { paragraphs: 290 } });
+    expect(iqan(paras.slice(0, 200)).issues).toEqual(['paragraphs 199, expected 290']);
+  });
 });
 
 describe('refs-assign', () => {
