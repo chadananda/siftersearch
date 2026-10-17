@@ -103,7 +103,7 @@
   <defs>
     <filter id="obs-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
     <radialGradient id="obs-core" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="var(--obs-core-hi)" /><stop offset="100%" stop-color="var(--obs-core-lo)" /></radialGradient>
-    <linearGradient id="obs-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--obs-sweep)" stop-opacity="0" /><stop offset="100%" stop-color="var(--obs-sweep)" stop-opacity="0.28" /></linearGradient>
+    <linearGradient id="obs-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--obs-afterglow)" stop-opacity="0" /><stop offset="100%" stop-color="var(--obs-afterglow)" stop-opacity="0.45" /></linearGradient>
   </defs>
 
   <!-- bezel -->
@@ -155,7 +155,11 @@
   {/each}
 
   <!-- the sweep -->
-  <g class="sweep" use:lock={0}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" class="sweep-glow" /></g>
+  <!-- the trace: a soft green phosphor line with a glow trailing a couple of pixels behind it (Chad 10-16) -->
+  <g class="sweep" use:lock={0}>
+    <path d={arcPath(C, C, 124, 436, LEAD_DEG - 2.2, LEAD_DEG)} fill="url(#obs-sweep)" class="sweep-glow" />
+    <line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="trace" />
+  </g>
   <!-- radar returns: the outline of each cell being built, painted by the trace, decaying like phosphor -->
   <g class="scope">
     {#each blips as bl (bl.key)}<path d={bl.d} class="blip" use:lock={bl.delay} />{/each}
@@ -208,7 +212,8 @@
   @keyframes trace { to { --obs-trace: 360deg; } }
   .scope { filter: drop-shadow(0 0 3px var(--obs-afterglow)); pointer-events: none; }
   .blip { fill: none; stroke: var(--obs-afterglow); stroke-width: 2.4; stroke-linecap: round; opacity: 0; animation: blip 14s linear infinite; }
-  .sweep-glow { filter: blur(5px); }   /* a soft arm: the brightness comes from what it paints */
+  .sweep-glow { filter: blur(2px); }
+  .trace { stroke: var(--obs-afterglow); stroke-width: 1.6; stroke-linecap: round; opacity: 0.8; filter: drop-shadow(0 0 3px var(--obs-afterglow)); }
   /* P7 phosphor: blue-white flash where the trace strikes, then a long yellow-green afterglow fading over the turn */
   @keyframes blip { 0% { opacity: 1; stroke: var(--obs-phosphor-hot); } 4% { stroke: var(--obs-afterglow); opacity: 0.95; } 30% { opacity: 0.6; } 60% { opacity: 0.28; } 90% { opacity: 0.06; } 100% { opacity: 0; } }
   @keyframes grow-throb { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 8px var(--c)); } }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:58:42.384Z",
+  "generated": "2026-10-17T05:01:09.973Z",
   "entries": [
+    {
+      "hash": "b79f8d04",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "Soft sweep arm again; persistence is a conic CSS mask on the lit layer, pinned to the sweep's clock (the SVG mask repainted lazily and drifted)",
+      "scope": "home"
+    },
     {
       "hash": "20764907",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Roadmap grader single-flight + 5-min cache — the plan follower re-graded ~900 books every 3 min with synchronous scans; one took 62 s and froze the API through the :30 health check (alerts 19:32Z, 20:32Z)",
       "scope": "api"
-    },
-    {
-      "hash": "6061dc94",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Strip what OceanLibrary/Ocean of Lights copy appends (reference line, short link, page URL) before the hunt; Clear button; pasting over a shown result replaces the quote and runs a new hunt (Liliane's report)",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "b79f8d04",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "Soft sweep arm again; persistence is a conic CSS mask on the lit layer, pinned to the sweep's clock (the SVG mask repainted lazily and drifted)",
+        "scope": "home"
+      },
       {
         "hash": "20764907",
         "date": "2026-10-16",
@@ -7018,13 +7025,6 @@
         "type": "Fixed",
         "description": "Roadmap grader single-flight + 5-min cache — the plan follower re-graded ~900 books every 3 min with synchronous scans; one took 62 s and froze the API through the :30 health check (alerts 19:32Z, 20:32Z)",
         "scope": "api"
-      },
-      {
-        "hash": "6061dc94",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Strip what OceanLibrary/Ocean of Lights copy appends (reference line, short link, page URL) before the hunt; Clear button; pasting over a shown result replaces the quote and runs a new hunt (Liliane's report)",
-        "scope": "sourcehunt"
       }
     ]
   }
