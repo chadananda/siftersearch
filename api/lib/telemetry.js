@@ -11,8 +11,10 @@ export const RINGS = [
   // ingestion … it does not even depend on external vector generation")
   { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },
   // document structure next (Chad 10-17): sub-documents and the TOC are metadata disambiguation and retrieval lean on;
-  // documents READ by the section index / documents (a single tablet has no sections but is done)
+  // documents whose structure was FOUND / documents (read ≠ found: most books mark none — inference comes next)
   { id: 'sections', label: 'Sub-documents', short: 'SECT', of: (r, docs) => [r.generated, docs] },
+  // references (Chad 10-17): traditional numbering (verse, section, saying) or a print page — what a citation resolves to
+  { id: 'refs', label: 'References', short: 'REF', of: (r) => [r.current, r.total] },
   { id: 'embedding', label: 'Paragraph vectors', short: 'VEC', of: (r) => [r.generated, r.total] },
   { id: 'phrase', label: 'Phrase vectors', short: 'PHRASE', of: (r) => [r.reached, r.total] },
   { id: 'context', label: 'Disambiguation', short: 'DISAMB', of: (r) => [r.generated, r.total] },

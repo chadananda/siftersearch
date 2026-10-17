@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 let raw;
 const SCHEMA = `
 CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, language TEXT, religion TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, author TEXT, collection TEXT, source_site TEXT);  -- production docs has no authority column
-CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT DEFAULT 'words', synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
+CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT DEFAULT 'words', block_attrs TEXT, pdf_page INTEGER, synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
   extract_model TEXT, translation TEXT, deleted_at TEXT, is_duplicate INTEGER);
 CREATE TABLE entity_mentions_v2 (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, status TEXT);
 CREATE TABLE concept_claims (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, proof_ok INTEGER);
@@ -48,6 +48,10 @@ describe('coverage ledger', () => {
     const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
     expect(m.keyword).toMatchObject({ total: 2, indexed: 3 });
     expect(m.text.total).toBe(3);
+    raw.prepare(`UPDATE content SET block_attrs = '{"pn":"3:16"}' WHERE id = 1`).run();
+    raw.prepare('UPDATE content SET pdf_page = 12 WHERE id IN (1, 2)').run();
+    const r = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((x) => [x.layer, x])).refs;
+    expect(r).toMatchObject({ total: 2, generated: 1, current: 2, indexed: 2 });   // pn on one, pages on two, either on two
     await repo.saveUnindexable(1, 'keyword', 1);   // a markup-only row ('|') the keyword job met
     const m2 = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
     expect(m2.keyword.total).toBe(1);

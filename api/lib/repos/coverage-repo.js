@@ -10,7 +10,7 @@ import { getAuthority } from '../authority.js';
 export const CORE_AUTHORITY = 8;
 export const isCore = (doc) => { try { return getAuthority(doc) >= CORE_AUTHORITY; } catch { return false; } };
 
-export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
+export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'refs', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 
 /** Points in a Qdrant collection for one document (exact count on the doc_id payload index). null when unreachable. */
@@ -33,7 +33,9 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
   const c = await queryOne(`SELECT COUNT(*) AS total, SUM(synced = 1) AS synced, SUM(embedding IS NOT NULL) AS embedded,
       SUM(LENGTH(COALESCE(context, '')) > 0) AS context, SUM(LENGTH(COALESCE(hyp_questions, '')) > 2) AS hype,
       SUM(hyp_model = ?) AS hype_current, SUM(extract_model IS NOT NULL) AS extracted,
-      SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated, SUM(LENGTH(COALESCE(text, '')) > 0) AS texted
+      SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated, SUM(LENGTH(COALESCE(text, '')) > 0) AS texted,
+      SUM(json_extract(block_attrs, '$.pn') IS NOT NULL) AS with_pn, SUM(pdf_page IS NOT NULL) AS with_page,
+      SUM(json_extract(block_attrs, '$.pn') IS NOT NULL OR pdf_page IS NOT NULL) AS with_ref
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0`, [hypeVersion || '', id], 'coverage:content');
   const total = c?.total || 0;
   const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure, kwSkip] = await Promise.all([
@@ -63,9 +65,12 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     // (10-17: 197 documents read 'short' forever and keyword-fill re-sent their 203K paragraphs every 10 minutes)
     row('keyword', kwTotal, kwTotal, kwN, null, kwTotal),
     row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
-    // structure is per DOCUMENT: total 1, generated 1 once the section index has read it (with or without sections),
-    // indexed = its sections — so the ring reads documents read / documents (Chad 10-17: structure right after ingestion)
-    row('sections', structure ? 1 : 0, structure ? 1 : 0, sections?.n || 0, null, 1),
+    // structure is per DOCUMENT: total 1; generated 1 when structure was FOUND (Chad 10-17: "often it is not" embedded as
+    // headings — reading every document is not the same as having its structure); current 1 once read; indexed = sections
+    row('sections', sections?.n ? 1 : 0, structure ? 1 : 0, sections?.n || 0, null, 1),
+    // traditional references (Chad 10-17): generated = a traditional number (verse, section, saying — block_attrs.pn),
+    // indexed = a print page (pdf_page), current = either; total = paragraphs with text
+    row('refs', c?.with_pn, c?.with_ref, c?.with_page, null, c?.texted ?? total),
     row('context', c?.context, c?.context, null),                       // feeds HyPE/extraction; not searched itself
     row('hype', c?.hype, c?.hype_current, hypeN, hypeVersion),           // points = questions
     row('entities', c?.extracted, c?.extracted, mentions?.n),
@@ -111,7 +116,7 @@ export const saveUnindexable = (docId, layer, n) => transaction([{ sql: `INSERT 
 export async function saveStructureCoverage(docId, sections) {
   const id = Number(docId);
   const core = (await queryOne(`SELECT core FROM index_coverage WHERE doc_id = ? AND layer = 'text'`, [id], 'coverage:core-of'))?.core ?? 0;
-  return saveCoverage(id, [{ layer: 'sections', total: 1, generated: 1, current: 1, indexed: sections, version: null, core }]);
+  return saveCoverage(id, [{ layer: 'sections', total: 1, generated: sections ? 1 : 0, current: 1, indexed: sections, version: null, core }]);
 }
 
 /** Rebuild coverage_totals from the whole ledger (daily, and when empty) — corrects drift the deltas cannot see. */
