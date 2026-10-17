@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-17T17:16:30.161Z",
+  "generated": "2026-10-17T17:35:01.205Z",
   "entries": [
+    {
+      "hash": "e54ee68d",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "BM25 follows ingestion automatically — the reports worker queues keyword-fill every 10 min while the ledger shows a real gap; cell rates from the oldest snapshot within a day",
+      "scope": "index"
+    },
+    {
+      "hash": "c3552b6c",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Tradition sub-progress moves between snapshots at each cell's own day rate; tighter rows so nothing is cut off",
+      "scope": "home"
+    },
     {
       "hash": "65bff217",
       "date": "2026-10-17",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "The source's own other copy (same title) is not listed as a citation",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "6d19c3fc",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Range links — text fragments to the quoted stretch on citations, the published source and the original (our copy + Ocean of Lights); API rangeUrl fields. Retired duplicates (docs-repo scope 'duplicates') excluded from search and from SourceHunt rows.",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "4ab744e5",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "A verbatim paragraph always holds the quote (the decision only ADDS meaning matches); exact wording outranks the Core label",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "e54ee68d",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "BM25 follows ingestion automatically — the reports worker queues keyword-fill every 10 min while the ledger shows a real gap; cell rates from the oldest snapshot within a day",
+        "scope": "index"
+      },
+      {
+        "hash": "c3552b6c",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Tradition sub-progress moves between snapshots at each cell's own day rate; tighter rows so nothing is cut off",
+        "scope": "home"
+      },
       {
         "hash": "65bff217",
         "date": "2026-10-17",
@@ -7012,20 +7026,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "The source's own other copy (same title) is not listed as a citation",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "6d19c3fc",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Range links — text fragments to the quoted stretch on citations, the published source and the original (our copy + Ocean of Lights); API rangeUrl fields. Retired duplicates (docs-repo scope 'duplicates') excluded from search and from SourceHunt rows.",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "4ab744e5",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "A verbatim paragraph always holds the quote (the decision only ADDS meaning matches); exact wording outranks the Core label",
         "scope": "sourcehunt"
       }
     ]

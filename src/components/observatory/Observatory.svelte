@@ -70,11 +70,16 @@
   const POINTS = { keyword: 'paragraphs_kw', phrase: 'phrases', hype: 'hype', concepts: 'concepts' };
   // the stage being built, tradition by tradition (Chad 10-17: "sub-progress lines for each tradition being worked on …
   // just for the currently processing index"): unfinished traditions, those that grew since the last snapshot first
+  // truncated, never rounded up: 13 paragraphs left must not read 100.00%
+  const pctDown = (done, total, digits) => `${(Math.floor((100 * done / total) * 10 ** digits) / 10 ** digits).toFixed(digits)}%`;
+  // enough decimals that the last digit moves about once a second at this rate (2 when idle, at most 6)
+  const tickDigits = (perHour, total) => (perHour > 0 && total ? Math.min(6, Math.max(3, Math.ceil(-Math.log10((100 * perHour) / 3600 / total)))) : 2);
   const TRAD_LABEL = { "Baha'i": 'Bahá’í', Tao: 'Taoist' };
   const tradSlug = (t) => (t === "Baha'i" ? 'bahai' : String(t).toLowerCase());
   const subRows = (ringId) => {
     const grew = new Set((snap?.growing || []).filter((g) => g.ring === ringId).map((g) => g.tradition));
-    return (snap?.cells || []).filter((c) => c.ring === ringId && c.total && c.done < c.total)
+    // a few dozen paragraphs left and not moving is a remainder (lines with nothing to index), not work in progress
+    return (snap?.cells || []).filter((c) => c.ring === ringId && c.total && c.total - c.done >= 100 || (snap?.cell_rates?.[`${c.tradition}|${ringId}`] > 0 && c.ring === ringId && c.done < c.total))
       .map((c) => {
         const r = snap?.cell_rates?.[`${c.tradition}|${ringId}`] || 0;
         const done = Math.min(c.total, interpolate(c.done, r, since));   // moves between snapshots at the cell's own rate
@@ -162,7 +167,7 @@
                 <div class="sub mono" class:grew={c.grew} style={`--c: var(--obs-${tradSlug(c.tradition)})`}>
                   <span class="sub-name">{#if c.grew}<i></i>{/if}{TRAD_LABEL[c.tradition] || c.tradition}</span>
                   <span class="sub-bar"><span style={`width:${Math.min(100, (100 * c.done) / c.total)}%`}></span></span>
-                  <span class="sub-pct">{pct(c.done, c.total, c.rate > 0 ? 4 : 2)}</span>
+                  <span class="sub-pct">{pctDown(c.done, c.total, tickDigits(c.rate, c.total))}</span>
                   <span class="sub-left">{compact(c.gap)}</span>
                 </div>
               {/each}
@@ -361,7 +366,7 @@
   .idle { color: var(--obs-text-faint); }
   /* per-tradition sub-progress under the stage being built */
   .subs { display: flex; flex-direction: column; gap: 1px; margin: 2px 0; padding-left: 6px; border-left: 1px solid var(--obs-line); }
-  .sub { display: grid; grid-template-columns: 62px minmax(20px, 1fr) auto 40px; align-items: center; gap: 6px; font-size: 10.5px; line-height: 1.5; color: var(--obs-text-dim); white-space: nowrap; }
+  .sub { display: grid; grid-template-columns: 62px minmax(20px, 1fr) 66px 40px; align-items: center; gap: 6px; font-size: 10.5px; line-height: 1.5; color: var(--obs-text-dim); white-space: nowrap; }
   .sub-name { display: flex; align-items: center; gap: 4px; color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sub-name i { width: 5px; height: 5px; border-radius: 50%; background: var(--obs-afterglow); box-shadow: 0 0 5px var(--obs-afterglow); animation: work-blink 1.4s ease-in-out infinite; flex: none; }
   .sub-bar { height: 3px; border-radius: 2px; background: var(--obs-line); overflow: hidden; }
