@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 
 let raw;
 const SCHEMA = `
-CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, source_site TEXT, deleted_at TEXT, duplicate_of INTEGER);
+CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, source_site TEXT, deleted_at TEXT, duplicate_of INTEGER, religion TEXT, scope TEXT, paragraph_count INTEGER);
 CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, heading TEXT, block_attrs TEXT, external_para_id TEXT, deleted_at TEXT);
 CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER NOT NULL, ord INTEGER NOT NULL, level INTEGER, title TEXT NOT NULL,
   start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, paragraphs INTEGER NOT NULL, first_para_id INTEGER,
@@ -35,6 +35,10 @@ describe('sections-repo', () => {
     await repo.replaceSections(20894, 'The World Order of Bahá’u’lláh', []);
     expect(raw.prepare('SELECT doc_id, sections, source FROM doc_structure').all()).toEqual([{ doc_id: 20894, sections: 0, source: null }]);
     expect(await repo.docsWithoutStructure()).toEqual([21310]);
+    raw.prepare("UPDATE docs SET religion = 'Baha''i', paragraph_count = 900 WHERE id = 20894").run();
+    const s = await repo.structureSummary();
+    expect(s.byTradition).toEqual([{ religion: "Baha'i", scope: 'primary', docs: 1, with_sections: 0, long_without: 1, paragraphs_without: 900 }]);
+    expect(s.longestWithout.map((d) => d.id)).toEqual([20894]);
   });
   it('builds from stored headings and finds a part by its name and its book’s', async () => {
     const n = await repo.replaceSections(21310, 'God Passes By', sectionsFromRows(await repo.headingRowsForDoc(21310)));

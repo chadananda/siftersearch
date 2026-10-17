@@ -4,7 +4,7 @@
 // a participant whose name is not in the episode's own text is dropped (kept in `dropped`), a citation outside the
 // episode is reported in `issues`, an A.H. year becomes a Gregorian one by formula. params { doc, titles?, limit? }.
 import { sectionsOfDoc } from '../repos/sections-repo.js';
-import { paragraphsInSpans, saveEpisode } from '../repos/episodes-repo.js';
+import { paragraphsInSpans, saveEpisode, episodesOfDoc } from '../repos/episodes-repo.js';
 import { episodesFromSections, verifyParticipants } from '../episodes.js';
 import { roleCreate, roleModel } from '../role-client.js';
 import { logActivity } from '../repos/activity-repo.js';
@@ -64,16 +64,19 @@ export async function extractEpisode(book, ep, paras, { create = roleCreate } = 
     participants: kept, dropped, events: Array.isArray(out.events) ? out.events : [], questions: Array.isArray(out.questions) ? out.questions : [], issues };
 }
 
-export async function episodeExtractJob({ doc, titles = null, limit = 0 } = {}, { create = roleCreate, sections = sectionsOfDoc, paragraphs = paragraphsInSpans, save = saveEpisode } = {}) {
+export async function episodeExtractJob({ doc, titles = null, limit = 0, redo = false } = {}, { create = roleCreate, sections = sectionsOfDoc, paragraphs = paragraphsInSpans, save = saveEpisode, existing = episodesOfDoc } = {}) {
   if (!doc) throw new Error('episode-extract needs { doc }');
   const secs = await sections(doc);
   const book = { 21310: 'God Passes By', 21308: 'The Dawn-Breakers' }[doc] || `document ${doc}`;
   let eps = episodesFromSections(secs);
   if (titles?.length) eps = eps.filter((e) => titles.some((t) => e.title.toLowerCase().includes(String(t).toLowerCase())));
   if (limit) eps = eps.slice(0, limit);
-  const stats = { doc, episodes: eps.length, done: 0, participants: 0, dropped: 0, with_issues: 0, failed: 0 };
+  // resumable: an episode already done at this version with no issues is kept (a restart does not pay twice); redo forces all
+  const have = redo ? new Map() : new Map((await existing(doc)).filter((e) => e.version === EPISODE_VERSION && !e.issues?.length).map((e) => [e.ord, e]));
+  const stats = { doc, episodes: eps.length, done: 0, kept: 0, participants: 0, dropped: 0, with_issues: 0, failed: 0 };
   let lastLog = Date.now();
   for (const ep of eps) {
+    if (have.has(ep.ord)) { stats.kept++; continue; }
     const paras = await paragraphs(doc, ep.spans);
     if (!paras.length) continue;
     let r;

@@ -61,3 +61,18 @@ export async function findSections(text, { limit = 10 } = {}) {
 /** A book's sections in order (its table of contents). */
 export const sectionsOfDoc = (docId) =>
   queryAll('SELECT id AS section_id, ord, level, title, start_index, end_index, paragraphs, first_para_id FROM doc_sections WHERE doc_id = ? ORDER BY ord', [Number(docId)], 'sections:of-doc');
+
+/** How much structure the section index found: per tradition × scope, documents read / with sections / long (>= 200
+ *  paragraphs) without any, by source; and the longest documents with none — where structure must be INFERRED. */
+export async function structureSummary({ longest = 25 } = {}) {
+  const [byTradition, bySource, longestWithout] = await Promise.all([
+    queryAll(`SELECT COALESCE(d.religion, 'Other') AS religion, COALESCE(d.scope, 'primary') AS scope, COUNT(*) AS docs,
+        SUM(s.sections > 0) AS with_sections, SUM(s.sections = 0 AND d.paragraph_count >= 200) AS long_without,
+        SUM(CASE WHEN s.sections = 0 THEN d.paragraph_count ELSE 0 END) AS paragraphs_without
+      FROM doc_structure s JOIN docs d ON d.id = s.doc_id WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL GROUP BY 1, 2 ORDER BY 3 DESC`, [], 'sections:summary'),
+    queryAll(`SELECT COALESCE(source, 'none') AS source, COUNT(*) AS docs, SUM(sections) AS sections FROM doc_structure GROUP BY 1`, [], 'sections:by-source'),
+    queryAll(`SELECT d.id, d.title, d.religion, d.scope, d.paragraph_count FROM doc_structure s JOIN docs d ON d.id = s.doc_id
+      WHERE s.sections = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL ORDER BY d.paragraph_count DESC LIMIT ?`, [longest], 'sections:longest-without'),
+  ]);
+  return { byTradition, bySource, longestWithout };
+}

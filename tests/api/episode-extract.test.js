@@ -29,10 +29,18 @@ describe('episode extract', () => {
   });
   it('a run saves each episode with its own spans and paragraph ids', async () => {
     const saved = [];
-    const stats = await episodeExtractJob({ doc: 21308 }, { sections, paragraphs, save: async (e) => saved.push(e),
+    const stats = await episodeExtractJob({ doc: 21308 }, { sections, paragraphs, save: async (e) => saved.push(e), existing: async () => [],
       create: reply({ place: 'Badasht', summary: 'They arrived [¶550].', participants: [{ name: 'Quddús', role: 'actor' }], events: [], questions: [] }) });
     expect(saved.map((e) => [e.title, e.spans, e.para_ids])).toEqual([['Their arrival at Badasht', [[550, 551]], [9550, 9551]],
       ['a. Significance of the gathering in Badasht', [[552, 553]], [9552, 9553]]]);
     expect(stats).toMatchObject({ episodes: 3, done: 2 });   // the chapter's own span (554-563) has no live paragraphs here
+  });
+  it('resumable: an episode done at this version without issues is kept, one with issues is redone', async () => {
+    const saved = [];
+    const existing = async () => [{ ord: 1, version: 'ep1', issues: [] }, { ord: 2, version: 'ep1', issues: ['no JSON from the model'] }];
+    const stats = await episodeExtractJob({ doc: 21308 }, { sections, paragraphs, existing, save: async (e) => saved.push(e),
+      create: reply({ summary: 'x [¶552].', participants: [] }) });
+    expect(saved.map((e) => e.ord)).toEqual([2]);
+    expect(stats.kept).toBe(1);
   });
 });
