@@ -160,9 +160,9 @@ export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-
   coverage: ['coverage-refresh'],
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(LANES.heavy);
-// How many jobs a lane runs AT ONCE (default 1). Phrase indexing: 3 since its store moved to an SSD (10-16 — disk idle,
-// CPU idle; Chad: "an obvious optimization"). Each queued run is its own document set; claims are atomic; the store is
-// WAL with a 120 s lock wait; Gemini 429s back off. Override with OPS_LANE_WORKERS='{"index":2}'.
-export const LANE_WORKERS = { index: 3, ...(() => { try { return JSON.parse(process.env.OPS_LANE_WORKERS || '{}'); } catch { return {}; } })() };
+// How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K
+// phrases/h for all three vs ~142K/h for one, because the interim /crutch SSD (Kingston A400, no TRIM) saturated —
+// 82% util, 667 ms write latency. Revisit on the 4TB NVMe. Override with OPS_LANE_WORKERS='{"index":2}'.
+export const LANE_WORKERS = { index: 1, ...(() => { try { return JSON.parse(process.env.OPS_LANE_WORKERS || '{}'); } catch { return {}; } })() };
 
 export const reportNames = () => Object.keys(REPORTS);
