@@ -68,6 +68,16 @@
   // moves (Chad 10-16: "like 99.0137% instead of 99.1% which never moves"); idle stages keep one
   const working = (id) => activeRings.includes(id) || (tel?.rates?.[id] || 0) > 0;   // a job on it, or it grew this hour
   const POINTS = { keyword: 'paragraphs_kw', phrase: 'phrases', hype: 'hype', concepts: 'concepts' };
+  // the stage being built, tradition by tradition (Chad 10-17: "sub-progress lines for each tradition being worked on …
+  // just for the currently processing index"): unfinished traditions, those that grew since the last snapshot first
+  const TRAD_LABEL = { "Baha'i": 'Bahá’í', Tao: 'Taoist' };
+  const tradSlug = (t) => (t === "Baha'i" ? 'bahai' : String(t).toLowerCase());
+  const subRows = (ringId) => {
+    const grew = new Set((snap?.growing || []).filter((g) => g.ring === ringId).map((g) => g.tradition));
+    return (snap?.cells || []).filter((c) => c.ring === ringId && c.total && c.done < c.total)
+      .map((c) => ({ ...c, grew: grew.has(c.tradition), gap: c.total - c.done }))
+      .sort((a, b) => b.grew - a.grew || b.gap - a.gap).slice(0, 6);
+  };
   const ago = (sec) => (sec < 90 ? `${Math.round(sec)} s ago` : sec < 5400 ? `${Math.round(sec / 60)} min ago` : `${(sec / 3600).toFixed(1)} h ago`);
   const levelOf = (p) => (p == null ? '' : p >= 85 ? 'hot' : p >= 60 ? 'warm' : 'cool');
 
@@ -142,6 +152,18 @@
             {#if rates[r.id] > 0}<span class="up">{rate(rates[r.id])}</span>{/if}
             {#if series(r.id).filter((x) => x != null).length > 2}<svg class="spark" viewBox="0 0 80 16" aria-hidden="true"><path d={sparkPath(series(r.id), 80, 16, r.total * 0.002)} /></svg>{/if}
           </div>
+          {#if activeRings.includes(r.id)}
+            <div class="subs">
+              {#each subRows(r.id) as c (c.tradition)}
+                <div class="sub mono" class:grew={c.grew} style={`--c: var(--obs-${tradSlug(c.tradition)})`}>
+                  <span class="sub-name">{#if c.grew}<i></i>{/if}{TRAD_LABEL[c.tradition] || c.tradition}</span>
+                  <span class="sub-bar"><span style={`width:${Math.min(100, (100 * c.done) / c.total)}%`}></span></span>
+                  <span class="sub-pct">{pct(c.done, c.total, 3)}</span>
+                  <span class="sub-left">{compact(c.gap)} left</span>
+                </div>
+              {/each}
+            </div>
+          {/if}
         </div>
       {/each}
     </aside>
@@ -333,6 +355,16 @@
   .working { display: inline-flex; align-items: center; gap: 4px; color: var(--obs-afterglow); font-weight: 600; }
   .working i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; animation: work-blink 1.4s ease-in-out infinite; }
   .idle { color: var(--obs-text-faint); }
+  /* per-tradition sub-progress under the stage being built */
+  .subs { display: flex; flex-direction: column; gap: 2px; margin: 3px 0 2px 18px; padding-left: 8px; border-left: 1px solid var(--obs-line); }
+  .sub { display: grid; grid-template-columns: 74px minmax(30px, 1fr) 58px 58px; align-items: center; gap: 6px; font-size: 10.5px; color: var(--obs-text-dim); }
+  .sub-name { display: flex; align-items: center; gap: 4px; color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub-name i { width: 5px; height: 5px; border-radius: 50%; background: var(--obs-afterglow); box-shadow: 0 0 5px var(--obs-afterglow); animation: work-blink 1.4s ease-in-out infinite; flex: none; }
+  .sub-bar { height: 3px; border-radius: 2px; background: var(--obs-line); overflow: hidden; }
+  .sub-bar span { display: block; height: 100%; background: var(--c); }
+  .sub-pct { text-align: right; color: var(--obs-text); font-variant-numeric: tabular-nums; }
+  .sub-left { text-align: right; color: var(--obs-text-faint); font-variant-numeric: tabular-nums; }
+  .sub.grew .sub-pct { color: var(--obs-afterglow); }
   .stage-pct.ticking { min-width: 64px; color: var(--obs-afterglow); font-variant-numeric: tabular-nums; }
   @keyframes work-blink { 50% { opacity: 0.3; } }
   .spark { width: 80px; height: 16px; margin-left: auto; }
@@ -430,5 +462,5 @@
     .kpi { border-left: 0 !important; border-top: 0 !important; } .kpi:nth-child(even) { border-left: 1px solid var(--obs-line) !important; } .kpi:nth-child(n + 3) { border-top: 1px solid var(--obs-line) !important; }
     .roadmap { grid-template-columns: minmax(0, 1fr); } .road + .road { border-left: 0; border-top: 1px solid var(--obs-line); }
   }
-  @media (prefers-reduced-motion: reduce) { .working i, .led, .spin, .flash, .bolt, .dot, .stage.grow .bar span, .kpis::after, .panel::after, .road-wrap::after { animation: none; } .bar span { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .sub-name i, .working i, .led, .spin, .flash, .bolt, .dot, .stage.grow .bar span, .kpis::after, .panel::after, .road-wrap::after { animation: none; } .bar span { transition: none; } }
 </style>

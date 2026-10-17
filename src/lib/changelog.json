@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T17:01:10.164Z",
+  "generated": "2026-10-17T17:05:59.764Z",
   "entries": [
+    {
+      "hash": "ff6c202b",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "A stage being built shows 4 decimals, interpolated at its measured rate, plus its live point count",
+      "scope": "home"
+    },
     {
       "hash": "27c44019",
       "date": "2026-10-16",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "The OceanLibrary copy of a Core book ranks as Core — the canonical (Gleanings, ESW, Gems, …) is flagged duplicate and not indexed, so its uncollected copy lost to a Core book that only paraphrased ('Tear asunder…' → Tablets book instead of Gleanings 75.1)",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "9c273248",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Original-side highlight = ONE stretch chosen by start/end clause vote (Clef + Clef-flash, Jev tie-break), not a yes/no per clause",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
+    "2026-10-17": [
+      {
+        "hash": "ff6c202b",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "A stage being built shows 4 decimals, interpolated at its measured rate, plus its live point count",
+        "scope": "home"
+      }
+    ],
     "2026-10-16": [
       {
         "hash": "27c44019",
@@ -7017,13 +7026,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "The OceanLibrary copy of a Core book ranks as Core — the canonical (Gleanings, ESW, Gems, …) is flagged duplicate and not indexed, so its uncollected copy lost to a Core book that only paraphrased ('Tear asunder…' → Tablets book instead of Gleanings 75.1)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "9c273248",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Original-side highlight = ONE stretch chosen by start/end clause vote (Clef + Clef-flash, Jev tie-break), not a yes/no per clause",
         "scope": "sourcehunt"
       }
     ]
