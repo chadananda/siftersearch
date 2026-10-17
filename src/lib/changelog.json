@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:27:08.405Z",
+  "generated": "2026-10-17T04:30:41.594Z",
   "entries": [
+    {
+      "hash": "57cf2da3",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Radar returns — growth fronts flash as the sweep crosses them and fade; afterglow, beams, halos removed",
+      "scope": "home"
+    },
     {
       "hash": "742d078b",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Highlight decision is one yes/no per clause, so a quote spanning several clauses is marked whole",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "d7d3d3ea",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Cross-translation — 'holds the quote' judged by a System-1 decision (sourcehunt-holds), doctrinal-writer retrieval in parallel, highlights by meaning; long passages clipped around the highlight",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "57cf2da3",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Radar returns — growth fronts flash as the sweep crosses them and fade; afterglow, beams, halos removed",
+        "scope": "home"
+      },
       {
         "hash": "742d078b",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Highlight decision is one yes/no per clause, so a quote spanning several clauses is marked whole",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "d7d3d3ea",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Cross-translation — 'holds the quote' judged by a System-1 decision (sourcehunt-holds), doctrinal-writer retrieval in parallel, highlights by meaning; long passages clipped around the highlight",
         "scope": "sourcehunt"
       }
     ]

@@ -59,10 +59,12 @@
         const key = `${sec.id}|${ringId}`, c = cellOf.get(key);
         if (!c?.total) continue;
         if (growRings.has(ringId) ? !growing.has(key) : c.done >= c.total) continue;
+        // the return is painted slice by slice (0.5°) as the beam crosses it, like phosphor under a real radar sweep
         const deg = Math.max(0.9, fillDeg(c.done, c.total, sec.a0, sec.a1)), front = sec.a0 + deg;
-        const hit = (((front - LEAD_DEG) % 360) + 360) % 360 / 360 * SWEEP_S;   // seconds into a turn when the edge reaches it
-        out.push({ key, d: arcPath(C, C, band.r0 - 1, band.r1 + 1, front - Math.min(deg, 7), front + 0.4),
-          slug: SLUG[sec.id], delay: (hit - t).toFixed(2) });
+        for (let a = front - Math.min(deg, 6); a < front + 0.4; a += 0.5) {
+          const hit = (((a + 0.25 - LEAD_DEG) % 360) + 360) % 360 / 360 * SWEEP_S;   // seconds into a turn when the beam reaches it
+          out.push({ key: `${key}|${a.toFixed(1)}`, d: arcPath(C, C, band.r0, band.r1, a, a + 0.55), delay: (hit - t).toFixed(2) });
+        }
       }
     }
     return out;
@@ -126,10 +128,10 @@
   {/each}
 
   <!-- the sweep -->
-  <g class="sweep" style={phase == null ? '' : `animation-delay: -${phase.toFixed(2)}s`}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" /></g>
+  <g class="sweep" style={phase == null ? '' : `animation-delay: -${phase.toFixed(2)}s`}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" /><line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="beam-line" /></g>
   <!-- radar returns: each growth front flashes as the sweep crosses it, then fades -->
   {#each blips as bl (bl.key)}
-    <path d={bl.d} class="blip" style={`--c: var(--obs-${bl.slug}); animation-delay: ${bl.delay}s`} />
+    <path d={bl.d} class="blip" style={`animation-delay: ${bl.delay}s`} />
   {/each}
 
   <!-- particles: work flowing from the library into the stage being built -->
@@ -170,9 +172,10 @@
   .cell.growing .track { animation: track-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
   .cell.feeding .track { animation: track-throb 3.2s ease-in-out infinite; animation-delay: var(--d); }
   /* ── radar returns: flash white-hot as the sweep crosses, then fade through the tradition's colour ── */
-  .blip { fill: #fff; opacity: 0; pointer-events: none; animation: blip 14s linear infinite;
-    filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 16px var(--c)) drop-shadow(0 0 30px var(--c)); }
-  @keyframes blip { 0% { opacity: 1; fill: #fff; } 6% { opacity: 1; fill: #fff; } 30% { fill: var(--c); opacity: 0.7; } 75% { opacity: 0.12; } 100% { opacity: 0; fill: var(--c); } }
+  .blip { fill: var(--obs-phosphor); opacity: 0; pointer-events: none; animation: blip 14s linear infinite; filter: drop-shadow(0 0 5px var(--obs-phosphor)) drop-shadow(0 0 14px var(--obs-phosphor)); }
+  .beam-line { stroke: var(--obs-phosphor-hot); stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--obs-phosphor)) drop-shadow(0 0 12px var(--obs-phosphor)); }
+  /* phosphor: lit at full the instant the beam paints it, then a long exponential-looking decay */
+  @keyframes blip { 0% { opacity: 1; fill: var(--obs-phosphor-hot); } 3% { opacity: 1; fill: var(--obs-phosphor); } 25% { opacity: 0.75; } 55% { opacity: 0.35; } 85% { opacity: 0.1; } 100% { opacity: 0; } }
   @keyframes grow-throb { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 8px var(--c)); } }
   @keyframes track-throb { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.32; } }
   .trad { font: 600 13px/1 var(--obs-sans); letter-spacing: 0.14em; }
