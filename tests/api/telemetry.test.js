@@ -83,3 +83,14 @@ describe('drive health (SMART)', async () => {
     expect(hdd).toMatchObject({ healthy: true, life_left_pct: null, reallocated: 0 });
   });
 });
+
+describe('growing cells (what is being built right now)', async () => {
+  const { growingCells } = await import('../../api/lib/telemetry.js');
+  it('cells that grew since the previous snapshot, biggest first; new or shrinking cells are not growth', () => {
+    const prev = [{ tradition: 'Islam', ring: 'phrase', done: 100 }, { tradition: "Baha'i", ring: 'hype', done: 50 }, { tradition: 'Tao', ring: 'phrase', done: 9 }];
+    const now = [{ tradition: 'Islam', ring: 'phrase', done: 400 }, { tradition: "Baha'i", ring: 'hype', done: 60 }, { tradition: 'Tao', ring: 'phrase', done: 8 },
+      { tradition: 'Jain', ring: 'phrase', done: 5 }];
+    expect(growingCells(now, prev)).toEqual([{ tradition: 'Islam', ring: 'phrase', delta: 300 }, { tradition: "Baha'i", ring: 'hype', delta: 10 }]);
+    expect(growingCells(now, [])).toEqual([]);
+  });
+});

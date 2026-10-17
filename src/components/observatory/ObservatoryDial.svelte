@@ -17,6 +17,10 @@
   const rings = $derived(snapshot?.rings || []);
   const layout = $derived(dialLayout(traditions, rings.map((r) => r.id)));
   const cellOf = $derived(new Map((snapshot?.cells || []).map((c) => [`${c.tradition}|${c.ring}`, c])));
+  // what is being built RIGHT NOW (cells that grew since the last snapshot) throbs; a running job's ring glows faintly
+  // when none of its cells has moved yet (Chad 10-16: "throb that part to show what is currently being grown")
+  const growing = $derived(new Set((snapshot?.growing || []).map((g) => `${g.tradition}|${g.ring}`)));
+  const feeding = $derived(new Set(activeRings.filter((r) => ![...growing].some((k) => k.endsWith(`|${r}`)))));
 
   // particles: a stream to each ring being fed right now, along a fixed spread of angles (stable between renders)
   const particles = $derived.by(() => {
@@ -67,10 +71,12 @@
       {@const ring = rings[bi]}
       {@const c = cellOf.get(`${s.id}|${b.id}`)}
       {@const deg = c ? fillDeg(c.done, c.total, s.a0, s.a1) : 0}
-      <g class="cell" class:planned={ring?.planned} style={`--c: var(--obs-${SLUG[s.id]})`}
+      {@const grow = growing.has(`${s.id}|${b.id}`)}
+      <g class="cell" class:planned={ring?.planned} class:growing={grow} class:feeding={feeding.has(b.id)} style={`--c: var(--obs-${SLUG[s.id]}); --d: ${((s.a0 * 7 + b.r0) % 23) / 10}s`}
         onmouseenter={(e) => hover(e, s.id, ring)} onmousemove={(e) => hover(e, s.id, ring)} onmouseleave={() => onhover(null)} role="presentation">
         <path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a1)} class="track" />
         {#if deg > 0}<path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a0 + deg)} class="fill" filter={deg / (s.a1 - s.a0) > 0.02 ? 'url(#obs-glow)' : undefined} />{/if}
+        {#if grow}<path d={arcPath(C, C, b.r0 - 1, b.r1 + 1, s.a0 + Math.max(0, deg - 0.9), s.a0 + Math.max(0.9, deg))} class="front" />{/if}
       </g>
     {/each}
   {/each}
@@ -127,6 +133,14 @@
   .cell { cursor: crosshair; }
   .cell:hover .track { opacity: 0.28; }
   .cell.planned .track { opacity: 0.05; }
+  /* being built right now: the cell breathes, its growth front pulses bright */
+  .cell.growing .fill { animation: grow-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
+  .cell.growing .track { animation: track-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
+  .front { fill: #fff; filter: drop-shadow(0 0 6px var(--c)); animation: front-pulse 1.1s ease-in-out infinite; pointer-events: none; }
+  .cell.feeding .track { animation: track-throb 3.2s ease-in-out infinite; animation-delay: var(--d); }
+  @keyframes grow-throb { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 8px var(--c)); } }
+  @keyframes track-throb { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.32; } }
+  @keyframes front-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
   .trad { font: 600 13px/1 var(--obs-sans); letter-spacing: 0.14em; }
   .stage { font: 500 9.5px/1 var(--obs-mono); fill: var(--obs-text-dim); letter-spacing: 0.06em; }
   .stage-pct { fill: var(--obs-text); font-weight: 600; }
@@ -144,5 +158,6 @@
   .core-inner { fill: none; stroke: var(--obs-line); stroke-width: 1; stroke-dasharray: 2 5; }
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; }
+    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .front { animation: none; } }
 </style>

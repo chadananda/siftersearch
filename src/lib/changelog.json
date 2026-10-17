@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-17T00:48:15.626Z",
+  "generated": "2026-10-17T04:04:15.941Z",
   "entries": [
+    {
+      "hash": "4e5c1c4a",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "A run is claimed by exactly one lane — the writer returns the change count in rows[0]",
+      "scope": "ops"
+    },
+    {
+      "hash": "1a1f223c",
+      "date": "2026-10-16",
+      "type": "Performance",
+      "description": "Phrase indexing runs 3 jobs at once now its store is on an SSD",
+      "scope": "ops"
+    },
+    {
+      "hash": "494c25f6",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Index state rows are one-line title + one-line explanation, percentage beside its bar",
+      "scope": "home"
+    },
     {
       "hash": "da20f1e9",
       "date": "2026-10-16",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "The ʿayn sits UNDER the lens — clipped to the glass, rim and glint drawn on top of it",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "8961cfbc",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Highlighter as span.pen — the global mark{background:none !important} pinned the background, so the pen never showed",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "1e1cbf58",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "One fat input line that grows with the text; light-yellow highlighter pen on English and Arabic/Persian (token --highlight-pen)",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "0adf7dd4",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Highlight the original's clause by DECISION — Clef-flash picks which numbered clause says what the quote says (any translation); vector spans as fallback; logged as task sourcehunt-highlight with Jev shadow",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "4e5c1c4a",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "A run is claimed by exactly one lane — the writer returns the change count in rows[0]",
+        "scope": "ops"
+      },
+      {
+        "hash": "1a1f223c",
+        "date": "2026-10-16",
+        "type": "Performance",
+        "description": "Phrase indexing runs 3 jobs at once now its store is on an SSD",
+        "scope": "ops"
+      },
+      {
+        "hash": "494c25f6",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Index state rows are one-line title + one-line explanation, percentage beside its bar",
+        "scope": "home"
+      },
       {
         "hash": "da20f1e9",
         "date": "2026-10-16",
@@ -7003,27 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "The ʿayn sits UNDER the lens — clipped to the glass, rim and glint drawn on top of it",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "8961cfbc",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Highlighter as span.pen — the global mark{background:none !important} pinned the background, so the pen never showed",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "1e1cbf58",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "One fat input line that grows with the text; light-yellow highlighter pen on English and Arabic/Persian (token --highlight-pen)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "0adf7dd4",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Highlight the original's clause by DECISION — Clef-flash picks which numbered clause says what the quote says (any translation); vector spans as fallback; logged as task sourcehunt-highlight with Jev shadow",
         "scope": "sourcehunt"
       }
     ]

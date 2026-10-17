@@ -59,6 +59,15 @@ export function shapeCoverage(rows) {
   return { traditions, rings, cells };
 }
 
+/** Cells (tradition × ring) that grew since the previous snapshot — what is being built right now (Chad 10-16: "some
+ *  part of the circular graph is being built at all times … throb that part"). Pure. */
+export function growingCells(cells = [], prevCells = []) {
+  const before = new Map(prevCells.map((c) => [`${c.tradition}|${c.ring}`, c.done]));
+  return cells.filter((c) => before.has(`${c.tradition}|${c.ring}`) && c.done > before.get(`${c.tradition}|${c.ring}`))
+    .map((c) => ({ tradition: c.tradition, ring: c.ring, delta: c.done - before.get(`${c.tradition}|${c.ring}`) }))
+    .sort((a, b) => b.delta - a.delta);
+}
+
 /** The compact row kept for sparklines and rates. */
 export const seriesOf = (snap) => ({ ...Object.fromEntries(snap.rings.map((r) => [r.id, r.done])), ...Object.fromEntries(Object.entries(snap.vectors || {}).map(([k, v]) => [`v_${k}`, v])),
   people: snap.counts?.people ?? null, claims: snap.counts?.concept_claims ?? null, sections: snap.counts?.sections ?? null,
@@ -129,7 +138,9 @@ export async function buildSnapshot() {
   const { slowQueryCount } = await import('./repos/query-health-repo.js');
   const health = await systemHealth({ slowCount: () => slowQueryCount() }).catch(() => null);
   const shaped = shapeCoverage(rows);
+  const prev = await repo.latestSnapshot().then((p) => (p ? JSON.parse(p.data) : null)).catch(() => null);
+  const growing = growingCells(shaped.cells, prev?.cells || []);
   const paragraphs = shaped.traditions.reduce((n, t) => n + t.paragraphs, 0);
   return { at: Math.floor(Date.now() / 1000), corpus: { documents: counts.documents, paragraphs, traditions: shaped.traditions.filter((t) => t.id !== 'Other').length },
-    ...shaped, vectors, counts: { ...counts, people }, jobs: shapeJobs(ops), capability: shapeCapability(ki), health, roadmap: ROADMAP };
+    ...shaped, vectors, counts: { ...counts, people }, jobs: shapeJobs(ops), capability: shapeCapability(ki), health, roadmap: ROADMAP, growing };
 }
