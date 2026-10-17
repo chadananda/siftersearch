@@ -18,7 +18,10 @@
   let pulse = $state(null);   // every 15 s: I/O load per device, CPU, vector counts, writer rows/min (worker → /pulse)
 
   const snap = $derived(tel?.snapshot || null);
-  const rates = $derived(tel?.rates || {});
+  // last hour's rate, else the last day's: a stage's ledger figure moves in lumps (documents are re-measured in batches),
+  // so an hour can read 0 while the day shows steady growth
+  const rates = $derived(Object.fromEntries([...new Set([...Object.keys(tel?.rates || {}), ...Object.keys(tel?.rates_24h || {})])]
+    .map((k) => [k, (tel?.rates?.[k] || 0) > 0 ? tel.rates[k] : tel?.rates_24h?.[k] || 0])));
   const since = $derived(snap ? Math.max(0, now / 1000 - snap.at) : 0);
   const live = (v, key) => interpolate(v, rates[key], since);
   const ring = (id) => snap?.rings?.find((r) => r.id === id) || null;
@@ -61,6 +64,10 @@
   const jobs = $derived(pulse?.jobs || (snap?.jobs ? { running: snap.jobs.running, queued: 0 } : null));
   const jobsAt = $derived(pulse?.at ? pulse.at * 1000 : fetchedAt);
   const activeRings = $derived([...new Set((jobs?.running || []).map((j) => ringOfJob(j.name, j.label)).filter(Boolean))]);
+  // a stage being built shows four decimals, interpolated between snapshots at its measured rate, so progress visibly
+  // moves (Chad 10-16: "like 99.0137% instead of 99.1% which never moves"); idle stages keep one
+  const working = (id) => activeRings.includes(id) || (tel?.rates?.[id] || 0) > 0;   // a job on it, or it grew this hour
+  const POINTS = { keyword: 'paragraphs_kw', phrase: 'phrases', hype: 'hype', concepts: 'concepts' };
   const ago = (sec) => (sec < 90 ? `${Math.round(sec)} s ago` : sec < 5400 ? `${Math.round(sec / 60)} min ago` : `${(sec / 3600).toFixed(1)} h ago`);
   const levelOf = (p) => (p == null ? '' : p >= 85 ? 'hot' : p >= 60 ? 'warm' : 'cool');
 
@@ -127,11 +134,11 @@
           <div class="stage-top"><span class="stage-n mono">{String(i + 1).padStart(2, '0')}</span><span class="stage-name">{RING_INFO[r.id]?.title || r.label}</span></div>
           {#if RING_INFO[r.id]}<div class="stage-sub" title={RING_INFO[r.id].sub}>{RING_INFO[r.id].sub}</div>{/if}
           <div class="bar-row"><div class="bar"><span style={`width:${Math.max(r.done ? 0.6 : 0, Math.min(100, p))}%`}></span></div>
-            <span class="stage-pct mono">{r.planned ? 'planned' : pct(r.done, r.total)}</span></div>
+            <span class="stage-pct mono" class:ticking={working(r.id)}>{r.planned ? 'planned' : working(r.id) ? pct(Math.min(r.total, live(r.done, r.id)), r.total, 4) : pct(r.done, r.total)}</span></div>
           <div class="stage-foot mono">
             <span>{compact(live(r.done, r.id))} / {compact(r.total)} {r.id === 'sections' ? 'docs' : '¶'}</span>
             {#if r.core_total && !r.planned}<span class="core-tag">core {pct(r.core_done, r.core_total, 0)}</span>{/if}
-            {#if activeRings.includes(r.id)}<span class="working"><i></i>indexing</span>{:else if !r.planned && r.done < r.total}<span class="idle">idle</span>{/if}
+            {#if activeRings.includes(r.id)}<span class="working"><i></i>indexing{#if POINTS[r.id] && pulse?.vectors?.[POINTS[r.id]] != null}&nbsp;· {exact(pulse.vectors[POINTS[r.id]])} pts{/if}</span>{:else if !r.planned && r.done < r.total}<span class="idle">idle</span>{/if}
             {#if rates[r.id] > 0}<span class="up">{rate(rates[r.id])}</span>{/if}
             {#if series(r.id).filter((x) => x != null).length > 2}<svg class="spark" viewBox="0 0 80 16" aria-hidden="true"><path d={sparkPath(series(r.id), 80, 16, r.total * 0.002)} /></svg>{/if}
           </div>
@@ -326,6 +333,7 @@
   .working { display: inline-flex; align-items: center; gap: 4px; color: var(--obs-afterglow); font-weight: 600; }
   .working i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; animation: work-blink 1.4s ease-in-out infinite; }
   .idle { color: var(--obs-text-faint); }
+  .stage-pct.ticking { min-width: 64px; color: var(--obs-afterglow); font-variant-numeric: tabular-nums; }
   @keyframes work-blink { 50% { opacity: 0.3; } }
   .spark { width: 80px; height: 16px; margin-left: auto; }
   .spark path { fill: none; stroke: var(--obs-accent); stroke-width: 1.4; }

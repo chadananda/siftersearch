@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T05:15:09.096Z",
+  "generated": "2026-10-17T17:01:10.164Z",
   "entries": [
+    {
+      "hash": "27c44019",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "BM25 comes right after ingestion — ledger-driven keyword-fill job (core first) for the 666K-paragraph gap; stages say indexing/idle",
+      "scope": "index"
+    },
     {
       "hash": "2976b901",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Original-side highlight = ONE stretch chosen by start/end clause vote (Clef + Clef-flash, Jev tie-break), not a yes/no per clause",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "ba92c29e",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Within the writer's own book the verbatim paragraph outranks a meaning-only neighbour (Gleanings 60.3 beat the verbatim 60.2 on quotedCount — Liliane's quotes)",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "27c44019",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "BM25 comes right after ingestion — ledger-driven keyword-fill job (core first) for the 666K-paragraph gap; stages say indexing/idle",
+        "scope": "index"
+      },
       {
         "hash": "2976b901",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Original-side highlight = ONE stretch chosen by start/end clause vote (Clef + Clef-flash, Jev tie-break), not a yes/no per clause",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "ba92c29e",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Within the writer's own book the verbatim paragraph outranks a meaning-only neighbour (Gleanings 60.3 beat the verbatim 60.2 on quotedCount — Liliane's quotes)",
         "scope": "sourcehunt"
       }
     ]
