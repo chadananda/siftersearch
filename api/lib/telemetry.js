@@ -10,9 +10,11 @@ export const RINGS = [
   // BM25 right after ingestion, BEFORE vectors (Chad 10-16: "the first thing to be completed after initial paragraph
   // ingestion … it does not even depend on external vector generation")
   { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },
+  // document structure next (Chad 10-17): sub-documents and the TOC are metadata disambiguation and retrieval lean on;
+  // documents READ by the section index / documents (a single tablet has no sections but is done)
+  { id: 'sections', label: 'Sub-documents', short: 'SECT', of: (r, docs) => [r.generated, docs] },
   { id: 'embedding', label: 'Paragraph vectors', short: 'VEC', of: (r) => [r.generated, r.total] },
   { id: 'phrase', label: 'Phrase vectors', short: 'PHRASE', of: (r) => [r.reached, r.total] },
-  { id: 'sections', label: 'Sub-documents', short: 'SECT', of: (r, docs) => [r.docs_with, docs] },
   { id: 'context', label: 'Disambiguation', short: 'DISAMB', of: (r) => [r.generated, r.total] },
   { id: 'hype', label: 'Questions (HyPE)', short: 'HYPE', of: (r) => [r.generated, r.total] },
   { id: 'entities', label: 'Historical entities', short: 'ENTITY', of: (r) => [r.generated, r.total] },
@@ -23,7 +25,7 @@ export const RINGS = [
 // Developed in public (Chad 10-16): what is being built now and next — edited here, shipped with the code.
 export const ROADMAP = [
   { state: 'now', text: 'Findability: every paragraph found from a few remembered words — tested continuously below' },
-  { state: 'now', text: 'BM25 keywords for the last 666K paragraphs — Zoroastrian and Islamic core first' },
+  { state: 'now', text: 'Book structure — parts, chapters and headings — read for every document, then kept current as books arrive' },
   { state: 'now', text: 'Phrase vectors for the Islamic, Arabic and secondary literature' },
   { state: 'next', text: 'Indexing stores move from a hard disk to a 4 TB NVMe (~Oct 24)' },
   { state: 'next', text: 'Questions (HyPE) for the doctrinal core of every tradition' },

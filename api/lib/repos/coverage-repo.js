@@ -36,7 +36,7 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
       SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated, SUM(LENGTH(COALESCE(text, '')) > 0) AS texted
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0`, [hypeVersion || '', id], 'coverage:content');
   const total = c?.total || 0;
-  const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts] = await Promise.all([
+  const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure] = await Promise.all([
     queryOne(`SELECT COUNT(DISTINCT para_id) AS n FROM entity_mentions_v2 WHERE doc_id = ? AND status = 'active'`, [id], 'coverage:mentions'),
     queryOne('SELECT COUNT(DISTINCT para_id) AS n FROM concept_claims WHERE doc_id = ? AND proof_ok = 1', [id], 'coverage:concepts'),
     queryOne(`SELECT COUNT(DISTINCT c.id) AS n FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL AND (
@@ -44,6 +44,7 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
         EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL))`, [id], 'coverage:alignment'),
     queryOne('SELECT COUNT(*) AS n, COALESCE(SUM(paragraphs), 0) AS paras FROM doc_sections WHERE doc_id = ?', [id], 'coverage:sections'),
     count('paragraphs_kw', id), count('phrases', id), count('hype', id), count('concepts', id),
+    queryOne('SELECT sections FROM doc_structure WHERE doc_id = ?', [id], 'coverage:structure'),
   ]);
   // a count that failed (Qdrant busy, timeout) is UNKNOWN, not zero: keep the document's last good figure (10-16: zeros
   // from timed-out counts made phrase/keyword coverage appear to shrink by ~66K paragraphs an hour)
@@ -60,7 +61,9 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     // and keyword-fill re-sent their 203K paragraphs every 10 minutes)
     row('keyword', c?.texted ?? total, c?.texted ?? total, kwN, null, c?.texted ?? total),
     row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
-    row('sections', sections?.n, sections?.n, sections?.n, null, sections?.n || 0),
+    // structure is per DOCUMENT: total 1, generated 1 once the section index has read it (with or without sections),
+    // indexed = its sections — so the ring reads documents read / documents (Chad 10-17: structure right after ingestion)
+    row('sections', structure ? 1 : 0, structure ? 1 : 0, sections?.n || 0, null, 1),
     row('context', c?.context, c?.context, null),                       // feeds HyPE/extraction; not searched itself
     row('hype', c?.hype, c?.hype_current, hypeN, hypeVersion),           // points = questions
     row('entities', c?.extracted, c?.extracted, mentions?.n),
@@ -95,6 +98,14 @@ export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 100
         current = current + excluded.current, indexed = indexed + excluded.indexed, reached = reached + excluded.reached, docs_with = docs_with + excluded.docs_with`, args: [id] },
   ], 'coverage:save');
   return rows.length;
+}
+
+/** The section index just read a document: move its ledger 'sections' row (1 of 1, indexed = sections) without
+ *  re-measuring every layer, keeping the document's core flag. */
+export async function saveStructureCoverage(docId, sections) {
+  const id = Number(docId);
+  const core = (await queryOne(`SELECT core FROM index_coverage WHERE doc_id = ? AND layer = 'text'`, [id], 'coverage:core-of'))?.core ?? 0;
+  return saveCoverage(id, [{ layer: 'sections', total: 1, generated: 1, current: 1, indexed: sections, version: null, core }]);
 }
 
 /** Rebuild coverage_totals from the whole ledger (daily, and when empty) — corrects drift the deltas cannot see. */

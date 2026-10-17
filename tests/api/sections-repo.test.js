@@ -10,6 +10,7 @@ CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER NOT NULL, ord 
   start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, paragraphs INTEGER NOT NULL, first_para_id INTEGER,
   source TEXT NOT NULL DEFAULT 'heading-run', UNIQUE (doc_id, ord));
 CREATE VIRTUAL TABLE doc_sections_fts USING fts5(title, book, tokenize = 'unicode61 remove_diacritics 2');
+CREATE TABLE doc_structure (doc_id INTEGER PRIMARY KEY, sections INTEGER NOT NULL DEFAULT 0, source TEXT, indexed_at INTEGER NOT NULL);
 `;
 vi.mock('../../api/lib/db.js', () => ({
   query: vi.fn(async (sql, p = []) => { const r = raw.prepare(sql).run(...p); return { rows: [{ changes: r.changes }] }; }),
@@ -29,6 +30,12 @@ beforeEach(() => {
 });
 
 describe('sections-repo', () => {
+  it('a document READ is marked even with no structure; unread documents are what the structure loop queues', async () => {
+    expect(await repo.docsWithoutStructure()).toEqual([20894, 21310]);
+    await repo.replaceSections(20894, 'The World Order of Bahá’u’lláh', []);
+    expect(raw.prepare('SELECT doc_id, sections, source FROM doc_structure').all()).toEqual([{ doc_id: 20894, sections: 0, source: null }]);
+    expect(await repo.docsWithoutStructure()).toEqual([21310]);
+  });
   it('builds from stored headings and finds a part by its name and its book’s', async () => {
     const n = await repo.replaceSections(21310, 'God Passes By', sectionsFromRows(await repo.headingRowsForDoc(21310)));
     expect(n).toBe(3);

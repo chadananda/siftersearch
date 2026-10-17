@@ -15,7 +15,7 @@ export const coverageRollup = () => queryAll(`SELECT religion, layer, SUM(docs) 
 export async function libraryCounts() {
   const [docs, t] = await Promise.all([
     queryOne('SELECT COUNT(*) AS n FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL', [], 'telemetry:docs'),
-    queryOne(`SELECT SUM(CASE WHEN layer = 'sections' THEN generated ELSE 0 END) AS sections, SUM(CASE WHEN layer = 'concepts' THEN indexed ELSE 0 END) AS claims,
+    queryOne(`SELECT SUM(CASE WHEN layer = 'sections' THEN indexed ELSE 0 END) AS sections, SUM(CASE WHEN layer = 'concepts' THEN indexed ELSE 0 END) AS claims,
       SUM(CASE WHEN layer = 'text' THEN docs ELSE 0 END) AS measured FROM coverage_totals`, [], 'telemetry:totals'),
   ]);
   return { documents: docs?.n || 0, sections: t?.sections || 0, concept_claims: t?.claims || 0, measured_docs: t?.measured || 0 };

@@ -11,6 +11,7 @@ CREATE TABLE entity_mentions_v2 (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id
 CREATE TABLE concept_claims (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, proof_ok INTEGER);
 CREATE TABLE content_alignment (id INTEGER PRIMARY KEY, trans_id INTEGER, orig_id INTEGER, retired_at INTEGER);
 CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraphs INTEGER);
+CREATE TABLE doc_structure (doc_id INTEGER PRIMARY KEY, sections INTEGER NOT NULL DEFAULT 0, source TEXT, indexed_at INTEGER NOT NULL);
 CREATE TABLE index_coverage (doc_id INTEGER NOT NULL, layer TEXT NOT NULL, total INTEGER NOT NULL DEFAULT 0, generated INTEGER NOT NULL DEFAULT 0,
   current INTEGER NOT NULL DEFAULT 0, indexed INTEGER NOT NULL DEFAULT 0, version TEXT, core INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL, PRIMARY KEY (doc_id, layer)) WITHOUT ROWID;
 CREATE TABLE coverage_totals (religion TEXT NOT NULL, layer TEXT NOT NULL, core INTEGER NOT NULL, docs INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 0,

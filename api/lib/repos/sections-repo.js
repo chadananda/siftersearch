@@ -10,6 +10,11 @@ const foldText = (s) => String(s || '').replace(/[’‘'ʼ`]/g, '');
 
 /** A document's live paragraphs with their stored heading and file paragraph id (block_attrs for library files,
  *  external_para_id for OceanLibrary site documents), in order (sections.js). */
+/** Live documents the section index has not read yet (new ingests first in id order) — structure right after ingestion. */
+export const docsWithoutStructure = (limit = 500) =>
+  queryAll(`SELECT d.id FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+    AND NOT EXISTS (SELECT 1 FROM doc_structure s WHERE s.doc_id = d.id) ORDER BY d.id LIMIT ?`, [limit], 'sections:unread').then((r) => r.map((x) => x.id));
+
 export const headingRowsForDoc = (docId) =>
   queryAll('SELECT id, paragraph_index, heading, block_attrs, external_para_id FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [Number(docId)], 'sections:rows');
 
@@ -26,6 +31,8 @@ export async function replaceSections(docId, bookTitle, sections, source = 'head
     stmts.push({ sql: 'INSERT INTO doc_sections_fts (rowid, title, book) SELECT id, ?, ? FROM doc_sections WHERE doc_id = ? AND ord = ?',
       args: [foldText(s.title), foldText(bookTitle), id, s.ord] });
   }
+  stmts.push({ sql: 'INSERT OR REPLACE INTO doc_structure (doc_id, sections, source, indexed_at) VALUES (?, ?, ?, ?)',
+    args: [id, sections.length, sections.length ? source : null, Math.floor(Date.now() / 1000)] });   // read, even with no structure
   await transaction(stmts, 'sections:replace');
   return sections.length;
 }

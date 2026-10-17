@@ -1678,6 +1678,15 @@ export const migrations = {
     await query(`CREATE TABLE IF NOT EXISTS telemetry_pulse (id INTEGER PRIMARY KEY CHECK (id = 1), at INTEGER NOT NULL, data TEXT NOT NULL)`);
     logger.info('Migration 154 complete: telemetry_pulse');
   },
+
+  155: async () => {
+    // DOCUMENT STRUCTURE (Chad 10-17: sub-documents and the TOC right after ingestion — "important metadata for
+    // disambiguation"): one row per document the section index has READ, even when it found no structure, so progress is
+    // documents read / documents, not documents-with-sections (a single tablet has none and would never count).
+    await query(`CREATE TABLE IF NOT EXISTS doc_structure (doc_id INTEGER PRIMARY KEY, sections INTEGER NOT NULL DEFAULT 0, source TEXT,
+      indexed_at INTEGER NOT NULL)`);
+    logger.info('Migration 155 complete: doc_structure');
+  },
 };
 
 export const graphMigrations = {

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-17T19:15:08.277Z",
+  "generated": "2026-10-17T19:25:08.418Z",
   "entries": [
+    {
+      "hash": "d96f5ed4",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Stop the keyword-fill write loop — the ledger counts only paragraphs with text for BM25, and the loop queues only when the gap changed",
+      "scope": "index"
+    },
+    {
+      "hash": "71bcce69",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Tradition sub-progress always four decimals, so lines compare",
+      "scope": "home"
+    },
     {
       "hash": "46774726",
       "date": "2026-10-17",
@@ -3486,24 +3500,24 @@
       "type": "Other",
       "description": "SourceHunt over the 498 Bahá'í Sacred Writings selections via the public API — proposed Original-Language Source (col V) + source check vs the sheet",
       "scope": "bsw"
-    },
-    {
-      "hash": "f1b280cd",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Source-hunt exclude {documentIds,titles} (a compilation checking its own selections); original carries documentId/paragraphId; scripts/sourcehunt/batch-csv.mjs runs a sheet through the public API",
-      "scope": "api"
-    },
-    {
-      "hash": "35a86437",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Citations are passages that QUOTE the source — wording holders or link-graph quoters only; the holds decision accepts another translation of the same sentence, never a passage making the same point (Chad 10-05: 'we are not looking for similar points … we are looking for citations')",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "d96f5ed4",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Stop the keyword-fill write loop — the ledger counts only paragraphs with text for BM25, and the loop queues only when the gap changed",
+        "scope": "index"
+      },
+      {
+        "hash": "71bcce69",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Tradition sub-progress always four decimals, so lines compare",
+        "scope": "home"
+      },
       {
         "hash": "46774726",
         "date": "2026-10-17",
@@ -7013,20 +7027,6 @@
         "type": "Other",
         "description": "SourceHunt over the 498 Bahá'í Sacred Writings selections via the public API — proposed Original-Language Source (col V) + source check vs the sheet",
         "scope": "bsw"
-      },
-      {
-        "hash": "f1b280cd",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Source-hunt exclude {documentIds,titles} (a compilation checking its own selections); original carries documentId/paragraphId; scripts/sourcehunt/batch-csv.mjs runs a sheet through the public API",
-        "scope": "api"
-      },
-      {
-        "hash": "35a86437",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Citations are passages that QUOTE the source — wording holders or link-graph quoters only; the holds decision accepts another translation of the same sentence, never a passage making the same point (Chad 10-05: 'we are not looking for similar points … we are looking for citations')",
-        "scope": "sourcehunt"
       }
     ]
   }

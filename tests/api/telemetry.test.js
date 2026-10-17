@@ -10,12 +10,12 @@ describe('telemetry shaping', () => {
   it('rings × traditions with the right measure per ring; unknown traditions fold into Other', () => {
     const s = shapeCoverage([
       row("Baha'i", 'text', { indexed: 100 }), row("Baha'i", 'phrase', { indexed: 5000, reached: 80 }), row("Baha'i", 'hype', { generated: 10, core_generated: 10 }),
-      row("Baha'i", 'sections', { total: 7, generated: 7, docs_with: 1 }), row('Wicca', 'text', { indexed: 40, total: 40 }),
+      row("Baha'i", 'sections', { total: 2, generated: 1, indexed: 7, docs_with: 1 }), row('Wicca', 'text', { indexed: 40, total: 40 }),
     ]);
     expect(s.traditions.map((t) => t.id)).toEqual(["Baha'i", 'Other']);
     const cell = (t, r) => s.cells.find((c) => c.tradition === t && c.ring === r);
     expect(cell("Baha'i", 'phrase')).toMatchObject({ done: 80, total: 100 });       // paragraphs reached, not points
-    expect(cell("Baha'i", 'sections')).toMatchObject({ done: 1, total: 2 });          // documents with sections
+    expect(cell("Baha'i", 'sections')).toMatchObject({ done: 1, total: 2 });          // documents READ for structure / documents
     expect(cell("Baha'i", 'concepts')).toMatchObject({ done: 0, total: 100 });       // no row → empty, never missing
     const hype = s.rings.find((r) => r.id === 'hype');
     expect(hype).toMatchObject({ done: 10, core_done: 10 });

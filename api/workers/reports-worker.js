@@ -79,7 +79,7 @@ async function rollingCoverage() {
   }
 }
 
-// BM25 right behind ingestion (Chad 10-16: "the first thing to be completed after initial paragraph ingestion"): every
+// BM25 and document structure right behind ingestion (Chad 10-16: "the first thing to be completed after initial paragraph ingestion"): every
 // 10 minutes, if the ledger shows a real keyword gap, queue keyword-fill (enqueue dedupes a queued/running twin).
 async function keywordLoop() {
   const { keywordGapDocs } = await import('../lib/repos/keyword-repo.js');
@@ -94,6 +94,9 @@ async function keywordLoop() {
       last = sig;
       await enqueue('keyword-fill', { significant: true }, 'keyword-loop').catch((err) => logger.warn({ err: err.message }, 'keyword loop: enqueue failed'));
     }
+    // document structure (sub-documents, TOC) right after ingestion (Chad 10-17): read every live document not yet read
+    const unread = await (await import('../lib/repos/sections-repo.js')).docsWithoutStructure(1).catch(() => []);
+    if (unread.length) await enqueue('section-index', { unread: true }, 'structure-loop').catch((err) => logger.warn({ err: err.message }, 'structure loop: enqueue failed'));
     await new Promise((r) => setTimeout(r, 600_000));
   }
 }

@@ -48,12 +48,14 @@ async function upsert(points, fetchImpl = fetch) {
 export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary', significant = false } = {}, { fetchImpl = fetch } = {}) {
   const docs = ids?.length ? ids.map((id) => ({ id: Number(id) })) : await keywordGapDocs({ scope, significant });
   const avg = avgLen(), v = await hypeVersion();
-  const stats = { docs: 0, of: docs.length, points: 0, still_short: 0, short_samples: [] };
+  const stats = { docs: 0, of: docs.length, points: 0, tokenless: 0, still_short: 0, short_samples: [] };
   let lastLog = Date.now();
   for (const d of limit ? docs.slice(0, limit) : docs) {
     const rows = await keywordRowsForDoc(d.id);
+    let tokenless = 0, sample = null;
     for (let i = 0; i < rows.length; i += BATCH) {
-      const pts = rows.slice(i, i + BATCH).map((p) => keywordPoint(p, avg)).filter(Boolean);
+      const slice = rows.slice(i, i + BATCH), pts = [];
+      for (const p of slice) { const pt = keywordPoint(p, avg); if (pt) pts.push(pt); else { tokenless++; sample ??= String(p.text).slice(0, 60); } }
       if (pts.length) { await upsert(pts, fetchImpl); stats.points += pts.length; }
     }
     const measured = await measureDoc(d.id, { hypeVersion: v });
@@ -61,9 +63,9 @@ export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary',
     const kw = measured.find((r) => r.layer === 'keyword');
     if (kw && kw.indexed < kw.total) {   // punctuation-only paragraphs tokenise to nothing and have no point
       stats.still_short++;
-      if (stats.short_samples.length < 8) stats.short_samples.push({ id: d.id, total: kw.total, rows: rows.length, indexed: kw.indexed });
+      if (stats.short_samples.length < 8) stats.short_samples.push({ id: d.id, total: kw.total, rows: rows.length, tokenless, indexed: kw.indexed, sample });
     }
-    stats.docs++;
+    stats.tokenless += tokenless; stats.docs++;
     if (Date.now() - lastLog > 60000) { lastLog = Date.now(); logActivity('index', `bm25 fill · ${stats.docs}/${stats.of} documents · +${stats.points.toLocaleString('en-US')} keyword points`); }
   }
   return stats;
