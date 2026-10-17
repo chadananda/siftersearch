@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:34:57.684Z",
+  "generated": "2026-10-17T04:40:06.661Z",
   "entries": [
+    {
+      "hash": "f62512e9",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "PPI scope — the whole dial fades behind the trace and is redrawn as it passes; active cells' outlines painted in P7 afterglow",
+      "scope": "home"
+    },
     {
       "hash": "759cf24c",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "An un-elided quote highlights one continuous run of clauses (drops a stray 0.61 clause); model-neutral caption",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "f4ecb882",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "POST /api/v1/source-hunt and /api/v1/source-hunt/page (article → its quotations, each traced); SourceHunt stages run in parallel + per-stage timings",
-      "scope": "api"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "f62512e9",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "PPI scope — the whole dial fades behind the trace and is redrawn as it passes; active cells' outlines painted in P7 afterglow",
+        "scope": "home"
+      },
       {
         "hash": "759cf24c",
         "date": "2026-10-16",
@@ -7018,13 +7025,6 @@
         "type": "Fixed",
         "description": "An un-elided quote highlights one continuous run of clauses (drops a stray 0.61 clause); model-neutral caption",
         "scope": "sourcehunt"
-      },
-      {
-        "hash": "f4ecb882",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "POST /api/v1/source-hunt and /api/v1/source-hunt/page (article → its quotations, each traced); SourceHunt stages run in parallel + per-stage timings",
-        "scope": "api"
       }
     ]
   }

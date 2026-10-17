@@ -257,7 +257,8 @@
     --obs-core-hi: light-dark(#ffffff, #10233b); --obs-core-lo: light-dark(#e2ecf6, #070f1c);
     --obs-sweep: light-dark(#0284c7, #38bdf8);
     --obs-phosphor: light-dark(#0369a1, #9fdcf5); --obs-phosphor-hot: light-dark(#075985, #eef9ff);   /* P7: blue-white trace + flash */
-    --obs-shade: light-dark(rgba(241, 245, 249, 0.62), rgba(3, 8, 18, 0.62));                        /* scope persistence: how far a turn-old paint has faded */
+    --obs-shade: light-dark(rgba(241, 245, 249, 0.7), rgba(3, 8, 18, 0.72));   /* scope persistence: how far a turn-old paint has faded */
+    --obs-glow: light-dark(rgba(14, 165, 233, 0.10), rgba(125, 211, 252, 0.20));                   /* the fresh redraw behind the trace */
     --obs-afterglow: light-dark(#4d7c0f, #b9f06a);                                                   /* P7: yellow-green persistence */
     --obs-bahai: light-dark(#b7791f, #fbbf24); --obs-islam: light-dark(#047857, #34d399); --obs-christian: light-dark(#b91c1c, #f87171);
     --obs-judaism: light-dark(#1d4ed8, #60a5fa); --obs-zoroastrian: light-dark(#c2410c, #fb923c); --obs-hindu: light-dark(#be185d, #f472b6);

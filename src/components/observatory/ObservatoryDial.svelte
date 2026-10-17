@@ -44,17 +44,26 @@
   // excites the phosphor, which flashes blue-white and decays through a yellow-green afterglow over the turn; a target is
   // seen as its OUTLINE painted, azimuth by azimuth, as the trace crosses it. The targets are the cells being built right
   // now — each cell that measurably grew, or, before any has moved, every unfinished cell of a ring a running job feeds.
-  // Trace and paint are phase-locked to the wall clock, so they stay in step however late a target is drawn.
+  // Trace, persistence and paint share ONE clock: each animation's startTime is pinned on the document timeline (use:lock)
+  // to the same turn origin plus its own offset. CSS animation-delay is NOT enough — a delay counts from when the element
+  // was inserted or restyled, so every snapshot refresh slid the paint out of step with the sweep (Chad 10-16).
   const SWEEP_S = 14, LEAD_DEG = 28, STEP = 1;           // one turn; the trace sits LEAD_DEG ahead of the wedge's start; 1° paint
-  let phase = $state(null);                              // seconds into the current turn at mount (client only)
-  $effect(() => { phase = (Date.now() / 1000) % SWEEP_S; });
-  const hitAt = (a, t) => ((((a - LEAD_DEG) % 360) + 360) % 360 / 360 * SWEEP_S - t).toFixed(2);   // delay until the trace reaches a
+  let phase = $state(null);                              // set once mounted (client only); turns the scope on
+  $effect(() => { phase = 0; });
+  // a turn boundary on the document timeline, in the past, aligned to the wall clock so every view sweeps alike
+  const T0 = typeof performance === 'undefined' ? 0 : performance.now() - (Date.now() % (SWEEP_S * 1000)) - SWEEP_S * 1000;
+  /** Svelte action: pin this element's animations to start `offset` seconds into the turn that began at T0. */
+  function lock(node, offset = 0) {
+    const pin = (o) => { for (const a of node.getAnimations()) a.startTime = T0 + o * 1000; };
+    pin(offset);
+    return { update: pin };
+  }
+  const hitAt = (a) => ((((a - LEAD_DEG) % 360) + 360) % 360) / 360 * SWEEP_S;   // seconds into a turn when the trace reaches a
   const arc = (r, a0, a1) => { const [x0, y0] = polar(C, C, r, a0), [x1, y1] = polar(C, C, r, a1); return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
   const radial = (r0, r1, a) => { const [x0, y0] = polar(C, C, r0, a), [x1, y1] = polar(C, C, r1, a); return `M${x0.toFixed(1)} ${y0.toFixed(1)}L${x1.toFixed(1)} ${y1.toFixed(1)}`; };
   const blips = $derived.by(() => {
     if (phase == null) return [];
     const growRings = new Set([...growing].map((k) => k.split('|')[1]));
-    const t = (Date.now() / 1000) % SWEEP_S;
     const out = [];
     for (const ringId of new Set([...activeRings, ...growRings])) {
       const band = layout.bands.find((b) => b.id === ringId);
@@ -64,12 +73,12 @@
         if (!c?.total) continue;
         if (growRings.has(ringId) ? !growing.has(key) : c.done >= c.total) continue;
         // the cell's outline: leading edge, then inner + outer arcs a degree at a time, then trailing edge
-        out.push({ key: `${key}|L`, d: radial(band.r0, band.r1, sec.a0), delay: hitAt(sec.a0, t) });
+        out.push({ key: `${key}|L`, d: radial(band.r0, band.r1, sec.a0), delay: hitAt(sec.a0) });
         for (let a = sec.a0; a < sec.a1 - 0.01; a += STEP) {
           const a1 = Math.min(sec.a1, a + STEP + 0.05);
-          out.push({ key: `${key}|${a.toFixed(1)}`, d: arc(band.r0, a, a1) + arc(band.r1, a, a1), delay: hitAt(a + STEP / 2, t) });
+          out.push({ key: `${key}|${a.toFixed(1)}`, d: arc(band.r0, a, a1) + arc(band.r1, a, a1), delay: hitAt(a + STEP / 2) });
         }
-        out.push({ key: `${key}|T`, d: radial(band.r0, band.r1, sec.a1), delay: hitAt(sec.a1, t) });
+        out.push({ key: `${key}|T`, d: radial(band.r0, band.r1, sec.a1), delay: hitAt(sec.a1) });
       }
     }
     return out;
@@ -133,10 +142,10 @@
   {/each}
 
   <!-- the sweep -->
-  <g class="sweep" style={phase == null ? '' : `animation-delay: -${phase.toFixed(2)}s`}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" /><line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="beam-line" /></g>
+  <g class="sweep" use:lock={0}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" /><line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="beam-line" /></g>
   <!-- radar returns: the outline of each cell being built, painted by the trace, decaying like phosphor -->
   <g class="scope">
-    {#each blips as bl (bl.key)}<path d={bl.d} class="blip" style={`animation-delay: ${bl.delay}s`} />{/each}
+    {#each blips as bl (bl.key)}<path d={bl.d} class="blip" use:lock={bl.delay} />{/each}
   </g>
 
   <!-- particles: work flowing from the library into the stage being built -->
@@ -163,7 +172,9 @@
 </svg>
 <!-- persistence: everything on the scope fades behind the trace and is redrawn as it passes (Chad 10-16: "in a radar,
      everything on the screen gradually fades and the sweeping line redraws it") — a conic shade rotating with the sweep -->
-<div class="persist" aria-hidden="true" style={phase == null ? 'display:none' : `--lead: ${LEAD_DEG}deg; animation-delay: -${phase.toFixed(2)}s`}></div>
+<div class="persist" aria-hidden="true" style={`--lead: ${LEAD_DEG}deg`} use:lock={0}></div>
+<!-- the freshly redrawn wedge just behind the trace is brighter than the rest: the phosphor's first glow -->
+<div class="persist fresh" aria-hidden="true" style={`--lead: ${LEAD_DEG}deg`} use:lock={0}></div>
 
 <style>
   .dial { width: 100%; height: auto; display: block; overflow: visible; }
@@ -186,8 +197,10 @@
     -webkit-mask-image: radial-gradient(circle closest-side, transparent 24.6%, #000 25.4%, #000 86.8%, transparent 87.6%);
     mask-image: radial-gradient(circle closest-side, transparent 24.6%, #000 25.4%, #000 86.8%, transparent 87.6%);
     animation: obs-spin 14s linear infinite; }
+  .persist.fresh { mix-blend-mode: plus-lighter;
+    background: conic-gradient(from var(--lead), transparent 0deg, transparent 250deg, color-mix(in srgb, var(--obs-glow) 35%, transparent) 330deg, var(--obs-glow) 359deg, transparent 360deg); }
   .scope { filter: drop-shadow(0 0 3px var(--obs-afterglow)); pointer-events: none; }
-  .blip { fill: none; stroke: var(--obs-afterglow); stroke-width: 2; stroke-linecap: round; opacity: 0; animation: blip 14s linear infinite; }
+  .blip { fill: none; stroke: var(--obs-afterglow); stroke-width: 2.4; stroke-linecap: round; opacity: 0; animation: blip 14s linear infinite; }
   .beam-line { stroke: var(--obs-phosphor); stroke-width: 1.4; opacity: 0.75; stroke-linecap: round; }
   /* P7 phosphor: blue-white flash where the trace strikes, then a long yellow-green afterglow fading over the turn */
   @keyframes blip { 0% { opacity: 1; stroke: var(--obs-phosphor-hot); } 4% { stroke: var(--obs-afterglow); opacity: 0.95; } 30% { opacity: 0.6; } 60% { opacity: 0.28; } 90% { opacity: 0.06; } 100% { opacity: 0; } }
