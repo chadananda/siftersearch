@@ -73,9 +73,13 @@ export function createExports(manifest) {
             return out;
           }
           if (request.method === 'GET' && !isLiveState(url.pathname)) {
+            // The EDGE keeps public API responses for their s-maxage; the BROWSER keeps none. The zone's Browser Cache TTL
+            // rewrites max-age to 14400 on whatever leaves here, so the home-page Observatory read a 2.6-hour-old
+            // telemetry snapshot for every refresh (2026-10-17) while the API served a fresh one. Edge hits are ~ms anyway.
+            const toBrowser = (r) => { const out = new Response(r.body, r); out.headers.set('cache-control', 'no-store, max-age=0'); out.headers.delete('expires'); return out; };
             const cache = caches.default;
             const hit = await cache.match(request);
-            if (hit) return hit;
+            if (hit) return toBrowser(hit);
             const res = await fetch(target, request);
             const cc = res.headers.get('cache-control') || '';
             if (res.ok && cc.includes('public') && /s-maxage=[1-9]/.test(cc) && !cc.includes('no-store')) {
@@ -89,7 +93,7 @@ export function createExports(manifest) {
               stored.headers.set('cache-control', `public, max-age=${ttl}, s-maxage=${ttl}`);
               ctx.waitUntil(cache.put(request, stored));
             }
-            return res;
+            return toBrowser(res);
           }
           // Same-zone subrequest: cannot recurse into this worker, streams SSE bodies straight through.
           return fetch(target, request);

@@ -1511,7 +1511,8 @@ export default {
  */
 async function observatoryGet(path) {
   const t0 = performance.now();
-  const res = await fetch(`${API_URL}${path}`, { headers: { Accept: 'application/json' } });
+  // cache: 'no-store' — browsers already holding a copy under the zone's 4-hour Browser Cache TTL must not reuse it (10-17)
+  const res = await fetch(`${API_URL}${path}`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   const data = await res.json();
   return { data, ms: Math.round(performance.now() - t0), cache: res.headers.get('cf-cache-status') || null };

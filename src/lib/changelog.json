@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T17:35:01.205Z",
+  "generated": "2026-10-17T19:11:34.996Z",
   "entries": [
+    {
+      "hash": "2fddd229",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Tradition sub-progress ticks — decimals sized to each tradition's rate, truncated (never 100% with work left); remainders under 100 paragraphs hidden",
+      "scope": "home"
+    },
     {
       "hash": "e54ee68d",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Citation range links only where the citation holds the quote verbatim (SAQ's paraphrase of the Supreme Tribunal got a fragment on 'governments and peoples')",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "1d11a154",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "The source's own other copy (same title) is not listed as a citation",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "2fddd229",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Tradition sub-progress ticks — decimals sized to each tradition's rate, truncated (never 100% with work left); remainders under 100 paragraphs hidden",
+        "scope": "home"
+      },
       {
         "hash": "e54ee68d",
         "date": "2026-10-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Citation range links only where the citation holds the quote verbatim (SAQ's paraphrase of the Supreme Tribunal got a fragment on 'governments and peoples')",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "1d11a154",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "The source's own other copy (same title) is not listed as a citation",
         "scope": "sourcehunt"
       }
     ]
