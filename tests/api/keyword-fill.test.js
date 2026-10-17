@@ -61,4 +61,11 @@ describe('keyword fill', () => {
     expect(measured).toEqual([1]);
     expect(stats).toMatchObject({ docs: 1, of: 2, points: 2, still_short: 0 });
   });
+  it('a document indexed except for rows with no words is only recorded — nothing re-sent', async () => {
+    raw.exec(`UPDATE index_coverage SET total = 3, indexed = 2 WHERE doc_id = 1 AND layer = 'keyword'; INSERT INTO content VALUES (15,1,'|',NULL,NULL,0);`);
+    const calls = [];
+    const stats = await keywordFillJob({ limit: 1 }, { fetchImpl: async (u) => { calls.push(u); return { ok: true, json: async () => ({}) }; } });
+    expect(calls).toEqual([]);
+    expect(stats).toMatchObject({ docs: 1, tokenless: 1, recorded_only: 1, points: 0 });
+  });
 });

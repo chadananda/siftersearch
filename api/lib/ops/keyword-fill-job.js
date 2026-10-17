@@ -53,11 +53,16 @@ export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary',
   for (const d of limit ? docs.slice(0, limit) : docs) {
     const rows = await keywordRowsForDoc(d.id);
     let tokenless = 0, sample = null;
+    const batches = [];
     for (let i = 0; i < rows.length; i += BATCH) {
-      const slice = rows.slice(i, i + BATCH), pts = [];
-      for (const p of slice) { const pt = keywordPoint(p, avg); if (pt) pts.push(pt); else { tokenless++; sample ??= String(p.text).slice(0, 60); } }
-      if (pts.length) { await upsert(pts, fetchImpl); stats.points += pts.length; }
+      const pts = [];
+      for (const p of rows.slice(i, i + BATCH)) { const pt = keywordPoint(p, avg); if (pt) pts.push(pt); else { tokenless++; sample ??= String(p.text).slice(0, 60); } }
+      batches.push(pts);
     }
+    // already complete except for rows with no words: just record those — no re-send (spares the NVMe a rewrite)
+    const complete = d.indexed != null && d.indexed + tokenless >= rows.length;
+    if (complete) stats.recorded_only = (stats.recorded_only || 0) + 1;
+    else for (const pts of batches) { if (pts.length) { await upsert(pts, fetchImpl); stats.points += pts.length; } }
     await saveUnindexable(d.id, 'keyword', tokenless);   // before measuring, so the ledger leaves them out
     const measured = await measureDoc(d.id, { hypeVersion: v });
     if (measured.length) await saveCoverage(d.id, measured);
