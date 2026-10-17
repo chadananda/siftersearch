@@ -39,21 +39,34 @@
     return out;
   });
 
-  // ACTIVITY, made impossible to miss (Chad 10-16: "make an active line very bright and draw attention … the very faint
-  // throb does not cut it"): every ring being built lights up as the radar sweep crosses it, the glow dissipating behind; every cell that grew gets an ENERGY
-  // BEAM from the library's core, a halo and a running bright outline. Rings come from running jobs and from cells that
-  // measurably grew — nothing lights up that is not happening.
-  const activeBands = $derived([...new Set([...activeRings, ...[...growing].map((k) => k.split('|')[1])])]
-    .map((id) => layout.bands.find((b) => b.id === id)).filter(Boolean));
-  const AFTERGLOW = Array.from({ length: 34 }, (_, i) => i);   // 3° segments trailing the sweep (~100°), faint → bright
-  const beams = $derived((snapshot?.growing || []).slice(0, 8).map((g, i) => {
-    const sec = layout.sectors.find((x) => x.id === g.tradition), band = layout.bands.find((b) => b.id === g.ring);
-    const c = cellOf.get(`${g.tradition}|${g.ring}`);
-    if (!sec || !band || !c) return null;
-    const a = sec.a0 + Math.max(0.5, fillDeg(c.done, c.total, sec.a0, sec.a1)) - 0.4;   // the growth front
-    const [x0, y0] = polar(C, C, 120, a), [x1, y1] = polar(C, C, (band.r0 + band.r1) / 2, a);
-    return { key: `${g.tradition}|${g.ring}`, x0, y0, x1, y1, slug: SLUG[g.tradition], delay: (i * 0.37) % 1.5 };
-  }).filter(Boolean));
+  // ACTIVITY as RADAR (Chad 10-16: "like a radar where the sweep lights up objects as it passes over them and then glow
+  // brightly and gradually fade"). The objects are the growth fronts being built right now — each cell that measurably grew,
+  // or, before a cell has moved, every unfinished cell of a ring a running job is feeding. Each blip flashes as the sweep's
+  // leading edge crosses its angle and fades over the turn. Sweep and blips are phase-locked to the wall clock, so they stay
+  // in step however late a blip is drawn. Nothing lights up that is not happening.
+  const SWEEP_S = 14, LEAD_DEG = 28;                     // one turn; the sweep's bright edge sits LEAD_DEG ahead of its start
+  let phase = $state(null);                              // seconds into the current turn at mount (client only)
+  $effect(() => { phase = (Date.now() / 1000) % SWEEP_S; });
+  const blips = $derived.by(() => {
+    if (phase == null) return [];
+    const growRings = new Set([...growing].map((k) => k.split('|')[1]));
+    const t = (Date.now() / 1000) % SWEEP_S;
+    const out = [];
+    for (const ringId of new Set([...activeRings, ...growRings])) {
+      const band = layout.bands.find((b) => b.id === ringId);
+      if (!band) continue;
+      for (const sec of layout.sectors) {
+        const key = `${sec.id}|${ringId}`, c = cellOf.get(key);
+        if (!c?.total) continue;
+        if (growRings.has(ringId) ? !growing.has(key) : c.done >= c.total) continue;
+        const deg = Math.max(0.9, fillDeg(c.done, c.total, sec.a0, sec.a1)), front = sec.a0 + deg;
+        const hit = (((front - LEAD_DEG) % 360) + 360) % 360 / 360 * SWEEP_S;   // seconds into a turn when the edge reaches it
+        out.push({ key, d: arcPath(C, C, band.r0 - 1, band.r1 + 1, front - Math.min(deg, 7), front + 0.4),
+          slug: SLUG[sec.id], delay: (hit - t).toFixed(2) });
+      }
+    }
+    return out;
+  });
 
   // outer tick ring — a precision-instrument bezel
   const ticks = Array.from({ length: 120 }, (_, i) => {
@@ -92,7 +105,6 @@
         onmouseenter={(e) => hover(e, s.id, ring)} onmousemove={(e) => hover(e, s.id, ring)} onmouseleave={() => onhover(null)} role="presentation">
         <path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a1)} class="track" />
         {#if deg > 0}<path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a0 + deg)} class="fill" filter={deg / (s.a1 - s.a0) > 0.02 ? 'url(#obs-glow)' : undefined} />{/if}
-        {#if grow}<path d={arcPath(C, C, b.r0 - 1, b.r1 + 1, s.a0 + Math.max(0, deg - 0.9), s.a0 + Math.max(0.9, deg))} class="front" />{/if}
       </g>
     {/each}
   {/each}
@@ -113,30 +125,12 @@
     </text>
   {/each}
 
-  <!-- ACTIVITY: halo + running outline on cells that grew, energy beams from the core (the active rings light up inside the sweep, below) -->
-  {#each layout.sectors as sec (sec.id)}
-    {#each layout.bands as b (b.id)}
-      {#if growing.has(`${sec.id}|${b.id}`)}
-        <path d={arcPath(C, C, b.r0 - 2, b.r1 + 2, sec.a0, sec.a1)} class="halo" style={`--c: var(--obs-${SLUG[sec.id]})`} />
-        <path d={arcPath(C, C, b.r0, b.r1, sec.a0, sec.a1)} class="outline" style={`--c: var(--obs-${SLUG[sec.id]})`} />
-      {/if}
-    {/each}
-  {/each}
-  {#each beams as bm (bm.key)}
-    <line x1={bm.x0} y1={bm.y0} x2={bm.x1} y2={bm.y1} class="beam-glow" style={`--c: var(--obs-${bm.slug})`} />
-    <line x1={bm.x0} y1={bm.y0} x2={bm.x1} y2={bm.y1} class="beam" style={`--c: var(--obs-${bm.slug}); animation-delay: ${bm.delay}s`} />
-    <circle cx={bm.x1} cy={bm.y1} r="5" class="beam-tip" style={`--c: var(--obs-${bm.slug}); animation-delay: ${bm.delay}s`} />
-  {/each}
   <!-- the sweep -->
-  <!-- radar: the active ring lights up where the beam crosses it and the glow dissipates behind (Chad 10-16) -->
-  <g class="sweep">
-    <path d={arcPath(C, C, 124, 436, 0, 28)} fill="url(#obs-sweep)" />
-    {#each activeBands as b (b.id)}
-      {#each AFTERGLOW as k (k)}
-        <path d={arcPath(C, C, b.r0, b.r1, 28 - (AFTERGLOW.length - k) * 3, 28 - (AFTERGLOW.length - 1 - k) * 3 + 0.15)} class="afterglow" style={`opacity: ${((k + 1) / AFTERGLOW.length) ** 2.2}`} />
-      {/each}
-    {/each}
-  </g>
+  <g class="sweep" style={phase == null ? '' : `animation-delay: -${phase.toFixed(2)}s`}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" /></g>
+  <!-- radar returns: each growth front flashes as the sweep crosses it, then fades -->
+  {#each blips as bl (bl.key)}
+    <path d={bl.d} class="blip" style={`--c: var(--obs-${bl.slug}); animation-delay: ${bl.delay}s`} />
+  {/each}
 
   <!-- particles: work flowing from the library into the stage being built -->
   {#each particles as p (p.key)}
@@ -174,29 +168,18 @@
   /* being built right now: the cell breathes, its growth front pulses bright */
   .cell.growing .fill { animation: grow-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
   .cell.growing .track { animation: track-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
-  .front { fill: #fff; filter: drop-shadow(0 0 6px var(--c)); animation: front-pulse 1.1s ease-in-out infinite; pointer-events: none; }
   .cell.feeding .track { animation: track-throb 3.2s ease-in-out infinite; animation-delay: var(--d); }
-  /* ── activity: bright, moving, unmistakable ── */
-  .halo { fill: var(--c); opacity: 0; filter: blur(7px); animation: halo 1.6s ease-in-out infinite; pointer-events: none; }
-  .outline { fill: none; stroke: #fff; stroke-width: 2.2; stroke-dasharray: 10 8; filter: drop-shadow(0 0 5px var(--c)) drop-shadow(0 0 10px var(--c));
-    animation: march 0.9s linear infinite; pointer-events: none; }
-  .beam-glow { stroke: var(--c); stroke-width: 7; opacity: 0.35; filter: blur(4px); pointer-events: none; }
-  .beam { stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 6 14; filter: drop-shadow(0 0 4px var(--c));
-    animation: flow-out 0.7s linear infinite; pointer-events: none; }
-  .beam-tip { fill: #fff; filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 14px var(--c)); animation: tip 1.1s ease-in-out infinite; pointer-events: none; }
-  @keyframes halo { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.85; } }
-  @keyframes march { to { stroke-dashoffset: -18; } }
-  @keyframes flow-out { to { stroke-dashoffset: -20; } }
-  @keyframes tip { 0%, 100% { r: 4; opacity: 0.7; } 50% { r: 8; opacity: 1; } }
+  /* ── radar returns: flash white-hot as the sweep crosses, then fade through the tradition's colour ── */
+  .blip { fill: #fff; opacity: 0; pointer-events: none; animation: blip 14s linear infinite;
+    filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 16px var(--c)) drop-shadow(0 0 30px var(--c)); }
+  @keyframes blip { 0% { opacity: 1; fill: #fff; } 6% { opacity: 1; fill: #fff; } 30% { fill: var(--c); opacity: 0.7; } 75% { opacity: 0.12; } 100% { opacity: 0; fill: var(--c); } }
   @keyframes grow-throb { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 8px var(--c)); } }
   @keyframes track-throb { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.32; } }
-  @keyframes front-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
   .trad { font: 600 13px/1 var(--obs-sans); letter-spacing: 0.14em; }
   .stage { font: 500 9.5px/1 var(--obs-mono); fill: var(--obs-text-dim); letter-spacing: 0.06em; }
   .stage-pct { fill: var(--obs-text); font-weight: 600; }
   .stage.planned, .stage.planned .stage-pct { fill: var(--obs-text-faint); }
   .sweep { transform-box: view-box; transform-origin: 50% 50%; animation: obs-spin 14s linear infinite; pointer-events: none; }
-  .afterglow { fill: #d6f6ff; filter: drop-shadow(0 0 5px var(--obs-accent)) drop-shadow(0 0 12px var(--obs-accent)); pointer-events: none; }
   .particle { filter: drop-shadow(0 0 3px currentColor); pointer-events: none; }
   .core { stroke: none; }
   .core-ring { fill: none; stroke: var(--obs-accent); stroke-width: 1.2; opacity: 0.7; }
@@ -210,6 +193,6 @@
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; }
-    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .front, .halo, .outline, .beam, .beam-tip { animation: none; }
+    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .blip { animation: none; } .blip { display: none; }
   }
 </style>

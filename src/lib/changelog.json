@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:23:33.306Z",
+  "generated": "2026-10-17T04:27:08.405Z",
   "entries": [
+    {
+      "hash": "742d078b",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Radar afterglow — the active ring lights where the sweep crosses it and fades; comet removed",
+      "scope": "home"
+    },
     {
       "hash": "4c625554",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Cross-translation — 'holds the quote' judged by a System-1 decision (sourcehunt-holds), doctrinal-writer retrieval in parallel, highlights by meaning; long passages clipped around the highlight",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "eaa60515",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Translation variants reach the writer's own book (content-word containment gate); English highlight by meaning when the exact run covers <80% of the quote",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "742d078b",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Radar afterglow — the active ring lights where the sweep crosses it and fades; comet removed",
+        "scope": "home"
+      },
       {
         "hash": "4c625554",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "New",
         "description": "Cross-translation — 'holds the quote' judged by a System-1 decision (sourcehunt-holds), doctrinal-writer retrieval in parallel, highlights by meaning; long passages clipped around the highlight",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "eaa60515",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Translation variants reach the writer's own book (content-word containment gate); English highlight by meaning when the exact run covers <80% of the quote",
         "scope": "sourcehunt"
       }
     ]
