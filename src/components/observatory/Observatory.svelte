@@ -124,10 +124,10 @@
       {#each snap?.rings || [] as r, i (r.id)}
         {@const p = r.total ? (100 * r.done) / r.total : 0}
         <div class="stage" class:planned={r.planned} class:grow={rates[r.id] > 0}>
-          <div class="stage-top"><span class="stage-n mono">{String(i + 1).padStart(2, '0')}</span><span class="stage-name">{RING_INFO[r.id]?.title || r.label}</span>
-            <span class="stage-pct mono">{r.planned ? 'planned' : pct(r.done, r.total)}</span></div>
+          <div class="stage-top"><span class="stage-n mono">{String(i + 1).padStart(2, '0')}</span><span class="stage-name">{RING_INFO[r.id]?.title || r.label}</span></div>
           {#if RING_INFO[r.id]}<div class="stage-sub" title={RING_INFO[r.id].sub}>{RING_INFO[r.id].sub}</div>{/if}
-          <div class="bar"><span style={`width:${Math.max(r.done ? 0.6 : 0, Math.min(100, p))}%`}></span></div>
+          <div class="bar-row"><div class="bar"><span style={`width:${Math.max(r.done ? 0.6 : 0, Math.min(100, p))}%`}></span></div>
+            <span class="stage-pct mono">{r.planned ? 'planned' : pct(r.done, r.total)}</span></div>
           <div class="stage-foot mono">
             <span>{compact(live(r.done, r.id))} / {compact(r.total)} {r.id === 'sections' ? 'docs' : '¶'}</span>
             {#if r.core_total && !r.planned}<span class="core-tag">core {pct(r.core_done, r.core_total, 0)}</span>{/if}
@@ -309,9 +309,12 @@
   .stage { display: flex; flex-direction: column; gap: 3px; }
   .stage-top { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
   .stage-n { color: var(--obs-text-faint); font-size: 11px; }
-  .stage-name { flex: 1; min-width: 0; font-weight: 600; font-size: 12.5px; letter-spacing: -0.005em; }
-  .stage-sub { font-size: 11px; line-height: 1.3; color: var(--obs-text-dim); margin: -1px 0 2px 26px; }
-  .stage-pct { font-size: 12.5px; font-weight: 600; }
+  /* one line of title, one line of explanation (Chad 10-16) */
+  .stage-name { flex: 1; min-width: 0; font-weight: 600; font-size: 12.5px; letter-spacing: -0.005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage-sub { font-size: 11px; line-height: 1.25; color: var(--obs-text-dim); margin: -2px 0 1px 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage-pct { font-size: 11.5px; font-weight: 600; min-width: 46px; text-align: right; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-row .bar { flex: 1; min-width: 0; }
   .stage.planned { opacity: 0.55; }
   .stage-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 11px; color: var(--obs-text-dim); }
   .core-tag { color: var(--obs-bahai); }

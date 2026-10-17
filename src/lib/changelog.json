@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T00:40:50.790Z",
+  "generated": "2026-10-17T00:48:15.626Z",
   "entries": [
+    {
+      "hash": "da20f1e9",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Hovering a ring explains why that index matters for search",
+      "scope": "home"
+    },
     {
       "hash": "0ea9e462",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Highlight the original's clause by DECISION — Clef-flash picks which numbered clause says what the quote says (any translation); vector spans as fallback; logged as task sourcehunt-highlight with Jev shadow",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "8c5ab29e",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Compact live console — horizontal stage stepper, probe field + ticker side by side at one short height (no empty space)",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "da20f1e9",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Hovering a ring explains why that index matters for search",
+        "scope": "home"
+      },
       {
         "hash": "0ea9e462",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "New",
         "description": "Highlight the original's clause by DECISION — Clef-flash picks which numbered clause says what the quote says (any translation); vector spans as fallback; logged as task sourcehunt-highlight with Jev shadow",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "8c5ab29e",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Compact live console — horizontal stage stepper, probe field + ticker side by side at one short height (no empty space)",
         "scope": "sourcehunt"
       }
     ]
