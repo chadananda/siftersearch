@@ -54,17 +54,10 @@
   const T0 = typeof performance === 'undefined' ? 0 : performance.now() - (Date.now() % (SWEEP_S * 1000)) - SWEEP_S * 1000;
   /** Svelte action: pin this element's animations to start `offset` seconds into the turn that began at T0. */
   function lock(node, offset = 0) {
-    const pin = (o) => { for (const a of node.getAnimations()) a.startTime = T0 + o * 1000; };
+    const pin = (o) => { if (o != null) for (const a of node.getAnimations()) a.startTime = T0 + o * 1000; };   // null: not animated yet
     pin(offset);
     return { update: pin };
   }
-  // phosphor decay behind the trace: θ degrees behind = θ/360 of a turn old → brightness, from 1 down to a dim floor
-  const PERSIST_STEP = 4;
-  const PERSIST = Array.from({ length: 360 / PERSIST_STEP }, (_, i) => {
-    const age = (i + 0.5) * PERSIST_STEP / 360;
-    const v = Math.round(255 * (0.22 + 0.78 * Math.exp(-age * 3.2)));   // opaque grey (luminance mask): overlaps don't stack
-    return { a: LEAD_DEG - (i + 1) * PERSIST_STEP, g: `rgb(${v},${v},${v})` };
-  });
   const hitAt = (a) => ((((a - LEAD_DEG) % 360) + 360) % 360) / 360 * SWEEP_S;   // seconds into a turn when the trace reaches a
   const arc = (r, a0, a1) => { const [x0, y0] = polar(C, C, r, a0), [x1, y1] = polar(C, C, r, a1); return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
   const radial = (r0, r1, a) => { const [x0, y0] = polar(C, C, r0, a), [x1, y1] = polar(C, C, r1, a); return `M${x0.toFixed(1)} ${y0.toFixed(1)}L${x1.toFixed(1)} ${y1.toFixed(1)}`; };
@@ -110,14 +103,7 @@
   <defs>
     <filter id="obs-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
     <radialGradient id="obs-core" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="var(--obs-core-hi)" /><stop offset="100%" stop-color="var(--obs-core-lo)" /></radialGradient>
-    <!-- persistence (Chad 10-16: "the sweeping light should not light up the dark parts, only the light parts"): a mask on
-         the FILLS only — a ring of wedges, full where the trace just passed, decaying to a dim floor a turn later, rotating
-         with the trace. Dark tracks, labels and the core are never part of it. -->
-    <mask id="obs-persist" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000">
-      <g class="persist" use:lock={0}>
-        {#each PERSIST as w (w.a)}<path d={arcPath(C, C, 0, 500, w.a, w.a + PERSIST_STEP + 0.3)} fill={w.g} />{/each}
-      </g>
-    </mask>
+    <linearGradient id="obs-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--obs-sweep)" stop-opacity="0" /><stop offset="100%" stop-color="var(--obs-sweep)" stop-opacity="0.28" /></linearGradient>
   </defs>
 
   <!-- bezel -->
@@ -134,10 +120,23 @@
       <g class="cell" class:planned={ring?.planned} class:growing={grow} class:feeding={feeding.has(b.id)} style={`--c: var(--obs-${SLUG[s.id]}); --d: ${((s.a0 * 7 + b.r0) % 23) / 10}s`}
         onmouseenter={(e) => hover(e, s.id, ring)} onmousemove={(e) => hover(e, s.id, ring)} onmouseleave={() => onhover(null)} role="presentation">
         <path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a1)} class="track" />
-        {#if deg > 0}<path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a0 + deg)} class="fill" mask={phase == null ? undefined : "url(#obs-persist)"} filter={deg / (s.a1 - s.a0) > 0.02 ? 'url(#obs-glow)' : undefined} />{/if}
       </g>
     {/each}
   {/each}
+  <!-- the lit parts (progress) in one layer: radar persistence fades them behind the trace and the sweep redraws them —
+       a conic CSS mask rotating with the trace (an animated SVG <mask> lagged the sweep: Chrome repaints mask content
+       lazily). Dark tracks, labels and the core sit outside it. The transparent rect pins the mask box to the dial. -->
+  <g class="lit" class:scoped={phase != null} use:lock={0}>
+    <rect x="0" y="0" width="1000" height="1000" fill="none" />
+    {#each layout.sectors as s (s.id)}
+      {#each layout.bands as b (b.id)}
+        {@const c = cellOf.get(`${s.id}|${b.id}`)}
+        {@const deg = c ? fillDeg(c.done, c.total, s.a0, s.a1) : 0}
+        {#if deg > 0}<path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a0 + deg)} class="fill" class:growing={growing.has(`${s.id}|${b.id}`)}
+          style={`--c: var(--obs-${SLUG[s.id]}); --d: ${((s.a0 * 7 + b.r0) % 23) / 10}s`} filter={deg / (s.a1 - s.a0) > 0.02 ? 'url(#obs-glow)' : undefined} />{/if}
+      {/each}
+    {/each}
+  </g>
 
   <!-- tradition names on the bezel -->
   {#each layout.sectors as s (s.id)}
@@ -156,7 +155,7 @@
   {/each}
 
   <!-- the sweep -->
-  <g class="sweep" use:lock={0}><line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="beam-line" /></g>
+  <g class="sweep" use:lock={0}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" class="sweep-glow" /></g>
   <!-- radar returns: the outline of each cell being built, painted by the trace, decaying like phosphor -->
   <g class="scope">
     {#each blips as bl (bl.key)}<path d={bl.d} class="blip" use:lock={bl.delay} />{/each}
@@ -196,14 +195,20 @@
   .cell:hover .track { opacity: 0.28; }
   .cell.planned .track { opacity: 0.05; }
   /* being built right now: the cell breathes, its growth front pulses bright */
-  .cell.growing .fill { animation: grow-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
+  .fill.growing { animation: grow-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
   .cell.growing .track { animation: track-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
   .cell.feeding .track { animation: track-throb 3.2s ease-in-out infinite; animation-delay: var(--d); }
   /* ── radar returns: flash white-hot as the sweep crosses, then fade through the tradition's colour ── */
-  .persist { transform-box: view-box; transform-origin: 50% 50%; animation: obs-spin 14s linear infinite; }
+  /* persistence: θ° behind the trace a paint is θ/360 of a turn old; brightness ≈ 0.22 + 0.78·e^(−3.2·age) */
+  @property --obs-trace { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  .lit { pointer-events: none; animation: trace 14s linear infinite; }   /* always running, so use:lock pins it at mount */
+  .lit.scoped { mask-origin: fill-box; mask-clip: no-clip;
+    -webkit-mask-image: conic-gradient(from calc(var(--obs-trace) + 28deg) at 50% 50%, rgb(0 0 0 / 0.25) 0deg, rgb(0 0 0 / 0.31) 120deg, rgb(0 0 0 / 0.49) 240deg, rgb(0 0 0 / 0.77) 320deg, #000 359.5deg, rgb(0 0 0 / 0.25) 360deg);
+    mask-image: conic-gradient(from calc(var(--obs-trace) + 28deg) at 50% 50%, rgb(0 0 0 / 0.25) 0deg, rgb(0 0 0 / 0.31) 120deg, rgb(0 0 0 / 0.49) 240deg, rgb(0 0 0 / 0.77) 320deg, #000 359.5deg, rgb(0 0 0 / 0.25) 360deg); }
+  @keyframes trace { to { --obs-trace: 360deg; } }
   .scope { filter: drop-shadow(0 0 3px var(--obs-afterglow)); pointer-events: none; }
   .blip { fill: none; stroke: var(--obs-afterglow); stroke-width: 2.4; stroke-linecap: round; opacity: 0; animation: blip 14s linear infinite; }
-  .beam-line { stroke: var(--obs-phosphor); stroke-width: 1.4; opacity: 0.75; stroke-linecap: round; }
+  .sweep-glow { filter: blur(5px); }   /* a soft arm: the brightness comes from what it paints */
   /* P7 phosphor: blue-white flash where the trace strikes, then a long yellow-green afterglow fading over the turn */
   @keyframes blip { 0% { opacity: 1; stroke: var(--obs-phosphor-hot); } 4% { stroke: var(--obs-afterglow); opacity: 0.95; } 30% { opacity: 0.6; } 60% { opacity: 0.28; } 90% { opacity: 0.06; } 100% { opacity: 0; } }
   @keyframes grow-throb { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 8px var(--c)); } }
@@ -225,7 +230,7 @@
   .core-inner { fill: none; stroke: var(--obs-line); stroke-width: 1; stroke-dasharray: 2 5; }
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; mask: none; }
-    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .blip { animation: none; } .blip { display: none; } .persist { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; } .lit { animation: none; } .lit.scoped { -webkit-mask-image: none; mask-image: none; }
+    .fill.growing, .cell.growing .track, .cell.feeding .track, .blip { animation: none; } .blip { display: none; }
   }
 </style>

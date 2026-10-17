@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:50:28.932Z",
+  "generated": "2026-10-17T04:58:42.384Z",
   "entries": [
+    {
+      "hash": "20764907",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Radar persistence masks only the lit cells — dark tracks and labels never swept; no lit wedge",
+      "scope": "home"
+    },
     {
       "hash": "61c42aea",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Strip what OceanLibrary/Ocean of Lights copy appends (reference line, short link, page URL) before the hunt; Clear button; pasting over a shown result replaces the quote and runs a new hunt (Liliane's report)",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "2675579d",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Clause highlight by VOTE — Clef + Clef-flash in parallel, Jev breaks a disagreement by majority; fallback spans fixed (cleanText offsets) and limited to the single best phrase",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "20764907",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Radar persistence masks only the lit cells — dark tracks and labels never swept; no lit wedge",
+        "scope": "home"
+      },
       {
         "hash": "61c42aea",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Strip what OceanLibrary/Ocean of Lights copy appends (reference line, short link, page URL) before the hunt; Clear button; pasting over a shown result replaces the quote and runs a new hunt (Liliane's report)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "2675579d",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Clause highlight by VOTE — Clef + Clef-flash in parallel, Jev breaks a disagreement by majority; fallback spans fixed (cleanText offsets) and limited to the single best phrase",
         "scope": "sourcehunt"
       }
     ]
