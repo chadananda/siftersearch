@@ -72,8 +72,7 @@
   // just for the currently processing index"): unfinished traditions, those that grew since the last snapshot first
   // truncated, never rounded up: 13 paragraphs left must not read 100.00%
   const pctDown = (done, total, digits) => `${(Math.floor((100 * done / total) * 10 ** digits) / 10 ** digits).toFixed(digits)}%`;
-  // enough decimals that the last digit moves about once a second at this rate (2 when idle, at most 6)
-  const tickDigits = (perHour, total) => (perHour > 0 && total ? Math.min(6, Math.max(3, Math.ceil(-Math.log10((100 * perHour) / 3600 / total)))) : 2);
+  // four decimals on every tradition line, so they line up and compare (Chad 10-17)
   const TRAD_LABEL = { "Baha'i": 'Bahá’í', Tao: 'Taoist' };
   const tradSlug = (t) => (t === "Baha'i" ? 'bahai' : String(t).toLowerCase());
   const subRows = (ringId) => {
@@ -167,7 +166,7 @@
                 <div class="sub mono" class:grew={c.grew} style={`--c: var(--obs-${tradSlug(c.tradition)})`}>
                   <span class="sub-name">{#if c.grew}<i></i>{/if}{TRAD_LABEL[c.tradition] || c.tradition}</span>
                   <span class="sub-bar"><span style={`width:${Math.min(100, (100 * c.done) / c.total)}%`}></span></span>
-                  <span class="sub-pct">{pctDown(c.done, c.total, tickDigits(c.rate, c.total))}</span>
+                  <span class="sub-pct">{pctDown(c.done, c.total, 4)}</span>
                   <span class="sub-left">{compact(c.gap)}</span>
                 </div>
               {/each}

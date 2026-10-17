@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T19:11:34.996Z",
+  "generated": "2026-10-17T19:15:08.277Z",
   "entries": [
+    {
+      "hash": "46774726",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Browsers never keep public API responses — the zone's 4 h Browser Cache TTL froze the Observatory on a 2.6 h-old snapshot",
+      "scope": "edge"
+    },
     {
       "hash": "2fddd229",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Citations are passages that QUOTE the source — wording holders or link-graph quoters only; the holds decision accepts another translation of the same sentence, never a passage making the same point (Chad 10-05: 'we are not looking for similar points … we are looking for citations')",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "1cc72274",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Citation range links only where the citation holds the quote verbatim (SAQ's paraphrase of the Supreme Tribunal got a fragment on 'governments and peoples')",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "46774726",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Browsers never keep public API responses — the zone's 4 h Browser Cache TTL froze the Observatory on a 2.6 h-old snapshot",
+        "scope": "edge"
+      },
       {
         "hash": "2fddd229",
         "date": "2026-10-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Citations are passages that QUOTE the source — wording holders or link-graph quoters only; the holds decision accepts another translation of the same sentence, never a passage making the same point (Chad 10-05: 'we are not looking for similar points … we are looking for citations')",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "1cc72274",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Citation range links only where the citation holds the quote verbatim (SAQ's paraphrase of the Supreme Tribunal got a fragment on 'governments and peoples')",
         "scope": "sourcehunt"
       }
     ]
