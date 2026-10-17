@@ -5,7 +5,7 @@ import os from 'os';
 import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
 import { claimNext, finish, requeueStale } from '../lib/repos/ops-report-repo.js';
-import { REPORTS, LANES } from '../lib/ops/reports.js';
+import { REPORTS, LANES, LANE_WORKERS } from '../lib/ops/reports.js';
 import { sendEmail } from '../services/email.js';
 import { logActivity } from '../lib/repos/activity-repo.js';
 
@@ -152,5 +152,5 @@ const laneNames = Object.values(LANES).flat();
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).map(([n, names]) => lane(n, names, [])), rollingCoverage(), telemetryLoop(), pulseLoop()]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), telemetryLoop(), pulseLoop()]);
 process.exit(0);
