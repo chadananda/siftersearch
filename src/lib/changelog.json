@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T17:05:59.764Z",
+  "generated": "2026-10-17T17:16:30.161Z",
   "entries": [
+    {
+      "hash": "65bff217",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "The stage being built lists its unfinished traditions — progress, paragraphs left, a dot on those that grew",
+      "scope": "home"
+    },
     {
       "hash": "ff6c202b",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A verbatim paragraph always holds the quote (the decision only ADDS meaning matches); exact wording outranks the Core label",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "207a1316",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "The OceanLibrary copy of a Core book ranks as Core — the canonical (Gleanings, ESW, Gems, …) is flagged duplicate and not indexed, so its uncollected copy lost to a Core book that only paraphrased ('Tear asunder…' → Tablets book instead of Gleanings 75.1)",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "65bff217",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "The stage being built lists its unfinished traditions — progress, paragraphs left, a dot on those that grew",
+        "scope": "home"
+      },
       {
         "hash": "ff6c202b",
         "date": "2026-10-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "A verbatim paragraph always holds the quote (the decision only ADDS meaning matches); exact wording outranks the Core label",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "207a1316",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "The OceanLibrary copy of a Core book ranks as Core — the canonical (Gleanings, ESW, Gems, …) is flagged duplicate and not indexed, so its uncollected copy lost to a Core book that only paraphrased ('Tear asunder…' → Tablets book instead of Gleanings 75.1)",
         "scope": "sourcehunt"
       }
     ]

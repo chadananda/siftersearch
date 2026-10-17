@@ -71,6 +71,15 @@ export function growingCells(cells = [], prevCells = []) {
     .sort((a, b) => b.delta - a.delta);
 }
 
+/** Per-cell growth per hour since an older snapshot (key 'tradition|ring', growing cells only) — lets the Observatory
+ *  move each tradition's sub-progress between snapshots, as the stage totals already do. Pure. */
+export function cellRates(cells = [], thenCells = [], hours = 0) {
+  if (!(hours > 0)) return {};
+  const then = new Map(thenCells.map((c) => [`${c.tradition}|${c.ring}`, c.done]));
+  return Object.fromEntries(cells.map((c) => [`${c.tradition}|${c.ring}`, then.has(`${c.tradition}|${c.ring}`) ? (c.done - then.get(`${c.tradition}|${c.ring}`)) / hours : 0])
+    .filter(([, r]) => r > 0).map(([k, r]) => [k, Math.round(r)]));
+}
+
 /** The compact row kept for sparklines and rates. */
 export const seriesOf = (snap) => ({ ...Object.fromEntries(snap.rings.map((r) => [r.id, r.done])), ...Object.fromEntries(Object.entries(snap.vectors || {}).map(([k, v]) => [`v_${k}`, v])),
   people: snap.counts?.people ?? null, claims: snap.counts?.concept_claims ?? null, sections: snap.counts?.sections ?? null,
@@ -143,7 +152,11 @@ export async function buildSnapshot() {
   const shaped = shapeCoverage(rows);
   const prev = await repo.latestSnapshot().then((p) => (p ? JSON.parse(p.data) : null)).catch(() => null);
   const growing = growingCells(shaped.cells, prev?.cells || []);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const dayAgo = await repo.snapshotAtOrBefore(nowSec - 86400).catch(() => null)
+    || await repo.snapshotAtOrBefore(nowSec - 3600).catch(() => null);   // younger history: the last hour
+  const cell_rates = dayAgo ? cellRates(shaped.cells, JSON.parse(dayAgo.data).cells || [], (nowSec - dayAgo.at) / 3600) : {};
   const paragraphs = shaped.traditions.reduce((n, t) => n + t.paragraphs, 0);
   return { at: Math.floor(Date.now() / 1000), corpus: { documents: counts.documents, paragraphs, traditions: shaped.traditions.filter((t) => t.id !== 'Other').length },
-    ...shaped, vectors, counts: { ...counts, people }, jobs: shapeJobs(ops), capability: shapeCapability(ki), health, roadmap: ROADMAP, growing };
+    ...shaped, vectors, counts: { ...counts, people }, jobs: shapeJobs(ops), capability: shapeCapability(ki), health, roadmap: ROADMAP, growing, cell_rates };
 }

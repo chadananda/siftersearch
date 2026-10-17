@@ -75,7 +75,11 @@
   const subRows = (ringId) => {
     const grew = new Set((snap?.growing || []).filter((g) => g.ring === ringId).map((g) => g.tradition));
     return (snap?.cells || []).filter((c) => c.ring === ringId && c.total && c.done < c.total)
-      .map((c) => ({ ...c, grew: grew.has(c.tradition), gap: c.total - c.done }))
+      .map((c) => {
+        const r = snap?.cell_rates?.[`${c.tradition}|${ringId}`] || 0;
+        const done = Math.min(c.total, interpolate(c.done, r, since));   // moves between snapshots at the cell's own rate
+        return { ...c, done, rate: r, grew: grew.has(c.tradition) || r > 0, gap: c.total - done };
+      })
       .sort((a, b) => b.grew - a.grew || b.gap - a.gap).slice(0, 6);
   };
   const ago = (sec) => (sec < 90 ? `${Math.round(sec)} s ago` : sec < 5400 ? `${Math.round(sec / 60)} min ago` : `${(sec / 3600).toFixed(1)} h ago`);
@@ -158,8 +162,8 @@
                 <div class="sub mono" class:grew={c.grew} style={`--c: var(--obs-${tradSlug(c.tradition)})`}>
                   <span class="sub-name">{#if c.grew}<i></i>{/if}{TRAD_LABEL[c.tradition] || c.tradition}</span>
                   <span class="sub-bar"><span style={`width:${Math.min(100, (100 * c.done) / c.total)}%`}></span></span>
-                  <span class="sub-pct">{pct(c.done, c.total, 3)}</span>
-                  <span class="sub-left">{compact(c.gap)} left</span>
+                  <span class="sub-pct">{pct(c.done, c.total, c.rate > 0 ? 4 : 2)}</span>
+                  <span class="sub-left">{compact(c.gap)}</span>
                 </div>
               {/each}
             </div>
@@ -356,8 +360,8 @@
   .working i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; animation: work-blink 1.4s ease-in-out infinite; }
   .idle { color: var(--obs-text-faint); }
   /* per-tradition sub-progress under the stage being built */
-  .subs { display: flex; flex-direction: column; gap: 2px; margin: 3px 0 2px 18px; padding-left: 8px; border-left: 1px solid var(--obs-line); }
-  .sub { display: grid; grid-template-columns: 74px minmax(30px, 1fr) 58px 58px; align-items: center; gap: 6px; font-size: 10.5px; color: var(--obs-text-dim); }
+  .subs { display: flex; flex-direction: column; gap: 1px; margin: 2px 0; padding-left: 6px; border-left: 1px solid var(--obs-line); }
+  .sub { display: grid; grid-template-columns: 62px minmax(20px, 1fr) auto 40px; align-items: center; gap: 6px; font-size: 10.5px; line-height: 1.5; color: var(--obs-text-dim); white-space: nowrap; }
   .sub-name { display: flex; align-items: center; gap: 4px; color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sub-name i { width: 5px; height: 5px; border-radius: 50%; background: var(--obs-afterglow); box-shadow: 0 0 5px var(--obs-afterglow); animation: work-blink 1.4s ease-in-out infinite; flex: none; }
   .sub-bar { height: 3px; border-radius: 2px; background: var(--obs-line); overflow: hidden; }

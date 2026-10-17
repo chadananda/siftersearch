@@ -94,3 +94,13 @@ describe('growing cells (what is being built right now)', async () => {
     expect(growingCells(now, [])).toEqual([]);
   });
 });
+
+describe('cell rates (sub-progress per tradition between snapshots)', async () => {
+  const { cellRates } = await import('../../api/lib/telemetry.js');
+  it('growth per hour since an older snapshot, growing cells only', () => {
+    const then = [{ tradition: 'Islam', ring: 'phrase', done: 100 }, { tradition: 'Tao', ring: 'phrase', done: 9 }];
+    const now = [{ tradition: 'Islam', ring: 'phrase', done: 2500 }, { tradition: 'Tao', ring: 'phrase', done: 9 }, { tradition: 'Jain', ring: 'phrase', done: 5 }];
+    expect(cellRates(now, then, 24)).toEqual({ 'Islam|phrase': 100 });
+    expect(cellRates(now, then, 0)).toEqual({});
+  });
+});
