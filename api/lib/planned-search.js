@@ -133,12 +133,16 @@ export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase:
 export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, hype: false, only: false } : v === 'only' ? { phrase: true, keyword: true, hype: true, only: true }
   : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, hype: !!v.hype, only: !!v.only } : v === false ? { phrase: false, keyword: false, hype: false, only: false } : qdrantDefault();
 
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // A reader's misspellings are corrected against the library's own vocabulary BEFORE anything searches (search/spell.js):
   // one slip cut Meili's matches from 50,000+ to 19 (10-16). The result says what was corrected ("showing results for …").
   const original = query;
+  // A typed CITATION ("Gleanings CXXV", "Íqán ¶12", "Arabic Hidden Words 5") resolves to its paragraph by the work's
+  // verified numbering (refs/cite.js) — read from the query as typed, before spelling correction touches "PHW" or "Iqan".
+  const cite = citer ?? (engine ? null : resolveCitation);
+  const citedP = cite ? cite(original).catch(() => null) : Promise.resolve(null);
   const spelled = correctQuery(query, vocab ?? vocabulary());
   query = spelled.query;
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
@@ -291,8 +295,13 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     if (exact.length) hits = [...exact, ...hits.filter((h) => !seen.has(h.id))].slice(0, Math.max(limit, exact.length));
   }
 
+  // the cited paragraph leads, labelled with its reference
+  const cited = await citedP;
+  if (cited) hits = [cited, ...hits.filter((h) => String(h.id) !== String(cited.id))].slice(0, Math.max(limit, 1));
+
   const value = {
     hits, plan, layers, resolution, entities, peopleAnswer,
+    citation: cited ? cited.citation : null,
     corrected: spelled.corrections.length ? { from: original, to: query, corrections: spelled.corrections } : null,
     target: tgt ? { id: tgt.id, name: tgt.name, type: tgt.type, names: tgt.names } : null,
     widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowResults.length, scopeUsed: r.scope,
@@ -300,4 +309,16 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);
   cache.set(key, { at: Date.now(), value });
   return { ...value, cached: false, timings: { plan_ms: planMs, search_ms: Date.now() - t1, total_ms: Date.now() - t0, ...stages, resolve_ms: resolution?.ms ?? null } };
+}
+
+/** A citation → its paragraph in the search-hit shape (SQLite, paragraphs-repo), with { work, pn } attached; else null. */
+export async function resolveCitation(query) {
+  const { parseCitation } = await import('./refs/cite.js');
+  const c = parseCitation(query);
+  if (!c) return null;
+  const { paragraphIdByPn } = await import('./repos/refs-repo.js');
+  const id = await paragraphIdByPn(c.doc, c.pn);
+  if (!id) return null;
+  const [p] = await (await import('./paragraphs-repo.js')).paragraphsByIds([id]);
+  return p ? { ...p, citation: { work: c.work, pn: c.pn } } : null;
 }

@@ -16,3 +16,7 @@ export async function setPn(rows) {
   }
   return rows.length;
 }
+
+/** The paragraph a work numbers `pn` (its first, if a number repeats) — the citation lookup. */
+export const paragraphIdByPn = async (docId, pn) => (await queryAll(`SELECT id FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    AND COALESCE(is_duplicate, 0) = 0 AND json_extract(block_attrs, '$.pn') = ? ORDER BY paragraph_index LIMIT 1`, [Number(docId), String(pn)], 'refs:by-pn'))[0]?.id ?? null;

@@ -28,6 +28,16 @@ describe('plannedSearch', () => {
     expect(r.plan.shape).toBe('quote');
   });
 
+  it('a typed citation leads with its paragraph and says which reference it is', async () => {
+    const e = engine(() => many(5));
+    const cited = { id: 999, text: 'Be generous in prosperity…', citation: { work: 'gleanings', pn: 'CXXX' } };
+    const r = await plannedSearch('Gleanings CXXX', { planner: planOf({}), engine: e.fn, citer: async (q) => (q === 'Gleanings CXXX' ? cited : null) });
+    expect(r.hits[0].id).toBe(999);
+    expect(r.citation).toEqual({ work: 'gleanings', pn: 'CXXX' });
+    const plain = await plannedSearch('generosity', { planner: planOf({}), engine: e.fn, citer: async () => null });
+    expect(plain.citation).toBeNull();
+  });
+
   it('widens when the narrow scope is too thin, and says so', async () => {
     const e = engine((f) => (f.religion ? many(1) : many(10)));
     const r = await plannedSearch('x', { planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });
