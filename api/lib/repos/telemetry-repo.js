@@ -7,7 +7,7 @@ import { query, queryOne, queryAll } from '../db.js';
 /** Tradition × layer totals — read from coverage_totals (kept incrementally by coverage-repo saveCoverage), ~260 rows. */
 export const coverageRollup = () => queryAll(`SELECT religion, layer, SUM(docs) AS docs, SUM(total) AS total, SUM(generated) AS generated,
     SUM(current) AS current, SUM(indexed) AS indexed, SUM(reached) AS reached, SUM(docs_with) AS docs_with,
-    SUM(core * total) AS core_total, SUM(core * generated) AS core_generated, SUM(core * reached) AS core_reached
+    SUM(core * total) AS core_total, SUM(core * generated) AS core_generated, SUM(core * reached) AS core_reached, SUM(core * indexed) AS core_indexed
   FROM coverage_totals GROUP BY 1, 2`, [], 'telemetry:rollup');
 
 /** Whole-library counts — from the incremental totals (sections, concept claims in the index, documents measured); only

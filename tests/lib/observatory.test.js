@@ -44,5 +44,7 @@ describe('observatory helpers', () => {
   it('sparkline', () => {
     expect(sparkPath([1])).toBe('');
     expect(sparkPath([0, 10], 100, 20)).toBe('M0.0 19.0L100.0 1.0');
+    // a 10-unit wiggle on a 1000-unit minimum span stays near the middle instead of filling the box
+    expect(sparkPath([500, 510], 100, 20, 1000)).toBe('M0.0 10.1L100.0 9.9');
   });
 });

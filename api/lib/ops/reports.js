@@ -2,6 +2,7 @@
 // the API: they scan whole tables), one at a time, and returns plain JSON stored in ops_report_runs. Add a report here,
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
 import { sectionIndexJob } from './section-index-job.js';
+import { keywordFillJob } from './keyword-fill-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -149,6 +150,7 @@ REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, vari
 };
 REPORTS['vocab-build'] = vocabBuildJob;   // params { minFreq?, maxWords? } — the library vocabulary for query spell-correction
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
+REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope? } — BM25 gaps from the ledger, core first (Chad 10-16)
 REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
@@ -158,6 +160,7 @@ REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — 
 export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'],
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact'],
   coverage: ['coverage-refresh'],
+  keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };
 export const HEAVY = new Set(LANES.heavy);
 // How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K

@@ -131,8 +131,9 @@
           <div class="stage-foot mono">
             <span>{compact(live(r.done, r.id))} / {compact(r.total)} {r.id === 'sections' ? 'docs' : '¶'}</span>
             {#if r.core_total && !r.planned}<span class="core-tag">core {pct(r.core_done, r.core_total, 0)}</span>{/if}
+            {#if activeRings.includes(r.id)}<span class="working"><i></i>indexing</span>{:else if !r.planned && r.done < r.total}<span class="idle">idle</span>{/if}
             {#if rates[r.id] > 0}<span class="up">{rate(rates[r.id])}</span>{/if}
-            {#if series(r.id).filter((x) => x != null).length > 2}<svg class="spark" viewBox="0 0 80 16" aria-hidden="true"><path d={sparkPath(series(r.id), 80, 16)} /></svg>{/if}
+            {#if series(r.id).filter((x) => x != null).length > 2}<svg class="spark" viewBox="0 0 80 16" aria-hidden="true"><path d={sparkPath(series(r.id), 80, 16, r.total * 0.002)} /></svg>{/if}
           </div>
         </div>
       {/each}
@@ -321,6 +322,11 @@
   .stage-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 11px; color: var(--obs-text-dim); }
   .core-tag { color: var(--obs-bahai); }
   .up { color: var(--success); }
+  /* is anything actually working on this stage right now (a running job), or is it waiting */
+  .working { display: inline-flex; align-items: center; gap: 4px; color: var(--obs-afterglow); font-weight: 600; }
+  .working i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; animation: work-blink 1.4s ease-in-out infinite; }
+  .idle { color: var(--obs-text-faint); }
+  @keyframes work-blink { 50% { opacity: 0.3; } }
   .spark { width: 80px; height: 16px; margin-left: auto; }
   .spark path { fill: none; stroke: var(--obs-accent); stroke-width: 1.4; }
   .bar { height: 5px; border-radius: 3px; background: var(--obs-line); overflow: hidden; }
@@ -416,5 +422,5 @@
     .kpi { border-left: 0 !important; border-top: 0 !important; } .kpi:nth-child(even) { border-left: 1px solid var(--obs-line) !important; } .kpi:nth-child(n + 3) { border-top: 1px solid var(--obs-line) !important; }
     .roadmap { grid-template-columns: minmax(0, 1fr); } .road + .road { border-left: 0; border-top: 1px solid var(--obs-line); }
   }
-  @media (prefers-reduced-motion: reduce) { .led, .spin, .flash, .bolt, .dot, .stage.grow .bar span, .kpis::after, .panel::after, .road-wrap::after { animation: none; } .bar span { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .working i, .led, .spin, .flash, .bolt, .dot, .stage.grow .bar span, .kpis::after, .panel::after, .road-wrap::after { animation: none; } .bar span { transition: none; } }
 </style>

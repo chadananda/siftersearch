@@ -59,7 +59,7 @@ export function duration(sec) {
 /** Which ring a running ops job is feeding (drives the particle streams). */
 export function ringOfJob(name, label = '') {
   if (name === 'phrase-index') return /hype/.test(label) ? 'hype' : /concept/.test(label) ? 'concepts' : 'phrase';
-  return { 'hype-index': 'hype', 'concept-index': 'concepts', 'section-index': 'sections', 'coverage-refresh': 'text', 'ingest-files': 'text', 'known-item': 'keyword' }[name] || null;
+  return { 'hype-index': 'hype', 'concept-index': 'concepts', 'section-index': 'sections', 'coverage-refresh': 'text', 'ingest-files': 'text', 'keyword-fill': 'keyword' }[name] || null;
 }
 
 /** Colour class of a terminal line: by kind, and probes by outcome. */
@@ -69,11 +69,12 @@ export function lineTone(line) {
   return line.kind;
 }
 
-/** Sparkline path for values in a w×h box (flat line when constant). */
-export function sparkPath(values, w = 120, h = 24) {
+/** Sparkline path for values in a w×h box (flat line when constant). `minSpan` stops measurement jitter from being
+ *  stretched into a staircase that reads as work (Chad 10-16: BM25 looked active "from the sparkline"; it was idle). */
+export function sparkPath(values, w = 120, h = 24, minSpan = 0) {
   const v = values.filter((x) => typeof x === 'number');
   if (v.length < 2) return '';
-  const min = Math.min(...v), max = Math.max(...v), span = max - min || 1;
+  const lo = Math.min(...v), hi = Math.max(...v), span = Math.max(hi - lo, minSpan) || 1, min = lo - (span - (hi - lo)) / 2;
   return v.map((x, i) => `${i ? 'L' : 'M'}${((i / (v.length - 1)) * w).toFixed(1)} ${(h - ((x - min) / span) * (h - 2) - 1).toFixed(1)}`).join('');
 }
 

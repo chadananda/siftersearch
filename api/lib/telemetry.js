@@ -7,8 +7,10 @@
 export const RINGS = [
   // Meilisearch is legacy, being replaced by Qdrant (Chad 10-16): the first ring is the paragraph store, not Meili sync
   { id: 'text', label: 'Paragraph store', short: 'STORE', of: (r) => [r.generated, r.total] },
-  { id: 'embedding', label: 'Paragraph vectors', short: 'VEC', of: (r) => [r.generated, r.total] },
+  // BM25 right after ingestion, BEFORE vectors (Chad 10-16: "the first thing to be completed after initial paragraph
+  // ingestion … it does not even depend on external vector generation")
   { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },
+  { id: 'embedding', label: 'Paragraph vectors', short: 'VEC', of: (r) => [r.generated, r.total] },
   { id: 'phrase', label: 'Phrase vectors', short: 'PHRASE', of: (r) => [r.reached, r.total] },
   { id: 'sections', label: 'Sub-documents', short: 'SECT', of: (r, docs) => [r.docs_with, docs] },
   { id: 'context', label: 'Disambiguation', short: 'DISAMB', of: (r) => [r.generated, r.total] },
@@ -21,6 +23,7 @@ export const RINGS = [
 // Developed in public (Chad 10-16): what is being built now and next — edited here, shipped with the code.
 export const ROADMAP = [
   { state: 'now', text: 'Findability: every paragraph found from a few remembered words — tested continuously below' },
+  { state: 'now', text: 'BM25 keywords for the last 666K paragraphs — Zoroastrian and Islamic core first' },
   { state: 'now', text: 'Phrase vectors for the Islamic, Arabic and secondary literature' },
   { state: 'next', text: 'Indexing stores move from a hard disk to a 4 TB NVMe (~Oct 24)' },
   { state: 'next', text: 'Questions (HyPE) for the doctrinal core of every tradition' },
@@ -53,7 +56,7 @@ export function shapeCoverage(rows) {
     const cs = cells.filter((c) => c.ring === ring.id);
     const done = cs.reduce((n, c) => n + c.done, 0), total = cs.reduce((n, c) => n + c.total, 0);
     const units = [...by.values()].reduce((n, m) => n + (m.get(ring.id)?.indexed || 0), 0);
-    const core = [...by.values()].reduce((a, m) => { const r = m.get(ring.id); if (r) { a[0] += ring.id === 'phrase' || ring.id === 'text' ? r.core_reached || 0 : r.core_generated || 0; a[1] += r.core_total || 0; } return a; }, [0, 0]);
+    const core = [...by.values()].reduce((a, m) => { const r = m.get(ring.id); if (r) { a[0] += ring.id === 'phrase' || ring.id === 'text' ? r.core_reached || 0 : ring.id === 'keyword' ? Math.min(r.core_indexed || 0, r.core_total || 0) : r.core_generated || 0; a[1] += r.core_total || 0; } return a; }, [0, 0]);
     return { id: ring.id, label: ring.label, short: ring.short, planned: !!ring.planned, done, total, units, core_done: core[0], core_total: core[1] };
   });
   return { traditions, rings, cells };

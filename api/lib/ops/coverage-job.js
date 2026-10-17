@@ -3,7 +3,7 @@
 // refreshStalest() every minute, so the whole library re-measures every few hours with no long query anywhere.
 import { measureDoc, saveCoverage, stalestDocs } from '../repos/coverage-repo.js';
 
-const hypeVersion = async () => (await import('../rag/enrich/retrieval.js')).HYPE_VERSION;
+export const hypeVersion = async () => (await import('../rag/enrich/retrieval.js')).HYPE_VERSION;
 
 export async function coverageRefreshJob({ ids = null, limit = 300 } = {}) {
   const v = await hypeVersion();
