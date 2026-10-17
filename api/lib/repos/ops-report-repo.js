@@ -29,7 +29,10 @@ export async function claimNext({ skip = [], only = [] } = {}) {
     ORDER BY CASE WHEN name IN ('spend', 'languages', 'ctai-audit', 'carry-verify', 'block-mismatch') THEN 0 WHEN name = 'reingest-carry' THEN 1 ELSE 2 END, id LIMIT 1`, args);
   if (!r) return null;
   const u = await query(`UPDATE ops_report_runs SET status = 'running', started_at = ? WHERE id = ? AND status = 'queued'`, [now(), r.id]);
-  return u?.changes === 0 ? null : parse(r);   // another lane took it
+  // through the single writer the count is rows[0].changes, not .changes — reading only .changes let every lane "win" the
+  // same run (10-16: three indexers ran job 105 while 106/107 waited). No count at all = not claimed.
+  const changes = u?.changes ?? u?.rows?.[0]?.changes;
+  return changes === 1 ? parse(r) : null;   // another lane took it
 }
 
 /** Drop a QUEUED run (a running one is left to finish). → the run row */
