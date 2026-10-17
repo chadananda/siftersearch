@@ -35,8 +35,8 @@ export const saveSnapshot = (at, data, series) =>
 export const pruneSnapshots = (keepSeconds = 7 * 86400) =>
   query('DELETE FROM telemetry_snapshots WHERE at < ?', [Math.floor(Date.now() / 1000) - keepSeconds], 'telemetry:prune');
 export const latestSnapshot = () => queryOne('SELECT at, data FROM telemetry_snapshots ORDER BY at DESC LIMIT 1', [], 'telemetry:latest');
-/** The newest snapshot taken at or before `at` (cell rates over a day). */
-export const snapshotAtOrBefore = (at) => queryOne('SELECT at, data FROM telemetry_snapshots WHERE at <= ? ORDER BY at DESC LIMIT 1', [at], 'telemetry:at-or-before');
+/** The oldest snapshot taken at or after `at` (cell rates over up to a day, even while history is younger). */
+export const snapshotSince = (at) => queryOne('SELECT at, data FROM telemetry_snapshots WHERE at >= ? ORDER BY at LIMIT 1', [at], 'telemetry:since');
 export const seriesSince = (sinceEpoch) => queryAll('SELECT at, series FROM telemetry_snapshots WHERE at >= ? ORDER BY at', [sinceEpoch], 'telemetry:series');
 
 /** The 15-second pulse (migration 154): one row, replaced each time. */

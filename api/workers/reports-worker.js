@@ -79,6 +79,18 @@ async function rollingCoverage() {
   }
 }
 
+// BM25 right behind ingestion (Chad 10-16: "the first thing to be completed after initial paragraph ingestion"): every
+// 10 minutes, if the ledger shows a real keyword gap, queue keyword-fill (enqueue dedupes a queued/running twin).
+async function keywordLoop() {
+  const { keywordGapDocs } = await import('../lib/repos/keyword-repo.js');
+  const { enqueue } = await import('../lib/repos/ops-report-repo.js');
+  while (!stopping) {
+    const gap = await keywordGapDocs({ significant: true, limit: 1 }).catch(() => []);
+    if (gap.length) await enqueue('keyword-fill', { significant: true }, 'keyword-loop').catch((err) => logger.warn({ err: err.message }, 'keyword loop: enqueue failed'));
+    await new Promise((r) => setTimeout(r, 600_000));
+  }
+}
+
 // Library telemetry for the home-page Observatory: one snapshot every 5 minutes (api/lib/telemetry.js); 7 days kept.
 async function telemetryLoop() {
   const { buildSnapshot, seriesOf } = await import('../lib/telemetry.js');
@@ -152,5 +164,5 @@ const laneNames = Object.values(LANES).flat();
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), telemetryLoop(), pulseLoop()]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), keywordLoop(), telemetryLoop(), pulseLoop()]);
 process.exit(0);

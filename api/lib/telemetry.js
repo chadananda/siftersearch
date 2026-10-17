@@ -72,11 +72,12 @@ export function growingCells(cells = [], prevCells = []) {
 }
 
 /** Per-cell growth per hour since an older snapshot (key 'tradition|ring', growing cells only) — lets the Observatory
- *  move each tradition's sub-progress between snapshots, as the stage totals already do. Pure. */
+ *  move each tradition's sub-progress between snapshots, as the stage totals already do. A cell that read 0 then (the
+ *  totals were still filling) has no rate. Pure. */
 export function cellRates(cells = [], thenCells = [], hours = 0) {
   if (!(hours > 0)) return {};
   const then = new Map(thenCells.map((c) => [`${c.tradition}|${c.ring}`, c.done]));
-  return Object.fromEntries(cells.map((c) => [`${c.tradition}|${c.ring}`, then.has(`${c.tradition}|${c.ring}`) ? (c.done - then.get(`${c.tradition}|${c.ring}`)) / hours : 0])
+  return Object.fromEntries(cells.map((c) => [`${c.tradition}|${c.ring}`, then.get(`${c.tradition}|${c.ring}`) > 0 ? (c.done - then.get(`${c.tradition}|${c.ring}`)) / hours : 0])
     .filter(([, r]) => r > 0).map(([k, r]) => [k, Math.round(r)]));
 }
 
@@ -153,9 +154,8 @@ export async function buildSnapshot() {
   const prev = await repo.latestSnapshot().then((p) => (p ? JSON.parse(p.data) : null)).catch(() => null);
   const growing = growingCells(shaped.cells, prev?.cells || []);
   const nowSec = Math.floor(Date.now() / 1000);
-  const dayAgo = await repo.snapshotAtOrBefore(nowSec - 86400).catch(() => null)
-    || await repo.snapshotAtOrBefore(nowSec - 3600).catch(() => null);   // younger history: the last hour
-  const cell_rates = dayAgo ? cellRates(shaped.cells, JSON.parse(dayAgo.data).cells || [], (nowSec - dayAgo.at) / 3600) : {};
+  const dayAgo = await repo.snapshotSince(nowSec - 86400).catch(() => null);
+  const cell_rates = dayAgo && nowSec - dayAgo.at >= 1800 ? cellRates(shaped.cells, JSON.parse(dayAgo.data).cells || [], (nowSec - dayAgo.at) / 3600) : {};
   const paragraphs = shaped.traditions.reduce((n, t) => n + t.paragraphs, 0);
   return { at: Math.floor(Date.now() / 1000), corpus: { documents: counts.documents, paragraphs, traditions: shaped.traditions.filter((t) => t.id !== 'Other').length },
     ...shaped, vectors, counts: { ...counts, people }, jobs: shapeJobs(ops), capability: shapeCapability(ki), health, roadmap: ROADMAP, growing, cell_rates };

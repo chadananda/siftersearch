@@ -3,10 +3,13 @@
 // keyword-fill ops job. Deps: db.js.
 import { queryAll } from '../db.js';
 
-/** Documents whose keyword points fall short of their live paragraphs, per the ledger: core first, largest gap first. */
-export const keywordGapDocs = ({ scope = 'primary', limit = 100000 } = {}) =>
+/** Documents whose keyword points fall short of their live paragraphs, per the ledger: core first, largest gap first.
+ *  `significant`: only a real gap — nothing indexed, or more than max(20, 2%) short — not the few paragraphs of pure
+ *  punctuation every document has, which tokenise to nothing and never get a point. */
+export const keywordGapDocs = ({ scope = 'primary', limit = 100000, significant = false } = {}) =>
   queryAll(`SELECT i.doc_id AS id, i.core, i.total, i.indexed FROM index_coverage i JOIN docs d ON d.id = i.doc_id
     WHERE i.layer = 'keyword' AND i.indexed < i.total AND COALESCE(d.scope, 'primary') = ? AND d.deleted_at IS NULL AND d.duplicate_of IS NULL
+      ${significant ? 'AND (i.indexed = 0 OR i.total - i.indexed > MAX(20, i.total / 50))' : ''}
     ORDER BY i.core DESC, (i.total - i.indexed) DESC LIMIT ?`, [scope, limit], 'keyword:gap-docs');
 
 /** One document's live, non-duplicate, non-empty paragraphs with the doc fields the keyword payload carries. */

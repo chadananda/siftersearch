@@ -37,6 +37,11 @@ describe('keyword fill', () => {
     expect((await keywordGapDocs()).map((d) => d.id)).toEqual([1, 2]);
     expect((await keywordGapDocs({ scope: 'supplemental' })).map((d) => d.id)).toEqual([4]);
   });
+  it('significant gaps only: nothing indexed or > max(20, 2%) short — not a few punctuation-only paragraphs', async () => {
+    raw.exec(`INSERT INTO docs VALUES (5,'en','Islam','Lit','W','primary',NULL,NULL), (6,'en','Islam','Lit','V','primary',NULL,NULL);
+      INSERT INTO index_coverage VALUES (5,'keyword',138000,137780,0), (6,'keyword',138000,130000,0);`);
+    expect((await keywordGapDocs({ significant: true })).map((d) => d.id)).toEqual([1, 6, 2]);
+  });
   it('a document\'s rows: live, not duplicate, not empty', async () => {
     expect((await keywordRowsForDoc(1)).map((r) => r.id)).toEqual([10, 11]);
   });

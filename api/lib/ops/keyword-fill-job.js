@@ -4,7 +4,8 @@
 // Chad 10-16: BM25 is the first layer after paragraph ingestion (no external model). Per document: its paragraphs →
 // bm25Doc (the one tokenizer, api/lib/keyword-tokens.js) → upsert (id = paragraph id; idempotent) → re-measure the
 // ledger. Primary scope only for now: supplemental needs the site-boilerplate filter, which scans the table.
-// params { ids?, limit? (documents), scope? }. No AI spend.
+// params { ids?, limit? (documents), scope?, significant? }. No AI spend. The reports worker queues { significant: true }
+// every 10 minutes while real gaps exist, so a newly ingested document has BM25 within minutes (Chad 10-16: BM25 first).
 import { existsSync, readFileSync } from 'fs';
 import { bm25Doc } from '../keyword-tokens.js';
 import { paragraphLang } from '../phrase-vectors.js';
@@ -44,8 +45,8 @@ async function upsert(points, fetchImpl = fetch) {
   }
 }
 
-export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary' } = {}, { fetchImpl = fetch } = {}) {
-  const docs = ids?.length ? ids.map((id) => ({ id: Number(id) })) : await keywordGapDocs({ scope });
+export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary', significant = false } = {}, { fetchImpl = fetch } = {}) {
+  const docs = ids?.length ? ids.map((id) => ({ id: Number(id) })) : await keywordGapDocs({ scope, significant });
   const avg = avgLen(), v = await hypeVersion();
   const stats = { docs: 0, of: docs.length, points: 0, still_short: 0 };
   let lastLog = Date.now();
