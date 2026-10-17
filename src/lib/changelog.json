@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:30:41.594Z",
+  "generated": "2026-10-17T04:34:57.684Z",
   "entries": [
+    {
+      "hash": "759cf24c",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "A real radar — a bright beam line paints the returns slice by slice; phosphor decay",
+      "scope": "home"
+    },
     {
       "hash": "57cf2da3",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "POST /api/v1/source-hunt and /api/v1/source-hunt/page (article → its quotations, each traced); SourceHunt stages run in parallel + per-stage timings",
       "scope": "api"
-    },
-    {
-      "hash": "5b162689",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Highlight decision is one yes/no per clause, so a quote spanning several clauses is marked whole",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "759cf24c",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "A real radar — a bright beam line paints the returns slice by slice; phosphor decay",
+        "scope": "home"
+      },
       {
         "hash": "57cf2da3",
         "date": "2026-10-16",
@@ -7018,13 +7025,6 @@
         "type": "New",
         "description": "POST /api/v1/source-hunt and /api/v1/source-hunt/page (article → its quotations, each traced); SourceHunt stages run in parallel + per-stage timings",
         "scope": "api"
-      },
-      {
-        "hash": "5b162689",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Highlight decision is one yes/no per clause, so a quote spanning several clauses is marked whole",
-        "scope": "sourcehunt"
       }
     ]
   }

@@ -256,7 +256,9 @@
     --obs-accent: var(--accent-primary);
     --obs-core-hi: light-dark(#ffffff, #10233b); --obs-core-lo: light-dark(#e2ecf6, #070f1c);
     --obs-sweep: light-dark(#0284c7, #38bdf8);
-    --obs-phosphor: light-dark(#0369a1, #7dd3fc); --obs-phosphor-hot: light-dark(#0c4a6e, #f0fbff);   /* radar returns + beam */
+    --obs-phosphor: light-dark(#0369a1, #9fdcf5); --obs-phosphor-hot: light-dark(#075985, #eef9ff);   /* P7: blue-white trace + flash */
+    --obs-shade: light-dark(rgba(241, 245, 249, 0.62), rgba(3, 8, 18, 0.62));                        /* scope persistence: how far a turn-old paint has faded */
+    --obs-afterglow: light-dark(#4d7c0f, #b9f06a);                                                   /* P7: yellow-green persistence */
     --obs-bahai: light-dark(#b7791f, #fbbf24); --obs-islam: light-dark(#047857, #34d399); --obs-christian: light-dark(#b91c1c, #f87171);
     --obs-judaism: light-dark(#1d4ed8, #60a5fa); --obs-zoroastrian: light-dark(#c2410c, #fb923c); --obs-hindu: light-dark(#be185d, #f472b6);
     --obs-buddhist: light-dark(#6d28d9, #a78bfa); --obs-jain: light-dark(#0f766e, #2dd4bf); --obs-sikh: light-dark(#4338ca, #818cf8);
