@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:04:15.941Z",
+  "generated": "2026-10-17T04:19:04.834Z",
   "entries": [
+    {
+      "hash": "5b199243",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "The part of the dial being built right now throbs",
+      "scope": "home"
+    },
     {
       "hash": "4e5c1c4a",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "ʿayn sized to sit inside the lens; library summary one compact row on phones",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "799b5a34",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "The ʿayn sits UNDER the lens — clipped to the glass, rim and glint drawn on top of it",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "5b199243",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "The part of the dial being built right now throbs",
+        "scope": "home"
+      },
       {
         "hash": "4e5c1c4a",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "ʿayn sized to sit inside the lens; library summary one compact row on phones",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "799b5a34",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "The ʿayn sits UNDER the lens — clipped to the glass, rim and glint drawn on top of it",
         "scope": "sourcehunt"
       }
     ]
