@@ -51,9 +51,11 @@ export function ownSpans(section, children = []) {
   return spans;
 }
 
-/** Keep only participants whose name appears in the episode's own text (folded: case, diacritics, apostrophes, hyphens). */
+/** Keep only participants whose name appears in the episode's own text — pass the heading with it: the author named them
+ *  there too (folded: case, diacritics, apostrophes, possessives, hyphens). */
 export function verifyParticipants(participants = [], text = '') {
-  const norm = (s) => ` ${String(s || '').split(/[\s\-‑–—,.;:()“”"]+/).map(foldWord).filter(Boolean).join(' ')} `;
+  // possessives ("‘Abdu’l-Bahá’s", "the Báb’s") and every apostrophe form (ʻ U+02BB too) fold away before comparing
+  const norm = (s) => ` ${String(s || '').replace(/[ʻʼ’‘']s\b/g, '').replace(/[ʻ]/g, '').split(/[\s\-‑–—,.;:()“”"!?]+/).map(foldWord).filter(Boolean).join(' ')} `;
   const hay = norm(text);
   const kept = [], dropped = [];
   for (const p of participants) (p?.name && hay.includes(norm(p.name)) ? kept : dropped).push(p);

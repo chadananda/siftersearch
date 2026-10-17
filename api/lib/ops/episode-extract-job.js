@@ -50,7 +50,7 @@ export async function extractEpisode(book, ep, paras, { create = roleCreate } = 
     out = jsonOf(raw);
   }
   if (!out) return { issues: [`no JSON from the model: ${raw.slice(0, 160) || '(empty reply)'}`] };
-  const text = paras.map((p) => p.text).join('\n');
+  const text = [ep.title, ...paras.map((p) => p.text)].join('\n');   // the heading is the author's text too
   const { kept, dropped } = verifyParticipants(Array.isArray(out.participants) ? out.participants : [], text);
   const own = new Set(paras.map((p) => p.paragraph_index));
   const cites = [...String(out.summary || '').matchAll(/\[¶(\d+)\]/g)].map((m) => Number(m[1]));
@@ -64,7 +64,7 @@ export async function extractEpisode(book, ep, paras, { create = roleCreate } = 
     participants: kept, dropped, events: Array.isArray(out.events) ? out.events : [], questions: Array.isArray(out.questions) ? out.questions : [], issues };
 }
 
-export async function episodeExtractJob({ doc, titles = null, limit = 0, redo = false } = {}, { create = roleCreate, sections = sectionsOfDoc, paragraphs = paragraphsInSpans, save = saveEpisode, existing = episodesOfDoc } = {}) {
+export async function episodeExtractJob({ doc, titles = null, limit = 0, redo = false, reverify = false } = {}, { create = roleCreate, sections = sectionsOfDoc, paragraphs = paragraphsInSpans, save = saveEpisode, existing = episodesOfDoc } = {}) {
   if (!doc) throw new Error('episode-extract needs { doc }');
   const secs = await sections(doc);
   const book = { 21310: 'God Passes By', 21308: 'The Dawn-Breakers' }[doc] || `document ${doc}`;
@@ -74,6 +74,7 @@ export async function episodeExtractJob({ doc, titles = null, limit = 0, redo = 
   // resumable: an episode already done at this version with no issues is kept (a restart does not pay twice); redo forces all
   const have = redo ? new Map() : new Map((await existing(doc)).filter((e) => e.version === EPISODE_VERSION && !e.issues?.length).map((e) => [e.ord, e]));
   const stats = { doc, episodes: eps.length, done: 0, kept: 0, participants: 0, dropped: 0, with_issues: 0, failed: 0 };
+  if (reverify) return reverifyEpisodes(doc, await existing(doc), { paragraphs, save, stats });
   let lastLog = Date.now();
   for (const ep of eps) {
     if (have.has(ep.ord)) { stats.kept++; continue; }
@@ -85,6 +86,19 @@ export async function episodeExtractJob({ doc, titles = null, limit = 0, redo = 
       para_ids: paras.map((p) => p.id), ...r, model: roleModel('episode-extract'), version: EPISODE_VERSION });
     stats.done++; stats.participants += r.participants?.length || 0; stats.dropped += r.dropped?.length || 0; if (r.issues?.length) stats.with_issues++;
     if (Date.now() - lastLog > 60000) { lastLog = Date.now(); logActivity('index', `episodes · ${book} · ${stats.done}/${stats.episodes} · ${stats.participants} participants checked against the text`); }
+  }
+  return stats;
+}
+
+/** Re-check stored episodes' participants against heading + text with the current rules — no model call. */
+async function reverifyEpisodes(doc, stored, { paragraphs, save, stats }) {
+  for (const e of stored) {
+    const paras = await paragraphs(doc, e.spans || []);
+    const { kept, dropped } = verifyParticipants([...(e.participants || []), ...(e.dropped || [])], [e.title, ...paras.map((p) => p.text)].join('\n'));
+    const issues = (e.issues || []).filter((i) => !i.startsWith('participants not in the text'));
+    if (dropped.length) issues.push(`participants not in the text: ${dropped.map((p) => p.name).join(', ')}`);
+    await save({ ...e, doc_id: Number(doc), participants: kept, dropped, issues });
+    stats.done++; stats.participants += kept.length; stats.dropped += dropped.length; if (issues.length) stats.with_issues++;
   }
   return stats;
 }

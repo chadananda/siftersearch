@@ -46,4 +46,10 @@ describe('participants are checked against the episode’s own text', () => {
     expect(kept.map((p) => p.name)).toEqual(['Tahirih', 'Quddus', 'Baha’u’llah']);
     expect(dropped.map((p) => p.name)).toEqual(['Mullá Ḥusayn']);
   });
+  it('possessives, the ʻ apostrophe and the heading count; a name only in a sub-scene does not', () => {
+    const text = 'Circumstances attending the attack on Náṣiri’d-Dín S̱háh\n“…” is ‘Abdu’l-Bahá’s written assertion; orders to ‘Alí Ḵhán; half of the Báb’s ministry.';
+    const { kept, dropped } = verifyParticipants([{ name: '‘Abdu’l-Bahá' }, { name: 'ʻAlí Ḵhán' }, { name: 'the Báb' }, { name: 'Náṣiri’d-Dín S̱háh' }, { name: 'Fatḥ-‘Alí S̱háh' }], text);
+    expect(kept.map((p) => p.name)).toEqual(['‘Abdu’l-Bahá', 'ʻAlí Ḵhán', 'the Báb', 'Náṣiri’d-Dín S̱háh']);
+    expect(dropped.map((p) => p.name)).toEqual(['Fatḥ-‘Alí S̱háh']);
+  });
 });
