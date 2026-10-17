@@ -454,7 +454,7 @@ export default async function searchRoutes(fastify) {
       return { ...r, hits: await withLinks(r.hits) };
     }
     const r = await plannedSearch(String(query), { limit: lim, given: filters, messages, qdrant, ...(weights ? { weights } : {}) });
-    return { hits: await withLinks(r.hits), corrected: r.corrected || null, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
+    return { hits: await withLinks(r.hits), corrected: r.corrected || null, citation: r.citation || null, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution, target: r.target || null } };
   });
 
   // Audit read-back: the last N SourceHunt queries with their complete results (internal).
