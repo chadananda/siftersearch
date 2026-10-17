@@ -4,6 +4,7 @@
 import { sectionIndexJob } from './section-index-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
 import { episodeExtractJob } from './episode-extract-job.js';
+import { refsAssignJob } from './refs-assign-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -154,6 +155,7 @@ REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? }
 REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
 REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, scope: 'supplemental' });   // heavy lane: it scans for site page chrome
 REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, limit? } — a predigested history's episodes (Chad 10-17)
+REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — traditional numbering, checked against the work's totals (Chad 10-17)
 REPORTS['section-index'] = sectionIndexJob;
 REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo.js')).structureSummary();   // where structure was found vs must be inferred (Chad 10-17)     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
@@ -165,7 +167,7 @@ export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
-  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary'] };
+  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign'] };
 export const HEAVY = new Set(LANES.heavy);
 // How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K
 // phrases/h for all three vs ~142K/h for one, because the interim /crutch SSD (Kingston A400, no TRIM) saturated —
