@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 let raw;
 const SCHEMA = `
 CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, language TEXT, religion TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, author TEXT, collection TEXT, source_site TEXT);  -- production docs has no authority column
-CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
+CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT DEFAULT 'words', synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
   extract_model TEXT, translation TEXT, deleted_at TEXT, is_duplicate INTEGER);
 CREATE TABLE entity_mentions_v2 (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, status TEXT);
 CREATE TABLE concept_claims (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, proof_ok INTEGER);
@@ -41,6 +41,12 @@ beforeEach(() => {
 });
 
 describe('coverage ledger', () => {
+  it('keyword counts only paragraphs with text — an empty row can never have a point', async () => {
+    raw.prepare("UPDATE content SET text = '' WHERE id = 3").run();
+    const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
+    expect(m.keyword).toMatchObject({ total: 2, indexed: 3 });
+    expect(m.text.total).toBe(3);
+  });
   it('measures one document across every layer', async () => {
     const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
     expect(m.text).toMatchObject({ total: 3, generated: 3, indexed: 2 });

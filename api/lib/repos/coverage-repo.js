@@ -33,7 +33,7 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
   const c = await queryOne(`SELECT COUNT(*) AS total, SUM(synced = 1) AS synced, SUM(embedding IS NOT NULL) AS embedded,
       SUM(LENGTH(COALESCE(context, '')) > 0) AS context, SUM(LENGTH(COALESCE(hyp_questions, '')) > 2) AS hype,
       SUM(hyp_model = ?) AS hype_current, SUM(extract_model IS NOT NULL) AS extracted,
-      SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated
+      SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated, SUM(LENGTH(COALESCE(text, '')) > 0) AS texted
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0`, [hypeVersion || '', id], 'coverage:content');
   const total = c?.total || 0;
   const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts] = await Promise.all([
@@ -56,7 +56,9 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
   return [
     row('text', total, total, c?.synced),
     row('embedding', c?.embedded, c?.embedded, c?.synced),
-    row('keyword', total, total, kwN),                                   // Qdrant points ≈ paragraphs
+    // Qdrant points ≈ paragraphs WITH TEXT: an empty row can never have a point (10-17: 197 documents read 'short' forever
+    // and keyword-fill re-sent their 203K paragraphs every 10 minutes)
+    row('keyword', c?.texted ?? total, c?.texted ?? total, kwN, null, c?.texted ?? total),
     row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
     row('sections', sections?.n, sections?.n, sections?.n, null, sections?.n || 0),
     row('context', c?.context, c?.context, null),                       // feeds HyPE/extraction; not searched itself

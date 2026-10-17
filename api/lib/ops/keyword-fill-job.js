@@ -48,7 +48,7 @@ async function upsert(points, fetchImpl = fetch) {
 export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary', significant = false } = {}, { fetchImpl = fetch } = {}) {
   const docs = ids?.length ? ids.map((id) => ({ id: Number(id) })) : await keywordGapDocs({ scope, significant });
   const avg = avgLen(), v = await hypeVersion();
-  const stats = { docs: 0, of: docs.length, points: 0, still_short: 0 };
+  const stats = { docs: 0, of: docs.length, points: 0, still_short: 0, short_samples: [] };
   let lastLog = Date.now();
   for (const d of limit ? docs.slice(0, limit) : docs) {
     const rows = await keywordRowsForDoc(d.id);
@@ -59,7 +59,10 @@ export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary',
     const measured = await measureDoc(d.id, { hypeVersion: v });
     if (measured.length) await saveCoverage(d.id, measured);
     const kw = measured.find((r) => r.layer === 'keyword');
-    if (kw && kw.indexed < kw.total) stats.still_short++;   // paragraphs with no tokens (numbers-only lines) have no point
+    if (kw && kw.indexed < kw.total) {   // punctuation-only paragraphs tokenise to nothing and have no point
+      stats.still_short++;
+      if (stats.short_samples.length < 8) stats.short_samples.push({ id: d.id, total: kw.total, rows: rows.length, indexed: kw.indexed });
+    }
     stats.docs++;
     if (Date.now() - lastLog > 60000) { lastLog = Date.now(); logActivity('index', `bm25 fill · ${stats.docs}/${stats.of} documents · +${stats.points.toLocaleString('en-US')} keyword points`); }
   }

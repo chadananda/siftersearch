@@ -84,9 +84,16 @@ async function rollingCoverage() {
 async function keywordLoop() {
   const { keywordGapDocs } = await import('../lib/repos/keyword-repo.js');
   const { enqueue } = await import('../lib/repos/ops-report-repo.js');
+  let last = '';
   while (!stopping) {
-    const gap = await keywordGapDocs({ significant: true, limit: 1 }).catch(() => []);
-    if (gap.length) await enqueue('keyword-fill', { significant: true }, 'keyword-loop').catch((err) => logger.warn({ err: err.message }, 'keyword loop: enqueue failed'));
+    // only when the gap CHANGED since the last queued run: a gap a fill cannot close (10-17: the same 197 documents
+    // re-sent every 10 minutes) must not become a write loop on the NVMe
+    const gap = await keywordGapDocs({ significant: true }).catch(() => []);
+    const sig = gap.map((d) => `${d.id}:${d.total}:${d.indexed}`).join(',');
+    if (gap.length && sig !== last) {
+      last = sig;
+      await enqueue('keyword-fill', { significant: true }, 'keyword-loop').catch((err) => logger.warn({ err: err.message }, 'keyword loop: enqueue failed'));
+    }
     await new Promise((r) => setTimeout(r, 600_000));
   }
 }
