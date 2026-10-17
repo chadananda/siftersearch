@@ -12,7 +12,7 @@ import { paragraphLang } from '../phrase-vectors.js';
 import { paragraphAuthor } from '../authorship/effective.js';
 import { authorKey } from '../search/qdrant-layers.js';
 import { keywordGapDocs, keywordRowsForDoc } from '../repos/keyword-repo.js';
-import { measureDoc, saveCoverage } from '../repos/coverage-repo.js';
+import { measureDoc, saveCoverage, saveUnindexable } from '../repos/coverage-repo.js';
 import { hypeVersion } from './coverage-job.js';
 import { logActivity } from '../repos/activity-repo.js';
 
@@ -58,6 +58,7 @@ export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary',
       for (const p of slice) { const pt = keywordPoint(p, avg); if (pt) pts.push(pt); else { tokenless++; sample ??= String(p.text).slice(0, 60); } }
       if (pts.length) { await upsert(pts, fetchImpl); stats.points += pts.length; }
     }
+    await saveUnindexable(d.id, 'keyword', tokenless);   // before measuring, so the ledger leaves them out
     const measured = await measureDoc(d.id, { hypeVersion: v });
     if (measured.length) await saveCoverage(d.id, measured);
     const kw = measured.find((r) => r.layer === 'keyword');

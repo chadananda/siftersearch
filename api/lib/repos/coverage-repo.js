@@ -36,7 +36,7 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
       SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated, SUM(LENGTH(COALESCE(text, '')) > 0) AS texted
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0`, [hypeVersion || '', id], 'coverage:content');
   const total = c?.total || 0;
-  const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure] = await Promise.all([
+  const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure, kwSkip] = await Promise.all([
     queryOne(`SELECT COUNT(DISTINCT para_id) AS n FROM entity_mentions_v2 WHERE doc_id = ? AND status = 'active'`, [id], 'coverage:mentions'),
     queryOne('SELECT COUNT(DISTINCT para_id) AS n FROM concept_claims WHERE doc_id = ? AND proof_ok = 1', [id], 'coverage:concepts'),
     queryOne(`SELECT COUNT(DISTINCT c.id) AS n FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL AND (
@@ -45,21 +45,23 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     queryOne('SELECT COUNT(*) AS n, COALESCE(SUM(paragraphs), 0) AS paras FROM doc_sections WHERE doc_id = ?', [id], 'coverage:sections'),
     count('paragraphs_kw', id), count('phrases', id), count('hype', id), count('concepts', id),
     queryOne('SELECT sections FROM doc_structure WHERE doc_id = ?', [id], 'coverage:structure'),
+    queryOne(`SELECT n FROM layer_unindexable WHERE doc_id = ? AND layer = 'keyword'`, [id], 'coverage:unindexable'),
   ]);
   // a count that failed (Qdrant busy, timeout) is UNKNOWN, not zero: keep the document's last good figure (10-16: zeros
   // from timed-out counts made phrase/keyword coverage appear to shrink by ~66K paragraphs an hour)
   const prev = Object.fromEntries((await queryAll('SELECT layer, indexed FROM index_coverage WHERE doc_id = ?', [id], 'coverage:prev')).map((r) => [r.layer, r.indexed]));
   const known = (n, layer) => (n == null ? prev[layer] ?? null : n);
   const [kwN, phraseN, hypeN, conceptN] = [known(kw, 'keyword'), known(phrase, 'phrase'), known(hype, 'hype'), known(conceptPts, 'concepts')];
+  const kwTotal = Math.max(0, (c?.texted ?? total) - (kwSkip?.n || 0));
   const nonEnglish = !/^en/i.test(String(doc.language || 'en'));
   const core = isCore(doc) ? 1 : 0;
   const row = (layer, generated, current, indexed, version = null, t = total) => ({ layer, total: t, generated: generated || 0, current: current ?? generated ?? 0, indexed: indexed ?? 0, version, core });
   return [
     row('text', total, total, c?.synced),
     row('embedding', c?.embedded, c?.embedded, c?.synced),
-    // Qdrant points ≈ paragraphs WITH TEXT: an empty row can never have a point (10-17: 197 documents read 'short' forever
-    // and keyword-fill re-sent their 203K paragraphs every 10 minutes)
-    row('keyword', c?.texted ?? total, c?.texted ?? total, kwN, null, c?.texted ?? total),
+    // Qdrant points ≈ paragraphs that HAVE WORDS: empty rows and markup-only rows ('|', '##') can never have a point
+    // (10-17: 197 documents read 'short' forever and keyword-fill re-sent their 203K paragraphs every 10 minutes)
+    row('keyword', kwTotal, kwTotal, kwN, null, kwTotal),
     row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
     // structure is per DOCUMENT: total 1, generated 1 once the section index has read it (with or without sections),
     // indexed = its sections — so the ring reads documents read / documents (Chad 10-17: structure right after ingestion)
@@ -99,6 +101,10 @@ export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 100
   ], 'coverage:save');
   return rows.length;
 }
+
+/** A layer met paragraphs it cannot index in a document (keyword: no words) — the ledger leaves them out of its total. */
+export const saveUnindexable = (docId, layer, n) => transaction([{ sql: `INSERT INTO layer_unindexable (doc_id, layer, n, at) VALUES (?, ?, ?, ?)
+  ON CONFLICT(doc_id, layer) DO UPDATE SET n = excluded.n, at = excluded.at`, args: [Number(docId), layer, n, Math.floor(Date.now() / 1000)] }], 'coverage:unindexable-save');
 
 /** The section index just read a document: move its ledger 'sections' row (1 of 1, indexed = sections) without
  *  re-measuring every layer, keeping the document's core flag. */

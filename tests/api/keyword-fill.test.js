@@ -13,6 +13,7 @@ const measured = [];
 vi.mock('../../api/lib/repos/coverage-repo.js', () => ({
   measureDoc: vi.fn(async (id) => [{ layer: 'keyword', total: 2, indexed: 2 }]),
   saveCoverage: vi.fn(async (id) => { measured.push(id); }),
+  saveUnindexable: vi.fn(async () => {}),
 }));
 vi.mock('../../api/lib/ops/coverage-job.js', () => ({ hypeVersion: async () => 'v' }));
 vi.mock('../../api/lib/repos/activity-repo.js', () => ({ logActivity: vi.fn() }));

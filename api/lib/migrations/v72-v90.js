@@ -1687,6 +1687,15 @@ export const migrations = {
       indexed_at INTEGER NOT NULL)`);
     logger.info('Migration 155 complete: doc_structure');
   },
+
+  156: async () => {
+    // Paragraphs a layer CANNOT index, per document (10-17: 21,020 rows that are only '|', '##' or '_____' — table and
+    // rule debris from ingestion — have no words, so BM25 can never give them a point and the ledger read 197 documents
+    // 'short' forever). Written by the layer's job when it meets them; the ledger subtracts them from that layer's total.
+    await query(`CREATE TABLE IF NOT EXISTS layer_unindexable (doc_id INTEGER NOT NULL, layer TEXT NOT NULL, n INTEGER NOT NULL,
+      at INTEGER NOT NULL, PRIMARY KEY (doc_id, layer)) WITHOUT ROWID`);
+    logger.info('Migration 156 complete: layer_unindexable');
+  },
 };
 
 export const graphMigrations = {
