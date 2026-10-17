@@ -68,4 +68,14 @@ describe('keyword fill', () => {
     expect(calls).toEqual([]);
     expect(stats).toMatchObject({ docs: 1, tokenless: 1, recorded_only: 1, points: 0 });
   });
+  it('supplemental: site page chrome (repeated across >= 10 site documents) and markup lines are left out, not sent', async () => {
+    raw.exec(`INSERT INTO docs VALUES ${Array.from({ length: 10 }, (_, k) => `(${100 + k},'en','Other','Web','Z','supplemental',NULL,NULL)`).join(',')};
+      INSERT INTO content VALUES ${Array.from({ length: 10 }, (_, k) => `(${1000 + k},${100 + k},'Home | About | Contact',NULL,NULL,0)`).join(',')},
+        (1100,100,'A real paragraph of the site',NULL,NULL,0), (1101,100,'<table>',NULL,NULL,0);
+      INSERT INTO index_coverage VALUES (100,'keyword',3,0,0);`);
+    const sent = [];
+    const stats = await keywordFillJob({ scope: 'supplemental', ids: [100] }, { fetchImpl: async (u, i) => { sent.push(...JSON.parse(i.body).points.map((p) => p.id)); return { ok: true, json: async () => ({}) }; } });
+    expect(sent).toEqual([1100]);
+    expect(stats.tokenless).toBe(2);
+  });
 });

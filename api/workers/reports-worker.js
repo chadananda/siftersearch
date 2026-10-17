@@ -84,15 +84,17 @@ async function rollingCoverage() {
 async function keywordLoop() {
   const { keywordGapDocs } = await import('../lib/repos/keyword-repo.js');
   const { enqueue } = await import('../lib/repos/ops-report-repo.js');
-  let last = '';
+  const last = {};
   while (!stopping) {
     // only when the gap CHANGED since the last queued run: a gap a fill cannot close (10-17: the same 197 documents
     // re-sent every 10 minutes) must not become a write loop on the NVMe
-    const gap = await keywordGapDocs({ significant: true }).catch(() => []);
-    const sig = gap.map((d) => `${d.id}:${d.total}:${d.indexed}`).join(',');
-    if (gap.length && sig !== last) {
-      last = sig;
-      await enqueue('keyword-fill', { significant: true }, 'keyword-loop').catch((err) => logger.warn({ err: err.message }, 'keyword loop: enqueue failed'));
+    for (const [scope, job] of [['primary', 'keyword-fill'], ['supplemental', 'keyword-fill-sites']]) {
+      const gap = await keywordGapDocs({ scope, significant: true }).catch(() => []);
+      const sig = gap.map((d) => `${d.id}:${d.total}:${d.indexed}`).join(',');
+      if (gap.length && sig !== last[scope]) {
+        last[scope] = sig;
+        await enqueue(job, { significant: true }, 'keyword-loop').catch((err) => logger.warn({ err: err.message }, 'keyword loop: enqueue failed'));
+      }
     }
     // document structure (sub-documents, TOC) right after ingestion (Chad 10-17): read every live document not yet read
     const unread = await (await import('../lib/repos/sections-repo.js')).docsWithoutStructure(1).catch(() => []);

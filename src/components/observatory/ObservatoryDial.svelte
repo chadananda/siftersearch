@@ -198,11 +198,7 @@
   .cell { cursor: crosshair; }
   .cell:hover .track { opacity: 0.28; }
   .cell.planned .track { opacity: 0.05; }
-  /* being built right now: the cell breathes, its growth front pulses bright */
-  .fill.growing { animation: grow-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
-  .cell.growing .track { animation: track-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
-  .cell.feeding .track { animation: track-throb 3.2s ease-in-out infinite; animation-delay: var(--d); }
-  /* ── radar returns: flash white-hot as the sweep crosses, then fade through the tradition's colour ── */
+  /* no cell animates on its own: only the sweep lights the dial (Chad 10-17: self-throbbing cells looked out of sync) */
   /* persistence: θ° behind the trace a paint is θ/360 of a turn old; brightness ≈ 0.22 + 0.78·e^(−3.2·age) */
   @property --obs-trace { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
   .lit { pointer-events: none; animation: trace 14s linear infinite; }   /* always running, so use:lock pins it at mount */
@@ -216,8 +212,6 @@
   .trace { stroke: var(--obs-afterglow); stroke-width: 1.6; stroke-linecap: round; opacity: 0.8; filter: drop-shadow(0 0 3px var(--obs-afterglow)); }
   /* P7 phosphor: blue-white flash where the trace strikes, then a long yellow-green afterglow fading over the turn */
   @keyframes blip { 0% { opacity: 1; stroke: var(--obs-phosphor-hot); } 4% { stroke: var(--obs-afterglow); opacity: 0.95; } 30% { opacity: 0.6; } 60% { opacity: 0.28; } 90% { opacity: 0.06; } 100% { opacity: 0; } }
-  @keyframes grow-throb { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 8px var(--c)); } }
-  @keyframes track-throb { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.32; } }
   .trad { font: 600 13px/1 var(--obs-sans); letter-spacing: 0.14em; }
   .stage { font: 500 9.5px/1 var(--obs-mono); fill: var(--obs-text-dim); letter-spacing: 0.06em; }
   .stage-pct { fill: var(--obs-text); font-weight: 600; }
@@ -236,6 +230,6 @@
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; } .lit { animation: none; } .lit.scoped { -webkit-mask-image: none; mask-image: none; }
-    .fill.growing, .cell.growing .track, .cell.feeding .track, .blip { animation: none; } .blip { display: none; }
+    .blip { animation: none; } .blip { display: none; }
   }
 </style>

@@ -3,7 +3,8 @@
 // un-duplicated) never got keyword points — 10-16: ~666K, mostly doctrinal core (Zoroastrian 330K, Islam 302K).
 // Chad 10-16: BM25 is the first layer after paragraph ingestion (no external model). Per document: its paragraphs →
 // bm25Doc (the one tokenizer, api/lib/keyword-tokens.js) → upsert (id = paragraph id; idempotent) → re-measure the
-// ledger. Primary scope only for now: supplemental needs the site-boilerplate filter, which scans the table.
+// ledger. Supplemental (scraped sites) leaves out page chrome — markup-only lines and texts repeated across ≥10 site
+// documents (api/lib/site-boilerplate.js) — counted as unindexable; that scan runs as keyword-fill-sites in the heavy lane.
 // params { ids?, limit? (documents), scope?, significant? }. No AI spend. The reports worker queues { significant: true }
 // every 10 minutes while real gaps exist, so a newly ingested document has BM25 within minutes (Chad 10-16: BM25 first).
 import { existsSync, readFileSync } from 'fs';
@@ -11,7 +12,8 @@ import { bm25Doc } from '../keyword-tokens.js';
 import { paragraphLang } from '../phrase-vectors.js';
 import { paragraphAuthor } from '../authorship/effective.js';
 import { authorKey } from '../search/qdrant-layers.js';
-import { keywordGapDocs, keywordRowsForDoc } from '../repos/keyword-repo.js';
+import { keywordGapDocs, keywordRowsForDoc, siteBoilerplateTexts } from '../repos/keyword-repo.js';
+import { keepSiteParagraph } from '../site-boilerplate.js';
 import { measureDoc, saveCoverage, saveUnindexable } from '../repos/coverage-repo.js';
 import { hypeVersion } from './coverage-job.js';
 import { logActivity } from '../repos/activity-repo.js';
@@ -48,6 +50,7 @@ async function upsert(points, fetchImpl = fetch) {
 export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary', significant = false } = {}, { fetchImpl = fetch } = {}) {
   const docs = ids?.length ? ids.map((id) => ({ id: Number(id) })) : await keywordGapDocs({ scope, significant });
   const avg = avgLen(), v = await hypeVersion();
+  const chrome = scope === 'supplemental' ? await siteBoilerplateTexts() : null;
   const stats = { docs: 0, of: docs.length, points: 0, tokenless: 0, still_short: 0, short_samples: [] };
   let lastLog = Date.now();
   for (const d of limit ? docs.slice(0, limit) : docs) {
@@ -56,7 +59,10 @@ export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary',
     const batches = [];
     for (let i = 0; i < rows.length; i += BATCH) {
       const pts = [];
-      for (const p of rows.slice(i, i + BATCH)) { const pt = keywordPoint(p, avg); if (pt) pts.push(pt); else { tokenless++; sample ??= String(p.text).slice(0, 60); } }
+      for (const p of rows.slice(i, i + BATCH)) {
+        const pt = chrome && !keepSiteParagraph(p.text, chrome) ? null : keywordPoint(p, avg);
+        if (pt) pts.push(pt); else { tokenless++; sample ??= String(p.text).slice(0, 60); }
+      }
       batches.push(pts);
     }
     // already complete except for rows with no words: just record those — no re-send (spares the NVMe a rewrite)

@@ -150,7 +150,8 @@ REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, vari
 };
 REPORTS['vocab-build'] = vocabBuildJob;   // params { minFreq?, maxWords? } — the library vocabulary for query spell-correction
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
-REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope? } — BM25 gaps from the ledger, core first (Chad 10-16)
+REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
+REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, scope: 'supplemental' });   // heavy lane: it scans for site page chrome
 REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
@@ -158,7 +159,7 @@ REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — 
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
 export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps'] };

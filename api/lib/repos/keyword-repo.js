@@ -2,6 +2,7 @@
 // short of keyword points (core first), and one document's paragraphs in the shape the BM25 indexer needs. Callers: the
 // keyword-fill ops job. Deps: db.js.
 import { queryAll } from '../db.js';
+import { MIN_DOCS } from '../site-boilerplate.js';
 
 /** Documents whose keyword points fall short of their live paragraphs, per the ledger: core first, largest gap first.
  *  `significant`: only a real gap — nothing indexed, or more than max(20, 2%) short — not the few paragraphs of pure
@@ -17,3 +18,9 @@ export const keywordRowsForDoc = (docId) =>
   queryAll(`SELECT c.id, c.doc_id, c.text, c.authors, d.language, d.religion, d.collection, d.author, COALESCE(d.scope, 'primary') AS scope
     FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE c.doc_id = ? AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0 ORDER BY c.id`, [Number(docId)], 'keyword:doc-rows');
+
+/** Scraped-site page chrome: paragraph texts repeated across >= minDocs site documents (menus, footers). One GROUP BY
+ *  over the supplemental paragraphs — run only from the heavy lane (keyword-fill-sites). */
+export const siteBoilerplateTexts = async (minDocs = MIN_DOCS) => new Set((await queryAll(`SELECT c.text FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE d.scope = 'supplemental' AND d.deleted_at IS NULL AND c.deleted_at IS NULL
+    GROUP BY c.text HAVING COUNT(DISTINCT c.doc_id) >= ?`, [minDocs], 'keyword:site-boilerplate')).map((r) => r.text));

@@ -59,7 +59,7 @@ export function duration(sec) {
 /** Which ring a running ops job is feeding (drives the particle streams). */
 export function ringOfJob(name, label = '') {
   if (name === 'phrase-index') return /hype/.test(label) ? 'hype' : /concept/.test(label) ? 'concepts' : 'phrase';
-  return { 'hype-index': 'hype', 'concept-index': 'concepts', 'section-index': 'sections', 'coverage-refresh': 'text', 'ingest-files': 'text', 'keyword-fill': 'keyword' }[name] || null;
+  return { 'hype-index': 'hype', 'concept-index': 'concepts', 'section-index': 'sections', 'coverage-refresh': 'text', 'ingest-files': 'text', 'keyword-fill': 'keyword', 'keyword-fill-sites': 'keyword' }[name] || null;
 }
 
 /** Colour class of a terminal line: by kind, and probes by outcome. */
