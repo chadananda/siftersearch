@@ -43,9 +43,13 @@ const jsonOf = (s) => { const m = String(s || '').match(/\{[\s\S]*\}/); try { re
 
 /** One episode: prompt → model → checks. `create` is roleCreate (injectable for tests). */
 export async function extractEpisode(book, ep, paras, { create = roleCreate } = {}) {
-  const res = await create('episode-extract', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: episodePrompt(book, ep, paras) }] });
-  const out = jsonOf(res?.choices?.[0]?.message?.content);
-  if (!out) return { issues: ['no JSON from the model'] };
+  let out = null, raw = '';
+  for (let attempt = 0; attempt < 2 && !out; attempt++) {   // one retry: a long episode can run past the first reply
+    const res = await create('episode-extract', { max_tokens: 4000, temperature: 0, messages: [{ role: 'user', content: episodePrompt(book, ep, paras) }] });
+    raw = res?.choices?.[0]?.message?.content || '';
+    out = jsonOf(raw);
+  }
+  if (!out) return { issues: [`no JSON from the model: ${raw.slice(0, 160) || '(empty reply)'}`] };
   const text = paras.map((p) => p.text).join('\n');
   const { kept, dropped } = verifyParticipants(Array.isArray(out.participants) ? out.participants : [], text);
   const own = new Set(paras.map((p) => p.paragraph_index));
