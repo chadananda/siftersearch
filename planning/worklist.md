@@ -20,6 +20,14 @@ automatically (reports-worker keywordLoop, every 10 min).
 - [x] Structure read for all 53,628 documents (doc_structure, migr 155)
 - [ ] 1. SECTION PATH CONTEXT — "Book › Part › Chapter › heading" per paragraph from the TOC, as its own weighted field
       (NOT in the embedding: 10-01 a title header HURT phrase search). Measure on the known-item test before/after.
+- [ ] STRUCTURE INFERENCE (Chad 10-17: structure is often NOT embedded as headings) — found in 1,100 / 53,628 docs;
+      2,962 long docs (≥200 ¶) have none (Khordeh Avesta 330K ¶, Radd al-Muhtar 172K, Douay-Rheims 41K, Partial Inventory
+      29K). Order: in-text markers (Bible book/chapter, كتاب/باب/فصل, Yasna/Yasht, ghazal numbers, numbered entries) → source
+      files' dropped headings → LLM segmentation only for marker-less prose (cost first). Report: structure-summary.
+- [ ] REFERENCES (Chad 10-17): every book with traditional referencing gets it (verse, section, saying number in
+      block_attrs.pn — Bible/Qur'an verse pn exist); Bahá'í books with page markers get page references (pdf_page);
+      Hidden Words get traditional numbering (Arabic 1–71, Persian 1–82). OceanLibrary display ids would match the
+      traditional paragraph numbering exactly but are not exported yet — derive meanwhile. Ledger layer 'refs' + dial ring.
 - [ ] 2. CITATION INDEX — normalised references (Bible ch:v, Qur'an s:a, Gleanings §, Aqdas ¶, Hidden Words A/P #):
       typed reference → passage; paragraphs that cite a verse → "cited in"
 - [ ] 3. QUOTATION REUSE — shingle fingerprints across the library: "quoted in", collapse re-quotations, source first
