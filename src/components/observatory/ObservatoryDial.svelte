@@ -58,6 +58,13 @@
     pin(offset);
     return { update: pin };
   }
+  // phosphor decay behind the trace: θ degrees behind = θ/360 of a turn old → brightness, from 1 down to a dim floor
+  const PERSIST_STEP = 4;
+  const PERSIST = Array.from({ length: 360 / PERSIST_STEP }, (_, i) => {
+    const age = (i + 0.5) * PERSIST_STEP / 360;
+    const v = Math.round(255 * (0.22 + 0.78 * Math.exp(-age * 3.2)));   // opaque grey (luminance mask): overlaps don't stack
+    return { a: LEAD_DEG - (i + 1) * PERSIST_STEP, g: `rgb(${v},${v},${v})` };
+  });
   const hitAt = (a) => ((((a - LEAD_DEG) % 360) + 360) % 360) / 360 * SWEEP_S;   // seconds into a turn when the trace reaches a
   const arc = (r, a0, a1) => { const [x0, y0] = polar(C, C, r, a0), [x1, y1] = polar(C, C, r, a1); return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
   const radial = (r0, r1, a) => { const [x0, y0] = polar(C, C, r0, a), [x1, y1] = polar(C, C, r1, a); return `M${x0.toFixed(1)} ${y0.toFixed(1)}L${x1.toFixed(1)} ${y1.toFixed(1)}`; };
@@ -103,7 +110,14 @@
   <defs>
     <filter id="obs-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
     <radialGradient id="obs-core" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="var(--obs-core-hi)" /><stop offset="100%" stop-color="var(--obs-core-lo)" /></radialGradient>
-    <linearGradient id="obs-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--obs-sweep)" stop-opacity="0" /><stop offset="100%" stop-color="var(--obs-sweep)" stop-opacity="0.28" /></linearGradient>
+    <!-- persistence (Chad 10-16: "the sweeping light should not light up the dark parts, only the light parts"): a mask on
+         the FILLS only — a ring of wedges, full where the trace just passed, decaying to a dim floor a turn later, rotating
+         with the trace. Dark tracks, labels and the core are never part of it. -->
+    <mask id="obs-persist" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000">
+      <g class="persist" use:lock={0}>
+        {#each PERSIST as w (w.a)}<path d={arcPath(C, C, 0, 500, w.a, w.a + PERSIST_STEP + 0.3)} fill={w.g} />{/each}
+      </g>
+    </mask>
   </defs>
 
   <!-- bezel -->
@@ -120,7 +134,7 @@
       <g class="cell" class:planned={ring?.planned} class:growing={grow} class:feeding={feeding.has(b.id)} style={`--c: var(--obs-${SLUG[s.id]}); --d: ${((s.a0 * 7 + b.r0) % 23) / 10}s`}
         onmouseenter={(e) => hover(e, s.id, ring)} onmousemove={(e) => hover(e, s.id, ring)} onmouseleave={() => onhover(null)} role="presentation">
         <path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a1)} class="track" />
-        {#if deg > 0}<path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a0 + deg)} class="fill" filter={deg / (s.a1 - s.a0) > 0.02 ? 'url(#obs-glow)' : undefined} />{/if}
+        {#if deg > 0}<path d={arcPath(C, C, b.r0, b.r1, s.a0, s.a0 + deg)} class="fill" mask={phase == null ? undefined : "url(#obs-persist)"} filter={deg / (s.a1 - s.a0) > 0.02 ? 'url(#obs-glow)' : undefined} />{/if}
       </g>
     {/each}
   {/each}
@@ -142,7 +156,7 @@
   {/each}
 
   <!-- the sweep -->
-  <g class="sweep" use:lock={0}><path d={arcPath(C, C, 124, 436, 0, LEAD_DEG)} fill="url(#obs-sweep)" /><line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="beam-line" /></g>
+  <g class="sweep" use:lock={0}><line x1={polar(C, C, 124, LEAD_DEG)[0]} y1={polar(C, C, 124, LEAD_DEG)[1]} x2={polar(C, C, 436, LEAD_DEG)[0]} y2={polar(C, C, 436, LEAD_DEG)[1]} class="beam-line" /></g>
   <!-- radar returns: the outline of each cell being built, painted by the trace, decaying like phosphor -->
   <g class="scope">
     {#each blips as bl (bl.key)}<path d={bl.d} class="blip" use:lock={bl.delay} />{/each}
@@ -170,11 +184,6 @@
   <text x={C} y={C + 32} class="core-label" text-anchor="middle">PARAGRAPHS</text>
   <text class="core-sub"><textPath href="#obs-core-bottom" startOffset="50%" text-anchor="middle">{compact(snapshot?.corpus?.documents)} DOCUMENTS · {snapshot?.corpus?.traditions ?? '—'} TRADITIONS</textPath></text>
 </svg>
-<!-- persistence: everything on the scope fades behind the trace and is redrawn as it passes (Chad 10-16: "in a radar,
-     everything on the screen gradually fades and the sweeping line redraws it") — a conic shade rotating with the sweep -->
-<div class="persist" aria-hidden="true" style={`--lead: ${LEAD_DEG}deg`} use:lock={0}></div>
-<!-- the freshly redrawn wedge just behind the trace is brighter than the rest: the phosphor's first glow -->
-<div class="persist fresh" aria-hidden="true" style={`--lead: ${LEAD_DEG}deg`} use:lock={0}></div>
 
 <style>
   .dial { width: 100%; height: auto; display: block; overflow: visible; }
@@ -182,7 +191,7 @@
   .tick { stroke: var(--obs-line); stroke-width: 1; }
   .tick.long { stroke: var(--obs-line-strong); stroke-width: 1.4; }
   .track { fill: var(--c); opacity: 0.08; transition: opacity 0.2s; }
-  .fill { fill: var(--c); opacity: 0.78; transition: d 1.2s ease; }
+  .fill { fill: var(--c); opacity: 0.95; transition: d 1.2s ease; }
   .cell { cursor: crosshair; }
   .cell:hover .track { opacity: 0.28; }
   .cell.planned .track { opacity: 0.05; }
@@ -191,14 +200,7 @@
   .cell.growing .track { animation: track-throb 2.2s ease-in-out infinite; animation-delay: var(--d); }
   .cell.feeding .track { animation: track-throb 3.2s ease-in-out infinite; animation-delay: var(--d); }
   /* ── radar returns: flash white-hot as the sweep crosses, then fade through the tradition's colour ── */
-  .persist { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1; pointer-events: none; border-radius: 50%;
-    background: conic-gradient(from var(--lead), var(--obs-shade) 0deg, color-mix(in srgb, var(--obs-shade) 75%, transparent) 90deg,
-      color-mix(in srgb, var(--obs-shade) 40%, transparent) 210deg, color-mix(in srgb, var(--obs-shade) 10%, transparent) 320deg, transparent 358deg, var(--obs-shade) 360deg);
-    -webkit-mask-image: radial-gradient(circle closest-side, transparent 24.6%, #000 25.4%, #000 86.8%, transparent 87.6%);
-    mask-image: radial-gradient(circle closest-side, transparent 24.6%, #000 25.4%, #000 86.8%, transparent 87.6%);
-    animation: obs-spin 14s linear infinite; }
-  .persist.fresh { mix-blend-mode: plus-lighter;
-    background: conic-gradient(from var(--lead), transparent 0deg, transparent 250deg, color-mix(in srgb, var(--obs-glow) 35%, transparent) 330deg, var(--obs-glow) 359deg, transparent 360deg); }
+  .persist { transform-box: view-box; transform-origin: 50% 50%; animation: obs-spin 14s linear infinite; }
   .scope { filter: drop-shadow(0 0 3px var(--obs-afterglow)); pointer-events: none; }
   .blip { fill: none; stroke: var(--obs-afterglow); stroke-width: 2.4; stroke-linecap: round; opacity: 0; animation: blip 14s linear infinite; }
   .beam-line { stroke: var(--obs-phosphor); stroke-width: 1.4; opacity: 0.75; stroke-linecap: round; }
@@ -223,7 +225,7 @@
   .core-inner { fill: none; stroke: var(--obs-line); stroke-width: 1; stroke-dasharray: 2 5; }
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; }
-    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .blip { animation: none; } .blip, .persist { display: none; }
+  @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; mask: none; }
+    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .blip { animation: none; } .blip { display: none; } .persist { animation: none; }
   }
 </style>

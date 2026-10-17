@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-17T04:40:06.661Z",
+  "generated": "2026-10-17T04:50:28.932Z",
   "entries": [
+    {
+      "hash": "61c42aea",
+      "date": "2026-10-16",
+      "type": "Performance",
+      "description": "Phrase indexing back to one job at a time — three saturated the interim SSD and ran slower (91K vs 142K phrases/h)",
+      "scope": "ops"
+    },
+    {
+      "hash": "500c22a5",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "Radar paint stays in step with the sweep — every animation pinned to one turn origin; brighter fresh redraw",
+      "scope": "home"
+    },
     {
       "hash": "f62512e9",
       "date": "2026-10-16",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Clause highlight by VOTE — Clef + Clef-flash in parallel, Jev breaks a disagreement by majority; fallback spans fixed (cleanText offsets) and limited to the single best phrase",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "8b143693",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "Clause highlight needs ≥0.5 AND within 0.2 of the best clause (Jev marked 0.64/0.50 strays beside 0.91/0.81)",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "a6e9f947",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "An un-elided quote highlights one continuous run of clauses (drops a stray 0.61 clause); model-neutral caption",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "61c42aea",
+        "date": "2026-10-16",
+        "type": "Performance",
+        "description": "Phrase indexing back to one job at a time — three saturated the interim SSD and ran slower (91K vs 142K phrases/h)",
+        "scope": "ops"
+      },
+      {
+        "hash": "500c22a5",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "Radar paint stays in step with the sweep — every animation pinned to one turn origin; brighter fresh redraw",
+        "scope": "home"
+      },
       {
         "hash": "f62512e9",
         "date": "2026-10-16",
@@ -7010,20 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Clause highlight by VOTE — Clef + Clef-flash in parallel, Jev breaks a disagreement by majority; fallback spans fixed (cleanText offsets) and limited to the single best phrase",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "8b143693",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "Clause highlight needs ≥0.5 AND within 0.2 of the best clause (Jev marked 0.64/0.50 strays beside 0.91/0.81)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "a6e9f947",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "An un-elided quote highlights one continuous run of clauses (drops a stray 0.61 clause); model-neutral caption",
         "scope": "sourcehunt"
       }
     ]
