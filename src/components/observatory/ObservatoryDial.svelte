@@ -3,7 +3,8 @@
   // ingesting and studying the library"). Centre = the library; rings outward = the enhancement stages in order; sectors =
   // traditions (equal angles — each tradition as visible as the largest); each cell = that tradition's progress on that
   // stage. A sweep circles the dial; particles stream from the core to the rings a running job is feeding.
-  import { dialLayout, arcPath, fillDeg, polar, compact, pct } from '../../lib/observatory.js';
+  import { dialLayout, arcPath, fillDeg, polar, compact, pct, RING_INFO } from '../../lib/observatory.js';
+  import { OCEAN_LOGO_PATH } from '../../lib/ocean-logo.js';
 
   let { snapshot, activeRings = [], now = Date.now(), onhover = () => {} } = $props();
 
@@ -44,7 +45,7 @@
   const paragraphs = $derived(snapshot?.corpus?.paragraphs ?? 0);
   function hover(e, t, ring) {
     const c = cellOf.get(`${t}|${ring.id}`);
-    onhover(c ? { x: e.clientX, y: e.clientY, tradition: LABEL[t] || t, ring: ring.label, done: c.done, total: c.total, sections: ring.id === 'sections' } : null);
+    onhover(c ? { x: e.clientX, y: e.clientY, tradition: LABEL[t] || t, ring: RING_INFO[ring.id]?.title || ring.label, sub: RING_INFO[ring.id]?.sub, done: c.done, total: c.total, sections: ring.id === 'sections' } : null);
   }
 </script>
 
@@ -101,14 +102,19 @@
     </circle>
   {/each}
 
-  <!-- core: the library -->
+  <!-- core: Ocean Library (Chad 10-16: "call it Ocean Library and add the faded Ocean logo at the very center"; text set
+       to the circle — the name on the upper arc, the count in the middle, the holdings on the lower arc, reading upright) -->
   <circle cx={C} cy={C} r="118" fill="url(#obs-core)" class="core" />
+  <path id="obs-core-top" d={`M ${C - 92} ${C} A 92 92 0 0 1 ${C + 92} ${C}`} fill="none" />
+  <path id="obs-core-bottom" d={`M ${C - 100} ${C} A 100 100 0 0 0 ${C + 100} ${C}`} fill="none" />
+  <g class="core-logo" transform={`translate(${C - 100} ${C - 100}) scale(${200 / 512})`}><path d={OCEAN_LOGO_PATH} /></g>
   <circle cx={C} cy={C} r="118" class="core-ring" />
+  <circle cx={C} cy={C} r="106" class="core-inner" />
   <circle cx={C} cy={C} r="118" class="core-pulse" />
-  <text x={C} y={C - 34} class="core-label" text-anchor="middle">THE LIBRARY</text>
-  <text x={C} y={C + 6} class="core-num" text-anchor="middle">{compact(paragraphs)}</text>
-  <text x={C} y={C + 30} class="core-label" text-anchor="middle">PARAGRAPHS</text>
-  <text x={C} y={C + 56} class="core-sub" text-anchor="middle">{compact(snapshot?.corpus?.documents)} docs · {snapshot?.corpus?.traditions ?? '—'} traditions</text>
+  <text class="core-name"><textPath href="#obs-core-top" startOffset="50%" text-anchor="middle">OCEAN LIBRARY</textPath></text>
+  <text x={C} y={C + 10} class="core-num" text-anchor="middle">{compact(paragraphs)}</text>
+  <text x={C} y={C + 32} class="core-label" text-anchor="middle">PARAGRAPHS</text>
+  <text class="core-sub"><textPath href="#obs-core-bottom" startOffset="50%" text-anchor="middle">{compact(snapshot?.corpus?.documents)} DOCUMENTS · {snapshot?.corpus?.traditions ?? '—'} TRADITIONS</textPath></text>
 </svg>
 
 <style>
@@ -130,9 +136,12 @@
   .core { stroke: none; }
   .core-ring { fill: none; stroke: var(--obs-accent); stroke-width: 1.2; opacity: 0.7; }
   .core-pulse { fill: none; stroke: var(--obs-accent); stroke-width: 2; transform-box: view-box; transform-origin: 50% 50%; animation: obs-pulse 3.2s ease-out infinite; }
-  .core-num { font: 600 46px/1 var(--obs-mono); fill: var(--obs-text); letter-spacing: -0.02em; }
-  .core-label { font: 600 10.5px/1 var(--obs-sans); fill: var(--obs-text-dim); letter-spacing: 0.22em; }
-  .core-sub { font: 500 12px/1 var(--obs-mono); fill: var(--obs-text-dim); }
+  .core-num { font: 600 44px/1 var(--obs-mono); fill: var(--obs-text); letter-spacing: -0.02em; }
+  .core-label { font: 600 10px/1 var(--obs-sans); fill: var(--obs-text-dim); letter-spacing: 0.26em; }
+  .core-name { font: 700 14px/1 var(--obs-sans); fill: var(--obs-accent); letter-spacing: 0.34em; }
+  .core-sub { font: 600 9.5px/1 var(--obs-mono); fill: var(--obs-text-dim); letter-spacing: 0.16em; }
+  .core-logo path { fill: var(--obs-accent); opacity: 0.2; }
+  .core-inner { fill: none; stroke: var(--obs-line); stroke-width: 1; stroke-dasharray: 2 5; }
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; } }

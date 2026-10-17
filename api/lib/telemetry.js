@@ -5,7 +5,8 @@
 
 // The rings, centre outward — the enhancement process in order. `of(row)` → [done, total] paragraphs (sections: documents).
 export const RINGS = [
-  { id: 'text', label: 'Searchable text', short: 'TEXT', of: (r) => [r.indexed, r.total] },
+  // Meilisearch is legacy, being replaced by Qdrant (Chad 10-16): the first ring is the paragraph store, not Meili sync
+  { id: 'text', label: 'Paragraph store', short: 'STORE', of: (r) => [r.generated, r.total] },
   { id: 'embedding', label: 'Paragraph vectors', short: 'VEC', of: (r) => [r.generated, r.total] },
   { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },
   { id: 'phrase', label: 'Phrase vectors', short: 'PHRASE', of: (r) => [r.reached, r.total] },
@@ -60,7 +61,9 @@ export function shapeCoverage(rows) {
 
 /** The compact row kept for sparklines and rates. */
 export const seriesOf = (snap) => ({ ...Object.fromEntries(snap.rings.map((r) => [r.id, r.done])), ...Object.fromEntries(Object.entries(snap.vectors || {}).map(([k, v]) => [`v_${k}`, v])),
-  people: snap.counts?.people ?? null, claims: snap.counts?.concept_claims ?? null, sections: snap.counts?.sections ?? null });
+  people: snap.counts?.people ?? null, claims: snap.counts?.concept_claims ?? null, sections: snap.counts?.sections ?? null,
+  // per drive: TB written and % life left — their rates give TB/day and a wear-out projection on the Observatory
+  ...Object.fromEntries((snap.health?.drives || []).flatMap((d) => [[`wtb_${d.dev}`, d.written_tb], [`life_${d.dev}`, d.life_left_pct]]).filter(([, v]) => typeof v === 'number')) });
 
 /** Per-hour rate of each series key from the points of the last ~`hours` (pure). */
 export function ratesOf(points, hours = 1) {

@@ -76,3 +76,19 @@ export function sparkPath(values, w = 120, h = 24) {
   const min = Math.min(...v), max = Math.max(...v), span = max - min || 1;
   return v.map((x, i) => `${i ? 'L' : 'M'}${((i / (v.length - 1)) * w).toFixed(1)} ${(h - ((x - min) / span) * (h - 2) - 1).toFixed(1)}`).join('');
 }
+
+/** What each index IS (Chad 10-16: "Searchable text is what? BM25? Then what is the keyword index? Even I am not sure"):
+ *  a technical title (the index and its engine) and one plain line of what it lets a reader do. */
+export const RING_INFO = {
+  text: { title: 'Paragraph store · SQLite', sub: 'every paragraph ingested, segmented and stored — the source every index is built from' },
+  embedding: { title: 'Paragraph embeddings · OpenAI 512-d', sub: "each paragraph's meaning as a vector — found by sense, not wording" },
+  keyword: { title: 'BM25 keyword index · Qdrant', sub: 'exact words ranked by rarity, misspellings corrected first — ~30 ms' },
+  phrase: { title: 'Phrase embeddings · Gemini, per clause', sub: 'every clause embedded on its own — a half-remembered phrase finds its paragraph' },
+  sections: { title: 'Sub-document index', sub: 'chapters, tablets and talks inside books, findable by their own titles' },
+  context: { title: 'Disambiguation context · LLM', sub: 'who "he", "the Master", "the Blessed Beauty" is — resolved from the surrounding text' },
+  hype: { title: 'HyPE questions · LLM', sub: 'the questions each paragraph answers, embedded so readers can search by question' },
+  entities: { title: 'Historical entities · LLM', sub: 'people, places and events named — linked into the people graph' },
+  concepts: { title: 'Concept claims · LLM', sub: 'proof-checked doctrinal claims, linked across works' },
+  alignment: { title: 'Cross-language alignment', sub: 'translations paired with their originals, paragraph by paragraph' },
+  translation: { title: 'Machine translation · planned', sub: 'English for non-English paragraphs with no aligned translation' },
+};

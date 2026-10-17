@@ -68,3 +68,18 @@ describe('activity log', () => {
     expect(await recentActivity(all[0].id)).toHaveLength(1);
   });
 });
+
+describe('drive health (SMART)', async () => {
+  const { parseSmart } = await import('../../api/lib/system-health.js');
+  it('NVMe: life left, TB written, temperature', () => {
+    const d = parseSmart('nvme0n1', { critical_warning: 0, temperature: 319, percent_used: 51, data_units_written: 982938374, media_errors: 0, power_on_hours: 2954 }, true);
+    expect(d).toMatchObject({ healthy: true, temp_c: 46, life_left_pct: 49, written_tb: 503.3, media_errors: 0 });
+  });
+  it('SATA SSD and HDD', () => {
+    const ssd = parseSmart('sdd', { smart_status: { passed: true }, temperature: { current: 31 }, ata_smart_attributes: { table: [
+      { name: 'SSD_Life_Left', value: 65, raw: { value: 65 } }, { name: 'Lifetime_Writes_GiB', value: 100, raw: { value: 45511 } }] } });
+    expect(ssd).toMatchObject({ healthy: true, life_left_pct: 65, written_tb: 48.9 });
+    const hdd = parseSmart('sdc', { smart_status: { passed: true }, ata_smart_attributes: { table: [{ name: 'Reallocated_Sector_Ct', value: 100, raw: { value: 0 } }] } });
+    expect(hdd).toMatchObject({ healthy: true, life_left_pct: null, reallocated: 0 });
+  });
+});

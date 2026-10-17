@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-16T20:10:29.481Z",
+  "generated": "2026-10-17T00:39:24.680Z",
   "entries": [
+    {
+      "hash": "4dfed426",
+      "date": "2026-10-16",
+      "type": "Fixed",
+      "description": "A failed vector count is unknown, not zero — keep the last good figure",
+      "scope": "coverage"
+    },
+    {
+      "hash": "6b707fc8",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "Constant motion — the terminal always types, live pulse everywhere, jobs never 'idle'",
+      "scope": "home"
+    },
     {
       "hash": "49caa0a8",
       "date": "2026-10-16",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Citations show the public copy (OceanLibrary › Ocean of Lights › Phelps › BLO; SifterSearch only when none); highlight the original by MEANING (phrase-vector spans), the source by wording with a meaning fallback",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "f5f940bb",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Live hunt console — streamed real stages (SSE), ʿAyn lens mark, probe field, stage rail, document ticker; full-width results with highlighter sweep, bilingual bridge, citation shelf",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "01f0cdf9",
-      "date": "2026-10-05",
-      "type": "New",
-      "description": "Every direct Jev caller logged per task (jevFetch → record) — search-plan, scope-extract, source-resolve, anis triage/persona/format, identity audit/link",
-      "scope": "systemone"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "4dfed426",
+        "date": "2026-10-16",
+        "type": "Fixed",
+        "description": "A failed vector count is unknown, not zero — keep the last good figure",
+        "scope": "coverage"
+      },
+      {
+        "hash": "6b707fc8",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "Constant motion — the terminal always types, live pulse everywhere, jobs never 'idle'",
+        "scope": "home"
+      },
       {
         "hash": "49caa0a8",
         "date": "2026-10-16",
@@ -7011,20 +7025,6 @@
         "type": "New",
         "description": "Citations show the public copy (OceanLibrary › Ocean of Lights › Phelps › BLO; SifterSearch only when none); highlight the original by MEANING (phrase-vector spans), the source by wording with a meaning fallback",
         "scope": "sourcehunt"
-      },
-      {
-        "hash": "f5f940bb",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Live hunt console — streamed real stages (SSE), ʿAyn lens mark, probe field, stage rail, document ticker; full-width results with highlighter sweep, bilingual bridge, citation shelf",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "01f0cdf9",
-        "date": "2026-10-05",
-        "type": "New",
-        "description": "Every direct Jev caller logged per task (jevFetch → record) — search-plan, scope-extract, source-resolve, anis triage/persona/format, identity audit/link",
-        "scope": "systemone"
       }
     ]
   }

@@ -18,6 +18,8 @@
   // FRAME WATCHDOG (10-16: without GPU acceleration the full-screen shader took seconds per frame and froze the whole page):
   // slow frames halve the resolution; below a quarter, the background settles to a still frame.
   let quality = 0.75, slowFrames = 0, lastFrame = 0, frozen = false;
+  const RESET_MS = 10 * 60 * 1000, FADE_MS = 1300;
+  let resetting = false;
   function onFocus(e) { const d = e.detail || {}; if (Number.isFinite(d.x) && Number.isFinite(d.y)) targetCenter = [d.x, 1 - d.y]; }
 
   // Get thinking state from shared store
@@ -283,6 +285,13 @@
     const smoothingFactor = 0.08; // Adjust for faster/slower transitions
     currentThinking += (targetThinking - currentThinking) * smoothingFactor;
 
+    // RESET every 10 min (Chad 10-16: "it migrates to fine lines"): the flow offset is time × speed, and once those numbers
+    // grow the GPU's float precision smears particles into streaks. Fade out, restart the clock unseen, fade back in.
+    if (timestamp - startTime > RESET_MS && !resetting) {
+      resetting = true;
+      canvas.style.opacity = '0';
+      setTimeout(() => { startTime = performance.now(); canvas.style.opacity = ''; resetting = false; }, FADE_MS);
+    }
     const time = (timestamp - startTime) / 1000;
     if (lastFrame) {
       const gap = timestamp - lastFrame;
@@ -348,6 +357,7 @@
 
 <style>
   .background-canvas {
+    transition: opacity 1.2s ease;
     position: fixed;
     top: 0;
     left: 0;

@@ -6,7 +6,7 @@
   // snapshots at their measured hourly rate; nothing is invented.
   import { onMount } from 'svelte';
   import { observatory } from '../../lib/api.js';
-  import { compact, exact, pct, rate, interpolate, duration, ringOfJob, sparkPath } from '../../lib/observatory.js';
+  import { compact, exact, pct, rate, interpolate, duration, ringOfJob, sparkPath, RING_INFO } from '../../lib/observatory.js';
   import ObservatoryDial from './ObservatoryDial.svelte';
   import ObservatoryTerminal from './ObservatoryTerminal.svelte';
 
@@ -124,8 +124,9 @@
       {#each snap?.rings || [] as r, i (r.id)}
         {@const p = r.total ? (100 * r.done) / r.total : 0}
         <div class="stage" class:planned={r.planned} class:grow={rates[r.id] > 0}>
-          <div class="stage-top"><span class="stage-n mono">{String(i + 1).padStart(2, '0')}</span><span class="stage-name">{r.label}</span>
+          <div class="stage-top"><span class="stage-n mono">{String(i + 1).padStart(2, '0')}</span><span class="stage-name">{RING_INFO[r.id]?.title || r.label}</span>
             <span class="stage-pct mono">{r.planned ? 'planned' : pct(r.done, r.total)}</span></div>
+          {#if RING_INFO[r.id]}<div class="stage-sub" title={RING_INFO[r.id].sub}>{RING_INFO[r.id].sub}</div>{/if}
           <div class="bar"><span style={`width:${Math.max(r.done ? 0.6 : 0, Math.min(100, p))}%`}></span></div>
           <div class="stage-foot mono">
             <span>{compact(live(r.done, r.id))} / {compact(r.total)} {r.id === 'sections' ? 'docs' : '¶'}</span>
@@ -173,6 +174,7 @@
         {#if snap?.health}
           {@const h = snap.health}
           {#each h.storage.filter((s) => s.size_gb).map((s) => ({ ...s, io: pulse?.io?.[s.dev] || s.io })) as s (s.dev)}
+            {@const dr = (h.drives || []).find((d) => d.dev === s.dev)}
             <div class="disk">
               <div class="disk-top"><span>{s.label} <span class="mute mono">{s.mount}</span></span><span class="mono">{s.used_pct}% of {s.size_gb >= 1000 ? `${(s.size_gb / 1000).toFixed(0)} TB` : `${s.size_gb} GB`}</span></div>
               <div class="bar thin"><span style={`width:${s.used_pct}%`}></span></div>
@@ -182,6 +184,17 @@
                 {#if s.io}<span class="mute">↓{s.io.read_mb_s} ↑{s.io.write_mb_s} MB/s</span>{/if}
               </div>
               {#if s.note}<div class="disk-note">→ {s.note}</div>{/if}
+              {#if dr}
+                {@const tbDay = (tel?.rates_24h?.[`wtb_${s.dev}`] ?? tel?.rates?.[`wtb_${s.dev}`] ?? 0) * 24}
+                {@const lifeDay = -(tel?.rates_24h?.[`life_${s.dev}`] ?? 0) * 24}
+                <div class="smart mono">
+                  <span class={dr.healthy ? 'ok' : 'bad'}>{dr.healthy ? 'SMART ok' : 'SMART FAIL'}</span>
+                  {#if dr.temp_c != null}<span>{dr.temp_c}°C</span>{/if}
+                  {#if dr.life_left_pct != null}<span class={dr.life_left_pct < 30 ? 'bad' : dr.life_left_pct < 60 ? 'warn' : ''}>{dr.life_left_pct}% life left</span>{/if}
+                  {#if dr.written_tb != null}<span class="mute">{dr.written_tb} TB written{tbDay > 0.05 ? ` · ${tbDay.toFixed(1)} TB/day` : ''}</span>{/if}
+                  {#if lifeDay > 0.01 && dr.life_left_pct != null}<span class="warn">≈{Math.round(dr.life_left_pct / lifeDay)} days at this rate</span>{/if}
+                </div>
+              {/if}
             </div>
           {/each}
           <div class="vitals mono">
@@ -224,6 +237,7 @@
   {#if tip}
     <div class="tip mono" style={`left:${tip.x + 14}px; top:${tip.y + 14}px`}>
       <div class="tip-h">{tip.tradition} · {tip.ring}</div>
+      {#if tip.sub}<div class="tip-sub">{tip.sub}</div>{/if}
       <div>{exact(tip.done)} / {exact(tip.total)} {tip.sections ? 'documents' : 'paragraphs'}</div>
       <div class="tip-p">{pct(tip.done, tip.total)}</div>
     </div>
@@ -294,7 +308,8 @@
   .stage { display: flex; flex-direction: column; gap: 3px; }
   .stage-top { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
   .stage-n { color: var(--obs-text-faint); font-size: 11px; }
-  .stage-name { flex: 1; min-width: 0; font-weight: 500; }
+  .stage-name { flex: 1; min-width: 0; font-weight: 600; font-size: 12.5px; letter-spacing: -0.005em; }
+  .stage-sub { font-size: 11px; line-height: 1.3; color: var(--obs-text-dim); margin: -1px 0 2px 26px; }
   .stage-pct { font-size: 12.5px; font-weight: 600; }
   .stage.planned { opacity: 0.55; }
   .stage-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 11px; color: var(--obs-text-dim); }
@@ -333,6 +348,8 @@
   .disk-io { display: flex; gap: 10px; font-size: 11px; }
   .io.hot { color: var(--error); } .io.warm { color: var(--warning); } .io.cool { color: var(--success); }
   .disk-note { font-size: 11px; color: var(--obs-accent); }
+  .smart { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 10.5px; color: var(--obs-text-dim); }
+  .smart .ok { color: var(--success); } .smart .warn { color: var(--warning); } .smart .bad { color: var(--error); }
   .vitals { display: grid; gap: 4px; font-size: 11.5px; border-top: 1px solid var(--obs-line); padding-top: 10px; }
   .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 5px; background: var(--obs-text-faint); }
   .dot.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; } .dot.yellow { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; } .dot.red, .dot.unreachable { background: #ef4444; }
@@ -351,6 +368,7 @@
   .tip { position: fixed; z-index: 60; pointer-events: none; padding: 9px 11px; border-radius: 8px; font-size: 11.5px; line-height: 1.5;
     background: light-dark(rgba(255, 255, 255, 0.96), rgba(7, 11, 18, 0.95)); border: 1px solid var(--obs-line-strong); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4); }
   .tip-h { font-weight: 600; }
+  .tip-sub { max-width: 300px; color: var(--obs-text-dim); font-family: var(--obs-sans); }
   .tip-p { font-size: 15px; font-weight: 600; color: var(--obs-accent); }
 
   /* ── motion: something alive in every box (Chad 10-16: "some part of each box needs to be moving and alive") ── */

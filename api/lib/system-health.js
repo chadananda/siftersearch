@@ -8,8 +8,9 @@ import { execFileSync } from 'child_process';
 
 // What each device IS — the public label. /tank's note is the planned move (the 4 TB NVMe, ~10-24).
 export const DEVICES = {
-  nvme0n1: { mount: '/fast', label: 'Index NVMe', kind: 'nvme', role: 'Qdrant · Meilisearch · SQLite' },
-  sdc: { mount: '/tank', label: 'Bulk HDD', kind: 'hdd', role: 'indexing stores · backups', note: 'indexing moves to a 4 TB NVMe' },
+  sdd: { mount: '/crutch', label: 'Interim SSD', kind: 'ssd', role: 'indexer stores — a crutch until the 4 TB NVMe' },
+  nvme0n1: { mount: '/fast', label: 'Index NVMe', kind: 'nvme', role: 'Qdrant · SQLite' },
+  sdc: { mount: '/tank', label: 'Bulk HDD', kind: 'hdd', role: 'backups · bulk storage' },
   sda: { mount: '/vault', label: 'Vault HDD', kind: 'hdd', role: 'archive' },
   sdb: { mount: '/', label: 'System SSD', kind: 'ssd', role: 'OS · services · logs' },
 };
@@ -57,6 +58,43 @@ async function vectorIndexes() {
   return out;
 }
 
+/** Pure: one drive's SMART reading (smartctl -j for SATA, `nvme smart-log -o json` for NVMe) → the figures we show.
+ *  life_left_pct: NVMe 100 − percentage_used; SATA SSD SSD_Life_Left / Percent_Lifetime_Remain; HDDs have none. */
+export function parseSmart(dev, json, nvme = false) {
+  if (!json) return null;
+  if (nvme) {
+    const duw = Number(json.data_units_written ?? 0);
+    return { dev, healthy: Number(json.critical_warning ?? 0) === 0, temp_c: json.temperature != null ? Math.round(Number(json.temperature) - 273) : null,
+      life_left_pct: json.percent_used != null ? 100 - Number(json.percent_used) : json.percentage_used != null ? 100 - Number(json.percentage_used) : null,
+      written_tb: +((duw * 512000) / 1e12).toFixed(1), media_errors: Number(json.media_errors ?? 0), power_on_hours: Number(json.power_on_hours ?? 0) };
+  }
+  const attrs = Object.fromEntries((json.ata_smart_attributes?.table || []).map((a) => [a.name, a]));
+  const raw = (n) => attrs[n]?.raw?.value ?? null;
+  const life = attrs.SSD_Life_Left?.value ?? attrs.Percent_Lifetime_Remain?.value ?? null;
+  const gib = raw('Lifetime_Writes_GiB'), lbas = raw('Total_LBAs_Written');
+  return { dev, healthy: json.smart_status?.passed !== false, temp_c: json.temperature?.current ?? null, life_left_pct: life,
+    written_tb: gib != null ? +((gib * 1.073741824) / 1000).toFixed(1) : lbas != null ? +((lbas * 512) / 1e12).toFixed(1) : null,
+    reallocated: raw('Reallocated_Sector_Ct'), pending: raw('Current_Pending_Sector'), power_on_hours: json.power_on_time?.hours ?? null };
+}
+
+/** SMART for every known drive (sudo -n: the reports worker has passwordless sudo for these two read-only tools). */
+function drives() {
+  const out = [];
+  for (const dev of Object.keys(DEVICES)) {
+    try {
+      const nvme = dev.startsWith('nvme');
+      const raw = nvme
+        ? execFileSync('sudo', ['-n', 'nvme', 'smart-log', `/dev/${dev}`, '-o', 'json'], { encoding: 'utf8', timeout: 10000 })
+        : execFileSync('sudo', ['-n', 'smartctl', '-j', '-H', '-A', `/dev/${dev}`], { encoding: 'utf8', timeout: 15000 });
+      out.push(parseSmart(dev, JSON.parse(raw), nvme));
+    } catch (err) {
+      // smartctl exits non-zero on some warnings but still prints JSON
+      try { out.push(parseSmart(dev, JSON.parse(err.stdout || ''), dev.startsWith('nvme'))); } catch { /* unreadable */ }
+    }
+  }
+  return out.filter(Boolean);
+}
+
 /** One health reading (~3 s: the I/O sample). */
 export async function systemHealth({ slowCount } = {}) {
   let io = {};
@@ -70,6 +108,6 @@ export async function systemHealth({ slowCount } = {}) {
     storage: storage().map((s) => ({ ...s, io: io[s.dev] || null })),
     cpu: { cores: os.cpus().length, load1: +load1.toFixed(1), load5: +load5.toFixed(1), load_pct: Math.round((load5 / os.cpus().length) * 100) },
     memory: { total_gb: Math.round(os.totalmem() / 1e9), used_pct: Math.round((1 - os.freemem() / os.totalmem()) * 100) },
-    services: services(), vectors: await vectorIndexes(), slow_queries_24h: slow, uptime_days: Math.floor(os.uptime() / 86400),
+    services: services(), vectors: await vectorIndexes(), slow_queries_24h: slow, uptime_days: Math.floor(os.uptime() / 86400), drives: drives(),
   };
 }
