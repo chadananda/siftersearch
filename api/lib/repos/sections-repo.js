@@ -76,3 +76,15 @@ export async function structureSummary({ longest = 25 } = {}) {
   ]);
   return { byTradition, bySource, longestWithout };
 }
+
+/** A FIXED sample of sections for the section-findability check — the same sections every run (every k-th by id),
+ *  titles with at least two words, from documents whose structure was found. */
+export const sectionSample = (n = 300) =>
+  queryAll(`SELECT s.id, s.doc_id, s.title, s.start_index, s.end_index FROM doc_sections s JOIN docs d ON d.id = s.doc_id
+    WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND s.paragraphs > 0 AND LENGTH(s.title) BETWEEN 8 AND 90 AND s.title LIKE '% %'
+    ORDER BY (s.id * 2654435761) % 1000003 LIMIT ?`, [n], 'sections:sample');
+
+/** Paragraph ids → [doc_id, paragraph_index] (to test a hit's place in a section). */
+export const paragraphPlaces = (ids = []) => (ids.length
+  ? queryAll(`SELECT id, doc_id, paragraph_index FROM content WHERE id IN (${ids.map(() => '?').join(',')})`, ids.map(Number), 'sections:places')
+  : Promise.resolve([]));

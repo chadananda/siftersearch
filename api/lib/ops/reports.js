@@ -157,6 +157,23 @@ REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, sco
 REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, limit? } — a predigested history's episodes (Chad 10-17)
 REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — traditional numbering, checked against the work's totals (Chad 10-17)
 REPORTS['section-index'] = sectionIndexJob;
+// Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
+// paragraph inside the section (Chad 10-17: structure before BM25 "so that sections get indexed") — before/after measure.
+REPORTS['section-findability'] = async ({ n = 300, k = 10 } = {}) => {
+  const { sectionSample, paragraphPlaces } = await import('../repos/sections-repo.js');
+  const { searchKeywordQdrant } = await import('../search/qdrant-layers.js');
+  const sample = await sectionSample(n);
+  let at1 = 0, atK = 0;
+  const misses = [];
+  for (const s of sample) {
+    const hits = (await searchKeywordQdrant(s.title, { limit: k }).catch(() => ({ hits: [] }))).hits || [];
+    const places = new Map((await paragraphPlaces(hits.map((h) => h.paragraph_id ?? h.id))).map((p) => [p.id, p]));
+    const rank = hits.findIndex((h) => { const p = places.get(Number(h.paragraph_id ?? h.id)); return p && p.doc_id === s.doc_id && p.paragraph_index >= s.start_index && p.paragraph_index <= s.end_index; });
+    if (rank === 0) at1++;
+    if (rank >= 0) atK++; else if (misses.length < 15) misses.push(`${s.doc_id} · ${s.title}`);
+  }
+  return { sections: sample.length, at1, atK, pct_at1: +(100 * at1 / Math.max(1, sample.length)).toFixed(1), pct_atK: +(100 * atK / Math.max(1, sample.length)).toFixed(1), k, misses };
+};
 REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo.js')).structureSummary();   // where structure was found vs must be inferred (Chad 10-17)     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
@@ -167,7 +184,7 @@ export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
-  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign'] };
+  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability'] };
 export const HEAVY = new Set(LANES.heavy);
 // How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K
 // phrases/h for all three vs ~142K/h for one, because the interim /crutch SSD (Kingston A400, no TRIM) saturated —

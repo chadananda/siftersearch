@@ -20,6 +20,22 @@ export function bm25Doc(text, avgLen, k = 1.2, b = 0.75) {
   return { indices, values: indices.map((i) => +((tf.get(i) * (k + 1)) / (tf.get(i) + norm)).toFixed(4)) };
 }
 
+// Document vector WITH its place in the book (Chad 10-17: structure before BM25 "so that sections get indexed"): the
+// section path's words ("The Dawn-Breakers › Chapter XVI › The Conference of Badasht") join the paragraph's own at a
+// fraction of a word's weight, so a heading reaches every paragraph under it without outranking what a paragraph says.
+// A paragraph with no words of its own stays unindexable (null).
+export function bm25DocWithContext(text, context, avgLen, weight = 0.3) {
+  const base = bm25Doc(text, avgLen);
+  if (!base || !context) return base;
+  const at = new Map(base.indices.map((id, i) => [id, i]));
+  const values = [...base.values], indices = [...base.indices];
+  for (const id of new Set(tokens(context).map(tokenId))) {
+    if (at.has(id)) values[at.get(id)] = +(values[at.get(id)] + weight).toFixed(4);
+    else { at.set(id, indices.length); indices.push(id); values.push(weight); }
+  }
+  return { indices, values };
+}
+
 // Query vector: each distinct query token once; IDF comes from Qdrant.
 export function bm25Query(text) {
   const ids = [...new Set(tokens(text).map(tokenId))];

@@ -7,12 +7,11 @@
 export const RINGS = [
   // Meilisearch is legacy, being replaced by Qdrant (Chad 10-16): the first ring is the paragraph store, not Meili sync
   { id: 'text', label: 'Paragraph store', short: 'STORE', of: (r) => [r.generated, r.total] },
-  // BM25 right after ingestion, BEFORE vectors (Chad 10-16: "the first thing to be completed after initial paragraph
-  // ingestion … it does not even depend on external vector generation")
-  { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },
-  // document structure next (Chad 10-17): sub-documents and the TOC are metadata disambiguation and retrieval lean on;
+  // document structure right after ingestion (Chad 10-17): sub-documents and the TOC are metadata disambiguation and retrieval lean on;
   // documents whose structure was FOUND / documents (read ≠ found: most books mark none — inference comes next)
   { id: 'sections', label: 'Sub-documents', short: 'SECT', of: (r, docs) => [r.generated, docs] },
+  // BM25 next — before vectors (Chad 10-16: no external model), and after structure (10-17) so it carries section paths
+  { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },
   // references (Chad 10-17): traditional numbering (verse, section, saying) or a print page — what a citation resolves to
   { id: 'refs', label: 'References', short: 'REF', of: (r) => [r.current, r.total] },
   { id: 'embedding', label: 'Paragraph vectors', short: 'VEC', of: (r) => [r.generated, r.total] },
