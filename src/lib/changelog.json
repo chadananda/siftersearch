@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-17T04:19:04.834Z",
+  "generated": "2026-10-17T04:23:33.306Z",
   "entries": [
+    {
+      "hash": "4c625554",
+      "date": "2026-10-16",
+      "type": "New",
+      "description": "The ring being built lights up and a bright comet sweeps it; growing cells get beams and a marching outline",
+      "scope": "home"
+    },
     {
       "hash": "5b199243",
       "date": "2026-10-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Translation variants reach the writer's own book (content-word containment gate); English highlight by meaning when the exact run covers <80% of the quote",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "806c88bf",
-      "date": "2026-10-05",
-      "type": "Fixed",
-      "description": "ʿayn sized to sit inside the lens; library summary one compact row on phones",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-16": [
+      {
+        "hash": "4c625554",
+        "date": "2026-10-16",
+        "type": "New",
+        "description": "The ring being built lights up and a bright comet sweeps it; growing cells get beams and a marching outline",
+        "scope": "home"
+      },
       {
         "hash": "5b199243",
         "date": "2026-10-16",
@@ -7017,13 +7024,6 @@
         "date": "2026-10-05",
         "type": "Fixed",
         "description": "Translation variants reach the writer's own book (content-word containment gate); English highlight by meaning when the exact run covers <80% of the quote",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "806c88bf",
-        "date": "2026-10-05",
-        "type": "Fixed",
-        "description": "ʿayn sized to sit inside the lens; library summary one compact row on phones",
         "scope": "sourcehunt"
       }
     ]

@@ -40,12 +40,12 @@
   });
 
   // ACTIVITY, made impossible to miss (Chad 10-16: "make an active line very bright and draw attention … the very faint
-  // throb does not cut it"): every ring being built carries a COMET orbiting it; every cell that grew gets an ENERGY
+  // throb does not cut it"): every ring being built lights up as the radar sweep crosses it, the glow dissipating behind; every cell that grew gets an ENERGY
   // BEAM from the library's core, a halo and a running bright outline. Rings come from running jobs and from cells that
   // measurably grew — nothing lights up that is not happening.
   const activeBands = $derived([...new Set([...activeRings, ...[...growing].map((k) => k.split('|')[1])])]
     .map((id) => layout.bands.find((b) => b.id === id)).filter(Boolean));
-  const COMET_TAIL = Array.from({ length: 30 }, (_, i) => i);   // tail segments (4° each, ~120° long), faint → bright
+  const AFTERGLOW = Array.from({ length: 34 }, (_, i) => i);   // 3° segments trailing the sweep (~100°), faint → bright
   const beams = $derived((snapshot?.growing || []).slice(0, 8).map((g, i) => {
     const sec = layout.sectors.find((x) => x.id === g.tradition), band = layout.bands.find((b) => b.id === g.ring);
     const c = cellOf.get(`${g.tradition}|${g.ring}`);
@@ -113,7 +113,7 @@
     </text>
   {/each}
 
-  <!-- ACTIVITY: halo + running outline on cells that grew, energy beams from the core, comets orbiting the active rings -->
+  <!-- ACTIVITY: halo + running outline on cells that grew, energy beams from the core (the active rings light up inside the sweep, below) -->
   {#each layout.sectors as sec (sec.id)}
     {#each layout.bands as b (b.id)}
       {#if growing.has(`${sec.id}|${b.id}`)}
@@ -127,24 +127,16 @@
     <line x1={bm.x0} y1={bm.y0} x2={bm.x1} y2={bm.y1} class="beam" style={`--c: var(--obs-${bm.slug}); animation-delay: ${bm.delay}s`} />
     <circle cx={bm.x1} cy={bm.y1} r="5" class="beam-tip" style={`--c: var(--obs-${bm.slug}); animation-delay: ${bm.delay}s`} />
   {/each}
-  {#each activeBands as b, i (b.id)}
-    {@const rm = (b.r0 + b.r1) / 2}
-    {@const head = polar(C, C, rm, 359.6)}
-    <!-- the whole ring lights up: a bright glowing circle along the band, breathing -->
-    <circle cx={C} cy={C} r={rm} class="ring-live" style={`stroke-width: ${b.r1 - b.r0}px; animation-delay: -${i * 0.6}s`} />
-    <circle cx={C} cy={C} r={b.r1 + 1} class="ring-edge" />
-    <circle cx={C} cy={C} r={b.r0 - 1} class="ring-edge" />
-    <g class="comet" style={`animation-duration: ${6 + i * 1.5}s; animation-delay: -${i * 2.3}s`}>
-      {#each COMET_TAIL as k (k)}
-        <path d={arcPath(C, C, b.r0 + 1, b.r1 - 1, 360 - (30 - k) * 4, 360 - (29 - k) * 4 + 0.2)} class="comet-tail" style={`opacity: ${((k + 1) / 30) ** 1.6}`} />
-      {/each}
-      <circle cx={head[0]} cy={head[1]} r={(b.r1 - b.r0) / 2 + 3} class="comet-flare" />
-      <circle cx={head[0]} cy={head[1]} r="7" class="comet-head" />
-    </g>
-  {/each}
-
   <!-- the sweep -->
-  <g class="sweep"><path d={arcPath(C, C, 124, 436, 0, 28)} fill="url(#obs-sweep)" /></g>
+  <!-- radar: the active ring lights up where the beam crosses it and the glow dissipates behind (Chad 10-16) -->
+  <g class="sweep">
+    <path d={arcPath(C, C, 124, 436, 0, 28)} fill="url(#obs-sweep)" />
+    {#each activeBands as b (b.id)}
+      {#each AFTERGLOW as k (k)}
+        <path d={arcPath(C, C, b.r0, b.r1, 28 - (AFTERGLOW.length - k) * 3, 28 - (AFTERGLOW.length - 1 - k) * 3 + 0.15)} class="afterglow" style={`opacity: ${((k + 1) / AFTERGLOW.length) ** 2.2}`} />
+      {/each}
+    {/each}
+  </g>
 
   <!-- particles: work flowing from the library into the stage being built -->
   {#each particles as p (p.key)}
@@ -192,13 +184,6 @@
   .beam { stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 6 14; filter: drop-shadow(0 0 4px var(--c));
     animation: flow-out 0.7s linear infinite; pointer-events: none; }
   .beam-tip { fill: #fff; filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 14px var(--c)); animation: tip 1.1s ease-in-out infinite; pointer-events: none; }
-  .comet { transform-box: view-box; transform-origin: 50% 50%; animation: obs-spin 8s linear infinite; pointer-events: none; }
-  .comet-tail { fill: #e0f7ff; filter: drop-shadow(0 0 6px var(--obs-accent)); }
-  .comet-flare { fill: var(--obs-accent); opacity: 0.55; filter: blur(8px); }
-  .comet-head { fill: #fff; filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 18px var(--obs-accent)) drop-shadow(0 0 34px var(--obs-accent)); }
-  .ring-live { fill: none; stroke: var(--obs-accent); opacity: 0.18; filter: blur(3px); animation: ring-live 1.8s ease-in-out infinite; pointer-events: none; }
-  .ring-edge { fill: none; stroke: #bff3ff; stroke-width: 1.6; opacity: 0.8; filter: drop-shadow(0 0 4px var(--obs-accent)) drop-shadow(0 0 10px var(--obs-accent)); pointer-events: none; }
-  @keyframes ring-live { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.42; } }
   @keyframes halo { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.85; } }
   @keyframes march { to { stroke-dashoffset: -18; } }
   @keyframes flow-out { to { stroke-dashoffset: -20; } }
@@ -211,6 +196,7 @@
   .stage-pct { fill: var(--obs-text); font-weight: 600; }
   .stage.planned, .stage.planned .stage-pct { fill: var(--obs-text-faint); }
   .sweep { transform-box: view-box; transform-origin: 50% 50%; animation: obs-spin 14s linear infinite; pointer-events: none; }
+  .afterglow { fill: #d6f6ff; filter: drop-shadow(0 0 5px var(--obs-accent)) drop-shadow(0 0 12px var(--obs-accent)); pointer-events: none; }
   .particle { filter: drop-shadow(0 0 3px currentColor); pointer-events: none; }
   .core { stroke: none; }
   .core-ring { fill: none; stroke: var(--obs-accent); stroke-width: 1.2; opacity: 0.7; }
@@ -224,6 +210,6 @@
   @keyframes obs-spin { to { transform: rotate(360deg); } }
   @keyframes obs-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.18); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .sweep, .core-pulse, .particle { display: none; } .fill { transition: none; }
-    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .front, .halo, .outline, .beam, .beam-tip, .ring-live { animation: none; }
-    .comet { display: none; } }
+    .cell.growing .fill, .cell.growing .track, .cell.feeding .track, .front, .halo, .outline, .beam, .beam-tip { animation: none; }
+  }
 </style>
