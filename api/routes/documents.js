@@ -139,6 +139,9 @@ export default async function documentsRoutes(fastify) {
     return { documents: r.docs, total: r.total, limit, offset, ...(sections ? { sections } : {}) };
   });
 
+  // A predigested history's episodes (God Passes By, The Dawn-Breakers): heading, place, date, cited summary, participants
+  fastify.get('/:id/episodes', async (request) => ({ episodes: await (await import('../lib/repos/episodes-repo.js')).episodesOfDoc(request.params.id) }));
+
   // A book's table of contents: its sections with paragraph ranges
   fastify.get('/:id/sections', async (request) => ({ sections: await sectionsOfDoc(request.params.id) }));
 

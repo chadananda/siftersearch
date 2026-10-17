@@ -1696,6 +1696,21 @@ export const migrations = {
       at INTEGER NOT NULL, PRIMARY KEY (doc_id, layer)) WITHOUT ROWID`);
     logger.info('Migration 156 complete: layer_unindexable');
   },
+
+  157: async () => {
+    // EPISODES of a predigested history (Chad 10-17: God Passes By and The Dawn-Breakers — the subheaders call out the
+    // scenes, so the episodes should be perfect). One row per section's OWN paragraphs (api/lib/episodes.js): its heading
+    // verbatim, chapter and path, the spans, then place, date, a cited summary, participants checked against the text,
+    // key events and the questions it answers. Written by the episode-extract ops job; read by the event index and search.
+    await query(`CREATE TABLE IF NOT EXISTS doc_episodes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, doc_id INTEGER NOT NULL, section_id INTEGER NOT NULL, ord INTEGER NOT NULL,
+      title TEXT NOT NULL, chapter TEXT, path TEXT, spans TEXT NOT NULL, para_ids TEXT NOT NULL,
+      place TEXT, when_text TEXT, year_start INTEGER, year_end INTEGER, summary TEXT, participants TEXT, dropped TEXT,
+      events TEXT, questions TEXT, issues TEXT, model TEXT, version TEXT, updated_at INTEGER NOT NULL,
+      UNIQUE (doc_id, ord))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_episodes_doc ON doc_episodes(doc_id, ord)');
+    logger.info('Migration 157 complete: doc_episodes');
+  },
 };
 
 export const graphMigrations = {

@@ -3,6 +3,7 @@
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
 import { sectionIndexJob } from './section-index-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
+import { episodeExtractJob } from './episode-extract-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -152,13 +153,14 @@ REPORTS['vocab-build'] = vocabBuildJob;   // params { minFreq?, maxWords? } — 
 REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
 REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
 REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, scope: 'supplemental' });   // heavy lane: it scans for site page chrome
+REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, limit? } — a predigested history's episodes (Chad 10-17)
 REPORTS['section-index'] = sectionIndexJob;     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
  *  there is no day or night. The rule is to ingest correctly so as to not block queries"): heavy work is kept from
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
-export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'],
+export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index', 'episode-extract'],
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
