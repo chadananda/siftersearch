@@ -12,6 +12,27 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
+## ▶ NOW (Chad 10-17) — RETRIEVAL ADDITIONS, in order
+Index order of operations for every ingest (Chad 10-16/17): paragraph store → BM25 → structure (sub-documents + TOC) →
+vectors → phrases → disambiguation → HyPE → entities/concepts → links → translation. BM25 + structure follow ingestion
+automatically (reports-worker keywordLoop, every 10 min).
+- [x] BM25 primary 100% (keyword-fill; 29K markup-only rows marked unindexable) · [~] scraped sites (keyword-fill-sites)
+- [x] Structure read for all 53,628 documents (doc_structure, migr 155)
+- [ ] 1. SECTION PATH CONTEXT — "Book › Part › Chapter › heading" per paragraph from the TOC, as its own weighted field
+      (NOT in the embedding: 10-01 a title header HURT phrase search). Measure on the known-item test before/after.
+- [ ] 2. CITATION INDEX — normalised references (Bible ch:v, Qur'an s:a, Gleanings §, Aqdas ¶, Hidden Words A/P #):
+      typed reference → passage; paragraphs that cite a verse → "cited in"
+- [ ] 3. QUOTATION REUSE — shingle fingerprints across the library: "quoted in", collapse re-quotations, source first
+- [ ] 4. NAME LOOKUP NORMALISER — two problems: several transliteration schemes AND bad spelling (Tahirih / Táhirih /
+      Qurratu'l-'Ayn / Tahireh). Scheme folding + entity-graph aliases + fuzzy match at query time.
+- [ ] 5. SECTION SUMMARIES + section HyPE — episode identification for historical works first (the Badasht unveiling)
+- [ ] 6. EVENT INDEX — expose what exists: entity_scenes (paragraph scenes: place/time/year/summary/participants, migr
+      125, scripts/extract-scenes.mjs), Dawn-Breakers heading-episodes (146, research_notes.episodes), encounters.js
+      (in-memory who-met-whom). Gaps: GPB episodes never extracted; graph.db `episodes` table unused.
+- [ ] 7. LINK THEN TRANSLATE — link existing translations first (no paying to re-translate), then translate the rest
+      IN THE DB so translations get BM25 + phrase indexes.
+- ✗ Reranking: NOT an off-the-shelf cross-encoder (always slow, never helped — Chad). Idea: our own Jev-style reranker.
+
 ## OVERNIGHT 10-13→14 (Chad asleep; watchers armed)
 - Fixed tonight: HyPE batches were 8 requests (cc override) → full batches; writer restart crashed runs (read-only err.message); rehype "done" now version-checked; Haiku real-time replies empty (content[0].text) → joined blocks; DeepSeek-tuned maxTokens truncated Haiku JSON (floor 1500); concept parse fenced JSON; runLadder surfaces errors; digest window server-owned; queue dedupe; operator stop final.
 - Watchers: night-restart (22:00 reports restart + concepts Qdrant index), night-index (phrase-coverage + HyPE index refresh 5), hype-after-concepts (20783/20780 v15), wave2-when-ready, overnight-check (15 min: failures/budget/checkpoints), stall-check.
