@@ -235,9 +235,10 @@
   {/if}
 
   {#if tip}
-    <div class="tip mono" style={`left:${tip.x + 14}px; top:${tip.y + 14}px`}>
+    <div class="tip mono" style={`left:${Math.min(tip.x + 14, (typeof window !== 'undefined' ? window.innerWidth : 1600) - 380)}px; top:${Math.min(tip.y + 14, (typeof window !== 'undefined' ? window.innerHeight : 900) - 230)}px`}>
       <div class="tip-h">{tip.tradition} · {tip.ring}</div>
       {#if tip.sub}<div class="tip-sub">{tip.sub}</div>{/if}
+      {#if tip.why}<div class="tip-why">{tip.why}</div>{/if}
       <div>{exact(tip.done)} / {exact(tip.total)} {tip.sections ? 'documents' : 'paragraphs'}</div>
       <div class="tip-p">{pct(tip.done, tip.total)}</div>
     </div>
@@ -368,7 +369,8 @@
   .tip { position: fixed; z-index: 60; pointer-events: none; padding: 9px 11px; border-radius: 8px; font-size: 11.5px; line-height: 1.5;
     background: light-dark(rgba(255, 255, 255, 0.96), rgba(7, 11, 18, 0.95)); border: 1px solid var(--obs-line-strong); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4); }
   .tip-h { font-weight: 600; }
-  .tip-sub { max-width: 300px; color: var(--obs-text-dim); font-family: var(--obs-sans); }
+  .tip-sub { max-width: 340px; color: var(--obs-text-dim); font-family: var(--obs-sans); }
+  .tip-why { max-width: 340px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--obs-line); font: 400 12px/1.5 var(--obs-sans); color: var(--obs-text); }
   .tip-p { font-size: 15px; font-weight: 600; color: var(--obs-accent); }
 
   /* ── motion: something alive in every box (Chad 10-16: "some part of each box needs to be moving and alive") ── */

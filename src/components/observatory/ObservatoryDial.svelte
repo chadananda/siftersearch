@@ -45,7 +45,7 @@
   const paragraphs = $derived(snapshot?.corpus?.paragraphs ?? 0);
   function hover(e, t, ring) {
     const c = cellOf.get(`${t}|${ring.id}`);
-    onhover(c ? { x: e.clientX, y: e.clientY, tradition: LABEL[t] || t, ring: RING_INFO[ring.id]?.title || ring.label, sub: RING_INFO[ring.id]?.sub, done: c.done, total: c.total, sections: ring.id === 'sections' } : null);
+    onhover(c ? { x: e.clientX, y: e.clientY, tradition: LABEL[t] || t, ring: RING_INFO[ring.id]?.title || ring.label, sub: RING_INFO[ring.id]?.sub, why: RING_INFO[ring.id]?.why, done: c.done, total: c.total, sections: ring.id === 'sections' } : null);
   }
 </script>
 
