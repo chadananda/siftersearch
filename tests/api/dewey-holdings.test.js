@@ -2,7 +2,7 @@
 // HELD needs the text to miss too.
 import { describe, it, expect } from 'vitest';
 import { checkHoldings } from '../../api/lib/dewey/holdings.js';
-import { identifyText, identifyUrl, sampleLines } from '../../api/lib/dewey/identify.js';
+import { identifyText, identifyUrl, sampleLines, withText } from '../../api/lib/dewey/identify.js';
 
 const DB = { id: 21308, title: 'The Dawn-Breakers', author: 'Nabíl-i-A‘ẓam' };
 const deps = (o = {}) => ({
@@ -49,6 +49,36 @@ describe('holdings check', () => {
   });
   it('a loose title match is only possible', async () => {
     expect((await checkHoldings({ title: 'Dawn' }, deps({ titles: [DB] }))).verdict).toBe('possible');
+  });
+});
+
+describe('holdings check — full-text path', () => {
+  const words = (n, seed) => Array.from({ length: n }, (_, i) => `w${(i * seed) % 997}x${i % 13}`).join(' ');
+  const sentences = (t) => t.split(' ').reduce((a, w, i) => a + w + ((i + 1) % 15 === 0 ? '. ' : ' '), '');
+  const OURS = sentences(words(900, 7));
+  const textDeps = (libText, extra = {}) => ({
+    find: async () => [], sections: async () => [],
+    keyword: async () => ({ hits: [{ doc_id: 500, paragraph_id: 1 }] }),
+    texts: async (ids) => ids.map((id) => ({ id, text: libText })),
+    docs: async ({ ids }) => ({ docs: ids.map((id) => ({ id, title: 'Library copy', author: 'X' })) }),
+    paragraphs: async () => [{ text: libText }],
+    ...extra,
+  });
+  it('a file whose text the library holds is held, with the relation and its percentages', async () => {
+    const id = withText({ title: 'Notes', from: 'file' }, OURS);
+    const r = await checkHoldings(id, textDeps(OURS));
+    expect(r.verdict).toBe('held');
+    expect(r.candidates[0]).toMatchObject({ id: 500, relation: { relation: 'same' } });
+    expect(r.candidates[0].evidence.find((e) => e.kind === 'text').detail).toMatch(/^the same text: 100%/);
+    expect(JSON.stringify(id)).not.toMatch(/_text/);   // the full text never leaves in a response
+  });
+  it('the library holding only the first part is partly-held', async () => {
+    const r = await checkHoldings(withText({ title: 'Notes' }, OURS), textDeps(OURS.split('. ').slice(0, 12).join('. ')));
+    expect(r.verdict).toBe('partly-held');
+  });
+  it('nothing in common is not-held, even when BM25 returns a top hit', async () => {
+    const r = await checkHoldings(withText({ title: 'Notes' }, OURS), textDeps(sentences(words(900, 11))));
+    expect(r.verdict).toBe('not-held');
   });
 });
 

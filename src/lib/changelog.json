@@ -1,6 +1,41 @@
 {
-  "generated": "2026-10-18T03:56:23.889Z",
+  "generated": "2026-10-18T04:50:37.725Z",
   "entries": [
+    {
+      "hash": "620533a8",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Any format → Markdown (DOC/RTF/ODT via LibreOffice, webarchive, EPUB, HTML, cp1252 TXT); DOCX read directly — mammoth had failed on every .docx since the 09-09 xmldom override; a printed line counts only if the hit paragraph contains it (false 'held'); folder-sweep API client",
+      "scope": "dewey"
+    },
+    {
+      "hash": "12c4e360",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "'Title by Author' typed as one string is held on the title alone — agents send it that way",
+      "scope": "dewey"
+    },
+    {
+      "hash": "14c3228a",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Gemini's per-minute 429 (billing boilerplate, 'PerMinute' metric id) is not out of credit — it killed phrase-index #106; job errors keep the Error line",
+      "scope": "alerts"
+    },
+    {
+      "hash": "7d2e2c7c",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Dewey in the OpenAPI spec — every /api/dewey route with request/response schemas, tag Dewey, X-API-Key or Bearer; contract test",
+      "scope": "dewey"
+    },
+    {
+      "hash": "3b50aadc",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "A photo sends itself (clearing the picker after an await threw and stopped it); Dewey's *italic* / **bold** rendered",
+      "scope": "dewey"
+    },
     {
       "hash": "fb0bba75",
       "date": "2026-10-17",
@@ -3465,45 +3500,45 @@
       "type": "Test",
       "description": "Held-out gold (New Era, ‘Abdu’l-Bahá in London — talk + editor's report) for the window classifier; never tuned on",
       "scope": "authorship"
-    },
-    {
-      "hash": "750b8159",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window eval — gold corrected from full text, NFC-normalised matching; LLM escalation budget fits ten transliterated names; 'another person' never stored",
-      "scope": "authorship"
-    },
-    {
-      "hash": "05d216b6",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier v3 — a compiler is never an extract's speaker; --hybrid fixes evidence-backed speakers and asks only their quotes",
-      "scope": "authorship"
-    },
-    {
-      "hash": "f36e8d6b",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier v2 — speaker = the paragraph's narrator unless it is wholly someone's words; long paragraphs condensed around their quotations; eval script + iteration log",
-      "scope": "authorship"
-    },
-    {
-      "hash": "f65abaac",
-      "date": "2026-10-08",
-      "type": "Test",
-      "description": "Hand-labelled speaker+quotes gold (Dawn-Breakers, Priceless Pearl) and gold scoring / variant switches for the window classifier",
-      "scope": "authorship"
-    },
-    {
-      "hash": "16590514",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Stray lines left by the block-attrs rework",
-      "scope": "backfill"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "620533a8",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Any format → Markdown (DOC/RTF/ODT via LibreOffice, webarchive, EPUB, HTML, cp1252 TXT); DOCX read directly — mammoth had failed on every .docx since the 09-09 xmldom override; a printed line counts only if the hit paragraph contains it (false 'held'); folder-sweep API client",
+        "scope": "dewey"
+      },
+      {
+        "hash": "12c4e360",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "'Title by Author' typed as one string is held on the title alone — agents send it that way",
+        "scope": "dewey"
+      },
+      {
+        "hash": "14c3228a",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Gemini's per-minute 429 (billing boilerplate, 'PerMinute' metric id) is not out of credit — it killed phrase-index #106; job errors keep the Error line",
+        "scope": "alerts"
+      },
+      {
+        "hash": "7d2e2c7c",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Dewey in the OpenAPI spec — every /api/dewey route with request/response schemas, tag Dewey, X-API-Key or Bearer; contract test",
+        "scope": "dewey"
+      },
+      {
+        "hash": "3b50aadc",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "A photo sends itself (clearing the picker after an await threw and stopped it); Dewey's *italic* / **bold** rendered",
+        "scope": "dewey"
+      },
       {
         "hash": "fb0bba75",
         "date": "2026-10-17",
@@ -6986,41 +7021,6 @@
         "type": "Test",
         "description": "Held-out gold (New Era, ‘Abdu’l-Bahá in London — talk + editor's report) for the window classifier; never tuned on",
         "scope": "authorship"
-      },
-      {
-        "hash": "750b8159",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window eval — gold corrected from full text, NFC-normalised matching; LLM escalation budget fits ten transliterated names; 'another person' never stored",
-        "scope": "authorship"
-      },
-      {
-        "hash": "05d216b6",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier v3 — a compiler is never an extract's speaker; --hybrid fixes evidence-backed speakers and asks only their quotes",
-        "scope": "authorship"
-      },
-      {
-        "hash": "f36e8d6b",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier v2 — speaker = the paragraph's narrator unless it is wholly someone's words; long paragraphs condensed around their quotations; eval script + iteration log",
-        "scope": "authorship"
-      },
-      {
-        "hash": "f65abaac",
-        "date": "2026-10-08",
-        "type": "Test",
-        "description": "Hand-labelled speaker+quotes gold (Dawn-Breakers, Priceless Pearl) and gold scoring / variant switches for the window classifier",
-        "scope": "authorship"
-      },
-      {
-        "hash": "16590514",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Stray lines left by the block-attrs rework",
-        "scope": "backfill"
       }
     ]
   }

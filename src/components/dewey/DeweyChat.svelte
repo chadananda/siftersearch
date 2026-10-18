@@ -159,6 +159,7 @@
 
   const VERDICT = {
     held: { label: 'We have it', tone: 'text-success' },
+    'partly-held': { label: 'We have part of it', tone: 'text-warning' },
     possible: { label: 'Possibly — check these', tone: 'text-warning' },
     'not-found-by-title': { label: 'Not found by title', tone: 'text-warning' },
     'not-held': { label: 'Not in the library', tone: 'text-error' },
@@ -200,7 +201,9 @@
                 <div class="flex gap-2 items-start mt-1.5">
                   {#if thumb}<img src={thumb.src} srcset={thumb.srcset} width="28" height="42" alt="" class="w-7 h-10 rounded-sm object-cover shrink-0" loading="lazy" />{/if}
                   <div class="min-w-0"><a href="/document/{d.id}" class="text-sm text-primary font-medium hover:text-accent">{d.title}</a>
-                    <div class="text-xs text-muted">{[d.author, d.language, d.year].filter(Boolean).join(' · ')} — {d.evidence.map((e) => e.kind).join(', ')}</div></div>
+                    <div class="text-xs text-muted">{[d.author, d.language, d.year].filter(Boolean).join(' · ')}{#if !d.relation} — {d.evidence.map((e) => e.kind).join(', ')}{/if}</div>
+                    <!-- the full-text comparison's finding, in words (compare.js) -->
+                    {#if d.relation}<div class="text-xs text-secondary">{d.evidence.find((e) => e.kind === 'text')?.detail}</div>{/if}</div>
                 </div>
               {/each}
               {#if p.r.verdict !== 'held' && id.title}

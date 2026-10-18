@@ -42,15 +42,21 @@ URLs of photos: cover, title page, a page of text), `file` (`{ name, data }`, ba
 ```
 ```json
 { "identified": { "title": "The Chosen Highway", "author": "Lady Blomfield", "from": "text" },
-  "verdict": "held | possible | not-found-by-title | not-held",
+  "verdict": "held | partly-held | possible | not-found-by-title | not-held",
+  "compared": { "words": 2252, "probes": 30, "documents": 4 },
   "candidates": [ { "id": 1234, "title": "…", "author": "…", "language": "en", "evidence": [ { "kind": "title", "detail": "…" } ] } ] }
 ```
 
 Files Dewey reads (converted to Markdown, headings kept): PDF (text layer; a scan is reported `needs_ocr`), DOCX, DOC, RTF,
 ODT, WPD, HTML, Safari `.webarchive`, EPUB, TXT/MD. Audio and video are refused with a reason (no transcription yet).
-A printed line counts as found only when the matching paragraph really contains it.
+**When text is given** (a file, a pasted passage, a photographed page) the library is compared with it IN FULL — word
+4-grams, both directions, and whether the shared text runs in order. Each candidate carries a `relation`:
+`same` (another copy, edition or transcription) · `inside` (part of a larger library work, e.g. a compilation) ·
+`partial` (the library holds only part of it — worth adding the fuller text) · `overlap` / `quotes` (shared passages only)
+· `unrelated`, with `ours_in_theirs`, `theirs_in_ours`, `in_order`, `length_ratio`. Verdict: `held` (same or inside),
+`partly-held`, `possible` (shared passages), `not-held`. Method: planning/dewey-holdings-comparison.md.
 
-`not-held` means its title **and** its text missed. A title miss alone is `not-found-by-title`: send a sentence of its
+With a title only: `not-held` means its title **and** its text missed. A title miss alone is `not-found-by-title`: send a sentence of its
 text to settle it.
 
 ### The wanted list

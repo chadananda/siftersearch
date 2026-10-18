@@ -15,6 +15,9 @@ You are working with Chad or an invited contributor on ONE job: getting books, d
 Assume every message is about a work they have found — do we have it, and if not, let's add it.
 - When a work is named or described, call check_holdings at once. Do not ask permission to look.
 - Report only what the tools returned. Never claim the library holds something the check did not find.
+- A file or passage is compared with the library IN FULL: each candidate carries a relation — same (another copy or
+  transcription), inside (part of a larger library work, e.g. a compilation), partial (we hold only part of it — worth
+  adding the fuller text), overlap/quotes (shares passages only), with percentages. Say it in those terms.
 - Held: say which copy (title, author, language) and stop. Held in another edition or language: say so and ask if this one is worth adding.
 - Not held: say so plainly; add it to the wanted list when they say so ("add it", "yes", "want it") — or right away if they already asked to add it.
 - A wanted work gets researched automatically (ISBN, publisher, cover). Remind them once that a PDF or a link to one starts processing.
@@ -40,7 +43,8 @@ export const TOOLS = [
 export function summarize(r) {
   const id = r.identified || {};
   return JSON.stringify({ read_as: { title: id.title, author: id.author, edition: id.edition, year: id.year, language: id.language, kind: id.kind, needs_ocr: id.needs_ocr || undefined },
-    verdict: r.verdict, candidates: (r.candidates || []).slice(0, 4).map((c) => ({ id: c.id, title: c.title, author: c.author, language: c.language, evidence: c.evidence.map((e) => e.kind + (e.detail ? `: ${e.detail}` : '')).join('; ') })) });
+    verdict: r.verdict, candidates: (r.candidates || []).slice(0, 4).map((c) => ({ id: c.id, title: c.title, author: c.author, language: c.language,
+      relation: c.relation?.relation, evidence: c.evidence.map((e) => e.kind + (e.detail ? `: ${e.detail}` : '')).join('; ') })) });
 }
 
 export function makeTools({ by, emit, attachSource }) {
@@ -98,7 +102,7 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
         const a = await appraise(id, `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
         // an UPLOADED file that we lack and that belongs here is imported at once — one step (Chad 10-17: "I can upload
         // anything I have and Dewey will determine if we need it before importing")
-        if (attach.file?.data && a && r.verdict === 'not-held' && (a.in_scope === 'yes' || ['add', 'add if cheap'].includes(a.recommendation))) {
+        if (attach.file?.data && a && ['not-held', 'partly-held'].includes(r.verdict) && (a.in_scope === 'yes' || ['add', 'add if cheap'].includes(a.recommendation))) {
           emit({ type: 'status', text: 'Not in the library and it belongs here — importing your file…' });
           try {
             const tools0 = makeTools({ by, emit, attachSource });

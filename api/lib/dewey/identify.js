@@ -50,8 +50,11 @@ export async function identifyFile({ name = '', bytes }) {
   const { markdown, scan } = await toMarkdownText(bytes, name);
   if (scan && markdown.replace(/\s/g, '').length < 200) return { title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, from: 'file' };
   const first = markdown.split('\n').map((l) => l.replace(/^#+\s*|\*+/g, '').trim()).filter(Boolean);
-  return { title: first[0]?.slice(0, 200) || name, kind: 'file', printed_lines: sampleLines(markdown), from: 'file' };
+  return withText({ title: first[0]?.slice(0, 200) || name, kind: 'file', printed_lines: sampleLines(markdown), from: 'file' }, markdown);
 }
+
+/** The whole text rides along for the holdings comparison (compare.js) but is NOT enumerable — never sent back in JSON. */
+export const withText = (id, text) => Object.defineProperty(id, '_text', { value: String(text || ''), enumerable: false });
 
 /** Up to n complete, distinctive lines from running text (long enough to identify a passage, not headings). */
 export function sampleLines(text, n = 6) {
@@ -65,7 +68,7 @@ export function sampleLines(text, n = 6) {
 export function identifyText(text) {
   const t = String(text || '').trim();
   if (/^https?:\/\//i.test(t)) return { url: t };
-  if (t.split(/\s+/).length >= 10) return { printed_lines: [t], from: 'text' };
+  if (t.split(/\s+/).length >= 10) return withText({ printed_lines: [t], from: 'text' }, t);
   // "The Chosen Highway by Lady Blomfield": the whole string stays the title (some titles hold "by" — "Prayers Revealed by
   // the Báb"); the part before the last " by " is a second title an exact match may land on, the rest the author
   const m = t.match(/^(.{3,}?)\s+by\s+([^,]{3,})$/i);

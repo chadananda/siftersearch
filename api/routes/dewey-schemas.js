@@ -15,16 +15,26 @@ const identified = open({
   needs_ocr: { type: 'boolean', description: 'a scan with no text layer' },
 }, { description: 'What Dewey read the work as' });
 
+const relation = open({
+  relation: { type: 'string', enum: ['same', 'inside', 'partial', 'overlap', 'quotes', 'too-short', 'unrelated'] },
+  ours_in_theirs: { type: 'number', description: 'share of the given text found in this document' },
+  theirs_in_ours: { type: 'number', description: 'share of this document found in the given text' },
+  in_order: { type: 'number', description: '1 = the shared text runs in the same order (same work); low = scattered quotation' },
+  length_ratio: { type: 'number', description: 'this document’s length ÷ the given text’s' },
+}, { description: 'Full-text comparison (word 4-grams, both directions)' });
+
 const candidate = open({
   id: { type: 'integer', description: 'document id (see /document/{id} on siftersearch.com)' },
   title: { type: 'string' }, author: { type: 'string' }, language: { type: 'string' },
-  evidence: { type: 'array', items: open({ kind: { type: 'string', description: 'title · author · text' }, detail: { type: 'string' } }) },
+  evidence: { type: 'array', items: open({ kind: { type: 'string', description: 'title · title+author · part of · text' }, detail: { type: 'string' } }) },
+  relation,
 });
 
 const holdings = open({
   identified,
-  verdict: { type: 'string', enum: ['held', 'possible', 'not-found-by-title', 'not-held'],
-    description: '`not-held` = title AND text both missed. `not-found-by-title` = only the title missed — send a sentence of its text to settle it.' },
+  verdict: { type: 'string', enum: ['held', 'partly-held', 'possible', 'not-found-by-title', 'not-held'],
+    description: 'From a FULL-TEXT comparison when text was given (a file, a passage, a photographed page): `held` = the same text or contained in a larger work; `partly-held` = the library holds only part of it; `possible` = shared passages only. `not-held` = nothing matched. Title-only input: `not-found-by-title` = only the title missed — send its text to settle it.' },
+  compared: open({ words: { type: 'integer' }, probes: { type: 'integer' }, documents: { type: 'integer' } }, { description: 'what the text comparison covered' }),
   candidates: { type: 'array', items: candidate },
 });
 
