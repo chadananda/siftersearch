@@ -32,6 +32,7 @@ import documentsRoutes from './routes/documents.js';
 import servicesRoutes from './routes/services.js';
 import anonymousRoutes from './routes/anonymous.js';
 import librarianRoutes from './routes/librarian.js';
+import deweyRoutes from './routes/dewey.js';
 import publicApiRoutes from './routes/public-api.js';
 import deployRoutes from './routes/deploy.js';
 import forumRoutes from './routes/forum.js';
@@ -364,6 +365,7 @@ await server.register(tabletPublicRoutes, { prefix: '/api/documents' });   // GE
   await server.register(servicesRoutes, { prefix: '/api/services' });
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });
   await server.register(librarianRoutes, { prefix: '/api/librarian' });
+  await server.register(deweyRoutes, { prefix: '/api/dewey' });
   await server.register(publicApiRoutes, { prefix: '/api/v1' });
   // Content (docs + conversations) — public reads at /api/v1/docs/:slug,
   // admin writes at /api/v1/admin/docs/:slug (X-Admin-Key auth).

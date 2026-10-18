@@ -1,6 +1,139 @@
 {
-  "generated": "2026-10-17T21:50:54.550Z",
+  "generated": "2026-10-18T02:32:14.947Z",
   "entries": [
+    {
+      "hash": "3461c4e5",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Phrase vectors follow new books automatically under a standing daily cap (AUTO_INDEX_USD_DAY; off until set)",
+      "scope": "ingest"
+    },
+    {
+      "hash": "ccf436d8",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "A new long book with no headings gets structure inferred automatically; a refusal is marked, not retried",
+      "scope": "ingest"
+    },
+    {
+      "hash": "f4aa3c43",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "References counts only works with a reference system (or that should have one) — not needed counts as done (Chad 10-17)",
+      "scope": "index"
+    },
+    {
+      "hash": "72521d4d",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "A short single work (tablet, letter, talk: < 60 paragraphs) counts as structure not needed once read",
+      "scope": "structure"
+    },
+    {
+      "hash": "7d606283",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "The Contents check compares with all sections found (the Summa's Questions were not counted)",
+      "scope": "structure"
+    },
+    {
+      "hash": "6b88f847",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "A length-cut reply is split and re-asked; a book whose Contents lists far more chapters than were found is not written",
+      "scope": "structure"
+    },
+    {
+      "hash": "792b1a09",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Structure-infer titles join a numbering line with the name line after it",
+      "scope": "structure"
+    },
+    {
+      "hash": "a14895e6",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Structure-infer accounts for every model call (parsed, kept, invented, finish) and uses 120-line calls; an unusable reply blocks the write",
+      "scope": "structure"
+    },
+    {
+      "hash": "2d10e7db",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Structure-infer — candidate heading lines, Haiku picks section starts by paragraph number (Contents page + standard structure as guidance), code builds and checks",
+      "scope": "structure"
+    },
+    {
+      "hash": "50a9875a",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Toc-candidates report — structureless books carrying their own Contents page",
+      "scope": "structure"
+    },
+    {
+      "hash": "6ad35606",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "/search/multi returns the resolved citation",
+      "scope": "search"
+    },
+    {
+      "hash": "23cedc1b",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "A typed citation leads — 'Gleanings CXXV', 'Íqán ¶12', 'Arabic Hidden Words 5' resolve to their paragraph by the verified numbering",
+      "scope": "search"
+    },
+    {
+      "hash": "4df1b3b6",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Structure before BM25 — keyword points carry the section path at 0.3 weight; section-findability measures it",
+      "scope": "index"
+    },
+    {
+      "hash": "fdb3b926",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Refs-assign show — every paragraph with the number it would get",
+      "scope": "refs"
+    },
+    {
+      "hash": "b0d92feb",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Gleanings (I–CLXVI, CXXV.2…), Aqdas (1–190, Q&A 1–107) and Íqán (1–290) numbering, each verified against its totals",
+      "scope": "refs"
+    },
+    {
+      "hash": "b2b022c6",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Participant check folds possessives and the ʻ apostrophe and counts the heading; reverify mode re-checks stored episodes without a model call",
+      "scope": "history"
+    },
+    {
+      "hash": "42350885",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Traditional numbering — refs-assign job + Hidden Words scheme (Arabic 1–71, Persian 1–82, verified against the totals)",
+      "scope": "refs"
+    },
+    {
+      "hash": "3d45688e",
+      "date": "2026-10-17",
+      "type": "Docs",
+      "description": "Structure inference + traditional references (Chad 10-17)",
+      "scope": "worklist"
+    },
+    {
+      "hash": "1d24d94b",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "References stage (traditional number or print page per paragraph); Structure counts documents whose structure was FOUND",
+      "scope": "index"
+    },
     {
       "hash": "2f3c824d",
       "date": "2026-10-17",
@@ -3367,143 +3500,143 @@
       "type": "New",
       "description": "CTAI concordance as a tool — a question about an Arabic/Persian word ('the word Irfan', 'what does ʿirfán mean', عرفان) becomes a TERM STUDY: Shoghi Effendi's renderings with counts (built by code) and passages pairing the original with his English, linked to CTAI; Latin spellings resolved by one tiny call; falls back to the ordinary search. Letters: styled tables and ```chart blocks drawn as HTML bar charts (every mail client) and block-character bars in plain text",
       "scope": "anis"
-    },
-    {
-      "hash": "98f8118f",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Support.mjs waits for the API's /health before drafting (a deploy restarts the API; the first call got 503)",
-      "scope": "mail"
-    },
-    {
-      "hash": "fb6c0679",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Support letters — Ocean support mail Chad hands to Anís: scripts/mail/support.mjs drafts the answer (Anís email turn) for Chad's approval, then POST /_mail/support records the question, invites the person and sends one letter ('Chad asked me to answer your letter…' + the approved answer; a shorter version if Anís has written before); replies to our letters now join their thread; digest lists support letters",
-      "scope": "mail"
-    },
-    {
-      "hash": "afcb992e",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Anís letter look — signature in large italic Palatino ('— Anís' over 'AI Research Assistant for Ocean 2.0') on every letter, styled body with RTL passages; invite-only: letters to invited people send at once (auto_send_invited), welcome says who asked ('Chad asked me to reach out…') and goes at once when asked; others still drafted for Chad",
-      "scope": "mail"
-    },
-    {
-      "hash": "94b822ef",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Anís describes itself as an experimental AI research assistant with its own email address (anis@oceanlibrary.com) — soul + 'about Anís' replies; renamed personas keep the general description",
-      "scope": "anis"
-    },
-    {
-      "hash": "9486961e",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Welcome letter — once, to someone added to the list with no history (template in D1 mail_templates, editable without a deploy); drafted for review like every letter; kill switch, pause and caps apply",
-      "scope": "mail"
-    },
-    {
-      "hash": "dc2abbdd",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Letters sign as Anís; footnote markers copied from passages are removed from drafts",
-      "scope": "mail"
-    },
-    {
-      "hash": "26759e9e",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "POST /_mail/run?job=draft",
-      "scope": "mail"
-    },
-    {
-      "hash": "0f34e38e",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Anís letters end to end — inbound to anis@ drafted by an ordinary Anís turn on tower (/anis/draft), outreach letters (/anis/outreach: capability letters then follow-up research; silence when nothing found) only while switched on; every letter a draft Chad approves on a signed review page (edit/send/discard) before the engagement rules; stop/personal disclosure ends outreach; daily digest 14:00 UTC; cron triggers",
-      "scope": "mail"
-    },
-    {
-      "hash": "fb2049f0",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Engagement rules enforced at the one send path — reply vs outreach; outreach kill switch (off), consent (they wrote first), pause/stop, alpha allowlist, cadence 3·5·12·25·44 days then quiet; per-person and global daily caps; signed pause link in every footer + RFC 8058 one-click List-Unsubscribe; an emailed 'unsubscribe' stops outreach. Settings in D1 mail_settings.",
-      "scope": "mail"
-    },
-    {
-      "hash": "5aa11bf9",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Ignore list (D1 mail_ignore; domain incl. subdomains, or full address) — mail from bnc.org and usbnc.org is dropped unread and unstored",
-      "scope": "mail"
-    },
-    {
-      "hash": "25fbea1a",
-      "date": "2026-10-07",
-      "type": "Chore",
-      "description": "Track the D1 'anis' migrations (global gitignore excludes *.sql)",
-      "scope": "mail"
-    },
-    {
-      "hash": "69401bb2",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Capture newsletter replies (info@ and any @m.oceanlibrary.com → mailbox 'newsletter'); inbound sorted into new / auto (out-of-office, bounces) / unsubscribe / spam",
-      "scope": "mail"
-    },
-    {
-      "hash": "054d2d98",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Anis@oceanlibrary.com via Amazon SES — Worker endpoints for inbound (SNS → S3 raw MIME → D1) and events (bounces, complaints, opens, clicks; suppression list), SNS signatures verified, internal-key send endpoint; D1 'anis' bound (migration 0001_mail)",
-      "scope": "mail"
-    },
-    {
-      "hash": "0a268501",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Load the env files (PM2 does not pass them); a failed model call is retried after a pause, never recorded as audited",
-      "scope": "audit"
-    },
-    {
-      "hash": "e6a0d151",
-      "date": "2026-10-07",
-      "type": "Other",
-      "description": "Run the strategy auditor (siftersearch-audit) and its daily 07:00 email digest under PM2; digest marks auditor-named 'missed' passages as leads to check",
-      "scope": "audit"
-    },
-    {
-      "hash": "03d69bb1",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Strategy auditor — every Anís exchange audited after the reply (typed verdicts: strategy right/best, evidence answered and why not, format, every mistake WHEREVER it lies incl. library data and readers' premises, new-strategy proposals, data gaps); $25/day cap; daily email digest; exchanges now log their evidence passages",
-      "scope": "audit"
-    },
-    {
-      "hash": "b7b7fd10",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "A footnote is an editor's note, never the writer's own work (the Aqdas's note 192 quoting 'My captivity…' ranked as Bahá’u’lláh's text); scripts/authorship/aqdas-notes.mjs credited the old library Aqdas copy's 207 inline notes to the Universal House of Justice",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "f135f9a5",
-      "date": "2026-10-06",
-      "type": "Fixed",
-      "description": "No doubled full stop after the original's quoted words",
-      "scope": "anis"
-    },
-    {
-      "hash": "ac97f9be",
-      "date": "2026-10-06",
-      "type": "New",
-      "description": "'where is this from?' answered from the hunt by template — no model call (no leaked instructions, no persona framing, no rambling); exact links, the original's matched words, Phelps entry, other publications",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "3461c4e5",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Phrase vectors follow new books automatically under a standing daily cap (AUTO_INDEX_USD_DAY; off until set)",
+        "scope": "ingest"
+      },
+      {
+        "hash": "ccf436d8",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "A new long book with no headings gets structure inferred automatically; a refusal is marked, not retried",
+        "scope": "ingest"
+      },
+      {
+        "hash": "f4aa3c43",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "References counts only works with a reference system (or that should have one) — not needed counts as done (Chad 10-17)",
+        "scope": "index"
+      },
+      {
+        "hash": "72521d4d",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "A short single work (tablet, letter, talk: < 60 paragraphs) counts as structure not needed once read",
+        "scope": "structure"
+      },
+      {
+        "hash": "7d606283",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "The Contents check compares with all sections found (the Summa's Questions were not counted)",
+        "scope": "structure"
+      },
+      {
+        "hash": "6b88f847",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "A length-cut reply is split and re-asked; a book whose Contents lists far more chapters than were found is not written",
+        "scope": "structure"
+      },
+      {
+        "hash": "792b1a09",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Structure-infer titles join a numbering line with the name line after it",
+        "scope": "structure"
+      },
+      {
+        "hash": "a14895e6",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Structure-infer accounts for every model call (parsed, kept, invented, finish) and uses 120-line calls; an unusable reply blocks the write",
+        "scope": "structure"
+      },
+      {
+        "hash": "2d10e7db",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Structure-infer — candidate heading lines, Haiku picks section starts by paragraph number (Contents page + standard structure as guidance), code builds and checks",
+        "scope": "structure"
+      },
+      {
+        "hash": "50a9875a",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Toc-candidates report — structureless books carrying their own Contents page",
+        "scope": "structure"
+      },
+      {
+        "hash": "6ad35606",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "/search/multi returns the resolved citation",
+        "scope": "search"
+      },
+      {
+        "hash": "23cedc1b",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "A typed citation leads — 'Gleanings CXXV', 'Íqán ¶12', 'Arabic Hidden Words 5' resolve to their paragraph by the verified numbering",
+        "scope": "search"
+      },
+      {
+        "hash": "4df1b3b6",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Structure before BM25 — keyword points carry the section path at 0.3 weight; section-findability measures it",
+        "scope": "index"
+      },
+      {
+        "hash": "fdb3b926",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Refs-assign show — every paragraph with the number it would get",
+        "scope": "refs"
+      },
+      {
+        "hash": "b0d92feb",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Gleanings (I–CLXVI, CXXV.2…), Aqdas (1–190, Q&A 1–107) and Íqán (1–290) numbering, each verified against its totals",
+        "scope": "refs"
+      },
+      {
+        "hash": "b2b022c6",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Participant check folds possessives and the ʻ apostrophe and counts the heading; reverify mode re-checks stored episodes without a model call",
+        "scope": "history"
+      },
+      {
+        "hash": "42350885",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Traditional numbering — refs-assign job + Hidden Words scheme (Arabic 1–71, Persian 1–82, verified against the totals)",
+        "scope": "refs"
+      },
+      {
+        "hash": "3d45688e",
+        "date": "2026-10-17",
+        "type": "Docs",
+        "description": "Structure inference + traditional references (Chad 10-17)",
+        "scope": "worklist"
+      },
+      {
+        "hash": "1d24d94b",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "References stage (traditional number or print page per paragraph); Structure counts documents whose structure was FOUND",
+        "scope": "index"
+      },
       {
         "hash": "2f3c824d",
         "date": "2026-10-17",
@@ -6889,141 +7022,6 @@
         "date": "2026-10-07",
         "type": "New",
         "description": "CTAI concordance as a tool — a question about an Arabic/Persian word ('the word Irfan', 'what does ʿirfán mean', عرفان) becomes a TERM STUDY: Shoghi Effendi's renderings with counts (built by code) and passages pairing the original with his English, linked to CTAI; Latin spellings resolved by one tiny call; falls back to the ordinary search. Letters: styled tables and ```chart blocks drawn as HTML bar charts (every mail client) and block-character bars in plain text",
-        "scope": "anis"
-      },
-      {
-        "hash": "98f8118f",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Support.mjs waits for the API's /health before drafting (a deploy restarts the API; the first call got 503)",
-        "scope": "mail"
-      },
-      {
-        "hash": "fb6c0679",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Support letters — Ocean support mail Chad hands to Anís: scripts/mail/support.mjs drafts the answer (Anís email turn) for Chad's approval, then POST /_mail/support records the question, invites the person and sends one letter ('Chad asked me to answer your letter…' + the approved answer; a shorter version if Anís has written before); replies to our letters now join their thread; digest lists support letters",
-        "scope": "mail"
-      },
-      {
-        "hash": "afcb992e",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Anís letter look — signature in large italic Palatino ('— Anís' over 'AI Research Assistant for Ocean 2.0') on every letter, styled body with RTL passages; invite-only: letters to invited people send at once (auto_send_invited), welcome says who asked ('Chad asked me to reach out…') and goes at once when asked; others still drafted for Chad",
-        "scope": "mail"
-      },
-      {
-        "hash": "94b822ef",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Anís describes itself as an experimental AI research assistant with its own email address (anis@oceanlibrary.com) — soul + 'about Anís' replies; renamed personas keep the general description",
-        "scope": "anis"
-      },
-      {
-        "hash": "9486961e",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Welcome letter — once, to someone added to the list with no history (template in D1 mail_templates, editable without a deploy); drafted for review like every letter; kill switch, pause and caps apply",
-        "scope": "mail"
-      },
-      {
-        "hash": "dc2abbdd",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Letters sign as Anís; footnote markers copied from passages are removed from drafts",
-        "scope": "mail"
-      },
-      {
-        "hash": "26759e9e",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "POST /_mail/run?job=draft",
-        "scope": "mail"
-      },
-      {
-        "hash": "0f34e38e",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Anís letters end to end — inbound to anis@ drafted by an ordinary Anís turn on tower (/anis/draft), outreach letters (/anis/outreach: capability letters then follow-up research; silence when nothing found) only while switched on; every letter a draft Chad approves on a signed review page (edit/send/discard) before the engagement rules; stop/personal disclosure ends outreach; daily digest 14:00 UTC; cron triggers",
-        "scope": "mail"
-      },
-      {
-        "hash": "fb2049f0",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Engagement rules enforced at the one send path — reply vs outreach; outreach kill switch (off), consent (they wrote first), pause/stop, alpha allowlist, cadence 3·5·12·25·44 days then quiet; per-person and global daily caps; signed pause link in every footer + RFC 8058 one-click List-Unsubscribe; an emailed 'unsubscribe' stops outreach. Settings in D1 mail_settings.",
-        "scope": "mail"
-      },
-      {
-        "hash": "5aa11bf9",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Ignore list (D1 mail_ignore; domain incl. subdomains, or full address) — mail from bnc.org and usbnc.org is dropped unread and unstored",
-        "scope": "mail"
-      },
-      {
-        "hash": "25fbea1a",
-        "date": "2026-10-07",
-        "type": "Chore",
-        "description": "Track the D1 'anis' migrations (global gitignore excludes *.sql)",
-        "scope": "mail"
-      },
-      {
-        "hash": "69401bb2",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Capture newsletter replies (info@ and any @m.oceanlibrary.com → mailbox 'newsletter'); inbound sorted into new / auto (out-of-office, bounces) / unsubscribe / spam",
-        "scope": "mail"
-      },
-      {
-        "hash": "054d2d98",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Anis@oceanlibrary.com via Amazon SES — Worker endpoints for inbound (SNS → S3 raw MIME → D1) and events (bounces, complaints, opens, clicks; suppression list), SNS signatures verified, internal-key send endpoint; D1 'anis' bound (migration 0001_mail)",
-        "scope": "mail"
-      },
-      {
-        "hash": "0a268501",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Load the env files (PM2 does not pass them); a failed model call is retried after a pause, never recorded as audited",
-        "scope": "audit"
-      },
-      {
-        "hash": "e6a0d151",
-        "date": "2026-10-07",
-        "type": "Other",
-        "description": "Run the strategy auditor (siftersearch-audit) and its daily 07:00 email digest under PM2; digest marks auditor-named 'missed' passages as leads to check",
-        "scope": "audit"
-      },
-      {
-        "hash": "03d69bb1",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Strategy auditor — every Anís exchange audited after the reply (typed verdicts: strategy right/best, evidence answered and why not, format, every mistake WHEREVER it lies incl. library data and readers' premises, new-strategy proposals, data gaps); $25/day cap; daily email digest; exchanges now log their evidence passages",
-        "scope": "audit"
-      },
-      {
-        "hash": "b7b7fd10",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "A footnote is an editor's note, never the writer's own work (the Aqdas's note 192 quoting 'My captivity…' ranked as Bahá’u’lláh's text); scripts/authorship/aqdas-notes.mjs credited the old library Aqdas copy's 207 inline notes to the Universal House of Justice",
-        "scope": "sourcehunt"
-      }
-    ],
-    "2026-10-06": [
-      {
-        "hash": "f135f9a5",
-        "date": "2026-10-06",
-        "type": "Fixed",
-        "description": "No doubled full stop after the original's quoted words",
-        "scope": "anis"
-      },
-      {
-        "hash": "ac97f9be",
-        "date": "2026-10-06",
-        "type": "New",
-        "description": "'where is this from?' answered from the hunt by template — no model call (no leaked instructions, no persona framing, no rambling); exact links, the original's matched words, Phelps entry, other publications",
         "scope": "anis"
       }
     ]

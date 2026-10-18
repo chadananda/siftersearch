@@ -999,6 +999,11 @@ export const admin = {
 // Librarian API (Document Ingestion)
 // ============================================
 
+/** Dewey, the librarian page (/dewey): "do we already have it?" from text, a URL, photos or a file. */
+export const dewey = {
+  holdings: (body) => request('/api/dewey/holdings', { method: 'POST', body: JSON.stringify(body) }),
+};
+
 export const librarian = {
   /**
    * Get queue statistics
