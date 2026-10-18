@@ -102,6 +102,13 @@ async function keywordLoop() {
     // a NEW long book whose own headings gave no structure → inference (its Contents page / the work's standard structure)
     const infer = await (await import('../lib/repos/sections-repo.js')).autoInferCandidates().catch(() => []);
     if (infer.length) await enqueue('structure-infer', { ids: infer }, 'structure-loop').catch((err) => logger.warn({ err: err.message }, 'structure loop: infer enqueue failed'));
+    // PAID follow-through (phrase vectors for new books) runs only under a standing daily cap — AUTO_INDEX_USD_DAY,
+    // 0/unset = off (Chad sets it); each run carries its own maxUsd and the shared budget key
+    const cap = Number(process.env.AUTO_INDEX_USD_DAY || 0);
+    if (cap > 0) {
+      const phraseless = await (await import('../lib/repos/coverage-repo.js')).newDocsMissingLayer('phrase').catch(() => []);
+      if (phraseless.length) await enqueue('phrase-index', { docs: phraseless, maxUsd: cap, budgetKey: 'auto-ingest' }, 'follow-through').catch((err) => logger.warn({ err: err.message }, 'follow-through: phrase enqueue failed'));
+    }
     await new Promise((r) => setTimeout(r, 600_000));
   }
 }

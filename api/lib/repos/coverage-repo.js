@@ -164,3 +164,8 @@ export async function coverageSummary() {
 /** One document's ledger rows. */
 export const docCoverage = (docId) =>
   queryAll('SELECT layer, total, generated, current, indexed, version, updated_at FROM index_coverage WHERE doc_id = ? ORDER BY layer', [Number(docId)], 'coverage:doc');
+
+/** NEW documents (ingested in the last `days`) that a layer has not reached at all — what follow-through queues next. */
+export const newDocsMissingLayer = async (layer, { days = 7, limit = 200 } = {}) => (await queryAll(`SELECT i.doc_id AS id FROM index_coverage i JOIN docs d ON d.id = i.doc_id
+    WHERE i.layer = ? AND i.total > 0 AND i.indexed = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.created_at >= ?
+    ORDER BY i.core DESC, i.doc_id LIMIT ?`, [layer, new Date(Date.now() - days * 86400000).toISOString(), limit], 'coverage:new-missing')).map((r) => r.id);
