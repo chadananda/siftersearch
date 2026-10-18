@@ -46,7 +46,7 @@ export async function deweyOcrJob({ id } = {}, deps = {}) {
   let out;
   // live progress for the Observatory's import board (pages done / total, SLP's stage) — no log line, just the field
   let lastBeat = 0;
-  const progress = (p) => { if (Date.now() - lastBeat < 30000 && p.step !== 'complete') return; lastBeat = Date.now();
+  const progress = (p) => { if (Date.now() - lastBeat < 30000 && !['complete', 'created', 'resumed'].includes(p.step)) return; lastBeat = Date.now();
     updateItem(item.id, { identified: { ...item.identified, slp_progress: { ...p, at: new Date().toISOString() } } }).catch(() => {}); };
   // a SLP result already on file (rejected under an earlier check) is re-checked, not paid for again
   const prior = item.identified?.slp_rejected;
@@ -54,7 +54,9 @@ export async function deweyOcrJob({ id } = {}, deps = {}) {
     try { const md = String(await (deps.read || readFile)(prior.path)); out = { markdown: md, ...slpToText(md), job_id: prior.job_id, score: prior.score, cost_cents: prior.cost_cents, pages: prior.pages, reused: true }; } catch { out = null; }
   }
   if (!out) {
-    try { out = await extract({ path: item.original_path, context }, { log: progress }); } catch (err) {
+    // a job submitted before a restart is resumed (its id is on the item), never re-submitted
+    const resume = item.identified?.slp_progress?.job_id && !['failed', 'capped'].includes(item.identified.slp_progress.step) ? item.identified.slp_progress.job_id : null;
+    try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress }); } catch (err) {
       await updateItem(item.id, { state: 'needs-human' }, `full OCR failed: ${String(err.message).slice(0, 200)}`);
       return { id, state: 'needs-human', why: err.message };
     }

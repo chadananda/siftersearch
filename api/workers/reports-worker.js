@@ -181,10 +181,25 @@ async function pulseLoop() {
     await new Promise((r) => setTimeout(r, 15000));
   }
 }
+// OCR self-healing (10-18): restarts dropped in-flight OCR jobs and 71 items sat at needs-ocr with five jobs queued. Every
+// 10 minutes each item waiting at OCR gets its job (enqueue dedupes a queued/running twin; a resumed job polls, never pays twice).
+async function ocrLoop() {
+  const { listItems } = await import('../lib/repos/dewey-repo.js');
+  const { enqueue } = await import('../lib/repos/ops-report-repo.js');
+  const { slpEnabled } = await import('../lib/dewey/searchlayer.js');
+  while (!stopping) {
+    if (slpEnabled()) {
+      const waiting = await listItems({ state: 'needs-ocr', limit: 1000 }).catch(() => []);
+      for (const i of waiting) await enqueue('dewey-ocr', { id: i.id }, 'ocr-loop').catch(() => {});
+    }
+    await new Promise((r) => setTimeout(r, 600_000));
+  }
+}
+
 const laneNames = Object.values(LANES).flat();
 // OPS_ONLY="a,b": a second worker process that runs ONLY these jobs (10-12: carry runs waited hours behind a slow batch;
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), keywordLoop(), telemetryLoop(), pulseLoop()]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), keywordLoop(), ocrLoop(), telemetryLoop(), pulseLoop()]);
 process.exit(0);

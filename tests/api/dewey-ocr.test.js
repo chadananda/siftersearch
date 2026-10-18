@@ -64,6 +64,20 @@ describe('slpExtract — the SLP contract', () => {
   });
 });
 
+describe('slpExtract resumes a submitted job after a restart', () => {
+  it('polls the job it already has — no create, no upload, no second charge', async () => {
+    const calls = [];
+    const ok = (o) => ({ ok: true, status: 200, text: async () => (typeof o === 'string' ? o : JSON.stringify(o)) });
+    const fetchImpl = async (url, opts = {}) => { calls.push(opts.method || 'GET');
+      if (url.endsWith('/v1/jobs/j7')) return ok({ status: 'complete', pages_total: 1 });
+      if (url.endsWith('/result')) return ok({ markdown: ROSENBERG });
+      throw new Error(`unexpected ${opts.method} ${url}`); };
+    const r = await slpExtract({ path: '/nope.pdf', resumeJobId: 'j7' }, { fetchImpl, key: 'k', pollMs: 1 });
+    expect(r.job_id).toBe('j7');
+    expect(calls).toEqual(['GET', 'GET']);
+  });
+});
+
 // ── the ops job ──
 const items = [];
 vi.mock('../../api/lib/repos/dewey-repo.js', () => ({

@@ -63,20 +63,27 @@ export function slpCheck(text, { pages = 1, sampleText = null } = {}) {
  * A PDF (a server path) → SLP's { markdown, meta, text, job_id, score, cost_cents }. Polls until done (scans: a GPU pod
  * takes 2–3 min to come up, then ~9 s a page English, ~17 s Arabic) — `timeoutMs` bounds it. fetchImpl injectable.
  */
-export async function slpExtract({ path, context = '' }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, timeoutMs = 3 * 3600000, log = () => {} } = {}) {
+export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, timeoutMs = 3 * 3600000, log = () => {} } = {}) {
   if (!key) throw new Error('SearchLayerPDF is not configured (SEARCHLAYERPDF_API_KEY)');
   const H = { Authorization: `Bearer ${key}` };
   const json = async (r) => { const t = await r.text(); try { return JSON.parse(t); } catch { return { raw: t.slice(0, 200) }; } };
-  let r = await fetchImpl(`${BASE()}/v1/jobs`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ privacy: 'open', quality: 'economy', context: String(context).slice(0, 2000) }) });
-  const job = await json(r);
-  if (!r.ok || !job.job_id) throw new Error(`SLP job not created (${r.status}): ${JSON.stringify(job).slice(0, 160)}`);
-  log({ job_id: job.job_id, step: 'created' });
-  r = await fetchImpl(job.upload_url, { method: 'PUT', headers: { ...H, 'Content-Type': 'application/pdf', 'Content-Length': String(statSync(path).size) },
-    body: createReadStream(path), duplex: 'half' });
-  if (!r.ok) throw new Error(`SLP upload failed (${r.status}) for job ${job.job_id}`);
-  r = await fetchImpl(job.process_url, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
-  if (!r.ok) throw new Error(`SLP did not start job ${job.job_id} (${r.status})`);
+  let r, job;
+  if (resumeJobId) {
+    // a job already submitted (the worker restarted while it ran): poll it — never upload and pay twice
+    job = { job_id: resumeJobId };
+    log({ job_id: job.job_id, step: 'resumed' });
+  } else {
+    r = await fetchImpl(`${BASE()}/v1/jobs`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ privacy: 'open', quality: 'economy', context: String(context).slice(0, 2000) }) });
+    job = await json(r);
+    if (!r.ok || !job.job_id) throw new Error(`SLP job not created (${r.status}): ${JSON.stringify(job).slice(0, 160)}`);
+    log({ job_id: job.job_id, step: 'created' });
+    r = await fetchImpl(job.upload_url, { method: 'PUT', headers: { ...H, 'Content-Type': 'application/pdf', 'Content-Length': String(statSync(path).size) },
+      body: createReadStream(path), duplex: 'half' });
+    if (!r.ok) throw new Error(`SLP upload failed (${r.status}) for job ${job.job_id}`);
+    r = await fetchImpl(job.process_url, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
+    if (!r.ok) throw new Error(`SLP did not start job ${job.job_id} (${r.status})`);
+  }
   const t0 = Date.now();
   let s;
   for (;;) {
