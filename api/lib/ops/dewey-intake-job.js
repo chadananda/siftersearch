@@ -5,6 +5,7 @@
 // vectors → …) takes over with no manual step. Every outcome is a state on the item with its reason. params { id }.
 import { readFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
+import { garbledLayer } from '../dewey/convert.js';
 import { extractText, proseGate, libraryShelves, chooseShelf, writeLibraryFile, toMarkdown } from '../dewey/intake.js';
 import { detectLang } from '../pipeline/profile.js';
 import { withAIContext } from '../ai-context.js';
@@ -28,6 +29,11 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     return { id: item.id, state: 'failed', why: err.message };
   }
   const gate = proseGate(text, { pages });
+  // a GARBLED text layer (old OCR) passes the prose gate but is not the book's text: it waits for real OCR like a scan
+  if (gate.ok && ext === 'pdf' && garbledLayer(text)) {
+    await updateItem(item.id, { state: 'needs-ocr' }, 'its text layer is a garbled old OCR — waits for full OCR');
+    return { id: item.id, state: 'needs-ocr', why: 'garbled text layer' };
+  }
   if (!gate.ok) {
     const scan = ext === 'pdf' && gate.scan;
     await updateItem(item.id, { state: scan ? 'needs-ocr' : 'failed' }, scan ? `a scan: no text layer (${gate.why}) — waits for OCR` : `not usable text: ${gate.why}`);

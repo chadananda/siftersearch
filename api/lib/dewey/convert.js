@@ -132,12 +132,21 @@ export async function visionRead(png) {
   return res?.choices?.[0]?.message?.content || '';
 }
 
-/** Does an OCR read look like real Latin-script words? (≥ 60% of tokens are 2+ letters with a vowel) */
-export function looksLikeWords(text) {
+/** Share of tokens that look like real Latin-script words (2+ letters, a vowel, clean shape) — 0..1; null if too few. */
+export function wordRatio(text) {
   const toks = String(text || '').split(/\s+/).filter((t) => t.length > 1);
-  if (toks.length < 20) return false;
-  return toks.filter((t) => /^[A-Za-z][a-z'’-]*[a-z][.,;:!?)"’]*$/.test(t) && /[aeiouy]/i.test(t)).length / toks.length >= 0.6;
+  if (toks.length < 20) return null;
+  return toks.filter((t) => /^[A-Za-z][a-z'’-]*[a-z][.,;:!?)"’]*$/.test(t) && /[aeiouy]/i.test(t)).length / toks.length;
 }
+
+/** Does an OCR read look like real Latin-script words? (≥ 60% of tokens are) */
+export const looksLikeWords = (text) => (wordRatio(text) ?? 0) >= 0.6;
+
+/** A garbled old-OCR text layer: mostly Latin letters but under 85% real-word shapes. Not fit to import as the text. */
+export const garbledLayer = (t) => mostlyLatin(t) && (wordRatio(t) ?? 1) < 0.85;
+
+/** Is this text mostly Latin letters? (a word-shape ratio means nothing for Arabic or Hebrew) */
+const mostlyLatin = (t) => { const l = (String(t).match(/\p{L}/gu) || []).length; return l > 0 && (String(t).match(/[A-Za-z]/g) || []).length / l > 0.8; };
 
 /** PRELIMINARY OCR of a scan: render sampled pages (pdftoppm, 200 dpi gray); tesseract for printed Latin, vision otherwise. */
 export async function ocrSample(bytes, totalPages, { run = execFile, k = 8, vision = null } = {}) {
@@ -185,6 +194,14 @@ export async function toMarkdownText(bytes, name = '', deps = {}) {
     const t = Array.isArray(text) ? text.join('\n') : text || '';
     const pages = totalPages || 1;
     const scan = t.replace(/\s/g, '').length < 200 || t.split(/\s+/).length / pages < 25;
+    // a GARBLED text layer (an old OCR: "uld ooo;o aiM1 r thea ~lk") reads worse than a fresh tesseract pass — Kelsey's
+    // layer scored 0.80 real words, a fresh read 0.95, and the garble hid that the library holds it (10-17)
+    const layer = !scan && mostlyLatin(t) ? wordRatio(t) : null;
+    if (layer != null && layer < 0.88 && deps.ocr !== false) {
+      const o = await (deps.ocrSample || ocrSample)(b, pages).catch(() => null);
+      const fresh = o?.text ? wordRatio(o.text) : null;
+      if (fresh != null && fresh >= layer + 0.08) return { markdown: o.text, pages, format: 'pdf', scan: true, ocr: { sampled: o.pages, of: pages, script: o.script, engine: o.langs === 'vision' ? 'vision' : 'tesseract', replaced_layer: +layer.toFixed(2) } };
+    }
     // a scan: a preliminary OCR of sampled pages, so the holdings check can still compare TEXT (deps.ocr: false skips it)
     if (scan && deps.ocr !== false) {
       const o = await (deps.ocrSample || ocrSample)(b, pages).catch(() => null);

@@ -1,7 +1,7 @@
 // Dewey's converter: every format → Markdown with headings kept; one path for identify and intake.
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
-import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages, looksLikeWords } from '../../api/lib/dewey/convert.js';
+import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages, looksLikeWords, garbledLayer } from '../../api/lib/dewey/convert.js';
 
 describe('htmlToMarkdown', () => {
   it('keeps headings, paragraphs, lists, quotes and emphasis; drops scripts and styles', () => {
@@ -75,5 +75,11 @@ describe('preliminary OCR of scans', () => {
     expect(looksLikeWords('Excerpts from the notes of Ben Levy, American Baha\'i in the Armed Forces in Germany. Pilgrimage March 9th to 16th, 1953. Mankind is now approaching the stage of maturity. Maturity means responsibility and all men are responsible to God.')).toBe(true);
     expect(looksLikeWords('プー 0 72 の と。 そん 「 レク ンタルレ ぎ CR んし り 。 EE 。 yt" いう 了 『ル レ/二2 /グ名 だ アン を wtっ ッン サリ が 計 ww チ も 症 が しゅ 5 。 | "ん /が じしゃる をrw')).toBe(false);
     expect(looksLikeWords('a fcast, at whnh atl kmd, af fimt, cmdcm smt, + tea wcn sewd. Bgy All fom Lmn w Rwe mn thn of Abdl Bba wwn thn. Prgn wm chnted + aftrwds thm thc mcn vsitd')).toBe(false);
+  });
+  it('a garbled old-OCR text layer is told from clean text (Kelsey 10-17)', () => {
+    const garble = '.r friends uld ooo;o aiM1 r thea ~lk bout the 9a.hs\' i Cau • The day and SOGle 40 Well if any of you here evar had. this illinois, you la:Ul\\\'f \\~\'lat a aevere headache goes along: with the illiness. fhe Xinneye and Uuy lfaxwel.l and my brother John oame down to see me off . bringing with tb~ letters !or me';
+    expect(garbledLayer(garble)).toBe(true);
+    expect(garbledLayer('You can see from what I have told you that we should have been ready ground for the teachings. But at the time we were first hearing of the Faith very little was being given out to the friends in the West.')).toBe(false);
+    expect(garbledLayer('بسم الله الرحمن الرحيم '.repeat(10))).toBe(false);
   });
 });
