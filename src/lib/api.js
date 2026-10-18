@@ -1008,7 +1008,7 @@ export const dewey = {
   thread: (after = 0) => request(`/api/dewey/thread?after=${after}`),
   missing: () => request('/api/dewey/missing'),
   want: (identified) => request('/api/dewey/items', { method: 'POST', body: JSON.stringify({ identified }) }),
-  items: () => request('/api/dewey/items'),
+  items: (limit = 100) => request(`/api/dewey/items?limit=${limit}`),
   accept: (id) => request(`/api/dewey/items/${id}/accept`, { method: 'POST' }),
   decline: (id) => request(`/api/dewey/items/${id}/decline`, { method: 'POST' }),
   attachSource: (id, body) => request(`/api/dewey/items/${id}/source`, { method: 'POST', body: JSON.stringify(body) }),

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-18T21:14:35.627Z",
+  "generated": "2026-10-18T21:31:35.346Z",
   "entries": [
+    {
+      "hash": "8d110955",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Review answers — no 'add it' for a scan without accepted text (it only went back to OCR); OCR that matched our own read under 30% recommends running OCR again, not using it",
+      "scope": "dewey"
+    },
+    {
+      "hash": "5ec7b181",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "/dewey page — thread opens at the latest message (no scroll-through); missing column hides works now held (a real document of the same title) and repeated titles; loading column shows stage chips + live OCR pages; 'Needs a person' gets a Review popup (view the original, read Dewey's text, answer: add it / use OCR text / run OCR again / decline) — GET items/:id/review, GET items/:id/file, POST items/:id/resolve; a person's 'add it' waives the fragment, twin, recheck and page-limit guards",
+      "scope": "dewey"
+    },
     {
       "hash": "06c710f8",
       "date": "2026-10-18",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Timeline v2 — spine facts first, pinned years never split one happening, journeys only where attested",
       "scope": "bio"
-    },
-    {
-      "hash": "30a616e2",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Life-timeline synthesis per person (events, typed relationships, journeys) from cited dossier facts",
-      "scope": "bio"
-    },
-    {
-      "hash": "f6bc7fd7",
-      "date": "2026-10-09",
-      "type": "Docs",
-      "description": "Immerse figure pages vs our bio dossiers — we hold the facts, lack the timeline synthesis",
-      "scope": "planning"
     }
   ],
   "grouped": {
     "2026-10-18": [
+      {
+        "hash": "8d110955",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Review answers — no 'add it' for a scan without accepted text (it only went back to OCR); OCR that matched our own read under 30% recommends running OCR again, not using it",
+        "scope": "dewey"
+      },
+      {
+        "hash": "5ec7b181",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "/dewey page — thread opens at the latest message (no scroll-through); missing column hides works now held (a real document of the same title) and repeated titles; loading column shows stage chips + live OCR pages; 'Needs a person' gets a Review popup (view the original, read Dewey's text, answer: add it / use OCR text / run OCR again / decline) — GET items/:id/review, GET items/:id/file, POST items/:id/resolve; a person's 'add it' waives the fragment, twin, recheck and page-limit guards",
+        "scope": "dewey"
+      },
       {
         "hash": "06c710f8",
         "date": "2026-10-18",
@@ -7007,20 +7021,6 @@
         "type": "Fixed",
         "description": "Timeline v2 — spine facts first, pinned years never split one happening, journeys only where attested",
         "scope": "bio"
-      },
-      {
-        "hash": "30a616e2",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Life-timeline synthesis per person (events, typed relationships, journeys) from cited dossier facts",
-        "scope": "bio"
-      },
-      {
-        "hash": "f6bc7fd7",
-        "date": "2026-10-09",
-        "type": "Docs",
-        "description": "Immerse figure pages vs our bio dossiers — we hold the facts, lack the timeline synthesis",
-        "scope": "planning"
       }
     ]
   }

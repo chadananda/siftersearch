@@ -38,7 +38,7 @@
     if (!total) return 'done';
     return done >= total ? 'done' : done > 0 ? 'part' : 'none';
   }
-  const LABEL = { source: 'Source attached', processing: 'Processing…', ingested: 'In the library', 'needs-ocr': 'Scan — waits for OCR', 'needs-human': 'Needs a person', failed: 'Failed' };
+  const LABEL = { source: 'Queued to load', processing: 'Loading…', ingested: 'In the library', 'needs-ocr': 'Scan — being read (OCR)', 'needs-human': 'Needs a person', failed: 'Failed' };
   const TONE = { processing: 'text-warning', source: 'text-warning', ingested: 'text-success', failed: 'text-error', 'needs-human': 'text-error', 'needs-ocr': 'text-warning' };
   const ago = (iso) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 90 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 172800 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`; };
 </script>
@@ -54,7 +54,13 @@
         <li class="item">
           {#if it.doc_id}<a href="/document/{it.doc_id}" class="text-primary text-sm font-medium hover:text-accent line-clamp-2">{it.title}</a>
           {:else}<span class="text-primary text-sm font-medium line-clamp-2">{it.title}</span>{/if}
-          <div class="text-xs"><span class={TONE[it.state] || 'text-secondary'}>{LABEL[it.state] || it.state}</span><span class="text-muted"> · {ago(it.updated_at)}</span></div>
+          {#if it.state === 'ingested'}
+            <!-- a plain answer to "is it loaded?" (Chad 10-18) — no index-layer jargon -->
+            <div class="text-xs">{#if it.searchable}<span class="text-success">✓ Loaded — in the library and searchable</span>{:else}<span class="text-warning">Added — being indexed for search…</span>{/if}<span class="text-muted"> · {ago(it.updated_at)}</span></div>
+            {#if it.searchable && !it.vectors_done}<div class="text-xs text-muted">Meaning search follows in the background</div>{/if}
+          {:else}
+            <div class="text-xs"><span class={TONE[it.state] || 'text-secondary'}>{LABEL[it.state] || it.state}</span><span class="text-muted"> · {ago(it.updated_at)}</span></div>
+          {/if}
           {#if it.last && it.state !== 'ingested'}<div class="text-xs text-muted line-clamp-3">{it.last}</div>{/if}
           {#if !it.layers && it.stages}
             <!-- before it is a document (10-18: "the loading column does not show progress"): checked → appraised → OCR → imported -->
@@ -69,7 +75,7 @@
           {#if ['needs-human', 'failed'].includes(it.state)}
             <button class="review" onclick={() => (reviewing = it.id)}>Review &amp; answer →</button>
           {/if}
-          {#if it.layers}
+          {#if it.layers && it.state === 'ingested' && !it.searchable}
             <div class="stages" aria-label="Indexing stages">
               {#each STAGES as s (s[0])}
                 {@const st = stageOf(it.layers, s)}

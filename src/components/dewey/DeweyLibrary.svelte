@@ -17,7 +17,9 @@
     if (!authed || asked) return;
     asked = true;
     dewey.missing().then((m) => (missing = m)).catch(() => (missing = { pending: true }));
-    const loadWanted = () => dewey.items().then((r) => (wanted = r.items)).catch(() => (wanted = []));
+    // only books still SOUGHT (no source yet) — once a source arrives the book is in the Loading column, not here
+    // (Chad 10-18: "lots of the missing column say things like 'waits for OCR'. Does that mean it is loading in the other column?")
+    const loadWanted = () => dewey.items(1000).then((r) => (wanted = r.items.filter((i) => ['wanted', 'researched'].includes(i.state)))).catch(() => (wanted = []));
     loadWanted(); const t = setInterval(loadWanted, 30000); return () => clearInterval(t);
   });
   const STATE = { wanted: 'researching', researched: 'researched', source: 'source attached', processing: 'processing', ingested: 'in the library',
@@ -44,7 +46,7 @@
   <section class="grow">
     <h2>Missing</h2>
     <div class="flex flex-wrap gap-1 mb-2 text-xs">
-      <button class:on={tab === 'wanted'} class="pill" onclick={() => (tab = 'wanted')}>Wanted · {wanted?.filter((i) => i.state !== 'ingested').length ?? '…'}</button>
+      <button class:on={tab === 'wanted'} class="pill" onclick={() => (tab = 'wanted')}>Wanted · {wanted?.length ?? '…'}</button>
       <button class:on={tab === 'have'} class="pill" onclick={() => (tab = 'have')}>Catalogue, have source · {missing?.haveSourceTotal ?? '…'}</button>
       <button class:on={tab === 'none'} class="pill" onclick={() => (tab = 'none')}>Catalogue, no source · {missing?.noSourceTotal ?? '…'}</button>
     </div>

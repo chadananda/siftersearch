@@ -30,6 +30,17 @@ export function ocrOf(i) {
       : prog ? { done: false, status: prog.step, stage: prog.stage, pages_done: prog.pages_done, pages_total: prog.pages_total, at: prog.at } : null;
 }
 
+/** Dewey's LOADING column (Chad 10-18: "Are the loading books being cleared from the list as loading is completed?" /
+ *  "it's unclear the status of the books … are they loaded?"). LOADED = in the library and searchable (text + BM25); the
+ *  slower layers (vectors, references) carry on in the background and are the Observatory's business. A loaded book shows
+ *  as "Loaded" for an hour, then leaves. Active work first (queued, importing, at OCR), then what waits for a person. Pure. */
+export const searchable = (layers) => ['text', 'keyword'].every((k) => layerDone(layers?.[k]) === 'done');
+export function loadingList(items, layers = {}, { now = Date.now(), graceMs = 3600000, limit = 30 } = {}) {
+  const rank = (s) => (['source', 'processing', 'needs-ocr'].includes(s) ? 0 : ['needs-human', 'failed'].includes(s) ? 1 : 2);
+  return items.filter((i) => i.state !== 'ingested' || !searchable(layers[i.doc_id]) || now - new Date(i.updated_at).getTime() < graceMs)
+    .sort((a, b) => rank(a.state) - rank(b.state) || String(b.updated_at).localeCompare(String(a.updated_at))).slice(0, limit);
+}
+
 const NOW = { source: 'queued for import', processing: 'being imported', 'needs-ocr': 'full OCR', 'needs-human': 'waiting for review', ingested: 'in the library', failed: 'failed' };
 
 /** → { counts, items } for GET /api/observatory/imports. */

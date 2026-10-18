@@ -32,3 +32,20 @@ describe('buildImportBoard', () => {
     expect(JSON.stringify(b)).not.toMatch(/\/tank\//);
   });
 });
+
+// The loading column (Chad 10-18: "are the loading books being cleared … as loading is completed?")
+import { loadingList } from '../../api/lib/import-board.js';
+describe('loadingList', () => {
+  const now = Date.parse('2026-10-18T22:00:00Z');
+  const done = { text: { generated: 5, total: 5 }, keyword: { indexed: 5, total: 5 } };
+  const items = [
+    { id: 1, state: 'ingested', doc_id: 11, updated_at: '2026-10-18T20:00:00Z' },   // searchable, 2 h ago → gone
+    { id: 2, state: 'ingested', doc_id: 12, updated_at: '2026-10-18T21:40:00Z' },   // searchable, 20 min ago → "Loaded"
+    { id: 3, state: 'ingested', doc_id: 13, updated_at: '2026-10-18T19:00:00Z' },   // not yet searchable → stays
+    { id: 4, state: 'needs-human', updated_at: '2026-10-18T21:50:00Z' },
+    { id: 5, state: 'needs-ocr', updated_at: '2026-10-18T18:00:00Z' },
+  ];
+  it('a loaded book leaves after an hour; active work first, then a person, then the rest', () => {
+    expect(loadingList(items, { 11: done, 12: done, 13: { text: { generated: 5, total: 5 }, keyword: { indexed: 0, total: 5 } } }, { now }).map((i) => i.id)).toEqual([5, 4, 2, 3]);
+  });
+});

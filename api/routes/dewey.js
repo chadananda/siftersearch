@@ -24,7 +24,7 @@ import { readFileSync, createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import { join } from 'path';
 import { coverageForDocs } from '../lib/repos/coverage-repo.js';
-import { stagesOf, ocrOf } from '../lib/import-board.js';
+import { stagesOf, ocrOf, loadingList, searchable } from '../lib/import-board.js';
 import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity, appendMessage, threadOf } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { archiveOriginal, inArchive } from '../lib/dewey/intake.js';
@@ -91,13 +91,17 @@ export default async function deweyRoutes(fastify) {
 
   // The right column: Dewey's intake activity — what he is loading now or has just loaded, each document's stages
   fastify.get('/activity', { schema: S.activitySchema, preHandler: requireDewey }, async (request) => {
-    const items = await intakeActivity(Math.min(Number(request.query?.limit) || 30, 100));
-    const layers = await coverageForDocs(items.map((i) => i.doc_id).filter(Boolean));
+    const limit = Math.min(Number(request.query?.limit) || 30, 100);
+    const recent = await intakeActivity(Math.max(100, limit * 3));   // wider window: finished books are filtered out below
+    const layers = await coverageForDocs(recent.map((i) => i.doc_id).filter(Boolean));
+    const items = loadingList(recent, layers, { limit });
     return { items: items.map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, doc_id: i.doc_id, updated_at: i.updated_at,
       cover: !!i.cover_path, last: i.log.at(-1)?.why || null, layers: i.doc_id ? layers[i.doc_id] || {} : null,
       // the loading column's progress (10-18: "the loading column does not show progress"): the same stage chips and live OCR
       // pages as the Observatory's import board; has_source → the Review popup can show the file
       stages: stagesOf(i, i.doc_id ? layers[i.doc_id] : null), ocr: ocrOf(i), has_source: !!i.original_path,
+      searchable: i.state === 'ingested' && searchable(layers[i.doc_id]),
+      vectors_done: i.state === 'ingested' && stagesOf(i, layers[i.doc_id]).find((x) => x.key === 'embedding')?.state === 'done',
       shelf: i.identified?.shelf ? `${i.identified.shelf.religion} › ${i.identified.shelf.collection}` : null })) };
   });
 
