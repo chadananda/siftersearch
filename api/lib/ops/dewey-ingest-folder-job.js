@@ -38,10 +38,15 @@ export async function easiestFirst(dir) {
 
 const sha256Of = (path) => new Promise((res, rej) => { const h = createHash('sha256'); createReadStream(path).on('data', (d) => h.update(d)).on('end', () => res(h.digest('hex'))).on('error', rej); });
 
-export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps = {}) {
+export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = [] } = {}, deps = {}) {
   const { list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder',
     recent = async () => (await listItems({ limit: 1000 })).filter((i) => ['source', 'processing', 'ingested'].includes(i.state) && String(i.original_path || '').includes('/Dewey Ingest/')),
     textOf = async (path) => (await identifyAndCheck({ path })).identified._text || '' } = deps;
+  // RECONSIDER: items held under an earlier rule (failed "too short", unappraisable scans) — back to intake once
+  for (const id of reconsider) {
+    await updateItem(Number(id), { state: 'source' }, 'reconsidered under the current rules');
+    await queue('dewey-intake', { id: Number(id) }, by);
+  }
   const dir = ingestDir();
   const files = await list(dir);
   const out = { round, queued: [], held: [], needs_person: [], skipped: 0 };
@@ -69,6 +74,15 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps =
     const name = f.path.split('/').pop();
     const item = known || await createItem({ title: a?.title || `Untitled (${name})`, author: a?.author || null, kind: a?.kind || doc.identified.kind || null,
       identified: { ...doc.identified, file_name: name, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: 'placed in the ingest folder' });
+    // a SCAN with nothing readable yet (handwriting, an empty text layer) goes forward to full OCR; it is appraised from the
+    // OCR text before anything is imported (dewey-ocr-job). Anything else without an appraisal waits for a person.
+    const scanFirst = !a?.title && (doc.identified.needs_ocr || doc.identified.kind === 'scan' || /\.pdf$/i.test(f.path));
+    if (scanFirst) {
+      await updateItem(item.id, { state: 'source', sha256: hash, original_path: f.path }, `ingest folder (round ${round}): a scan with nothing readable yet — to full OCR, appraised from its text before import`);
+      await queue('dewey-intake', { id: item.id }, by);
+      out.queued.push(f.path);
+      continue;
+    }
     const hold = !a?.title ? 'could not be appraised (no title from its contents)'
       : a.recommendation === 'skip' || a.in_scope === 'no' ? `Dewey judged it out of scope: ${String(a.summary || a.scope_why || '').slice(0, 200)}` : null;
     // the SAME WORK already taken from this folder (another copy — a .doc beside its .pdf — queued in this round or an
@@ -98,7 +112,7 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps =
   }
   const remaining = files.length - out.skipped - out.queued.length - out.held.length - out.needs_person.length;
   // the next round queues BEHIND this round's intakes (same lane, first in first out) — gradual by construction
-  if (remaining > 0) await queue('dewey-ingest-folder', { batch, round: round + 1 }, by);
+  if (remaining > 0 && batch > 0) await queue('dewey-ingest-folder', { batch, round: round + 1 }, by);   // batch 0 = reconsider only
   await logActivity('ingest', `ingest folder round ${round}: ${out.queued.length} queued, ${out.held.length} already held, ${out.needs_person.length} for a person, ${remaining} waiting`).catch(() => {});
   return { ...out, remaining };
 }

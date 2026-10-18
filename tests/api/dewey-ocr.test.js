@@ -67,6 +67,7 @@ describe('slpExtract — the SLP contract', () => {
 // ── the ops job ──
 const items = [];
 vi.mock('../../api/lib/repos/dewey-repo.js', () => ({
+  listItems: vi.fn(async () => items),
   getItem: vi.fn(async (id) => items.find((i) => i.id === id)),
   updateItem: vi.fn(async (id, f, why) => { const i = items.find((x) => x.id === id); Object.assign(i, f); (i.log ||= []).push({ state: i.state, why }); return i; }),
 }));
@@ -75,7 +76,7 @@ const { deweyOcrJob } = await import('../../api/lib/ops/dewey-ocr-job.js');
 
 describe('dewey-ocr job', () => {
   beforeEach(() => { items.length = 0; items.push({ id: 7, title: 'Rosenberg notes', original_path: '/in/scan.pdf', sha256: 'abc', identified: {}, state: 'needs-ocr' }); });
-  const base = (over = {}) => ({ pdfInfo: async () => ({ pages: 1 }), save: async () => {}, sample: async () => ({ text: slpToText(ROSENBERG).text }), queue: vi.fn(async () => {}),
+  const base = (over = {}) => ({ pdfInfo: async () => ({ pages: 1 }), save: async () => {}, appraise: async () => ({ title: 'Rosenberg notes' }), sample: async () => ({ text: slpToText(ROSENBERG).text }), queue: vi.fn(async () => {}),
     extract: async () => ({ markdown: ROSENBERG, ...slpToText(ROSENBERG), job_id: 'j1', score: 95, cost_cents: 0, pages: 1 }), ...over });
   it('a passing result is kept and intake runs again on it', async () => {
     const d = base();
@@ -90,6 +91,20 @@ describe('dewey-ocr job', () => {
     expect(r.state).toBe('needs-human');
     expect(items[0].identified.slp).toBeUndefined();
     expect(d.queue).not.toHaveBeenCalled();
+  });
+  it('the same work already on its way through OCR is not sent twice', async () => {
+    items.unshift({ id: 3, title: 'Rosenberg Notes', state: 'needs-ocr', identified: {} });
+    const r = await deweyOcrJob({ id: 7 }, base({ extract: async () => { throw new Error('must not be called'); } }));
+    expect(r).toMatchObject({ state: 'needs-human', twin: 3 });
+  });
+  it('an untitled scan is appraised from the OCR text before import; out of scope waits for a person', async () => {
+    items[0].title = 'Untitled (scan.pdf)';
+    const ok = await deweyOcrJob({ id: 7 }, base({ appraise: async () => ({ title: 'Notes on the Will', author: 'Ethel Rosenberg', shelf: { religion: "Baha'i", collection: 'Pilgrim Notes' } }) }));
+    expect(ok.state).toBe('source');
+    expect(items[0]).toMatchObject({ title: 'Notes on the Will', author: 'Ethel Rosenberg', identified: { shelf: { collection: 'Pilgrim Notes' } } });
+    items[0] = { id: 7, title: 'Untitled (scan.pdf)', original_path: '/in/scan.pdf', sha256: 'abc', identified: {}, state: 'needs-ocr' };
+    const no = await deweyOcrJob({ id: 7 }, base({ appraise: async () => ({ title: 'A catalogue', recommendation: 'skip', in_scope: 'no', summary: 'a bookseller catalogue' }) }));
+    expect(no).toMatchObject({ state: 'needs-human', why: 'out of scope after OCR' });
   });
   it('a scan over the page limit is not sent automatically', async () => {
     const r = await deweyOcrJob({ id: 7 }, base({ pdfInfo: async () => ({ pages: 969 }), extract: async () => { throw new Error('must not be called'); } }));

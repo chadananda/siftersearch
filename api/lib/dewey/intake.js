@@ -36,13 +36,15 @@ export async function extractText(bytes, ext, path = null) {   // path: a PDF re
 }
 
 /** Real prose? Letters in any script, a substantial length, some text per page. A scan reads ~0 words. */
-export function proseGate(text, { pages = 1 } = {}) {
+// min 60 words, not 300 (10-18): letters, emails and pilgrim notes are short by nature (Paddy Vickers's email, 216 words,
+// "failed"); a BOOK that short is caught separately in intake ("only part of a book?").
+export function proseGate(text, { pages = 1, minWords = 60 } = {}) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const words = t ? t.split(' ').length : 0;
   const letters = (t.match(/\p{L}/gu) || []).length;
   const ratio = t.length ? letters / t.length : 0;
   const perPage = words / Math.max(1, pages);
-  const why = [words < 300 && `too short (${words} words)`, ratio < 0.55 && `low letter ratio (${ratio.toFixed(2)})`,
+  const why = [words < minWords && `too short (${words} words)`, ratio < 0.55 && `low letter ratio (${ratio.toFixed(2)})`,
     perPage < 25 && `almost no text per page (${Math.round(perPage)} words/page)`].filter(Boolean);
   return { ok: !why.length, why: why.join('; '), words, scan: words / Math.max(1, pages) < 25 };
 }

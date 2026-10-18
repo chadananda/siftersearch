@@ -38,7 +38,8 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   const gate = proseGate(text.replace(/<pb[^>]*\/>/g, ' '), { pages });
   // a scan or a GARBLED text layer (old OCR) is not the book's text: it waits for full OCR — SearchLayerPDF, queued here
   // when configured (its output is checked before it comes back to this job)
-  const needsOcr = !slp && ext === 'pdf' && (gate.ok ? garbledLayer(text) : gate.scan);
+  // ANY PDF that fails the gate goes to OCR — a handwritten letter's junk text layer (77 words, letter ratio 0.43) is a scan too
+  const needsOcr = !slp && ext === 'pdf' && (gate.ok ? garbledLayer(text) : true);
   if (needsOcr) {
     const why = gate.ok ? 'its text layer is a garbled old OCR' : `a scan: no text layer (${gate.why})`;
     const slpOn = (deps.slpEnabled || slpEnabled)();
