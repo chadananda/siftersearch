@@ -54,7 +54,7 @@ export async function inferStructure(doc, rows, { create = roleCreate } = {}) {
   if (failed) issues.push(`${failed} of ${calls.length} calls returned no usable JSON`);
   // the book's own Contents page lists its chapters: finding far fewer means headings were missed (Phelps 10-17: 2 of 10)
   const listed = contents.split('\n').filter((l) => /^\s*(chapter\s+)?([IVXLC]+|\d{1,3})[.:)\s]\s*\p{L}/iu.test(l) || /^\s*chapter\b/i.test(l)).length;
-  const found = sections.filter((s) => /^\s*(chapter|book|part)?\s*([IVXLC]+|\d{1,3})\b/i.test(s.title) || /chapter/i.test(s.title)).length;
+  const found = sections.length;   // any level: the Summa lists Questions ("1. Of Faith") and is found as "Question 1 — Of Faith"
   if (listed >= 5 && found < listed * 0.6) issues.push(`the Contents page lists ~${listed} numbered entries; ${found} were found in the text`);
   return { candidates: cands.length, sections, issues, calls };
 }
