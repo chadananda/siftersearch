@@ -1,6 +1,69 @@
 {
-  "generated": "2026-10-18T17:05:33.055Z",
+  "generated": "2026-10-18T21:14:35.627Z",
   "entries": [
+    {
+      "hash": "06c710f8",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "OCR refresh — an imported document takes SLP's improved result for the same job when it agrees with our own text, re-imported in place; a scan's OCR text is checked against the library before import (one Sears letter came in from two files)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "3e6cbd06",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Every SearchLayerPDF request retried on a network error (four jobs ended 'fetch failed' — tower's uplink, not the files); a resumed job still awaiting its upload is uploaded",
+      "scope": "dewey"
+    },
+    {
+      "hash": "0fe86358",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "A job SLP reported failed is re-polled under its id (SLP completes failed jobs later); the import log names the vision transcription instead of 'SLP job undefined'",
+      "scope": "dewey"
+    },
+    {
+      "hash": "8b7255f4",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "A re-run SLP job is re-fetched under the same id (current output + receipt), saved copy as fallback; ops runs with params.priority go first in their lane",
+      "scope": "dewey"
+    },
+    {
+      "hash": "5e8bcf35",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Real-word measure is Unicode-aware (Bahá'u'lláh, Kitáb-i-Íqán counted as noise), all-caps headings and hyphen-joined parts count, numbers/page refs/initials not judged; garbled thresholds recalibrated (clean 0.98–0.99, garbled 0.79–0.84); inspector no longer counts headings before numbered lists, TOC lines or repeated endnote citations",
+      "scope": "dewey"
+    },
+    {
+      "hash": "16487fb1",
+      "date": "2026-10-18",
+      "type": "Docs",
+      "description": "SearchLayerPDF improvement suggestions from the Dewey pilot (handwriting inventions, line-level blocks, per-block confidence, quality score, footnote refs/stamps, front-matter flag, small-job throughput, API details)",
+      "scope": null
+    },
+    {
+      "hash": "e3e05461",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "The text cleaner — the source's false paragraph marks (a hard break on every printed line) repaired, running headers removed only beside page boundaries (never refrains like 'O SON OF MAN!'), page numbers out, hyphens closed (also mid-line typesetting hyphens), emphasis dropped, deep headings capped; applied in intake for every format and SLP; dewey-reimport re-reads imports from the archive into the same document",
+      "scope": "dewey"
+    },
+    {
+      "hash": "e18274e5",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "Import quality inspection — every Dewey import measured (split sentences, running headers, page numbers, broken hyphens, fragments, walls, OCR noise, markup, weak titles), worst first, causes tallied → Dewey fixes and SLP suggestions",
+      "scope": "dewey"
+    },
+    {
+      "hash": "63b469cf",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "Every decided source archived on the NAS (/tank/library-originals, content-addressed, sidecar → its document), ingest folder off Dropbox (/tank/dewey-ingest), dewey-archive backfill; the reader's 'Original scan' link (GET /api/documents/:id/source — unpublished material public, published scans admin-only via signed links, byte ranges); SLP: rejoin lines split at printed line ends, page markers with print pages",
+      "scope": "dewey"
+    },
     {
       "hash": "4ba9db11",
       "date": "2026-10-18",
@@ -3437,73 +3500,73 @@
       "type": "Docs",
       "description": "Immerse figure pages vs our bio dossiers — we hold the facts, lack the timeline synthesis",
       "scope": "planning"
-    },
-    {
-      "hash": "3bb70790",
-      "date": "2026-10-09",
-      "type": "Performance",
-      "description": "Window-run starts longest books first and logs the total — parallelism is across books",
-      "scope": "authorship"
-    },
-    {
-      "hash": "64748967",
-      "date": "2026-10-09",
-      "type": "Docs",
-      "description": "Competitor parity tracker for Immerse (bahaiwritings.app) + YouTube talks backlog",
-      "scope": "planning"
-    },
-    {
-      "hash": "4d2566f2",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "OceanLibrary range links everywhere links are generated",
-      "scope": "links"
-    },
-    {
-      "hash": "edf7568f",
-      "date": "2026-10-09",
-      "type": "Docs",
-      "description": "Anís feature requests — any language (careful templating), voice in the plugin (exploration), Anís-only app, book study guides at the reader's level, year-long reading plans with OceanLibrary audio",
-      "scope": "backlog"
-    },
-    {
-      "hash": "566ac720",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Every enrichment stage reads the paragraph's VOICE — who speaks it and whom it quotes",
-      "scope": "enrich"
-    },
-    {
-      "hash": "5ea759df",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "A failed re-ingest restores the doc's previous file/body hash — otherwise the next run calls it unchanged and the old paragraphs stay for good",
-      "scope": "ingest"
-    },
-    {
-      "hash": "b495d981",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Extraction_validations (referencing paragraph_extractions) are removed first when a re-ingest drops a paragraph",
-      "scope": "ingest"
-    },
-    {
-      "hash": "ff5b8526",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Window run --secondary — every secondary-literature book (authority < 8) or multi-author compilation; doc-tier exports isCompilation (unchanged)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "63503c80",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "A re-ingest detaches rows that reference removed paragraphs in the same transaction (nullable → NULL, derived → deleted, saved research quotes re-attached to the paragraph their text went into) — FOREIGN KEY failures aborted re-ingests mid-way",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-18": [
+      {
+        "hash": "06c710f8",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "OCR refresh — an imported document takes SLP's improved result for the same job when it agrees with our own text, re-imported in place; a scan's OCR text is checked against the library before import (one Sears letter came in from two files)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "3e6cbd06",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Every SearchLayerPDF request retried on a network error (four jobs ended 'fetch failed' — tower's uplink, not the files); a resumed job still awaiting its upload is uploaded",
+        "scope": "dewey"
+      },
+      {
+        "hash": "0fe86358",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "A job SLP reported failed is re-polled under its id (SLP completes failed jobs later); the import log names the vision transcription instead of 'SLP job undefined'",
+        "scope": "dewey"
+      },
+      {
+        "hash": "8b7255f4",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "A re-run SLP job is re-fetched under the same id (current output + receipt), saved copy as fallback; ops runs with params.priority go first in their lane",
+        "scope": "dewey"
+      },
+      {
+        "hash": "5e8bcf35",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Real-word measure is Unicode-aware (Bahá'u'lláh, Kitáb-i-Íqán counted as noise), all-caps headings and hyphen-joined parts count, numbers/page refs/initials not judged; garbled thresholds recalibrated (clean 0.98–0.99, garbled 0.79–0.84); inspector no longer counts headings before numbered lists, TOC lines or repeated endnote citations",
+        "scope": "dewey"
+      },
+      {
+        "hash": "16487fb1",
+        "date": "2026-10-18",
+        "type": "Docs",
+        "description": "SearchLayerPDF improvement suggestions from the Dewey pilot (handwriting inventions, line-level blocks, per-block confidence, quality score, footnote refs/stamps, front-matter flag, small-job throughput, API details)",
+        "scope": null
+      },
+      {
+        "hash": "e3e05461",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "The text cleaner — the source's false paragraph marks (a hard break on every printed line) repaired, running headers removed only beside page boundaries (never refrains like 'O SON OF MAN!'), page numbers out, hyphens closed (also mid-line typesetting hyphens), emphasis dropped, deep headings capped; applied in intake for every format and SLP; dewey-reimport re-reads imports from the archive into the same document",
+        "scope": "dewey"
+      },
+      {
+        "hash": "e18274e5",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "Import quality inspection — every Dewey import measured (split sentences, running headers, page numbers, broken hyphens, fragments, walls, OCR noise, markup, weak titles), worst first, causes tallied → Dewey fixes and SLP suggestions",
+        "scope": "dewey"
+      },
+      {
+        "hash": "63b469cf",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "Every decided source archived on the NAS (/tank/library-originals, content-addressed, sidecar → its document), ingest folder off Dropbox (/tank/dewey-ingest), dewey-archive backfill; the reader's 'Original scan' link (GET /api/documents/:id/source — unpublished material public, published scans admin-only via signed links, byte ranges); SLP: rejoin lines split at printed line ends, page markers with print pages",
+        "scope": "dewey"
+      },
       {
         "hash": "4ba9db11",
         "date": "2026-10-18",
@@ -6958,69 +7021,6 @@
         "type": "Docs",
         "description": "Immerse figure pages vs our bio dossiers — we hold the facts, lack the timeline synthesis",
         "scope": "planning"
-      },
-      {
-        "hash": "3bb70790",
-        "date": "2026-10-09",
-        "type": "Performance",
-        "description": "Window-run starts longest books first and logs the total — parallelism is across books",
-        "scope": "authorship"
-      },
-      {
-        "hash": "64748967",
-        "date": "2026-10-09",
-        "type": "Docs",
-        "description": "Competitor parity tracker for Immerse (bahaiwritings.app) + YouTube talks backlog",
-        "scope": "planning"
-      },
-      {
-        "hash": "4d2566f2",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "OceanLibrary range links everywhere links are generated",
-        "scope": "links"
-      },
-      {
-        "hash": "edf7568f",
-        "date": "2026-10-09",
-        "type": "Docs",
-        "description": "Anís feature requests — any language (careful templating), voice in the plugin (exploration), Anís-only app, book study guides at the reader's level, year-long reading plans with OceanLibrary audio",
-        "scope": "backlog"
-      },
-      {
-        "hash": "566ac720",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Every enrichment stage reads the paragraph's VOICE — who speaks it and whom it quotes",
-        "scope": "enrich"
-      },
-      {
-        "hash": "5ea759df",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "A failed re-ingest restores the doc's previous file/body hash — otherwise the next run calls it unchanged and the old paragraphs stay for good",
-        "scope": "ingest"
-      },
-      {
-        "hash": "b495d981",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Extraction_validations (referencing paragraph_extractions) are removed first when a re-ingest drops a paragraph",
-        "scope": "ingest"
-      },
-      {
-        "hash": "ff5b8526",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Window run --secondary — every secondary-literature book (authority < 8) or multi-author compilation; doc-tier exports isCompilation (unchanged)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "63503c80",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "A re-ingest detaches rows that reference removed paragraphs in the same transaction (nullable → NULL, derived → deleted, saved research quotes re-attached to the paragraph their text went into) — FOREIGN KEY failures aborted re-ingests mid-way",
-        "scope": "ingest"
       }
     ]
   }

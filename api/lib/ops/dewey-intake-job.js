@@ -67,13 +67,15 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   // a BOOK that reads as a few pages is a fragment — "The Apocalypse Unsealed" (10-18) was its preface only (1,479 words):
   // a person decides whether a fragment belongs. Pilgrim notes, letters and talks are short by nature and pass.
   const kind = String(item.identified?.appraisal?.kind || item.kind || '').toLowerCase();
-  if (kind === 'book' && gate.words < 5000 && !deps.allowFragment) {
+  // a person's "add it" (Review popup, dewey/review.js) waives the guards that held it for a person
+  const approved = !!item.identified?.override?.add;
+  if (kind === 'book' && gate.words < 5000 && !deps.allowFragment && !approved) {
     await updateItem(item.id, { state: 'needs-human' }, `only part of a book? Its text is ${gate.words.toLocaleString('en-US')} words — check whether this file holds the whole work`);
     return { id: item.id, state: 'needs-human', why: 'book fragment' };
   }
   // a SCAN's text exists only after OCR, so the library was never checked against it: check now — two files of one Sears
   // letter ("1960 Sears to Ioas Sept 60.pdf", "1962 Sears USNBA.pdf") both went in, 10-18
-  if (slp && !deps.skipRecheck) {
+  if (slp && !deps.skipRecheck && !approved) {
     const { checkHoldings } = await import('../dewey/holdings.js');
     const { withText } = await import('../dewey/identify.js');
     const h = await checkHoldings(withText({ title: item.title, from: 'file' }, text)).catch(() => null);

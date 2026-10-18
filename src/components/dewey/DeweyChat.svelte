@@ -66,7 +66,13 @@
     r.readAsDataURL(f);
     e.currentTarget.value = '';
   }
-  const scrollDown = async () => { await tick(); log?.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); };
+  // smooth for a new reply; INSTANT when the thread is (re)loaded — a smooth scroll from the top animated through the whole
+  // history on every page load (Chad 10-18); once more after images settle the height
+  const scrollDown = async (instant = false) => {
+    await tick();
+    log?.scrollTo({ top: log.scrollHeight, behavior: instant ? 'auto' : 'smooth' });
+    if (instant) setTimeout(() => log?.scrollTo({ top: log.scrollHeight, behavior: 'auto' }), 400);
+  };
 
   // ONE THREAD per member, on the server (Chad 10-17: "interaction between desktop and mobile is shared … one thread"):
   // load it when signed in, and every 5 s pick up what another device added
@@ -81,7 +87,7 @@
     }
     return out;
   }
-  async function loadThread() { try { const { messages } = await dewey.thread(0); turns = fromThread(messages); scrollDown(); } catch { /* next poll */ } }
+  async function loadThread() { try { const { messages } = await dewey.thread(0); turns = fromThread(messages); scrollDown(true); } catch { /* next poll */ } }
   $effect(() => {
     if (!authed) return;
     loadThread();

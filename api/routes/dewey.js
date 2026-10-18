@@ -5,6 +5,9 @@
 //   POST /api/dewey/items     { identified } → a WANTED work (research queued: ISBN, publisher, cover)
 //   GET  /api/dewey/items     → the wanted list and intake queue, open items first
 //   POST /api/dewey/items/:id/source { url? | file: { name, data } } → original archived, intake queued
+//   GET  /api/dewey/items/:id/review → a 'needs a person' item's question, text preview and fitting answers
+//   GET  /api/dewey/items/:id/file   → the original file (inline)
+//   POST /api/dewey/items/:id/resolve { action: import|use-ocr|retry-ocr|decline, title?, author?, shelf? }
 //   POST /api/dewey/chat      { messages, attach: { images?, file?, url? }, stream? } → SSE: holdings · item · delta · done
 //                             (stream: false → one JSON { reply, holdings, items } — for agents)
 //   GET  /api/dewey/thread?after=ID → the member's ONE thread (shared by phone and desktop)
@@ -17,12 +20,15 @@ import { identifyPhotos, identifyUrl, identifyText } from '../lib/dewey/identify
 import { checkHoldingsOffThread as checkHoldings, identifyAndCheckOffThread } from '../lib/dewey/holdings.js';   // off the event loop
 import { allowedPath } from '../lib/dewey/paths.js';
 import { ApiError } from '../lib/errors.js';
-import { readFileSync } from 'fs';
+import { readFileSync, createReadStream } from 'fs';
+import { stat } from 'fs/promises';
 import { join } from 'path';
 import { coverageForDocs } from '../lib/repos/coverage-repo.js';
+import { stagesOf, ocrOf } from '../lib/import-board.js';
 import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity, appendMessage, threadOf } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
-import { archiveOriginal } from '../lib/dewey/intake.js';
+import { archiveOriginal, inArchive } from '../lib/dewey/intake.js';
+import { reviewOf, resolveItem } from '../lib/dewey/review.js';
 import { deweyTurn } from '../lib/dewey/agent.js';
 import * as S from './dewey-schemas.js';
 
@@ -59,6 +65,12 @@ export async function acceptOffer(itemId, by = 'dewey') {
   return getItem(item.id);
 }
 
+const FILE_TYPES = { pdf: 'application/pdf', txt: 'text/plain; charset=utf-8', md: 'text/plain; charset=utf-8', html: 'text/html; charset=utf-8', htm: 'text/html; charset=utf-8',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', tif: 'image/tiff', tiff: 'image/tiff',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', doc: 'application/msword', rtf: 'application/rtf', epub: 'application/epub+zip' };
+
+let missingMemo = { at: null, t: 0, body: null };
+
 export default async function deweyRoutes(fastify) {
   fastify.post('/holdings', { schema: S.holdingsSchema, preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request) => {
     const { text, url, images, file, path } = request.body || {};
@@ -82,7 +94,11 @@ export default async function deweyRoutes(fastify) {
     const items = await intakeActivity(Math.min(Number(request.query?.limit) || 30, 100));
     const layers = await coverageForDocs(items.map((i) => i.doc_id).filter(Boolean));
     return { items: items.map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, doc_id: i.doc_id, updated_at: i.updated_at,
-      cover: !!i.cover_path, last: i.log.at(-1)?.why || null, layers: i.doc_id ? layers[i.doc_id] || {} : null })) };
+      cover: !!i.cover_path, last: i.log.at(-1)?.why || null, layers: i.doc_id ? layers[i.doc_id] || {} : null,
+      // the loading column's progress (10-18: "the loading column does not show progress"): the same stage chips and live OCR
+      // pages as the Observatory's import board; has_source → the Review popup can show the file
+      stages: stagesOf(i, i.doc_id ? layers[i.doc_id] : null), ocr: ocrOf(i), has_source: !!i.original_path,
+      shelf: i.identified?.shelf ? `${i.identified.shelf.religion} › ${i.identified.shelf.collection}` : null })) };
   });
 
   // The left column: books the library lists but does not hold (the missing-books triage snapshot), first of each queue
@@ -90,8 +106,29 @@ export default async function deweyRoutes(fastify) {
     let mb = null;
     try { mb = JSON.parse(readFileSync(PIPELINE_SNAPSHOT_PATH, 'utf8'))?.missingBooks; } catch { /* no snapshot yet */ }
     if (!mb?.haveSource) return { pending: true };
-    return { haveSourceTotal: mb.haveSourceTotal, noSourceTotal: mb.noSourceTotal, generated_at: mb.generated_at ?? null,
-      haveSource: (mb.haveSource || []).slice(0, 40), noSource: (mb.noSource || []).slice(0, 40) };
+    // the snapshot lists STUBS (catalogue rows, ~1 paragraph); a book Dewey has since imported is a NEW document and the
+    // stub stayed listed (Chad 10-18: "the missing column seems to have books we have already added") — an entry is hidden
+    // when a real document (> 5 paragraphs) of the same title now exists; repeated titles listed once. Cached 5 minutes.
+    if (missingMemo.body && missingMemo.at === mb.generated_at && Date.now() - missingMemo.t < 300000) return missingMemo.body;
+    const { findDocuments } = await import('../lib/docs-repo.js');
+    const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const stillMissing = async (list) => {
+      const seen = new Set(), out = [];
+      for (const e of list.slice(0, 300)) {   // bounded: one indexed FTS lookup each, memoised
+        const k = fold(e.title);
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        const hits = (await findDocuments(e.title, { fields: ['id', 'title', 'paragraph_count'], limit: 5 }).catch(() => ({ docs: [] }))).docs || [];
+        if (hits.some((d) => d.id !== e.id && (d.paragraph_count || 0) > 5 && fold(d.title).startsWith(k.slice(0, 60)))) continue;
+        out.push(e);
+        if (out.length >= 40) break;
+      }
+      return out;
+    };
+    const body = { haveSourceTotal: mb.haveSourceTotal, noSourceTotal: mb.noSourceTotal, generated_at: mb.generated_at ?? null,
+      haveSource: await stillMissing(mb.haveSource || []), noSource: await stillMissing(mb.noSource || []) };
+    missingMemo = { at: mb.generated_at, t: Date.now(), body };
+    return body;
   });
 
   // WANTED (Chad 10-17): a book not in the library goes on Dewey's list and is researched at once
@@ -126,6 +163,27 @@ export default async function deweyRoutes(fastify) {
     if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
     if (item.state !== 'offered') return { item };
     return { item: await updateItem(item.id, { state: 'declined' }, `declined by ${request.user?.email || 'dewey'}`) };
+  });
+
+  // NEEDS A PERSON → the Review popup (Chad 10-18: "a way to comply … view the document and answer the question"): the
+  // question, what Dewey knows, its text and the answers that fit; the original file itself; and the answer carried out
+  fastify.get('/items/:id/review', { schema: S.reviewSchema, preHandler: requireDewey }, async (request) => reviewOf(request.params.id));
+  fastify.get('/items/:id/file', { schema: S.itemFileSchema, preHandler: requireDewey }, async (request, reply) => {
+    const item = await getItem(request.params.id);
+    const p = item?.original_path;
+    if (!p || !(inArchive(p) || allowedPath(p))) throw new ApiError(404, 'no source file for this item');
+    const info = await stat(p).catch(() => null);
+    if (!info) throw new ApiError(404, 'the source file is not on hand');
+    const ext = p.split('.').pop().toLowerCase();
+    const name = (item.identified?.file_name || p.split('/').pop()).replace(/[^\w .,()'-]/g, '_');
+    reply.header('Content-Type', FILE_TYPES[ext] || 'application/octet-stream').header('Content-Length', info.size)
+      .header('Content-Disposition', `inline; filename="${name}"`).header('Cache-Control', 'private, max-age=300');
+    return reply.send(createReadStream(p));
+  });
+  fastify.post('/items/:id/resolve', { schema: S.resolveSchema, preHandler: requireDewey }, async (request) => {
+    const { action, title, author, shelf } = request.body || {};
+    const by = request.user?.viaKey ? `${request.user.email} (key ${request.user.viaKey})` : request.user?.email || 'dewey';
+    return { item: await resolveItem(request.params.id, action, { title, author, shelf }, by) };
   });
 
   // DEWEY'S CHAT, streamed (server-sent events): attachments are checked first, then Dewey replies with tools

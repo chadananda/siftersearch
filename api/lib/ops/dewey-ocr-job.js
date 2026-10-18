@@ -45,14 +45,15 @@ export async function deweyOcrJob({ id, refresh = false } = {}, deps = {}) {
   // never OCR the same work twice (two copies of "Islam and the Baha'i Faith" were both sent, 10-18): an earlier item with
   // the same title already on its way through OCR or in the library → a person decides
   const untitled = /^untitled/i.test(String(item.title || ''));
-  const twin = untitled ? null : (await others()).find((o) => o.id < item.id && workKey(o.title) === workKey(item.title)
+  const approved = !!item.identified?.override?.add;   // a person said add it (Review popup): no twin guard, no page limit
+  const twin = untitled || approved ? null : (await others()).find((o) => o.id < item.id && workKey(o.title) === workKey(item.title)
     && (['source', 'processing', 'ingested'].includes(o.state) || (o.state === 'needs-ocr' && !o.identified?.slp_rejected)));
   if (twin) {
     await updateItem(item.id, { state: 'needs-human' }, `possibly the same work as item ${twin.id} (“${twin.title}”, ${twin.state}) — not sent for OCR twice`);
     return { id, state: 'needs-human', twin: twin.id };
   }
   const { pages } = await pdfInfo({ path: item.original_path });
-  if (pages > slpMaxPages()) {
+  if (pages > slpMaxPages() && !approved) {
     await updateItem(item.id, { state: 'needs-human' }, `a ${pages}-page scan — over the ${slpMaxPages()}-page limit for automatic OCR; approve it by hand`);
     return { id, state: 'needs-human', pages };
   }

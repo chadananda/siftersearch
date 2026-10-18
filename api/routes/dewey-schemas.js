@@ -71,6 +71,10 @@ export const activitySchema = {
     doc_id: { type: ['integer', 'null'] }, updated_at: { type: 'string' }, cover: { type: 'boolean' },
     last: { type: ['string', 'null'], description: 'the latest log line' },
     layers: open({}, { nullable: true, description: 'per indexing layer (text, sections, keyword, refs, embedding, phrase, hype): generated/indexed vs total' }),
+    stages: { type: 'array', items: open({ key: { type: 'string' }, label: { type: 'string' }, state: { type: 'string', enum: ['done', 'active', 'todo', 'wait', 'fail', 'skip'] } }), description: 'checked → appraised → OCR → imported → indexing layers' },
+    ocr: open({}, { nullable: true, description: 'done (receipt), in progress (pages_done / pages_total, stage) or rejected (why)' }),
+    has_source: { type: 'boolean', description: 'the original file is on hand (GET /api/dewey/items/:id/file)' },
+    shelf: { type: ['string', 'null'] },
   }) } }) },
 };
 
@@ -146,4 +150,20 @@ export const keysSchema = {
   body: open({ name: { type: 'string', maxLength: 80 } }),
   response: { 200: open({ key: { type: 'string' }, id: { type: 'integer' }, name: { type: 'string' }, prefix: { type: 'string' },
     rateLimitPerHour: { type: 'integer' }, note: { type: 'string' } }), 403: err[400] },
+};
+
+const idParam = { type: 'object', required: ['id'], properties: { id: { type: 'integer' } } };
+export const reviewSchema = {
+  ...base('Review an item', 'For an item waiting for a person: the question Dewey is asking, what it knows, the text it has (OCR or file, first 4,000 characters), the library shelves, and the answers that fit (`answers[].action` → POST /items/:id/resolve).'),
+  params: idParam,
+  response: { 200: open({ item: open({}), question: { type: ['string', 'null'] }, history: { type: 'array', items: open({}) }, source: open({}, { nullable: true }),
+    text: open({}, { nullable: true }), shelves: open({}), answers: { type: 'array', items: open({ action: { type: 'string' }, label: { type: 'string' }, hint: { type: 'string' }, fields: { type: 'boolean' } }) } }) },
+};
+export const itemFileSchema = { ...base('An item\'s original file', 'The archived original (PDF, Word, text…), served inline.'), params: idParam };
+export const resolveSchema = {
+  ...base('Answer an item', 'Carries out a person\'s answer: `import` (add it — waives the fragment, twin and page-limit guards; optional title, author, shelf), `use-ocr` (accept OCR text that failed the check), `retry-ocr`, or `decline`. Only the answers GET /review lists are accepted.'),
+  params: idParam,
+  body: { type: 'object', required: ['action'], properties: { action: { type: 'string', enum: ['import', 'use-ocr', 'retry-ocr', 'decline'] },
+    title: { type: 'string' }, author: { type: 'string' }, shelf: { type: 'object', properties: { religion: { type: 'string' }, collection: { type: 'string' } } } } },
+  response: { 200: open({ item: open({}) }) },
 };

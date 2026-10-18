@@ -4,10 +4,12 @@
   // work is a document, its indexing stages from the coverage ledger. A stage reads done when it covers the book or is not
   // needed for it.
   import { dewey } from '../../lib/api.js';
+  import DeweyReview from './DeweyReview.svelte';
 
   let { authed = false, oncount = () => {} } = $props();   // oncount(n): works being processed now (the edge button's badge)
   let items = $state(null);
   let error = $state(null);
+  let reviewing = $state(null);   // the item open in the Review popup
   async function load() {
     try { items = (await dewey.activity(30)).items; error = null; oncount(items.filter((i) => ['source', 'processing'].includes(i.state)).length, items.length); } catch (e) { error = e.message; }
   }
@@ -16,7 +18,7 @@
     if (!authed) return;
     load();
     let n = 0;
-    const t = setInterval(() => { n++; if (items?.some((i) => ['source', 'processing'].includes(i.state)) || n % 6 === 0) load(); }, 10000);
+    const t = setInterval(() => { n++; if (items?.some((i) => ['source', 'processing', 'needs-ocr'].includes(i.state)) || n % 6 === 0) load(); }, 10000);
     return () => clearInterval(t);
   });
 
@@ -53,7 +55,20 @@
           {#if it.doc_id}<a href="/document/{it.doc_id}" class="text-primary text-sm font-medium hover:text-accent line-clamp-2">{it.title}</a>
           {:else}<span class="text-primary text-sm font-medium line-clamp-2">{it.title}</span>{/if}
           <div class="text-xs"><span class={TONE[it.state] || 'text-secondary'}>{LABEL[it.state] || it.state}</span><span class="text-muted"> · {ago(it.updated_at)}</span></div>
-          {#if it.last && it.state !== 'ingested'}<div class="text-xs text-muted">{it.last}</div>{/if}
+          {#if it.last && it.state !== 'ingested'}<div class="text-xs text-muted line-clamp-3">{it.last}</div>{/if}
+          {#if !it.layers && it.stages}
+            <!-- before it is a document (10-18: "the loading column does not show progress"): checked → appraised → OCR → imported -->
+            <div class="stages" aria-label="Progress">
+              {#each it.stages.filter((s) => !s.index) as s (s.key)}<span class="stage {s.state}" title="{s.label}: {s.state}">{s.label}</span>{/each}
+            </div>
+          {/if}
+          {#if it.ocr && !it.ocr.done && !it.ocr.rejected && it.ocr.pages_total}
+            <div class="ocr text-xs"><span>OCR {it.ocr.pages_done ?? 0}/{it.ocr.pages_total} pages{#if it.ocr.stage} · {it.ocr.stage}{/if}</span>
+              <span class="bar"><span style={`width:${Math.min(100, (100 * (it.ocr.pages_done || 0)) / it.ocr.pages_total)}%`}></span></span></div>
+          {/if}
+          {#if ['needs-human', 'failed'].includes(it.state)}
+            <button class="review" onclick={() => (reviewing = it.id)}>Review &amp; answer →</button>
+          {/if}
           {#if it.layers}
             <div class="stages" aria-label="Indexing stages">
               {#each STAGES as s (s[0])}
@@ -67,6 +82,7 @@
     </ul>
   {/if}
 </aside>
+{#if reviewing}<DeweyReview id={reviewing} onclose={() => (reviewing = null)} ondone={load} />{/if}
 
 <style>
   .col { height: 100%; min-height: 0; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-1); padding: 0.75rem; }
@@ -76,5 +92,13 @@
   .stages { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.3rem; }
   .stage { font-size: 0.65rem; padding: 0.05rem 0.35rem; border-radius: 0.25rem; border: 1px solid var(--border-subtle); color: var(--text-muted); }
   .stage.done { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--text-primary); border-color: transparent; }
+  .stage.active { color: var(--text-primary); border-color: var(--warning); }
+  .stage.wait { background: color-mix(in srgb, var(--warning) 18%, transparent); color: var(--text-primary); border-color: transparent; }
+  .stage.fail { background: color-mix(in srgb, var(--error) 18%, transparent); color: var(--text-primary); border-color: transparent; }
+  .ocr { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; color: var(--warning); }
+  .bar { flex: 1; max-width: 9rem; height: 3px; border-radius: 2px; background: var(--border-subtle); overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--warning); }
+  .review { margin-top: 0.35rem; font-size: 0.75rem; font-weight: 500; padding: 0.2rem 0.6rem; border-radius: 0.4rem; border: 1px solid var(--accent-primary); color: var(--accent-primary); }
+  .review:hover { background: var(--accent-primary); color: white; }
   .stage.part { background: color-mix(in srgb, var(--warning) 18%, transparent); color: var(--text-primary); border-color: transparent; }
 </style>

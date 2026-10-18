@@ -1012,6 +1012,10 @@ export const dewey = {
   accept: (id) => request(`/api/dewey/items/${id}/accept`, { method: 'POST' }),
   decline: (id) => request(`/api/dewey/items/${id}/decline`, { method: 'POST' }),
   attachSource: (id, body) => request(`/api/dewey/items/${id}/source`, { method: 'POST', body: JSON.stringify(body) }),
+  review: (id) => request(`/api/dewey/items/${id}/review`),
+  resolve: (id, body) => request(`/api/dewey/items/${id}/resolve`, { method: 'POST', body: JSON.stringify(body) }),
+  // the original file as a blob (the bearer token can't ride an <iframe src>, so the popup shows an object URL)
+  async file(id) { const r = await authenticatedFetch(`${API_URL}/api/dewey/items/${id}/file`); if (!r.ok) throw new Error(`could not load the file (${r.status})`); return r.blob(); },
 };
 
 export const librarian = {

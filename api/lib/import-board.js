@@ -22,6 +22,14 @@ export function stagesOf(item, layers = null) {
   return stages;
 }
 
+/** An item's OCR as the boards show it: done (with SLP's receipt), in progress (pages done / total), rejected, or null. Pure. */
+export function ocrOf(i) {
+  const id = i.identified || {}, slp = id.slp, prog = id.slp_progress;
+  return slp ? { done: true, pages: slp.pages, score: slp.score, cost_cents: slp.cost_cents, check: slp.check ? { words: slp.check.words, per_page: slp.check.perPage, sample_found: slp.check.sampleFound } : null, receipt: slp.receipt || null }
+    : id.slp_rejected ? { done: false, rejected: true, why: id.slp_rejected.check?.why || [], receipt: id.slp_rejected.receipt || null }
+      : prog ? { done: false, status: prog.step, stage: prog.stage, pages_done: prog.pages_done, pages_total: prog.pages_total, at: prog.at } : null;
+}
+
 const NOW = { source: 'queued for import', processing: 'being imported', 'needs-ocr': 'full OCR', 'needs-human': 'waiting for review', ingested: 'in the library', failed: 'failed' };
 
 /** → { counts, items } for GET /api/observatory/imports. */
@@ -30,16 +38,14 @@ export async function buildImportBoard({ board = importBoard, coverage = coverag
   const docIds = b.items.map((i) => i.doc_id).filter(Boolean);
   const layers = docIds.length ? await coverage(docIds).catch(() => ({})) : {};
   const items = b.items.map((i) => {
-    const id = i.identified || {}, slp = id.slp, prog = id.slp_progress;
+    const id = i.identified || {};
     const last = String(i.log?.at(-1)?.why || '').replace(/\/(?:tank|home|Users|mnt)\/\S*/g, (m) => `…/${m.split('/').pop()}`).slice(0, 220);   // no server paths
     return {
       id: i.id, title: i.title, author: i.author || id.appraisal?.author || null, state: i.state, now: NOW[i.state] || i.state, updated_at: i.updated_at,
       doc_id: i.doc_id || null, shelf: id.shelf ? `${id.shelf.religion} › ${id.shelf.collection}` : null, kind: id.appraisal?.kind || i.kind || null,
       summary: id.appraisal?.summary || null, last,
       stages: stagesOf(i, i.doc_id ? layers[i.doc_id] : null),
-      ocr: slp ? { done: true, pages: slp.pages, score: slp.score, cost_cents: slp.cost_cents, check: slp.check ? { words: slp.check.words, per_page: slp.check.perPage, sample_found: slp.check.sampleFound } : null, receipt: slp.receipt || null }
-        : prog ? { done: false, status: prog.step, stage: prog.stage, pages_done: prog.pages_done, pages_total: prog.pages_total, at: prog.at }
-          : id.slp_rejected ? { done: false, rejected: true, why: id.slp_rejected.check?.why || [], receipt: id.slp_rejected.receipt || null } : null,
+      ocr: ocrOf(i),
     };
   });
   const st = b.byState || {};
