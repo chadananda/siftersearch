@@ -11,7 +11,7 @@
   let now = $state(Date.now());
 
   async function load() {
-    try { board = await observatory.imports(); oncounts(board.counts); } catch { /* the board is a nicety; the page stands without it */ }
+    try { const { data } = await observatory.imports(); if (data?.counts) { board = data; oncounts(data.counts); } } catch { /* the board is a nicety; the page stands without it */ }
   }
   onMount(() => {
     load();

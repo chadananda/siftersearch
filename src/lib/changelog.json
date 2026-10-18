@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T15:31:02.305Z",
+  "generated": "2026-10-18T15:37:15.103Z",
   "entries": [
+    {
+      "hash": "16c1c096",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "Document import is stage 01 (new today / importing / for review) and the import board sits under the dial — each book's stages, live OCR progress, SearchLayerPDF's receipt; fix(dewey): the twin guard compares a spot-check sample against the twin's FULL text (World's Congress of Religions went in twice — two scans, different sampled pages)",
+      "scope": "observatory"
+    },
     {
       "hash": "d63218a7",
       "date": "2026-10-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Rejoin trailing-citation check was an exponential regex (8 h freeze on the library dry run) — bounded token loop + timing test",
       "scope": "library"
-    },
-    {
-      "hash": "841e6738",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Rejoin — trailing bold/bracketed citations end a sentence, an opening quote is not a continuation, number columns and short-line lists are not prose; seams reported for review",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-10-18": [
+      {
+        "hash": "16c1c096",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "Document import is stage 01 (new today / importing / for review) and the import board sits under the dial — each book's stages, live OCR progress, SearchLayerPDF's receipt; fix(dewey): the twin guard compares a spot-check sample against the twin's FULL text (World's Congress of Religions went in twice — two scans, different sampled pages)",
+        "scope": "observatory"
+      },
       {
         "hash": "d63218a7",
         "date": "2026-10-18",
@@ -7013,15 +7020,6 @@
         "date": "2026-10-09",
         "type": "Fixed",
         "description": "Rejoin trailing-citation check was an exponential regex (8 h freeze on the library dry run) — bounded token loop + timing test",
-        "scope": "library"
-      }
-    ],
-    "2026-10-08": [
-      {
-        "hash": "841e6738",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Rejoin — trailing bold/bracketed citations end a sentence, an opening quote is not a continuation, number columns and short-line lists are not prose; seams reported for review",
         "scope": "library"
       }
     ]
