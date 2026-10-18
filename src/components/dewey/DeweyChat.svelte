@@ -122,11 +122,7 @@
 <div class="chat">
   <div class="log" bind:this={log} aria-live="polite">
     <!-- Dewey's introduction: the first bubble of every conversation (Chad 10-17) -->
-    <div class="dewey"><div class="card intro">
-      <p class="text-primary">Hello — I'm Dewey, the librarian. What have you found?</p>
-      <p class="text-secondary text-sm mt-1">Snap the cover or title page with 📷, attach a file with 📎, paste a link — or just name it. I'll check the
-        library at once, and if we don't have it, I'll put it on the wanted list and research it.</p>
-    </div></div>
+    <div class="dewey"><div class="card intro"><p class="text-primary">Hi, I'm Dewey, your AI librarian. I'm here to help you add new documents!</p></div></div>
     {#each turns as t (t.id)}
       <div class="you">
         {#if t.you.text}<p class="whitespace-pre-wrap">{t.you.text}</p>{/if}

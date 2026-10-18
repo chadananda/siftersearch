@@ -36,7 +36,7 @@
     </nav>
     <div class="cols" data-view={view}>
       <div class="left"><DeweyLibrary authed={ready} /></div>
-      <div class="mid"><h1 class="title">Dewey <span>the Librarian Agent</span></h1><div class="chatbox"><DeweyChat /></div></div>
+      <div class="mid"><div class="chatbox"><DeweyChat /></div></div>
       <div class="right"><DeweyAdded authed={ready} /></div>
     </div>
   </div>
@@ -44,11 +44,9 @@
 
 <style>
   .dewey { height: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
-  /* the title sits just above the chat (Chad 10-17) */
+  /* Dewey introduces himself in the chat — no heading above it (Chad 10-17) */
   .mid { display: flex; flex-direction: column; gap: 0.4rem; }
   .chatbox { flex: 1; min-height: 0; }
-  .title { font-size: 1.15rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; text-align: center; }
-  .title span { font-weight: 400; color: var(--text-secondary); }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 0.75rem; }
   .cols > div { min-height: 0; }
   .tabs { display: none; }

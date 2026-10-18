@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:20:43.866Z",
+  "generated": "2026-10-18T03:21:38.557Z",
   "entries": [
+    {
+      "hash": "9b91b1c3",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Send inside a full-width input; photo + attach as large round floating buttons; the intro is Dewey's first bubble",
+      "scope": "dewey"
+    },
     {
       "hash": "b439540c",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Recover extract-level authors of compilations whose section headings were lost on export (OceanLibrary kept them as bare '##') from the official bahai.org edition — section labels and trailers matched to our paragraphs by text; only weak assignments (book/system1) replaced; dry run by default",
       "scope": "authorship"
-    },
-    {
-      "hash": "b2a8cdc6",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "OceanLibrary multi-author Bahá'í compilations credited to their compiler, not their first author — Lights of Guidance → Helen Hornby (compiler), 29 Research Department compilations → the Research Department, Bahá'í Prayers / Sacred Writings / Japan Will Turn Ablaze → Compilation (Bahá'í Writings); a UHJ letter in them was being treated as Bahá'u'lláh's own work. Authority defaults keep their rank (8 / 7)",
-      "scope": "data"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "9b91b1c3",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Send inside a full-width input; photo + attach as large round floating buttons; the intro is Dewey's first bubble",
+        "scope": "dewey"
+      },
       {
         "hash": "b439540c",
         "date": "2026-10-17",
@@ -7014,13 +7021,6 @@
         "type": "New",
         "description": "Recover extract-level authors of compilations whose section headings were lost on export (OceanLibrary kept them as bare '##') from the official bahai.org edition — section labels and trailers matched to our paragraphs by text; only weak assignments (book/system1) replaced; dry run by default",
         "scope": "authorship"
-      },
-      {
-        "hash": "b2a8cdc6",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "OceanLibrary multi-author Bahá'í compilations credited to their compiler, not their first author — Lights of Guidance → Helen Hornby (compiler), 29 Research Department compilations → the Research Department, Bahá'í Prayers / Sacred Writings / Japan Will Turn Ablaze → Compilation (Bahá'í Writings); a UHJ letter in them was being treated as Bahá'u'lláh's own work. Authority defaults keep their rank (8 / 7)",
-        "scope": "data"
       }
     ]
   }
