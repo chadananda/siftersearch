@@ -17,7 +17,8 @@ import { identifyAndCheck } from '../dewey/holdings.js';
 import { appraiseDocument } from '../dewey/appraise.js';
 import { logActivity } from '../repos/activity-repo.js';
 
-export const ingestDir = () => process.env.DEWEY_INGEST_DIR || '/tank/dropbox/Ocean2.0 Supplemental/Dewey Ingest/new';
+// on the NAS, OUTSIDE the synced Dropbox (Chad 10-18: no large PDFs, video or audio in Dropbox)
+export const ingestDir = () => process.env.DEWEY_INGEST_DIR || '/tank/dewey-ingest/new';
 const EASE = { txt: 0, md: 0, markdown: 0, docx: 1, html: 2, htm: 2, xhtml: 2, epub: 2, rtf: 2, odt: 2, doc: 3, wpd: 3, wps: 3, webarchive: 4, pdf: 5 };
 const HELD_WHY = 'ingest folder: already in the library';
 /** A work's title for "the same work?": diacritics, apostrophes and the subtitle after ':' folded away. */

@@ -25,6 +25,7 @@
   import { authenticatedFetch } from '../../lib/api.js';
   import AuthModal from '../AuthModal.svelte';
   import TabletAbout from './TabletAbout.svelte';
+  import DocumentSource from './DocumentSource.svelte';
   import { toCurlyQuotes } from '../../lib/text-utils.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
@@ -1213,6 +1214,7 @@
           </div>
         {/if}
         {#if document.id}<TabletAbout documentId={document.id} />{/if}
+        {#if document.id}<DocumentSource documentId={document.id} />{/if}
       </header>
 
       <hr class="doc-divider" />

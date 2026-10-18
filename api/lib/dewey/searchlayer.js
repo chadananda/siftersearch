@@ -24,8 +24,36 @@ export function slpToText(md) {
     const m = line.match(/^(\w+):\s*(.*)$/);
     if (m) { let v = m[2].trim(); try { v = JSON.parse(v); } catch { v = v.replace(/^["']|["']$/g, ''); } meta[m[1]] = v; }
   }
-  const text = (fm ? s.slice(fm[0].length) : s).replace(/<!--\s*pdf:(\d+)\s*-->/g, '<pb n="$1"/>').replace(/\n{3,}/g, '\n\n').trim();
-  return { meta, text };
+  // page markers: "<!-- pdf:2 -->" or "<!-- pdf:2, pg:98 -->" → the ingester's <pb n="2"/> (the PDF page — what a link
+  // into the original scan opens; the print page rides along as data-pg for citations)
+  let text = (fm ? s.slice(fm[0].length) : s).replace(/<!--\s*pdf:(\d+)(?:\s*,\s*pg:([\w-]+))?\s*-->/g, (m, pdf) => `<pb n="${pdf}"/>`);
+  return { meta, text: rejoinLines(text).replace(/\n{3,}/g, '\n\n').trim() };
+}
+
+/**
+ * SLP ends a block at every printed LINE ("There were probably fewer than 6,000 ⏎⏎ Baha'is in the United States"), and
+ * the library splits paragraphs on blank lines — one sentence became several paragraphs (10-18). A block that does not end
+ * a sentence is joined to the next when that one continues it (starts lower-case, with a digit, or the previous ends with a
+ * hyphen); headings, list items, footnotes and page markers stay as they are. Pure.
+ */
+export function rejoinLines(text) {
+  const blocks = String(text).split(/\n{2,}/);
+  const out = [];
+  for (const b0 of blocks) {
+    const b = b0.trim();
+    if (!b) continue;
+    const prev = out.at(-1);
+    const keep = (x) => /^(#|<pb|[*\-•]\s|\d+[.)]\s|>)/.test(x);
+    const open = prev && !keep(prev) && !/[.!?:;"”’)\]]$/.test(prev);
+    // a broken line of RUNNING TEXT (5+ words, mostly lower case) continues even into a capital ("…fewer than 6,000 ⏎⏎
+    // Baha'is in…"); a Title-Case block ("The Making of the Babi Movement in Iran") is a heading and stays
+    const words = prev ? prev.split(/\s+/) : [];
+    const running = words.length >= 5 && words.filter((w) => /^\p{Lu}/u.test(w)).length / words.length < 0.6;
+    const cont = !keep(b) && (/^[\p{Ll}\d(“"‘'—–-]/u.test(b) || running);
+    if (open && (cont || /-$/.test(prev))) out[out.length - 1] = /-$/.test(prev) ? prev.replace(/-$/, '') + b : `${prev} ${b}`;
+    else out.push(b);
+  }
+  return out.join('\n\n');
 }
 
 /**

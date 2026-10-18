@@ -26,6 +26,9 @@ export const findOpenByTitle = async (title) => parse(await queryOne(`SELECT * F
 /** The item for this exact file (by its sha256), newest first — the ingest folder's "have we handled this file?". */
 export const findBySha = async (sha256) => parse(await queryOne('SELECT * FROM dewey_items WHERE sha256 = ? ORDER BY id DESC LIMIT 1', [String(sha256)], 'dewey:by-sha'));
 
+/** The Dewey item that became this document (its archived original lives on the item). */
+export const findByDoc = async (docId) => parse(await queryOne('SELECT * FROM dewey_items WHERE doc_id = ? ORDER BY id DESC LIMIT 1', [Number(docId)], 'dewey:by-doc'));
+
 /** Change fields and, when `state` changes, append { at, state, why } to the log. */
 export async function updateItem(id, fields = {}, why = null) {
   const cur = await getItem(id);

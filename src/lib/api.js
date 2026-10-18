@@ -510,6 +510,8 @@ export const search = {
 // ============================================
 
 export const documents = {
+  /** The document's archived original (scan, letter, file): available? may I open it? its link (signed for admins). */
+  sourceInfo: (documentId) => request(`/api/documents/${encodeURIComponent(documentId)}/source/info`),
   /**
    * Get document metadata by ID
    */

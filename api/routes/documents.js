@@ -11,6 +11,7 @@
  * GET /api/documents/:id/export/:format - Export in specific format
  */
 
+import { optionalAuthenticate } from '../lib/auth.js';
 import { queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { findDocuments, listDocs } from '../lib/docs-repo.js';
@@ -146,6 +147,40 @@ export default async function documentsRoutes(fastify) {
   fastify.get('/:id/sections', async (request) => ({ sections: await sectionsOfDoc(request.params.id) }));
 
   // Get document metadata by ID
+  // THE ORIGINAL SOURCE (doc-source.js): is there one, may this reader open it, and where (an admin gets a signed link)
+  fastify.get('/:id/source/info', { preHandler: optionalAuthenticate }, async (request) => {
+    const { sourceOf, signSource } = await import('../lib/doc-source.js');
+    const src = await sourceOf(request.params.id);
+    if (!src) return { available: false };
+    const admin = request.user?.tier === 'admin';
+    if (!src.public && !admin) return { available: true, public: false, allowed: false };
+    const base = `/api/documents/${Number(request.params.id)}/source`;
+    return { available: true, public: src.public, allowed: true, type: src.ext, mb: Math.round(src.bytes / 104857.6) / 10, pages: src.pages, kind: src.kind,
+      url: src.public ? base : `${base}?t=${signSource(Number(request.params.id))}` };
+  });
+
+  // the file itself — inline, with byte ranges (a PDF viewer opens big scans page by page)
+  fastify.get('/:id/source', async (request, reply) => {
+    const { sourceOf, verifySource } = await import('../lib/doc-source.js');
+    const { createReadStream } = await import('fs');
+    const id = Number(request.params.id);
+    const src = await sourceOf(id);
+    if (!src) throw ApiError.notFound('no archived source for this document');
+    if (!src.public && !verifySource(id, request.query?.t)) throw ApiError.forbidden('this source is for admins — open it from the document page');
+    reply.header('Content-Type', src.type).header('Accept-Ranges', 'bytes').header('Content-Disposition', `inline; filename="document-${id}.${src.ext}"`)
+      .header('Cache-Control', src.public ? 'public, max-age=86400' : 'private, no-store');
+    const m = String(request.headers.range || '').match(/^bytes=(\d*)-(\d*)$/);
+    if (m && (m[1] || m[2])) {
+      const start = m[1] ? Number(m[1]) : Math.max(0, src.bytes - Number(m[2]));
+      const end = m[1] && m[2] ? Math.min(Number(m[2]), src.bytes - 1) : src.bytes - 1;
+      if (start > end || start >= src.bytes) { reply.code(416).header('Content-Range', `bytes */${src.bytes}`); return ''; }
+      reply.code(206).header('Content-Range', `bytes ${start}-${end}/${src.bytes}`).header('Content-Length', String(end - start + 1));
+      return reply.send(createReadStream(src.path, { start, end }));
+    }
+    reply.header('Content-Length', String(src.bytes));
+    return reply.send(createReadStream(src.path));
+  });
+
   fastify.get('/:id', async (request) => {
     const { id } = request.params;
     const document = await queryOne('SELECT * FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);

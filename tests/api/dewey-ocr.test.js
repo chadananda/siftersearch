@@ -23,6 +23,17 @@ describe('slpToText', () => {
   });
 });
 
+describe('rejoinLines — SLP breaks blocks at printed line ends', () => {
+  it('joins a sentence split across blocks; keeps headings, footnotes and page markers', async () => {
+    const { rejoinLines } = await import('../../api/lib/dewey/searchlayer.js');
+    const t = 'There were probably fewer than 6,000\n\nBaha\'is in the United States at this time.\n\n## A heading\n\n* a footnote\n\n<pb n="2"/>\n\nA new para-\n\ngraph continues.\n\nThe Making of the Babi Movement in Iran\n\nThe book begins in Shiraz.';
+    expect(rejoinLines(t)).toBe('There were probably fewer than 6,000 Baha\'is in the United States at this time.\n\n## A heading\n\n* a footnote\n\n<pb n="2"/>\n\nA new paragraph continues.\n\nThe Making of the Babi Movement in Iran\n\nThe book begins in Shiraz.');
+  });
+  it('a print page in the marker keeps the PDF page for the link into the scan', () => {
+    expect(slpToText('<!-- pdf:2, pg:98 -->\n\nText.').text).toBe('<pb n="2"/>\n\nText.');
+  });
+});
+
 describe('slpCheck — nothing is imported unchecked', () => {
   const { text } = slpToText(ROSENBERG);
   it('passes clean text that contains the pages we read ourselves', () => {

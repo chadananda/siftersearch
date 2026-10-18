@@ -5,7 +5,7 @@
 import { realpathSync, statSync } from 'fs';
 import { resolve } from 'path';
 
-export const deweyRoots = () => (process.env.DEWEY_PATH_ROOTS || '/tank/dropbox/Ocean2.0 Supplemental').split(':').filter(Boolean).map((r) => r.replace(/\/+$/, ''));
+export const deweyRoots = () => (process.env.DEWEY_PATH_ROOTS || '/tank/dropbox/Ocean2.0 Supplemental:/tank/dewey-ingest').split(':').filter(Boolean).map((r) => r.replace(/\/+$/, ''));
 
 /** A server path Dewey may read → its real path; throws 400 otherwise. */
 export function allowedPath(p, roots = deweyRoots()) {

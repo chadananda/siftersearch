@@ -3,12 +3,13 @@
 // shelf among the library's existing tradition › collection folders, write the Markdown, ingest it through the ingester
 // and single writer, attach its researched cover. From there the automatic chain (structure → BM25 → references →
 // vectors → …) takes over with no manual step. Every outcome is a state on the item with its reason. params { id }.
-import { readFile } from 'fs/promises';
+import { readFile, unlink, writeFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
 import { garbledLayer } from '../dewey/convert.js';
 import { slpToText, slpEnabled } from '../dewey/searchlayer.js';
 import { enqueue } from '../repos/ops-report-repo.js';
-import { extractText, proseGate, libraryShelves, chooseShelf, writeLibraryFile, toMarkdown } from '../dewey/intake.js';
+import { ingestDir } from './dewey-ingest-folder-job.js';
+import { extractText, archiveFile, inArchive, proseGate, libraryShelves, chooseShelf, writeLibraryFile, toMarkdown } from '../dewey/intake.js';
 import { detectLang } from '../pipeline/profile.js';
 import { withAIContext } from '../ai-context.js';
 import { waitForQuietWriter } from './ctai-jobs.js';
@@ -23,6 +24,14 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   if (!item) throw new Error(`dewey item ${id} not found`);
   if (!item.original_path) throw new Error(`dewey item ${id} has no source attached`);
   await updateItem(item.id, { state: 'processing' }, 'intake started');
+  // the source is ARCHIVED on the NAS (outside the synced Dropbox) before anything else; a copy in the ingest folder is then
+  // removed — the archive is the original from here on (the reader can open it: GET /api/documents/:id/source)
+  if (!inArchive(item.original_path) && !deps.read) {
+    const arc = await archiveFile(item.original_path, { itemId: item.id, title: item.title, kind: item.identified?.appraisal?.kind || item.kind || null });
+    if (item.original_path.startsWith(`${ingestDir()}/`)) await unlink(item.original_path).catch(() => {});
+    await updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, `source archived on the NAS (${Math.round(arc.bytes / 1048576 * 10) / 10} MB)`);
+    item.original_path = arc.path; item.sha256 = arc.sha256;
+  }
   const ext = item.original_path.split('.').pop().toLowerCase();
   let text, pages;
   const slp = item.identified?.slp;   // SearchLayerPDF's checked text of a scan (dewey-ocr-job.js), when it has run
@@ -78,6 +87,12 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   if (!docId || res.status === 'error') {
     await updateItem(item.id, { state: 'failed' }, `ingest failed: ${res?.error || res?.status || 'no document id'}`);
     return { id: item.id, state: 'failed' };
+  }
+  // the archive's sidecar learns which document this source became (the reader's "original scan" link resolves through it)
+  if (inArchive(item.original_path)) {
+    const side = `${item.original_path}.json`;
+    const prev = await readFile(side, 'utf8').then(JSON.parse).catch(() => ({}));
+    await writeFile(side, JSON.stringify({ ...prev, docId, title, shelf: `${shelf.religion} › ${shelf.collection}` }, null, 2)).catch(() => {});
   }
   if (item.cover_path) {
     const buf = await read(item.cover_path).catch(() => null);

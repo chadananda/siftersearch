@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-18T15:37:15.103Z",
+  "generated": "2026-10-18T17:05:33.055Z",
   "entries": [
+    {
+      "hash": "4ba9db11",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "OCR survives restarts — a submitted SearchLayerPDF job is resumed (polled), never re-submitted; an ocr loop gives every item waiting at OCR its job every 10 min (71 waited with 5 queued after restarts)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "a23f5a3e",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "SLP's cross-check counts distinct words (a noisy typed page scored 21% as 4-grams vs SLP's excellent text; 54% as words, wrong file 2%); handwriting SLP misreads (it invented text in a Sears letter) is transcribed by the vision model under the same check; a SLP result on file is re-checked, not re-bought",
+      "scope": "dewey"
+    },
+    {
+      "hash": "fe8f76e6",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "The import board reads { data } from observatoryGet",
+      "scope": "observatory"
+    },
     {
       "hash": "16c1c096",
       "date": "2026-10-18",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "A re-ingest detaches rows that reference removed paragraphs in the same transaction (nullable → NULL, derived → deleted, saved research quotes re-attached to the paragraph their text went into) — FOREIGN KEY failures aborted re-ingests mid-way",
       "scope": "ingest"
-    },
-    {
-      "hash": "6c19ceca",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Rejoin v4 — repeated running headers/footers removed (their place kept as <pb/>), a line-end hyphen only joins a lowercase continuation",
-      "scope": "library"
-    },
-    {
-      "hash": "d76386d7",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Rejoin v3 — 'page vi' lines and running headers become page markers, soft line-end hyphens removed, a trailing heading line never runs on, capital-letter joins only in clearly line-broken files",
-      "scope": "library"
-    },
-    {
-      "hash": "5a8f1c29",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Rejoin trailing-citation check was an exponential regex (8 h freeze on the library dry run) — bounded token loop + timing test",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-10-18": [
+      {
+        "hash": "4ba9db11",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "OCR survives restarts — a submitted SearchLayerPDF job is resumed (polled), never re-submitted; an ocr loop gives every item waiting at OCR its job every 10 min (71 waited with 5 queued after restarts)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "a23f5a3e",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "SLP's cross-check counts distinct words (a noisy typed page scored 21% as 4-grams vs SLP's excellent text; 54% as words, wrong file 2%); handwriting SLP misreads (it invented text in a Sears letter) is transcribed by the vision model under the same check; a SLP result on file is re-checked, not re-bought",
+        "scope": "dewey"
+      },
+      {
+        "hash": "fe8f76e6",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "The import board reads { data } from observatoryGet",
+        "scope": "observatory"
+      },
       {
         "hash": "16c1c096",
         "date": "2026-10-18",
@@ -7000,27 +7021,6 @@
         "type": "Fixed",
         "description": "A re-ingest detaches rows that reference removed paragraphs in the same transaction (nullable → NULL, derived → deleted, saved research quotes re-attached to the paragraph their text went into) — FOREIGN KEY failures aborted re-ingests mid-way",
         "scope": "ingest"
-      },
-      {
-        "hash": "6c19ceca",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Rejoin v4 — repeated running headers/footers removed (their place kept as <pb/>), a line-end hyphen only joins a lowercase continuation",
-        "scope": "library"
-      },
-      {
-        "hash": "d76386d7",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Rejoin v3 — 'page vi' lines and running headers become page markers, soft line-end hyphens removed, a trailing heading line never runs on, capital-letter joins only in clearly line-broken files",
-        "scope": "library"
-      },
-      {
-        "hash": "5a8f1c29",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Rejoin trailing-citation check was an exponential regex (8 h freeze on the library dry run) — bounded token loop + timing test",
-        "scope": "library"
       }
     ]
   }

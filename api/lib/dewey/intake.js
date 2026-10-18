@@ -13,6 +13,28 @@ import { toMarkdownText } from './convert.js';
 
 export const originalsDir = () => process.env.LIBRARY_ORIGINALS_DIR || '/tank/library-originals';
 
+/**
+ * ARCHIVE a source already on disk (Chad 10-18: "archive the source documents somewhere on Tower-NAS for later reference …
+ * I just don't want large documents like PDFs, Video and Audio files to be inside the synced Dropbox folder"): streamed into
+ * <originals>/<sha256>.<ext> (content-addressed: the same bytes are stored once) with a sidecar saying where it came from
+ * and what it became. → { path, sha256, ext, bytes }. Never loads the file into memory.
+ */
+export async function archiveFile(src, meta = {}) {
+  const { createReadStream } = await import('fs');
+  const { copyFile, stat } = await import('fs/promises');
+  const sha256 = await new Promise((res, rej) => { const h = createHash('sha256'); createReadStream(src).on('data', (d) => h.update(d)).on('end', () => res(h.digest('hex'))).on('error', rej); });
+  const ext = (String(src).match(/\.([a-z0-9]{2,5})$/i)?.[1] || 'bin').toLowerCase();
+  const path = join(originalsDir(), `${sha256}.${ext}`);
+  await mkdir(originalsDir(), { recursive: true });
+  if (!existsSync(path)) await copyFile(src, path);
+  const bytes = (await stat(path)).size;
+  await writeFile(`${path}.json`, JSON.stringify({ sha256, name: String(src).split('/').pop(), from: src, ...meta, bytes, archivedAt: new Date().toISOString() }, null, 2));
+  return { path, sha256, ext, bytes };
+}
+
+/** Is this path inside the archive already? */
+export const inArchive = (p) => String(p || '').startsWith(`${originalsDir()}/`);
+
 /** Keep the original untouched: <originals>/<sha256>.<ext> + a sidecar of where it came from. Same bytes → same file. */
 export async function archiveOriginal(bytes, { name = '', url = null, itemId = null } = {}) {
   const buf = Buffer.from(bytes);
