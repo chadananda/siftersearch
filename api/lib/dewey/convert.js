@@ -113,7 +113,7 @@ export async function officeHtml(bytes, ext, { run = execFile } = {}) {
   } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
 }
 
-const sh = (run, cmd, args, timeout = 120000) => new Promise((res, rej) => run(cmd, args, { timeout, maxBuffer: 1 << 26 }, (err, out, stderr) => (err ? rej(new Error(String(stderr || err.message).slice(0, 200))) : res(String(out)))));
+const sh = (run, cmd, args, timeout = 120000) => new Promise((res, rej) => run(cmd, args, { timeout, maxBuffer: 1 << 28 }, (err, out, stderr) => (err ? rej(new Error(String(stderr || err.message).slice(0, 200))) : res(String(out)))));
 
 /** Pages to sample from a scan of n pages: the title page region and an even spread through the body (≤ k). */
 export function samplePages(n, k = 8) {
@@ -174,6 +174,28 @@ export async function ocrSample(bytes, totalPages, { run = execFile, k = 8, visi
   } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
 }
 
+/**
+ * A PDF's text layer → { text, pages }. poppler's pdftotext first: a separate native program, lean and fast (unpdf parsed a
+ * 270 MB book inside the API process and pushed it past pm2's 3 GB limit — a restart, 10-18). unpdf where poppler is absent.
+ */
+export async function pdfText(bytes, { run = execFile } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'dewey-pdf-'));
+  try {
+    const src = join(dir, 'in.pdf');
+    await writeFile(src, bytes);
+    const info = await sh(run, 'pdfinfo', [src], 60000);
+    const pages = Number(info.match(/^Pages:\s+(\d+)/m)?.[1]) || 1;
+    const text = await sh(run, 'pdftotext', ['-enc', 'UTF-8', src, '-'], 600000);
+    return { text, pages };
+  } catch (err) {
+    if (!/ENOENT|not found/i.test(err.message)) throw err;
+    const { extractText, getDocumentProxy } = await import('unpdf');
+    const pdf = await getDocumentProxy(new Uint8Array(bytes));
+    const { text, totalPages } = await extractText(pdf, { mergePages: true });
+    return { text: Array.isArray(text) ? text.join('\n') : text || '', pages: totalPages || 1 };
+  } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
+}
+
 /** Plain text in an unknown encoding: UTF-8 if it decodes cleanly, else Windows-1252 (old .txt files). */
 function plain(bytes) {
   const u = Buffer.from(bytes).toString('utf8');
@@ -188,11 +210,7 @@ export async function toMarkdownText(bytes, name = '', deps = {}) {
     : b[0] === 0x50 && b[1] === 0x4b ? (b.includes('mimetypeapplication/epub+zip') ? 'epub' : 'docx') : b.subarray(0, 5).toString() === '{\\rtf' ? 'rtf' : 'txt';
   if (MEDIA.test(ext)) throw Object.assign(new Error(`${ext.toUpperCase()} is audio/video — Dewey cannot transcribe it yet`), { unsupported: true });
   if (ext === 'pdf') {
-    const { extractText, getDocumentProxy } = await import('unpdf');
-    const pdf = await getDocumentProxy(new Uint8Array(b));
-    const { text, totalPages } = await extractText(pdf, { mergePages: true });
-    const t = Array.isArray(text) ? text.join('\n') : text || '';
-    const pages = totalPages || 1;
+    const { text: t, pages } = await (deps.pdfText || pdfText)(b);
     const scan = t.replace(/\s/g, '').length < 200 || t.split(/\s+/).length / pages < 25;
     // a GARBLED text layer (an old OCR: "uld ooo;o aiM1 r thea ~lk") reads worse than a fresh tesseract pass — Kelsey's
     // layer scored 0.80 real words, a fresh read 0.95, and the garble hid that the library holds it (10-17)

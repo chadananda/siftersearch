@@ -8,6 +8,7 @@ import { findSections } from '../repos/sections-repo.js';
 import { searchKeywordQdrant } from '../search/qdrant-layers.js';
 import { paragraphsByIds } from '../paragraphs-repo.js';
 import { Worker } from 'worker_threads';
+import { fork } from 'child_process';
 import { withText } from './identify.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -146,15 +147,37 @@ export function checkHoldingsOffThread(id, { timeoutMs = 120000 } = {}) {
 }
 
 /**
- * A DOCUMENT (an upload { name, data } or a server path) → identified, checked — all off the event loop. → { identified
+ * A DOCUMENT (an upload { name, data } or a server path) → identified, checked — in a child process (see inChild). → { identified
  * (with _text = an excerpt for the appraisal), result, sha256, bytes }. Big books get more time (conversion + OCR).
  */
-export async function identifyAndCheckOffThread({ file = null, path = null }, { timeoutMs = 300000, run = inWorker } = {}) {
-  const out = process.env.VITEST && run === inWorker ? JSON.parse(JSON.stringify(await identifyAndCheck({ file, path }))) : await run({ file, path }, timeoutMs);
+// at most 2 document checks at once — each child can take gigabytes for a big book
+let running = 0;
+const waiting = [];
+const slot = () => (running < 2 ? (running++, Promise.resolve()) : new Promise((r) => waiting.push(r)));
+const release = () => { const next = waiting.shift(); if (next) next(); else running--; };
+
+/** A child PROCESS (holdings-child.mjs) does the document check: own memory, own crash domain, time-limited. */
+function inChild(job, timeoutMs) {
+  return slot().then(() => new Promise((resolve, reject) => {
+    const env = { ...process.env, SIFTER_PROC: 'dewey-holdings' };
+    delete env.pm_id; delete env.name;   // db.js tags its queries by pm2's name otherwise — they are not the API's
+    const child = fork(new URL('./holdings-child.mjs', import.meta.url), [], { env, execArgv: ['--max-old-space-size=8192'], serialization: 'advanced' });
+    let done = false;
+    const finish = (fn, v) => { if (done) return; done = true; clearTimeout(timer); release(); fn(v); };
+    const timer = setTimeout(() => { child.kill('SIGKILL'); finish(reject, new Error(`the document check took over ${Math.round(timeoutMs / 1000)} s and was stopped`)); }, timeoutMs);
+    child.once('message', (m) => (m.error ? finish(reject, new Error(m.error)) : finish(resolve, JSON.parse(m.json))));
+    child.once('error', (e) => finish(reject, e));
+    child.once('exit', (code, sig) => finish(reject, new Error(`the document check stopped (${sig || `exit ${code}`}) — the file may be too large or damaged`)));
+    child.send(job);
+  }));
+}
+
+export async function identifyAndCheckOffThread({ file = null, path = null }, { timeoutMs = 600000, run = inChild } = {}) {
+  const out = process.env.VITEST && run === inChild ? JSON.parse(JSON.stringify(await identifyAndCheck({ file, path }))) : await run({ file, path }, timeoutMs);
   return { ...out, identified: withText(out.identified, out.excerpt) };
 }
 
-/** In-thread body of the above (holdings-worker.js runs it): read → identify → check → { identified, excerpt, result, sha256, bytes }. */
+/** The body of the above (holdings-child.mjs runs it): read → identify → check → { identified, excerpt, result, sha256, bytes }. */
 export async function identifyAndCheck({ file = null, path = null }) {
   const { readFile } = await import('fs/promises');
   const { createHash } = await import('crypto');

@@ -228,7 +228,7 @@ const agoOf = (at) => {
     // design, reported as info. Writes anywhere, and reads in the API/worker/ingest, still count as blocking.
     // Also not freezes: reads on a WORKER THREAD ('<proc>/thread', db.js) and in the pipeline-snapshot cron (its own process,
     // serves nobody) — slow, but no request waits on them (10-17: the roadmap's off-thread reads headlined "blocking in api").
-    const BATCH = `NOT (kind = 'read' AND (proc IN ('reports', 'reports-worker.js', 'pipeline-snapshot') OR proc LIKE '%/thread'))`;
+    const BATCH = `NOT (kind = 'read' AND (proc IN ('reports', 'reports-worker.js', 'pipeline-snapshot', 'dewey-holdings') OR proc LIKE '%/thread'))`;
     const worst = g(`SELECT proc, kind, duration_ms worst, sql_sample sql, at
                        FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND ${BATCH}
                       ORDER BY duration_ms DESC LIMIT 1`);
