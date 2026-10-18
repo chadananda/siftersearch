@@ -18,11 +18,29 @@ import { slpExtract, slpCheck, slpMaxPages, slpReceipt, slpToText } from '../dew
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
 
-export async function deweyOcrJob({ id } = {}, deps = {}) {
+export async function deweyOcrJob({ id, refresh = false } = {}, deps = {}) {
   const { extract = slpExtract, receipt = slpReceipt, sample = ocrSample, pdfInfo = readPdf, queue = enqueue, appraise = appraiseDocument,
     others = async () => listItems({ limit: 1000 }), save = async (p, t) => { await mkdir(join(p, '..'), { recursive: true }); await writeFile(p, t); } } = deps;
   const item = await getItem(id);
   if (!item?.original_path) throw new Error(`dewey item ${id} has no source`);
+  // REFRESH (10-18: SLP fixed two handwritten letters under their original job ids): an imported document whose text came
+  // from our vision fallback, or an earlier SLP result, re-fetches SLP's current result for the same job, checks it, and —
+  // when it passes — becomes the document's text (re-imported into the same document)
+  if (refresh && item.doc_id) {
+    const jobId = item.identified?.slp?.slp_rejected_job || item.identified?.slp?.job_id;
+    if (!jobId) return { id, skipped: 'no SLP job to refresh' };
+    const { pages } = await pdfInfo({ path: item.original_path });
+    const fresh = await extract({ path: item.original_path, resumeJobId: jobId }, {});
+    const own = item.identified?.slp?.engine === 'vision' ? { text: String(await (deps.read || readFile)(item.identified.slp.path)) } : await sample({ path: item.original_path }, pages).catch(() => null);
+    const check = slpCheck(fresh.text, { pages: fresh.pages || pages, sampleText: own?.text || null });
+    if (!check.ok) return { id, state: item.state, refreshed: false, check };
+    const where = join(originalsDir(), 'ocr', `${item.sha256 || `item-${item.id}`}.slp.md`);
+    await save(where, fresh.markdown);
+    const slp = { path: where, job_id: jobId, score: fresh.score, cost_cents: fresh.cost_cents, pages: fresh.pages || pages, check, meta: fresh.meta, receipt: await receipt(jobId).catch(() => null) };
+    await updateItem(item.id, { identified: { ...item.identified, slp, slp_previous: item.identified?.slp || null } }, `SearchLayerPDF's improved result (job ${jobId}) passed the check (${check.sampleFound != null ? `${Math.round(check.sampleFound * 100)}% of our own words found` : `${check.words} words`}) — re-importing with it`);
+    await queue('dewey-reimport', { docs: [item.doc_id] }, 'dewey-ocr');
+    return { id, refreshed: true, check };
+  }
   if (item.identified?.slp?.path) return { id, skipped: 'already has SLP text' };
   // never OCR the same work twice (two copies of "Islam and the Baha'i Faith" were both sent, 10-18): an earlier item with
   // the same title already on its way through OCR or in the library → a person decides

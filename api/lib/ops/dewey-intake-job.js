@@ -71,6 +71,18 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     await updateItem(item.id, { state: 'needs-human' }, `only part of a book? Its text is ${gate.words.toLocaleString('en-US')} words — check whether this file holds the whole work`);
     return { id: item.id, state: 'needs-human', why: 'book fragment' };
   }
+  // a SCAN's text exists only after OCR, so the library was never checked against it: check now — two files of one Sears
+  // letter ("1960 Sears to Ioas Sept 60.pdf", "1962 Sears USNBA.pdf") both went in, 10-18
+  if (slp && !deps.skipRecheck) {
+    const { checkHoldings } = await import('../dewey/holdings.js');
+    const { withText } = await import('../dewey/identify.js');
+    const h = await checkHoldings(withText({ title: item.title, from: 'file' }, text)).catch(() => null);
+    const twin = h?.candidates?.find((c) => ['same', 'inside'].includes(c.relation?.relation));
+    if (twin) {
+      await updateItem(item.id, { state: 'declined' }, `after OCR: the library already holds this text — #${twin.id} “${twin.title}” (${twin.relation.relation}, ${Math.round(twin.relation.ours_in_theirs * 100)}%); not added`);
+      return { id: item.id, state: 'declined', twin: twin.id };
+    }
+  }
   const r = item.research || {};
   const title = r.matched && r.title ? r.title : item.title;
   const author = (r.matched && r.author) || item.author || null;

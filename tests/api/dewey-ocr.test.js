@@ -168,6 +168,17 @@ describe('dewey-ocr job', () => {
     expect(r.state).toBe('source');
     expect(items[0].identified.slp).toMatchObject({ engine: 'vision', slp_rejected_job: 'j9' });
   });
+  it('REFRESH: an imported document takes SLP\'s improved result when it agrees with our own text; re-imported in place', async () => {
+    const text = slpToText(ROSENBERG).text;
+    items[0] = { id: 7, title: 'Rosenberg notes', state: 'ingested', doc_id: 99, original_path: '/in/scan.pdf', sha256: 'abc',
+      identified: { slp: { engine: 'vision', path: '/ocr/abc.vision.md', slp_rejected_job: 'j5' } } };
+    const d = base({ read: async () => text, extract: async ({ resumeJobId }) => ({ markdown: ROSENBERG, ...slpToText(ROSENBERG), job_id: resumeJobId, score: 95, pages: 1 }) });
+    const r = await deweyOcrJob({ id: 7, refresh: true }, d);
+    expect(r).toMatchObject({ refreshed: true });
+    expect(items[0].identified.slp).toMatchObject({ job_id: 'j5' });
+    expect(items[0].identified.slp_previous).toMatchObject({ engine: 'vision' });
+    expect(d.queue).toHaveBeenCalledWith('dewey-reimport', { docs: [99] }, 'dewey-ocr');
+  });
   it('a scan over the page limit is not sent automatically', async () => {
     const r = await deweyOcrJob({ id: 7 }, base({ pdfInfo: async () => ({ pages: 969 }), extract: async () => { throw new Error('must not be called'); } }));
     expect(r).toMatchObject({ state: 'needs-human', pages: 969 });
