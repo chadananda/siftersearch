@@ -93,6 +93,15 @@ describe('an upload we lack is OFFERED, never imported unasked (Chad 10-17)', ()
     expect(archived).toBe(false);
     expect(events.find((e) => e.type === 'item')?.item).toMatchObject({ state: 'offered', original_path: '/tank/dropbox/Ocean2.0 Supplemental/x/Big Book.pdf', sha256: 'abc' });
   });
+  it('a path spelled in the other Unicode form (macOS NFD vs Linux NFC) still finds the file', async () => {
+    const { allowedPath } = await import('../../api/lib/dewey/paths.js');
+    const { mkdtempSync, writeFileSync, realpathSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const root = realpathSync(mkdtempSync(`${tmpdir()}/dewey-`));
+    writeFileSync(`${root}/Bah\u00e1.doc`, 'x');   // composed, as on tower
+    // (macOS's filesystem matches either spelling and echoes the one given; Linux needs the composed one — compare normalized)
+    expect(allowedPath(`${root}/Baha\u0301.doc`, [root]).normalize('NFC')).toBe(`${root}/Bah\u00e1.doc`.normalize('NFC'));
+  });
   it('a path outside the allowed folders is refused', async () => {
     const { allowedPath } = await import('../../api/lib/dewey/paths.js');
     expect(() => allowedPath('/etc/passwd', ['/tank/dropbox/Ocean2.0 Supplemental'])).toThrow(/outside the folders/);

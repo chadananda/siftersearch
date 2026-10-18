@@ -16,7 +16,7 @@ const argv = process.argv.slice(2);
 const rootArg = argv.includes('--server-root') ? argv[argv.indexOf('--server-root') + 1] : null;
 const [dir, out] = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--server-root');
 const [LOCAL_ROOT, SERVER_ROOT] = rootArg ? rootArg.split('=') : [null, null];
-const serverPath = (p) => (LOCAL_ROOT && p.startsWith(LOCAL_ROOT) ? SERVER_ROOT + p.slice(LOCAL_ROOT.length) : null);
+const serverPath = (p) => (LOCAL_ROOT && p.startsWith(LOCAL_ROOT) ? (SERVER_ROOT + p.slice(LOCAL_ROOT.length)).normalize('NFC') : null);   // macOS names are NFD
 const CHAT = process.argv.includes('--chat');
 const FOLDER = dir.replace(/\/+$/, '').split('/').pop();
 const KEY = (process.env.DEWEY_API_KEY || readFileSync('tmp/dewey-test-key', 'utf8')).trim();

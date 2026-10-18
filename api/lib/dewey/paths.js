@@ -9,8 +9,12 @@ export const deweyRoots = () => (process.env.DEWEY_PATH_ROOTS || '/tank/dropbox/
 
 /** A server path Dewey may read → its real path; throws 400 otherwise. */
 export function allowedPath(p, roots = deweyRoots()) {
-  let real;
-  try { real = realpathSync(resolve(String(p || ''))); } catch { throw Object.assign(new Error('no such file on the server'), { statusCode: 400 }); }
+  // a Mac spells "á" decomposed (NFD), Linux composed (NFC): the same Dropbox file under two byte sequences (10-18)
+  let real = null;
+  for (const form of [null, 'NFC', 'NFD']) {
+    try { real = realpathSync(resolve(form ? String(p || '').normalize(form) : String(p || ''))); break; } catch { /* next spelling */ }
+  }
+  if (!real) throw Object.assign(new Error('no such file on the server'), { statusCode: 400 });
   if (!roots.some((r) => real === r || real.startsWith(`${r}/`))) throw Object.assign(new Error('that path is outside the folders Dewey may read'), { statusCode: 400 });
   if (!statSync(real).isFile()) throw Object.assign(new Error('not a file'), { statusCode: 400 });
   return real;
