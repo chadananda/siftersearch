@@ -106,7 +106,13 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
   const convo = [{ role: 'system', content: SYSTEM }, ...messages.slice(-12),
     ...(notes.length ? [{ role: 'system', content: notes.join('\n') }] : [])];
   for (let round = 0; round < 5; round++) {
-    const stream = await create('dewey-chat', { max_tokens: 700, temperature: 0.3, stream: true, tools: TOOLS, messages: convo });
+    let stream;
+    try { stream = await create('dewey-chat', { max_tokens: 700, temperature: 0.3, stream: true, tools: TOOLS, messages: convo }); }
+    catch (err) {
+      // what the model was sent, in shape only (roles and lengths) — enough to see why it refused, no content logged
+      (await import('../logger.js')).logger.error({ err: err.message, round, shape: convo.map((m) => `${m.role}:${m.tool_calls ? 'tool_calls' : String(m.content ?? '').length}`) }, 'dewey-chat: model refused the request');
+      throw err;
+    }
     let text = '';
     const calls = [];
     for await (const chunk of stream) {
