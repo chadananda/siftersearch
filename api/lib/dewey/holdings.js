@@ -5,12 +5,21 @@
 import { findDocuments, listDocs } from '../docs-repo.js';
 import { findSections } from '../repos/sections-repo.js';
 import { searchKeywordQdrant } from '../search/qdrant-layers.js';
+import { paragraphsByIds } from '../paragraphs-repo.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 export const textLines = (id) => (id.printed_lines || []).filter((l) => String(l).trim().split(/\s+/).length >= 6).slice(0, 6);
 
-export async function checkHoldings(id, { find = findDocuments, sections = findSections, keyword = searchKeywordQdrant, docs = listDocs } = {}) {
+/** Does this paragraph really contain the line? ≥ 80% of the line's words present (OCR noise allowed). BM25 always returns a
+ *  top hit for any line, so a hit alone proves nothing — it called the Sohrab Diary "held" as an unrelated paper (10-17). */
+export function contains(paragraph, line) {
+  const have = new Set(fold(paragraph).split(' '));
+  const words = fold(line).split(' ').filter((w) => w.length > 1);
+  return words.length > 0 && words.filter((w) => have.has(w)).length / words.length >= 0.8;
+}
+
+export async function checkHoldings(id, { find = findDocuments, sections = findSections, keyword = searchKeywordQdrant, docs = listDocs, texts = paragraphsByIds } = {}) {
   const fields = ['id', 'title', 'author', 'language', 'religion', 'collection', 'year', 'paragraph_count', 'cover_url'];
   const by = new Map();
   const add = (d, ev) => { const e = by.get(d.id) || { doc: d, evidence: [], score: 0 }; e.evidence.push(ev); e.score += ev.weight; by.set(d.id, e); };
@@ -25,8 +34,13 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   const exact = new Set([title, id.title_alt].filter(Boolean).map(fold));
   for (const d of titleHits) add(d, { kind: 'title', weight: exact.has(fold(d.title)) ? 3 : 1, detail: d.title });
   for (const d of authorHits) add(d, { kind: 'title+author', weight: 1, detail: d.author });
+  // a line is FOUND only where one of its top hits really contains it
+  const paraText = new Map((await texts(lineHits.flatMap(({ hits }) => hits.slice(0, 3).map((h) => h.paragraph_id)).filter(Boolean)).catch(() => [])).map((p) => [p.id, p.text]));
   const lineDocIds = new Map();
-  for (const { line, hits } of lineHits) if (hits[0]) lineDocIds.set(hits[0].doc_id, [...(lineDocIds.get(hits[0].doc_id) || []), line]);
+  for (const { line, hits } of lineHits) {
+    const hit = hits.slice(0, 3).find((h) => contains(paraText.get(h.paragraph_id) || '', line));
+    if (hit) lineDocIds.set(hit.doc_id, [...(lineDocIds.get(hit.doc_id) || []), line]);
+  }
   const sectionDocs = new Map(sectionHits.map((s) => [s.doc_id, s]));
   const missing = [...new Set([...lineDocIds.keys(), ...sectionDocs.keys()])].filter((d) => !by.has(d));
   const fetched = missing.length ? (await docs({ ids: missing, fields, limit: missing.length, count: false })).docs : [];

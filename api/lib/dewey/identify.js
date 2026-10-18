@@ -1,8 +1,9 @@
 // Dewey's IDENTIFY step (Chad 10-17: "search for a document by anything I give it … work with my phone camera"): photos,
 // a file, a URL or typed text → the fields a holdings check searches on: title, author, edition, language, kind, and
 // printed lines (verbatim text, the strongest evidence — it finds a work under any title). Photos are read by a vision
-// model; files by their text layer (unpdf, mammoth); URLs by oEmbed (video) or the page itself.
+// model; files through convert.js (any format → Markdown); URLs by oEmbed (video) or the page itself.
 import { roleCreate } from '../role-client.js';
+import { toMarkdownText } from './convert.js';
 
 const jsonOf = (s) => { const m = String(s || '').match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : null; } catch { return null; } };
 
@@ -42,25 +43,19 @@ export async function identifyUrl(url, { fetchImpl = fetch } = {}) {
   return { title, author: meta('citation_author') || meta('author'), kind: 'web page', url, printed_lines: sampleLines(body), from: 'url' };
 }
 
-/** A file → identified fields from its text layer (PDF via unpdf, DOCX via mammoth, plain text as is). A scan with no
+/** A file (any format convert.js reads) → identified fields from its Markdown. A scan with no
  *  text layer says so: it needs OCR before its lines can be checked. */
 export async function identifyFile({ name = '', bytes }) {
-  let text = '';
-  if (/\.pdf$/i.test(name) || (bytes[0] === 0x25 && bytes[1] === 0x50)) {
-    const { extractText, getDocumentProxy } = await import('unpdf');
-    const pdf = await getDocumentProxy(bytes);
-    text = (await extractText(pdf, { mergePages: true })).text || '';
-    if (text.replace(/\s/g, '').length < 200) return { title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, from: 'file' };
-  } else if (/\.docx$/i.test(name)) {
-    text = (await (await import('mammoth')).extractRawText({ buffer: Buffer.from(bytes) })).value || '';
-  } else text = Buffer.from(bytes).toString('utf8');
-  const first = text.split('\n').map((l) => l.trim()).filter(Boolean);
-  return { title: first[0]?.slice(0, 200) || name, kind: 'file', printed_lines: sampleLines(text), from: 'file' };
+  // every format through the one converter (convert.js) — the same Markdown intake will write
+  const { markdown, scan } = await toMarkdownText(bytes, name);
+  if (scan && markdown.replace(/\s/g, '').length < 200) return { title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, from: 'file' };
+  const first = markdown.split('\n').map((l) => l.replace(/^#+\s*|\*+/g, '').trim()).filter(Boolean);
+  return { title: first[0]?.slice(0, 200) || name, kind: 'file', printed_lines: sampleLines(markdown), from: 'file' };
 }
 
 /** Up to n complete, distinctive lines from running text (long enough to identify a passage, not headings). */
 export function sampleLines(text, n = 6) {
-  const lines = String(text || '').split(/\n+/).map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l.split(' ').length >= 8 && l.split(' ').length <= 60);
+  const lines = String(text || '').split(/\n+/).map((l) => l.replace(/^(#+|>|-)\s+/, '').replace(/\*+/g, '').replace(/\s+/g, ' ').trim()).filter((l) => l.split(' ').length >= 8 && l.split(' ').length <= 60);
   if (lines.length <= n) return lines;
   const step = Math.floor(lines.length / n);
   return Array.from({ length: n }, (_, k) => lines[Math.min(lines.length - 1, 2 + k * step)]);

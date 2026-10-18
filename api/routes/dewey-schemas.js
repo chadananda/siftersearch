@@ -5,7 +5,7 @@ const open = (properties = {}, extra = {}) => ({ type: 'object', additionalPrope
 const security = [{ apiKey: [] }, { bearer: [] }];
 const base = (summary, description) => ({ tags: ['Dewey'], summary, description, security });
 
-const fileUpload = open({ name: { type: 'string', description: 'file name with extension (.pdf, .docx, .epub, .html, .txt)' },
+const fileUpload = open({ name: { type: 'string', description: 'file name with extension: .pdf .docx .doc .rtf .odt .wpd .html .webarchive .epub .txt .md' },
   data: { type: 'string', description: 'the file, base64' } }, { required: ['data'] });
 
 const identified = open({

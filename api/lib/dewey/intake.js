@@ -9,6 +9,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { config } from '../config.js';
 import { roleCreate } from '../role-client.js';
+import { toMarkdownText } from './convert.js';
 
 export const originalsDir = () => process.env.LIBRARY_ORIGINALS_DIR || '/tank/library-originals';
 
@@ -26,20 +27,10 @@ export async function archiveOriginal(bytes, { name = '', url = null, itemId = n
   return { path, sha256, ext, bytes: buf.length };
 }
 
-/** Text by type → { text, pages }. PDF: its text layer (a scan has none — OCR is a later stage). */
+/** Text by type → { text, pages }: Markdown from the one converter (convert.js). A scan PDF has no text layer — OCR later. */
 export async function extractText(bytes, ext) {
-  if (ext === 'pdf') {
-    const { extractText: pdfText, getDocumentProxy } = await import('unpdf');
-    const pdf = await getDocumentProxy(new Uint8Array(bytes));
-    const { text, totalPages } = await pdfText(pdf, { mergePages: true });
-    return { text: Array.isArray(text) ? text.join('\n') : text, pages: totalPages || 1 };
-  }
-  if (ext === 'docx') return { text: (await (await import('mammoth')).extractRawText({ buffer: Buffer.from(bytes) })).value || '', pages: 1 };
-  const s = Buffer.from(bytes).toString('utf8');
-  if (ext === 'html' || ext === 'htm' || /^\s*<(!doctype|html)/i.test(s)) {
-    return { text: s.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<\/(p|div|h\d|li|br)>/gi, '\n\n').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/[ \t]+/g, ' '), pages: 1 };
-  }
-  return { text: s, pages: 1 };
+  const { markdown, pages } = await toMarkdownText(bytes, `original.${ext}`);
+  return { text: markdown, pages };
 }
 
 /** Real prose? Letters in any script, a substantial length, some text per page. A scan reads ~0 words. */

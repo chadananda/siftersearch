@@ -9,6 +9,8 @@ const deps = (o = {}) => ({
   find: async () => o.titles || [], sections: async () => o.sections || [],
   keyword: async (line) => ({ hits: (o.lines || {})[line] ? [{ doc_id: o.lines[line], paragraph_id: 1 }] : [] }),
   docs: async ({ ids }) => ({ docs: ids.map((id) => (o.byId || {})[id]).filter(Boolean) }),
+  // the hit paragraph holds the searched line unless the test says otherwise (o.paraText: id → text)
+  texts: async (ids) => ids.map((id) => ({ id, text: (o.paraText || {})[id] ?? Object.keys(o.lines || {}).join(' ') })),
 });
 
 describe('holdings check', () => {
@@ -35,6 +37,11 @@ describe('holdings check', () => {
   it('a title miss alone is not "not held"; a text miss too is', async () => {
     expect((await checkHoldings({ title: 'Unknown Pamphlet' }, deps())).verdict).toBe('not-found-by-title');
     expect((await checkHoldings({ title: 'Unknown Pamphlet', printed_lines: ['some printed line that nothing in the library has at all'] }, deps())).verdict).toBe('not-held');
+  });
+  it('a BM25 top hit that does not contain the line is not evidence (the false "held" of 10-17)', async () => {
+    const lines = { 'a line of the narrative long enough to search': 21308, 'another full printed line of that very page': 21308 };
+    const r = await checkHoldings({ title: 'Diary', printed_lines: Object.keys(lines) }, deps({ lines, byId: { 21308: DB }, paraText: { 1: 'an unrelated paragraph about universities and their nature' } }));
+    expect(r.verdict).toBe('not-held');
   });
   it('a title page’s short lines are not text evidence', async () => {
     const r = await checkHoldings({ title: 'Some Pamphlet', printed_lines: ['THE DAWN-BREAKERS', 'Bahai Publishing Trust 1932'] }, deps({ lines: { 'THE DAWN-BREAKERS': 21308 }, byId: { 21308: DB } }));

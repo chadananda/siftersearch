@@ -46,6 +46,10 @@ URLs of photos: cover, title page, a page of text), `file` (`{ name, data }`, ba
   "candidates": [ { "id": 1234, "title": "…", "author": "…", "language": "en", "evidence": [ { "kind": "title", "detail": "…" } ] } ] }
 ```
 
+Files Dewey reads (converted to Markdown, headings kept): PDF (text layer; a scan is reported `needs_ocr`), DOCX, DOC, RTF,
+ODT, WPD, HTML, Safari `.webarchive`, EPUB, TXT/MD. Audio and video are refused with a reason (no transcription yet).
+A printed line counts as found only when the matching paragraph really contains it.
+
 `not-held` means its title **and** its text missed. A title miss alone is `not-found-by-title`: send a sentence of its
 text to settle it.
 
