@@ -5,12 +5,18 @@
 // --chat: each file goes to Dewey's CHAT instead (POST /api/dewey/chat, one at a time) — it lands in the key owner's thread
 // on /dewey, and a work we lack that belongs is imported (Loading column). Oversize files are skipped there (a text excerpt
 // must never be imported as the work).
-// Usage: node scripts/library/dewey-folder-sweep.mjs <folder> <out.jsonl> [--chat]
+// --server-root LOCAL=SERVER: the folder is ALSO on the server (the synced Dropbox): each file is sent as its server path
+// (attach.path) — read in place by Dewey, no upload, no size limit, original stays where it is.
+// Usage: node scripts/library/dewey-folder-sweep.mjs <folder> <out.jsonl> [--chat] [--server-root /Users/chad/Dropbox=/tank/dropbox]
 import { readdirSync, statSync, readFileSync, appendFileSync, existsSync } from 'fs';
 import { join, extname, relative } from 'path';
 import { execFileSync } from 'child_process';
 
-const [dir, out] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const argv = process.argv.slice(2);
+const rootArg = argv.includes('--server-root') ? argv[argv.indexOf('--server-root') + 1] : null;
+const [dir, out] = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--server-root');
+const [LOCAL_ROOT, SERVER_ROOT] = rootArg ? rootArg.split('=') : [null, null];
+const serverPath = (p) => (LOCAL_ROOT && p.startsWith(LOCAL_ROOT) ? SERVER_ROOT + p.slice(LOCAL_ROOT.length) : null);
 const CHAT = process.argv.includes('--chat');
 const FOLDER = dir.replace(/\/+$/, '').split('/').pop();
 const KEY = (process.env.DEWEY_API_KEY || readFileSync('tmp/dewey-test-key', 'utf8')).trim();
@@ -24,6 +30,8 @@ const files = walk(dir).filter((p) => !SKIP.test(p)).sort();
 
 function payload(p) {
   const ext = extname(p).toLowerCase(), size = statSync(p).size, name = p.split('/').pop();
+  const sp = serverPath(p);
+  if (sp) return { how: 'path', body: { path: sp }, attach: { path: sp } };
   if (size <= MAX) return { how: 'file', body: { file: { name, data: readFileSync(p).toString('base64') } } };
   let text;
   if (ext === '.pdf') text = execFileSync('pdftotext', ['-l', '40', '-enc', 'UTF-8', p, '-'], { maxBuffer: 1 << 28 }).toString();
@@ -37,11 +45,11 @@ async function check(p) {
   let pl;
   try { pl = payload(p); } catch (e) { return { file, how: 'convert', verdict: `convert failed: ${e.message}`.slice(0, 200) }; }
   if (!pl) return { file, how: 'unsupported', verdict: 'unsupported' };
-  if (CHAT && pl.how !== 'file') return { file, how: pl.how, verdict: 'skipped: too large to send whole' };
+  if (CHAT && !['file', 'path'].includes(pl.how)) return { file, how: pl.how, verdict: 'skipped: too large to send whole' };
   const t0 = Date.now();
   if (CHAT) {
     const r = await fetch(API.replace(/\/holdings$/, '/chat'), { method: 'POST', headers: { 'X-Api-Key': KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `From the folder “${FOLDER}”: ${file}`, attach: { file: pl.body.file }, stream: false }), signal: AbortSignal.timeout(300000) }).catch((e) => ({ status: 0, json: async () => ({ message: e.message }) }));
+      body: JSON.stringify({ message: `From the folder “${FOLDER}”: ${file}`, attach: pl.attach || { file: pl.body.file }, stream: false }), signal: AbortSignal.timeout(600000) }).catch((e) => ({ status: 0, json: async () => ({ message: e.message }) }));
     const j = await r.json().catch(() => ({}));
     const h = j.holdings?.[0];
     return { file, how: 'chat', status: r.status, ms: Date.now() - t0, verdict: h?.verdict || `error ${r.status}: ${j.message || ''}`.slice(0, 200),

@@ -71,7 +71,8 @@ describe('an upload we lack is OFFERED, never imported unasked (Chad 10-17)', ()
     const appraiseDoc = async () => ({ title: 'Shoghi Effendi in Torquay', shelf: { religion: "Baha'i", collection: 'Pilgrim Notes' }, recommendation: 'add',
       recommendation_line: 'It looks like this belongs in our Bahá’í › Pilgrim Notes collection.' });
     await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.docx', data: 'eA==' } }, emit: (e) => events.push(e), attachSource, create: quiet, archive, appraiseDoc,
-      check: async () => ({ verdict: 'not-held', candidates: [], compared: { words: 900, probes: 30, documents: 3 } }), appraise: async () => { throw new Error('no web appraisal for an upload'); } });
+      identifyCheck: async () => ({ identified: { title: 'p', kind: 'file' }, result: { verdict: 'not-held', candidates: [], compared: { words: 900, probes: 30, documents: 3 } }, sha256: 'x', bytes: 1 }),
+      appraise: async () => { throw new Error('no web appraisal for an upload'); } });
     expect(attached).toHaveLength(0);
     const offer = events.find((e) => e.type === 'item')?.item;
     expect(offer).toMatchObject({ state: 'offered', title: 'Shoghi Effendi in Torquay', original_path: '/originals/x.pdf', identified: { shelf: { collection: 'Pilgrim Notes' } } });
@@ -79,8 +80,23 @@ describe('an upload we lack is OFFERED, never imported unasked (Chad 10-17)', ()
   it('a held upload is neither offered nor appraised', async () => {
     const events = [];
     await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.pdf', data: 'eA==' } }, emit: (e) => events.push(e), attachSource: async () => { throw new Error('no'); }, create: quiet, archive,
-      check: async () => ({ verdict: 'held', candidates: [{ id: 1, title: 'A Rare Pamphlet', evidence: [] }] }), appraiseDoc: async () => { throw new Error('not called'); } });
+      identifyCheck: async () => ({ identified: { title: 'A Rare Pamphlet' }, result: { verdict: 'held', candidates: [{ id: 1, title: 'A Rare Pamphlet', evidence: [] }] } }), appraiseDoc: async () => { throw new Error('not called'); } });
     expect(events.some((e) => e.type === 'item')).toBe(false);
+  });
+  it('a file READ IN PLACE on the server (a Dropbox path) is offered with that path as its original — no copy, no upload', async () => {
+    const events = [];
+    let archived = false;
+    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { path: '/tank/dropbox/Ocean2.0 Supplemental/x/Big Book.pdf' }, emit: (e) => events.push(e), create: quiet,
+      archive: async () => { archived = true; return {}; }, pathOk: (p) => p,
+      appraiseDoc: async () => ({ title: 'A Big Book', shelf: { religion: "Baha'i", collection: 'Books' } }),
+      identifyCheck: async ({ path }) => ({ identified: { title: 'A Big Book', kind: 'file' }, result: { verdict: 'not-held', candidates: [] }, sha256: 'abc', bytes: 280e6, _path: path }) });
+    expect(archived).toBe(false);
+    expect(events.find((e) => e.type === 'item')?.item).toMatchObject({ state: 'offered', original_path: '/tank/dropbox/Ocean2.0 Supplemental/x/Big Book.pdf', sha256: 'abc' });
+  });
+  it('a path outside the allowed folders is refused', async () => {
+    const { allowedPath } = await import('../../api/lib/dewey/paths.js');
+    expect(() => allowedPath('/etc/passwd', ['/tank/dropbox/Ocean2.0 Supplemental'])).toThrow(/outside the folders/);
+    expect(() => allowedPath('/tmp/../etc/passwd', ['/tmp'])).toThrow(/outside the folders/);
   });
   it('add_offered imports on yes, item by item', async () => {
     const { makeTools } = await import('../../api/lib/dewey/agent.js');

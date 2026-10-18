@@ -58,6 +58,7 @@ export const holdingsSchema = {
     url: { type: 'string', description: 'a book page, PDF or video' },
     images: { type: 'array', maxItems: 6, items: { type: 'string' }, description: 'data URLs (JPEG/PNG), ~1600 px is best' },
     file: fileUpload,
+    path: { type: 'string', description: 'a file already ON THE SERVER, under a folder Dewey may read (the synced Dropbox, DEWEY_PATH_ROOTS) — read in place: no upload, no size limit' },
   }),
   response: { 200: holdings, ...err },
 };
@@ -124,7 +125,7 @@ export const chatSchema = {
     message: { type: 'string', description: 'your message (the thread supplies the history)' },
     messages: { type: 'array', items: open({ role: { type: 'string', description: 'user | assistant' }, content: { type: 'string' } }),
       description: 'OR the whole conversation, last one yours — overrides the saved history' },
-    attach: open({ images: { type: 'array', maxItems: 6, items: { type: 'string' }, description: 'photo data URLs' }, file: fileUpload, url: { type: 'string' } }),
+    attach: open({ images: { type: 'array', maxItems: 6, items: { type: 'string' }, description: 'photo data URLs' }, file: fileUpload, path: { type: 'string', description: 'a file already ON THE SERVER, under a folder Dewey may read (the synced Dropbox, DEWEY_PATH_ROOTS) — read in place: no upload, no size limit' }, url: { type: 'string' } }),
     stream: { type: 'boolean', default: true },
   }),
   response: { 200: open({ reply: { type: 'string' }, error: { type: 'string' }, holdings: { type: 'array', items: holdings }, items: { type: 'array', items: item } },

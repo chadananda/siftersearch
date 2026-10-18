@@ -13,8 +13,9 @@
 // (X-Api-Key: sk_… or Authorization: Bearer sk_…). Docs: docs/agents/dewey-api.md
 // Photos arrive resized by the page (≤1600 px JPEG), so a body of a few MB is enough.
 import { requireDewey } from '../lib/auth.js';
-import { identifyPhotos, identifyUrl, identifyFile, identifyText } from '../lib/dewey/identify.js';
-import { checkHoldingsOffThread as checkHoldings } from '../lib/dewey/holdings.js';   // off the event loop
+import { identifyPhotos, identifyUrl, identifyText } from '../lib/dewey/identify.js';
+import { checkHoldingsOffThread as checkHoldings, identifyAndCheckOffThread } from '../lib/dewey/holdings.js';   // off the event loop
+import { allowedPath } from '../lib/dewey/paths.js';
 import { ApiError } from '../lib/errors.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -60,10 +61,14 @@ export async function acceptOffer(itemId, by = 'dewey') {
 
 export default async function deweyRoutes(fastify) {
   fastify.post('/holdings', { schema: S.holdingsSchema, preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request) => {
-    const { text, url, images, file } = request.body || {};
+    const { text, url, images, file, path } = request.body || {};
+    // a DOCUMENT (an upload, or a file read in place on the server): read, converted and checked off the event loop
+    if (file?.data || path) {
+      const doc = await identifyAndCheckOffThread({ file: file?.data ? file : null, path: path ? allowedPath(path) : null });
+      return { identified: doc.identified, ...doc.result };
+    }
     let id = {};
     if (images?.length) id = await identifyPhotos(images);
-    else if (file?.data) id = await identifyFile({ name: file.name || '', bytes: new Uint8Array(Buffer.from(file.data, 'base64')) });
     else {
       const t = identifyText(text);
       id = url || t.url ? await identifyUrl(url || t.url) : t;
@@ -131,7 +136,7 @@ export default async function deweyRoutes(fastify) {
     // ONE THREAD per member, shared by every device: the new message is saved first; the model's history comes from the
     // saved thread (an agent may still pass its own `messages`)
     const text = String(message ?? (messages?.at(-1)?.content || '')).slice(0, 4000);
-    await appendMessage(uid, 'user', text, { thumbs: (thumbs || []).slice(0, 6), file: attach.file?.name || null });
+    await appendMessage(uid, 'user', text, { thumbs: (thumbs || []).slice(0, 6), file: attach.file?.name || (attach.path ? String(attach.path).split('/').pop() : null) });
     const history = messages?.length ? messages.slice(0, -1) : (await threadOf(uid, { limit: 24 })).slice(0, -1)
       .map((m) => ({ role: m.role, content: m.content || (m.parts?.thumbs?.length ? '(photos)' : '') })).filter((m) => m.content);
     const parts = [];

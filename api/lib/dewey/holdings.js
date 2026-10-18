@@ -8,6 +8,7 @@ import { findSections } from '../repos/sections-repo.js';
 import { searchKeywordQdrant } from '../search/qdrant-layers.js';
 import { paragraphsByIds } from '../paragraphs-repo.js';
 import { Worker } from 'worker_threads';
+import { withText } from './identify.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
@@ -129,13 +130,39 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
  * synchronous and the comparison is CPU work: in-process, one slow check freezes every request (573 s on 10-17). A check
  * past `timeoutMs` is terminated, not waited out. Tests (VITEST) run in-process.
  */
-export function checkHoldingsOffThread(id, { timeoutMs = 120000 } = {}) {
-  if (process.env.VITEST) return checkHoldings(id);
+function inWorker(workerData, timeoutMs) {
   return new Promise((resolve, reject) => {
-    const w = new Worker(new URL('./holdings-worker.js', import.meta.url), { workerData: { id: JSON.parse(JSON.stringify(id)), text: id._text ?? null } });
+    const w = new Worker(new URL('./holdings-worker.js', import.meta.url), { workerData });
     const timer = setTimeout(() => { w.terminate(); reject(new Error(`the holdings check took over ${Math.round(timeoutMs / 1000)} s and was stopped`)); }, timeoutMs);
     w.once('message', (m) => { clearTimeout(timer); w.terminate(); m.error ? reject(new Error(m.error)) : resolve(JSON.parse(m.json)); });
     w.once('error', (e) => { clearTimeout(timer); reject(e); });
     w.once('exit', (code) => { clearTimeout(timer); if (code !== 0) reject(new Error(`holdings worker exited ${code}`)); });
   });
+}
+
+export function checkHoldingsOffThread(id, { timeoutMs = 120000 } = {}) {
+  if (process.env.VITEST) return checkHoldings(id);
+  return inWorker({ id: JSON.parse(JSON.stringify(id)), text: id._text ?? null }, timeoutMs);
+}
+
+/**
+ * A DOCUMENT (an upload { name, data } or a server path) → identified, checked — all off the event loop. → { identified
+ * (with _text = an excerpt for the appraisal), result, sha256, bytes }. Big books get more time (conversion + OCR).
+ */
+export async function identifyAndCheckOffThread({ file = null, path = null }, { timeoutMs = 300000, run = inWorker } = {}) {
+  const out = process.env.VITEST && run === inWorker ? JSON.parse(JSON.stringify(await identifyAndCheck({ file, path }))) : await run({ file, path }, timeoutMs);
+  return { ...out, identified: withText(out.identified, out.excerpt) };
+}
+
+/** In-thread body of the above (holdings-worker.js runs it): read → identify → check → { identified, excerpt, result, sha256, bytes }. */
+export async function identifyAndCheck({ file = null, path = null }) {
+  const { readFile } = await import('fs/promises');
+  const { createHash } = await import('crypto');
+  const { identifyFile } = await import('./identify.js');
+  const { excerptOf } = await import('./appraise.js');
+  const bytes = path ? await readFile(path) : Buffer.from(file.data, 'base64');
+  const name = path ? path.split('/').pop() : file.name || '';
+  const id = await identifyFile({ name, bytes: new Uint8Array(bytes) });
+  const result = await checkHoldings(id);
+  return { identified: id, excerpt: excerptOf(id._text || ''), result, sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length };
 }

@@ -5,8 +5,9 @@
 // reports only what the tools found. An UPLOAD we lack is appraised from its own text and kept as an OFFERED item; the member
 // is asked, and add_offered imports it on yes (nothing is imported unasked). Events out: status · holdings · research · appraisal · item · delta · done. Deps injectable for tests.
 import { roleCreate } from '../role-client.js';
-import { identifyPhotos, identifyUrl, identifyFile, identifyText } from './identify.js';
-import { checkHoldingsOffThread as checkHoldings } from './holdings.js';   // off the event loop (a check once froze the API)
+import { identifyPhotos, identifyUrl, identifyText } from './identify.js';
+import { checkHoldingsOffThread as checkHoldings, identifyAndCheckOffThread } from './holdings.js';   // off the event loop (a check once froze the API)
+import { allowedPath } from './paths.js';
 import { appraiseWork, appraiseDocument } from './appraise.js';
 import { archiveOriginal } from './intake.js';
 import { createItem, findOpenByTitle, listItems, getItem, updateItem } from '../repos/dewey-repo.js';
@@ -105,34 +106,43 @@ export function makeTools({ by, emit, attachSource, accept }) {
   };
 }
 
-/** One chat turn. messages: [{ role, content }] (the last is the user's); attach: { images?, file?, url? }. */
-export async function deweyTurn({ messages, attach = {}, by = null, emit, attachSource, accept = async () => { throw new Error('accept not wired'); }, create = roleCreate, check = checkHoldings, appraise = appraiseWork, appraiseDoc = appraiseDocument, archive = archiveOriginal }) {
+/** One chat turn. messages: [{ role, content }] (the last is the user's); attach: { images?, file?, path?, url? } — path = a
+ *  file already on the server under an allowed root (paths.js), read in place. */
+export async function deweyTurn({ messages, attach = {}, by = null, emit, attachSource, accept = async () => { throw new Error('accept not wired'); }, create = roleCreate, check = checkHoldings, appraise = appraiseWork, appraiseDoc = appraiseDocument, archive = archiveOriginal, identifyCheck = identifyAndCheckOffThread, pathOk = allowedPath }) {
   const notes = [];
   // attachments are checked BEFORE the model speaks — no need to ask (Chad 10-17)
   const lastText = String(messages.at(-1)?.content || '');
   const urlInText = lastText.match(/https?:\/\/\S+/)?.[0];
-  if (attach.images?.length || attach.file?.data || attach.url || urlInText) {
-    let id;
+  const isDoc = !!(attach.file?.data || attach.path);   // a DOCUMENT: uploaded, or read in place on the server
+  if (attach.images?.length || isDoc || attach.url || urlInText) {
+    let id, r, doc = null;
     try {
       // a status line at every step — never silence (Chad 10-17: "respond immediately and regularly")
-      emit({ type: 'status', text: attach.images?.length ? 'Reading your photo…' : attach.file?.data ? 'Reading the file…' : 'Opening the link…' });
-      id = attach.images?.length ? await identifyPhotos(attach.images)
-        : attach.file?.data ? await identifyFile({ name: attach.file.name || '', bytes: new Uint8Array(Buffer.from(attach.file.data, 'base64')) })
-          : await identifyUrl(attach.url || urlInText);
-      emit({ type: 'status', text: id.title ? `Checking the library for “${id.title}”…` : 'Checking the library…' });
-      const r = { identified: id, ...(await check(id)) };
+      emit({ type: 'status', text: attach.images?.length ? 'Reading your photo…' : isDoc ? 'Reading the document and checking the library…' : 'Opening the link…' });
+      if (isDoc) {
+        // read, converted, OCR'd if a scan, and checked — all off the event loop
+        const path = attach.path ? pathOk(attach.path) : null;
+        doc = await identifyCheck({ file: attach.file?.data ? attach.file : null, path });
+        doc.path = path; doc.name = path ? path.split('/').pop() : attach.file.name || '';
+        id = doc.identified;
+        r = { identified: id, ...doc.result };
+      } else {
+        id = attach.images?.length ? await identifyPhotos(attach.images) : await identifyUrl(attach.url || urlInText);
+        emit({ type: 'status', text: id.title ? `Checking the library for “${id.title}”…` : 'Checking the library…' });
+        r = { identified: id, ...(await check(id)) };
+      }
       emit({ type: 'holdings', ...r });
-      notes.push(`Holdings check of what they just sent (${attach.images?.length ? `${attach.images.length} photo(s)` : attach.file ? 'a file' : 'a link'}): ${summarize(r)}`);
-      if (attach.file?.data && r.verdict === 'held') notes.push('Their uploaded file is ALREADY in the library — nothing to add. Say which copy we hold, and how (same text, or inside which larger work).');
+      notes.push(`Holdings check of what they just sent (${attach.images?.length ? `${attach.images.length} photo(s)` : isDoc ? 'a document' : 'a link'}): ${summarize(r)}`);
+      if (isDoc && r.verdict === 'held') notes.push('Their uploaded file is ALREADY in the library — nothing to add. Say which copy we hold, and how (same text, or inside which larger work).');
       // an UPLOAD we lack: appraised from its OWN text, kept as an OFFERED item, and the member is asked (Chad 10-17: "the
       // question should go to whether or not to add … Dewey should make a recommendation")
-      if (attach.file?.data && r.verdict !== 'held') {
+      if (isDoc && r.verdict !== 'held') {
         const a = await appraiseDoc(id, id._text || (id.printed_lines || []).join('\n'), `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
-        const bytes = Buffer.from(attach.file.data, 'base64');
-        const item = await createItem({ title: a?.title || id.title || `Untitled document (uploaded as “${attach.file.name || 'a file'}”)`, author: a?.author || id.author || null, kind: a?.kind || id.kind || null,
-          identified: { ...id, file_name: attach.file.name || null, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: `uploaded (${attach.file.name || 'a file'}); not in the library — offered` });
-        const arc = await archive(bytes, { name: attach.file.name || '', itemId: item.id });
-        const offered = await updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, `original archived (${Math.round(arc.bytes / 1024)} KB)`);
+        const item = await createItem({ title: a?.title || id.title || `Untitled document (${doc.path ? 'on the server' : 'uploaded'} as “${doc.name || 'a file'}”)`, author: a?.author || id.author || null, kind: a?.kind || id.kind || null,
+          identified: { ...id, file_name: doc.name || null, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: `${doc.path ? `found at ${doc.path}` : `uploaded (${doc.name || 'a file'})`}; not in the library — offered` });
+        // a server file stays where it lives (its path IS the original); an upload is archived by sha256
+        const arc = doc.path ? { path: doc.path, sha256: doc.sha256, bytes: doc.bytes } : await archive(Buffer.from(attach.file.data, 'base64'), { name: doc.name, itemId: item.id });
+        const offered = await updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, doc.path ? `original in place (${Math.round(arc.bytes / 1048576)} MB)` : `original archived (${Math.round(arc.bytes / 1024)} KB)`);
         emit({ type: 'item', item: offered });
         notes.push(`Their upload is NOT in the library (${r.verdict}${r.compared ? `; full text compared, ${r.compared.words} words` : ''}${id.needs_ocr ? '; a scan — its text will need OCR' : ''}). Kept as OFFERED item ${offered.id}. Appraisal of the document itself: ${JSON.stringify({ title: a?.title, author: a?.author, year: a?.year, kind: a?.kind, summary: a?.summary, in_scope: a?.in_scope, scope_why: a?.scope_why, shelf: a?.shelf, value: a?.value, recommendation: a?.recommendation, recommendation_line: a?.recommendation_line })}`);
       } else if (r.verdict !== 'held' && id.title) {
