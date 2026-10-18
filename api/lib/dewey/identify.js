@@ -49,10 +49,14 @@ export async function identifyFile({ name = '', bytes }) {
   // every format through the one converter (convert.js) — the same Markdown intake will write
   const { markdown, scan, ocr } = await toMarkdownText(bytes, name);
   // a scan read by the PRELIMINARY OCR (sampled pages): compared as a sample; still needs full OCR to be imported
-  if (ocr) return withText({ title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, ocr, printed_lines: sampleLines(markdown), from: 'file' }, markdown);
-  if (scan && markdown.replace(/\s/g, '').length < 200) return { title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, from: 'file' };
-  const first = markdown.split('\n').map((l) => l.replace(/^#+\s*|\*+/g, '').trim()).filter(Boolean);
-  return withText({ title: first[0]?.slice(0, 200) || name, kind: 'file', printed_lines: sampleLines(markdown), from: 'file' }, markdown);
+  // The FILE NAME is not the document's title — it is often wrong, or names the archive box or folder it came from ("1921
+  // John and Louise Bosch Box 11 John Bosch"; Chad 10-17: "The contents must be examined"). It is kept as file_name only;
+  // the title comes from the contents (the appraisal reads them).
+  const file_name = name || null;
+  if (ocr) return withText({ title: null, file_name, kind: 'scan', needs_ocr: true, ocr, printed_lines: sampleLines(markdown), from: 'file' }, markdown);
+  if (scan && markdown.replace(/\s/g, '').length < 200) return { title: null, file_name, kind: 'scan', needs_ocr: true, from: 'file' };
+  const first = markdown.split('\n').map((l) => l.replace(/^#+\s*|\*+/g, '').trim()).filter((l) => l && !/^\[page \d+\]$/i.test(l));
+  return withText({ title: first[0]?.slice(0, 200) || null, file_name, kind: 'file', printed_lines: sampleLines(markdown), from: 'file' }, markdown);
 }
 
 /** The whole text rides along for the holdings comparison (compare.js) but is NOT enumerable — never sent back in JSON. */

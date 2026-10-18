@@ -70,11 +70,11 @@ export async function appraiseWork(id, holdingsLine, { emit = () => {}, pplx = p
 export const JUDGE_DOC = (id, holdings, excerpt, shelves) => `You are Dewey, librarian of a research library of SACRED and SCHOLARLY texts across 11 traditions
 (Bahá’í, Islam, Christian, Judaism, Zoroastrian, Hindu, Buddhist, Jain, Sikh, Taoist, Confucian). Someone uploaded this document; the
 library does not hold its text. Read it and appraise it.
-FILE: ${id.file_name || id.title || 'untitled'}
+FILE NAME (often WRONG — it may name the archive box or folder it came from, not this document; a weak hint at most): ${id.file_name || '(none)'}
 LIBRARY CHECK: ${holdings}
 DOCUMENT (excerpts from its start, middle and end):
 """
-${excerpt || '(no text layer — a scan; judge from the file name only)'}
+${excerpt || '(no readable text — a scan the preliminary OCR could not read; say that the contents could not be examined)'}
 """
 SHELVES (tradition: its existing collections — choose only from these):
 ${Object.entries(shelves).map(([r, cs]) => `${r}: ${cs.join(' | ')}`).join('\n')}
@@ -84,7 +84,8 @@ Return ONE JSON object:
  "summary":"one sentence: what it is","in_scope":"yes|no|maybe","scope_why":"one short reason",
  "shelf":{"religion":"…","collection":"…"} or null,"value":"high|medium|low","value_why":"why it matters (or not) to THIS collection",
  "recommendation":"add|skip|ask","recommendation_line":"one sentence to the person, e.g. 'It looks like this belongs in our Bahá’í › Pilgrim Notes collection — it is …'"}
-Judge from the document itself; null where it says nothing.`;
+Judge from the CONTENTS: the title is what the document itself says it is (its heading, its first lines, a letter's
+salutation and date); never take it from the file name. Null where the contents say nothing.`;
 
 /** Excerpts a model can judge a document by: its start, middle and end (~6,500 chars). */
 export function excerptOf(text) {

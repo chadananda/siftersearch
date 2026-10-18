@@ -24,6 +24,8 @@ Assume every message is about a work they have found — do we have it, and if n
   do not talk about the title search. "not-held" then means no library document shares its text.
 - Held: say which copy (title, author, language) and stop. Held in another edition or language: say so and ask if this one is worth adding.
 - Not held: say so plainly; add it to the wanted list when they say so ("add it", "yes", "want it") — or right away if they already asked to add it.
+- A FILE NAME is often wrong — it may name the archive box or folder, not the document. Never call a document by its file
+  name or reason from it; describe it by what its contents say (the appraisal read them).
 - Anything attached was ALREADY checked before you speak — do not call check_holdings for it again.
 - An UPLOADED document we lack is never imported on its own: it is kept as an OFFERED item and appraised from its own text.
   Give the recommendation in one or two sentences, led by the appraisal's recommendation_line ("It looks like this belongs
@@ -125,7 +127,7 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
       if (attach.file?.data && r.verdict !== 'held') {
         const a = await appraiseDoc(id, id._text || (id.printed_lines || []).join('\n'), `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
         const bytes = Buffer.from(attach.file.data, 'base64');
-        const item = await createItem({ title: a?.title || id.title || attach.file.name || 'untitled', author: a?.author || id.author || null, kind: a?.kind || id.kind || null,
+        const item = await createItem({ title: a?.title || id.title || `Untitled document (uploaded as “${attach.file.name || 'a file'}”)`, author: a?.author || id.author || null, kind: a?.kind || id.kind || null,
           identified: { ...id, file_name: attach.file.name || null, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: `uploaded (${attach.file.name || 'a file'}); not in the library — offered` });
         const arc = await archive(bytes, { name: attach.file.name || '', itemId: item.id });
         const offered = await updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, `original archived (${Math.round(arc.bytes / 1024)} KB)`);

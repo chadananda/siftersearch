@@ -28,7 +28,10 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   const fields = ['id', 'title', 'author', 'language', 'religion', 'collection', 'year', 'paragraph_count', 'cover_url'];
   const by = new Map();
   const add = (d, ev) => { const e = by.get(d.id) || { doc: d, evidence: [], score: 0 }; e.evidence.push(ev); e.score += ev.weight; by.set(d.id, e); };
-  const title = [id.title, id.subtitle].filter(Boolean).join(' ');
+  // nothing readable at all (a scan OCR could not read): the file name is the only clue — searched, but never enough to
+  // call it held (file names are often wrong)
+  const nameOnly = !byText && !id.title && !!id.file_name;
+  const title = nameOnly ? id.file_name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ') : [id.title, id.subtitle].filter(Boolean).join(' ');
   const [titleHits, authorHits, sectionHits, lineHits] = await Promise.all([
     title ? find(title, { fields, limit: 8 }).then((r) => r.docs || r).catch(() => []) : [],
     id.author && title ? find(`${title} ${id.author}`, { fields, limit: 5 }).then((r) => r.docs || r).catch(() => []) : [],
@@ -59,8 +62,8 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   const textMatched = candidates.some((c) => c.evidence.some((e) => e.kind === 'text' && e.weight >= 4));
   const verdict = !candidates.length
     ? (textLines(id).length ? 'not-held' : 'not-found-by-title')
-    : textMatched || top.evidence.some((e) => (e.kind === 'title' || e.kind === 'part of') && e.weight >= 3) ? 'held' : 'possible';
-  return { verdict, candidates };
+    : !nameOnly && (textMatched || top.evidence.some((e) => (e.kind === 'title' || e.kind === 'part of') && e.weight >= 3)) ? 'held' : 'possible';
+  return { verdict, candidates, ...(nameOnly ? { searched_by: 'file name only (no readable text) — a weak hint' } : {}) };
 }
 
 const RANK = { same: 5, inside: 5, partial: 4, overlap: 3, quotes: 2, 'too-short': 1, unrelated: 0 };
@@ -107,7 +110,9 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
   }
   const cmpOf = new Map(out.map((o) => [o.docId, o]));
   const candidates = [...by.values()]
-    .filter(({ doc }) => cmpOf.has(doc.id) && (cmpOf.get(doc.id).c.relation !== 'unrelated' || exact.has(fold(doc.title))))
+    // with text in hand only TEXT decides: a title match whose text is unrelated is a different document (titles and file
+    // names mislead); an empty library copy (too-short) is shown only when its title matched
+    .filter(({ doc }) => cmpOf.has(doc.id) && cmpOf.get(doc.id).c.relation !== 'unrelated' && (cmpOf.get(doc.id).c.relation !== 'too-short' || exact.has(fold(doc.title))))
     .map(({ doc, evidence, score: sc }) => ({ ...doc, score: sc, evidence, relation: cmpOf.get(doc.id).c, probes_found: cmpOf.get(doc.id).probes }))
     .sort((a, b) => RANK[b.relation.relation] - RANK[a.relation.relation] || b.relation.ours_in_theirs - a.relation.ours_in_theirs).slice(0, 8);
   const rels = candidates.map((c) => c.relation.relation);

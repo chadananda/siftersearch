@@ -68,7 +68,7 @@ export default async function deweyRoutes(fastify) {
       const t = identifyText(text);
       id = url || t.url ? await identifyUrl(url || t.url) : t;
     }
-    if (!id.title && !id.printed_lines?.length) throw ApiError.badRequest?.('Nothing to search on — add a title, a few lines of text, a photo or a URL') ?? Object.assign(new Error('nothing to search on'), { statusCode: 400 });
+    if (!id.title && !id.printed_lines?.length && !id.file_name) throw ApiError.badRequest?.('Nothing to search on — add a title, a few lines of text, a photo or a URL') ?? Object.assign(new Error('nothing to search on'), { statusCode: 400 });
     return { identified: id, ...(await checkHoldings(id)) };
   });
 
