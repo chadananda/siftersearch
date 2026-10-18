@@ -88,3 +88,18 @@ export const sectionSample = (n = 300) =>
 export const paragraphPlaces = (ids = []) => (ids.length
   ? queryAll(`SELECT id, doc_id, paragraph_index FROM content WHERE id IN (${ids.map(() => '?').join(',')})`, ids.map(Number), 'sections:places')
   : Promise.resolve([]));
+
+/** Documents with no structure found that carry their own CONTENTS page near the front (Chad 10-17: "a lot of our 3rd
+ *  party books have TOC, but that data is not integrated into the text") — by tradition, with the longest first. */
+export async function tocCandidates({ within = 120, longest = 30 } = {}) {
+  const rows = await queryAll(`SELECT d.id, d.title, COALESCE(d.religion, 'Other') AS religion, COALESCE(d.scope, 'primary') AS scope,
+      d.paragraph_count, MIN(c.paragraph_index) AS at, MAX(c.pdf_page IS NOT NULL) AS paged
+    FROM doc_structure s JOIN docs d ON d.id = s.doc_id JOIN content c ON c.doc_id = d.id
+    WHERE s.sections = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND c.deleted_at IS NULL AND c.paragraph_index < ?
+      AND (LOWER(TRIM(REPLACE(REPLACE(c.text, '*', ''), '#', ''))) IN ('contents', 'table of contents', 'contents.', 'table of contents.', 'index', 'فهرست', 'الفهرس', 'فهرس', 'فهرست مطالب', 'תוכן העניינים', 'inhalt', 'table des matières', 'índice')
+        OR LOWER(TRIM(COALESCE(c.heading, ''))) IN ('contents', 'table of contents'))
+    GROUP BY d.id ORDER BY d.paragraph_count DESC`, [within], 'sections:toc-candidates');
+  const by = {};
+  for (const r of rows) { const k = `${r.religion} · ${r.scope}`; (by[k] ||= { docs: 0, long: 0, paged: 0 }); by[k].docs++; if (r.paragraph_count >= 200) by[k].long++; if (r.paged) by[k].paged++; }
+  return { documents: rows.length, long: rows.filter((r) => r.paragraph_count >= 200).length, paged: rows.filter((r) => r.paged).length, byTradition: by, longest: rows.slice(0, longest) };
+}

@@ -174,6 +174,7 @@ REPORTS['section-findability'] = async ({ n = 300, k = 10 } = {}) => {
   }
   return { sections: sample.length, at1, atK, pct_at1: +(100 * at1 / Math.max(1, sample.length)).toFixed(1), pct_atK: +(100 * atK / Math.max(1, sample.length)).toFixed(1), k, misses };
 };
+REPORTS['toc-candidates'] = async (p = {}) => (await import('../repos/sections-repo.js')).tocCandidates(p);   // books whose own Contents page is not yet structure
 REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo.js')).structureSummary();   // where structure was found vs must be inferred (Chad 10-17)     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
 /** LANES run side by side, each one job at a time. NO TIME-OF-DAY GATE (Chad 10-14: "If we are feeding out to the world,
@@ -181,7 +182,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
 export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index', 'episode-extract'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability'] };

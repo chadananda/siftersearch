@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 let raw;
 const SCHEMA = `
 CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, source_site TEXT, deleted_at TEXT, duplicate_of INTEGER, religion TEXT, scope TEXT, paragraph_count INTEGER);
-CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, heading TEXT, block_attrs TEXT, external_para_id TEXT, deleted_at TEXT);
+CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, heading TEXT, block_attrs TEXT, external_para_id TEXT, deleted_at TEXT, text TEXT, pdf_page INTEGER);
 CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER NOT NULL, ord INTEGER NOT NULL, level INTEGER, title TEXT NOT NULL,
   start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, paragraphs INTEGER NOT NULL, first_para_id INTEGER,
   source TEXT NOT NULL DEFAULT 'heading-run', UNIQUE (doc_id, ord));
@@ -30,6 +30,14 @@ beforeEach(() => {
 });
 
 describe('sections-repo', () => {
+  it('toc candidates: a structureless book with its own Contents page near the front', async () => {
+    raw.prepare("UPDATE docs SET religion = 'Christian', paragraph_count = 900 WHERE id = 20894").run();
+    await repo.replaceSections(20894, 'x', []);
+    raw.prepare("INSERT INTO content (id, doc_id, paragraph_index, text, pdf_page) VALUES (950, 20894, 3, '**Contents**', 5)").run();
+    const r = await repo.tocCandidates();
+    expect(r).toMatchObject({ documents: 1, long: 1, paged: 1 });
+    expect(r.longest[0]).toMatchObject({ id: 20894, at: 3 });
+  });
   it('a document READ is marked even with no structure; unread documents are what the structure loop queues', async () => {
     expect(await repo.docsWithoutStructure()).toEqual([20894, 21310]);
     await repo.replaceSections(20894, 'The World Order of Bahá’u’lláh', []);
