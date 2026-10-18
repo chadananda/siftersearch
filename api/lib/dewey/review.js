@@ -13,13 +13,16 @@ const extOf = (p) => String(p || '').split('.').pop().toLowerCase();
 /** The answers that fit this item. Pure. The recommended one (first) follows the question. */
 export function answersFor(item) {
   const id = item.identified || {}, q = String(item.log?.at(-1)?.why || ''), pdf = extOf(item.original_path) === 'pdf';
-  const out = [];
-  if (id.slp_rejected?.path) out.push({ action: 'use-ocr', label: 'The OCR text is good — use it', hint: 'imports the text shown below despite the failed check' });
-  if (/over the \d+-page limit|full OCR failed/i.test(q) && pdf) out.push({ action: 'retry-ocr', label: /limit/i.test(q) ? 'Approve full OCR' : 'Try OCR again', hint: 'sends the scan to SearchLayerPDF' });
-  out.push({ action: 'import', label: /same work|twin|already holds/i.test(q) ? 'Not the same — add it' : /part of a book/i.test(q) ? 'Add it as it is' : 'Add it', hint: 'imports it with the title, author and shelf below', fields: true });
-  if (id.slp_rejected?.path && pdf && !out.some((a) => a.action === 'retry-ocr')) out.push({ action: 'retry-ocr', label: 'Run OCR again', hint: 'asks SearchLayerPDF for its current result for this scan' });
+  const rej = id.slp_rejected?.path ? id.slp_rejected : null, ocrQuestion = /over the \d+-page limit|full OCR failed/i.test(q) && pdf;
+  const useOcr = rej && { action: 'use-ocr', label: 'The OCR text is good — use it', hint: 'imports the text shown below despite the failed check', fields: true };
+  const retry = (rej || ocrQuestion) && pdf && { action: 'retry-ocr', label: /limit/i.test(q) ? 'Approve full OCR' : rej ? 'Run OCR again' : 'Try OCR again', hint: 'asks SearchLayerPDF for its current result for this scan' };
+  // OCR that barely matched what we read ourselves (a handwritten letter at 2%) is not recommended: try again first
+  const poor = rej && (rej.check?.sampleFound ?? 1) < 0.3;
+  const out = poor ? [retry, useOcr] : [useOcr, retry];
+  // "add it" for a scan with no accepted text would only send it back to OCR — there the OCR answers ARE the way to add it
+  if (!rej && !ocrQuestion) out.push({ action: 'import', label: /same work|twin|already holds/i.test(q) ? 'Not the same — add it' : /part of a book/i.test(q) ? 'Add it as it is' : 'Add it', hint: 'imports it with the title, author and shelf below', fields: true });
   out.push({ action: 'decline', label: 'Don\'t add it', hint: 'kept in the archive, never imported' });
-  return out;
+  return out.filter(Boolean);
 }
 
 /** → everything the Review popup shows. */

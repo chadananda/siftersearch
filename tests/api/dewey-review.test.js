@@ -18,9 +18,16 @@ describe('answersFor', () => {
     expect(answersFor(item()).map((a) => a.action)).toEqual(['import', 'decline']);
     expect(answersFor(item())[0].label).toMatch(/as it is/);
   });
-  it('rejected OCR: use it first, run again, add, decline', () => {
-    const a = answersFor(item({ identified: { slp_rejected: { path: '/ocr/x.slp.md' } }, log: [{ why: 'SearchLayerPDF text did not pass the check' }] }));
-    expect(a.map((x) => x.action)).toEqual(['use-ocr', 'import', 'retry-ocr', 'decline']);
+  it('rejected OCR: use it first, run again, decline — no "add it" (it would only go back to OCR)', () => {
+    const a = answersFor(item({ identified: { slp_rejected: { path: '/ocr/x.slp.md', check: { sampleFound: 0.35 } } }, log: [{ why: 'SearchLayerPDF text did not pass the check' }] }));
+    expect(a.map((x) => x.action)).toEqual(['use-ocr', 'retry-ocr', 'decline']);
+  });
+  it('OCR that barely matched our own read (2%): run again is recommended', () => {
+    const a = answersFor(item({ identified: { slp_rejected: { path: '/ocr/x.slp.md', check: { sampleFound: 0.02 } } }, log: [{ why: 'did not pass' }] }));
+    expect(a.map((x) => x.action)).toEqual(['retry-ocr', 'use-ocr', 'decline']);
+  });
+  it('OCR failed (network): try again or decline', () => {
+    expect(answersFor(item({ log: [{ why: 'full OCR failed: fetch failed' }] })).map((x) => x.action)).toEqual(['retry-ocr', 'decline']);
   });
   it('over the page limit: approve OCR first', () => {
     expect(answersFor(item({ log: [{ why: 'a 512-page scan — over the 400-page limit for automatic OCR' }] }))[0]).toMatchObject({ action: 'retry-ocr', label: 'Approve full OCR' });
