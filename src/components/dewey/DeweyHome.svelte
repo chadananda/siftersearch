@@ -23,12 +23,13 @@
 <!-- instant (Chad 10-17): the page draws at once; only a signed-in check that says "no access" replaces it -->
 {#if ready && !canDewey}
   <section class="max-w-xl mx-auto text-center py-12">
-    <h1 class="text-2xl font-semibold text-primary mb-2">Dewey</h1>
+    <h1 class="text-2xl font-semibold text-primary mb-2">Dewey the Librarian Agent</h1>
     <p class="text-secondary">Dewey, the AI Librarian for Ocean 2.0, works with invited contributors.
       {#if !auth.isAuthenticated}Sign in if you have been invited.{:else}Ask Chad for access.{/if}</p>
   </section>
 {:else}
   <div class="dewey">
+    <h1 class="title">Dewey <span>the Librarian Agent</span></h1>
     <nav class="tabs" aria-label="Dewey views">
       <button class:on={view === 'library'} onclick={() => (view = 'library')}>Library</button>
       <button class:on={view === 'chat'} onclick={() => (view = 'chat')}>Dewey</button>
@@ -44,6 +45,8 @@
 
 <style>
   .dewey { height: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
+  .title { font-size: 1.15rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+  .title span { font-weight: 400; color: var(--text-secondary); }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 0.75rem; }
   .cols > div { min-height: 0; }
   .tabs { display: none; }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:13:17.420Z",
+  "generated": "2026-10-18T03:15:54.242Z",
   "entries": [
+    {
+      "hash": "c6ef256a",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "The page crashed on load — a helper named 'state' made Svelte read $state as a store; renamed",
+      "scope": "dewey"
+    },
     {
       "hash": "7d3c2795",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Term-study passage table built by code from CTAI's spans (exact bolding of the word and its rendering, different renderings first, a list where tables can't show); filler alignments ('can', 'your') dropped; punctuation spacing fixed. The model writes only the opening and the reading",
       "scope": "anis"
-    },
-    {
-      "hash": "54a4db97",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Term study searches both ی/ي and ک/ك spellings and merges (CTAI does not fold them: ایقان 6 passages vs ايقان 22); live battery tests/quality/term-study-battery.mjs — 49/49: detection (10 ordinary questions never hijacked), Latin → Arabic, per-word top rendering for 8 terms, never a different word on the same root",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "c6ef256a",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "The page crashed on load — a helper named 'state' made Svelte read $state as a store; renamed",
+        "scope": "dewey"
+      },
       {
         "hash": "7d3c2795",
         "date": "2026-10-17",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-07",
         "type": "New",
         "description": "Term-study passage table built by code from CTAI's spans (exact bolding of the word and its rendering, different renderings first, a list where tables can't show); filler alignments ('can', 'your') dropped; punctuation spacing fixed. The model writes only the opening and the reading",
-        "scope": "anis"
-      },
-      {
-        "hash": "54a4db97",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Term study searches both ی/ي and ک/ك spellings and merges (CTAI does not fold them: ایقان 6 passages vs ايقان 22); live battery tests/quality/term-study-battery.mjs — 49/49: detection (10 ordinary questions never hijacked), Latin → Arabic, per-word top rendering for 8 terms, never a different word on the same root",
         "scope": "anis"
       }
     ]

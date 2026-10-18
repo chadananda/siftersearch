@@ -1,6 +1,6 @@
 {
   "id": "/dewey",
-  "name": "Dewey — AI Librarian",
+  "name": "Dewey the Librarian Agent",
   "short_name": "Dewey",
   "description": "Do we already have it? Check a book, document or video against the library from your phone — and add what is missing.",
   "start_url": "/dewey",
