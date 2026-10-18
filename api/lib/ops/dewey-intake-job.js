@@ -12,6 +12,7 @@ import { enqueue } from '../repos/ops-report-repo.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
 import { extractText, archiveFile, inArchive, proseGate, libraryShelves, chooseShelf, writeLibraryFile, toMarkdown } from '../dewey/intake.js';
 import { detectLang } from '../pipeline/profile.js';
+import { researchWork } from '../dewey/research.js';
 import { withAIContext } from '../ai-context.js';
 import { waitForQuietWriter } from './ctai-jobs.js';
 import { audit } from '../audit.js';
@@ -83,8 +84,15 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     const pdfPages = ext !== 'pdf' ? null : slp ? (deps.pdfPages ? await deps.pdfPages() : (await readPdf({ path: item.original_path }).catch(() => null))?.pages) || slp.pages : pages;
     const whole = ext === 'pdf' ? completeness(text, { pdfPages }) : { ok: true, why: [] };
     const preview = previewSigns(text);
-    const published = Number(item.research?.matched && item.research?.pages) || 0;
-    const short = kind === 'book' && ext === 'pdf' && published >= 60 && pages < published * 0.5 ? `the PDF has ${pages} pages; the published book has about ${published}` : null;
+    // the published length: the wanted item's research, else (an ingest-folder book has none) looked up now — a title match only
+    let published = Number(item.research?.matched && item.research?.pages) || 0;
+    if (!published && kind === 'book' && ext === 'pdf' && !item.research && !/^untitled/i.test(String(item.title || ''))) {
+      const r = await (deps.research || researchWork)({ title: item.title, author: item.author }).catch(() => null);
+      published = Number(r?.matched && r.pages) || 0;
+    }
+    // short by pages AND by words (a two-pages-a-sheet scan halves the page count, never the words: ~150 a printed page)
+    const short = kind === 'book' && ext === 'pdf' && published >= 60 && pages < published * 0.5 && gate.words < published * 150
+      ? `the PDF has ${pages} pages (${gate.words.toLocaleString('en-US')} words); the published book has about ${published} pages` : null;
     const why = [...whole.why, ...(preview ? [`it reads as a preview (“${preview}”)`] : []), ...(short ? [short] : [])];
     if (why.length) {
       // a text LAYER that stops early is not the book's text: full OCR reads every page; OCR text that stops early → a person

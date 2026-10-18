@@ -95,6 +95,24 @@ describe('intake', () => {
     await repo.updateItem(note.id, { state: 'source', original_path: '/x/notes.txt' });
     expect((await deweyIntakeJob({ id: note.id }, deps())).state).toBe('ingested');
   });
+
+  // Chad 10-18: "we do not want to add a book if it is only a sample of the beginning"
+  const slpPages = (n) => Array.from({ length: n }, (_, k) => `<!-- pdf:${k + 1} -->\n\n${PROSE}`).join('\n\n');
+  it('OCR text that stops at page 3 of 40 is not added', async () => {
+    const it1 = await repo.createItem({ title: 'A Long Memoir', identified: { appraisal: { kind: 'memoir' }, slp: { path: '/ocr/m.slp.md', pages: 3 } } });
+    await repo.updateItem(it1.id, { state: 'source', original_path: '/tank/library-originals/m.pdf' });
+    const r = await deweyIntakeJob({ id: it1.id }, { ...deps({ text: slpPages(3) }), pdfPages: async () => 40, skipRecheck: true });
+    expect(r).toMatchObject({ state: 'needs-human', why: 'partial' });
+    expect((await repo.getItem(it1.id)).log.at(-1).why).toMatch(/stops at page 3 of 40/);
+  });
+  it('a short PDF of a long published book is not added', async () => {
+    const big = await repo.createItem({ title: 'The Proud Helper', identified: { appraisal: { kind: 'book' }, slp: { path: '/ocr/p.slp.md', pages: 6 } } });
+    await repo.updateItem(big.id, { state: 'source', original_path: '/tank/library-originals/p.pdf' });
+    const text = slpPages(6).repeat(1) + ('\n\n' + PROSE).repeat(4);   // ~13,000 words: past the fragment rule, far short of 320 pages
+    const r = await deweyIntakeJob({ id: big.id }, { ...deps({ text }), pdfPages: async () => 6, skipRecheck: true, research: async () => ({ matched: true, pages: 320 }) });
+    expect(r).toMatchObject({ state: 'needs-human', why: 'partial' });
+    expect((await repo.getItem(big.id)).log.at(-1).why).toMatch(/published book has about 320 pages/);
+  });
 });
 
 import { previewSigns } from '../../api/lib/ops/dewey-intake-job.js';
