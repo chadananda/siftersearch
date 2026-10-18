@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:16:31.188Z",
+  "generated": "2026-10-18T03:18:26.385Z",
   "entries": [
+    {
+      "hash": "8e28e4aa",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "The title sits just above the chat",
+      "scope": "dewey"
+    },
     {
       "hash": "f7aca2ed",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Term-study placeholders are never streamed to chat (code fills them in the final text)",
       "scope": "anis"
-    },
-    {
-      "hash": "0650857b",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Chart cells were styled twice by the table pass (duplicate attributes); charts are filled in after styling",
-      "scope": "mail"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "8e28e4aa",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "The title sits just above the chat",
+        "scope": "dewey"
+      },
       {
         "hash": "f7aca2ed",
         "date": "2026-10-17",
@@ -7016,13 +7023,6 @@
         "type": "Fixed",
         "description": "Term-study placeholders are never streamed to chat (code fills them in the final text)",
         "scope": "anis"
-      },
-      {
-        "hash": "0650857b",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Chart cells were styled twice by the table pass (duplicate attributes); charts are filled in after styling",
-        "scope": "mail"
       }
     ]
   }

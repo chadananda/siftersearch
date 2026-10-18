@@ -76,7 +76,7 @@ adds to the wanted list when asked, and attaches sources you link.
 
 | Call | Returns |
 |---|---|
-| `GET /recent?limit=25` | recently added documents with every indexing stage's status |
+| `GET /activity?limit=30` | Dewey's intake: works loading now or just loaded, with each document's indexing stages |
 | `GET /missing` | the catalogue's missing-books list (works it lists but does not hold) |
 
 ## Limits

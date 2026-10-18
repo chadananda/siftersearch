@@ -181,3 +181,12 @@ export async function recentDocsCoverage(limit = 25) {
   for (const r of rows) (by.get(r.doc_id) || by.set(r.doc_id, {}).get(r.doc_id))[r.layer] = r;
   return docs.map((d) => ({ ...d, layers: by.get(d.id) || {} }));
 }
+
+/** Every layer's ledger row for these documents → { docId: { layer: row } }. */
+export async function coverageForDocs(ids = []) {
+  if (!ids.length) return {};
+  const rows = await queryAll(`SELECT doc_id, layer, total, generated, current, indexed FROM index_coverage WHERE doc_id IN (${ids.map(() => '?').join(',')})`, ids.map(Number), 'coverage:for-docs');
+  const by = {};
+  for (const r of rows) (by[r.doc_id] ||= {})[r.layer] = r;
+  return by;
+}

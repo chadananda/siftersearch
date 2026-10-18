@@ -156,7 +156,7 @@
                 </div>
               {/each}
               {#if p.r.verdict !== 'held' && id.title}
-                <button class="mt-2 px-3 py-1 rounded-md bg-accent text-white text-sm hover:bg-accent-hover" onclick={() => want(p.r)}>Add to wanted</button>
+                <button class="act primary mt-2" onclick={() => want(p.r)}>Add to wanted</button>
               {/if}
             </div>
           {:else if p.kind === 'item'}
@@ -167,9 +167,9 @@
               {#if it.state === 'ingested' && it.doc_id}<a class="text-sm text-accent" href="/document/{it.doc_id}">Open it in the library →</a>{/if}
               {#if ['wanted', 'researched', 'needs-ocr', 'failed'].includes(it.state)}
                 <div class="flex flex-wrap gap-1.5 mt-2 items-center">
-                  <input class="flex-1 min-w-40 px-2 py-1 text-sm rounded border border-border bg-surface-0 text-primary" placeholder="Link to a PDF or page" bind:value={sourceUrl[it.id]} />
-                  <button class="px-2 py-1 text-sm rounded-md border border-border hover:bg-surface-2" disabled={!sourceUrl[it.id]} onclick={() => attach(it, { url: sourceUrl[it.id] })}>Attach</button>
-                  <label class="px-2 py-1 text-sm rounded-md border border-border hover:bg-surface-2 cursor-pointer">PDF…<input type="file" accept=".pdf,.docx,.txt,.md,.html" class="sr-only" onchange={(e) => attachFile(it, e)} /></label>
+                  <input class="flex-1 min-w-40 px-3 py-2 text-base rounded-lg border border-border bg-surface-0 text-primary" placeholder="Link to a PDF or page" bind:value={sourceUrl[it.id]} />
+                  <button class="act" disabled={!sourceUrl[it.id]} onclick={() => attach(it, { url: sourceUrl[it.id] })}>Attach</button>
+                  <label class="act cursor-pointer">PDF…<input type="file" accept=".pdf,.docx,.txt,.md,.html" class="sr-only" onchange={(e) => attachFile(it, e)} /></label>
                 </div>
               {/if}
               {#if it._err}<p class="text-xs text-error mt-1">{it._err}</p>{/if}
@@ -191,10 +191,10 @@
     <div class="flex gap-2 items-end">
       <label class="tool" title="Take a photo — it is checked at once">📷<input type="file" accept="image/*" capture="environment" multiple class="sr-only" onchange={addPhotos} /></label>
       <label class="tool" title="Attach a file (PDF, DOCX, text) — checked at once">📎<input type="file" accept=".pdf,.docx,.txt,.md,image/*" class="sr-only" onchange={addFile} /></label>
-      <textarea class="flex-1 px-3 py-2 rounded-md border border-border bg-surface-0 text-primary resize-none" rows="2" bind:value={q}
+      <textarea class="flex-1 px-3 py-2 rounded-lg border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
         placeholder="Name it, paste a link, or ask…" aria-label="Message to Dewey"
         onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}></textarea>
-      <button class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-hover disabled:opacity-50" disabled={busy || !hasInput}>{busy ? '…' : 'Send'}</button>
+      <button class="send" disabled={busy || !hasInput}>{busy ? '…' : 'Send'}</button>
     </div>
   </form>
 </div>
@@ -207,6 +207,13 @@
   .dewey { align-self: flex-start; max-width: 92%; display: flex; flex-direction: column; gap: 0.5rem; }
   .card { padding: 0.6rem 0.8rem; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: var(--surface-0); }
   .composer { border-top: 1px solid var(--border-subtle); padding: 0.6rem; }
-  .tool { display: inline-flex; align-items: center; justify-content: center; width: 2.6rem; height: 2.6rem; border-radius: 0.5rem; border: 1px solid var(--border); cursor: pointer; font-size: 1.15rem; }
+  /* thumb-sized on a phone (Chad 10-17): 48 px targets; inputs at 16 px so iOS does not zoom the page */
+  .tool { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; border: 1px solid var(--border); cursor: pointer; font-size: 1.4rem; flex: none; }
+  .send { min-height: 3rem; padding: 0 1.25rem; border-radius: 0.75rem; background: var(--accent-primary); color: white; font-weight: 600; font-size: 1rem; flex: none; }
+  .send:disabled { opacity: 0.5; }
+  .act { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1rem; border-radius: 0.6rem; border: 1px solid var(--border); font-size: 0.95rem; color: var(--text-primary); }
+  .act.primary { background: var(--accent-primary); color: white; border-color: transparent; font-weight: 600; }
+  .act:disabled { opacity: 0.5; }
+  @media (max-width: 640px) { .tool { width: 3.25rem; height: 3.25rem; font-size: 1.6rem; } .send { min-height: 3.25rem; } }
   .tool:hover { background: var(--surface-2); }
 </style>

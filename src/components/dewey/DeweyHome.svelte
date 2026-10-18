@@ -32,7 +32,7 @@
     <nav class="tabs" aria-label="Dewey views">
       <button class:on={view === 'library'} onclick={() => (view = 'library')}>Library</button>
       <button class:on={view === 'chat'} onclick={() => (view = 'chat')}>Dewey</button>
-      <button class:on={view === 'added'} onclick={() => (view = 'added')}>Added</button>
+      <button class:on={view === 'added'} onclick={() => (view = 'added')}>Loading</button>
     </nav>
     <div class="cols" data-view={view}>
       <div class="left"><DeweyLibrary authed={ready} /></div>

@@ -1002,7 +1002,7 @@ export const admin = {
 /** Dewey, the librarian page (/dewey): "do we already have it?" from text, a URL, photos or a file. */
 export const dewey = {
   holdings: (body) => request('/api/dewey/holdings', { method: 'POST', body: JSON.stringify(body) }),
-  recent: (limit = 25) => request(`/api/dewey/recent?limit=${limit}`),
+  activity: (limit = 30) => request(`/api/dewey/activity?limit=${limit}`),
   missing: () => request('/api/dewey/missing'),
   want: (identified) => request('/api/dewey/items', { method: 'POST', body: JSON.stringify({ identified }) }),
   items: () => request('/api/dewey/items'),

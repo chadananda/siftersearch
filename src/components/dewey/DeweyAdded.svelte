@@ -1,16 +1,23 @@
 <script>
-  // Dewey's right column: recently added books and where each stands in every indexing stage — the coverage ledger per
-  // document (GET /api/dewey/recent). A stage reads done when it covers the book or is not needed for it (Chad 10-17).
+  // Dewey's right column: his INTAKE ACTIVITY (Chad 10-17: "documents we are loading now or have very recently loaded") —
+  // works with a source attached, processing, waiting for OCR, failed, or just ingested (GET /api/dewey/activity); once a
+  // work is a document, its indexing stages from the coverage ledger. A stage reads done when it covers the book or is not
+  // needed for it.
   import { dewey } from '../../lib/api.js';
-  import { compact } from '../../lib/observatory.js';
 
   let { authed = false } = $props();
-  let docs = $state(null);
+  let items = $state(null);
   let error = $state(null);
-  async function load() { try { docs = (await dewey.recent(30)).docs; error = null; } catch (e) { error = e.message; } }
-  $effect(() => { if (!authed) return; load(); const t = setInterval(load, 60000); return () => clearInterval(t); });
+  async function load() { try { items = (await dewey.activity(30)).items; error = null; } catch (e) { error = e.message; } }
+  // every 10 s while something is loading; otherwise about once a minute
+  $effect(() => {
+    if (!authed) return;
+    load();
+    let n = 0;
+    const t = setInterval(() => { n++; if (items?.some((i) => ['source', 'processing'].includes(i.state)) || n % 6 === 0) load(); }, 10000);
+    return () => clearInterval(t);
+  });
 
-  // per layer: [label, done?, partial ratio] — the same measures as the dial
   const STAGES = [
     ['Text', (l) => l.text, (r) => [r.generated, r.total]],
     ['Structure', (l) => l.sections, (r) => [r.generated, r.total]],
@@ -24,28 +31,35 @@
     const r = pick(layers);
     if (!r) return 'none';
     const [done, total] = of(r);
-    if (!total) return 'done';          // nothing to do for this book: not needed counts as done
+    if (!total) return 'done';
     return done >= total ? 'done' : done > 0 ? 'part' : 'none';
   }
-  const ago = (iso) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 3600 ? `${Math.round(s / 60)} min` : s < 172800 ? `${Math.round(s / 3600)} h` : `${Math.round(s / 86400)} d`; };
+  const LABEL = { source: 'Source attached', processing: 'Processing…', ingested: 'In the library', 'needs-ocr': 'Scan — waits for OCR', 'needs-human': 'Needs a person', failed: 'Failed' };
+  const TONE = { processing: 'text-warning', source: 'text-warning', ingested: 'text-success', failed: 'text-error', 'needs-human': 'text-error', 'needs-ocr': 'text-warning' };
+  const ago = (iso) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 90 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 172800 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`; };
 </script>
 
-<aside class="col" aria-label="Added books">
-  <h2>Added</h2>
+<aside class="col" aria-label="Loading now">
+  <h2>Loading</h2>
   {#if error}<p class="text-error text-sm">{error}</p>
-  {:else if !docs}<p class="text-muted text-sm">Loading…</p>
+  {:else if !items}<p class="text-muted text-sm">…</p>
+  {:else if !items.length}<p class="text-muted text-sm">Nothing loading yet. Attach a PDF or a link to a wanted book and it shows here while Dewey brings it in.</p>
   {:else}
     <ul class="flex flex-col gap-2" role="list">
-      {#each docs as d (d.id)}
+      {#each items as it (it.id)}
         <li class="item">
-          <a href="/document/{d.id}" class="text-primary text-sm font-medium hover:text-accent line-clamp-2">{d.title || 'Untitled'}</a>
-          <div class="text-xs text-muted">{[d.author, d.religion, `${compact(d.paragraph_count || 0)} ¶`, `${ago(d.created_at)} ago`].filter(Boolean).join(' · ')}</div>
-          <div class="stages" aria-label="Indexing stages">
-            {#each STAGES as s (s[0])}
-              {@const st = stageOf(d.layers, s)}
-              <span class="stage {st}" title="{s[0]}: {st === 'done' ? 'done' : st === 'part' ? 'in progress' : 'not yet'}">{s[0]}</span>
-            {/each}
-          </div>
+          {#if it.doc_id}<a href="/document/{it.doc_id}" class="text-primary text-sm font-medium hover:text-accent line-clamp-2">{it.title}</a>
+          {:else}<span class="text-primary text-sm font-medium line-clamp-2">{it.title}</span>{/if}
+          <div class="text-xs"><span class={TONE[it.state] || 'text-secondary'}>{LABEL[it.state] || it.state}</span><span class="text-muted"> · {ago(it.updated_at)}</span></div>
+          {#if it.last && it.state !== 'ingested'}<div class="text-xs text-muted">{it.last}</div>{/if}
+          {#if it.layers}
+            <div class="stages" aria-label="Indexing stages">
+              {#each STAGES as s (s[0])}
+                {@const st = stageOf(it.layers, s)}
+                <span class="stage {st}" title="{s[0]}: {st === 'done' ? 'done' : st === 'part' ? 'in progress' : 'not yet'}">{s[0]}</span>
+              {/each}
+            </div>
+          {/if}
         </li>
       {/each}
     </ul>

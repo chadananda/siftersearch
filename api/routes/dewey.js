@@ -1,6 +1,6 @@
 // Dewey routes (the librarian page /dewey; Chad 10-17). Members with Dewey access only (requireDewey).
 //   POST /api/dewey/holdings  { text?, url?, images?: dataURL[], file?: { name, data: base64 } } → { identified, verdict, candidates }
-//   GET  /api/dewey/recent    → recently added books with every layer's ledger row (right column)
+//   GET  /api/dewey/activity  → Dewey's intake: works loading now or just loaded, with each document's stages (right column)
 //   GET  /api/dewey/missing   → books listed but not held (left column; the missing-books snapshot)
 //   POST /api/dewey/items     { identified } → a WANTED work (research queued: ISBN, publisher, cover)
 //   GET  /api/dewey/items     → the wanted list and intake queue, open items first
@@ -17,8 +17,8 @@ import { checkHoldings } from '../lib/dewey/holdings.js';
 import { ApiError } from '../lib/errors.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { recentDocsCoverage } from '../lib/repos/coverage-repo.js';
-import { createItem, getItem, listItems, findOpenByTitle, updateItem } from '../lib/repos/dewey-repo.js';
+import { coverageForDocs } from '../lib/repos/coverage-repo.js';
+import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { archiveOriginal } from '../lib/dewey/intake.js';
 import { deweyTurn } from '../lib/dewey/agent.js';
@@ -59,14 +59,12 @@ export default async function deweyRoutes(fastify) {
     return { identified: id, ...(await checkHoldings(id)) };
   });
 
-  // The right column: recently added books and where each stands in every indexing stage (the coverage ledger)
-  // instant (Chad 10-17): served from memory for 30 s; the query itself rides idx_docs_created
-  let recentMemo = { at: 0, limit: 0, docs: null };
-  fastify.get('/recent', { preHandler: requireDewey }, async (request) => {
-    const limit = Math.min(Number(request.query?.limit) || 25, 100);
-    if (recentMemo.docs && recentMemo.limit === limit && Date.now() - recentMemo.at < 30000) return { docs: recentMemo.docs };
-    recentMemo = { at: Date.now(), limit, docs: await recentDocsCoverage(limit) };
-    return { docs: recentMemo.docs };
+  // The right column: Dewey's intake activity — what he is loading now or has just loaded, each document's stages
+  fastify.get('/activity', { preHandler: requireDewey }, async (request) => {
+    const items = await intakeActivity(Math.min(Number(request.query?.limit) || 30, 100));
+    const layers = await coverageForDocs(items.map((i) => i.doc_id).filter(Boolean));
+    return { items: items.map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, doc_id: i.doc_id, updated_at: i.updated_at,
+      cover: !!i.cover_path, last: i.log.at(-1)?.why || null, layers: i.doc_id ? layers[i.doc_id] || {} : null })) };
   });
 
   // The left column: books the library lists but does not hold (the missing-books triage snapshot), first of each queue
