@@ -5,7 +5,6 @@
 // slpCheck() must pass — real words, enough text per page, and the pages our preliminary OCR read must be IN it — or the
 // item waits for a person. Key: SEARCHLAYERPDF_API_KEY (read from .env-secrets if the process predates it).
 import { readFileSync, createReadStream, statSync } from 'fs';
-import { compareWords, compareTexts } from './compare.js';
 import { wordRatio } from './convert.js';
 
 const BASE = () => process.env.SEARCHLAYERPDF_URL || 'https://searchlayerpdf.com';
@@ -33,8 +32,8 @@ export function slpToText(md) {
  * Is SLP's text fit to import? → { ok, why[], words, perPage, ratio, sampleFound }.
  *  - real words (Latin text): ≥ 75% word shapes
  *  - enough text: ≥ 40 words per page (a book page has hundreds)
- *  - CONSISTENT with what we read ourselves: the pages our preliminary OCR sampled are found in it (≥ 30% of their 4-grams
- *    in order) — catches a wrong file, a scrambled order, a page that came back empty
+ *  - CONSISTENT with what we read ourselves: ≥ 40% of the distinct 5+-letter words of the pages our preliminary OCR read
+ *    are in it — catches a wrong file, garbled handwriting, a page that came back empty
  */
 export function slpCheck(text, { pages = 1, sampleText = null } = {}) {
   const body = String(text || '').replace(/<pb[^>]*\/>/g, ' ');
@@ -44,10 +43,16 @@ export function slpCheck(text, { pages = 1, sampleText = null } = {}) {
   const ratio = latin ? wordRatio(body) : null;
   let sampleFound = null;
   const why = [];
-  if (sampleText && compareWords(sampleText).length >= 60) {
-    const c = compareTexts(compareWords(sampleText), compareWords(body));
-    sampleFound = c.ours_in_theirs;
-    if (c.ours_in_theirs < 0.3) why.push(`the pages we read ourselves are not in its text (${Math.round(c.ours_in_theirs * 100)}% found)`);
+  // OUR OWN pages must be in it — measured on DISTINCT words of 5+ letters, not 4-grams: one misread word breaks every
+  // 4-gram it touches, so a typed page we read noisily scored 21% against SLP's excellent text (Rosenberg, 10-18);
+  // as distinct words it is 54%, while a wrong document scores ~2% and SLP's garbled handwriting 7–25%
+  if (sampleText) {
+    const fold = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const ours = new Set(fold(sampleText).match(/\p{L}{5,}/gu) || []), theirs = new Set(fold(body).match(/\p{L}{5,}/gu) || []);
+    if (ours.size >= 15) {
+      sampleFound = +([...ours].filter((w) => theirs.has(w)).length / ours.size).toFixed(2);
+      if (sampleFound < 0.4) why.push(`the pages we read ourselves are not in its text (${Math.round(sampleFound * 100)}% of their words found)`);
+    }
   }
   if (ratio != null && ratio < 0.75) why.push(`not clean text (${Math.round(ratio * 100)}% real words)`);
   if (perPage < 40) why.push(`too little text (${Math.round(perPage)} words a page)`);

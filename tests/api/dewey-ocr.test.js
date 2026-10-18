@@ -106,6 +106,21 @@ describe('dewey-ocr job', () => {
     const no = await deweyOcrJob({ id: 7 }, base({ appraise: async () => ({ title: 'A catalogue', recommendation: 'skip', in_scope: 'no', summary: 'a bookseller catalogue' }) }));
     expect(no).toMatchObject({ state: 'needs-human', why: 'out of scope after OCR' });
   });
+  it('a SLP result on file is re-checked, not paid for again', async () => {
+    items[0].identified = { slp_rejected: { path: '/ocr/abc.slp.md', job_id: 'j0', pages: 1 } };
+    const r = await deweyOcrJob({ id: 7 }, base({ read: async () => ROSENBERG, extract: async () => { throw new Error('must not be called'); } }));
+    expect(r.state).toBe('source');
+    expect(items[0].identified.slp).toMatchObject({ job_id: 'j0', path: '/ocr/abc.slp.md' });
+  });
+  it('HANDWRITING SLP misread → the vision transcription is used when it passes the check', async () => {
+    const vision = slpToText(ROSENBERG).text;
+    const r = await deweyOcrJob({ id: 7 }, base({
+      sample: async () => ({ text: vision, langs: 'vision' }),
+      extract: async () => ({ markdown: 'x', text: 'Bok P-0. boy /SS Hafa Durael deanthoy and oylos Sepf. Bo man form Bhi whos sysbles ui fulap Ma ose lly aarp feast ans Bot spgtiars fue sippecl feo Cameylondinee piined. '.repeat(3), meta: {}, job_id: 'j9', pages: 1 }),
+      transcribe: async () => ({ text: vision }) }));
+    expect(r.state).toBe('source');
+    expect(items[0].identified.slp).toMatchObject({ engine: 'vision', slp_rejected_job: 'j9' });
+  });
   it('a scan over the page limit is not sent automatically', async () => {
     const r = await deweyOcrJob({ id: 7 }, base({ pdfInfo: async () => ({ pages: 969 }), extract: async () => { throw new Error('must not be called'); } }));
     expect(r).toMatchObject({ state: 'needs-human', pages: 969 });
