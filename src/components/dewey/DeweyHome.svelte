@@ -29,7 +29,6 @@
   </section>
 {:else}
   <div class="dewey">
-    <h1 class="title">Dewey <span>the Librarian Agent</span></h1>
     <nav class="tabs" aria-label="Dewey views">
       <button class:on={view === 'library'} onclick={() => (view = 'library')}>Library</button>
       <button class:on={view === 'chat'} onclick={() => (view = 'chat')}>Dewey</button>
@@ -37,7 +36,7 @@
     </nav>
     <div class="cols" data-view={view}>
       <div class="left"><DeweyLibrary authed={ready} /></div>
-      <div class="mid"><DeweyChat /></div>
+      <div class="mid"><h1 class="title">Dewey <span>the Librarian Agent</span></h1><div class="chatbox"><DeweyChat /></div></div>
       <div class="right"><DeweyAdded authed={ready} /></div>
     </div>
   </div>
@@ -45,7 +44,10 @@
 
 <style>
   .dewey { height: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
-  .title { font-size: 1.15rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+  /* the title sits just above the chat (Chad 10-17) */
+  .mid { display: flex; flex-direction: column; gap: 0.4rem; }
+  .chatbox { flex: 1; min-height: 0; }
+  .title { font-size: 1.15rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; text-align: center; }
   .title span { font-weight: 400; color: var(--text-secondary); }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 0.75rem; }
   .cols > div { min-height: 0; }
@@ -56,6 +58,7 @@
     .tabs button.on { background: var(--surface-2); color: var(--text-primary); }
     .cols { grid-template-columns: minmax(0, 1fr); }
     .cols > div { display: none; }
-    .cols[data-view='library'] .left, .cols[data-view='chat'] .mid, .cols[data-view='added'] .right { display: block; height: 100%; }
+    .cols[data-view='library'] .left, .cols[data-view='added'] .right { display: block; height: 100%; }
+    .cols[data-view='chat'] .mid { display: flex; height: 100%; }
   }
 </style>

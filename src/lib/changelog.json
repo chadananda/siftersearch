@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:15:54.242Z",
+  "generated": "2026-10-18T03:16:31.188Z",
   "entries": [
+    {
+      "hash": "f7aca2ed",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Titled 'Dewey the Librarian Agent' — page, heading and installed app",
+      "scope": "dewey"
+    },
     {
       "hash": "c6ef256a",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Chart cells were styled twice by the table pass (duplicate attributes); charts are filled in after styling",
       "scope": "mail"
-    },
-    {
-      "hash": "44c5273b",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Term-study passage table built by code from CTAI's spans (exact bolding of the word and its rendering, different renderings first, a list where tables can't show); filler alignments ('can', 'your') dropped; punctuation spacing fixed. The model writes only the opening and the reading",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "f7aca2ed",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Titled 'Dewey the Librarian Agent' — page, heading and installed app",
+        "scope": "dewey"
+      },
       {
         "hash": "c6ef256a",
         "date": "2026-10-17",
@@ -7016,13 +7023,6 @@
         "type": "Fixed",
         "description": "Chart cells were styled twice by the table pass (duplicate attributes); charts are filled in after styling",
         "scope": "mail"
-      },
-      {
-        "hash": "44c5273b",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Term-study passage table built by code from CTAI's spans (exact bolding of the word and its rendering, different renderings first, a list where tables can't show); filler alignments ('can', 'your') dropped; punctuation spacing fixed. The model writes only the opening and the reading",
-        "scope": "anis"
       }
     ]
   }
