@@ -24,7 +24,9 @@ ${contents ? `\nThe book's own table of contents, for guidance:\n${contents}\n` 
 LINES
 ${lines.map((l) => `[${l.i}] ${l.text}`).join('\n')}
 
-Return ONE JSON object: {"headings":[{"i":<paragraph number from the list>,"level":<1-6>,"title":"the heading, cleaned of numbering artefacts and page numbers"}]}`;
+Title: when a numbering line is followed by the line that names it ("QUESTION 1" then "OF FAITH (In Ten Articles)",
+"CHAPTER" then "XXXV. CEYLON"), pick the FIRST line and give the full title ("Question 1 — Of Faith"); drop page numbers.
+Return ONE JSON object: {"headings":[{"i":<paragraph number from the list>,"level":<1-6>,"title":"…"}]}`;
 }
 
 export async function inferStructure(doc, rows, { create = roleCreate } = {}) {
