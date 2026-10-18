@@ -23,6 +23,7 @@ import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActi
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { archiveOriginal } from '../lib/dewey/intake.js';
 import { deweyTurn } from '../lib/dewey/agent.js';
+import * as S from './dewey-schemas.js';
 
 // the admin pipeline snapshot (scripts/pipeline-snapshot.js) — same file /api/admin/library/missing-books reads
 const PIPELINE_SNAPSHOT_PATH = join(process.cwd(), 'data', 'pipeline-status.json');
@@ -47,7 +48,7 @@ export async function attachSource(itemId, { url = null, file = null } = {}, by 
 }
 
 export default async function deweyRoutes(fastify) {
-  fastify.post('/holdings', { preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request) => {
+  fastify.post('/holdings', { schema: S.holdingsSchema, preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request) => {
     const { text, url, images, file } = request.body || {};
     let id = {};
     if (images?.length) id = await identifyPhotos(images);
@@ -61,7 +62,7 @@ export default async function deweyRoutes(fastify) {
   });
 
   // The right column: Dewey's intake activity — what he is loading now or has just loaded, each document's stages
-  fastify.get('/activity', { preHandler: requireDewey }, async (request) => {
+  fastify.get('/activity', { schema: S.activitySchema, preHandler: requireDewey }, async (request) => {
     const items = await intakeActivity(Math.min(Number(request.query?.limit) || 30, 100));
     const layers = await coverageForDocs(items.map((i) => i.doc_id).filter(Boolean));
     return { items: items.map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, doc_id: i.doc_id, updated_at: i.updated_at,
@@ -69,7 +70,7 @@ export default async function deweyRoutes(fastify) {
   });
 
   // The left column: books the library lists but does not hold (the missing-books triage snapshot), first of each queue
-  fastify.get('/missing', { preHandler: requireDewey }, async () => {
+  fastify.get('/missing', { schema: S.missingSchema, preHandler: requireDewey }, async () => {
     let mb = null;
     try { mb = JSON.parse(readFileSync(PIPELINE_SNAPSHOT_PATH, 'utf8'))?.missingBooks; } catch { /* no snapshot yet */ }
     if (!mb?.haveSource) return { pending: true };
@@ -78,7 +79,7 @@ export default async function deweyRoutes(fastify) {
   });
 
   // WANTED (Chad 10-17): a book not in the library goes on Dewey's list and is researched at once
-  fastify.post('/items', { preHandler: requireDewey }, async (request) => {
+  fastify.post('/items', { schema: S.createItemSchema, preHandler: requireDewey }, async (request) => {
     const id = request.body?.identified || {};
     if (!id.title) throw Object.assign(new Error('a wanted item needs a title'), { statusCode: 400 });
     const existing = await findOpenByTitle(id.title);
@@ -88,17 +89,17 @@ export default async function deweyRoutes(fastify) {
     await enqueue('dewey-research', { id: item.id }, request.user?.email || 'dewey');
     return { item };
   });
-  fastify.get('/items', { preHandler: requireDewey }, async (request) => ({ items: await listItems({ state: request.query?.state || null }) }));
+  fastify.get('/items', { schema: S.listItemsSchema, preHandler: requireDewey }, async (request) => ({ items: await listItems({ state: request.query?.state || null }) }));
 
   // A SOURCE for a wanted item (a PDF, DOCX or page — a file or a URL): archive the original untouched, then intake.
   // It leaves the wanted list the moment its source arrives.
-  fastify.post('/items/:id/source', { preHandler: requireDewey, bodyLimit: 120 * 1024 * 1024 }, async (request) => {
+  fastify.post('/items/:id/source', { schema: S.sourceSchema, preHandler: requireDewey, bodyLimit: 120 * 1024 * 1024 }, async (request) => {
     const { url, file } = request.body || {};
     return { item: await attachSource(request.params.id, { url, file }, request.user?.email || 'dewey') };
   });
 
   // DEWEY'S CHAT, streamed (server-sent events): attachments are checked first, then Dewey replies with tools
-  fastify.post('/chat', { preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request, reply) => {
+  fastify.post('/chat', { schema: S.chatSchema, preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request, reply) => {
     const { message = null, messages = null, attach = {}, thumbs = [], stream = true } = request.body || {};
     const by = request.user?.viaKey ? `${request.user.email} (key ${request.user.viaKey})` : request.user?.email || 'dewey';
     const uid = request.user.sub;
@@ -142,14 +143,14 @@ export default async function deweyRoutes(fastify) {
   });
 
   // The member's thread — the same on every device; `after` returns only what is new (the other device's messages)
-  fastify.get('/thread', { preHandler: requireDewey }, async (request) => {
+  fastify.get('/thread', { schema: S.threadSchema, preHandler: requireDewey }, async (request) => {
     const after = Number(request.query?.after) || 0;
     return { messages: await threadOf(request.user.sub, { after, limit: after ? 100 : 60 }) };
   });
 
   // Dewey API keys for your own agents — created from a SIGNED-IN SESSION only (never with another key), shown once,
   // stored only as a hash, permission 'dewey'. Revoke on /settings (API keys).
-  fastify.post('/keys', { preHandler: requireDewey }, async (request) => {
+  fastify.post('/keys', { schema: S.keysSchema, preHandler: requireDewey }, async (request) => {
     if (request.user?.viaKey) throw Object.assign(new Error('Create Dewey keys from a signed-in session, not with a key'), { statusCode: 403 });
     const { createApiKey } = await import('../lib/api-keys.js');
     const name = String(request.body?.name || 'Dewey agent').slice(0, 80);

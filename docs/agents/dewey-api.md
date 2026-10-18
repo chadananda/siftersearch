@@ -7,6 +7,9 @@ description: How your own agents talk to Dewey — check holdings, keep the want
 
 Base: `https://siftersearch.com/api/dewey` (or `https://api.siftersearch.com/api/dewey`).
 
+**OpenAPI 3:** `https://api.siftersearch.com/api/v1/docs/json` (tag **Dewey**; browsable at `/api/v1/docs`). Point your
+agent's tool loader at it: every call has request and response schemas.
+
 ## Authentication
 
 Every call needs **one** of:

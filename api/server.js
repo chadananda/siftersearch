@@ -318,7 +318,8 @@ export async function createServer(opts = {}) {
       servers: [{ url: 'https://api.siftersearch.com', description: 'Production' }],
       components: {
         securitySchemes: {
-          apiKey: { type: 'apiKey', name: 'X-API-Key', in: 'header', description: 'API key from Settings → API Keys' }
+          apiKey: { type: 'apiKey', name: 'X-API-Key', in: 'header', description: 'API key from Settings → API Keys' },
+          bearer: { type: 'http', scheme: 'bearer', description: 'The same API key as `Authorization: Bearer sk_…`' }
         }
       },
       tags: [
@@ -326,12 +327,13 @@ export async function createServer(opts = {}) {
         { name: 'Library', description: 'Browse and search the document library' },
         { name: 'Chat', description: 'AI-powered research assistant' },
         { name: 'System', description: 'Health checks and metadata' },
+        { name: 'Dewey', description: 'Dewey, the AI librarian: is a work in the library (title, text, URL, photo or file), the wanted list, attaching a source to bring it in, and chat. Needs a Dewey API key (POST /api/dewey/keys from a signed-in session). Guide: https://github.com/chadananda/siftersearch/blob/main/docs/agents/dewey-api.md' },
         { name: 'Entities', description: 'Person/group/event/place graph. START HERE for "who was at X" and for people linked to events or to each other — lookup the node, read its participants/evidence, filter by relation. Passage search is for quoting the result, not for building it.' }
       ]
     },
     transform: ({ schema, url, ...rest }) => {
-      // Only include /api/v1/ routes in the OpenAPI spec
-      if (!url.startsWith('/api/v1/')) return { schema: { ...schema, hide: true }, url, ...rest };
+      // Only /api/v1/ routes and Dewey's (/api/dewey/, for members' own agents) are in the OpenAPI spec
+      if (!url.startsWith('/api/v1/') && !url.startsWith('/api/dewey/')) return { schema: { ...schema, hide: true }, url, ...rest };
       return { schema, url, ...rest };
     }
   });
