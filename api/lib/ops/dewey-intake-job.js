@@ -102,7 +102,7 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     const buf = await read(item.cover_path).catch(() => null);
     if (buf) await storeCover(docId, buf, { source: r.cover?.source || 'research', url: r.cover?.url }).catch(() => null);
   }
-  await updateItem(item.id, { state: 'ingested', doc_id: docId }, `ingested as document ${docId} in ${shelf.religion} › ${shelf.collection} (${gate.words.toLocaleString('en-US')} words${slp ? `, text by SearchLayerPDF job ${slp.job_id}` : ''})`);
+  await updateItem(item.id, { state: 'ingested', doc_id: docId }, `ingested as document ${docId} in ${shelf.religion} › ${shelf.collection} (${gate.words.toLocaleString('en-US')} words${slp ? (slp.engine === 'vision' ? ', text by our vision transcription (handwriting SLP could not read)' : `, text by SearchLayerPDF job ${slp.job_id}`) : ''})`);
   logActivity('job', `dewey · “${title}” added to ${shelf.religion} › ${shelf.collection}`);
   return { id: item.id, state: 'ingested', doc_id: docId, rel, words: gate.words };
 }

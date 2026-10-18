@@ -60,7 +60,8 @@ export async function deweyOcrJob({ id } = {}, deps = {}) {
   }
   if (!out) {
     // a job submitted before a restart is resumed (its id is on the item), never re-submitted
-    const resume = item.identified?.slp_progress?.job_id && !['failed', 'capped'].includes(item.identified.slp_progress.step) ? item.identified.slp_progress.job_id : null;
+    // …including one SLP reported failed: SLP finishes failed jobs later under the same id (10-18), so ask that id first
+    const resume = item.identified?.slp_progress?.job_id || null;
     try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress }); } catch (err) {
       await updateItem(item.id, { state: 'needs-human' }, `full OCR failed: ${String(err.message).slice(0, 200)}`);
       return { id, state: 'needs-human', why: err.message };
