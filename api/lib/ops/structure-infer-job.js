@@ -11,7 +11,7 @@ import { headingCandidates, sectionsFromPicks, checkSections } from '../toc.js';
 import { roleCreate } from '../role-client.js';
 import { logActivity } from '../repos/activity-repo.js';
 
-const CHUNK = 250;
+const CHUNK = 120;   // 250 lines per call came back empty for most of the Summa and the Bible (10-17 pilot): smaller calls
 const jsonOf = (s) => { const m = String(s || '').match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : null; } catch { return null; } };
 
 export function inferPrompt(doc, lines, contents, before) {
@@ -31,15 +31,23 @@ export async function inferStructure(doc, rows, { create = roleCreate } = {}) {
   const cands = headingCandidates(rows);
   const ci = rows.findIndex((r) => /^\W*(table of )?contents\W*$/i.test(String(r.text).trim()));
   const contents = ci >= 0 ? rows.slice(ci + 1, ci + 80).map((r) => r.text).join('\n').slice(0, 6000) : '';
-  const picks = [];
+  const picks = [], calls = [];
   for (let k = 0; k < cands.length; k += CHUNK) {
     const lines = cands.slice(k, k + CHUNK), allowed = new Set(lines.map((l) => l.i));
-    const res = await create('toc-infer', { max_tokens: 6000, temperature: 0, messages: [{ role: 'user', content: inferPrompt(doc, lines, contents, picks.slice(-8)) }] });
+    const res = await create('toc-infer', { max_tokens: 8000, temperature: 0, messages: [{ role: 'user', content: inferPrompt(doc, lines, contents, picks.slice(-8)) }] });
+    const raw = res?.choices?.[0]?.message?.content || '';
+    const out = jsonOf(raw);
     // only a line from THIS list may begin a section — a number the model invents is dropped
-    for (const h of jsonOf(res?.choices?.[0]?.message?.content)?.headings || []) if (allowed.has(Number(h.i))) picks.push({ i: Number(h.i), level: h.level, title: h.title });
+    let kept = 0, invented = 0;
+    for (const h of out?.headings || []) if (allowed.has(Number(h.i))) { picks.push({ i: Number(h.i), level: h.level, title: h.title }); kept++; } else invented++;
+    // every call is accounted for: an empty or unparseable reply is visible, never silently nothing
+    calls.push({ from: lines[0]?.i, lines: lines.length, parsed: !!out, kept, invented, finish: res?.choices?.[0]?.finish_reason || null, ...(out ? {} : { raw: raw.slice(0, 160) }) });
   }
   const sections = sectionsFromPicks(picks, rows);
-  return { candidates: cands.length, sections, issues: checkSections(sections, rows) };
+  const failed = calls.filter((c) => !c.parsed).length;
+  const issues = checkSections(sections, rows);
+  if (failed) issues.push(`${failed} of ${calls.length} calls returned no usable JSON`);
+  return { candidates: cands.length, sections, issues, calls };
 }
 
 export async function structureInferJob({ ids = null, candidates = false, limit = 0, dry = false } = {}, { create = roleCreate } = {}) {
@@ -56,7 +64,7 @@ export async function structureInferJob({ ids = null, candidates = false, limit 
       stats.docs++;
       if (dry || r.issues.length) {
         if (r.issues.length) { stats.refused++; if (stats.refusals.length < 30) stats.refusals.push({ id: doc.id, title: doc.title, issues: r.issues }); }
-        if (dry && stats.previews.length < 10) stats.previews.push({ id: doc.id, title: doc.title, candidates: r.candidates, sections: r.sections.length,
+        if (dry && stats.previews.length < 10) stats.previews.push({ id: doc.id, title: doc.title, candidates: r.candidates, sections: r.sections.length, calls: r.calls,
           outline: r.sections.slice(0, 40).map((s) => `${'  '.repeat(s.level - 1)}${s.title} [¶${s.start_index}, ${s.paragraphs}]`) });
         continue;
       }
