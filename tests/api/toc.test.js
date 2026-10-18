@@ -35,4 +35,17 @@ describe('inferStructure', async () => {
     expect(r.sections.map((s) => s.title)).toEqual(['Book VI', 'XXXIV. Expansion', 'Book VII']);
     expect(r.issues).toEqual([]);
   });
+  it('a reply cut off by length is split and asked again; nothing is lost', async () => {
+    const many = Array.from({ length: 60 }, (_, i) => ({ id: i, paragraph_index: i, text: `CHAPTER ${i + 1}` }));
+    let n = 0;
+    const create = async (role, { messages }) => {
+      n++;
+      const idx = [...messages[0].content.matchAll(/^\[(\d+)\]/gm)].map((m) => Number(m[1]));
+      if (idx.length > 30) return { choices: [{ finish_reason: 'length', message: { content: '{"headings":[{"i":0' } }] };
+      return { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ headings: idx.map((i) => ({ i, level: 1, title: `Chapter ${i + 1}` })) }) } }] };
+    };
+    const r = await inferStructure({ title: 'x' }, many, { create });
+    expect(r.sections).toHaveLength(60);
+    expect(n).toBe(3);
+  });
 });

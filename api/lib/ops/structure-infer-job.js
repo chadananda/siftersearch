@@ -34,21 +34,28 @@ export async function inferStructure(doc, rows, { create = roleCreate } = {}) {
   const ci = rows.findIndex((r) => /^\W*(table of )?contents\W*$/i.test(String(r.text).trim()));
   const contents = ci >= 0 ? rows.slice(ci + 1, ci + 80).map((r) => r.text).join('\n').slice(0, 6000) : '';
   const picks = [], calls = [];
-  for (let k = 0; k < cands.length; k += CHUNK) {
-    const lines = cands.slice(k, k + CHUNK), allowed = new Set(lines.map((l) => l.i));
+  const ask = async (lines) => {
+    const allowed = new Set(lines.map((l) => l.i));
     const res = await create('toc-infer', { max_tokens: 8000, temperature: 0, messages: [{ role: 'user', content: inferPrompt(doc, lines, contents, picks.slice(-8)) }] });
-    const raw = res?.choices?.[0]?.message?.content || '';
+    const raw = res?.choices?.[0]?.message?.content || '', finish = res?.choices?.[0]?.finish_reason || null;
     const out = jsonOf(raw);
+    // a reply cut off by its length (many long titles): split the lines in half and ask again, rather than lose them
+    if (!out && finish === 'length' && lines.length > 20) { const h = Math.ceil(lines.length / 2); await ask(lines.slice(0, h)); await ask(lines.slice(h)); return; }
     // only a line from THIS list may begin a section — a number the model invents is dropped
     let kept = 0, invented = 0;
     for (const h of out?.headings || []) if (allowed.has(Number(h.i))) { picks.push({ i: Number(h.i), level: h.level, title: h.title }); kept++; } else invented++;
     // every call is accounted for: an empty or unparseable reply is visible, never silently nothing
-    calls.push({ from: lines[0]?.i, lines: lines.length, parsed: !!out, kept, invented, finish: res?.choices?.[0]?.finish_reason || null, ...(out ? {} : { raw: raw.slice(0, 160) }) });
-  }
+    calls.push({ from: lines[0]?.i, lines: lines.length, parsed: !!out, kept, invented, finish, ...(out ? {} : { raw: raw.slice(0, 160) }) });
+  };
+  for (let k = 0; k < cands.length; k += CHUNK) await ask(cands.slice(k, k + CHUNK));
   const sections = sectionsFromPicks(picks, rows);
   const failed = calls.filter((c) => !c.parsed).length;
   const issues = checkSections(sections, rows);
   if (failed) issues.push(`${failed} of ${calls.length} calls returned no usable JSON`);
+  // the book's own Contents page lists its chapters: finding far fewer means headings were missed (Phelps 10-17: 2 of 10)
+  const listed = contents.split('\n').filter((l) => /^\s*(chapter\s+)?([IVXLC]+|\d{1,3})[.:)\s]\s*\p{L}/iu.test(l) || /^\s*chapter\b/i.test(l)).length;
+  const found = sections.filter((s) => /^\s*(chapter|book|part)?\s*([IVXLC]+|\d{1,3})\b/i.test(s.title) || /chapter/i.test(s.title)).length;
+  if (listed >= 5 && found < listed * 0.6) issues.push(`the Contents page lists ~${listed} numbered entries; ${found} were found in the text`);
   return { candidates: cands.length, sections, issues, calls };
 }
 
