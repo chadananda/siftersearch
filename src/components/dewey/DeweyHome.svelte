@@ -13,12 +13,15 @@
   let ready = $state(false);
   let view = $state('chat');   // narrow screens: chat | library | added
   let canDewey = $derived(['admin', 'superadmin'].includes(auth.user?.tier) || Number(auth.user?.dewey_access) === 1);
-  onMount(async () => { await initAuth(); ready = true; });
+  onMount(async () => {
+    await initAuth(); ready = true;
+    // installable on a phone (Chad 10-17): Dewey's own service worker, scoped to /dewey, caching nothing
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/dewey/sw.js', { scope: '/dewey' }).catch(() => {});
+  });
 </script>
 
-{#if !ready}
-  <p class="text-secondary">Loading…</p>
-{:else if !canDewey}
+<!-- instant (Chad 10-17): the page draws at once; only a signed-in check that says "no access" replaces it -->
+{#if ready && !canDewey}
   <section class="max-w-xl mx-auto text-center py-12">
     <h1 class="text-2xl font-semibold text-primary mb-2">Dewey</h1>
     <p class="text-secondary">Dewey, the AI Librarian for Ocean 2.0, works with invited contributors.
@@ -32,9 +35,9 @@
       <button class:on={view === 'added'} onclick={() => (view = 'added')}>Added</button>
     </nav>
     <div class="cols" data-view={view}>
-      <div class="left"><DeweyLibrary /></div>
+      <div class="left"><DeweyLibrary authed={ready} /></div>
       <div class="mid"><DeweyChat /></div>
-      <div class="right"><DeweyAdded /></div>
+      <div class="right"><DeweyAdded authed={ready} /></div>
     </div>
   </div>
 {/if}

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T02:46:27.425Z",
+  "generated": "2026-10-18T03:05:55.470Z",
   "entries": [
+    {
+      "hash": "b2ec120d",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Dewey mode — library + known missing on the left, Dewey's chat full height in the middle, added books with per-stage status on the right; the chat alone on a phone",
+      "scope": "dewey"
+    },
     {
       "hash": "668d7f20",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Term-study chart labels are the rendering itself (the alignment can drag neighbouring words along)",
       "scope": "anis"
-    },
-    {
-      "hash": "ea2b07d4",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Term study counts Shoghi Effendi's renderings of the WORD over its own passages (inflections grouped), not CTAI's per-root counts — عرفان's chart had 'fragrance' (ʿarf, same letters, another word) second; table rows quote a phrase and show different renderings",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "b2ec120d",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Dewey mode — library + known missing on the left, Dewey's chat full height in the middle, added books with per-stage status on the right; the chat alone on a phone",
+        "scope": "dewey"
+      },
       {
         "hash": "668d7f20",
         "date": "2026-10-17",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-07",
         "type": "Fixed",
         "description": "Term-study chart labels are the rendering itself (the alignment can drag neighbouring words along)",
-        "scope": "anis"
-      },
-      {
-        "hash": "ea2b07d4",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Term study counts Shoghi Effendi's renderings of the WORD over its own passages (inflections grouped), not CTAI's per-root counts — عرفان's chart had 'fragrance' (ʿarf, same letters, another word) second; table rows quote a phrase and show different renderings",
         "scope": "anis"
       }
     ]

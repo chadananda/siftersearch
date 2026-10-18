@@ -1711,6 +1711,28 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_doc_episodes_doc ON doc_episodes(doc_id, ord)');
     logger.info('Migration 157 complete: doc_episodes');
   },
+
+  158: async () => {
+    // DEWEY'S WANTED LIST + INTAKE QUEUE (Chad 10-17: "If we find a book that is not in the library, we should be able to
+    // add it to the missing books list and the system should do research on that book, pull down the image, isbn etc. If
+    // we add a PDF or a url to a PDF for that book, we remove it from the missing books and start processing"). One row
+    // per wanted work: what was identified, what research found (isbn, publisher, year, cover, sources), its state
+    // (wanted → researched → source → processing → ingested | needs-ocr | failed), the archived original, the document
+    // it became, and a log of every transition. Written by /api/dewey/items + the dewey-research / dewey-intake jobs.
+    await query(`CREATE TABLE IF NOT EXISTS dewey_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, author TEXT, kind TEXT, identified TEXT, research TEXT,
+      state TEXT NOT NULL DEFAULT 'wanted', source_url TEXT, original_path TEXT, sha256 TEXT, cover_path TEXT, doc_id INTEGER,
+      log TEXT NOT NULL DEFAULT '[]', created_by TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_dewey_items_state ON dewey_items(state, updated_at)');
+    logger.info('Migration 158 complete: dewey_items');
+  },
+
+  159: async () => {
+    // Dewey's "added" column reads the newest documents (Chad 10-17: "loading should be instant") — without this index
+    // ORDER BY created_at scanned every document on each load.
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_created ON docs(created_at)');
+    logger.info('Migration 159 complete: idx_docs_created');
+  },
 };
 
 export const graphMigrations = {

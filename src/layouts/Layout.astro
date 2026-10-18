@@ -10,6 +10,7 @@ interface Props {
   noindex?: boolean;
   footer?: boolean;   // the global footer (off for full-height app views)
   anis?: boolean;     // Anís's chat button — on every public page (Chad 10-10)
+  app?: { manifest: string; icon: string; name: string; color: string };   // an installable app on its own (Dewey: /dewey/manifest.webmanifest)
 }
 
 const siteUrl = 'https://siftersearch.com';
@@ -25,7 +26,8 @@ const {
   type = 'website',
   noindex = false,
   footer = true,
-  anis = true
+  anis = true,
+  app = null
 } = Astro.props;
 
 // Build canonical URL from current path
@@ -113,8 +115,11 @@ const organizationSchema = {
     <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
 
     <link rel="icon" type="image/svg+xml" href="/ocean.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href={app?.icon || '/apple-touch-icon.png'} />
+    <link rel="manifest" href={app?.manifest || '/manifest.webmanifest'} />
+    {app && <meta name="apple-mobile-web-app-capable" content="yes" />}
+    {app && <meta name="apple-mobile-web-app-title" content={app.name} />}
+    {app && <meta name="theme-color" content={app.color} />}
 
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

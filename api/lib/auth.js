@@ -214,7 +214,27 @@ export function requireTier(...allowedTiers) {
 // Dewey, the AI Librarian: admins plus the members granted access on the users page (users.dewey_access, user migration 8).
 const DEWEY_TIERS = ['admin', 'superadmin'];
 export const canUseDewey = (user) => !!user && user.tier !== 'banned' && (DEWEY_TIERS.includes(user.tier) || Number(user.dewey_access) === 1);
+/** A Dewey API key (Chad 10-17: "a good usable secure API so I can use my own agents to talk to it"): X-Api-Key, or
+ *  Authorization: Bearer sk_…. Accepted only when the key is live, within its rate limit, carries the 'dewey' permission,
+ *  and belongs to a member who has Dewey access. Env/legacy keys belong to no one and are refused. */
+async function deweyKeyUser(request) {
+  const h = request.headers || {};
+  const key = h['x-api-key'] || (/^Bearer\s+(sk_\S+)$/.exec(h.authorization || '') || [])[1];
+  if (!key) return null;
+  const { validateApiKey } = await import('./api-keys.js');
+  const rec = await validateApiKey(key);
+  if (!rec || rec.legacy || !rec.user_id) throw ApiError.unauthorized?.('Invalid API key') ?? Object.assign(new Error('Invalid API key'), { statusCode: 401 });
+  if (rec.rateLimited) throw Object.assign(new Error('Rate limit reached for this key'), { statusCode: 429 });
+  let perms = []; try { perms = JSON.parse(rec.permissions || '[]'); } catch { /* none */ }
+  if (!perms.includes('dewey')) throw ApiError.forbidden('This key has no Dewey permission');
+  const user = await queryOne('SELECT id, email, tier, dewey_access FROM users WHERE id = ?', [rec.user_id]);
+  if (!canUseDewey(user)) throw ApiError.forbidden('Dewey access is for invited members');
+  return { sub: user.id, email: user.email, tier: user.tier, viaKey: rec.id };
+}
+
 export async function requireDewey(request, reply) {
+  const keyUser = await deweyKeyUser(request);
+  if (keyUser) { request.user = keyUser; return; }
   await authenticate(request, reply);
   if (DEWEY_TIERS.includes(request.user.tier)) return;
   const row = await queryOne('SELECT tier, dewey_access FROM users WHERE id = ?', [request.user.sub]);

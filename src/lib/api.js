@@ -1004,6 +1004,9 @@ export const dewey = {
   holdings: (body) => request('/api/dewey/holdings', { method: 'POST', body: JSON.stringify(body) }),
   recent: (limit = 25) => request(`/api/dewey/recent?limit=${limit}`),
   missing: () => request('/api/dewey/missing'),
+  want: (identified) => request('/api/dewey/items', { method: 'POST', body: JSON.stringify({ identified }) }),
+  items: () => request('/api/dewey/items'),
+  attachSource: (id, body) => request(`/api/dewey/items/${id}/source`, { method: 'POST', body: JSON.stringify(body) }),
 };
 
 export const librarian = {

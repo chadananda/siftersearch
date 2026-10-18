@@ -43,7 +43,8 @@ export async function createApiKey(userId, name, options = {}) {
     `INSERT INTO api_keys (user_id, name, key_hash, key_prefix, key_value, rate_limit, permissions, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
      RETURNING id, name, key_prefix, rate_limit, permissions, created_at`,
-    [userId, name, keyHash, keyPrefix, rawKey, options.rateLimit || 1000, JSON.stringify(options.permissions || ['search'])]
+    // retrievable: false keeps only the hash — a Dewey key acts on the library, so it is shown once and never stored readable
+    [userId, name, keyHash, keyPrefix, options.retrievable === false ? null : rawKey, options.rateLimit || 1000, JSON.stringify(options.permissions || ['search'])]
   );
 
   return {

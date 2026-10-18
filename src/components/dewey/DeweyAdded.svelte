@@ -1,14 +1,14 @@
 <script>
   // Dewey's right column: recently added books and where each stands in every indexing stage — the coverage ledger per
   // document (GET /api/dewey/recent). A stage reads done when it covers the book or is not needed for it (Chad 10-17).
-  import { onMount } from 'svelte';
   import { dewey } from '../../lib/api.js';
   import { compact } from '../../lib/observatory.js';
 
+  let { authed = false } = $props();
   let docs = $state(null);
   let error = $state(null);
   async function load() { try { docs = (await dewey.recent(30)).docs; error = null; } catch (e) { error = e.message; } }
-  onMount(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); });
+  $effect(() => { if (!authed) return; load(); const t = setInterval(load, 60000); return () => clearInterval(t); });
 
   // per layer: [label, done?, partial ratio] — the same measures as the dial
   const STAGES = [

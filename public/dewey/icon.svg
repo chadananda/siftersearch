@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0f2a3d"/>
+  <!-- an open book, the librarian's sign -->
+  <path d="M96 150c56-20 112-20 160 12v230c-48-32-104-32-160-12z" fill="#e8d9b5"/>
+  <path d="M416 150c-56-20-112-20-160 12v230c48-32 104-32 160-12z" fill="#f4ead1"/>
+  <path d="M256 162v230" stroke="#0f2a3d" stroke-width="6"/>
+  <g stroke="#b9a87e" stroke-width="7" stroke-linecap="round">
+    <path d="M128 200c36-10 70-8 100 6"/><path d="M128 240c36-10 70-8 100 6"/><path d="M128 280c36-10 70-8 100 6"/>
+    <path d="M284 206c30-14 64-16 100-6"/><path d="M284 246c30-14 64-16 100-6"/><path d="M284 286c30-14 64-16 100-6"/>
+  </g>
+  <text x="256" y="112" text-anchor="middle" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#7dd3fc">Dewey</text>
+</svg>

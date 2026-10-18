@@ -39,6 +39,8 @@ export const MODEL_ROLES = {
     why: 'best value for Arabic; batch half price; LM Studio retired (Chad 10-11)' },
   'episode-extract': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['json', 'multilingual', 'grounded-writing'],
     why: 'one call per episode of a predigested history (heading = boundary): place, date, cited summary, participants, events, questions; ~550 calls for GPB + DB' },
+  'dewey-chat': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['tool-use', 'streaming', 'fast'],
+    why: 'Dewey\'s streamed chat about adding works: checks holdings, puts works on the wanted list, attaches sources (tools); a few calls per turn' },
   'dewey-identify': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['vision', 'multilingual', 'json'],
     why: 'Dewey reads phone photos of covers, title pages and text pages (any script) into title/author/edition/printed lines; one call per check' },
   'toc-infer': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['json', 'multilingual', 'long-input'],

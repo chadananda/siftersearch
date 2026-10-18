@@ -5,14 +5,23 @@
   import { observatory, dewey } from '../../lib/api.js';
   import { compact, pct } from '../../lib/observatory.js';
 
+  let { authed = false } = $props();   // the page draws at once; the signed-in reads start when sign-in is ready
   let snap = $state(null);
   let missing = $state(null);
-  let tab = $state('have');
+  let tab = $state('wanted');
+  let wanted = $state(null);   // Dewey's own wanted list (dewey_items), open first
 
-  onMount(async () => {
-    observatory.telemetry().then((r) => (snap = r.data.snapshot)).catch(() => {});
+  onMount(() => { observatory.telemetry().then((r) => (snap = r.data.snapshot)).catch(() => {}); });   // public, edge-cached
+  let asked = false;
+  $effect(() => {
+    if (!authed || asked) return;
+    asked = true;
     dewey.missing().then((m) => (missing = m)).catch(() => (missing = { pending: true }));
+    const loadWanted = () => dewey.items().then((r) => (wanted = r.items)).catch(() => (wanted = []));
+    loadWanted(); const t = setInterval(loadWanted, 30000); return () => clearInterval(t);
   });
+  const STATE = { wanted: 'researching', researched: 'researched', source: 'source attached', processing: 'processing', ingested: 'in the library',
+    'needs-ocr': 'waits for OCR', 'needs-human': 'needs a person', failed: 'failed' };
   const LABEL = { "Baha'i": 'Bahá’í', Tao: 'Taoist' };
   const rows = $derived((tab === 'have' ? missing?.haveSource : missing?.noSource) ?? []);
 </script>
@@ -41,14 +50,26 @@
   </section>
 
   <section class="grow">
-    <h2>Known missing</h2>
-    {#if !missing}<p class="text-muted text-sm">Loading…</p>
-    {:else if missing.pending}<p class="text-muted text-sm">The missing-books list has not been computed yet.</p>
+    <h2>Missing</h2>
+    <div class="flex flex-wrap gap-1 mb-2 text-xs">
+      <button class:on={tab === 'wanted'} class="pill" onclick={() => (tab = 'wanted')}>Wanted · {wanted?.filter((i) => i.state !== 'ingested').length ?? '…'}</button>
+      <button class:on={tab === 'have'} class="pill" onclick={() => (tab = 'have')}>Catalogue, have source · {missing?.haveSourceTotal ?? '…'}</button>
+      <button class:on={tab === 'none'} class="pill" onclick={() => (tab = 'none')}>Catalogue, no source · {missing?.noSourceTotal ?? '…'}</button>
+    </div>
+    {#if tab === 'wanted'}
+      {#if !wanted}<p class="text-muted text-sm">Loading…</p>
+      {:else if !wanted.length}<p class="text-muted text-sm">Nothing wanted yet — tell Dewey about a book that is not here.</p>
+      {:else}
+        <ul class="text-xs flex flex-col gap-2" role="list">
+          {#each wanted as w (w.id)}
+            <li><span class="text-primary">{w.title}</span>{#if w.author}<span class="text-muted"> · {w.author}</span>{/if}
+              <div class="text-muted">{STATE[w.state] || w.state}{#if w.research?.isbn13} · ISBN {w.research.isbn13}{/if}{#if w.research?.year} · {w.research.year}{/if}{#if w.doc_id} · <a class="text-accent" href="/document/{w.doc_id}">open</a>{/if}</div></li>
+          {/each}
+        </ul>
+      {/if}
+    {:else if !missing}<p class="text-muted text-sm">Loading…</p>
+    {:else if missing.pending}<p class="text-muted text-sm">The catalogue's missing-books list has not been computed yet.</p>
     {:else}
-      <div class="flex gap-1 mb-2 text-xs">
-        <button class:on={tab === 'have'} class="pill" onclick={() => (tab = 'have')}>Have a source · {missing.haveSourceTotal ?? 0}</button>
-        <button class:on={tab === 'none'} class="pill" onclick={() => (tab = 'none')}>No source · {missing.noSourceTotal ?? 0}</button>
-      </div>
       <ul class="text-xs flex flex-col gap-1.5" role="list">
         {#each rows as m, i (m.id ?? i)}
           <li><span class="text-primary">{m.title || 'Untitled'}</span>{#if m.author}<span class="text-muted"> · {m.author}</span>{/if}</li>
