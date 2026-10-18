@@ -18,6 +18,8 @@ describe('isExhaustion', () => {
     expect(isExhaustion({ status: 429, message: 'Quota exceeded for metric embed_content requests per minute' })).toBe(false);
     expect(isExhaustion({ status: 429, message: 'Rate limit reached for requests' })).toBe(false);
     expect(isExhaustion({ status: 500, message: 'internal error' })).toBe(false);
+    // Gemini's per-minute 429 carries billing boilerplate and a camel-case metric id (killed phrase-index #106, 10-17)
+    expect(isExhaustion({ status: 429, message: '{"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.","status":"RESOURCE_EXHAUSTED","details":[{"violations":[{"quotaMetric":"generativelanguage.googleapis.com/embed_content_free_tier_requests","quotaId":"EmbedContentRequestsPerMinutePerProjectPerModel"}]}]}}' })).toBe(false);
   });
 });
 

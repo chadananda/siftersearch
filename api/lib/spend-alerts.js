@@ -16,13 +16,16 @@ const EXHAUSTED = [
   /quota exceeded.*(per[ _]day|per[ _]month|daily|monthly)|RESOURCE_EXHAUSTED.*(day|month|billing|credit)/i,
   /(daily|free) (neuron )?allocation|exceeded.*allocation/i,  // Cloudflare Workers AI
 ];
-const RATE_ONLY = /per[ _]minute|requests per min|rate limit(?!.*(day|month|billing|credit|balance))/i;
+const RATE_ONLY = /per[ _]?minute|requests per min|rate limit(?!.*(day|month|billing|credit|balance))/i;   // Gemini: "…PerMinute…"
+// Gemini's per-minute 429 says "You exceeded your current quota, please check your plan and billing details" — boilerplate,
+// not a billing problem; it killed phrase-index #106 (10-17) as "out of credit" while Gemini was fine.
+const BOILERPLATE = /please check your plan and billing details\.?/gi;
 
 /** Is this error the provider telling us we have no credit left? Pure. */
 export function isExhaustion({ status = null, message = '' } = {}) {
   const m = String(message || '');
   if (status === 402) return true;
-  if (RATE_ONLY.test(m) && !/billing|credit|balance|day|month/i.test(m)) return false;
+  if (RATE_ONLY.test(m) && !/billing|credit|balance|day|month/i.test(m.replace(BOILERPLATE, ''))) return false;
   return EXHAUSTED.some((re) => re.test(m));
 }
 
