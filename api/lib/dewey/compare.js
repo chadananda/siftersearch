@@ -62,14 +62,14 @@ const round = (x) => Math.round(x * 1000) / 1000;
 // Thresholds calibrated on real pairs (tests/api/dewey-compare.test.js): a clean vs an OCR'd copy of one text shares ~55–90%
 // of 4-grams; two unrelated books on the same subject share under 3%; a book that quotes a passage shares it out of
 // order with the rest. STRONG = most of it; SOME = a real shared passage.
-export const STRONG = 0.45, SOME = 0.12, ORDERED = 0.6, OCR_STRONG = 0.35;
+export const STRONG = 0.45, SOME = 0.12, ORDERED = 0.6, OCR_STRONG = 0.3;   // Marion Yazdi 34% in order (10-17)
 // tesseract on a decent scan keeps most 4-grams; a sample's own pages must still be mostly found to call it held
 
 export function relationOf({ ours_in_theirs: a, theirs_in_ours: b, in_order: o, length_ratio: r, sample = false }) {
   if (sample) {   // only some pages of ours were read: theirs cannot be "mostly in ours"; length comes from the page count
     // OCR'd text loses 4-grams to every misread word: a LONG IN-ORDER run is the signal (Roy Wilhelm 10-17: 40–42% in
-    // order against two copies of the same notes — unrelated texts share ~1%)
-    const strong = a >= STRONG || (a >= OCR_STRONG && o >= 0.8);
+    // order against two copies of the same notes; Marion Yazdi 34% — unrelated texts share ~1–3%)
+    const strong = a >= STRONG || (a >= OCR_STRONG && o >= 0.85);
     if (strong && o >= ORDERED) return r > 1.5 ? 'inside' : r < 0.67 ? 'partial' : 'same';
     return a >= SOME ? (o >= ORDERED ? 'overlap' : 'quotes') : 'unrelated';
   }

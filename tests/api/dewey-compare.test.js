@@ -59,6 +59,7 @@ describe('a scan read by preliminary OCR is compared as a SAMPLE', () => {
   it('OCR\'d pages sharing a long in-order run (≥35%) with a copy are the same text (Roy Wilhelm 10-17)', async () => {
     const { relationOf } = await import('../../api/lib/dewey/compare.js');
     expect(relationOf({ ours_in_theirs: 0.41, theirs_in_ours: 0.2, in_order: 0.93, length_ratio: 1.1, sample: true })).toBe('same');
+    expect(relationOf({ ours_in_theirs: 0.34, theirs_in_ours: 0.2, in_order: 0.9, length_ratio: 1.1, sample: true })).toBe('same');
     expect(relationOf({ ours_in_theirs: 0.41, theirs_in_ours: 0.2, in_order: 0.5, length_ratio: 1.1, sample: true })).not.toBe('same');
     expect(relationOf({ ours_in_theirs: 0.41, theirs_in_ours: 0.41, in_order: 0.93, length_ratio: 1.1 })).not.toBe('same');   // clean text keeps the 45% bar
   });
