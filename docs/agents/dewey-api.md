@@ -47,9 +47,9 @@ URLs of photos: cover, title page, a page of text), `file` (`{ name, data }`, ba
   "candidates": [ { "id": 1234, "title": "…", "author": "…", "language": "en", "evidence": [ { "kind": "title", "detail": "…" } ] } ] }
 ```
 
-Files Dewey reads (converted to Markdown, headings kept): PDF (text layer; a SCAN gets a preliminary OCR of up to 8
-sampled pages — tesseract, script detected — so it is still compared by text, as a sample; `compared.ocr_sample` says so,
-and importing it waits for full OCR), DOCX, DOC, RTF,
+Files Dewey reads (converted to Markdown, headings kept): PDF — SPOT-CHECKED: a PDF over 12 pages is read on ~10
+sampled pages and its length judged from the page count (`compared.sample`: pages read, of how many, engine); a SCAN gets
+a preliminary OCR of sampled pages instead (tesseract; vision for handwriting); importing it waits for full OCR —, DOCX, DOC, RTF,
 ODT, WPD, HTML, Safari `.webarchive`, EPUB, TXT/MD. Audio and video are refused with a reason (no transcription yet).
 **When text is given** (a file, a pasted passage, a photographed page) the library is compared with it IN FULL — word
 4-grams, both directions, and whether the shared text runs in order. Each candidate carries a `relation`:

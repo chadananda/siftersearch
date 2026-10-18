@@ -60,8 +60,8 @@ export const TOOLS = [
 export function summarize(r) {
   const id = r.identified || {};
   return JSON.stringify({ read_as: { title: id.title, author: id.author, edition: id.edition, year: id.year, language: id.language, kind: id.kind, needs_ocr: id.needs_ocr || undefined },
-    verdict: r.verdict, reason: r.reason, compared: r.compared ? (r.compared.ocr_sample
-      ? `a SCAN: ${r.compared.ocr_sample.pages.length} of its ${r.compared.ocr_sample.of} pages were read by preliminary OCR; ${r.compared.probes} passages from them were searched across the whole library and the ${r.compared.documents} closest documents compared in full — the verdict rests on that text; importing it will still need full OCR (SearchLayerPDF)`
+    verdict: r.verdict, reason: r.reason, compared: r.compared ? (r.compared.sample
+      ? `a SPOT-CHECK: ${r.compared.sample.pages.length} of its ${r.compared.sample.of} pages were read (${r.compared.sample.engine === 'text-layer' ? 'its text layer' : 'by preliminary OCR — a scan; importing it will need full OCR'}); ${r.compared.probes} passages from them were searched across the whole library and the ${r.compared.documents} closest documents compared, length judged from the page count — the verdict rests on that text`
       : `its text (${r.compared.words} words): ${r.compared.probes} passages were searched across the whole library and the ${r.compared.documents} closest documents compared in full — the verdict rests on the text, not the title. Say it that way (not "compared with every document")`) : undefined,
     candidates: (r.candidates || []).slice(0, 4).map((c) => ({ id: c.id, title: c.title, author: c.author, language: c.language,
       relation: c.relation?.relation, evidence: c.evidence.map((e) => e.kind + (e.detail ? `: ${e.detail}` : '')).join('; ') })) });

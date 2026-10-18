@@ -108,8 +108,8 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
     const doc = by.get(docId)?.doc || fetched.find((d) => d.id === docId);
     if (!doc) continue;
     const theirs = compareWords((await paragraphs(docId).catch(() => [])).map((p) => p.text).join('\n'));
-    // a scan's sampled pages: estimate the whole work's length from its page count
-    const c = id.ocr ? compareTexts(ourWords, theirs, { sample: true, ourLength: Math.round(ourWords.length * id.ocr.of / Math.max(1, id.ocr.sampled.length)) }) : compareTexts(ourWords, theirs);
+    // SAMPLED pages (a spot-checked PDF, or a scan's preliminary OCR): the whole work's length is estimated from its page count
+    const c = id.sample ? compareTexts(ourWords, theirs, { sample: true, ourLength: Math.round(ourWords.length * id.sample.of / Math.max(1, id.sample.sampled.length)) }) : compareTexts(ourWords, theirs);
     add(doc, { kind: 'text', weight: RANK[c.relation] * 2, detail: say(c) });
     out.push({ docId, c, probes: +(score.get(docId) || 0).toFixed(1) });
   }
@@ -123,7 +123,7 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
   const rels = candidates.map((c) => c.relation.relation);
   const verdict = rels.some((r) => HELD.has(r)) ? 'held' : rels.includes('partial') ? 'partly-held'
     : rels.some((r) => r === 'overlap' || r === 'quotes' || r === 'too-short') ? 'possible' : 'not-held';
-  return { verdict, candidates, compared: { words: ourWords.length, probes: probeList.length, documents: out.length, ...(id.ocr ? { ocr_sample: { pages: id.ocr.sampled, of: id.ocr.of, script: id.ocr.script } } : {}) } };
+  return { verdict, candidates, compared: { words: ourWords.length, probes: probeList.length, documents: out.length, ...(id.sample ? { sample: { pages: id.sample.sampled, of: id.sample.of, engine: id.sample.engine } } : {}) } };
 }
 
 /**
@@ -180,12 +180,17 @@ export async function identifyAndCheckOffThread({ file = null, path = null }, { 
 /** The body of the above (holdings-child.mjs runs it): read → identify → check → { identified, excerpt, result, sha256, bytes }. */
 export async function identifyAndCheck({ file = null, path = null }) {
   const { readFile } = await import('fs/promises');
+  const { createReadStream, statSync } = await import('fs');
   const { createHash } = await import('crypto');
   const { identifyFile } = await import('./identify.js');
   const { excerptOf } = await import('./appraise.js');
-  const bytes = path ? await readFile(path) : Buffer.from(file.data, 'base64');
   const name = path ? path.split('/').pop() : file.name || '';
-  const id = await identifyFile({ name, bytes: new Uint8Array(bytes) });
+  // a PDF on the server is never loaded into memory: poppler reads its sampled pages from disk; the checksum is streamed
+  const inPlacePdf = path && /\.pdf$/i.test(name);
+  const bytes = inPlacePdf ? null : path ? await readFile(path) : Buffer.from(file.data, 'base64');
+  const id = await identifyFile({ name, bytes: bytes && new Uint8Array(bytes), path });
   const result = await checkHoldings(id);
-  return { identified: id, excerpt: excerptOf(id._text || ''), result, sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length };
+  const sha256 = bytes ? createHash('sha256').update(bytes).digest('hex')
+    : await new Promise((res, rej) => { const h = createHash('sha256'); createReadStream(path).on('data', (d) => h.update(d)).on('end', () => res(h.digest('hex'))).on('error', rej); });
+  return { identified: id, excerpt: excerptOf(id._text || ''), result, sha256, bytes: bytes ? bytes.length : statSync(path).size };
 }

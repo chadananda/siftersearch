@@ -1,7 +1,7 @@
 // Dewey's converter: every format → Markdown with headings kept; one path for identify and intake.
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
-import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages, looksLikeWords, garbledLayer } from '../../api/lib/dewey/convert.js';
+import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages, looksLikeWords, garbledLayer, readPdf } from '../../api/lib/dewey/convert.js';
 
 describe('htmlToMarkdown', () => {
   it('keeps headings, paragraphs, lists, quotes and emphasis; drops scripts and styles', () => {
@@ -81,5 +81,36 @@ describe('preliminary OCR of scans', () => {
     expect(garbledLayer(garble)).toBe(true);
     expect(garbledLayer('You can see from what I have told you that we should have been ready ground for the teachings. But at the time we were first hearing of the Faith very little was being given out to the friends in the West.')).toBe(false);
     expect(garbledLayer('بسم الله الرحمن الرحيم '.repeat(10))).toBe(false);
+  });
+});
+
+describe('a big PDF is SPOT-CHECKED, not read whole (Chad 10-18)', () => {
+  // a fake poppler: pdfinfo says 300 pages; pdftotext answers per page (-f N -l N) or, without -f, the whole book
+  const fake = () => {
+    const calls = [];
+    const run = (cmd, args, opts, cb) => {
+      calls.push([cmd, args]);
+      if (cmd === 'pdfinfo') return cb(null, 'Title: x\nPages:          300\n', '');
+      const f = args.indexOf('-f');
+      cb(null, f >= 0 ? `Page ${args[f + 1]} of the book, with enough real words on it to read as running prose.` : 'THE WHOLE BOOK', '');
+    };
+    return { run, calls };
+  };
+  it('reads ~10 sampled pages and reports them, never the whole text', async () => {
+    const { run, calls } = fake();
+    const r = await readPdf({ path: '/books/big.pdf' }, { run });
+    expect(r.pages).toBe(300);
+    expect(r.sampled.length).toBeLessThanOrEqual(10);
+    expect(calls.filter(([c, a]) => c === 'pdftotext' && !a.includes('-f'))).toHaveLength(0);
+    expect(r.text).toMatch(/^\[page 2\]/);
+  });
+  it('reads every page when asked (intake imports the whole text)', async () => {
+    const { run } = fake();
+    const r = await readPdf({ path: '/books/big.pdf' }, { run, full: true });
+    expect(r).toMatchObject({ text: 'THE WHOLE BOOK', sampled: null });
+  });
+  it('a short PDF (≤ 12 pages) is simply read whole', async () => {
+    const run = (cmd, args, opts, cb) => cb(null, cmd === 'pdfinfo' ? 'Pages: 9\n' : 'nine pages', '');
+    expect((await readPdf({ path: '/x.pdf' }, { run })).sampled).toBeNull();
   });
 });

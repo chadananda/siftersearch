@@ -148,52 +148,94 @@ export const garbledLayer = (t) => mostlyLatin(t) && (wordRatio(t) ?? 1) < 0.85;
 /** Is this text mostly Latin letters? (a word-shape ratio means nothing for Arabic or Hebrew) */
 const mostlyLatin = (t) => { const l = (String(t).match(/\p{L}/gu) || []).length; return l > 0 && (String(t).match(/[A-Za-z]/g) || []).length / l > 0.8; };
 
-/** PRELIMINARY OCR of a scan: render sampled pages (pdftoppm, 200 dpi gray); tesseract for printed Latin, vision otherwise. */
-export async function ocrSample(bytes, totalPages, { run = execFile, k = 8, vision = null } = {}) {
-  const dir = await mkdtemp(join(tmpdir(), 'dewey-ocr-'));
-  try {
-    const src = join(dir, 'in.pdf');
-    await writeFile(src, bytes);
-    const pages = samplePages(totalPages, k);
-    await Promise.all(pages.map((p) => sh(run, 'pdftoppm', ['-r', '200', '-gray', '-f', String(p), '-l', String(p), '-singlefile', '-png', src, join(dir, `p${p}`)])));
-    // English first: OSD called a typewritten English scan "Japanese" (10-17) and the OCR came out as noise. When the English
-    // read of a middle page is not mostly real words, the pages are HANDWRITTEN or in another script — tesseract cannot be
-    // trusted there, so the vision model transcribes up to 4 sampled pages instead (handwriting and any script).
-    const mid = pages[Math.floor(pages.length / 2)];
-    const probe = await sh(run, 'tesseract', [join(dir, `p${mid}.png`), '-', '-l', 'eng', '--psm', '1']).catch(() => '');
-    if (!looksLikeWords(probe)) {
-      const few = pages.length <= 4 ? pages : [pages[0], pages[1], mid, pages.at(-1)].filter((p, i, a) => a.indexOf(p) === i);
-      const reads = await Promise.all(few.map(async (p) => (vision || visionRead)(await readFile(join(dir, `p${p}.png`))).catch(() => '')));
-      const ok = reads.map((t) => (/^\s*UNREADABLE\s*$/i.test(t) ? '' : t));
-      if (ok.join('').replace(/\s/g, '').length < 200) return { text: '', pages: few, script: 'unreadable', langs: 'vision' };
-      return { text: ok.map((t, i) => `[page ${few[i]}]\n${t.trim()}`).join('\n\n'), pages: few, script: 'handwriting or non-Latin', langs: 'vision' };
-    }
-    const script = 'Latin', langs = 'eng';
-    const texts = await Promise.all(pages.map((p) => (p === mid ? Promise.resolve(probe) : sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => ''))));
-    return { text: texts.map((t, i) => `[page ${pages[i]}]\n${t.trim()}`).join('\n\n'), pages, script, langs };
-  } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
+/** A PDF ON DISK for poppler: the server file itself when Dewey reads in place, else the bytes in a temp file. */
+async function onDisk({ bytes = null, path = null }, fn) {
+  if (path) return fn(path, null);
+  const dir = await mkdtemp(join(tmpdir(), 'dewey-pdf-'));
+  try { const f = join(dir, 'in.pdf'); await writeFile(f, bytes); return await fn(f, dir); } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
 }
 
-/**
- * A PDF's text layer → { text, pages }. poppler's pdftotext first: a separate native program, lean and fast (unpdf parsed a
- * 270 MB book inside the API process and pushed it past pm2's 3 GB limit — a restart, 10-18). unpdf where poppler is absent.
- */
-export async function pdfText(bytes, { run = execFile } = {}) {
-  const dir = await mkdtemp(join(tmpdir(), 'dewey-pdf-'));
+/** PRELIMINARY OCR of a scan: render sampled pages (pdftoppm, 200 dpi gray); tesseract for printed Latin, vision otherwise. */
+export async function ocrSample(src, totalPages, { run = execFile, k = 8, vision = null } = {}) {
+  const work = await mkdtemp(join(tmpdir(), 'dewey-ocr-'));
   try {
-    const src = join(dir, 'in.pdf');
-    await writeFile(src, bytes);
-    const info = await sh(run, 'pdfinfo', [src], 60000);
-    const pages = Number(info.match(/^Pages:\s+(\d+)/m)?.[1]) || 1;
-    const text = await sh(run, 'pdftotext', ['-enc', 'UTF-8', src, '-'], 600000);
-    return { text, pages };
+    // src: { bytes } or { path } (a bare Buffer still works)
+    return await onDisk(src.bytes || src.path ? src : { bytes: src }, async (pdf) => {
+      const dir = work;
+      const pages = samplePages(totalPages, k);
+      await Promise.all(pages.map((p) => sh(run, 'pdftoppm', ['-r', '200', '-gray', '-f', String(p), '-l', String(p), '-singlefile', '-png', pdf, join(dir, `p${p}`)])));
+      // English first: OSD called a typewritten English scan "Japanese" (10-17) and the OCR came out as noise. When the English
+      // read of a middle page is not mostly real words, the pages are HANDWRITTEN or in another script — tesseract cannot be
+      // trusted there, so the vision model transcribes up to 4 sampled pages instead (handwriting and any script).
+      const mid = pages[Math.floor(pages.length / 2)];
+      const probe = await sh(run, 'tesseract', [join(dir, `p${mid}.png`), '-', '-l', 'eng', '--psm', '1']).catch(() => '');
+      if (!looksLikeWords(probe)) {
+        const few = pages.length <= 4 ? pages : [pages[0], pages[1], mid, pages.at(-1)].filter((p, i, a) => a.indexOf(p) === i);
+        const reads = await Promise.all(few.map(async (p) => (vision || visionRead)(await readFile(join(dir, `p${p}.png`))).catch(() => '')));
+        const ok = reads.map((t) => (/^\s*UNREADABLE\s*$/i.test(t) ? '' : t));
+        if (ok.join('').replace(/\s/g, '').length < 200) return { text: '', pages: few, script: 'unreadable', langs: 'vision' };
+        return { text: ok.map((t, i) => `[page ${few[i]}]\n${t.trim()}`).join('\n\n'), pages: few, script: 'handwriting or non-Latin', langs: 'vision' };
+      }
+      const script = 'Latin', langs = 'eng';
+      const texts = await Promise.all(pages.map((p) => (p === mid ? Promise.resolve(probe) : sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => ''))));
+      return { text: texts.map((t, i) => `[page ${pages[i]}]\n${t.trim()}`).join('\n\n'), pages, script, langs };
+    });
+  } finally { await rm(work, { recursive: true, force: true }).catch(() => {}); }
+}
+
+// SPOT-CHECK, not a full read (Chad 10-18: "we should be able to tell by spot-checking and size comparison … It is wasteful
+// to read the whole thing"): a PDF over SAMPLE_OVER pages is read on SAMPLE_PAGES sampled pages; its length comes from the
+// page count. Intake (the import itself) still reads every page (full: true).
+export const SAMPLE_OVER = 12, SAMPLE_PAGES = 10;
+
+/**
+ * A PDF's text layer → { text, pages, sampled } (sampled = the page numbers read, or null for a full read). poppler's
+ * pdftotext — a separate native program (unpdf parsed a 270 MB book inside the API and pushed it past pm2's 3 GB, 10-18);
+ * unpdf only where poppler is absent.
+ */
+export async function readPdf(src, { run = execFile, full = false } = {}) {
+  try {
+    return await onDisk(src, async (f) => {
+      const pages = Number((await sh(run, 'pdfinfo', [f], 60000)).match(/^Pages:\s+(\d+)/m)?.[1]) || 1;
+      if (!full && pages > SAMPLE_OVER) {
+        const picks = samplePages(pages, SAMPLE_PAGES);
+        const texts = await Promise.all(picks.map((p) => sh(run, 'pdftotext', ['-f', String(p), '-l', String(p), '-enc', 'UTF-8', f, '-'], 120000).catch(() => '')));
+        return { text: picks.map((p, i) => `[page ${p}]\n${texts[i].trim()}`).join('\n\n'), pages, sampled: picks };
+      }
+      return { text: await sh(run, 'pdftotext', ['-enc', 'UTF-8', f, '-'], 600000), pages, sampled: null };
+    });
   } catch (err) {
     if (!/ENOENT|not found/i.test(err.message)) throw err;
     const { extractText, getDocumentProxy } = await import('unpdf');
+    const bytes = src.bytes || await readFile(src.path);
     const pdf = await getDocumentProxy(new Uint8Array(bytes));
     const { text, totalPages } = await extractText(pdf, { mergePages: true });
-    return { text: Array.isArray(text) ? text.join('\n') : text || '', pages: totalPages || 1 };
-  } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
+    return { text: Array.isArray(text) ? text.join('\n') : text || '', pages: totalPages || 1, sampled: null };
+  }
+}
+
+/** A PDF → Markdown text: the text layer (sampled pages unless full), a fresh OCR of sampled pages when the layer is
+ *  missing (a scan) or garbled (an old OCR). */
+async function pdfToMarkdown(src, deps) {
+  const { text: t, pages, sampled } = await (deps.readPdf || readPdf)(src, { full: !!deps.full });
+  const per = sampled ? sampled.length : pages;
+  const body = t.replace(/\[page \d+\]/g, '');
+  const scan = body.replace(/\s/g, '').length < 200 || body.split(/\s+/).length / per < 25;
+  const ocrOf = (o, extra = {}) => ({ markdown: o.text, pages, format: 'pdf', scan: true, sample: { sampled: o.pages, of: pages, engine: o.langs === 'vision' ? 'vision' : 'tesseract', script: o.script, ...extra } });
+  // a GARBLED text layer (an old OCR: "uld ooo;o aiM1 r thea ~lk") reads worse than a fresh tesseract pass — Kelsey's
+  // layer scored 0.80 real words, a fresh read 0.95, and the garble hid that the library holds it (10-17)
+  const layer = !scan && mostlyLatin(body) ? wordRatio(body) : null;
+  if (layer != null && layer < 0.88 && deps.ocr !== false) {
+    const o = await (deps.ocrSample || ocrSample)(src, pages).catch(() => null);
+    const fresh = o?.text ? wordRatio(o.text) : null;
+    if (fresh != null && fresh >= layer + 0.08) return ocrOf(o, { replaced_layer: +layer.toFixed(2) });
+  }
+  // a scan: a preliminary OCR of sampled pages, so the holdings check can still compare TEXT (deps.ocr: false skips it)
+  if (scan && deps.ocr !== false) {
+    const o = await (deps.ocrSample || ocrSample)(src, pages).catch(() => null);
+    if (o?.text && o.text.replace(/\s|\[page \d+\]/g, '').length > 200) return ocrOf(o);
+  }
+  return { markdown: t, pages, format: 'pdf', scan, ...(sampled ? { sample: { sampled, of: pages, engine: 'text-layer' } } : {}) };
 }
 
 /** Plain text in an unknown encoding: UTF-8 if it decodes cleanly, else Windows-1252 (old .txt files). */
@@ -202,31 +244,20 @@ function plain(bytes) {
   return (u.match(/�/g) || []).length > 3 ? new TextDecoder('windows-1252').decode(bytes) : u;
 }
 
-/** Any file → { markdown, pages, format, scan }. `name` gives the extension; content sniffing covers missing ones. */
+/**
+ * Any file → { markdown, pages, format, scan, sample? }. `name` gives the extension; content sniffing covers missing ones.
+ * deps.path = the file on the server (read in place; bytes may then be null for a PDF); deps.full = read every page (intake);
+ * deps.ocr === false = no preliminary OCR (intake). sample = { sampled, of, engine: text-layer|tesseract|vision } when only
+ * some pages were read — the comparison then judges length from the page count.
+ */
 export async function toMarkdownText(bytes, name = '', deps = {}) {
-  const b = Buffer.from(bytes);
   let ext = (String(name).match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+  if (ext === 'pdf' && deps.path && !bytes) return pdfToMarkdown({ path: deps.path }, deps);   // never loaded into memory
+  const b = Buffer.from(bytes || await readFile(deps.path));
   if (!ext) ext = b.subarray(0, 4).toString() === '%PDF' ? 'pdf' : b.subarray(0, 8).toString() === 'bplist00' ? 'webarchive'
     : b[0] === 0x50 && b[1] === 0x4b ? (b.includes('mimetypeapplication/epub+zip') ? 'epub' : 'docx') : b.subarray(0, 5).toString() === '{\\rtf' ? 'rtf' : 'txt';
   if (MEDIA.test(ext)) throw Object.assign(new Error(`${ext.toUpperCase()} is audio/video — Dewey cannot transcribe it yet`), { unsupported: true });
-  if (ext === 'pdf') {
-    const { text: t, pages } = await (deps.pdfText || pdfText)(b);
-    const scan = t.replace(/\s/g, '').length < 200 || t.split(/\s+/).length / pages < 25;
-    // a GARBLED text layer (an old OCR: "uld ooo;o aiM1 r thea ~lk") reads worse than a fresh tesseract pass — Kelsey's
-    // layer scored 0.80 real words, a fresh read 0.95, and the garble hid that the library holds it (10-17)
-    const layer = !scan && mostlyLatin(t) ? wordRatio(t) : null;
-    if (layer != null && layer < 0.88 && deps.ocr !== false) {
-      const o = await (deps.ocrSample || ocrSample)(b, pages).catch(() => null);
-      const fresh = o?.text ? wordRatio(o.text) : null;
-      if (fresh != null && fresh >= layer + 0.08) return { markdown: o.text, pages, format: 'pdf', scan: true, ocr: { sampled: o.pages, of: pages, script: o.script, engine: o.langs === 'vision' ? 'vision' : 'tesseract', replaced_layer: +layer.toFixed(2) } };
-    }
-    // a scan: a preliminary OCR of sampled pages, so the holdings check can still compare TEXT (deps.ocr: false skips it)
-    if (scan && deps.ocr !== false) {
-      const o = await (deps.ocrSample || ocrSample)(b, pages).catch(() => null);
-      if (o?.text && o.text.replace(/\s|\[page \d+\]/g, '').length > 200) return { markdown: o.text, pages, format: 'pdf', scan: true, ocr: { sampled: o.pages, of: pages, script: o.script, engine: o.langs === 'vision' ? 'vision' : 'tesseract' } };
-    }
-    return { markdown: t, pages, format: 'pdf', scan };
-  }
+  if (ext === 'pdf') return pdfToMarkdown({ bytes: b, path: deps.path || null }, deps);
   let html;
   if (ext === 'docx') html = await docxHtml(b);
   else if (OFFICE.has(ext)) html = await (deps.office || officeHtml)(b, ext);
