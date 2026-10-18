@@ -16,6 +16,24 @@
   let log;
   let hasInput = $derived(!!q.trim() || photos.length > 0 || !!file);
 
+  // speaking (Chad 10-17): the browser's speech recognition fills the input as you talk — edit, then send
+  const SR = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+  let listening = $state(false);
+  let rec = null;
+  function toggleMic() {
+    if (listening) { rec?.stop(); return; }
+    rec = new SR();
+    rec.lang = navigator.language || 'en-US';
+    rec.interimResults = true;
+    rec.continuous = false;
+    const before = q ? q.replace(/\s*$/, ' ') : '';
+    rec.onresult = (e) => { q = before + [...e.results].map((r) => r[0].transcript).join(' '); };
+    rec.onend = () => { listening = false; };
+    rec.onerror = () => { listening = false; };
+    listening = true;
+    rec.start();
+  }
+
   function resize(f, max = 1600) {
     return new Promise((ok, fail) => {
       const img = new Image();
@@ -211,9 +229,12 @@
     {/if}
     <!-- full-width input with Send inside it (Chad 10-17) -->
     <div class="field">
-      <textarea class="w-full pl-3 pr-14 py-3 rounded-2xl border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
+      <textarea class="w-full pl-3 {SR ? 'pr-28' : 'pr-14'} py-3 rounded-2xl border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
         placeholder="Name it, paste a link, or ask…" aria-label="Message to Dewey"
         onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}></textarea>
+      {#if SR}<button type="button" class="mic" class:on={listening} onclick={toggleMic} aria-label={listening ? 'Stop listening' : 'Speak'} title={listening ? 'Stop listening' : 'Speak'}>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm6-3a6 6 0 0 1-12 0m6 6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>{/if}
       <button class="send" disabled={busy || !hasInput} aria-label="Send">{#if busy}…{:else}<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>{/if}</button>
     </div>
   </form>
@@ -245,6 +266,9 @@
   .send { position: absolute; right: 0.5rem; bottom: 0.55rem; width: 2.75rem; height: 2.75rem; border-radius: 999px; display: inline-flex;
     align-items: center; justify-content: center; background: var(--accent-primary); color: white; }
   .send:disabled { opacity: 0.4; }
+  .mic { position: absolute; right: 3.6rem; bottom: 0.55rem; width: 2.75rem; height: 2.75rem; border-radius: 999px; display: inline-flex;
+    align-items: center; justify-content: center; color: var(--text-primary); border: 1px solid var(--border); background: var(--surface-1); }
+  .mic.on { background: var(--error); color: white; border-color: transparent; animation: pulse 1s ease-in-out infinite; }
   .fabs { position: absolute; right: 0.9rem; bottom: 6.5rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 2; }
   .fab { width: 3.5rem; height: 3.5rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem;
     cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.5); }

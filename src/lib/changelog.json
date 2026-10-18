@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:26:13.216Z",
+  "generated": "2026-10-18T03:28:39.870Z",
   "entries": [
+    {
+      "hash": "e770e716",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Appraisal — Perplexity + Parallel.ai research, then in scope?, which shelf, value, price, free text online, advice; a live status line at every step",
+      "scope": "dewey"
+    },
     {
       "hash": "9a4eb7f6",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "'quoted in <work>' never credits the quoting work; Ḥuqúqu'lláh (our copy's attribution lines demonstrably wrong) takes the official section/work attribution over its own",
       "scope": "authorship"
-    },
-    {
-      "hash": "7dc8d999",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "A citation naming only a work ('(The Kitáb-i-Aqdas, par. 42)') closes the extracts above it and names its writer through a works map (else the section heading) — extracts were waiting for the next line that named a person",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "e770e716",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Appraisal — Perplexity + Parallel.ai research, then in scope?, which shelf, value, price, free text online, advice; a live status line at every step",
+        "scope": "dewey"
+      },
       {
         "hash": "9a4eb7f6",
         "date": "2026-10-17",
@@ -7013,13 +7020,6 @@
         "date": "2026-10-08",
         "type": "Fixed",
         "description": "'quoted in <work>' never credits the quoting work; Ḥuqúqu'lláh (our copy's attribution lines demonstrably wrong) takes the official section/work attribution over its own",
-        "scope": "authorship"
-      },
-      {
-        "hash": "7dc8d999",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "A citation naming only a work ('(The Kitáb-i-Aqdas, par. 42)') closes the extracts above it and names its writer through a works map (else the section heading) — extracts were waiting for the next line that named a person",
         "scope": "authorship"
       }
     ]

@@ -5,10 +5,12 @@
   // needed for it.
   import { dewey } from '../../lib/api.js';
 
-  let { authed = false } = $props();
+  let { authed = false, oncount = () => {} } = $props();   // oncount(n): works being processed now (the edge button's badge)
   let items = $state(null);
   let error = $state(null);
-  async function load() { try { items = (await dewey.activity(30)).items; error = null; } catch (e) { error = e.message; } }
+  async function load() {
+    try { items = (await dewey.activity(30)).items; error = null; oncount(items.filter((i) => ['source', 'processing'].includes(i.state)).length); } catch (e) { error = e.message; }
+  }
   // every 10 s while something is loading; otherwise about once a minute
   $effect(() => {
     if (!authed) return;
@@ -40,7 +42,7 @@
 </script>
 
 <aside class="col" aria-label="Loading now">
-  <h2>Loading</h2>
+  <h2>Loading{#if items?.some((i) => ['source', 'processing'].includes(i.state))} <span class="count">{items.filter((i) => ['source', 'processing'].includes(i.state)).length}</span>{/if}</h2>
   {#if error}<p class="text-error text-sm">{error}</p>
   {:else if !items}<p class="text-muted text-sm">…</p>
   {:else if !items.length}<p class="text-muted text-sm">Nothing loading yet. Attach a PDF or a link to a wanted book and it shows here while Dewey brings it in.</p>
@@ -69,6 +71,7 @@
 <style>
   .col { height: 100%; min-height: 0; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-1); padding: 0.75rem; }
   h2 { font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; }
+  .count { display: inline-block; min-width: 1.4rem; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-primary); color: white; font-size: 0.8rem; text-align: center; }
   .item { padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle); }
   .stages { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.3rem; }
   .stage { font-size: 0.65rem; padding: 0.05rem 0.35rem; border-radius: 0.25rem; border: 1px solid var(--border-subtle); color: var(--text-muted); }

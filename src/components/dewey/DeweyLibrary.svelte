@@ -41,7 +41,7 @@
       <h3>Indexing</h3>
       <ul class="text-xs flex flex-col gap-1">
         {#each snap.rings.filter((r) => !r.planned) as r (r.id)}
-          <li class="flex items-center gap-2"><span class="w-20 text-secondary truncate">{r.label}</span>
+          <li class="flex items-center gap-2"><span class="w-28 text-secondary truncate" title={r.label}>{r.label}</span>
             <span class="flex-1 h-1.5 rounded bg-surface-2 overflow-hidden"><span class="block h-full bg-accent" style={`width:${Math.min(100, (100 * r.done) / (r.total || 1))}%`}></span></span>
             <span class="w-12 text-right tabular-nums text-primary">{pct(r.done, r.total)}</span></li>
         {/each}
