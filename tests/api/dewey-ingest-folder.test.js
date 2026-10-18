@@ -49,6 +49,16 @@ describe('dewey-ingest-folder', () => {
     await deweyIngestFolderJob({ batch: 1 }, deps(queued));
     expect(items[0].state).toBe('source');
   });
+  it('nothing goes in unappraised or out of scope — it waits for a person (the Copyright Book List of 10-18)', async () => {
+    const queued = [];
+    const d = { ...deps(queued), appraise: async (id) => (String(id.title).includes('letter') ? null : String(id.title).includes('notes') ? { title: 'A list of file names', recommendation: 'skip', in_scope: 'no', summary: 'a list of PDF file names' } : { title: 'Real Title' }) };
+    const r = await deweyIngestFolderJob({ batch: 2 }, d);
+    expect(r.needs_person).toEqual(['/in/letter.txt', '/in/notes.docx']);
+    expect(r.queued).toEqual([]);
+    expect(items.find((i) => i.original_path === '/in/letter.txt').log.at(-1).why).toMatch(/could not be appraised/);
+    expect(items.find((i) => i.original_path === '/in/notes.docx').log.at(-1).why).toMatch(/out of scope: a list of PDF file names/);
+    expect(queued.map(([n]) => n)).toEqual(['dewey-ingest-folder']);
+  });
   it('lists only document formats, easiest first', async () => {
     const { mkdtempSync, writeFileSync, mkdirSync } = await import('fs');
     const { tmpdir } = await import('os');

@@ -38,9 +38,9 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps =
   const { list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder' } = deps;
   const dir = ingestDir();
   const files = await list(dir);
-  const out = { round, queued: [], held: [], skipped: 0 };
+  const out = { round, queued: [], held: [], needs_person: [], skipped: 0 };
   for (const f of files) {
-    if (out.queued.length + out.held.length >= batch) break;
+    if (out.queued.length + out.held.length + out.needs_person.length >= batch) break;
     const hash = await sha(f.path);
     const known = await findBySha(hash);
     // handled already — or found held by an earlier round. (A file Chad once DECLINED but has now placed here is a yes.)
@@ -55,18 +55,30 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps =
       out.held.push(f.path);
       continue;
     }
-    // a file never offered before is appraised from its own text (title, author, shelf) — as an upload would be
-    const a = known ? null : await appraise(doc.identified, doc.excerpt, doc.result.verdict).catch(() => null);
-    const item = known || await createItem({ title: a?.title || doc.identified.title || f.path.split('/').pop(), author: a?.author || doc.identified.author || null,
-      kind: a?.kind || doc.identified.kind || null, identified: { ...doc.identified, file_name: f.path.split('/').pop(), shelf: a?.shelf || null, appraisal: a || null },
-      by, state: 'offered', why: 'placed in the ingest folder' });
-    await updateItem(item.id, { state: 'source', sha256: hash, original_path: f.path }, `ingest folder (round ${round}, easiest first): ${doc.result.verdict} → adding`);
+    // EVERY file is appraised from its own text before it goes in (an earlier offer's appraisal is reused when it has one).
+    // 10-18: "Copyright Book List.txt" — a list of PDF file names whose earlier appraisal had failed — went in titled by its
+    // first line. No appraisal, or "out of scope", now waits for a person instead.
+    let a = known?.identified?.appraisal?.recommendation ? known.identified.appraisal : null;
+    if (!a) a = await appraise(doc.identified, doc.excerpt, doc.result.verdict).catch(() => null);
+    const name = f.path.split('/').pop();
+    const item = known || await createItem({ title: a?.title || `Untitled (${name})`, author: a?.author || null, kind: a?.kind || doc.identified.kind || null,
+      identified: { ...doc.identified, file_name: name, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: 'placed in the ingest folder' });
+    const hold = !a?.title ? 'could not be appraised (no title from its contents)'
+      : a.recommendation === 'skip' || a.in_scope === 'no' ? `Dewey judged it out of scope: ${String(a.summary || a.scope_why || '').slice(0, 200)}` : null;
+    if (hold) {
+      await updateItem(item.id, { state: 'needs-human', sha256: hash, original_path: f.path, identified: { ...item.identified, appraisal: a || null, shelf: a?.shelf || null } },
+        `ingest folder: ${hold} — add it by hand if you want it`);
+      out.needs_person.push(f.path);
+      continue;
+    }
+    await updateItem(item.id, { state: 'source', sha256: hash, original_path: f.path, title: a.title, author: a.author || item.author || null,
+      identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null } }, `ingest folder (round ${round}, easiest first): ${doc.result.verdict} → adding`);
     await queue('dewey-intake', { id: item.id }, by);
     out.queued.push(f.path);
   }
-  const remaining = files.length - out.skipped - out.queued.length - out.held.length;
+  const remaining = files.length - out.skipped - out.queued.length - out.held.length - out.needs_person.length;
   // the next round queues BEHIND this round's intakes (same lane, first in first out) — gradual by construction
   if (remaining > 0) await queue('dewey-ingest-folder', { batch, round: round + 1 }, by);
-  await logActivity('ingest', `ingest folder round ${round}: ${out.queued.length} queued, ${out.held.length} already held, ${remaining} waiting`).catch(() => {});
+  await logActivity('ingest', `ingest folder round ${round}: ${out.queued.length} queued, ${out.held.length} already held, ${out.needs_person.length} for a person, ${remaining} waiting`).catch(() => {});
   return { ...out, remaining };
 }
