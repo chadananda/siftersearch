@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-18T04:50:37.725Z",
+  "generated": "2026-10-18T05:04:07.872Z",
   "entries": [
+    {
+      "hash": "b50ddeb2",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Chat answers at once and keeps the line alive (JSON leading spaces / SSE ping) — long turns hit Cloudflare's 100 s edge timeout (524); agent told the full text was compared, never asks for lines; folder sweep --chat",
+      "scope": "dewey"
+    },
+    {
+      "hash": "15b5d7be",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Holdings by FULL-TEXT comparison — normalized word 4-grams both directions + order → same · inside a compilation · partly held · quotes · unrelated; probes find candidates (common quotations discounted); calibrated on real pairs",
+      "scope": "dewey"
+    },
     {
       "hash": "620533a8",
       "date": "2026-10-17",
@@ -3486,24 +3500,24 @@
       "type": "Test",
       "description": "Blind third gold set (God Passes By, Memorials, Lights of Guidance); detection scored only on definite labels",
       "scope": "authorship"
-    },
-    {
-      "hash": "730b3685",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier v7 — a paragraph never quotes its own speaker; reported teachings count as cited; generic narrators → 'the editor or reporter'",
-      "scope": "authorship"
-    },
-    {
-      "hash": "cca24d26",
-      "date": "2026-10-08",
-      "type": "Test",
-      "description": "Held-out gold (New Era, ‘Abdu’l-Bahá in London — talk + editor's report) for the window classifier; never tuned on",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "b50ddeb2",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Chat answers at once and keeps the line alive (JSON leading spaces / SSE ping) — long turns hit Cloudflare's 100 s edge timeout (524); agent told the full text was compared, never asks for lines; folder sweep --chat",
+        "scope": "dewey"
+      },
+      {
+        "hash": "15b5d7be",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Holdings by FULL-TEXT comparison — normalized word 4-grams both directions + order → same · inside a compilation · partly held · quotes · unrelated; probes find candidates (common quotations discounted); calibrated on real pairs",
+        "scope": "dewey"
+      },
       {
         "hash": "620533a8",
         "date": "2026-10-17",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-08",
         "type": "Test",
         "description": "Blind third gold set (God Passes By, Memorials, Lights of Guidance); detection scored only on definite labels",
-        "scope": "authorship"
-      },
-      {
-        "hash": "730b3685",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier v7 — a paragraph never quotes its own speaker; reported teachings count as cited; generic narrators → 'the editor or reporter'",
-        "scope": "authorship"
-      },
-      {
-        "hash": "cca24d26",
-        "date": "2026-10-08",
-        "type": "Test",
-        "description": "Held-out gold (New Era, ‘Abdu’l-Bahá in London — talk + editor's report) for the window classifier; never tuned on",
         "scope": "authorship"
       }
     ]

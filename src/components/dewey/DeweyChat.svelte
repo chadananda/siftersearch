@@ -146,6 +146,9 @@
     const { item } = await dewey.want(r.identified);
     const t = turns.at(-1); t.parts.push({ kind: 'item', item }); turns = [...turns]; scrollDown();
   }
+  async function decide(item, how) {
+    try { const { item: next } = await dewey[how](item.id); Object.assign(item, next); turns = [...turns]; } catch (e) { item._err = e.message; turns = [...turns]; }
+  }
   let sourceUrl = $state({});
   async function attach(item, body) {
     try { const { item: next } = await dewey.attachSource(item.id, body); Object.assign(item, next); turns = [...turns]; } catch (e) { item._err = e.message; turns = [...turns]; }
@@ -164,7 +167,7 @@
     'not-found-by-title': { label: 'Not found by title', tone: 'text-warning' },
     'not-held': { label: 'Not in the library', tone: 'text-error' },
   };
-  const STATE = { wanted: 'Wanted — researching', researched: 'Wanted — researched', source: 'Source attached', processing: 'Processing',
+  const STATE = { offered: 'Not in the library — add it?', declined: 'Not added', wanted: 'Wanted — researching', researched: 'Wanted — researched', source: 'Source attached', processing: 'Processing',
     ingested: 'In the library', 'needs-ocr': 'Scan — waits for OCR', 'needs-human': 'Needs a person', failed: 'Failed' };
   // Dewey's light markdown: *italic* and **bold**, everything else as text (escaped first)
   const md = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -237,6 +240,14 @@
               <p class="text-sm"><span class="font-semibold text-primary">{it.title}</span>{#if it.author}<span class="text-secondary"> · {it.author}</span>{/if}</p>
               <p class="text-xs text-accent">{STATE[it.state] || it.state}</p>
               {#if it.state === 'ingested' && it.doc_id}<a class="text-sm text-accent" href="/document/{it.doc_id}">Open it in the library →</a>{/if}
+              <!-- an upload we lack: Dewey recommends a shelf and asks (Chad 10-17); one tap says yes or no -->
+              {#if it.state === 'offered'}
+                {#if it.identified?.shelf}<p class="text-xs text-secondary">Recommended: {it.identified.shelf.religion} › {it.identified.shelf.collection}</p>{/if}
+                <div class="flex gap-1.5 mt-2">
+                  <button class="act primary" onclick={() => decide(it, 'accept')}>Add it</button>
+                  <button class="act" onclick={() => decide(it, 'decline')}>Not this one</button>
+                </div>
+              {/if}
               {#if ['wanted', 'researched', 'needs-ocr', 'failed'].includes(it.state)}
                 <div class="flex flex-wrap gap-1.5 mt-2 items-center">
                   <input class="flex-1 min-w-40 px-3 py-2 text-base rounded-lg border border-border bg-surface-0 text-primary" placeholder="Link to a PDF or page" bind:value={sourceUrl[it.id]} />

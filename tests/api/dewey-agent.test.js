@@ -8,7 +8,8 @@ vi.mock('../../api/lib/dewey/identify.js', () => ({
 const items = [];
 vi.mock('../../api/lib/repos/dewey-repo.js', () => ({
   createItem: vi.fn(async (o) => { const i = { id: items.length + 1, state: 'wanted', ...o }; items.push(i); return i; }),
-  findOpenByTitle: vi.fn(async () => null), listItems: vi.fn(async () => items), getItem: vi.fn(), updateItem: vi.fn(),
+  findOpenByTitle: vi.fn(async () => null), listItems: vi.fn(async () => items), getItem: vi.fn(),
+  updateItem: vi.fn(async (id, f) => Object.assign(items.find((i) => i.id === id) || {}, f)),
 }));
 vi.mock('../../api/lib/repos/ops-report-repo.js', () => ({ enqueue: vi.fn(async () => ({})) }));
 const { deweyTurn, summarize } = await import('../../api/lib/dewey/agent.js');
@@ -58,21 +59,32 @@ describe('dewey chat turn', () => {
   });
 });
 
-describe('upload is one step', () => {
+describe('an upload we lack is OFFERED, never imported unasked (Chad 10-17)', () => {
   const quiet = async () => (async function* () { yield { choices: [{ delta: { content: 'ok' } }] }; })();
-  it('a file we lack that belongs here is imported at once; a held one is not', async () => {
-    const attached = [];
-    const attachSource = async (id, src) => { attached.push({ id, src }); return { id, state: 'source', title: 'A Rare Pamphlet' }; };
-    const events = [];
-    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.pdf', data: 'eA==' } }, emit: (e) => events.push(e), attachSource, create: quiet,
-      check: async () => ({ verdict: 'not-held', candidates: [] }), appraise: async () => ({ in_scope: 'yes', recommendation: 'add' }) });
-    expect(attached).toHaveLength(1);
-    expect(attached[0].src.file.name).toBe('p.pdf');
-    expect(events.some((e) => e.type === 'item' && e.item.state === 'source')).toBe(true);
-    attached.length = 0;
-    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.pdf', data: 'eA==' } }, emit: () => {}, attachSource, create: quiet,
-      check: async () => ({ verdict: 'held', candidates: [{ id: 1, title: 'A Rare Pamphlet', evidence: [] }] }), appraise: async () => { throw new Error('not called'); } });
+  const archive = async () => ({ path: '/originals/x.pdf', sha256: 'abc', bytes: 1024 });
+  it('appraised from its own text, kept as an offered item with the recommended shelf; nothing queued', async () => {
+    const attached = [], events = [];
+    const attachSource = async (id, src) => { attached.push({ id, src }); return { id }; };
+    const appraiseDoc = async () => ({ title: 'Shoghi Effendi in Torquay', shelf: { religion: "Baha'i", collection: 'Pilgrim Notes' }, recommendation: 'add',
+      recommendation_line: 'It looks like this belongs in our Bahá’í › Pilgrim Notes collection.' });
+    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.docx', data: 'eA==' } }, emit: (e) => events.push(e), attachSource, create: quiet, archive, appraiseDoc,
+      check: async () => ({ verdict: 'not-held', candidates: [], compared: { words: 900, probes: 30, documents: 3 } }), appraise: async () => { throw new Error('no web appraisal for an upload'); } });
     expect(attached).toHaveLength(0);
+    const offer = events.find((e) => e.type === 'item')?.item;
+    expect(offer).toMatchObject({ state: 'offered', title: 'Shoghi Effendi in Torquay', original_path: '/originals/x.pdf', identified: { shelf: { collection: 'Pilgrim Notes' } } });
+  });
+  it('a held upload is neither offered nor appraised', async () => {
+    const events = [];
+    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.pdf', data: 'eA==' } }, emit: (e) => events.push(e), attachSource: async () => { throw new Error('no'); }, create: quiet, archive,
+      check: async () => ({ verdict: 'held', candidates: [{ id: 1, title: 'A Rare Pamphlet', evidence: [] }] }), appraiseDoc: async () => { throw new Error('not called'); } });
+    expect(events.some((e) => e.type === 'item')).toBe(false);
+  });
+  it('add_offered imports on yes, item by item', async () => {
+    const { makeTools } = await import('../../api/lib/dewey/agent.js');
+    const accepted = [];
+    const tools = makeTools({ by: 'chad', emit: () => {}, accept: async (id) => { accepted.push(id); return { id, state: 'source' }; } });
+    expect(JSON.parse(await tools.add_offered({ item_ids: [4, 5] })).accepted).toEqual([{ id: 4, state: 'source' }, { id: 5, state: 'source' }]);
+    expect(accepted).toEqual([4, 5]);
   });
 });
 

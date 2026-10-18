@@ -38,10 +38,10 @@ const holdings = open({
   candidates: { type: 'array', items: candidate },
 });
 
-const STATES = ['wanted', 'researched', 'source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed'];
+const STATES = ['offered', 'declined', 'wanted', 'researched', 'source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed'];
 const item = open({
   id: { type: 'integer' }, title: { type: 'string' }, author: { type: ['string', 'null'] }, kind: { type: ['string', 'null'] },
-  state: { type: 'string', enum: STATES, description: 'wanted → researched → source → processing → ingested; or needs-ocr / needs-human / failed (reason in log)' },
+  state: { type: 'string', enum: STATES, description: 'offered (an uploaded document we lack, archived, waiting for a yes: POST /items/{id}/accept) · wanted → researched → source → processing → ingested; or needs-ocr / needs-human / failed (reason in log)' },
   doc_id: { type: ['integer', 'null'], description: 'the library document once ingested' },
   research: open({}, { description: 'ISBN, publisher, year, cover, sources found', nullable: true }),
   log: { type: 'array', items: open({ at: { type: 'string' }, why: { type: 'string' } }) },
@@ -95,6 +95,18 @@ export const sourceSchema = {
   params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] },
   body: open({ url: { type: 'string' }, file: fileUpload }),
   response: { 200: open({ item }), ...err, 404: err[400] },
+};
+
+export const acceptSchema = {
+  ...base('Add an offered upload', 'Yes to an upload Dewey offered (state `offered`: not in the library, already archived, appraised with a recommended shelf). Queues intake into that shelf. Idempotent.'),
+  params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] },
+  response: { 200: open({ item }), 400: err[400], 404: err[400] },
+};
+
+export const declineSchema = {
+  ...base('Decline an offered upload', 'No to an offered upload: marked `declined`, never imported (the archived original is kept). Idempotent.'),
+  params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] },
+  response: { 200: open({ item }), 404: err[400] },
 };
 
 export const chatSchema = {

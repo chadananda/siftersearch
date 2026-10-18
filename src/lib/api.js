@@ -1007,6 +1007,8 @@ export const dewey = {
   missing: () => request('/api/dewey/missing'),
   want: (identified) => request('/api/dewey/items', { method: 'POST', body: JSON.stringify({ identified }) }),
   items: () => request('/api/dewey/items'),
+  accept: (id) => request(`/api/dewey/items/${id}/accept`, { method: 'POST' }),
+  decline: (id) => request(`/api/dewey/items/${id}/decline`, { method: 'POST' }),
   attachSource: (id, body) => request(`/api/dewey/items/${id}/source`, { method: 'POST', body: JSON.stringify(body) }),
 };
 

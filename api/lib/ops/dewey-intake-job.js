@@ -37,7 +37,9 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   const title = r.matched && r.title ? r.title : item.title;
   const author = (r.matched && r.author) || item.author || null;
   const language = detectLang(text.slice(0, 6000), null) || r.language || 'en';
-  const shelf = await choose({ title, author, language, subjects: r.subjects, description: r.description?.slice(0, 600), kind: item.kind }, shelves());
+// the shelf the member already said yes to (the offer's appraisal), when it is still an existing shelf
+  const offered = item.identified?.shelf, sh = shelves();
+  const shelf = offered && sh[offered.religion]?.includes(offered.collection) ? offered : await choose({ title, author, language, subjects: r.subjects, description: r.description?.slice(0, 600), kind: item.kind }, sh);
   if (!shelf) {
     await updateItem(item.id, { state: 'needs-human' }, 'no existing shelf fits — file it by hand');
     return { id: item.id, state: 'needs-human' };

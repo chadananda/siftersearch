@@ -455,6 +455,9 @@ async function watchdog() {
   // A deploy recreates these services; one caught mid-swap (starting, or still draining) is NOT down — 10-11 19:35 a
   // [PAGE] fired 19 s into a deploy for a worker the deploy itself brought up seconds later.
   if (Date.now() - lastSwapAt < 120000) { log('info', 'WATCHDOG: deploy in the last 2 min — services left to settle'); return; }
+  // Every tick, not only at the next deploy: a reload's old cluster worker is < 3 min old when that deploy sweeps, so it
+  // survived until the NEXT deploy — serving stale code and failing health in between ([PAGE] 10-17 21:40/21:45).
+  await killStrayApiProcesses().catch((e) => log('warn', `WATCHDOG: stray sweep failed: ${e.message}`));
   for (const name of ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-research']) {
     if (await isProcessRunning(name)) { await recovered(`down-${name}`); continue; }
     await new Promise((r) => setTimeout(r, 45000));   // starting / restarting by pm2 itself: give it a moment

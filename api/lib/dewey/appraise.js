@@ -63,3 +63,45 @@ export async function appraiseWork(id, holdingsLine, { emit = () => {}, pplx = p
   emit({ type: 'appraisal', title: id.title, ...appraisal });
   return appraisal;
 }
+
+// An UPLOADED document is judged on ITS OWN TEXT, not on a web search for its filename (Chad 10-17: "It should be assessed
+// and Dewey should make a recommendation 'It looks like this document belongs in our Baha'i/Pilgrim Notes collection'").
+// Web research on "192? Shoghi Effendi in Torquay" found nothing and called a real pilgrim's note "not catalogable".
+export const JUDGE_DOC = (id, holdings, excerpt, shelves) => `You are Dewey, librarian of a research library of SACRED and SCHOLARLY texts across 11 traditions
+(Bahá’í, Islam, Christian, Judaism, Zoroastrian, Hindu, Buddhist, Jain, Sikh, Taoist, Confucian). Someone uploaded this document; the
+library does not hold its text. Read it and appraise it.
+FILE: ${id.file_name || id.title || 'untitled'}
+LIBRARY CHECK: ${holdings}
+DOCUMENT (excerpts from its start, middle and end):
+"""
+${excerpt || '(no text layer — a scan; judge from the file name only)'}
+"""
+SHELVES (tradition: its existing collections — choose only from these):
+${Object.entries(shelves).map(([r, cs]) => `${r}: ${cs.join(' | ')}`).join('\n')}
+Return ONE JSON object:
+{"title":"the document's real title as it would be catalogued","author":"its author, or null","year":"its date if stated, or null",
+ "kind":"book|article|letter|pilgrim notes|talk|transcript|memoir|compilation|other","language":"ISO code",
+ "summary":"one sentence: what it is","in_scope":"yes|no|maybe","scope_why":"one short reason",
+ "shelf":{"religion":"…","collection":"…"} or null,"value":"high|medium|low","value_why":"why it matters (or not) to THIS collection",
+ "recommendation":"add|skip|ask","recommendation_line":"one sentence to the person, e.g. 'It looks like this belongs in our Bahá’í › Pilgrim Notes collection — it is …'"}
+Judge from the document itself; null where it says nothing.`;
+
+/** Excerpts a model can judge a document by: its start, middle and end (~6,500 chars). */
+export function excerptOf(text) {
+  const t = String(text || '').replace(/\n{3,}/g, '\n\n').trim();
+  if (t.length <= 6500) return t;
+  const mid = Math.floor(t.length / 2);
+  return `${t.slice(0, 4000)}\n[…]\n${t.slice(mid - 750, mid + 750)}\n[…]\n${t.slice(-1000)}`;
+}
+
+/** Appraise an uploaded document from its own text. emit({ type: 'status' | 'appraisal', … }). */
+export async function appraiseDocument(id, text, holdingsLine, { emit = () => {}, create = roleCreate, shelves = libraryShelves } = {}) {
+  emit({ type: 'status', text: 'Reading it to see what it is and where it belongs…' });
+  const sh = (() => { try { return shelves(); } catch { return {}; } })();
+  const res = await create('dewey-identify', { max_tokens: 700, temperature: 0, messages: [{ role: 'user', content: JUDGE_DOC(id, holdingsLine, excerptOf(text), sh) }] });
+  const a = jsonOf(res?.choices?.[0]?.message?.content) || {};
+  if (a.shelf && !sh[a.shelf.religion]?.includes(a.shelf.collection)) a.shelf = null;   // only an existing shelf
+  const appraisal = { ...a, from: 'document', sources: [] };
+  emit({ type: 'appraisal', title: a.title || id.title, ...appraisal });
+  return appraisal;
+}

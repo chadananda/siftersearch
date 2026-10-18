@@ -47,6 +47,17 @@ export async function attachSource(itemId, { url = null, file = null } = {}, by 
   return getItem(item.id);
 }
 
+/** The member said yes to an OFFERED upload (its original is already archived): queue intake. */
+export async function acceptOffer(itemId, by = 'dewey') {
+  const item = await getItem(itemId);
+  if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
+  if (item.state !== 'offered') return item;   // already accepted (a second tap, or the other device)
+  if (!item.original_path) throw Object.assign(new Error('this offer has no file attached'), { statusCode: 400 });
+  await updateItem(item.id, { state: 'source' }, `accepted by ${by}`);
+  await enqueue('dewey-intake', { id: item.id }, by);
+  return getItem(item.id);
+}
+
 export default async function deweyRoutes(fastify) {
   fastify.post('/holdings', { schema: S.holdingsSchema, preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request) => {
     const { text, url, images, file } = request.body || {};
@@ -98,6 +109,20 @@ export default async function deweyRoutes(fastify) {
     return { item: await attachSource(request.params.id, { url, file }, request.user?.email || 'dewey') };
   });
 
+  // YES to an offered upload (the card's "Add it" button; agents too)
+  fastify.post('/items/:id/accept', { schema: S.acceptSchema, preHandler: requireDewey }, async (request) => {
+    const by = request.user?.viaKey ? `${request.user.email} (key ${request.user.viaKey})` : request.user?.email || 'dewey';
+    return { item: await acceptOffer(request.params.id, by) };
+  });
+
+  // NO to an offered upload: it stays archived, marked declined, and is never imported
+  fastify.post('/items/:id/decline', { schema: S.declineSchema, preHandler: requireDewey }, async (request) => {
+    const item = await getItem(request.params.id);
+    if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
+    if (item.state !== 'offered') return { item };
+    return { item: await updateItem(item.id, { state: 'declined' }, `declined by ${request.user?.email || 'dewey'}`) };
+  });
+
   // DEWEY'S CHAT, streamed (server-sent events): attachments are checked first, then Dewey replies with tools
   fastify.post('/chat', { schema: S.chatSchema, preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request, reply) => {
     const { message = null, messages = null, attach = {}, thumbs = [], stream = true } = request.body || {};
@@ -120,7 +145,7 @@ export default async function deweyRoutes(fastify) {
     const save = () => appendMessage(uid, 'assistant', parts.filter((p) => p.kind === 'text').map((p) => p.text).join('').trim(), { parts }).catch(() => {});
     const turn = (emit) => deweyTurn({ messages: [...history.slice(-12), { role: 'user', content: text || (attach.images?.length ? 'Do we have this?' : 'Do we have this?') }]
       .map((m) => ({ role: m.role, content: String(m.content || '').slice(0, 4000) })),
-      attach, by, emit: (e) => { keep(e); emit(e); }, attachSource: (id, src) => attachSource(id, src, by) });
+      attach, by, emit: (e) => { keep(e); emit(e); }, attachSource: (id, src) => attachSource(id, src, by), accept: (id) => acceptOffer(id, by) });
     // for agents: { stream: false } → one JSON answer { reply, holdings, items }
     // A turn with web research can outlast Cloudflare's ~100 s edge timeout (a 524 to the caller while the turn finished
     // here, 10-17). So both forms answer at once and keep the line alive: JSON with a space every 20 s (leading whitespace is

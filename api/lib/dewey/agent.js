@@ -2,11 +2,13 @@
 // discussing adding books or documents. If I post a picture, it will immediately start looking to see if we have it or
 // not. No need to ask."). One turn: attachments are checked FIRST, deterministically, before the model says a word; then
 // the model streams its reply with tools to check more titles, put works on the wanted list and attach a source. It
-// reports only what the tools found. Events out: status · holdings · research · appraisal · item · delta · done. Deps injectable for tests.
+// reports only what the tools found. An UPLOAD we lack is appraised from its own text and kept as an OFFERED item; the member
+// is asked, and add_offered imports it on yes (nothing is imported unasked). Events out: status · holdings · research · appraisal · item · delta · done. Deps injectable for tests.
 import { roleCreate } from '../role-client.js';
 import { identifyPhotos, identifyUrl, identifyFile, identifyText } from './identify.js';
 import { checkHoldings } from './holdings.js';
-import { appraiseWork } from './appraise.js';
+import { appraiseWork, appraiseDocument } from './appraise.js';
+import { archiveOriginal } from './intake.js';
 import { createItem, findOpenByTitle, listItems, getItem, updateItem } from '../repos/dewey-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 
@@ -22,6 +24,12 @@ Assume every message is about a work they have found — do we have it, and if n
   do not talk about the title search. "not-held" then means no library document shares its text.
 - Held: say which copy (title, author, language) and stop. Held in another edition or language: say so and ask if this one is worth adding.
 - Not held: say so plainly; add it to the wanted list when they say so ("add it", "yes", "want it") — or right away if they already asked to add it.
+- Anything attached was ALREADY checked before you speak — do not call check_holdings for it again.
+- An UPLOADED document we lack is never imported on its own: it is kept as an OFFERED item and appraised from its own text.
+  Give the recommendation in one or two sentences, led by the appraisal's recommendation_line ("It looks like this belongs
+  in our Bahá’í › Pilgrim Notes collection — …"), note anything that matters (we hold part of it; a scan that will need OCR),
+  then ask "Shall I add it?". On yes, call add_offered with its item id (several ids when they say "add them all"). If they
+  decline, say it will not be added.
 - A wanted work gets researched automatically (ISBN, publisher, cover). Remind them once that a PDF or a link to one starts processing.
 - A link to a PDF or page for a wanted work: call attach_source.
 - When a work is NOT held, an appraisal follows (web research → in scope?, which shelf, value to the collection, price, a free
@@ -38,6 +46,8 @@ export const TOOLS = [
     parameters: { type: 'object', properties: { item_id: { type: 'integer' }, url: { type: 'string' } }, required: ['item_id', 'url'] } } },
   { type: 'function', function: { name: 'appraise_work', description: 'Research a work online (Perplexity + Parallel.ai) and judge: in scope for the library, where it would go, its value and price, a free text online.',
     parameters: { type: 'object', properties: { title: { type: 'string' }, author: { type: 'string' }, edition: { type: 'string' }, year: { type: 'string' } }, required: ['title'] } } },
+  { type: 'function', function: { name: 'add_offered', description: 'The member said YES to adding offered uploads: import them (into the recommended shelf).',
+    parameters: { type: 'object', properties: { item_ids: { type: 'array', items: { type: 'integer' } } }, required: ['item_ids'] } } },
   { type: 'function', function: { name: 'list_wanted', description: 'The wanted list and intake queue: open items with their state.', parameters: { type: 'object', properties: {} } } },
 ];
 
@@ -50,8 +60,16 @@ export function summarize(r) {
       relation: c.relation?.relation, evidence: c.evidence.map((e) => e.kind + (e.detail ? `: ${e.detail}` : '')).join('; ') })) });
 }
 
-export function makeTools({ by, emit, attachSource }) {
+export function makeTools({ by, emit, attachSource, accept }) {
   return {
+    async add_offered({ item_ids = [] }) {
+      const out = [];
+      for (const id of item_ids.slice(0, 50)) {
+        try { const item = await accept(id); emit({ type: 'item', item }); out.push({ id, state: item.state }); }
+        catch (err) { out.push({ id, error: String(err.message).slice(0, 120) }); }
+      }
+      return JSON.stringify({ accepted: out });
+    },
     async check_holdings({ title, author, lines }) {
       const id = lines ? { ...identifyText(lines), title: title || undefined, author } : { title, author, from: 'text' };
       const r = { identified: id, ...(await checkHoldings(id)) };
@@ -76,13 +94,13 @@ export function makeTools({ by, emit, attachSource }) {
       return JSON.stringify(a || { error: 'nothing found' });
     },
     async list_wanted() {
-      return JSON.stringify((await listItems({ limit: 30 })).map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, isbn: i.research?.isbn13 || null })));
+      return JSON.stringify((await listItems({ limit: 30 })).map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, isbn: i.research?.isbn13 || null, shelf: i.identified?.shelf || null })));
     },
   };
 }
 
 /** One chat turn. messages: [{ role, content }] (the last is the user's); attach: { images?, file?, url? }. */
-export async function deweyTurn({ messages, attach = {}, by = null, emit, attachSource, create = roleCreate, check = checkHoldings, appraise = appraiseWork }) {
+export async function deweyTurn({ messages, attach = {}, by = null, emit, attachSource, accept = async () => { throw new Error('accept not wired'); }, create = roleCreate, check = checkHoldings, appraise = appraiseWork, appraiseDoc = appraiseDocument, archive = archiveOriginal }) {
   const notes = [];
   // attachments are checked BEFORE the model speaks — no need to ask (Chad 10-17)
   const lastText = String(messages.at(-1)?.content || '');
@@ -99,22 +117,21 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
       const r = { identified: id, ...(await check(id)) };
       emit({ type: 'holdings', ...r });
       notes.push(`Holdings check of what they just sent (${attach.images?.length ? `${attach.images.length} photo(s)` : attach.file ? 'a file' : 'a link'}): ${summarize(r)}`);
-      // not here (or not sure) → research it online and appraise it, each piece shown as it lands
-      if (attach.file?.data && r.verdict === 'held') notes.push('Their uploaded file is ALREADY in the library — nothing imported. Say which copy we hold.');
-      if (r.verdict !== 'held' && id.title) {
+      if (attach.file?.data && r.verdict === 'held') notes.push('Their uploaded file is ALREADY in the library — nothing to add. Say which copy we hold, and how (same text, or inside which larger work).');
+      // an UPLOAD we lack: appraised from its OWN text, kept as an OFFERED item, and the member is asked (Chad 10-17: "the
+      // question should go to whether or not to add … Dewey should make a recommendation")
+      if (attach.file?.data && r.verdict !== 'held') {
+        const a = await appraiseDoc(id, id._text || (id.printed_lines || []).join('\n'), `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
+        const bytes = Buffer.from(attach.file.data, 'base64');
+        const item = await createItem({ title: a?.title || id.title || attach.file.name || 'untitled', author: a?.author || id.author || null, kind: a?.kind || id.kind || null,
+          identified: { ...id, file_name: attach.file.name || null, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: `uploaded (${attach.file.name || 'a file'}); not in the library — offered` });
+        const arc = await archive(bytes, { name: attach.file.name || '', itemId: item.id });
+        const offered = await updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, `original archived (${Math.round(arc.bytes / 1024)} KB)`);
+        emit({ type: 'item', item: offered });
+        notes.push(`Their upload is NOT in the library (${r.verdict}${r.compared ? `; full text compared, ${r.compared.words} words` : ''}${id.needs_ocr ? '; a scan — its text will need OCR' : ''}). Kept as OFFERED item ${offered.id}. Appraisal of the document itself: ${JSON.stringify({ title: a?.title, author: a?.author, year: a?.year, kind: a?.kind, summary: a?.summary, in_scope: a?.in_scope, scope_why: a?.scope_why, shelf: a?.shelf, value: a?.value, recommendation: a?.recommendation, recommendation_line: a?.recommendation_line })}`);
+      } else if (r.verdict !== 'held' && id.title) {
+        // a photographed or linked WORK (a published book): research it online and appraise it, each piece shown as it lands
         const a = await appraise(id, `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
-        // an UPLOADED file that we lack and that belongs here is imported at once — one step (Chad 10-17: "I can upload
-        // anything I have and Dewey will determine if we need it before importing")
-        if (attach.file?.data && a && ['not-held', 'partly-held'].includes(r.verdict) && (a.in_scope === 'yes' || ['add', 'add if cheap'].includes(a.recommendation))) {
-          emit({ type: 'status', text: 'Not in the library and it belongs here — importing your file…' });
-          try {
-            const tools0 = makeTools({ by, emit, attachSource });
-            const added = JSON.parse(await tools0.add_to_wanted({ title: id.title, author: id.author || null, kind: id.kind || null }));
-            const item = await attachSource(added.id, { file: attach.file });
-            emit({ type: 'item', item });
-            notes.push(`Their uploaded file was imported automatically: wanted item ${item.id}, now ${item.state}. Tell them it is being added and where it will go.`);
-          } catch (err) { notes.push(`Importing the uploaded file failed: ${String(err.message).slice(0, 160)}`); }
-        } else if (attach.file?.data && a) notes.push('Their uploaded file was NOT imported (not clearly in scope) — ask whether to add it.');
         if (a) notes.push(`Appraisal from web research: ${JSON.stringify({ summary: a.summary, in_scope: a.in_scope, scope_why: a.scope_why, shelf: a.shelf, value: a.value, value_why: a.value_why, price: a.price, rarity: a.rarity, free_online: a.free_online, recommendation: a.recommendation, next: a.next })}`);
       }
     } catch (err) {
@@ -122,7 +139,7 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
     }
     emit({ type: 'status', text: null });
   }
-  const tools = makeTools({ by, emit, attachSource });
+  const tools = makeTools({ by, emit, attachSource, accept });
   const convo = [{ role: 'system', content: SYSTEM }, ...messages.slice(-12),
     ...(notes.length ? [{ role: 'system', content: notes.join('\n') }] : [])];
   for (let round = 0; round < 5; round++) {
