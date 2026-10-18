@@ -70,5 +70,9 @@ export function sampleLines(text, n = 6) {
 export function identifyText(text) {
   const t = String(text || '').trim();
   if (/^https?:\/\//i.test(t)) return { url: t };
-  return t.split(/\s+/).length >= 10 ? { printed_lines: [t], from: 'text' } : { title: t, from: 'text' };
+  if (t.split(/\s+/).length >= 10) return { printed_lines: [t], from: 'text' };
+  // "The Chosen Highway by Lady Blomfield": the whole string stays the title (some titles hold "by" — "Prayers Revealed by
+  // the Báb"); the part before the last " by " is a second title an exact match may land on, the rest the author
+  const m = t.match(/^(.{3,}?)\s+by\s+([^,]{3,})$/i);
+  return m ? { title: t, title_alt: m[1].trim(), author: m[2].trim(), from: 'text' } : { title: t, from: 'text' };
 }

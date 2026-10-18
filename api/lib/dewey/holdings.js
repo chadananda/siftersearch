@@ -22,7 +22,8 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
     // only lines of running text are TEXT evidence — a title page's short lines would match its own title, not prove the text
     Promise.all(textLines(id).map((l) => keyword(l, { limit: 3 }).then((r) => ({ line: l, hits: r.hits || [] })).catch(() => ({ line: l, hits: [] })))),
   ]);
-  for (const d of titleHits) add(d, { kind: 'title', weight: fold(d.title) === fold(title) ? 3 : 1, detail: d.title });
+  const exact = new Set([title, id.title_alt].filter(Boolean).map(fold));
+  for (const d of titleHits) add(d, { kind: 'title', weight: exact.has(fold(d.title)) ? 3 : 1, detail: d.title });
   for (const d of authorHits) add(d, { kind: 'title+author', weight: 1, detail: d.author });
   const lineDocIds = new Map();
   for (const { line, hits } of lineHits) if (hits[0]) lineDocIds.set(hits[0].doc_id, [...(lineDocIds.get(hits[0].doc_id) || []), line]);
@@ -31,7 +32,7 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   const fetched = missing.length ? (await docs({ ids: missing, fields, limit: missing.length, count: false })).docs : [];
   const docOf = (idv) => by.get(idv)?.doc || fetched.find((d) => d.id === idv);
   for (const [docId, lines] of lineDocIds) { const d = docOf(docId); if (d) add(d, { kind: 'text', weight: 2 * lines.length, detail: `${lines.length} of ${textLines(id).length} printed lines found` }); }
-  for (const [docId, s] of sectionDocs) { const d = docOf(docId); if (d) add(d, { kind: 'part of', weight: fold(s.title) === fold(title) ? 3 : 1, detail: `“${s.title}” inside ${s.book}` }); }
+  for (const [docId, s] of sectionDocs) { const d = docOf(docId); if (d) add(d, { kind: 'part of', weight: exact.has(fold(s.title)) ? 3 : 1, detail: `“${s.title}” inside ${s.book}` }); }
   const candidates = [...by.values()].sort((a, b) => b.score - a.score).slice(0, 8)
     .map(({ doc, evidence, score }) => ({ ...doc, score, evidence }));
   const top = candidates[0];

@@ -16,6 +16,10 @@ describe('holdings check', () => {
     const r = await checkHoldings({ title: 'The Dawn-Breakers' }, deps({ titles: [DB] }));
     expect(r).toMatchObject({ verdict: 'held', candidates: [{ id: 21308 }] });
   });
+  it('"Title by Author" typed as one string is held on the title alone (agents send it that way)', async () => {
+    const r = await checkHoldings(identifyText('The Dawn-Breakers by Nabíl'), deps({ titles: [DB] }));
+    expect(r.verdict).toBe('held');
+  });
   it('printed lines find a work under another title — held by text', async () => {
     const lines = { 'a line of the narrative long enough to search': 21308, 'another full printed line of that very page': 21308 };
     const r = await checkHoldings({ title: "Nabil's Narrative", printed_lines: Object.keys(lines) }, deps({ lines, byId: { 21308: DB } }));
@@ -46,6 +50,10 @@ describe('identify', () => {
     expect(identifyText('The Dawn-Breakers')).toEqual({ title: 'The Dawn-Breakers', from: 'text' });
     expect(identifyText('He is the One Who hath revealed Himself unto all things in the kingdom of His creation').printed_lines).toHaveLength(1);
     expect(identifyText('https://youtu.be/abc')).toEqual({ url: 'https://youtu.be/abc' });
+  });
+  it('"Title by Author" keeps the whole string as the title, and offers the split', () => {
+    expect(identifyText('The Chosen Highway by Lady Blomfield')).toEqual({ title: 'The Chosen Highway by Lady Blomfield', title_alt: 'The Chosen Highway', author: 'Lady Blomfield', from: 'text' });
+    expect(identifyText('Prayers Revealed by the Báb').title).toBe('Prayers Revealed by the Báb');
   });
   it('a video URL is read by oEmbed; a web page by its title and text', async () => {
     const yt = await identifyUrl('https://www.youtube.com/watch?v=x', { fetchImpl: async () => ({ ok: true, json: async () => ({ title: 'A Talk on the Seven Valleys', author_name: 'Some Channel' }) }) });
