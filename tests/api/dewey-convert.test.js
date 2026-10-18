@@ -1,7 +1,7 @@
 // Dewey's converter: every format → Markdown with headings kept; one path for identify and intake.
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
-import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages } from '../../api/lib/dewey/convert.js';
+import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages, looksLikeWords } from '../../api/lib/dewey/convert.js';
 
 describe('htmlToMarkdown', () => {
   it('keeps headings, paragraphs, lists, quotes and emphasis; drops scripts and styles', () => {
@@ -71,4 +71,9 @@ describe('preliminary OCR of scans', () => {
     expect(p.slice(0, 2)).toEqual([2, 3]);
     expect(p.at(-1)).toBeGreaterThan(250);
   });
-})
+  it('tells a real English read from OCR noise (handwriting read as "Japanese", 10-17)', () => {
+    expect(looksLikeWords('Excerpts from the notes of Ben Levy, American Baha\'i in the Armed Forces in Germany. Pilgrimage March 9th to 16th, 1953. Mankind is now approaching the stage of maturity. Maturity means responsibility and all men are responsible to God.')).toBe(true);
+    expect(looksLikeWords('プー 0 72 の と。 そん 「 レク ンタルレ ぎ CR んし り 。 EE 。 yt" いう 了 『ル レ/二2 /グ名 だ アン を wtっ ッン サリ が 計 ww チ も 症 が しゅ 5 。 | "ん /が じしゃる をrw')).toBe(false);
+    expect(looksLikeWords('a fcast, at whnh atl kmd, af fimt, cmdcm smt, + tea wcn sewd. Bgy All fom Lmn w Rwe mn thn of Abdl Bba wwn thn. Prgn wm chnted + aftrwds thm thc mcn vsitd')).toBe(false);
+  });
+});

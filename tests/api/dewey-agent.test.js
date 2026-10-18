@@ -46,8 +46,11 @@ describe('dewey chat turn', () => {
     expect(events.find((e) => e.type === 'holdings')).toMatchObject({ verdict: 'not-held', identified: { title: 'The Chosen Highway' } });
     expect(events.find((e) => e.type === 'appraisal')).toMatchObject({ in_scope: 'yes', value: 'high' });   // not held → appraised at once
     expect(events.findIndex((e) => e.type === 'appraisal')).toBeLessThan(events.findIndex((e) => e.type === 'delta'));
-    expect(m.seen[0].some((x) => x.role === 'system' && String(x.content).includes('Holdings check of what they just sent (1 photo(s))'))).toBe(true);
-    expect(m.seen[0].some((x) => x.role === 'system' && String(x.content).includes('Appraisal from web research'))).toBe(true);
+    // the checks ride IN the member's turn (a 2nd system message is hoisted above the conversation and was missed, 10-17)
+    const turn = m.seen[0].filter((x) => x.role === 'user').at(-1);
+    expect(turn.content).toContain('Holdings check of what they just sent (1 photo(s))');
+    expect(turn.content).toContain('Appraisal from web research');
+    expect(m.seen[0].filter((x) => x.role === 'system')).toHaveLength(1);
     expect(events.filter((e) => e.type === 'item')[0].item).toMatchObject({ title: 'The Chosen Highway', author: 'Lady Blomfield' });
     expect(events.filter((e) => e.type === 'delta').map((e) => e.text).join('')).toContain('Added to the wanted list — send a PDF to start.');
     expect(events.at(-1)).toEqual({ type: 'done' });

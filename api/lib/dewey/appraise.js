@@ -56,7 +56,7 @@ export async function appraiseWork(id, holdingsLine, { emit = () => {}, pplx = p
   emit({ type: 'status', text: 'Weighing whether it belongs here and what it is worth…' });
   const web = found.map((f) => `[${f.source}]\n${f.text.slice(0, 3500)}`).join('\n\n');
   const sh = (() => { try { return shelves(); } catch { return {}; } })();
-  const res = await create('dewey-identify', { max_tokens: 700, temperature: 0, messages: [{ role: 'user', content: JUDGE(id, holdingsLine, web, sh) }] });
+  const res = await create('dewey-identify', { max_tokens: 4000, temperature: 0, messages: [{ role: 'user', content: JUDGE(id, holdingsLine, web, sh) }] });
   const a = jsonOf(res?.choices?.[0]?.message?.content) || {};
   if (a.shelf && !sh[a.shelf.religion]?.includes(a.shelf.collection)) a.shelf = null;   // only an existing shelf
   const appraisal = { ...a, sources: [...new Map(found.flatMap((f) => f.citations || []).map((c) => [c.url, c])).values()].slice(0, 8) };
@@ -99,7 +99,7 @@ export function excerptOf(text) {
 export async function appraiseDocument(id, text, holdingsLine, { emit = () => {}, create = roleCreate, shelves = libraryShelves } = {}) {
   emit({ type: 'status', text: 'Reading it to see what it is and where it belongs…' });
   const sh = (() => { try { return shelves(); } catch { return {}; } })();
-  const res = await create('dewey-identify', { max_tokens: 700, temperature: 0, messages: [{ role: 'user', content: JUDGE_DOC(id, holdingsLine, excerptOf(text), sh) }] });
+  const res = await create('dewey-identify', { max_tokens: 4000, temperature: 0, messages: [{ role: 'user', content: JUDGE_DOC(id, holdingsLine, excerptOf(text), sh) }] });
   const a = jsonOf(res?.choices?.[0]?.message?.content) || {};
   if (a.shelf && !sh[a.shelf.religion]?.includes(a.shelf.collection)) a.shelf = null;   // only an existing shelf
   const appraisal = { ...a, from: 'document', sources: [] };

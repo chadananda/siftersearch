@@ -4,8 +4,9 @@
 // (SearchLayerPDF, later). DOCX: read directly (jszip + word/document.xml) — mammoth broke when the 09-09 security
 // override forced @xmldom/xmldom 0.9 (it needs 0.8: every .docx threw "mimeType undefined"). DOC/RTF/ODT/WPD/WPS/PAGES-less word files: LibreOffice headless → HTML
 // (tower has soffice). HTML, Safari .webarchive (the page's HTML is stored verbatim in the plist), EPUB (spine order).
-// Audio/video: not text — refused with a reason. A SCAN gets a PRELIMINARY OCR of up to 8 sampled pages (tesseract, script
-// detected first) — enough to tell whether the library holds it before SearchLayerPDF's full extraction (Chad 10-17).
+// Audio/video: not text — refused with a reason. A SCAN gets a PRELIMINARY OCR of sampled pages — tesseract for printed
+// Latin text (8 pages), the vision model for handwriting and other scripts (4 pages) — enough to tell whether the library
+// holds it before SearchLayerPDF's full extraction (Chad 10-17).
 // Deps injectable for tests (run, ocr).
 import { execFile } from 'child_process';
 import { mkdtemp, writeFile, readFile, rm } from 'fs/promises';
@@ -112,8 +113,6 @@ export async function officeHtml(bytes, ext, { run = execFile } = {}) {
   } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
 }
 
-// tesseract script (from OSD) → languages to read it with
-const SCRIPT_LANGS = { Latin: 'eng', Arabic: 'ara+fas+urd', Hebrew: 'heb', Cyrillic: 'rus', Han: 'chi_sim+chi_tra', Devanagari: 'hin', Greek: 'ell', Japanese: 'jpn', Hangul: 'kor', Bengali: 'ben', Tamil: 'tam' };
 const sh = (run, cmd, args, timeout = 120000) => new Promise((res, rej) => run(cmd, args, { timeout, maxBuffer: 1 << 26 }, (err, out, stderr) => (err ? rej(new Error(String(stderr || err.message).slice(0, 200))) : res(String(out)))));
 
 /** Pages to sample from a scan of n pages: the title page region and an even spread through the body (≤ k). */
@@ -124,18 +123,44 @@ export function samplePages(n, k = 8) {
   return [...picks].sort((a, b) => a - b);
 }
 
-/** PRELIMINARY OCR of a scan: render sampled pages (pdftoppm, 200 dpi gray), detect the script on one, read all in parallel. */
-export async function ocrSample(bytes, totalPages, { run = execFile, k = 8 } = {}) {
+/** A page image → its text, read by the vision model (handwriting, any script). 'UNREADABLE' when it cannot. */
+export async function visionRead(png) {
+  const { roleCreate } = await import('../role-client.js');
+  const res = await roleCreate('dewey-identify', { max_tokens: 4000, temperature: 0, messages: [{ role: 'user', content: [
+    { type: 'text', text: 'Transcribe the text on this page exactly as written, line by line, in its own language and script. Output only the text — no commentary. If nothing on it can be read, output UNREADABLE.' },
+    { type: 'image_url', image_url: { url: `data:image/png;base64,${Buffer.from(png).toString('base64')}` } }] }] });
+  return res?.choices?.[0]?.message?.content || '';
+}
+
+/** Does an OCR read look like real Latin-script words? (≥ 60% of tokens are 2+ letters with a vowel) */
+export function looksLikeWords(text) {
+  const toks = String(text || '').split(/\s+/).filter((t) => t.length > 1);
+  if (toks.length < 20) return false;
+  return toks.filter((t) => /^[A-Za-z][a-z'’-]*[a-z][.,;:!?)"’]*$/.test(t) && /[aeiouy]/i.test(t)).length / toks.length >= 0.6;
+}
+
+/** PRELIMINARY OCR of a scan: render sampled pages (pdftoppm, 200 dpi gray); tesseract for printed Latin, vision otherwise. */
+export async function ocrSample(bytes, totalPages, { run = execFile, k = 8, vision = null } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'dewey-ocr-'));
   try {
     const src = join(dir, 'in.pdf');
     await writeFile(src, bytes);
     const pages = samplePages(totalPages, k);
     await Promise.all(pages.map((p) => sh(run, 'pdftoppm', ['-r', '200', '-gray', '-f', String(p), '-l', String(p), '-singlefile', '-png', src, join(dir, `p${p}`)])));
+    // English first: OSD called a typewritten English scan "Japanese" (10-17) and the OCR came out as noise. When the English
+    // read of a middle page is not mostly real words, the pages are HANDWRITTEN or in another script — tesseract cannot be
+    // trusted there, so the vision model transcribes up to 4 sampled pages instead (handwriting and any script).
     const mid = pages[Math.floor(pages.length / 2)];
-    const script = (await sh(run, 'tesseract', [join(dir, `p${mid}.png`), '-', '--psm', '0', '-l', 'osd'], 60000).catch(() => '')).match(/Script:\s*(\w+)/)?.[1] || 'Latin';
-    const langs = SCRIPT_LANGS[script] || 'eng';
-    const texts = await Promise.all(pages.map((p) => sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => '')));
+    const probe = await sh(run, 'tesseract', [join(dir, `p${mid}.png`), '-', '-l', 'eng', '--psm', '1']).catch(() => '');
+    if (!looksLikeWords(probe)) {
+      const few = pages.length <= 4 ? pages : [pages[0], pages[1], mid, pages.at(-1)].filter((p, i, a) => a.indexOf(p) === i);
+      const reads = await Promise.all(few.map(async (p) => (vision || visionRead)(await readFile(join(dir, `p${p}.png`))).catch(() => '')));
+      const ok = reads.map((t) => (/^\s*UNREADABLE\s*$/i.test(t) ? '' : t));
+      if (ok.join('').replace(/\s/g, '').length < 200) return { text: '', pages: few, script: 'unreadable', langs: 'vision' };
+      return { text: ok.map((t, i) => `[page ${few[i]}]\n${t.trim()}`).join('\n\n'), pages: few, script: 'handwriting or non-Latin', langs: 'vision' };
+    }
+    const script = 'Latin', langs = 'eng';
+    const texts = await Promise.all(pages.map((p) => (p === mid ? Promise.resolve(probe) : sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => ''))));
     return { text: texts.map((t, i) => `[page ${pages[i]}]\n${t.trim()}`).join('\n\n'), pages, script, langs };
   } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
 }
@@ -163,7 +188,7 @@ export async function toMarkdownText(bytes, name = '', deps = {}) {
     // a scan: a preliminary OCR of sampled pages, so the holdings check can still compare TEXT (deps.ocr: false skips it)
     if (scan && deps.ocr !== false) {
       const o = await (deps.ocrSample || ocrSample)(b, pages).catch(() => null);
-      if (o?.text && o.text.replace(/\s|\[page \d+\]/g, '').length > 200) return { markdown: o.text, pages, format: 'pdf', scan: true, ocr: { sampled: o.pages, of: pages, script: o.script, engine: 'tesseract' } };
+      if (o?.text && o.text.replace(/\s|\[page \d+\]/g, '').length > 200) return { markdown: o.text, pages, format: 'pdf', scan: true, ocr: { sampled: o.pages, of: pages, script: o.script, engine: o.langs === 'vision' ? 'vision' : 'tesseract' } };
     }
     return { markdown: t, pages, format: 'pdf', scan };
   }

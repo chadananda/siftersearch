@@ -146,11 +146,15 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
     emit({ type: 'status', text: null });
   }
   const tools = makeTools({ by, emit, attachSource, accept });
-  const convo = [{ role: 'system', content: SYSTEM }, ...messages.slice(-12),
-    ...(notes.length ? [{ role: 'system', content: notes.join('\n') }] : [])];
+  // what the checks found rides IN the member's turn: a second system message is hoisted above the whole conversation by
+  // the compat endpoint, and Dewey answered "I don't have the holding results" while they sat there (10-17)
+  const history = messages.slice(-12);
+  const last = history.at(-1);
+  const convo = [{ role: 'system', content: SYSTEM }, ...history.slice(0, -1),
+    { role: 'user', content: notes.length ? `${last?.content || ''}\n\n[Dewey's checks of what was just sent — done before replying; authoritative]\n${notes.join('\n')}` : last?.content || '' }];
   for (let round = 0; round < 5; round++) {
     let stream;
-    try { stream = await create('dewey-chat', { max_tokens: 700, temperature: 0.3, stream: true, tools: TOOLS, messages: convo }); }
+    try { stream = await create('dewey-chat', { max_tokens: 4000, temperature: 0.3, stream: true, tools: TOOLS, messages: convo }); }
     catch (err) {
       // what the model was sent, in shape only (roles and lengths) — enough to see why it refused, no content logged
       (await import('../logger.js')).logger.error({ err: err.message, round, shape: convo.map((m) => `${m.role}:${m.tool_calls ? 'tool_calls' : String(m.content ?? '').length}`) }, 'dewey-chat: model refused the request');

@@ -164,9 +164,16 @@ async function chatOpenAI(messages, { model, temperature, maxTokens, stream }) {
   };
 }
 
+// Anthropic takes ONE system prompt: every system message is joined (find() kept only the first and silently dropped the
+// rest — a later system note never reached the model, 10-17).
+function joinedSystem(messages) {
+  const sys = messages.filter(m => m.role === 'system').map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content)));
+  return sys.length ? { role: 'system', content: sys.join('\n\n') } : null;
+}
+
 // The Anthropic request for a chat, shared by the live call and the batch transport below.
 function anthropicParams(messages, { model, temperature, maxTokens, usePromptCache = false }) {
-  const systemMsg = messages.find(m => m.role === 'system');
+  const systemMsg = joinedSystem(messages);
   const otherMsgs = messages.filter(m => m.role !== 'system');
   const systemParam = systemMsg ? (usePromptCache ? [{ type: 'text', text: systemMsg.content, cache_control: { type: 'ephemeral' } }] : systemMsg.content) : undefined;
   return {
@@ -250,7 +257,7 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
   }
 
   // Convert OpenAI message format to Anthropic format
-  const systemMsg = messages.find(m => m.role === 'system');
+  const systemMsg = joinedSystem(messages);
   const otherMsgs = messages.filter(m => m.role !== 'system');
 
   // Prompt caching: mark the system prompt for caching when the caller opts in.

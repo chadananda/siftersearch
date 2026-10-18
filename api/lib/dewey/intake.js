@@ -62,7 +62,7 @@ const jsonOf = (s) => { const m = String(s || '').match(/\{[\s\S]*\}/); try { re
 /** Where a work belongs: one of the existing tradition › collection pairs, chosen by the model from what we know. */
 export async function chooseShelf(work, shelves, { create = roleCreate } = {}) {
   const list = Object.entries(shelves).map(([r, cs]) => `${r}: ${cs.join(' | ')}`).join('\n');
-  const res = await create('dewey-identify', { max_tokens: 200, temperature: 0, messages: [{ role: 'user', content:
+  const res = await create('dewey-identify', { max_tokens: 4000, temperature: 0, messages: [{ role: 'user', content:
     `Where does this work belong in the library? Choose ONE existing tradition and ONE of its existing collections.
 Work: ${JSON.stringify(work)}
 SHELVES (tradition: collections)

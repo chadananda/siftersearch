@@ -152,7 +152,9 @@ export default async function deweyRoutes(fastify) {
     // valid JSON), SSE with a comment line.
     reply.hijack();
     if (stream === false) {
-      reply.raw.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' });
+      // NDJSON, not application/json: cloudflared buffers a JSON body whole (the spaces never left — 524 again), but flushes
+      // text/event-stream and application/x-ndjson as written. The body is one JSON object either way.
+      reply.raw.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' });
       const beat = setInterval(() => { try { reply.raw.write(' '); } catch { /* client gone */ } }, 20000);
       const out = { reply: '', holdings: [], items: [] };
       try {

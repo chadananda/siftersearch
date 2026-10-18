@@ -17,7 +17,7 @@ Use null for anything not visible. Never guess a title that is not printed.`;
 /** Photos (data URLs) → identified fields, via the vision model. */
 export async function identifyPhotos(images, { create = roleCreate } = {}) {
   const content = [{ type: 'text', text: VISION_PROMPT }, ...images.slice(0, 6).map((url) => ({ type: 'image_url', image_url: { url } }))];
-  const res = await create('dewey-identify', { max_tokens: 1200, temperature: 0, messages: [{ role: 'user', content }] });
+  const res = await create('dewey-identify', { max_tokens: 4000, temperature: 0, messages: [{ role: 'user', content }] });
   return { ...(jsonOf(res?.choices?.[0]?.message?.content) || {}), from: 'photo' };
 }
 
