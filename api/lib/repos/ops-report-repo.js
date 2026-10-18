@@ -23,10 +23,13 @@ export async function claimNext({ skip = [], only = [] } = {}) {
   const where = [`status = 'queued'`], args = [];
   if (only.length) { where.push(`name IN (${only.map(() => '?').join(',')})`); args.push(...only); }
   if (skip.length) { where.push(`name NOT IN (${skip.map(() => '?').join(',')})`); args.push(...skip); }
+  // a run queued with params.priority = true goes first in its lane (10-18: re-fetching nine finished SLP results should not
+  // wait hours behind 58 fresh OCR jobs)
   // carry runs protect paid work (HyPE, alignment): they go ahead of plain re-ingest batches
   // quick answers first (spend, audits, verify), then carry runs (they protect paid work), then bulk batches
   const r = await queryOne(`SELECT * FROM ops_report_runs WHERE ${where.join(' AND ')}
-    ORDER BY CASE WHEN name IN ('spend', 'languages', 'ctai-audit', 'carry-verify', 'block-mismatch') THEN 0 WHEN name = 'reingest-carry' THEN 1 ELSE 2 END, id LIMIT 1`, args);
+    ORDER BY CASE WHEN params LIKE '%"priority":true%' THEN 0 ELSE 1 END,
+      CASE WHEN name IN ('spend', 'languages', 'ctai-audit', 'carry-verify', 'block-mismatch') THEN 0 WHEN name = 'reingest-carry' THEN 1 ELSE 2 END, id LIMIT 1`, args);
   if (!r) return null;
   const u = await query(`UPDATE ops_report_runs SET status = 'running', started_at = ? WHERE id = ? AND status = 'queued'`, [now(), r.id]);
   // through the single writer the count is rows[0].changes, not .changes — reading only .changes let every lane "win" the

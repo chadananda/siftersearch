@@ -50,7 +50,12 @@ export async function deweyOcrJob({ id } = {}, deps = {}) {
     updateItem(item.id, { identified: { ...item.identified, slp_progress: { ...p, at: new Date().toISOString() } } }).catch(() => {}); };
   // a SLP result already on file (rejected under an earlier check) is re-checked, not paid for again
   const prior = item.identified?.slp_rejected;
-  if (prior?.path) {
+  // SLP re-runs a job under the SAME id when it improves (10-18: "failed OCR jobs have been completed. you can request them
+  // with the same url") — so the CURRENT result for that id is fetched first; the saved copy is the fallback
+  if (prior?.job_id && !deps.read) {
+    try { out = { ...(await extract({ path: item.original_path, context, resumeJobId: prior.job_id }, { log: progress })), refetched: true }; } catch { out = null; }
+  }
+  if (!out && prior?.path) {
     try { const md = String(await (deps.read || readFile)(prior.path)); out = { markdown: md, ...slpToText(md), job_id: prior.job_id, score: prior.score, cost_cents: prior.cost_cents, pages: prior.pages, reused: true }; } catch { out = null; }
   }
   if (!out) {
