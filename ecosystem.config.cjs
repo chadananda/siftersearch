@@ -68,10 +68,8 @@ module.exports = {
       // pm2 proceed after 60 s even without 'ready' — a slow boot costs the overlap, never a restart loop.
       wait_ready: true,
       listen_timeout: 60000,
-      // A clean exit (code 0) is the graceful shutdown a reload asked for — NOT a crash. Without this pm2 restarted the old
-      // worker as '_old_<id>' after it drained ("will restart in 1000ms"), an untracked copy serving stale code that failed
-      // health and had to be hunted as a "stray" (10-17). Crashes exit non-zero and are still restarted.
-      stop_exit_codes: [0],
+      // NOT stop_exit_codes [0]: tried 10-17 against the reload's '_old_' strays — pm2 then left the API entry 'waiting
+      // restart' with pid 0 while an untracked worker served. Strays stay the deploy sweep's job (update-server.js).
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
