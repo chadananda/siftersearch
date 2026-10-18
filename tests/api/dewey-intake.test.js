@@ -86,4 +86,13 @@ describe('intake', () => {
     await repo.updateItem(b.id, { state: 'source', original_path: '/x/b.txt' });
     expect((await deweyIntakeJob({ id: b.id }, deps({ shelf: null }))).state).toBe('needs-human');
   });
+  it('a BOOK whose file is only a few pages waits for a person (the Apocalypse Unsealed preface, 10-18); a pilgrim note does not', async () => {
+    const book = await repo.createItem({ title: 'The Apocalypse Unsealed', identified: { appraisal: { kind: 'book' } } });
+    await repo.updateItem(book.id, { state: 'source', original_path: '/x/apocalypse.txt' });
+    const r = await deweyIntakeJob({ id: book.id }, deps());
+    expect(r).toMatchObject({ state: 'needs-human', why: 'book fragment' });
+    const note = await repo.createItem({ title: 'Pilgrim notes', identified: { appraisal: { kind: 'pilgrim notes' } } });
+    await repo.updateItem(note.id, { state: 'source', original_path: '/x/notes.txt' });
+    expect((await deweyIntakeJob({ id: note.id }, deps())).state).toBe('ingested');
+  });
 });

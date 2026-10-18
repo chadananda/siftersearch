@@ -50,6 +50,13 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     await updateItem(item.id, { state: 'failed' }, `not usable text: ${gate.why}`);
     return { id: item.id, state: 'failed', why: gate.why };
   }
+  // a BOOK that reads as a few pages is a fragment — "The Apocalypse Unsealed" (10-18) was its preface only (1,479 words):
+  // a person decides whether a fragment belongs. Pilgrim notes, letters and talks are short by nature and pass.
+  const kind = String(item.identified?.appraisal?.kind || item.kind || '').toLowerCase();
+  if (kind === 'book' && gate.words < 5000 && !deps.allowFragment) {
+    await updateItem(item.id, { state: 'needs-human' }, `only part of a book? Its text is ${gate.words.toLocaleString('en-US')} words — check whether this file holds the whole work`);
+    return { id: item.id, state: 'needs-human', why: 'book fragment' };
+  }
   const r = item.research || {};
   const title = r.matched && r.title ? r.title : item.title;
   const author = (r.matched && r.author) || item.author || null;
