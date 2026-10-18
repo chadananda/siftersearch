@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const items = [];
 vi.mock('../../api/lib/repos/dewey-repo.js', () => ({
+  listItems: vi.fn(async () => items),
   findBySha: vi.fn(async (h) => items.filter((i) => i.sha256 === h).at(-1) || null),
   createItem: vi.fn(async (o) => { const i = { id: items.length + 1, log: [{ why: o.why }], ...o }; items.push(i); return i; }),
   updateItem: vi.fn(async (id, f, why) => { const i = items.find((x) => x.id === id); Object.assign(i, f); i.log.push({ why }); return i; }),
@@ -16,6 +17,7 @@ const files = [
   { path: '/in/letter.txt', ext: 'txt', size: 2e3 }, { path: '/in/held-copy.doc', ext: 'doc', size: 5e4 }, { path: '/in/small.pdf', ext: 'pdf', size: 2e6 },
 ];
 const deps = (queued) => ({
+  recent: async () => [], textOf: async () => '',
   list: async () => [...files].sort((a, b) => ({ txt: 0, docx: 1, doc: 3, pdf: 5 }[a.ext] - { txt: 0, docx: 1, doc: 3, pdf: 5 }[b.ext] || a.size - b.size)),
   sha: async (p) => `sha:${p}`,
   check: async ({ path }) => ({ identified: { title: path }, excerpt: 'x', result: { verdict: path.includes('held-copy') ? 'held' : 'not-held', candidates: [{ id: 9, title: 'Library copy' }] } }),
@@ -58,6 +60,17 @@ describe('dewey-ingest-folder', () => {
     expect(items.find((i) => i.original_path === '/in/letter.txt').log.at(-1).why).toMatch(/could not be appraised/);
     expect(items.find((i) => i.original_path === '/in/notes.docx').log.at(-1).why).toMatch(/out of scope: a list of PDF file names/);
     expect(queued.map(([n]) => n)).toEqual(['dewey-ingest-folder']);
+  });
+  it('a second copy of a work already taken from the folder (same title, same text) is not added again', async () => {
+    const queued = [];
+    const body = Array.from({ length: 120 }, (_, i) => `station${i % 7} claim${(i * 3) % 11} chapter${i}`).join(' ');   // varied, like a real text
+    const d = { ...deps(queued), appraise: async () => ({ title: "The Station and Claims of Bahá'u'llah" }),
+      check: async ({ path }) => ({ identified: Object.defineProperty({ title: path }, '_text', { value: body }), excerpt: body, result: { verdict: 'not-held', candidates: [] } }),
+      recent: async () => items.filter((i) => i.state === 'source'), textOf: async () => body };
+    const r = await deweyIngestFolderJob({ batch: 3 }, d);
+    expect(r.queued).toHaveLength(1);
+    expect(r.held).toHaveLength(2);
+    expect(items.filter((i) => i.state === 'declined').every((i) => /the same work as item 1/.test(i.log.at(-1).why))).toBe(true);
   });
   it('lists only document formats, easiest first', async () => {
     const { mkdtempSync, writeFileSync, mkdirSync } = await import('fs');

@@ -9,7 +9,8 @@ import { readdir, stat } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname } from 'path';
-import { findBySha, createItem, updateItem } from '../repos/dewey-repo.js';
+import { findBySha, createItem, updateItem, listItems } from '../repos/dewey-repo.js';
+import { compareWords, compareTexts } from '../dewey/compare.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { identifyAndCheck } from '../dewey/holdings.js';
 import { appraiseDocument } from '../dewey/appraise.js';
@@ -18,6 +19,9 @@ import { logActivity } from '../repos/activity-repo.js';
 export const ingestDir = () => process.env.DEWEY_INGEST_DIR || '/tank/dropbox/Ocean2.0 Supplemental/Dewey Ingest/new';
 const EASE = { txt: 0, md: 0, markdown: 0, docx: 1, html: 2, htm: 2, xhtml: 2, epub: 2, rtf: 2, odt: 2, doc: 3, wpd: 3, wps: 3, webarchive: 4, pdf: 5 };
 const HELD_WHY = 'ingest folder: already in the library';
+/** A work's title for "the same work?": diacritics, apostrophes and the subtitle after ':' folded away. */
+export const workKey = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().split(':')[0].replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
 const DONE = new Set(['source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed']);
 
 /** The folder's documents, easiest first: by format, then size. */
@@ -35,7 +39,9 @@ export async function easiestFirst(dir) {
 const sha256Of = (path) => new Promise((res, rej) => { const h = createHash('sha256'); createReadStream(path).on('data', (d) => h.update(d)).on('end', () => res(h.digest('hex'))).on('error', rej); });
 
 export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps = {}) {
-  const { list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder' } = deps;
+  const { list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder',
+    recent = async () => (await listItems({ limit: 1000 })).filter((i) => ['source', 'processing', 'ingested'].includes(i.state) && String(i.original_path || '').includes('/Dewey Ingest/')),
+    textOf = async (path) => (await identifyAndCheck({ path })).identified._text || '' } = deps;
   const dir = ingestDir();
   const files = await list(dir);
   const out = { round, queued: [], held: [], needs_person: [], skipped: 0 };
@@ -65,6 +71,20 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1 } = {}, deps =
       identified: { ...doc.identified, file_name: name, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: 'placed in the ingest folder' });
     const hold = !a?.title ? 'could not be appraised (no title from its contents)'
       : a.recommendation === 'skip' || a.in_scope === 'no' ? `Dewey judged it out of scope: ${String(a.summary || a.scope_why || '').slice(0, 200)}` : null;
+    // the SAME WORK already taken from this folder (another copy — a .doc beside its .pdf — queued in this round or an
+    // earlier one, so the library check could not see it yet). 10-18: The Station and Claims of Bahá'u'llah and the
+    // Olinga interview went in twice. Same title → compare the texts; same text → not added.
+    if (!hold && a?.title) {
+      const twin = (await recent()).find((i) => i.id !== item.id && workKey(i.title) === workKey(a.title));
+      if (twin) {
+        const c = compareTexts(compareWords(doc.identified._text || doc.excerpt), compareWords(await textOf(twin.original_path).catch(() => '')), doc.identified.sample ? { sample: true } : {});
+        if (['same', 'inside', 'partial'].includes(c.relation)) {
+          await updateItem(item.id, { state: 'declined', sha256: hash, original_path: f.path }, `${HELD_WHY} — the same work as item ${twin.id} (“${twin.title}”), taken from this folder already (${c.relation})`);
+          out.held.push(f.path);
+          continue;
+        }
+      }
+    }
     if (hold) {
       await updateItem(item.id, { state: 'needs-human', sha256: hash, original_path: f.path, identified: { ...item.identified, appraisal: a || null, shelf: a?.shelf || null } },
         `ingest folder: ${hold} — add it by hand if you want it`);
