@@ -103,3 +103,8 @@ export async function tocCandidates({ within = 120, longest = 30 } = {}) {
   for (const r of rows) { const k = `${r.religion} · ${r.scope}`; (by[k] ||= { docs: 0, long: 0, paged: 0 }); by[k].docs++; if (r.paragraph_count >= 200) by[k].long++; if (r.paged) by[k].paged++; }
   return { documents: rows.length, long: rows.filter((r) => r.paragraph_count >= 200).length, paged: rows.filter((r) => r.paged).length, byTradition: by, longest: rows.slice(0, longest) };
 }
+
+/** A document's live paragraphs in order, text cut to 400 characters (enough to judge a heading) — structure inference. */
+export const structureRows = (docId) =>
+  queryAll(`SELECT id, paragraph_index, substr(text, 1, 400) AS text FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    AND COALESCE(is_duplicate, 0) = 0 AND LENGTH(text) > 0 ORDER BY paragraph_index`, [Number(docId)], 'sections:structure-rows');

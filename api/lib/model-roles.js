@@ -39,6 +39,8 @@ export const MODEL_ROLES = {
     why: 'best value for Arabic; batch half price; LM Studio retired (Chad 10-11)' },
   'episode-extract': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['json', 'multilingual', 'grounded-writing'],
     why: 'one call per episode of a predigested history (heading = boundary): place, date, cited summary, participants, events, questions; ~550 calls for GPB + DB' },
+  'toc-infer': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['json', 'multilingual', 'long-input'],
+    why: 'picks which candidate lines begin a section of a book (its Contents page and the work\'s standard structure as guidance); ~2 calls/book' },
   // ── evaluation ──
   'eval-recall': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-16', needs: ['fast', 'multilingual'],
     why: 'known-item test: writes the 2–4 words a reader half-remembers from a passage (one synonym, maybe a misspelling); ~300 calls/run' },

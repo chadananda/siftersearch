@@ -5,6 +5,7 @@ import { sectionIndexJob } from './section-index-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
 import { episodeExtractJob } from './episode-extract-job.js';
 import { refsAssignJob } from './refs-assign-job.js';
+import { structureInferJob } from './structure-infer-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -156,6 +157,7 @@ REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope?,
 REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, scope: 'supplemental' });   // heavy lane: it scans for site page chrome
 REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, limit? } — a predigested history's episodes (Chad 10-17)
 REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — traditional numbering, checked against the work's totals (Chad 10-17)
+REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates?, limit?, dry? } — structure for books that do not mark it (Chad 10-17)
 REPORTS['section-index'] = sectionIndexJob;
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
 // paragraph inside the section (Chad 10-17: structure before BM25 "so that sections get indexed") — before/after measure.
@@ -181,7 +183,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
  *  there is no day or night. The rule is to ingest correctly so as to not block queries"): heavy work is kept from
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
-export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index', 'episode-extract'],
+export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index', 'episode-extract', 'structure-infer'],
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
