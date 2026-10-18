@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:18:26.385Z",
+  "generated": "2026-10-18T03:20:43.866Z",
   "entries": [
+    {
+      "hash": "b439540c",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "The right column is Dewey's intake activity (loading now / just loaded, with stages); thumb-sized chat buttons, 16 px inputs",
+      "scope": "dewey"
+    },
     {
       "hash": "8e28e4aa",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "OceanLibrary multi-author Bahá'í compilations credited to their compiler, not their first author — Lights of Guidance → Helen Hornby (compiler), 29 Research Department compilations → the Research Department, Bahá'í Prayers / Sacred Writings / Japan Will Turn Ablaze → Compilation (Bahá'í Writings); a UHJ letter in them was being treated as Bahá'u'lláh's own work. Authority defaults keep their rank (8 / 7)",
       "scope": "data"
-    },
-    {
-      "hash": "200a9fb3",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Term-study placeholders are never streamed to chat (code fills them in the final text)",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "b439540c",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "The right column is Dewey's intake activity (loading now / just loaded, with stages); thumb-sized chat buttons, 16 px inputs",
+        "scope": "dewey"
+      },
       {
         "hash": "8e28e4aa",
         "date": "2026-10-17",
@@ -7014,15 +7021,6 @@
         "type": "Fixed",
         "description": "OceanLibrary multi-author Bahá'í compilations credited to their compiler, not their first author — Lights of Guidance → Helen Hornby (compiler), 29 Research Department compilations → the Research Department, Bahá'í Prayers / Sacred Writings / Japan Will Turn Ablaze → Compilation (Bahá'í Writings); a UHJ letter in them was being treated as Bahá'u'lláh's own work. Authority defaults keep their rank (8 / 7)",
         "scope": "data"
-      }
-    ],
-    "2026-10-07": [
-      {
-        "hash": "200a9fb3",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Term-study placeholders are never streamed to chat (code fills them in the final text)",
-        "scope": "anis"
       }
     ]
   }

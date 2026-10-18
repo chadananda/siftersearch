@@ -121,13 +121,12 @@
 
 <div class="chat">
   <div class="log" bind:this={log} aria-live="polite">
-    {#if !turns.length}
-      <div class="hello">
-        <p class="text-primary font-semibold">What have you found?</p>
-        <p class="text-secondary text-sm mt-1">Snap the cover or title page with 📷, attach a file, paste a link — or just name it.
-          I'll check the library at once, and if we don't have it, I'll put it on the wanted list and research it.</p>
-      </div>
-    {/if}
+    <!-- Dewey's introduction: the first bubble of every conversation (Chad 10-17) -->
+    <div class="dewey"><div class="card intro">
+      <p class="text-primary">Hello — I'm Dewey, the librarian. What have you found?</p>
+      <p class="text-secondary text-sm mt-1">Snap the cover or title page with 📷, attach a file with 📎, paste a link — or just name it. I'll check the
+        library at once, and if we don't have it, I'll put it on the wanted list and research it.</p>
+    </div></div>
     {#each turns as t (t.id)}
       <div class="you">
         {#if t.you.text}<p class="whitespace-pre-wrap">{t.you.text}</p>{/if}
@@ -188,32 +187,40 @@
         {#if file}<span class="px-2 py-1 rounded bg-surface-2 text-xs text-primary">📄 {file.name}</span>{/if}
       </div>
     {/if}
-    <div class="flex gap-2 items-end">
-      <label class="tool" title="Take a photo — it is checked at once">📷<input type="file" accept="image/*" capture="environment" multiple class="sr-only" onchange={addPhotos} /></label>
-      <label class="tool" title="Attach a file (PDF, DOCX, text) — checked at once">📎<input type="file" accept=".pdf,.docx,.txt,.md,image/*" class="sr-only" onchange={addFile} /></label>
-      <textarea class="flex-1 px-3 py-2 rounded-lg border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
+    <!-- full-width input with Send inside it (Chad 10-17) -->
+    <div class="field">
+      <textarea class="w-full pl-3 pr-14 py-3 rounded-2xl border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
         placeholder="Name it, paste a link, or ask…" aria-label="Message to Dewey"
         onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}></textarea>
-      <button class="send" disabled={busy || !hasInput}>{busy ? '…' : 'Send'}</button>
+      <button class="send" disabled={busy || !hasInput} aria-label="Send">{#if busy}…{:else}<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>{/if}</button>
     </div>
   </form>
+
+  <!-- photo + attach as large round floating buttons at the right edge, above the input — thumb-sized, out of the way -->
+  <div class="fabs">
+    <label class="fab" title="Take a photo — it is checked at once" aria-label="Take a photo">📷<input type="file" accept="image/*" capture="environment" multiple class="sr-only" onchange={addPhotos} /></label>
+    <label class="fab" title="Attach a file (PDF, DOCX, text) — checked at once" aria-label="Attach a file">📎<input type="file" accept=".pdf,.docx,.txt,.md,image/*" class="sr-only" onchange={addFile} /></label>
+  </div>
 </div>
 
 <style>
-  .chat { display: flex; flex-direction: column; height: 100%; min-height: 0; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-1); }
-  .log { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-  .hello { margin: auto; max-width: 28rem; text-align: center; }
+  .chat { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-1); }
+  .log { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 5rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
   .you { align-self: flex-end; max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 0.75rem 0.75rem 0.25rem 0.75rem; background: var(--surface-2); color: var(--text-primary); }
   .dewey { align-self: flex-start; max-width: 92%; display: flex; flex-direction: column; gap: 0.5rem; }
   .card { padding: 0.6rem 0.8rem; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: var(--surface-0); }
   .composer { border-top: 1px solid var(--border-subtle); padding: 0.6rem; }
-  /* thumb-sized on a phone (Chad 10-17): 48 px targets; inputs at 16 px so iOS does not zoom the page */
-  .tool { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; border: 1px solid var(--border); cursor: pointer; font-size: 1.4rem; flex: none; }
-  .send { min-height: 3rem; padding: 0 1.25rem; border-radius: 0.75rem; background: var(--accent-primary); color: white; font-weight: 600; font-size: 1rem; flex: none; }
-  .send:disabled { opacity: 0.5; }
+  /* thumb-sized (Chad 10-17): Send inside the full-width input; photo + attach as 56 px round buttons floating at the right
+     edge above the input; inputs at 16 px so iOS does not zoom the page */
+  .field { position: relative; }
+  .send { position: absolute; right: 0.5rem; bottom: 0.55rem; width: 2.75rem; height: 2.75rem; border-radius: 999px; display: inline-flex;
+    align-items: center; justify-content: center; background: var(--accent-primary); color: white; }
+  .send:disabled { opacity: 0.4; }
+  .fabs { position: absolute; right: 0.9rem; bottom: 6.5rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 2; }
+  .fab { width: 3.5rem; height: 3.5rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem;
+    cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.5); }
+  .fab:active { transform: scale(0.95); }
   .act { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1rem; border-radius: 0.6rem; border: 1px solid var(--border); font-size: 0.95rem; color: var(--text-primary); }
   .act.primary { background: var(--accent-primary); color: white; border-color: transparent; font-weight: 600; }
   .act:disabled { opacity: 0.5; }
-  @media (max-width: 640px) { .tool { width: 3.25rem; height: 3.25rem; font-size: 1.6rem; } .send { min-height: 3.25rem; } }
-  .tool:hover { background: var(--surface-2); }
 </style>
