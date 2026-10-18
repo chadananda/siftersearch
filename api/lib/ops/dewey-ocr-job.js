@@ -32,7 +32,7 @@ export async function deweyOcrJob({ id, refresh = false } = {}, deps = {}) {
     const { pages } = await pdfInfo({ path: item.original_path });
     const fresh = await extract({ path: item.original_path, resumeJobId: jobId }, {});
     const own = item.identified?.slp?.engine === 'vision' ? { text: String(await (deps.read || readFile)(item.identified.slp.path)) } : await sample({ path: item.original_path }, pages).catch(() => null);
-    const check = slpCheck(fresh.text, { pages: fresh.pages || pages, sampleText: own?.text || null });
+    const check = slpCheck(fresh.text, { pages, pdfPages: pages, sampleText: own?.text || null });
     if (!check.ok) return { id, state: item.state, refreshed: false, check };
     const where = join(originalsDir(), 'ocr', `${item.sha256 || `item-${item.id}`}.slp.md`);
     await save(where, fresh.markdown);
@@ -86,7 +86,7 @@ export async function deweyOcrJob({ id, refresh = false } = {}, deps = {}) {
       return { id, state: 'needs-human', why: err.message };
     }
   }
-  let check = slpCheck(out.text, { pages: out.pages || pages, sampleText: own?.text || null });
+  let check = slpCheck(out.text, { pages, pdfPages: pages, sampleText: own?.text || null });   // the PDF's page count: a truncated job reports its own
   const where = join(originalsDir(), 'ocr', `${item.sha256 || `item-${item.id}`}.slp.md`);
   if (!out.reused) await save(where, out.markdown);   // kept either way — a failed check can be read by a person
   let slp = { path: out.reused ? prior.path : where, job_id: out.job_id, score: out.score, cost_cents: out.cost_cents, pages: out.pages || pages, check, meta: out.meta,
@@ -96,7 +96,7 @@ export async function deweyOcrJob({ id, refresh = false } = {}, deps = {}) {
   // transcribes every page, and that text must pass the same quality check (words, text per page).
   if (!check.ok && own?.langs === 'vision' && pages <= 30) {
     const vis = await (deps.transcribe || transcribeAll)(item.original_path, pages).catch(() => null);
-    const vcheck = vis ? slpCheck(vis.text, { pages }) : null;
+    const vcheck = vis ? slpCheck(vis.text, { pages, pdfPages: pages }) : null;
     if (vcheck?.ok) {
       const vwhere = join(originalsDir(), 'ocr', `${item.sha256 || `item-${item.id}`}.vision.md`);
       await save(vwhere, vis.text);

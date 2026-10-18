@@ -96,3 +96,12 @@ describe('intake', () => {
     expect((await deweyIntakeJob({ id: note.id }, deps())).state).toBe('ingested');
   });
 });
+
+import { previewSigns } from '../../api/lib/ops/dewey-intake-job.js';
+describe('previewSigns', () => {
+  it('a Google/publisher preview is recognised; ordinary prose is not', () => {
+    expect(previewSigns('… Pages 23 to 180 are not shown in this preview. …')).toMatch(/not shown in this preview/);
+    expect(previewSigns('You have reached the end of this sample.')).toBeTruthy();
+    expect(previewSigns('He gave them a sample of the soil from the garden and a preview of the plans.')).toBeNull();
+  });
+});

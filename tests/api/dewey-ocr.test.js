@@ -184,3 +184,25 @@ describe('dewey-ocr job', () => {
     expect(r).toMatchObject({ state: 'needs-human', pages: 969 });
   });
 });
+
+// THE WHOLE DOCUMENT (Chad 10-18: "lots of books with just the first pages … we do not want to add … only a sample")
+import { completeness } from '../../api/lib/dewey/searchlayer.js';
+describe('completeness', () => {
+  const page = (n) => `<pb n="${n}"/>\n\n${Array.from({ length: 40 }, (_, i) => `word${n}x${i} lorem`).join(' ')} the chapter continues here with more words`;
+  const book = (upTo) => Array.from({ length: upTo }, (_, i) => page(i + 1)).join('\n\n');
+  it('a result that stops at page 20 of 300 is only the beginning', () => {
+    const c = completeness(book(20), { pdfPages: 300 });
+    expect(c.ok).toBe(false);
+    expect(c.why.join()).toMatch(/stops at page 20 of 300/);
+  });
+  it('the whole book (a blank last page or two allowed) passes', () => {
+    expect(completeness(book(298), { pdfPages: 300 }).ok).toBe(true);
+    expect(completeness(book(9), { pdfPages: 10 }).ok).toBe(true);
+  });
+  it('our own late pages missing from its text fail it', () => {
+    const late = '[page 250]\n' + 'Concluding remarks regarding everlasting sovereignty, providence, steadfastness, magnanimity, tranquility, benevolence, consolation, faithfulness, radiance, heavenly, kingdom, assemblies';
+    const c = completeness('<pb n="1"/>\n\nnothing alike', { pdfPages: 260, sampleText: late });
+    expect(c.lateFound).toBe(0);
+    expect(c.why.join()).toMatch(/last pages we read ourselves/);
+  });
+});

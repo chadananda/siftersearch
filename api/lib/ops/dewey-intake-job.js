@@ -5,9 +5,9 @@
 // vectors → …) takes over with no manual step. Every outcome is a state on the item with its reason. params { id }.
 import { readFile, unlink, writeFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
-import { garbledLayer } from '../dewey/convert.js';
+import { garbledLayer, readPdf } from '../dewey/convert.js';
 import { cleanText } from '../dewey/clean.js';
-import { slpToText, slpEnabled } from '../dewey/searchlayer.js';
+import { slpToText, slpEnabled, completeness } from '../dewey/searchlayer.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
 import { extractText, archiveFile, inArchive, proseGate, libraryShelves, chooseShelf, writeLibraryFile, toMarkdown } from '../dewey/intake.js';
@@ -16,6 +16,12 @@ import { withAIContext } from '../ai-context.js';
 import { waitForQuietWriter } from './ctai-jobs.js';
 import { audit } from '../audit.js';
 import { logActivity } from '../repos/activity-repo.js';
+
+/** Words that mark a PREVIEW or sample rather than the work ("Pages 23 to 180 are not shown in this preview"). Pure. */
+export function previewSigns(text) {
+  const m = String(text || '').match(/(?:pages? [\w\s,–-]{0,20}(?:are|is) not (?:shown|included|available) in this (?:preview|sample)|end of (?:this )?(?:free )?(?:sample|preview|excerpt)|you have reached the end of (?:this|the) (?:sample|preview)|this (?:is a|free) (?:sample|preview) of|buy (?:the|this) (?:full )?(?:book|ebook) to (?:continue|read more)|limited preview|restricted page)/i);
+  return m ? m[0].slice(0, 80) : null;
+}
 
 export async function deweyIntakeJob({ id } = {}, deps = {}) {
   const { ingest = async (md, rel) => (await import('../../services/ingester.js')).ingestDocument(md, {}, rel),
@@ -69,6 +75,28 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   const kind = String(item.identified?.appraisal?.kind || item.kind || '').toLowerCase();
   // a person's "add it" (Review popup, dewey/review.js) waives the guards that held it for a person
   const approved = !!item.identified?.override?.add;
+  // ONLY THE BEGINNING? (Chad 10-18: "we do not want to add a book if it is only a sample of the beginning"). Three ways:
+  // a PDF whose text (its own layer, or OCR) stops early; a file that is itself a preview ("pages not shown in this
+  // preview"); a book whose PDF has far fewer pages than its published edition (research: Open Library / Google Books).
+  if (!approved && !deps.allowFragment) {
+    // the PDF's OWN page count — never SLP's (a truncated job reports the pages it did)
+    const pdfPages = ext !== 'pdf' ? null : slp ? (deps.pdfPages ? await deps.pdfPages() : (await readPdf({ path: item.original_path }).catch(() => null))?.pages) || slp.pages : pages;
+    const whole = ext === 'pdf' ? completeness(text, { pdfPages }) : { ok: true, why: [] };
+    const preview = previewSigns(text);
+    const published = Number(item.research?.matched && item.research?.pages) || 0;
+    const short = kind === 'book' && ext === 'pdf' && published >= 60 && pages < published * 0.5 ? `the PDF has ${pages} pages; the published book has about ${published}` : null;
+    const why = [...whole.why, ...(preview ? [`it reads as a preview (“${preview}”)`] : []), ...(short ? [short] : [])];
+    if (why.length) {
+      // a text LAYER that stops early is not the book's text: full OCR reads every page; OCR text that stops early → a person
+      if (ext === 'pdf' && !slp && !preview && !short && (deps.slpEnabled || slpEnabled)()) {
+        await updateItem(item.id, { state: 'needs-ocr' }, `its text layer covers only part of the PDF (${why.join('; ')}) — sent for full OCR`);
+        await (deps.queue || enqueue)('dewey-ocr', { id: item.id }, 'dewey-intake');
+        return { id: item.id, state: 'needs-ocr', why };
+      }
+      await updateItem(item.id, { state: 'needs-human' }, `only part of the document? ${why.join('; ')} — not added`);
+      return { id: item.id, state: 'needs-human', why: 'partial' };
+    }
+  }
   if (kind === 'book' && gate.words < 5000 && !deps.allowFragment && !approved) {
     await updateItem(item.id, { state: 'needs-human' }, `only part of a book? Its text is ${gate.words.toLocaleString('en-US')} words — check whether this file holds the whole work`);
     return { id: item.id, state: 'needs-human', why: 'book fragment' };

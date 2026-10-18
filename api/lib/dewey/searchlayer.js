@@ -63,10 +63,47 @@ export function rejoinLines(text) {
  *  - CONSISTENT with what we read ourselves: ≥ 40% of the distinct 5+-letter words of the pages our preliminary OCR read
  *    are in it — catches a wrong file, garbled handwriting, a page that came back empty
  */
-export function slpCheck(text, { pages = 1, sampleText = null } = {}) {
+/**
+ * IS IT THE WHOLE DOCUMENT? (Chad 10-18: "I see lots of books with just the first pages and we do not want to add a book
+ * if it is only a sample of the beginning".) The pooled sample score and SLP's own page count can't see a result that stops
+ * early, so two measures against the PDF itself: (1) SLP's page markers (<pb n>) must reach the end — the last page with text
+ * at least 85% of the way through (or within 2 pages), and text on most pages; (2) our own sampled pages from the LAST third
+ * must be found in its text. text: slpToText's text; sampleText: ocrSample's "[page N]" sections. Pure.
+ */
+export function completeness(text, { pdfPages = null, sampleText = null } = {}) {
+  const why = [];
+  const fold = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  // pages with text, by marker
+  const withText = new Set();
+  const parts = String(text || '').split(/<pb n="(\d+)"\/>/);
+  for (let k = 1; k < parts.length; k += 2) if ((parts[k + 1] || '').split(/\s+/).filter((w) => /\p{L}{2,}/u.test(w)).length >= 15) withText.add(Number(parts[k]));
+  const lastPage = withText.size ? Math.max(...withText) : null;
+  if (pdfPages && pdfPages > 3 && lastPage != null && lastPage < pdfPages * 0.85 && pdfPages - lastPage > 2)
+    why.push(`only the beginning: its text stops at page ${lastPage} of ${pdfPages}`);
+  if (pdfPages && pdfPages > 6 && withText.size && withText.size < pdfPages * 0.5)
+    why.push(`text on only ${withText.size} of ${pdfPages} pages`);
+  // our own late pages
+  let lateFound = null;
+  if (sampleText && pdfPages > 6) {
+    const theirs = new Set(fold(text).match(/\p{L}{5,}/gu) || []);
+    const scores = [];
+    for (const m of String(sampleText).matchAll(/\[page (\d+)\]\n([\s\S]*?)(?=\n\[page \d+\]|$)/g)) {
+      if (Number(m[1]) < pdfPages * 0.67) continue;
+      const ours = new Set(fold(m[2]).match(/\p{L}{5,}/gu) || []);
+      if (ours.size >= 12) scores.push([...ours].filter((w) => theirs.has(w)).length / ours.size);
+    }
+    if (scores.length) {
+      lateFound = +(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2);
+      if (lateFound < 0.3) why.push(`the last pages we read ourselves are not in it (${Math.round(lateFound * 100)}% of their words found)`);
+    }
+  }
+  return { ok: !why.length, why, lastPage, pagesWithText: withText.size, pdfPages, lateFound };
+}
+
+export function slpCheck(text, { pages = 1, sampleText = null, pdfPages = null } = {}) {
   const body = String(text || '').replace(/<pb[^>]*\/>/g, ' ');
   const words = body.split(/\s+/).filter(Boolean).length;
-  const perPage = words / Math.max(1, pages);
+  const perPage = words / Math.max(1, pdfPages || pages);
   const latin = (body.match(/[A-Za-z]/g) || []).length / Math.max(1, (body.match(/\p{L}/gu) || []).length) > 0.8;
   const ratio = latin ? wordRatio(body) : null;
   let sampleFound = null;
@@ -84,7 +121,10 @@ export function slpCheck(text, { pages = 1, sampleText = null } = {}) {
   }
   if (ratio != null && ratio < 0.75) why.push(`not clean text (${Math.round(ratio * 100)}% real words)`);
   if (perPage < 40) why.push(`too little text (${Math.round(perPage)} words a page)`);
-  return { ok: !why.length, why, words, perPage: Math.round(perPage), ratio: ratio == null ? null : +ratio.toFixed(2), sampleFound };
+  // the WHOLE document, measured against the PDF's own page count (never SLP's — a truncated job reports its own pages)
+  const whole = pdfPages ? completeness(text, { pdfPages, sampleText }) : null;
+  if (whole) why.push(...whole.why);
+  return { ok: !why.length, why, words, perPage: Math.round(perPage), ratio: ratio == null ? null : +ratio.toFixed(2), sampleFound, whole };
 }
 
 /**
