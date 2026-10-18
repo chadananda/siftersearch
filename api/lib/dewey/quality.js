@@ -2,7 +2,7 @@
 // further and build those into Dewey and suggest to SLP"): what a document's stored paragraphs say about how it was read.
 // Pure measures, one document at a time; the dewey-quality ops report runs them over every Dewey import, worst first.
 // Each finding names its likely CAUSE so it becomes a fix (Dewey) or a suggestion (SearchLayerPDF).
-import { wordRatio } from './convert.js';
+import { wordRatio, REAL_WORD } from './convert.js';
 
 const TERMINAL = /[.!?:;"”’)\]…]$/;
 const norm = (t) => String(t || '').toLowerCase().replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
@@ -17,12 +17,22 @@ export function inspectDocument(paragraphs, item = {}) {
 
   // a sentence split across paragraphs: no end punctuation, next starts lower-case / with a digit
   const splits = [];
-  for (let k = 0; k + 1 < ps.length; k++) if (!TERMINAL.test(ps[k]) && words[k] >= 4 && /^[\p{Ll}\d]/u.test(ps[k + 1])) splits.push(`${ps[k].slice(-60)} ‖ ${ps[k + 1].slice(0, 40)}`);
+  // not a split: a heading (mostly capitals) before a numbered list or text; a table-of-contents line (dot leaders, ends in a
+  // page number) — 10-18 round 2: these were most of the "splits" left
+  const headingLike = (t) => { const w = t.split(/\s+/); return w.filter((x) => /^\p{Lu}/u.test(x)).length / w.length >= 0.6; };
+  for (let k = 0; k + 1 < ps.length; k++) {
+    const a = ps[k], b = ps[k + 1];
+    if (TERMINAL.test(a) || words[k] < 4 || !/^[\p{Ll}\d]/u.test(b)) continue;
+    if (headingLike(a) || /^\d+[.)]\s/.test(b) || /\.{3,}\s*\d*$|\s\d{1,4}$/.test(a)) continue;
+    splits.push(`${a.slice(-60)} ‖ ${b.slice(0, 40)}`);
+  }
   add('split-sentences', splits.length, splits[0], 'line ends taken as paragraph breaks', 'rejoin blocks that do not end a sentence (SLP: emit paragraphs, not printed lines)');
 
   // running headers / footers: the same short line again and again
   const counts = new Map();
-  for (const t of ps) if (t.split(/\s+/).length <= 10) counts.set(norm(t), (counts.get(norm(t)) || 0) + 1);
+  // a repeated CITATION ("Bahá'u'lláh, Kitáb-i-Íqán, p. 12", "Gleanings, 45:3") is an endnote, not a header
+  const citation = (k) => /\bp\.\s*#|#:#|^#\.\s|,\s*#\.?$/.test(k);
+  for (const t of ps) if (t.split(/\s+/).length <= 10 && !citation(norm(t))) counts.set(norm(t), (counts.get(norm(t)) || 0) + 1);
   const repeats = [...counts].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
   add('running-headers', repeats.reduce((n, [, c]) => n + c, 0), repeats[0]?.[0], 'page headers/footers kept as text', 'drop short lines repeated on many pages (SLP: mark headers/footers, never in the Markdown)');
 
@@ -45,7 +55,7 @@ export function inspectDocument(paragraphs, item = {}) {
   // OCR noise (Latin text)
   const latin = ps.join(' ');
   const ratio = /[A-Za-z]/.test(latin) ? wordRatio(latin) : null;
-  if (ratio != null && ratio < 0.8) add('ocr-noise', Math.round((1 - ratio) * 100), latin.split(/\s+/).filter((w) => w.length > 1 && !/^[A-Za-z][a-z'’-]*[a-z][.,;:!?)"’]*$/.test(w)).slice(0, 8).join(' '), 'misread characters', 'a cleaner OCR pass, or the vision transcription for handwriting');
+  if (ratio != null && ratio < 0.8) add('ocr-noise', Math.round((1 - ratio) * 100), latin.split(/\s+/).filter((w) => w.length > 1 && !REAL_WORD.test(w)).slice(0, 8).join(' '), 'misread characters', 'a cleaner OCR pass, or the vision transcription for handwriting');
 
   // Markdown left in the text
   const md = ps.filter((t) => /\*\*|__|^#{1,6}\s|\[\]\(|<!--/.test(t));

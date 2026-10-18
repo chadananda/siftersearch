@@ -9,6 +9,11 @@ describe('inspectDocument', () => {
     const codes = Object.fromEntries(r.findings.map((f) => [f.code, f.n]));
     expect(codes).toMatchObject({ 'split-sentences': 1, 'running-headers': 3, 'page-numbers': 1, 'broken-hyphens': 1 });
   });
+  it('headings before numbered lists, TOC lines and repeated citations are not findings', () => {
+    const r = inspectDocument(P('THE GIFT OF TEACHING', '1. Teach thou the Cause of God.', 'Part I An Invitation ....... 5', 'chapter text continues on here.',
+      ...Array(5).fill("Bahá'u'lláh, Kitáb-i-Íqán, p. 12."), 'The end.'), { title: 'T', author: 'A' });
+    expect(r.findings.map((f) => f.code)).toEqual([]);
+  });
   it('a clean document has no findings', () => {
     const r = inspectDocument(P('The first paragraph is complete.', 'The second one is too.'), { title: 'A Book', author: 'Someone' });
     expect(r.findings).toEqual([]);

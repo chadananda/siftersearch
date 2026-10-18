@@ -132,18 +132,26 @@ export async function visionRead(png) {
   return res?.choices?.[0]?.message?.content || '';
 }
 
+/** A real word: Unicode letters, transliteration marks and apostrophes, parts joined by hyphens ("Kitáb-i-Íqán"), or an
+ *  ALL-CAPS heading word; trailing punctuation allowed. */
+export const REAL_WORD = /^[(“"‘'ʻ]?(?:\p{Lu}{2,}|\p{L}[\p{Ll}\p{M}'’ʻʼ]*\p{Ll}[\p{Ll}\p{M}'’ʻʼ]*|\p{L}[\p{Ll}\p{M}'’ʻʼ]*)(?:[-'’ʻʼ]\p{L}[\p{Ll}\p{M}'’ʻʼ]*)*[.,;:!?)"’”]*$/u;
+
 /** Share of tokens that look like real Latin-script words (2+ letters, a vowel, clean shape) — 0..1; null if too few. */
 export function wordRatio(text) {
-  const toks = String(text || '').split(/\s+/).filter((t) => t.length > 1);
+  // only tokens with 3+ letters are judged — numbers, page refs ("p. 12."), dot leaders and initials are neither words nor noise
+  const toks = String(text || '').split(/\s+/).filter((t) => (t.match(/\p{L}/gu) || []).length >= 3);
   if (toks.length < 20) return null;
-  return toks.filter((t) => /^[A-Za-z][a-z'’-]*[a-z][.,;:!?)"’]*$/.test(t) && /[aeiouy]/i.test(t)).length / toks.length;
+  // Unicode letters (10-18: ASCII-only counted "Bahá'u'lláh", "Kitáb-i-Íqán", "ʻAbdu'l-Bahá" as noise — clean Bahá'í text
+  // scored as garbled); vowels checked on the diacritic-stripped form
+  return toks.filter((t) => REAL_WORD.test(t) && /[aeiouy]/i.test(t.normalize('NFD').replace(/\p{M}/gu, ''))).length / toks.length;
 }
 
 /** Does an OCR read look like real Latin-script words? (≥ 60% of tokens are) */
 export const looksLikeWords = (text) => (wordRatio(text) ?? 0) >= 0.6;
 
 /** A garbled old-OCR text layer: mostly Latin letters but under 85% real-word shapes. Not fit to import as the text. */
-export const garbledLayer = (t) => mostlyLatin(t) && (wordRatio(t) ?? 1) < 0.85;
+// thresholds on the Unicode measure (10-18): clean layers 0.98–0.99, garbled 0.79–0.84 (Remey, Kelsey)
+export const garbledLayer = (t) => mostlyLatin(t) && (wordRatio(t) ?? 1) < 0.9;
 
 /** Is this text mostly Latin letters? (a word-shape ratio means nothing for Arabic or Hebrew) */
 const mostlyLatin = (t) => { const l = (String(t).match(/\p{L}/gu) || []).length; return l > 0 && (String(t).match(/[A-Za-z]/g) || []).length / l > 0.8; };

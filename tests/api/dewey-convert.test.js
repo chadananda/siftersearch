@@ -71,6 +71,9 @@ describe('preliminary OCR of scans', () => {
     expect(p.slice(0, 2)).toEqual([2, 3]);
     expect(p.at(-1)).toBeGreaterThan(250);
   });
+  it('transliterated names are real words (ASCII-only scoring called clean Bahá’í text garbled, 10-18)', () => {
+    expect(looksLikeWords("Bahá'u'lláh revealed the Kitáb-i-Íqán in Baghdád, and ʻAbdu'l-Bahá explained it to the friends who came from Ṭihrán and ʻAkká to hear Him speak of the Báb and of Quddús and Ṭáhirih.")).toBe(true);
+  });
   it('tells a real English read from OCR noise (handwriting read as "Japanese", 10-17)', () => {
     expect(looksLikeWords('Excerpts from the notes of Ben Levy, American Baha\'i in the Armed Forces in Germany. Pilgrimage March 9th to 16th, 1953. Mankind is now approaching the stage of maturity. Maturity means responsibility and all men are responsible to God.')).toBe(true);
     expect(looksLikeWords('プー 0 72 の と。 そん 「 レク ンタルレ ぎ CR んし り 。 EE 。 yt" いう 了 『ル レ/二2 /グ名 だ アン を wtっ ッン サリ が 計 ww チ も 症 が しゅ 5 。 | "ん /が じしゃる をrw')).toBe(false);
