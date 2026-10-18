@@ -10,6 +10,9 @@ import { getAuthority } from '../authority.js';
 export const CORE_AUTHORITY = 8;
 export const isCore = (doc) => { try { return getAuthority(doc) >= CORE_AUTHORITY; } catch { return false; } };
 
+/** A document shorter than this (paragraphs with text) is a single work — a tablet, a letter, a talk: it needs no TOC. */
+export const STRUCTURE_NEEDED_FROM = 60;
+
 export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'refs', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 
@@ -66,8 +69,9 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     row('keyword', kwTotal, kwTotal, kwN, null, kwTotal),
     row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
     // structure is per DOCUMENT: total 1; generated 1 when structure was FOUND (Chad 10-17: "often it is not" embedded as
-    // headings — reading every document is not the same as having its structure); current 1 once read; indexed = sections
-    row('sections', sections?.n ? 1 : 0, structure ? 1 : 0, sections?.n || 0, null, 1),
+    // headings — reading every document is not the same as having its structure) OR is NOT NEEDED: a short single work —
+    // a tablet, a letter, a talk (Chad 10-17: "largely independent tablets") — once read; current 1 once read; indexed = sections
+    row('sections', sections?.n || (structure && (c?.texted ?? total) < STRUCTURE_NEEDED_FROM) ? 1 : 0, structure ? 1 : 0, sections?.n || 0, null, 1),
     // traditional references (Chad 10-17): generated = a traditional number (verse, section, saying — block_attrs.pn),
     // indexed = a print page (pdf_page), current = either; total = paragraphs with text
     row('refs', c?.with_pn, c?.with_ref, c?.with_page, null, c?.texted ?? total),
@@ -116,7 +120,8 @@ export const saveUnindexable = (docId, layer, n) => transaction([{ sql: `INSERT 
 export async function saveStructureCoverage(docId, sections) {
   const id = Number(docId);
   const core = (await queryOne(`SELECT core FROM index_coverage WHERE doc_id = ? AND layer = 'text'`, [id], 'coverage:core-of'))?.core ?? 0;
-  return saveCoverage(id, [{ layer: 'sections', total: 1, generated: sections ? 1 : 0, current: 1, indexed: sections, version: null, core }]);
+  const short = (await queryOne(`SELECT total FROM index_coverage WHERE doc_id = ? AND layer = 'text'`, [id], 'coverage:size-of'))?.total < STRUCTURE_NEEDED_FROM;
+  return saveCoverage(id, [{ layer: 'sections', total: 1, generated: sections || short ? 1 : 0, current: 1, indexed: sections, version: null, core }]);
 }
 
 /** Rebuild coverage_totals from the whole ledger (daily, and when empty) — corrects drift the deltas cannot see. */

@@ -8,7 +8,7 @@ export const RINGS = [
   // Meilisearch is legacy, being replaced by Qdrant (Chad 10-16): the first ring is the paragraph store, not Meili sync
   { id: 'text', label: 'Paragraph store', short: 'STORE', of: (r) => [r.generated, r.total] },
   // document structure right after ingestion (Chad 10-17): sub-documents and the TOC are metadata disambiguation and retrieval lean on;
-  // documents whose structure was FOUND / documents (read ≠ found: most books mark none — inference comes next)
+  // documents whose structure was FOUND or is NOT NEEDED (a short single work: a tablet, a letter) / documents
   { id: 'sections', label: 'Sub-documents', short: 'SECT', of: (r, docs) => [r.generated, docs] },
   // BM25 next — before vectors (Chad 10-16: no external model), and after structure (10-17) so it carries section paths
   { id: 'keyword', label: 'Keyword index', short: 'BM25', of: (r) => [Math.min(r.indexed, r.total), r.total] },

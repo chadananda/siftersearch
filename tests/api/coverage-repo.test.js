@@ -52,6 +52,9 @@ describe('coverage ledger', () => {
     raw.prepare('UPDATE content SET pdf_page = 12 WHERE id IN (1, 2)').run();
     const r = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((x) => [x.layer, x])).refs;
     expect(r).toMatchObject({ total: 2, generated: 1, current: 2, indexed: 2 });   // pn on one, pages on two, either on two
+    raw.prepare("INSERT INTO doc_structure (doc_id, sections, indexed_at) VALUES (1, 0, 1)").run();
+    const st = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((x) => [x.layer, x])).sections;
+    expect(st).toMatchObject({ total: 1, generated: 1, current: 1, indexed: 0 });   // read, no sections, 3 paragraphs: a single work needs none
     await repo.saveUnindexable(1, 'keyword', 1);   // a markup-only row ('|') the keyword job met
     const m2 = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
     expect(m2.keyword.total).toBe(1);
