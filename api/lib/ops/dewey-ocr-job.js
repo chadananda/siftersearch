@@ -18,7 +18,16 @@ import { slpExtract, slpCheck, slpMaxPages, slpReceipt, slpToText } from '../dew
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
 
-export async function deweyOcrJob({ id, refresh = false } = {}, deps = {}) {
+// one OCR at a time per item: the three OCR lanes share this process, and two runs of one item (a Review answer + the OCR
+// loop, 10-18) would each pay SearchLayerPDF
+const running = new Set();
+export async function deweyOcrJob(params = {}, deps = {}) {
+  if (running.has(Number(params.id))) return { id: params.id, skipped: 'already being read by another run' };
+  running.add(Number(params.id));
+  try { return await ocrOnce(params, deps); } finally { running.delete(Number(params.id)); }
+}
+
+async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
   const { extract = slpExtract, receipt = slpReceipt, sample = ocrSample, pdfInfo = readPdf, queue = enqueue, appraise = appraiseDocument,
     others = async () => listItems({ limit: 1000 }), save = async (p, t) => { await mkdir(join(p, '..'), { recursive: true }); await writeFile(p, t); } } = deps;
   const item = await getItem(id);

@@ -185,12 +185,15 @@ async function pulseLoop() {
 // 10 minutes each item waiting at OCR gets its job (enqueue dedupes a queued/running twin; a resumed job polls, never pays twice).
 async function ocrLoop() {
   const { listItems } = await import('../lib/repos/dewey-repo.js');
-  const { enqueue } = await import('../lib/repos/ops-report-repo.js');
+  const { enqueue, pendingRuns } = await import('../lib/repos/ops-report-repo.js');
   const { slpEnabled } = await import('../lib/dewey/searchlayer.js');
   while (!stopping) {
     if (slpEnabled()) {
       const waiting = await listItems({ state: 'needs-ocr', limit: 1000 }).catch(() => []);
-      for (const i of waiting) await enqueue('dewey-ocr', { id: i.id }, 'ocr-loop').catch(() => {});
+      // an item already on its way (a Review answer queues it with priority — different params, so enqueue's own dedupe
+      // missed it, 10-18: four items queued twice) is not queued again
+      const onWay = new Set((await pendingRuns('dewey-ocr').catch(() => [])).map((r) => Number(r.params?.id)));
+      for (const i of waiting) if (!onWay.has(i.id)) await enqueue('dewey-ocr', { id: i.id }, 'ocr-loop').catch(() => {});
     }
     await new Promise((r) => setTimeout(r, 600_000));
   }
