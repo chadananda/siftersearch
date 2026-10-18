@@ -91,39 +91,55 @@ export function slpCheck(text, { pages = 1, sampleText = null } = {}) {
  * A PDF (a server path) → SLP's { markdown, meta, text, job_id, score, cost_cents }. Polls until done (scans: a GPU pod
  * takes 2–3 min to come up, then ~9 s a page English, ~17 s Arabic) — `timeoutMs` bounds it. fetchImpl injectable.
  */
-export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, timeoutMs = 3 * 3600000, log = () => {} } = {}) {
+export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, retryMs = 5000, timeoutMs = 3 * 3600000, log = () => {} } = {}) {
   if (!key) throw new Error('SearchLayerPDF is not configured (SEARCHLAYERPDF_API_KEY)');
   const H = { Authorization: `Bearer ${key}` };
   const json = async (r) => { const t = await r.text(); try { return JSON.parse(t); } catch { return { raw: t.slice(0, 200) }; } };
+  // every request retried on a NETWORK error (10-18: four jobs ended "fetch failed" — two uploads of 270 KB–11 MB never
+  // arrived, a poll and a result fetch dropped; tower's uplink, not the files). HTTP errors are answers, not retried.
+  const call = async (url, opts = {}, tries = 5) => {
+    for (let k = 0; ; k++) {
+      try { return await fetchImpl(url, typeof opts === 'function' ? opts() : opts); } catch (err) {
+        if (k >= tries - 1) throw err;
+        await new Promise((z) => setTimeout(z, Math.min(60000, retryMs * 2 ** k)));
+      }
+    }
+  };
+  const upload = async (job) => {
+    const r1 = await call(job.upload_url || `${BASE()}/v1/jobs/${job.job_id}/source`, () => ({ method: 'PUT', headers: { ...H, 'Content-Type': 'application/pdf', 'Content-Length': String(statSync(path).size) },
+      body: createReadStream(path), duplex: 'half' }));   // a fresh stream per attempt
+    if (!r1.ok) throw new Error(`SLP upload failed (${r1.status}) for job ${job.job_id}`);
+    const r2 = await call(job.process_url || `${BASE()}/v1/jobs/${job.job_id}/process`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
+    if (!r2.ok) throw new Error(`SLP did not start job ${job.job_id} (${r2.status})`);
+  };
   let r, job;
   if (resumeJobId) {
-    // a job already submitted (the worker restarted while it ran): poll it — never upload and pay twice
+    // a job already submitted (the worker restarted while it ran): poll it — never upload and pay twice; but a job still
+    // AWAITING its upload (the upload failed) gets it now
     job = { job_id: resumeJobId };
     log({ job_id: job.job_id, step: 'resumed' });
+    const st = await json(await call(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
+    if (st.status === 'awaiting_upload') { log({ job_id: job.job_id, step: 'reuploading' }); await upload(job); }
   } else {
-    r = await fetchImpl(`${BASE()}/v1/jobs`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
+    r = await call(`${BASE()}/v1/jobs`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
       body: JSON.stringify({ privacy: 'open', quality: 'economy', context: String(context).slice(0, 2000) }) });
     job = await json(r);
     if (!r.ok || !job.job_id) throw new Error(`SLP job not created (${r.status}): ${JSON.stringify(job).slice(0, 160)}`);
     log({ job_id: job.job_id, step: 'created' });
-    r = await fetchImpl(job.upload_url, { method: 'PUT', headers: { ...H, 'Content-Type': 'application/pdf', 'Content-Length': String(statSync(path).size) },
-      body: createReadStream(path), duplex: 'half' });
-    if (!r.ok) throw new Error(`SLP upload failed (${r.status}) for job ${job.job_id}`);
-    r = await fetchImpl(job.process_url, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
-    if (!r.ok) throw new Error(`SLP did not start job ${job.job_id} (${r.status})`);
+    await upload(job);
   }
   const t0 = Date.now();
   let s;
   for (;;) {
-    s = await json(await fetchImpl(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
+    s = await json(await call(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
     log({ job_id: job.job_id, step: s.status, stage: s.current_stage || null, pages_done: s.pages_done ?? null, pages_total: s.pages_total ?? s.page_count ?? null });
     if (['complete', 'failed', 'capped'].includes(s.status)) break;
     if (Date.now() - t0 > timeoutMs) throw new Error(`SLP job ${job.job_id} still ${s.status} after ${Math.round(timeoutMs / 60000)} min`);
     await new Promise((z) => setTimeout(z, pollMs));
   }
   if (s.status !== 'complete') throw new Error(`SLP job ${job.job_id} ${s.status}${s.failure_code ? `: ${s.failure_code}` : ''}`);
-  const res = await json(await fetchImpl(`${BASE()}/v1/jobs/${job.job_id}/result`, { headers: { ...H, Accept: 'application/json' } }));
-  const md = res.markdown ?? (res.markdown_url ? await (await fetchImpl(res.markdown_url)).text() : null);
+  const res = await json(await call(`${BASE()}/v1/jobs/${job.job_id}/result`, { headers: { ...H, Accept: 'application/json' } }));
+  const md = res.markdown ?? (res.markdown_url ? await (await call(res.markdown_url)).text() : null);
   if (!md) throw new Error(`SLP job ${job.job_id} returned no Markdown`);
   return { markdown: md, ...slpToText(md), job_id: job.job_id, score: s.score_after ?? res.score_after ?? null, cost_cents: s.cost_cents ?? null, pages: s.pages_total ?? s.page_count ?? null };
 }

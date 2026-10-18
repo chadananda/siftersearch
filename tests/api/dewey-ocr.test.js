@@ -75,6 +75,28 @@ describe('slpExtract — the SLP contract', () => {
   });
 });
 
+describe('slpExtract survives a flaky network and a lost upload', () => {
+  it('retries a network error; a resumed job still awaiting its upload is uploaded', async () => {
+    const { writeFileSync, mkdtempSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const f = `${mkdtempSync(`${tmpdir()}/slp-`)}/scan.pdf`; writeFileSync(f, '%PDF-1.4 x');
+    const calls = []; let flaky = 1, polls = 0;
+    const ok = (o) => ({ ok: true, status: 200, text: async () => (typeof o === 'string' ? o : JSON.stringify(o)) });
+    const fetchImpl = async (url, opts = {}) => {
+      calls.push(`${opts.method || 'GET'} ${url.replace(/^https:\/\/[^/]+/, '')}`);
+      if (url.endsWith('/source') && flaky-- > 0) throw new TypeError('fetch failed');
+      if (url.endsWith('/v1/jobs/j8')) return ok({ status: polls++ === 0 ? 'awaiting_upload' : 'complete', pages_total: 1 });
+      if (url.endsWith('/source') || url.endsWith('/process')) return ok({});
+      if (url.endsWith('/result')) return ok({ markdown: ROSENBERG });
+      throw new Error(`unexpected ${url}`);
+    };
+    const r = await slpExtract({ path: f, resumeJobId: 'j8' }, { fetchImpl, key: 'k', pollMs: 1, retryMs: 1 });
+    expect(r.job_id).toBe('j8');
+    expect(calls.filter((c) => c.startsWith('PUT'))).toHaveLength(2);   // the failed upload was retried
+    expect(calls).toContain('POST /v1/jobs/j8/process');
+  });
+});
+
 describe('slpExtract resumes a submitted job after a restart', () => {
   it('polls the job it already has — no create, no upload, no second charge', async () => {
     const calls = [];
@@ -85,7 +107,7 @@ describe('slpExtract resumes a submitted job after a restart', () => {
       throw new Error(`unexpected ${opts.method} ${url}`); };
     const r = await slpExtract({ path: '/nope.pdf', resumeJobId: 'j7' }, { fetchImpl, key: 'k', pollMs: 1 });
     expect(r.job_id).toBe('j7');
-    expect(calls).toEqual(['GET', 'GET']);
+    expect(calls).toEqual(['GET', 'GET', 'GET']);   // status (resume check), poll, result
   });
 });
 
