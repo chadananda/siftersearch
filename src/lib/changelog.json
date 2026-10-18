@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:51:30.213Z",
+  "generated": "2026-10-18T03:56:23.889Z",
   "entries": [
+    {
+      "hash": "fb0bba75",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "An upload is one step — checked, appraised, and imported at once when we lack it and it belongs; errors stay visible; no indexing status in the library column",
+      "scope": "dewey"
+    },
     {
       "hash": "7d40b0c1",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Stray lines left by the block-attrs rework",
       "scope": "backfill"
-    },
-    {
-      "hash": "764cd408",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "OceanLibrary paragraphs keep their whole heading path, not only the innermost heading",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "fb0bba75",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "An upload is one step — checked, appraised, and imported at once when we lack it and it belongs; errors stay visible; no indexing status in the library column",
+        "scope": "dewey"
+      },
       {
         "hash": "7d40b0c1",
         "date": "2026-10-17",
@@ -7014,13 +7021,6 @@
         "type": "Fixed",
         "description": "Stray lines left by the block-attrs rework",
         "scope": "backfill"
-      },
-      {
-        "hash": "764cd408",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "OceanLibrary paragraphs keep their whole heading path, not only the innermost heading",
-        "scope": "ingest"
       }
     ]
   }

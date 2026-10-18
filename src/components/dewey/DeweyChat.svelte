@@ -51,8 +51,11 @@
   }
   // a photo is checked the moment it is taken (Chad: "If I post a picture, it will immediately start looking")
   async function addPhotos(e) {
-    for (const f of [...e.currentTarget.files].slice(0, 6 - photos.length)) photos = [...photos, await resize(f)];
-    e.currentTarget.value = '';
+    // keep the input: after the first await the event's currentTarget is gone, and clearing it threw — so the photo
+    // never sent itself and Chad had to press Send (10-17)
+    const input = e.currentTarget, files = [...input.files].slice(0, 6 - photos.length);
+    input.value = '';
+    for (const f of files) photos = [...photos, await resize(f)];
     if (!busy) send();
   }
   function addFile(e) {
@@ -162,6 +165,9 @@
   };
   const STATE = { wanted: 'Wanted — researching', researched: 'Wanted — researched', source: 'Source attached', processing: 'Processing',
     ingested: 'In the library', 'needs-ocr': 'Scan — waits for OCR', 'needs-human': 'Needs a person', failed: 'Failed' };
+  // Dewey's light markdown: *italic* and **bold**, everything else as text (escaped first)
+  const md = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
   const fieldLine = (id) => [id.author, id.translator && `tr. ${id.translator}`, id.edition, id.publisher, id.year, id.language].filter(Boolean).join(' · ');
 </script>
 
@@ -180,7 +186,7 @@
         {#if !t.parts.length && t.busy && !t.status}<p class="text-secondary">Looking…</p>{/if}
         {#each t.parts as p, k (k)}
           {#if p.kind === 'text'}
-            <p class="text-primary whitespace-pre-wrap">{p.text}</p>
+            <p class="text-primary whitespace-pre-wrap">{@html md(p.text)}</p>
           {:else if p.kind === 'holdings'}
             {@const v = VERDICT[p.r.verdict] || { label: p.r.verdict, tone: 'text-primary' }}
             {@const id = p.r.identified || {}}
