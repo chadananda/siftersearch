@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:28:39.870Z",
+  "generated": "2026-10-18T03:34:43.867Z",
   "entries": [
+    {
+      "hash": "6a41ebae",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Responsive — nothing scrolls sideways, edge buttons flush, solid slide-over panels with a dark scrim, full stage labels; mic in the input; processing count on the loading button",
+      "scope": "dewey"
+    },
     {
       "hash": "e770e716",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "OceanLibrary range links + restore 42 books the export conversion dropped",
       "scope": "ocean"
-    },
-    {
-      "hash": "7092e38c",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "'quoted in <work>' never credits the quoting work; Ḥuqúqu'lláh (our copy's attribution lines demonstrably wrong) takes the official section/work attribution over its own",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "6a41ebae",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Responsive — nothing scrolls sideways, edge buttons flush, solid slide-over panels with a dark scrim, full stage labels; mic in the input; processing count on the loading button",
+        "scope": "dewey"
+      },
       {
         "hash": "e770e716",
         "date": "2026-10-17",
@@ -7014,13 +7021,6 @@
         "type": "New",
         "description": "OceanLibrary range links + restore 42 books the export conversion dropped",
         "scope": "ocean"
-      },
-      {
-        "hash": "7092e38c",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "'quoted in <work>' never credits the quoting work; Ḥuqúqu'lláh (our copy's attribution lines demonstrably wrong) takes the official section/work attribution over its own",
-        "scope": "authorship"
       }
     ]
   }

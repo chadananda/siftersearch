@@ -143,7 +143,7 @@
 <div class="chat">
   <div class="log" bind:this={log} aria-live="polite">
     <!-- Dewey's introduction: the first bubble of every conversation (Chad 10-17) -->
-    <div class="dewey"><div class="card intro"><p class="text-primary">Hi, I'm Dewey, your AI librarian. I'm here to help you add new documents!</p></div></div>
+    <div class="row"><img class="avatar" src="/dewey/avatar-96.jpg" alt="Dewey" width="40" height="40" /><div class="dewey"><div class="card intro"><p class="text-primary">Hi, I'm Dewey, your AI librarian. I'm here to help you add new documents!</p></div></div></div>
     {#each turns as t (t.id)}
       <div class="you">
         {#if t.you.text}<p class="whitespace-pre-wrap">{t.you.text}</p>{/if}
@@ -151,7 +151,7 @@
         {#if t.you.photos.length}<div class="flex flex-wrap gap-1.5 justify-end">{#each t.you.photos as p, i (i)}<img src={p} alt="Photo {i + 1}" class="thumb" />{/each}</div>{/if}
         {#if t.you.file}<p class="text-sm mt-1">📄 {t.you.file.name}</p>{/if}
       </div>
-      <div class="dewey">
+      <div class="row"><img class="avatar" src="/dewey/avatar-96.jpg" alt="Dewey" width="40" height="40" /><div class="dewey">
         {#if !t.parts.length && t.busy && !t.status}<p class="text-secondary">Looking…</p>{/if}
         {#each t.parts as p, k (k)}
           {#if p.kind === 'text'}
@@ -216,7 +216,7 @@
         {/each}
         {#if t.busy && t.status}<p class="status"><span class="dot"></span>{t.status}</p>{/if}
         {#if t.error}<p class="text-error text-sm">{t.error}</p>{/if}
-      </div>
+      </div></div>
     {/each}
   </div>
 
@@ -229,7 +229,7 @@
     {/if}
     <!-- full-width input with Send inside it (Chad 10-17) -->
     <div class="field">
-      <textarea class="w-full pl-3 {SR ? 'pr-28' : 'pr-14'} py-3 rounded-2xl border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
+      <textarea class="w-full {SR ? 'pl-14' : 'pl-3'} pr-14 py-3 rounded-2xl border border-border bg-surface-0 text-primary resize-none text-base" rows="2" bind:value={q}
         placeholder="Name it, paste a link, or ask…" aria-label="Message to Dewey"
         onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}></textarea>
       {#if SR}<button type="button" class="mic" class:on={listening} onclick={toggleMic} aria-label={listening ? 'Stop listening' : 'Speak'} title={listening ? 'Stop listening' : 'Speak'}>
@@ -250,7 +250,9 @@
   .chat { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-1); }
   .log { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 5rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
   .you { align-self: flex-end; max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 0.75rem 0.75rem 0.25rem 0.75rem; background: var(--surface-2); color: var(--text-primary); }
-  .dewey { align-self: flex-start; max-width: 92%; display: flex; flex-direction: column; gap: 0.5rem; }
+  .row { display: flex; gap: 0.5rem; align-items: flex-start; align-self: flex-start; max-width: 96%; }
+  .avatar { width: 2.5rem; height: 2.5rem; border-radius: 999px; object-fit: cover; flex: none; border: 1px solid var(--border); }
+  .dewey { min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
   .status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
   .dot { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: var(--accent-primary); animation: pulse 1s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.25; } }
@@ -266,7 +268,8 @@
   .send { position: absolute; right: 0.5rem; bottom: 0.55rem; width: 2.75rem; height: 2.75rem; border-radius: 999px; display: inline-flex;
     align-items: center; justify-content: center; background: var(--accent-primary); color: white; }
   .send:disabled { opacity: 0.4; }
-  .mic { position: absolute; right: 3.6rem; bottom: 0.55rem; width: 2.75rem; height: 2.75rem; border-radius: 999px; display: inline-flex;
+  /* mic on the LEFT, send on the RIGHT — far apart, so the wrong one is not hit (Chad 10-17) */
+  .mic { position: absolute; left: 0.5rem; bottom: 0.55rem; width: 2.75rem; height: 2.75rem; border-radius: 999px; display: inline-flex;
     align-items: center; justify-content: center; color: var(--text-primary); border: 1px solid var(--border); background: var(--surface-1); }
   .mic.on { background: var(--error); color: white; border-color: transparent; animation: pulse 1s ease-in-out infinite; }
   .fabs { position: absolute; right: 0.9rem; bottom: 6.5rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 2; }
