@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:05:55.470Z",
+  "generated": "2026-10-18T03:13:17.420Z",
   "entries": [
+    {
+      "hash": "7d3c2795",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Wanted list → research → source → intake; streamed agent chat; installable app; secure API for agents; instant load",
+      "scope": "dewey"
+    },
     {
       "hash": "b2ec120d",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Term study searches both ی/ي and ک/ك spellings and merges (CTAI does not fold them: ایقان 6 passages vs ايقان 22); live battery tests/quality/term-study-battery.mjs — 49/49: detection (10 ordinary questions never hijacked), Latin → Arabic, per-word top rendering for 8 terms, never a different word on the same root",
       "scope": "anis"
-    },
-    {
-      "hash": "2f369299",
-      "date": "2026-10-07",
-      "type": "Fixed",
-      "description": "Term-study chart labels are the rendering itself (the alignment can drag neighbouring words along)",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "7d3c2795",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Wanted list → research → source → intake; streamed agent chat; installable app; secure API for agents; instant load",
+        "scope": "dewey"
+      },
       {
         "hash": "b2ec120d",
         "date": "2026-10-17",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-07",
         "type": "Fixed",
         "description": "Term study searches both ی/ي and ک/ك spellings and merges (CTAI does not fold them: ایقان 6 passages vs ايقان 22); live battery tests/quality/term-study-battery.mjs — 49/49: detection (10 ordinary questions never hijacked), Latin → Arabic, per-word top rendering for 8 terms, never a different word on the same root",
-        "scope": "anis"
-      },
-      {
-        "hash": "2f369299",
-        "date": "2026-10-07",
-        "type": "Fixed",
-        "description": "Term-study chart labels are the rendering itself (the alignment can drag neighbouring words along)",
         "scope": "anis"
       }
     ]

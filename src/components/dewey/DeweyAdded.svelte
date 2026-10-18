@@ -20,7 +20,7 @@
     ['Phrases', (l) => l.phrase, (r) => [r.indexed > 0 ? r.total : 0, r.total]],
     ['HyPE', (l) => l.hype, (r) => [r.generated, r.total]],
   ];
-  function state(layers, [, pick, of]) {
+  function stageOf(layers, [, pick, of]) {   // not "state": Svelte would read $state as that store
     const r = pick(layers);
     if (!r) return 'none';
     const [done, total] = of(r);
@@ -42,7 +42,7 @@
           <div class="text-xs text-muted">{[d.author, d.religion, `${compact(d.paragraph_count || 0)} ¶`, `${ago(d.created_at)} ago`].filter(Boolean).join(' · ')}</div>
           <div class="stages" aria-label="Indexing stages">
             {#each STAGES as s (s[0])}
-              {@const st = state(d.layers, s)}
+              {@const st = stageOf(d.layers, s)}
               <span class="stage {st}" title="{s[0]}: {st === 'done' ? 'done' : st === 'part' ? 'in progress' : 'not yet'}">{s[0]}</span>
             {/each}
           </div>
