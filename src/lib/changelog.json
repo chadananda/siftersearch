@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-18T02:32:14.947Z",
+  "generated": "2026-10-18T02:46:27.425Z",
   "entries": [
+    {
+      "hash": "668d7f20",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Only lines of running text (6+ words) are text evidence — a title page's own lines are not",
+      "scope": "dewey"
+    },
+    {
+      "hash": "0a015c3a",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "'do we have it?' from anything on /dewey — title/author, printed lines, a URL (page, PDF, video), a file, or phone photos",
+      "scope": "dewey"
+    },
     {
       "hash": "3461c4e5",
       "date": "2026-10-17",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Term study counts Shoghi Effendi's renderings of the WORD over its own passages (inflections grouped), not CTAI's per-root counts — عرفان's chart had 'fragrance' (ʿarf, same letters, another word) second; table rows quote a phrase and show different renderings",
       "scope": "anis"
-    },
-    {
-      "hash": "9f1d1472",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "Reader feedback is the strongest signal — every audit records reader_feedback (about, justified?, the concrete fix); a message the gate read as feedback is audited against the EARLIER reply; the daily digest leads with it",
-      "scope": "audit"
-    },
-    {
-      "hash": "3bdffd0e",
-      "date": "2026-10-07",
-      "type": "New",
-      "description": "CTAI concordance as a tool — a question about an Arabic/Persian word ('the word Irfan', 'what does ʿirfán mean', عرفان) becomes a TERM STUDY: Shoghi Effendi's renderings with counts (built by code) and passages pairing the original with his English, linked to CTAI; Latin spellings resolved by one tiny call; falls back to the ordinary search. Letters: styled tables and ```chart blocks drawn as HTML bar charts (every mail client) and block-character bars in plain text",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "668d7f20",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Only lines of running text (6+ words) are text evidence — a title page's own lines are not",
+        "scope": "dewey"
+      },
+      {
+        "hash": "0a015c3a",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "'do we have it?' from anything on /dewey — title/author, printed lines, a URL (page, PDF, video), a file, or phone photos",
+        "scope": "dewey"
+      },
       {
         "hash": "3461c4e5",
         "date": "2026-10-17",
@@ -7008,20 +7022,6 @@
         "date": "2026-10-07",
         "type": "Fixed",
         "description": "Term study counts Shoghi Effendi's renderings of the WORD over its own passages (inflections grouped), not CTAI's per-root counts — عرفان's chart had 'fragrance' (ʿarf, same letters, another word) second; table rows quote a phrase and show different renderings",
-        "scope": "anis"
-      },
-      {
-        "hash": "9f1d1472",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "Reader feedback is the strongest signal — every audit records reader_feedback (about, justified?, the concrete fix); a message the gate read as feedback is audited against the EARLIER reply; the daily digest leads with it",
-        "scope": "audit"
-      },
-      {
-        "hash": "3bdffd0e",
-        "date": "2026-10-07",
-        "type": "New",
-        "description": "CTAI concordance as a tool — a question about an Arabic/Persian word ('the word Irfan', 'what does ʿirfán mean', عرفان) becomes a TERM STUDY: Shoghi Effendi's renderings with counts (built by code) and passages pairing the original with his English, linked to CTAI; Latin spellings resolved by one tiny call; falls back to the ordinary search. Letters: styled tables and ```chart blocks drawn as HTML bar charts (every mail client) and block-character bars in plain text",
         "scope": "anis"
       }
     ]

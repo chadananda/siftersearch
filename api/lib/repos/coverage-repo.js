@@ -169,3 +169,15 @@ export const docCoverage = (docId) =>
 export const newDocsMissingLayer = async (layer, { days = 7, limit = 200 } = {}) => (await queryAll(`SELECT i.doc_id AS id FROM index_coverage i JOIN docs d ON d.id = i.doc_id
     WHERE i.layer = ? AND i.total > 0 AND i.indexed = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.created_at >= ?
     ORDER BY i.core DESC, i.doc_id LIMIT ?`, [layer, new Date(Date.now() - days * 86400000).toISOString(), limit], 'coverage:new-missing')).map((r) => r.id);
+
+/** The most recently ADDED documents with every layer's ledger row — Dewey's "added books" column (Chad 10-17). */
+export async function recentDocsCoverage(limit = 25) {
+  const docs = await queryAll(`SELECT id, title, author, religion, language, collection, created_at, paragraph_count, cover_url FROM docs
+    WHERE deleted_at IS NULL AND duplicate_of IS NULL ORDER BY created_at DESC LIMIT ?`, [Math.min(Number(limit) || 25, 100)], 'coverage:recent-docs');
+  if (!docs.length) return [];
+  const rows = await queryAll(`SELECT doc_id, layer, total, generated, current, indexed, updated_at FROM index_coverage WHERE doc_id IN (${docs.map(() => '?').join(',')})`,
+    docs.map((d) => d.id), 'coverage:recent-rows');
+  const by = new Map();
+  for (const r of rows) (by.get(r.doc_id) || by.set(r.doc_id, {}).get(r.doc_id))[r.layer] = r;
+  return docs.map((d) => ({ ...d, layers: by.get(d.id) || {} }));
+}

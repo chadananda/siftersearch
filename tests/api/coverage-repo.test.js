@@ -43,6 +43,15 @@ beforeEach(() => {
 });
 
 describe('coverage ledger', () => {
+  it('recent documents carry every layer of their ledger', async () => {
+    raw.exec("ALTER TABLE docs ADD COLUMN created_at TEXT; ALTER TABLE docs ADD COLUMN paragraph_count INTEGER; ALTER TABLE docs ADD COLUMN cover_url TEXT;");
+    raw.prepare("UPDATE docs SET created_at = '2026-10-17T00:00:00Z' WHERE id = 2").run();
+    raw.prepare("UPDATE docs SET created_at = '2026-01-01T00:00:00Z' WHERE id = 1").run();
+    await repo.saveCoverage(2, await repo.measureDoc(2, { hypeVersion: 'v15', count }));
+    const r = await repo.recentDocsCoverage(5);
+    expect(r.map((d) => d.id)).toEqual([2, 1]);
+    expect(Object.keys(r[0].layers)).toEqual(expect.arrayContaining(['text', 'keyword', 'sections', 'refs']));
+  });
   it('keyword counts only paragraphs with text — an empty row can never have a point', async () => {
     raw.prepare("UPDATE content SET text = '' WHERE id = 3").run();
     const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
