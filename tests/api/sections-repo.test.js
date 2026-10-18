@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 
 let raw;
 const SCHEMA = `
-CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, source_site TEXT, deleted_at TEXT, duplicate_of INTEGER, religion TEXT, scope TEXT, paragraph_count INTEGER);
+CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, source_site TEXT, deleted_at TEXT, duplicate_of INTEGER, religion TEXT, scope TEXT, paragraph_count INTEGER, created_at TEXT);
 CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, heading TEXT, block_attrs TEXT, external_para_id TEXT, deleted_at TEXT, text TEXT, pdf_page INTEGER);
 CREATE TABLE doc_sections (id INTEGER PRIMARY KEY, doc_id INTEGER NOT NULL, ord INTEGER NOT NULL, level INTEGER, title TEXT NOT NULL,
   start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, paragraphs INTEGER NOT NULL, first_para_id INTEGER,
@@ -30,6 +30,14 @@ beforeEach(() => {
 });
 
 describe('sections-repo', () => {
+  it('auto-infer: only NEW long books read with no structure and not yet tried; a refusal is not retried', async () => {
+    raw.prepare(`UPDATE docs SET paragraph_count = 900, created_at = ? WHERE id = 20894`).run(new Date().toISOString());
+    raw.prepare(`UPDATE docs SET paragraph_count = 900, created_at = '2026-01-01T00:00:00.000Z' WHERE id = 21310`).run();
+    await repo.replaceSections(20894, 'x', []); await repo.replaceSections(21310, 'y', []);
+    expect(await repo.autoInferCandidates()).toEqual([20894]);
+    await repo.markStructureRefused(20894);
+    expect(await repo.autoInferCandidates()).toEqual([]);
+  });
   it('toc candidates: a structureless book with its own Contents page near the front', async () => {
     raw.prepare("UPDATE docs SET religion = 'Christian', paragraph_count = 900 WHERE id = 20894").run();
     await repo.replaceSections(20894, 'x', []);

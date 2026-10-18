@@ -4,7 +4,7 @@
 // source 'inferred' (never shown as the author's headings), then BM25 re-sent so the paths are searchable.
 // params { ids? | candidates? (books with a Contents page), limit?, dry? }.
 import { listDocs } from '../docs-repo.js';
-import { structureRows, replaceSections, tocCandidates } from '../repos/sections-repo.js';
+import { structureRows, replaceSections, tocCandidates, markStructureRefused } from '../repos/sections-repo.js';
 import { saveStructureCoverage } from '../repos/coverage-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { headingCandidates, sectionsFromPicks, checkSections } from '../toc.js';
@@ -72,7 +72,10 @@ export async function structureInferJob({ ids = null, candidates = false, limit 
       const r = await inferStructure(doc, rows, { create }).catch((err) => ({ sections: [], issues: [`failed: ${String(err.message).slice(0, 100)}`] }));
       stats.docs++;
       if (dry || r.issues.length) {
-        if (r.issues.length) { stats.refused++; if (stats.refusals.length < 30) stats.refusals.push({ id: doc.id, title: doc.title, issues: r.issues }); }
+        if (r.issues.length) {
+          stats.refused++; if (stats.refusals.length < 200) stats.refusals.push({ id: doc.id, title: doc.title, issues: r.issues });
+          if (!dry) await markStructureRefused(doc.id);   // not retried automatically; reviewed from the refusal list
+        }
         if (dry && stats.previews.length < 10) stats.previews.push({ id: doc.id, title: doc.title, candidates: r.candidates, sections: r.sections.length, calls: r.calls,
           outline: r.sections.slice(0, 40).map((s) => `${'  '.repeat(s.level - 1)}${s.title} [¶${s.start_index}, ${s.paragraphs}]`) });
         continue;

@@ -99,6 +99,9 @@ async function keywordLoop() {
     // document structure (sub-documents, TOC) right after ingestion (Chad 10-17): read every live document not yet read
     const unread = await (await import('../lib/repos/sections-repo.js')).docsWithoutStructure(1).catch(() => []);
     if (unread.length) await enqueue('section-index', { unread: true }, 'structure-loop').catch((err) => logger.warn({ err: err.message }, 'structure loop: enqueue failed'));
+    // a NEW long book whose own headings gave no structure → inference (its Contents page / the work's standard structure)
+    const infer = await (await import('../lib/repos/sections-repo.js')).autoInferCandidates().catch(() => []);
+    if (infer.length) await enqueue('structure-infer', { ids: infer }, 'structure-loop').catch((err) => logger.warn({ err: err.message }, 'structure loop: infer enqueue failed'));
     await new Promise((r) => setTimeout(r, 600_000));
   }
 }

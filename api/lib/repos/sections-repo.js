@@ -108,3 +108,12 @@ export async function tocCandidates({ within = 120, longest = 30 } = {}) {
 export const structureRows = (docId) =>
   queryAll(`SELECT id, paragraph_index, substr(text, 1, 400) AS text FROM content WHERE doc_id = ? AND deleted_at IS NULL
     AND COALESCE(is_duplicate, 0) = 0 AND LENGTH(text) > 0 ORDER BY paragraph_index`, [Number(docId)], 'sections:structure-rows');
+
+/** NEW books (ingested in the last `days`) read for structure, long enough to need it, none found, not yet tried by
+ *  inference — structure follows ingestion with no manual step (Chad 10-17). */
+export const autoInferCandidates = async ({ days = 7, limit = 20, minParagraphs = 60 } = {}) => (await queryAll(`SELECT d.id FROM doc_structure s JOIN docs d ON d.id = s.doc_id
+    WHERE s.sections = 0 AND s.source IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.paragraph_count >= ?
+      AND d.created_at >= ? ORDER BY d.id LIMIT ?`, [minParagraphs, new Date(Date.now() - days * 86400000).toISOString(), limit], 'sections:auto-infer')).map((r) => r.id);
+
+/** Inference was tried and refused: mark it so the loop does not pay for it again; a person reviews the refusal list. */
+export const markStructureRefused = (docId) => transaction([{ sql: `UPDATE doc_structure SET source = 'inferred-refused' WHERE doc_id = ? AND sections = 0`, args: [Number(docId)] }], 'sections:refused');
