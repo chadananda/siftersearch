@@ -226,13 +226,15 @@ const agoOf = (at) => {
     // entry still inside the rolling 24h window — that alarm fired for 14h after the cause was gone.
     // Long READS in the ops worker (siftersearch-reports: night-window health scans) freeze only that process — batch work by
     // design, reported as info. Writes anywhere, and reads in the API/worker/ingest, still count as blocking.
-    const BATCH = `NOT (kind = 'read' AND proc IN ('reports', 'reports-worker.js'))`;
+    // Also not freezes: reads on a WORKER THREAD ('<proc>/thread', db.js) and in the pipeline-snapshot cron (its own process,
+    // serves nobody) — slow, but no request waits on them (10-17: the roadmap's off-thread reads headlined "blocking in api").
+    const BATCH = `NOT (kind = 'read' AND (proc IN ('reports', 'reports-worker.js', 'pipeline-snapshot') OR proc LIKE '%/thread'))`;
     const worst = g(`SELECT proc, kind, duration_ms worst, sql_sample sql, at
                        FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND ${BATCH}
                       ORDER BY duration_ms DESC LIMIT 1`);
     const total = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND ${BATCH}`)?.n ?? 0;
     const batch = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs} AND NOT (${BATCH})`)?.n ?? 0;
-    if (batch) add('Batch scans (24h, ops worker)', true, 'info', `${batch} long reads in siftersearch-reports (night-window health scans)`);
+    if (batch) add('Batch scans (24h, off the serving path)', true, 'info', `${batch} long reads in the ops worker, the snapshot cron or worker threads — slow, but nothing waits on them`);
     // A blocking WRITE on the writer is critical (it breaks other processes, not just itself); a blocking
     // read is a warning (slow, but it does not close anyone's socket).
     // what is slow NOW: the 24h worst can be one stale outlier (10-12: a 292 s scan from the day before headlined the

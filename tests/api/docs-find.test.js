@@ -1,6 +1,7 @@
 // findDocuments — title/author lookup in SQLite (docs_fts, migration 142) instead of a search engine's documents index.
 // Real in-memory SQLite: the FTS table, its triggers and the scope policy are what is under test.
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import * as dbmod from '../../api/lib/db.js';
 import Database from 'better-sqlite3';
 
 const db = new Database(':memory:');
@@ -62,7 +63,7 @@ describe('findDocuments (SQLite FTS)', () => {
   });
   it('neutralises FTS syntax in user text', async () => {
     const { ftsQuery } = await import('../../api/lib/docs-repo.js');
-    expect(ftsQuery('"Dawn" OR NEAR(*)')).toBe('"dawn"* "or"* "near"*');
+    expect(ftsQuery('"Dawn" OR NEAR(*)')).toBe('"dawn"* "near"*');
   });
 });
 
@@ -87,5 +88,43 @@ describe('setDocCover', () => {
     expect(db.prepare('SELECT cover_url FROM docs WHERE id = 5').get().cover_url).toBeNull();
     await setDocCover(1, null);
     expect(db.prepare('SELECT cover_url FROM docs WHERE id = 1').get().cover_url).toBeNull();
+  });
+});
+
+// THE 573-SECOND QUERY (10-17): Dewey searched a document's first line as a "title"; its words became prefix terms
+// ("the"* "of"* …) matching nearly every row, and the ORDER BY re-ran the FTS MATCH once PER ROW — quadratic; better-sqlite3
+// is synchronous, so the API froze for 9½ minutes (health [PAGE], restart storm). This must stay fast at library scale.
+describe('findDocuments never blocks (the 10-17 freeze)', () => {
+  beforeAll(() => {
+    const ins = db.prepare('INSERT INTO docs (id, title, author, religion, collection, source_site, duplicate_of, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    const words = 'the of and a to in his notes letters pilgrim haifa visit guardian world faith history account talks'.split(' ');
+    // long descriptions with many distinct words sharing short prefixes — what makes one prefix MATCH expensive in production
+    const vocab = Array.from({ length: 4000 }, (_, k) => ['the', 'of', 'an', 'to', 'in', 'pil', 'gua', 'wor'][k % 8] + (k * 2654435761 % 100000).toString(36));
+    const upd = db.prepare('UPDATE docs SET description = ? WHERE id = ?');
+    db.transaction(() => { for (let i = 0; i < 20000; i++) {
+      ins.run(1000 + i, `The ${words[i % 17]} of the ${words[(i * 7) % 17]} and a ${words[(i * 3) % 17]} ${i}`, 'An author of the faith', "Baha'i", 'Books', 'bahai-library.com', null, null);
+      upd.run(Array.from({ length: 60 }, (_, k) => vocab[(i * 31 + k * 97) % 4000]).join(' ') + ' the of and a', 1000 + i);
+    } })();
+  });
+  it('a long, stopword-heavy first line as a title answers in well under a second', async () => {
+    const { findDocuments } = await import('../../api/lib/docs-repo.js');
+    const t0 = performance.now();
+    await findDocuments('Excerpts from the notes of Ben Levy, an American in the Armed Forces in Germany. Pilgrimage to the Holy Land and a visit of the world', { fields: ['id', 'title'], limit: 8 });
+    await findDocuments('the of and a to in', { fields: ['id', 'title'], limit: 8 });
+    expect(performance.now() - t0).toBeLessThan(300);
+  });
+  it('the FTS MATCH runs ONCE per search — never per row (the structural cause of the freeze)', async () => {
+    const { findDocuments } = await import('../../api/lib/docs-repo.js');
+    dbmod.queryAll.mockClear();
+    await findDocuments('Dawn Breakers', { fields: ['id', 'title'] });
+    const sql = dbmod.queryAll.mock.calls.map(([q]) => q).find((q) => /FROM docs d/.test(q));
+    expect((sql.match(/\bMATCH\b/g) || []).length).toBe(1);
+    expect(sql).not.toMatch(/MATCH \? AND rowid/);
+  });
+  it('ftsQuery drops stopwords and 1–2-letter prefixes, keeps ≤ 8 terms', async () => {
+    const { ftsQuery } = await import('../../api/lib/docs-repo.js');
+    expect(ftsQuery('The Dawn of a New Day')).toBe('"dawn"* "new"* "day"*');
+    expect(ftsQuery('Of the')).not.toBe('');
+    expect(ftsQuery('one two three four five six seven eight nine ten eleven twelve').split(' ')).toHaveLength(8);
   });
 });

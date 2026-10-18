@@ -6,7 +6,7 @@
 // is asked, and add_offered imports it on yes (nothing is imported unasked). Events out: status · holdings · research · appraisal · item · delta · done. Deps injectable for tests.
 import { roleCreate } from '../role-client.js';
 import { identifyPhotos, identifyUrl, identifyFile, identifyText } from './identify.js';
-import { checkHoldings } from './holdings.js';
+import { checkHoldingsOffThread as checkHoldings } from './holdings.js';   // off the event loop (a check once froze the API)
 import { appraiseWork, appraiseDocument } from './appraise.js';
 import { archiveOriginal } from './intake.js';
 import { createItem, findOpenByTitle, listItems, getItem, updateItem } from '../repos/dewey-repo.js';

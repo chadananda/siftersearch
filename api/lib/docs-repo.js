@@ -183,11 +183,17 @@ export async function setDocTitle(docId, title) {
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 
-/** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised. */
+/** FTS5 query from free text: every word a prefix term ("dawn break" finds "The Dawn-Breakers"); FTS syntax neutralised.
+ *  Stopwords and 1–2-letter words are dropped (a prefix term "the"* or "a"* matches nearly every document — with the
+ *  per-row rank below it froze the API for 573 s on 10-17) and at most 8 terms are kept, the longest first. */
+const FTS_STOP = new Set('the of and a an in on to for by with from at is was are be his her their its this that these those as or not but which who whom all upon unto into our your my me we you he she it they them there here than then so such no nor'.split(' '));
 export function ftsQuery(text) {
   // apostrophes removed first, as docs_fts stores them (migration 142): "Bahá’u’lláh" / "Baha'u'llah" / "Bahaullah" agree
   const words = String(text || '').normalize('NFKC').replace(/[’‘'ʼ`]/g, '').toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
-  return words.slice(0, 12).map((w) => `"${w}"*`).join(' ');
+  let keep = [...new Set(words)].filter((w) => !FTS_STOP.has(w) && (w.length >= 3 || /^\d+$/.test(w)));
+  if (!keep.length) keep = [...new Set(words)].sort((a, b) => b.length - a.length).slice(0, 2);   // "Of the" alone: still a query
+  if (keep.length > 8) keep = [...keep].sort((a, b) => b.length - a.length).slice(0, 8);
+  return keep.map((w) => `"${w}"*`).join(' ');
 }
 
 /**
@@ -199,7 +205,8 @@ export async function findDocuments(text, { scope = 'live', religion, collection
   const match = ftsQuery(text);
   const where = scopeSql(scope);
   const params = [];
-  if (match) { where.push('d.id IN (SELECT rowid FROM docs_fts WHERE docs_fts MATCH ?)'); params.push(match); }
+  // the FTS MATCH runs ONCE, ranked, in a joined subquery (bounded to the 2,000 best) — never per row (see ftsQuery)
+  const ftsJoin = match ? 'JOIN (SELECT rowid AS fid, bm25(docs_fts, 10.0, 4.0, 1.0, 0.5) AS fts_rank FROM docs_fts WHERE docs_fts MATCH ? ORDER BY fts_rank LIMIT 2000) f ON f.fid = d.id' : '';
   if (religion) { where.push('d.religion = ?'); params.push(religion); }
   if (collection) { where.push('d.collection = ?'); params.push(collection); }
   if (collectionLike) { where.push('d.collection LIKE ?'); params.push(`%${collectionLike}%`); }
@@ -216,19 +223,17 @@ export async function findDocuments(text, { scope = 'live', religion, collection
   // breakers" gave a tag page, a movie and a novel before The Dawn-Breakers, 10-09), then BM25 (title weighted highest;
   // weights follow the column order title, author, collection, description). SQL does the last two over a window;
   // the title tier re-orders that window.
-  const order = match
-    ? `ORDER BY (CASE WHEN ${IS_CANONICAL} THEN 0 ELSE 1 END), (SELECT bm25(docs_fts, 10.0, 4.0, 1.0, 0.5) FROM docs_fts WHERE docs_fts MATCH ? AND rowid = d.id)`
-    : 'ORDER BY d.title';
+  const order = match ? `ORDER BY (CASE WHEN ${IS_CANONICAL} THEN 0 ELSE 1 END), f.fts_rank` : 'ORDER BY d.title';
   const cols = selectList(fields);
   const window = match ? Math.min(250, offset + limit + 50) : Math.min(200, limit);
-  const rows = await queryAll(`SELECT ${cols}${/\bd\.title\b/.test(cols) ? '' : ', d.title AS _title'} FROM docs d ${clause} ${order} LIMIT ? OFFSET ?`,
-    [...params, ...(match ? [match] : []), window, match ? 0 : offset], 'docs-repo:find');
+  const rows = await queryAll(`SELECT ${cols}${/\bd\.title\b/.test(cols) ? '' : ', d.title AS _title'} FROM docs d ${ftsJoin} ${clause} ${order} LIMIT ? OFFSET ?`,
+    [...(match ? [match] : []), ...params, window, match ? 0 : offset], 'docs-repo:find');
   const ranked = match
     ? rows.map((r, i) => ({ r, tier: titleTier(text, r.title ?? r._title), i })).sort((a, b) => (b.tier - a.tier) || (a.i - b.i))
       .slice(offset, offset + limit).map((x) => x.r)
     : rows;
   for (const r of ranked) delete r._title;
-  const total = await queryOne(`SELECT COUNT(*) n FROM (SELECT 1 FROM docs d ${clause} LIMIT 1000)`, params, 'docs-repo:find-count');
+  const total = await queryOne(`SELECT COUNT(*) n FROM (SELECT 1 FROM docs d ${ftsJoin} ${clause} LIMIT 1000)`, [...(match ? [match] : []), ...params], 'docs-repo:find-count');
   return { docs: ranked, total: total?.n ?? 0, scope, limit, offset };
 }
 

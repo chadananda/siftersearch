@@ -2,6 +2,7 @@
 // Three separate databases: content (sifter.db), user, graph (graph.db).
 // Exported function signatures are async for backward compatibility.
 
+import { isMainThread } from 'worker_threads';
 import os from 'os';
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
@@ -266,9 +267,11 @@ const SLOW_QUERY_RECORD_MS = parseInt(process.env.SLOW_QUERY_RECORD_MS || '1000'
 const BLOCKING_QUERY_MS = parseInt(process.env.BLOCKING_QUERY_MS || '5000', 10);
 
 // Which process is blocking. pm2 sets name; scripts fall back to their filename.
-const PROC_NAME = process.env.pm_id !== undefined && process.env.name
+// A WORKER THREAD's queries are tagged '<proc>/thread': they are slow but cannot freeze the process's event loop (the
+// roadmap's 6 s reads ran off-thread yet read as "blocking in api" — 10-17). Only main-thread rows are freezes.
+const PROC_NAME = (process.env.pm_id !== undefined && process.env.name
   ? String(process.env.name).replace(/^siftersearch-/, '')
-  : (process.env.SIFTER_PROC || (process.argv[1] || 'node').split('/').pop());
+  : (process.env.SIFTER_PROC || (process.argv[1] || 'node').split('/').pop())) + (isMainThread ? '' : '/thread');
 
 /** Statement SHAPE — literals, IN-lists and whitespace stripped so repeats of one query aggregate. */
 export function fingerprintSql(sql) {

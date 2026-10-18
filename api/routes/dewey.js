@@ -14,7 +14,7 @@
 // Photos arrive resized by the page (≤1600 px JPEG), so a body of a few MB is enough.
 import { requireDewey } from '../lib/auth.js';
 import { identifyPhotos, identifyUrl, identifyFile, identifyText } from '../lib/dewey/identify.js';
-import { checkHoldings } from '../lib/dewey/holdings.js';
+import { checkHoldingsOffThread as checkHoldings } from '../lib/dewey/holdings.js';   // off the event loop
 import { ApiError } from '../lib/errors.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';

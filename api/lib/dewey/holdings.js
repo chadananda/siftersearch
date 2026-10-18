@@ -7,6 +7,7 @@ import { compareWords, compareTexts, probes, HELD } from './compare.js';
 import { findSections } from '../repos/sections-repo.js';
 import { searchKeywordQdrant } from '../search/qdrant-layers.js';
 import { paragraphsByIds } from '../paragraphs-repo.js';
+import { Worker } from 'worker_threads';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
@@ -121,4 +122,20 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
   const verdict = rels.some((r) => HELD.has(r)) ? 'held' : rels.includes('partial') ? 'partly-held'
     : rels.some((r) => r === 'overlap' || r === 'quotes' || r === 'too-short') ? 'possible' : 'not-held';
   return { verdict, candidates, compared: { words: ourWords.length, probes: probeList.length, documents: out.length, ...(id.ocr ? { ocr_sample: { pages: id.ocr.sampled, of: id.ocr.of, script: id.ocr.script } } : {}) } };
+}
+
+/**
+ * The holdings check OFF the event loop (holdings-worker.js) — what the API and Dewey's chat call. better-sqlite3 is
+ * synchronous and the comparison is CPU work: in-process, one slow check freezes every request (573 s on 10-17). A check
+ * past `timeoutMs` is terminated, not waited out. Tests (VITEST) run in-process.
+ */
+export function checkHoldingsOffThread(id, { timeoutMs = 120000 } = {}) {
+  if (process.env.VITEST) return checkHoldings(id);
+  return new Promise((resolve, reject) => {
+    const w = new Worker(new URL('./holdings-worker.js', import.meta.url), { workerData: { id: JSON.parse(JSON.stringify(id)), text: id._text ?? null } });
+    const timer = setTimeout(() => { w.terminate(); reject(new Error(`the holdings check took over ${Math.round(timeoutMs / 1000)} s and was stopped`)); }, timeoutMs);
+    w.once('message', (m) => { clearTimeout(timer); w.terminate(); m.error ? reject(new Error(m.error)) : resolve(JSON.parse(m.json)); });
+    w.once('error', (e) => { clearTimeout(timer); reject(e); });
+    w.once('exit', (code) => { clearTimeout(timer); if (code !== 0) reject(new Error(`holdings worker exited ${code}`)); });
+  });
 }
