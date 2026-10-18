@@ -11,6 +11,7 @@ import { createHash } from 'crypto';
 import { join, extname } from 'path';
 import { findBySha, createItem, updateItem, listItems } from '../repos/dewey-repo.js';
 import { compareWords, compareTexts } from '../dewey/compare.js';
+import { toMarkdownText } from '../dewey/convert.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { identifyAndCheck } from '../dewey/holdings.js';
 import { appraiseDocument } from '../dewey/appraise.js';
@@ -41,7 +42,9 @@ const sha256Of = (path) => new Promise((res, rej) => { const h = createHash('sha
 export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = [] } = {}, deps = {}) {
   const { list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder',
     recent = async () => (await listItems({ limit: 1000 })).filter((i) => ['source', 'processing', 'ingested'].includes(i.state) && String(i.original_path || '').includes('/Dewey Ingest/')),
-    textOf = async (path) => (await identifyAndCheck({ path })).identified._text || '' } = deps;
+    // the twin's FULL text (a spot-check sample of each of two scans of one book covers different pages — the World's
+    // Congress of Religions went in twice, 10-18); this job runs in the reports worker, where a full read is fine
+    textOf = async (path) => (await toMarkdownText(null, path.split('/').pop(), { path, full: true, ocr: false })).markdown || '' } = deps;
   // RECONSIDER: items held under an earlier rule (failed "too short", unappraisable scans) — back to intake once
   for (const id of reconsider) {
     await updateItem(Number(id), { state: 'source' }, 'reconsidered under the current rules');
@@ -91,7 +94,9 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     if (!hold && a?.title) {
       const twin = (await recent()).find((i) => i.id !== item.id && workKey(i.title) === workKey(a.title));
       if (twin) {
-        const c = compareTexts(compareWords(doc.identified._text || doc.excerpt), compareWords(await textOf(twin.original_path).catch(() => '')), doc.identified.sample ? { sample: true } : {});
+        const ours = compareWords(doc.identified._text || doc.excerpt), sm = doc.identified.sample;
+        const c = compareTexts(ours, compareWords(await textOf(twin.original_path).catch(() => '')),
+          sm ? { sample: true, ourLength: Math.round(ours.length * sm.of / Math.max(1, sm.sampled.length)) } : {});
         if (['same', 'inside', 'partial'].includes(c.relation)) {
           await updateItem(item.id, { state: 'declined', sha256: hash, original_path: f.path }, `${HELD_WHY} — the same work as item ${twin.id} (“${twin.title}”), taken from this folder already (${c.relation})`);
           out.held.push(f.path);

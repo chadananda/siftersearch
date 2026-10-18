@@ -1,6 +1,139 @@
 {
-  "generated": "2026-10-18T05:20:39.659Z",
+  "generated": "2026-10-18T15:31:02.305Z",
   "entries": [
+    {
+      "hash": "d63218a7",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "The IMPORT BOARD — GET /api/observatory/imports: each new book's stages (checked → appraised → OCR → imported → indexed), live SearchLayerPDF progress and its work receipt (narrative, quality before→after, engines, time, cost); public, no paths, no pending offers; ring 01 is Document import",
+      "scope": "observatory"
+    },
+    {
+      "hash": "d44543c4",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Short real prose passes (min 60 words — letters, emails, pilgrim notes 'failed' at 300); any PDF failing the gate goes to OCR; unreadable scans go forward to OCR and are appraised from SLP's text before import (out of scope → a person); never OCR the same work twice; reconsider param",
+      "scope": "dewey"
+    },
+    {
+      "hash": "8a3bfd50",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "A BOOK whose file holds under 5,000 words waits for a person (The Apocalypse Unsealed .doc was its preface only)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "c60e0841",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "The ingest folder never adds a second copy of a work it already took (same title + same text, e.g. a .doc beside its .pdf, re-checked in one round before either was in the library) — Station and Claims and the Olinga interview went in twice",
+      "scope": "dewey"
+    },
+    {
+      "hash": "d4fc669e",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "The ingest folder imports nothing unappraised or out of scope — it waits for a person (Copyright Book List.txt, a list of file names whose appraisal had failed, went in as doc 956129 titled by its first line; removed)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "74bd0d08",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "The INGEST FOLDER (dewey-ingest-folder job: a few at a time, easiest first, re-checked before adding) + SearchLayerPDF for scans (dewey-ocr job, ocr lane ×3: open/economy jobs, output CHECKED — real words, text per page, our own sampled pages must be in it — else needs-human; ≤400 pages automatic); SLP page markers → <pb n/> for pdf_page; intake reads PDFs in place; GET /items?limit",
+      "scope": "dewey"
+    },
+    {
+      "hash": "fecd1781",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "SPOT-CHECK big PDFs — ~10 sampled pages via pdftotext, length from the page count (Chad 10-18: 'wasteful to read the whole thing'); a PDF on the server is never loaded into memory (poppler reads it in place, checksum streamed); intake still reads every page",
+      "scope": "dewey"
+    },
+    {
+      "hash": "7de8bfcc",
+      "date": "2026-10-18",
+      "type": "Docs",
+      "description": "Overnight sweep report — 1,006 files, 0 errors; results jsonl",
+      "scope": "dewey"
+    },
+    {
+      "hash": "88a04b8d",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "A server path spelled NFD (macOS) finds the NFC file on tower (Julio Savi 'Bahá’u’lláh' did not reach the server); sweep sends NFC",
+      "scope": "dewey"
+    },
+    {
+      "hash": "33943017",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "A 270 MB book pushed the API past pm2's 3 GB (restart, 10-18) — documents are checked in a CHILD PROCESS (own memory and crash domain, ≤2 at once, 10 min limit, queries tagged dewey-holdings) and PDF text comes from poppler's pdftotext (273 MB book: 2.7 s, API-side RSS 101 MB, loop lag 2 ms)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "10a59540",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Read a document IN PLACE on the server (attach.path / holdings path, under DEWEY_PATH_ROOTS = the synced Dropbox) — no upload, no size limit, the original stays put; reading/conversion/OCR now off the event loop with the check (52 MB book: 620 ms, main-loop lag 2 ms); sweep --server-root",
+      "scope": "dewey"
+    },
+    {
+      "hash": "34401877",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "OCR bar 30% with ≥0.85 in order (Marion Yazdi 34%); the agent describes the comparison exactly (passages searched library-wide, closest compared in full — not 'every document')",
+      "scope": "dewey"
+    },
+    {
+      "hash": "08ef13ed",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "OCR'd text — a long in-order run (≥35%, ≥0.8 in order) is the same text (Roy Wilhelm read 'possible' at 40–42%)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "24406ffc",
+      "date": "2026-10-17",
+      "type": "Other",
+      "description": "Stop_exit_codes on the API left pm2 'waiting restart' (pid 0) with an untracked worker serving — reverted",
+      "scope": "pm2"
+    },
+    {
+      "hash": "ddcb978c",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "A garbled old-OCR text layer is re-read by tesseract when that reads better (Kelsey 0.80 → 0.95), and never imported as the text (needs-ocr); fix(pm2): stop_exit_codes [0] on the API — pm2 restarted a reload's drained old worker as an untracked '_old_' copy (the 'strays')",
+      "scope": "dewey"
+    },
+    {
+      "hash": "99df9c0e",
+      "date": "2026-10-17",
+      "type": "Other",
+      "description": "The watchdog's every-tick stray sweep killed the LIVE API worker every 5 min (restart storm 10-17 22:41→23:03) — back to deploy-time sweeping only",
+      "scope": "updater"
+    },
+    {
+      "hash": "16ae7e12",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "The 573 s API freeze — docs-repo:find re-ran the FTS MATCH per row (ORDER BY subquery) on a stopword-heavy title from Dewey; MATCH once in a ranked bounded join, stopwords/short prefixes dropped; test fails on old code (>10 min) passes on new (87 ms); Dewey's holdings check runs in a worker thread with a 120 s limit; worker-thread slow reads tagged /thread and not counted as blocking; standing policy docs/architecture/blocking-queries.md",
+      "scope": "db"
+    },
+    {
+      "hash": "de25bcff",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "Checks ride in the member's turn (a hoisted 2nd system message went unseen — 'I don't have the holding results'); Haiku reasons before answering, so 700/200-token caps returned NOTHING (appraisal empty, replies blank, intake shelf choice) → 4000; handwriting/non-Latin scans read by vision (tesseract+OSD read handwriting as 'Japanese'); NDJSON keep-alive (cloudflared buffers JSON); fix(ai): Anthropic joins every system message (find() dropped all but the first)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "5564286e",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "No readable text → 'undetermined' (say so, never decide from a file name); fix(updater): sweep the reload's own orphan worker 200 s after a deploy",
+      "scope": "dewey"
+    },
     {
       "hash": "459c0107",
       "date": "2026-10-17",
@@ -3367,143 +3500,145 @@
       "type": "Fixed",
       "description": "Rejoin — trailing bold/bracketed citations end a sentence, an opening quote is not a continuation, number columns and short-line lists are not prose; seams reported for review",
       "scope": "library"
-    },
-    {
-      "hash": "b35aba1a",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Re-join paragraphs broken mid-sentence by PDF conversion — a page number between the pieces becomes <pb n/> (page-breaks.js stores it); secondary literature only; originals backed up. docs-repo listDocs gains an exact filePath filter",
-      "scope": "library"
-    },
-    {
-      "hash": "f31f447d",
-      "date": "2026-10-08",
-      "type": "Test",
-      "description": "Blind secondary-literature gold (Hatcher, Stockman, Momen) for the window classifier",
-      "scope": "authorship"
-    },
-    {
-      "hash": "20652490",
-      "date": "2026-10-08",
-      "type": "Docs",
-      "description": "Window classifier production log — 147 Bahá'í books written, other traditions held",
-      "scope": "authorship"
-    },
-    {
-      "hash": "079681aa",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window v18b — in Shoghi Effendi's books his secretaries' letters and 'the Guardian’s …' letters are his, on his behalf",
-      "scope": "authorship"
-    },
-    {
-      "hash": "806fbfe1",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window v18 — a compilation's default (the compiler) is never set over a paragraph; a letter written on behalf of Shoghi Effendi is his (on_behalf), not his secretary's; runner --religion filter (writes validated on Bahá'í books only)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "a6b0ca68",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window classifier v17 — 'the editor' needs editorial evidence (footnote, note-like opening, author named in the third person); the deterministic checks are one idempotent refineLabel, re-applied at write time to labels saved by earlier versions",
-      "scope": "authorship"
-    },
-    {
-      "hash": "923da697",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window run never rewrites a book default (any spelling) or adds one where none exists — 4,259 of 5,371 dry-run 'changes' were such no-ops",
-      "scope": "authorship"
-    },
-    {
-      "hash": "6ffcb1bd",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Escape speaker names in the window classifier's name regexes ('Compilation (Bahá’í Writings)' crashed 3 books)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "bb04c37a",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window run — trailer-prev protected; rollback.jsonl of every written row's previous authors; change-precision log",
-      "scope": "authorship"
-    },
-    {
-      "hash": "8067e50d",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Block evidence reads the whole introducing paragraph; a heading counts only when it attributes (Address by…, Words of…), not when it names a subject",
-      "scope": "authorship"
-    },
-    {
-      "hash": "40415d8c",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window classifier v16 — an unmarked block (prayer, letter body, quoted will) leaves the book's author only when the previous paragraph names AND introduces its speaker, the heading names them, or it continues their block",
-      "scope": "authorship"
-    },
-    {
-      "hash": "daf7e01e",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window eval — gold labels mixing names and the 'someone new' wildcard were parsed as one invalid regex",
-      "scope": "authorship"
-    },
-    {
-      "hash": "e518c28b",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window classifier v15 — narration guard catches introductions without speech verbs, short 'he said' tags, third-person narration and three-letter names; source links protected; datelines and salutations stay with the letter's writer; runner retries a failed book once",
-      "scope": "authorship"
-    },
-    {
-      "hash": "5902bb4a",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window classifier v14 — narration guard (a quote introduced in the narration stays the narrator's; the person moves to quoted), captions and one-line titles get no speaker, Unicode-safe self-quote check. From the change spot-check: 12 of 36 sampled changes credited the quoted person",
-      "scope": "authorship"
-    },
-    {
-      "hash": "c1bbc178",
-      "date": "2026-10-08",
-      "type": "Performance",
-      "description": "Window classifier v13 — rules and speaker descriptions stated once per window, questions are bare names (repeating them in 20 questions was most of the tokens)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "24d84805",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Window classifier offers only the relevant roster per window (whole roster in 20 questions overflowed Jev on Dawn-Breakers and cost ~4x); an overflowing window is split, never dropped",
-      "scope": "authorship"
-    },
-    {
-      "hash": "927c193c",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier production runner (resumable per book; --write applies speaker + quoted through the writer, never over evidence / official-edition / structural rows); shared engine window-core.mjs, eval defaults = v10",
-      "scope": "authorship"
-    },
-    {
-      "hash": "a3ca1acd",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier — editor label variants; v10 results logged (speaker ≈99.7%, quotes ≈96% on 165 hand-labelled ¶)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "71b20507",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier v10 — per-book LLM brief (speakers + how to recognise them + book rules) tunes System-1's instructions",
-      "scope": "authorship"
     }
   ],
   "grouped": {
+    "2026-10-18": [
+      {
+        "hash": "d63218a7",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "The IMPORT BOARD — GET /api/observatory/imports: each new book's stages (checked → appraised → OCR → imported → indexed), live SearchLayerPDF progress and its work receipt (narrative, quality before→after, engines, time, cost); public, no paths, no pending offers; ring 01 is Document import",
+        "scope": "observatory"
+      },
+      {
+        "hash": "d44543c4",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Short real prose passes (min 60 words — letters, emails, pilgrim notes 'failed' at 300); any PDF failing the gate goes to OCR; unreadable scans go forward to OCR and are appraised from SLP's text before import (out of scope → a person); never OCR the same work twice; reconsider param",
+        "scope": "dewey"
+      },
+      {
+        "hash": "8a3bfd50",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "A BOOK whose file holds under 5,000 words waits for a person (The Apocalypse Unsealed .doc was its preface only)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "c60e0841",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "The ingest folder never adds a second copy of a work it already took (same title + same text, e.g. a .doc beside its .pdf, re-checked in one round before either was in the library) — Station and Claims and the Olinga interview went in twice",
+        "scope": "dewey"
+      },
+      {
+        "hash": "d4fc669e",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "The ingest folder imports nothing unappraised or out of scope — it waits for a person (Copyright Book List.txt, a list of file names whose appraisal had failed, went in as doc 956129 titled by its first line; removed)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "74bd0d08",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "The INGEST FOLDER (dewey-ingest-folder job: a few at a time, easiest first, re-checked before adding) + SearchLayerPDF for scans (dewey-ocr job, ocr lane ×3: open/economy jobs, output CHECKED — real words, text per page, our own sampled pages must be in it — else needs-human; ≤400 pages automatic); SLP page markers → <pb n/> for pdf_page; intake reads PDFs in place; GET /items?limit",
+        "scope": "dewey"
+      },
+      {
+        "hash": "fecd1781",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "SPOT-CHECK big PDFs — ~10 sampled pages via pdftotext, length from the page count (Chad 10-18: 'wasteful to read the whole thing'); a PDF on the server is never loaded into memory (poppler reads it in place, checksum streamed); intake still reads every page",
+        "scope": "dewey"
+      },
+      {
+        "hash": "7de8bfcc",
+        "date": "2026-10-18",
+        "type": "Docs",
+        "description": "Overnight sweep report — 1,006 files, 0 errors; results jsonl",
+        "scope": "dewey"
+      },
+      {
+        "hash": "88a04b8d",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "A server path spelled NFD (macOS) finds the NFC file on tower (Julio Savi 'Bahá’u’lláh' did not reach the server); sweep sends NFC",
+        "scope": "dewey"
+      },
+      {
+        "hash": "33943017",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "A 270 MB book pushed the API past pm2's 3 GB (restart, 10-18) — documents are checked in a CHILD PROCESS (own memory and crash domain, ≤2 at once, 10 min limit, queries tagged dewey-holdings) and PDF text comes from poppler's pdftotext (273 MB book: 2.7 s, API-side RSS 101 MB, loop lag 2 ms)",
+        "scope": "dewey"
+      }
+    ],
     "2026-10-17": [
+      {
+        "hash": "10a59540",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Read a document IN PLACE on the server (attach.path / holdings path, under DEWEY_PATH_ROOTS = the synced Dropbox) — no upload, no size limit, the original stays put; reading/conversion/OCR now off the event loop with the check (52 MB book: 620 ms, main-loop lag 2 ms); sweep --server-root",
+        "scope": "dewey"
+      },
+      {
+        "hash": "34401877",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "OCR bar 30% with ≥0.85 in order (Marion Yazdi 34%); the agent describes the comparison exactly (passages searched library-wide, closest compared in full — not 'every document')",
+        "scope": "dewey"
+      },
+      {
+        "hash": "08ef13ed",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "OCR'd text — a long in-order run (≥35%, ≥0.8 in order) is the same text (Roy Wilhelm read 'possible' at 40–42%)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "24406ffc",
+        "date": "2026-10-17",
+        "type": "Other",
+        "description": "Stop_exit_codes on the API left pm2 'waiting restart' (pid 0) with an untracked worker serving — reverted",
+        "scope": "pm2"
+      },
+      {
+        "hash": "ddcb978c",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "A garbled old-OCR text layer is re-read by tesseract when that reads better (Kelsey 0.80 → 0.95), and never imported as the text (needs-ocr); fix(pm2): stop_exit_codes [0] on the API — pm2 restarted a reload's drained old worker as an untracked '_old_' copy (the 'strays')",
+        "scope": "dewey"
+      },
+      {
+        "hash": "99df9c0e",
+        "date": "2026-10-17",
+        "type": "Other",
+        "description": "The watchdog's every-tick stray sweep killed the LIVE API worker every 5 min (restart storm 10-17 22:41→23:03) — back to deploy-time sweeping only",
+        "scope": "updater"
+      },
+      {
+        "hash": "16ae7e12",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "The 573 s API freeze — docs-repo:find re-ran the FTS MATCH per row (ORDER BY subquery) on a stopword-heavy title from Dewey; MATCH once in a ranked bounded join, stopwords/short prefixes dropped; test fails on old code (>10 min) passes on new (87 ms); Dewey's holdings check runs in a worker thread with a 120 s limit; worker-thread slow reads tagged /thread and not counted as blocking; standing policy docs/architecture/blocking-queries.md",
+        "scope": "db"
+      },
+      {
+        "hash": "de25bcff",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "Checks ride in the member's turn (a hoisted 2nd system message went unseen — 'I don't have the holding results'); Haiku reasons before answering, so 700/200-token caps returned NOTHING (appraisal empty, replies blank, intake shelf choice) → 4000; handwriting/non-Latin scans read by vision (tesseract+OSD read handwriting as 'Japanese'); NDJSON keep-alive (cloudflared buffers JSON); fix(ai): Anthropic joins every system message (find() dropped all but the first)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "5564286e",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "No readable text → 'undetermined' (say so, never decide from a file name); fix(updater): sweep the reload's own orphan worker 200 s after a deploy",
+        "scope": "dewey"
+      },
       {
         "hash": "459c0107",
         "date": "2026-10-17",
@@ -6888,139 +7023,6 @@
         "type": "Fixed",
         "description": "Rejoin — trailing bold/bracketed citations end a sentence, an opening quote is not a continuation, number columns and short-line lists are not prose; seams reported for review",
         "scope": "library"
-      },
-      {
-        "hash": "b35aba1a",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Re-join paragraphs broken mid-sentence by PDF conversion — a page number between the pieces becomes <pb n/> (page-breaks.js stores it); secondary literature only; originals backed up. docs-repo listDocs gains an exact filePath filter",
-        "scope": "library"
-      },
-      {
-        "hash": "f31f447d",
-        "date": "2026-10-08",
-        "type": "Test",
-        "description": "Blind secondary-literature gold (Hatcher, Stockman, Momen) for the window classifier",
-        "scope": "authorship"
-      },
-      {
-        "hash": "20652490",
-        "date": "2026-10-08",
-        "type": "Docs",
-        "description": "Window classifier production log — 147 Bahá'í books written, other traditions held",
-        "scope": "authorship"
-      },
-      {
-        "hash": "079681aa",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window v18b — in Shoghi Effendi's books his secretaries' letters and 'the Guardian’s …' letters are his, on his behalf",
-        "scope": "authorship"
-      },
-      {
-        "hash": "806fbfe1",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window v18 — a compilation's default (the compiler) is never set over a paragraph; a letter written on behalf of Shoghi Effendi is his (on_behalf), not his secretary's; runner --religion filter (writes validated on Bahá'í books only)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "a6b0ca68",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window classifier v17 — 'the editor' needs editorial evidence (footnote, note-like opening, author named in the third person); the deterministic checks are one idempotent refineLabel, re-applied at write time to labels saved by earlier versions",
-        "scope": "authorship"
-      },
-      {
-        "hash": "923da697",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window run never rewrites a book default (any spelling) or adds one where none exists — 4,259 of 5,371 dry-run 'changes' were such no-ops",
-        "scope": "authorship"
-      },
-      {
-        "hash": "6ffcb1bd",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Escape speaker names in the window classifier's name regexes ('Compilation (Bahá’í Writings)' crashed 3 books)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "bb04c37a",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window run — trailer-prev protected; rollback.jsonl of every written row's previous authors; change-precision log",
-        "scope": "authorship"
-      },
-      {
-        "hash": "8067e50d",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Block evidence reads the whole introducing paragraph; a heading counts only when it attributes (Address by…, Words of…), not when it names a subject",
-        "scope": "authorship"
-      },
-      {
-        "hash": "40415d8c",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window classifier v16 — an unmarked block (prayer, letter body, quoted will) leaves the book's author only when the previous paragraph names AND introduces its speaker, the heading names them, or it continues their block",
-        "scope": "authorship"
-      },
-      {
-        "hash": "daf7e01e",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window eval — gold labels mixing names and the 'someone new' wildcard were parsed as one invalid regex",
-        "scope": "authorship"
-      },
-      {
-        "hash": "e518c28b",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window classifier v15 — narration guard catches introductions without speech verbs, short 'he said' tags, third-person narration and three-letter names; source links protected; datelines and salutations stay with the letter's writer; runner retries a failed book once",
-        "scope": "authorship"
-      },
-      {
-        "hash": "5902bb4a",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window classifier v14 — narration guard (a quote introduced in the narration stays the narrator's; the person moves to quoted), captions and one-line titles get no speaker, Unicode-safe self-quote check. From the change spot-check: 12 of 36 sampled changes credited the quoted person",
-        "scope": "authorship"
-      },
-      {
-        "hash": "c1bbc178",
-        "date": "2026-10-08",
-        "type": "Performance",
-        "description": "Window classifier v13 — rules and speaker descriptions stated once per window, questions are bare names (repeating them in 20 questions was most of the tokens)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "24d84805",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Window classifier offers only the relevant roster per window (whole roster in 20 questions overflowed Jev on Dawn-Breakers and cost ~4x); an overflowing window is split, never dropped",
-        "scope": "authorship"
-      },
-      {
-        "hash": "927c193c",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier production runner (resumable per book; --write applies speaker + quoted through the writer, never over evidence / official-edition / structural rows); shared engine window-core.mjs, eval defaults = v10",
-        "scope": "authorship"
-      },
-      {
-        "hash": "a3ca1acd",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier — editor label variants; v10 results logged (speaker ≈99.7%, quotes ≈96% on 165 hand-labelled ¶)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "71b20507",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier v10 — per-book LLM brief (speakers + how to recognise them + book rules) tunes System-1's instructions",
-        "scope": "authorship"
       }
     ]
   }

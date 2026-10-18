@@ -9,7 +9,9 @@
   import { compact, exact, pct, rate, interpolate, duration, ringOfJob, sparkPath, RING_INFO } from '../../lib/observatory.js';
   import ObservatoryDial from './ObservatoryDial.svelte';
   import ObservatoryTerminal from './ObservatoryTerminal.svelte';
+  import ImportActivity from './ImportActivity.svelte';
 
+  let importCounts = $state(null);   // stage 01 (document import): from the import board under the dial
   let tel = $state(null);
   let error = $state(null);
   let now = $state(Date.now());
@@ -154,6 +156,9 @@
           <div class="bar-row"><div class="bar"><span style={`width:${Math.max(r.done ? 0.6 : 0, Math.min(100, p))}%`}></span></div>
             <span class="stage-pct mono" class:ticking={working(r.id)}>{r.planned ? 'planned' : working(r.id) ? pct(Math.min(r.total, live(r.done, r.id)), r.total, 4) : pct(r.done, r.total)}</span></div>
           <div class="stage-foot mono">
+            {#if r.id === 'text' && importCounts}
+              <span><b class="imp">{importCounts.imported_24h}</b> new today · {importCounts.in_progress + importCounts.ocr} importing{#if importCounts.waiting} · {importCounts.waiting} for review{/if}</span>
+            {/if}
             <span>{compact(live(r.done, r.id))} / {compact(r.total)} {r.id === 'sections' ? 'docs' : '¶'}</span>
             {#if r.core_total && !r.planned}<span class="core-tag">core {pct(r.core_done, r.core_total, 0)}</span>{/if}
             {#if activeRings.includes(r.id)}<span class="working"><i></i>indexing{#if POINTS[r.id] && pulse?.vectors?.[POINTS[r.id]] != null}&nbsp;· {exact(pulse.vectors[POINTS[r.id]])} pts{/if}</span>{:else if !r.planned && r.done < r.total}<span class="idle">idle</span>{/if}
@@ -181,6 +186,7 @@
       {#if snap}<ObservatoryDial snapshot={snap} {activeRings} {now} onhover={(t) => (tip = t)} />
       {:else}<div class="dial-skel"><span class="mono">calibrating…</span></div>{/if}
       {#if activeRings.length}<div class="dial-note mono">◉ live: {activeRings.join(' · ')}</div>{/if}
+      <ImportActivity oncounts={(c) => (importCounts = c)} />
     </div>
 
     <!-- right: capability + health -->
@@ -356,6 +362,7 @@
   .bar-row { display: flex; align-items: center; gap: 8px; }
   .bar-row .bar { flex: 1; min-width: 0; }
   .stage.planned { opacity: 0.55; }
+  .imp { color: var(--obs-afterglow); font-weight: 600; }
   .stage-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 11px; color: var(--obs-text-dim); }
   .core-tag { color: var(--obs-bahai); }
   .up { color: var(--success); }
