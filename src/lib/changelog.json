@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:22:50.037Z",
+  "generated": "2026-10-18T03:26:13.216Z",
   "entries": [
+    {
+      "hash": "9a4eb7f6",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "On a phone, the library and loading panels are edge icon buttons that slide over the chat; photos appear in the conversation as real thumbnails",
+      "scope": "dewey"
+    },
     {
       "hash": "e1933498",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A citation naming only a work ('(The Kitáb-i-Aqdas, par. 42)') closes the extracts above it and names its writer through a works map (else the section heading) — extracts were waiting for the next line that named a person",
       "scope": "authorship"
-    },
-    {
-      "hash": "74162170",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "Official attribution lines end in a note number ('… translated from the Arabic) [1]') — strip it so the line is read as a trailer; without it extracts piled up under the next recognised line",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "9a4eb7f6",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "On a phone, the library and loading panels are edge icon buttons that slide over the chat; photos appear in the conversation as real thumbnails",
+        "scope": "dewey"
+      },
       {
         "hash": "e1933498",
         "date": "2026-10-17",
@@ -7013,13 +7020,6 @@
         "date": "2026-10-08",
         "type": "Fixed",
         "description": "A citation naming only a work ('(The Kitáb-i-Aqdas, par. 42)') closes the extracts above it and names its writer through a works map (else the section heading) — extracts were waiting for the next line that named a person",
-        "scope": "authorship"
-      },
-      {
-        "hash": "74162170",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "Official attribution lines end in a note number ('… translated from the Arabic) [1]') — strip it so the line is read as a trailer; without it extracts piled up under the next recognised line",
         "scope": "authorship"
       }
     ]

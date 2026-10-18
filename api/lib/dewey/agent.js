@@ -2,10 +2,11 @@
 // discussing adding books or documents. If I post a picture, it will immediately start looking to see if we have it or
 // not. No need to ask."). One turn: attachments are checked FIRST, deterministically, before the model says a word; then
 // the model streams its reply with tools to check more titles, put works on the wanted list and attach a source. It
-// reports only what the tools found. Events out: holdings · item · delta · done. Deps injectable for tests.
+// reports only what the tools found. Events out: status · holdings · research · appraisal · item · delta · done. Deps injectable for tests.
 import { roleCreate } from '../role-client.js';
 import { identifyPhotos, identifyUrl, identifyFile, identifyText } from './identify.js';
 import { checkHoldings } from './holdings.js';
+import { appraiseWork } from './appraise.js';
 import { createItem, findOpenByTitle, listItems, getItem, updateItem } from '../repos/dewey-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 
@@ -18,7 +19,10 @@ Assume every message is about a work they have found — do we have it, and if n
 - Not held: say so plainly; add it to the wanted list when they say so ("add it", "yes", "want it") — or right away if they already asked to add it.
 - A wanted work gets researched automatically (ISBN, publisher, cover). Remind them once that a PDF or a link to one starts processing.
 - A link to a PDF or page for a wanted work: call attach_source.
-Be brief, warm and exact — two or three short sentences. No sign-off.`;
+- When a work is NOT held, an appraisal follows (web research → in scope?, which shelf, value to the collection, price, a free
+  text online). Give your verdict from it in two or three sentences — belongs or not, where, worth adding at what price —
+  and offer to add it. For a typed title that is not held, call appraise_work.
+Be brief, warm and exact. No sign-off.`;
 
 export const TOOLS = [
   { type: 'function', function: { name: 'check_holdings', description: 'Is this work in the library? Search by title/author, or by a few printed lines of its text.',
@@ -27,6 +31,8 @@ export const TOOLS = [
     parameters: { type: 'object', properties: { title: { type: 'string' }, author: { type: 'string' }, kind: { type: 'string' } }, required: ['title'] } } },
   { type: 'function', function: { name: 'attach_source', description: 'Attach a URL (a PDF or web page of the work) to a wanted item; processing starts.',
     parameters: { type: 'object', properties: { item_id: { type: 'integer' }, url: { type: 'string' } }, required: ['item_id', 'url'] } } },
+  { type: 'function', function: { name: 'appraise_work', description: 'Research a work online (Perplexity + Parallel.ai) and judge: in scope for the library, where it would go, its value and price, a free text online.',
+    parameters: { type: 'object', properties: { title: { type: 'string' }, author: { type: 'string' }, edition: { type: 'string' }, year: { type: 'string' } }, required: ['title'] } } },
   { type: 'function', function: { name: 'list_wanted', description: 'The wanted list and intake queue: open items with their state.', parameters: { type: 'object', properties: {} } } },
 ];
 
@@ -58,6 +64,10 @@ export function makeTools({ by, emit, attachSource }) {
       emit({ type: 'item', item });
       return JSON.stringify({ attached: true, id: item.id, state: item.state });
     },
+    async appraise_work({ title, author, edition, year }) {
+      const a = await appraiseWork({ title, author, edition, year }, 'not checked here', { emit });
+      return JSON.stringify(a || { error: 'nothing found' });
+    },
     async list_wanted() {
       return JSON.stringify((await listItems({ limit: 30 })).map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, isbn: i.research?.isbn13 || null })));
     },
@@ -65,7 +75,7 @@ export function makeTools({ by, emit, attachSource }) {
 }
 
 /** One chat turn. messages: [{ role, content }] (the last is the user's); attach: { images?, file?, url? }. */
-export async function deweyTurn({ messages, attach = {}, by = null, emit, attachSource, create = roleCreate, check = checkHoldings }) {
+export async function deweyTurn({ messages, attach = {}, by = null, emit, attachSource, create = roleCreate, check = checkHoldings, appraise = appraiseWork }) {
   const notes = [];
   // attachments are checked BEFORE the model speaks — no need to ask (Chad 10-17)
   const lastText = String(messages.at(-1)?.content || '');
@@ -73,15 +83,24 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
   if (attach.images?.length || attach.file?.data || attach.url || urlInText) {
     let id;
     try {
+      // a status line at every step — never silence (Chad 10-17: "respond immediately and regularly")
+      emit({ type: 'status', text: attach.images?.length ? 'Reading your photo…' : attach.file?.data ? 'Reading the file…' : 'Opening the link…' });
       id = attach.images?.length ? await identifyPhotos(attach.images)
         : attach.file?.data ? await identifyFile({ name: attach.file.name || '', bytes: new Uint8Array(Buffer.from(attach.file.data, 'base64')) })
           : await identifyUrl(attach.url || urlInText);
+      emit({ type: 'status', text: id.title ? `Checking the library for “${id.title}”…` : 'Checking the library…' });
       const r = { identified: id, ...(await check(id)) };
       emit({ type: 'holdings', ...r });
       notes.push(`Holdings check of what they just sent (${attach.images?.length ? `${attach.images.length} photo(s)` : attach.file ? 'a file' : 'a link'}): ${summarize(r)}`);
+      // not here (or not sure) → research it online and appraise it, each piece shown as it lands
+      if (r.verdict !== 'held' && id.title) {
+        const a = await appraise(id, `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
+        if (a) notes.push(`Appraisal from web research: ${JSON.stringify({ summary: a.summary, in_scope: a.in_scope, scope_why: a.scope_why, shelf: a.shelf, value: a.value, value_why: a.value_why, price: a.price, rarity: a.rarity, free_online: a.free_online, recommendation: a.recommendation, next: a.next })}`);
+      }
     } catch (err) {
       notes.push(`Could not read what they sent: ${String(err.message).slice(0, 160)}`);
     }
+    emit({ type: 'status', text: null });
   }
   const tools = makeTools({ by, emit, attachSource });
   const convo = [{ role: 'system', content: SYSTEM }, ...messages.slice(-12),

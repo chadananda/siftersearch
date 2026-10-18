@@ -77,7 +77,10 @@
           let e; try { e = JSON.parse(line); } catch { continue; }
           const t = turns.find((x) => x.id === turn.id);
           if (e.type === 'delta') { const last = t.parts.at(-1); if (last?.kind === 'text') last.text += e.text; else t.parts.push({ kind: 'text', text: e.text }); }
+          else if (e.type === 'status') t.status = e.text;   // a live line while Dewey works — never silence
           else if (e.type === 'holdings') t.parts.push({ kind: 'holdings', r: e });
+          else if (e.type === 'research') t.parts.push({ kind: 'research', r: e });
+          else if (e.type === 'appraisal') t.parts.push({ kind: 'appraisal', a: e });
           else if (e.type === 'item') t.parts.push({ kind: 'item', item: e.item });
           else if (e.type === 'error') t.error = e.message;
           turns = [...turns];
@@ -131,7 +134,7 @@
         {#if t.you.file}<p class="text-sm mt-1">📄 {t.you.file.name}</p>{/if}
       </div>
       <div class="dewey">
-        {#if !t.parts.length && t.busy}<p class="text-secondary">Looking…</p>{/if}
+        {#if !t.parts.length && t.busy && !t.status}<p class="text-secondary">Looking…</p>{/if}
         {#each t.parts as p, k (k)}
           {#if p.kind === 'text'}
             <p class="text-primary whitespace-pre-wrap">{p.text}</p>
@@ -155,6 +158,27 @@
                 <button class="act primary mt-2" onclick={() => want(p.r)}>Add to wanted</button>
               {/if}
             </div>
+          {:else if p.kind === 'research'}
+            <details class="card">
+              <summary class="text-sm text-secondary cursor-pointer">Web research · {p.r.source}</summary>
+              <p class="text-sm text-primary whitespace-pre-wrap mt-1">{p.r.text}</p>
+              {#if p.r.citations?.length}<p class="text-xs text-muted mt-1">{#each p.r.citations as c, i (c.url)}<a class="text-accent" href={c.url} target="_blank" rel="noopener">[{i + 1}] {c.title}</a> {/each}</p>{/if}
+            </details>
+          {:else if p.kind === 'appraisal'}
+            {@const a = p.a}
+            <div class="card">
+              <p class="text-xs uppercase tracking-wide text-muted">Appraisal</p>
+              {#if a.summary}<p class="text-sm text-primary">{a.summary}</p>{/if}
+              <dl class="appraisal">
+                <dt>Belongs here</dt><dd class={a.in_scope === 'yes' ? 'text-success' : a.in_scope === 'no' ? 'text-error' : 'text-warning'}>{a.in_scope || '—'}{#if a.scope_why} — {a.scope_why}{/if}</dd>
+                <dt>Would go</dt><dd>{a.shelf ? `${a.shelf.religion} › ${a.shelf.collection}` : '—'}</dd>
+                <dt>Value</dt><dd>{a.value || '—'}{#if a.value_why} — {a.value_why}{/if}</dd>
+                <dt>Price</dt><dd>{a.price || '—'}{#if a.rarity && a.rarity !== 'unknown'} · {a.rarity}{/if}</dd>
+                {#if a.free_online}<dt>Free online</dt><dd><a class="text-accent break-all" href={a.free_online} target="_blank" rel="noopener">{a.free_online}</a></dd>{/if}
+                <dt>Advice</dt><dd class="font-medium text-primary">{a.recommendation || '—'}{#if a.next} — {a.next}{/if}</dd>
+              </dl>
+              {#if a.recommendation && a.recommendation !== 'skip'}<button class="act primary mt-2" onclick={() => want({ identified: { title: a.title } })}>Add to wanted</button>{/if}
+            </div>
           {:else if p.kind === 'item'}
             {@const it = p.item}
             <div class="card">
@@ -172,6 +196,7 @@
             </div>
           {/if}
         {/each}
+        {#if t.busy && t.status}<p class="status"><span class="dot"></span>{t.status}</p>{/if}
         {#if t.error}<p class="text-error text-sm">{t.error}</p>{/if}
       </div>
     {/each}
@@ -205,6 +230,12 @@
   .log { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 5rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
   .you { align-self: flex-end; max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 0.75rem 0.75rem 0.25rem 0.75rem; background: var(--surface-2); color: var(--text-primary); }
   .dewey { align-self: flex-start; max-width: 92%; display: flex; flex-direction: column; gap: 0.5rem; }
+  .status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
+  .dot { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: var(--accent-primary); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+  .appraisal { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.75rem; margin-top: 0.4rem; font-size: 0.85rem; }
+  .appraisal dt { color: var(--text-muted); }
+  .appraisal dd { color: var(--text-secondary); }
   .thumb { width: 6rem; height: 8rem; object-fit: cover; border-radius: 0.6rem; border: 1px solid var(--border-subtle); }
   .card { padding: 0.6rem 0.8rem; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: var(--surface-0); }
   .composer { border-top: 1px solid var(--border-subtle); padding: 0.6rem; }
