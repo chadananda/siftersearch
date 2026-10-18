@@ -2,12 +2,17 @@
 // with a Dewey key (DEWEY_API_KEY, or tmp/dewey-test-key). Every document ≤ 21 MB goes up as it is — Dewey converts any
 // format itself (api/lib/dewey/convert.js); only an oversize PDF is cut to its first 40 pages' text locally (pdftotext) and
 // sent as .txt. Audio is listed, not sent. Resumable.
-// Usage: node scripts/library/dewey-folder-sweep.mjs <folder> <out.jsonl>
+// --chat: each file goes to Dewey's CHAT instead (POST /api/dewey/chat, one at a time) — it lands in the key owner's thread
+// on /dewey, and a work we lack that belongs is imported (Loading column). Oversize files are skipped there (a text excerpt
+// must never be imported as the work).
+// Usage: node scripts/library/dewey-folder-sweep.mjs <folder> <out.jsonl> [--chat]
 import { readdirSync, statSync, readFileSync, appendFileSync, existsSync } from 'fs';
 import { join, extname, relative } from 'path';
 import { execFileSync } from 'child_process';
 
-const [dir, out] = process.argv.slice(2);
+const [dir, out] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const CHAT = process.argv.includes('--chat');
+const FOLDER = dir.replace(/\/+$/, '').split('/').pop();
 const KEY = (process.env.DEWEY_API_KEY || readFileSync('tmp/dewey-test-key', 'utf8')).trim();
 const API = process.env.DEWEY_API || 'https://api.siftersearch.com/api/dewey/holdings';
 const AUDIO = /\.(mp3|m4a|aiff?|wav|ogg)$/i, SKIP = /(^|\/)(\.DS_Store|Icon\r?)$/;
@@ -32,7 +37,17 @@ async function check(p) {
   let pl;
   try { pl = payload(p); } catch (e) { return { file, how: 'convert', verdict: `convert failed: ${e.message}`.slice(0, 200) }; }
   if (!pl) return { file, how: 'unsupported', verdict: 'unsupported' };
+  if (CHAT && pl.how !== 'file') return { file, how: pl.how, verdict: 'skipped: too large to send whole' };
   const t0 = Date.now();
+  if (CHAT) {
+    const r = await fetch(API.replace(/\/holdings$/, '/chat'), { method: 'POST', headers: { 'X-Api-Key': KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `From the folder “${FOLDER}”: ${file}`, attach: { file: pl.body.file }, stream: false }), signal: AbortSignal.timeout(300000) }).catch((e) => ({ status: 0, json: async () => ({ message: e.message }) }));
+    const j = await r.json().catch(() => ({}));
+    const h = j.holdings?.[0];
+    return { file, how: 'chat', status: r.status, ms: Date.now() - t0, verdict: h?.verdict || `error ${r.status}: ${j.message || ''}`.slice(0, 200),
+      top: (h?.candidates || []).slice(0, 2).map((c) => ({ id: c.id, title: c.title, rel: c.relation?.relation })),
+      items: (j.items || []).map((i) => ({ id: i.id, state: i.state })), reply: String(j.reply || '').slice(0, 400) };
+  }
   for (let attempt = 0; ; attempt++) {
     try {
       const r = await fetch(API, { method: 'POST', headers: { 'X-Api-Key': KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(pl.body), signal: AbortSignal.timeout(180000) });
@@ -48,11 +63,11 @@ async function check(p) {
 const queue = files.filter((p) => !done.has(relative(dir, p)));
 console.log(`${files.length} files, ${queue.length} to check`);
 let i = 0;
-await Promise.all(Array.from({ length: 3 }, async () => {
+await Promise.all(Array.from({ length: CHAT ? 1 : 3 }, async () => {   // chat: one at a time, in order, as a person would
   while (i < queue.length) {
     const p = queue[i++];
     const r = await check(p);
     appendFileSync(out, JSON.stringify(r) + '\n');
-    console.log(`${r.verdict.padEnd(20)} ${r.how.padEnd(12)} ${r.file}${r.top?.[0] ? `  → #${r.top[0].id} ${r.top[0].title}` : ''}`);
+    console.log(`${r.verdict.padEnd(20)} ${r.how.padEnd(12)} ${r.file}${r.top?.[0] ? `  → #${r.top[0].id} ${r.top[0].title}${r.top[0].rel ? ` (${r.top[0].rel})` : ''}` : ''}${r.items?.length ? `  [imported: item ${r.items.map((i) => `${i.id} ${i.state}`).join(', ')}]` : ''}`);
   }
 }));

@@ -122,15 +122,26 @@ export default async function deweyRoutes(fastify) {
       .map((m) => ({ role: m.role, content: String(m.content || '').slice(0, 4000) })),
       attach, by, emit: (e) => { keep(e); emit(e); }, attachSource: (id, src) => attachSource(id, src, by) });
     // for agents: { stream: false } → one JSON answer { reply, holdings, items }
+    // A turn with web research can outlast Cloudflare's ~100 s edge timeout (a 524 to the caller while the turn finished
+    // here, 10-17). So both forms answer at once and keep the line alive: JSON with a space every 20 s (leading whitespace is
+    // valid JSON), SSE with a comment line.
+    reply.hijack();
     if (stream === false) {
+      reply.raw.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' });
+      const beat = setInterval(() => { try { reply.raw.write(' '); } catch { /* client gone */ } }, 20000);
       const out = { reply: '', holdings: [], items: [] };
-      await turn((e) => { if (e.type === 'delta') out.reply += e.text; else if (e.type === 'holdings') out.holdings.push(e); else if (e.type === 'item') out.items.push(e.item); });
+      try {
+        await turn((e) => { if (e.type === 'delta') out.reply += e.text; else if (e.type === 'holdings') out.holdings.push(e); else if (e.type === 'item') out.items.push(e.item); });
+      } catch (err) { out.error = String(err.message || err).slice(0, 300); }
+      clearInterval(beat);
       out.reply = out.reply.trim();
       await save();
-      return out;
+      reply.raw.end(JSON.stringify(out));
+      return;
     }
-    reply.hijack();
     reply.raw.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    const ping = setInterval(() => { try { reply.raw.write(': ping\n\n'); } catch { /* client gone */ } }, 20000);
+    reply.raw.on('close', () => clearInterval(ping));
     const emit = (e) => { try { reply.raw.write(`data: ${JSON.stringify(e)}\n\n`); } catch { /* client gone */ } };
     try {
       await turn(emit);
@@ -138,6 +149,7 @@ export default async function deweyRoutes(fastify) {
       emit({ type: 'error', message: String(err.message || err).slice(0, 300) });
       emit({ type: 'done' });
     }
+    clearInterval(ping);
     await save();
     reply.raw.end();
   });

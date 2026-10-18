@@ -18,6 +18,8 @@ Assume every message is about a work they have found — do we have it, and if n
 - A file or passage is compared with the library IN FULL: each candidate carries a relation — same (another copy or
   transcription), inside (part of a larger library work, e.g. a compilation), partial (we hold only part of it — worth
   adding the fuller text), overlap/quotes (shares passages only), with percentages. Say it in those terms.
+- When the check says the full text was compared, the verdict is settled by the text: NEVER ask for lines of its text, and
+  do not talk about the title search. "not-held" then means no library document shares its text.
 - Held: say which copy (title, author, language) and stop. Held in another edition or language: say so and ask if this one is worth adding.
 - Not held: say so plainly; add it to the wanted list when they say so ("add it", "yes", "want it") — or right away if they already asked to add it.
 - A wanted work gets researched automatically (ISBN, publisher, cover). Remind them once that a PDF or a link to one starts processing.
@@ -43,7 +45,8 @@ export const TOOLS = [
 export function summarize(r) {
   const id = r.identified || {};
   return JSON.stringify({ read_as: { title: id.title, author: id.author, edition: id.edition, year: id.year, language: id.language, kind: id.kind, needs_ocr: id.needs_ocr || undefined },
-    verdict: r.verdict, candidates: (r.candidates || []).slice(0, 4).map((c) => ({ id: c.id, title: c.title, author: c.author, language: c.language,
+    verdict: r.verdict, compared: r.compared ? `the FULL TEXT (${r.compared.words} words) was compared with ${r.compared.documents} candidate library documents — the verdict rests on the text, not the title` : undefined,
+    candidates: (r.candidates || []).slice(0, 4).map((c) => ({ id: c.id, title: c.title, author: c.author, language: c.language,
       relation: c.relation?.relation, evidence: c.evidence.map((e) => e.kind + (e.detail ? `: ${e.detail}` : '')).join('; ') })) });
 }
 

@@ -105,7 +105,7 @@ export const chatSchema = {
     '',
     '**Default: server-sent events** (`text/event-stream`), one JSON object per `data:` line, `type` one of: `status` (progress line; `text: null` clears it) · `holdings` (a check, shaped as POST /holdings returns) · `research` (`source`, `text`, `citations`) · `appraisal` · `item` (a wanted item created or changed) · `delta` (reply text) · `error` · `done`.',
     '',
-    '**`stream: false`** returns the JSON documented below.',
+    '**`stream: false`** returns the JSON documented below. Both forms answer at once and keep the connection alive (JSON: leading spaces every 20 s, valid JSON; SSE: `: ping` comments), so a long turn never hits the edge timeout. A failure after the headers comes back as `error` in the JSON.',
   ].join('\n')),
   body: open({
     message: { type: 'string', description: 'your message (the thread supplies the history)' },
@@ -114,7 +114,7 @@ export const chatSchema = {
     attach: open({ images: { type: 'array', maxItems: 6, items: { type: 'string' }, description: 'photo data URLs' }, file: fileUpload, url: { type: 'string' } }),
     stream: { type: 'boolean', default: true },
   }),
-  response: { 200: open({ reply: { type: 'string' }, holdings: { type: 'array', items: holdings }, items: { type: 'array', items: item } },
+  response: { 200: open({ reply: { type: 'string' }, error: { type: 'string' }, holdings: { type: 'array', items: holdings }, items: { type: 'array', items: item } },
     { description: 'with `stream: false`' }) },
 };
 
