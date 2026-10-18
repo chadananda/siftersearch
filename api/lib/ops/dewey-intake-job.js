@@ -6,6 +6,7 @@
 import { readFile, unlink, writeFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
 import { garbledLayer } from '../dewey/convert.js';
+import { cleanText } from '../dewey/clean.js';
 import { slpToText, slpEnabled } from '../dewey/searchlayer.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
@@ -44,6 +45,9 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     await updateItem(item.id, { state: 'failed' }, `could not read the ${ext.toUpperCase()}: ${String(err.message).slice(0, 160)}`);
     return { id: item.id, state: 'failed', why: err.message };
   }
+  // the text cleaner (dewey/clean.js): pages marked, running headers/page numbers out, the source's false paragraph marks
+  // (a hard break on every printed line) repaired, hyphens closed, emphasis markers dropped — every format, SLP's too
+  text = cleanText(text);
   const gate = proseGate(text.replace(/<pb[^>]*\/>/g, ' '), { pages });
   // a scan or a GARBLED text layer (old OCR) is not the book's text: it waits for full OCR — SearchLayerPDF, queued here
   // when configured (its output is checked before it comes back to this job)

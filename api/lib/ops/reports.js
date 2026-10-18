@@ -12,6 +12,7 @@ import { deweyIngestFolderJob } from './dewey-ingest-folder-job.js';
 import { deweyOcrJob } from './dewey-ocr-job.js';
 import { deweyArchiveJob } from './dewey-archive-job.js';
 import { deweyQualityJob } from './dewey-quality-job.js';
+import { deweyReimportJob } from './dewey-reimport-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -166,6 +167,7 @@ REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — t
 REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates?, limit?, dry? } — structure for books that do not mark it (Chad 10-17)
 REPORTS['dewey-research'] = deweyResearchJob;   // params: { id } — research a wanted work: ISBN, publisher, cover (Chad 10-17)
 REPORTS['dewey-ingest-folder'] = deweyIngestFolderJob;   // params: { batch?, round? } — the ingest folder, a few at a time, easiest first
+REPORTS['dewey-reimport'] = deweyReimportJob;   // params: { docs?, all?, limit? } — re-read from the archive with today's cleaner, same document
 REPORTS['dewey-quality'] = deweyQualityJob;     // params: { limit?, since? } — every Dewey import inspected, worst first, causes tallied
 REPORTS['dewey-archive'] = deweyArchiveJob;     // one pass: every decided source onto the NAS archive, ingest copies out of Dropbox
 REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's final text from SearchLayerPDF, checked
@@ -199,7 +201,7 @@ export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
-  intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive'],   // a book Chad is waiting on does not queue behind hours of indexing
+  intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research'] };
 export const HEAVY = new Set(LANES.heavy);
