@@ -7,6 +7,7 @@
 //   POST /api/dewey/items/:id/source { url? | file: { name, data } } → original archived, intake queued
 //   POST /api/dewey/chat      { messages, attach: { images?, file?, url? }, stream? } → SSE: holdings · item · delta · done
 //                             (stream: false → one JSON { reply, holdings, items } — for agents)
+//   GET  /api/dewey/thread?after=ID → the member's ONE thread (shared by phone and desktop)
 //   POST /api/dewey/keys      { name } → a Dewey API key, shown once (signed-in session only)
 // Auth: a signed-in session with Dewey access, OR an API key with the 'dewey' permission owned by such a member
 // (X-Api-Key: sk_… or Authorization: Bearer sk_…). Docs: docs/agents/dewey-api.md
@@ -18,7 +19,7 @@ import { ApiError } from '../lib/errors.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { coverageForDocs } from '../lib/repos/coverage-repo.js';
-import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity } from '../lib/repos/dewey-repo.js';
+import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity, appendMessage, threadOf } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { archiveOriginal } from '../lib/dewey/intake.js';
 import { deweyTurn } from '../lib/dewey/agent.js';
@@ -98,15 +99,33 @@ export default async function deweyRoutes(fastify) {
 
   // DEWEY'S CHAT, streamed (server-sent events): attachments are checked first, then Dewey replies with tools
   fastify.post('/chat', { preHandler: requireDewey, bodyLimit: 30 * 1024 * 1024 }, async (request, reply) => {
-    const { messages = [], attach = {}, stream = true } = request.body || {};
+    const { message = null, messages = null, attach = {}, thumbs = [], stream = true } = request.body || {};
     const by = request.user?.viaKey ? `${request.user.email} (key ${request.user.viaKey})` : request.user?.email || 'dewey';
-    const turn = (emit) => deweyTurn({ messages: messages.filter((m) => m && ['user', 'assistant'].includes(m.role)).map((m) => ({ role: m.role, content: String(m.content || '').slice(0, 4000) })),
-      attach, by, emit, attachSource: (id, url) => attachSource(id, { url }, by) });
+    const uid = request.user.sub;
+    // ONE THREAD per member, shared by every device: the new message is saved first; the model's history comes from the
+    // saved thread (an agent may still pass its own `messages`)
+    const text = String(message ?? (messages?.at(-1)?.content || '')).slice(0, 4000);
+    await appendMessage(uid, 'user', text, { thumbs: (thumbs || []).slice(0, 6), file: attach.file?.name || null });
+    const history = messages?.length ? messages.slice(0, -1) : (await threadOf(uid, { limit: 24 })).slice(0, -1)
+      .map((m) => ({ role: m.role, content: m.content || (m.parts?.thumbs?.length ? '(photos)' : '') })).filter((m) => m.content);
+    const parts = [];
+    const keep = (e) => {   // what is saved with Dewey's reply, to show it again on any device
+      if (e.type === 'delta') { const last = parts.at(-1); if (last?.kind === 'text') last.text += e.text; else parts.push({ kind: 'text', text: e.text }); }
+      else if (e.type === 'holdings') parts.push({ kind: 'holdings', r: e });
+      else if (e.type === 'research') parts.push({ kind: 'research', r: e });
+      else if (e.type === 'appraisal') parts.push({ kind: 'appraisal', a: e });
+      else if (e.type === 'item') parts.push({ kind: 'item', item: e.item });
+    };
+    const save = () => appendMessage(uid, 'assistant', parts.filter((p) => p.kind === 'text').map((p) => p.text).join('').trim(), { parts }).catch(() => {});
+    const turn = (emit) => deweyTurn({ messages: [...history.slice(-12), { role: 'user', content: text || (attach.images?.length ? 'Do we have this?' : 'Do we have this?') }]
+      .map((m) => ({ role: m.role, content: String(m.content || '').slice(0, 4000) })),
+      attach, by, emit: (e) => { keep(e); emit(e); }, attachSource: (id, url) => attachSource(id, { url }, by) });
     // for agents: { stream: false } → one JSON answer { reply, holdings, items }
     if (stream === false) {
       const out = { reply: '', holdings: [], items: [] };
       await turn((e) => { if (e.type === 'delta') out.reply += e.text; else if (e.type === 'holdings') out.holdings.push(e); else if (e.type === 'item') out.items.push(e.item); });
       out.reply = out.reply.trim();
+      await save();
       return out;
     }
     reply.hijack();
@@ -118,7 +137,14 @@ export default async function deweyRoutes(fastify) {
       emit({ type: 'error', message: String(err.message || err).slice(0, 300) });
       emit({ type: 'done' });
     }
+    await save();
     reply.raw.end();
+  });
+
+  // The member's thread — the same on every device; `after` returns only what is new (the other device's messages)
+  fastify.get('/thread', { preHandler: requireDewey }, async (request) => {
+    const after = Number(request.query?.after) || 0;
+    return { messages: await threadOf(request.user.sub, { after, limit: after ? 100 : 60 }) };
   });
 
   // Dewey API keys for your own agents — created from a SIGNED-IN SESSION only (never with another key), shown once,

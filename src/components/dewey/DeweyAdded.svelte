@@ -9,7 +9,7 @@
   let items = $state(null);
   let error = $state(null);
   async function load() {
-    try { items = (await dewey.activity(30)).items; error = null; oncount(items.filter((i) => ['source', 'processing'].includes(i.state)).length); } catch (e) { error = e.message; }
+    try { items = (await dewey.activity(30)).items; error = null; oncount(items.filter((i) => ['source', 'processing'].includes(i.state)).length, items.length); } catch (e) { error = e.message; }
   }
   // every 10 s while something is loading; otherwise about once a minute
   $effect(() => {

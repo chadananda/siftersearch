@@ -1733,6 +1733,17 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_docs_created ON docs(created_at)');
     logger.info('Migration 159 complete: idx_docs_created');
   },
+
+  160: async () => {
+    // DEWEY'S THREAD, one per member (Chad 10-17: "make sure interaction between desktop and mobile is shared for the same
+    // user. one thread"): every message — the member's words (with small photo thumbnails / a file name) and Dewey's reply
+    // with its cards (holdings, research, appraisal, items). The phone and the desktop read the same rows; the model's
+    // memory of the conversation comes from here, not from the browser.
+    await query(`CREATE TABLE IF NOT EXISTS dewey_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, role TEXT NOT NULL,
+      content TEXT, parts TEXT, created_at TEXT NOT NULL)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_dewey_messages_user ON dewey_messages(user_id, id)');
+    logger.info('Migration 160 complete: dewey_messages');
+  },
 };
 
 export const graphMigrations = {

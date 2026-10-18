@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:34:43.867Z",
+  "generated": "2026-10-18T03:37:11.395Z",
   "entries": [
+    {
+      "hash": "80e28dc9",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Arcimboldo's 'The Librarian' (public domain) as Dewey's avatar and app icon; mic on the left, send on the right",
+      "scope": "dewey"
+    },
     {
       "hash": "6a41ebae",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "An OceanLibrary .reference citation that opens with a writer or their work names that writer",
       "scope": "authorship"
-    },
-    {
-      "hash": "b7016ebd",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "OceanLibrary range links + restore 42 books the export conversion dropped",
-      "scope": "ocean"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "80e28dc9",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Arcimboldo's 'The Librarian' (public domain) as Dewey's avatar and app icon; mic on the left, send on the right",
+        "scope": "dewey"
+      },
       {
         "hash": "6a41ebae",
         "date": "2026-10-17",
@@ -7014,13 +7021,6 @@
         "type": "Fixed",
         "description": "An OceanLibrary .reference citation that opens with a writer or their work names that writer",
         "scope": "authorship"
-      },
-      {
-        "hash": "b7016ebd",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "OceanLibrary range links + restore 42 books the export conversion dropped",
-        "scope": "ocean"
       }
     ]
   }

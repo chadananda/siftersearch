@@ -1003,6 +1003,7 @@ export const admin = {
 export const dewey = {
   holdings: (body) => request('/api/dewey/holdings', { method: 'POST', body: JSON.stringify(body) }),
   activity: (limit = 30) => request(`/api/dewey/activity?limit=${limit}`),
+  thread: (after = 0) => request(`/api/dewey/thread?after=${after}`),
   missing: () => request('/api/dewey/missing'),
   want: (identified) => request('/api/dewey/items', { method: 'POST', body: JSON.stringify({ identified }) }),
   items: () => request('/api/dewey/items'),

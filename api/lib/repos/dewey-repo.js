@@ -41,3 +41,19 @@ export async function updateItem(id, fields = {}, why = null) {
  *  wanted stage — source attached, processing, waiting for OCR, failed, ingested — most recently changed first. */
 export const intakeActivity = async (limit = 30) => (await queryAll(`SELECT * FROM dewey_items WHERE state NOT IN ('wanted', 'researched')
   ORDER BY updated_at DESC LIMIT ?`, [limit], 'dewey:activity')).map(parse);
+
+// ── Dewey's thread: one per member, shared by every device (dewey_messages, migration 160) ──
+/** Append a message: role 'user' | 'assistant'; parts = cards/thumbnails to show it again. → id */
+export async function appendMessage(userId, role, content, parts = null) {
+  await transaction([{ sql: 'INSERT INTO dewey_messages (user_id, role, content, parts, created_at) VALUES (?, ?, ?, ?, ?)',
+    args: [Number(userId), role, content == null ? null : String(content).slice(0, 20000), parts ? JSON.stringify(parts) : null, new Date().toISOString()] }], 'dewey:message');
+  return (await queryOne('SELECT MAX(id) AS id FROM dewey_messages WHERE user_id = ?', [Number(userId)], 'dewey:message-id'))?.id;
+}
+
+/** A member's thread: messages after `after` (oldest first), or the newest `limit` when after is 0. */
+export async function threadOf(userId, { after = 0, limit = 60 } = {}) {
+  const rows = after
+    ? await queryAll('SELECT * FROM dewey_messages WHERE user_id = ? AND id > ? ORDER BY id LIMIT ?', [Number(userId), Number(after), limit], 'dewey:thread-after')
+    : (await queryAll('SELECT * FROM dewey_messages WHERE user_id = ? ORDER BY id DESC LIMIT ?', [Number(userId), limit], 'dewey:thread')).reverse();
+  return rows.map((r) => ({ ...r, parts: r.parts ? JSON.parse(r.parts) : null }));
+}

@@ -65,15 +65,39 @@
   }
   const scrollDown = async () => { await tick(); log?.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); };
 
-  // the conversation as the model sees it: your words and Dewey's words (cards are summarized server-side)
-  const history = () => turns.flatMap((t) => [{ role: 'user', content: t.you.text || (t.you.photos.length ? '(photos)' : t.you.file ? `(file ${t.you.file.name})` : '') },
-    ...(t.parts.some((p) => p.kind === 'text') ? [{ role: 'assistant', content: t.parts.filter((p) => p.kind === 'text').map((p) => p.text).join('') }] : [])]);
+  // ONE THREAD per member, on the server (Chad 10-17: "interaction between desktop and mobile is shared … one thread"):
+  // load it when signed in, and every 5 s pick up what another device added
+  let { authed = false } = $props();
+  let lastId = 0;
+  function fromThread(messages) {
+    const out = [];
+    for (const m of messages) {
+      if (m.role === 'user') out.push({ id: m.id, you: { text: m.content || '', photos: m.parts?.thumbs || [], file: m.parts?.file ? { name: m.parts.file } : null }, parts: [], busy: false, error: null });
+      else if (out.length) out.at(-1).parts = m.parts?.parts || (m.content ? [{ kind: 'text', text: m.content }] : []);
+      lastId = Math.max(lastId, m.id);
+    }
+    return out;
+  }
+  async function loadThread() { try { const { messages } = await dewey.thread(0); turns = fromThread(messages); scrollDown(); } catch { /* next poll */ } }
+  $effect(() => {
+    if (!authed) return;
+    loadThread();
+    const t = setInterval(async () => {
+      if (busy || document.hidden) return;
+      try { const { messages } = await dewey.thread(lastId); if (messages.length) await loadThread(); } catch { /* next poll */ }
+    }, 5000);
+    return () => clearInterval(t);
+  });
+  // small copies of the photos for the thread (the full ones go to the check only)
+  const thumbOf = (dataUrl) => new Promise((ok) => { const img = new Image(); img.onload = () => { const k = Math.min(1, 240 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL('image/jpeg', 0.7)); };
+    img.onerror = () => ok(null); img.src = dataUrl; });
 
   async function send() {
     if (!hasInput || busy) return;
     const you = { text: q.trim(), photos, file: file ? { name: file.name } : null };
     const attach = { ...(photos.length ? { images: photos } : {}), ...(file ? { file } : {}) };
-    const messages = [...history(), { role: 'user', content: you.text || (photos.length ? 'Do we have this?' : `Do we have this? (${file?.name})`) }];
+    const thumbs = (await Promise.all(photos.map(thumbOf))).filter(Boolean);
     const turn = { id: Date.now(), you, parts: [], busy: true, error: null };
     turns = [...turns, turn];
     q = ''; photos = []; file = null; busy = true;
@@ -81,7 +105,7 @@
     try {
       const res = await fetch(`${API}/api/dewey/chat`, { method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
-        body: JSON.stringify({ messages, attach }) });
+        body: JSON.stringify({ message: you.text, attach, thumbs }) });
       if (!res.ok || !res.body) throw new Error(`Dewey could not answer (${res.status})`);
       const reader = res.body.getReader(), dec = new TextDecoder();
       let buf = '';
@@ -110,7 +134,7 @@
     }
     turns.find((x) => x.id === turn.id).busy = false;
     turns = [...turns]; busy = false;
-    scrollDown();
+    await loadThread();   // the saved thread is the truth (and carries the ids the other device will see)
   }
 
   // card actions — straight to the API, no round through the model

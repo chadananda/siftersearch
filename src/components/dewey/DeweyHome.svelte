@@ -12,7 +12,8 @@
   const auth = getAuthState();
   let ready = $state(false);
   let view = $state('chat');
-  let processing = $state(0);   // books being processed now — the badge on the loading button   // narrow screens: chat | library | added
+  let processing = $state(0);   // books being processed now — the badge on the loading button
+  let activity = $state(0);     // anything at all in the loading list — none: no loading button / column (Chad 10-17)   // narrow screens: chat | library | added
   let canDewey = $derived(['admin', 'superadmin'].includes(auth.user?.tier) || Number(auth.user?.dewey_access) === 1);
   onMount(async () => {
     await initAuth(); ready = true;
@@ -30,20 +31,20 @@
   </section>
 {:else}
   <div class="dewey">
-    <div class="cols" data-panel={view}>
+    <div class="cols" data-panel={view} class:quiet={!activity}>
       <div class="left panel"><DeweyLibrary authed={ready} /></div>
-      <div class="mid"><div class="chatbox"><DeweyChat /></div></div>
-      <div class="right panel"><DeweyAdded authed={ready} oncount={(n) => (processing = n)} /></div>
+      <div class="mid"><div class="chatbox"><DeweyChat authed={ready} /></div></div>
+      <div class="right panel"><DeweyAdded authed={ready} oncount={(n, all) => { processing = n; activity = all; }} /></div>
     </div>
     <!-- narrow screens (Chad 10-17): the library and what is loading are icon buttons on the edges that slide their
          panel over the chat; a tap outside closes it -->
     <button class="edge left-edge" aria-label="The library" title="The library" onclick={() => (view = view === 'library' ? 'chat' : 'library')}>
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 19V5m4 14V5m4 14 4-14m4 14H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-    <button class="edge right-edge" aria-label="Loading now" title="Loading now" onclick={() => (view = view === 'added' ? 'chat' : 'added')}>
+    {#if activity}<button class="edge right-edge" aria-label="Loading now" title="Loading now" onclick={() => (view = view === 'added' ? 'chat' : 'added')}>
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 21h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       {#if processing}<span class="badge" aria-label="{processing} being processed">{processing}</span>{/if}
-    </button>
+    </button>{/if}
     {#if view !== 'chat'}<button class="scrim" aria-label="Close" onclick={() => (view = 'chat')}></button>{/if}
   </div>
 {/if}
@@ -55,10 +56,12 @@
   .chatbox { flex: 1; min-height: 0; }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 0.75rem; }
   .cols > div { min-height: 0; }
+  .cols.quiet { grid-template-columns: 290px minmax(0, 1fr); }
+  .cols.quiet .right { display: none; }
   .edge, .scrim { display: none; }
   @media (max-width: 1099px) {
     .dewey { position: relative; overflow: hidden; }   /* the off-screen panels never make the page scroll sideways */
-    .cols { grid-template-columns: minmax(0, 1fr); }
+    .cols, .cols.quiet { grid-template-columns: minmax(0, 1fr); }
     .mid { height: 100%; }
     /* panels slide over the chat from their own side */
     .panel { position: absolute; top: 0; bottom: 0; width: min(88%, 360px); z-index: 20; transition: transform 0.25s ease; }
