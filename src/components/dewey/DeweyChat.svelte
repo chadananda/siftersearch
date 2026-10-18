@@ -132,9 +132,10 @@
     } catch (e) {
       turns.find((x) => x.id === turn.id).error = e.message;
     }
-    turns.find((x) => x.id === turn.id).busy = false;
-    turns = [...turns]; busy = false;
-    await loadThread();   // the saved thread is the truth (and carries the ids the other device will see)
+    const done = turns.find((x) => x.id === turn.id);
+    done.busy = false; busy = false;
+    // the saved thread is the truth (and carries the ids the other device will see) — but a failure stays visible
+    if (done.error) { turns = [...turns]; scrollDown(); } else await loadThread();
   }
 
   // card actions — straight to the API, no round through the model

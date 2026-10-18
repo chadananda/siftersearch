@@ -119,7 +119,7 @@ export default async function deweyRoutes(fastify) {
     const save = () => appendMessage(uid, 'assistant', parts.filter((p) => p.kind === 'text').map((p) => p.text).join('').trim(), { parts }).catch(() => {});
     const turn = (emit) => deweyTurn({ messages: [...history.slice(-12), { role: 'user', content: text || (attach.images?.length ? 'Do we have this?' : 'Do we have this?') }]
       .map((m) => ({ role: m.role, content: String(m.content || '').slice(0, 4000) })),
-      attach, by, emit: (e) => { keep(e); emit(e); }, attachSource: (id, url) => attachSource(id, { url }, by) });
+      attach, by, emit: (e) => { keep(e); emit(e); }, attachSource: (id, src) => attachSource(id, src, by) });
     // for agents: { stream: false } → one JSON answer { reply, holdings, items }
     if (stream === false) {
       const out = { reply: '', holdings: [], items: [] };

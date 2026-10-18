@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../api/lib/dewey/identify.js', () => ({
   identifyPhotos: vi.fn(async () => ({ title: 'The Chosen Highway', author: 'Lady Blomfield', from: 'photo' })),
-  identifyUrl: vi.fn(), identifyFile: vi.fn(), identifyText: (t) => ({ printed_lines: [t], from: 'text' }),
+  identifyUrl: vi.fn(), identifyFile: vi.fn(async () => ({ title: 'A Rare Pamphlet', kind: 'file', from: 'file' })), identifyText: (t) => ({ printed_lines: [t], from: 'text' }),
 }));
 const items = [];
 vi.mock('../../api/lib/repos/dewey-repo.js', () => ({
@@ -55,6 +55,24 @@ describe('dewey chat turn', () => {
   it('summarize keeps the model’s view small', () => {
     const s = JSON.parse(summarize({ identified: { title: 'T' }, verdict: 'held', candidates: [{ id: 1, title: 'T', evidence: [{ kind: 'title', detail: 'T' }] }] }));
     expect(s).toMatchObject({ verdict: 'held', candidates: [{ id: 1, evidence: 'title: T' }] });
+  });
+});
+
+describe('upload is one step', () => {
+  const quiet = async () => (async function* () { yield { choices: [{ delta: { content: 'ok' } }] }; })();
+  it('a file we lack that belongs here is imported at once; a held one is not', async () => {
+    const attached = [];
+    const attachSource = async (id, src) => { attached.push({ id, src }); return { id, state: 'source', title: 'A Rare Pamphlet' }; };
+    const events = [];
+    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.pdf', data: 'eA==' } }, emit: (e) => events.push(e), attachSource, create: quiet,
+      check: async () => ({ verdict: 'not-held', candidates: [] }), appraise: async () => ({ in_scope: 'yes', recommendation: 'add' }) });
+    expect(attached).toHaveLength(1);
+    expect(attached[0].src.file.name).toBe('p.pdf');
+    expect(events.some((e) => e.type === 'item' && e.item.state === 'source')).toBe(true);
+    attached.length = 0;
+    await deweyTurn({ messages: [{ role: 'user', content: '' }], attach: { file: { name: 'p.pdf', data: 'eA==' } }, emit: () => {}, attachSource, create: quiet,
+      check: async () => ({ verdict: 'held', candidates: [{ id: 1, title: 'A Rare Pamphlet', evidence: [] }] }), appraise: async () => { throw new Error('not called'); } });
+    expect(attached).toHaveLength(0);
   });
 });
 

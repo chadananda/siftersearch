@@ -60,7 +60,7 @@ export function makeTools({ by, emit, attachSource }) {
       return JSON.stringify({ added: true, id: item.id, research: 'queued' });
     },
     async attach_source({ item_id, url }) {
-      const item = await attachSource(item_id, url);
+      const item = await attachSource(item_id, { url });
       emit({ type: 'item', item });
       return JSON.stringify({ attached: true, id: item.id, state: item.state });
     },
@@ -93,8 +93,21 @@ export async function deweyTurn({ messages, attach = {}, by = null, emit, attach
       emit({ type: 'holdings', ...r });
       notes.push(`Holdings check of what they just sent (${attach.images?.length ? `${attach.images.length} photo(s)` : attach.file ? 'a file' : 'a link'}): ${summarize(r)}`);
       // not here (or not sure) → research it online and appraise it, each piece shown as it lands
+      if (attach.file?.data && r.verdict === 'held') notes.push('Their uploaded file is ALREADY in the library — nothing imported. Say which copy we hold.');
       if (r.verdict !== 'held' && id.title) {
         const a = await appraise(id, `${r.verdict} (${(r.candidates || []).length} candidates)`, { emit });
+        // an UPLOADED file that we lack and that belongs here is imported at once — one step (Chad 10-17: "I can upload
+        // anything I have and Dewey will determine if we need it before importing")
+        if (attach.file?.data && a && r.verdict === 'not-held' && (a.in_scope === 'yes' || ['add', 'add if cheap'].includes(a.recommendation))) {
+          emit({ type: 'status', text: 'Not in the library and it belongs here — importing your file…' });
+          try {
+            const tools0 = makeTools({ by, emit, attachSource });
+            const added = JSON.parse(await tools0.add_to_wanted({ title: id.title, author: id.author || null, kind: id.kind || null }));
+            const item = await attachSource(added.id, { file: attach.file });
+            emit({ type: 'item', item });
+            notes.push(`Their uploaded file was imported automatically: wanted item ${item.id}, now ${item.state}. Tell them it is being added and where it will go.`);
+          } catch (err) { notes.push(`Importing the uploaded file failed: ${String(err.message).slice(0, 160)}`); }
+        } else if (attach.file?.data && a) notes.push('Their uploaded file was NOT imported (not clearly in scope) — ask whether to add it.');
         if (a) notes.push(`Appraisal from web research: ${JSON.stringify({ summary: a.summary, in_scope: a.in_scope, scope_why: a.scope_why, shelf: a.shelf, value: a.value, value_why: a.value_why, price: a.price, rarity: a.rarity, free_online: a.free_online, recommendation: a.recommendation, next: a.next })}`);
       }
     } catch (err) {

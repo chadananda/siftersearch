@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-18T03:37:11.395Z",
+  "generated": "2026-10-18T03:51:30.213Z",
   "entries": [
+    {
+      "hash": "7d40b0c1",
+      "date": "2026-10-17",
+      "type": "Chore",
+      "description": "Log the shape of a refused model request",
+      "scope": "dewey"
+    },
+    {
+      "hash": "377250a3",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "One thread per member shared by phone and desktop (dewey_messages, migr 160); no loading button or column when nothing is loading",
+      "scope": "dewey"
+    },
     {
       "hash": "80e28dc9",
       "date": "2026-10-17",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "OceanLibrary paragraphs keep their whole heading path, not only the innermost heading",
       "scope": "ingest"
-    },
-    {
-      "hash": "95ae815b",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Windowed paragraph-attribution pilot (5 decided + 10 to decide + 5 ahead)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "5a7f4c07",
-      "date": "2026-10-08",
-      "type": "Fixed",
-      "description": "An OceanLibrary .reference citation that opens with a writer or their work names that writer",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "7d40b0c1",
+        "date": "2026-10-17",
+        "type": "Chore",
+        "description": "Log the shape of a refused model request",
+        "scope": "dewey"
+      },
+      {
+        "hash": "377250a3",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "One thread per member shared by phone and desktop (dewey_messages, migr 160); no loading button or column when nothing is loading",
+        "scope": "dewey"
+      },
       {
         "hash": "80e28dc9",
         "date": "2026-10-17",
@@ -7007,20 +7021,6 @@
         "type": "Fixed",
         "description": "OceanLibrary paragraphs keep their whole heading path, not only the innermost heading",
         "scope": "ingest"
-      },
-      {
-        "hash": "95ae815b",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Windowed paragraph-attribution pilot (5 decided + 10 to decide + 5 ahead)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "5a7f4c07",
-        "date": "2026-10-08",
-        "type": "Fixed",
-        "description": "An OceanLibrary .reference citation that opens with a writer or their work names that writer",
-        "scope": "authorship"
       }
     ]
   }
