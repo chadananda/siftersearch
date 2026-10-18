@@ -8,6 +8,8 @@ import { searchKeywordQdrant } from '../search/qdrant-layers.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
+export const textLines = (id) => (id.printed_lines || []).filter((l) => String(l).trim().split(/\s+/).length >= 6).slice(0, 6);
+
 export async function checkHoldings(id, { find = findDocuments, sections = findSections, keyword = searchKeywordQdrant, docs = listDocs } = {}) {
   const fields = ['id', 'title', 'author', 'language', 'religion', 'collection', 'year', 'paragraph_count', 'cover_url'];
   const by = new Map();
@@ -17,7 +19,8 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
     title ? find(title, { fields, limit: 8 }).then((r) => r.docs || r).catch(() => []) : [],
     id.author && title ? find(`${title} ${id.author}`, { fields, limit: 5 }).then((r) => r.docs || r).catch(() => []) : [],
     title ? sections(title, { limit: 5 }).catch(() => []) : [],
-    Promise.all((id.printed_lines || []).slice(0, 6).map((l) => keyword(l, { limit: 3 }).then((r) => ({ line: l, hits: r.hits || [] })).catch(() => ({ line: l, hits: [] })))),
+    // only lines of running text are TEXT evidence — a title page's short lines would match its own title, not prove the text
+    Promise.all(textLines(id).map((l) => keyword(l, { limit: 3 }).then((r) => ({ line: l, hits: r.hits || [] })).catch(() => ({ line: l, hits: [] })))),
   ]);
   for (const d of titleHits) add(d, { kind: 'title', weight: fold(d.title) === fold(title) ? 3 : 1, detail: d.title });
   for (const d of authorHits) add(d, { kind: 'title+author', weight: 1, detail: d.author });
@@ -27,14 +30,14 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   const missing = [...new Set([...lineDocIds.keys(), ...sectionDocs.keys()])].filter((d) => !by.has(d));
   const fetched = missing.length ? (await docs({ ids: missing, fields, limit: missing.length, count: false })).docs : [];
   const docOf = (idv) => by.get(idv)?.doc || fetched.find((d) => d.id === idv);
-  for (const [docId, lines] of lineDocIds) { const d = docOf(docId); if (d) add(d, { kind: 'text', weight: 2 * lines.length, detail: `${lines.length} of ${(id.printed_lines || []).length} printed lines found` }); }
+  for (const [docId, lines] of lineDocIds) { const d = docOf(docId); if (d) add(d, { kind: 'text', weight: 2 * lines.length, detail: `${lines.length} of ${textLines(id).length} printed lines found` }); }
   for (const [docId, s] of sectionDocs) { const d = docOf(docId); if (d) add(d, { kind: 'part of', weight: fold(s.title) === fold(title) ? 3 : 1, detail: `“${s.title}” inside ${s.book}` }); }
   const candidates = [...by.values()].sort((a, b) => b.score - a.score).slice(0, 8)
     .map(({ doc, evidence, score }) => ({ ...doc, score, evidence }));
   const top = candidates[0];
   const textMatched = candidates.some((c) => c.evidence.some((e) => e.kind === 'text' && e.weight >= 4));
   const verdict = !candidates.length
-    ? ((id.printed_lines || []).length ? 'not-held' : 'not-found-by-title')
+    ? (textLines(id).length ? 'not-held' : 'not-found-by-title')
     : textMatched || top.evidence.some((e) => (e.kind === 'title' || e.kind === 'part of') && e.weight >= 3) ? 'held' : 'possible';
   return { verdict, candidates };
 }

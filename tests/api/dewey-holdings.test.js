@@ -32,6 +32,10 @@ describe('holdings check', () => {
     expect((await checkHoldings({ title: 'Unknown Pamphlet' }, deps())).verdict).toBe('not-found-by-title');
     expect((await checkHoldings({ title: 'Unknown Pamphlet', printed_lines: ['some printed line that nothing in the library has at all'] }, deps())).verdict).toBe('not-held');
   });
+  it('a title page’s short lines are not text evidence', async () => {
+    const r = await checkHoldings({ title: 'Some Pamphlet', printed_lines: ['THE DAWN-BREAKERS', 'Bahai Publishing Trust 1932'] }, deps({ lines: { 'THE DAWN-BREAKERS': 21308 }, byId: { 21308: DB } }));
+    expect(r.verdict).toBe('not-found-by-title');
+  });
   it('a loose title match is only possible', async () => {
     expect((await checkHoldings({ title: 'Dawn' }, deps({ titles: [DB] }))).verdict).toBe('possible');
   });
