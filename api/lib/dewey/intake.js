@@ -28,10 +28,10 @@ export async function archiveOriginal(bytes, { name = '', url = null, itemId = n
 }
 
 /** Text by type → { text, pages }: Markdown from the one converter (convert.js). A scan PDF has no text layer — OCR later. */
-export async function extractText(bytes, ext) {
+export async function extractText(bytes, ext, path = null) {   // path: a PDF read in place by poppler (never loaded)
   // never the preliminary OCR sample: a scan must fail the prose gate and wait for real OCR (needs-ocr)
   // and EVERY page (full: true) — the spot-check is for "do we have it?", never for what we import
-  const { markdown, pages } = await toMarkdownText(bytes, `original.${ext}`, { ocr: false, full: true });
+  const { markdown, pages } = await toMarkdownText(bytes, `original.${ext}`, { ocr: false, full: true, path });
   return { text: markdown, pages };
 }
 

@@ -8,6 +8,8 @@ import { refsAssignJob } from './refs-assign-job.js';
 import { structureInferJob } from './structure-infer-job.js';
 import { deweyResearchJob } from './dewey-research-job.js';
 import { deweyIntakeJob } from './dewey-intake-job.js';
+import { deweyIngestFolderJob } from './dewey-ingest-folder-job.js';
+import { deweyOcrJob } from './dewey-ocr-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -161,6 +163,8 @@ REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, lim
 REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — traditional numbering, checked against the work's totals (Chad 10-17)
 REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates?, limit?, dry? } — structure for books that do not mark it (Chad 10-17)
 REPORTS['dewey-research'] = deweyResearchJob;   // params: { id } — research a wanted work: ISBN, publisher, cover (Chad 10-17)
+REPORTS['dewey-ingest-folder'] = deweyIngestFolderJob;   // params: { batch?, round? } — the ingest folder, a few at a time, easiest first
+REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's final text from SearchLayerPDF, checked
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
 REPORTS['section-index'] = sectionIndexJob;
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
@@ -191,12 +195,14 @@ export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
   coverage: ['coverage-refresh'],
   keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
-  intake: ['dewey-intake'],   // a book Chad is waiting on does not queue behind hours of indexing
+  intake: ['dewey-intake', 'dewey-ingest-folder'],   // a book Chad is waiting on does not queue behind hours of indexing
+  ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research'] };
 export const HEAVY = new Set(LANES.heavy);
 // How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K
 // phrases/h for all three vs ~142K/h for one, because the interim /crutch SSD (Kingston A400, no TRIM) saturated —
 // 82% util, 667 ms write latency. Revisit on the 4TB NVMe. Override with OPS_LANE_WORKERS='{"index":2}'.
-export const LANE_WORKERS = { index: 1, ...(() => { try { return JSON.parse(process.env.OPS_LANE_WORKERS || '{}'); } catch { return {}; } })() };
+// ocr: 3 — SearchLayerPDF batches are cheapest submitted together (one GPU pod serves them; pods stop after 10 idle min).
+export const LANE_WORKERS = { index: 1, ocr: 3, ...(() => { try { return JSON.parse(process.env.OPS_LANE_WORKERS || '{}'); } catch { return {}; } })() };
 
 export const reportNames = () => Object.keys(REPORTS);

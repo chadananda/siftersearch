@@ -23,6 +23,9 @@ export const listItems = async ({ state = null, limit = 100 } = {}) => (await qu
 /** An item already wanted under this title (case/diacritics-insensitive enough for a duplicate guard). */
 export const findOpenByTitle = async (title) => parse(await queryOne(`SELECT * FROM dewey_items WHERE LOWER(title) = LOWER(?) AND state NOT IN ('ingested', 'offered', 'declined') LIMIT 1`, [String(title)], 'dewey:by-title'));
 
+/** The item for this exact file (by its sha256), newest first — the ingest folder's "have we handled this file?". */
+export const findBySha = async (sha256) => parse(await queryOne('SELECT * FROM dewey_items WHERE sha256 = ? ORDER BY id DESC LIMIT 1', [String(sha256)], 'dewey:by-sha'));
+
 /** Change fields and, when `state` changes, append { at, state, why } to the log. */
 export async function updateItem(id, fields = {}, why = null) {
   const cur = await getItem(id);

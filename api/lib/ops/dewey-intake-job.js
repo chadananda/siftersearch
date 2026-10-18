@@ -6,6 +6,8 @@
 import { readFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
 import { garbledLayer } from '../dewey/convert.js';
+import { slpToText, slpEnabled } from '../dewey/searchlayer.js';
+import { enqueue } from '../repos/ops-report-repo.js';
 import { extractText, proseGate, libraryShelves, chooseShelf, writeLibraryFile, toMarkdown } from '../dewey/intake.js';
 import { detectLang } from '../pipeline/profile.js';
 import { withAIContext } from '../ai-context.js';
@@ -23,21 +25,30 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   await updateItem(item.id, { state: 'processing' }, 'intake started');
   const ext = item.original_path.split('.').pop().toLowerCase();
   let text, pages;
-  try { ({ text, pages } = await extractText(await read(item.original_path), ext)); } catch (err) {
+  const slp = item.identified?.slp;   // SearchLayerPDF's checked text of a scan (dewey-ocr-job.js), when it has run
+  // a PDF is read in place by poppler (a 270 MB book never enters this process's memory); anything else is small
+  try {
+    if (slp?.path) ({ text } = slpToText(String(await read(slp.path))), pages = slp.pages || 1);
+    else ({ text, pages } = ext === 'pdf' && !deps.read ? await extractText(null, ext, item.original_path) : await extractText(await read(item.original_path), ext));
+  } catch (err) {
     // a damaged or unreadable file is an outcome with its reason, not a crashed job
     await updateItem(item.id, { state: 'failed' }, `could not read the ${ext.toUpperCase()}: ${String(err.message).slice(0, 160)}`);
     return { id: item.id, state: 'failed', why: err.message };
   }
-  const gate = proseGate(text, { pages });
-  // a GARBLED text layer (old OCR) passes the prose gate but is not the book's text: it waits for real OCR like a scan
-  if (gate.ok && ext === 'pdf' && garbledLayer(text)) {
-    await updateItem(item.id, { state: 'needs-ocr' }, 'its text layer is a garbled old OCR — waits for full OCR');
-    return { id: item.id, state: 'needs-ocr', why: 'garbled text layer' };
+  const gate = proseGate(text.replace(/<pb[^>]*\/>/g, ' '), { pages });
+  // a scan or a GARBLED text layer (old OCR) is not the book's text: it waits for full OCR — SearchLayerPDF, queued here
+  // when configured (its output is checked before it comes back to this job)
+  const needsOcr = !slp && ext === 'pdf' && (gate.ok ? garbledLayer(text) : gate.scan);
+  if (needsOcr) {
+    const why = gate.ok ? 'its text layer is a garbled old OCR' : `a scan: no text layer (${gate.why})`;
+    const slpOn = (deps.slpEnabled || slpEnabled)();
+    await updateItem(item.id, { state: 'needs-ocr' }, `${why} — ${slpOn ? 'sent for full OCR (SearchLayerPDF)' : 'waits for full OCR'}`);
+    if (slpOn) await (deps.queue || enqueue)('dewey-ocr', { id: item.id }, 'dewey-intake');
+    return { id: item.id, state: 'needs-ocr', why };
   }
   if (!gate.ok) {
-    const scan = ext === 'pdf' && gate.scan;
-    await updateItem(item.id, { state: scan ? 'needs-ocr' : 'failed' }, scan ? `a scan: no text layer (${gate.why}) — waits for OCR` : `not usable text: ${gate.why}`);
-    return { id: item.id, state: scan ? 'needs-ocr' : 'failed', why: gate.why };
+    await updateItem(item.id, { state: 'failed' }, `not usable text: ${gate.why}`);
+    return { id: item.id, state: 'failed', why: gate.why };
   }
   const r = item.research || {};
   const title = r.matched && r.title ? r.title : item.title;
@@ -64,7 +75,7 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     const buf = await read(item.cover_path).catch(() => null);
     if (buf) await storeCover(docId, buf, { source: r.cover?.source || 'research', url: r.cover?.url }).catch(() => null);
   }
-  await updateItem(item.id, { state: 'ingested', doc_id: docId }, `ingested as document ${docId} in ${shelf.religion} › ${shelf.collection} (${gate.words.toLocaleString('en-US')} words)`);
+  await updateItem(item.id, { state: 'ingested', doc_id: docId }, `ingested as document ${docId} in ${shelf.religion} › ${shelf.collection} (${gate.words.toLocaleString('en-US')} words${slp ? `, text by SearchLayerPDF job ${slp.job_id}` : ''})`);
   logActivity('job', `dewey · “${title}” added to ${shelf.religion} › ${shelf.collection}`);
   return { id: item.id, state: 'ingested', doc_id: docId, rel, words: gate.words };
 }

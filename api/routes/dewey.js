@@ -105,7 +105,7 @@ export default async function deweyRoutes(fastify) {
     await enqueue('dewey-research', { id: item.id }, request.user?.email || 'dewey');
     return { item };
   });
-  fastify.get('/items', { schema: S.listItemsSchema, preHandler: requireDewey }, async (request) => ({ items: await listItems({ state: request.query?.state || null }) }));
+  fastify.get('/items', { schema: S.listItemsSchema, preHandler: requireDewey }, async (request) => ({ items: await listItems({ state: request.query?.state || null, limit: Math.min(Number(request.query?.limit) || 100, 1000) }) }));
 
   // A SOURCE for a wanted item (a PDF, DOCX or page — a file or a URL): archive the original untouched, then intake.
   // It leaves the wanted list the moment its source arrives.

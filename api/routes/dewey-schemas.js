@@ -88,7 +88,7 @@ export const createItemSchema = {
 
 export const listItemsSchema = {
   ...base('The wanted list', 'The wanted list and intake queue, open items first.'),
-  querystring: { type: 'object', properties: { state: { type: 'string', enum: STATES } } },
+  querystring: { type: 'object', properties: { state: { type: 'string', enum: STATES }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 } } },
   response: { 200: open({ items: { type: 'array', items: item } }) },
 };
 
