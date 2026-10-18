@@ -43,6 +43,25 @@ describe('compareTexts', () => {
   });
 });
 
+describe('a scan read by preliminary OCR is compared as a SAMPLE', () => {
+  const A = book(1, 400);
+  const pages = A.split('. ');
+  const sampled = [pages.slice(20, 40), pages.slice(180, 200), pages.slice(340, 360)].map((p) => p.join('. ')).join('\n[page 9]\n');
+  it('sampled pages of a held work: same, judged on the estimated whole length', () => {
+    const our = W(ocr(sampled));
+    const r = compareTexts(our, W(A), { sample: true, ourLength: our.length * (400 / 60) });
+    expect(r).toMatchObject({ relation: 'same', sample: true });
+  });
+  it('sampled pages found inside a much longer library work: inside', () => {
+    const our = W(sampled);
+    expect(compareTexts(our, W(book(9, 800) + ' ' + A + ' ' + book(8, 800)), { sample: true, ourLength: our.length * (400 / 60) }).relation).toBe('inside');
+  });
+  it('a sample is not called "partial" just because the library text is not all in our few pages', () => {
+    const our = W(sampled);
+    expect(compareTexts(our, W(A), { sample: true, ourLength: our.length * (400 / 60) }).relation).not.toBe('partial');
+  });
+});
+
 describe('probes', () => {
   it('spreads ~n sentences of 12–40 words through the whole document', () => {
     const ps = probes(book(7, 300), 30);

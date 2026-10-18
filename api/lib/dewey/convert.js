@@ -4,7 +4,9 @@
 // (SearchLayerPDF, later). DOCX: read directly (jszip + word/document.xml) — mammoth broke when the 09-09 security
 // override forced @xmldom/xmldom 0.9 (it needs 0.8: every .docx threw "mimeType undefined"). DOC/RTF/ODT/WPD/WPS/PAGES-less word files: LibreOffice headless → HTML
 // (tower has soffice). HTML, Safari .webarchive (the page's HTML is stored verbatim in the plist), EPUB (spine order).
-// Audio/video: not text — refused with a reason. Deps injectable for tests (run).
+// Audio/video: not text — refused with a reason. A SCAN gets a PRELIMINARY OCR of up to 8 sampled pages (tesseract, script
+// detected first) — enough to tell whether the library holds it before SearchLayerPDF's full extraction (Chad 10-17).
+// Deps injectable for tests (run, ocr).
 import { execFile } from 'child_process';
 import { mkdtemp, writeFile, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
@@ -110,6 +112,34 @@ export async function officeHtml(bytes, ext, { run = execFile } = {}) {
   } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
 }
 
+// tesseract script (from OSD) → languages to read it with
+const SCRIPT_LANGS = { Latin: 'eng', Arabic: 'ara+fas+urd', Hebrew: 'heb', Cyrillic: 'rus', Han: 'chi_sim+chi_tra', Devanagari: 'hin', Greek: 'ell', Japanese: 'jpn', Hangul: 'kor', Bengali: 'ben', Tamil: 'tam' };
+const sh = (run, cmd, args, timeout = 120000) => new Promise((res, rej) => run(cmd, args, { timeout, maxBuffer: 1 << 26 }, (err, out, stderr) => (err ? rej(new Error(String(stderr || err.message).slice(0, 200))) : res(String(out)))));
+
+/** Pages to sample from a scan of n pages: the title page region and an even spread through the body (≤ k). */
+export function samplePages(n, k = 8) {
+  if (n <= k) return Array.from({ length: n }, (_, i) => i + 1);
+  const picks = new Set([Math.min(2, n), Math.min(3, n)]);
+  for (let i = 0; picks.size < k; i++) picks.add(Math.max(1, Math.min(n, Math.round(4 + (i + 0.5) * (n - 4) / (k - 2)))));
+  return [...picks].sort((a, b) => a - b);
+}
+
+/** PRELIMINARY OCR of a scan: render sampled pages (pdftoppm, 200 dpi gray), detect the script on one, read all in parallel. */
+export async function ocrSample(bytes, totalPages, { run = execFile, k = 8 } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'dewey-ocr-'));
+  try {
+    const src = join(dir, 'in.pdf');
+    await writeFile(src, bytes);
+    const pages = samplePages(totalPages, k);
+    await Promise.all(pages.map((p) => sh(run, 'pdftoppm', ['-r', '200', '-gray', '-f', String(p), '-l', String(p), '-singlefile', '-png', src, join(dir, `p${p}`)])));
+    const mid = pages[Math.floor(pages.length / 2)];
+    const script = (await sh(run, 'tesseract', [join(dir, `p${mid}.png`), '-', '--psm', '0', '-l', 'osd'], 60000).catch(() => '')).match(/Script:\s*(\w+)/)?.[1] || 'Latin';
+    const langs = SCRIPT_LANGS[script] || 'eng';
+    const texts = await Promise.all(pages.map((p) => sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => '')));
+    return { text: texts.map((t, i) => `[page ${pages[i]}]\n${t.trim()}`).join('\n\n'), pages, script, langs };
+  } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
+}
+
 /** Plain text in an unknown encoding: UTF-8 if it decodes cleanly, else Windows-1252 (old .txt files). */
 function plain(bytes) {
   const u = Buffer.from(bytes).toString('utf8');
@@ -129,7 +159,13 @@ export async function toMarkdownText(bytes, name = '', deps = {}) {
     const { text, totalPages } = await extractText(pdf, { mergePages: true });
     const t = Array.isArray(text) ? text.join('\n') : text || '';
     const pages = totalPages || 1;
-    return { markdown: t, pages, format: 'pdf', scan: t.replace(/\s/g, '').length < 200 || t.split(/\s+/).length / pages < 25 };
+    const scan = t.replace(/\s/g, '').length < 200 || t.split(/\s+/).length / pages < 25;
+    // a scan: a preliminary OCR of sampled pages, so the holdings check can still compare TEXT (deps.ocr: false skips it)
+    if (scan && deps.ocr !== false) {
+      const o = await (deps.ocrSample || ocrSample)(b, pages).catch(() => null);
+      if (o?.text && o.text.replace(/\s|\[page \d+\]/g, '').length > 200) return { markdown: o.text, pages, format: 'pdf', scan: true, ocr: { sampled: o.pages, of: pages, script: o.script, engine: 'tesseract' } };
+    }
+    return { markdown: t, pages, format: 'pdf', scan };
   }
   let html;
   if (ext === 'docx') html = await docxHtml(b);

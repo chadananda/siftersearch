@@ -47,7 +47,9 @@ export async function identifyUrl(url, { fetchImpl = fetch } = {}) {
  *  text layer says so: it needs OCR before its lines can be checked. */
 export async function identifyFile({ name = '', bytes }) {
   // every format through the one converter (convert.js) — the same Markdown intake will write
-  const { markdown, scan } = await toMarkdownText(bytes, name);
+  const { markdown, scan, ocr } = await toMarkdownText(bytes, name);
+  // a scan read by the PRELIMINARY OCR (sampled pages): compared as a sample; still needs full OCR to be imported
+  if (ocr) return withText({ title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, ocr, printed_lines: sampleLines(markdown), from: 'file' }, markdown);
   if (scan && markdown.replace(/\s/g, '').length < 200) return { title: name.replace(/\.[^.]+$/, ''), kind: 'scan', needs_ocr: true, from: 'file' };
   const first = markdown.split('\n').map((l) => l.replace(/^#+\s*|\*+/g, '').trim()).filter(Boolean);
   return withText({ title: first[0]?.slice(0, 200) || name, kind: 'file', printed_lines: sampleLines(markdown), from: 'file' }, markdown);

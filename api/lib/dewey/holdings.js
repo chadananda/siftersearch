@@ -65,7 +65,8 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
 
 const RANK = { same: 5, inside: 5, partial: 4, overlap: 3, quotes: 2, 'too-short': 1, unrelated: 0 };
 const pct = (x) => `${Math.round(x * 100)}%`;
-const say = (c) => ({
+const say = (c) => sayRel(c) + (c.sample ? ' (from sampled pages read by preliminary OCR)' : '');
+const sayRel = (c) => ({
   same: `the same text: ${pct(c.ours_in_theirs)} of this document is in it, in order`,
   inside: `contained in it: ${pct(c.ours_in_theirs)} of this document is in it, in order — this is ${pct(1 / c.length_ratio)} of its length`,
   partial: `the library holds only part: ${pct(c.theirs_in_ours)} of it is in this document, but it is ${pct(c.length_ratio)} of this document's length`,
@@ -99,7 +100,8 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
     const doc = by.get(docId)?.doc || fetched.find((d) => d.id === docId);
     if (!doc) continue;
     const theirs = compareWords((await paragraphs(docId).catch(() => [])).map((p) => p.text).join('\n'));
-    const c = compareTexts(ourWords, theirs);
+    // a scan's sampled pages: estimate the whole work's length from its page count
+    const c = id.ocr ? compareTexts(ourWords, theirs, { sample: true, ourLength: Math.round(ourWords.length * id.ocr.of / Math.max(1, id.ocr.sampled.length)) }) : compareTexts(ourWords, theirs);
     add(doc, { kind: 'text', weight: RANK[c.relation] * 2, detail: say(c) });
     out.push({ docId, c, probes: +(score.get(docId) || 0).toFixed(1) });
   }
@@ -111,5 +113,5 @@ async function compareWithLibrary({ id, body, ourWords, by, add, exact, sectionD
   const rels = candidates.map((c) => c.relation.relation);
   const verdict = rels.some((r) => HELD.has(r)) ? 'held' : rels.includes('partial') ? 'partly-held'
     : rels.some((r) => r === 'overlap' || r === 'quotes' || r === 'too-short') ? 'possible' : 'not-held';
-  return { verdict, candidates, compared: { words: ourWords.length, probes: probeList.length, documents: out.length } };
+  return { verdict, candidates, compared: { words: ourWords.length, probes: probeList.length, documents: out.length, ...(id.ocr ? { ocr_sample: { pages: id.ocr.sampled, of: id.ocr.of, script: id.ocr.script } } : {}) } };
 }

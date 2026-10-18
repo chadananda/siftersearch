@@ -29,7 +29,8 @@ export async function archiveOriginal(bytes, { name = '', url = null, itemId = n
 
 /** Text by type → { text, pages }: Markdown from the one converter (convert.js). A scan PDF has no text layer — OCR later. */
 export async function extractText(bytes, ext) {
-  const { markdown, pages } = await toMarkdownText(bytes, `original.${ext}`);
+  // never the preliminary OCR sample: a scan must fail the prose gate and wait for real OCR (needs-ocr)
+  const { markdown, pages } = await toMarkdownText(bytes, `original.${ext}`, { ocr: false });
   return { text: markdown, pages };
 }
 

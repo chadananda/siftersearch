@@ -38,7 +38,7 @@ function lis(seq) {
  *   theirs_in_ours: share of THEIR shingles found in ours
  *   in_order: share of our matched shingles that fall in one increasing run through theirs (1 = same sequence)
  */
-export function compareTexts(ourWords, theirWords) {
+export function compareTexts(ourWords, theirWords, { ourLength = null, sample = false } = {}) {
   const ours = shingleList(ourWords), theirs = shingleList(theirWords);
   if (ours.length < 8 || theirs.length < 8) return { ours_in_theirs: 0, theirs_in_ours: 0, in_order: 0, length_ratio: 0, relation: 'too-short' };
   const pos = new Map();
@@ -52,8 +52,10 @@ export function compareTexts(ourWords, theirWords) {
   const ours_in_theirs = hit / ours.length;
   const theirs_in_ours = back / new Set(theirs).size;
   const in_order = matchedPos.length ? lis(matchedPos) / matchedPos.length : 0;
-  const length_ratio = theirWords.length / ourWords.length;
-  return { ours_in_theirs: round(ours_in_theirs), theirs_in_ours: round(theirs_in_ours), in_order: round(in_order), length_ratio: round(length_ratio), relation: relationOf({ ours_in_theirs, theirs_in_ours, in_order, length_ratio }) };
+  // a SAMPLE (pages of a scan read by the preliminary OCR) is judged against the whole work's estimated length
+  const length_ratio = theirWords.length / (ourLength || ourWords.length);
+  return { ours_in_theirs: round(ours_in_theirs), theirs_in_ours: round(theirs_in_ours), in_order: round(in_order), length_ratio: round(length_ratio),
+    ...(sample ? { sample: true } : {}), relation: relationOf({ ours_in_theirs, theirs_in_ours, in_order, length_ratio, sample }) };
 }
 const round = (x) => Math.round(x * 1000) / 1000;
 
@@ -61,8 +63,13 @@ const round = (x) => Math.round(x * 1000) / 1000;
 // of 4-grams; two unrelated books on the same subject share under 3%; a book that quotes a passage shares it out of
 // order with the rest. STRONG = most of it; SOME = a real shared passage.
 export const STRONG = 0.45, SOME = 0.12, ORDERED = 0.6;
+// tesseract on a decent scan keeps most 4-grams; a sample's own pages must still be mostly found to call it held
 
-export function relationOf({ ours_in_theirs: a, theirs_in_ours: b, in_order: o, length_ratio: r }) {
+export function relationOf({ ours_in_theirs: a, theirs_in_ours: b, in_order: o, length_ratio: r, sample = false }) {
+  if (sample) {   // only some pages of ours were read: theirs cannot be "mostly in ours"; length comes from the page count
+    if (a >= STRONG && o >= ORDERED) return r > 1.5 ? 'inside' : r < 0.67 ? 'partial' : 'same';
+    return a >= SOME ? (o >= ORDERED ? 'overlap' : 'quotes') : 'unrelated';
+  }
   if (a >= STRONG && b >= STRONG && o >= ORDERED) return 'same';                 // another copy, edition or transcription
   if (a >= STRONG && o >= ORDERED && r > 1.5) return 'inside';                    // ours is part of a larger library work
   if (a >= STRONG && o >= ORDERED) return 'same';

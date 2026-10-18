@@ -1,7 +1,7 @@
 // Dewey's converter: every format → Markdown with headings kept; one path for identify and intake.
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
-import { htmlToMarkdown, webarchiveHtml, toMarkdownText } from '../../api/lib/dewey/convert.js';
+import { htmlToMarkdown, webarchiveHtml, toMarkdownText, samplePages } from '../../api/lib/dewey/convert.js';
 
 describe('htmlToMarkdown', () => {
   it('keeps headings, paragraphs, lists, quotes and emphasis; drops scripts and styles', () => {
@@ -62,3 +62,13 @@ describe('toMarkdownText', () => {
     await expect(toMarkdownText(Buffer.from('ID3'), 'talk.mp3')).rejects.toThrow(/audio\/video/);
   });
 });
+
+describe('preliminary OCR of scans', () => {
+  it('samples the title-page region and an even spread, ≤ 8 pages', () => {
+    expect(samplePages(5)).toEqual([1, 2, 3, 4, 5]);
+    const p = samplePages(300);
+    expect(p).toHaveLength(8);
+    expect(p.slice(0, 2)).toEqual([2, 3]);
+    expect(p.at(-1)).toBeGreaterThan(250);
+  });
+})
