@@ -56,6 +56,12 @@ describe('a scan read by preliminary OCR is compared as a SAMPLE', () => {
     const our = W(sampled);
     expect(compareTexts(our, W(book(9, 800) + ' ' + A + ' ' + book(8, 800)), { sample: true, ourLength: our.length * (400 / 60) }).relation).toBe('inside');
   });
+  it('OCR\'d pages sharing a long in-order run (≥35%) with a copy are the same text (Roy Wilhelm 10-17)', async () => {
+    const { relationOf } = await import('../../api/lib/dewey/compare.js');
+    expect(relationOf({ ours_in_theirs: 0.41, theirs_in_ours: 0.2, in_order: 0.93, length_ratio: 1.1, sample: true })).toBe('same');
+    expect(relationOf({ ours_in_theirs: 0.41, theirs_in_ours: 0.2, in_order: 0.5, length_ratio: 1.1, sample: true })).not.toBe('same');
+    expect(relationOf({ ours_in_theirs: 0.41, theirs_in_ours: 0.41, in_order: 0.93, length_ratio: 1.1 })).not.toBe('same');   // clean text keeps the 45% bar
+  });
   it('a sample is not called "partial" just because the library text is not all in our few pages', () => {
     const our = W(sampled);
     expect(compareTexts(our, W(A), { sample: true, ourLength: our.length * (400 / 60) }).relation).not.toBe('partial');
