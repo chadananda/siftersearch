@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-18T03:21:38.557Z",
+  "generated": "2026-10-18T03:22:50.037Z",
   "entries": [
+    {
+      "hash": "e1933498",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "The chat opens with Dewey's one-line introduction; no heading above it",
+      "scope": "dewey"
+    },
     {
       "hash": "9b91b1c3",
       "date": "2026-10-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Official attribution lines end in a note number ('… translated from the Arabic) [1]') — strip it so the line is read as a trailer; without it extracts piled up under the next recognised line",
       "scope": "authorship"
-    },
-    {
-      "hash": "feb4c241",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Recover extract-level authors of compilations whose section headings were lost on export (OceanLibrary kept them as bare '##') from the official bahai.org edition — section labels and trailers matched to our paragraphs by text; only weak assignments (book/system1) replaced; dry run by default",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "e1933498",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "The chat opens with Dewey's one-line introduction; no heading above it",
+        "scope": "dewey"
+      },
       {
         "hash": "9b91b1c3",
         "date": "2026-10-17",
@@ -7013,13 +7020,6 @@
         "date": "2026-10-08",
         "type": "Fixed",
         "description": "Official attribution lines end in a note number ('… translated from the Arabic) [1]') — strip it so the line is read as a trailer; without it extracts piled up under the next recognised line",
-        "scope": "authorship"
-      },
-      {
-        "hash": "feb4c241",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Recover extract-level authors of compilations whose section headings were lost on export (OceanLibrary kept them as bare '##') from the official bahai.org edition — section labels and trailers matched to our paragraphs by text; only weak assignments (book/system1) replaced; dry run by default",
         "scope": "authorship"
       }
     ]

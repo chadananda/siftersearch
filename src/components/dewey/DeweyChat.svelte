@@ -126,7 +126,8 @@
     {#each turns as t (t.id)}
       <div class="you">
         {#if t.you.text}<p class="whitespace-pre-wrap">{t.you.text}</p>{/if}
-        {#if t.you.photos.length}<div class="flex flex-wrap gap-1 mt-1">{#each t.you.photos as p, i (i)}<img src={p} alt="Photo {i + 1}" class="w-14 h-18 object-cover rounded" />{/each}</div>{/if}
+        <!-- every photo taken goes into the conversation as a thumbnail (Chad 10-17) -->
+        {#if t.you.photos.length}<div class="flex flex-wrap gap-1.5 justify-end">{#each t.you.photos as p, i (i)}<img src={p} alt="Photo {i + 1}" class="thumb" />{/each}</div>{/if}
         {#if t.you.file}<p class="text-sm mt-1">📄 {t.you.file.name}</p>{/if}
       </div>
       <div class="dewey">
@@ -204,6 +205,7 @@
   .log { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 5rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
   .you { align-self: flex-end; max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 0.75rem 0.75rem 0.25rem 0.75rem; background: var(--surface-2); color: var(--text-primary); }
   .dewey { align-self: flex-start; max-width: 92%; display: flex; flex-direction: column; gap: 0.5rem; }
+  .thumb { width: 6rem; height: 8rem; object-fit: cover; border-radius: 0.6rem; border: 1px solid var(--border-subtle); }
   .card { padding: 0.6rem 0.8rem; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: var(--surface-0); }
   .composer { border-top: 1px solid var(--border-subtle); padding: 0.6rem; }
   /* thumb-sized (Chad 10-17): Send inside the full-width input; photo + attach as 56 px round buttons floating at the right

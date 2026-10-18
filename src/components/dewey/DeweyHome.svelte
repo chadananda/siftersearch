@@ -29,16 +29,20 @@
   </section>
 {:else}
   <div class="dewey">
-    <nav class="tabs" aria-label="Dewey views">
-      <button class:on={view === 'library'} onclick={() => (view = 'library')}>Library</button>
-      <button class:on={view === 'chat'} onclick={() => (view = 'chat')}>Dewey</button>
-      <button class:on={view === 'added'} onclick={() => (view = 'added')}>Loading</button>
-    </nav>
-    <div class="cols" data-view={view}>
-      <div class="left"><DeweyLibrary authed={ready} /></div>
+    <div class="cols" data-panel={view}>
+      <div class="left panel"><DeweyLibrary authed={ready} /></div>
       <div class="mid"><div class="chatbox"><DeweyChat /></div></div>
-      <div class="right"><DeweyAdded authed={ready} /></div>
+      <div class="right panel"><DeweyAdded authed={ready} /></div>
     </div>
+    <!-- narrow screens (Chad 10-17): the library and what is loading are icon buttons on the edges that slide their
+         panel over the chat; a tap outside closes it -->
+    <button class="edge left-edge" aria-label="The library" title="The library" onclick={() => (view = view === 'library' ? 'chat' : 'library')}>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 19V5m4 14V5m4 14 4-14m4 14H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="edge right-edge" aria-label="Loading now" title="Loading now" onclick={() => (view = view === 'added' ? 'chat' : 'added')}>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 21h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    {#if view !== 'chat'}<button class="scrim" aria-label="Close" onclick={() => (view = 'chat')}></button>{/if}
   </div>
 {/if}
 
@@ -49,14 +53,22 @@
   .chatbox { flex: 1; min-height: 0; }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 0.75rem; }
   .cols > div { min-height: 0; }
-  .tabs { display: none; }
+  .edge, .scrim { display: none; }
   @media (max-width: 1099px) {
-    .tabs { display: flex; gap: 0.25rem; justify-content: center; }
-    .tabs button { padding: 0.3rem 0.9rem; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); font-size: 0.85rem; }
-    .tabs button.on { background: var(--surface-2); color: var(--text-primary); }
+    .dewey { position: relative; }
     .cols { grid-template-columns: minmax(0, 1fr); }
-    .cols > div { display: none; }
-    .cols[data-view='library'] .left, .cols[data-view='added'] .right { display: block; height: 100%; }
-    .cols[data-view='chat'] .mid { display: flex; height: 100%; }
+    .mid { height: 100%; }
+    /* panels slide over the chat from their own side */
+    .panel { position: absolute; top: 0; bottom: 0; width: min(88%, 360px); z-index: 20; transition: transform 0.25s ease; }
+    .left.panel { left: 0; transform: translateX(-105%); }
+    .right.panel { right: 0; transform: translateX(105%); }
+    .cols[data-panel='library'] .left.panel, .cols[data-panel='added'] .right.panel { transform: none; }
+    .panel :global(> *) { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6); background: var(--surface-1); }
+    .scrim { display: block; position: absolute; inset: 0; z-index: 15; background: rgba(0, 0, 0, 0.35); }
+    /* half-round tabs on the screen edges, thumb-sized, clear of the photo/attach buttons at the bottom right */
+    .edge { display: inline-flex; align-items: center; justify-content: center; position: absolute; top: 30%; z-index: 10; width: 2.75rem; height: 3.5rem;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-primary); box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5); }
+    .left-edge { left: -1rem; border-radius: 0 1rem 1rem 0; padding-left: 0.6rem; }
+    .right-edge { right: -1rem; border-radius: 1rem 0 0 1rem; padding-right: 0.6rem; }
   }
 </style>
