@@ -52,6 +52,11 @@ describe('coverage ledger', () => {
     raw.prepare('UPDATE content SET pdf_page = 12 WHERE id IN (1, 2)').run();
     const r = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((x) => [x.layer, x])).refs;
     expect(r).toMatchObject({ total: 2, generated: 1, current: 2, indexed: 2 });   // pn on one, pages on two, either on two
+    raw.prepare('UPDATE content SET block_attrs = NULL, pdf_page = NULL').run();
+    const none = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((x) => [x.layer, x])).refs;
+    expect(none.total).toBe(0);   // no reference system: not needed, counts as done
+    raw.prepare(`UPDATE content SET block_attrs = '{"pn":"3:16"}' WHERE id = 1`).run();
+    raw.prepare('UPDATE content SET pdf_page = 12 WHERE id IN (1, 2)').run();
     raw.prepare("INSERT INTO doc_structure (doc_id, sections, indexed_at) VALUES (1, 0, 1)").run();
     const st = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((x) => [x.layer, x])).sections;
     expect(st).toMatchObject({ total: 1, generated: 1, current: 1, indexed: 0 });   // read, no sections, 3 paragraphs: a single work needs none

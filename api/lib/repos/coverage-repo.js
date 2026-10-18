@@ -12,6 +12,8 @@ export const isCore = (doc) => { try { return getAuthority(doc) >= CORE_AUTHORIT
 
 /** A document shorter than this (paragraphs with text) is a single work — a tablet, a letter, a talk: it needs no TOC. */
 export const STRUCTURE_NEEDED_FROM = 60;
+/** Works that carry a traditional numbering we have not yet verified on our copy (refs/schemes.js) — counted as missing. */
+export const REFS_EXPECTED = new Set([21307]);   // The Kitáb-i-Aqdas: ¶1–190, Q&A 1–107
 
 export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'refs', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
@@ -73,8 +75,9 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     // a tablet, a letter, a talk (Chad 10-17: "largely independent tablets") — once read; current 1 once read; indexed = sections
     row('sections', sections?.n || (structure && (c?.texted ?? total) < STRUCTURE_NEEDED_FROM) ? 1 : 0, structure ? 1 : 0, sections?.n || 0, null, 1),
     // traditional references (Chad 10-17): generated = a traditional number (verse, section, saying — block_attrs.pn),
-    // indexed = a print page (pdf_page), current = either; total = paragraphs with text
-    row('refs', c?.with_pn, c?.with_ref, c?.with_page, null, c?.texted ?? total),
+    // indexed = a print page (pdf_page), current = either. "Not needed counts as done": a work with no reference system
+    // has total 0; the total is its paragraphs only when it has one, or SHOULD (REFS_EXPECTED — the Aqdas until verified)
+    row('refs', c?.with_pn, c?.with_ref, c?.with_page, null, c?.with_ref || REFS_EXPECTED.has(id) ? (c?.texted ?? total) : 0),
     row('context', c?.context, c?.context, null),                       // feeds HyPE/extraction; not searched itself
     row('hype', c?.hype, c?.hype_current, hypeN, hypeVersion),           // points = questions
     row('entities', c?.extracted, c?.extracted, mentions?.n),
