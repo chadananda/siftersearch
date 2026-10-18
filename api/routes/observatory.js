@@ -27,6 +27,16 @@ export default async function observatoryRoutes(fastify) {
     return p ? { at: p.at, ...JSON.parse(p.data) } : { at: null };
   });
 
+  // the IMPORT BOARD: new books moving through Dewey's import, stage by stage, with SearchLayerPDF's receipt (live, cheap)
+  let importsMemo = { at: 0, body: null };
+  fastify.get('/imports', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=10, s-maxage=10');
+    if (importsMemo.body && Date.now() - importsMemo.at < 10000) return importsMemo.body;
+    const { buildImportBoard } = await import('../lib/import-board.js');
+    importsMemo = { at: Date.now(), body: await buildImportBoard() };
+    return importsMemo.body;
+  });
+
   fastify.get('/activity', async (request, reply) => {
     reply.header('Cache-Control', 'public, max-age=4, s-maxage=5');
     const { after = 0, limit = 120 } = request.query || {};

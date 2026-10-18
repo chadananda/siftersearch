@@ -46,6 +46,18 @@ export async function updateItem(id, fields = {}, why = null) {
 export const intakeActivity = async (limit = 30) => (await queryAll(`SELECT * FROM dewey_items WHERE state NOT IN ('wanted', 'researched', 'offered', 'declined')
   ORDER BY updated_at DESC LIMIT ?`, [limit], 'dewey:activity')).map(parse);
 
+/** THE IMPORT BOARD (Observatory, Chad 10-18: "show such activity of importing new documents … the flow of new material
+ *  and what we do for each"): decided items only (never an offer still awaiting a yes), changed in the last `hours`. */
+export async function importBoard({ hours = 48, limit = 16 } = {}) {
+  const since = (h) => new Date(Date.now() - h * 3600000).toISOString();
+  const items = (await queryAll(`SELECT * FROM dewey_items WHERE state IN ('source', 'processing', 'needs-ocr', 'needs-human', 'ingested', 'failed')
+    AND updated_at >= ? ORDER BY updated_at DESC LIMIT ?`, [since(hours), limit], 'dewey:import-board')).map(parse);
+  const byState = Object.fromEntries((await queryAll('SELECT state, COUNT(*) n FROM dewey_items GROUP BY state', [], 'dewey:import-states')).map((r) => [r.state, r.n]));
+  const done = await queryOne(`SELECT SUM(CASE WHEN updated_at >= ? THEN 1 ELSE 0 END) d1, SUM(CASE WHEN updated_at >= ? THEN 1 ELSE 0 END) d7
+    FROM dewey_items WHERE state = 'ingested'`, [since(24), since(168)], 'dewey:import-done');
+  return { items, byState, imported_24h: done?.d1 || 0, imported_7d: done?.d7 || 0 };
+}
+
 // ── Dewey's thread: one per member, shared by every device (dewey_messages, migration 160) ──
 /** Append a message: role 'user' | 'assistant'; parts = cards/thumbnails to show it again. → id */
 export async function appendMessage(userId, role, content, parts = null) {

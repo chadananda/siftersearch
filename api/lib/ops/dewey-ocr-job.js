@@ -10,12 +10,12 @@ import { appraiseDocument } from '../dewey/appraise.js';
 import { workKey } from './dewey-ingest-folder-job.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { readPdf, ocrSample } from '../dewey/convert.js';
-import { slpExtract, slpCheck, slpMaxPages } from '../dewey/searchlayer.js';
+import { slpExtract, slpCheck, slpMaxPages, slpReceipt } from '../dewey/searchlayer.js';
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
 
 export async function deweyOcrJob({ id } = {}, deps = {}) {
-  const { extract = slpExtract, sample = ocrSample, pdfInfo = readPdf, queue = enqueue, appraise = appraiseDocument,
+  const { extract = slpExtract, receipt = slpReceipt, sample = ocrSample, pdfInfo = readPdf, queue = enqueue, appraise = appraiseDocument,
     others = async () => listItems({ limit: 1000 }), save = async (p, t) => { await mkdir(join(p, '..'), { recursive: true }); await writeFile(p, t); } } = deps;
   const item = await getItem(id);
   if (!item?.original_path) throw new Error(`dewey item ${id} has no source`);
@@ -40,14 +40,19 @@ export async function deweyOcrJob({ id } = {}, deps = {}) {
   const a = item.identified?.appraisal || {};
   const context = [a.title || item.title, a.author || item.author, a.year, a.summary].filter(Boolean).join(' — ');
   let out;
-  try { out = await extract({ path: item.original_path, context }); } catch (err) {
+  // live progress for the Observatory's import board (pages done / total, SLP's stage) — no log line, just the field
+  let lastBeat = 0;
+  const progress = (p) => { if (Date.now() - lastBeat < 30000 && p.step !== 'complete') return; lastBeat = Date.now();
+    updateItem(item.id, { identified: { ...item.identified, slp_progress: { ...p, at: new Date().toISOString() } } }).catch(() => {}); };
+  try { out = await extract({ path: item.original_path, context }, { log: progress }); } catch (err) {
     await updateItem(item.id, { state: 'needs-human' }, `full OCR failed: ${String(err.message).slice(0, 200)}`);
     return { id, state: 'needs-human', why: err.message };
   }
   const check = slpCheck(out.text, { pages: out.pages || pages, sampleText: own?.text || null });
   const where = join(originalsDir(), 'ocr', `${item.sha256 || `item-${item.id}`}.slp.md`);
   await save(where, out.markdown);   // kept either way — a failed check can be read by a person
-  const slp = { path: where, job_id: out.job_id, score: out.score, cost_cents: out.cost_cents, pages: out.pages || pages, check, meta: out.meta };
+  const slp = { path: where, job_id: out.job_id, score: out.score, cost_cents: out.cost_cents, pages: out.pages || pages, check, meta: out.meta,
+    receipt: await receipt(out.job_id).catch(() => null) };   // SLP's own account of the work, shown on the import board
   if (!check.ok) {
     await updateItem(item.id, { state: 'needs-human', identified: { ...item.identified, slp_rejected: slp } }, `SearchLayerPDF text did not pass the check (${check.why.join('; ')}) — job ${out.job_id}, kept at ${where}`);
     return { id, state: 'needs-human', check };

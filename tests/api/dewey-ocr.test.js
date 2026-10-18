@@ -76,7 +76,7 @@ const { deweyOcrJob } = await import('../../api/lib/ops/dewey-ocr-job.js');
 
 describe('dewey-ocr job', () => {
   beforeEach(() => { items.length = 0; items.push({ id: 7, title: 'Rosenberg notes', original_path: '/in/scan.pdf', sha256: 'abc', identified: {}, state: 'needs-ocr' }); });
-  const base = (over = {}) => ({ pdfInfo: async () => ({ pages: 1 }), save: async () => {}, appraise: async () => ({ title: 'Rosenberg notes' }), sample: async () => ({ text: slpToText(ROSENBERG).text }), queue: vi.fn(async () => {}),
+  const base = (over = {}) => ({ pdfInfo: async () => ({ pages: 1 }), save: async () => {}, receipt: async () => ({ narrative: 'read with 4 engines' }), appraise: async () => ({ title: 'Rosenberg notes' }), sample: async () => ({ text: slpToText(ROSENBERG).text }), queue: vi.fn(async () => {}),
     extract: async () => ({ markdown: ROSENBERG, ...slpToText(ROSENBERG), job_id: 'j1', score: 95, cost_cents: 0, pages: 1 }), ...over });
   it('a passing result is kept and intake runs again on it', async () => {
     const d = base();

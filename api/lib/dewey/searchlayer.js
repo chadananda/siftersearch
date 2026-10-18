@@ -76,6 +76,7 @@ export async function slpExtract({ path, context = '' }, { fetchImpl = fetch, ke
   let s;
   for (;;) {
     s = await json(await fetchImpl(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
+    log({ job_id: job.job_id, step: s.status, stage: s.current_stage || null, pages_done: s.pages_done ?? null, pages_total: s.pages_total ?? s.page_count ?? null });
     if (['complete', 'failed', 'capped'].includes(s.status)) break;
     if (Date.now() - t0 > timeoutMs) throw new Error(`SLP job ${job.job_id} still ${s.status} after ${Math.round(timeoutMs / 60000)} min`);
     await new Promise((z) => setTimeout(z, pollMs));
@@ -85,4 +86,16 @@ export async function slpExtract({ path, context = '' }, { fetchImpl = fetch, ke
   const md = res.markdown ?? (res.markdown_url ? await (await fetchImpl(res.markdown_url)).text() : null);
   if (!md) throw new Error(`SLP job ${job.job_id} returned no Markdown`);
   return { markdown: md, ...slpToText(md), job_id: job.job_id, score: s.score_after ?? res.score_after ?? null, cost_cents: s.cost_cents ?? null, pages: s.pages_total ?? s.page_count ?? null };
+}
+
+/** SLP's work receipt, compacted for the Observatory: what it found, what it did, how well, how long, what it cost. */
+export async function slpReceipt(jobId, { fetchImpl = fetch, key = slpKey() } = {}) {
+  const r = await fetchImpl(`${BASE()}/v1/jobs/${jobId}/receipt`, { headers: { Authorization: `Bearer ${key}` } });
+  if (!r.ok) return null;
+  const j = await r.json();
+  return { narrative: j.narrative || null, warnings: (j.warnings || []).slice(0, 5),
+    document: { type: j.document?.type, pages: j.document?.page_count, language: j.document?.language, script: j.document?.script, text_layer: j.document?.has_text_layer, garbled_layer: j.document?.garbled_text_layer },
+    quality: { before: j.quality?.before ?? null, after: j.quality?.after ?? null, retrievable_after: j.quality?.retrievable_after ?? null },
+    processing: { ms: j.processing?.duration_ms ?? null, cost_usd: j.processing?.cost_usd ?? null, method: j.processing?.method_summary || null,
+      engines: j.processing?.engines_used || [], pages_vision: j.processing?.pages_vision ?? 0, pages_escalated: j.processing?.pages_escalated ?? 0 } };
 }
