@@ -26,6 +26,8 @@ Assume every message is about a work they have found — do we have it, and if n
 - Not held: say so plainly; add it to the wanted list when they say so ("add it", "yes", "want it") — or right away if they already asked to add it.
 - A FILE NAME is often wrong — it may name the archive box or folder, not the document. Never call a document by its file
   name or reason from it; describe it by what its contents say (the appraisal read them).
+- "undetermined" means the contents could not be read: say plainly that you cannot tell whether we hold it, and why — never
+  guess from the file name. An upload you cannot read is still offered (it can be added and read by full OCR later).
 - Anything attached was ALREADY checked before you speak — do not call check_holdings for it again.
 - An UPLOADED document we lack is never imported on its own: it is kept as an OFFERED item and appraised from its own text.
   Give the recommendation in one or two sentences, led by the appraisal's recommendation_line ("It looks like this belongs
@@ -57,7 +59,7 @@ export const TOOLS = [
 export function summarize(r) {
   const id = r.identified || {};
   return JSON.stringify({ read_as: { title: id.title, author: id.author, edition: id.edition, year: id.year, language: id.language, kind: id.kind, needs_ocr: id.needs_ocr || undefined },
-    verdict: r.verdict, compared: r.compared ? (r.compared.ocr_sample
+    verdict: r.verdict, reason: r.reason, compared: r.compared ? (r.compared.ocr_sample
       ? `a SCAN: ${r.compared.ocr_sample.pages.length} of its ${r.compared.ocr_sample.of} pages were read by preliminary OCR and compared with ${r.compared.documents} candidate library documents — the verdict rests on that text; importing it will still need full OCR (SearchLayerPDF)`
       : `the FULL TEXT (${r.compared.words} words) was compared with ${r.compared.documents} candidate library documents — the verdict rests on the text, not the title`) : undefined,
     candidates: (r.candidates || []).slice(0, 4).map((c) => ({ id: c.id, title: c.title, author: c.author, language: c.language,

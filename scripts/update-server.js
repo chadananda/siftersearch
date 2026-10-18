@@ -795,6 +795,8 @@ async function reloadPm2Only() {
   if (!await swapPm2Process('siftersearch-worker')) return false;
   if (!await swapPm2Process('siftersearch-deep-research')) return false;
   await killStrayApiProcesses();
+  // the worker this reload replaced is still < 3 min old here, so the sweep above cannot take it; sweep again once it is
+  setTimeout(() => killStrayApiProcesses().catch(() => {}), 200000).unref?.();
   log('info', 'All PM2 processes recreated');
   return true;
 }

@@ -32,8 +32,9 @@ const candidate = open({
 
 const holdings = open({
   identified,
-  verdict: { type: 'string', enum: ['held', 'partly-held', 'possible', 'not-found-by-title', 'not-held'],
-    description: 'From a FULL-TEXT comparison when text was given (a file, a passage, a photographed page): `held` = the same text or contained in a larger work; `partly-held` = the library holds only part of it; `possible` = shared passages only. `not-held` = nothing matched. Title-only input: `not-found-by-title` = only the title missed — send its text to settle it.' },
+  verdict: { type: 'string', enum: ['held', 'partly-held', 'possible', 'not-found-by-title', 'not-held', 'undetermined'],
+    description: 'From a FULL-TEXT comparison when text was given (a file, a passage, a photographed page): `held` = the same text or contained in a larger work; `partly-held` = the library holds only part of it; `possible` = shared passages only. `not-held` = nothing matched. Title-only input: `not-found-by-title` = only the title missed — send its text to settle it. `undetermined` = no readable text (a scan OCR could not read): Dewey cannot tell, and file-name matches are hints only.' },
+  reason: { type: 'string' },
   compared: open({ words: { type: 'integer' }, probes: { type: 'integer' }, documents: { type: 'integer' } }, { description: 'what the text comparison covered' }),
   candidates: { type: 'array', items: candidate },
 });

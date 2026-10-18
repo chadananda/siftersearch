@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-18T05:04:07.872Z",
+  "generated": "2026-10-18T05:20:39.659Z",
   "entries": [
+    {
+      "hash": "459c0107",
+      "date": "2026-10-17",
+      "type": "Fixed",
+      "description": "The file name is a hint, never a determination — titles come from the contents; with text in hand only text decides which library documents are shown; name-only (unreadable scan) is never 'held'",
+      "scope": "dewey"
+    },
+    {
+      "hash": "24da1e01",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "Preliminary OCR for scans — 8 sampled pages (pdftoppm + tesseract, script detected) so 'do we have it?' is answered by text before SearchLayerPDF; compared as a sample against the estimated whole length; intake never imports the sample",
+      "scope": "dewey"
+    },
+    {
+      "hash": "7478cc57",
+      "date": "2026-10-17",
+      "type": "New",
+      "description": "An upload we lack is appraised from ITS OWN TEXT, kept as an OFFERED item with a recommended shelf, and Dewey asks — Add it / Not this one (accept/decline endpoints, add_offered tool); no unasked imports; fix(updater): watchdog sweeps stray API workers every tick (a reload's orphan served stale code and failed health until the next deploy)",
+      "scope": "dewey"
+    },
     {
       "hash": "b50ddeb2",
       "date": "2026-10-17",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Window classifier v10 — per-book LLM brief (speakers + how to recognise them + book rules) tunes System-1's instructions",
       "scope": "authorship"
-    },
-    {
-      "hash": "ff2050a0",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window classifier --backend (score Clef / Clef-flash against the gold directly); iteration log",
-      "scope": "authorship"
-    },
-    {
-      "hash": "542e7355",
-      "date": "2026-10-08",
-      "type": "New",
-      "description": "Window hybrid also fixes structural lines — a heading is the book's author/compiler, an attribution line its named writer",
-      "scope": "authorship"
-    },
-    {
-      "hash": "2ed6373e",
-      "date": "2026-10-08",
-      "type": "Test",
-      "description": "Blind third gold set (God Passes By, Memorials, Lights of Guidance); detection scored only on definite labels",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-17": [
+      {
+        "hash": "459c0107",
+        "date": "2026-10-17",
+        "type": "Fixed",
+        "description": "The file name is a hint, never a determination — titles come from the contents; with text in hand only text decides which library documents are shown; name-only (unreadable scan) is never 'held'",
+        "scope": "dewey"
+      },
+      {
+        "hash": "24da1e01",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "Preliminary OCR for scans — 8 sampled pages (pdftoppm + tesseract, script detected) so 'do we have it?' is answered by text before SearchLayerPDF; compared as a sample against the estimated whole length; intake never imports the sample",
+        "scope": "dewey"
+      },
+      {
+        "hash": "7478cc57",
+        "date": "2026-10-17",
+        "type": "New",
+        "description": "An upload we lack is appraised from ITS OWN TEXT, kept as an OFFERED item with a recommended shelf, and Dewey asks — Add it / Not this one (accept/decline endpoints, add_offered tool); no unasked imports; fix(updater): watchdog sweeps stray API workers every tick (a reload's orphan served stale code and failed health until the next deploy)",
+        "scope": "dewey"
+      },
       {
         "hash": "b50ddeb2",
         "date": "2026-10-17",
@@ -6999,27 +7020,6 @@
         "date": "2026-10-08",
         "type": "New",
         "description": "Window classifier v10 — per-book LLM brief (speakers + how to recognise them + book rules) tunes System-1's instructions",
-        "scope": "authorship"
-      },
-      {
-        "hash": "ff2050a0",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window classifier --backend (score Clef / Clef-flash against the gold directly); iteration log",
-        "scope": "authorship"
-      },
-      {
-        "hash": "542e7355",
-        "date": "2026-10-08",
-        "type": "New",
-        "description": "Window hybrid also fixes structural lines — a heading is the book's author/compiler, an attribution line its named writer",
-        "scope": "authorship"
-      },
-      {
-        "hash": "2ed6373e",
-        "date": "2026-10-08",
-        "type": "Test",
-        "description": "Blind third gold set (God Passes By, Memorials, Lights of Guidance); detection scored only on definite labels",
         "scope": "authorship"
       }
     ]

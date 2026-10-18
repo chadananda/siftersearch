@@ -41,7 +41,7 @@ describe('OpenAPI contract — Dewey', () => {
     const body = op('/api/dewey/holdings', 'post').requestBody.content['application/json'].schema;
     expect(Object.keys(body.properties)).toEqual(expect.arrayContaining(['text', 'url', 'images', 'file']));
     const res = op('/api/dewey/holdings', 'post').responses['200'].content['application/json'].schema;
-    expect(res.properties.verdict.enum).toEqual(['held', 'partly-held', 'possible', 'not-found-by-title', 'not-held']);
+    expect(res.properties.verdict.enum).toEqual(['held', 'partly-held', 'possible', 'not-found-by-title', 'not-held', 'undetermined']);
   });
 
   it('chat documents the SSE event types and stream:false', () => {

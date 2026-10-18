@@ -58,10 +58,10 @@ describe('file names are not titles (Chad 10-17)', () => {
     const id = await identifyFile({ name: '1921 John and Louise Bosch Box 11 John Bosch.txt', bytes: new TextEncoder().encode('Notes of a Visit to Haifa\n\nWe arrived in the evening and were met at the pilgrim house by the friends of the Guardian.') });
     expect(id).toMatchObject({ title: 'Notes of a Visit to Haifa', file_name: '1921 John and Louise Bosch Box 11 John Bosch.txt' });
   });
-  it('with nothing readable, the file name is searched but never makes it "held"', async () => {
+  it('with nothing readable it says it cannot tell — file-name matches are hints, never a determination', async () => {
     const r = await checkHoldings({ title: null, file_name: 'The Dawn-Breakers.pdf', kind: 'scan' }, deps({ titles: [DB] }));
-    expect(r.verdict).toBe('possible');
-    expect(r.searched_by).toMatch(/file name/);
+    expect(r.verdict).toBe('undetermined');
+    expect(r.reason).toMatch(/could not be examined/);
   });
 });
 

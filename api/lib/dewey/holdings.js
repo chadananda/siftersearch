@@ -61,9 +61,11 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   const top = candidates[0];
   const textMatched = candidates.some((c) => c.evidence.some((e) => e.kind === 'text' && e.weight >= 4));
   const verdict = !candidates.length
-    ? (textLines(id).length ? 'not-held' : 'not-found-by-title')
-    : !nameOnly && (textMatched || top.evidence.some((e) => (e.kind === 'title' || e.kind === 'part of') && e.weight >= 3)) ? 'held' : 'possible';
-  return { verdict, candidates, ...(nameOnly ? { searched_by: 'file name only (no readable text) — a weak hint' } : {}) };
+    ? (nameOnly ? 'undetermined' : textLines(id).length ? 'not-held' : 'not-found-by-title')
+    : textMatched || top.evidence.some((e) => (e.kind === 'title' || e.kind === 'part of') && e.weight >= 3) ? 'held' : 'possible';
+  // no readable text: say we cannot tell rather than decide on a file name (Chad 10-17) — its matches are hints only
+  if (nameOnly) return { verdict: 'undetermined', reason: 'no readable text — the contents could not be examined; documents matching the file name are hints only', candidates: candidates.slice(0, 3) };
+  return { verdict, candidates };
 }
 
 const RANK = { same: 5, inside: 5, partial: 4, overlap: 3, quotes: 2, 'too-short': 1, unrelated: 0 };
