@@ -7,10 +7,11 @@ import { appraiseDocument } from '../dewey/appraise.js';
 import { allowedPath } from '../dewey/paths.js';
 import { createItem, updateItem, findBySha } from '../repos/dewey-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
+import { wholeWork, estimatedWords } from '../dewey/whole.js';
 
 export async function deweyOfferPathsJob({ paths = [], by = 'dewey-sweep' } = {}, deps = {}) {
   const { check = identifyAndCheck, appraise = appraiseDocument, find = findBySha, create = createItem, update = updateItem, allowed = allowedPath } = deps;
-  const out = { offered: [], held: [], skipped: [], errors: [] };
+  const out = { offered: [], held: [], skipped: [], incomplete: [], errors: [] };
   for (const path of paths) {
     if (!allowed(path)) { out.errors.push({ path, why: 'outside the allowed folders' }); continue; }
     try {
@@ -18,6 +19,16 @@ export async function deweyOfferPathsJob({ paths = [], by = 'dewey-sweep' } = {}
       if (doc.sha256 && await find(doc.sha256)) { out.skipped.push(path); continue; }
       if (doc.result?.verdict === 'held') { out.held.push({ path, held: doc.result.candidates?.[0]?.id }); continue; }
       const a = await appraise(doc.identified, doc.excerpt, doc.result?.verdict).catch(() => null);
+      // never offer an incomplete copy (Chad 10-19: "That is a trap")
+      const w = wholeWork({ name: path.split('/').pop(), kind: a?.kind || '', words: estimatedWords(doc), pdfPages: doc.identified?.sample?.of || null, text: doc.identified?._text || doc.excerpt || '' });
+      // an incomplete copy only tells us the work EXISTS: it goes on the acquire list, the copy noted as the evidence
+      if (!w.whole) {
+        const it = await create({ title: a?.title || doc.identified?.title || path.split('/').pop(), author: a?.author || null, kind: a?.kind || null,
+          identified: { title: a?.title || null, author: a?.author || null, appraisal: a, incomplete_copy: { path, why: w.why }, scout: { sought: a?.title || null, why: a?.summary || null, importance: 3, channels: [] } },
+          by, state: 'to-buy', why: `a folder had only part of it (${w.why.join('; ')}) — on the list to acquire` });
+        out.incomplete.push({ path, why: w.why, item: it.id });
+        continue;
+      }
       const name = path.split('/').pop();
       const item = await create({ title: a?.title || doc.identified?.title || name, author: a?.author || doc.identified?.author || null, kind: a?.kind || null,
         identified: { ...doc.identified, _text: undefined, file_name: name, shelf: a?.shelf || null, appraisal: a, verdict: doc.result?.verdict,

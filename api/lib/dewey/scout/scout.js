@@ -10,6 +10,7 @@ import { workKey } from '../../ops/dewey-ingest-folder-job.js';
 import { CHANNELS, purchaseLeads, isShadow, sameWork } from './channels.js';
 import { UA } from './ris.js';
 import { toMarkdownText } from '../convert.js';
+import { wholeWork, estimatedWords } from '../whole.js';
 
 export const scoutDir = () => process.env.DEWEY_SCOUT_DIR || '/tank/dewey-ingest/scout';
 const BY = 'dewey-scout';
@@ -115,6 +116,17 @@ export async function scoutWork(work, deps = {}) {
       return { state: 'held-by-text', held: top?.id };
     }
     const a = await appraise(doc.identified, doc.excerpt, doc.result?.verdict).catch(() => null);
+    // ONLY A WHOLE COPY IS OFFERED (Chad 10-19: "please do not propose books that are incomplete. That is a trap"): a
+    // contents/index/excerpt file, a preview, a book of a few pages — noted, and the search goes on for a whole copy
+    const kind = a?.kind || work.kind || '';
+    const pdfPages = /\.pdf$/i.test(path) ? (doc.identified?.sample?.of || await (deps.pdfPages || (await import('../convert.js')).pdfPageCount)(path).catch(() => null)) : null;
+    const published = /book/i.test(kind) ? (work.publishedPages ??= Number((await (deps.research || (await import('../research.js')).researchWork)({ title: work.sought || work.title, author: work.author }).catch(() => null))?.pages) || 0) : 0;
+    const w = wholeWork({ url: c.url, name: path.split('/').pop(), kind, words: estimatedWords(doc), pdfPages, text: doc.identified?._text || doc.excerpt || '', published });
+    if (!w.whole) {
+      (scout.incomplete ||= []).push({ url: c.url, site: c.site, why: w.why });
+      await unlink(path).catch(() => {});
+      continue;
+    }
     const item = await create({ title: a?.title || work.title, author: a?.author || work.author, kind: a?.kind || work.kind,
       identified: { ...doc.identified, _text: undefined, file_name: path.split('/').pop(), shelf: work.shelfHint?.collection ? work.shelfHint : (work.shelfHint && a?.shelf?.religion !== work.shelfHint.religion ? null : a?.shelf || null), appraisal: a, scout, source: c, verdict: doc.result?.verdict }, by: BY, state: 'offered',
       why: `scout found a copy at ${c.site} (${c.kind}${c.note ? `, ${c.note}` : ''}) — ${doc.result?.verdict}; ${scout.channels.filter((x) => x.searched).length} places searched${a?.title && !sameWork(work.title, a.title) && !sameWork(a.title, work.title) ? ` — ⚠ it reads as “${a.title}”, perhaps not the work sought` : ''}` });
@@ -136,14 +148,17 @@ export async function scoutWork(work, deps = {}) {
   const leads = found.filter((f) => ['borrow', 'view'].includes(f.kind) || (f.kind === 'html' && f.site !== new URL(work.page || 'http://x').hostname));
   if (leads.length) {
     await create({ title: work.title, author: work.author, kind: work.kind, identified: { title: work.title, author: work.author, scout }, by: BY, state: 'lead',
-      why: `scout: no downloadable copy; readable at ${leads.slice(0, 3).map((l) => `${l.site} (${l.kind})`).join(', ')}` });
+      why: `scout: no whole downloadable copy; readable at ${leads.slice(0, 3).map((l) => `${l.site} (${l.kind})`).join(', ')}${scout.incomplete?.length ? ` — ${scout.incomplete.length} incomplete cop${scout.incomplete.length === 1 ? 'y' : 'ies'} passed over` : ''}` });
     return { state: 'lead', leads: leads.length };
   }
-  // 5. NOTHING ANYWHERE → to buy (important works), with prices and who to ask
-  const p = (work.importance ?? 3) >= 3 ? await purchase(work).catch(() => null) : null;
-  await create({ title: work.title, author: work.author, kind: work.kind, identified: { title: work.title, author: work.author, scout, purchase: p }, by: BY, state: (work.importance ?? 3) >= 3 ? 'to-buy' : 'declined',
-    why: `scout: no copy found in ${scout.channels.filter((x) => x.searched).length} places${(work.importance ?? 3) >= 3 ? ' — to buy and scan' : ' (not important enough to buy)'}` });
-  return { state: (work.importance ?? 3) >= 3 ? 'to-buy' : 'skipped' };
+  // 5. NOTHING WHOLE ANYWHERE → to acquire (important works — or any work an incomplete copy proved exists: Chad 10-19, "such
+  // books might inform us of the existence of the actual book so we can find it or keep it on the list of books we need
+  // to acquire"), with prices and who to ask
+  const acquire = (work.importance ?? 3) >= 3 || !!scout.incomplete?.length;
+  const p = acquire ? await purchase(work).catch(() => null) : null;
+  await create({ title: work.title, author: work.author, kind: work.kind, identified: { title: work.title, author: work.author, scout, purchase: p }, by: BY, state: acquire ? 'to-buy' : 'declined',
+    why: `scout: no whole copy found in ${scout.channels.filter((x) => x.searched).length} places${scout.incomplete?.length ? ` (incomplete: ${scout.incomplete.map((x) => x.site).join(', ')})` : ''}${acquire ? ' — to acquire' : ' (not important enough to buy)'}` });
+  return { state: acquire ? 'to-buy' : 'skipped' };
 }
 
 /** A list → each work not handled before, up to `limit`. → { counts, outcomes } */

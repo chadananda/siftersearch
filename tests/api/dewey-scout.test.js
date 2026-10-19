@@ -29,7 +29,7 @@ const mk = () => {
     create: vi.fn(async (x) => { created.push(x); return { id: created.length, ...x }; }), update: vi.fn(async () => ({})), politeMs: 0,
     check: vi.fn(async () => ({ verdict: 'not-found-by-title' })), appraise: vi.fn(async () => ({ title: 'Resurrection and Renewal', kind: 'book', shelf: null })),
     archive: vi.fn(async () => ({ path: '/arc/x.pdf', sha256: 'abc' })), purchase: vi.fn(async () => ({ text: 'AbeBooks $40' })),
-    get: vi.fn(async () => '/tmp/none-such.pdf'),
+    get: vi.fn(async () => '/tmp/none-such.pdf'), research: async () => null, pdfPages: async () => null,
   } };
 };
 
@@ -150,9 +150,34 @@ describe('folder-sweep offers (Chad 10-19: "find books we do not have and propos
       check: async ({ path }) => (path.endsWith('held.txt') ? { sha256: 'h', result: { verdict: 'held', candidates: [{ id: 7 }] } } : path.endsWith('seen.txt') ? { sha256: 'seen', result: { verdict: 'not-held' } } : { sha256: 'n', identified: { title: 'A Book' }, excerpt: 'x', result: { verdict: 'not-held' } }) };
     const r = await deweyOfferPathsJob({ paths: ['/tank/dropbox/a/new.txt', '/tank/dropbox/a/held.txt', '/tank/dropbox/a/seen.txt', '/etc/passwd'] }, deps);
     expect(r.offered.map((o) => o.path)).toEqual(['/tank/dropbox/a/new.txt']);
+    expect(r.incomplete).toEqual([]);
     expect(r.held).toEqual([{ path: '/tank/dropbox/a/held.txt', held: 7 }]);
     expect(r.skipped).toEqual(['/tank/dropbox/a/seen.txt']);
     expect(r.errors[0].path).toBe('/etc/passwd');
     expect(created[0]).toMatchObject({ state: 'offered', by: 'dewey-sweep' });
+  });
+});
+
+describe('an incomplete copy is passed over (10-19: "do not propose books that are incomplete")', () => {
+  it('a contents PDF is not offered; the search goes on to a whole copy', async () => {
+    const { created, deps } = mk();
+    const channels = { 'archive.org': vi.fn(async () => [{ url: 'https://x.org/book_contents.pdf', kind: 'pdf', site: 'x.org' }, { url: 'https://y.org/book.pdf', kind: 'pdf', site: 'y.org' }]) };
+    deps.get = vi.fn(async (c) => `/tmp/${c.url.split('/').pop()}`);
+    deps.checkFile = vi.fn(async () => ({ identified: { _text: 'word '.repeat(9000) }, excerpt: 'x', result: { verdict: 'not-held' } }));
+    const r = await scoutWork(work, { ...deps, channels });
+    expect(r).toMatchObject({ state: 'offered', from: 'https://y.org/book.pdf' });
+    expect(created[0].identified.scout.incomplete[0]).toMatchObject({ url: 'https://x.org/book_contents.pdf' });
+  });
+});
+
+describe('an incomplete copy tells us the work exists (10-19)', () => {
+  it('a folder file that is only part of a book goes on the acquire list, never offered', async () => {
+    const { deweyOfferPathsJob } = await import('../../api/lib/ops/dewey-offer-paths-job.js');
+    const created = [];
+    const r = await deweyOfferPathsJob({ paths: ['/tank/dropbox/a/europe_contents.pdf'] }, { allowed: () => true, find: async () => null, update: async () => ({}),
+      appraise: async () => ({ title: "'Abdu'l-Bahá in Europe", kind: 'book' }), create: async (x) => { created.push(x); return { id: 9, ...x }; },
+      check: async () => ({ sha256: 'e', identified: { _text: 'w '.repeat(4400) }, excerpt: 'x', result: { verdict: 'not-held' } }) });
+    expect(r.offered).toEqual([]);
+    expect(created[0]).toMatchObject({ state: 'to-buy', title: "'Abdu'l-Bahá in Europe" });
   });
 });
