@@ -76,3 +76,16 @@ export async function countParagraphs(docId) {
   const r = await queryAll('SELECT COUNT(*) n FROM content WHERE doc_id = ? AND deleted_at IS NULL', [Number(docId)], 'paragraphs:count');
   return r[0]?.n ?? 0;
 }
+
+/** UNSEGMENTED documents (Chad 10-19: "Never should we search an unsegmented book"): live paragraphs longer than `minChars`
+ *  in one id window (afterId, afterId + span] — a bounded primary-key range read, so a whole-table survey is many short
+ *  reads, never one long one. → [{ doc_id, n, max_chars }] */
+export async function oversizedParagraphDocs({ afterId = 0, span = 100000, minChars = 8000 } = {}) {
+  return queryAll(`SELECT doc_id, COUNT(*) AS n, MAX(LENGTH(text)) AS max_chars FROM content
+    WHERE id > ? AND id <= ? AND deleted_at IS NULL AND LENGTH(text) > ? GROUP BY doc_id`,
+  [Number(afterId), Number(afterId) + Number(span), Number(minChars)], 'paragraphs-repo:oversized');
+}
+/** The highest content id (the survey's end). */
+export async function maxContentId() {
+  return (await queryAll('SELECT MAX(id) AS m FROM content', [], 'paragraphs-repo:max-id'))[0]?.m || 0;
+}

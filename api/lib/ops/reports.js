@@ -17,6 +17,7 @@ import { deweyScoutJob } from './dewey-scout-job.js';
 import { deweyRetitleJob } from './dewey-retitle-job.js';
 import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
+import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
@@ -173,6 +174,7 @@ REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates
 REPORTS['dewey-research'] = deweyResearchJob;   // params: { id } — research a wanted work: ISBN, publisher, cover (Chad 10-17)
 REPORTS['dewey-ingest-folder'] = deweyIngestFolderJob;   // params: { batch?, round? } — the ingest folder, a few at a time, easiest first
 REPORTS['dewey-reimport'] = deweyReimportJob;   // params: { docs?, all?, limit? } — re-read from the archive with today's cleaner, same document
+REPORTS['unsegmented-docs'] = unsegmentedDocsJob;   // params: { minChars? } — documents holding a whole-book 'paragraph': the re-ingest list (read-only)
 REPORTS['dewey-offer-paths'] = deweyOfferPathsJob;   // params: { paths } — files a folder sweep found missing → offers on /dewey (never imported unasked)
 REPORTS['dewey-title-check'] = deweyTitleCheckJob;   // params: { titles: [{ title, author? }] } — the title index against the real library (read-only)
 REPORTS['dewey-retitle'] = deweyRetitleJob;   // params: { limit? } — real titles for imports titled from unreadable pages (read-only proposals)
