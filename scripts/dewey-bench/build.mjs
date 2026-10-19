@@ -110,7 +110,7 @@ for (const d of held) {
     await add(`P8-${tag}`, 'P8 abridged', ['held'], V.abridge(t, { seed: d.id }), { source: src });
     await add(`P9-${tag}`, 'P9 excerpt', ['held'], V.excerpt(t, { seed: d.id }), { source: src });
     await add(`P13-${tag}`, 'P13 front matter only', ['held'], V.frontOnly(t), { source: src, note: 'held — and must read as a fragment' });
-    await add(`P10-${tag}`, 'P10 superset (held + new chapters)', ['partly-held'], V.superset(t, prose), { source: src });
+    await add(`P10-${tag}`, 'P10 superset (held + new chapters)', ['partly-held'], V.superset(d.text, cap(prose, 30000)), { source: src, note: 'the WHOLE held text + new chapters (a capped book is only part of the held work)' });
   }
 }
 const longs = held.filter((d) => d.kind === 'long');
