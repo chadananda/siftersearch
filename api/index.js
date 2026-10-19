@@ -273,7 +273,8 @@ const shutdown = async (signal) => {
 // heartbeat (api/lib/service-heartbeat.js): this instance's version, state and the Anís answers it is researching
 {
   const [{ startHeartbeat }, jobs] = await Promise.all([import('./lib/service-heartbeat.js'), import('./lib/jobs/async-jobs.js')]);
-  startHeartbeat({ name: process.env.name || 'siftersearch-api', state: () => ({ inflight: jobs.inFlight(), draining_requests: shuttingDown }) });
+  // only the pm2 API — the updater's pre-deploy test instance (port 7899) inherits the updater's name and must not report
+  if (process.env.name === 'siftersearch-api') startHeartbeat({ name: 'siftersearch-api', state: () => ({ inflight: jobs.inFlight(), draining_requests: shuttingDown }) });
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
