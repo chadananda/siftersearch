@@ -20,10 +20,14 @@ export async function unsegmentedDocsJob({ minChars = 8000, span = 100000 } = {}
   const ids = [...byDoc.keys()];
   const meta = new Map();
   for (let i = 0; i < ids.length; i += 500) {
-    for (const d of (await docs({ ids: ids.slice(i, i + 500), fields: ['id', 'title', 'author', 'source_site', 'file_path', 'paragraph_count'], limit: 500, count: false, scope: 'all' })).docs) meta.set(d.id, d);
+    for (const d of (await docs({ ids: ids.slice(i, i + 500), fields: ['id', 'title', 'author', 'source_site', 'file_path', 'paragraph_count'], limit: 500, count: false, scope: 'live' })).docs) meta.set(d.id, d);
   }
-  const list = ids.map((id) => ({ ...byDoc.get(id), ...(meta.get(id) || {}) })).sort((a, b) => b.max_chars - a.max_chars);
+  // LIVE documents only: 598 of the first run's 1,397 bahai-library "documents" were soft-deleted duplicates (retired in
+  // favour of their OceanLibrary copies) whose paragraphs were never deleted with them — re-ingesting them would resurrect
+  // them (10-19). Counted apart, never on the re-ingest list.
+  const list = ids.filter((id) => meta.has(id)).map((id) => ({ ...byDoc.get(id), ...meta.get(id) })).sort((a, b) => b.max_chars - a.max_chars);
+  const deletedWithLiveText = ids.length - list.length;
   const bySite = {};
   for (const d of list) bySite[d.source_site || 'library'] = (bySite[d.source_site || 'library'] || 0) + 1;
-  return { documents: list.length, by_site: bySite, list };
+  return { documents: list.length, by_site: bySite, deleted_docs_with_live_text: deletedWithLiveText, list };
 }

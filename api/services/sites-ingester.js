@@ -520,6 +520,12 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   // A row retired as a duplicate stays retired: upsertDoc clears duplicate_of, so re-ingesting its file would bring the
   // duplicate back (10-11). Retiring is deliberate; only an explicit restore undoes it.
   if (existing?.duplicate_of) return { status: 'retired_duplicate', file: relPath, doc_id: existing.id, scope };
+  // …and so does one retired AND soft-deleted: with no live row the file looked new and was re-added (10-19: a forced
+  // re-ingest of bahai-library would have resurrected 598 pages retired in favour of their OceanLibrary copies)
+  if (!existing && !isSiteOnly) {
+    const retired = await queryOne('SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NOT NULL AND duplicate_of IS NOT NULL LIMIT 1', [relPath]);
+    if (retired) return { status: 'retired_duplicate', file: relPath, doc_id: retired.id, scope };
+  }
   // "Unchanged" means the TEXT is there, not merely that the hash matches: a doc whose paragraphs were soft-deleted
   // (the June reconcile bug) kept its hash and was skipped on every run for months — ESW, This Decisive Hour…
   const hasLiveContent = existing
