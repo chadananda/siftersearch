@@ -11,6 +11,7 @@ import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
 import { unmachine } from './lint.js';
+import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
@@ -381,8 +382,16 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (!study?.passages?.length) study = null;
     } catch { study = null; }
   }
+  // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
+  // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")
+  const position = !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
+    ? await positionResearch({ question, create: d.create || (await import('../role-client.js')).roleCreate, search: d.search,
+      authorityOf: d.authorityOf || (async (p) => { try { return (await import('../authority.js')).getAuthority(p || {}); } catch { return 0; } }),
+      defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch(() => null)
+    : null;
   const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
+    : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
@@ -423,6 +432,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const choose = d.chooseFormat || chooseFormat;
   const formatP = sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
+    : position?.passages?.length ? Promise.resolve({ id: 'position', by: 'position', how: POSITION_HOW })
     : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })
     : conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
 
