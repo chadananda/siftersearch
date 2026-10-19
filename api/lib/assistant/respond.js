@@ -188,7 +188,7 @@ export function attributionIn(text) {
  *  findOriginals — the passages holding the quotation verbatim, then the originals linked to them) on each passage the
  *  seeker quoted. → { retrieved: [the English passage, its original], how, plan } or null. */
 async function quotedOriginal(d, question) {
-  const find = d.findOriginals || (async (t) => (await import('../passage-links.js')).findOriginals(t, { limit: 3, search: (await import('../search.js')).hybridSearch }));
+  const find = d.findOriginals || (async (t) => (await import('../passage-links.js')).findOriginals(t, { limit: 10, search: (await import('../search.js')).hybridSearch }));   // 10: compilations quoting it crowd the top
   const authorityOf = d.authorityOf || (async (doc) => { try { return (await import('../authority.js')).getAuthority(doc || {}); } catch { return 0; } });
   for (const q of quotedPassages(question)) {
     const r = await find(q).catch(() => null);
@@ -196,8 +196,12 @@ async function quotedOriginal(d, question) {
     if (!o?.text) continue;
     // the English from the work ITSELF, not a book quoting it (10-19: the reply named Doris McKay's "Fires in Many Hearts"
     // for Gleanings CXXXVI): verbatim matches ranked by the library's authority, then overlap
-    const ranked = await Promise.all((r.matches || []).filter((x) => x.passage && (x.overlap ?? 1) >= 0.8).map(async (x) => ({ x, a: Number(await authorityOf({ ...x.passage.document })) || 0 })));
-    const en = (ranked.sort((a, b) => b.a - a.a || (b.x.overlap ?? 0) - (a.x.overlap ?? 0))[0]?.x || r.matches?.[0])?.passage;
+    // (10-19, second try: "Divine Virtues and Spiritual Qualities: A Compilation" won) — the original's OWN author's work first
+    // (Bahá'u'lláh's Gleanings for his Arabic), then authority, then overlap
+    const fa = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f'’‘`ʼ]/g, '').toLowerCase();
+    const sameAuthor = (doc) => !!o.document?.author && fa(doc?.author).includes(fa(o.document.author).split(/[,;(]/)[0].trim()) && !/compilation/i.test(doc?.title || '');
+    const ranked = await Promise.all((r.matches || []).filter((x) => x.passage && (x.overlap ?? 1) >= 0.8).map(async (x) => ({ x, own: sameAuthor(x.passage.document) ? 1 : 0, a: Number(await authorityOf({ ...x.passage.document })) || 0 })));
+    const en = (ranked.sort((a, b) => b.own - a.own || b.a - a.a || (b.x.overlap ?? 0) - (a.x.overlap ?? 0))[0]?.x || r.matches?.[0])?.passage;
     const lang = o.language === 'ar' ? 'Arabic' : o.language === 'fa' ? 'Persian' : (o.language || 'original');
     const enTitle = [en?.document?.title, en?.heading].filter(Boolean).join(', ');
     // the seeker NAMED a work ("Kitab'i-Aqdas") the passage is not in → one gentle sentence saying where it is

@@ -78,8 +78,8 @@ describe('any quoted passage → its original (Chad 10-19: "fix Anis")', () => {
       deps: {
         plan: async () => ({ shape: 'fact' }),
         search: async () => { calls.search++; return { passages: [] }; },
-        authorityOf: async (doc) => (/Gleanings/.test(doc.title) ? 10 : 3),
-        findOriginals: async (t) => { calls.looked.push(t); return { matches: [{ overlap: 1, passage: { id: 9, documentId: 13808, paragraphIndex: 33, text: 'Whoso reciteth…', document: { title: 'Fires in Many Hearts', author: 'Doris McKay' } } }, { overlap: 1, passage: { id: 1, documentId: 20783, paragraphIndex: 606, text: 'Whoso reciteth, in the privacy of his chamber, the verses revealed by God…', heading: '– CXXXVI –', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } } }],
+        authorityOf: async (doc) => (/Compilation/.test(doc.title) ? 10 : 3),   // even a high-authority compilation loses to the author's own work
+        findOriginals: async (t) => { calls.looked.push(t); return { matches: [{ overlap: 1, passage: { id: 9, documentId: 919386, paragraphIndex: 586, text: 'Whoso reciteth…', document: { title: 'Divine Virtues and Spiritual Qualities: A Compilation', author: 'Bahá’u’lláh' } } }, { overlap: 1, passage: { id: 1, documentId: 20783, paragraphIndex: 606, text: 'Whoso reciteth, in the privacy of his chamber, the verses revealed by God…', heading: '– CXXXVI –', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } } }],
           originals: [{ id: 2, documentId: 924842, paragraphIndex: 1, language: 'ar', text: AR, document: { title: 'Muntakhabát-i-Áthár:136', author: 'Bahá’u’lláh' }, foundThrough: { id: 1 } }] }; },
         companion: async () => ({ append: '', plan: null, offer: false }),
         chooseFormat: async () => ({ id: 'should-not-be-used' }),
