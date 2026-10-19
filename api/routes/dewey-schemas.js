@@ -39,7 +39,7 @@ const holdings = open({
   candidates: { type: 'array', items: candidate },
 });
 
-const STATES = ['offered', 'declined', 'wanted', 'researched', 'source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed'];
+const STATES = ['offered', 'declined', 'wanted', 'researched', 'source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed', 'lead', 'to-buy'];   // lead · to-buy: the scouts (planning/dewey-scouts-plan.md)
 const item = open({
   id: { type: 'integer' }, title: { type: 'string' }, author: { type: ['string', 'null'] }, kind: { type: ['string', 'null'] },
   state: { type: 'string', enum: STATES, description: 'offered (an uploaded document we lack, archived, waiting for a yes: POST /items/{id}/accept) · wanted → researched → source → processing → ingested; or needs-ocr / needs-human / failed (reason in log)' },

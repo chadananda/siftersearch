@@ -1,0 +1,84 @@
+// Dewey's scouts (planning/dewey-scouts-plan.md): the RIS seed, and each outcome for a work — held, a copy offered, a lead
+// readable elsewhere, to buy — with every channel logged, shadow libraries never used.
+import { describe, it, expect, vi } from 'vitest';
+import { parseRis } from '../../api/lib/dewey/scout/ris.js';
+import { isShadow } from '../../api/lib/dewey/scout/channels.js';
+import { scoutWork, scoutList } from '../../api/lib/dewey/scout/scout.js';
+
+const RIS = `TY  - GEN\nID  - 3956\nUR  - https://bahai-library.com/ali-khan_pilgrim-notes_1906\nT1  - 1906 Pilgrim Notes of Ali Kuli Khan\nA1  - Khan,Ali Kuli\nA2  - Merrick,David, editor\nY1  - 2010\nY2  - 1906\nM3  - Pilgrims; Histories; \nLA  - English\nAB  - Large volume of the words of 'Abdu'l-Bahá.\nKW  - 1906\nKW  - Pilgrims notes\nER  - \n\nTY  - UNPB\nT1  - No URL here\nER  - \n`;
+
+describe('RIS', () => {
+  it('parses bahai-library entries, names first-name first; entries without a URL are dropped', () => {
+    const w = parseRis(RIS);
+    expect(w).toHaveLength(1);
+    expect(w[0]).toMatchObject({ id: '3956', title: '1906 Pilgrim Notes of Ali Kuli Khan', authors: ['Ali Kuli Khan'], editors: ['David Merrick'], year: '2010', written: '1906', kinds: ['Pilgrims', 'Histories'], keywords: ['1906', 'Pilgrims notes'] });
+  });
+});
+
+describe('shadow libraries', () => {
+  it('are never used', () => {
+    for (const u of ['https://libgen.is/book/1', 'https://annas-archive.org/md5/x', 'https://z-lib.io/b', 'https://sci-hub.se/x', 'https://www.pdfdrive.com/x']) expect(isShadow(u)).toBe(true);
+    for (const u of ['https://archive.org/details/x', 'https://bahai-library.com/x', 'https://www.academia.edu/123']) expect(isShadow(u)).toBe(false);
+  });
+});
+
+const work = { title: 'Resurrection and Renewal', author: 'Abbas Amanat', importance: 5, kind: 'book', list: 'bahai-publications' };
+const mk = () => {
+  const created = [];
+  return { created, deps: {
+    create: vi.fn(async (x) => { created.push(x); return { id: created.length, ...x }; }), update: vi.fn(async () => ({})), politeMs: 0,
+    check: vi.fn(async () => ({ verdict: 'not-found-by-title' })), appraise: vi.fn(async () => ({ title: 'Resurrection and Renewal', kind: 'book', shelf: null })),
+    archive: vi.fn(async () => ({ path: '/arc/x.pdf', sha256: 'abc' })), purchase: vi.fn(async () => ({ text: 'AbeBooks $40' })),
+    get: vi.fn(async () => '/tmp/none-such.pdf'),
+  } };
+};
+
+describe('scoutWork', () => {
+  it('held by title → recorded, nothing searched', async () => {
+    const { created, deps } = mk();
+    deps.check = vi.fn(async () => ({ verdict: 'held', candidates: [{ id: 7, title: 'Resurrection and Renewal' }] }));
+    const ch = { 'archive.org': vi.fn() };
+    expect(await scoutWork(work, { ...deps, channels: ch })).toMatchObject({ state: 'held', held: 7 });
+    expect(ch['archive.org']).not.toHaveBeenCalled();
+    expect(created[0].state).toBe('declined');
+  });
+  it('a copy found → downloaded, its text checked, offered with where it came from', async () => {
+    const { created, deps } = mk();
+    const channels = { 'archive.org': vi.fn(async () => [{ url: 'https://archive.org/download/rr/rr_text.pdf', kind: 'pdf', site: 'archive.org', title: work.title }]), web: vi.fn(async () => []) };
+    deps.checkFile = vi.fn(async () => ({ identified: { _text: 'word '.repeat(5000) }, excerpt: 'x', result: { verdict: 'not-held' } }));
+    const r = await scoutWork(work, { ...deps, channels });
+    expect(r).toMatchObject({ state: 'offered', from: 'https://archive.org/download/rr/rr_text.pdf' });
+    expect(created[0]).toMatchObject({ state: 'offered', by: 'dewey-scout' });
+    expect(created[0].identified.scout.channels).toEqual([{ channel: 'archive.org', searched: true, found: 1 }, { channel: 'web', searched: true, found: 0 }]);
+    expect(deps.update).toHaveBeenCalledWith(1, expect.objectContaining({ source_url: 'https://archive.org/download/rr/rr_text.pdf', original_path: '/arc/x.pdf' }));
+  });
+  it('a copy whose TEXT is a held book under another title → not offered', async () => {
+    const { created, deps } = mk();
+    const channels = { web: vi.fn(async () => [{ url: 'https://example.org/rr.pdf', kind: 'pdf', site: 'example.org', title: work.title }]) };
+    deps.checkFile = vi.fn(async () => ({ identified: { _text: 'word '.repeat(5000) }, result: { verdict: 'held', candidates: [{ id: 9, title: 'The Babi Movement' }] } }));
+    expect(await scoutWork(work, { ...deps, channels })).toMatchObject({ state: 'held-by-text', held: 9 });
+    expect(created[0].state).toBe('declined');
+  });
+  it('borrow-only → a lead; nothing anywhere → to buy, with every channel logged and prices', async () => {
+    const a = mk();
+    expect(await scoutWork(work, { ...a.deps, channels: { 'archive.org': async () => [{ url: 'https://archive.org/details/rr', kind: 'borrow', site: 'archive.org' }] } })).toMatchObject({ state: 'lead' });
+    const b = mk();
+    expect(await scoutWork(work, { ...b.deps, channels: { 'archive.org': async () => [], web: async () => [] } })).toMatchObject({ state: 'to-buy' });
+    expect(b.created[0].identified).toMatchObject({ purchase: { text: 'AbeBooks $40' }, scout: { channels: [{ channel: 'archive.org', searched: true, found: 0 }, { channel: 'web', searched: true, found: 0 }] } });
+  });
+  it('a shadow-library hit is dropped even if a channel returns it', async () => {
+    const { deps } = mk();
+    const r = await scoutWork(work, { ...deps, channels: { web: async () => [{ url: 'https://libgen.is/x.pdf', kind: 'pdf', site: 'libgen.is' }] } });
+    expect(r.state).toBe('to-buy');
+    expect(deps.get).not.toHaveBeenCalled();
+  });
+});
+
+describe('scoutList', () => {
+  it('a work handled before (by title or page) is skipped; limit respected', async () => {
+    const { deps } = mk();
+    const works = [{ ...work, title: 'Already Seen' }, { ...work, title: 'New One', page: null }, { ...work, title: 'Another' }];
+    const r = await scoutList(works, { limit: 1, deps: { ...deps, channels: { web: async () => [] }, items: async () => [{ title: 'Already Seen', identified: {} }] } });
+    expect(r.outcomes.map((o) => o.title)).toEqual(['New One']);
+  });
+});

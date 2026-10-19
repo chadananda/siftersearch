@@ -10,6 +10,13 @@
   let missing = $state(null);
   let tab = $state('wanted');
   let wanted = $state(null);   // Dewey's own wanted list (dewey_items), open first
+  let found = $state([]), toBuy = $state([]), busy = $state(null);
+  async function answer(it, yes) {
+    busy = it.id;
+    try { await (yes ? dewey.accept(it.id) : dewey.decline(it.id)); found = found.filter((x) => x.id !== it.id); } catch { /* stays listed */ }
+    busy = null;
+  }
+  const searched = (it) => (it.identified?.scout?.channels || []).filter((c) => c.searched).map((c) => c.channel);
 
   onMount(() => { observatory.telemetry().then((r) => (snap = r.data.snapshot)).catch(() => {}); });   // public, edge-cached
   let asked = false;
@@ -19,7 +26,13 @@
     dewey.missing().then((m) => (missing = m)).catch(() => (missing = { pending: true }));
     // only books still SOUGHT (no source yet) — once a source arrives the book is in the Loading column, not here
     // (Chad 10-18: "lots of the missing column say things like 'waits for OCR'. Does that mean it is loading in the other column?")
-    const loadWanted = () => dewey.items(1000).then((r) => (wanted = r.items.filter((i) => ['wanted', 'researched'].includes(i.state)))).catch(() => (wanted = []));
+    // the SCOUTS' finds (planning/dewey-scouts-plan.md): copies found and checked (offered by dewey-scout) and works with
+    // no downloadable copy anywhere (lead: readable elsewhere; to-buy: buy and scan)
+    const loadWanted = () => dewey.items(1000).then((r) => {
+      wanted = r.items.filter((i) => ['wanted', 'researched'].includes(i.state));
+      found = r.items.filter((i) => i.state === 'offered' && i.created_by === 'dewey-scout');
+      toBuy = r.items.filter((i) => ['to-buy', 'lead'].includes(i.state)).sort((a, b) => (b.identified?.scout?.importance ?? 3) - (a.identified?.scout?.importance ?? 3));
+    }).catch(() => (wanted = []));
     loadWanted(); const t = setInterval(loadWanted, 30000); return () => clearInterval(t);
   });
   const STATE = { wanted: 'researching', researched: 'researched', source: 'source attached', processing: 'processing', ingested: 'in the library',
@@ -47,6 +60,8 @@
     <h2>Missing</h2>
     <div class="flex flex-wrap gap-1 mb-2 text-xs">
       <button class:on={tab === 'wanted'} class="pill" onclick={() => (tab = 'wanted')}>Wanted · {wanted?.length ?? '…'}</button>
+      <button class:on={tab === 'found'} class="pill" onclick={() => (tab = 'found')}>Found · {found.length}</button>
+      <button class:on={tab === 'buy'} class="pill" onclick={() => (tab = 'buy')}>To buy · {toBuy.length}</button>
       <button class:on={tab === 'have'} class="pill" onclick={() => (tab = 'have')}>Catalogue, have source · {missing?.haveSourceTotal ?? '…'}</button>
       <button class:on={tab === 'none'} class="pill" onclick={() => (tab = 'none')}>Catalogue, no source · {missing?.noSourceTotal ?? '…'}</button>
     </div>
@@ -58,6 +73,32 @@
           {#each wanted as w (w.id)}
             <li><span class="text-primary">{w.title}</span>{#if w.author}<span class="text-muted"> · {w.author}</span>{/if}
               <div class="text-muted">{STATE[w.state] || w.state}{#if w.research?.isbn13} · ISBN {w.research.isbn13}{/if}{#if w.research?.year} · {w.research.year}{/if}{#if w.doc_id} · <a class="text-accent" href="/document/{w.doc_id}">open</a>{/if}</div></li>
+          {/each}
+        </ul>
+      {/if}
+    {:else if tab === 'found'}
+      {#if !found.length}<p class="text-muted text-sm">Nothing found yet — the scouts add copies here as they find them.</p>
+      {:else}
+        <ul class="text-xs flex flex-col gap-2.5" role="list">
+          {#each found as f (f.id)}
+            {@const s = f.identified?.source}
+            <li><span class="text-primary">{f.title}</span>{#if f.author}<span class="text-muted"> · {f.author}</span>{/if}
+              {#if f.identified?.appraisal?.summary}<div class="text-secondary line-clamp-2">{f.identified.appraisal.summary}</div>{/if}
+              <div class="text-muted">{#if s}<a class="text-accent" href={s.url} target="_blank" rel="noopener">{s.site}</a> · {s.kind}{#if s.note} · {s.note}{/if}{/if} · {f.identified?.verdict || ''}</div>
+              <div class="flex gap-1.5 mt-1"><button class="act yes" disabled={busy === f.id} onclick={() => answer(f, true)}>Add it</button><button class="act" disabled={busy === f.id} onclick={() => answer(f, false)}>No</button></div></li>
+          {/each}
+        </ul>
+      {/if}
+    {:else if tab === 'buy'}
+      {#if !toBuy.length}<p class="text-muted text-sm">Nothing to buy — every work the scouts looked for so far was found or is held.</p>
+      {:else}
+        <ul class="text-xs flex flex-col gap-2.5" role="list">
+          {#each toBuy as b (b.id)}
+            <li><span class="text-primary">{b.title}</span>{#if b.author}<span class="text-muted"> · {b.author}</span>{/if}
+              <div class="text-muted">{b.state === 'lead' ? 'readable elsewhere, not downloadable' : 'no copy anywhere — buy and scan'} · searched: {searched(b).join(', ') || '—'}</div>
+              {#if b.identified?.scout?.why}<div class="text-secondary line-clamp-2">{b.identified.scout.why}</div>{/if}
+              {#if b.state === 'lead'}<div>{#each (b.identified?.scout?.found || []).filter((x) => ['borrow', 'view', 'html'].includes(x.kind)).slice(0, 3) as l}<a class="text-accent mr-2" href={l.url} target="_blank" rel="noopener">{l.site} ({l.kind})</a>{/each}</div>{/if}
+              {#if b.identified?.purchase?.text}<details><summary class="text-muted cursor-pointer">prices · who to ask</summary><p class="text-secondary whitespace-pre-line mt-1">{b.identified.purchase.text}</p></details>{/if}</li>
           {/each}
         </ul>
       {/if}
@@ -80,4 +121,7 @@
   h2 { font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem; }
   .pill { padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
   .pill.on { background: var(--surface-2); color: var(--text-primary); }
+  .act { padding: 0.1rem 0.55rem; border-radius: 0.4rem; border: 1px solid var(--border); color: var(--text-secondary); }
+  .act.yes { border-color: var(--accent-primary); color: var(--accent-primary); }
+  .act:disabled { opacity: 0.5; }
 </style>

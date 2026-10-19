@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-18T21:31:35.346Z",
+  "generated": "2026-10-19T04:26:27.871Z",
   "entries": [
+    {
+      "hash": "4e3fc249",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "A job SLP failed on its own side (expired source link: 'fetch source … HTTP 401' at page 323/342) is reprocessed once under the same id, keeping pages already read; a cancelled SLP job ends the wait (SLP's DELETE now cancels active jobs)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "f0322ca8",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Declining stops OCR — a decline cancels the item's open SLP job (DELETE), a run polling SLP notices the decline within a poll, cancels and never fetches or uses the result, queued runs of a declined item are skipped; a book scan far shorter than the published book (< 25% of its pages) is held for a person BEFORE paying for OCR",
+      "scope": "dewey"
+    },
+    {
+      "hash": "f7d31766",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "A book's PDF is checked against its published length — Open Library / Google Books page count looked up when the item has no research (ingest-folder books); short by pages AND words (two-up scans allowed) → held for a person, not added",
+      "scope": "dewey"
+    },
+    {
+      "hash": "b457d4a0",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "One OCR run per item — the OCR loop skips items already queued (a Review answer's run has a priority flag, so enqueue's dedupe missed it: four items queued twice) and a second concurrent run of one item is skipped, never paying SLP twice",
+      "scope": "dewey"
+    },
+    {
+      "hash": "0200e709",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "Completeness report also compares each library document's words with its source text's",
+      "scope": "dewey"
+    },
+    {
+      "hash": "755e222c",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "Only the WHOLE document is imported — SLP/OCR text must reach the PDF's last pages (page markers ≥85% of the PDF's own page count, text on most pages) and our own sampled late pages must be in it; checked against the PDF's page count, never SLP's; intake also holds previews ('not shown in this preview'), PDFs far shorter than the published book, and sends a text layer that stops early to full OCR; dewey-completeness report audits what is already imported",
+      "scope": "dewey"
+    },
+    {
+      "hash": "420c2e64",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Loading column says plainly 'Loaded — in the library and searchable' (text + BM25) and clears a loaded book after an hour, active work first; Wanted tab lists only books still sought (no source) — items at OCR or loading were shown twice",
+      "scope": "dewey"
+    },
     {
       "hash": "8d110955",
       "date": "2026-10-18",
@@ -3451,59 +3500,59 @@
       "type": "Fixed",
       "description": "Byline/dialogue speakers are evidence; secondary writes never demote a named speaker to the book author",
       "scope": "authorship"
-    },
-    {
-      "hash": "4039ebbc",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Verify quick_check gets a 2h cap (42GB copy passed 30min under load), steps timed, a timeout alarms as UNVERIFIED not FAILED",
-      "scope": "backup"
-    },
-    {
-      "hash": "712a7f09",
-      "date": "2026-10-09",
-      "type": "Docs",
-      "description": "Answer-quality gap — pre-computed answer units, upstream fact defects, head-to-head battery plan",
-      "scope": "planning"
-    },
-    {
-      "hash": "9b6f4564",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Timeline v5 — review drops facts that belong to another person's life (Ḥujjat's Zanján on Quddús)",
-      "scope": "bio"
-    },
-    {
-      "hash": "dc3faaff",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Per-person life page — timeline, relationships, journeys, every line cited (pilot)",
-      "scope": "biography"
-    },
-    {
-      "hash": "3f90d1ca",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Timeline v4 — review pass merges duplicates, fixes order against DB/GPB ¶, adds missing authoritative events",
-      "scope": "bio"
-    },
-    {
-      "hash": "a454cabc",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Timeline v3 — narrative paragraph order (DB/GPB ¶) sequences events whose years are only pinned",
-      "scope": "bio"
-    },
-    {
-      "hash": "17a18adb",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Timeline v2 — spine facts first, pinned years never split one happening, journeys only where attested",
-      "scope": "bio"
     }
   ],
   "grouped": {
     "2026-10-18": [
+      {
+        "hash": "4e3fc249",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "A job SLP failed on its own side (expired source link: 'fetch source … HTTP 401' at page 323/342) is reprocessed once under the same id, keeping pages already read; a cancelled SLP job ends the wait (SLP's DELETE now cancels active jobs)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "f0322ca8",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Declining stops OCR — a decline cancels the item's open SLP job (DELETE), a run polling SLP notices the decline within a poll, cancels and never fetches or uses the result, queued runs of a declined item are skipped; a book scan far shorter than the published book (< 25% of its pages) is held for a person BEFORE paying for OCR",
+        "scope": "dewey"
+      },
+      {
+        "hash": "f7d31766",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "A book's PDF is checked against its published length — Open Library / Google Books page count looked up when the item has no research (ingest-folder books); short by pages AND words (two-up scans allowed) → held for a person, not added",
+        "scope": "dewey"
+      },
+      {
+        "hash": "b457d4a0",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "One OCR run per item — the OCR loop skips items already queued (a Review answer's run has a priority flag, so enqueue's dedupe missed it: four items queued twice) and a second concurrent run of one item is skipped, never paying SLP twice",
+        "scope": "dewey"
+      },
+      {
+        "hash": "0200e709",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "Completeness report also compares each library document's words with its source text's",
+        "scope": "dewey"
+      },
+      {
+        "hash": "755e222c",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "Only the WHOLE document is imported — SLP/OCR text must reach the PDF's last pages (page markers ≥85% of the PDF's own page count, text on most pages) and our own sampled late pages must be in it; checked against the PDF's page count, never SLP's; intake also holds previews ('not shown in this preview'), PDFs far shorter than the published book, and sends a text layer that stops early to full OCR; dewey-completeness report audits what is already imported",
+        "scope": "dewey"
+      },
+      {
+        "hash": "420c2e64",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Loading column says plainly 'Loaded — in the library and searchable' (text + BM25) and clears a loaded book after an hour, active work first; Wanted tab lists only books still sought (no source) — items at OCR or loading were shown twice",
+        "scope": "dewey"
+      },
       {
         "hash": "8d110955",
         "date": "2026-10-18",
@@ -6972,55 +7021,6 @@
         "type": "Fixed",
         "description": "Byline/dialogue speakers are evidence; secondary writes never demote a named speaker to the book author",
         "scope": "authorship"
-      },
-      {
-        "hash": "4039ebbc",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Verify quick_check gets a 2h cap (42GB copy passed 30min under load), steps timed, a timeout alarms as UNVERIFIED not FAILED",
-        "scope": "backup"
-      },
-      {
-        "hash": "712a7f09",
-        "date": "2026-10-09",
-        "type": "Docs",
-        "description": "Answer-quality gap — pre-computed answer units, upstream fact defects, head-to-head battery plan",
-        "scope": "planning"
-      },
-      {
-        "hash": "9b6f4564",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Timeline v5 — review drops facts that belong to another person's life (Ḥujjat's Zanján on Quddús)",
-        "scope": "bio"
-      },
-      {
-        "hash": "dc3faaff",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Per-person life page — timeline, relationships, journeys, every line cited (pilot)",
-        "scope": "biography"
-      },
-      {
-        "hash": "3f90d1ca",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Timeline v4 — review pass merges duplicates, fixes order against DB/GPB ¶, adds missing authoritative events",
-        "scope": "bio"
-      },
-      {
-        "hash": "a454cabc",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Timeline v3 — narrative paragraph order (DB/GPB ¶) sequences events whose years are only pinned",
-        "scope": "bio"
-      },
-      {
-        "hash": "17a18adb",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Timeline v2 — spine facts first, pinned years never split one happening, journeys only where attested",
-        "scope": "bio"
       }
     ]
   }
