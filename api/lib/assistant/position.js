@@ -61,7 +61,8 @@ export async function positionResearch({ question, create, search, authorityOf, 
   if (!defaults.religion && /bah[aá]['’]?[ií]/i.test(question)) defaults = { ...defaults, religion: "Baha'i" };
   let themes = [], raw = '';
   try {
-    const r = await create('anis-research-brief', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
+    const r = await create('anis-research-brief', { max_tokens: 6000,   // Haiku thinks first: 1500 was spent thinking, text empty (10-19; the ≥ 4000 rule)
+      temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
     raw = String(r?.choices?.[0]?.message?.content || '');
     if (!raw) log.warn({ finish: r?.choices?.[0]?.finish_reason, usage: r?.usage, model: r?.model, keys: Object.keys(r?.choices?.[0]?.message || {}) }, 'position: planner returned no text');
     themes = parseBrief(raw);
