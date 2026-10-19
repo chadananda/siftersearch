@@ -124,3 +124,12 @@ describe('sameWork — a work about a work is not the work', () => {
     expect(sameWork('Confessions', 'The Confessions of Saint Augustine')).toBe(true);
   });
 });
+describe('held by the main title (10-19: The Dawn-Breakers scouted as a lead)', () => {
+  it('a long subtitle on the list does not hide a held work', async () => {
+    const { deps } = mk();
+    deps.check = vi.fn(async (id) => (id.title === 'The Dawn-Breakers' ? { verdict: 'held', candidates: [{ id: 21308, title: 'The Dawn-Breakers' }] } : { verdict: 'not-found-by-title' }));
+    const ch = { 'archive.org': vi.fn(async () => []) };
+    expect(await scoutWork({ ...work, title: "The Dawn-Breakers: Nabíl's Narrative of the Early Days of the Bahá'í Revelation" }, { ...deps, channels: ch })).toMatchObject({ state: 'held', held: 21308 });
+    expect(ch['archive.org']).not.toHaveBeenCalled();
+  });
+});

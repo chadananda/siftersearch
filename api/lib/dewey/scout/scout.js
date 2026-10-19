@@ -59,7 +59,11 @@ export async function scoutWork(work, deps = {}) {
     create = createItem, update = updateItem, read = async (p) => (await toMarkdownText(null, p.split('/').pop(), { path: p, full: false })).markdown } = deps;
   const scout = { list: work.list, why: work.why, importance: work.importance, page: work.page || null, channels: [] };
   // 1. HELD? by title first (cheap); a copy's text decides later
-  const h = await check({ title: work.title, author: work.author, from: 'scout' }).catch(() => null);
+  let h = await check({ title: work.title, author: work.author, from: 'scout' }).catch(() => null);
+  // …and by the MAIN title: a list's long subtitle ("The Dawn-Breakers: Nabíl's Narrative of the Early Days…") missed the
+  // library's "The Dawn-Breakers" (10-19: held, scouted as a lead)
+  const mainTitle = String(work.title).split(/\s*[:;(]\s*/)[0];
+  if (h?.verdict !== 'held' && mainTitle.length >= 4 && mainTitle !== work.title) h = (await check({ title: mainTitle, author: work.author, from: 'scout' }).catch(() => null)) || h;
   if (h?.verdict === 'held') {
     const top = h.candidates?.[0];
     await create({ title: work.title, author: work.author, kind: work.kind, identified: { title: work.title, author: work.author, scout, held: top ? { id: top.id, title: top.title } : null }, by: BY, state: 'declined', why: `scout: already in the library${top ? ` — #${top.id} ${top.title}` : ''}` });
@@ -93,7 +97,7 @@ export async function scoutWork(work, deps = {}) {
     const a = await appraise(doc.identified, doc.excerpt, doc.result?.verdict).catch(() => null);
     const item = await create({ title: a?.title || work.title, author: a?.author || work.author, kind: a?.kind || work.kind,
       identified: { ...doc.identified, _text: undefined, file_name: path.split('/').pop(), shelf: a?.shelf || null, appraisal: a, scout, source: c, verdict: doc.result?.verdict }, by: BY, state: 'offered',
-      why: `scout found a copy at ${c.site} (${c.kind}${c.note ? `, ${c.note}` : ''}) — ${doc.result?.verdict}; ${scout.channels.filter((x) => x.searched).length} places searched` });
+      why: `scout found a copy at ${c.site} (${c.kind}${c.note ? `, ${c.note}` : ''}) — ${doc.result?.verdict}; ${scout.channels.filter((x) => x.searched).length} places searched${a?.title && !sameWork(work.title, a.title) && !sameWork(a.title, work.title) ? ` — ⚠ it reads as “${a.title}”, perhaps not the work sought` : ''}` });
     const arc = await archive(path, { itemId: item.id, title: item.title, kind: item.kind });
     await update(item.id, { source_url: c.url, original_path: arc.path, sha256: arc.sha256 });
     await unlink(path).catch(() => {});
