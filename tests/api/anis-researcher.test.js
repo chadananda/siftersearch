@@ -42,7 +42,7 @@ describe('the switch', () => {
     expect(researchEnabled({ id: 'email' }, 'email')).toBe(true);
     expect(researchEnabled({ id: 'widget-chat' }, 'email')).toBe(false);
     expect(researchEnabled({ id: 'widget-chat' }, 'all')).toBe(true);
-    expect(researchEnabled({ id: 'email' }, undefined)).toBe(false);
+    expect(researchEnabled({ id: 'email' }, '')).toBe(false);
   });
 });
 

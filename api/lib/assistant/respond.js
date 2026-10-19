@@ -361,7 +361,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
-  const researchOn = !conversational && (direction.research ?? researchEnabled(direction.channel));
+  // injected deps without a researcher (a test harness) keep it off; tests opt in with deps.research
+  const researchOn = !conversational && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const R = researchOn ? await (d.research || runResearch)({ messages,
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
