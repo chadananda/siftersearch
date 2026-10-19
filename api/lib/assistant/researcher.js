@@ -29,6 +29,8 @@ export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study 
 - Authority decides on doctrine: the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi) carry the answer; the Universal House of Justice is authoritative on applying the law; memoirs, pilgrims' notes and studies only illustrate.
 - Well-known background is yours to give too: e.g. Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán and Prayers and Meditations — never doubt such a fact for want of a passage.
 - Your own knowledge of LANGUAGE (what an Arabic/Persian/Hebrew word means, other words for the idea, roots, grammar) and well-known general background may go in the brief, marked [own]. Facts about people, events, dates and teachings need a passage (P#) — or a web result (W#), named as such.
+- When you name candidate words (other Arabic/Persian words for an idea), check each in word_study, in Arabic script, so the brief can say how Shoghi Effendi rendered them.
+- An empty tool result means only that this lookup found nothing — never treat it as evidence, and never disown or "correct" an earlier reply unless a passage shows it was wrong.
 - Never conclude "nothing found" while a reasonable search is untried. If the library truly lacks something, say what it does have that helps.
 When done, reply with no tool call, in exactly this form:
 BRIEF:
@@ -75,7 +77,8 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     find_original: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     word_study: async ({ word }) => {
       const r = await impl.wordStudy(word);
-      if (!r) return 'no concordance entry';
+      // an empty result is about the SPELLING, never evidence (10-19: "bayt" found nothing and the reply disowned a real chart)
+      if (!r) return `no concordance entry for "${word}" in this spelling — this says nothing about the word; try it in Arabic script (e.g. بيت, غرفة, حجرة)`;
       return `${r.summary}\n\n${show((r.passages || []).map((x) => add(x)))}`;
     },
     source_of: async ({ quotation }) => show((await impl.sourceOf(quotation)).map((x) => add(x))),
