@@ -45,3 +45,18 @@ Chad, 10-19: "We need a way to rapidly iterate without breaking in-process work.
 - **Releases:** each deploy runs `git worktree add ~/sifter/releases/<sha>`, with symlinks for `data/`, `logs/` and `.env-secrets`, and node_modules shared while the lock file is unchanged. `~/sifter/current` points at the newest release, and pm2 runs from it. A process keeps its own release's code until it exits, so there is no skew. Releases no running process uses (no matching `/proc/*/cwd`) are garbage-collected.
 - **Detached runs:** an ops job runs as `node <release>/scripts/run-job.mjs <runId>` with `setsid`, outside pm2's process tree. It writes its pid, release, heartbeat and progress to `ops_report_runs`. After a restart, the reports worker re-attaches to every run whose pid is alive and whose heartbeat is fresh, and requeues only dead runs. The API's spawned tasks (sites-ingest) use the same registry, so their status survives API reloads.
 - **Hot config:** the prompts (soul, house style, researcher), model roles and lint lists are read from data files whose modification time is checked on each use, so a wording change needs no restart.
+
+## Built 10-19
+
+| Service | Port | Mode | Owns |
+|---|---|---|---|
+| siftersearch-gateway | 7839 | cluster ×1 | the tunnel's target. It routes by path (`api/gateway.js`) and retries a restarting service for up to 10 s before returning 503. |
+| siftersearch-api | 7845 | cluster ×1 | search, library, documents, the public and admin APIs. It is the primary: migrations, seeds and the sync worker. |
+| siftersearch-anis | 7844 | cluster ×2 | `/api/chat`, `/api/v1/anis`, `/api/v1/reading`, `/api/v1/companion`, the widget |
+| siftersearch-ops | 7843 | cluster ×1 | `/api/admin/ops/*`, including `services`, the health view |
+| siftersearch-indexer | — | fork | phrase, HyPE, concept and section vectors, BM25 and the coverage ledger (`ops/index-reports.js`) |
+| siftersearch-reports (-carry) | — | fork | the other ops jobs, Dewey's included |
+
+- **Cut-over, 10-19:** 18 requests were retried while the search API moved off 7839, and none failed. A 61-question battery ran straight through it.
+- **Coordinator:** it boots each new build of the gateway, Anís and ops services on a test port (`/healthz`) before any reload. A build that fails is not deployed.
+- **Still to do:** the `ecosystem.config.cjs` rule is still global, so any edit to it touches every service. It should affect only the apps whose own block changed. Phase 4, release directories and detached runs, is not started.

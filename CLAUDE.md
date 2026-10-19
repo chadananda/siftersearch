@@ -102,9 +102,15 @@ npm run build   # Build (must pass)
 The system runs across **two surfaces** — keep this distinction in mind for every change:
 
 **Surface 1: tower-nas (origin / data plane)**
-- Fastify API at `localhost:7839`, exposed publicly via Cloudflare Tunnel as `api.siftersearch.com`
+- **Macro-services behind a gateway** (10-19, `docs/architecture/continuous-deploy.md`): `siftersearch-gateway` on `localhost:7839`
+  (the tunnel → `api.siftersearch.com`, and every internal caller) routes by path to `siftersearch-api` (search, 7845),
+  `siftersearch-anis` (chat/letters/reading/widget, 2 instances, 7844), `siftersearch-ops` (ops reports + health, 7843).
+  Route sets: `api/routes/sets/`; shared runtime `api/lib/api-runtime.js`; every service answers `/healthz`.
+- **The coordinator** (`scripts/update-server.js`) reloads ONLY services whose import graph a push touches; queue services
+  DRAIN (SIGHUP → finish work in hand → exit → new code); long work is a JOB (`api/lib/jobs/async-jobs.js`). What every
+  service runs and is doing: `GET /api/admin/ops/services`. Indexing is its own service (`siftersearch-indexer`).
 - SQLite content DB at `~/sifter/siftersearch/data/sifter.db` (the source of truth — no D1, no Turso for content)
-- PM2 processes (live): `siftersearch-api`, `siftersearch-worker` (single writer, hosts `/write` :7849), `siftersearch-embedding`, `siftersearch-deep-research`, `siftersearch-library-watcher`, `siftersearch-updater`, `cloudflared-tunnel`
+- PM2 processes (live): `siftersearch-gateway`, `siftersearch-api`, `siftersearch-anis`, `siftersearch-ops`, `siftersearch-indexer`, `siftersearch-reports(-carry)`, `siftersearch-worker` (single writer, hosts `/write` :7849), `siftersearch-embedding`, `siftersearch-deep-research`, `siftersearch-library-watcher`, `siftersearch-updater`, `cloudflared-tunnel`
 - RETIRED 2026-07-10 (pm2-stopped, superseded by the unified enrichment pipeline — see below): `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor/promoter/resolver/validator`. Do not restart.
 - **Enrichment pipeline (v2):** ONE gated, ordered, idempotent orchestrator (DISAMBIGUATE→{HyPE∥EXTRACT}→RECONCILE, per-book, DeepSeek) replaces the six retired pollers. State in `doc_pipeline`; code in `api/lib/pipeline/` + `scripts/pipeline/`. Full design: `docs/architecture/unified-enrichment-pipeline.md`.
 - Meilisearch + Dropbox + boss vLLM (boss is a separate machine for local LLM inference)
