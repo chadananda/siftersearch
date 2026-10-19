@@ -49,12 +49,23 @@ async function anis(messages, v) {
     try { return await anisOnce(messages, v, t0); } catch (e) { if (attempt) return { text: `(error: ${e.message})`, error: e.message, ms: Date.now() - t0 }; await new Promise((z) => setTimeout(z, 5000)); }
   }
 }
+// as a JOB (docs/architecture/continuous-deploy.md): start, then poll — no request stays open, so Cloudflare's ~125 s edge
+// limit (10-19: 40 of 61 answers were 524s) and API reloads (the old instance finishes its jobs) cannot touch it
+const RUN = Date.now().toString(36);
+let seq = 0;
 async function anisOnce(messages, v, t0) {
-  const r = await fetch(`${API}/api/v1/anis/draft`, { method: 'POST', signal: AbortSignal.timeout(240000),
-    headers: { 'content-type': 'application/json', 'X-Internal-Key': process.env.INTERNAL_API_KEY },
-    body: JSON.stringify({ messages, email: 'battery@siftersearch.com', ...v }) });
-  const j = await r.json().catch(() => ({}));
-  return { text: j.reply || `(error ${r.status}: ${JSON.stringify(j).slice(0, 200)})`, format: j.format, research: j.research, ms: Date.now() - t0 };
+  const headers = { 'content-type': 'application/json', 'X-Internal-Key': process.env.INTERNAL_API_KEY };
+  const job = `battery-${RUN}-${++seq}`;
+  const r = await fetch(`${API}/api/v1/anis/draft`, { method: 'POST', signal: AbortSignal.timeout(30000), headers,
+    body: JSON.stringify({ messages, email: 'battery@siftersearch.com', async: true, job, ...v }) });
+  if (!r.ok) return { text: `(error ${r.status} starting the job)`, error: `start ${r.status}`, ms: Date.now() - t0 };
+  for (;;) {
+    await new Promise((z) => setTimeout(z, 5000));
+    const g = await fetch(`${API}/api/v1/anis/draft/job/${job}`, { headers, signal: AbortSignal.timeout(30000) }).then((x) => x.json()).catch(() => ({ status: 'poll-failed' }));
+    if (g.status === 'done') { const j = g.result || {}; return { text: j.reply || '(empty reply)', format: j.format, research: j.research, ms: Date.now() - t0 }; }
+    if (g.status === 'failed' || g.status === 'lost') return { text: `(error: job ${g.status} ${g.error || ''})`, error: g.status, ms: Date.now() - t0 };
+    if (Date.now() - t0 > 600000) return { text: '(error: job still running after 10 min)', error: 'timeout', ms: Date.now() - t0 };
+  }
 }
 
 async function perplexity(messages) {
