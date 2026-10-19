@@ -13,7 +13,9 @@ export async function bahaiLibraryList(collections = ['Pilgrims'], deps = {}) {
   const out = [];
   for (const c of collections) for (const w of await (deps.collection || bahaiLibraryCollection)(c)) {
     out.push({ title: w.title, author: w.authors.join('; ') || null, year: w.written || w.year || null, why: w.abstract || null, importance: 4,
-      kind: /pilgrim/i.test(c) ? 'pilgrim notes' : (w.kinds?.[0] || null), page: w.url, language: w.language || null, list: `bahai-library:${c}` });
+      kind: /pilgrim/i.test(c) ? 'pilgrim notes' : (w.kinds?.[0] || null), page: w.url, language: w.language || null, list: `bahai-library:${c}`,
+      // the shelf its collection names (10-19: a pilgrim account shelved by its text under Christian › Mysticism)
+      shelfHint: /pilgrim/i.test(c) ? { religion: "Baha'i", collection: 'Pilgrim Notes' } : { religion: "Baha'i", collection: null } });
   }
   return out;
 }

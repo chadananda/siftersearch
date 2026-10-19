@@ -116,7 +116,7 @@ export async function scoutWork(work, deps = {}) {
     }
     const a = await appraise(doc.identified, doc.excerpt, doc.result?.verdict).catch(() => null);
     const item = await create({ title: a?.title || work.title, author: a?.author || work.author, kind: a?.kind || work.kind,
-      identified: { ...doc.identified, _text: undefined, file_name: path.split('/').pop(), shelf: a?.shelf || null, appraisal: a, scout, source: c, verdict: doc.result?.verdict }, by: BY, state: 'offered',
+      identified: { ...doc.identified, _text: undefined, file_name: path.split('/').pop(), shelf: work.shelfHint?.collection ? work.shelfHint : (work.shelfHint && a?.shelf?.religion !== work.shelfHint.religion ? null : a?.shelf || null), appraisal: a, scout, source: c, verdict: doc.result?.verdict }, by: BY, state: 'offered',
       why: `scout found a copy at ${c.site} (${c.kind}${c.note ? `, ${c.note}` : ''}) — ${doc.result?.verdict}; ${scout.channels.filter((x) => x.searched).length} places searched${a?.title && !sameWork(work.title, a.title) && !sameWork(a.title, work.title) ? ` — ⚠ it reads as “${a.title}”, perhaps not the work sought` : ''}` });
     const arc = await archive(path, { itemId: item.id, title: item.title, kind: item.kind });
     await update(item.id, { source_url: c.url, original_path: arc.path, sha256: arc.sha256 });

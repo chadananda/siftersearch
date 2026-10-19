@@ -127,3 +127,13 @@ describe('guessLatinLang (10-18: a French scan read as English came back "not he
     expect(guessLatinLang('too short')).toBe('eng');
   });
 });
+
+describe('titleFromLines (10-19: "MOOJAN MOMEN" read as the title)', () => {
+  it('a known author on the first line is the author; metadata skipped; the next line is the title', async () => {
+    const { titleFromLines } = await import('../../api/lib/dewey/identify.js');
+    const authors = new Set(['moojan momen']);
+    expect(await titleFromLines(['MOOJAN MOMEN', 'The Family and Early Life of Ṭáhirih Qurrat al-‘Ayn', 'Abstract'], { authors })).toEqual({ title: 'The Family and Early Life of Ṭáhirih Qurrat al-‘Ayn', author: 'Moojan Momen' });
+    expect(await titleFromLines(['Vol. 12, No. 3', 'GOD PASSES BY', 'by Shoghi Effendi'], { authors })).toEqual({ title: 'GOD PASSES BY', author: null });
+    expect(await titleFromLines(['by Lady Blomfield', 'The Chosen Highway'], { authors })).toEqual({ title: 'The Chosen Highway', author: 'Lady Blomfield' });
+  });
+});

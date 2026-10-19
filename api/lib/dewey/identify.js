@@ -57,7 +57,8 @@ export async function identifyFile({ name = '', bytes = null, path = null }) {
   if (ocrd) return withText({ title: null, file_name, kind: 'scan', needs_ocr: true, sample, printed_lines: sampleLines(markdown), from: 'file' }, markdown);
   if (scan && markdown.replace(/\s|\[page \d+\]/g, '').length < 200) return { title: null, file_name, kind: 'scan', needs_ocr: true, from: 'file' };
   const first = markdown.split('\n').map((l) => l.replace(/^#+\s*|\*+/g, '').trim()).filter((l) => l && !/^\[page \d+\]$/i.test(l));
-  return withText({ title: first[0]?.slice(0, 200) || null, file_name, kind: 'file', ...(sample ? { sample } : {}), printed_lines: sampleLines(markdown), from: 'file' }, markdown);
+  const { title, author } = await titleFromLines(first);
+  return withText({ title, ...(author ? { author } : {}), file_name, kind: 'file', ...(sample ? { sample } : {}), printed_lines: sampleLines(markdown), from: 'file' }, markdown);
 }
 
 /** The whole text rides along for the holdings comparison (compare.js) but is NOT enumerable — never sent back in JSON. */
@@ -80,4 +81,34 @@ export function identifyText(text) {
   // the Báb"); the part before the last " by " is a second title an exact match may land on, the rest the author
   const m = t.match(/^(.{3,}?)\s+by\s+([^,]{3,})$/i);
   return m ? { title: t, title_alt: m[1].trim(), author: m[2].trim(), from: 'text' } : { title: t, from: 'text' };
+}
+
+// A TITLE PAGE's first line is often the AUTHOR ("MOOJAN MOMEN" above "The Family and Early Life of Ṭáhirih", 10-19) or a
+// journal header. A first line that is an author the library knows (its own author names, folded) is the author; lines of
+// metadata (volume, issue, ISBN, copyright, a URL, a bare date) are skipped; the title is the next title-like line.
+const META = /^(?:vol(?:ume)?\.?\s|no\.\s|issue\b|pp?\.\s|page\s\d|copyright|©|isbn|issn|https?:|www\.|\d[\d\s./-]*$|by\s*$)/i;
+let authorNames = null;
+async function knownAuthors() {
+  if (authorNames) return authorNames;
+  if (process.env.VITEST) return (authorNames = new Set());
+  const { titleIndex, fold } = await import('./title-index.js');
+  const idx = await titleIndex().catch(() => null);
+  authorNames = new Set();
+  for (const d of idx?.docs || []) for (const a of String(d.author || '').split(/\s*(?:;|&|\band\b|,\s*(?:tr|ed)\.)\s*/i)) { const f = fold(a); if (f.split(' ').length >= 2 && f.length >= 6) authorNames.add(f); }
+  return authorNames;
+}
+/** The first lines of a document → { title, author? }. deps.authors: a Set of folded author names (tests). */
+export async function titleFromLines(lines, { authors = null } = {}) {
+  const { fold } = await import('./title-index.js');
+  const known = authors || await knownAuthors();
+  let author = null;
+  for (const raw of lines.slice(0, 8)) {
+    const l = raw.trim();
+    if (!l || META.test(l)) continue;
+    const by = l.match(/^by\s+(.{3,80})$/i);
+    if (by) { author ||= by[1]; continue; }
+    if (known.has(fold(l))) { author ||= l.replace(/\b(\p{L})(\p{L}*)/gu, (m, a, b) => a + b.toLowerCase()); continue; }
+    return { title: l.slice(0, 200), author };
+  }
+  return { title: lines[0]?.slice(0, 200) || null, author };
 }
