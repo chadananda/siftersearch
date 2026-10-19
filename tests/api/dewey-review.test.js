@@ -93,3 +93,11 @@ describe('archive (Chad 10-19: "keep an archive of unsearchable documents that m
     expect(items[0].log.at(-1).why).toMatch(/original is kept.*document 956320 withdrawn/);
   });
 });
+describe('the popup shows a document\'s size (10-19: "give me the total pages in the viewer")', () => {
+  it('a PDF\'s pages and a text\'s words', async () => {
+    items = [item({ identified: { slp_rejected: { path: '/ocr/x.slp.md' } } })];
+    const r = await reviewOf(1, { read: async () => 'one two three four', size: async () => ({ size: 10 }), shelves: () => ({}), pdfPages: async () => 312 });
+    expect(r.source.pages).toBe(312);
+    expect(r.text.words).toBe(4);
+  });
+});

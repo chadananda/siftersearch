@@ -198,6 +198,12 @@ export async function ocrSample(src, totalPages, { run = execFile, k = 8, vision
   } finally { await rm(work, { recursive: true, force: true }).catch(() => {}); }
 }
 
+/** A PDF's page count (pdfinfo only — nothing read). → number | null */
+export async function pdfPageCount(path, { run = execFile } = {}) {
+  const out = await sh(run, 'pdfinfo', [path], 30000).catch(() => '');
+  return Number(String(out).match(/^Pages:\s+(\d+)/m)?.[1]) || null;
+}
+
 // function words that only one language uses often — a page of OCR text names its language by them
 const FUNCTION_WORDS = {
   fra: ['le', 'la', 'les', 'des', 'du', 'et', 'est', 'dans', 'une', 'pour', 'qui', 'que', 'sur', 'pas', 'avec', 'au', 'aux', 'ce', 'il', 'elle'],

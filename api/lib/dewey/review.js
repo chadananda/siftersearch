@@ -30,13 +30,16 @@ export function answersFor(item) {
 }
 
 /** → everything the Review popup shows. */
-export async function reviewOf(itemId, { read = readFile, size = stat, shelves = libraryShelves } = {}) {
+export async function reviewOf(itemId, deps = {}) {
+  const { read = readFile, size = stat, shelves = libraryShelves } = deps;
   const item = await getItem(itemId);
   if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
   const id = item.identified || {}, a = id.appraisal || {};
   const textPath = id.slp?.path || id.slp_rejected?.path || (['txt', 'md', 'markdown'].includes(extOf(item.original_path)) ? item.original_path : null);
   const text = textPath ? String(await read(textPath).catch(() => '')).replace(/<!--[\s\S]*?-->/g, '').replace(/^---\n[\s\S]*?\n---\n/, '').trim() : '';
   const bytes = item.original_path ? (await size(item.original_path).catch(() => null))?.size ?? null : null;
+  // the WHOLE size in the header (10-19: "give me the total pages in the viewer") — a PDF's pages, a text's words
+  const pages = extOf(item.original_path) === 'pdf' ? await (deps.pdfPages || (await import('./convert.js')).pdfPageCount)(item.original_path).catch(() => null) : null;
   let sh = {};
   try { sh = shelves(); } catch { /* library not mounted here */ }
   return {
@@ -44,8 +47,8 @@ export async function reviewOf(itemId, { read = readFile, size = stat, shelves =
       summary: a.summary || null, shelf: id.shelf || null, doc_id: item.doc_id || null },
     question: item.log?.at(-1)?.why || null,
     history: (item.log || []).slice(-8).map((l) => ({ at: l.at, state: l.state, why: l.why })),
-    source: item.original_path ? { name: id.file_name || item.original_path.split('/').pop(), ext: extOf(item.original_path), bytes } : null,
-    text: text ? { from: id.slp?.path ? 'ocr' : id.slp_rejected?.path ? 'ocr-rejected' : 'file', preview: text.slice(0, TEXT_PREVIEW), chars: text.length,
+    source: item.original_path ? { name: id.file_name || item.original_path.split('/').pop(), ext: extOf(item.original_path), bytes, pages } : null,
+    text: text ? { from: id.slp?.path ? 'ocr' : id.slp_rejected?.path ? 'ocr-rejected' : 'file', preview: text.slice(0, TEXT_PREVIEW), chars: text.length, words: text.split(/\s+/).filter(Boolean).length,
       why_rejected: id.slp_rejected?.check?.why || null } : null,
     shelves: sh,
     answers: answersFor(item),

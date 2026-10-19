@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-19T13:17:38.177Z",
+  "generated": "2026-10-19T13:44:06.678Z",
   "entries": [
+    {
+      "hash": "c33133e0",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The Review popup shows a document's WHOLE text (the first 4,000 characters read as a cut-off book — Chad 10-19: 'I don't want to reject a book because it is not complete'); the folder sweep waits out the key's hourly limit instead of recording 429s, and re-checks erred files on resume",
+      "scope": "dewey"
+    },
+    {
+      "hash": "512db78c",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Folder-sweep finds become OFFERS (dewey-offer-paths: each missing file checked again, appraised, offered under Found with its verdict and nearest library copy — never imported unasked); the sweep skips helper files (.debug, .sample, images)",
+      "scope": "dewey"
+    },
     {
       "hash": "01b28801",
       "date": "2026-10-19",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Index outbox — removals reach EVERY search index (P2)",
       "scope": "index"
-    },
-    {
-      "hash": "2801f290",
-      "date": "2026-10-09",
-      "type": "Refactor",
-      "description": "Qdrant search params in ONE place (SEARCH_PARAMS) + qdrant-profile.mjs (latency vs overlap per variant); eslint: standard Node globals (drop per-file workarounds)",
-      "scope": "search"
-    },
-    {
-      "hash": "8ece9bf3",
-      "date": "2026-10-09",
-      "type": "Docs",
-      "description": "10-09 search battery — Qdrant-only loses other-tradition questions to layer TIMEOUTS, not ranking; refactor P1 done",
-      "scope": "planning"
     }
   ],
   "grouped": {
     "2026-10-19": [
+      {
+        "hash": "c33133e0",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The Review popup shows a document's WHOLE text (the first 4,000 characters read as a cut-off book — Chad 10-19: 'I don't want to reject a book because it is not complete'); the folder sweep waits out the key's hourly limit instead of recording 429s, and re-checks erred files on resume",
+        "scope": "dewey"
+      },
+      {
+        "hash": "512db78c",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Folder-sweep finds become OFFERS (dewey-offer-paths: each missing file checked again, appraised, offered under Found with its verdict and nearest library copy — never imported unasked); the sweep skips helper files (.debug, .sample, images)",
+        "scope": "dewey"
+      },
       {
         "hash": "01b28801",
         "date": "2026-10-19",
@@ -7009,20 +7023,6 @@
         "type": "New",
         "description": "Index outbox — removals reach EVERY search index (P2)",
         "scope": "index"
-      },
-      {
-        "hash": "2801f290",
-        "date": "2026-10-09",
-        "type": "Refactor",
-        "description": "Qdrant search params in ONE place (SEARCH_PARAMS) + qdrant-profile.mjs (latency vs overlap per variant); eslint: standard Node globals (drop per-file workarounds)",
-        "scope": "search"
-      },
-      {
-        "hash": "8ece9bf3",
-        "date": "2026-10-09",
-        "type": "Docs",
-        "description": "10-09 search battery — Qdrant-only loses other-tradition questions to layer TIMEOUTS, not ranking; refactor P1 done",
-        "scope": "planning"
       }
     ]
   }

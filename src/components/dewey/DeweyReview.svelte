@@ -8,6 +8,8 @@
   let r = $state(null), error = $state(null), busy = $state(null);
   let fileUrl = $state(null), fileErr = $state(null), tab = $state('file');
   let title = $state(''), author = $state(''), religion = $state(''), collection = $state('');
+  const CHUNK = 60000;
+  let shown = $state(CHUNK);   // characters of the text drawn so far
 
   $effect(() => {
     let url = null, dead = false;
@@ -55,8 +57,8 @@
       <div class="body">
         <section class="viewer">
           <div class="tabs">
-            {#if r.source}<button class:on={tab === 'file'} onclick={() => (tab = 'file')}>File · {r.source.ext.toUpperCase()} {size(r.source.bytes)}</button>{/if}
-            {#if r.text}<button class:on={tab === 'text'} onclick={() => (tab = 'text')}>{r.text.from === 'file' ? 'Text' : r.text.from === 'ocr-rejected' ? 'OCR text (failed the check)' : 'OCR text'}</button>{/if}
+            {#if r.source}<button class:on={tab === 'file'} onclick={() => (tab = 'file')}>File · {r.source.ext.toUpperCase()}{#if r.source.pages} · {r.source.pages} pages{/if} · {size(r.source.bytes)}</button>{/if}
+            {#if r.text}<button class:on={tab === 'text'} onclick={() => (tab = 'text')}>{r.text.from === 'file' ? 'Text' : r.text.from === 'ocr-rejected' ? 'OCR text (failed the check)' : 'OCR text'} · {r.text.words?.toLocaleString('en-US')} words</button>{/if}
             {#if fileUrl}<a class="open" href={fileUrl} target="_blank" rel="noopener">Open ↗</a>{/if}
           </div>
           {#if tab === 'file'}
@@ -65,9 +67,12 @@
             {:else}<p class="text-muted text-sm p-3">Loading the file…</p>{/if}
           {:else if r.text}
             {#if r.text.why_rejected?.length}<p class="text-warning text-xs px-3 pt-2">Check failed: {r.text.why_rejected.join('; ')}</p>{/if}
-            <pre class="text">{r.text.preview}{#if r.text.chars > r.text.preview.length}<span class="text-muted">
+            <!-- the whole text, LOADED ON SCROLL (10-19: a large book opens at once and keeps reading as you scroll) -->
+            <pre class="text" onscroll={(e) => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight > el.scrollHeight - 1500) shown = Math.min(r.text.preview.length, shown + CHUNK); }}>{r.text.preview.slice(0, shown)}{#if shown < r.text.preview.length}<span class="text-muted">
 
-… {(r.text.chars - r.text.preview.length).toLocaleString('en-US')} more characters</span>{/if}</pre>
+… loading as you scroll ({Math.round((100 * shown) / r.text.preview.length)}% shown)</span>{:else if r.text.chars > r.text.preview.length}<span class="text-muted">
+
+… the text continues ({(r.text.chars - r.text.preview.length).toLocaleString('en-US')} more characters)</span>{/if}</pre>
           {/if}
         </section>
         <section class="side">
