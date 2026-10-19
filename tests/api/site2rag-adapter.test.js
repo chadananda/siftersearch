@@ -428,3 +428,20 @@ describe('no whole-book paragraphs (Chad 10-19: "Never should we search an unseg
     expect(r.paragraphs.some((p) => p.pdf_page === 40)).toBe(true);
   });
 });
+describe('text with no sentence structure (verse lines, lists)', () => {
+  it('is split at line breaks, then words — never left whole', async () => {
+    const { splitByStructure, MAX_BLOCK } = await import('../../api/services/site-adapters/site2rag.js');
+    const verses = Array.from({ length: 2000 }, (_, i) => `${i} and the Lord spake unto them saying`).join('\n');
+    const a = splitByStructure(verses);
+    expect(a.every((p) => p.length <= MAX_BLOCK)).toBe(true);
+    const run = Array.from({ length: 3000 }, (_, i) => `word${i}`).join(' ');
+    expect(splitByStructure(run).every((p) => p.length <= MAX_BLOCK)).toBe(true);
+  });
+});
+describe('site chrome', () => {
+  it('a navigation table of raw HTML is dropped; prose with a link is not', async () => {
+    const { isChrome } = await import('../../api/services/site-adapters/site2rag.js');
+    expect(isChrome('<table align="center"><tbody><tr><td><form action="https://bahai-library.com/" method="get"><select name=""><option value="a">A</option></select></form></td></tr></tbody></table>')).toBe(true);
+    expect(isChrome('The Bahá’í community of Kansas grew steadily through the 1920s, as <a href="x">this history</a> shows.')).toBe(false);
+  });
+});

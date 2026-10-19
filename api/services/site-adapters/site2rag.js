@@ -165,6 +165,14 @@ function deriveExternalId(frontmatter, relativePath) {
 // the text they precede. Chad 10-19: "Never should we search an unsegmented book … MD files should always have clearly
 // separated paragraphs."
 export const MAX_BLOCK = 3000;
+/** SITE CHROME: a block that is mostly raw HTML markup (bahai-library's navigation table with its search form and drop-down —
+ *  8,538 characters on hundreds of pages, 10-19) is not text. Pure. */
+export function isChrome(block) {
+  const b = String(block || '').trim();
+  if (!/^<(table|form|select|div|nav|script|style|ul|iframe)\b/i.test(b)) return false;
+  const text = b.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return text.length < b.length * 0.35;
+}
 const TARGET = 1200;
 export function splitByStructure(block) {
   const b = String(block || '').trim();
@@ -189,14 +197,27 @@ export function splitByStructure(block) {
       acc = acc ? `${acc} ${sn}` : sn;
     }
     if (acc.trim()) out.push(acc.trim());
-    return out;
+    // 3. no sentence structure at all (verse lines, lists): at line breaks, then at word boundaries — the last resort for
+    // text that has no other structure (the Apocrypha kept a 46,000-character block)
+    return out.flatMap((x) => (x.length <= MAX_BLOCK ? [x] : byLength(p.length === x.length ? p : x)));
   });
+}
+function byLength(text) {
+  const units = String(text).includes('\n') ? String(text).split('\n') : String(text).split(/(?<=\s)/);
+  const out = [];
+  let acc = '';
+  for (const u of units) {
+    if (acc && acc.length + u.length > TARGET) { out.push(acc.trim()); acc = ''; }
+    acc += (acc && String(text).includes('\n') ? '\n' : '') + u;
+  }
+  if (acc.trim()) out.push(acc.trim());
+  return out.flatMap((x) => (x.length <= MAX_BLOCK ? [x] : x.match(new RegExp(`[\\s\\S]{1,${TARGET}}(?:\\s|$)`, 'g')).map((y) => y.trim()).filter(Boolean)));
 }
 
 // ─── HTML-derived body parser ───────────────────────────────────────────────
 
 function parseHtmlBody(body, frontmatter) {
-  const blocks = body.split(/\n{2,}/).map(b => b.trim()).filter(Boolean).flatMap((b) => splitByStructure(b));
+  const blocks = body.split(/\n{2,}/).map(b => b.trim()).filter((b) => b && !isChrome(b)).flatMap((b) => splitByStructure(b));
   const paragraphs = [];
   let idx = 0;
 
@@ -233,7 +254,7 @@ function parsePdfBody(body, frontmatter) {
   // "paragraph" per book, and those whole-book paragraphs polluted every search), then each block is split on its own
   // structure (splitByStructure)
   const marked = String(body).replace(/(\[↗ p\.\d+\]\([^)]+\)\s*)?(<span\s+data-pdf-page=)/g, '\n\n$1$2');
-  const blocks = marked.split(/\n{2,}/).map(b => b.trim()).filter(Boolean).flatMap((b) => splitByStructure(b));
+  const blocks = marked.split(/\n{2,}/).map(b => b.trim()).filter((b) => b && !isChrome(b)).flatMap((b) => splitByStructure(b));
   const paragraphs = [];
   let idx = 0;
   let pendingPage = null;
