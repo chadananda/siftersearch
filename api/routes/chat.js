@@ -663,7 +663,9 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       ...(planInfo ? { _plan: planInfo } : {}),
       ...(entitiesOut ? { entities: entitiesOut } : {}),
       ...(peopleAnswerOut ? { peopleAnswer: peopleAnswerOut } : {}),
-      passages: await withBetterCopies(top.map(hit => {
+      // a whole-book "paragraph" (an unsegmented import awaiting re-ingest) is never a passage (Chad 10-19: "Never should we
+      // search an unsegmented book") — filtered BEFORE the 500-character cut below hides its size
+      passages: await withBetterCopies(top.filter((hit) => String(hit.text || '').length <= 8000).map(hit => {
         const docId = hit.doc_id || hit.document_id;
         const meta = docMeta.get(docId);
         const extParaId = paraExtIds.get(`${docId}:${hit.paragraph_index}`);
