@@ -137,3 +137,14 @@ describe('titleFromLines (10-19: "MOOJAN MOMEN" read as the title)', () => {
     expect(await titleFromLines(['by Lady Blomfield', 'The Chosen Highway'], { authors })).toEqual({ title: 'The Chosen Highway', author: 'Lady Blomfield' });
   });
 });
+
+describe('titleLike', () => {
+  it('a sentence of running text is not a title', async () => {
+    const { titleFromLines, titleLike } = await import('../../api/lib/dewey/identify.js');
+    expect(titleLike('new information is both complementary, in the sense of confirming from different sources, and')).toBe(false);
+    expect(titleLike('The Family and Early Life of Ṭáhirih Qurrat al-‘Ayn')).toBe(true);
+    expect(titleLike('GOD PASSES BY')).toBe(true);
+    expect(await titleFromLines(['MOOJAN MOMEN', 'new information is both complementary, in the sense of', 'confirming it.', 'x', 'x', 'x', 'x', 'x', 'The Family and Early Life of Ṭáhirih Qurrat al-‘Ayn'], { authors: new Set(['moojan momen']) }))
+      .toEqual({ title: 'The Family and Early Life of Ṭáhirih Qurrat al-‘Ayn', author: 'Moojan Momen' });
+  });
+});

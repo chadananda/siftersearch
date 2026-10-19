@@ -97,6 +97,15 @@ async function knownAuthors() {
   for (const d of idx?.docs || []) for (const a of String(d.author || '').split(/\s*(?:;|&|\band\b|,\s*(?:tr|ed)\.)\s*/i)) { const f = fold(a); if (f.split(' ').length >= 2 && f.length >= 6) authorNames.add(f); }
   return authorNames;
 }
+/** Looks like a TITLE: starts with a capital or digit, ≤ 20 words, no trailing comma or semicolon, and mostly capitalised
+ *  words (all caps counts) — a sentence of running text ("new information is both complementary, …") is not. Pure. */
+export function titleLike(l) {
+  const w = l.split(/\s+/);
+  if (!/^[\p{Lu}\p{N}"“'‘(]/u.test(l) || w.length > 20 || /[,;]$/.test(l) || (/[.!?]$/.test(l) && w.length > 8)) return false;
+  const content = w.filter((x) => x.length > 3);
+  const caps = content.filter((x) => /^[\p{Lu}\p{N}"“'‘(]/u.test(x)).length;
+  return !content.length || caps / content.length >= 0.5;
+}
 /** The first lines of a document → { title, author? }. deps.authors: a Set of folded author names (tests). */
 export async function titleFromLines(lines, { authors = null } = {}) {
   const { fold } = await import('./title-index.js');
@@ -108,7 +117,9 @@ export async function titleFromLines(lines, { authors = null } = {}) {
     const by = l.match(/^by\s+(.{3,80})$/i);
     if (by) { author ||= by[1]; continue; }
     if (known.has(fold(l))) { author ||= l.replace(/\b(\p{L})(\p{L}*)/gu, (m, a, b) => a + b.toLowerCase()); continue; }
-    return { title: l.slice(0, 200), author };
+    if (titleLike(l)) return { title: l.slice(0, 200), author };
   }
-  return { title: lines[0]?.slice(0, 200) || null, author };
+  // no title-like line at the top: the first one further down (a sampled page can open mid-text), else the first line
+  const later = lines.slice(8, 40).find((l) => !META.test(l) && !known.has(fold(l)) && titleLike(l));
+  return { title: (later || lines.find((l) => !known.has(fold(l))) || lines[0])?.slice(0, 200) || null, author };
 }
