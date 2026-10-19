@@ -3,8 +3,11 @@
 // today's Anís, the researcher (two writers) and Perplexity; Opus judges them BLIND (shuffled labels) for helpfulness,
 // substance and faithfulness to authority. Anís through the internal API (/api/v1/anis/draft — logs as battery@), Perplexity
 // and the judge directly. Usage: node scripts/anis/research-battery.mjs [--only 1,3] [--variants current,haiku,sonnet]
+//   --immerse tmp/immerse/<feed>.json: the questions people put to bahaiwritings.app, judged against Immerse's own answer
+//   (Chad 10-19: "make sure we can give a more detailed, doctrinal, nuanced and interesting answer to each")
+//   --no-perplexity  --concurrency N
 import dotenv from 'dotenv';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
@@ -58,7 +61,7 @@ async function perplexity(messages) {
   return { text: j.choices?.[0]?.message?.content || `(error ${r.status})`, ms: Date.now() - t0 };
 }
 
-const JUDGE = `You judge answers from study assistants to a reader of the world's sacred texts (here mostly the Bahá'í Writings). The standard: the most HELPFUL and INFORMATIVE answer for this reader — it takes up what they are reaching for and gives real substance (the texts' own words, originals where relevant, sound language knowledge), invites further exploration, never declines or quibbles. On doctrine, authority decides: the words of Bahá'u'lláh and the Báb and the authorised interpretation of 'Abdu'l-Bahá and Shoghi Effendi carry the answer; secondary views are illustration, and popular opinion is not doctrine. Penalise errors, invented quotations or sources, misattribution, padding and evasion. Judge each answer on its own merits — the labels are random.`;
+const JUDGE = `Criteria, each counted: DETAILED (real substance, not length for its own sake), DOCTRINAL (grounded in the authoritative texts, quoted and attributed correctly), NUANCED (distinctions, context, the reader's real question), INTERESTING (a genuine insight or thread worth pulling). You judge answers from study assistants to a reader of the world's sacred texts (here mostly the Bahá'í Writings). The standard: the most HELPFUL and INFORMATIVE answer for this reader — it takes up what they are reaching for and gives real substance (the texts' own words, originals where relevant, sound language knowledge), invites further exploration, never declines or quibbles. On doctrine, authority decides: the words of Bahá'u'lláh and the Báb and the authorised interpretation of 'Abdu'l-Bahá and Shoghi Effendi carry the answer; secondary views are illustration, and popular opinion is not doctrine. Penalise errors, invented quotations or sources, misattribution, padding and evasion. Judge each answer on its own merits — the labels are random.`;
 
 async function judge(c, answers) {
   const labels = Object.keys(answers).sort(() => Math.random() - 0.5);
@@ -69,29 +72,43 @@ async function judge(c, answers) {
   const res = await client.messages.create({ model: 'claude-opus-5-5', max_tokens: 4000, system: JUDGE,
     tools: [{ name: 'verdict', description: 'scores for every answer', input_schema: { type: 'object', required: ['scores', 'best'], properties: {
       scores: { type: 'array', items: { type: 'object', required: ['label', 'score', 'why'], properties: { label: { type: 'string' }, score: { type: 'number', description: '1–10' }, why: { type: 'string', description: 'one or two sentences: strengths, errors, what is missing' } } } },
-      best: { type: 'string' } } } }],
+      best: { type: 'string' },
+      anis_gaps: { type: 'string', description: 'what the best non-Anís answer gave that the Anís answers lacked (texts, facts, structure, depth) — concrete, or "none"' } } } }],
     tool_choice: { type: 'auto' },   // Opus 5.5 rejects a forced tool choice
     messages: [{ role: 'user', content: `THE CONVERSATION:\n${convo}\n\n${body}\n\nScore every answer (1–10) and name the best, by calling the verdict tool.` }] });
   const v = res.content.find((b) => b.type === 'tool_use')?.input || { scores: [] };
   const back = Object.fromEntries(Object.entries(tag).map(([k, t]) => [t, k]));
-  return { scores: Object.fromEntries((v.scores || []).map((s) => [back[s.label] || s.label, { score: s.score, why: s.why }])), best: back[v.best] || v.best };
+  return { scores: Object.fromEntries((v.scores || []).map((s) => [back[s.label] || s.label, { score: s.score, why: s.why }])), best: back[v.best] || v.best, gaps: v.anis_gaps || null };
 }
 
 const only = arg('only')?.split(',').map(Number);
-const variants = (arg('variants') || 'current,haiku,sonnet').split(',');
-const out = [];
-for (const c of CASES.filter((x) => !only || only.includes(x.id))) {
+const immerseFile = arg('immerse');
+const cases = immerseFile
+  ? JSON.parse(readFileSync(immerseFile, 'utf8')).map((x, i) => ({ id: i + 1, kind: `immerse: ${x.title || ''}`.slice(0, 60), url: x.url,
+    messages: [{ role: 'user', content: x.question }], immerse: x.answer }))
+  : CASES;
+const variants = (arg('variants') || (immerseFile ? 'sonnet' : 'current,haiku,sonnet')).split(',');
+const withPx = !process.argv.includes('--no-perplexity');
+const clipA = (t) => (String(t || '').length > 14000 ? `${String(t).slice(0, 14000)}…` : String(t || ''));
+async function runCase(c) {
   const answers = {};
-  const [px, ...an] = await Promise.all([perplexity(c.messages), ...variants.map((v) => anis(c.messages, VARIANTS[v]))]);
-  answers.perplexity = px;
+  const [px, ...an] = await Promise.all([withPx ? perplexity(c.messages) : null, ...variants.map((v) => anis(c.messages, VARIANTS[v]))]);
+  if (px) answers.perplexity = px;
+  if (c.immerse) answers.immerse = { text: clipA(c.immerse) };
   variants.forEach((v, i) => { answers[v] = an[i]; });
   const verdict = await judge(c, answers).catch((e) => ({ error: e.message, scores: {} }));
-  out.push({ ...c, answers, verdict });
-  console.log(`#${c.id} ${c.kind.padEnd(30)} ${Object.keys(answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}`);
+  console.log(`#${c.id} ${c.kind.padEnd(34)} ${Object.keys(answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}`);
+  return { ...c, answers, verdict };
 }
+const out = [];
+const todo = cases.filter((x) => !only || only.includes(x.id));
+const N = Number(arg('concurrency') || (immerseFile ? 3 : 1));
+for (let i = 0; i < todo.length; i += N) out.push(...await Promise.all(todo.slice(i, i + N).map(runCase)));
 const mean = (k) => { const s = out.map((o) => o.verdict.scores[k]?.score).filter((x) => x != null); return s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null; };
-const beats = (k) => out.filter((o) => (o.verdict.scores[k]?.score ?? 0) > (o.verdict.scores.perplexity?.score ?? 99)).length;
-const summary = Object.fromEntries(['perplexity', ...variants].map((k) => [k, { mean: mean(k), beats_perplexity: k === 'perplexity' ? null : `${beats(k)}/${out.length}`, best: out.filter((o) => o.verdict.best === k).length }]));
+const rivals = [...(withPx ? ['perplexity'] : []), ...(immerseFile ? ['immerse'] : [])];
+const beatsOf = (k, r) => out.filter((o) => (o.verdict.scores[k]?.score ?? 0) > (o.verdict.scores[r]?.score ?? 99)).length;
+const summary = Object.fromEntries([...rivals, ...variants].map((k) => [k, { mean: mean(k), best: out.filter((o) => o.verdict.best === k).length,
+  ...(rivals.includes(k) ? {} : Object.fromEntries(rivals.map((r) => [`beats_${r}`, `${beatsOf(k, r)}/${out.length}`]))) }]));
 console.log(JSON.stringify(summary, null, 1));
 mkdirSync(join(ROOT, 'tmp'), { recursive: true });
 const file = join(ROOT, 'tmp', `anis-battery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);

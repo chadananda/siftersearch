@@ -72,7 +72,14 @@ const put = store.prepare(`INSERT OR REPLACE INTO audits (message_id, session_id
 /** The auditor found the answer short: not (fully) answered, or problems listed. */
 // …or the competitor answered this reader better (Chad 10-19: "we should always be more helpful and informative than Perplexity")
 export const flagged = (v) => ['no', 'partly'].includes(v?.evidence?.answered) || (Array.isArray(v?.problems) && v.problems.length > 0) || v?.vs_competitor?.verdict === 'worse';
+// OUR OWN TEST ADDRESSES are audited (the data is useful) but never alert Chad — a 61-question battery would flood his inbox
+const { emailHash } = await import('../../api/lib/assistant/pause-link.js');
+const QUIET = new Set(['battery@siftersearch.com', 'test-rerun@siftersearch.com', ...String(process.env.AUDIT_QUIET_EMAILS || '').split(',')]
+  .filter(Boolean).map((e) => `email:${emailHash(e)}`));
+const participantOf = content.prepare('SELECT participant_id FROM chat_sessions WHERE id = ?');
+export const quiet = (sessionId) => QUIET.has(participantOf.get(sessionId)?.participant_id);
 async function alertPoorAnswer({ row, question, verdict: v }) {
+  if (quiet(row.session_id)) return;
   const { actionRequired } = await import('../../api/lib/ops/alert.js');
   const probs = (Array.isArray(v.problems) ? v.problems : []).slice(0, 8).map((p) => `  • ${p.kind}: ${p.detail}`).join('\n');
   const text = `Anís's answer needs a look (${row.channel || 'chat'}, ${row.answered_at || ''} UTC)\n\nQUESTION:\n${String(question).slice(0, 1500)}\n\nANÍS REPLIED:\n${String(row.content || '').slice(0, 2500)}\n\n`
