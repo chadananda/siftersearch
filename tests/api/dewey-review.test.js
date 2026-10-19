@@ -68,3 +68,17 @@ describe('reviewOf', () => {
     expect(r.shelves).toEqual({ Bahai: ['Letters'] });
   });
 });
+
+describe('decline cancels SLP', () => {
+  it('a job still reading it is cancelled; a finished one is left alone', async () => {
+    const cancel = vi.fn(async () => ({ deleted: true }));
+    items = [item({ identified: { slp_progress: { job_id: 'job_live', step: 'processing' } } })];
+    await resolveItem(1, 'decline', {}, 'chad', { cancel });
+    expect(cancel).toHaveBeenCalledWith('job_live');
+    expect(items[0].log.at(-1).why).toMatch(/job_live cancelled/);
+    items = [item({ identified: { slp_progress: { job_id: 'job_done', step: 'complete' }, slp_rejected: { path: '/o.md', job_id: 'job_done' } } })];
+    cancel.mockClear();
+    await resolveItem(1, 'decline', {}, 'chad', { cancel });
+    expect(cancel).not.toHaveBeenCalled();
+  });
+});

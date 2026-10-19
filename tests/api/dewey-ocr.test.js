@@ -206,3 +206,14 @@ describe('completeness', () => {
     expect(c.why.join()).toMatch(/last pages we read ourselves/);
   });
 });
+
+describe('slpExtract stop', () => {
+  it('declined while SLP reads it → the job is cancelled at SLP and the wait ends', async () => {
+    const calls = [];
+    const fetchImpl = vi.fn(async (url, opts = {}) => { calls.push(`${opts.method || 'GET'} ${url}`);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ status: 'processing' }), json: async () => ({ deleted: true }) }; });
+    await expect(slpExtract({ path: '/x.pdf', resumeJobId: 'job_9' }, { fetchImpl, key: 'k', pollMs: 1, stop: async () => true })).rejects.toMatchObject({ cancelled: true });
+    expect(calls.some((c) => c.startsWith('DELETE') && c.endsWith('/v1/jobs/job_9'))).toBe(true);
+    expect(calls.some((c) => c.includes('/result'))).toBe(false);
+  });
+});

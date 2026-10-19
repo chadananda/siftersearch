@@ -6,6 +6,7 @@ import { readFile, stat } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { libraryShelves } from './intake.js';
+import { slpCancel } from './searchlayer.js';
 
 const TEXT_PREVIEW = 4000;
 const extOf = (p) => String(p || '').split('.').pop().toLowerCase();
@@ -49,13 +50,13 @@ export async function reviewOf(itemId, { read = readFile, size = stat, shelves =
 }
 
 /** Carry out a person's answer. action: import | use-ocr | retry-ocr | decline; fields { title?, author?, shelf? }. */
-export async function resolveItem(itemId, action, { title, author, shelf } = {}, by = 'dewey', { queue = enqueue } = {}) {
+export async function resolveItem(itemId, action, { title, author, shelf } = {}, by = 'dewey', { queue = enqueue, cancel = slpCancel } = {}) {
   const item = await getItem(itemId);
   if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
   if (!['needs-human', 'failed', 'needs-ocr'].includes(item.state)) throw Object.assign(new Error(`this item is ${item.state} — nothing to answer`), { statusCode: 409 });
   const allowed = answersFor(item).map((x) => x.action);
   if (!allowed.includes(action)) throw Object.assign(new Error(`“${action}” does not fit this item (${allowed.join(', ')})`), { statusCode: 400 });
-  if (action === 'decline') return updateItem(item.id, { state: 'declined' }, `declined by ${by}`);
+  if (action === 'decline') return declineItem(item, by, { cancel });
   const override = { add: true, by, at: new Date().toISOString() };
   let identified = { ...item.identified, override };
   if (shelf?.religion && shelf?.collection) identified.shelf = { religion: shelf.religion, collection: shelf.collection, why: `chosen by ${by}` };
@@ -74,4 +75,13 @@ export async function resolveItem(itemId, action, { title, author, shelf } = {},
   await updateItem(item.id, { state: 'source', identified, ...named }, `${by}: ${action === 'use-ocr' ? 'the OCR text is good — use it' : 'add it'}`);
   await queue('dewey-intake', { id: item.id, priority: 1 }, by);
   return getItem(item.id);
+}
+
+/** NO: declined, and an SLP job still reading it is cancelled (Chad 10-18: "choosing not to add a book did not stop the SLP
+ *  processing") — a job whose connection dropped ("fetch failed") has no run polling it, so the decline itself cancels it. */
+export async function declineItem(item, by, { cancel = slpCancel } = {}) {
+  const id = item.identified || {};
+  const job = id.slp_progress?.job_id && id.slp_progress.step !== 'complete' && !id.slp?.job_id && id.slp_progress.job_id !== id.slp_rejected?.job_id ? id.slp_progress.job_id : null;
+  const c = job ? await cancel(job).catch(() => null) : null;
+  return updateItem(item.id, { state: 'declined' }, `declined by ${by}${job ? (c?.deleted ? ` — SearchLayerPDF job ${job} cancelled` : ` — could not cancel SearchLayerPDF job ${job}`) : ''}`);
 }

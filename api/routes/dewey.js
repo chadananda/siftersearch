@@ -28,7 +28,7 @@ import { stagesOf, ocrOf, loadingList, searchable } from '../lib/import-board.js
 import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity, appendMessage, threadOf } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { archiveOriginal, inArchive } from '../lib/dewey/intake.js';
-import { reviewOf, resolveItem } from '../lib/dewey/review.js';
+import { reviewOf, resolveItem, declineItem } from '../lib/dewey/review.js';
 import { deweyTurn } from '../lib/dewey/agent.js';
 import * as S from './dewey-schemas.js';
 
@@ -166,7 +166,7 @@ export default async function deweyRoutes(fastify) {
     const item = await getItem(request.params.id);
     if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
     if (item.state !== 'offered') return { item };
-    return { item: await updateItem(item.id, { state: 'declined' }, `declined by ${request.user?.email || 'dewey'}`) };
+    return { item: await declineItem(item, request.user?.email || 'dewey') };
   });
 
   // NEEDS A PERSON → the Review popup (Chad 10-18: "a way to comply … view the document and answer the question"): the

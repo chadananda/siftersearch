@@ -15,6 +15,7 @@ import { readPdf, ocrSample, visionRead } from '../dewey/convert.js';
 import { execFile } from 'child_process';
 import { tmpdir } from 'os';
 import { slpExtract, slpCheck, slpMaxPages, slpReceipt, slpToText } from '../dewey/searchlayer.js';
+import { researchWork } from '../dewey/research.js';
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
 
@@ -51,6 +52,8 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
     return { id, refreshed: true, check };
   }
   if (item.identified?.slp?.path) return { id, skipped: 'already has SLP text' };
+  // declined (or imported) while this run waited in the queue: nothing to read
+  if (['declined', 'ingested'].includes(item.state)) return { id, skipped: `item is ${item.state}` };
   // never OCR the same work twice (two copies of "Islam and the Baha'i Faith" were both sent, 10-18): an earlier item with
   // the same title already on its way through OCR or in the library → a person decides
   const untitled = /^untitled/i.test(String(item.title || ''));
@@ -66,12 +69,25 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
     await updateItem(item.id, { state: 'needs-human' }, `a ${pages}-page scan — over the ${slpMaxPages()}-page limit for automatic OCR; approve it by hand`);
     return { id, state: 'needs-human', pages };
   }
+  // BEFORE PAYING FOR OCR: a scan far shorter than the published book is only part of it (10-18: Chad declined a 2-page "Proud
+  // Helper" and others only after SLP had read them) — a person decides first
+  const kind = String(item.identified?.appraisal?.kind || item.kind || '').toLowerCase();
+  if (!approved && kind === 'book' && !untitled) {
+    const r = item.research?.matched ? item.research : await (deps.research || researchWork)({ title: item.title, author: item.author }).catch(() => null);
+    const published = Number(r?.matched && r.pages) || 0;
+    if (published >= 60 && pages < published * 0.25) {
+      await updateItem(item.id, { state: 'needs-human' }, `only part of the book? The scan has ${pages} pages; the published book has about ${published} — not sent for OCR`);
+      return { id, state: 'needs-human', why: 'partial before OCR', pages, published };
+    }
+  }
   await updateItem(item.id, { state: 'needs-ocr' }, `full OCR started (SearchLayerPDF, ${pages} pages)`);
   // our own read of a few pages — what SLP's text must contain
   const own = await sample({ path: item.original_path }, pages).catch(() => null);
   const a = item.identified?.appraisal || {};
   const context = [a.title || item.title, a.author || item.author, a.year, a.summary].filter(Boolean).join(' — ');
   let out;
+  // checked on every poll: the member declined it while SLP was reading → the SLP job is cancelled (slpExtract)
+  const declined = async () => (await getItem(item.id).catch(() => null))?.state === 'declined';
   // live progress for the Observatory's import board (pages done / total, SLP's stage) — no log line, just the field
   let lastBeat = 0;
   const progress = (p) => { if (Date.now() - lastBeat < 30000 && !['complete', 'created', 'resumed'].includes(p.step)) return; lastBeat = Date.now();
@@ -81,7 +97,7 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
   // SLP re-runs a job under the SAME id when it improves (10-18: "failed OCR jobs have been completed. you can request them
   // with the same url") — so the CURRENT result for that id is fetched first; the saved copy is the fallback
   if (prior?.job_id && !deps.read) {
-    try { out = { ...(await extract({ path: item.original_path, context, resumeJobId: prior.job_id }, { log: progress })), refetched: true }; } catch { out = null; }
+    try { out = { ...(await extract({ path: item.original_path, context, resumeJobId: prior.job_id }, { log: progress, stop: declined })), refetched: true }; } catch { out = null; }
   }
   if (!out && prior?.path) {
     try { const md = String(await (deps.read || readFile)(prior.path)); out = { markdown: md, ...slpToText(md), job_id: prior.job_id, score: prior.score, cost_cents: prior.cost_cents, pages: prior.pages, reused: true }; } catch { out = null; }
@@ -90,11 +106,13 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
     // a job submitted before a restart is resumed (its id is on the item), never re-submitted
     // …including one SLP reported failed: SLP finishes failed jobs later under the same id (10-18), so ask that id first
     const resume = item.identified?.slp_progress?.job_id || null;
-    try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress }); } catch (err) {
+    try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress, stop: declined }); } catch (err) {
+      if (err.cancelled) return { id, state: 'declined', cancelled: true };
       await updateItem(item.id, { state: 'needs-human' }, `full OCR failed: ${String(err.message).slice(0, 200)}`);
       return { id, state: 'needs-human', why: err.message };
     }
   }
+  if (await declined()) return { id, state: 'declined', cancelled: true };   // declined while the result was fetched
   let check = slpCheck(out.text, { pages, pdfPages: pages, sampleText: own?.text || null });   // the PDF's page count: a truncated job reports its own
   const where = join(originalsDir(), 'ocr', `${item.sha256 || `item-${item.id}`}.slp.md`);
   if (!out.reused) await save(where, out.markdown);   // kept either way — a failed check can be read by a person

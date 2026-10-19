@@ -127,11 +127,19 @@ export function slpCheck(text, { pages = 1, sampleText = null, pdfPages = null }
   return { ok: !why.length, why, words, perPage: Math.round(perPage), ratio: ratio == null ? null : +ratio.toFixed(2), sampleFound, whole };
 }
 
+/** Cancel (delete) an SLP job. SLP answers 202 "deleted" even while it is processing; it may finish the page in hand. */
+export async function slpCancel(jobId, { fetchImpl = fetch, key = slpKey() } = {}) {
+  if (!jobId || !key) return { deleted: false };
+  const r = await fetchImpl(`${BASE()}/v1/jobs/${jobId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(30000) });
+  const j = await r.json().catch(() => ({}));
+  return { deleted: r.ok && j.deleted !== false, status: r.status };
+}
+
 /**
  * A PDF (a server path) → SLP's { markdown, meta, text, job_id, score, cost_cents }. Polls until done (scans: a GPU pod
  * takes 2–3 min to come up, then ~9 s a page English, ~17 s Arabic) — `timeoutMs` bounds it. fetchImpl injectable.
  */
-export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, retryMs = 5000, timeoutMs = 3 * 3600000, log = () => {} } = {}) {
+export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, retryMs = 5000, timeoutMs = 3 * 3600000, log = () => {}, stop = async () => false } = {}) {
   if (!key) throw new Error('SearchLayerPDF is not configured (SEARCHLAYERPDF_API_KEY)');
   const H = { Authorization: `Bearer ${key}` };
   const json = async (r) => { const t = await r.text(); try { return JSON.parse(t); } catch { return { raw: t.slice(0, 200) }; } };
@@ -174,6 +182,12 @@ export async function slpExtract({ path, context = '', resumeJobId = null }, { f
     s = await json(await call(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
     log({ job_id: job.job_id, step: s.status, stage: s.current_stage || null, pages_done: s.pages_done ?? null, pages_total: s.pages_total ?? s.page_count ?? null });
     if (['complete', 'failed', 'capped'].includes(s.status)) break;
+    // the member said NO while SLP was reading it (Chad 10-18: "choosing not to add a book did not stop the SLP processing"):
+    // the job is cancelled at SLP and this wait ends — its result is never fetched or used
+    if (await stop()) {
+      await slpCancel(job.job_id, { fetchImpl, key }).catch(() => null);
+      throw Object.assign(new Error(`SLP job ${job.job_id} cancelled: the item was declined`), { cancelled: true });
+    }
     if (Date.now() - t0 > timeoutMs) throw new Error(`SLP job ${job.job_id} still ${s.status} after ${Math.round(timeoutMs / 60000)} min`);
     await new Promise((z) => setTimeout(z, pollMs));
   }
