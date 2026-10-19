@@ -80,3 +80,10 @@ describe('dewey-ingest-folder', () => {
     expect((await easiestFirst(d)).map((f) => f.path.split('/').pop())).toEqual(['z.txt', 'a.docx', 'b.pdf']);
   });
 });
+describe('workKey: a generic lead-in is not the work (10-19: two pilgrim notes held as twins)', () => {
+  it('"Pilgrim Notes: …" keys on the whole title; a real title before the colon still keys on it', async () => {
+    const { workKey } = await import('../../api/lib/ops/dewey-ingest-folder-job.js');
+    expect(workKey("Pilgrim Notes: Account of Abdu'l-Bahá's Arrival in America")).not.toBe(workKey('Pilgrim notes: nine days in Akka and Haifa'));
+    expect(workKey('Resurrection and Renewal: The Making of the Babi Movement')).toBe(workKey('Resurrection and Renewal'));
+  });
+});

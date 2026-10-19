@@ -22,7 +22,10 @@ export const ingestDir = () => process.env.DEWEY_INGEST_DIR || '/tank/dewey-inge
 const EASE = { txt: 0, md: 0, markdown: 0, docx: 1, html: 2, htm: 2, xhtml: 2, epub: 2, rtf: 2, odt: 2, doc: 3, wpd: 3, wps: 3, webarchive: 4, pdf: 5 };
 const HELD_WHY = 'ingest folder: already in the library';
 /** A work's title for "the same work?": diacritics, apostrophes and the subtitle after ':' folded away. */
-export const workKey = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().split(':')[0].replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+// …but a GENERIC lead-in before the colon ("Pilgrim Notes: Account of Abdu'l-Bahá's Arrival…" vs "Pilgrim notes: nine days in
+// Akka…") is not the work's name — the whole title is used (10-19: two different pilgrim notes held as twins)
+const GENERIC = /^(?:pilgrim(?:'?s)? notes?|notes?|letters?|untitled|talks?|diary|memoirs?|recollections|reminiscences|an? (?:letter|talk|account)|account|transcript|interview|excerpts?|chapter \w+)$/;
+export const workKey = (t) => { const f = String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase(); const head = f.split(':')[0].replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); return GENERIC.test(head) || head.split(' ').length < 2 ? f.replace(/[^\p{L}\p{N}]+/gu, ' ').trim() : head; };
 
 const DONE = new Set(['source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed']);
 

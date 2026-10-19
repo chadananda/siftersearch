@@ -13,9 +13,16 @@ import { toMarkdownText } from '../convert.js';
 
 export const scoutDir = () => process.env.DEWEY_SCOUT_DIR || '/tank/dewey-ingest/scout';
 const BY = 'dewey-scout';
-const DOWNLOADABLE = ['pdf', 'text', 'epub', 'html'];
+const DOWNLOADABLE = ['pdf', 'text', 'epub', 'html', 'docx', 'doc', 'rtf'];
 const pause = (ms) => new Promise((z) => setTimeout(z, ms));
-const extOf = (c, type = '') => (c.kind === 'pdf' || /pdf/.test(type) ? 'pdf' : c.kind === 'epub' || /epub/.test(type) ? 'epub' : c.kind === 'text' || /text\/plain/.test(type) ? 'txt' : 'html');
+// the file's type: its URL's extension, the channel's kind, then the server's content type
+const extOf = (c, type = '') => {
+  const fromUrl = String(c.url || '').split('?')[0].match(/\.(pdf|docx?|rtf|epub|txt|html?)$/i)?.[1]?.toLowerCase();
+  if (fromUrl) return fromUrl === 'htm' ? 'html' : fromUrl;
+  if (['docx', 'doc', 'rtf'].includes(c.kind)) return c.kind;
+  return c.kind === 'pdf' || /pdf/.test(type) ? 'pdf' : c.kind === 'epub' || /epub/.test(type) ? 'epub' : c.kind === 'text' || /text\/plain/.test(type) ? 'txt'
+    : /wordprocessingml/.test(type) ? 'docx' : /msword/.test(type) ? 'doc' : 'html';
+};
 
 /** Download a found copy (≤ 150 MB) to the scout folder → path, or null. */
 export async function download(c, { fetchImpl = fetch, dir = scoutDir() } = {}) {
@@ -49,7 +56,8 @@ export async function pageCopies(work, fetchImpl = fetch) {
   const site = new URL(work.page).hostname;
   const docs = [...new Set([...html.matchAll(/href="([^"]+\.(?:pdf|docx?|rtf)(?:\?[^"]*)?)"/gi)].map((m) => new URL(m[1], work.page).href))]
     .filter((u) => !isShadow(u) && !/favicon|logo/i.test(u)).slice(0, 4);
-  return [...docs.map((u) => ({ url: u, kind: /\.pdf/i.test(u) ? 'pdf' : 'html', site, title: work.title, note: 'linked from the list\'s page' })),
+  // the linked file's OWN type (10-19: a .docx saved as .html was read as a web page — "not usable text")
+  return [...docs.map((u) => ({ url: u, kind: (u.match(/\.(pdf|docx?|rtf)(?:\?|$)/i)?.[1] || 'html').toLowerCase(), site, title: work.title, note: 'linked from the list\'s page' })),
     { url: work.page, kind: 'html', site, title: work.title, note: 'the list\'s own page' }];
 }
 

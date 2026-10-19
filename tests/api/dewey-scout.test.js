@@ -133,3 +133,11 @@ describe('held by the main title (10-19: The Dawn-Breakers scouted as a lead)', 
     expect(ch['archive.org']).not.toHaveBeenCalled();
   });
 });
+describe('a linked Word file keeps its type (10-19: a .docx saved as .html → "not usable text")', () => {
+  it('pageCopies names a .docx a docx', async () => {
+    const { pageCopies } = await import('../../api/lib/dewey/scout/scout.js');
+    const html = '<a href="/docs/s/scatcherd_wise_man_east.docx">Word</a><a href="/pdf/h/haney.pdf">PDF</a>';
+    const r = await pageCopies({ page: 'https://bahai-library.com/scatcherd', title: 'x' }, async () => ({ ok: true, text: async () => html }));
+    expect(r.map((c) => c.kind)).toEqual(['docx', 'pdf', 'html']);
+  });
+});
