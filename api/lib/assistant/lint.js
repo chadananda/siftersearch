@@ -33,7 +33,7 @@ export function unmachine(text) {
 // ("NO interpretations please"; "I raised ONE question"), and it survived a prompt instruction against it (10-14). The
 // prompt asks; this guarantees: such a paragraph is removed whole. Pure.
 // (10-19: "As for the authorities behind these sources: the Arabic text itself is revealed Scripture …" slipped past)
-const AUTHORITY_LECTURE = /\b(authority layers?|layers? of authority|to be (entirely |completely |fully )?clear about (the )?authorit|as (for|to) the authorit(y|ies)|authorit(y|ies) (behind|of) (these|the|this|our) (sources?|texts?|passages?))/i;
+const AUTHORITY_LECTURE = /\b(kinds of authority|carr(?:y|ies) the (?:primary )?weight of doctrine|(?:revelation|revealed scripture)[^.\n]{0,120}authori[sz]ed interpretation|separate (?:settled )?doctrine from (?:secondary )?(?:commentary|opinion)[^.\n]{0,60}\. (?:in the|revelation)|authority layers?|layers? of authority|to be (entirely |completely |fully )?clear about (the )?authorit|as (for|to) the authorit(y|ies)|authorit(y|ies) (behind|of) (these|the|this|our) (sources?|texts?|passages?))/i;
 export function dropAuthorityLecture(text) {
   const paras = String(text || '').split(/\n{2,}/);
   const kept = paras.filter((p) => !AUTHORITY_LECTURE.test(p));

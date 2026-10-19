@@ -19,7 +19,7 @@ export function looksLikePositionQuestion(text) {
 }
 
 const BRIEF = (q) => `A reader asks the Bahá'í library assistant: "${q}"
-List the 4–6 THEMES this question covers. For each, ONE line in exactly this form:
+List the 5–7 THEMES a well-read Bahá'í scholar would cover in answering it — not only the words of the question but the related doctrines the authoritative texts address (for an economic question, e.g. the institution of private property, the role and limits of the state, taxation and the rights of subjects, trade between nations, the warnings about materialist ideologies). For each, ONE line in exactly this form:
 THEME: <theme> | SEARCH: <phrasing 1>; <phrasing 2> | WORKS: <work 1>; <work 2>
 SEARCH = short phrasings in the words the Bahá'í writings themselves use. WORKS = authoritative works where it is addressed
 (writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi's letters and books, the Universal House of Justice) — only
@@ -55,7 +55,7 @@ export async function rankByAuthority(passages, authorityOf = async () => 0) {
 }
 
 /** → { passages, themes } — up to `perTheme` passages a theme, authoritative first, `max` in all. */
-export async function positionResearch({ question, create, search, authorityOf, defaults = {}, scope_config, perTheme = 3, max = 16 }) {
+export async function positionResearch({ question, create, search, authorityOf, defaults = {}, scope_config, perTheme = 3, max = 20 }) {
   // a question naming the Faith searches its texts (unscoped, a cross-tradition rule leaves the Bahá'í writings ONE slot in 8)
   if (!defaults.religion && /bah[aá]['’]?[ií]/i.test(question)) defaults = { ...defaults, religion: "Baha'i" };
   let themes = [];
@@ -63,7 +63,7 @@ export async function positionResearch({ question, create, search, authorityOf, 
     const r = await create('anis-research-brief', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
     themes = parseBrief(r?.choices?.[0]?.message?.content);
   } catch (err) { log.warn({ err: String(err.message).slice(0, 200) }, 'position: planning failed'); themes = []; }
-  themes = themes.filter((t) => t?.theme).slice(0, 6);
+  themes = themes.filter((t) => t?.theme).slice(0, 7);
   if (!themes.length) { log.warn('position: no themes'); return null; }
   const searchOne = (query) => search({ query, mode: 'passages', limit: 8, scope_config, plan: { messages: [{ role: 'user', content: query }], defaults } }).then((r) => r?.passages || [])
     .catch((err) => { log.warn({ err: String(err.message).slice(0, 200), query }, 'position: search failed'); return []; });

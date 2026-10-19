@@ -125,3 +125,10 @@ describe('the original\'s own linked translation wins (10-19)', () => {
     expect(ev).not.toContain('Divine Virtues: A Compilation');
   });
 });
+describe('the authority-kinds opening is dropped (10-19, position answer)', () => {
+  it('drops a paragraph lecturing on revelation vs authorized interpretation', async () => {
+    const { dropAuthorityLecture } = await import('../../api/lib/assistant/lint.js');
+    const t = "Hello, friend.\n\nIn the authoritative texts, revelation (such as the writings of Bahá'u'lláh) and authorized interpretation (such as the works of ‘Abdu’l-Bahá) carry the primary weight of doctrine.\n\n**Property** — A person hath full jurisdiction over his property.";
+    expect(dropAuthorityLecture(t)).toBe("Hello, friend.\n\n**Property** — A person hath full jurisdiction over his property.");
+  });
+});
