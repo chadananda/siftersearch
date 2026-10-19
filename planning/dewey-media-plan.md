@@ -17,7 +17,12 @@ the recording at that moment.
 | storage | archive on /tank (outside Dropbox) | **media on /tank only** — never in Dropbox (Chad 10-18: no video or audio in the synced folder); the library holds the transcript and a link |
 | text | SearchLayerPDF / OCR | transcription: Whisper on boss (local GPU), or an API for volume; speaker turns kept |
 
-## Decisions for Chad
+## Decisions
+
+**Chad 10-19: "for now, just a transcript with a link. Later we will archive."** — every lecture: our transcript in the
+library + a link to the recording; no media files kept yet. Archiving (files on /tank) comes later. Engine and display: open.
+
+### Originally asked
 1. **Keep the file, or link plus transcript?** Downloading YouTube lectures has terms-of-service issues. Proposed:
    - **YouTube:** link plus our transcript (from the captions when they exist, otherwise transcribed from the audio).
    - **archive.org, podcasts and university downloads that permit it:** keep the file on /tank.

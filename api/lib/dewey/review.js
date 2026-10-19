@@ -22,7 +22,10 @@ export function answersFor(item) {
   const out = poor ? [retry, useOcr] : [useOcr, retry];
   // "add it" for a scan with no accepted text would only send it back to OCR — there the OCR answers ARE the way to add it
   if (!rej && !ocrQuestion) out.push({ action: 'import', label: /same work|twin|already holds/i.test(q) ? 'Not the same — add it' : /part of a book/i.test(q) ? 'Add it as it is' : 'Add it', hint: 'imports it with the title, author and shelf below', fields: true });
-  out.push({ action: 'decline', label: 'Don\'t add it', hint: 'kept in the archive, never imported' });
+  // THE ARCHIVE (Chad 10-19: "keep an archive of unsearchable documents that might have value later"): illegible handwriting,
+  // a scan no OCR can read — the original kept on the NAS with its record, out of the searchable library
+  out.push({ action: 'archive', label: 'Archive it', hint: 'keep the original and its record, not in the searchable library — for later' });
+  out.push({ action: 'decline', label: 'Don\'t add it', hint: 'not wanted' });
   return out.filter(Boolean);
 }
 
@@ -50,12 +53,16 @@ export async function reviewOf(itemId, { read = readFile, size = stat, shelves =
 }
 
 /** Carry out a person's answer. action: import | use-ocr | retry-ocr | decline; fields { title?, author?, shelf? }. */
-export async function resolveItem(itemId, action, { title, author, shelf } = {}, by = 'dewey', { queue = enqueue, cancel = slpCancel } = {}) {
+export async function resolveItem(itemId, action, { title, author, shelf } = {}, by = 'dewey', deps = {}) {
+  const { queue = enqueue, cancel = slpCancel } = deps;
   const item = await getItem(itemId);
   if (!item) throw Object.assign(new Error('no such item'), { statusCode: 404 });
+  // an IMPORTED document can be archived too (its text proved unreadable): it leaves the searchable library, its original stays
+  if (action === 'archive' && item.state === 'ingested') return archiveItem(item, by, deps);
   if (!['needs-human', 'failed', 'needs-ocr'].includes(item.state)) throw Object.assign(new Error(`this item is ${item.state} — nothing to answer`), { statusCode: 409 });
   const allowed = answersFor(item).map((x) => x.action);
   if (!allowed.includes(action)) throw Object.assign(new Error(`“${action}” does not fit this item (${allowed.join(', ')})`), { statusCode: 400 });
+  if (action === 'archive') return archiveItem(item, by, deps);
   if (action === 'decline') return declineItem(item, by, { cancel });
   const override = { add: true, by, at: new Date().toISOString() };
   let identified = { ...item.identified, override };
@@ -84,4 +91,14 @@ export async function declineItem(item, by, { cancel = slpCancel } = {}) {
   const job = id.slp_progress?.job_id && id.slp_progress.step !== 'complete' && !id.slp?.job_id && id.slp_progress.job_id !== id.slp_rejected?.job_id ? id.slp_progress.job_id : null;
   const c = job ? await cancel(job).catch(() => null) : null;
   return updateItem(item.id, { state: 'declined' }, `declined by ${by}${job ? (c?.deleted ? ` — SearchLayerPDF job ${job} cancelled` : ` — could not cancel SearchLayerPDF job ${job}`) : ''}`);
+}
+
+/** ARCHIVED: the original stays on the NAS (library-originals, with its sidecar), the record keeps what is known; a document
+ *  already imported leaves the searchable library (soft delete — reversible). */
+export async function archiveItem(item, by, { remove = null } = {}) {
+  if (item.doc_id) {
+    const softDeleteDocs = remove || (await import('../docs-repo.js')).softDeleteDocs;
+    await softDeleteDocs([item.doc_id], { reason: `archived by ${by}: kept for later, not searchable (Dewey item ${item.id})`, allowLastCopy: true });
+  }
+  return updateItem(item.id, { state: 'archived' }, `archived by ${by} — the original is kept${item.original_path ? ` (${item.original_path.split('/').pop()})` : ''}, not in the searchable library${item.doc_id ? `; document ${item.doc_id} withdrawn` : ''}`);
 }

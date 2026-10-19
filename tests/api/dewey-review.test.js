@@ -15,19 +15,19 @@ const item = (over = {}) => ({ id: 1, title: 'Notes', author: null, state: 'need
 
 describe('answersFor', () => {
   it('a fragment: add it as it is, or decline', () => {
-    expect(answersFor(item()).map((a) => a.action)).toEqual(['import', 'decline']);
+    expect(answersFor(item()).map((a) => a.action)).toEqual(['import', 'archive', 'decline']);
     expect(answersFor(item())[0].label).toMatch(/as it is/);
   });
   it('rejected OCR: use it first, run again, decline — no "add it" (it would only go back to OCR)', () => {
     const a = answersFor(item({ identified: { slp_rejected: { path: '/ocr/x.slp.md', check: { sampleFound: 0.35 } } }, log: [{ why: 'SearchLayerPDF text did not pass the check' }] }));
-    expect(a.map((x) => x.action)).toEqual(['use-ocr', 'retry-ocr', 'decline']);
+    expect(a.map((x) => x.action)).toEqual(['use-ocr', 'retry-ocr', 'archive', 'decline']);
   });
   it('OCR that barely matched our own read (2%): run again is recommended', () => {
     const a = answersFor(item({ identified: { slp_rejected: { path: '/ocr/x.slp.md', check: { sampleFound: 0.02 } } }, log: [{ why: 'did not pass' }] }));
-    expect(a.map((x) => x.action)).toEqual(['retry-ocr', 'use-ocr', 'decline']);
+    expect(a.map((x) => x.action)).toEqual(['retry-ocr', 'use-ocr', 'archive', 'decline']);
   });
   it('OCR failed (network): try again or decline', () => {
-    expect(answersFor(item({ log: [{ why: 'full OCR failed: fetch failed' }] })).map((x) => x.action)).toEqual(['retry-ocr', 'decline']);
+    expect(answersFor(item({ log: [{ why: 'full OCR failed: fetch failed' }] })).map((x) => x.action)).toEqual(['retry-ocr', 'archive', 'decline']);
   });
   it('over the page limit: approve OCR first', () => {
     expect(answersFor(item({ log: [{ why: 'a 512-page scan — over the 400-page limit for automatic OCR' }] }))[0]).toMatchObject({ action: 'retry-ocr', label: 'Approve full OCR' });
@@ -80,5 +80,16 @@ describe('decline cancels SLP', () => {
     cancel.mockClear();
     await resolveItem(1, 'decline', {}, 'chad', { cancel });
     expect(cancel).not.toHaveBeenCalled();
+  });
+});
+
+describe('archive (Chad 10-19: "keep an archive of unsearchable documents that might have value later")', () => {
+  it('an imported, unreadable document is withdrawn from search and its item archived; the original stays', async () => {
+    items = [item({ id: 1, state: 'ingested', doc_id: 956320 })];
+    const remove = vi.fn(async () => ({ deleted: 1 }));
+    await resolveItem(1, 'archive', {}, 'chad', { remove });
+    expect(remove).toHaveBeenCalledWith([956320], expect.objectContaining({ allowLastCopy: true }));
+    expect(items[0].state).toBe('archived');
+    expect(items[0].log.at(-1).why).toMatch(/original is kept.*document 956320 withdrawn/);
   });
 });

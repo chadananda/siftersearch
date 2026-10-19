@@ -46,7 +46,7 @@ export async function updateItem(id, fields = {}, why = null) {
 
 /** Dewey's intake ACTIVITY (Chad 10-17: "documents we are loading now or have very recently loaded"): items past the
  *  wanted stage — source attached, processing, waiting for OCR, failed, ingested — most recently changed first. */
-export const intakeActivity = async (limit = 30) => (await queryAll(`SELECT * FROM dewey_items WHERE state NOT IN ('wanted', 'researched', 'offered', 'declined')
+export const intakeActivity = async (limit = 30) => (await queryAll(`SELECT * FROM dewey_items WHERE state NOT IN ('wanted', 'researched', 'offered', 'declined', 'archived', 'lead', 'to-buy')
   ORDER BY updated_at DESC LIMIT ?`, [limit], 'dewey:activity')).map(parse);
 
 /** THE IMPORT BOARD (Observatory, Chad 10-18: "show such activity of importing new documents … the flow of new material
