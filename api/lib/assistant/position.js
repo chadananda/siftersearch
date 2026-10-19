@@ -63,6 +63,7 @@ export async function positionResearch({ question, create, search, authorityOf, 
   try {
     const r = await create('anis-research-brief', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
     raw = String(r?.choices?.[0]?.message?.content || '');
+    if (!raw) log.warn({ finish: r?.choices?.[0]?.finish_reason, usage: r?.usage, model: r?.model, keys: Object.keys(r?.choices?.[0]?.message || {}) }, 'position: planner returned no text');
     themes = parseBrief(raw);
   } catch (err) { log.warn({ err: String(err.message).slice(0, 200) }, 'position: planning failed'); themes = []; }
   themes = themes.filter((t) => t?.theme).slice(0, 7);
