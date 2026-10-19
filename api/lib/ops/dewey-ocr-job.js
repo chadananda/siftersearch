@@ -110,7 +110,13 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
     // …including one SLP reported failed: SLP finishes failed jobs later under the same id (10-18), so ask that id first
     const resume = item.identified?.slp_progress?.job_id || null;
     try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress, stop: declined }); } catch (err) {
-      if (err.cancelled) return { id, state: 'declined', cancelled: true };
+      if (err.cancelled) {
+        // cancelled because WE were declined → done; cancelled at SLP while the item is still wanted (10-19: the Greek New
+        // Testament, stopped at 172/512 by mistake) → forget that job; the next round starts a new one, never a dead loop
+        if (await declined()) return { id, state: 'declined', cancelled: true };
+        await updateItem(item.id, { identified: { ...item.identified, slp_progress: null } }, `SearchLayerPDF job ${resume || ''} was cancelled at SLP; a new job will be started`);
+        return { id, state: 'needs-ocr', restart: true };
+      }
       await updateItem(item.id, { state: 'needs-human' }, `full OCR failed: ${String(err.message).slice(0, 200)}`);
       return { id, state: 'needs-human', why: err.message };
     }
