@@ -7,7 +7,7 @@ import { mkdir, writeFile, unlink, stat } from 'fs/promises';
 import { join } from 'path';
 import { createItem, updateItem, listItems } from '../../repos/dewey-repo.js';
 import { workKey } from '../../ops/dewey-ingest-folder-job.js';
-import { CHANNELS, purchaseLeads, isShadow } from './channels.js';
+import { CHANNELS, purchaseLeads, isShadow, sameWork } from './channels.js';
 import { UA } from './ris.js';
 import { toMarkdownText } from '../convert.js';
 
@@ -20,6 +20,14 @@ const extOf = (c, type = '') => (c.kind === 'pdf' || /pdf/.test(type) ? 'pdf' : 
 /** Download a found copy (≤ 150 MB) to the scout folder → path, or null. */
 export async function download(c, { fetchImpl = fetch, dir = scoutDir() } = {}) {
   if (isShadow(c.url)) return null;
+  if (c.parts?.length > 1) {   // a work in volumes: every volume, in order, one file
+    const texts = [];
+    for (const u of c.parts) { const r = await fetchImpl(u, { signal: AbortSignal.timeout(300000), headers: { 'User-Agent': UA } }).catch(() => null); if (!r?.ok) return null; texts.push(await r.text()); }
+    await mkdir(dir, { recursive: true });
+    const path = join(dir, `${Date.now()}-${String(c.title || 'copy').replace(/[^\w]+/g, '_').slice(0, 60)}.txt`);
+    await writeFile(path, texts.join('\n\n'));
+    return path;
+  }
   const r = await fetchImpl(c.url, { redirect: 'follow', signal: AbortSignal.timeout(300000), headers: { 'User-Agent': UA } }).catch(() => null);
   if (!r?.ok) return null;
   const len = Number(r.headers.get('content-length') || 0);
@@ -92,7 +100,8 @@ export async function scoutWork(work, deps = {}) {
     // THE DAILY PULSE ADDS the most important finds itself (Chad 10-18: "adding to the library, the most important first"):
     // important (≥ 4), not held by its text, judged in scope and worth adding — straight to intake, where every guard
     // (whole work, fragments, previews, published length) still applies. The rest wait under Found for a yes.
-    if (deps.autoAdd?.(work, a, doc)) {
+    // …and only when the copy IS the work sought — its appraised title the sought title (10-19: two wrong works imported)
+    if (deps.autoAdd?.(work, a, doc) && (sameWork(work.title, a?.title) || sameWork(a?.title, work.title))) {
       await update(item.id, { state: 'source' }, `added by the daily pulse (importance ${work.importance}; ${doc.result?.verdict}; appraisal: ${a?.recommendation})`);
       await (deps.queue || (await import('../../repos/ops-report-repo.js')).enqueue)('dewey-intake', { id: item.id }, BY);
       return { state: 'added', item: item.id, from: c.url };

@@ -104,3 +104,23 @@ describe('daily pulse', () => {
     expect(rule({ importance: 5 }, a, ok)).toBe(false);   // cap reached
   });
 });
+
+import { sameWork } from '../../api/lib/dewey/scout/channels.js';
+describe('sameWork (10-19: two wrong works were imported on a loose title match)', () => {
+  it('the found main title must be the asked one, give or take a few words', () => {
+    expect(sameWork("Apostles' Creed", "The Plain Man's Guide to the True Church, or an Exposition of the Apostles' Creed")).toBe(false);
+    expect(sameWork('Septuaginta', 'Septuaginta-Studien, 1. Heft')).toBe(false);
+    expect(sameWork('Septuaginta', 'Septuaginta: id est Vetus Testamentum graece')).toBe(true);
+    expect(sameWork('Institutes of the Christian Religion', 'Institutes of the Christian Religion (Vol. 1 of 2)')).toBe(true);
+    expect(sameWork('The Rule of Saint Benedict', 'The Rule of St. Benedict')).toBe(true);
+    expect(sameWork('Resurrection and Renewal', 'Resurrection And Renewal: The Making of the Babi Movement')).toBe(true);
+  });
+});
+describe('sameWork — a work about a work is not the work', () => {
+  it('the found title begins with the asked one', () => {
+    expect(sameWork('Summa Theologiae', 'The Cambridge Companion To The Summa Theologiae')).toBe(false);
+    expect(sameWork('Summa Theologiae', 'Fragmenta Manuscripta 072, Summa theologiae')).toBe(false);
+    expect(sameWork("Apostles' Creed", 'A commentary on the Apostles\' Creed')).toBe(false);
+    expect(sameWork('Confessions', 'The Confessions of Saint Augustine')).toBe(true);
+  });
+});

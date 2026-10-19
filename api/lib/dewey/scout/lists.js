@@ -28,10 +28,11 @@ const ASK = {
 export async function researchedList(topic, { religion = null } = {}, { research = parallelResearch, create = roleCreate } = {}) {
   const ask = ASK[topic]?.(religion);
   if (!ask) throw new Error(`no researched list "${topic}"`);
-  const r = await research(ask, { processor: 'core', timeoutS: 300, caller: 'dewey-scout' });
+  // the deep run can time out (10-19: the Bahá'í publications list came back empty) — then a quicker one
+  const r = (await research(ask, { processor: 'core', timeoutS: 600, caller: 'dewey-scout' })) || (await research(ask, { processor: 'base', timeoutS: 300, caller: 'dewey-scout' }));
   if (!r?.text) return [];
   const res = await create('dewey-scout', { max_tokens: 16000, temperature: 0, messages: [{ role: 'user', content:
-    `Turn this research into a JSON array of works. Each: {"title","author","year","why","importance"} — importance 1–5 (5 = indispensable). Only real, specific published works named in the text; no categories, no duplicates. Return ONLY the JSON array.\n\n${r.text.slice(0, 60000)}` }] });
+    `Turn this research into a JSON array of works. Each: {"title","author","year","why","importance"} — importance 1–5 (5 = indispensable). Only real, specific, BOOK-LENGTH published works named in the text — no creeds, single prayers, short definitions, articles or chapters (10-19: the Nicene Creed went to 'buy'); no categories, no duplicates. Return ONLY the JSON array.\n\n${r.text.slice(0, 60000)}` }] });
   return jsonArray(res?.choices?.[0]?.message?.content).filter((w) => w?.title).map((w) => ({ title: String(w.title), author: w.author || null, year: w.year || null,
     why: w.why || null, importance: Number(w.importance) || 3, kind: topic === 'bahai-pilgrim-notes' ? 'pilgrim notes' : 'book', list: `${topic}${religion ? `:${religion}` : ''}`, cited: r.citations }));
 }

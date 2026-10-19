@@ -34,7 +34,21 @@ export function autoAddRule({ cap = 15, addedToday = 0 } = {}) {
   };
 }
 
-export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pilgrims'], religion = null, limit = 20, autoAdd = false, cap = 15, addedToday = 0 } = {}, deps = {}) {
+export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pilgrims'], religion = null, limit = 20, autoAdd = false, cap = 15, addedToday = 0, retry = null } = {}, deps = {}) {
+  // RE-SCOUT (10-19: broken channels sent The Rule of Saint Benedict to "buy" after "7 places searched"): works left as
+  // to-buy / lead are searched again with today's channels; the old item is closed, a new outcome replaces it
+  if (retry?.length) {
+    const { listItems, updateItem } = await import('../repos/dewey-repo.js');
+    const old = (await listItems({ limit: 5000 })).filter((i) => i.created_by === 'dewey-scout' && retry.includes(i.state));
+    const works = [];
+    for (const i of old.slice(0, limit)) {   // only those searched again this run are closed
+      const sc = i.identified?.scout || {};
+      works.push({ title: i.title, author: i.author, kind: i.kind, why: sc.why, importance: sc.importance ?? 3, list: sc.list, page: sc.page || null });
+      await updateItem(i.id, { state: 'declined' }, 'scouted again with the improved channels — see the newer item');
+    }
+    const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, items: async () => [], ...deps } });
+    return { retry, listed: works.length, ...r };
+  }
   if (autoAdd && !deps.items) {   // today's pulse additions so far (the cap is per day, across the day's runs)
     const { listItems } = await import('../repos/dewey-repo.js');
     const day = new Date().toISOString().slice(0, 10);
