@@ -117,3 +117,13 @@ describe('a big PDF is SPOT-CHECKED, not read whole (Chad 10-18)', () => {
     expect((await readPdf({ path: '/x.pdf' }, { run })).sampled).toBeNull();
   });
 });
+
+describe('guessLatinLang (10-18: a French scan read as English came back "not held")', () => {
+  it('names the language of OCR text by its function words', async () => {
+    const { guessLatinLang } = await import('../../api/lib/dewey/convert.js');
+    expect(guessLatinLang("Le Báb et les Bábís : le soulèvement politique et religieux en Perse de 1845 à 1853. Il est dans la ville avec les croyants qui sont venus pour le voir, et ce que nous savons de sa vie est une histoire que les sources ne disent pas toujours.")).toBe('fra');
+    expect(guessLatinLang('La falta de crecimiento y el cambio de cultura en las comunidades es un tema que se discute con frecuencia por los amigos, y para muchos de ellos lo más importante es la manera en que se aprende.')).toBe('spa');
+    expect(guessLatinLang('The Báb was born in Shiraz and his declaration was made to Mulla Husayn, who was the first to believe in him and to spread the news of his station among the people of the land.')).toBe('eng');
+    expect(guessLatinLang('too short')).toBe('eng');
+  });
+});

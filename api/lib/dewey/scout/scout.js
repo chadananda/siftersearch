@@ -89,6 +89,14 @@ export async function scoutWork(work, deps = {}) {
     const arc = await archive(path, { itemId: item.id, title: item.title, kind: item.kind });
     await update(item.id, { source_url: c.url, original_path: arc.path, sha256: arc.sha256 });
     await unlink(path).catch(() => {});
+    // THE DAILY PULSE ADDS the most important finds itself (Chad 10-18: "adding to the library, the most important first"):
+    // important (≥ 4), not held by its text, judged in scope and worth adding — straight to intake, where every guard
+    // (whole work, fragments, previews, published length) still applies. The rest wait under Found for a yes.
+    if (deps.autoAdd?.(work, a, doc)) {
+      await update(item.id, { state: 'source' }, `added by the daily pulse (importance ${work.importance}; ${doc.result?.verdict}; appraisal: ${a?.recommendation})`);
+      await (deps.queue || (await import('../../repos/ops-report-repo.js')).enqueue)('dewey-intake', { id: item.id }, BY);
+      return { state: 'added', item: item.id, from: c.url };
+    }
     return { state: 'offered', item: item.id, from: c.url };
   }
   // 4. READABLE ELSEWHERE ONLY (borrow / view): a lead for a person

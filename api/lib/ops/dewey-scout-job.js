@@ -23,13 +23,53 @@ async function cachedList(list, religion, make) {
   return works;
 }
 
-export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pilgrims'], religion = null, limit = 20 } = {}, deps = {}) {
+/** May the pulse add this find itself? important, not held, in scope, recommended — and today's cap not reached. Pure. */
+export function autoAddRule({ cap = 15, addedToday = 0 } = {}) {
+  let n = addedToday;
+  return (work, a, doc) => {
+    const ok = n < cap && (work.importance ?? 0) >= 4 && doc?.result?.verdict === 'not-held' && a?.in_scope !== 'no' && a?.in_scope !== 'maybe'
+      && ['add', 'add if cheap'].includes(String(a?.recommendation || '').toLowerCase());
+    if (ok) n++;
+    return ok;
+  };
+}
+
+export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pilgrims'], religion = null, limit = 20, autoAdd = false, cap = 15, addedToday = 0 } = {}, deps = {}) {
+  if (autoAdd && !deps.items) {   // today's pulse additions so far (the cap is per day, across the day's runs)
+    const { listItems } = await import('../repos/dewey-repo.js');
+    const day = new Date().toISOString().slice(0, 10);
+    addedToday = (await listItems({ limit: 5000 })).filter((i) => (i.log || []).some((l) => String(l.at || '').startsWith(day) && /added by the daily pulse/.test(l.why || ''))).length;
+  }
   return withAIContext({ caller: 'dewey-scout' }, async () => {
     const works = list === 'bahai-library' ? await bahaiLibraryList(collections) : await (deps.cachedList || cachedList)(list, religion, () => researchedList(list, { religion }));
     // most important first; bahai-library keeps its own order
     if (list !== 'bahai-library') works.sort((a, b) => (b.importance ?? 3) - (a.importance ?? 3));
-    const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, ...deps } });
+    const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, autoAdd: autoAdd ? autoAddRule({ cap, addedToday }) : null, ...deps } });
     await logActivity('job', `dewey scout (${list}${religion ? ` · ${religion}` : ''}): ${Object.entries(r.counts).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing new'}; ${r.remaining} left on the list`).catch(() => {});
     return { list, religion, listed: works.length, ...r };
   });
+}
+
+// THE DAILY PULSE (Chad 10-18: "a daily pulse of research looking for the most important books we do not yet have in each
+// tradition, finding their sources, prioritizing and then adding to the library, the most important first"): once a day,
+// the next stretch of bahai-library (pilgrim notes first, collection by collection), the important Bahá'í publications, and
+// the core works of the next tradition in rotation — the most important additions made automatically (≤ 15 a day).
+export const BAHAI_LIBRARY_ORDER = ['Pilgrims', 'Books', 'Histories', 'Biographies', 'Theses', 'Talks', 'Letters', 'Articles'];
+export const TRADITIONS = ['Christian', 'Islam', 'Judaism', 'Buddhist', 'Hindu', 'Sikh', 'Tao', 'Confucian', 'Zoroastrian', 'Jain'];
+
+/** state { day, bahai: index, tradition: index, lastBahaiRun } + the previous bahai-library run's result → today's runs + new state. Pure. */
+export function pulsePlan(state = {}, { today, lastBahaiResult = null } = {}) {
+  if (state.day === today) return { runs: [], state };
+  let bahai = state.bahai ?? 0;
+  if (lastBahaiResult && lastBahaiResult.remaining === 0) bahai = Math.min(bahai + 1, BAHAI_LIBRARY_ORDER.length - 1);
+  const tradition = state.day ? ((state.tradition ?? -1) + 1) % TRADITIONS.length : 0;
+  const common = { autoAdd: true, cap: 15 };
+  return {
+    runs: [
+      { list: 'bahai-library', collections: [BAHAI_LIBRARY_ORDER[bahai]], limit: 25, ...common },
+      { list: 'bahai-publications', limit: 15, ...common },
+      { list: 'core-books', religion: TRADITIONS[tradition], limit: 15, ...common },
+    ],
+    state: { day: today, bahai, tradition },
+  };
 }

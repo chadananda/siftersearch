@@ -183,6 +183,33 @@ async function pulseLoop() {
 }
 // OCR self-healing (10-18): restarts dropped in-flight OCR jobs and 71 items sat at needs-ocr with five jobs queued. Every
 // 10 minutes each item waiting at OCR gets its job (enqueue dedupes a queued/running twin; a resumed job polls, never pays twice).
+// Dewey's DAILY PULSE (dewey-scout-job.js pulsePlan): after 06:00 UTC, once a day, the scouts' runs are queued in the scout
+// lane. State (which bahai-library collection, which tradition next, the last run) in $DEWEY_DIR/scout-pulse.json.
+async function scoutPulse() {
+  const { pulsePlan } = await import('../lib/ops/dewey-scout-job.js');
+  const { enqueue, getRun } = await import('../lib/repos/ops-report-repo.js');
+  const { deweyDir } = await import('../lib/dewey/research.js');
+  const { readFile, writeFile, mkdir } = await import('fs/promises');
+  const f = `${deweyDir()}/scout-pulse.json`;
+  while (!stopping) {
+    try {
+      const now = new Date();
+      if (process.env.DEWEY_PULSE !== 'off' && now.getUTCHours() >= 6) {
+        const st = await readFile(f, 'utf8').then(JSON.parse).catch(() => ({}));
+        const last = st.lastBahaiRun ? await getRun(st.lastBahaiRun).catch(() => null) : null;
+        const { runs, state } = pulsePlan(st, { today: now.toISOString().slice(0, 10), lastBahaiResult: last?.result || null });
+        if (runs.length) {
+          const ids = [];
+          for (const r of runs) ids.push((await enqueue('dewey-scout', r, 'scout-pulse')).id);
+          await mkdir(deweyDir(), { recursive: true });
+          await writeFile(f, JSON.stringify({ ...state, lastBahaiRun: ids[0], runs: ids }, null, 1));
+        }
+      }
+    } catch { /* next half hour */ }
+    await new Promise((r) => setTimeout(r, 1_800_000));
+  }
+}
+
 async function ocrLoop() {
   const { listItems } = await import('../lib/repos/dewey-repo.js');
   const { enqueue, pendingRuns } = await import('../lib/repos/ops-report-repo.js');
@@ -204,5 +231,5 @@ const laneNames = Object.values(LANES).flat();
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 if (ONLY.length) await lane(`only:${ONLY.join('+')}`, ONLY, []);
-else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), keywordLoop(), ocrLoop(), telemetryLoop(), pulseLoop()]);
+else await Promise.all([lane('main', [], laneNames), ...Object.entries(LANES).flatMap(([n, names]) => Array.from({ length: Math.max(1, LANE_WORKERS[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, []))), rollingCoverage(), keywordLoop(), ocrLoop(), scoutPulse(), telemetryLoop(), pulseLoop()]);
 process.exit(0);

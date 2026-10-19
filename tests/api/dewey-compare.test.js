@@ -76,3 +76,16 @@ describe('probes', () => {
     for (const p of ps) { const n = p.split(' ').length; expect(n).toBeGreaterThanOrEqual(12); expect(n).toBeLessThanOrEqual(40); }
   });
 });
+
+describe('repeated formulas (10-18: a hadith collection read as quotes)', () => {
+  it('a text that repeats its chains of narration is still in order against an exact copy', async () => {
+    const { compareTexts, compareWords } = await import('../../api/lib/dewey/compare.js');
+    const isnad = 'حدثنا محمد بن بشار قال حدثنا يحيى بن سعيد عن سفيان عن الأعمش';
+    const text = Array.from({ length: 200 }, (_, i) => `${isnad} قال رسول الله في الحديث رقم ${i} كلام ${i * 7} وبيان ${i * 3} ومعنى ${i + 11}`).join(' ');
+    const r = compareTexts(compareWords(text), compareWords(text));
+    expect(r.in_order).toBeGreaterThan(0.95);
+    expect(r.relation).toBe('same');
+    const firstHalf = compareTexts(compareWords(text.slice(0, text.length / 2)), compareWords(text));
+    expect(['same', 'inside']).toContain(firstHalf.relation);   // held either way
+  });
+});

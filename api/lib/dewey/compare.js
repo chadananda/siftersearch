@@ -41,12 +41,16 @@ function lis(seq) {
 export function compareTexts(ourWords, theirWords, { ourLength = null, sample = false } = {}) {
   const ours = shingleList(ourWords), theirs = shingleList(theirWords);
   if (ours.length < 8 || theirs.length < 8) return { ours_in_theirs: 0, theirs_in_ours: 0, in_order: 0, length_ratio: 0, relation: 'too-short' };
+  // EVERY position of each shingle, and each of ours matched to the first occurrence AFTER the previous match: a text that
+  // repeats its formulas (a hadith collection's chains of narration — "حدثنا … عن …" thousands of times) read as
+  // out of order when only the first occurrence counted — an exact copy of Al-Targhib wa al-Tarhib scored "quotes" (10-18)
   const pos = new Map();
-  theirs.forEach((s, i) => { if (!pos.has(s)) pos.set(s, i); });
+  theirs.forEach((s, i) => { const a = pos.get(s); if (a) a.push(i); else pos.set(s, [i]); });
+  const after = (a, x) => { let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] > x) hi = m; else lo = m + 1; } return lo < a.length ? a[lo] : a[0]; };
   const ourSet = new Set(ours);
   const matchedPos = [];
-  let hit = 0;
-  for (const s of ours) { const p = pos.get(s); if (p != null) { hit++; matchedPos.push(p); } }
+  let hit = 0, prev = -1;
+  for (const s of ours) { const a = pos.get(s); if (a) { hit++; const p = after(a, prev); matchedPos.push(p); prev = p; } }
   let back = 0;
   for (const s of new Set(theirs)) if (ourSet.has(s)) back++;
   const ours_in_theirs = hit / ours.length;

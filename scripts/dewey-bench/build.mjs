@@ -54,7 +54,9 @@ const SOURCES = [
 // texts we do not hold (title search empty, 10-18); 'author' marks the same-author-as-a-held-work case
 const NOT_HELD = [
   { id: 621, title: 'The Varieties of Religious Experience', author: 'William James' },
-  { id: 3296, title: 'The Confessions of Saint Augustine', author: 'Augustine' },
+  // HELD after all: the library has "Confessions of St. Augustine" (#17295) — the title lookup missed it, Dewey's text did not
+  // (10-18). Kept as a positive: a held work in another edition from another source.
+  { id: 3296, title: 'The Confessions of Saint Augustine', author: 'Augustine', held: 17295 },
   { id: 1695, title: 'The Man Who Was Thursday', author: 'G. K. Chesterton', sameAuthorAs: 'Orthodoxy' },
 ];
 
@@ -73,7 +75,7 @@ async function add(id, scenario, expect, text, { format = 'txt', source = null, 
     sh('python3', ['scripts/dewey-bench/render-scan.py', md, file, '--quality', scanQuality || 'clean', '--max-pages', String(pages)]);
     if (format === 'ocrpdf') {   // a searchable PDF: the scan with tesseract's text layer (the "_OCRd.pdf" of a drive)
       const dir = `${base}-pages`; await mkdir(dir, { recursive: true });
-      sh('pdftoppm', ['-r', '150', '-gray', '-png', file, join(dir, 'p')]);
+      sh('pdftoppm', ['-r', '100', '-gray', '-png', file, join(dir, 'p')]);   // 100 dpi: the API takes ≤ 30 MB
       const list = sh('sh', ['-c', `ls ${dir}/p-*.png`]).trim().split('\n');
       await writeFile(join(dir, 'list.txt'), list.join('\n'));
       sh('tesseract', [join(dir, 'list.txt'), base, 'pdf']);   // writes <base>.pdf
@@ -86,7 +88,8 @@ const held = [];
 for (const [kind, q, n, lim] of SOURCES) for (const d of await pick(q, n, lim)) held.push({ ...d, kind, text: await textOf(d.id) });
 const nots = [];
 for (const g of NOT_HELD) nots.push({ ...g, text: await gutenberg(g.id) });
-const prose = nots[0].text;   // new prose for compilations, commentary, supersets
+const fresh = nots.filter((g) => !g.held && !g.sameAuthorAs);
+const prose = fresh[0].text;   // new prose for compilations, commentary, supersets — never a held text
 const cap = (t, words = 60000) => t.split(/(?<=\n\n)/).reduce((a, p) => (a.n < words ? { s: a.s + p, n: a.n + p.split(/\s+/).length } : a), { s: '', n: 0 }).s;
 
 for (const d of held) {
@@ -102,23 +105,28 @@ for (const d of held) {
     await add(`P2h-${tag}`, 'P2 format .html', ['held'], t, { source: src, format: 'html' });
     await add(`P2e-${tag}`, 'P2 format .epub', ['held'], t, { source: src, format: 'epub' });
     await add(`P2r-${tag}`, 'P2 format .rtf', ['held'], t, { source: src, format: 'rtf' });
-    if (latin) await add(`P2p-${tag}`, "P2 OCR'd PDF (text layer)", ['held'], t, { source: src, format: 'ocrpdf', pages: 30 });   // no Arabic-script shaping in the renderer
+    if (latin) await add(`P2p-${tag}`, "P2 OCR'd PDF (text layer)", ['held'], t, { source: src, format: 'ocrpdf', pages: 15 });   // no Arabic-script shaping in the renderer
     await add(`P7-${tag}`, 'P7 other edition', ['held'], V.edition(t, { title: d.title, seed: d.id }), { source: src, format: 'docx' });
     await add(`P8-${tag}`, 'P8 abridged', ['held'], V.abridge(t, { seed: d.id }), { source: src });
     await add(`P9-${tag}`, 'P9 excerpt', ['held'], V.excerpt(t, { seed: d.id }), { source: src });
     await add(`P13-${tag}`, 'P13 front matter only', ['held'], V.frontOnly(t), { source: src, note: 'held — and must read as a fragment' });
-    await add(`P10-${tag}`, 'P10 superset (held + new chapters)', ['partly-held'], V.superset(t, nots[1].text), { source: src });
+    await add(`P10-${tag}`, 'P10 superset (held + new chapters)', ['partly-held'], V.superset(t, prose), { source: src });
   }
 }
 const longs = held.filter((d) => d.kind === 'long');
 await add('G1-compilation', 'G1 new compilation (quotes from held works)', ['possible', 'not-held'], V.compilation(longs.map((d) => d.text), prose));
-await add('G2-commentary', 'G2 commentary quoting a held work', ['possible', 'not-held'], V.commentary(longs[0].text, nots[1].text), { source: { id: longs[0].id, title: longs[0].title } });
+await add('G2-commentary', 'G2 commentary quoting a held work', ['possible', 'not-held'], V.commentary(longs[0].text, prose), { source: { id: longs[0].id, title: longs[0].title } });
 for (const g of nots) {
   const t = cap(g.text, 40000);
+  if (g.held) {
+    await add(`P14-${g.id}`, 'P14 held work, other edition from another source', ['held'], t, { note: `${g.title} — held as #${g.held}` });
+    await add(`P14s-${g.id}`, 'P14 held work, other edition — scan', ['held'], t, { format: 'scan', pages: 12, note: `${g.title} — held as #${g.held}` });
+    continue;
+  }
   await add(`N1-${g.id}`, g.sameAuthorAs ? 'N3 same author, other work' : 'N1 not held', ['not-held', 'not-found-by-title'], t, { note: g.title });
   await add(`N1s-${g.id}`, 'N1 not held — scan', ['not-held', 'not-found-by-title'], t, { format: 'scan', pages: 12, note: g.title });
 }
-for (const d of longs.slice(0, 2)) await add(`N2-${d.id}`, 'N2 same title+author as a held work, other text', ['not-held', 'not-found-by-title'], V.sameTitle(d.title, d.author || '', cap(nots[0].text, 20000)), { note: `title of #${d.id}` });
+for (const d of longs.slice(0, 2)) await add(`N2-${d.id}`, 'N2 same title+author as a held work, other text', ['not-held', 'not-found-by-title'], V.sameTitle(d.title, d.author || '', cap(prose, 20000)), { note: `title of #${d.id}` });
 await add('N4-blank', 'N4 blank/noise scan', ['undetermined'], 'x\n\n'.repeat(400), { format: 'scan', scanQuality: 'blank' });
 
 await writeFile(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 1));

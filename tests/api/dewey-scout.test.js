@@ -82,3 +82,25 @@ describe('scoutList', () => {
     expect(r.outcomes.map((o) => o.title)).toEqual(['New One']);
   });
 });
+
+import { pulsePlan, autoAddRule, BAHAI_LIBRARY_ORDER } from '../../api/lib/ops/dewey-scout-job.js';
+describe('daily pulse', () => {
+  it('once a day: bahai-library (pilgrim notes first), Bahá\'í publications, the next tradition', () => {
+    const a = pulsePlan({}, { today: '2026-10-19' });
+    expect(a.runs.map((r) => [r.list, r.collections?.[0] || r.religion || null])).toEqual([['bahai-library', 'Pilgrims'], ['bahai-publications', null], ['core-books', 'Christian']]);
+    expect(pulsePlan(a.state, { today: '2026-10-19' }).runs).toEqual([]);
+    const b = pulsePlan(a.state, { today: '2026-10-20', lastBahaiResult: { remaining: 0 } });
+    expect(b.runs[0].collections).toEqual([BAHAI_LIBRARY_ORDER[1]]);
+    expect(b.runs[2].religion).toBe('Islam');
+    expect(pulsePlan(b.state, { today: '2026-10-21', lastBahaiResult: { remaining: 40 } }).runs[0].collections).toEqual([BAHAI_LIBRARY_ORDER[1]]);
+  });
+  it('adds only important, not-held, in-scope, recommended finds, up to the day\'s cap', () => {
+    const ok = { result: { verdict: 'not-held' } }, a = { in_scope: 'yes', recommendation: 'add' };
+    const rule = autoAddRule({ cap: 2, addedToday: 1 });
+    expect(rule({ importance: 3 }, a, ok)).toBe(false);
+    expect(rule({ importance: 5 }, { ...a, in_scope: 'maybe' }, ok)).toBe(false);
+    expect(rule({ importance: 5 }, a, { result: { verdict: 'possible' } })).toBe(false);
+    expect(rule({ importance: 5 }, a, ok)).toBe(true);
+    expect(rule({ importance: 5 }, a, ok)).toBe(false);   // cap reached
+  });
+});

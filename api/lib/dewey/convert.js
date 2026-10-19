@@ -184,11 +184,33 @@ export async function ocrSample(src, totalPages, { run = execFile, k = 8, vision
         if (ok.join('').replace(/\s/g, '').length < 200) return { text: '', pages: few, script: 'unreadable', langs: 'vision' };
         return { text: ok.map((t, i) => `[page ${few[i]}]\n${t.trim()}`).join('\n\n'), pages: few, script: 'handwriting or non-Latin', langs: 'vision' };
       }
-      const script = 'Latin', langs = 'eng';
-      const texts = await Promise.all(pages.map((p) => (p === mid ? Promise.resolve(probe) : sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => ''))));
+      // a FRENCH, SPANISH, GERMAN… scan read as English loses its accents and many words (10-18 benchmark: a degraded French
+      // scan came back "not held" with no candidates): the language is guessed from the English probe's function words and
+      // every page is read in it (tesseract has fra spa deu ita por nld on tower)
+      const script = 'Latin', lang = guessLatinLang(probe), langs = lang === 'eng' ? 'eng' : `${lang}+eng`;
+      const texts = await Promise.all(pages.map((p) => (p === mid && lang === 'eng' ? Promise.resolve(probe) : sh(run, 'tesseract', [join(dir, `p${p}.png`), '-', '-l', langs, '--psm', '1']).catch(() => ''))));
       return { text: texts.map((t, i) => `[page ${pages[i]}]\n${t.trim()}`).join('\n\n'), pages, script, langs };
     });
   } finally { await rm(work, { recursive: true, force: true }).catch(() => {}); }
+}
+
+// function words that only one language uses often — a page of OCR text names its language by them
+const FUNCTION_WORDS = {
+  fra: ['le', 'la', 'les', 'des', 'du', 'et', 'est', 'dans', 'une', 'pour', 'qui', 'que', 'sur', 'pas', 'avec', 'au', 'aux', 'ce', 'il', 'elle'],
+  spa: ['el', 'los', 'las', 'del', 'y', 'es', 'en', 'una', 'para', 'que', 'por', 'con', 'se', 'su', 'lo', 'como', 'más', 'pero'],
+  deu: ['der', 'die', 'das', 'und', 'ist', 'nicht', 'mit', 'den', 'dem', 'ein', 'eine', 'zu', 'auf', 'sich', 'von', 'auch', 'ich'],
+  ita: ['il', 'della', 'che', 'e', 'di', 'non', 'per', 'una', 'gli', 'nel', 'sono', 'alla', 'dei', 'come', 'anche'],
+  por: ['o', 'os', 'da', 'do', 'das', 'dos', 'e', 'que', 'não', 'uma', 'para', 'com', 'em', 'por', 'ao'],
+  nld: ['de', 'het', 'een', 'en', 'van', 'is', 'niet', 'dat', 'op', 'zijn', 'met', 'voor', 'ook', 'maar'],
+  eng: ['the', 'and', 'of', 'to', 'is', 'in', 'that', 'it', 'was', 'for', 'with', 'as', 'his', 'he', 'be', 'by', 'not', 'which'],
+};
+/** The language of a page of Latin-script OCR text, by function words → a tesseract code (eng when unsure). Pure. */
+export function guessLatinLang(text) {
+  const words = String(text || '').toLowerCase().normalize('NFC').match(/\p{L}+/gu) || [];
+  if (words.length < 30) return 'eng';
+  const score = Object.fromEntries(Object.entries(FUNCTION_WORDS).map(([l, ws]) => { const set = new Set(ws); return [l, words.filter((w) => set.has(w)).length / words.length]; }));
+  const [best, val] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+  return best !== 'eng' && val > 0.08 && val > score.eng * 1.5 ? best : 'eng';
 }
 
 // SPOT-CHECK, not a full read (Chad 10-18: "we should be able to tell by spot-checking and size comparison … It is wasteful
