@@ -66,7 +66,9 @@ export function createGateway() {
   });
 }
 
-if (process.argv[1] && process.argv[1].endsWith('gateway.js')) {
+// run as the service (node api/gateway.js, or under pm2 — whose cluster mode makes argv[1] its own container script, so
+// the real entry is in pm_exec_path); imported by tests, it only exports
+if ([process.argv[1], process.env.pm_exec_path].some((p) => String(p || '').endsWith('gateway.js'))) {
   const port = Number(process.env.GATEWAY_PORT || 7839);
   const server = createGateway();
   server.keepAliveTimeout = 76_000; server.headersTimeout = 80_000;   // longer than Cloudflare's idle keep-alive
