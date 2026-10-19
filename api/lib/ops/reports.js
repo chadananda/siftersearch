@@ -1,7 +1,6 @@
 // Ops reports — the named, server-side answers to "is the library healthy?". Each runs inside siftersearch-reports (never
 // the API: they scan whole tables), one at a time, and returns plain JSON stored in ops_report_runs. Add a report here,
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
-import { sectionIndexJob } from './section-index-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
 import { episodeExtractJob } from './episode-extract-job.js';
 import { refsAssignJob } from './refs-assign-job.js';
@@ -19,7 +18,6 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
@@ -28,7 +26,8 @@ import { normLang } from '../language-codes.js';
 import { spendSince } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
-import { phraseIndexJob } from './phrase-index-job.js';
+import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js';
+export { INDEX_LANES, INDEX_JOB_NAMES };
 import { retireDuplicatesJob } from './library-jobs.js';
 import { sectionAuthorJob } from './section-author.js';
 import { slowQueriesByHour } from '../repos/query-health-repo.js';
@@ -124,10 +123,6 @@ REPORTS['carry-repair'] = carryRepairJob;       // params: { ids } — re-apply 
 REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
 REPORTS['section-author'] = sectionAuthorJob;       // params: { docId, from, to, name, apply? } — dry run by default
 REPORTS['retire-duplicates'] = retireDuplicatesJob;   // params: { pairs:[{dup,keep,reason}], batch?, apply? } — dry run by default
-REPORTS['phrase-index'] = phraseIndexJob;       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time   // enrichment on drifted rows a re-ingest would replace
-// HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build
-REPORTS['hype-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'hype' });
-REPORTS['concept-index'] = (p = {}) => phraseIndexJob({ ...p, field: 'concepts' });
 // HyPE coverage of a tradition (params { religion? }): paragraphs none / older version / current, by scope × language
 REPORTS['hype-coverage'] = async ({ religion = "Baha'i" } = {}) => {
   const [{ hypeCoverage }, { HYPE_VERSION }] = await Promise.all([import('../repos/enrichment-repo.js'), import('../rag/enrich/retrieval.js')]);
@@ -165,8 +160,6 @@ REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, vari
   } });
 };
 REPORTS['vocab-build'] = vocabBuildJob;   // params { minFreq?, maxWords? } — the library vocabulary for query spell-correction
-REPORTS['coverage-refresh'] = coverageRefreshJob;   // params: { ids? | limit? } — re-measure docs into index_coverage
-REPORTS['keyword-fill'] = keywordFillJob;     // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
 REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, scope: 'supplemental' });   // heavy lane: it scans for site page chrome
 REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, limit? } — a predigested history's episodes (Chad 10-17)
 REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — traditional numbering, checked against the work's totals (Chad 10-17)
@@ -184,7 +177,6 @@ REPORTS['dewey-quality'] = deweyQualityJob;     // params: { limit?, since? } �
 REPORTS['dewey-archive'] = deweyArchiveJob;     // one pass: every decided source onto the NAS archive, ingest copies out of Dropbox
 REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's final text from SearchLayerPDF, checked
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
-REPORTS['section-index'] = sectionIndexJob;
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
 // paragraph inside the section (Chad 10-17: structure before BM25 "so that sections get indexed") — before/after measure.
 REPORTS['section-findability'] = async ({ n = 300, k = 10 } = {}) => {
@@ -209,19 +201,15 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
  *  there is no day or night. The rule is to ingest correctly so as to not block queries"): heavy work is kept from
  *  blocking queries by PACING (paged reads, paced writes, low OS priority) and by never running two at once — the
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
-export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index', 'episode-extract', 'structure-infer'],
+// the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
+Object.assign(REPORTS, INDEX_REPORTS);
+export const LANES = { extract: ['episode-extract', 'structure-infer'],
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
-  coverage: ['coverage-refresh'],
-  keyword: ['keyword-fill'],   // its own lane: BM25 writes Qdrant on /fast, so it does not queue behind phrase indexing on /crutch
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],   // hours of polite searching and downloading must not hold up intake or OCR
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
-// How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K
-// phrases/h for all three vs ~142K/h for one, because the interim /crutch SSD (Kingston A400, no TRIM) saturated —
-// 82% util, 667 ms write latency. Revisit on the 4TB NVMe. Override with OPS_LANE_WORKERS='{"index":2}'.
-// ocr: 3 — SearchLayerPDF batches are cheapest submitted together (one GPU pod serves them; pods stop after 10 idle min).
-export const LANE_WORKERS = { index: 1, ocr: 3, ...(() => { try { return JSON.parse(process.env.OPS_LANE_WORKERS || '{}'); } catch { return {}; } })() };
+export { LANE_WORKERS } from './lane-workers.js';
 
 export const reportNames = () => Object.keys(REPORTS);

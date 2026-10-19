@@ -17,3 +17,12 @@ describe('affected services', () => {
     expect(run(['api/lib/computed-import-target.js'])).toEqual(['api', 'reports']);
   });
 });
+
+describe('the indexing service is independent (Chad 10-19)', () => {
+  it("the indexer's own code holds no Dewey or Anís module, so their changes never drain it", async () => {
+    const { importGraph } = await import('../../scripts/lib/import-graph.mjs');
+    const g = importGraph('api/workers/indexer-worker.js', { root: process.cwd() });
+    expect(g.has('api/lib/ops/phrase-index-job.js')).toBe(true);
+    expect([...g].filter((f) => /dewey|assistant\//.test(f))).toEqual([]);
+  });
+});

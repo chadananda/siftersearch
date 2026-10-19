@@ -53,4 +53,8 @@ export async function finish(id, { result = null, error = null, ms = null }) {
 }
 
 /** A worker restart leaves runs 'running' forever — requeue them on start. */
-export const requeueStale = () => query(`UPDATE ops_report_runs SET status = 'queued', started_at = NULL WHERE status = 'running'`);
+/** Interrupted runs back to the queue — ONLY the jobs the calling service runs (only): a service restarting must never
+ *  requeue, and so double-run, another service's live job (10-19: reports' restart requeued reports-carry's). */
+export const requeueStale = ({ only = [] } = {}) => (only.length
+  ? query(`UPDATE ops_report_runs SET status = 'queued', started_at = NULL WHERE status = 'running' AND name IN (${only.map(() => '?').join(',')})`, only)
+  : Promise.resolve({ changes: 0 }));

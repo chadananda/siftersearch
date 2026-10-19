@@ -583,6 +583,22 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // The INDEXING macro-service (docs/architecture/continuous-deploy.md): phrase / HyPE / concept / section vectors, BM25
+      // keyword fill, the coverage ledger — its own small import graph, so deploys that change other services leave it running.
+      name: 'siftersearch-indexer',
+      script: 'api/workers/indexer-worker.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 30000,
+      watch: false,
+      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
+      error_file: './logs/indexer-error.log',
+      out_file: './logs/indexer-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // A second ops process for the carry jobs only (OPS_ONLY) — runs them beside the main worker's long batches.
       name: 'siftersearch-reports-carry',
       script: 'api/workers/reports-worker.js',

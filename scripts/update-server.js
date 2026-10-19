@@ -639,7 +639,7 @@ async function servicesBehind(head) {
   for (const svc of readServices({ dir: join(PROJECT_ROOT, 'data', 'run', 'services'), head: head.slice(0, 12) })) {
     // a draining service is already on its way to HEAD — never signalled (or verified for) twice
     if (!MANAGED.includes(svc.name) || !svc.commit || svc.on_head || svc.health === 'silent' || svc.health === 'draining') continue;
-    const mine = (await deployPlan(svc.commit)).find(([n]) => n === svc.name);
+    const mine = (await deployPlan(svc.commit, { quiet: true })).find(([n]) => n === svc.name);
     if (mine && mine[1] !== 'keep') out.push(mine);
   }
   return out;
@@ -655,7 +655,7 @@ async function changedFiles(from, to = 'HEAD') {
   return d.every((l) => /"version"\s*:/.test(l)) ? files.filter((f) => f !== 'package.json') : files;
 }
 
-async function deployPlan(fromSha) {
+async function deployPlan(fromSha, { quiet = false } = {}) {
   const { createRequire } = await import('node:module');
   const apps = createRequire(import.meta.url)(join(PROJECT_ROOT, 'ecosystem.config.cjs')).apps;
   const running = [];
@@ -665,7 +665,7 @@ async function deployPlan(fromSha) {
     const changed = await changedFiles(fromSha);
     const { affectedApps } = await import('./lib/import-graph.mjs');
     affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT });
-    for (const [n, files] of Object.entries(affected)) log('info', `  ${n} loads ${files.length} changed file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? ', …' : ''}`);
+    if (!quiet) for (const [n, files] of Object.entries(affected)) log('info', `  ${n} loads ${files.length} changed file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? ', …' : ''}`);
   }
   return running.map((name) => [name, affected && !affected[name] ? 'keep' : DRAIN.has(name) ? 'drain' : 'reload']);
 }
@@ -767,6 +767,14 @@ async function applyUpdates() {
   // get SIGHUP — they finish the work in hand and exit; pm2 restarts them on the new code. The rest reload gracefully
   // (API: the new instance first, the old one finishes requests and jobs). Unaffected services keep running untouched.
   let failed = false;
+  // a service newly declared in ecosystem.config.cjs (siftersearch-indexer, 10-19) is started once — never revived after a
+  // deliberate stop (pm2 still knows a stopped one)
+  for (const name of MANAGED) {
+    if (!await isProcessKnown(name) && (await run(`grep -q "name: '${name}'" ecosystem.config.cjs`)).success) {
+      log('info', `  ${name}: new service — starting`);
+      if (!await swapPm2Process(name)) failed = true;
+    }
+  }
   for (const [name, how] of await deployPlan(prevSha)) {
     if (how === 'keep') { log('info', `  ${name}: code unchanged — keeps running`); continue; }
     if (how === 'drain') {
