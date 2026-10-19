@@ -1,6 +1,132 @@
 {
-  "generated": "2026-10-19T14:41:13.339Z",
+  "generated": "2026-10-19T16:47:28.732Z",
   "entries": [
+    {
+      "hash": "47f9b001",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Unsegmented-docs report — every live document holding a whole-book 'paragraph', surveyed in short id windows: the re-ingest list (Chad 10-19)",
+      "scope": "ops"
+    },
+    {
+      "hash": "8424994b",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A whole-book 'paragraph' (unsegmented import awaiting re-ingest) is never returned as a passage — filtered before the 500-char cut hid its size",
+      "scope": "search"
+    },
+    {
+      "hash": "780cd4ad",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "No whole-book paragraphs — the site2rag adapter split bahai-library PDF markdown only on blank lines and read one page marker a block, so a book with single newlines became ONE 'paragraph' (50k–700k chars) that polluted every search (Chad 10-19: 'Never should we search an unsegmented book … a bug in the ingester'). Every page marker starts a block; an oversized block is split on its own structure (sentence-ending line breaks, then sentence boundaries); the sites ingester REFUSES a file that still has a >8,000-char paragraph (logged, nothing indexed)",
+      "scope": "ingest"
+    },
+    {
+      "hash": "e646a022",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The Universal House of Justice is APPLICATION, not doctrine (Chad 10-19, per the Will and Testament: authoritative on applying Bahá'í law, not decisive on doctrine) — doctrine is the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi); House passages are labelled [application] and cited after the doctrine",
+      "scope": "anis"
+    },
+    {
+      "hash": "7c7ecbd2",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Within doctrine, a work the planner named for the theme leads, then relevance; the authority number only breaks ties (a loosely related Aqdas line outranked the exact Promised Day passage); the named works are searched first",
+      "scope": "anis"
+    },
+    {
+      "hash": "91b4cff4",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The position planner gets 6000 tokens — Haiku spent all 1500 thinking and returned no text (finish 'length')",
+      "scope": "anis"
+    },
+    {
+      "hash": "634042a7",
+      "date": "2026-10-19",
+      "type": "Chore",
+      "description": "Log why the position planner returned no text",
+      "scope": "anis"
+    },
+    {
+      "hash": "0c05533a",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The position planner's lines are parsed through bullets, numbers and bold (a dressed reply parsed as no themes and the answer fell back); its raw text is logged when no theme parses",
+      "scope": "anis"
+    },
+    {
+      "hash": "931e8ee8",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Position planner covers the related doctrines a scholar would cite (property as an institution, the state, taxation and the rights of subjects, trade, materialist ideologies), up to 7 themes / 20 passages; the 'kinds of authority' opening is dropped",
+      "scope": "anis"
+    },
+    {
+      "hash": "5d231b67",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Letters (email) and position answers get room — the 700-token chat cap cut both mid-sentence; a reply that hits the cap is logged",
+      "scope": "anis"
+    },
+    {
+      "hash": "e773f46b",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "DOCTRINE apart from opinion in position answers (Chad 10-19: 'separate actual doctrine [from] human fad opinions … authority is everything'): only the writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi and the UHJ carry the answer — a pilgrim note never, a writer's view only labelled [opinion] and set against the texts; each passage reaches the writer marked [doctrine]/[opinion] with its theme; the planner answers in lines (its JSON broke on a quoted title and the answer fell back silently)",
+      "scope": "anis"
+    },
+    {
+      "hash": "a88a0064",
+      "date": "2026-10-19",
+      "type": "Chore",
+      "description": "Position research logs its themes, failures and counts (it fell back silently on tower)",
+      "scope": "anis"
+    },
+    {
+      "hash": "278ca552",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "POSITION questions researched theme by theme, authoritative texts first (Chad 10-19: the socialism/equality/property answer came from pilgrim notes and secondary articles — 'extremely shallow and wishy washy'): one planning call names the themes and the works that address them (where to look, never the answer); each theme searched within the Faith's texts; passages ranked Central Figures / Shoghi Effendi / UHJ first, secondary only to fill, unsegmented whole-book 'paragraphs' dropped; the reply goes theme by theme, quoting the authoritative texts, without hedging or 'the library has nothing' when passages exist. House style: authority order in every answer",
+      "scope": "anis"
+    },
+    {
+      "hash": "9479017a",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The English of a quoted passage is the ORIGINAL's own linked translation (Gleanings ¶606 for Muntakhabát 136) — the phrase search's top hits were all compilations quoting it",
+      "scope": "anis"
+    },
+    {
+      "hash": "67b47323",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The English of a quoted passage comes from the original's own author's work (Gleanings) before any compilation quoting it; the lookup's shortlist is 10, not 3",
+      "scope": "anis"
+    },
+    {
+      "hash": "40b8e126",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The English is taken from the work itself, ranked by the library's authority (not a memoir quoting it — the reply named 'Fires in Many Hearts' for Gleanings CXXXVI); a work the seeker named that the passage is not in is corrected in one gentle sentence; the 'As for the authorities behind these sources' paragraph is dropped. The auditor ALERTS Chad at once when an answer falls short (Chad 10-19: 'every single interaction with Anis should be audited immediately after for quality')",
+      "scope": "anis"
+    },
+    {
+      "hash": "5d34bd39",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "ANY quoted passage → its original (Chad 10-19: 'fix Anis'). The original-wording step knew only the Hidden Words; Lal's 'chamber' (Gleanings CXXXVI, no quotation marks, an Aqdas attribution and a P.S.) was looked up as one text and Anís answered 'I couldn't find it'. Now each passage the seeker quoted runs through the library's English→original lookup (findOriginals) and the reply is written from the English passage and its Arabic/Persian, naming where the passage actually appears",
+      "scope": "anis"
+    },
+    {
+      "hash": "a1c35dba",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The daily digest shows her CONVERSATIONS like Jafar's — numbers, the replies the auditor flagged first (with its reasons), who asked, every question and answer as the reader saw it; the mail activity after (Chad 10-19: 'follow conversations early on to head off poor answers')",
+      "scope": "anis mail"
+    },
     {
       "hash": "2d614e43",
       "date": "2026-10-19",
@@ -3374,136 +3500,136 @@
       "type": "Fixed",
       "description": "The book page's by-path API returns cover_url (it built its own document object without it)",
       "scope": "library"
-    },
-    {
-      "hash": "52165e6b",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Show book covers — image-service URLs at exact display sizes",
-      "scope": "library"
-    },
-    {
-      "hash": "3c7ded79",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Lossy WebP via jSquash — Photon's WebP is lossless only",
-      "scope": "img"
-    },
-    {
-      "hash": "54fa5133",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "The Librarian is Dewey — AI Librarian for Ocean 2.0 (dewey@oceanlibrary.com)",
-      "scope": "agents"
-    },
-    {
-      "hash": "69ce114c",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Import script + docs-repo setDocCover; image Worker config",
-      "scope": "covers"
-    },
-    {
-      "hash": "482dc84a",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "ImageKit-style image service Worker + book-cover originals on tower",
-      "scope": "img"
-    },
-    {
-      "hash": "961e6554",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Enrich and correct existing content — collate editions, find metadata, find covers",
-      "scope": "librarian"
-    },
-    {
-      "hash": "e4ce247c",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "A page per interactive agent — Anís and the Librarian (soul, purpose, tools, scenarios, memory)",
-      "scope": "agents"
-    },
-    {
-      "hash": "ec9e2de2",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "One functionality plan — finish the index, the Librarian (new), reader features",
-      "scope": "planning"
-    },
-    {
-      "hash": "b726ac83",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Entity layer is dead (stale ids); Qdrant caught up with new content",
-      "scope": "planning"
-    },
-    {
-      "hash": "5bab0bfb",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "A site paragraph leaves the primary Meili index too",
-      "scope": "index"
-    },
-    {
-      "hash": "b16a1549",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Periodic tasks threw every 5 s since 8624611b — getMeili() is sync, .catch is not a function",
-      "scope": "worker"
-    },
-    {
-      "hash": "4ae02c5a",
-      "date": "2026-10-09",
-      "type": "Docs",
-      "description": "Bahai-library non-content retirement done (60,044); data-access progress (ratchet 50 → 21)",
-      "scope": "planning"
-    },
-    {
-      "hash": "03a056fd",
-      "date": "2026-10-09",
-      "type": "Chore",
-      "description": "Delete dead Meili code — graph-pipeline worker, reindexAll, migrateEmbeddingsFromMeilisearch, cancel-meili route",
-      "scope": null
-    },
-    {
-      "hash": "86c40d5e",
-      "date": "2026-10-09",
-      "type": "Refactor",
-      "description": "One highlighting module; search health reports Qdrant",
-      "scope": "search"
-    },
-    {
-      "hash": "048f14c2",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Drop the Meili keyword fallback (no threshold) and the Meili sync",
-      "scope": "deep-research"
-    },
-    {
-      "hash": "87d708ff",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Hourly keyword catch-up to Qdrant (no live Qdrant writer yet)",
-      "scope": "index"
-    },
-    {
-      "hash": "8624611b",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "API no longer freezes on the grounding roadmap; Qdrant path stops leaning on Meili",
-      "scope": null
-    },
-    {
-      "hash": "0e51fb20",
-      "date": "2026-10-09",
-      "type": "Chore",
-      "description": "Delete 24 dead scripts that wrote Meili directly + the dead sync-processor duplicate",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-19": [
+      {
+        "hash": "47f9b001",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Unsegmented-docs report — every live document holding a whole-book 'paragraph', surveyed in short id windows: the re-ingest list (Chad 10-19)",
+        "scope": "ops"
+      },
+      {
+        "hash": "8424994b",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A whole-book 'paragraph' (unsegmented import awaiting re-ingest) is never returned as a passage — filtered before the 500-char cut hid its size",
+        "scope": "search"
+      },
+      {
+        "hash": "780cd4ad",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "No whole-book paragraphs — the site2rag adapter split bahai-library PDF markdown only on blank lines and read one page marker a block, so a book with single newlines became ONE 'paragraph' (50k–700k chars) that polluted every search (Chad 10-19: 'Never should we search an unsegmented book … a bug in the ingester'). Every page marker starts a block; an oversized block is split on its own structure (sentence-ending line breaks, then sentence boundaries); the sites ingester REFUSES a file that still has a >8,000-char paragraph (logged, nothing indexed)",
+        "scope": "ingest"
+      },
+      {
+        "hash": "e646a022",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The Universal House of Justice is APPLICATION, not doctrine (Chad 10-19, per the Will and Testament: authoritative on applying Bahá'í law, not decisive on doctrine) — doctrine is the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi); House passages are labelled [application] and cited after the doctrine",
+        "scope": "anis"
+      },
+      {
+        "hash": "7c7ecbd2",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Within doctrine, a work the planner named for the theme leads, then relevance; the authority number only breaks ties (a loosely related Aqdas line outranked the exact Promised Day passage); the named works are searched first",
+        "scope": "anis"
+      },
+      {
+        "hash": "91b4cff4",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The position planner gets 6000 tokens — Haiku spent all 1500 thinking and returned no text (finish 'length')",
+        "scope": "anis"
+      },
+      {
+        "hash": "634042a7",
+        "date": "2026-10-19",
+        "type": "Chore",
+        "description": "Log why the position planner returned no text",
+        "scope": "anis"
+      },
+      {
+        "hash": "0c05533a",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The position planner's lines are parsed through bullets, numbers and bold (a dressed reply parsed as no themes and the answer fell back); its raw text is logged when no theme parses",
+        "scope": "anis"
+      },
+      {
+        "hash": "931e8ee8",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Position planner covers the related doctrines a scholar would cite (property as an institution, the state, taxation and the rights of subjects, trade, materialist ideologies), up to 7 themes / 20 passages; the 'kinds of authority' opening is dropped",
+        "scope": "anis"
+      },
+      {
+        "hash": "5d231b67",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Letters (email) and position answers get room — the 700-token chat cap cut both mid-sentence; a reply that hits the cap is logged",
+        "scope": "anis"
+      },
+      {
+        "hash": "e773f46b",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "DOCTRINE apart from opinion in position answers (Chad 10-19: 'separate actual doctrine [from] human fad opinions … authority is everything'): only the writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi and the UHJ carry the answer — a pilgrim note never, a writer's view only labelled [opinion] and set against the texts; each passage reaches the writer marked [doctrine]/[opinion] with its theme; the planner answers in lines (its JSON broke on a quoted title and the answer fell back silently)",
+        "scope": "anis"
+      },
+      {
+        "hash": "a88a0064",
+        "date": "2026-10-19",
+        "type": "Chore",
+        "description": "Position research logs its themes, failures and counts (it fell back silently on tower)",
+        "scope": "anis"
+      },
+      {
+        "hash": "278ca552",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "POSITION questions researched theme by theme, authoritative texts first (Chad 10-19: the socialism/equality/property answer came from pilgrim notes and secondary articles — 'extremely shallow and wishy washy'): one planning call names the themes and the works that address them (where to look, never the answer); each theme searched within the Faith's texts; passages ranked Central Figures / Shoghi Effendi / UHJ first, secondary only to fill, unsegmented whole-book 'paragraphs' dropped; the reply goes theme by theme, quoting the authoritative texts, without hedging or 'the library has nothing' when passages exist. House style: authority order in every answer",
+        "scope": "anis"
+      },
+      {
+        "hash": "9479017a",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The English of a quoted passage is the ORIGINAL's own linked translation (Gleanings ¶606 for Muntakhabát 136) — the phrase search's top hits were all compilations quoting it",
+        "scope": "anis"
+      },
+      {
+        "hash": "67b47323",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The English of a quoted passage comes from the original's own author's work (Gleanings) before any compilation quoting it; the lookup's shortlist is 10, not 3",
+        "scope": "anis"
+      },
+      {
+        "hash": "40b8e126",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The English is taken from the work itself, ranked by the library's authority (not a memoir quoting it — the reply named 'Fires in Many Hearts' for Gleanings CXXXVI); a work the seeker named that the passage is not in is corrected in one gentle sentence; the 'As for the authorities behind these sources' paragraph is dropped. The auditor ALERTS Chad at once when an answer falls short (Chad 10-19: 'every single interaction with Anis should be audited immediately after for quality')",
+        "scope": "anis"
+      },
+      {
+        "hash": "5d34bd39",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "ANY quoted passage → its original (Chad 10-19: 'fix Anis'). The original-wording step knew only the Hidden Words; Lal's 'chamber' (Gleanings CXXXVI, no quotation marks, an Aqdas attribution and a P.S.) was looked up as one text and Anís answered 'I couldn't find it'. Now each passage the seeker quoted runs through the library's English→original lookup (findOriginals) and the reply is written from the English passage and its Arabic/Persian, naming where the passage actually appears",
+        "scope": "anis"
+      },
+      {
+        "hash": "a1c35dba",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The daily digest shows her CONVERSATIONS like Jafar's — numbers, the replies the auditor flagged first (with its reasons), who asked, every question and answer as the reader saw it; the mail activity after (Chad 10-19: 'follow conversations early on to head off poor answers')",
+        "scope": "anis mail"
+      },
       {
         "hash": "2d614e43",
         "date": "2026-10-19",
@@ -6895,134 +7021,6 @@
         "type": "Fixed",
         "description": "The book page's by-path API returns cover_url (it built its own document object without it)",
         "scope": "library"
-      },
-      {
-        "hash": "52165e6b",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Show book covers — image-service URLs at exact display sizes",
-        "scope": "library"
-      },
-      {
-        "hash": "3c7ded79",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Lossy WebP via jSquash — Photon's WebP is lossless only",
-        "scope": "img"
-      },
-      {
-        "hash": "54fa5133",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "The Librarian is Dewey — AI Librarian for Ocean 2.0 (dewey@oceanlibrary.com)",
-        "scope": "agents"
-      },
-      {
-        "hash": "69ce114c",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Import script + docs-repo setDocCover; image Worker config",
-        "scope": "covers"
-      },
-      {
-        "hash": "482dc84a",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "ImageKit-style image service Worker + book-cover originals on tower",
-        "scope": "img"
-      },
-      {
-        "hash": "961e6554",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Enrich and correct existing content — collate editions, find metadata, find covers",
-        "scope": "librarian"
-      },
-      {
-        "hash": "e4ce247c",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "A page per interactive agent — Anís and the Librarian (soul, purpose, tools, scenarios, memory)",
-        "scope": "agents"
-      },
-      {
-        "hash": "ec9e2de2",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "One functionality plan — finish the index, the Librarian (new), reader features",
-        "scope": "planning"
-      },
-      {
-        "hash": "b726ac83",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Entity layer is dead (stale ids); Qdrant caught up with new content",
-        "scope": "planning"
-      },
-      {
-        "hash": "5bab0bfb",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "A site paragraph leaves the primary Meili index too",
-        "scope": "index"
-      }
-    ],
-    "2026-10-09": [
-      {
-        "hash": "b16a1549",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Periodic tasks threw every 5 s since 8624611b — getMeili() is sync, .catch is not a function",
-        "scope": "worker"
-      },
-      {
-        "hash": "4ae02c5a",
-        "date": "2026-10-09",
-        "type": "Docs",
-        "description": "Bahai-library non-content retirement done (60,044); data-access progress (ratchet 50 → 21)",
-        "scope": "planning"
-      },
-      {
-        "hash": "03a056fd",
-        "date": "2026-10-09",
-        "type": "Chore",
-        "description": "Delete dead Meili code — graph-pipeline worker, reindexAll, migrateEmbeddingsFromMeilisearch, cancel-meili route",
-        "scope": null
-      },
-      {
-        "hash": "86c40d5e",
-        "date": "2026-10-09",
-        "type": "Refactor",
-        "description": "One highlighting module; search health reports Qdrant",
-        "scope": "search"
-      },
-      {
-        "hash": "048f14c2",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Drop the Meili keyword fallback (no threshold) and the Meili sync",
-        "scope": "deep-research"
-      },
-      {
-        "hash": "87d708ff",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Hourly keyword catch-up to Qdrant (no live Qdrant writer yet)",
-        "scope": "index"
-      },
-      {
-        "hash": "8624611b",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "API no longer freezes on the grounding roadmap; Qdrant path stops leaning on Meili",
-        "scope": null
-      },
-      {
-        "hash": "0e51fb20",
-        "date": "2026-10-09",
-        "type": "Chore",
-        "description": "Delete 24 dead scripts that wrote Meili directly + the dead sync-processor duplicate",
-        "scope": null
       }
     ]
   }

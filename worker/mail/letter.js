@@ -49,10 +49,25 @@ export function chartText(c) {
 export const plainText = (md) => String(md || '').replace(/<\/?mark>/g, '').replace(CHART_RE, (m, src) => { const c = parseChart(src); return c ? chartText(c) : m; });
 
 /** Markdown → the letter body, styled inline (mail clients ignore stylesheets). Tables get rules and padding. */
+/** A QUOTATION written as a link — ["the whole passage"](url) — reads as a quotation, the link moved to the work it is
+ *  from (10-19, Chad: "a tad bit more formatting … see the nice emails Jafar sends": whole passages showed as underlined
+ *  link text). `["q"](url) — *Work*` → `“q” — [*Work*](url)`; a quote-link with no work after keeps a small "source" link. Pure. */
+export function quotesNotLinks(md) {
+  return String(md || '')
+    .replace(/\[["“]([^\]]{12,}?)["”]\]\((https?:\/\/[^)\s]+)\)(\s*[—–-]\s*)(\*[^*\n]+\*|_[^_\n]+_)/g, (m, q, url, dash, work) => `“${q}”${dash}[${work}](${url})`)
+    .replace(/\[["“]([^\]]{12,}?)["”]\]\((https?:\/\/[^)\s]+)\)/g, (m, q, url) => `“${q}” ([source](${url}))`);
+}
+
 export function bodyHtml(md) {
   const charts = [];
-  const withSlots = String(md || '').replace(CHART_RE, (m, src) => { const c = parseChart(src); if (!c) return m; charts.push(chartHtml(c)); return `\n\n@@CHART${charts.length - 1}@@\n\n`; });
+  const withSlots = quotesNotLinks(md).replace(CHART_RE, (m, src) => { const c = parseChart(src); if (!c) return m; charts.push(chartHtml(c)); return `\n\n@@CHART${charts.length - 1}@@\n\n`; });
   return marked.parse(withSlots, { async: false })
+    // headings, bold, lists and rules styled like Jafar's letters (a mail client's default h3 is a shout)
+    .replace(/<h[1-3](\s[^>]*)?>/g, `<h3 dir="auto" style="margin:22px 0 8px;font-size:18px;line-height:1.35;color:${SEA}">`).replace(/<\/h[1-3]>/g, '</h3>')
+    .replace(/<h[4-6](\s[^>]*)?>/g, `<h4 dir="auto" style="margin:16px 0 6px;font-size:16.5px;color:${SEA}">`).replace(/<\/h[4-6]>/g, '</h4>')
+    .replace(/<strong>/g, `<strong style="color:${INK}">`)
+    .replace(/<ul>/g, '<ul style="margin:6px 0 14px;padding-left:22px">').replace(/<ol>/g, '<ol style="margin:6px 0 14px;padding-left:24px">')
+    .replace(/<hr\s*\/?>/g, `<hr style="border:0;border-top:1px solid ${RULE};margin:18px 0">`)
     .replace(/<p>/g, '<p dir="auto" style="margin:0 0 14px">')
     // the reading guide's noted words: a soft highlight tied to the note by its number (Chad 10-13)
     .replace(/<mark>/g, '<mark style="background:#f7e9b9;color:inherit;padding:0 2px;border-radius:2px">')
