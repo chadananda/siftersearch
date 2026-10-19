@@ -19,6 +19,9 @@ import { researchWork } from '../dewey/research.js';
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
 
+/** A title that only describes what could not be read ("title not legible", "untitled", "not stated in the excerpts"). Pure. */
+export const placeholderTitle = (t) => /\b(?:not (?:legible|stated|given|shown|visible|readable|included)|illegible|untitled|unknown title|title page (?:not|missing))\b/i.test(String(t || ''));
+
 // one OCR at a time per item: the three OCR lanes share this process, and two runs of one item (a Review answer + the OCR
 // loop, 10-18) would each pay SearchLayerPDF
 const running = new Set();
@@ -138,7 +141,9 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
   }
   // a scan that could not be appraised before OCR is appraised NOW, from SLP's text — title, author, shelf, scope
   let ap = a;
-  if (!a.title) {
+  // no title, OR a placeholder the pre-OCR appraisal made from a few unreadable pages ("Doctoral dissertation on … (full
+  // title not legible in the excerpts)" — 10-18, while the OCR text opened with the full title): appraised again from the text
+  if (!a.title || placeholderTitle(a.title)) {
     ap = await appraise({ ...item.identified, file_name: item.identified?.file_name }, out.text.slice(0, 8000), 'not held (checked before OCR)').catch(() => null) || {};
     if (ap.recommendation === 'skip' || ap.in_scope === 'no') {
       await updateItem(item.id, { state: 'needs-human', identified: { ...item.identified, slp, appraisal: ap } }, `read by full OCR, then judged out of scope: ${String(ap.summary || ap.scope_why || '').slice(0, 200)} — add it by hand if you want it`);

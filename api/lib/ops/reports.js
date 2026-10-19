@@ -14,6 +14,7 @@ import { deweyArchiveJob } from './dewey-archive-job.js';
 import { deweyQualityJob } from './dewey-quality-job.js';
 import { deweyCompletenessJob } from './dewey-completeness-job.js';
 import { deweyScoutJob } from './dewey-scout-job.js';
+import { deweyRetitleJob } from './dewey-retitle-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { vocabBuildJob } from './vocab-job.js';
@@ -170,6 +171,7 @@ REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates
 REPORTS['dewey-research'] = deweyResearchJob;   // params: { id } — research a wanted work: ISBN, publisher, cover (Chad 10-17)
 REPORTS['dewey-ingest-folder'] = deweyIngestFolderJob;   // params: { batch?, round? } — the ingest folder, a few at a time, easiest first
 REPORTS['dewey-reimport'] = deweyReimportJob;   // params: { docs?, all?, limit? } — re-read from the archive with today's cleaner, same document
+REPORTS['dewey-retitle'] = deweyRetitleJob;   // params: { limit? } — real titles for imports titled from unreadable pages (read-only proposals)
 REPORTS['dewey-scout'] = deweyScoutJob;   // params: { list, collections?, religion?, limit? } — find works the library lacks and a copy of each (planning/dewey-scouts-plan.md)
 REPORTS['dewey-completeness'] = deweyCompletenessJob;   // params: { since? } — imported PDFs that are only the beginning (read-only)
 REPORTS['dewey-quality'] = deweyQualityJob;     // params: { limit?, since? } — every Dewey import inspected, worst first, causes tallied
@@ -208,7 +210,7 @@ export const LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research'] };
+  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle'] };
 export const HEAVY = new Set(LANES.heavy);
 // How many jobs a lane runs AT ONCE (default 1). Phrase indexing was tried at 3 (10-16) and MEASURED WORSE: ~91K
 // phrases/h for all three vs ~142K/h for one, because the interim /crutch SSD (Kingston A400, no TRIM) saturated —

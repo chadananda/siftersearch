@@ -238,3 +238,13 @@ describe('slpExtract — SLP-side failure and cancel', () => {
     await expect(slpExtract({ path: '/x.pdf', resumeJobId: 'job_c' }, { fetchImpl, key: 'k', pollMs: 1 })).rejects.toMatchObject({ cancelled: true });
   });
 });
+
+describe('placeholderTitle', () => {
+  it('a title that only says it could not be read is re-appraised from the OCR text', async () => {
+    const { placeholderTitle } = await import('../../api/lib/ops/dewey-ocr-job.js');
+    expect(placeholderTitle("Doctoral dissertation on 'Abdu'l-Bahá's Western travels (full title not legible in the excerpts; contents include chapters)")).toBe(true);
+    expect(placeholderTitle('Untitled handwritten letter')).toBe(true);
+    expect(placeholderTitle('Sirah of the Prophet Muhammad (title not stated in the excerpts)')).toBe(true);
+    expect(placeholderTitle('Resurrection and Renewal')).toBe(false);
+  });
+});
