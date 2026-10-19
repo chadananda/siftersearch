@@ -21,7 +21,7 @@ describe('position questions', () => {
       { id: 5, author: 'Jane Scholar', collection: 'Papers', text: 'secondary' },
     ];
     const r = await rankByAuthority(ps, async (p) => (p.collection === 'Papers' ? 6 : 1));
-    expect(r.map((p) => p.id)).toEqual([2, 4, 5, 1]);
+    expect(r.map((p) => p.id)).toEqual([2, 4, 1, 5]);   // doctrine first; the rest in search order (opinion never takes a pilgrim note)
   });
   it('plans themes, searches each, and keeps the authoritative passages', async () => {
     const searched = [];
@@ -57,5 +57,16 @@ describe('parseBrief tolerates dressing', () => {
     const { parseBrief } = await import('../../api/lib/assistant/position.js');
     const t = '- **THEME:** private property | **SEARCH:** institution of private property | **WORKS:** God Passes By\n2. THEME : taxation | SEARCH: burden of taxes | WORKS:';
     expect(parseBrief(t).map((x) => x.theme)).toEqual(['private property', 'taxation']);
+  });
+});
+
+describe('relevance within doctrine (10-19)', () => {
+  it('a named work leads, then search order; the authority number only breaks ties', async () => {
+    const r = await rankByAuthority([
+      { id: 1, author: 'Bahá’u’lláh', title: 'The Kitáb-i-Aqdas', text: 'loosely related' },
+      { id: 2, author: 'Shoghi Effendi', title: 'The Promised Day is Come', text: 'the Movement of the Left' },
+      { id: 3, author: 'Shoghi Effendi', title: 'The World Order of Bahá’u’lláh', text: 'x' },
+    ], async (p) => (p.author.startsWith('Bah') ? 10 : 8), ['The Promised Day is Come']);
+    expect(r.map((p) => p.id)).toEqual([2, 1, 3]);
   });
 });

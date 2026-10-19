@@ -42,7 +42,7 @@ export const isDoctrine = (p) => AUTHORITATIVE.test(String(p.author || '')) && !
 const GIANT = 6000;   // a "paragraph" this long is a whole unsegmented book (pdf imports) — it matches everything
 
 /** Rank passages: authoritative author first, then the library's authority, then search order; giants out. Pure but for authorityOf. */
-export async function rankByAuthority(passages, authorityOf = async () => 0) {
+export async function rankByAuthority(passages, authorityOf = async () => 0, works = []) {
   const seen = new Set();
   const scored = [];
   for (const [i, p] of passages.entries()) {
@@ -50,9 +50,13 @@ export async function rankByAuthority(passages, authorityOf = async () => 0) {
     if (seen.has(key) || String(p.text || '').length > GIANT) continue;
     seen.add(key);
     const core = isDoctrine(p) ? 1 : 0;
-    scored.push({ p, core, a: Number(await authorityOf(p)) || 0, i });
+    const fw = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f'’‘"]/g, '').toLowerCase();
+    const named = works.some((w) => fw(w).length > 4 && fw(p.title).includes(fw(w).replace(/^the /, '')));
+    scored.push({ p, core, named: named ? 1 : 0, a: Number(await authorityOf(p)) || 0, i });
   }
-  return scored.sort((x, y) => y.core - x.core || y.a - x.a || x.i - y.i).map((s) => s.p);
+  // doctrine first; within it a work the planner NAMED for this theme, then RELEVANCE (search order) — the authority number
+  // only breaks ties (10-19: a loosely related Aqdas line outranked the exact Promised Day passage)
+  return scored.sort((x, y) => y.core - x.core || y.named - x.named || x.i - y.i || y.a - x.a).map((s) => s.p);
 }
 
 /** → { passages, themes } — up to `perTheme` passages a theme, authoritative first, `max` in all. */
@@ -72,9 +76,10 @@ export async function positionResearch({ question, create, search, authorityOf, 
   const searchOne = (query) => search({ query, mode: 'passages', limit: 8, scope_config, plan: { messages: [{ role: 'user', content: query }], defaults } }).then((r) => r?.passages || [])
     .catch((err) => { log.warn({ err: String(err.message).slice(0, 200), query }, 'position: search failed'); return []; });
   const perThemeHits = await Promise.all(themes.map(async (t) => {
-    const qs = [...(t.queries || []).slice(0, 2), ...(t.works || []).slice(0, 1).map((w) => `${w} ${t.theme}`)];   // ≤ 3 searches a theme
+    const qs = [...(t.works || []).slice(0, 2).map((w) => `${w} ${(t.queries || [t.theme])[0]}`), ...(t.queries || []).slice(0, 2)];   // ≤ 4 a theme, the named works first
     const hits = (await Promise.all(qs.map(searchOne))).flat();
-    const ranked = await rankByAuthority(hits, authorityOf);
+    // the named works' own searches first, so their passages lead the theme's search order
+    const ranked = await rankByAuthority(hits, authorityOf, t.works || []);
     // the theme's DOCTRINE; a non-authoritative view only where it can be set against doctrine (labelled), never a pilgrim note
     const doctrine = ranked.filter(isDoctrine).slice(0, perTheme).map((p) => ({ ...p, standing: 'doctrine' }));
     const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`)).slice(0, 1).map((p) => ({ ...p, standing: 'opinion' })) : [];
