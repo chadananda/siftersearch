@@ -142,21 +142,26 @@ if (process.argv.includes('--reaudit-gaps')) {
   console.log(JSON.stringify({ reaudited: done, spentToday: +spentToday().toFixed(4) }));
   process.exit(0);
 }
+// DRAIN (api/lib/drain.js): SIGHUP from the updater = finish the exchange in hand, then exit → pm2 restarts on the new code
+const { drainOnSignals, isDraining, nap } = await import('../../api/lib/drain.js');
+drainOnSignals();
+(await import('../../api/lib/service-heartbeat.js')).startHeartbeat({ name: process.env.name || 'siftersearch-audit', state: () => ({ audited_this_run: done }) });
 for (;;) {
+  if (isDraining()) break;
   if (spentToday() >= DAILY_USD) {                       // budget spent: wait for tomorrow (nothing is skipped)
     if (ONCE) break;
-    await new Promise((r) => setTimeout(r, 15 * 60 * 1000)); continue;
+    await nap(15 * 60 * 1000); continue;
   }
   const batch = nextBatch(lastAudited());
   let failed = false;
   for (const row of batch) {
-    if (spentToday() >= DAILY_USD || done >= LIMIT) break;
+    if (isDraining() || spentToday() >= DAILY_USD || done >= LIMIT) break;
     if (!(await audit(row))) { failed = true; break; }
     done++;
   }
-  if (failed) { if (ONCE) break; await new Promise((r) => setTimeout(r, 5 * 60 * 1000)); continue; }
+  if (failed) { if (ONCE) break; await nap(5 * 60 * 1000); continue; }
   if (ONCE || done >= LIMIT) break;
-  if (!batch.length) await new Promise((r) => setTimeout(r, 60 * 1000));
+  if (!batch.length) await nap(60 * 1000);
 }
 console.log(JSON.stringify({ audited: done, spentToday: +spentToday().toFixed(4) }));
 process.exit(0);

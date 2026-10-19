@@ -257,6 +257,12 @@ const shutdown = async (signal) => {
       logger.warn({ err: err.message }, 'Server close error (continuing shutdown)');
     }
   }
+  // …and the JOBS this instance runs (api/lib/jobs/async-jobs.js — Anís research answers, 40–120 s): the next instance
+  // already serves the polls; this one finishes the work (pm2 kill_timeout 300 s gives the room)
+  try {
+    const left = await (await import('./lib/jobs/async-jobs.js')).drain(280000);
+    logger.info({ left }, left ? 'Shutdown: jobs still running at the drain budget' : 'Shutdown: jobs drained');
+  } catch (err) { logger.warn({ err: err.message }, 'job drain failed (continuing shutdown)'); }
   stopSyncWorker();
   stopEmbeddingWorker();
   await stopLibraryWatcher();
@@ -264,6 +270,11 @@ const shutdown = async (signal) => {
   process.exit(0);
 };
 
+// heartbeat (api/lib/service-heartbeat.js): this instance's version, state and the Anís answers it is researching
+{
+  const [{ startHeartbeat }, jobs] = await Promise.all([import('./lib/service-heartbeat.js'), import('./lib/jobs/async-jobs.js')]);
+  startHeartbeat({ name: process.env.name || 'siftersearch-api', state: () => ({ inflight: jobs.inFlight(), draining_requests: shuttingDown }) });
+}
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 

@@ -946,6 +946,8 @@ async function workerLoop() {
   }
 
   logger.info('Unified worker ready');
+  // heartbeat (api/lib/service-heartbeat.js → GET /api/admin/ops/services)
+  (await import('../lib/service-heartbeat.js')).startHeartbeat({ name: process.env.name || 'siftersearch-worker' });
   while (!isShuttingDown) {
     try {
       let didWork = false;

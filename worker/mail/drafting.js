@@ -51,9 +51,34 @@ export async function threadMessages(db, threadKey, uptoId = Infinity) {
 }
 
 async function tower(env, path, body) {
-  const res = await fetch(`${TOWER}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-internal-key': env.S1_KEY }, body: JSON.stringify(body) });
+  const res = await fetch(`${TOWER}${path}`, { method: body === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json', 'x-internal-key': env.S1_KEY },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  if (res.status === 404 && body === undefined) return { status: 'unknown' };
   if (!res.ok) throw new Error(`tower ${path} ${res.status}`);
   return res.json();
+}
+
+/** One reply draft as a JOB on tower (docs/architecture/continuous-deploy.md): a research answer takes 40–120 s; asked
+ *  synchronously it died at Cloudflare's ~125 s limit (524) and the next tick recomputed it, every minute. The first tick
+ *  starts the job (key mail-<id>, never run twice); later ticks poll it. → the finished result, or null while it runs.
+ *  A failed or lost job is retried up to 3 times, then the message is marked failed (its error says why). */
+export async function draftJob(env, db, m, { call = tower } = {}) {
+  const key = `mail-${m.id}`;
+  const attempts = Number(/attempt (\d+)/.exec(m.error || '')?.[1] || 0);
+  const j = m.status === 'drafting' ? await call(env, `/draft/job/${key}`) : { status: 'unknown' };
+  if (j.status === 'done') return j.result;
+  if (j.status === 'running') return null;
+  // not started yet, failed, lost (its API instance was killed) or unknown (tower lost the file): (re)start it
+  // only a job that RAN and failed (or was killed) counts; "unknown" = never started (tower was unreachable) → just start it
+  if (j.status === 'failed' || j.status === 'lost') {
+    if (attempts >= 3) {
+      await db.prepare(`UPDATE mail_messages SET status = 'failed', error = ? WHERE id = ?`).bind(`draft ${j.status} after ${attempts} attempts: ${j.error || ''}`.slice(0, 300), m.id).run();
+      return null;
+    }
+    await db.prepare('UPDATE mail_messages SET error = ? WHERE id = ?').bind(`attempt ${attempts + 1}${j.error ? `: ${j.error}` : ''}`.slice(0, 300), m.id).run();
+  }
+  await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr });
+  return null;
 }
 
 /** Invite-only alpha (Chad 2026-10-08: "no need to go to draft since this is an internal group"): letters to invited
@@ -84,8 +109,9 @@ export const REPLY_GAP_MIN = 3;
 export async function draftReplies(env, limit = 4) {
   const db = env.ANIS_DB;
   const settings = await loadSettings(db);
-  const { results } = await db.prepare(`SELECT * FROM mail_messages WHERE direction = 'in' AND mailbox = 'anis' AND (status = 'new'
-    OR (status = 'drafting' AND created_at < datetime('now', '-20 minutes'))) ORDER BY id LIMIT ?`).bind(limit).all();   // a crashed tick retries
+  // 'drafting' = a job runs on tower: every tick polls it (draftJob) — no more "retry after 20 minutes"
+  const { results } = await db.prepare(`SELECT * FROM mail_messages WHERE direction = 'in' AND mailbox = 'anis' AND status IN ('new', 'drafting')
+    ORDER BY id LIMIT ?`).bind(limit).all();
   for (const m of results) {
     if (m.from_addr === FROM_ADDR || /^(no-?reply|mailer-daemon|postmaster)/i.test(m.from_addr)) {
       await db.prepare(`UPDATE mail_messages SET status = 'handled' WHERE id = ?`).bind(m.id).run();   // nothing to answer
@@ -95,10 +121,13 @@ export async function draftReplies(env, limit = 4) {
     // gets the next page right away; a rapid volley waits out the 3 minutes)
     if (await db.prepare(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND to_addr = ? AND created_at > datetime('now', ?)`)
       .bind(m.from_addr, `-${REPLY_GAP_MIN} minutes`).first()) continue;
-    const claim = await db.prepare(`UPDATE mail_messages SET status = 'drafting' WHERE id = ? AND status = ?`).bind(m.id, m.status).run();
-    if (!claim.meta?.changes) continue;                                  // another tick has it
+    if (m.status === 'new') {
+      const claim = await db.prepare(`UPDATE mail_messages SET status = 'drafting' WHERE id = ? AND status = 'new'`).bind(m.id).run();
+      if (!claim.meta?.changes) continue;                                // another tick has it
+    }
     try {
-      const r = await tower(env, '/draft', { messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr });
+      const r = await draftJob(env, db, m);
+      if (!r) continue;                                                  // still researching — the next tick looks again
       const stop = (r.triage?.stop ?? 0) >= 0.5, personal = r.triage?.stance === 'grieving_personal' || r.triage?.kind === 'personal';
       if (stop || personal) {                                            // no outreach after "stop" or a personal disclosure
         await db.prepare('INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, ?)').bind(await emailHash(m.from_addr), stop ? 'asked to stop' : 'personal disclosure').run();
@@ -114,7 +143,8 @@ export async function draftReplies(env, limit = 4) {
         ON CONFLICT(email) DO NOTHING`).bind(m.from_addr, m.from_name ?? null).run();
       await sendOrReview(env, settings, draft, m);
     } catch (e) {
-      await db.prepare(`UPDATE mail_messages SET status = 'new', error = ? WHERE id = ?`).bind(String(e.message).slice(0, 300), m.id).run();
+      // tower unreachable: stay 'drafting' — the job (if started) keeps running; the next tick polls or starts it
+      await db.prepare(`UPDATE mail_messages SET error = ? WHERE id = ?`).bind(String(e.message).slice(0, 300), m.id).run();
     }
   }
 }

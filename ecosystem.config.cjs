@@ -106,7 +106,7 @@ module.exports = {
       // 30s gives Fastify time to drain in-flight chat SSE streams
       // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —
       // any active chat got 503'd during reloads.
-      kill_timeout: 30000,
+      kill_timeout: 300000,   // drain: in-flight requests AND jobs (Anís research 40–120 s) finish before the old instance exits (docs/architecture/continuous-deploy.md)
       exp_backoff_restart_delay: 1000, // 1s, 2s, 4s, ... up to 15s
       max_restarts: 999999,   // effectively unlimited
       min_uptime: '10s',

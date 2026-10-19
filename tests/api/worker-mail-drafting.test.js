@@ -119,3 +119,35 @@ describe('replySubject — a reading stays in its thread', () => {
     expect(replySubject('a question', null)).toBe('Re: a question');
   });
 });
+
+describe('reply drafts are tower JOBS (docs/architecture/continuous-deploy.md)', () => {
+  const fakeDb = () => {
+    const runs = [];
+    return { runs, prepare: (sql) => ({ bind: (...a) => ({ run: async () => { runs.push([sql, a]); return { meta: { changes: 1 } }; }, all: async () => ({ results: [] }), first: async () => null }) }) };
+  };
+  const m = (o) => ({ id: 702, thread_key: 't', from_addr: 'a@b.c', status: 'new', error: null, ...o });
+  it('a new message starts a job and waits; a running job waits; a done job yields its reply', async () => {
+    const { draftJob } = await import('../../worker/mail/drafting.js');
+    const calls = [];
+    const call = (status, result) => async (env, path, body) => { calls.push([path, body?.job ?? null]); return path.startsWith('/draft/job/') ? { status, result } : { status: 'running' }; };
+    expect(await draftJob({}, fakeDb(), m(), { call: call() })).toBeNull();
+    expect(calls).toEqual([['/draft', 'mail-702']]);
+    calls.length = 0;
+    expect(await draftJob({}, fakeDb(), m({ status: 'drafting' }), { call: call('running') })).toBeNull();
+    expect(calls).toEqual([['/draft/job/mail-702', null]]);
+    expect(await draftJob({}, fakeDb(), m({ status: 'drafting' }), { call: call('done', { reply: 'Dear Lal' }) })).toEqual({ reply: 'Dear Lal' });
+  });
+  it('unknown (never started) restarts without counting; failed counts, and after 3 the message is failed', async () => {
+    const { draftJob } = await import('../../worker/mail/drafting.js');
+    const call = (status) => async (env, path) => (path.startsWith('/draft/job/') ? { status, error: 'boom' } : { status: 'running' });
+    const db1 = fakeDb();
+    await draftJob({}, db1, m({ status: 'drafting' }), { call: call('unknown') });
+    expect(db1.runs.length).toBe(0);
+    const db2 = fakeDb();
+    await draftJob({}, db2, m({ status: 'drafting', error: 'attempt 1: x' }), { call: call('failed') });
+    expect(db2.runs[0][1][0]).toMatch(/^attempt 2/);
+    const db3 = fakeDb();
+    await draftJob({}, db3, m({ status: 'drafting', error: 'attempt 3: x' }), { call: call('lost') });
+    expect(db3.runs[0][0]).toMatch(/status = 'failed'/);
+  });
+});

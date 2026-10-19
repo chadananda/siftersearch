@@ -615,6 +615,26 @@ async function ensureCronSchedule(name) {
 /**
  * Apply updates with zero-downtime deploy
  */
+// Long-lived services the coordinator manages, in swap order (user-facing first). Drain services finish their work first.
+const MANAGED = ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-research', 'siftersearch-library-watcher',
+  'siftersearch-embedding', 'siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit'];
+const DRAIN = new Set(['siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit']);
+/** → [[name, 'keep'|'drain'|'reload']] for the RUNNING managed services. No previous commit known → every one is reloaded/drained. */
+async function deployPlan(fromSha) {
+  const { createRequire } = await import('node:module');
+  const apps = createRequire(import.meta.url)(join(PROJECT_ROOT, 'ecosystem.config.cjs')).apps;
+  const running = [];
+  for (const name of MANAGED) if (await isProcessRunning(name)) running.push(name);
+  let affected = null;
+  if (fromSha) {
+    const changed = (await run(`git diff --name-only ${fromSha} HEAD`)).stdout.split('\n').filter(Boolean);
+    const { affectedApps } = await import('./lib/import-graph.mjs');
+    affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT });
+    for (const [n, files] of Object.entries(affected)) log('info', `  ${n} loads ${files.length} changed file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? ', …' : ''}`);
+  }
+  return running.map((name) => [name, affected && !affected[name] ? 'keep' : DRAIN.has(name) ? 'drain' : 'reload']);
+}
+
 async function applyUpdates() {
   log('info', 'Pulling latest changes...');
 
@@ -706,15 +726,21 @@ async function applyUpdates() {
   failedVerifications = 0;
   log('info', 'Verification passed — swapping to new code');
 
-  // Swap API first (user-facing), then background workers
+  // THE COORDINATOR (docs/architecture/continuous-deploy.md; Chad 10-19: "independent monitored, versioned services each of
+  // which can wind down for an update if needed but … continue through if updating that service is not required"): each
+  // long-lived service is touched ONLY if the change reaches its code (its import graph). Drain services (queue workers)
+  // get SIGHUP — they finish the work in hand and exit; pm2 restarts them on the new code. The rest reload gracefully
+  // (API: the new instance first, the old one finishes requests and jobs). Unaffected services keep running untouched.
   let failed = false;
-  if (!await swapPm2Process('siftersearch-api')) failed = true;
-  if (!await swapPm2Process('siftersearch-worker')) failed = true;
-  if (!await swapPm2Process('siftersearch-deep-research')) failed = true;
-  // Library-watcher — restart after API/worker to avoid SQLite write contention.
-  // NOTE: only swap it if it's currently running; swapPm2Process uses startOrReload
-  // which would otherwise REVIVE a deliberately-stopped process on every deploy.
-  if (await isProcessRunning('siftersearch-library-watcher')) await swapPm2Process('siftersearch-library-watcher');
+  for (const [name, how] of await deployPlan(prevSha)) {
+    if (how === 'keep') { log('info', `  ${name}: code unchanged — keeps running`); continue; }
+    if (how === 'drain') {
+      const r = await run(`pm2 sendSignal SIGHUP ${name}`);
+      log(r.success ? 'info' : 'warn', `  ${name}: ${r.success ? 'draining — restarts on the new code when its work in hand is done' : `drain signal failed: ${r.error}`}`);
+      continue;
+    }
+    if (!await swapPm2Process(name)) failed = true;
+  }
   // RETIRED 2026-07-10 (superseded by the per-book deepseek entity pipeline): the old
   // blanket Sonnet/Qwen enrichment (wrote garbage old-format HyPE) and the legacy graph-*
   // entity pipeline (extracted from un-disambiguated text) are pm2-stopped. Do NOT swap

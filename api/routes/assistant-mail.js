@@ -58,16 +58,11 @@ export default async function anisRoutes(fastify) {
   });
 
   // A reply to an inbound email: one ordinary Anís turn on the email channel (triage gate, research, output check).
-  fastify.post('/draft', async (request, reply) => {
-    if (!internalOnly(request, reply)) return;
-    const { messages = [], email = '', research = undefined, writer = null } = request.body || {};
-    if (!messages.length) return reply.code(400).send({ error: 'messages required' });
-    // research: true/false overrides ANIS_RESEARCH for this draft; writer: "anthropic:claude-sonnet-5-5" — the battery
-    // (scripts/anis/research-battery.mjs) compares them against Perplexity before anything goes live
+  // One draft: reading guide first (Chad 10-12: "help me study <book>", then next / again / back / skip to …), else an
+  // ordinary Anís turn on the email channel. research / writer override ANIS_RESEARCH / the writer (the battery).
+  async function draftFor({ messages, email = '', research = undefined, writer = null }) {
     const { parseLlm } = await import('../lib/assistant/respond.js');
     const llm = writer ? parseLlm(writer) : undefined;
-    // READING GUIDE first (Chad 10-12): "help me study <book>", then next / again / back / skip to …; anything else is an
-    // ordinary question and falls through to the usual turn.
     const { readingTurn } = await import('../lib/assistant/reading.js');
     const rd = await readingTurn({ messages, participantId: who(email) }).catch((err) => { logger.error({ err: err.message }, 'anis: reading turn failed'); return null; });
     if (rd?.reply) return { reply: rd.reply, subject: rd.subject || null, status: 'reading', triage: null, retrieved: 0, format: 'reading-guide' };
@@ -75,6 +70,28 @@ export default async function anisRoutes(fastify) {
     const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, llm });
     return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
       research: r.plan?.shape === 'research' ? { steps: r.plan.steps, ms: r.plan.ms } : null };
+  }
+  let jobs = null;
+  const draftJobs = async () => (jobs ||= (await import('../lib/jobs/async-jobs.js')).jobStore());
+
+  // A reply to an inbound email. async + job (docs/architecture/continuous-deploy.md): a research answer takes 40–120 s —
+  // synchronously it died at Cloudflare's ~125 s limit (524) and at API reloads, and the mail cron recomputed it every
+  // minute. As a job it returns at once; GET /draft/job/:key polls; the same key never runs twice.
+  fastify.post('/draft', async (request, reply) => {
+    if (!internalOnly(request, reply)) return;
+    const b = request.body || {};
+    if (!b.messages?.length) return reply.code(400).send({ error: 'messages required' });
+    if (!b.async) return draftFor(b);
+    const key = String(b.job || '').replace(/[^\w.-]/g, '').slice(0, 80);
+    if (!key) return reply.code(400).send({ error: 'job key required with async' });
+    const store = await draftJobs();
+    if (Math.random() < 0.02) store.prune();
+    return store.start(key, () => draftFor(b), { kind: 'anis-draft' });
+  });
+  fastify.get('/draft/job/:key', async (request, reply) => {
+    if (!internalOnly(request, reply)) return;
+    const rec = (await draftJobs()).get(String(request.params.key).replace(/[^\w.-]/g, ''));
+    return rec || reply.code(404).send({ status: 'unknown' });
   });
 
   // A letter Anís starts (onboarding / follow-up). step 0–1: a capability they have not used, shown on their own subject;

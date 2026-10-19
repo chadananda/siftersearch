@@ -8,6 +8,7 @@ import { claimNext, finish, requeueStale } from '../lib/repos/ops-report-repo.js
 import { REPORTS, LANES, LANE_WORKERS } from '../lib/ops/reports.js';
 import { sendEmail } from '../services/email.js';
 import { logActivity } from '../lib/repos/activity-repo.js';
+import { drainOnSignals, nap } from '../lib/drain.js';
 
 // A job that FAILS or STOPS SHORT (budget cap, monthly cap) is mailed at once (10-16: a phrase run stopped at its $20 cap
 // and went unnoticed for 11 hours; Chad: "you were supposed to be watching it closely"). Never throws.
@@ -23,10 +24,15 @@ const stoppedShort = (result) => { const s = JSON.stringify(result || {}); retur
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 try { os.setPriority(19); } catch { /* not permitted — runs at normal priority */ }
 const IDLE_MS = 15_000;
+// DRAIN (api/lib/drain.js): SIGHUP from the updater = finish the jobs in hand, claim nothing new, exit 0 → pm2 restarts on
+// the new code (the queued update); SIGINT/SIGTERM drain the same way. Every sleeping loop wakes at once.
 let stopping = false;
-process.on('SIGTERM', () => { stopping = true; });
-process.on('SIGINT', () => { stopping = true; });
+drainOnSignals((sig) => { stopping = true; logger.info({ sig }, 'reports: draining — finishing the jobs in hand, claiming nothing new'); });
 
+// heartbeat: the jobs in hand per lane (api/lib/service-heartbeat.js → GET /api/admin/ops/services)
+const inHand = new Map();
+(await import('../lib/service-heartbeat.js')).startHeartbeat({ name: process.env.name || 'siftersearch-reports',
+  state: () => ({ inflight: inHand.size, doing: [...inHand.values()] }) });
 if (!process.env.OPS_ONLY) await requeueStale().catch((err) => logger.warn({ err: err.message }, 'reports: requeue failed'));
 logger.info({ reports: Object.keys(REPORTS) }, 'Reports worker started');
 async function lane(name, only, skipAlways) {
@@ -34,8 +40,9 @@ async function lane(name, only, skipAlways) {
     // no time-of-day gate (10-14): every job runs when claimed; heavy ones are serialised in their own lane and paced
     const skip = skipAlways;
     const run = await claimNext({ only, skip }).catch((err) => { logger.warn({ err: err.message, lane: name }, 'reports: claim failed'); return null; });
-    if (!run) { await new Promise((r) => setTimeout(r, IDLE_MS)); continue; }
+    if (!run) { await nap(IDLE_MS); continue; }
     const t0 = Date.now();
+    inHand.set(name, `${run.name} #${run.id}`);
     const what = (() => { const p = run.params || {}; return p.budgetKey || p.field || (p.docs?.length ? `${p.docs.length} documents` : p.ids?.length ? `${p.ids.length} documents` : ''); })();
     logActivity('job', `▶ ${run.name}${what ? ` · ${what}` : ''} · #${run.id} started`);
     try {
@@ -58,7 +65,7 @@ async function lane(name, only, skipAlways) {
       await alert(run, 'FAILED', String(err.message || err).slice(0, 1500));
       logActivity('job', `✗ ${run.name} · #${run.id} failed`);
       logger.error({ id: run.id, name: run.name, lane: name, err: err.message }, 'report failed');
-    }
+    } finally { inHand.delete(name); }
   }
 }
 // Rolling coverage refresh (planning/index-coverage-plan.md): the 300 stalest documents re-measured every minute, so the
@@ -75,7 +82,7 @@ async function rollingCoverage() {
     }
     const r = await coverageRefreshJob({ limit: 300 }).catch((err) => { logger.warn({ err: err.message }, 'coverage: rolling refresh failed'); return null; });
     if (r?.measured) logActivity('ledger', `re-measured ${r.measured} documents × 11 layers · index coverage ledger`);
-    await new Promise((r) => setTimeout(r, 60_000));
+    await nap(60_000);
   }
 }
 
@@ -109,7 +116,7 @@ async function keywordLoop() {
       const phraseless = await (await import('../lib/repos/coverage-repo.js')).newDocsMissingLayer('phrase').catch(() => []);
       if (phraseless.length) await enqueue('phrase-index', { docs: phraseless, maxUsd: cap, budgetKey: 'auto-ingest' }, 'follow-through').catch((err) => logger.warn({ err: err.message }, 'follow-through: phrase enqueue failed'));
     }
-    await new Promise((r) => setTimeout(r, 600_000));
+    await nap(600_000);
   }
 }
 
@@ -126,7 +133,7 @@ async function telemetryLoop() {
       const v = snap.vectors || {}, h = snap.health;
       logActivity('telemetry', `snapshot · ${fmt(snap.corpus.paragraphs)} ¶ · phrase ${fmt(v.phrases)} · hype ${fmt(v.hype)} · concepts ${fmt(v.concepts)}${h ? ` · load ${h.cpu.load_pct}% · tank ${h.storage.find((s) => s.dev === 'sdc')?.io?.busy_pct ?? '—'}% busy` : ''}`);
     } catch (err) { logger.warn({ err: err.message }, 'telemetry: snapshot failed'); }
-    await new Promise((r) => setTimeout(r, 5 * 60_000));
+    await nap(5 * 60_000);
   }
 }
 // PULSE (Chad 10-16: "the console is a bit dead … there is a ton of indexing activity going on"): the machinery's real
@@ -178,7 +185,7 @@ async function pulseLoop() {
         queued_names: [...new Set(live.filter((j) => j.status === 'queued').map((j) => j.name))] };
       await tel.savePulse(Math.floor(Date.now() / 1000), { io, vectors, writer, jobs, cpu: { load_pct: Math.round((load1 / os.cpus().length) * 100) } });
     } catch (err) { logger.warn({ err: err.message }, 'pulse failed'); }
-    await new Promise((r) => setTimeout(r, 15000));
+    await nap(15000);
   }
 }
 // OCR self-healing (10-18): restarts dropped in-flight OCR jobs and 71 items sat at needs-ocr with five jobs queued. Every
@@ -206,7 +213,7 @@ async function scoutPulse() {
         }
       }
     } catch { /* next half hour */ }
-    await new Promise((r) => setTimeout(r, 1_800_000));
+    await nap(1_800_000);
   }
 }
 
@@ -222,7 +229,7 @@ async function ocrLoop() {
       const onWay = new Set((await pendingRuns('dewey-ocr').catch(() => [])).map((r) => Number(r.params?.id)));
       for (const i of waiting) if (!onWay.has(i.id)) await enqueue('dewey-ocr', { id: i.id }, 'ocr-loop').catch(() => {});
     }
-    await new Promise((r) => setTimeout(r, 600_000));
+    await nap(600_000);
   }
 }
 
