@@ -158,10 +158,45 @@ function deriveExternalId(frontmatter, relativePath) {
   return relativePath.split('/').pop().replace(/\.md$/i, '');
 }
 
+// ─── paragraphs by STRUCTURE ────────────────────────────────────────────────
+// A block longer than a paragraph can be (MAX_BLOCK) is split on its own structure, never at an arbitrary character count:
+// first at line breaks that END a sentence (in PDF text a paragraph ends at a line ending in . ? ! : ” ’ ") — then, a block
+// with no such breaks (one run of text), at sentence boundaries into paragraphs of a readable size. Page markers stay with
+// the text they precede. Chad 10-19: "Never should we search an unsegmented book … MD files should always have clearly
+// separated paragraphs."
+export const MAX_BLOCK = 3000;
+const TARGET = 1200;
+export function splitByStructure(block) {
+  const b = String(block || '').trim();
+  if (b.length <= MAX_BLOCK) return [b];
+  // 1. line breaks that end a sentence
+  const lines = b.split('\n');
+  const byLines = [];
+  let cur = '';
+  for (const line of lines) {
+    cur = cur ? `${cur}\n${line}` : line;
+    if (/[.?!:;"”’»)]\s*$/.test(line.replace(/<span[^>]*><\/span>|\[↗ p\.\d+\]\([^)]+\)/g, '').trim()) && cur.length >= 200) { byLines.push(cur.trim()); cur = ''; }
+  }
+  if (cur.trim()) byLines.push(cur.trim());
+  // 2. what is still too long: sentence boundaries, grouped to a readable size
+  return byLines.flatMap((p) => {
+    if (p.length <= MAX_BLOCK) return [p];
+    const sentences = p.replace(/\n/g, ' ').split(/(?<=[.?!][”’"»)]?)\s+(?=[“"‘«(]?\p{Lu})/u);
+    const out = [];
+    let acc = '';
+    for (const sn of sentences) {
+      if (acc && acc.length + sn.length > TARGET) { out.push(acc.trim()); acc = ''; }
+      acc = acc ? `${acc} ${sn}` : sn;
+    }
+    if (acc.trim()) out.push(acc.trim());
+    return out;
+  });
+}
+
 // ─── HTML-derived body parser ───────────────────────────────────────────────
 
 function parseHtmlBody(body, frontmatter) {
-  const blocks = body.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+  const blocks = body.split(/\n{2,}/).map(b => b.trim()).filter(Boolean).flatMap((b) => splitByStructure(b));
   const paragraphs = [];
   let idx = 0;
 
@@ -194,7 +229,11 @@ function parsePdfBody(body, frontmatter) {
   // If no markers exist (some HTML-imported PDF derivatives drop them), fall
   // back to plain blank-line splitting and leave pdf_page null.
 
-  const blocks = body.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+  // every PAGE MARKER starts a block (10-19: a body with single newlines only — or markers inline in the text — became ONE
+  // "paragraph" per book, and those whole-book paragraphs polluted every search), then each block is split on its own
+  // structure (splitByStructure)
+  const marked = String(body).replace(/(\[↗ p\.\d+\]\([^)]+\)\s*)?(<span\s+data-pdf-page=)/g, '\n\n$1$2');
+  const blocks = marked.split(/\n{2,}/).map(b => b.trim()).filter(Boolean).flatMap((b) => splitByStructure(b));
   const paragraphs = [];
   let idx = 0;
   let pendingPage = null;

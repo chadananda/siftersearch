@@ -557,6 +557,15 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     return { status: 'empty', file: relPath, scope };
   }
 
+  // NEVER AN UNSEGMENTED BOOK (Chad 10-19: "Never should we search an unsegmented book … unsegmented paragraphs indicate a
+  // bug in the ingester"): a "paragraph" longer than any real one means the source has no paragraph structure the adapter
+  // could find — the file is refused (logged, nothing indexed) until its markdown is fixed, never searched as one blob
+  const giant = paragraphs.find((p) => String(p.text || '').length > UNSEGMENTED_CHARS);
+  if (giant) {
+    logger.warn({ file: relPath, chars: giant.text.length, paragraphs: paragraphs.length, scope }, 'Sites-ingester: UNSEGMENTED — a paragraph is a whole book; file refused until its markdown has paragraphs');
+    return { status: 'unsegmented', file: relPath, scope, chars: giant.text.length };
+  }
+
   // Compute hashes for cache lookup. Always harvest from main `content`
   // table — the embedding cache is cross-corpus, so a paragraph appearing in
   // both bahaiteachings.org and primary reuses the existing embedding.
@@ -717,6 +726,9 @@ async function reconcileDeletes(siteId, basePath, diskPaths, walkComplete) {
 }
 
 // ─── Public API: run a single site through the full pipeline ────────────
+
+/** A paragraph this long is not a paragraph (the longest real ones run to ~3,000 characters): the source is unsegmented. */
+export const UNSEGMENTED_CHARS = 8000;
 
 export async function ingestSite(siteId, opts = {}) {
   const basePath = config.library.basePath;

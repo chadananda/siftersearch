@@ -400,3 +400,31 @@ describe('site2rag adapter — detectSupersedee', () => {
     expect(result.supersedes).toBeNull();
   });
 });
+
+// 10-19: bahai-library PDFs whose crawled markdown has single newlines only (or markers inline) became ONE paragraph per
+// book (50,000–700,000 characters) and polluted every search. Paragraphs come from the text's own structure now.
+describe('no whole-book paragraphs (Chad 10-19: "Never should we search an unsegmented book")', () => {
+  it('splitByStructure: sentence-ending line breaks, then sentence boundaries; short blocks untouched', async () => {
+    const { splitByStructure, MAX_BLOCK } = await import('../../api/services/site-adapters/site2rag.js');
+    expect(splitByStructure('A short paragraph.')).toEqual(['A short paragraph.']);
+    const para = (n) => `This is sentence one of paragraph ${n} and it runs on for a while about the history of the Faith in Persia and\nits early believers who met in secret.`;
+    const book = Array.from({ length: 80 }, (_, i) => para(i)).join('\n');
+    const parts = splitByStructure(book);
+    expect(parts.length).toBeGreaterThan(10);
+    expect(parts.every((p) => p.length <= MAX_BLOCK)).toBe(true);
+    const run = Array.from({ length: 300 }, (_, i) => `Sentence ${i} speaks of the Covenant.`).join(' ');
+    const runParts = splitByStructure(run);
+    expect(runParts.every((p) => p.length <= MAX_BLOCK && /\.$/.test(p))).toBe(true);
+    expect(runParts.join(' ')).toBe(run);
+  });
+  it('a PDF body with single newlines and inline markers becomes many paragraphs with their pages', async () => {
+    const { parseDoc } = await import('../../api/services/site-adapters/site2rag.js');
+    const span = (pg) => `<span data-pdf-page="${pg}" data-pdf-para="1" data-pdf-src="x#page=${pg}"></span>`;
+    const body = Array.from({ length: 40 }, (_, pg) => `${span(pg + 1)}\n${Array.from({ length: 8 }, (_, i) => `Page ${pg + 1} line ${i} of the book ends with a sentence.`).join('\n')}`).join('\n');
+    const md = `---\ntitle: "Religion for Mankind"\nurl: "https://bahai-library.com/pdf/h/holley_religion_for_mankind.pdf"\nmime_type: "application/pdf"\n---\n\n${body}`;
+    const r = await parseDoc('pdf-h-holley_religion_for_mankind.md', md, { siteConfig: {} });
+    expect(r.paragraphs.length).toBeGreaterThanOrEqual(40);
+    expect(Math.max(...r.paragraphs.map((p) => p.text.length))).toBeLessThan(3000);
+    expect(r.paragraphs.some((p) => p.pdf_page === 40)).toBe(true);
+  });
+});
