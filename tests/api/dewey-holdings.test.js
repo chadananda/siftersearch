@@ -117,3 +117,38 @@ describe('identify', () => {
     expect(sampleLines('CHAPTER I\nA short line\nThis line of running text has enough words to identify the passage well.')).toEqual(['This line of running text has enough words to identify the passage well.']);
   });
 });
+
+describe('a work by its title, many ways (10-19: Ẓuhúru\'l-Ḥaqq — nine held volumes — scouted as "to buy")', () => {
+  it('prefixes, brackets, subtitles, volumes and spellings resolve to one main title', async () => {
+    const { mainTitle, titleVariants } = await import('../../api/lib/dewey/holdings.js');
+    const w = "Táríkh-i-Ẓuhúru'l-Ḥaqq (The History of the Manifestation of Truth)";
+    const mains = new Set(titleVariants(w).map(mainTitle));
+    expect(mains.has(mainTitle("Ẓuhúru'l-Ḥaqq Vol 1 (Pre-Babi Era)"))).toBe(true);
+    expect(mains.has(mainTitle('History of the Manifestation of Truth'))).toBe(true);
+    expect(mainTitle("The Dawn-Breakers: Nabíl's Narrative of the Early Days")).toBe(mainTitle('The Dawn-Breakers'));
+    expect(mainTitle('The Life of the Báb')).not.toBe(mainTitle('The Life of Bahá’u’lláh'));
+  });
+  it('held by title when a substantial document carries the work\'s main title; a same-titled short entry is not enough', async () => {
+    const { checkHoldings } = await import('../../api/lib/dewey/holdings.js');
+    const vol = { id: 15228, title: "Ẓuhúru'l-Ḥaqq Vol 1 (Pre-Babi Era)", paragraph_count: 205 };
+    const entry = { id: 11497, title: "Ẓuhúru'l-Ḥaqq: an encyclopedia entry", paragraph_count: 6 };
+    const none = async () => [];
+    const deps = (docs) => ({ find: async () => ({ docs }), sections: none, keyword: async () => ({ hits: [] }), docs: async () => ({ docs: [] }), texts: none, paragraphs: none });
+    expect((await checkHoldings({ title: "Táríkh-i-Ẓuhúru'l-Ḥaqq (The History of the Manifestation of Truth)" }, deps([vol]))).verdict).toBe('held');
+    expect((await checkHoldings({ title: "Táríkh-i-Ẓuhúru'l-Ḥaqq" }, deps([entry]))).verdict).toBe('possible');
+  });
+});
+
+describe('the title index in the holdings check (10-19: "cannot be so weak as to miss slight variations in title")', () => {
+  it('a held work under another spelling and prefix is held; a different work is not', async () => {
+    const { checkHoldings } = await import('../../api/lib/dewey/holdings.js');
+    const { buildIndex } = await import('../../api/lib/dewey/title-index.js');
+    const idx = buildIndex([{ id: 15228, title: "Ẓuhúru'l-Ḥaqq Vol 1 (Pre-Babi Era)", paragraph_count: 205 }, { id: 17000, title: 'Summa Theologica', author: 'Thomas Aquinas', paragraph_count: 9000 }, { id: 21308, title: 'The Dawn-Breakers', paragraph_count: 3000 }]);
+    const none = async () => [];
+    const deps = { find: async () => ({ docs: [] }), sections: none, keyword: async () => ({ hits: [] }), docs: async () => ({ docs: [] }), texts: none, paragraphs: none, titles: async () => idx };
+    expect((await checkHoldings({ title: 'Táríkh-i-Zuhur al-Haqq' }, deps)).candidates[0].id).toBe(15228);
+    expect((await checkHoldings({ title: 'Táríkh-i-Zuhur al-Haqq' }, deps)).verdict).toBe('held');
+    expect((await checkHoldings({ title: 'Summa Theologiae', author: 'Aquinas' }, deps)).verdict).toBe('held');
+    expect((await checkHoldings({ title: 'The Varieties of Religious Experience' }, deps)).verdict).toBe('not-found-by-title');
+  });
+});

@@ -13,6 +13,21 @@ import { withText } from './identify.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
+// A WORK'S TITLE, MANY WAYS (10-19: "Táríkh-i-Ẓuhúru'l-Ḥaqq (The History of the Manifestation of Truth)" missed the nine
+// held volumes "Ẓuhúru'l-Ḥaqq Vol 1 (Pre-Babi Era)" … "Vol 9"; "The Dawn-Breakers: Nabíl's Narrative…" missed "The
+// Dawn-Breakers"): searched as given, by its main title, by the other title in brackets, and without a generic prefix.
+const PREFIX = /^(?:the|a|an|tarikh|kitab|risaliy|risaliyi|risala|lawh|lawhi|majmuih|majmuiy|tafsir|sharh|al|el)\s+(?=\S)/;
+/** A document's or work's MAIN title, folded: before ':' ';' '(' ', vol.' ' Vol N', without a generic prefix. Pure. */
+export const mainTitle = (t) => { let m = fold(String(t || '').split(/\s*(?:[:;(\[—]|,?\s+vol(?:ume)?\.?\s*\d|\s+-\s)/i)[0]); for (let k = 0; k < 2; k++) m = m.replace(PREFIX, ''); return m.replace(/\b(i|e)\b\s*/g, '').replace(/\s+/g, ' ').trim(); };
+/** The forms a title is searched under. Pure. */
+export function titleVariants(t) {
+  const raw = String(t || '').trim();
+  const main = raw.split(/\s*[:;(\[—]\s*/)[0];
+  const alt = (raw.match(/\(([^)]{4,})\)/) || [])[1];
+  const bare = main.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^(?:the|a|an|t[aá]r[ií]kh-?i-?|kit[aá]b-?i-?|ris[aá]liy-?i-?|law[hḥ]-?i-?)\s*/i, '');
+  return [...new Set([raw, main, alt, bare].filter((x) => x && x.length >= 3))];
+}
+
 export const textLines = (id) => (id.printed_lines || []).filter((l) => String(l).trim().split(/\s+/).length >= 6).slice(0, 6);
 
 /** Does this paragraph really contain the line? ≥ 80% of the line's words present (OCR noise allowed). BM25 always returns a
@@ -23,7 +38,7 @@ export function contains(paragraph, line) {
   return words.length > 0 && words.filter((w) => have.has(w)).length / words.length >= 0.8;
 }
 
-export async function checkHoldings(id, { find = findDocuments, sections = findSections, keyword = searchKeywordQdrant, docs = listDocs, texts = paragraphsByIds, paragraphs = getParagraphs } = {}) {
+export async function checkHoldings(id, { find = findDocuments, sections = findSections, keyword = searchKeywordQdrant, docs = listDocs, texts = paragraphsByIds, paragraphs = getParagraphs, titles = null } = {}) {
   // A document's TEXT decides when we have enough of it (a file, a pasted passage, a photographed page): compare.js
   const body = id._text || (id.printed_lines || []).join('\n');
   const ourWords = compareWords(body);
@@ -35,15 +50,32 @@ export async function checkHoldings(id, { find = findDocuments, sections = findS
   // call it held (file names are often wrong)
   const nameOnly = !byText && !id.title && !!id.file_name;
   const title = nameOnly ? id.file_name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ') : [id.title, id.subtitle].filter(Boolean).join(' ');
+  const variants = nameOnly ? [title] : titleVariants(title);
   const [titleHits, authorHits, sectionHits, lineHits] = await Promise.all([
-    title ? find(title, { fields, limit: 8 }).then((r) => r.docs || r).catch(() => []) : [],
+    title ? Promise.all(variants.map((v) => find(v, { fields, limit: 12 }).then((r) => r.docs || r).catch(() => []))).then((rs) => [...new Map(rs.flat().map((d) => [d.id, d])).values()]) : [],
     id.author && title ? find(`${title} ${id.author}`, { fields, limit: 5 }).then((r) => r.docs || r).catch(() => []) : [],
     title ? sections(title, { limit: 5 }).catch(() => []) : [],
     // only lines of running text are TEXT evidence — a title page's short lines would match its own title, not prove the text
     byText ? [] : Promise.all(textLines(id).map((l) => keyword(l, { limit: 3 }).then((r) => ({ line: l, hits: r.hits || [] })).catch(() => ({ line: l, hits: [] })))),
   ]);
   const exact = new Set([title, id.title_alt].filter(Boolean).map(fold));
-  for (const d of titleHits) add(d, { kind: 'title', weight: exact.has(fold(d.title)) ? 3 : 1, detail: d.title });
+  // the SAME WORK by title: the document's main title is one of the work's (volumes of it, a subtitle, another spelling) —
+  // and the document is a real text (≥ 20 paragraphs), never a same-titled encyclopedia entry or a catalogue stub
+  const mains = new Set([...variants, id.title_alt].filter(Boolean).map(mainTitle).filter((m) => m.length >= 3));
+  for (const d of titleHits) add(d, { kind: 'title', weight: exact.has(fold(d.title)) || (!nameOnly && mains.has(mainTitle(d.title)) && (d.paragraph_count ?? 0) >= 20) ? 3 : 1, detail: d.title });
+  // THE TITLE INDEX (title-index.js): every library title, fuzzily — spelling, transliteration, prefixes, subtitles, volumes.
+  // A strong match on a real text (≥ 20 paragraphs, or a near-exact title) is the work; a weaker one is a hint.
+  if (title && !nameOnly) {
+    // (unit tests inject their own index; they never load the real library's)
+    const idx = titles ? await titles().catch(() => null) : process.env.VITEST ? null : await (await import('./title-index.js')).titleIndex().catch(() => null);
+    const seen = new Set(titleHits.map((d) => d.id));
+    for (const m of idx ? (await import('./title-index.js')).matchTitle(idx, title, { author: id.author, alt: [id.title_alt].filter(Boolean) }) : []) {
+      if (seen.has(m.doc.id)) { const e = by.get(m.doc.id); if (e && m.score >= 0.9 && (m.doc.paragraph_count ?? 0) >= 20 && !e.evidence.some((v) => v.weight >= 3)) { e.evidence.push({ kind: 'title', weight: 2, detail: `${m.doc.title} (title match ${m.score})` }); e.score += 2; } continue; }
+      const strong = m.score >= 0.9 && ((m.doc.paragraph_count ?? 0) >= 20 || m.score >= 0.97);
+      add({ id: m.doc.id, title: m.doc.title, author: m.doc.author, language: m.doc.language, collection: m.doc.collection, paragraph_count: m.doc.paragraph_count },
+        { kind: 'title', weight: strong ? 3 : 1, detail: `${m.doc.title} (title match ${m.score})` });
+    }
+  }
   for (const d of authorHits) add(d, { kind: 'title+author', weight: 1, detail: d.author });
   // a line is FOUND only where one of its top hits really contains it
   const paraText = new Map((await texts(lineHits.flatMap(({ hits }) => hits.slice(0, 3).map((h) => h.paragraph_id)).filter(Boolean)).catch(() => [])).map((p) => [p.id, p.text]));
