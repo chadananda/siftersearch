@@ -26,8 +26,9 @@ SEARCH = short phrasings in the words the Bahá'í writings themselves use. WORK
 ones you are sure of; leave empty if unsure. The library will be searched; you do not answer. Lines only, nothing else.`;
 /** The planner's lines → themes. (JSON broke on tower 10-19 — a quote inside a work's title.) Pure. */
 export function parseBrief(text) {
-  return String(text || '').split('\n').map((l) => l.trim()).filter((l) => /^THEME:/i.test(l)).map((l) => {
-    const part = (k) => (l.match(new RegExp(`${k}:\\s*([^|]*)`, 'i'))?.[1] || '').trim();
+  // tolerant of the dressing a model adds: bullets, numbers, bold (10-19: "- **THEME:** …" parsed as no themes)
+  return String(text || '').split('\n').map((l) => l.replace(/\*\*|__|`/g, '').replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim()).filter((l) => /^THEME\s*:/i.test(l)).map((l) => {
+    const part = (k) => (l.match(new RegExp(`${k}\\s*:\\s*([^|]*)`, 'i'))?.[1] || '').trim();
     const list = (k) => part(k).split(';').map((x) => x.trim()).filter(Boolean);
     return { theme: part('THEME'), queries: list('SEARCH'), works: list('WORKS') };
   }).filter((t) => t.theme);
@@ -58,13 +59,14 @@ export async function rankByAuthority(passages, authorityOf = async () => 0) {
 export async function positionResearch({ question, create, search, authorityOf, defaults = {}, scope_config, perTheme = 3, max = 20 }) {
   // a question naming the Faith searches its texts (unscoped, a cross-tradition rule leaves the Bahá'í writings ONE slot in 8)
   if (!defaults.religion && /bah[aá]['’]?[ií]/i.test(question)) defaults = { ...defaults, religion: "Baha'i" };
-  let themes = [];
+  let themes = [], raw = '';
   try {
     const r = await create('anis-research-brief', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
-    themes = parseBrief(r?.choices?.[0]?.message?.content);
+    raw = String(r?.choices?.[0]?.message?.content || '');
+    themes = parseBrief(raw);
   } catch (err) { log.warn({ err: String(err.message).slice(0, 200) }, 'position: planning failed'); themes = []; }
   themes = themes.filter((t) => t?.theme).slice(0, 7);
-  if (!themes.length) { log.warn('position: no themes'); return null; }
+  if (!themes.length) { log.warn({ raw: raw.slice(0, 600) }, 'position: no themes'); return null; }
   const searchOne = (query) => search({ query, mode: 'passages', limit: 8, scope_config, plan: { messages: [{ role: 'user', content: query }], defaults } }).then((r) => r?.passages || [])
     .catch((err) => { log.warn({ err: String(err.message).slice(0, 200), query }, 'position: search failed'); return []; });
   const perThemeHits = await Promise.all(themes.map(async (t) => {

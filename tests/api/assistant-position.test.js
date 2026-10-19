@@ -51,3 +51,11 @@ describe('doctrine vs opinion (Chad 10-19)', () => {
       .toEqual({ theme: 'property', queries: ['private property', 'ownership'], works: ['God Passes By', '"The Promised Day is Come"'] });
   });
 });
+
+describe('parseBrief tolerates dressing', () => {
+  it('bullets, numbers and bold', async () => {
+    const { parseBrief } = await import('../../api/lib/assistant/position.js');
+    const t = '- **THEME:** private property | **SEARCH:** institution of private property | **WORKS:** God Passes By\n2. THEME : taxation | SEARCH: burden of taxes | WORKS:';
+    expect(parseBrief(t).map((x) => x.theme)).toEqual(['private property', 'taxation']);
+  });
+});
