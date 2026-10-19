@@ -6,6 +6,8 @@
 // answer); each theme is searched; every passage is ranked by AUTHORITY (the Central Figures, Shoghi Effendi, the
 // Universal House of Justice first, secondary works only to fill); whole-book "paragraphs" (unsegmented PDF imports) are
 // dropped. Deps injectable: create (roleCreate), search (executeSearch), authorityOf.
+import { logger } from '../logger.js';
+const log = logger.child ? logger.child({ mod: 'anis-position' }) : logger;
 
 /** "position / stance / teaching / view on X", "where does the Faith fit", "what does the Faith say about X". Pure. */
 export function looksLikePositionQuestion(text) {
@@ -47,10 +49,11 @@ export async function positionResearch({ question, create, search, authorityOf, 
     const r = await create('anis-research-brief', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
     const m = String(r?.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/);
     themes = (m ? JSON.parse(m[0]).themes : []) || [];
-  } catch { themes = []; }
+  } catch (err) { log.warn({ err: String(err.message).slice(0, 200) }, 'position: planning failed'); themes = []; }
   themes = themes.filter((t) => t?.theme).slice(0, 6);
-  if (!themes.length) return null;
-  const searchOne = (query) => search({ query, mode: 'passages', limit: 8, scope_config, plan: { messages: [{ role: 'user', content: query }], defaults } }).then((r) => r?.passages || []).catch(() => []);
+  if (!themes.length) { log.warn('position: no themes'); return null; }
+  const searchOne = (query) => search({ query, mode: 'passages', limit: 8, scope_config, plan: { messages: [{ role: 'user', content: query }], defaults } }).then((r) => r?.passages || [])
+    .catch((err) => { log.warn({ err: String(err.message).slice(0, 200), query }, 'position: search failed'); return []; });
   const perThemeHits = await Promise.all(themes.map(async (t) => {
     const qs = [...(t.queries || []).slice(0, 2), ...(t.works || []).slice(0, 1).map((w) => `${w} ${t.theme}`)];   // ≤ 3 searches a theme
     const hits = (await Promise.all(qs.map(searchOne))).flat();
@@ -62,6 +65,7 @@ export async function positionResearch({ question, create, search, authorityOf, 
     if (ids.has(k) || out.length >= max) continue;
     ids.add(k); out.push({ ...p, theme: t.theme });
   }
+  log.info({ themes: perThemeHits.map((t) => `${t.theme}:${t.ranked.length}`), passages: out.length }, 'position: researched');
   return { passages: out, themes: perThemeHits.map((t) => ({ theme: t.theme, found: t.ranked.length })) };
 }
 

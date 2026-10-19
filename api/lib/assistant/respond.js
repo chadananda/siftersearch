@@ -387,7 +387,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const position = !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
     ? await positionResearch({ question, create: d.create || (await import('../role-client.js')).roleCreate, search: d.search,
       authorityOf: d.authorityOf || (async (p) => { try { return (await import('../authority.js')).getAuthority(p || {}); } catch { return 0; } }),
-      defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch(() => null)
+      defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
     : null;
   const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
