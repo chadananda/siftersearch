@@ -6,7 +6,7 @@
 import { readFile, unlink, writeFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
 import { garbledLayer, readPdf } from '../dewey/convert.js';
-import { cleanText } from '../dewey/clean.js';
+import { prepareForIngest } from '../dewey/prepare.js';
 import { slpToText, slpEnabled, completeness } from '../dewey/searchlayer.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
@@ -54,7 +54,10 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   }
   // the text cleaner (dewey/clean.js): pages marked, running headers/page numbers out, the source's false paragraph marks
   // (a hard break on every printed line) repaired, hyphens closed, emphasis markers dropped — every format, SLP's too
-  text = cleanText(text);
+  // + Dewey's quality repairs (dewey/prepare.js, Chad 10-19): page-foot notes marked at their reference, paragraphs joined
+  // across page breaks, easy OCR misreadings corrected against the dictionary, walls of text split — and a verdict
+  const prep = prepareForIngest(text, { item });
+  text = prep.text;
   const gate = proseGate(text.replace(/<pb[^>]*\/>/g, ' '), { pages });
   // a scan or a GARBLED text layer (old OCR) is not the book's text: it waits for full OCR — SearchLayerPDF, queued here
   // when configured (its output is checked before it comes back to this job)
@@ -138,6 +141,12 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   if (!shelf) {
     await updateItem(item.id, { state: 'needs-human' }, 'no existing shelf fits — file it by hand');
     return { id: item.id, state: 'needs-human' };
+  }
+  // THE QUALITY GATE (Chad 10-19: "We don't want to ingest books unless the quality is very good"): a text still unfit for
+  // concept and history extraction after Dewey's repairs goes to a person with the reasons — never quietly into the library
+  if (!prep.pass && !approved) {
+    await updateItem(item.id, { state: 'needs-human', identified: { ...(item.identified || {}), quality: { why: prep.why, repairs: prep.repairs } } }, `quality below the library's bar after repair: ${prep.why.join('; ')}`);
+    return { id: item.id, state: 'needs-human', why: 'quality', reasons: prep.why };
   }
   const markdown = toMarkdown({ title, author, language, research: r, sourceUrl: item.source_url, sha256: item.sha256, itemId: item.id }, text);
   const rel = await write({ religion: shelf.religion, collection: shelf.collection, title, itemId: item.id, markdown });

@@ -77,6 +77,18 @@ describe('intake', () => {
     expect(d.storeCover).toHaveBeenCalledWith(999, expect.any(Buffer), expect.objectContaining({ source: 'openlibrary' }));
     expect((await repo.getItem(item.id)).state).toBe('ingested');
   });
+  it('a text below the quality bar after repair goes to a person with the reasons; their "add it" lets it in (Chad 10-19)', async () => {
+    const NOISY = Array.from({ length: 80 }, (_, i) => `This is sentence ${i} of a real book about the Faith qxzv, wrkt bnnq in Persia.`).join(' ');
+    const item = await repo.createItem({ title: 'Noisy Book' });
+    await repo.updateItem(item.id, { state: 'source', original_path: '/x/noisy.txt' });
+    const r = await deweyIntakeJob({ id: item.id }, deps({ text: NOISY }));
+    expect(r).toMatchObject({ state: 'needs-human', why: 'quality' });
+    expect(r.reasons.join(' ')).toMatch(/OCR noise/);
+    const held = await repo.getItem(item.id);
+    expect(held.log.at(-1).why).toMatch(/quality below the library's bar/);
+    await repo.updateItem(item.id, { state: 'source', identified: { ...held.identified, override: { add: true } } });
+    expect((await deweyIntakeJob({ id: item.id }, deps({ text: NOISY }))).state).toBe('ingested');
+  });
   it('a scanned PDF waits for OCR; no fitting shelf asks a person', async () => {
     const a = await repo.createItem({ title: 'A Scan' });
     await repo.updateItem(a.id, { state: 'source', original_path: '/x/s.pdf' });

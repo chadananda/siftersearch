@@ -21,11 +21,13 @@ export function answersFor(item) {
   const poor = rej && (rej.check?.sampleFound ?? 1) < 0.3;
   const out = poor ? [retry, useOcr] : [useOcr, retry];
   // "add it" for a scan with no accepted text would only send it back to OCR — there the OCR answers ARE the way to add it
-  if (!rej && !ocrQuestion) out.push({ action: 'import', label: /same work|twin|already holds/i.test(q) ? 'Not the same — add it' : /part of a book/i.test(q) ? 'Add it as it is' : 'Add it', hint: 'imports it with the title, author and shelf below', fields: true });
+  if (!rej && !ocrQuestion) out.push({ action: 'import', label: /same work|twin|already holds/i.test(q) ? 'Not the same — add it' : /part of a book|quality below/i.test(q) ? 'Add it as it is' : 'Add it', hint: 'imports it with the title, author and shelf below', fields: true });
   // THE ARCHIVE (Chad 10-19: "keep an archive of unsearchable documents that might have value later"): illegible handwriting,
   // a scan no OCR can read — the original kept on the NAS with its record, out of the searchable library
   // only PART of a book: it tells us the book exists — on the acquire list (Chad 10-19), never imported as the book
   if (/part of (?:a|the) (?:book|document)|only the beginning|preview|published book has/i.test(q)) out.unshift({ action: 'acquire', label: 'Put it on the acquire list', hint: 'only part of the book — find or buy the whole one; this copy is kept as evidence' });
+  // held for QUALITY (dewey/prepare.js): a better copy or a cleaner OCR is the usual way out
+  if (/quality below/i.test(q) && pdf) out.unshift({ action: 'retry-ocr', label: 'Run OCR again', hint: 'a fresh OCR may read it cleanly' });
   out.push({ action: 'archive', label: 'Archive it', hint: 'keep the original and its record, not in the searchable library — for later' });
   out.push({ action: 'decline', label: 'Don\'t add it', hint: 'not wanted' });
   return out.filter(Boolean);

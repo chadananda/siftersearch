@@ -32,6 +32,7 @@ import { aiService } from '../lib/ai-services.js';
 import { content } from '../lib/content.js';
 import { adjudicateSameWork } from '../lib/dedup-adjudicator.js';
 import { carriedEnrichment } from './carried-enrichment.js';   // ONE pairing rule for carried note/stamp + HyPE
+import { repairParagraphs, judge } from '../lib/dewey/prepare.js';   // Dewey's quality gate: repair, then the verdict
 import {
   hashNormalized as normalizedHash,
   hashContent as fileHashOf,
@@ -479,6 +480,12 @@ function siteDbReplaceContent(siteDb, docId, paragraphs) {
   txn(paragraphs);
 }
 
+/** Dewey's repair + verdict for one file's paragraphs (api/lib/dewey/prepare.js). */
+export function qualityGate(paragraphs, language) {
+  const r = repairParagraphs(paragraphs, { language });
+  return { paragraphs: r.paragraphs, repairs: r.repairs, verdict: judge(r.paragraphs.map((p) => p.text), { latin: r.latin }) };
+}
+
 /** Skip a file only when its hash matches AND its document still has live paragraphs. Pure. */
 export function isUnchanged({ existing, fileHash, force, hasLiveContent }) {
   return !force && !!existing && existing.file_hash === fileHash && !!hasLiveContent;
@@ -546,8 +553,12 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     return { status: 'kept_live', file: relPath, doc_id: existing.id, scope };
   }
   if (dryRun) {
+    // the quality gate's verdict is part of the dry run: what would be HELD, and why
+    const parsed = await adapter.parseDoc(relPath, text, { siteRoot, siteConfig }).catch(() => null);
+    const gate = parsed && siteConfig.quality_gate !== false ? qualityGate(parsed.paragraphs, parsed.docFields.language) : null;
+    if (gate && !gate.verdict.pass) return { status: 'would_hold_quality', file: relPath, doc_id: existing?.id ?? null, scope, why: gate.verdict.why, repairs: gate.repairs };
     const status = !existing ? 'would_add_new' : hasLiveContent ? 'would_reingest_changed' : 'would_restore_hollow';
-    return { status, file: relPath, doc_id: existing?.id ?? null, scope };
+    return { status, file: relPath, doc_id: existing?.id ?? null, scope, ...(gate ? { repairs: gate.repairs } : {}) };
   }
   if (existing && existing.file_hash === fileHash && !hasLiveContent) {
     logger.warn({ file: relPath, docId: existing.id, scope }, 'Sites-ingester: HOLLOW doc (same hash, no live paragraphs) — re-ingesting');
@@ -555,8 +566,22 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
 
   // Parse via the site adapter — pass siteConfig so the adapter can look up
   // its religion_map / format hints / etc. without reading config files.
-  const { docFields, paragraphs } = await adapter.parseDoc(relPath, text, { siteRoot, siteConfig });
+  const parsed = await adapter.parseDoc(relPath, text, { siteRoot, siteConfig });
+  const { docFields } = parsed;
+  let { paragraphs } = parsed;
   docFields.file_path = relPath;
+  // DEWEY'S QUALITY GATE (Chad 10-19: "We don't want to ingest books unless the quality is very good"): markup out,
+  // paragraphs broken at a page joined again, page-foot notes moved into block_attrs, easy OCR fixed — then judged.
+  // A file below the bar is HELD (logged, nothing written; an existing document stays as it is) until its source is fixed.
+  if (siteConfig.quality_gate !== false && paragraphs.length) {
+    const gate = qualityGate(paragraphs, docFields.language);
+    if (!gate.verdict.pass) {
+      logger.warn({ file: relPath, why: gate.verdict.why, scope }, 'Sites-ingester: HELD by the quality gate — not ingested');
+      return { status: 'held_quality', file: relPath, doc_id: existing?.id ?? null, scope, why: gate.verdict.why };
+    }
+    paragraphs = gate.paragraphs;
+    docFields.paragraph_count = paragraphs.length;
+  }
   if (siteConfig.encumbered) docFields.encumbered = true;
 
   if (paragraphs.length === 0) {
