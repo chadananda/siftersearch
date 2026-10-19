@@ -138,11 +138,25 @@ export function findHiddenWord(paras, { part, n }) {
 }
 
 const HIDDEN_WORDS_DOC = 20809;   // the OceanLibrary canonical (concepts/ctai.js CTAI_DOC_BY_WORK['the-hidden-words'])
-const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question (in their own script), give a transliteration and the English rendering beside each, and name where it is. Do not interpret, explain the meaning, or add background unless asked — no closing remarks about authority, scholarship or doctrine. If the original given does not contain what was asked, say so in one sentence.';
+const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question (in their own script), give a transliteration and the English rendering beside each, and name where it is — the work it actually appears in; if the seeker named a different work, say gently where the passage is found. Do not interpret, explain the meaning, or add background unless asked — no closing remarks about authority, scholarship or doctrine. If the original given does not contain what was asked, say so in one sentence.';
+
+/** The passage(s) a seeker quoted, to look up: text in quotation marks, else each paragraph long enough to be a
+ *  quotation (a question's own words, an attribution line or a P.S. are not). Markdown emphasis and ellipses out. Pure.
+ *  10-19: Lal's "Whoso reciteth, in the privacy of his *chamber*, the verses revealed by God, ……  Kitab'i-Aqdas  P.S. I am
+ *  NOT asking for translation" was looked up as ONE text — no passage holds that, and Anís said he could not find it. */
+export function quotedPassages(text) {
+  const clean = (x) => String(x).replace(/[*_]+/g, '').replace(/\.{3,}|…+/g, ' ').replace(/\s+/g, ' ').trim();
+  const q = quotationIn(text);
+  const marked = q !== String(text || '').trim() ? [clean(q)] : [];
+  const paras = String(text || '').split(/\n\s*\n|\n(?=P\.?S\.?)/i).map(clean)
+    .filter((x) => x.split(/\s+/).length >= 8 && !/^(?:p\.?s\.?|what|which|where|how|why|is|are|can|could|please|i am|i'm)\b/i.test(x) && !/\?$/.test(x));
+  return [...new Set([...marked, ...paras])].slice(0, 3);
+}
 
 /** → { retrieved, how, plan } or null: the canonical English paragraph(s) with their aligned originals as evidence. */
 async function originalWording(d, question, messages) {
   const ref = hiddenWordRef(question) || hiddenWordRef(messages.map((m) => m.content).join('\n'));
+  if (!ref) return quotedOriginal(d, question);
   if (ref) {
     const { getParagraphs } = await import('../docs-repo.js');
     const p = findHiddenWord(await (d.getParagraphs || getParagraphs)(HIDDEN_WORDS_DOC), ref);
@@ -158,6 +172,29 @@ async function originalWording(d, question, messages) {
           citation_url: url, doc_id: HIDDEN_WORDS_DOC, paragraph_index: p.paragraph_index, religion: "Baha'i", collection: null,
           source_lang: lang === 'Arabic' ? 'ar' : 'fa', via: 'original' }] };
     }
+  }
+  return null;
+}
+
+/** ANY QUOTED PASSAGE → its original (Chad 10-19: "fix Anis"): the library's English→original lookup (passage-links.js
+ *  findOriginals — the passages holding the quotation verbatim, then the originals linked to them) on each passage the
+ *  seeker quoted. → { retrieved: [the English passage, its original], how, plan } or null. */
+async function quotedOriginal(d, question) {
+  const find = d.findOriginals || (async (t) => (await import('../passage-links.js')).findOriginals(t, { limit: 3, search: (await import('../search.js')).hybridSearch }));
+  for (const q of quotedPassages(question)) {
+    const r = await find(q).catch(() => null);
+    const o = r?.originals?.[0];
+    if (!o?.text) continue;
+    const m = (r.matches || []).find((x) => x.passage?.id === o.foundThrough?.id) || r.matches?.[0];
+    const en = m?.passage;
+    const lang = o.language === 'ar' ? 'Arabic' : o.language === 'fa' ? 'Persian' : (o.language || 'original');
+    const enTitle = [en?.document?.title, en?.heading].filter(Boolean).join(', ');
+    return { plan: { shape: 'original', via: 'quote', found: { english: en?.id || null, original: o.id } }, how: ORIGINAL_HOW, retrieved: [
+      ...(en ? [{ text: en.text, source_title: enTitle || 'the English passage', source_author: en.document?.author || '', citation_url: en.readerUrl || en.url || null,
+        doc_id: en.documentId, paragraph_index: en.paragraphIndex, religion: en.document?.religion || null, collection: en.document?.collection || null, source_lang: en.language || 'en', via: 'original' }] : []),
+      { text: o.text, source_title: `${o.document?.title || 'the original'} (original, ${lang})`, source_author: o.document?.author || '', citation_url: o.readerUrl || o.url || null,
+        doc_id: o.documentId, paragraph_index: o.paragraphIndex, religion: o.document?.religion || null, collection: o.document?.collection || null, source_lang: o.language || null, via: 'original' },
+    ] };
   }
   return null;
 }

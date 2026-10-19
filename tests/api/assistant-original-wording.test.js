@@ -58,3 +58,38 @@ describe('dropAuthorityLecture', () => {
     expect(dropAuthorityLecture('Nothing to remove.')).toBe('Nothing to remove.');
   });
 });
+
+// 10-19: Lal asked for the original word for "chamber", quoting the passage without quotation marks, naming the Aqdas and
+// adding a P.S. Anís looked it up as one text, found nothing and answered "I couldn't find it" — the library holds the
+// English (Gleanings CXXXVI) and its Arabic. Any quoted passage now resolves through the English→original lookup.
+const LAL_CHAMBER = 'Whoso reciteth, in the privacy of his *chamber*, the verses revealed by\nGod, ......\n\nKitab\'i-Aqdas\n\n\nP.S.\n\nI am NOT asking for translation of the word.  Only for the original word\nused.';
+describe('any quoted passage → its original (Chad 10-19: "fix Anis")', () => {
+  it('finds the quoted passage in a message with an attribution and a P.S.', async () => {
+    const { quotedPassages } = await import('../../api/lib/assistant/respond.js');
+    expect(quotedPassages(LAL_CHAMBER)).toEqual(['Whoso reciteth, in the privacy of his chamber, the verses revealed by God,']);
+    expect(quotedPassages('What is the Arabic for "the scattering angels of the Almighty shall scatter abroad the fragrance"?')[0]).toBe('the scattering angels of the Almighty shall scatter abroad the fragrance');
+  });
+  it('answers from the English passage and its Arabic original', async () => {
+    const calls = { search: 0, craft: null, looked: [] };
+    const AR = 'ومن يقرأ آيات الله من بيته وحدة لينشر نفحاتها ملائكة النّاشرات';
+    await anisRespond({
+      messages: [{ role: 'user', content: `What is the original word used for "chamber"?\n\n${LAL_CHAMBER}` }],
+      llm: { provider: 'test', model: 'test' },
+      deps: {
+        plan: async () => ({ shape: 'fact' }),
+        search: async () => { calls.search++; return { passages: [] }; },
+        findOriginals: async (t) => { calls.looked.push(t); return { matches: [{ passage: { id: 1, documentId: 20783, paragraphIndex: 606, text: 'Whoso reciteth, in the privacy of his chamber, the verses revealed by God…', heading: '– CXXXVI –', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } } }],
+          originals: [{ id: 2, documentId: 924842, paragraphIndex: 1, language: 'ar', text: AR, document: { title: 'Muntakhabát-i-Áthár:136', author: 'Bahá’u’lláh' }, foundThrough: { id: 1 } }] }; },
+        companion: async () => ({ append: '', plan: null, offer: false }),
+        chooseFormat: async () => ({ id: 'should-not-be-used' }),
+        craft: async (args) => { calls.craft = args; return 'بيت (bayt)'; },
+      },
+    });
+    expect(calls.search).toBe(0);
+    expect(calls.looked[0]).toMatch(/^Whoso reciteth, in the privacy of his chamber/);
+    const evidence = JSON.stringify(calls.craft);
+    expect(evidence).toContain(AR);
+    expect(evidence).toContain('Gleanings');
+    expect(evidence).toMatch(/actually appears in/);
+  });
+});
