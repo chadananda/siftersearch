@@ -26,8 +26,10 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
   const effort = llm.reasoning_effort ?? reg.reasoningEffort;
   // a LETTER (email) or a POSITION answer is longer than a chat reply: 700 tokens cut both mid-sentence (10-19 — Chad's
   // socialism answer ended at "'Abdu'l-Bah", another mid-link). Chat stays short.
+  // a RESEARCH reply (Sonnet 5.5, which thinks first) hit 2,700 tokens at 2,218 characters (10-19 battery): it gets room
+  const research = direction.format?.id === 'research';
   const long = direction.format?.id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
-  const maxTok = (effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 700) + (long ? 2000 : 0);
+  const maxTok = research ? 8000 : (effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 700) + (long ? 2000 : 0);
   const params = {
     model: llm.model,
     messages: [

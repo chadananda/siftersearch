@@ -96,7 +96,13 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   let calls = 0, final = '';
   for (let round = 0; round < maxRounds; round++) {
     const last = round === maxRounds - 1 || calls >= maxCalls;
-    const r = await create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: 'auto' }), max_tokens: 4000 });
+    // one retry for a timed-out or dropped round; the failure says which round and how long (10-19: bare "Request timed out")
+    const ask = () => create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: 'auto' }), max_tokens: 4000 });
+    let r;
+    try { r = await ask(); } catch (err) {
+      log.warn({ round, calls, ms: Date.now() - t0, err: String(err?.message).slice(0, 160) }, 'research round failed — retrying once');
+      try { r = await ask(); } catch (err2) { throw Object.assign(new Error(`round ${round} after ${Date.now() - t0} ms: ${err2?.message}`), { cause: err2 }); }
+    }
     const m = r?.choices?.[0]?.message || {};
     const tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) { final = String(m.content || ''); break; }

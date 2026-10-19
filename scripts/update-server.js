@@ -48,6 +48,7 @@ import { createRequire } from 'module';
 
 const execAsync = promisify(exec);
 
+import { touchesRuntime } from './lib/runtime-files.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 
@@ -173,6 +174,7 @@ async function checkPm2NeedsReload() {
 /**
  * Check if there are updates available
  */
+
 async function checkForUpdates() {
   // Fetch latest from remote
   log('info', `Fetching from ${REMOTE}...`);
@@ -214,8 +216,8 @@ async function checkForUpdates() {
   // Get list of commits we're behind
   const logResult = await run(`git log HEAD..${REMOTE}/${BRANCH} --oneline`);
   const commits = logResult.stdout.split('\n').filter(Boolean);
-
-  return { hasUpdates: true, commits };
+  const files = (await run(`git diff --name-only HEAD..${REMOTE}/${BRANCH}`)).stdout.split('\n').filter(Boolean);
+  return { hasUpdates: true, commits, files, runtime: touchesRuntime(files) };
 }
 
 const HEALTH_CHECK_PORT = 7899; // Temp port for pre-deploy health check
@@ -861,6 +863,17 @@ async function runOnce() {
   if (DRY_RUN) {
     log('info', 'DRY RUN - skipping actual update');
     return true;
+  }
+
+  // nothing a running process loads → pull and stop: no smoke test, no reload, no killed requests
+  if (!updateCheck.runtime) {
+    const pulled = await run(`git pull --ff-only ${REMOTE} ${BRANCH}`);
+    if (pulled.success) {
+      lastReloadedCommitHash = (await run('git rev-parse HEAD')).stdout.trim() || lastReloadedCommitHash;
+      log('info', `Pulled ${updateCheck.commits.length} commit(s) touching no runtime code (${updateCheck.files.slice(0, 4).join(', ')}${updateCheck.files.length > 4 ? ', …' : ''}) — no reload`);
+      return true;
+    }
+    log('warn', `Fast-forward pull failed (${pulled.error}) — falling back to the full update`);
   }
 
   // Apply updates
