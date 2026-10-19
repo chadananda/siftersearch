@@ -15,8 +15,8 @@ const item = (over = {}) => ({ id: 1, title: 'Notes', author: null, state: 'need
 
 describe('answersFor', () => {
   it('a fragment: add it as it is, or decline', () => {
-    expect(answersFor(item()).map((a) => a.action)).toEqual(['import', 'archive', 'decline']);
-    expect(answersFor(item())[0].label).toMatch(/as it is/);
+    expect(answersFor(item()).map((a) => a.action)).toEqual(['acquire', 'import', 'archive', 'decline']);   // only part of a book: acquire first (10-19)
+    expect(answersFor(item())[1].label).toMatch(/as it is/);
   });
   it('rejected OCR: use it first, run again, decline — no "add it" (it would only go back to OCR)', () => {
     const a = answersFor(item({ identified: { slp_rejected: { path: '/ocr/x.slp.md', check: { sampleFound: 0.35 } } }, log: [{ why: 'SearchLayerPDF text did not pass the check' }] }));

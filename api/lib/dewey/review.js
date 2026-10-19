@@ -24,6 +24,8 @@ export function answersFor(item) {
   if (!rej && !ocrQuestion) out.push({ action: 'import', label: /same work|twin|already holds/i.test(q) ? 'Not the same — add it' : /part of a book/i.test(q) ? 'Add it as it is' : 'Add it', hint: 'imports it with the title, author and shelf below', fields: true });
   // THE ARCHIVE (Chad 10-19: "keep an archive of unsearchable documents that might have value later"): illegible handwriting,
   // a scan no OCR can read — the original kept on the NAS with its record, out of the searchable library
+  // only PART of a book: it tells us the book exists — on the acquire list (Chad 10-19), never imported as the book
+  if (/part of (?:a|the) (?:book|document)|only the beginning|preview|published book has/i.test(q)) out.unshift({ action: 'acquire', label: 'Put it on the acquire list', hint: 'only part of the book — find or buy the whole one; this copy is kept as evidence' });
   out.push({ action: 'archive', label: 'Archive it', hint: 'keep the original and its record, not in the searchable library — for later' });
   out.push({ action: 'decline', label: 'Don\'t add it', hint: 'not wanted' });
   return out.filter(Boolean);
@@ -66,6 +68,7 @@ export async function resolveItem(itemId, action, { title, author, shelf } = {},
   const allowed = answersFor(item).map((x) => x.action);
   if (!allowed.includes(action)) throw Object.assign(new Error(`“${action}” does not fit this item (${allowed.join(', ')})`), { statusCode: 400 });
   if (action === 'archive') return archiveItem(item, by, deps);
+  if (action === 'acquire') return updateItem(item.id, { state: 'to-buy', identified: { ...item.identified, incomplete_copy: { path: item.original_path, why: [String(item.log?.at(-1)?.why || '')] } } }, `${by}: only part of the book — on the acquire list (find or buy the whole one)`);
   if (action === 'decline') return declineItem(item, by, { cancel });
   const override = { add: true, by, at: new Date().toISOString() };
   let identified = { ...item.identified, override };

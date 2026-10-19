@@ -163,7 +163,7 @@ export const itemFileSchema = { ...base('An item\'s original file', 'The archive
 export const resolveSchema = {
   ...base('Answer an item', 'Carries out a person\'s answer: `import` (add it — waives the fragment, twin and page-limit guards; optional title, author, shelf), `use-ocr` (accept OCR text that failed the check), `retry-ocr`, or `decline`. Only the answers GET /review lists are accepted.'),
   params: idParam,
-  body: { type: 'object', required: ['action'], properties: { action: { type: 'string', enum: ['import', 'use-ocr', 'retry-ocr', 'archive', 'decline'] },
+  body: { type: 'object', required: ['action'], properties: { action: { type: 'string', enum: ['import', 'use-ocr', 'retry-ocr', 'acquire', 'archive', 'decline'] },
     title: { type: 'string' }, author: { type: 'string' }, shelf: { type: 'object', properties: { religion: { type: 'string' }, collection: { type: 'string' } } } } },
   response: { 200: open({ item: open({}) }) },
 };
