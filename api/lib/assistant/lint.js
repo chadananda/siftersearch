@@ -40,7 +40,7 @@ const AUTHORITY_LECTURE = /\b(kinds of authority|carr(?:y|ies) the (?:primary )?
 // the language itself. Pure.
 const QUIBBLE = /\b(genitive|nominative|accusative|case ending|grammatical(?:ly)? (?:rule|irregular\w*)|would (?:normally|typically|properly) be|should (?:properly )?be written|requires? (?:a|the) (?:genitive|case))\b/i;
 const ASKED_GRAMMAR = /\b(grammar|grammatical|genitive|nominative|accusative|case ending|i\'?rab|iʿrāb|declension)\b/i;
-const NOT_SETTLED = /\b(?:texts|sources|library) I can search\b[^.\n]*\b(?:do not|don't|cannot|can't|does not)\b|\bcannot lean on\b/i;
+const NOT_SETTLED = /\b(?:texts|sources|library) I can search\b[^.\n]*\b(?:do not|don't|cannot|can't|does not)\b|\bcannot lean on\b|\bI (?:can't|cannot|couldn't|could not) find anything\b/i;
 export function dropQuibbles(text, { question = '', format = null } = {}) {
   const asked = ASKED_GRAMMAR.test(String(question));
   return String(text || '').split(/\n{2,}/).map((para) => {
