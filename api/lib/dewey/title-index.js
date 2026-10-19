@@ -83,7 +83,7 @@ export function buildIndex(rows) {
   return { docs, byGram, size: docs.length };
 }
 
-const DERIVATIVE = /\b(?:study (?:guide|questions|notes|outline|aid)|faculty notes|notes on|commentary|companion|introduction to|homage|perspective|a review|review of|summary of|outline of|reader'?s guide|self-quotation|index to|concordance|lesson plans?|workbook|teaching|reflections on|study of|selections from|extracts? from|excerpts? from)\b/i;
+const DERIVATIVE = /\b(?:study (?:guide|questions|notes|outline|aid)|faculty notes|notes on|commentary|companion|introduction to|homage|perspective|a review|review of|summary of|a summary|meditation on|outline of|reader'?s guide|self-quotation|index to|concordance|lesson plans?|workbook|teaching|reflections on|study of|selections from|extracts? from|excerpts? from)\b/i;
 
 /** A work's title (and author) → the library documents that ARE it by title, best first: [{ doc, score, author }]. */
 export function matchTitle(index, title, { author = null, alt = [], min = 0.8, limit = 12 } = {}) {
