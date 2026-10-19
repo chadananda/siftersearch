@@ -43,7 +43,7 @@ export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pi
     const works = [];
     for (const i of old.slice(0, limit)) {   // only those searched again this run are closed
       const sc = i.identified?.scout || {};
-      works.push({ title: i.title, author: i.author, kind: i.kind, why: sc.why, importance: sc.importance ?? 3, list: sc.list, page: sc.page || null });
+      works.push({ title: sc.sought || i.title, author: sc.author || i.author, kind: i.kind, why: sc.why, importance: sc.importance ?? 3, list: sc.list, page: sc.page || null });
       await updateItem(i.id, { state: 'declined' }, 'scouted again with the improved channels — see the newer item');
     }
     const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, items: async () => [], ...deps } });

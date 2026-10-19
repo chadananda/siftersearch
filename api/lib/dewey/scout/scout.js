@@ -57,7 +57,8 @@ export async function pageCopies(work, fetchImpl = fetch) {
 export async function scoutWork(work, deps = {}) {
   const { check, checkFile, appraise, archive, channels = CHANNELS, purchase = purchaseLeads, get = download, politeMs = 1500,
     create = createItem, update = updateItem, read = async (p) => (await toMarkdownText(null, p.split('/').pop(), { path: p, full: false })).markdown } = deps;
-  const scout = { list: work.list, why: work.why, importance: work.importance, page: work.page || null, channels: [] };
+  // the title it was SOUGHT under is kept (a copy's appraised title can differ — a re-scout must look for the work, not the copy)
+  const scout = { list: work.list, sought: work.sought || work.title, author: work.author || null, why: work.why, importance: work.importance, page: work.page || null, channels: [] };
   // 1. HELD? by title first (cheap); a copy's text decides later
   let h = await check({ title: work.title, author: work.author, from: 'scout' }).catch(() => null);
   // …and by the MAIN title: a list's long subtitle ("The Dawn-Breakers: Nabíl's Narrative of the Early Days…") missed the
