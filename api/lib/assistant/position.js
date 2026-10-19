@@ -22,7 +22,7 @@ const BRIEF = (q) => `A reader asks the Bahá'í library assistant: "${q}"
 List the 5–7 THEMES a well-read Bahá'í scholar would cover in answering it — not only the words of the question but the related doctrines the authoritative texts address (for an economic question, e.g. the institution of private property, the role and limits of the state, taxation and the rights of subjects, trade between nations, the warnings about materialist ideologies). For each, ONE line in exactly this form:
 THEME: <theme> | SEARCH: <phrasing 1>; <phrasing 2> | WORKS: <work 1>; <work 2>
 SEARCH = short phrasings in the words the Bahá'í writings themselves use. WORKS = authoritative works where it is addressed
-(writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi's letters and books, the Universal House of Justice) — only
+(the writings of Bahá'u'lláh and the Báb, and their authorised interpretation by 'Abdu'l-Bahá and Shoghi Effendi) — only
 ones you are sure of; leave empty if unsure. The library will be searched; you do not answer. Lines only, nothing else.`;
 /** The planner's lines → themes. (JSON broke on tower 10-19 — a quote inside a work's title.) Pure. */
 export function parseBrief(text) {
@@ -34,11 +34,18 @@ export function parseBrief(text) {
   }).filter((t) => t.theme);
 }
 
-const AUTHORITATIVE = /(bah[aá]['’]?u['’]?ll[aá]h|\bthe b[aá]b|abdu['’]?l-bah[aá]|shoghi effendi|universal house of justice)/i;
-/** DOCTRINE (Chad 10-19: "with doctrine, authority is everything … separate actual doctrine [from] human fad opinions"): the
- *  writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi and the Universal House of Justice — never a pilgrim's note
- *  or a memoir recording them, never a study about them. Pure. */
-export const isDoctrine = (p) => AUTHORITATIVE.test(String(p.author || '')) && !/pilgrim|memoir|reminiscen/i.test(`${p.collection || ''} ${p.title || ''}`);
+// DOCTRINE = the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi). The
+// Universal House of Justice is authoritative in APPLYING Bahá'í law and legislating on what the texts do not cover, but
+// not decisive on doctrine (Chad 10-19, per the Will and Testament of 'Abdu'l-Bahá) — its guidance is 'application'.
+// (no \b at the end: "Bahá" ends in an accented letter, which \b does not count as a word character)
+const DOCTRINAL = /(bah[aá]['’]?u['’]?ll[aá]h|\bthe b[aá]b|abdu['’]?l-bah[aá]|shoghi effendi)/i;
+const HOUSE = /universal house of justice/i;
+/** DOCTRINE (Chad 10-19: "with doctrine, authority is everything … separate actual doctrine [from] human fad opinions"):
+ *  the writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá and Shoghi Effendi — never a pilgrim's note or a memoir recording
+ *  them, never a study about them, and not the House of Justice (application, not doctrine). Pure. */
+export const isDoctrine = (p) => DOCTRINAL.test(String(p.author || '')) && !HOUSE.test(String(p.author || '')) && !/pilgrim|memoir|reminiscen/i.test(`${p.collection || ''} ${p.title || ''}`);
+/** The House of Justice's own guidance — authoritative on applying the law, labelled as such. Pure. */
+export const isApplication = (p) => HOUSE.test(String(p.author || '')) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`);
 const GIANT = 6000;   // a "paragraph" this long is a whole unsegmented book (pdf imports) — it matches everything
 
 /** Rank passages: authoritative author first, then the library's authority, then search order; giants out. Pure but for authorityOf. */
@@ -82,8 +89,9 @@ export async function positionResearch({ question, create, search, authorityOf, 
     const ranked = await rankByAuthority(hits, authorityOf, t.works || []);
     // the theme's DOCTRINE; a non-authoritative view only where it can be set against doctrine (labelled), never a pilgrim note
     const doctrine = ranked.filter(isDoctrine).slice(0, perTheme).map((p) => ({ ...p, standing: 'doctrine' }));
-    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`)).slice(0, 1).map((p) => ({ ...p, standing: 'opinion' })) : [];
-    return { theme: t.theme, ranked: [...doctrine, ...opinion] };
+    const application = ranked.filter(isApplication).slice(0, 1).map((p) => ({ ...p, standing: 'application' }));
+    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !isApplication(p) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`)).slice(0, 1).map((p) => ({ ...p, standing: 'opinion' })) : [];
+    return { theme: t.theme, ranked: [...doctrine, ...application, ...opinion] };
   }));
   const out = [], ids = new Set();
   for (const t of perThemeHits) for (const p of t.ranked) {
@@ -96,4 +104,4 @@ export async function positionResearch({ question, create, search, authorityOf, 
   return { passages: out, themes: perThemeHits.map((t) => ({ theme: t.theme, found: t.ranked.length })) };
 }
 
-export const POSITION_HOW = 'The seeker asks for the Bahá\'í position on a subject. Separate DOCTRINE from opinion. Answer THEME BY THEME (a bold lead for each), and under each say plainly what the authoritative texts affirm and what they warn against, QUOTING them — Bahá\'u\'lláh, the Báb, \'Abdu\'l-Bahá, Shoghi Effendi, the Universal House of Justice — naming who and where. Only passages marked [doctrine] carry the answer. A passage marked [opinion] is a writer\'s view, never doctrine: mention it only where it helps, in a closing line or two set against what the texts say, and call it a view. Give substance, not hedging: no "it does not fit neatly", no generic neutrality, no talk about kinds of authority, no remarks about your own synthesis, no closing filler. Never say the library has nothing on a theme when passages on it are given.';
+export const POSITION_HOW = 'The seeker asks for the Bahá\'í position on a subject. Separate DOCTRINE from everything else. Answer THEME BY THEME (a bold lead for each), and under each say plainly what the doctrine affirms and what it warns against, QUOTING it and naming who and where. DOCTRINE is only the Revelation (Bahá\'u\'lláh, the Báb) and its authorised interpretation (\'Abdu\'l-Bahá, Shoghi Effendi): passages marked [doctrine] carry the answer. A passage marked [application] is the Universal House of Justice applying the law — authoritative for practice, not decisive on doctrine: cite it as such, after the doctrine. A passage marked [opinion] is a writer\'s view, never doctrine: mention it only to set it against what the texts say, and call it a view. Give substance, not hedging: no "it does not fit neatly", no generic neutrality, no talk about kinds of authority, no remarks about your own synthesis or opinion, no closing filler. Never say the library has nothing on a theme when passages on it are given.';

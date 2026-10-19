@@ -70,3 +70,13 @@ describe('relevance within doctrine (10-19)', () => {
     expect(r.map((p) => p.id)).toEqual([2, 1, 3]);
   });
 });
+
+describe('the House of Justice applies the law; it is not doctrine (Chad 10-19, Will and Testament)', () => {
+  it('is labelled application', async () => {
+    const { isDoctrine, isApplication } = await import('../../api/lib/assistant/position.js');
+    const uhj = { author: 'Universal House of Justice', collection: 'Messages', title: 'Social Action' };
+    expect(isDoctrine(uhj)).toBe(false);
+    expect(isApplication(uhj)).toBe(true);
+    expect(isDoctrine({ author: 'Shoghi Effendi', title: 'The Promised Day is Come' })).toBe(true);
+  });
+});
