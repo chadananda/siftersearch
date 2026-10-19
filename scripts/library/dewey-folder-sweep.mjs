@@ -21,7 +21,7 @@ const CHAT = process.argv.includes('--chat');
 const FOLDER = dir.replace(/\/+$/, '').split('/').pop();
 const KEY = (process.env.DEWEY_API_KEY || readFileSync('tmp/dewey-test-key', 'utf8')).trim();
 const API = process.env.DEWEY_API || 'https://api.siftersearch.com/api/dewey/holdings';
-const AUDIO = /\.(mp3|m4a|aiff?|wav|ogg)$/i, SKIP = /(^|\/)(\.DS_Store|Icon\r?)$/;
+const AUDIO = /\.(mp3|m4a|aiff?|wav|ogg)$/i, SKIP = /(^|\/)(\.DS_Store|Icon\r?|\.gitignore)$|\.(debug|sample|zip|jpe?g|png|gif)$/i;   // helpers and images are not documents
 const MAX = 21 * 1024 * 1024;   // base64 of this stays under the route's 30 MB body limit
 const done = new Set(existsSync(out) ? readFileSync(out, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l).file) : []);
 

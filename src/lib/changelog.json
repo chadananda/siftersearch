@@ -1,6 +1,139 @@
 {
-  "generated": "2026-10-19T04:26:27.871Z",
+  "generated": "2026-10-19T13:17:38.177Z",
   "entries": [
+    {
+      "hash": "01b28801",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The spot-check always reads PAGE 1 (the title page — skipped, a body sentence or the author's name became the title) and spreads the rest to the last page",
+      "scope": "dewey"
+    },
+    {
+      "hash": "d200a6be",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A title must look like one (capital start, ≤ 20 words, no trailing comma, mostly capitalised) — a body sentence was taken as the title after the author line",
+      "scope": "dewey"
+    },
+    {
+      "hash": "616d89eb",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A title page's first line that is a known author is the author, not the title ('MOOJAN MOMEN'); metadata lines skipped; bahai-library pilgrim notes shelve as Bahá'í › Pilgrim Notes (one went to Christian › Mysticism by its text)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "c38d738d",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A linked Word file keeps its type (a .docx saved as .html read as junk — 'not usable text'); a generic lead-in before the colon ('Pilgrim Notes: …') is not a work's name for the twin guard (two different pilgrim notes held as twins)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "cb15f9e9",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "ARCHIVE — unsearchable documents that may have value later (illegible handwriting, unreadable scans) are kept: the original on the NAS with its record, out of the searchable library; 'Archive it' answer in Review, also for an imported document (withdrawn, reversible). Media plan: transcript + link for now (Chad 10-19)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "bef3d86d",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The title a work was SOUGHT under is kept; a re-scout looks for the work, not its copy's appraised title",
+      "scope": "dewey scouts"
+    },
+    {
+      "hash": "2fdb9bf2",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "'a summary' / 'meditation on' are derivative",
+      "scope": "dewey title index"
+    },
+    {
+      "hash": "0430ff76",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Precision on the real library's confusables — a derivative work (study guide, notes, commentary, companion, homage…) is not the work unless asked; words in front of the work's title count against it; a one-word title must be the whole title (unless it is the title written together)",
+      "scope": "dewey title index"
+    },
+    {
+      "hash": "4f6ebf16",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The librarian's TITLE INDEX — every library title folded to its main title (no diacritics/apostrophes, subtitle, volume, edition, generic prefix like Táríkh-i-/Kitáb-i-/The) and matched fuzzily (consonant skeleton for transliteration, word match for order and slips, subtitles indexed too, authors folded); used by every holdings check. Chad 10-19: Dewey missed Ẓuhúru'l-Ḥaqq (nine held volumes, asked as 'Táríkh-i-Ẓuhúru'l-Ḥaqq'), The Dawn-Breakers (long subtitle) and the Summa (Theologiae/Theologica) — 'our librarian API cannot be so weak as to miss slight variations in title'. dewey-title-check report runs a battery against the real library",
+      "scope": "dewey"
+    },
+    {
+      "hash": "d8b35e6e",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A list's alternative title in brackets is searched too when nothing downloadable turned up (The New History of the Báb is catalogued as The Táríkh-i-Jadíd)",
+      "scope": "dewey scouts"
+    },
+    {
+      "hash": "47bc63d1",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Held is also checked by the main title (a list's long subtitle hid The Dawn-Breakers); an offer whose copy reads as another work says so",
+      "scope": "dewey scouts"
+    },
+    {
+      "hash": "c4a1cd59",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The first pulse's mistakes — a loose title match imported two wrong works (sameWork: the found main title must BEGIN with the sought one, hyphenated words whole, a companion/commentary is not the work; auto-add also requires the copy's appraised title to be the sought one); a channel that could not be asked (Google Books quota, dead gutendex) is logged NOT searched instead of 'nothing found'; Gutenberg via its own OPDS catalogue, multi-volume works gathered into one copy; archive.org searched for downloadable copies separately and by title when the author is catalogued otherwise; Wikisource channel; lists ask for book-length works only and fall back to a quicker research run; retry param re-scouts to-buy/lead items",
+      "scope": "dewey scouts"
+    },
+    {
+      "hash": "276e771c",
+      "date": "2026-10-18",
+      "type": "Chore",
+      "description": "Supersets embed the whole held text",
+      "scope": "dewey-bench"
+    },
+    {
+      "hash": "0a32c9bc",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "Downloads strip the internal sentence markers (⁅s1⁆…⁅/s1⁆) — every sentence of marked documents (Arabic, Persian, French) came out wrapped; found by the Dewey benchmark",
+      "scope": "documents"
+    },
+    {
+      "hash": "e187eddd",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "No placeholder titles — a scan appraised from unreadable pages ('… not legible in the excerpts') is re-appraised from its OCR text; dewey-retitle report proposes real titles (printed, or an archival supplied title in brackets) for the 17 already imported",
+      "scope": "dewey"
+    },
+    {
+      "hash": "365c56d0",
+      "date": "2026-10-18",
+      "type": "Docs",
+      "description": "Media collection plan (lectures per tradition) — draft with Chad's three decisions",
+      "scope": "dewey"
+    },
+    {
+      "hash": "2441972e",
+      "date": "2026-10-18",
+      "type": "Fixed",
+      "description": "A held work inside a larger file of ours (held book + new chapters, a fuller edition) is PARTIAL, not same — the new material was being skipped (benchmark P10: 6 of 6)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "94bc8f33",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "The daily pulse — once a day the scouts run (bahai-library collection by collection, pilgrim notes first; important Bahá'í publications; the core works of the next tradition in rotation) and ADD the most important finds themselves (importance ≥ 4, not held by text, in scope, recommended; ≤ 15 a day; intake guards still apply). Benchmark fixes: a text that repeats its formulas (hadith isnads) is matched in order (each shingle to its next occurrence — an exact Arabic copy read as 'quotes'); a non-English Latin scan is OCR'd in its own language (guessed from the English probe's function words — a French scan came back 'not held')",
+      "scope": "dewey"
+    },
+    {
+      "hash": "135cb29c",
+      "date": "2026-10-18",
+      "type": "New",
+      "description": "Scouts — the library advisor (core works of each tradition, researched) and the Bahá'í scout (every bahai-library collection via RIS — pilgrim notes first — and researched lists of important publications): held? → every channel searched (bahai-library page, archive.org incl. borrow-only, Google Books, HathiTrust, Gutenberg, Open Library, bahai.works, the open web; never shadow libraries) → a copy downloaded, its text checked against the library, appraised and OFFERED with where it came from",
+      "scope": "dewey"
+    },
     {
       "hash": "4e3fc249",
       "date": "2026-10-18",
@@ -3367,143 +3500,145 @@
       "type": "Docs",
       "description": "10-09 search battery — Qdrant-only loses other-tradition questions to layer TIMEOUTS, not ranking; refactor P1 done",
       "scope": "planning"
-    },
-    {
-      "hash": "a74bec56",
-      "date": "2026-10-09",
-      "type": "Refactor",
-      "description": "FindDocuments ranks the NAMED work first (title-rank inside the finder) — one rule for every title lookup",
-      "scope": "docs-repo"
-    },
-    {
-      "hash": "e859c762",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "FindDocuments ranks the library's own + OceanLibrary documents before scraped pages, then relevance",
-      "scope": "docs-repo"
-    },
-    {
-      "hash": "25807773",
-      "date": "2026-10-09",
-      "type": "Refactor",
-      "description": "SQLite is the only data source; search engine asked only for ids — P0+P1 of planning/architecture-data-access-20261009.md",
-      "scope": "data-access"
-    },
-    {
-      "hash": "f9830cbf",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Stale-ingest sweep runs in slices (--after/--docs) — the parse path leaks across files",
-      "scope": "library"
-    },
-    {
-      "hash": "08b4cb0c",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Stale-ingest sweep — books whose stored paragraphs predate a parser fix",
-      "scope": "library"
-    },
-    {
-      "hash": "5d847058",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Window-run --secondary accepts explicit doc ids (re-ingested books)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "7733e248",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Quoting passages follow the author's best three, not the whole author-filtered page",
-      "scope": "search"
-    },
-    {
-      "hash": "137a7132",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "'where does X say Y?' — X's own words, then passages quoting X (e.g. Shoghi Effendi citing Bahá'u'lláh, marked _quotes), then the rest",
-      "scope": "search"
-    },
-    {
-      "hash": "000a9701",
-      "date": "2026-10-09",
-      "type": "Chore",
-      "description": "Bump SEARCH_VERSION — question-frame fix must not be served from cache",
-      "scope": "search"
-    },
-    {
-      "hash": "b99aed5d",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Epithets introduce a source but never mark a paragraph as about Him (the Supreme Pen); salutation after a date line",
-      "scope": "authorship"
-    },
-    {
-      "hash": "5e1778e5",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "'where does X say Y?' searches Y — the question frame matched 'Where is he who…'; authorship: sources introduced by epithet, divine pronoun, 'word of', salutation",
-      "scope": "search"
-    },
-    {
-      "hash": "8fc1aa31",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Secondary — aliases introduce ('The Master says:'), bibliography entries are junk; fresh sample c saved (36 C / 3 W / 1 U)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "64b8893a",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Secondary — on-behalf rule never re-promotes a paragraph a check handed back to the author",
-      "scope": "authorship"
-    },
-    {
-      "hash": "28766da2",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Secondary guard v3 — author's prose stays the author's, citation lines are junk, no on-behalf override of narration, source-only 'of' intros",
-      "scope": "authorship"
-    },
-    {
-      "hash": "0f13e568",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Secondary — model's own previous label continues a split quotation; written-source intro looks back 1500 chars like blockHasEvidence",
-      "scope": "authorship"
-    },
-    {
-      "hash": "d22db81d",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Secondary guard — no cascade down split quotations, signatures are not subjects, kinship names do not introduce",
-      "scope": "authorship"
-    },
-    {
-      "hash": "2c1276cf",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Secondary-literature guard — junk rows, third-person subjects, one-figure lead-ins, written sources need the page",
-      "scope": "authorship"
-    },
-    {
-      "hash": "1b75db8e",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Secondary write skips books of line fragments (listed for a rejoin)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "c2ac3ad9",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Byline/dialogue speakers are evidence; secondary writes never demote a named speaker to the book author",
-      "scope": "authorship"
     }
   ],
   "grouped": {
+    "2026-10-19": [
+      {
+        "hash": "01b28801",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The spot-check always reads PAGE 1 (the title page — skipped, a body sentence or the author's name became the title) and spreads the rest to the last page",
+        "scope": "dewey"
+      },
+      {
+        "hash": "d200a6be",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A title must look like one (capital start, ≤ 20 words, no trailing comma, mostly capitalised) — a body sentence was taken as the title after the author line",
+        "scope": "dewey"
+      },
+      {
+        "hash": "616d89eb",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A title page's first line that is a known author is the author, not the title ('MOOJAN MOMEN'); metadata lines skipped; bahai-library pilgrim notes shelve as Bahá'í › Pilgrim Notes (one went to Christian › Mysticism by its text)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "c38d738d",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A linked Word file keeps its type (a .docx saved as .html read as junk — 'not usable text'); a generic lead-in before the colon ('Pilgrim Notes: …') is not a work's name for the twin guard (two different pilgrim notes held as twins)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "cb15f9e9",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "ARCHIVE — unsearchable documents that may have value later (illegible handwriting, unreadable scans) are kept: the original on the NAS with its record, out of the searchable library; 'Archive it' answer in Review, also for an imported document (withdrawn, reversible). Media plan: transcript + link for now (Chad 10-19)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "bef3d86d",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The title a work was SOUGHT under is kept; a re-scout looks for the work, not its copy's appraised title",
+        "scope": "dewey scouts"
+      },
+      {
+        "hash": "2fdb9bf2",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "'a summary' / 'meditation on' are derivative",
+        "scope": "dewey title index"
+      },
+      {
+        "hash": "0430ff76",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Precision on the real library's confusables — a derivative work (study guide, notes, commentary, companion, homage…) is not the work unless asked; words in front of the work's title count against it; a one-word title must be the whole title (unless it is the title written together)",
+        "scope": "dewey title index"
+      },
+      {
+        "hash": "4f6ebf16",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The librarian's TITLE INDEX — every library title folded to its main title (no diacritics/apostrophes, subtitle, volume, edition, generic prefix like Táríkh-i-/Kitáb-i-/The) and matched fuzzily (consonant skeleton for transliteration, word match for order and slips, subtitles indexed too, authors folded); used by every holdings check. Chad 10-19: Dewey missed Ẓuhúru'l-Ḥaqq (nine held volumes, asked as 'Táríkh-i-Ẓuhúru'l-Ḥaqq'), The Dawn-Breakers (long subtitle) and the Summa (Theologiae/Theologica) — 'our librarian API cannot be so weak as to miss slight variations in title'. dewey-title-check report runs a battery against the real library",
+        "scope": "dewey"
+      },
+      {
+        "hash": "d8b35e6e",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A list's alternative title in brackets is searched too when nothing downloadable turned up (The New History of the Báb is catalogued as The Táríkh-i-Jadíd)",
+        "scope": "dewey scouts"
+      },
+      {
+        "hash": "47bc63d1",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Held is also checked by the main title (a list's long subtitle hid The Dawn-Breakers); an offer whose copy reads as another work says so",
+        "scope": "dewey scouts"
+      },
+      {
+        "hash": "c4a1cd59",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The first pulse's mistakes — a loose title match imported two wrong works (sameWork: the found main title must BEGIN with the sought one, hyphenated words whole, a companion/commentary is not the work; auto-add also requires the copy's appraised title to be the sought one); a channel that could not be asked (Google Books quota, dead gutendex) is logged NOT searched instead of 'nothing found'; Gutenberg via its own OPDS catalogue, multi-volume works gathered into one copy; archive.org searched for downloadable copies separately and by title when the author is catalogued otherwise; Wikisource channel; lists ask for book-length works only and fall back to a quicker research run; retry param re-scouts to-buy/lead items",
+        "scope": "dewey scouts"
+      }
+    ],
     "2026-10-18": [
+      {
+        "hash": "276e771c",
+        "date": "2026-10-18",
+        "type": "Chore",
+        "description": "Supersets embed the whole held text",
+        "scope": "dewey-bench"
+      },
+      {
+        "hash": "0a32c9bc",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "Downloads strip the internal sentence markers (⁅s1⁆…⁅/s1⁆) — every sentence of marked documents (Arabic, Persian, French) came out wrapped; found by the Dewey benchmark",
+        "scope": "documents"
+      },
+      {
+        "hash": "e187eddd",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "No placeholder titles — a scan appraised from unreadable pages ('… not legible in the excerpts') is re-appraised from its OCR text; dewey-retitle report proposes real titles (printed, or an archival supplied title in brackets) for the 17 already imported",
+        "scope": "dewey"
+      },
+      {
+        "hash": "365c56d0",
+        "date": "2026-10-18",
+        "type": "Docs",
+        "description": "Media collection plan (lectures per tradition) — draft with Chad's three decisions",
+        "scope": "dewey"
+      },
+      {
+        "hash": "2441972e",
+        "date": "2026-10-18",
+        "type": "Fixed",
+        "description": "A held work inside a larger file of ours (held book + new chapters, a fuller edition) is PARTIAL, not same — the new material was being skipped (benchmark P10: 6 of 6)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "94bc8f33",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "The daily pulse — once a day the scouts run (bahai-library collection by collection, pilgrim notes first; important Bahá'í publications; the core works of the next tradition in rotation) and ADD the most important finds themselves (importance ≥ 4, not held by text, in scope, recommended; ≤ 15 a day; intake guards still apply). Benchmark fixes: a text that repeats its formulas (hadith isnads) is matched in order (each shingle to its next occurrence — an exact Arabic copy read as 'quotes'); a non-English Latin scan is OCR'd in its own language (guessed from the English probe's function words — a French scan came back 'not held')",
+        "scope": "dewey"
+      },
+      {
+        "hash": "135cb29c",
+        "date": "2026-10-18",
+        "type": "New",
+        "description": "Scouts — the library advisor (core works of each tradition, researched) and the Bahá'í scout (every bahai-library collection via RIS — pilgrim notes first — and researched lists of important publications): held? → every channel searched (bahai-library page, archive.org incl. borrow-only, Google Books, HathiTrust, Gutenberg, Open Library, bahai.works, the open web; never shadow libraries) → a copy downloaded, its text checked against the library, appraised and OFFERED with where it came from",
+        "scope": "dewey"
+      },
       {
         "hash": "4e3fc249",
         "date": "2026-10-18",
@@ -6888,139 +7023,6 @@
         "type": "Docs",
         "description": "10-09 search battery — Qdrant-only loses other-tradition questions to layer TIMEOUTS, not ranking; refactor P1 done",
         "scope": "planning"
-      },
-      {
-        "hash": "a74bec56",
-        "date": "2026-10-09",
-        "type": "Refactor",
-        "description": "FindDocuments ranks the NAMED work first (title-rank inside the finder) — one rule for every title lookup",
-        "scope": "docs-repo"
-      },
-      {
-        "hash": "e859c762",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "FindDocuments ranks the library's own + OceanLibrary documents before scraped pages, then relevance",
-        "scope": "docs-repo"
-      },
-      {
-        "hash": "25807773",
-        "date": "2026-10-09",
-        "type": "Refactor",
-        "description": "SQLite is the only data source; search engine asked only for ids — P0+P1 of planning/architecture-data-access-20261009.md",
-        "scope": "data-access"
-      },
-      {
-        "hash": "f9830cbf",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Stale-ingest sweep runs in slices (--after/--docs) — the parse path leaks across files",
-        "scope": "library"
-      },
-      {
-        "hash": "08b4cb0c",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Stale-ingest sweep — books whose stored paragraphs predate a parser fix",
-        "scope": "library"
-      },
-      {
-        "hash": "5d847058",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Window-run --secondary accepts explicit doc ids (re-ingested books)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "7733e248",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Quoting passages follow the author's best three, not the whole author-filtered page",
-        "scope": "search"
-      },
-      {
-        "hash": "137a7132",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "'where does X say Y?' — X's own words, then passages quoting X (e.g. Shoghi Effendi citing Bahá'u'lláh, marked _quotes), then the rest",
-        "scope": "search"
-      },
-      {
-        "hash": "000a9701",
-        "date": "2026-10-09",
-        "type": "Chore",
-        "description": "Bump SEARCH_VERSION — question-frame fix must not be served from cache",
-        "scope": "search"
-      },
-      {
-        "hash": "b99aed5d",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Epithets introduce a source but never mark a paragraph as about Him (the Supreme Pen); salutation after a date line",
-        "scope": "authorship"
-      },
-      {
-        "hash": "5e1778e5",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "'where does X say Y?' searches Y — the question frame matched 'Where is he who…'; authorship: sources introduced by epithet, divine pronoun, 'word of', salutation",
-        "scope": "search"
-      },
-      {
-        "hash": "8fc1aa31",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Secondary — aliases introduce ('The Master says:'), bibliography entries are junk; fresh sample c saved (36 C / 3 W / 1 U)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "64b8893a",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Secondary — on-behalf rule never re-promotes a paragraph a check handed back to the author",
-        "scope": "authorship"
-      },
-      {
-        "hash": "28766da2",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Secondary guard v3 — author's prose stays the author's, citation lines are junk, no on-behalf override of narration, source-only 'of' intros",
-        "scope": "authorship"
-      },
-      {
-        "hash": "0f13e568",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Secondary — model's own previous label continues a split quotation; written-source intro looks back 1500 chars like blockHasEvidence",
-        "scope": "authorship"
-      },
-      {
-        "hash": "d22db81d",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Secondary guard — no cascade down split quotations, signatures are not subjects, kinship names do not introduce",
-        "scope": "authorship"
-      },
-      {
-        "hash": "2c1276cf",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Secondary-literature guard — junk rows, third-person subjects, one-figure lead-ins, written sources need the page",
-        "scope": "authorship"
-      },
-      {
-        "hash": "1b75db8e",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Secondary write skips books of line fragments (listed for a rejoin)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "c2ac3ad9",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Byline/dialogue speakers are evidence; secondary writes never demote a named speaker to the book author",
-        "scope": "authorship"
       }
     ]
   }

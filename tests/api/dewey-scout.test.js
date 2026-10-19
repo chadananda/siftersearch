@@ -141,3 +141,18 @@ describe('a linked Word file keeps its type (10-19: a .docx saved as .html → "
     expect(r.map((c) => c.kind)).toEqual(['docx', 'pdf', 'html']);
   });
 });
+describe('folder-sweep offers (Chad 10-19: "find books we do not have and propose them")', () => {
+  it('missing files are offered, held ones and handled ones are not, nothing outside the allowed folders', async () => {
+    const { deweyOfferPathsJob } = await import('../../api/lib/ops/dewey-offer-paths-job.js');
+    const created = [];
+    const deps = { allowed: (p) => p.startsWith('/tank/dropbox/'), find: async (sha) => sha === 'seen', appraise: async () => ({ title: 'A Book', recommendation: 'add', shelf: null }),
+      create: async (x) => { created.push(x); return { id: created.length, ...x }; }, update: async () => ({}),
+      check: async ({ path }) => (path.endsWith('held.txt') ? { sha256: 'h', result: { verdict: 'held', candidates: [{ id: 7 }] } } : path.endsWith('seen.txt') ? { sha256: 'seen', result: { verdict: 'not-held' } } : { sha256: 'n', identified: { title: 'A Book' }, excerpt: 'x', result: { verdict: 'not-held' } }) };
+    const r = await deweyOfferPathsJob({ paths: ['/tank/dropbox/a/new.txt', '/tank/dropbox/a/held.txt', '/tank/dropbox/a/seen.txt', '/etc/passwd'] }, deps);
+    expect(r.offered.map((o) => o.path)).toEqual(['/tank/dropbox/a/new.txt']);
+    expect(r.held).toEqual([{ path: '/tank/dropbox/a/held.txt', held: 7 }]);
+    expect(r.skipped).toEqual(['/tank/dropbox/a/seen.txt']);
+    expect(r.errors[0].path).toBe('/etc/passwd');
+    expect(created[0]).toMatchObject({ state: 'offered', by: 'dewey-sweep' });
+  });
+});

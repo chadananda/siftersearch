@@ -30,7 +30,7 @@
     // no downloadable copy anywhere (lead: readable elsewhere; to-buy: buy and scan)
     const loadWanted = () => dewey.items(1000).then((r) => {
       wanted = r.items.filter((i) => ['wanted', 'researched'].includes(i.state));
-      found = r.items.filter((i) => i.state === 'offered' && i.created_by === 'dewey-scout');
+      found = r.items.filter((i) => i.state === 'offered' && ['dewey-scout', 'dewey-sweep'].includes(i.created_by));   // the scouts' finds and folder-sweep finds
       toBuy = r.items.filter((i) => ['to-buy', 'lead'].includes(i.state)).sort((a, b) => (b.identified?.scout?.importance ?? 3) - (a.identified?.scout?.importance ?? 3));
     }).catch(() => (wanted = []));
     loadWanted(); const t = setInterval(loadWanted, 30000); return () => clearInterval(t);
@@ -84,7 +84,7 @@
             {@const s = f.identified?.source}
             <li><span class="text-primary">{f.title}</span>{#if f.author}<span class="text-muted"> · {f.author}</span>{/if}
               {#if f.identified?.appraisal?.summary}<div class="text-secondary line-clamp-2">{f.identified.appraisal.summary}</div>{/if}
-              <div class="text-muted">{#if s}<a class="text-accent" href={s.url} target="_blank" rel="noopener">{s.site}</a> · {s.kind}{#if s.note} · {s.note}{/if}{/if} · {f.identified?.verdict || ''}</div>
+              <div class="text-muted">{#if s}<a class="text-accent" href={s.url} target="_blank" rel="noopener">{s.site}</a> · {s.kind}{#if s.note} · {s.note}{/if}{:else if f.created_by === 'dewey-sweep'}folder: {f.identified?.file_name}{/if} · {f.identified?.verdict || ''}{#if f.identified?.candidates?.[0]} · nearest: #{f.identified.candidates[0].id} {f.identified.candidates[0].title} ({f.identified.candidates[0].relation}){/if}</div>
               <div class="flex gap-1.5 mt-1"><button class="act yes" disabled={busy === f.id} onclick={() => answer(f, true)}>Add it</button><button class="act" disabled={busy === f.id} onclick={() => answer(f, false)}>No</button></div></li>
           {/each}
         </ul>
