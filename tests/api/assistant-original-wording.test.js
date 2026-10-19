@@ -78,7 +78,8 @@ describe('any quoted passage → its original (Chad 10-19: "fix Anis")', () => {
       deps: {
         plan: async () => ({ shape: 'fact' }),
         search: async () => { calls.search++; return { passages: [] }; },
-        findOriginals: async (t) => { calls.looked.push(t); return { matches: [{ passage: { id: 1, documentId: 20783, paragraphIndex: 606, text: 'Whoso reciteth, in the privacy of his chamber, the verses revealed by God…', heading: '– CXXXVI –', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } } }],
+        authorityOf: async (doc) => (/Gleanings/.test(doc.title) ? 10 : 3),
+        findOriginals: async (t) => { calls.looked.push(t); return { matches: [{ overlap: 1, passage: { id: 9, documentId: 13808, paragraphIndex: 33, text: 'Whoso reciteth…', document: { title: 'Fires in Many Hearts', author: 'Doris McKay' } } }, { overlap: 1, passage: { id: 1, documentId: 20783, paragraphIndex: 606, text: 'Whoso reciteth, in the privacy of his chamber, the verses revealed by God…', heading: '– CXXXVI –', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } } }],
           originals: [{ id: 2, documentId: 924842, paragraphIndex: 1, language: 'ar', text: AR, document: { title: 'Muntakhabát-i-Áthár:136', author: 'Bahá’u’lláh' }, foundThrough: { id: 1 } }] }; },
         companion: async () => ({ append: '', plan: null, offer: false }),
         chooseFormat: async () => ({ id: 'should-not-be-used' }),
@@ -91,5 +92,18 @@ describe('any quoted passage → its original (Chad 10-19: "fix Anis")', () => {
     expect(evidence).toContain(AR);
     expect(evidence).toContain('Gleanings');
     expect(evidence).toMatch(/actually appears in/);
+    expect(evidence).toMatch(/attributed this passage to \\"Kitab'i-Aqdas\\"/);
+  });
+});
+
+describe('attribution and the authority lecture (10-19)', () => {
+  it('finds the work a seeker named', async () => {
+    const { attributionIn } = await import('../../api/lib/assistant/respond.js');
+    expect(attributionIn(LAL_CHAMBER)).toBe("Kitab'i-Aqdas");
+    expect(attributionIn('What is the Arabic of "x y z"?')).toBe(null);
+  });
+  it('the authority paragraph is dropped', async () => {
+    const { dropAuthorityLecture } = await import('../../api/lib/assistant/lint.js');
+    expect(dropAuthorityLecture('The word is bayt.\n\nAs for the authorities behind these sources: the Arabic is Scripture.\n\nWarmly,\nAnís')).toBe('The word is bayt.\n\nWarmly,\nAnís');
   });
 });

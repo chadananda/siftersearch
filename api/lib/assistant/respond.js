@@ -176,20 +176,35 @@ async function originalWording(d, question, messages) {
   return null;
 }
 
+/** A work the seeker NAMED as the passage's source: a short line of its own that is not the question ("Kitab'i-Aqdas",
+ *  "— Gleanings, p. 295"). Pure. */
+export function attributionIn(text) {
+  const lines = String(text || '').split('\n').map((l) => l.replace(/^[\s—–-]+|[*_]+/g, '').trim()).filter(Boolean);
+  const l = lines.find((x) => { const w = x.split(/\s+/).length; return w >= 1 && w <= 7 && /^\p{Lu}/u.test(x) && !/[?]$/.test(x) && !/^(p\.?s\.?|what|which|where|how|why|i |dear|hello|thanks?|warmly|regards)/i.test(x) && /[\p{L}]{4,}/u.test(x); });
+  return l ? l.replace(/,?\s*p+\.\s*\d.*$/i, '').trim() : null;
+}
+
 /** ANY QUOTED PASSAGE → its original (Chad 10-19: "fix Anis"): the library's English→original lookup (passage-links.js
  *  findOriginals — the passages holding the quotation verbatim, then the originals linked to them) on each passage the
  *  seeker quoted. → { retrieved: [the English passage, its original], how, plan } or null. */
 async function quotedOriginal(d, question) {
   const find = d.findOriginals || (async (t) => (await import('../passage-links.js')).findOriginals(t, { limit: 3, search: (await import('../search.js')).hybridSearch }));
+  const authorityOf = d.authorityOf || (async (doc) => { try { return (await import('../authority.js')).getAuthority(doc || {}); } catch { return 0; } });
   for (const q of quotedPassages(question)) {
     const r = await find(q).catch(() => null);
     const o = r?.originals?.[0];
     if (!o?.text) continue;
-    const m = (r.matches || []).find((x) => x.passage?.id === o.foundThrough?.id) || r.matches?.[0];
-    const en = m?.passage;
+    // the English from the work ITSELF, not a book quoting it (10-19: the reply named Doris McKay's "Fires in Many Hearts"
+    // for Gleanings CXXXVI): verbatim matches ranked by the library's authority, then overlap
+    const ranked = await Promise.all((r.matches || []).filter((x) => x.passage && (x.overlap ?? 1) >= 0.8).map(async (x) => ({ x, a: Number(await authorityOf({ ...x.passage.document })) || 0 })));
+    const en = (ranked.sort((a, b) => b.a - a.a || (b.x.overlap ?? 0) - (a.x.overlap ?? 0))[0]?.x || r.matches?.[0])?.passage;
     const lang = o.language === 'ar' ? 'Arabic' : o.language === 'fa' ? 'Persian' : (o.language || 'original');
     const enTitle = [en?.document?.title, en?.heading].filter(Boolean).join(', ');
-    return { plan: { shape: 'original', via: 'quote', found: { english: en?.id || null, original: o.id } }, how: ORIGINAL_HOW, retrieved: [
+    // the seeker NAMED a work ("Kitab'i-Aqdas") the passage is not in → one gentle sentence saying where it is
+    const said = attributionIn(question), fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f'’‘`ʼ-]/g, '').toLowerCase();
+    const wrong = said && ![enTitle, o.document?.title].some((t) => fold(t).includes(fold(said)) || fold(said).includes(fold(t).split(',')[0]));
+    const how = wrong ? `${ORIGINAL_HOW} The seeker attributed this passage to "${said}"; it is found in ${enTitle || o.document?.title} — say so in one gentle sentence.` : ORIGINAL_HOW;
+    return { plan: { shape: 'original', via: 'quote', found: { english: en?.id || null, original: o.id }, attributed: said || null }, how, retrieved: [
       ...(en ? [{ text: en.text, source_title: enTitle || 'the English passage', source_author: en.document?.author || '', citation_url: en.readerUrl || en.url || null,
         doc_id: en.documentId, paragraph_index: en.paragraphIndex, religion: en.document?.religion || null, collection: en.document?.collection || null, source_lang: en.language || 'en', via: 'original' }] : []),
       { text: o.text, source_title: `${o.document?.title || 'the original'} (original, ${lang})`, source_author: o.document?.author || '', citation_url: o.readerUrl || o.url || null,
@@ -399,7 +414,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
   const formatP = sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
-    : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: ORIGINAL_HOW })
+    : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
     : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })
     : conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
 
