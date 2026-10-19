@@ -44,6 +44,12 @@ const VARIANTS = {
 
 async function anis(messages, v) {
   const t0 = Date.now();
+  // a network failure is recorded as this answer's error, never the end of the run (10-19: one ETIMEDOUT killed 61 cases)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try { return await anisOnce(messages, v, t0); } catch (e) { if (attempt) return { text: `(error: ${e.message})`, error: e.message, ms: Date.now() - t0 }; await new Promise((z) => setTimeout(z, 5000)); }
+  }
+}
+async function anisOnce(messages, v, t0) {
   const r = await fetch(`${API}/api/v1/anis/draft`, { method: 'POST', signal: AbortSignal.timeout(240000),
     headers: { 'content-type': 'application/json', 'X-Internal-Key': process.env.INTERNAL_API_KEY },
     body: JSON.stringify({ messages, email: 'battery@siftersearch.com', ...v }) });
@@ -101,16 +107,19 @@ async function runCase(c) {
   return { ...c, answers, verdict };
 }
 const out = [];
+mkdirSync(join(ROOT, 'tmp'), { recursive: true });
+const file = join(ROOT, 'tmp', `anis-battery-${immerseFile ? 'immerse-' : ''}${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
 const todo = cases.filter((x) => !only || only.includes(x.id));
 const N = Number(arg('concurrency') || (immerseFile ? 3 : 1));
-for (let i = 0; i < todo.length; i += N) out.push(...await Promise.all(todo.slice(i, i + N).map(runCase)));
+for (let i = 0; i < todo.length; i += N) {
+  out.push(...await Promise.all(todo.slice(i, i + N).map((c) => runCase(c).catch((e) => ({ ...c, answers: {}, verdict: { error: e.message, scores: {} } })))));
+  writeFileSync(file, JSON.stringify({ partial: true, cases: out }, null, 1));   // saved as it goes
+}
 const mean = (k) => { const s = out.map((o) => o.verdict.scores[k]?.score).filter((x) => x != null); return s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null; };
 const rivals = [...(withPx ? ['perplexity'] : []), ...(immerseFile ? ['immerse'] : [])];
 const beatsOf = (k, r) => out.filter((o) => (o.verdict.scores[k]?.score ?? 0) > (o.verdict.scores[r]?.score ?? 99)).length;
 const summary = Object.fromEntries([...rivals, ...variants].map((k) => [k, { mean: mean(k), best: out.filter((o) => o.verdict.best === k).length,
   ...(rivals.includes(k) ? {} : Object.fromEntries(rivals.map((r) => [`beats_${r}`, `${beatsOf(k, r)}/${out.length}`]))) }]));
 console.log(JSON.stringify(summary, null, 1));
-mkdirSync(join(ROOT, 'tmp'), { recursive: true });
-const file = join(ROOT, 'tmp', `anis-battery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
 writeFileSync(file, JSON.stringify({ summary, cases: out }, null, 1));
 console.log(file);
