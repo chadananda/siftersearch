@@ -8,7 +8,7 @@ import { enqueue } from '../repos/ops-report-repo.js';
 import { libraryShelves } from './intake.js';
 import { slpCancel } from './searchlayer.js';
 
-const TEXT_PREVIEW = 4000;
+const TEXT_PREVIEW = 2_000_000;   // the WHOLE text (10-19: "they all seem cut off" — the first 4,000 characters read as a cut-off)
 const extOf = (p) => String(p || '').split('.').pop().toLowerCase();
 
 /** The answers that fit this item. Pure. The recommended one (first) follows the question. */

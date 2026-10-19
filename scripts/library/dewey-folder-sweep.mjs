@@ -23,7 +23,8 @@ const KEY = (process.env.DEWEY_API_KEY || readFileSync('tmp/dewey-test-key', 'ut
 const API = process.env.DEWEY_API || 'https://api.siftersearch.com/api/dewey/holdings';
 const AUDIO = /\.(mp3|m4a|aiff?|wav|ogg)$/i, SKIP = /(^|\/)(\.DS_Store|Icon\r?|\.gitignore)$|\.(debug|sample|zip|jpe?g|png|gif)$/i;   // helpers and images are not documents
 const MAX = 21 * 1024 * 1024;   // base64 of this stays under the route's 30 MB body limit
-const done = new Set(existsSync(out) ? readFileSync(out, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l).file) : []);
+// a file whose check ERRED (a 429, a timeout) is checked again on resume
+const done = new Set(existsSync(out) ? readFileSync(out, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)).filter((r) => !/^error/.test(r.verdict || '')).map((r) => r.file) : []);
 
 const walk = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? walk(p) : [p]; });
 const files = walk(dir).filter((p) => !SKIP.test(p)).sort();
@@ -60,6 +61,7 @@ async function check(p) {
     try {
       const r = await fetch(API, { method: 'POST', headers: { 'X-Api-Key': KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(pl.body), signal: AbortSignal.timeout(180000) });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 429) { await new Promise((z) => setTimeout(z, 60000)); attempt--; continue; }   // the key's hourly allowance: wait, never record it
       if (r.status >= 500 && attempt < 2) continue;
       return { file, how: pl.how, status: r.status, ms: Date.now() - t0, verdict: j.verdict || `error ${r.status}: ${j.message || ''}`.slice(0, 200),
         read_as: j.identified ? { title: j.identified.title, needs_ocr: j.identified.needs_ocr || undefined, lines: j.identified.printed_lines?.length || 0 } : undefined,
@@ -71,7 +73,7 @@ async function check(p) {
 const queue = files.filter((p) => !done.has(relative(dir, p)));
 console.log(`${files.length} files, ${queue.length} to check`);
 let i = 0;
-await Promise.all(Array.from({ length: CHAT ? 1 : 3 }, async () => {   // chat: one at a time, in order, as a person would
+await Promise.all(Array.from({ length: CHAT ? 1 : 2 }, async () => {   // 2 at a time: the key allows 600 checks an hour   // chat: one at a time, in order, as a person would
   while (i < queue.length) {
     const p = queue[i++];
     const r = await check(p);
