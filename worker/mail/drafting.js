@@ -58,6 +58,9 @@ async function tower(env, path, body) {
 /** Invite-only alpha (Chad 2026-10-08: "no need to go to draft since this is an internal group"): letters to invited
  *  people (mail_allowlist) are sent at once; anyone else's goes to Chad as a draft. */
 async function sendOrReview(env, settings, draft, source) {
+  // a REPLY always goes at once (Chad 10-19: "if someone asks a question of Anis, they should get an immediate answer … I did
+  // not say I wanted to be asked to approve anis emails") — the engagement rules (stop, bounces, caps) still decide in deliver()
+  if (draft.kind === 'reply') return deliver(env, draft);
   const invited = settings.auto_send_invited === 'on'
     && await env.ANIS_DB.prepare('SELECT 1 x FROM mail_allowlist WHERE email = ?').bind(draft.to_addr).first();
   if (invited) return deliver(env, draft);                             // in the daily digest as sent, or blocked with why

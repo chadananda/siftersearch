@@ -1,6 +1,41 @@
 {
-  "generated": "2026-10-19T13:44:06.678Z",
+  "generated": "2026-10-19T14:31:32.090Z",
   "entries": [
+    {
+      "hash": "62d4b937",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "An SLP job cancelled at SLP while the item is still wanted is forgotten and a new one started (the Greek New Testament looped on its cancelled job)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "bc7c111b",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "TRUNCATED BOOKS caught by the book's own apparatus — the highest page its contents point to, its index cites, its printed page numbers reach, against the PDF's length (ported from SearchLayerPDF's completeness.js, same tests; Chad 10-19 via the SLP session: 'so we do not accidentally think we have a book when we do not'). Checked for every offer (scouts, folder sweeps) and at intake (a text layer's first/last 20 pages; OCR Markdown's printed page labels) — a suspect copy goes to the acquire list with the evidence, never imported as the book. SLP's new awaiting_approval status: Dewey's own page gate already decided, so the job is approved once and read",
+      "scope": "dewey"
+    },
+    {
+      "hash": "9be70733",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "'Put it on the acquire list' — an item that is only part of a book goes on the to-buy list with its copy kept as evidence (Chad 10-19)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "9023f2a1",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "ONLY A WHOLE COPY IS OFFERED (Chad 10-19: 'do not propose books that are incomplete. That is a trap'): a contents/index/appendix/excerpt/sample file, preview wording, a 'book' of a few thousand words, a PDF far shorter than its edition — passed over; the scout searches on for a whole copy, and an incomplete copy only puts the work on the ACQUIRE list ('such books might inform us of the existence of the actual book'); same for folder-sweep offers",
+      "scope": "dewey"
+    },
+    {
+      "hash": "94cbab0e",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The Review popup shows a document's total size (a PDF's pages, a text's words) and loads its whole text as you scroll",
+      "scope": "dewey"
+    },
     {
       "hash": "c33133e0",
       "date": "2026-10-19",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "Outbox drain clears slice by slice under a time budget",
       "scope": "index"
-    },
-    {
-      "hash": "790f219b",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Drain the pre-trigger backlog through the outbox (enqueueBacklogWindow + paced runner)",
-      "scope": "index"
-    },
-    {
-      "hash": "e3c33366",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Clef page-role classifier (work vs metadata vs navigation) + bahai-library cleanup plan",
-      "scope": "library"
-    },
-    {
-      "hash": "1eb9d648",
-      "date": "2026-10-09",
-      "type": "Performance",
-      "description": "Phrase layer = plain top-(limit x4) query grouped client-side, not /query/groups (2.0-2.3 s -> 0.6-1.1 s, same ranking)",
-      "scope": "search"
-    },
-    {
-      "hash": "8dac46a9",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Qdrant-only search degrades to one longer BM25 retry when every Qdrant layer fails (was an empty page)",
-      "scope": "search"
-    },
-    {
-      "hash": "5ecc87b9",
-      "date": "2026-10-09",
-      "type": "New",
-      "description": "Index outbox — removals reach EVERY search index (P2)",
-      "scope": "index"
     }
   ],
   "grouped": {
     "2026-10-19": [
+      {
+        "hash": "62d4b937",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "An SLP job cancelled at SLP while the item is still wanted is forgotten and a new one started (the Greek New Testament looped on its cancelled job)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "bc7c111b",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "TRUNCATED BOOKS caught by the book's own apparatus — the highest page its contents point to, its index cites, its printed page numbers reach, against the PDF's length (ported from SearchLayerPDF's completeness.js, same tests; Chad 10-19 via the SLP session: 'so we do not accidentally think we have a book when we do not'). Checked for every offer (scouts, folder sweeps) and at intake (a text layer's first/last 20 pages; OCR Markdown's printed page labels) — a suspect copy goes to the acquire list with the evidence, never imported as the book. SLP's new awaiting_approval status: Dewey's own page gate already decided, so the job is approved once and read",
+        "scope": "dewey"
+      },
+      {
+        "hash": "9be70733",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "'Put it on the acquire list' — an item that is only part of a book goes on the to-buy list with its copy kept as evidence (Chad 10-19)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "9023f2a1",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "ONLY A WHOLE COPY IS OFFERED (Chad 10-19: 'do not propose books that are incomplete. That is a trap'): a contents/index/appendix/excerpt/sample file, preview wording, a 'book' of a few thousand words, a PDF far shorter than its edition — passed over; the scout searches on for a whole copy, and an incomplete copy only puts the work on the ACQUIRE list ('such books might inform us of the existence of the actual book'); same for folder-sweep offers",
+        "scope": "dewey"
+      },
+      {
+        "hash": "94cbab0e",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The Review popup shows a document's total size (a PDF's pages, a text's words) and loads its whole text as you scroll",
+        "scope": "dewey"
+      },
       {
         "hash": "c33133e0",
         "date": "2026-10-19",
@@ -6987,41 +7022,6 @@
         "date": "2026-10-09",
         "type": "Fixed",
         "description": "Outbox drain clears slice by slice under a time budget",
-        "scope": "index"
-      },
-      {
-        "hash": "790f219b",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Drain the pre-trigger backlog through the outbox (enqueueBacklogWindow + paced runner)",
-        "scope": "index"
-      },
-      {
-        "hash": "e3c33366",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Clef page-role classifier (work vs metadata vs navigation) + bahai-library cleanup plan",
-        "scope": "library"
-      },
-      {
-        "hash": "1eb9d648",
-        "date": "2026-10-09",
-        "type": "Performance",
-        "description": "Phrase layer = plain top-(limit x4) query grouped client-side, not /query/groups (2.0-2.3 s -> 0.6-1.1 s, same ranking)",
-        "scope": "search"
-      },
-      {
-        "hash": "8dac46a9",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Qdrant-only search degrades to one longer BM25 retry when every Qdrant layer fails (was an empty page)",
-        "scope": "search"
-      },
-      {
-        "hash": "5ecc87b9",
-        "date": "2026-10-09",
-        "type": "New",
-        "description": "Index outbox — removals reach EVERY search index (P2)",
         "scope": "index"
       }
     ]
