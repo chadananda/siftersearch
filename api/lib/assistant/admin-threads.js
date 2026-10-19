@@ -152,3 +152,24 @@ export function strategyGaps(rows = []) {
   return { audited: done.length, warranted: done.filter((r) => strategyFlag(r.v).warranted).length,
     switches: ranked(switches), needs: ranked(needs, 30), shortfalls: ranked(causes), data_gaps: ranked(gaps, 30), problems: ranked(problems) };
 }
+
+/** THE DAILY DIGEST's conversations (Chad 10-19: "replicate [Jafar's daily digest] for Anis … follow conversations early on
+ *  to head off poor answers"): every round answered in the last `hours`, grouped by person, each with its audit — the
+ *  reviewer's own (test) questions left out. → { hours, people: [{ person, channel, rounds: [{ at, question, reply, status,
+ *  route, audit }] }] } */
+export async function digestConversations({ listThreads, thread, messages, audits = auditsFor, people = mailPeople }, { hours = 24, exclude = [] } = {}) {
+  const since = Date.now() - hours * 3600e3;
+  const at = (s) => Date.parse(String(s || '').replace(' ', 'T') + (/[zZ+]/.test(String(s)) ? '' : 'Z'));
+  const rows = await listThreads({ days: Math.ceil(hours / 24) + 1, limit: 500 });
+  const skip = new Set(exclude.map((e) => String(e).toLowerCase()));
+  const out = [];
+  for (const t of rows) {
+    if (at(t.last_at) < since) continue;
+    const d = await threadDetail({ thread, messages, audits, people }, t.id);
+    if (!d || (d.person?.email && skip.has(d.person.email.toLowerCase()))) continue;
+    const rounds = d.rounds.filter((r) => r.reply && at(r.reply.at) >= since).map((r) => ({ at: r.reply.at, question: r.question?.text || '', reply: r.reply.text,
+      status: r.reply.status, channel: r.reply.channel || d.channel, route: r.reply.route, audit: r.reply.audit }));
+    if (rounds.length) out.push({ thread: d.id, person: d.person, channel: d.channel, rounds });
+  }
+  return { hours, people: out };
+}

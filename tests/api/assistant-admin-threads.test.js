@@ -99,3 +99,25 @@ describe('rememberCorrespondent', async () => {
     expect(m.get(`email:${emailHash('seeker@example.org')}`).email).toBe('seeker@example.org');
   });
 });
+
+describe('digestConversations (Chad 10-19: Anís daily digest like Jafar\'s)', () => {
+  it('rounds answered in the window, grouped by person, with audits; the reviewer\'s own threads left out', async () => {
+    const { digestConversations } = await import('../../api/lib/assistant/admin-threads.js');
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const old = new Date(Date.now() - 3 * 86400e3).toISOString().slice(0, 19).replace('T', ' ');
+    const listThreads = async () => [{ id: 's1', last_at: now }, { id: 's2', last_at: now }, { id: 's3', last_at: old }];
+    const thread = async (id) => ({ id, channel: 'email', participant_id: id === 's2' ? 'email:chad' : 'email:abc' });
+    const messages = async (id) => [
+      { id: 10, round_index: 0, role: 'user', content: 'old question', created_at: old },
+      { id: 11, round_index: 0, role: 'assistant', content: 'old answer', status: 'answered', created_at: old, answered_at: old, path_json: '{}' },
+      { id: 12, round_index: 1, role: 'user', content: 'What is the original word for chamber?', created_at: now },
+      { id: 12, round_index: 1, role: 'assistant', content: 'I cannot find it.', status: 'answered', created_at: now, answered_at: now, path_json: '{"recipe":"quote"}' },
+    ];
+    const ppl = async () => new Map([['email:abc', { email: 'lal@example.com', name: 'Lal' }], ['email:chad', { email: 'chadananda@gmail.com', name: 'Chad' }]]);
+    const r = await digestConversations({ listThreads, thread, messages, audits, people: ppl }, { hours: 24, exclude: ['chadananda@gmail.com'] });
+    expect(r.people).toHaveLength(1);
+    expect(r.people[0].person.name).toBe('Lal');
+    expect(r.people[0].rounds).toHaveLength(1);
+    expect(r.people[0].rounds[0]).toMatchObject({ question: 'What is the original word for chamber?', reply: 'I cannot find it.', audit: { answered: 'no' } });
+  });
+});

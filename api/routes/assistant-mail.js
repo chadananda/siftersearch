@@ -46,6 +46,17 @@ export default async function anisRoutes(fastify) {
   };
   const who = (email) => { rememberCorrespondent(email); return `email:${emailHash(email)}`; };   // admin Threads names them
 
+  // The daily digest's conversations (worker/mail/drafting.js dailyDigest renders and sends them): every round of the last
+  // `hours`, each with its audit; the reviewer's own questions excluded (?exclude=email,…).
+  fastify.get('/digest', async (request, reply) => {
+    if (!internalOnly(request, reply)) return;
+    const { digestConversations } = await import('../lib/assistant/admin-threads.js');
+    const { listAnisThreads, anisThread, anisThreadMessages } = await import('../lib/repos/anis-threads-repo.js');
+    const hours = Math.min(Number(request.query?.hours) || 24, 24 * 14);
+    const exclude = String(request.query?.exclude || '').split(',').filter(Boolean);
+    return digestConversations({ listThreads: listAnisThreads, thread: anisThread, messages: anisThreadMessages }, { hours, exclude });
+  });
+
   // A reply to an inbound email: one ordinary Anís turn on the email channel (triage gate, research, output check).
   fastify.post('/draft', async (request, reply) => {
     if (!internalOnly(request, reply)) return;
