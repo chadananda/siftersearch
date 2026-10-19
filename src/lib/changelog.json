@@ -1,6 +1,174 @@
 {
-  "generated": "2026-10-19T16:47:28.732Z",
+  "generated": "2026-10-19T22:23:11.262Z",
   "entries": [
+    {
+      "hash": "2207e27a",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Only the pm2 API reports — the updater's pre-deploy test instance inherited its name",
+      "scope": "heartbeat"
+    },
+    {
+      "hash": "a9c46bea",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Continuous deploy without breaking work — coordinator touches only the services a change reaches (import graph); queue services DRAIN (SIGHUP: finish the work in hand, exit, pm2 restarts on new code); API drains requests AND jobs for 300 s; long work is a JOB (Anís mail drafts: async + poll, no more 524 or per-minute recompute); every service heartbeats its version/health/work → GET /api/admin/ops/services (Chad 10-19; docs/architecture/continuous-deploy.md)",
+      "scope": "deploy"
+    },
+    {
+      "hash": "18ca0da1",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A push touching no runtime code (tests, docs, frontend, hand-run scripts) is pulled without reloading the API and writer — a script-only push killed in-flight Anís research answers with 502s (10-19); research replies get 8,000 tokens (Sonnet thinks first; 2,700 cut them off); a timed-out research round retries once and logs round + elapsed",
+      "scope": "deploy"
+    },
+    {
+      "hash": "9d43e601",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A network failure is one answer's error, never the end of the run; results saved after every batch",
+      "scope": "anis battery"
+    },
+    {
+      "hash": "37ed611b",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "--immerse runs the questions people asked bahaiwritings.app against Immerse's own answers (detailed · doctrinal · nuanced · interesting; the gap Anís left is recorded); our test addresses are audited but never alert Chad",
+      "scope": "anis battery"
+    },
+    {
+      "hash": "0588bb21",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Earlier replies are context, never audited unless the reader questions them (three 'corrections' of Lal's chart were all false)",
+      "scope": "anis researcher"
+    },
+    {
+      "hash": "90624f1a",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A word study shows both measures, labelled — aligned-passage counts and CTAI's root-level counts — so an earlier root-level chart is not mistaken for an error",
+      "scope": "anis"
+    },
+    {
+      "hash": "f0e93704",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "An earlier reply is corrected only with a passage, precisely — never called unsupported or invented (a root-wide count is a different measure, not an error)",
+      "scope": "anis researcher"
+    },
+    {
+      "hash": "1fb6f212",
+      "date": "2026-10-19",
+      "type": "Test",
+      "description": "The researcher switch never leaks into test harnesses (injected deps keep it off unless they inject a researcher)",
+      "scope": "anis"
+    },
+    {
+      "hash": "c44b9ab4",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "An empty word study is about the spelling, never evidence — no disowning an earlier reply on it; candidate words are checked in the concordance in Arabic script",
+      "scope": "anis researcher"
+    },
+    {
+      "hash": "02b4d053",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The researcher answers EMAIL — Haiku 5.5 plans, Sonnet 5.5 writes; battery 10-19 (10 real questions, Opus blind): mean 7.45, beat Perplexity 10/10 (old pipeline 5.0, 6/10); chat stays on the fast path",
+      "scope": "anis"
+    },
+    {
+      "hash": "078bf969",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Research battery vs Perplexity (Opus judges blind); the brief's markers never reach the reader; the writer never volunteers what it could not find; well-known background (Shoghi Effendi translated Gleanings) is stated, not doubted",
+      "scope": "anis"
+    },
+    {
+      "hash": "1419d956",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The researcher — Haiku 5.5 plans the research with the library's tools (search, read around, original of a passage, Shoghi Effendi's renderings, source of a quotation, web) and briefs the writer; replaces regex routing when ANIS_RESEARCH names the channel (off by default); /draft takes research + writer for the battery (Chad 10-19: 'too determinative')",
+      "scope": "anis"
+    },
+    {
+      "hash": "abaa866c",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A language answer never says it 'couldn't find anything'",
+      "scope": "anis"
+    },
+    {
+      "hash": "0f51b32b",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Every Anís exchange is judged against Perplexity's answer to the same (scrubbed) question — vs_competitor better/equal/worse with what each gave; 'worse' alerts like a poor answer (Chad 10-19: always more helpful than Perplexity)",
+      "scope": "audit"
+    },
+    {
+      "hash": "1c75869b",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The quibble lint — a sentence correcting the reader's case endings is dropped unless they asked about grammar; a language answer never disclaims that 'the texts I can search do not settle' it (Chad 10-19)",
+      "scope": "anis"
+    },
+    {
+      "hash": "a5d58a0d",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Language questions get their own shape — answered from knowledge of the language and the passage under discussion, no padding search; authority shown by use, never described (Chad 10-19, Lal's 'fí baytihi')",
+      "scope": "anis"
+    },
+    {
+      "hash": "4fe9ac27",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Explore, never shut a question down — language knowledge (word meanings, which Arabic/Persian words carry an idea, grammar) is his to give; a reader's spelling/grammar slip is never corrected; the auditor judges exploration first and flags 'shut-down' replies (Chad 10-19, Lal's 'chamber' follow-up)",
+      "scope": "anis"
+    },
+    {
+      "hash": "58c22d99",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The main ingester HOLDS a file whose 'paragraph' is a whole book (>8,000 chars) even when it declares its paragraphing — nothing is cut, nothing unsegmented gets in (Chad 10-19)",
+      "scope": "ingest"
+    },
+    {
+      "hash": "8f3f1163",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Quality gate before ingestion — repair then judge; below the bar is HELD, never ingested (Chad 10-19)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "c85404c2",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A file whose row was retired as a duplicate AND soft-deleted stays retired (a forced bahai-library re-ingest would have resurrected 598 pages retired for their OceanLibrary copies); unsegmented-docs lists live documents only, deleted ones with orphaned paragraphs counted apart",
+      "scope": "ingest"
+    },
+    {
+      "hash": "35c40bbf",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Text with no sentence structure (verse lines, lists) is split at line breaks then words, never left whole; bahai-library's raw-HTML navigation table (8,538 chars on hundreds of pages) is dropped as site chrome",
+      "scope": "ingest"
+    },
+    {
+      "hash": "a12220c1",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Sites-ingest takes a file list — re-ingest exactly the files a fix touched (dry run supported)",
+      "scope": "admin"
+    },
+    {
+      "hash": "65ba7d59",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Letters read like Jafar's — a quotation is quoted text with its link on the work (whole passages showed as underlined link text); headings, bold, lists and rules styled inline (Chad 10-19)",
+      "scope": "anis mail"
+    },
     {
       "hash": "47f9b001",
       "date": "2026-10-19",
@@ -3332,178 +3500,178 @@
       "type": "Fixed",
       "description": "Remaining raw images through the image service; test forbids raw R2/ImageKit URLs in page code",
       "scope": "images"
-    },
-    {
-      "hash": "c0d4e580",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Research images through our image service — sharpened WebP + srcset (card 2.7 MB → 54 KB)",
-      "scope": "images"
-    },
-    {
-      "hash": "caf5b36a",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "AI calls review — spend by caller, current prices, 7 candidates to A/B, Strata on boss",
-      "scope": "planning"
-    },
-    {
-      "hash": "2c28eb25",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Current pricing + peak schedule — pipeline was pausing 16 h/day for a window DeepSeek retired",
-      "scope": "deepseek"
-    },
-    {
-      "hash": "5a4638ea",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Phrase indexer logs every Gemini embedding batch to ai_usage (caller phrase-index:<budget>)",
-      "scope": "spend"
-    },
-    {
-      "hash": "c1f7bfcd",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "System-1 jobs — add designed-not-built jobs (branching, re-rank, concept linking, audit triage, Dewey, talks)",
-      "scope": "planning"
-    },
-    {
-      "hash": "8d384ec1",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "System-1 jobs — one spec per decision (state budget ≤900 tokens, labels, switch rule) + job catalogue",
-      "scope": "planning"
-    },
-    {
-      "hash": "aab3f89c",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Laya training plan — short states, distil Jev per task, pilot paragraph-attribution",
-      "scope": "planning"
-    },
-    {
-      "hash": "621edaf1",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Jev first — SourceHunt span decision and page-role default to Jev; Clef-flash only as fallback",
-      "scope": "system1"
-    },
-    {
-      "hash": "a2329bd9",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Clef is near-free when used correctly — short states, no bulk shadowing",
-      "scope": "dewey"
-    },
-    {
-      "hash": "7b0b075c",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Clef is not near-free — $0.24/M input, ~6x Jev",
-      "scope": "dewey"
-    },
-    {
-      "hash": "b218ed2a",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Shadow budget — Clef shadows sampled 2% and capped 200/task/backend/day",
-      "scope": "systemone"
-    },
-    {
-      "hash": "56ea4dc0",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Technical Reference Manual, shown as the TRM tab in /admin/anis",
-      "scope": "anis"
-    },
-    {
-      "hash": "7e800ec6",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Retire Sifter, Analyzer, Translator, Memory, Transcriber — Anís + Dewey are the agents",
-      "scope": "agents"
-    },
-    {
-      "hash": "9c116fe6",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Price Clef, Flash-Lite, Groq at list rates; costs shown to the cent; 'Today' names its date",
-      "scope": "spend"
-    },
-    {
-      "hash": "941c22d9",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "One Anís hub — deployments, personality, assessment, activity, costs, System-1, about; strategies shown",
-      "scope": "anis"
-    },
-    {
-      "hash": "ced5c21d",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Every API deploy since 09:39 was aborted — /library/recent too slow for the smoke test",
-      "scope": "deploy"
-    },
-    {
-      "hash": "3df714b6",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "The actual changes for 0cf8f9f2 (that commit carried only the SEO component deletion)",
-      "scope": "admin"
-    },
-    {
-      "hash": "0cf8f9f2",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Doc Failures froze the API for minutes; one Analytics; Companion is Anís's",
-      "scope": "admin"
-    },
-    {
-      "hash": "bbe44486",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Talks as a content category — pipeline, tools, pilot (Hooper Dunbar), decisions",
-      "scope": "planning"
-    },
-    {
-      "hash": "5530a4d2",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Jev, Clef, per-search Gemini embeddings and Anís replies are now spend (ai_usage)",
-      "scope": "spend"
-    },
-    {
-      "hash": "6d95a6d0",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "The chat widgets page is the Anís page — per-site instructions + home tradition",
-      "scope": "anis"
-    },
-    {
-      "hash": "1b5b7dbb",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Test traffic stays out of search statistics (X-Sifter-Test)",
-      "scope": "analytics"
-    },
-    {
-      "hash": "3dc81c96",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Access managed on the users page; Dewey link in the user menu; /dewey holdings check",
-      "scope": "dewey"
-    },
-    {
-      "hash": "380ce040",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "The book page's by-path API returns cover_url (it built its own document object without it)",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-10-19": [
+      {
+        "hash": "2207e27a",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Only the pm2 API reports — the updater's pre-deploy test instance inherited its name",
+        "scope": "heartbeat"
+      },
+      {
+        "hash": "a9c46bea",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Continuous deploy without breaking work — coordinator touches only the services a change reaches (import graph); queue services DRAIN (SIGHUP: finish the work in hand, exit, pm2 restarts on new code); API drains requests AND jobs for 300 s; long work is a JOB (Anís mail drafts: async + poll, no more 524 or per-minute recompute); every service heartbeats its version/health/work → GET /api/admin/ops/services (Chad 10-19; docs/architecture/continuous-deploy.md)",
+        "scope": "deploy"
+      },
+      {
+        "hash": "18ca0da1",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A push touching no runtime code (tests, docs, frontend, hand-run scripts) is pulled without reloading the API and writer — a script-only push killed in-flight Anís research answers with 502s (10-19); research replies get 8,000 tokens (Sonnet thinks first; 2,700 cut them off); a timed-out research round retries once and logs round + elapsed",
+        "scope": "deploy"
+      },
+      {
+        "hash": "9d43e601",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A network failure is one answer's error, never the end of the run; results saved after every batch",
+        "scope": "anis battery"
+      },
+      {
+        "hash": "37ed611b",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "--immerse runs the questions people asked bahaiwritings.app against Immerse's own answers (detailed · doctrinal · nuanced · interesting; the gap Anís left is recorded); our test addresses are audited but never alert Chad",
+        "scope": "anis battery"
+      },
+      {
+        "hash": "0588bb21",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Earlier replies are context, never audited unless the reader questions them (three 'corrections' of Lal's chart were all false)",
+        "scope": "anis researcher"
+      },
+      {
+        "hash": "90624f1a",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A word study shows both measures, labelled — aligned-passage counts and CTAI's root-level counts — so an earlier root-level chart is not mistaken for an error",
+        "scope": "anis"
+      },
+      {
+        "hash": "f0e93704",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "An earlier reply is corrected only with a passage, precisely — never called unsupported or invented (a root-wide count is a different measure, not an error)",
+        "scope": "anis researcher"
+      },
+      {
+        "hash": "1fb6f212",
+        "date": "2026-10-19",
+        "type": "Test",
+        "description": "The researcher switch never leaks into test harnesses (injected deps keep it off unless they inject a researcher)",
+        "scope": "anis"
+      },
+      {
+        "hash": "c44b9ab4",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "An empty word study is about the spelling, never evidence — no disowning an earlier reply on it; candidate words are checked in the concordance in Arabic script",
+        "scope": "anis researcher"
+      },
+      {
+        "hash": "02b4d053",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The researcher answers EMAIL — Haiku 5.5 plans, Sonnet 5.5 writes; battery 10-19 (10 real questions, Opus blind): mean 7.45, beat Perplexity 10/10 (old pipeline 5.0, 6/10); chat stays on the fast path",
+        "scope": "anis"
+      },
+      {
+        "hash": "078bf969",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Research battery vs Perplexity (Opus judges blind); the brief's markers never reach the reader; the writer never volunteers what it could not find; well-known background (Shoghi Effendi translated Gleanings) is stated, not doubted",
+        "scope": "anis"
+      },
+      {
+        "hash": "1419d956",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The researcher — Haiku 5.5 plans the research with the library's tools (search, read around, original of a passage, Shoghi Effendi's renderings, source of a quotation, web) and briefs the writer; replaces regex routing when ANIS_RESEARCH names the channel (off by default); /draft takes research + writer for the battery (Chad 10-19: 'too determinative')",
+        "scope": "anis"
+      },
+      {
+        "hash": "abaa866c",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A language answer never says it 'couldn't find anything'",
+        "scope": "anis"
+      },
+      {
+        "hash": "0f51b32b",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Every Anís exchange is judged against Perplexity's answer to the same (scrubbed) question — vs_competitor better/equal/worse with what each gave; 'worse' alerts like a poor answer (Chad 10-19: always more helpful than Perplexity)",
+        "scope": "audit"
+      },
+      {
+        "hash": "1c75869b",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The quibble lint — a sentence correcting the reader's case endings is dropped unless they asked about grammar; a language answer never disclaims that 'the texts I can search do not settle' it (Chad 10-19)",
+        "scope": "anis"
+      },
+      {
+        "hash": "a5d58a0d",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Language questions get their own shape — answered from knowledge of the language and the passage under discussion, no padding search; authority shown by use, never described (Chad 10-19, Lal's 'fí baytihi')",
+        "scope": "anis"
+      },
+      {
+        "hash": "4fe9ac27",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Explore, never shut a question down — language knowledge (word meanings, which Arabic/Persian words carry an idea, grammar) is his to give; a reader's spelling/grammar slip is never corrected; the auditor judges exploration first and flags 'shut-down' replies (Chad 10-19, Lal's 'chamber' follow-up)",
+        "scope": "anis"
+      },
+      {
+        "hash": "58c22d99",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The main ingester HOLDS a file whose 'paragraph' is a whole book (>8,000 chars) even when it declares its paragraphing — nothing is cut, nothing unsegmented gets in (Chad 10-19)",
+        "scope": "ingest"
+      },
+      {
+        "hash": "8f3f1163",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Quality gate before ingestion — repair then judge; below the bar is HELD, never ingested (Chad 10-19)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "c85404c2",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A file whose row was retired as a duplicate AND soft-deleted stays retired (a forced bahai-library re-ingest would have resurrected 598 pages retired for their OceanLibrary copies); unsegmented-docs lists live documents only, deleted ones with orphaned paragraphs counted apart",
+        "scope": "ingest"
+      },
+      {
+        "hash": "35c40bbf",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Text with no sentence structure (verse lines, lists) is split at line breaks then words, never left whole; bahai-library's raw-HTML navigation table (8,538 chars on hundreds of pages) is dropped as site chrome",
+        "scope": "ingest"
+      },
+      {
+        "hash": "a12220c1",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Sites-ingest takes a file list — re-ingest exactly the files a fix touched (dry run supported)",
+        "scope": "admin"
+      },
+      {
+        "hash": "65ba7d59",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Letters read like Jafar's — a quotation is quoted text with its link on the work (whole passages showed as underlined link text); headings, bold, lists and rules styled inline (Chad 10-19)",
+        "scope": "anis mail"
+      },
       {
         "hash": "47f9b001",
         "date": "2026-10-19",
@@ -6853,174 +7021,6 @@
         "type": "Fixed",
         "description": "Remaining raw images through the image service; test forbids raw R2/ImageKit URLs in page code",
         "scope": "images"
-      },
-      {
-        "hash": "c0d4e580",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Research images through our image service — sharpened WebP + srcset (card 2.7 MB → 54 KB)",
-        "scope": "images"
-      },
-      {
-        "hash": "caf5b36a",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "AI calls review — spend by caller, current prices, 7 candidates to A/B, Strata on boss",
-        "scope": "planning"
-      },
-      {
-        "hash": "2c28eb25",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Current pricing + peak schedule — pipeline was pausing 16 h/day for a window DeepSeek retired",
-        "scope": "deepseek"
-      },
-      {
-        "hash": "5a4638ea",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Phrase indexer logs every Gemini embedding batch to ai_usage (caller phrase-index:<budget>)",
-        "scope": "spend"
-      },
-      {
-        "hash": "c1f7bfcd",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "System-1 jobs — add designed-not-built jobs (branching, re-rank, concept linking, audit triage, Dewey, talks)",
-        "scope": "planning"
-      },
-      {
-        "hash": "8d384ec1",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "System-1 jobs — one spec per decision (state budget ≤900 tokens, labels, switch rule) + job catalogue",
-        "scope": "planning"
-      },
-      {
-        "hash": "aab3f89c",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Laya training plan — short states, distil Jev per task, pilot paragraph-attribution",
-        "scope": "planning"
-      },
-      {
-        "hash": "621edaf1",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Jev first — SourceHunt span decision and page-role default to Jev; Clef-flash only as fallback",
-        "scope": "system1"
-      },
-      {
-        "hash": "a2329bd9",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Clef is near-free when used correctly — short states, no bulk shadowing",
-        "scope": "dewey"
-      },
-      {
-        "hash": "7b0b075c",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Clef is not near-free — $0.24/M input, ~6x Jev",
-        "scope": "dewey"
-      },
-      {
-        "hash": "b218ed2a",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Shadow budget — Clef shadows sampled 2% and capped 200/task/backend/day",
-        "scope": "systemone"
-      },
-      {
-        "hash": "56ea4dc0",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Technical Reference Manual, shown as the TRM tab in /admin/anis",
-        "scope": "anis"
-      },
-      {
-        "hash": "7e800ec6",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Retire Sifter, Analyzer, Translator, Memory, Transcriber — Anís + Dewey are the agents",
-        "scope": "agents"
-      },
-      {
-        "hash": "9c116fe6",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Price Clef, Flash-Lite, Groq at list rates; costs shown to the cent; 'Today' names its date",
-        "scope": "spend"
-      },
-      {
-        "hash": "941c22d9",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "One Anís hub — deployments, personality, assessment, activity, costs, System-1, about; strategies shown",
-        "scope": "anis"
-      },
-      {
-        "hash": "ced5c21d",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Every API deploy since 09:39 was aborted — /library/recent too slow for the smoke test",
-        "scope": "deploy"
-      },
-      {
-        "hash": "3df714b6",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "The actual changes for 0cf8f9f2 (that commit carried only the SEO component deletion)",
-        "scope": "admin"
-      },
-      {
-        "hash": "0cf8f9f2",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Doc Failures froze the API for minutes; one Analytics; Companion is Anís's",
-        "scope": "admin"
-      },
-      {
-        "hash": "bbe44486",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Talks as a content category — pipeline, tools, pilot (Hooper Dunbar), decisions",
-        "scope": "planning"
-      },
-      {
-        "hash": "5530a4d2",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Jev, Clef, per-search Gemini embeddings and Anís replies are now spend (ai_usage)",
-        "scope": "spend"
-      },
-      {
-        "hash": "6d95a6d0",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "The chat widgets page is the Anís page — per-site instructions + home tradition",
-        "scope": "anis"
-      },
-      {
-        "hash": "1b5b7dbb",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Test traffic stays out of search statistics (X-Sifter-Test)",
-        "scope": "analytics"
-      },
-      {
-        "hash": "3dc81c96",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Access managed on the users page; Dewey link in the user menu; /dewey holdings check",
-        "scope": "dewey"
-      },
-      {
-        "hash": "380ce040",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "The book page's by-path API returns cover_url (it built its own document object without it)",
-        "scope": "library"
       }
     ]
   }

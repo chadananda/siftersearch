@@ -139,7 +139,19 @@ async function checkPm2NeedsReload() {
     return { needsReload: false };
   }
 
-  // Check if PM2 API version matches package.json version
+  // A service is BEHIND when the commit it runs (its heartbeat) and HEAD differ in files IT loads — the version in
+  // package.json says nothing (an untouched service rightly keeps an older commit through a per-service deploy).
+  try {
+    const behind = await servicesBehind(currentHash);
+    if (behind.length) {
+      log('info', `Services behind HEAD in their own code: ${behind.map(([n, how]) => `${n} (${how})`).join(', ')}`);
+      return { needsReload: true, commitHash: currentHash, behind };
+    }
+    lastReloadedCommitHash = currentHash;
+    return { needsReload: false };
+  } catch (err) {
+    log('warn', `heartbeat check failed (${err.message}) — falling back to the version check`);
+  }
   const pm2Result = await run('pm2 jlist');
   if (!pm2Result.success) {
     log('warn', 'Could not check PM2 processes');
@@ -208,7 +220,7 @@ async function checkForUpdates() {
     // (handles case where code was pulled but PM2 wasn't reloaded — e.g. updater self-restart)
     const pm2Check = await checkPm2NeedsReload();
     if (pm2Check.needsReload) {
-      return { hasUpdates: false, needsPm2Reload: true, commitHash: pm2Check.commitHash };
+      return { hasUpdates: false, needsPm2Reload: true, commitHash: pm2Check.commitHash, behind: pm2Check.behind };
     }
     return { hasUpdates: false };
   }
@@ -216,7 +228,7 @@ async function checkForUpdates() {
   // Get list of commits we're behind
   const logResult = await run(`git log HEAD..${REMOTE}/${BRANCH} --oneline`);
   const commits = logResult.stdout.split('\n').filter(Boolean);
-  const files = (await run(`git diff --name-only HEAD..${REMOTE}/${BRANCH}`)).stdout.split('\n').filter(Boolean);
+  const files = await changedFiles('HEAD', `${REMOTE}/${BRANCH}`);
   return { hasUpdates: true, commits, files, runtime: touchesRuntime(files) };
 }
 
@@ -620,6 +632,29 @@ const MANAGED = ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-r
   'siftersearch-embedding', 'siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit'];
 const DRAIN = new Set(['siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit']);
 /** → [[name, 'keep'|'drain'|'reload']] for the RUNNING managed services. No previous commit known → every one is reloaded/drained. */
+/** [[service, 'drain'|'reload']] for running managed services whose heartbeat commit lags HEAD in code they load. */
+async function servicesBehind(head) {
+  const { readServices } = await import('../api/lib/service-heartbeat.js');
+  const out = [];
+  for (const svc of readServices({ dir: join(PROJECT_ROOT, 'data', 'run', 'services'), head: head.slice(0, 12) })) {
+    // a draining service is already on its way to HEAD — never signalled (or verified for) twice
+    if (!MANAGED.includes(svc.name) || !svc.commit || svc.on_head || svc.health === 'silent' || svc.health === 'draining') continue;
+    const mine = (await deployPlan(svc.commit)).find(([n]) => n === svc.name);
+    if (mine && mine[1] !== 'keep') out.push(mine);
+  }
+  return out;
+}
+
+/** Changed files between two commits — a package.json that only moved its "version" (every frontend deploy bumps it) is
+ *  not a change: it would reload every service for nothing. */
+async function changedFiles(from, to = 'HEAD') {
+  const files = (await run(`git diff --name-only ${from} ${to}`)).stdout.split('\n').filter(Boolean);
+  if (!files.includes('package.json')) return files;
+  const d = (await run(`git diff -U0 ${from} ${to} -- package.json`)).stdout.split('\n')
+    .filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
+  return d.every((l) => /"version"\s*:/.test(l)) ? files.filter((f) => f !== 'package.json') : files;
+}
+
 async function deployPlan(fromSha) {
   const { createRequire } = await import('node:module');
   const apps = createRequire(import.meta.url)(join(PROJECT_ROOT, 'ecosystem.config.cjs')).apps;
@@ -627,7 +662,7 @@ async function deployPlan(fromSha) {
   for (const name of MANAGED) if (await isProcessRunning(name)) running.push(name);
   let affected = null;
   if (fromSha) {
-    const changed = (await run(`git diff --name-only ${fromSha} HEAD`)).stdout.split('\n').filter(Boolean);
+    const changed = await changedFiles(fromSha);
     const { affectedApps } = await import('./lib/import-graph.mjs');
     affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT });
     for (const [n, files] of Object.entries(affected)) log('info', `  ${n} loads ${files.length} changed file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? ', …' : ''}`);
@@ -807,18 +842,19 @@ function getCurrentVersion() {
 /**
  * Reload PM2 only (no git pull needed)
  */
-async function reloadPm2Only() {
-  log('info', 'Verifying code before PM2 reload...');
-  const verified = await verifyNewCode();
+async function reloadPm2Only(behind = [['siftersearch-api', 'reload'], ['siftersearch-worker', 'reload'], ['siftersearch-deep-research', 'reload']]) {
+  // code verification (a test API) only when something will actually RELOAD; drains restart themselves
+  const verified = behind.some(([, how]) => how === 'reload') ? (log('info', 'Verifying code before PM2 reload...'), await verifyNewCode()) : true;
   if (!verified) {
     log('error', 'Code verification failed — keeping current processes');
     return false;
   }
 
-  log('info', 'Verification passed — recreating PM2 processes...');
-  if (!await swapPm2Process('siftersearch-api')) return false;
-  if (!await swapPm2Process('siftersearch-worker')) return false;
-  if (!await swapPm2Process('siftersearch-deep-research')) return false;
+  log('info', 'Verification passed — bringing lagging services to HEAD...');
+  for (const [name, how] of behind) {
+    if (how === 'drain') { await run(`pm2 sendSignal SIGHUP ${name}`); log('info', `  ${name}: draining`); continue; }
+    if (!await swapPm2Process(name)) return false;
+  }
   await killStrayApiProcesses();
   log('info', 'All PM2 processes recreated');
   return true;
@@ -862,7 +898,7 @@ async function runOnce() {
       log('info', 'DRY RUN - skipping PM2 reload');
       return true;
     }
-    const success = await reloadPm2Only();
+    const success = await reloadPm2Only(updateCheck.behind);
     if (success) {
       // Record commit hash so we don't reload again for the same commit
       lastReloadedCommitHash = updateCheck.commitHash || null;
