@@ -153,8 +153,9 @@ export function libraryTools({ search }) {
       if (!s?.passages?.length) return null;
       const bars = (s.renderings || []).map((x) => `${x.en} ${x.count}`).join(' · ');
       // say WHAT the counts are (10-19 audit: root-wide counts were presented as the phrase's)
-      const of = s.counted ? `in the ${s.counted} aligned passages shown` : 'across all words of the root';
-      return { summary: `Word ${s.term}${s.transliteration ? ` (${s.transliteration})` : ''}${s.root ? `, root ${s.root}` : ''}${s.meaning ? ` — ${s.meaning}` : ''}. Shoghi Effendi's renderings ${of}: ${bars || 'n/a'}${s.researchUrl ? ` · all renderings: ${s.researchUrl}` : ''}`,
+      const of = s.counted ? `in ${s.counted} aligned passages` : 'across all words of the root';
+      const root = s.counted && s.root_renderings?.length ? ` · CTAI's ROOT-LEVEL counts (every word of the root, a different measure): ${s.root_renderings.map((x) => `${x.en} ${x.count}`).join(' · ')}` : '';
+      return { summary: `Word ${s.term}${s.transliteration ? ` (${s.transliteration})` : ''}${s.root ? `, root ${s.root}` : ''}${s.meaning ? ` — ${s.meaning}` : ''}. Shoghi Effendi's renderings ${of}: ${bars || 'n/a'}${root}${s.researchUrl ? ` · all renderings: ${s.researchUrl}` : ''}`,
         passages: s.passages.slice(0, 4).map((x) => shape({ text: `${x.original}\n${x.english}`, title: x.ref || x.work, author: x.author, source_url: x.url, religion: "Baha'i", language: 'ar' })) };
     },
     sourceOf: async (quotation) => {

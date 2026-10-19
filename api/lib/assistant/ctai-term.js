@@ -129,6 +129,8 @@ export async function ctaiTerm(term, { fetchImpl = fetch, key = config.ctai?.api
     term, root: t?.root || null, transliteration: t?.transliteration || null, meaning: t?.meaning || null,
     renderings: (aligned >= 3 ? counted : (t?.renderings || []).map((r) => ({ en: r.en, count: r.count }))).slice(0, 8),
     counted: aligned >= 3 ? aligned : 0,            // passages the counts come from (0 = CTAI's root-level counts)
+    // both measures, labelled (10-19: a reply showing the aligned counts "corrected" an earlier chart of the root-level ones)
+    root_renderings: (t?.renderings || []).map((r) => ({ en: r.en, count: r.count })).slice(0, 8),
     total: pas?.total ?? passages.length, researchUrl: t?.more?.url || null, passages,
   };
 }
