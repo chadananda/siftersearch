@@ -79,6 +79,17 @@ export async function scoutWork(work, deps = {}) {
     // a downloadable copy from a known channel is enough; the open web is searched only when none was
     if (name === 'bahai.works' && found.some((f) => DOWNLOADABLE.includes(f.kind) && f.site !== 'web')) break;
   }
+  // the OTHER title a list gives in brackets ("The New History of the Báb (Táríkh-i-Jadíd)" is catalogued as "The
+  // Táríkh-i-Jadíd, or New History…", 10-19): searched too when nothing downloadable turned up — every channel but the web
+  const alt = (String(work.title).match(/\(([^)]{4,})\)/) || [])[1];
+  if (alt && !found.some((f) => DOWNLOADABLE.includes(f.kind))) {
+    for (const [name, fn] of Object.entries(channels)) {
+      if (name === 'web') continue;
+      const hits = await fn({ ...work, title: alt }).catch(() => null);
+      if (hits) { scout.channels.push({ channel: `${name} (as “${alt}”)`, searched: true, found: hits.length }); found.push(...hits.filter((x) => !isShadow(x.url))); }
+      await pause(politeMs);
+    }
+  }
   scout.found = found.map(({ context, ...f }) => f).slice(0, 20);
   // 3. A COPY: download → text checked against the library → appraised → offered
   for (const c of found.filter((f) => DOWNLOADABLE.includes(f.kind))) {
