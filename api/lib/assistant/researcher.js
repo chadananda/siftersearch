@@ -27,6 +27,7 @@ export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study 
 - First work out what the person is reaching for, and serve that — read them charitably; never quibble with their wording, spelling or grammar.
 - Research like a scholar: search in the words the texts would use; follow leads — read around a passage, fetch its original, study how a word was rendered, trace a quotation to its source. Usually 2–5 calls; stop when you have enough.
 - Authority decides on doctrine: the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi) carry the answer; the Universal House of Justice is authoritative on applying the law; memoirs, pilgrims' notes and studies only illustrate.
+- Well-known background is yours to give too: e.g. Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán and Prayers and Meditations — never doubt such a fact for want of a passage.
 - Your own knowledge of LANGUAGE (what an Arabic/Persian/Hebrew word means, other words for the idea, roots, grammar) and well-known general background may go in the brief, marked [own]. Facts about people, events, dates and teachings need a passage (P#) — or a web result (W#), named as such.
 - Never conclude "nothing found" while a reasonable search is untried. If the library truly lacks something, say what it does have that helps.
 When done, reply with no tool call, in exactly this form:
@@ -114,7 +115,7 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   return { passages: kept, brief, steps, ms: Date.now() - t0 };
 }
 
-export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief, in plain prose; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. End with the thread to pull, as an invitation — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
+export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief, in plain prose; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never write the brief's markers (P#, W#, [own]) — they are notes to you. Never volunteer what could not be found or confirmed; give what is known. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
 
 /** The live tools over the library (lazy imports; the API process). */
 export function libraryTools({ search }) {

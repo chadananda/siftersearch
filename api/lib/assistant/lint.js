@@ -26,7 +26,7 @@ export function lintReply(text) {
 // what slips through. Rewrites only the fixed phrase, never meaning.
 const MACHINERY_PHRASE = /\b(the|these) (provided|retrieved|given) (texts|passages|sources|writings)\b/gi;
 export function unmachine(text) {
-  return dropAuthorityLecture(mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search'))));
+  return dropBriefMarkers(dropAuthorityLecture(mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search')))));
 }
 
 // The AUTHORITY LECTURE — a paragraph explaining "authority layers" nobody asked about. Lal objected to it in three letters
@@ -49,6 +49,9 @@ export function dropQuibbles(text, { question = '', format = null } = {}) {
     return kept.join('').trim();
   }).filter(Boolean).join('\n\n');
 }
+
+/** The researcher's brief markers never reach the reader ("[own]", "(P3)", "[P2, W1]"). Pure. */
+export const dropBriefMarkers = (t) => String(t || '').replace(/\s*\[own\]/gi, '').replace(/\s*\((?:[PW]\d+(?:,\s*)?)+\)/g, '').replace(/\s*\[(?:[PW]\d+(?:,\s*)?)+\]/g, '');
 
 export function dropAuthorityLecture(text) {
   const paras = String(text || '').split(/\n{2,}/);

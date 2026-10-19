@@ -45,3 +45,10 @@ describe('the switch', () => {
     expect(researchEnabled({ id: 'email' }, undefined)).toBe(false);
   });
 });
+
+describe('brief markers', () => {
+  it('never reach the reader', async () => {
+    const { dropBriefMarkers } = await import('../../api/lib/assistant/lint.js');
+    expect(dropBriefMarkers('Bayt means house [own]. It is rendered "chamber" (P1, P2) and so on [W1].')).toBe('Bayt means house. It is rendered "chamber" and so on.');
+  });
+});
