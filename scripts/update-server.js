@@ -664,7 +664,8 @@ async function deployPlan(fromSha, { quiet = false } = {}) {
   if (fromSha) {
     const changed = await changedFiles(fromSha);
     const { affectedApps } = await import('./lib/import-graph.mjs');
-    affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT });
+    const added = (await run(`git diff --name-only --diff-filter=A ${fromSha} HEAD`)).stdout.split('\n').filter(Boolean);
+    affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT, added });
     if (!quiet) for (const [n, files] of Object.entries(affected)) log('info', `  ${n} loads ${files.length} changed file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? ', …' : ''}`);
   }
   return running.map((name) => [name, affected && !affected[name] ? 'keep' : DRAIN.has(name) ? 'drain' : 'reload']);

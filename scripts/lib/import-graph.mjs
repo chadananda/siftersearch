@@ -39,7 +39,7 @@ export function importGraph(entry, { root }) {
 const GLOBAL = /^(package(-lock)?\.json|\.env-public|ecosystem\.config\.cjs)$/;
 
 /** apps: [{ name, script }] → { [name]: [changed files it loads] } for the apps a change affects. */
-export function affectedApps(changed, apps, { root, graphOf = (s) => importGraph(s, { root }) }) {
+export function affectedApps(changed, apps, { root, graphOf = (s) => importGraph(s, { root }), added = [] }) {
   const runtime = changed.filter((f) => touchesRuntime([f]));
   const graphs = Object.fromEntries(apps.map((a) => [a.name, graphOf(a.script)]));
   const out = {};
@@ -50,6 +50,9 @@ export function affectedApps(changed, apps, { root, graphOf = (s) => importGraph
     if (owners.length) { for (const a of owners) hit(a.name, f); continue; }
     // reached by no graph: under api/ it may be a computed import — every app loading api/ code; elsewhere (a script the
     // API spawns fresh each run, a config read at call time) nothing running holds it
+    // …unless the file is NEW in this deploy: running code cannot have loaded a file that did not exist (10-19: the new
+    // indexer's entry file reloaded the writer, deep-research and embedding for nothing)
+    if (added.includes(f)) continue;
     if (/^(api|config)\//.test(f)) for (const a of apps) if ([...graphs[a.name]].some((g) => g.startsWith('api/'))) hit(a.name, f);
   }
   return out;

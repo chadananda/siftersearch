@@ -26,3 +26,14 @@ describe('the indexing service is independent (Chad 10-19)', () => {
     expect([...g].filter((f) => /dewey|assistant\//.test(f))).toEqual([]);
   });
 });
+
+describe('new files', () => {
+  it('a file added in this deploy cannot be loaded by running code — no fallback reload', async () => {
+    const { affectedApps } = await import('../../scripts/lib/import-graph.mjs');
+    const graphs = { api: new Set(['api/index.js']), worker: new Set(['api/workers/unified-worker.js']) };
+    const apps = Object.keys(graphs).map((name) => ({ name, script: name }));
+    const run = (changed, added) => Object.keys(affectedApps(changed, apps, { root: '/', graphOf: (s) => graphs[s], added })).sort();
+    expect(run(['api/workers/indexer-worker.js'], ['api/workers/indexer-worker.js'])).toEqual([]);
+    expect(run(['api/lib/old-computed.js'], [])).toEqual(['api', 'worker']);
+  });
+});
