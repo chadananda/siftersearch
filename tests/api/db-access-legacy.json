@@ -95,7 +95,6 @@
   "api/routes/tablets.js",
   "api/routes/user.js",
   "api/routes/widget.js",
-  "api/server.js",
   "api/services/audio.js",
   "api/services/email.js",
   "api/services/indexer.js",

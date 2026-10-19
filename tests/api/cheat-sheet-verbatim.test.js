@@ -28,7 +28,7 @@ const plain = (s) => s.replace(/`/g, '').replace(/\s+/g, ' ').trim();
 const EXPECTED = LINES.map(plain);
 
 describe('OpenAPI info.description', () => {
-  const server = readFileSync(join(ROOT, 'api/server.js'), 'utf8');
+  const server = readFileSync(join(ROOT, 'api/lib/http-server.js'), 'utf8');
 
   it('STARTS with line 1 — nothing in front of the numbered lines', () => {
     const d = server.slice(server.indexOf('description: ['));

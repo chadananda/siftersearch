@@ -309,6 +309,30 @@ async function runSmokeTests(port) {
  * Start a test API instance, run smoke tests, return success/failure.
  * Kills the test instance before returning either way.
  */
+// The other HTTP services' entries and how to ask a test boot of each whether it is healthy. Before a reload the new build
+// boots on a test port; a build that does not answer is NOT deployed — the running version keeps serving.
+const VERIFY_ENTRIES = {
+  'siftersearch-anis': { script: 'api/anis-index.js', env: (p) => ({ API_PORT: String(p) }), path: '/healthz' },
+  'siftersearch-ops': { script: 'api/ops-index.js', env: (p) => ({ API_PORT: String(p) }), path: '/healthz' },
+  'siftersearch-gateway': { script: 'api/gateway.js', env: (p) => ({ GATEWAY_PORT: String(p) }), path: '/gateway/health' },
+};
+async function verifyEntry(name, port = 7898) {
+  const v = VERIFY_ENTRIES[name];
+  if (!v) return true;
+  try { execSync(`lsof -ti :${port} | xargs kill -9 2>/dev/null`, { stdio: 'ignore' }); } catch { /* free */ }
+  const child = spawn('node', [v.script], { cwd: PROJECT_ROOT, env: { ...process.env, ...v.env(port), name: `verify-${name}`, NODE_ENV: 'production' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = ''; child.stdout.on('data', (d) => { out += d; }); child.stderr.on('data', (d) => { out += d; });
+  let crashed = null; child.on('exit', (code) => { crashed = code; });
+  let ok = false;
+  for (let i = 0; i < 45 && crashed === null && !ok; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    ok = (await httpGet(`http://127.0.0.1:${port}${v.path}`)).ok;
+  }
+  try { child.kill('SIGKILL'); } catch { /* gone */ }
+  if (!ok) log('error', `  ${name}: the new build did not come up healthy (${crashed !== null ? `exit ${crashed}` : 'no answer'}) — NOT deployed; the running version keeps serving.\n${out.slice(-600)}`);
+  return ok;
+}
+
 async function verifyNewCode() {
   log('info', `Starting test API on port ${HEALTH_CHECK_PORT}...`);
 
@@ -515,15 +539,22 @@ async function stopChild(child) {
 
 /** API processes PM2 does not manage are STRAYS: two cluster workers from the 10-10 incident outlived their PM2 entry
  *  and kept receiving requests on :7839 with day-old code (10-11: fixes seemed to come and go). Kill them. → killed pids */
+// The API services and their entries (docs/architecture/continuous-deploy.md). A stray is a process running one of these
+// entries that pm2 does not manage and that is older than the DRAIN budget: an old instance still finishing requests and
+// jobs after a graceful reload is unmanaged for up to kill_timeout (300 s) — killing it at 180 s (the old threshold) cut
+// off the very answers the drain protects.
+const API_ENTRIES = { 'siftersearch-api': 'api/index.js', 'siftersearch-anis': 'api/anis-index.js', 'siftersearch-ops': 'api/ops-index.js' };
+const STRAY_AFTER_S = 330;
 async function killStrayApiProcesses() {
   const list = JSON.parse((await run('pm2 jlist', { silent: true })).stdout || '[]');
-  const managed = new Set(list.filter((p) => p.name === 'siftersearch-api').map((p) => String(p.pid)));
-  const ps = (await run('pgrep -f "node .*api/index.js"', { silent: true })).stdout || '';
-  // an old worker still draining after a graceful reload is unmanaged for a few seconds — only older than 3 min is a stray
+  const managed = new Set(list.filter((p) => API_ENTRIES[p.name]).map((p) => String(p.pid)));
   const age = async (pid) => Number(((await run(`ps -o etimes= -p ${pid}`, { silent: true })).stdout || '0').trim()) || 0;
   const strays = [];
-  for (const pid of ps.split('\n').map((x) => x.trim()).filter((p) => p && !managed.has(p) && p !== String(process.pid))) {
-    if ((await age(pid)) > 180) strays.push(pid);
+  for (const entry of Object.values(API_ENTRIES)) {
+    const ps = (await run(`pgrep -f "node .*${entry}"`, { silent: true })).stdout || '';
+    for (const pid of ps.split('\n').map((x) => x.trim()).filter((p) => p && !managed.has(p) && p !== String(process.pid))) {
+      if ((await age(pid)) > STRAY_AFTER_S) strays.push(pid);
+    }
   }
   for (const pid of strays) { try { process.kill(Number(pid), 'SIGTERM'); } catch { /* gone */ } }
   if (strays.length) {
@@ -628,7 +659,7 @@ async function ensureCronSchedule(name) {
  * Apply updates with zero-downtime deploy
  */
 // Long-lived services the coordinator manages, in swap order (user-facing first). Drain services finish their work first.
-const MANAGED = ['siftersearch-api', 'siftersearch-worker', 'siftersearch-deep-research', 'siftersearch-library-watcher',
+const MANAGED = ['siftersearch-gateway', 'siftersearch-api', 'siftersearch-anis', 'siftersearch-ops', 'siftersearch-worker', 'siftersearch-deep-research', 'siftersearch-library-watcher',
   'siftersearch-embedding', 'siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit'];
 const DRAIN = new Set(['siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit']);
 /** → [[name, 'keep'|'drain'|'reload']] for the RUNNING managed services. No previous commit known → every one is reloaded/drained. */
@@ -773,6 +804,7 @@ async function applyUpdates() {
   for (const name of MANAGED) {
     if (!await isProcessKnown(name) && (await run(`grep -q "name: '${name}'" ecosystem.config.cjs`)).success) {
       log('info', `  ${name}: new service — starting`);
+      if (VERIFY_ENTRIES[name] && !await verifyEntry(name)) { failed = true; continue; }
       if (!await swapPm2Process(name)) failed = true;
     }
   }
@@ -783,6 +815,7 @@ async function applyUpdates() {
       log(r.success ? 'info' : 'warn', `  ${name}: ${r.success ? 'draining — restarts on the new code when its work in hand is done' : `drain signal failed: ${r.error}`}`);
       continue;
     }
+    if (VERIFY_ENTRIES[name] && !await verifyEntry(name)) { failed = true; continue; }
     if (!await swapPm2Process(name)) failed = true;
   }
   // RETIRED 2026-07-10 (superseded by the per-book deepseek entity pipeline): the old

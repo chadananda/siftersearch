@@ -80,6 +80,8 @@ module.exports = {
         // cluster mode: finish migrations + index warm-up BEFORE listening (api/index.js), so a reload never routes a
         // request to a process that cannot answer yet
         API_PREBOOT: '1',
+        // behind the gateway (api/gateway.js on 7839) since 10-19 — docs/architecture/continuous-deploy.md
+        API_PORT: '7845',
         SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
         SQLITE_BUSY_TIMEOUT_MS: '30000',
         // Grounding runs ONE book at a time, fully, in strict roadmap order. The graph tail
@@ -112,6 +114,70 @@ module.exports = {
       min_uptime: '10s',
       error_file: './logs/api-error.log',
       out_file: './logs/api-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true
+    },
+    {
+      // THE GATEWAY (api/gateway.js) — port 7839, where the Cloudflare tunnel and every internal caller point: each request
+      // to its service (search API · Anís · ops), retried while a service restarts. CLUSTER mode so its own (rare) reloads
+      // start the new instance before the old one lets go of the port (docs/architecture/continuous-deploy.md).
+      name: 'siftersearch-gateway',
+      script: 'api/gateway.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'cluster',
+      watch: false,
+      wait_ready: true,
+      listen_timeout: 15000,
+      kill_timeout: 300000,   // streams (Anís conversations) finish before an old gateway exits
+      max_memory_restart: '1G',
+      env: { NODE_ENV: 'production', GATEWAY_PORT: '7839', GATEWAY_SEARCH_PORT: '7845', GATEWAY_ANIS_PORT: '7844', GATEWAY_OPS_PORT: '7843' },
+      error_file: './logs/gateway-error.log',
+      out_file: './logs/gateway-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true
+    },
+    {
+      // THE ANÍS SERVICE (api/anis-index.js): conversations, letters, the reading guide, the widget — its own process, so an
+      // Anís update reloads only Anís and a search/indexing update never touches a conversation in progress. Two instances:
+      // a reload replaces one at a time, and 3,000 readers a day never wait on one busy process.
+      name: 'siftersearch-anis',
+      script: 'api/anis-index.js',
+      cwd: PROJECT_ROOT,
+      instances: 2,
+      exec_mode: 'cluster',
+      watch: false,
+      wait_ready: true,
+      listen_timeout: 60000,
+      kill_timeout: 300000,   // a conversation or a research job in flight finishes before an old instance exits
+      max_memory_restart: '3G',
+      env: { NODE_ENV: 'production', API_PORT: '7844', API_PREBOOT: '1', SIFTER_WRITER_URL: 'http://127.0.0.1:7849', SQLITE_BUSY_TIMEOUT_MS: '30000',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '' },
+      exp_backoff_restart_delay: 1000,
+      max_restarts: 999999,
+      min_uptime: '10s',
+      error_file: './logs/anis-error.log',
+      out_file: './logs/anis-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true
+    },
+    {
+      // THE OPS SERVICE (api/ops-index.js): ops reports and the service health view — tiny, rarely changed, so health stays
+      // visible through every other service's update.
+      name: 'siftersearch-ops',
+      script: 'api/ops-index.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'cluster',
+      watch: false,
+      wait_ready: true,
+      listen_timeout: 60000,
+      kill_timeout: 60000,
+      max_memory_restart: '1G',
+      env: { NODE_ENV: 'production', API_PORT: '7843', SIFTER_WRITER_URL: 'http://127.0.0.1:7849', SQLITE_BUSY_TIMEOUT_MS: '30000',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '' },
+      error_file: './logs/ops-error.log',
+      out_file: './logs/ops-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true
     },
