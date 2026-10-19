@@ -100,3 +100,20 @@ describe('matching v3 + recheck (10-15)', async () => {
     expect(again.problems.filter((p) => p.kind === 'not-retrieved')).toHaveLength(1);
   });
 });
+
+describe('the competitor bar (Chad 10-19: "always more helpful and informative than Perplexity")', () => {
+  it('only the scrubbed question leaves — no address, number, greeting or signature; a short follow-up carries its context', async () => {
+    const { competitorQuery } = await import('../../api/lib/audit/auditor.js');
+    const q = competitorQuery('Thank you so much for the info!\n\nWould "fi baytihi" be used for "chamber"?\n\nWarmly,\nLal\nlal@example.com +1 (555) 123-4567',
+      [{ role: 'user', content: 'Dear Anís,\nWhat is the original word for "chamber" in "in the privacy of his chamber"?' }]);
+    expect(q).toContain('Follow-up: Would "fi baytihi" be used for "chamber"?');
+    expect(q).toContain('Earlier question: What is the original word');
+    expect(q).not.toMatch(/Lal|example\.com|555|Thank you|Warmly|Dear/);
+  });
+  it("the competitor's answer is in the prompt with its sources; without one the verdict is no-comparison", async () => {
+    const { buildAuditPrompt } = await import('../../api/lib/audit/auditor.js');
+    const withIt = buildAuditPrompt({ question: 'q', reply: 'r', competitor: { text: 'ghurfa means room', citations: [{ title: 'x', url: 'https://example.org/a' }] } }).user;
+    expect(withIt).toMatch(/ANSWERED BY PERPLEXITY[\s\S]*ghurfa means room[\s\S]*https:\/\/example\.org\/a/);
+    expect(buildAuditPrompt({ question: 'q', reply: 'r' }).user).toMatch(/no-comparison/);
+  });
+});

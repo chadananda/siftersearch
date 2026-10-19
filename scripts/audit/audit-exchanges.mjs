@@ -12,7 +12,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { buildAuditPrompt, AUDIT_TOOL, costOf, verifyHoldings, titleCandidates, titleMatches } from '../../api/lib/audit/auditor.js';
+import { buildAuditPrompt, competitorQuery, AUDIT_TOOL, costOf, verifyHoldings, titleCandidates, titleMatches } from '../../api/lib/audit/auditor.js';
 import { MODEL_REGISTRY } from '../../api/lib/model-registry.js';
 
 // PM2 does not pass the env files to every app: load them here (as the other tower scripts do)
@@ -70,12 +70,13 @@ const put = store.prepare(`INSERT OR REPLACE INTO audits (message_id, session_id
   VALUES (@message_id, @session_id, @round, @channel, @asked_at, @model, @usd, @input_tokens, @output_tokens, @status, @verdict_json, @error)`);
 
 /** The auditor found the answer short: not (fully) answered, or problems listed. */
-export const flagged = (v) => ['no', 'partly'].includes(v?.evidence?.answered) || (Array.isArray(v?.problems) && v.problems.length > 0);
+// …or the competitor answered this reader better (Chad 10-19: "we should always be more helpful and informative than Perplexity")
+export const flagged = (v) => ['no', 'partly'].includes(v?.evidence?.answered) || (Array.isArray(v?.problems) && v.problems.length > 0) || v?.vs_competitor?.verdict === 'worse';
 async function alertPoorAnswer({ row, question, verdict: v }) {
   const { actionRequired } = await import('../../api/lib/ops/alert.js');
   const probs = (Array.isArray(v.problems) ? v.problems : []).slice(0, 8).map((p) => `  • ${p.kind}: ${p.detail}`).join('\n');
   const text = `Anís's answer needs a look (${row.channel || 'chat'}, ${row.answered_at || ''} UTC)\n\nQUESTION:\n${String(question).slice(0, 1500)}\n\nANÍS REPLIED:\n${String(row.content || '').slice(0, 2500)}\n\n`
-    + `AUDIT: answered ${v.evidence?.answered || '?'} · strategy ${v.strategy_used || '?'} → best ${v.best_strategy || '?'}${v.summary ? `\n${v.summary}` : ''}\n${probs}\n\nThread: https://siftersearch.com/admin/anis#threads/${row.session_id}`;
+    + `AUDIT: answered ${v.evidence?.answered || '?'} · strategy ${v.strategy_used || '?'} → best ${v.best_strategy || '?'}${v.summary ? `\n${v.summary}` : ''}\n${probs}${v.vs_competitor?.verdict && v.vs_competitor.verdict !== 'no-comparison' ? `\n\nVS PERPLEXITY: ${v.vs_competitor.verdict.toUpperCase()} — they gave: ${v.vs_competitor.they_gave || '?'} · we gave: ${v.vs_competitor.we_gave || '?'}` : ''}\n\nThread: https://siftersearch.com/admin/anis#threads/${row.session_id}`;
   await actionRequired({ key: `anis-poor-answer-${row.id}`, subject: `Anís answer needs a look: ${String(question).replace(/\s+/g, ' ').slice(0, 70)}`, text });
 }
 
@@ -83,13 +84,18 @@ async function audit(row) {
   const question = questionOf.get(row.session_id, row.round_index)?.content || '';
   const earlier = earlierOf.all(row.session_id, row.round_index, row.round_index - 3);
   let path = {}; try { path = JSON.parse(row.path_json || '{}'); } catch { /* old rows */ }
-  const { system, user } = buildAuditPrompt({ earlier, question, reply: row.content, path });
+  // THE BAR (Chad 10-19): the same question put to Perplexity, so the audit judges Anís against what a reader could get
+  // elsewhere. Only the scrubbed question leaves (competitorQuery); no key or a failed call → no comparison, never no audit.
+  const { perplexityFallback } = await import('../../api/lib/perplexity.js');
+  const competitor = process.argv.includes('--no-competitor') ? null
+    : await perplexityFallback(competitorQuery(question, earlier), { caller: 'anis-audit', maxTokens: 800 }).catch(() => null);
+  const { system, user } = buildAuditPrompt({ earlier, question, reply: row.content, path, competitor });
   const base = { message_id: row.id, session_id: row.session_id, round: row.round_index, channel: row.channel, asked_at: row.answered_at, model: MODEL };
   try {
     const res = await anthropic.messages.create({ model: MODEL, max_tokens: 4000, system, tools: [AUDIT_TOOL],
       tool_choice: { type: 'auto' }, messages: [{ role: 'user', content: user }] });
     const call = res.content.find((b) => b.type === 'tool_use');
-    if (call) call.input = { ...(await verifyHoldings(call.input, findHeld)), audit_v: AUDIT_V };
+    if (call) call.input = { ...(await verifyHoldings(call.input, findHeld)), audit_v: AUDIT_V, ...(competitor?.text ? { competitor: { text: competitor.text.slice(0, 4000), citations: (competitor.citations || []).slice(0, 10) } } : {}) };
     put.run({ ...base, usd: costOf(res.usage, PRICING), input_tokens: res.usage?.input_tokens ?? 0, output_tokens: res.usage?.output_tokens ?? 0,
       status: call ? 'done' : 'error', verdict_json: call ? JSON.stringify(call.input) : null, error: call ? null : `no tool call (${res.stop_reason})` });
     // a POOR ANSWER reaches Chad AT ONCE (Chad 10-19: "every single interaction with Anis should be audited immediately after

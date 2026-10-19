@@ -68,6 +68,11 @@ export const AUDIT_TOOL = {
         justified: { type: 'string', enum: ['yes', 'partly', 'no', 'unclear'], description: 'judged against the earlier reply and its evidence' },
         fix: { type: 'string', description: 'the concrete improvement it points to (strategy, index, data, format, voice), or "none"' },
       } },
+      vs_competitor: { type: 'object', required: ['verdict'], description: 'Anís against the SAME question answered by Perplexity (when shown)', properties: {
+        verdict: { type: 'string', enum: ['better', 'equal', 'worse', 'no-comparison'] },
+        they_gave: { type: 'string', description: 'what the competitor gave that Anís did not (a fact, a word, a source, a direction) — or "nothing"' },
+        we_gave: { type: 'string', description: 'what Anís gave that the competitor could not (the library: originals, authoritative texts, links into them)' },
+      } },
       summary: { type: 'string', description: 'one sentence: what most needs improving, or "fine"' },
     },
   },
@@ -76,7 +81,20 @@ export const AUDIT_TOOL = {
 const clip = (s, n) => { const t = String(s ?? ''); return t.length > n ? `${t.slice(0, n)}…` : t; };
 
 /** The audit request for one exchange: earlier turns (context), the question, the logged path, the evidence, the reply. */
-export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
+/** What the competitor is asked: the reader's question alone — no addresses, numbers, greetings or signatures (a name
+ *  lives in those) — with the previous question for context when this one is a short follow-up. Pure. */
+export function competitorQuery(question, earlier = []) {
+  // everything from the sign-off down is the signature (a name on its own line)
+  const unsigned = (t) => { const ls = String(t || '').split('\n'); const k = ls.findIndex((l, i) => i > 0 && /^\s*(warm(ly)?|regards|best( wishes)?|love|blessings|sincerely|cheers|yours\b|with (love|thanks)|sent from)\b/i.test(l)); return (k > 0 ? ls.slice(0, k) : ls).join('\n'); };
+  const scrub = (t) => unsigned(t).replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, ' ').replace(/\+?\d[\d\s().-]{7,}\d/g, ' ')
+    .split('\n').filter((l) => !/^\s*(dear|hi|hello|thank(s| you)|warm(ly)?|regards|best|love|blessings|sincerely|cheers|sent from|on .+ wrote:|>)\b/i.test(l)).join('\n')
+    .replace(/\n{3,}/g, '\n\n').trim();
+  const q = scrub(question);
+  const prev = [...earlier].reverse().find((m) => m.role === 'user');
+  return q.length < 220 && prev ? `Earlier question: ${clip(scrub(prev.content), 500)}\n\nFollow-up: ${q}` : q;
+}
+
+export function buildAuditPrompt({ earlier = [], question, reply, path = {}, competitor = null }) {
   const p = path || {};
   const evidence = (p.evidence || []).map((e, i) => `[${i + 1}] ${e.title || '?'} — ${e.author || '?'}${e.religion ? ` (${e.religion})` : ''}\n${clip(e.text, 1200)}`).join('\n\n');
   const route = {
@@ -92,6 +110,7 @@ export function buildAuditPrompt({ earlier = [], question, reply, path = {} }) {
     `WHAT THE SYSTEM DID:\n${JSON.stringify(route)}`,
     `EVIDENCE THE REPLY WAS WRITTEN FROM:\n${evidence || '(not logged for this exchange)'}`,
     `REPLY:\n${clip(reply, 4000)}`,
+    competitor?.text ? `THE SAME QUESTION ANSWERED BY PERPLEXITY (web search — our main competitor; the bar is that Anís is ALWAYS more helpful and informative, with the library's originals, authoritative texts and links behind him):\n${clip(competitor.text, 3000)}${competitor.citations?.length ? `\nIts sources: ${competitor.citations.slice(0, 8).map((c) => c?.url || c).join(' · ')}` : ''}\nJudge vs_competitor: is Anís's reply better, equal or worse for this reader, and what did each give that the other did not? A competitor's claim is not evidence — check it against the passages; do not reward a confident error.` : 'No competitor answer this time: vs_competitor.verdict = no-comparison.',
     'Audit this exchange by calling the record_audit tool (exactly one call; no prose).',
   ].filter(Boolean).join('\n\n');
   return { system, user };
