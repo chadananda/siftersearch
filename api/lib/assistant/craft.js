@@ -24,7 +24,10 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
   // max_completion_tokens and should not reason for a chat reply (reasoning_effort minimal).
   const reg = getModel(llm.model) || {};
   const effort = llm.reasoning_effort ?? reg.reasoningEffort;
-  const maxTok = effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 700;
+  // a LETTER (email) or a POSITION answer is longer than a chat reply: 700 tokens cut both mid-sentence (10-19 — Chad's
+  // socialism answer ended at "'Abdu'l-Bah", another mid-link). Chat stays short.
+  const long = direction.format?.id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
+  const maxTok = (effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 700) + (long ? 2000 : 0);
   const params = {
     model: llm.model,
     messages: [
@@ -47,12 +50,15 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     noteProviderError(llm.provider === 'gemini' ? 'Gemini' : llm.provider, { status: e?.status ?? null, message: e?.message || String(e) });
     throw e;
   }
-  let full = '', usage = null;
+  let full = '', usage = null, finish = null;
   for await (const chunk of stream) {
     const t = chunk.choices?.[0]?.delta?.content || '';
     if (t) { full += t; onChunk?.(t); }
+    if (chunk.choices?.[0]?.finish_reason) finish = chunk.choices[0].finish_reason;
     if (chunk.usage) usage = chunk.usage;
   }
+  // a reply CUT by the token cap is never silent (10-19: two letters ended mid-sentence)
+  if (finish === 'length') console.warn(JSON.stringify({ anis_craft: 'reply hit the token cap', max_tokens: maxTok, chars: full.length, format: direction.format?.id || null }));
   // Spend: every Anís reply. Providers that don't report usage on a stream get an estimate (~4 chars/token).
   const promptChars = params.messages.reduce((n, m) => n + String(m.content || '').length, 0);
   const promptTokens = usage?.prompt_tokens ?? Math.ceil(promptChars / 4), completionTokens = usage?.completion_tokens ?? Math.ceil(full.length / 4);
