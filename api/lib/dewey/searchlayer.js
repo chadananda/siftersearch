@@ -127,7 +127,7 @@ export function slpCheck(text, { pages = 1, sampleText = null, pdfPages = null }
   return { ok: !why.length, why, words, perPage: Math.round(perPage), ratio: ratio == null ? null : +ratio.toFixed(2), sampleFound, whole };
 }
 
-/** Cancel (delete) an SLP job. SLP answers 202 "deleted" even while it is processing; it may finish the page in hand. */
+/** Cancel an SLP job: DELETE stops an active job (status 'cancelled', billed for pages done — SLP fixed 10-18) and removes a finished one. */
 export async function slpCancel(jobId, { fetchImpl = fetch, key = slpKey() } = {}) {
   if (!jobId || !key) return { deleted: false };
   const r = await fetchImpl(`${BASE()}/v1/jobs/${jobId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(30000) });
@@ -177,10 +177,20 @@ export async function slpExtract({ path, context = '', resumeJobId = null }, { f
     await upload(job);
   }
   const t0 = Date.now();
-  let s;
+  let s, reprocessed = false;
   for (;;) {
     s = await json(await call(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
     log({ job_id: job.job_id, step: s.status, stage: s.current_stage || null, pages_done: s.pages_done ?? null, pages_total: s.pages_total ?? s.page_count ?? null });
+    if (s.status === 'cancelled') throw Object.assign(new Error(`SLP job ${job.job_id} was cancelled`), { cancelled: true });
+    // a job that FAILED INSIDE SLP (10-18: "fetch source (4 tries): HTTP 401" — its own signed source link expired after
+    // hours in its queue, with 323 of 342 pages done) is re-queued ONCE under the same id: /reprocess keeps the pages
+    // already read well, so the retry costs only what is left
+    if (s.status === 'failed' && !reprocessed) {
+      reprocessed = true;
+      const rp = await call(`${BASE()}/v1/jobs/${job.job_id}/reprocess`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
+      log({ job_id: job.job_id, step: 'reprocess', failure: s.failure_code || null, accepted: rp.ok });
+      if (rp.ok) { await new Promise((z) => setTimeout(z, pollMs)); continue; }
+    }
     if (['complete', 'failed', 'capped'].includes(s.status)) break;
     // the member said NO while SLP was reading it (Chad 10-18: "choosing not to add a book did not stop the SLP processing"):
     // the job is cancelled at SLP and this wait ends — its result is never fetched or used

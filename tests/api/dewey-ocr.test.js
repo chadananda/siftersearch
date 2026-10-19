@@ -217,3 +217,24 @@ describe('slpExtract stop', () => {
     expect(calls.some((c) => c.includes('/result'))).toBe(false);
   });
 });
+
+describe('slpExtract — SLP-side failure and cancel', () => {
+  it('a job failed inside SLP is reprocessed once under the same id, then its result is used', async () => {
+    let n = 0;
+    const calls = [];
+    const fetchImpl = vi.fn(async (url, opts = {}) => {
+      calls.push(`${opts.method || 'GET'} ${url}`);
+      const body = url.endsWith('/result') ? { markdown: '<!-- pdf:1 -->\n\nHello world' }
+        : url.endsWith('/reprocess') ? { ok: true }
+        : { status: n++ < 2 ? 'failed' : 'complete', failure_code: 'fetch source (4 tries): HTTP 401', pages_total: 1 };
+      return { ok: true, status: 200, text: async () => JSON.stringify(body), json: async () => body };
+    });
+    const out = await slpExtract({ path: '/x.pdf', resumeJobId: 'job_r' }, { fetchImpl, key: 'k', pollMs: 1 });
+    expect(calls.filter((c) => c === 'POST https://searchlayerpdf.com/v1/jobs/job_r/reprocess')).toHaveLength(1);
+    expect(out.markdown).toMatch(/Hello world/);
+  });
+  it('a cancelled job ends the wait', async () => {
+    const fetchImpl = vi.fn(async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ status: 'cancelled' }), json: async () => ({}) }));
+    await expect(slpExtract({ path: '/x.pdf', resumeJobId: 'job_c' }, { fetchImpl, key: 'k', pollMs: 1 })).rejects.toMatchObject({ cancelled: true });
+  });
+});
