@@ -117,6 +117,7 @@ const CHUNK_CONFIG = {
 // Based on 2x longest paragraph in well-formatted documents (God Passes By: ~1500 chars)
 // This ensures all content fits within embedding model token limits (8192 tokens)
 const MAX_PARAGRAPH_LENGTH = 3000;
+const UNSEGMENTED_CHARS = 8000;   // a "paragraph" longer than this is a whole book (sites-ingester.js uses the same bar)
 
 /**
  * Log a document failure to the database
@@ -1572,6 +1573,14 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         errorMessage: `${long.length} paragraph(s) over ${MAX_PARAGRAPH_LENGTH} chars kept whole; segment semantically at source.`,
         details: { count: long.length, longest: Math.max(...long.map((c) => c.length)), language: finalMeta.language },
       });
+      // …but a WHOLE BOOK in one "paragraph" is never ingested (Chad 10-19: "Never should we search an unsegmented book";
+      // "We don't want to ingest books unless the quality is very good") — the file is HELD until its Markdown has
+      // paragraphs (Dewey's prepare.js repairs it); an existing document stays as it is
+      const giant = chunks.find((c) => (c.text?.length || 0) > UNSEGMENTED_CHARS);
+      if (giant) {
+        logger.warn({ documentId: existingDoc?.id, relativePath, chars: giant.text.length }, 'Ingester: HELD — a paragraph is a whole book; fix the file\'s paragraphs');
+        return { documentId: existingDoc?.id ?? null, paragraphCount: 0, status: 'held_quality', error: `a paragraph of ${giant.text.length} characters — the file has no paragraph structure` };
+      }
     }
   }
   // ───────────────────────────────────────────────────────────────────────────

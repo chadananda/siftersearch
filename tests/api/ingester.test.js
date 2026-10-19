@@ -834,6 +834,18 @@ New content here with sufficient text.`;
       expect(result.documentId).toBe('doc_from_path');
     });
 
+    it('a whole book in one paragraph is HELD even when the file declares its paragraphing (Chad 10-19: never search an unsegmented book)', async () => {
+      queryOne.mockResolvedValue(null);
+      queryAll.mockResolvedValue([]);
+      query.mockResolvedValue({ changes: 1, lastInsertRowid: BigInt(43) });
+      transaction.mockResolvedValue(undefined);
+      const wall = Array.from({ length: 120 }, (_, i) => `This is sentence ${i} of a book whose paragraphs were lost on import.`).join(' ');
+      // a file that DECLARES its paragraphing (needs_segmentation: false) but has none — the 1,287 library books of 10-19
+      const result = await ingestDocument(`---\ntitle: A Wall\nlanguage: en\nneeds_segmentation: false\n---\n\n${wall}`, {}, 'test/path/wall.md');
+      expect(result.status).toBe('held_quality');
+      expect(transaction).not.toHaveBeenCalled();
+    });
+
     it('should generate new INTEGER ID when neither metadata.id nor file_path finds existing doc', async () => {
       // Setup mock - nothing found
       queryOne.mockResolvedValue(null);
