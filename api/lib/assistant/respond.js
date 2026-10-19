@@ -12,6 +12,7 @@ import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
 import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
+import { research as runResearch, libraryTools, RESEARCH_HOW } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
@@ -323,6 +324,13 @@ async function defaultDeps() {
   };
 }
 
+/** ANIS_RESEARCH="email" | "chat,email" | "all": the channels the researcher answers on. Off by default. */
+export function researchEnabled(channel, env = process.env.ANIS_RESEARCH) {
+  const on = String(env || '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean);
+  const id = String(channel?.id || channel?.name || channel || '').toLowerCase();
+  return on.includes('all') || (!!id && on.some((c) => id.includes(c)));
+}
+
 // Fallback link filter when none is injected: keep only markdown links whose URL was retrieved.
 const keepRetrievedLinks = (text, quotes) => {
   const ok = new Set(quotes.map((q) => q.citation_url).filter(Boolean));
@@ -350,13 +358,21 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   let conversational = plan?.shape === 'converse';
 
   onEvent({ type: 'stage', stage: 'search' });
+  // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the
+  // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
+  // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
+  const researchOn = !conversational && (direction.research ?? researchEnabled(direction.channel));
+  const R = researchOn ? await (d.research || runResearch)({ messages,
+    create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
+    tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
+  const researched = R?.passages?.length || R?.brief ? R : null;
   // "Where is this from?" → SourceHunt (published source + original tablet); nothing found → the ordinary search
   const wantsOriginal = looksLikeOriginalQuestion(question);
   const quoted = quotationIn(question);
-  const sourced = (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)
+  const sourced = !researched && (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)
     || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await huntSource(d, question) : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
-  const original = !sourced && wantsOriginal ? await originalWording(d, question, messages).catch(() => null) : null;
+  const original = !researched && !sourced && wantsOriginal ? await originalWording(d, question, messages).catch(() => null) : null;
   if (sourced) {
     // "Where is this from?" is answered by the hunt directly (template, no model call, no companion plan).
     // OceanLibrary range links (lib/ocean-links.js): the reply's links and each citation highlight their passage
@@ -375,7 +391,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // "What does ʿirfán mean?" → a TERM STUDY from the CTAI concordance: Shoghi Effendi's renderings of the word and
   // passages pairing the original with his English (api/lib/anis/ctai-term.js). Nothing found → the ordinary search.
   let study = null;
-  const termQ = !sourced && !original && !conversational ? (d.termQuestion || termQuestion)(question) : null;
+  const termQ = !researched && !sourced && !original && !conversational ? (d.termQuestion || termQuestion)(question) : null;
   if (termQ) {
     try {
       const word = termQ.script === 'arabic' ? termQ.term : await (d.resolveTerm || resolveTerm)(termQ.term);
@@ -385,15 +401,16 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   }
   // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
   // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")
-  const position = !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
+  const position = !researched && !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
     ? await positionResearch({ question, create: d.create || (await import('../role-client.js')).roleCreate, search: d.search,
       authorityOf: d.authorityOf || (async (p) => { try { return (await import('../authority.js')).getAuthority(p || {}); } catch { return 0; } }),
       defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
     : null;
   // A LANGUAGE question (assistant/language.js): answered from knowledge of the language and the passage already under
   // discussion — a search would only bring unrelated quotations to pad it with (10-19, Lal's 'fí baytihi')
-  const language = !sourced && !original && !study && !position && !conversational && (d.looksLikeLanguage || looksLikeLanguageQuestion)(question);
-  const res = sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
+  const language = !researched && !sourced && !original && !study && !position && !conversational && (d.looksLikeLanguage || looksLikeLanguageQuestion)(question);
+  const res = researched ? { passages: researched.passages || [], _plan: { shape: 'research', steps: researched.steps, ms: researched.ms } }
+    : sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
@@ -408,7 +425,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
   }));
   // An original-language question answered by the ordinary search: each hit that has an aligned original carries it too
-  if (wantsOriginal && !sourced && !original && !study && res?.passages?.length) {
+  if (wantsOriginal && !researched && !sourced && !original && !study && res?.passages?.length) {
     const { originalsByIds } = await import('../paragraphs-repo.js');
     const origs = await (d.originalsByIds || originalsByIds)(res.passages.map((p) => p.id).filter(Boolean)).catch(() => new Map());
     res.passages.forEach((p, i) => {
@@ -435,7 +452,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
-  const formatP = sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
+  const formatP = researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
+    : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
     : position?.passages?.length ? Promise.resolve({ id: 'position', by: 'position', how: POSITION_HOW })
     : language ? Promise.resolve({ id: 'language', by: 'language', how: LANGUAGE_HOW })
@@ -472,7 +490,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const raw = await d.craft({
     user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format }, llm: llm || parseLlm(process.env.ANIS_LLM),
+    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format }, llm: llm || (researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM)),
     onChunk: (t) => gate.push(t),
   });
   gate.flush();

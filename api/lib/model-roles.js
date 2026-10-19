@@ -54,6 +54,10 @@ export const MODEL_ROLES = {
     why: 'blind judge must be stronger than every flash candidate and read fa/ar/he/zh (anthropic-policy stage model-eval)' },
   // ── legacy chat / publishing / bios (call sites not yet on modelFor — see tests/api/model-literal-ratchet.test.js) ──
   'chat-research': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-13', needs: ['tool-use'], why: 'legacy Jafar pipeline' },
+  'anis-researcher': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['tool-use', 'planning', 'multilingual'],
+    why: 'plans the research loop over the library tools (Chad 10-19: "Even Haiku 5.5 might be sufficient for planning research")' },
+  'anis-writer': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'],
+    why: 'writes the reply from the researcher brief; to be measured against Sonnet 5 on the Perplexity battery' },
   'anis-research-brief': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['json', 'fast'],
     why: 'Anís plans a POSITION question: its themes, search phrasings and the authoritative works to search — where to look, never the answer; one call per such question' },
   'chat-light': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast'], why: 'legacy Jafar pipeline' },

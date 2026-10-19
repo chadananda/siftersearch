@@ -60,16 +60,21 @@ export default async function anisRoutes(fastify) {
   // A reply to an inbound email: one ordinary Anís turn on the email channel (triage gate, research, output check).
   fastify.post('/draft', async (request, reply) => {
     if (!internalOnly(request, reply)) return;
-    const { messages = [], email = '' } = request.body || {};
+    const { messages = [], email = '', research = undefined, writer = null } = request.body || {};
     if (!messages.length) return reply.code(400).send({ error: 'messages required' });
+    // research: true/false overrides ANIS_RESEARCH for this draft; writer: "anthropic:claude-sonnet-5-5" — the battery
+    // (scripts/anis/research-battery.mjs) compares them against Perplexity before anything goes live
+    const { parseLlm } = await import('../lib/assistant/respond.js');
+    const llm = writer ? parseLlm(writer) : undefined;
     // READING GUIDE first (Chad 10-12): "help me study <book>", then next / again / back / skip to …; anything else is an
     // ordinary question and falls through to the usual turn.
     const { readingTurn } = await import('../lib/assistant/reading.js');
     const rd = await readingTurn({ messages, participantId: who(email) }).catch((err) => { logger.error({ err: err.message }, 'anis: reading turn failed'); return null; });
     if (rd?.reply) return { reply: rd.reply, subject: rd.subject || null, status: 'reading', triage: null, retrieved: 0, format: 'reading-guide' };
     const { anisTurn } = await import('../lib/assistant/turn.js');
-    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email) });
-    return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null };
+    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, llm });
+    return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
+      research: r.plan?.shape === 'research' ? { steps: r.plan.steps, ms: r.plan.ms } : null };
   });
 
   // A letter Anís starts (onboarding / follow-up). step 0–1: a capability they have not used, shown on their own subject;

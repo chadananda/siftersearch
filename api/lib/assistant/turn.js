@@ -29,7 +29,7 @@ async function defaultDeps() {
  * @param {string} [a.clientKey]    strike key (participant id, else IP)
  */
 export async function anisTurn({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent = () => {}, deps }) {
+  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, llm = undefined, deps }) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const channel = channelFor(channelName, { trusted });
   const text = lastUser(messages);
@@ -79,8 +79,9 @@ export async function anisTurn({ messages, channel: channelName = 'widget-chat',
         timings: { total_ms: Date.now() - t0 } };
     }
 
-    const r = await d.respond({ messages, profile, participant, onEvent, direction: { stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel } });
+    // research / llm: a caller's override (the /draft battery compares the researcher and writers before they go live)
+    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), direction: { stance: triageSummary?.stance ?? null,
+      kind: route.kind, guarded: route.action === 'guarded', channel, ...(research !== undefined ? { research } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
