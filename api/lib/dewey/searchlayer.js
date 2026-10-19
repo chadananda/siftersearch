@@ -177,11 +177,19 @@ export async function slpExtract({ path, context = '', resumeJobId = null }, { f
     await upload(job);
   }
   const t0 = Date.now();
-  let s, reprocessed = false;
+  let s, reprocessed = false, approved = false;
   for (;;) {
     s = await json(await call(`${BASE()}/v1/jobs/${job.job_id}`, { headers: H }));
     log({ job_id: job.job_id, step: s.status, stage: s.current_stage || null, pages_done: s.pages_done ?? null, pages_total: s.pages_total ?? s.page_count ?? null });
     if (s.status === 'cancelled') throw Object.assign(new Error(`SLP job ${job.job_id} was cancelled`), { cancelled: true });
+    // SLP now holds an OCR job of 100+ pages for APPROVAL (nothing billed, an estimate given). Dewey has already decided — a
+    // scan over DEWEY_SLP_MAX_PAGES waits for Chad before it is ever sent — so a job here is approved: released once
+    if (s.status === 'awaiting_approval' && !approved) {
+      approved = true;
+      const ap = await call(`${BASE()}/v1/jobs/${job.job_id}/approve`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
+      log({ job_id: job.job_id, step: 'approved', estimate_usd: s.progress?.awaiting_approval?.est_usd ?? null, accepted: ap.ok });
+      await new Promise((z) => setTimeout(z, pollMs)); continue;
+    }
     // a job that FAILED INSIDE SLP (10-18: "fetch source (4 tries): HTTP 401" — its own signed source link expired after
     // hours in its queue, with 323 of 342 pages done) is re-queued ONCE under the same id: /reprocess keeps the pages
     // already read well, so the retry costs only what is left

@@ -7,7 +7,7 @@ import { appraiseDocument } from '../dewey/appraise.js';
 import { allowedPath } from '../dewey/paths.js';
 import { createItem, updateItem, findBySha } from '../repos/dewey-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
-import { wholeWork, estimatedWords } from '../dewey/whole.js';
+import { wholeWork, estimatedWords, tocCheck } from '../dewey/whole.js';
 
 export async function deweyOfferPathsJob({ paths = [], by = 'dewey-sweep' } = {}, deps = {}) {
   const { check = identifyAndCheck, appraise = appraiseDocument, find = findBySha, create = createItem, update = updateItem, allowed = allowedPath } = deps;
@@ -20,7 +20,8 @@ export async function deweyOfferPathsJob({ paths = [], by = 'dewey-sweep' } = {}
       if (doc.result?.verdict === 'held') { out.held.push({ path, held: doc.result.candidates?.[0]?.id }); continue; }
       const a = await appraise(doc.identified, doc.excerpt, doc.result?.verdict).catch(() => null);
       // never offer an incomplete copy (Chad 10-19: "That is a trap")
-      const w = wholeWork({ name: path.split('/').pop(), kind: a?.kind || '', words: estimatedWords(doc), pdfPages: doc.identified?.sample?.of || null, text: doc.identified?._text || doc.excerpt || '' });
+      const toc = await (deps.tocCheck || tocCheck)(path).catch(() => null);
+      const w = wholeWork({ name: path.split('/').pop(), kind: a?.kind || '', words: estimatedWords(doc), pdfPages: doc.identified?.sample?.of || null, text: doc.identified?._text || doc.excerpt || '', toc });
       // an incomplete copy only tells us the work EXISTS: it goes on the acquire list, the copy noted as the evidence
       if (!w.whole) {
         const it = await create({ title: a?.title || doc.identified?.title || path.split('/').pop(), author: a?.author || null, kind: a?.kind || null,

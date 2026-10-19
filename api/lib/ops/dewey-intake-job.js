@@ -93,10 +93,17 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     // short by pages AND by words (a two-pages-a-sheet scan halves the page count, never the words: ~150 a printed page)
     const short = kind === 'book' && ext === 'pdf' && published >= 60 && pages < published * 0.5 && gate.words < published * 150
       ? `the PDF has ${pages} pages (${gate.words.toLocaleString('en-US')} words); the published book has about ${published} pages` : null;
-    const why = [...whole.why, ...(preview ? [`it reads as a preview (“${preview}”)`] : []), ...(short ? [short] : [])];
+    // its own CONTENTS / INDEX / printed page numbers against its length (truncation.js; Chad 10-19 via the SLP session):
+    // the OCR'd Markdown's page markers carry the printed page labels; a text layer is read at its first and last 20 pages
+    let toc = null;
+    if (ext === 'pdf' && !deps.read) {
+      const { assessCompleteness, slpPages, pdfEnds } = await import('../dewey/truncation.js');
+      toc = slp?.path ? assessCompleteness({ ...slpPages(String(await read(slp.path).catch(() => ''))), pdfPages }) : assessCompleteness(await pdfEnds(item.original_path, { pdfPages }));
+    } else if (deps.toc) toc = deps.toc;
+    const why = [...whole.why, ...(preview ? [`it reads as a preview (“${preview}”)`] : []), ...(short ? [short] : []), ...(toc?.suspect ? [`truncated: ${toc.evidence.join('; ')}`] : [])];
     if (why.length) {
       // a text LAYER that stops early is not the book's text: full OCR reads every page; OCR text that stops early → a person
-      if (ext === 'pdf' && !slp && !preview && !short && (deps.slpEnabled || slpEnabled)()) {
+      if (ext === 'pdf' && !slp && !preview && !short && !toc?.suspect && (deps.slpEnabled || slpEnabled)()) {
         await updateItem(item.id, { state: 'needs-ocr' }, `its text layer covers only part of the PDF (${why.join('; ')}) — sent for full OCR`);
         await (deps.queue || enqueue)('dewey-ocr', { id: item.id }, 'dewey-intake');
         return { id: item.id, state: 'needs-ocr', why };

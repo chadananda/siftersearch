@@ -23,3 +23,10 @@ describe('wholeWork', () => {
     expect(estimatedWords({ identified: { _text: 'w '.repeat(3000), sample: { of: 300, sampled: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] } } })).toBe(90000);
   });
 });
+describe('truncation evidence makes a copy incomplete', () => {
+  it('contents pointing far past the PDF', () => {
+    const w = wholeWork({ name: 'europe.pdf', kind: 'book', words: 90000, toc: { suspect: true, evidence: ['contents point to page 681', 'index cites page 690', 'the PDF has only 19 pages'] } });
+    expect(w.whole).toBe(false);
+    expect(w.why.join()).toMatch(/contents point to page 681.*only 19 pages/);
+  });
+});

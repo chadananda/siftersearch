@@ -7,7 +7,7 @@ import { previewSigns } from '../ops/dewey-intake-job.js';
 const PART_FILE = /(?:^|[_\-\s.])(?:contents|toc|index|appendix|appendices|excerpts?|extract|sample|preview|chapter[_\-\s]?\d+|ch\d+|part[_\-\s]?\d+|vol(?:ume)?[_\-\s]?\d+[_\-\s]?of|front[_\-\s]?matter|introduction|intro)(?:[_\-\s.]|$)/i;
 
 /** → { whole: boolean, why: [] }. copy: { name|url, kind, words (whole text, estimated when sampled), pdfPages, text } */
-export function wholeWork({ name = '', url = '', kind = '', words = null, pdfPages = null, text = '', published = 0 } = {}) {
+export function wholeWork({ name = '', url = '', kind = '', words = null, pdfPages = null, text = '', published = 0, toc = null } = {}) {
   const why = [];
   const file = decodeURIComponent(String(name || url || '').split('?')[0].split('/').pop() || '');
   if (PART_FILE.test(file.replace(/\.[a-z0-9]+$/i, ''))) why.push(`the file is only part of the work (“${file}”)`);
@@ -16,6 +16,8 @@ export function wholeWork({ name = '', url = '', kind = '', words = null, pdfPag
   const book = /book/i.test(String(kind || ''));
   if (book && words != null && words < 5000) why.push(`a book of only ${words.toLocaleString('en-US')} words`);
   if (book && published >= 60 && pdfPages && pdfPages < published * 0.5 && (words == null || words < published * 150)) why.push(`${pdfPages} pages; the published book has about ${published}`);
+  // the book's own apparatus: contents, index, printed page numbers point far past the PDF (truncation.js)
+  if (toc?.suspect) why.push(`truncated: ${toc.evidence.join('; ')}`);
   return { whole: !why.length, why };
 }
 
@@ -24,4 +26,12 @@ export function estimatedWords(doc) {
   const w = String(doc?.identified?._text || doc?.excerpt || '').split(/\s+/).filter(Boolean).length;
   const s = doc?.identified?.sample;
   return s?.of && s?.sampled?.length ? Math.round(w * s.of / s.sampled.length) : w;
+}
+
+/** A PDF on disk → the truncation evidence of its own contents/index/page numbers (text layer: first + last 20 pages). */
+export async function tocCheck(path) {
+  if (!/\.pdf$/i.test(String(path))) return null;
+  const { pdfEnds, assessCompleteness } = await import('./truncation.js');
+  const e = await pdfEnds(path).catch(() => null);
+  return e?.pdfPages ? assessCompleteness(e) : null;
 }

@@ -10,7 +10,7 @@ import { workKey } from '../../ops/dewey-ingest-folder-job.js';
 import { CHANNELS, purchaseLeads, isShadow, sameWork } from './channels.js';
 import { UA } from './ris.js';
 import { toMarkdownText } from '../convert.js';
-import { wholeWork, estimatedWords } from '../whole.js';
+import { wholeWork, estimatedWords, tocCheck } from '../whole.js';
 
 export const scoutDir = () => process.env.DEWEY_SCOUT_DIR || '/tank/dewey-ingest/scout';
 const BY = 'dewey-scout';
@@ -121,7 +121,8 @@ export async function scoutWork(work, deps = {}) {
     const kind = a?.kind || work.kind || '';
     const pdfPages = /\.pdf$/i.test(path) ? (doc.identified?.sample?.of || await (deps.pdfPages || (await import('../convert.js')).pdfPageCount)(path).catch(() => null)) : null;
     const published = /book/i.test(kind) ? (work.publishedPages ??= Number((await (deps.research || (await import('../research.js')).researchWork)({ title: work.sought || work.title, author: work.author }).catch(() => null))?.pages) || 0) : 0;
-    const w = wholeWork({ url: c.url, name: path.split('/').pop(), kind, words: estimatedWords(doc), pdfPages, text: doc.identified?._text || doc.excerpt || '', published });
+    const toc = await (deps.tocCheck || tocCheck)(path).catch(() => null);
+    const w = wholeWork({ url: c.url, name: path.split('/').pop(), kind, words: estimatedWords(doc), pdfPages, text: doc.identified?._text || doc.excerpt || '', published, toc });
     if (!w.whole) {
       (scout.incomplete ||= []).push({ url: c.url, site: c.site, why: w.why });
       await unlink(path).catch(() => {});

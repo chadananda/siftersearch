@@ -248,3 +248,16 @@ describe('placeholderTitle', () => {
     expect(placeholderTitle('Resurrection and Renewal')).toBe(false);
   });
 });
+describe('SLP awaiting_approval (10-19)', () => {
+  it('a job held for approval is approved once and then read', async () => {
+    let n = 0; const calls = [];
+    const fetchImpl = vi.fn(async (url, opts = {}) => {
+      calls.push(`${opts.method || 'GET'} ${url}`);
+      const body = url.endsWith('/result') ? { markdown: '<!-- pdf:1 -->\n\nHello' } : url.endsWith('/approve') ? {} : { status: n++ < 2 ? 'awaiting_approval' : 'complete', pages_total: 1, progress: { awaiting_approval: { est_usd: 0.4 } } };
+      return { ok: true, status: 200, text: async () => JSON.stringify(body), json: async () => body };
+    });
+    const out = await slpExtract({ path: '/x.pdf', resumeJobId: 'job_a' }, { fetchImpl, key: 'k', pollMs: 1 });
+    expect(calls.filter((c) => c.endsWith('/approve'))).toHaveLength(1);
+    expect(out.markdown).toMatch(/Hello/);
+  });
+});
