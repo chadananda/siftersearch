@@ -89,3 +89,14 @@ describe('repeated formulas (10-18: a hadith collection read as quotes)', () => 
     expect(['same', 'inside']).toContain(firstHalf.relation);   // held either way
   });
 });
+
+describe('a held work inside a larger one of ours (10-18 benchmark: supersets read as "same")', () => {
+  it('held book + as much new text → partial; a copy with a preface and index added stays same', async () => {
+    const { compareTexts, compareWords } = await import('../../api/lib/dewey/compare.js');
+    const book = Array.from({ length: 300 }, (_, i) => `sentence ${i} of the held book speaks of matter ${i * 13} and of the ${i % 7} kinds of truth`).join(' ');
+    const fresh = Array.from({ length: 300 }, (_, i) => `entirely new chapter line ${i} concerning topic ${i * 17} with other words ${i % 11}`).join(' ');
+    expect(compareTexts(compareWords(`${fresh} ${book}`), compareWords(book)).relation).toBe('partial');
+    const edition = `PREFACE a short new preface of some forty words about this edition and its corrections ${'and more '.repeat(10)} ${book} INDEX ${'term 12 '.repeat(30)}`;
+    expect(compareTexts(compareWords(edition), compareWords(book)).relation).toBe('same');
+  });
+});

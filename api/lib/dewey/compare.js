@@ -77,6 +77,10 @@ export function relationOf({ ours_in_theirs: a, theirs_in_ours: b, in_order: o, 
     if (strong && o >= ORDERED) return r > 1.5 ? 'inside' : r < 0.67 ? 'partial' : 'same';
     return a >= SOME ? (o >= ORDERED ? 'overlap' : 'quotes') : 'unrelated';
   }
+  // a held work INSIDE a larger one of ours (a held book + new chapters, a fuller edition): theirs is mostly in ours, ours
+  // much longer and only partly theirs — PARTIAL, worth adding. Called 'same' before (10-18 benchmark, 6 of 6), losing the
+  // new chapters.
+  if (b >= STRONG && o >= ORDERED && r < 0.8 && a < 0.8) return 'partial';
   if (a >= STRONG && b >= STRONG && o >= ORDERED) return 'same';                 // another copy, edition or transcription
   if (a >= STRONG && o >= ORDERED && r > 1.5) return 'inside';                    // ours is part of a larger library work
   if (a >= STRONG && o >= ORDERED) return 'same';
