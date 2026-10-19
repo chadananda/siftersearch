@@ -118,8 +118,12 @@ const sh = (run, cmd, args, timeout = 120000) => new Promise((res, rej) => run(c
 /** Pages to sample from a scan of n pages: the title page region and an even spread through the body (≤ k). */
 export function samplePages(n, k = 8) {
   if (n <= k) return Array.from({ length: n }, (_, i) => i + 1);
-  const picks = new Set([Math.min(2, n), Math.min(3, n)]);
-  for (let i = 0; picks.size < k; i++) picks.add(Math.max(1, Math.min(n, Math.round(4 + (i + 0.5) * (n - 4) / (k - 2)))));
+  // PAGE 1 always: it is the title page — skipped, a document's title was never read and a body sentence (or the author's
+  // name) became its title (10-19, Momen's Ṭáhirih); then the start of the text and pages spread through the rest
+  const picks = new Set([1, Math.min(2, n), Math.min(3, n)]);
+  const rest = k - picks.size;   // the rest spread evenly from page 4 to the LAST page (the end of the book is checked too)
+  for (let i = 0; i < rest; i++) picks.add(Math.max(1, Math.min(n, Math.round(4 + i * (n - 4) / Math.max(1, rest - 1)))));
+  for (let p = 4; picks.size < k && p <= n; p++) picks.add(p);
   return [...picks].sort((a, b) => a - b);
 }
 

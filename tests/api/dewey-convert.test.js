@@ -68,7 +68,7 @@ describe('preliminary OCR of scans', () => {
     expect(samplePages(5)).toEqual([1, 2, 3, 4, 5]);
     const p = samplePages(300);
     expect(p).toHaveLength(8);
-    expect(p.slice(0, 2)).toEqual([2, 3]);
+    expect(p.slice(0, 3)).toEqual([1, 2, 3]);   // the title page always (10-19)
     expect(p.at(-1)).toBeGreaterThan(250);
   });
   it('transliterated names are real words (ASCII-only scoring called clean Bahá’í text garbled, 10-18)', () => {
@@ -105,7 +105,7 @@ describe('a big PDF is SPOT-CHECKED, not read whole (Chad 10-18)', () => {
     expect(r.pages).toBe(300);
     expect(r.sampled.length).toBeLessThanOrEqual(10);
     expect(calls.filter(([c, a]) => c === 'pdftotext' && !a.includes('-f'))).toHaveLength(0);
-    expect(r.text).toMatch(/^\[page 2\]/);
+    expect(r.text).toMatch(/^\[page 1\]/);
   });
   it('reads every page when asked (intake imports the whole text)', async () => {
     const { run } = fake();
