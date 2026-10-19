@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-19T14:31:32.090Z",
+  "generated": "2026-10-19T14:41:13.339Z",
   "entries": [
+    {
+      "hash": "2d614e43",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The day's conversations for the daily digest — GET /api/v1/anis/digest (internal): every round answered in the window, grouped by person, each with its audit; the reviewer's own questions excluded",
+      "scope": "anis"
+    },
+    {
+      "hash": "5ca6858f",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A reply to anyone who writes goes at once — never a draft for approval (Chad 10-19: 'if someone asks a question of Anis, they should get an immediate answer'); the engagement rules still decide in deliver(). A stale 10-08 test draft that the daily digest kept listing was discarded",
+      "scope": "anis mail"
+    },
     {
       "hash": "62d4b937",
       "date": "2026-10-19",
@@ -3486,24 +3500,24 @@
       "type": "Chore",
       "description": "Delete 24 dead scripts that wrote Meili directly + the dead sync-processor duplicate",
       "scope": null
-    },
-    {
-      "hash": "2909ca00",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Bahai-library removal decided by the content classifier, not page-type rules; exact run restore",
-      "scope": "library"
-    },
-    {
-      "hash": "53a855bb",
-      "date": "2026-10-09",
-      "type": "Fixed",
-      "description": "Outbox drain clears slice by slice under a time budget",
-      "scope": "index"
     }
   ],
   "grouped": {
     "2026-10-19": [
+      {
+        "hash": "2d614e43",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The day's conversations for the daily digest — GET /api/v1/anis/digest (internal): every round answered in the window, grouped by person, each with its audit; the reviewer's own questions excluded",
+        "scope": "anis"
+      },
+      {
+        "hash": "5ca6858f",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A reply to anyone who writes goes at once — never a draft for approval (Chad 10-19: 'if someone asks a question of Anis, they should get an immediate answer'); the engagement rules still decide in deliver(). A stale 10-08 test draft that the daily digest kept listing was discarded",
+        "scope": "anis mail"
+      },
       {
         "hash": "62d4b937",
         "date": "2026-10-19",
@@ -7009,20 +7023,6 @@
         "type": "Chore",
         "description": "Delete 24 dead scripts that wrote Meili directly + the dead sync-processor duplicate",
         "scope": null
-      },
-      {
-        "hash": "2909ca00",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Bahai-library removal decided by the content classifier, not page-type rules; exact run restore",
-        "scope": "library"
-      },
-      {
-        "hash": "53a855bb",
-        "date": "2026-10-09",
-        "type": "Fixed",
-        "description": "Outbox drain clears slice by slice under a time budget",
-        "scope": "index"
       }
     ]
   }

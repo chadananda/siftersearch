@@ -10,6 +10,7 @@
 import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody } from './letter.js';
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
+import { digestHtml } from './digest-html.js';
 
 const TOWER = 'https://api.siftersearch.com/api/v1/anis';
 const SITE = 'https://siftersearch.com';
@@ -285,6 +286,12 @@ export async function dailyDigest(env) {
     `New pauses/stops: ${fmt(Object.fromEntries(stops.map((s) => [s.reason, s.n])))}`,
     ...(ignored.length ? [`Ignored senders: ${ignored.map((i) => `${i.pattern} (${i.hits} total)`).join(', ')}`] : []),
   ].join('\n');
-  const html = `<pre style="font:14px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap">${esc(text).replace(/(https:\/\/siftersearch\.com\/_mail\/review\?t=[\w.]+)/g, '<a href="$1">review</a>')}</pre>`;
-  await sendMail(env, { to: settings.reviewer_email, subject: `Anís mail: ${inbound.length} in · ${out.filter((o) => o.status === 'sent').length} sent · ${pending.length} drafts waiting`, text, html, system: true });
+  const mailHtml = `<pre style="font:13px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;color:#444">${esc(text).replace(/(https:\/\/siftersearch\.com\/_mail\/review\?t=[\w.]+)/g, '<a href="$1">review</a>')}</pre>`;
+  // her CONVERSATIONS first — every question and answer of the day, the ones the auditor flagged on top (Chad 10-19:
+  // "replicate [Jafar's digest] for Anis … follow conversations early on to head off poor answers"); the mail activity after
+  const conv = await fetch(`${TOWER}/digest?hours=24&exclude=${encodeURIComponent(settings.reviewer_email)}`, { headers: { 'x-internal-key': env.S1_KEY } })
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const d = digestHtml(conv || { hours: 24, people: [] }, { mailHtml });
+  const html = conv ? d.html : `<p style="color:#b33">Conversations could not be read from the server today.</p>${mailHtml}`;
+  await sendMail(env, { to: settings.reviewer_email, subject: `Anís digest — ${new Date().toISOString().slice(0, 10)} · ${d.questions} question${d.questions === 1 ? '' : 's'}${d.flagged ? ` · ${d.flagged} need a look` : ''} · ${out.filter((o) => o.status === 'sent').length} sent${pending.length ? ` · ${pending.length} drafts waiting` : ''}`, text, html, system: true });
 }
