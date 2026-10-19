@@ -14,6 +14,11 @@ const LIB = [
   { id: 9, title: 'The Kitáb-i-Íqán: The Book of Certitude', author: "Bahá'u'lláh", paragraph_count: 300 },
   { id: 10, title: 'Some Answered Questions', author: "'Abdu'l-Bahá", paragraph_count: 400 },
   { id: 11, title: 'Promulgation of Universal Peace', author: "'Abdu'l-Bahá", paragraph_count: 2000 },
+  { id: 12, title: 'Some Answered Questions: Study Guide', author: 'bayat', paragraph_count: 2759 },
+  { id: 13, title: 'An Homage to Memorials of the Faithful', author: 'Julio Savi', paragraph_count: 311 },
+  { id: 14, title: 'Memorials of the Faithful', author: "'Abdu'l-Bahá", paragraph_count: 573 },
+  { id: 15, title: 'Prayers and Meditations', author: "Bahá'u'lláh", paragraph_count: 877 },
+  { id: 16, title: 'High Endeavors: Letters to Alaska', author: 'Shoghi Effendi', paragraph_count: 829 },
 ];
 const idx = buildIndex(LIB);
 const top = (t, o) => matchTitle(idx, t, o)[0]?.doc.id ?? null;
@@ -50,5 +55,16 @@ describe('different works are never confused', () => {
   it('authors folded: Mazandarani = Mírzá Asadu\'lláh Fáḍil Mázandarání', () => {
     expect(authorMatch('Mazandarani', "Mírzá Asadu'lláh Fáḍil Mázandarání")).toBe(true);
     expect(authorMatch('William James', 'Augustine')).toBe(false);
+  });
+});
+
+describe('precision on the real library\'s confusables (10-19 battery)', () => {
+  it('a study guide, an homage, a longer title with the same first word are not the work', () => {
+    expect(top('Some Answered Questions')).toBe(10);
+    expect(matchTitle(idx, 'Some Answered Questions').map((m) => m.doc.id)).not.toContain(12);
+    expect(matchTitle(idx, 'Memorials of the Faithful').map((m) => m.doc.id)).toEqual([14]);
+    expect(matchTitle(idx, 'Prayers')).toEqual([]);
+    expect(matchTitle(idx, 'Letter')).toEqual([]);
+    expect(top('Some Answered Questions: Study Guide')).toBe(12);   // asked for the guide → the guide
   });
 });

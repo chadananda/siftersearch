@@ -53,9 +53,14 @@ export function titleScore(qk, dk) {
   const qw = words(qk), dw = words(dk);
   const found = qw.filter((w) => dw.some((d) => sameWord(w, d))).length;
   const extra = Math.max(0, dw.length - found);
-  // every word of the asked title in the document's (in any order), few words of its own
-  const worded = qw.length ? (found / qw.length) * (extra <= 1 ? 1 : extra <= 3 ? 0.9 : 0.75) : 0;
-  return Math.max(spelled, worded);
+  // every word of the asked title in the document's, few words of its own — and those AFTER the work's title, never in
+  // front ("An Homage to Memorials of the Faithful" is not Memorials of the Faithful); a ONE-word title must be the whole
+  // title ("Prayers" is not "Prayers and Meditations")
+  const leads = dw.length && qw.length ? !sameWord(dw[0], qw[0]) : false;
+  const worded = !qw.length || (qw.length === 1 && extra > 0) ? 0
+    : (found / qw.length) * (extra === 0 ? 1 : extra <= 1 ? 0.95 : extra <= 3 ? 0.88 : 0.75) * (leads && extra > 0 ? 0.8 : 1);
+  // (one word that IS the title written together — "Dawnbreakers" — is the same title: its squashed spelling is equal)
+  return Math.max(qw.length === 1 && extra > 0 && spelled < 0.95 ? Math.min(spelled, 0.79) : spelled, worded);
 }
 /** Do two author strings name the same person? (surnames, folded; "Mazandarani" = "Mírzá Asadu'lláh Fáḍil Mázandarání"). Pure. */
 export function authorMatch(a, b) {
@@ -78,6 +83,8 @@ export function buildIndex(rows) {
   return { docs, byGram, size: docs.length };
 }
 
+const DERIVATIVE = /\b(?:study (?:guide|questions|notes|outline|aid)|faculty notes|notes on|commentary|companion|introduction to|homage|perspective|a review|review of|summary of|outline of|reader'?s guide|self-quotation|index to|concordance|lesson plans?|workbook|teaching|reflections on|study of|selections from|extracts? from|excerpts? from)\b/i;
+
 /** A work's title (and author) → the library documents that ARE it by title, best first: [{ doc, score, author }]. */
 export function matchTitle(index, title, { author = null, alt = [], min = 0.8, limit = 12 } = {}) {
   const keys = [...new Set([title, ...alt, ...String(title || '').match(/\(([^)]{4,})\)/g)?.map((x) => x.slice(1, -1)) || []].map(mainKey).filter((k) => squash(k).length >= 3))];
@@ -90,6 +97,9 @@ export function matchTitle(index, title, { author = null, alt = [], min = 0.8, l
     for (const [i] of pool) {
       const d = index.docs[i];
       let s = Math.max(...d.keys.map((k) => titleScore(qk, k)));
+      // a DERIVATIVE work carries the title too — a study guide, notes, a commentary, a companion — and is not the work
+      // unless that is what was asked for ("Some Answered Questions: Study Guide", "Seven Valleys: Faculty notes")
+      if (DERIVATIVE.test(d.title) && !DERIVATIVE.test(title)) s -= 0.3;
       const am = author ? authorMatch(author, d.author) : null;
       if (am === true) s = Math.min(1, s + 0.05); else if (am === false) s -= 0.08;   // same title, another author: perhaps another work
       if (s >= min && s > (best.get(i)?.score ?? 0)) best.set(i, { doc: d, score: +s.toFixed(3), author: am });
