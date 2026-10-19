@@ -201,7 +201,11 @@ async function quotedOriginal(d, question) {
     const fa = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f'’‘`ʼ]/g, '').toLowerCase();
     const sameAuthor = (doc) => !!o.document?.author && fa(doc?.author).includes(fa(o.document.author).split(/[,;(]/)[0].trim()) && !/compilation/i.test(doc?.title || '');
     const ranked = await Promise.all((r.matches || []).filter((x) => x.passage && (x.overlap ?? 1) >= 0.8).map(async (x) => ({ x, own: sameAuthor(x.passage.document) ? 1 : 0, a: Number(await authorityOf({ ...x.passage.document })) || 0 })));
-    const en = (ranked.sort((a, b) => b.own - a.own || b.a - a.a || (b.x.overlap ?? 0) - (a.x.overlap ?? 0))[0]?.x || r.matches?.[0])?.passage;
+    // best of all: the ORIGINAL's own linked translations (10-19: dozens of compilations quote this passage and pushed
+    // Gleanings out of the phrase search; the Arabic paragraph is linked to Gleanings ¶606 directly)
+    const linked = await (d.translationsOf || (async (id) => ((await (await import('../passage-links.js')).resolveLinks([id], { quotedBy: false })).get(id)?.translations) || []))(o.id).catch(() => []);
+    const tr = await Promise.all((linked || []).filter((t) => t?.text).map(async (t) => ({ x: { passage: t, overlap: 1 }, own: sameAuthor(t.document) ? 1 : 0, a: Number(await authorityOf({ ...t.document })) || 0 })));
+    const en = ([...tr.sort((a, b) => b.own - a.own || b.a - a.a)][0]?.x || ranked.sort((a, b) => b.own - a.own || b.a - a.a || (b.x.overlap ?? 0) - (a.x.overlap ?? 0))[0]?.x || r.matches?.[0])?.passage;
     const lang = o.language === 'ar' ? 'Arabic' : o.language === 'fa' ? 'Persian' : (o.language || 'original');
     const enTitle = [en?.document?.title, en?.heading].filter(Boolean).join(', ');
     // the seeker NAMED a work ("Kitab'i-Aqdas") the passage is not in → one gentle sentence saying where it is

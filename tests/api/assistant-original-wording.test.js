@@ -79,6 +79,7 @@ describe('any quoted passage → its original (Chad 10-19: "fix Anis")', () => {
         plan: async () => ({ shape: 'fact' }),
         search: async () => { calls.search++; return { passages: [] }; },
         authorityOf: async (doc) => (/Compilation/.test(doc.title) ? 10 : 3),   // even a high-authority compilation loses to the author's own work
+        translationsOf: async () => [],   // no linked translation here: the phrase matches decide
         findOriginals: async (t) => { calls.looked.push(t); return { matches: [{ overlap: 1, passage: { id: 9, documentId: 919386, paragraphIndex: 586, text: 'Whoso reciteth…', document: { title: 'Divine Virtues and Spiritual Qualities: A Compilation', author: 'Bahá’u’lláh' } } }, { overlap: 1, passage: { id: 1, documentId: 20783, paragraphIndex: 606, text: 'Whoso reciteth, in the privacy of his chamber, the verses revealed by God…', heading: '– CXXXVI –', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } } }],
           originals: [{ id: 2, documentId: 924842, paragraphIndex: 1, language: 'ar', text: AR, document: { title: 'Muntakhabát-i-Áthár:136', author: 'Bahá’u’lláh' }, foundThrough: { id: 1 } }] }; },
         companion: async () => ({ append: '', plan: null, offer: false }),
@@ -105,5 +106,22 @@ describe('attribution and the authority lecture (10-19)', () => {
   it('the authority paragraph is dropped', async () => {
     const { dropAuthorityLecture } = await import('../../api/lib/assistant/lint.js');
     expect(dropAuthorityLecture('The word is bayt.\n\nAs for the authorities behind these sources: the Arabic is Scripture.\n\nWarmly,\nAnís')).toBe('The word is bayt.\n\nWarmly,\nAnís');
+  });
+});
+
+describe('the original\'s own linked translation wins (10-19)', () => {
+  it('Gleanings ¶606 is taken from the original\'s links even when the phrase search found only compilations', async () => {
+    const calls = { craft: null };
+    await anisRespond({
+      messages: [{ role: 'user', content: LAL_CHAMBER }], llm: { provider: 'test', model: 'test' },
+      deps: { plan: async () => ({ shape: 'fact' }), search: async () => ({ passages: [] }), authorityOf: async () => 5,
+        findOriginals: async () => ({ matches: [{ overlap: 1, passage: { id: 9, documentId: 919386, text: 'x', document: { title: 'Divine Virtues: A Compilation', author: 'Various' } } }],
+          originals: [{ id: 2, documentId: 924842, language: 'ar', text: 'من بيته وحدة', document: { title: 'Muntakhabát-i-Áthár:136', author: 'Bahá’u’lláh' }, foundThrough: { id: 9 } }] }),
+        translationsOf: async () => [{ id: 7, documentId: 20783, paragraphIndex: 606, heading: '– CXXXVI –', text: 'Whoso reciteth, in the privacy of his chamber…', document: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } }],
+        companion: async () => ({ append: '', plan: null, offer: false }), craft: async (args) => { calls.craft = args; return 'x'; } },
+    });
+    const ev = JSON.stringify(calls.craft);
+    expect(ev).toContain('Gleanings from the Writings');
+    expect(ev).not.toContain('Divine Virtues: A Compilation');
   });
 });
