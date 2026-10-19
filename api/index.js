@@ -21,8 +21,9 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { startApi } from './lib/api-runtime.js';
-import { ALL_ROUTES } from './routes/sets/all.js';
+import { SEARCH_ROUTES } from './routes/sets/search.js';
 
-// THE SEARCH API (siftersearch-api) — every route until the gateway sends Anís and ops traffic to their own services
-// (docs/architecture/continuous-deploy.md); then SEARCH_ROUTES only.
-await startApi({ name: 'siftersearch-api', routes: ALL_ROUTES, role: 'primary' });
+// THE SEARCH API (siftersearch-api, 7845 behind the gateway): search, library, documents, the public and admin APIs. Anís
+// and ops traffic goes to their own services (api/gateway.js), so an Anís update never reloads search
+// (docs/architecture/continuous-deploy.md). Tests use api/server.js — every route.
+await startApi({ name: 'siftersearch-api', routes: SEARCH_ROUTES, role: 'primary' });

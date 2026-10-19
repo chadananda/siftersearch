@@ -52,3 +52,12 @@ describe('brief markers', () => {
     expect(dropBriefMarkers('Bayt means house [own]. It is rendered "chamber" (P1, P2) and so on [W1].')).toBe('Bayt means house. It is rendered "chamber" and so on.');
   });
 });
+
+describe('the gate never deflects a real question (10-19 battery)', () => {
+  it('"race unity" and a pasted excerpt have substance; "hi?" does not', async () => {
+    const { hasSubstance } = await import('../../api/lib/assistant/turn.js');
+    expect(hasSubstance('race unity')).toBe(true);
+    expect(hasSubstance('Find this. excerpt from a pilgrim note: "But this working day of eight hours is only the beginning"')).toBe(true);
+    expect(hasSubstance('hi?')).toBe(false);
+  });
+});

@@ -28,6 +28,9 @@ async function defaultDeps() {
  * @param {string} [a.conversationId] a thread the client asks to resume (honoured only if owned)
  * @param {string} [a.clientKey]    strike key (participant id, else IP)
  */
+/** A message worth researching: two real words, or a passage of 40+ characters. Pure. */
+export const hasSubstance = (text) => (String(text || '').match(/\p{L}{3,}/gu) || []).length >= 2 || String(text || '').trim().length >= 40;
+
 export async function anisTurn({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
   conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, llm = undefined, deps }) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
@@ -59,6 +62,10 @@ export async function anisTurn({ messages, channel: channelName = 'widget-chat',
   const [ex, tri] = await Promise.all([d.open(logArgs).catch(() => null), d.triage(messages).catch(() => null)]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
+  // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
+  // passage ("Find this. excerpt from a pilgrim note: …") goes to research (10-19 battery: both got a canned "say more" /
+  // "part of your message went missing" instead of an answer — scored 1 against Immerse's 8)
+  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && hasSubstance(text)) Object.assign(route, { action: 'research', overridden: route.kind });
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms };
   const finish = async (reply, status, extra = {}) => {
