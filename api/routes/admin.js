@@ -2497,16 +2497,27 @@ Collection: ${paragraph.collection || 'Unknown'}
     preHandler: requireInternal,
     schema: { body: { type: 'object', properties: {
       site: { type: 'string', default: 'oceanlibrary.com' }, dryRun: { type: 'boolean', default: true }, onlyMissing: { type: 'boolean', default: true },
+      files: { type: 'array', items: { type: 'string' }, maxItems: 20000 },
     } } },
   }, async (request) => {
-    const { site = 'oceanlibrary.com', dryRun = true, onlyMissing = true } = request.body || {};
+    const { site = 'oceanlibrary.com', dryRun = true, onlyMissing = true, files = null } = request.body || {};
+    // files: ONLY these (paths relative to the site folder) — re-ingest exactly what a fix touched (10-19: 1,397
+    // bahai-library documents held whole-book "paragraphs" until the adapter split by structure)
+    const list = Array.isArray(files) ? files.map(String).filter((f) => f && !f.includes('..')).slice(0, 20000) : null;
     if (dryRun) {
       const { ingestSite } = await import('../services/sites-ingester.js');
-      return ingestSite(site, { dryRun: true, onlyMissing, force: true });
+      return ingestSite(site, { dryRun: true, onlyMissing: list ? false : onlyMissing, force: true, ...(list ? { files: list } : {}) });
     }
     const existing = backgroundTasks.get('sites-ingest');
     if (existing && existing.status === 'running') throw ApiError.conflict('A sites-ingest run is already in progress');
-    const args = ['--site', site, '--force', ...(onlyMissing ? ['--only-missing'] : [])];
+    let listArgs = [];
+    if (list?.length) {
+      const { writeFileSync } = await import('fs');
+      const f = `/tmp/sites-ingest-${Date.now()}.txt`;
+      writeFileSync(f, list.join('\n'));
+      listArgs = ['--files', f];
+    }
+    const args = ['--site', site, '--force', ...(listArgs.length ? listArgs : onlyMissing ? ['--only-missing'] : [])];
     const task = runBackgroundTask('sites-ingest', 'scripts/sites-ingest.mjs', args);
     logger.info({ site, onlyMissing }, 'sites-ingest started via API');
     return { success: true, taskId: 'sites-ingest', site, onlyMissing, status: task.status };
