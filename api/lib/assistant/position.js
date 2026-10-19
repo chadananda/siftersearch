@@ -19,11 +19,25 @@ export function looksLikePositionQuestion(text) {
 }
 
 const BRIEF = (q) => `A reader asks the Bahá'í library assistant: "${q}"
-List the 4–6 THEMES this question covers, and for each: 2–3 short search phrasings (the words the Bahá'í writings themselves use), and the authoritative works where it is addressed (writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi's letters and books, the Universal House of Justice). Name works only if you are confident; the library will be searched, you do not answer.
-JSON only: {"themes":[{"theme":"…","queries":["…"],"works":["…"]}]}`;
+List the 4–6 THEMES this question covers. For each, ONE line in exactly this form:
+THEME: <theme> | SEARCH: <phrasing 1>; <phrasing 2> | WORKS: <work 1>; <work 2>
+SEARCH = short phrasings in the words the Bahá'í writings themselves use. WORKS = authoritative works where it is addressed
+(writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi's letters and books, the Universal House of Justice) — only
+ones you are sure of; leave empty if unsure. The library will be searched; you do not answer. Lines only, nothing else.`;
+/** The planner's lines → themes. (JSON broke on tower 10-19 — a quote inside a work's title.) Pure. */
+export function parseBrief(text) {
+  return String(text || '').split('\n').map((l) => l.trim()).filter((l) => /^THEME:/i.test(l)).map((l) => {
+    const part = (k) => (l.match(new RegExp(`${k}:\\s*([^|]*)`, 'i'))?.[1] || '').trim();
+    const list = (k) => part(k).split(';').map((x) => x.trim()).filter(Boolean);
+    return { theme: part('THEME'), queries: list('SEARCH'), works: list('WORKS') };
+  }).filter((t) => t.theme);
+}
 
-// (no \b at the end: "Bahá" ends in an accented letter, which \b does not count as a word character)
 const AUTHORITATIVE = /(bah[aá]['’]?u['’]?ll[aá]h|\bthe b[aá]b|abdu['’]?l-bah[aá]|shoghi effendi|universal house of justice)/i;
+/** DOCTRINE (Chad 10-19: "with doctrine, authority is everything … separate actual doctrine [from] human fad opinions"): the
+ *  writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi and the Universal House of Justice — never a pilgrim's note
+ *  or a memoir recording them, never a study about them. Pure. */
+export const isDoctrine = (p) => AUTHORITATIVE.test(String(p.author || '')) && !/pilgrim|memoir|reminiscen/i.test(`${p.collection || ''} ${p.title || ''}`);
 const GIANT = 6000;   // a "paragraph" this long is a whole unsegmented book (pdf imports) — it matches everything
 
 /** Rank passages: authoritative author first, then the library's authority, then search order; giants out. Pure but for authorityOf. */
@@ -34,7 +48,7 @@ export async function rankByAuthority(passages, authorityOf = async () => 0) {
     const key = p.id ?? `${p.document_id}:${p.paragraph_index}`;
     if (seen.has(key) || String(p.text || '').length > GIANT) continue;
     seen.add(key);
-    const core = AUTHORITATIVE.test(String(p.author || '')) && !/pilgrim/i.test(String(p.collection || '')) ? 1 : 0;
+    const core = isDoctrine(p) ? 1 : 0;
     scored.push({ p, core, a: Number(await authorityOf(p)) || 0, i });
   }
   return scored.sort((x, y) => y.core - x.core || y.a - x.a || x.i - y.i).map((s) => s.p);
@@ -47,8 +61,7 @@ export async function positionResearch({ question, create, search, authorityOf, 
   let themes = [];
   try {
     const r = await create('anis-research-brief', { max_tokens: 1500, temperature: 0, messages: [{ role: 'user', content: BRIEF(question) }] });
-    const m = String(r?.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/);
-    themes = (m ? JSON.parse(m[0]).themes : []) || [];
+    themes = parseBrief(r?.choices?.[0]?.message?.content);
   } catch (err) { log.warn({ err: String(err.message).slice(0, 200) }, 'position: planning failed'); themes = []; }
   themes = themes.filter((t) => t?.theme).slice(0, 6);
   if (!themes.length) { log.warn('position: no themes'); return null; }
@@ -57,7 +70,11 @@ export async function positionResearch({ question, create, search, authorityOf, 
   const perThemeHits = await Promise.all(themes.map(async (t) => {
     const qs = [...(t.queries || []).slice(0, 2), ...(t.works || []).slice(0, 1).map((w) => `${w} ${t.theme}`)];   // ≤ 3 searches a theme
     const hits = (await Promise.all(qs.map(searchOne))).flat();
-    return { theme: t.theme, ranked: (await rankByAuthority(hits, authorityOf)).slice(0, perTheme) };
+    const ranked = await rankByAuthority(hits, authorityOf);
+    // the theme's DOCTRINE; a non-authoritative view only where it can be set against doctrine (labelled), never a pilgrim note
+    const doctrine = ranked.filter(isDoctrine).slice(0, perTheme).map((p) => ({ ...p, standing: 'doctrine' }));
+    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`)).slice(0, 1).map((p) => ({ ...p, standing: 'opinion' })) : [];
+    return { theme: t.theme, ranked: [...doctrine, ...opinion] };
   }));
   const out = [], ids = new Set();
   for (const t of perThemeHits) for (const p of t.ranked) {
@@ -66,7 +83,8 @@ export async function positionResearch({ question, create, search, authorityOf, 
     ids.add(k); out.push({ ...p, theme: t.theme });
   }
   log.info({ themes: perThemeHits.map((t) => `${t.theme}:${t.ranked.length}`), passages: out.length }, 'position: researched');
+  if (!out.some((p) => p.standing === 'doctrine')) return null;   // no doctrine found: not a position answer
   return { passages: out, themes: perThemeHits.map((t) => ({ theme: t.theme, found: t.ranked.length })) };
 }
 
-export const POSITION_HOW = 'The seeker asks for the Bahá\'í position on a subject. Answer THEME BY THEME (one short heading or bold lead each, the themes of the evidence). Under each, say plainly what the authoritative texts affirm and what they warn against, quoting them — Bahá\'u\'lláh, the Báb, \'Abdu\'l-Bahá, Shoghi Effendi, the Universal House of Justice — and naming who and where; use secondary works or pilgrims\' notes only to illustrate, and say that they are not authoritative. Give substance, not hedging: no "it does not fit neatly into any theory", no generic neutrality line, no closing filler — unless a quoted text says so. Never say the library has nothing on a theme when passages on it are given; if a theme truly has no passage, leave it out.';
+export const POSITION_HOW = 'The seeker asks for the Bahá\'í position on a subject. Separate DOCTRINE from opinion. Answer THEME BY THEME (a bold lead for each), and under each say plainly what the authoritative texts affirm and what they warn against, QUOTING them — Bahá\'u\'lláh, the Báb, \'Abdu\'l-Bahá, Shoghi Effendi, the Universal House of Justice — naming who and where. Only passages marked [doctrine] carry the answer. A passage marked [opinion] is a writer\'s view, never doctrine: mention it only where it helps, in a closing line or two set against what the texts say, and call it a view. Give substance, not hedging: no "it does not fit neatly", no generic neutrality, no talk about kinds of authority, no remarks about your own synthesis, no closing filler. Never say the library has nothing on a theme when passages on it are given.';

@@ -400,7 +400,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
-    collection: p.collection || null, source_lang: p.language || null, via: 'planned',
+    collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
   }));
   // An original-language question answered by the ordinary search: each hit that has an aligned original carries it too
   if (wantsOriginal && !sourced && !original && !study && res?.passages?.length) {

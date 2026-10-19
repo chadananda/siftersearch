@@ -27,7 +27,7 @@ describe('position questions', () => {
     const searched = [];
     const r = await positionResearch({
       question: CHAD,
-      create: async () => ({ choices: [{ message: { content: '{"themes":[{"theme":"private property","queries":["private property"],"works":["God Passes By"]},{"theme":"socialism","queries":["socialism"],"works":[]}]}' } }] }),
+      create: async () => ({ choices: [{ message: { content: 'THEME: private property | SEARCH: private property | WORKS: God Passes By\nTHEME: socialism | SEARCH: socialism | WORKS:' } }] }),
       search: async ({ query, plan }) => { searched.push([query, plan.defaults.religion]); return { passages: query.includes('property')
         ? [{ id: 10, author: 'Shoghi Effendi', title: 'God Passes By', text: 'the institution of private property' }, { id: 11, author: 'Jane Scholar', text: 'secondary' }]
         : [{ id: 12, author: '‘Abdu’l-Bahá', title: 'Promulgation', text: 'socialism' }] }; },
@@ -35,7 +35,19 @@ describe('position questions', () => {
     });
     expect(searched.every(([, religion]) => religion === "Baha'i")).toBe(true);
     expect(r.themes.map((t) => t.theme)).toEqual(['private property', 'socialism']);
-    expect(r.passages[0]).toMatchObject({ id: 10, theme: 'private property' });
+    expect(r.passages[0]).toMatchObject({ id: 10, theme: 'private property', standing: 'doctrine' });
+    expect(r.passages.find((p) => p.id === 11)).toMatchObject({ standing: 'opinion' });   // a writer's view, labelled
     expect(r.passages.map((p) => p.id)).toContain(12);
+  });
+});
+
+describe('doctrine vs opinion (Chad 10-19)', () => {
+  it('a pilgrim note recording Shoghi Effendi is not doctrine; his own letter is', async () => {
+    const { isDoctrine, parseBrief } = await import('../../api/lib/assistant/position.js');
+    expect(isDoctrine({ author: 'Shoghi Effendi', collection: 'Shoghi Effendi', title: 'The Promised Day is Come' })).toBe(true);
+    expect(isDoctrine({ author: 'Shoghi Effendi', collection: 'Pilgrim Notes', title: 'Plans for the Ten Year Plan' })).toBe(false);
+    expect(isDoctrine({ author: 'Udo Schaefer', collection: 'Papers' })).toBe(false);
+    expect(parseBrief('THEME: property | SEARCH: private property; ownership | WORKS: God Passes By; "The Promised Day is Come"')[0])
+      .toEqual({ theme: 'property', queries: ['private property', 'ownership'], works: ['God Passes By', '"The Promised Day is Come"'] });
   });
 });
