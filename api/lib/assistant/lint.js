@@ -34,6 +34,22 @@ export function unmachine(text) {
 // prompt asks; this guarantees: such a paragraph is removed whole. Pure.
 // (10-19: "As for the authorities behind these sources: the Arabic text itself is revealed Scripture …" slipped past)
 const AUTHORITY_LECTURE = /\b(kinds of authority|carr(?:y|ies) the (?:primary )?weight of doctrine|(?:revelation|revealed scripture)[^.\n]{0,120}authori[sz]ed interpretation|separate (?:settled )?doctrine from (?:secondary )?(?:commentary|opinion)[^.\n]{0,60}\. (?:in the|revelation)|authority layers?|layers? of authority|to be (entirely |completely |fully )?clear about (the )?authorit|as (for|to) the authorit(y|ies)|authorit(y|ies) (behind|of) (these|the|this|our) (sources?|texts?|passages?)|(?:is|are) distinct from (?:the )?(?:authori[sz]ed interpretations?|primary texts?|scripture)|distinct from the primary texts|valuable historical windows?)/i;
+// THE QUIBBLE (Chad 10-19: Lal asked whether "fi baytuhu" could stand for "chamber" and was told his phrase wanted a
+// genitive — "What a useless answer"): a sentence correcting the reader's case endings is dropped unless they asked about
+// grammar; in a LANGUAGE answer, the disclaimer that "the texts I can search do not settle…" goes too — the answer is
+// the language itself. Pure.
+const QUIBBLE = /\b(genitive|nominative|accusative|case ending|grammatical(?:ly)? (?:rule|irregular\w*)|would (?:normally|typically|properly) be|should (?:properly )?be written|requires? (?:a|the) (?:genitive|case))\b/i;
+const ASKED_GRAMMAR = /\b(grammar|grammatical|genitive|nominative|accusative|case ending|i\'?rab|iʿrāb|declension)\b/i;
+const NOT_SETTLED = /\b(?:texts|sources|library) I can search\b[^.\n]*\b(?:do not|don't|cannot|can't|does not)\b|\bcannot lean on\b/i;
+export function dropQuibbles(text, { question = '', format = null } = {}) {
+  const asked = ASKED_GRAMMAR.test(String(question));
+  return String(text || '').split(/\n{2,}/).map((para) => {
+    const sents = para.match(/[^.!?]+(?:[.!?]+["”’)]*|$)\s*/g) || [para];
+    const kept = sents.filter((x) => !(!asked && QUIBBLE.test(x)) && !(format === 'language' && NOT_SETTLED.test(x)));
+    return kept.join('').trim();
+  }).filter(Boolean).join('\n\n');
+}
+
 export function dropAuthorityLecture(text) {
   const paras = String(text || '').split(/\n{2,}/);
   const kept = paras.filter((p) => !AUTHORITY_LECTURE.test(p));

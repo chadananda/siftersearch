@@ -16,3 +16,13 @@ describe('language questions', () => {
     expect(dropAuthorityLecture(t)).toBe('Bayt means house; ghurfa is a room.\n\nWarmly,\nAnís');
   });
 });
+
+describe('the quibble (10-19)', () => {
+  it("a correction of the reader's case ending is dropped unless they asked about grammar; the language answer keeps its substance", async () => {
+    const { dropQuibbles } = await import('../../api/lib/assistant/lint.js');
+    const reply = 'The noun bayt means house. So literally, fí baytuhu puts a nominative ending where a genitive is expected—it would normally be fí baytihi.\n\nA room is a ghurfa; a private chamber is a ḥujra.\n\nI should note that the texts I can search here do not settle the grammar of this phrase.';
+    const q = 'Would you agree if "Fi baytuhu" be used for "Chamber" instead of "Bayt"?';
+    expect(dropQuibbles(reply, { question: q, format: 'language' })).toBe('The noun bayt means house.\n\nA room is a ghurfa; a private chamber is a ḥujra.');
+    expect(dropQuibbles(reply, { question: 'Is baytuhu genitive here?', format: 'language' })).toContain('nominative');
+  });
+});

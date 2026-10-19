@@ -10,7 +10,7 @@ import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, place
 import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
-import { unmachine } from './lint.js';
+import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 
@@ -464,7 +464,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
     ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
-  const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed));
+  const cleanLinks = (t) => dropQuibbles(unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed)), { question, format: format?.id });
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
     onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
