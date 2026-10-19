@@ -17,6 +17,7 @@ import { ApiError } from '../lib/errors.js';
 import { findDocuments, listDocs } from '../lib/docs-repo.js';
 import { findSections, sectionsOfDoc } from '../lib/repos/sections-repo.js';
 import { logger } from '../lib/logger.js';
+import { stripMarkers } from '../lib/markers.js';
 import { nanoid } from 'nanoid';
 
 // Download token store (in production, use Redis or DB)
@@ -292,10 +293,12 @@ export default async function documentsRoutes(fastify) {
     const segmentCols = options.includeEmbeddings
       ? 'id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language, embedding'
       : 'id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language';
-    const segments = await queryAll(
+    const segments = (await queryAll(
       `SELECT ${segmentCols} FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index`,
       [documentId]
-    );
+    // the internal sentence markers (⁅s1⁆…⁅/s1⁆) are an index, not text — a download leaked them (10-19, found by the Dewey
+    // benchmark: Arabic, Persian and French documents downloaded with every sentence wrapped)
+    )).map((s) => ({ ...s, text: stripMarkers(s.text || '') }));
 
     // Format the response based on requested format
     let content;
