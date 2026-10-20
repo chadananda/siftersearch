@@ -16,24 +16,33 @@ Dewey is served like a public-domain text.
   'model:0.82', 'chad') + `rights_checked_at` — the ONE source of truth, per document.
 - A `servingPolicy(rights)` table in one module decides every serving path (full text / reading guide / quote length / public
   API / download) — no path reads a boolean.
-- `encumbered` becomes derived (rights = copyrighted) for the transition, then retired (ratchet: no new reads).
+- `encumbered` becomes derived (rights = private) for the transition, then retired (ratchet: no new reads).
 - Chad 10-20: "it's set overly broad" — collection/religion-level defaults restrict whole shelves. The new class is decided PER
   DOCUMENT from evidence; nothing is restricted by where it sits.
 
-## Classes
-| class | examples | restricted (full text never served) |
+## Classes — Chad's rule (10-20)
+"included in non encumbered is all the published Baha'i writings and everything from institutions. just not privately published
+books that are not found online"
+
+| class | what | restricted |
 |---|---|---|
-| `public-domain` | scripture translations in the public domain, pre-1930 publications, Phelps' renderings (PD, Chad 09-29) | no |
-| `shareable` | Bahá'í World Centre texts published for free distribution (bahai.org library), UHJ / BIC / ITC / OSED statements, author-licensed papers | no |
-| `copyrighted` | published books by living or recent authors (Saiedi, Redman, Stockman, Dunbar, Taherzadeh …), publisher editions | **yes** |
-| `unknown` | no publisher/date evidence | **no** — restricted only on evidence (Chad: the old flag was overly broad); listed for review |
+| `writings` | all published Bahá'í Writings — Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi — and compilations of them | no |
+| `institutional` | everything from Bahá'í institutions: UHJ (messages, letters, Research Dept compilations), BIC, ITC, OSED, NSAs, BWC publications | no |
+| `online` | any other work whose text is freely available online (bahai-library.com, oceanlibrary.com, author sites, papers, journals) | no |
+| `private` | **privately published books NOT found online** (individual authors, publisher editions held only as files — e.g. the Archive "Private" folder) | **yes** |
+
+Everything is shareable in full unless it is a privately published book whose text is not online. Other traditions' scripture
+and public-domain texts fall under `online`/public domain → not restricted.
 
 ## Evidence (cheap first)
-1. Explicit: frontmatter `rights:` / `license:`; collection meta.yaml.
-2. Source: bahai.org/library, bic.org, uhj.org → shareable; oceanlibrary.com → per its own rights field; Phelps PI → public-domain.
-3. Dates: publication year + author death year (author_meta) → public domain where life+70 / pre-1930 rules clearly apply.
-4. Text: copyright notice / ISBN / "All rights reserved" in the front matter of the file → copyrighted.
-5. Model (Haiku, one call, title + first pages + the above): only when 1–4 don't decide; low confidence → `unknown` → review.
+1. Writer: paragraph/book author is a Central Figure or Shoghi Effendi → `writings`; an institution (UHJ, BIC, ITC, OSED, NSA,
+   Research Dept, BWC) → `institutional`.
+2. Source: a document scraped from or linked to a public site (source_url / source_site: bahai-library.com, oceanlibrary.com,
+   bahai.org …) → `online`.
+3. Otherwise (a book file with no public source): look it up — is the full text online? (search the title on bahai-library /
+   OceanLibrary / the web; Dewey's scout already does this) → found: `online`; not found and it is a published book (ISBN,
+   publisher, © notice): `private`.
+4. Undecided → `online` provisionally (not restricted — the old flag was overly broad) and listed for review.
 
 ## Steps
 0. [ ] Measure the current breadth: an ops report — docs encumbered by source (frontmatter vs collection vs religion
