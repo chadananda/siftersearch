@@ -10,7 +10,9 @@ import { execSync } from 'child_process';
 dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
-const MODE = process.argv.includes('--daily') ? 'daily' : 'check';
+// --report: the same checks, printed as JSON — no email, no state written (Chad 10-19: "check for these errors
+// periodically … seems stupid for the system to email me and then I tell you"): the agent's own watch reads this
+const MODE = process.argv.includes('--daily') ? 'daily' : process.argv.includes('--report') ? 'report' : 'check';
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
 const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
 const STATE_FILE = 'logs/system-checks-state.json';
@@ -281,6 +283,10 @@ const lines = [
   `  spend 24h: ${spendRows.map((r) => `${r.provider} $${r.usd} (${r.calls} calls)`).join(' · ') || 'none'}`,
 ].filter(Boolean);
 const text = lines.join('\n');
+if (MODE === 'report') {
+  console.log(JSON.stringify({ at: new Date().toISOString(), criticals, warns, checks }));
+  process.exit(0);
+}
 console.log(text);
 
 // Persist state for delta checks.
