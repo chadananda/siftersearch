@@ -12,6 +12,16 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
+// people search runs on a worker thread in production (claim-search.js); here the same corpus → rank path runs in-process
+// over the fake db, so these behavioural assertions still see real claims
+vi.mock('../../api/lib/claim-search.js', () => ({
+  claimRows: async (terms, foldedQuery) => {
+    const m = await import('../../api/lib/entity-api.js');
+    return m.rankClaims((await m.claimCorpusRows()).map((r) => ({ ...r, f: m.foldText(r.statement) })), terms, foldedQuery);
+  },
+  warmClaimSearch: () => {},
+}));
+
 // ── Fixtures modelled on the real rows that caused each failure ───────────────────────────────────────────
 const BADASHT = { id: 1264029, cn: 'Badasht Conference', et: 'event', importance: 0, lav: null };
 const LETTERS = { id: 1247655, cn: 'the Letters of the Living (Ḥurúf-i-Ḥayy)', et: 'group', importance: 0, lav: null };
@@ -73,18 +83,14 @@ describe('event node — participants, precision and cost', () => {
     expect(db.queries.filter((s) => /FROM entity_claims/i.test(s)).length).toBeLessThanOrEqual(2);
   });
 
-  it('folds each row once, not once per term — the expression may not repeat per term', async () => {
+  it('the claim corpus is read whole and folded in JS — no fold chain and no per-query binds in SQL', async () => {
     const db = fakeDb({ entity: BADASHT });
     vi.doMock('../../api/lib/db.js', () => db);
     vi.resetModules();
     const { entityDossier } = await import('../../api/lib/entity-api.js?fold');
     await entityDossier(1264029);
-    const search = db.queries.find((s) => /FROM entity_claims/i.test(s) && /LIKE/.test(s));
-    if (search) {
-      // The fold chain must appear ONCE (inside the CTE), not inlined into every LIKE and rank term.
-      const folds = (search.match(/REPLACE\(LOWER|LOWER\(REPLACE/g) || []).length;
-      expect(folds).toBeLessThanOrEqual(1);
-      expect(search).toMatch(/MATERIALIZED/);
+    for (const sql of db.queries.filter((q) => /FROM entity_claims ec JOIN/i.test(q))) {
+      expect(sql).not.toMatch(/REPLACE\(|\?/);
     }
   });
 });
@@ -136,7 +142,7 @@ describe('SQL parameter arity', () => {
     vi.resetModules();
     const { entityDossier } = await import('../../api/lib/entity-api.js?arity');
     await entityDossier(1264029);
-    const claimCalls = db.calls.filter((c) => /FROM entity_claims|FROM c\b/i.test(c.sql) && /LIKE/.test(c.sql));
+    const claimCalls = db.calls.filter((c) => /FROM entity_claims/i.test(c.sql));
     expect(claimCalls.length).toBeGreaterThan(0);
     for (const { sql, params } of claimCalls) {
       const placeholders = (sql.match(/\?/g) || []).length;

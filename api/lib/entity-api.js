@@ -5,7 +5,8 @@
 // are excluded everywhere.
 import { queryOne, queryAll } from './db.js';
 import { skeletonKeys } from './translit-key.js';
-import { LIVE_SQL, isLiveRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
+import { LIVE_SQL, isLiveRow } from './entity-live.js';
+import { claimRows } from './claim-search.js';   // ONE definition of live/merged (see entity-live.js header)
 
 const parse = (s) => { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
 const abbrOf = (t) => t === 'The Dawn-Breakers' ? 'DB' : t === 'God Passes By' ? 'GPB' : (String(t || '').split(/\s+/).filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 4) || null);
@@ -236,16 +237,28 @@ export function scoreStatement(statement, terms, foldedQuery = null) {
   return score;
 }
 
-// The SQL-side fold, so the OR pre-filter selects the same rows the JS scorer would. Generated from FOLD so
-// the two can never drift apart.
-const SQL_FOLD = (col) => {
-  const pairs = [...new Set(Object.keys(FOLD).flatMap((c) => [c, c.toUpperCase()]))]
-    .filter((c) => FOLD[c] || FOLD[c.toLowerCase()]);
-  let e = col;
-  for (const c of pairs) e = `REPLACE(${e}, '${c}', '${FOLD[c] ?? FOLD[c.toLowerCase()]}')`;
-  for (const c of ['ʼ', 'ʻ', '‘', '’', "''", '`']) e = `REPLACE(${e}, '${c}', '')`;
-  return `LOWER(${e})`;
-};
+/** Every supported claim about a live person, for the claim-search worker (claim-search-worker.js) — read once there,
+ *  folded in JS, never on a serving thread. */
+export const claimCorpusRows = () => queryAll(
+  `SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation,
+          ec.doc_id, ec.para_id, ec.time_value tv, ec.time_precision tp, substr(ec.proof_verbatim, 1, 400) proof
+     FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
+    WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
+      AND ${LIVE_SQL('ge.')}`);
+
+/** The rows a query matches, best first — any term in the folded statement; the whole phrase counts 10, each term 1
+ *  (the ranking the SQL version used). rows carry `f` (folded statement). Pure. */
+export function rankClaims(rows, terms, foldedQuery, limit = 2000) {
+  const out = [];
+  for (const r of rows) {
+    let rank = 0;
+    for (const t of terms) if (r.f.includes(t)) rank++;
+    if (!rank) continue;
+    if (foldedQuery && r.f.includes(foldedQuery)) rank += 10;
+    out.push({ r, rank });
+  }
+  return out.sort((a, b) => b.rank - a.rank).slice(0, limit).map(({ r, rank }) => { const { f, ...rest } = r; return { ...rest, rank }; });
+}
 
 // entity_search(query) — candidate people whose CITED claims match the query tokens. Returns each with the
 // matching cited claims as evidence — the general search / chat can then read or verify them.
@@ -253,37 +266,12 @@ export async function entitySearch(q, { limit = 12, rows: preRows = null } = {})
   const terms = searchTerms(q);
   if (!terms.length) return { query: q, results: [] };
   const foldedQuery = foldText(q);
-  // FOLD ONCE PER ROW, NOT ONCE PER TERM PER ROW.
-  //
-  // The first version inlined SQL_FOLD (a ~40-deep REPLACE chain) into every term test in WHERE, every term
-  // test in the rank, and the phrase test — five evaluations per row for a two-word name, NINE for
-  // "the Letters of the Living (Ḥurúf-i-Ḥayy)". Measured live: entities/search 9.8s, the Badasht node 20.8s,
-  // the Letters node 31.2s against a 20s agent-client timeout. Latency scaled with the term count, which is
-  // the fingerprint of exactly this mistake.
-  //
-  // A MATERIALIZED CTE folds each candidate row once and the rest of the query reads that column. SQLite
-  // flattens a plain subquery (re-inlining the expression and changing nothing), so the hint is load-bearing.
-  const rank = `(10 * (f LIKE ?) + ${terms.map(() => `(f LIKE ?)`).join(' + ')})`;
-  // ONE VALUE PER PLACEHOLDER, COUNTED: rank binds 1 (phrase) + n (terms), the WHERE binds n more. Carrying
-  // the old two-copy params array into the new query passed 1+3n values for 1+2n placeholders and every
-  // entities/search 500'd in production — better-sqlite3 rejects the arity, it does not silently ignore the
-  // extras. The unit tests missed it because a stubbed db never binds anything; see the arity assertion in
-  // tests/api/entity-graph-contract.test.js.
-  const rankParams = [`%${foldedQuery}%`, ...terms.map((t) => `%${t}%`)];
-  const whereParams = terms.map((t) => `%${t}%`);
-  const rows = preRows || await queryAll(
-    `WITH c AS MATERIALIZED (
-        SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation,
-               ec.doc_id, ec.para_id, ec.time_value tv, ec.time_precision tp, substr(ec.proof_verbatim, 1, 400) proof, ${SQL_FOLD('ec.statement')} f
-          FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
-         WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
-           AND ${LIVE_SQL('ge.')}
-     )
-     SELECT id, name, imp, statement, relation, doc_id, para_id, tv, tp, proof, ${rank} rank
-       FROM c
-      WHERE ${terms.map(() => `f LIKE ?`).join(' OR ')}
-      ORDER BY rank DESC LIMIT 2000`,
-    [...rankParams, ...whereParams]);
+  // History: a SQL REPLACE-chain fold per term per row took 9.8–31 s (08-28); a MATERIALIZED CTE folded once per row but
+  // still scanned and folded the whole table on every call, on the serving thread.
+  // OFF THE SERVING THREAD (10-19: this scan folded every supported person claim on each call — 10–13 s on the api and
+  // anis main threads, 121 times in one hour, freezing every request they served). The claims live folded in memory in a
+  // worker thread (claim-search.js); a query is a scan there of milliseconds. preRows: tests.
+  const rows = preRows || await claimRows(terms, foldedQuery);
   const dmap = await resolveDocs(rows.map((r) => r.doc_id));
   const byEnt = new Map();
   for (const r of rows) {
