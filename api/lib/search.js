@@ -4,7 +4,7 @@
  * Hybrid search combining keyword and vector (semantic) search.
  */
 
-import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
+import { foldVerbatim, isVerbatimQuery, isQuestion } from './search/verbatim.js';
 import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
 import { logger } from './logger.js';
@@ -1598,9 +1598,10 @@ export async function multiIndexSearch(query, options = {}) {
     finalEntries = sortedDeduped.slice(0, limit);
   }
   // A passage containing the query verbatim leads, ahead of diversity (known-item test 10-16: exact matches were demoted).
-  if (isVerbatimQuery(query)) {
+  // …but a QUESTION is not a quotation, and a low-authority copy never leads on the strength of the words alone (10-20)
+  if (isVerbatimQuery(query) && !isQuestion(query)) {
     const q = foldVerbatim(query);
-    const exact = sortedDeduped.filter((e) => foldVerbatim(e.paragraph?.text).includes(q));
+    const exact = sortedDeduped.filter((e) => (e._factor ?? 1) >= 1 && foldVerbatim(e.paragraph?.text).includes(q));
     if (exact.length) {
       const ids = new Set(exact.map((e) => e.paragraph?.id));
       finalEntries = [...exact, ...finalEntries.filter((e) => !ids.has(e.paragraph?.id))].slice(0, limit);

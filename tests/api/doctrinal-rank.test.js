@@ -24,3 +24,14 @@ describe('doctrinal factors', () => {
     expect(numberFactor(10)).toBeGreaterThan(numberFactor(5));
   });
 });
+
+describe('a question is not a quotation (10-20: a PDF restating the question led the answer)', () => {
+  it('verbatimLead leaves a question alone, still leads a quotation', async () => {
+    const { verbatimLead, isQuestion } = await import('../../api/lib/search/verbatim.js');
+    const entries = [{ t: "Prayer is conversation with God — 'Abdu'l-Bahá" }, { t: 'People often ask: what is the purpose of prayer in daily life' }];
+    expect(isQuestion('what is the purpose of prayer')).toBe(true);
+    expect(verbatimLead(entries, 'what is the purpose of prayer', (e) => e.t)[0]).toBe(entries[0]);
+    const q = [{ t: 'other text here and there' }, { t: 'The earth is but one country, and mankind its citizens' }];
+    expect(verbatimLead(q, 'The earth is but one country, and mankind its citizens', (e) => e.t)[0]).toBe(q[1]);
+  });
+});
