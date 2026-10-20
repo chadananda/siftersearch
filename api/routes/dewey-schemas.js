@@ -32,6 +32,7 @@ const candidate = open({
 
 const holdings = open({
   identified,
+  memo: open({ sha256: { type: 'string' }, cached: { type: 'boolean' }, checked_at: { type: 'string' } }, { description: 'files only: the check memo (dewey_checks) — cached = answered from an earlier check of the same content (a held verdict while its document is live; others for 7 days)' }),
   verdict: { type: 'string', enum: ['held', 'partly-held', 'possible', 'not-found-by-title', 'not-held', 'undetermined'],
     description: 'From a FULL-TEXT comparison when text was given (a file, a passage, a photographed page): `held` = the same text or contained in a larger work; `partly-held` = the library holds only part of it; `possible` = shared passages only. `not-held` = nothing matched. Title-only input: `not-found-by-title` = only the title missed — send its text to settle it. `undetermined` = no readable text (a scan OCR could not read): Dewey cannot tell, and file-name matches are hints only.' },
   reason: { type: 'string' },
@@ -60,6 +61,7 @@ export const holdingsSchema = {
     file: fileUpload,
     path: { type: 'string', description: 'a file already ON THE SERVER, under a folder Dewey may read (the synced Dropbox, DEWEY_PATH_ROOTS) — read in place: no upload, no size limit' },
   }),
+  querystring: { type: 'object', properties: { fresh: { type: 'string', description: '1 = check again even if this file content was checked before' } } },
   response: { 200: holdings, ...err },
 };
 

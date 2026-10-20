@@ -19,6 +19,7 @@ import { requireDewey } from '../lib/auth.js';
 import { identifyPhotos, identifyUrl, identifyText } from '../lib/dewey/identify.js';
 import { checkHoldingsOffThread as checkHoldings, identifyAndCheckOffThread } from '../lib/dewey/holdings.js';   // off the event loop
 import { allowedPath } from '../lib/dewey/paths.js';
+import { checkWithMemo } from '../lib/dewey/check-memo.js';
 import { ApiError } from '../lib/errors.js';
 import { readFileSync, createReadStream } from 'fs';
 import { stat } from 'fs/promises';
@@ -76,8 +77,10 @@ export default async function deweyRoutes(fastify) {
     const { text, url, images, file, path } = request.body || {};
     // a DOCUMENT (an upload, or a file read in place on the server): read, converted and checked off the event loop
     if (file?.data || path) {
-      const doc = await identifyAndCheckOffThread({ file: file?.data ? file : null, path: path ? allowedPath(path) : null });
-      return { identified: doc.identified, ...doc.result };
+      // the same CONTENT checked before answers from the memo (dewey_checks) — instant; ?fresh=1 checks again
+      const doc = await checkWithMemo({ file: file?.data ? file : null, path: path ? allowedPath(path) : null }, identifyAndCheckOffThread,
+        { fresh: ['1', 'true'].includes(String(request.query?.fresh)) });
+      return { identified: doc.identified, ...doc.result, memo: doc.memo };
     }
     let id = {};
     if (images?.length) id = await identifyPhotos(images);

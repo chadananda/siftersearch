@@ -1744,6 +1744,15 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_dewey_messages_user ON dewey_messages(user_id, id)');
     logger.info('Migration 160 complete: dewey_messages');
   },
+
+  161: async () => {
+    // DEWEY'S CHECK MEMO (Chad 10-20: "keep a hash-table list of all duplicate checks so subsequent checks of the same book are
+    // instant"): one row per file CONTENT (sha256) — the verdict and the holdings result of its last check. A renamed or moved
+    // copy of the same file hits it too. Freshness rules live in api/lib/dewey/check-memo.js.
+    await query(`CREATE TABLE IF NOT EXISTS dewey_checks (sha256 TEXT PRIMARY KEY, verdict TEXT, identified TEXT, result TEXT,
+      bytes INTEGER, file_name TEXT, checked_at TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 0)`);
+    logger.info('Migration 161 complete: dewey_checks');
+  },
 };
 
 export const graphMigrations = {
