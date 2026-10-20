@@ -119,11 +119,34 @@ export function symbolNamed(symbol, query) {
 // boot simply find no concept until the load lands).
 const LEX_TTL_MS = 30 * 60 * 1000;
 let lexicon = null, lexAt = 0, lexLoading = null;
+// Each book's rows INDEXED once (block id → row, folded text) — proofParagraph per entry re-parsed every row's block_attrs
+// and re-folded every text, ~29,000 entries × thousands of rows: it blocked the API's event loop for minutes at boot
+// (10-20 outage). Resolution is now a map lookup, the text scan only a fallback, yielding every 200 entries.
+export function indexRows(rows) {
+  const byBlock = new Map();
+  const flats = rows.map((r) => { try { const id = JSON.parse(r.block_attrs || '{}').id; if (id) byBlock.set(id, r); } catch { /* none */ } return [r.id, flat(r.text)]; });
+  return { byBlock, flats };
+}
+export function proofParagraphIndexed({ byBlock, flats }, { proof_para_id, proof_verbatim }) {
+  const hit = proof_para_id ? byBlock.get(proof_para_id) : null;
+  const v = flat(proof_verbatim).slice(0, 80);
+  if (hit && (!v || flat(hit.text).includes(v))) return hit.id;
+  return (v && flats.find(([, f]) => f.includes(v))?.[0]) || hit?.id || null;
+}
 export async function loadLexicon({ rows: given = null, rowsOf = rowsForDoc } = {}) {
   const rows = given || await queryAll(LEXICON_SELECT, [], 'concepts:lexicon-load');
-  const byDoc = new Map();
-  for (const d of new Set(rows.map((r) => r.proof_doc_id).filter(Boolean))) byDoc.set(d, await rowsOf(d).catch(() => []));
-  return rows.map((r) => lexiconDoc({ ...r, paragraph_id: r.proof_doc_id ? proofParagraph(byDoc.get(r.proof_doc_id) || [], r) : null }));
+  const idx = new Map();
+  for (const d of new Set(rows.map((r) => r.proof_doc_id).filter(Boolean))) {
+    idx.set(d, indexRows(await rowsOf(d).catch(() => [])));
+    await new Promise((r) => setImmediate(r));
+  }
+  const out = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    out.push(lexiconDoc({ ...r, paragraph_id: r.proof_doc_id ? proofParagraphIndexed(idx.get(r.proof_doc_id) || indexRows([]), r) : null }));
+    if (i % 200 === 199) await new Promise((res) => setImmediate(res));
+  }
+  return out;
 }
 function lexiconNow() {
   if (!lexLoading && (!lexicon || Date.now() - lexAt > LEX_TTL_MS)) {

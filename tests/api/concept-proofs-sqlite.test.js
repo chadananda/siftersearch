@@ -20,3 +20,18 @@ describe('concept layer without Meilisearch', () => {
     expect((await searchConceptProofs({}, 'what is love', { entries })).hits).toEqual([]);
   });
 });
+
+describe('lexicon load never blocks the event loop (10-20 outage)', () => {
+  it('resolves 3,000 entries over a 3,000-row book quickly and yields', async () => {
+    const { loadLexicon } = await import('../../api/lib/search/concepts.js');
+    const book = Array.from({ length: 3000 }, (_, i) => ({ id: 1000 + i, text: `paragraph number ${i} about the sun and the moon ${i}`, block_attrs: `{"id":"para_${i}"}` }));
+    const rows = Array.from({ length: 3000 }, (_, i) => ({ id: i, symbol: `s${i}`, interpretation: 'x', authority: 'a', authority_tier: 1, proof_doc_id: 9, proof_para_id: `para_${i}`, proof_verbatim: `paragraph number ${i} about` }));
+    let ticks = 0; const t = setInterval(() => { ticks++; }, 0);
+    const t0 = Date.now();
+    const out = await loadLexicon({ rows, rowsOf: async () => book });
+    clearInterval(t);
+    expect(out[2999].paragraph_id).toBe(3999);
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(ticks).toBeGreaterThan(0);
+  });
+});
