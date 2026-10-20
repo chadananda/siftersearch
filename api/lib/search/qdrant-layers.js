@@ -60,7 +60,10 @@ export function toQdrantFilter(filters = {}) {
   // in Mazindarani's history answers "what did the Báb say" (Chad 10-19). Points not yet stamped still match by author_fold.
   if (filters.author) {
     const keys = (Array.isArray(filters.author) ? filters.author : [filters.author]).map(authorKey);
-    must.push({ should: [{ key: 'author_fold', match: { any: keys } }, { key: 'voices_fold', match: { any: keys } }] });
+    // writerOnly: the indexed author_fold alone — a fast, selective filter (the authoritative pass; 10-20 a should over the
+    // then-unindexed voices_fold scanned 35M points and timed out on every query)
+    must.push(filters.writerOnly ? { key: 'author_fold', match: { any: keys } }
+      : { should: [{ key: 'author_fold', match: { any: keys } }, { key: 'voices_fold', match: { any: keys } }] });
   }
   const excl = filters.documentId == null ? excludedDocIds() : [];
   if (excl.length) must_not.push({ key: 'doc_id', match: { any: excl } });   // metadata indexes are not passages

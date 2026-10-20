@@ -1463,7 +1463,13 @@ export async function multiIndexSearch(query, options = {}) {
   if (wantsDoctrinal) {
     try {
       const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
-      doctrinalResult = await timed('doctrinal', searchPhrases(query, { limit: 15, filters: { ...qfilters, author: DOCTRINAL_KEYS, scope: 'primary' }, timeoutMs: 2500 }));
+      // phrases AND the doctrinal HyPE questions (a question finds the passage that answers it), writer filter only
+      const af = { ...qfilters, author: DOCTRINAL_KEYS, writerOnly: true, scope: 'primary' };
+      const [dp, dh] = await Promise.all([
+        timed('doctrinal', searchPhrases(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
+        timed('doctrinal_hype', searchHypeQdrant(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
+      ]);
+      doctrinalResult = { hits: [...(dp.hits || []), ...(dh.hits || [])] };
     } catch (err) {
       logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed');
     }
