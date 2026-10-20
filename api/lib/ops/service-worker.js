@@ -5,7 +5,7 @@
 // service restarting must never requeue — and so double-run — another's live job). Deps: ops-report-repo, drain, heartbeat.
 import os from 'os';
 import { logger } from '../logger.js';
-import { claimNext, finish, requeueStale } from '../repos/ops-report-repo.js';
+import { claimNext, finish, requeueStale, saveResume } from '../repos/ops-report-repo.js';
 import { sendEmail } from '../../services/email.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { drainOnSignals, isDraining, nap } from '../drain.js';
@@ -57,6 +57,9 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
         // A RESUMABLE long job YIELDS at a safe point when the service drains (10-19: a multi-hour paragraph-authors run held
         // the whole reports service — every lane, the Phelps ingest included — in 'draining' until it ended). The run stays
         // 'running', so the next start's requeueStale() puts it back and it resumes on the new code.
+        // A job that returns `resume` (params for where it stopped) continues there, not from the start (10-20: stamp-voices
+        // held the indexer in 'draining' for hours, and a plain requeue would have redone every window).
+        if (result?.yielded && isDraining() && result.resume) await saveResume(run.id, { ...(run.params || {}), ...result.resume }).catch((err) => logger.warn({ id: run.id, err: err.message }, 'ops: resume point not saved'));
         if (result?.yielded && isDraining()) { logger.info({ id: run.id, name: run.name, lane: laneName }, 'job yielded to the drain — requeued on next start'); logActivity('job', `⏸ ${run.name} · #${run.id} yielded to an update — resumes after restart`); break; }
         await finish(run.id, { result, ms: Date.now() - t0 });
         logger.info({ id: run.id, name: run.name, lane: laneName, ms: Date.now() - t0 }, 'report done');

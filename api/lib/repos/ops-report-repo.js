@@ -49,6 +49,11 @@ export async function cancel(id) {
   return getRun(id);
 }
 
+/** A yielding job's resume point (merged into its params) — the requeued run continues there instead of from the start. */
+export async function saveResume(id, params) {
+  await query(`UPDATE ops_report_runs SET params = ? WHERE id = ? AND status = 'running'`, [JSON.stringify(params), id]);
+}
+
 export async function finish(id, { result = null, error = null, ms = null }) {
   // a run cancelled while it ran keeps 'cancelled' (its result is still recorded)
   await query(`UPDATE ops_report_runs SET status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE ? END, finished_at = ?, ms = ?, result = ?, error = ? WHERE id = ?`,

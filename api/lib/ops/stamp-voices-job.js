@@ -3,19 +3,22 @@
 // — its author and every quoted voice, folded like author_fold — so the author filter (qdrant-layers.js) finds the Báb
 // whether he wrote the paragraph or a scholar quotes him. Payload only (no re-embedding); paragraphs grouped by their exact
 // voice set so one call stamps many; the content table read in short id windows. Runs in the INDEXER service after each
-// paragraph-authors run. params { span = 100000, collections }.
+// paragraph-authors run. params { span = 100000, collections, after = 0 }. Yields between windows when the service drains,
+// returning `resume: { after }` so the requeued run continues there.
 import { quotedVoiceRows, maxContentId } from '../paragraphs-repo.js';
 import { paragraphVoices } from '../authorship/effective.js';
 import { authorKey, qdrantRequest } from '../search/qdrant-layers.js';
+import { isDraining } from '../drain.js';
 
 const COLLECTIONS = ['phrases', 'paragraphs_kw', 'hype'];
 
-export async function stampVoicesJob({ span = 100000, collections = COLLECTIONS } = {}, deps = {}) {
-  const { rows = quotedVoiceRows, top = maxContentId, qd = qdrantRequest, index = ensureIndex } = deps;
+export async function stampVoicesJob({ span = 100000, collections = COLLECTIONS, after: from = 0 } = {}, deps = {}) {
+  const { rows = quotedVoiceRows, top = maxContentId, qd = qdrantRequest, index = ensureIndex, draining = isDraining } = deps;
   for (const c of collections) await index(c).catch(() => {});
   const end = await top();
   const out = { paragraphs: 0, groups: 0, calls: 0, errors: 0 };
-  for (let after = 0; after < end; after += span) {
+  for (let after = Number(from) || 0; after < end; after += span) {
+    if (draining()) return { ...out, yielded: true, resume: { after } };
     const groups = new Map();   // voices key → [paragraph ids]
     for (const r of await rows({ afterId: after, span })) {
       const voices = paragraphVoices(r).map(authorKey).filter(Boolean);
