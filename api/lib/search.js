@@ -734,7 +734,26 @@ const entityMentionsSettings = {
 /**
  * Hybrid search combining keyword and semantic search
  */
+// MEILISEARCH RETIREMENT (Chad 10-20): under SEARCH_QDRANT=only, the classic entry points — hybridSearch, keywordSearch,
+// searchHypeQuestions — answer from Qdrant (the fused, authority-ranked multiIndexSearch with Meili off), so every caller
+// (public /v1/search, keyword route, chat, deep research, grounding counts) moves at once with the same return shape.
+// Site-only scopes (no primary) stay on Meili until their content is in Qdrant (planning/meili-retirement-plan.md).
+const qdrantOnly = () => /\bonly\b/.test(process.env.SEARCH_QDRANT || '');
+export const routesToQdrant = (options) => qdrantOnly() && !options._meiliDirect && (!options.scope_config || options.scope_config.primary !== false);
+async function qdrantClassic(query, options = {}, { keywordOnly = false } = {}) {
+  const { limit = 20, offset = 0, filters = {}, scope_config, semanticRatio } = options;
+  const kwOnly = keywordOnly || semanticRatio === 0;
+  const t0 = Date.now();
+  const r = await multiIndexSearch(query, { ...options, limit: offset + limit, filters, scope_config, meili: false,
+    phraseLayer: !kwOnly, qdrantKeyword: true, qdrantHype: !kwOnly, hype: !kwOnly, conceptLayer: !kwOnly && options.conceptLayer });
+  const all = r.hits || [];
+  const hits = all.slice(offset, offset + limit);
+  return { hits, query, processingTimeMs: Date.now() - t0, estimatedTotalHits: r.estimatedTotalHits ?? all.length, limit, offset,
+    hasMore: offset + limit < all.length, cached: false, _engine: 'qdrant' };
+}
+
 export async function hybridSearch(query, options = {}) {
+  if (routesToQdrant(options)) return qdrantClassic(query, options);
   if (!config.search.enabled) {
     logger.warn('Meilisearch disabled, returning empty results');
     return { hits: [], totalHits: 0, query };
@@ -994,6 +1013,7 @@ import {
  * Results are cached for 5 minutes to enable fast pagination.
  */
 export async function keywordSearch(query, options = {}) {
+  if (routesToQdrant(options)) return qdrantClassic(query, options, { keywordOnly: true });
   const { limit = 10, offset = 0, ...restOptions } = options;
 
   // Check cache first — keyed on the scope too, or a filtered search is answered from an unfiltered one
@@ -1146,6 +1166,10 @@ import {
 } from './search/hype.js';
 
 export async function searchHypeQuestions(query, options = {}) {
+  if (routesToQdrant(options)) {
+    const r = await searchHypeQdrant(query, { limit: options.limit || 20, filters: options.filters ? await resolveQdrantFilters(options.filters).catch(() => undefined) : undefined });
+    return { hits: (r.hits || []).map((h) => ({ ...h, id: h.paragraph_id })), _engine: 'qdrant' };
+  }
   return _searchHypeQuestions({ getMeili, INDEXES }, query, options);
 }
 
