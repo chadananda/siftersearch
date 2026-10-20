@@ -124,14 +124,13 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
           logger.warn({ err: err.message }, 'encounter index warm-up failed'));
         await warmOlDocIdCache().catch((err) => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
       };
-      // Preboot runs only the fast boot tasks (~0.5 s) before listening. The warm-ups (encounter index, OL doc ids — ~6 s)
-      // run AFTER listening, paged and yielding: Chad 10-12 "restarting the server must not take more than a second or two
-      // before the API is available". Until the index is built, encounter questions fall back to passage search.
-      if (preboot) await bootTasks();
+      // Preboot (pm2 cluster, behind the gateway): EVERYTHING before listening, warm-ups included. The old instance keeps
+      // serving until this one sends 'ready', so a slow warm-up costs nothing — while warming AFTER listening froze the event
+      // loop for ~24 s (the encounter query) with live conversations on it (10-19: 74 blocking reads in 'anis' in 3 h). The
+      // 10-12 "a second or two" rule was for when a restart meant downtime; behind the gateway it no longer does.
+      if (preboot) { await bootTasks(); await warmIndexes().catch((err) => logger.warn({ err: err.message }, 'warm-up failed (serving anyway)')); }
 
       await server.listen({ port, host });
-      // a few seconds' grace first: the cluster routes requests here the moment it listens
-      if (preboot) setTimeout(() => warmIndexes().catch(() => {}), 3000).unref();
 
       if (!preboot) {
         // Warm the who-met-whom index once, off the request path (a ~5 s synchronous build; searches never wait on it cold).
