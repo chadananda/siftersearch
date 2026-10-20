@@ -109,7 +109,9 @@ if (db) {
   // plan books were unenqueueable (9 husks with zero prose, 2 non-English parked), so the queue was correctly
   // empty and this alarm fired CRITICAL on every status update with nothing wrong and nothing to do.
   let exh = null;
-  try { exh = JSON.parse((await http('http://127.0.0.1:7839/api/admin/grounding/exhaustion', { headers: H })).body); }
+  // 30 s: the endpoint checks every plan book (5–6 s, more under load) — the default 8 s turned an exhausted plan into a
+  // CRITICAL 'nothing queued' alarm (10-20)
+  try { exh = JSON.parse((await http('http://127.0.0.1:7839/api/admin/grounding/exhaustion', { headers: H, timeout: 30000 })).body); }
   catch { /* endpoint unreachable → fall back to the old queue-depth-only reading (fail loud, not silent) */ }
   const idle = mode === 'plan' && liveRuns === 0 && queueDepth === 0 && done24 === 0;
   const stalled = idle && !exh?.exhausted;

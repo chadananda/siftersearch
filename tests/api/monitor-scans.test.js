@@ -69,3 +69,9 @@ describe('person search claims run off the API main thread (10-20: 5.8 s)', () =
     expect(readFileSync(join(import.meta.dirname, '../../api/lib/claim-search-worker.js'), 'utf8')).toMatch(/bioClaimRowsSql/);
   });
 });
+
+describe('grounding exhaustion probe has time to answer (10-20 false critical)', () => {
+  it('the exhaustion call gets a 30 s timeout', () => {
+    expect(src('system-checks.mjs')).toMatch(/grounding\/exhaustion', \{ headers: H, timeout: 30000 \}/);
+  });
+});
