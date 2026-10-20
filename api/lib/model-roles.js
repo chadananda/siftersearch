@@ -54,6 +54,8 @@ export const MODEL_ROLES = {
     why: 'blind judge must be stronger than every flash candidate and read fa/ar/he/zh (anthropic-policy stage model-eval)' },
   // ── legacy chat / publishing / bios (call sites not yet on modelFor — see tests/api/model-literal-ratchet.test.js) ──
   'chat-research': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-13', needs: ['tool-use'], why: 'legacy Jafar pipeline' },
+  'authorship-window': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['classification', 'cheap', 'bulk'],
+    why: 'names the speaker of a paragraph the window classifier escalates (was deepseek-v4-flash; DeepSeek retired 10-13); max_tokens >= 4000 (Haiku thinks first)' },
   'anis-researcher': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['tool-use', 'planning', 'multilingual'],
     why: 'plans the research loop over the library tools (Chad 10-19: "Even Haiku 5.5 might be sufficient for planning research")' },
   'anis-writer': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'],

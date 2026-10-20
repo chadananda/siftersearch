@@ -27,6 +27,7 @@ import { spendSince } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js';
+import { paragraphAuthorsJob } from './paragraph-authors-job.js';
 export { INDEX_LANES, INDEX_JOB_NAMES };
 import { retireDuplicatesJob } from './library-jobs.js';
 import { sectionAuthorJob } from './section-author.js';
@@ -176,6 +177,7 @@ REPORTS['dewey-completeness'] = deweyCompletenessJob;   // params: { since? } �
 REPORTS['dewey-quality'] = deweyQualityJob;     // params: { limit?, since? } — every Dewey import inspected, worst first, causes tallied
 REPORTS['dewey-archive'] = deweyArchiveJob;     // one pass: every decided source onto the NAS archive, ingest copies out of Dropbox
 REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's final text from SearchLayerPDF, checked
+REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
 // paragraph inside the section (Chad 10-17: structure before BM25 "so that sections get indexed") — before/after measure.
@@ -207,7 +209,8 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
-  scout: ['dewey-scout'],   // hours of polite searching and downloading must not hold up intake or OCR
+  scout: ['dewey-scout'],
+  authorship: ['paragraph-authors'],   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 export { LANE_WORKERS } from './lane-workers.js';

@@ -2,7 +2,7 @@
 // docs-repo.js; planning/architecture-data-access-20261009.md). paragraphDoc() is the ONE search-document shape: what the
 // sync worker indexes AND what search hits are hydrated with — so switching engines changes nothing a caller sees.
 // Deps: db, authority, authorship.
-import { queryAll } from './db.js';
+import { queryAll, transaction } from './db.js';
 import { authorAuthority, getAuthority } from './authority.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { olCiteTitle } from './library/ol-works.js';
@@ -88,4 +88,26 @@ export async function oversizedParagraphDocs({ afterId = 0, span = 100000, minCh
 /** The highest content id (the survey's end). */
 export async function maxContentId() {
   return (await queryAll('SELECT MAX(id) AS m FROM content', [], 'paragraphs-repo:max-id'))[0]?.m || 0;
+}
+
+/** A book's rows for paragraph attribution — the shape authorship/window-core.js loadRows gives (heading = section path). */
+export async function authorshipRows(docId) {
+  const rows = await queryAll(`SELECT id, paragraph_index pidx, text, heading, blocktype, block_attrs, authors, authors_model
+    FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index`, [Number(docId)], 'paragraphs-repo:authorship-rows');
+  return rows.map((r) => {
+    let path = null;
+    try { path = r.block_attrs ? JSON.parse(r.block_attrs).path : null; } catch { /* malformed attrs */ }
+    return { ...r, heading: path?.length ? path.join(' › ') : r.heading };
+  });
+}
+
+/** Paragraph authors (the window classifier) through the single writer, 500 statements a batch.
+ *  updates: [{ id, authors: [...], model? }] — model set only where the author changed (authors_model). */
+export async function writeParagraphAuthors(updates, name = 'authorship:window') {
+  for (let i = 0; i < updates.length; i += 500) {
+    await transaction(updates.slice(i, i + 500).map((u) => (u.model
+      ? { sql: 'UPDATE content SET authors = ?, authors_model = ? WHERE id = ?', args: [JSON.stringify(u.authors), u.model, u.id] }
+      : { sql: 'UPDATE content SET authors = ? WHERE id = ?', args: [JSON.stringify(u.authors), u.id] })), name);
+  }
+  return updates.length;
 }
