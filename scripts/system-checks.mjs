@@ -136,7 +136,11 @@ if (db) {
   try {
     spendRows = db.prepare(`SELECT provider, ROUND(SUM(estimated_cost_usd),2) usd, COUNT(*) calls FROM ai_usage WHERE timestamp > datetime('now','-24 hours') GROUP BY provider ORDER BY usd DESC`).all();
     const total = spendRows.reduce((s, r) => s + r.usd, 0);
-    add('AI spend 24h', total <= SPEND_ALERT_USD, total > SPEND_ALERT_USD ? 'critical' : 'info', `$${total.toFixed(2)} (${spendRows.map((r) => `${r.provider} $${r.usd}`).join(' · ')})`);
+    // spending Chad APPROVED is not an alarm (10-20) — the threshold rises by the active approved allowances
+    const { loadApproved, activeAllowance, spendAlarming } = await import('./lib/approved-spend.mjs');
+    const allowance = activeAllowance(loadApproved('data/approved-spend.json'));
+    const alarming = spendAlarming(total, SPEND_ALERT_USD, allowance);
+    add('AI spend 24h', !alarming, alarming ? 'critical' : 'info', `$${total.toFixed(2)}${allowance ? ` (approved allowance $${allowance}/day)` : ''} (${spendRows.map((r) => `${r.provider} $${r.usd}`).join(' · ')})`);
   } catch (e) { add('AI spend 24h', true, 'warn', `query failed: ${e.message}`); }
 }
 
