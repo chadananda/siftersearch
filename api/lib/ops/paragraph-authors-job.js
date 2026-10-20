@@ -14,6 +14,7 @@ import { getAuthority } from '../authority.js';
 import { isCompilation } from '../doc-tier.js';
 import { authorshipRows, writeParagraphAuthors } from '../paragraphs-repo.js';
 import { createClassifier, fragmentShare, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from '../authorship/window-core.js';
+import { trailerAuthors } from '../authorship/trailers.js';
 
 const multiAuthor = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.test(d.author || '');
 export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
@@ -44,6 +45,19 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
     const book = { title: d.title, author: d.author, religion: d.religion };
     const rows = await rowsOf(d.id);
     if (!rows.length) return;
+    // EVIDENCE FIRST: a quotation followed by its attribution trailer is the trailer's writer (basis 'trailer'), set before
+    // the classifier runs so it is a fixed anchor there and is never overridden (10-19: Lights of Guidance's quotations
+    // were labelled 'the compiler, quoting Shoghi Effendi')
+    const evidence = [];
+    for (const [id, t] of trailerAuthors(rows)) {
+      const r = rows.find((x) => x.id === id);
+      const cur = (() => { try { return JSON.parse(r.authors || '[]') || []; } catch { return []; } })();
+      if (cur.some((e) => e.role === 'author' && e.basis && !['book', 'system1', 'window', 'continuation'].includes(e.basis))) continue;   // evidence already
+      const authors = [{ name: t.name, role: 'author', basis: 'trailer', ...(t.on_behalf ? { on_behalf: true } : {}), ...(t.kind ? { kind: t.kind } : {}) }, ...cur.filter((e) => e.role !== 'author')];
+      evidence.push({ id, authors, model: 'trailers-2026-10-19', prev: { authors: r.authors, authors_model: r.authors_model } });
+      r.authors = JSON.stringify(authors);   // the classifier and the write rules see the evidence
+    }
+    stats.trailer_assigned = (stats.trailer_assigned || 0) + evidence.length;
     const file = join(outDir, `${d.id}.json`);
     let lab;
     if (existsSync(file)) { lab = JSON.parse(readFileSync(file, 'utf-8')); stats.resumed++; }
@@ -57,8 +71,10 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
     const raw = new Map(lab.labels.map((l) => [l.id, l]));
     const byId = new Map();
     rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book, { secondary, prevRaw: raw.get(rows[i - 1]?.id) })); });
-    const updates = [];
+    const updates = [...evidence];
+    const done = new Set(evidence.map((u) => u.id));
     for (const r of rows) {
+      if (done.has(r.id)) { stats.paras++; continue; }
       stats.paras++;
       const n = nextAuthors(r, byId.get(r.id), book, { noDemote: secondary });
       if (!n) continue;

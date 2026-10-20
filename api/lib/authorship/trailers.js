@@ -110,3 +110,33 @@ export function parseTrailer(raw) {
   return { name, on_behalf: !!onBehalfM, kind, date, cited_in: citedIn, basis };
 }
 
+
+/** The text a trailer test reads: no sentence markers, and no pandoc attribute tail — a library copy of an OceanLibrary
+ *  compilation still carries `{id="para_13" ilm_id="bl4rw" type="par"}` after its lines (10-19, Lights of Guidance 20804),
+ *  which hid every "(From a letter …)" trailer behind its trailing brace. */
+export const trailerText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\s*\{[^{}]*\}\s*$/, '').trim();
+
+/**
+ * EVIDENCE from a compilation's attribution trailers (Chad 10-19: a quotation followed by "(From a letter written on behalf
+ * of Shoghi Effendi …)" is Shoghi Effendi's words — the classifier was naming the compiler): every paragraph above a
+ * trailer, back to the previous trailer or heading, gets the trailer's writer (basis 'trailer' — evidence the window
+ * classifier never overrides; on-behalf letters are Shoghi Effendi's, per the 10-08 rule). rows: [{ id, text, blocktype }]
+ * in order → Map(id → { name, on_behalf, kind, trailer_id }). Pure.
+ */
+export function trailerAuthors(rows) {
+  const out = new Map();
+  let pending = [];
+  for (const r of rows) {
+    const t = trailerText(r.text);
+    if (!t || r.blocktype === 'footnote') continue;
+    if (isTrailer(t)) {
+      const p = parseTrailer(t);
+      if (p.name && !p.ibid) for (const x of pending) out.set(x.id, { name: p.name, on_behalf: p.on_behalf, kind: p.kind, trailer_id: r.id });
+      pending = [];
+      continue;
+    }
+    if (isHeading(r, t)) { pending = []; continue; }
+    pending.push(r);
+  }
+  return out;
+}

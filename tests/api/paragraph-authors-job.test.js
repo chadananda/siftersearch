@@ -41,3 +41,19 @@ describe('paragraph-authors job', () => {
     expect(isSecondaryBook(BOOK)).toBe(true);
   });
 });
+
+describe('trailer evidence (Lights of Guidance, 10-19)', () => {
+  it('a quotation followed by its trailer is the trailer\'s writer — attribute tails stripped, heading resets', async () => {
+    const { trailerAuthors } = await import('../../api/lib/authorship/trailers.js');
+    const m = trailerAuthors([
+      { id: 1, text: '**1. Established First in America** {id="para_11"}', blocktype: 'heading' },
+      { id: 2, text: '“The Administrative Order of the Cause … is not an American production …” {id="para_12" ilm_id="x"}', blocktype: 'paragraph' },
+      { id: 3, text: '(From a letter written on behalf of Shoghi Effendi to an individual believer, October 29, 1938: Dawn of a New Day, p. 202) {id="para_13" ilm_id="bl4rw"}', blocktype: 'paragraph' },
+      { id: 4, text: '“Bahá’í elections are a spiritual act …”', blocktype: 'paragraph' },
+      { id: 5, text: '(From a letter of the Universal House of Justice, 1 May 1989)', blocktype: 'paragraph' },
+    ]);
+    expect(m.get(2)).toMatchObject({ name: 'Shoghi Effendi', on_behalf: true });
+    expect(m.get(4)).toMatchObject({ name: 'Universal House of Justice' });
+    expect(m.has(1)).toBe(false);
+  });
+});
