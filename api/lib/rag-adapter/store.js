@@ -14,6 +14,29 @@ import { voiceLine } from '../authorship/voice.js';   // who speaks a paragraph 
 // One record's rows for the lookup index — the SAME keys and folding as scripts/entity-read/build-lookup-index.mjs
 // (nameKeys = transliteration skeletons ∪ Arabic-script keys), so a record indexed here is found exactly as a rebuilt one.
 const lookupNorm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+const conceptKey = (c) => `${c.canonical}\u0000${c.tradition ?? ''}`;
+const conceptRow = (c) => [c.root ?? null, JSON.stringify(c.renderings || []), c.concept_type || 'concept', c.importance ?? null, c.summary ?? null];
+/** existing rows (db shape) + promoted concepts → { ops: [{sql,args}] } — delete gone keys, update changed, insert new. Pure. */
+export function diffConceptEntities(existing, concepts) {
+  const want = new Map();
+  for (const c of concepts) want.set(conceptKey(c), c);
+  const have = new Map(existing.map((r) => [conceptKey(r), r]));
+  const ops = [];
+  for (const [k, r] of have) if (!want.has(k)) ops.push({ sql: 'DELETE FROM concept_entities WHERE id = ?', args: [r.id] });
+  for (const [k, c] of want) {
+    const r = have.get(k);
+    const v = conceptRow(c);
+    if (!r) {
+      ops.push({ sql: `INSERT INTO concept_entities (canonical, root, renderings, concept_type, tradition, importance, summary, last_assessed_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, args: [c.canonical, v[0], v[1], v[2], c.tradition ?? null, v[3], v[4], 'promote-v1'] });
+    } else if (JSON.stringify([r.root ?? null, r.renderings ?? '[]', r.concept_type || 'concept', r.importance ?? null, r.summary ?? null]) !== JSON.stringify(v)) {
+      ops.push({ sql: `UPDATE concept_entities SET root = ?, renderings = ?, concept_type = ?, importance = ?, summary = ?, last_assessed_version = 'promote-v1' WHERE id = ?`,
+        args: [...v, r.id] });
+    }
+  }
+  return { ops };
+}
+
 export function lookupKeyRows(id, surface, type, importance, isCanonical) {
   return [...new Set(nameKeys(surface))].map((k) => ({ sql: `INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance) VALUES (?,?,?,?,?,?,?)`,
     args: [k, id, surface, lookupNorm(surface), isCanonical, type, importance ?? null] }));
@@ -201,16 +224,13 @@ export function makeStore() {
     // could never bind anything.
     async saveConceptEntities(concepts) {
       if (!concepts?.length) return 0;
-      const stmts = [{ sql: `DELETE FROM concept_entities`, args: [] }];
-      for (const c of concepts) {
-        stmts.push({
-          sql: `INSERT INTO concept_entities (canonical, root, renderings, concept_type, tradition, importance, summary, last_assessed_version)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          args: [c.canonical, c.root ?? null, JSON.stringify(c.renderings || []), c.concept_type || 'concept',
-            c.tradition ?? null, c.importance ?? null, c.summary ?? null, 'promote-v1'],
-        });
-      }
-      await db.transaction(stmts);   // same batch writer every other save port uses; routes to the single writer
+      // A DIFF, not DELETE-all + re-insert: every concept run's promote stage rebuilt all ~29,000 rows in ONE transaction,
+      // so eight runs finishing together held the single writer 1.5–3 s each, again and again, and the WAL churn stalled
+      // other writes 8–15 s (10-20). Same converged result: unchanged rows untouched (their ids now stable), changed rows
+      // updated, gone rows deleted, new rows inserted — in chunks of ≤500 so no batch holds the writer long.
+      const existing = await db.queryAll(`SELECT id, canonical, tradition, root, renderings, concept_type, importance, summary FROM concept_entities`);
+      const { ops } = diffConceptEntities(existing, concepts);
+      for (let i = 0; i < ops.length; i += 500) await db.transaction(ops.slice(i, i + 500));
       return concepts.length;
     },
 
