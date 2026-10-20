@@ -15,6 +15,7 @@ import { isCompilation } from '../doc-tier.js';
 import { authorshipRows, writeParagraphAuthors } from '../paragraphs-repo.js';
 import { createClassifier, fragmentShare, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from '../authorship/window-core.js';
 import { trailerAuthors } from '../authorship/trailers.js';
+import { isDraining } from '../drain.js';
 
 const multiAuthor = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.test(d.author || '');
 export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
@@ -101,6 +102,8 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
     while (queue.length) {
       // a SPEND CAP: no new book once the Haiku calls (briefs + escalations) reach maxLlm; the rest resume next run
       if (cost.llm >= maxLlm) { stats.stopped_at_cap = queue.length; break; }
+      // an update is waiting: stop between books (every finished book is saved and written) — the service requeues the run
+      if (isDraining()) { stats.yielded = true; break; }
       const d = queue.shift();
       // one retry after a pause: a transient model / writer error must not drop a whole book (10-08: 6 of 6 failed once)
       for (let attempt = 1; attempt <= 2; attempt++) {

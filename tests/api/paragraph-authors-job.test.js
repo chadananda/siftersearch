@@ -79,3 +79,18 @@ describe('spend cap', () => {
     expect(r.stopped_at_cap).toBe(3);
   });
 });
+
+describe('yields to a drain (10-19: a multi-hour run held the reports service in draining)', () => {
+  it('starts no new book while the service drains and reports yielded', async () => {
+    vi.resetModules();
+    vi.doMock('../../api/lib/drain.js', () => ({ isDraining: () => true }));
+    const { paragraphAuthorsJob } = await import('../../api/lib/ops/paragraph-authors-job.js');
+    const { mkdtempSync } = await import('fs'); const { tmpdir } = await import('os'); const { join } = await import('path');
+    const books = [1, 2].map((id) => ({ id, title: `B${id}`, author: 'X', religion: "Baha'i", paragraph_count: 1 }));
+    const r = await paragraphAuthorsJob({ concurrency: 1, outDir: mkdtempSync(join(tmpdir(), 'pa-')) },
+      { ask: async () => ({}), chatCompletion: async () => '', docs: async () => ({ docs: books }), rowsOf: async () => [], writeAuthors: async () => {} });
+    expect(r.yielded).toBe(true);
+    expect(r.books).toBe(0);
+    vi.doUnmock('../../api/lib/drain.js');
+  });
+});

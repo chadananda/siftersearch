@@ -54,6 +54,10 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
         const fn = registry[run.name];
         if (!fn) throw new Error(`unknown report "${run.name}"`);
         const result = await fn(run.params || {});
+        // A RESUMABLE long job YIELDS at a safe point when the service drains (10-19: a multi-hour paragraph-authors run held
+        // the whole reports service — every lane, the Phelps ingest included — in 'draining' until it ended). The run stays
+        // 'running', so the next start's requeueStale() puts it back and it resumes on the new code.
+        if (result?.yielded && isDraining()) { logger.info({ id: run.id, name: run.name, lane: laneName }, 'job yielded to the drain — requeued on next start'); logActivity('job', `⏸ ${run.name} · #${run.id} yielded to an update — resumes after restart`); break; }
         await finish(run.id, { result, ms: Date.now() - t0 });
         logger.info({ id: run.id, name: run.name, lane: laneName, ms: Date.now() - t0 }, 'report done');
         const short = stoppedShort(result);
