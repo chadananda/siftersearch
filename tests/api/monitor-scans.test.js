@@ -52,3 +52,11 @@ describe('CLI scripts exit when done (10-19: an 8-day-old --status kept scanning
     expect(src('deep-research-runner.mjs')).toMatch(/main\(\)\.then\(\(\) => process\.exit\(0\)\)/);
   });
 });
+
+describe('person pages label citations through the (doc_id, external_para_id) index (10-20: 7 s full scan)', () => {
+  it('bio.js never filters content by external_para_id alone', () => {
+    const s = readFileSync(join(import.meta.dirname, '../../api/lib/bio.js'), 'utf8');
+    expect(s).not.toMatch(/FROM content WHERE external_para_id IN/);
+    expect(s).toMatch(/FROM content WHERE doc_id = \? AND external_para_id IN/);
+  });
+});

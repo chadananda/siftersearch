@@ -569,10 +569,16 @@ export async function getBioPerson(rawId) {
   }
   // compact citation label per fact: short source + paragraph number (e.g. "GPB ¶72", "DB ¶467"); works for any book.
   try {
-    const pids = [...new Set(characterizations.map(c => c.paraId).filter(Boolean))];
-    if (pids.length) {
-      const ixRows = await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE external_para_id IN (${pids.map(() => '?').join(',')})`, pids);
-      const ix = {}; for (const r of ixRows) ix[`${r.doc_id}:${r.pid}`] = r.pix;
+    // per DOCUMENT: the index is (doc_id, external_para_id), so a bare external_para_id IN (…) scanned all of content —
+    // 7 s on the API's main thread for one person page (10-20). Only facts with a document can be labelled anyway.
+    const byDoc = new Map();
+    for (const c of characterizations) if (c._doc != null && c.paraId) (byDoc.get(c._doc) || byDoc.set(c._doc, new Set()).get(c._doc)).add(c.paraId);
+    if (byDoc.size || characterizations.length) {
+      const ix = {};
+      for (const [doc, set] of byDoc) {
+        const ps = [...set];
+        for (const r of await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE doc_id = ? AND external_para_id IN (${ps.map(() => '?').join(',')})`, [doc, ...ps])) ix[`${r.doc_id}:${r.pid}`] = r.pix;
+      }
       const abbrOf = (s) => s === 'The Dawn-Breakers' ? 'DB' : s === 'God Passes By' ? 'GPB' : (String(s || '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 4) || 'SRC');
       for (const c of characterizations) {
         const n = c._doc != null ? ix[`${c._doc}:${c.paraId}`] : null;
