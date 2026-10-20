@@ -124,6 +124,8 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
           logger.warn({ err: err.message }, 'encounter index warm-up failed'));
         // people search's claim corpus loads on its own worker thread (claim-search.js) — started here, never awaited
         await import('./claim-search.js').then((m) => m.warmClaimSearch()).catch(() => {});
+        // the concept lexicon (concept layer) loads into memory in the background — Meilisearch retired (10-20)
+        await import('./search/concepts.js').then((m) => m.warmLexicon()).catch(() => {});
         await warmOlDocIdCache().catch((err) => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
       };
       // Preboot (pm2 cluster, behind the gateway): EVERYTHING before listening, warm-ups included. The old instance keeps

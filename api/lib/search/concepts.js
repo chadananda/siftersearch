@@ -114,15 +114,31 @@ export function symbolNamed(symbol, query) {
 
 /** CONCEPT LAYER: the authoritative interpretation of a symbol the question names (concept_lexicon, cited) → its proof
  *  paragraph, as a ranked list for multiIndexSearch. Empty unless a symbol is actually named. */
-export async function searchConceptProofs({ getMeili: meili = getMeili, INDEXES: ix = INDEXES } = {}, query, { limit = 8 } = {}) {
-  const m = meili();
-  if (!m || !query) return { hits: [] };
-  const r = await m.index(ix.CONCEPTS).search(String(query).slice(0, 200), {
-    limit: 30, filter: 'kind = "lexicon"',
-    attributesToRetrieve: ['id', 'symbol', 'interpretation', 'authority', 'authority_tier', 'paragraph_id', 'proof_doc_id'],
-  });
+// The lexicon IN MEMORY (10-20: Meilisearch retired — Chad): a few thousand cited entries, loaded from SQLite with each
+// proof resolved to its content row once, refreshed every 30 min, never on a search's path (the first searches after a
+// boot simply find no concept until the load lands).
+const LEX_TTL_MS = 30 * 60 * 1000;
+let lexicon = null, lexAt = 0, lexLoading = null;
+export async function loadLexicon({ rows: given = null, rowsOf = rowsForDoc } = {}) {
+  const rows = given || await queryAll(LEXICON_SELECT, [], 'concepts:lexicon-load');
+  const byDoc = new Map();
+  for (const d of new Set(rows.map((r) => r.proof_doc_id).filter(Boolean))) byDoc.set(d, await rowsOf(d).catch(() => []));
+  return rows.map((r) => lexiconDoc({ ...r, paragraph_id: r.proof_doc_id ? proofParagraph(byDoc.get(r.proof_doc_id) || [], r) : null }));
+}
+function lexiconNow() {
+  if (!lexLoading && (!lexicon || Date.now() - lexAt > LEX_TTL_MS)) {
+    lexLoading = loadLexicon().then((l) => { lexicon = l; lexAt = Date.now(); }).catch(() => {}).finally(() => { lexLoading = null; });
+  }
+  return lexicon || [];
+}
+export const warmLexicon = () => { lexiconNow(); };
+
+/** CONCEPT LAYER: the authoritative interpretation of a symbol the question names (concept_lexicon, cited) → its proof
+ *  paragraph, as a ranked list for multiIndexSearch. Empty unless a symbol is actually named. entries: tests. */
+export async function searchConceptProofs(_deps, query, { limit = 8, entries = null } = {}) {
+  if (!query) return { hits: [] };
   const seen = new Set();
-  const hits = (r.hits || []).filter((h) => h.paragraph_id && symbolNamed(h.symbol, query))
+  const hits = (entries || lexiconNow()).filter((h) => h.paragraph_id && symbolNamed(h.symbol, query))
     .sort((a, b) => (a.authority_tier ?? 99) - (b.authority_tier ?? 99))
     .filter((h) => !seen.has(h.paragraph_id) && seen.add(h.paragraph_id)).slice(0, limit);
   return { hits: hits.map((h) => ({ paragraph_id: h.paragraph_id, doc_id: h.proof_doc_id, concept: { symbol: h.symbol, interpretation: h.interpretation, authority: h.authority } })) };

@@ -1156,7 +1156,7 @@ import {
 } from './search/entity.js';
 
 export async function searchByEntity(entityIds, options = {}) {
-  return _searchByEntity({ getMeili, INDEXES }, entityIds, options);
+  return _searchByEntity({ getAuthority }, entityIds, options);
 }
 
 export async function syncEntityMentionsBatch(options = {}) {
