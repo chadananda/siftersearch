@@ -48,6 +48,15 @@ let siteRegistryByDomain = {};
 // ============================================================
 // Configuration
 // ============================================================
+
+// BREADCRUMB (10-20): the writer froze 45 s with nothing logged — the watchdog killed it before any slow-query log could
+// fire. Each cycle names itself in a tiny file as it starts; the watchdog copies the file into its log when it restarts us.
+import { writeFileSync as _crumbWrite } from 'fs';
+const CRUMB = process.env.WRITER_PHASE_FILE || '/tmp/siftersearch-writer-phase.json';
+export function phase(name, extra = {}) {
+  try { _crumbWrite(CRUMB, JSON.stringify({ at: new Date().toISOString(), pid: process.pid, phase: name, ...extra })); } catch { /* best effort */ }
+}
+
 const PARA_BATCH_SIZE = 1000;   // rows per getDirtyParagraphsForDoc call; must exceed largest doc so inner loop processes all rows in one pass
 const YIELD_DELAY_MS = 10;
 const DOC_DELAY_MS = 50;
@@ -312,6 +321,7 @@ async function processSyncJob(job) {
       // Process all fresh docs before re-fetching to avoid paying the slow
       // getDocsWithDirtyParagraphs query cost on every single document.
       for (const doc of fresh) {
+        phase('sync-doc', { docId: doc.id });
         if (isShuttingDown) break;
         inFlightDocIds.add(doc.id);
 
@@ -459,6 +469,7 @@ async function processSyncJob(job) {
 const RECONCILE_ENABLED = process.env.SYNC_RECONCILE === '1';
 
 async function runCleanupCycle() {
+  phase('runCleanupCycle');
   logger.info('Starting cleanup cycle');
   try {
     const meili = await getMeili();
@@ -601,6 +612,7 @@ async function processTranslationAudioJob(job) {
 // index. Keeps newly-enriched content searchable within one minute, no manual
 // intervention required.
 async function runHypeSyncCycle() {
+  phase('runHypeSyncCycle');
   try {
     const result = await syncHypeBatch({ queryAll, query, getAuthority, limit: HYPE_SYNC_BATCH });
     if (result.indexed > 0) {
@@ -614,6 +626,7 @@ async function runHypeSyncCycle() {
 
 // Drain entity_mentions where em_synced=0 into the entity_mentions_idx sidecar.
 async function runEntitySyncCycle() {
+  phase('runEntitySyncCycle');
   try {
     const result = await syncEntityMentionsBatch({ queryAll, query, getAuthority, limit: ENTITY_SYNC_BATCH });
     if (result.indexed > 0) {
@@ -627,6 +640,7 @@ async function runEntitySyncCycle() {
 
 // Sync entity aliases as Meilisearch synonyms (paragraphs index).
 async function runAliasSyncCycle() {
+  phase('runAliasSyncCycle');
   try {
     const result = await syncAliasesToMeili();
     if (result.synonymCount > 0) {
@@ -652,6 +666,7 @@ async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 3600000) {
 // after Meili confirms the task. Per-site failures logged but never kill
 // the loop.
 async function runSiteOnlySyncCycle() {
+  phase('runSiteOnlySyncCycle');
   const meili = await getMeili();
   if (!meili) return;
   const siteOnlyConfigs = Object.values(siteRegistryByDomain).filter(c => c.scope === 'site-only');
@@ -783,6 +798,7 @@ const PERIODIC_TASK_TIMEOUT_MS = 90_000;   // < watchdog GRACE (240s) so the tim
 // Resolve meili_sync_tasks rows left 'processing'. Runs on a timer so it fires when the corpus is
 // IDLE — which is exactly when orphans exist and nothing else would clear them.
 async function runMeiliReconcileCycle() {
+  phase('runMeiliReconcileCycle');
   const meili = await getMeili();
   if (!meili) return;
   await reconcileSyncTasks(meili);

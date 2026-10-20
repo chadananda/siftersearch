@@ -30,7 +30,14 @@ for i in 1 2 3; do
 done
 
 if [ "$fails" -ge 3 ]; then
+  # a restart was issued < 2 min ago: the old writer is still draining — never restart it twice (10-20: 05:37:41 + 05:38:10)
+  LAST="$HOME/sifter/siftersearch/logs/.writer-watchdog-last"
+  if [ -f "$LAST" ] && [ $(( $(date +%s) - $(cat "$LAST") )) -lt 120 ]; then exit 0; fi
+  date +%s > "$LAST"
   echo "$(date -u +%FT%TZ) writer /health unresponsive x3 (${TIMEOUT}s each, up ${UP}s) → pm2 restart siftersearch-worker" >> "$LOG"
+  # what it was doing when it froze (unified-worker phase breadcrumb, 10-20)
+  echo "  last phase: $(cat /tmp/siftersearch-writer-phase.json 2>/dev/null || echo unknown)" >> "$LOG"
+  
   pm2 restart siftersearch-worker >> "$LOG" 2>&1
   echo "$(date -u +%FT%TZ) restart issued (exit $?)" >> "$LOG"
 fi
