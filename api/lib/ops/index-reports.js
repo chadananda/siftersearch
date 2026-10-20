@@ -7,6 +7,7 @@ import { sectionIndexJob } from './section-index-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
 import { stampVoicesJob } from './stamp-voices-job.js';
+import { stampSiteJob } from './stamp-site-job.js';
 
 export const INDEX_REPORTS = {
   'phrase-index': phraseIndexJob,       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time
@@ -17,8 +18,9 @@ export const INDEX_REPORTS = {
   'keyword-fill': keywordFillJob,       // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
   'coverage-refresh': coverageRefreshJob,   // params: { ids? | limit? } — re-measure docs into index_coverage
   'stamp-voices': stampVoicesJob,   // every quoted voice findable by author (Chad 10-19) — after each paragraph-authors run
+  'stamp-site': stampSiteJob,   // `site` on every scraped-site point (planning/site-databases-plan.md, Chad 10-20)
 };
 // lanes: phrase indexing alone (measured: one at a time is fastest on the interim SSD); HyPE/concepts/sections beside it;
 // BM25 on /fast in its own lane; coverage re-measures
-export const INDEX_LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices'] };
+export const INDEX_LANES = { index: ['phrase-index'], index2: ['hype-index', 'concept-index', 'section-index'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site'] };
 export const INDEX_JOB_NAMES = Object.keys(INDEX_REPORTS);
