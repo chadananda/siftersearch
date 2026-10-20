@@ -131,9 +131,11 @@ describe('author filter folds spelling variants', () => {
     expect(authorKey("Abdu'l-Baha")).toBe('abdulbaha');
     expect(authorKey("Bahá'u'lláh")).toBe(authorKey('Bahá’u’lláh'));
   });
-  it('filters on author_fold', () => {
-    expect(toQdrantFilter({ author: "'Abdu'l-Bahá" })).toEqual({ must: [{ key: 'author_fold', match: { value: 'abdulbaha' } }] });
-    expect(toQdrantFilter({ author: ['Shoghi Effendi', 'Shoghi Rabbani'] })).toEqual({ must: [{ key: 'author_fold', match: { any: ['shoghieffendi', 'shoghirabbani'] } }] });
+  // the writer OR a quoted voice (Chad 10-19: the Báb quoted by a scholar answers "what did the Báb say")
+  it('filters on author_fold or voices_fold', () => {
+    const either = (keys) => ({ must: [{ should: [{ key: 'author_fold', match: { any: keys } }, { key: 'voices_fold', match: { any: keys } }] }] });
+    expect(toQdrantFilter({ author: "'Abdu'l-Bahá" })).toEqual(either(['abdulbaha']));
+    expect(toQdrantFilter({ author: ['Shoghi Effendi', 'Shoghi Rabbani'] })).toEqual(either(['shoghieffendi', 'shoghirabbani']));
   });
 });
 

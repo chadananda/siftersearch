@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 import { tokens, bm25Doc } from '../../api/lib/keyword-tokens.js';
 import { paragraphLang } from '../../api/lib/phrase-vectors.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
-import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
+import { paragraphAuthor, paragraphVoices } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -86,7 +86,8 @@ for (const p of src.prepare(SQL).iterate(state.lastId)) {
   const v = bm25Doc(p.text, state.avgLen);
   if (v) terms += v.indices.length;
   if (v) batch.push({ id: p.id, vector: { bm25: v }, payload: { paragraph_id: p.id, doc_id: p.doc_id, lang_group: paragraphLang(p.text, p.language).group,
-    religion: p.religion, collection: p.collection, author: paragraphAuthor(p), author_fold: authorKey(paragraphAuthor(p)), scope: DB_SCOPE } });
+    religion: p.religion, collection: p.collection, author: paragraphAuthor(p), author_fold: authorKey(paragraphAuthor(p)),
+    voices_fold: paragraphVoices(p).map(authorKey), scope: DB_SCOPE } });
   if (batch.length >= BATCH || terms >= MAX_TERMS) await flush();
   if (LIMIT && sentRun + batch.length >= LIMIT) break;
 }

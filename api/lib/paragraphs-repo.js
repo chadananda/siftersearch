@@ -111,3 +111,10 @@ export async function writeParagraphAuthors(updates, name = 'authorship:window')
   }
   return updates.length;
 }
+
+/** Paragraphs whose authors quote someone, in one id WINDOW (a short read — a whole-table LIKE scan blocks; feedback
+ *  10-17). → [{ id, doc_id, authors }]. stamp-voices walks the windows. */
+export async function quotedVoiceRows({ afterId = 0, span = 100000 } = {}) {
+  return queryAll(`SELECT c.id, c.doc_id, c.authors, d.author FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE c.id > ? AND c.id <= ? AND c.deleted_at IS NULL AND c.authors LIKE '%"quoted"%'`, [Number(afterId), Number(afterId) + Number(span)], 'paragraphs-repo:quoted-voices');
+}

@@ -25,3 +25,10 @@ export function effectiveAuthor({ authors, para_meta: paraMeta, author } = {}) {
 /** The author an index stores for a paragraph: its own writer when the reader named one, else the book's. One definition
  *  for Meili (unified-worker) and the Qdrant indexers, so an author filter means the same thing on both engines. */
 export const paragraphAuthor = ({ authors, author }) => (authors && effectiveAuthor({ authors, author }).author) || author;
+
+/** EVERY VOICE in a paragraph — its author and everyone it quotes (Chad 10-19: "If some scholar like Mazindarani quotes the
+ *  Báb on some topic, I want it to be findable when someone asks 'What did the Báb say about X'"). Unique, in order. */
+export function paragraphVoices(row = {}) {
+  const e = effectiveAuthor(row);
+  return [...new Set([e.author, ...(e.quoted || [])].filter(Boolean))];
+}

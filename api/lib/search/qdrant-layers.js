@@ -52,7 +52,12 @@ export function toQdrantFilter(filters = {}) {
   const eq = (key, v) => must.push(Array.isArray(v) ? { key, match: { any: v } } : { key, match: { value: v } });
   if (filters.religion) eq('religion', filters.religion);
   if (filters.collection) eq('collection', filters.collection);
-  if (filters.author) eq('author_fold', Array.isArray(filters.author) ? filters.author.map(authorKey) : authorKey(filters.author));
+  // the asked author as WRITER or as a QUOTED voice (voices_fold, stamped by the indexer's stamp-voices job): the Báb quoted
+  // in Mazindarani's history answers "what did the Báb say" (Chad 10-19). Points not yet stamped still match by author_fold.
+  if (filters.author) {
+    const keys = (Array.isArray(filters.author) ? filters.author : [filters.author]).map(authorKey);
+    must.push({ should: [{ key: 'author_fold', match: { any: keys } }, { key: 'voices_fold', match: { any: keys } }] });
+  }
   const excl = filters.documentId == null ? excludedDocIds() : [];
   if (excl.length) must_not.push({ key: 'doc_id', match: { any: excl } });   // metadata indexes are not passages
   if (filters.documentId != null) eq('doc_id', Array.isArray(filters.documentId) ? filters.documentId.map(Number) : Number(filters.documentId));
