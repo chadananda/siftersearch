@@ -236,7 +236,11 @@ const HEALTH_CHECK_PORT = 7899; // Temp port for pre-deploy health check
 // Startup runs migrations + service checks and now takes >10s, so the old 5×2s=10s window timed out and ABORTED
 // every deploy ("Test API failed to start after all retries") — the old server kept running and backend fixes never
 // went live. Widen to 30×2s=60s so a slow-but-healthy boot verifies instead of spuriously failing.
-const HEALTH_CHECK_RETRIES = 30;
+// A test boot runs the PRODUCTION boot order (API_PREBOOT=1: warm-ups BEFORE listening, as under pm2 cluster) and must
+// answer within 50 s — under pm2's listen_timeout (60 s), after which pm2 stops the old instance whether or not the new one
+// listens. 10-20: the fork-mode test boot listened first and passed in 5 s while the real preboot hung for minutes →
+// a 4-minute search outage.
+const HEALTH_CHECK_RETRIES = 25;
 const HEALTH_CHECK_INTERVAL = 2000; // 2s between retries
 
 /**
@@ -312,8 +316,8 @@ async function runSmokeTests(port) {
 // The other HTTP services' entries and how to ask a test boot of each whether it is healthy. Before a reload the new build
 // boots on a test port; a build that does not answer is NOT deployed — the running version keeps serving.
 const VERIFY_ENTRIES = {
-  'siftersearch-anis': { script: 'api/anis-index.js', env: (p) => ({ API_PORT: String(p) }), path: '/healthz' },
-  'siftersearch-ops': { script: 'api/ops-index.js', env: (p) => ({ API_PORT: String(p) }), path: '/healthz' },
+  'siftersearch-anis': { script: 'api/anis-index.js', env: (p) => ({ API_PORT: String(p), API_PREBOOT: '1' }), path: '/healthz' },
+  'siftersearch-ops': { script: 'api/ops-index.js', env: (p) => ({ API_PORT: String(p), API_PREBOOT: '1' }), path: '/healthz' },
   'siftersearch-gateway': { script: 'api/gateway.js', env: (p) => ({ GATEWAY_PORT: String(p) }), path: '/gateway/health' },
 };
 async function verifyEntry(name, port = 7898) {
@@ -324,7 +328,7 @@ async function verifyEntry(name, port = 7898) {
   let out = ''; child.stdout.on('data', (d) => { out += d; }); child.stderr.on('data', (d) => { out += d; });
   let crashed = null; child.on('exit', (code) => { crashed = code; });
   let ok = false;
-  for (let i = 0; i < 45 && crashed === null && !ok; i++) {
+  for (let i = 0; i < 25 && crashed === null && !ok; i++) {   // ≤50 s: under pm2's 60 s listen_timeout (see HEALTH_CHECK_RETRIES)
     await new Promise((r) => setTimeout(r, 2000));
     ok = (await httpGet(`http://127.0.0.1:${port}${v.path}`)).ok;
   }
@@ -343,7 +347,7 @@ async function verifyNewCode() {
 
   const child = spawn('node', ['api/index.js'], {
     cwd: PROJECT_ROOT,
-    env: { ...process.env, API_PORT: String(HEALTH_CHECK_PORT), NODE_ENV: 'production' },
+    env: { ...process.env, API_PORT: String(HEALTH_CHECK_PORT), NODE_ENV: 'production', API_PREBOOT: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false
   });
