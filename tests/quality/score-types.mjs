@@ -27,7 +27,9 @@ const QDRANT = QDRANT_ARG ? (QDRANT_ARG === '--qdrant=only' ? 'only' : QDRANT_AR
 const WEIGHTS = (args.find((a) => a.startsWith('--weights='))?.split('=')[1] || '').split(',').filter(Boolean)
   .reduce((o, kv) => { const [k, v] = kv.split(':'); o[k] = Number(v); return o; }, {});
 if (QDRANT_ARG && !args.includes('--multi')) { console.error('--qdrant needs --multi (/api/search/multi)'); process.exit(2); }
-const AB = { qdrant: QDRANT, ...(Object.keys(WEIGHTS).length ? { weights: WEIGHTS } : {}) };
+// no --qdrant flag = the SERVER's default (SEARCH_QDRANT) — sending qdrant:false forced the Meili path and measured a
+// configuration production no longer runs (10-20: 'live' runs of 60–61 were the legacy path)
+const AB = { ...(QDRANT_ARG ? { qdrant: QDRANT } : {}), ...(Object.keys(WEIGHTS).length ? { weights: WEIGHTS } : {}) };
 const TOP_K = parseInt(args.find((a) => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const TYPE = args.find((a) => a.startsWith('--type='))?.split('=')[1] || null;
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
