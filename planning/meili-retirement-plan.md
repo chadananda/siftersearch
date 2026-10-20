@@ -37,7 +37,7 @@ keyword → BM25 paragraphs_kw hydrated; hype → searchHypeQdrant) — every ca
 0. [x] Authority-aware Qdrant fusion (da42344a…0859aaa1: fusion, authoritative pass, canonical dedup, answer-band re-rank, authenticated-text cap, Bahá'í-scoped) (see above) — then rerun the battery with no deploys during it.
 1. [x] Battery `--qdrant=only` 66/83 vs base 63/83 (p50 1.6 s vs 4.4 s) → SEARCH_QDRANT=only (10-20). Was: Battery `--qdrant=only` vs base (64/83) — flip `SEARCH_QDRANT=only` for api + anis only at parity or better.
 2. [x] Concept + entity layers off Meili (876178b9).
-3. [ ] Site scopes: stamp `site` payload on supplemental points (balib, ool) so site filters work in Qdrant; decide bt.
+3. [ ] Site scopes → folded into planning/site-databases-plan.md (one DB per scraped site, OceanLibrary stays primary; bt into Qdrant). Was: stamp `site` payload on supplemental points (balib, ool) so site filters work in Qdrant; decide bt.
 4. [ ] Route hybridSearch/keywordSearch/searchHypeQuestions to Qdrant under SEARCH_QDRANT=only (see above). documents/deep_research are write-only → just stop writing.
 5. [ ] Stop writers: unified-worker Meili sync cycles (paragraphs, hype sidecar, entity sidecar, outbox), library-watcher + indexer Meili writes, graph-meili-sync; admin Meili stats → Qdrant.
 6. [ ] `systemctl --user stop meilisearch` (KEEP /fast/meilisearch-data for rollback ≥2 weeks); system-checks/critical-path stop probing Meili.
