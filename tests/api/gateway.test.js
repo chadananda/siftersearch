@@ -71,3 +71,12 @@ describe('unavailable answers are recorded (10-19: a rising count with nothing t
     expect(list.at(-1)).toMatchObject({ service: 'anis', code: 'ECONNREFUSED' });
   });
 });
+
+describe('a slow request cut off is a timeout, not a restart (10-19)', () => {
+  it('classifies a late reset as timeout and a refused connection as unavailable', async () => {
+    const { classifyFailure } = await import('../../api/gateway.js');
+    expect(classifyFailure('ECONNRESET', 29988, 10000)).toBe('timeout');
+    expect(classifyFailure('ECONNREFUSED', 10500, 10000)).toBe('unavailable');
+    expect(classifyFailure('ECONNRESET', 300, 10000)).toBe('unavailable');
+  });
+});

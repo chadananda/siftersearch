@@ -21,6 +21,8 @@ const OPS = /^\/api\/admin\/ops(\/|$|\?)/;
 export const routeFor = (path) => (OPS.test(path) ? 'ops' : ANIS.test(path) ? 'anis' : 'search');
 
 const RETRY_MS = Number(process.env.GATEWAY_RETRY_MS || 10_000);
+/** A failed upstream request: refused/reset within the retry window = restarting; a reset after it = the service's timeout. Pure. */
+export const classifyFailure = (code, waitedMs, retryMs = RETRY_MS) => (code === 'ECONNRESET' && waitedMs > retryMs ? 'timeout' : 'unavailable');
 const MAX_BODY = 25 * 1024 * 1024;
 const agents = Object.fromEntries(Object.keys(SERVICES).map((k) => [k, new http.Agent({ keepAlive: true, maxSockets: 512 })]));
 const stats = { inflight: 0, served: { search: 0, anis: 0, ops: 0 }, retried: 0, unavailable: 0 };
@@ -42,11 +44,16 @@ function forward(service, req, res, body, started) {
       return;
     }
     if (!res.headersSent) {
-      stats.unavailable++;
-      noteUnavailable({ at: new Date().toISOString(), service, path: String(req.url).slice(0, 120), code: err.code, waited_ms: Date.now() - started });
-      console.error(JSON.stringify({ gateway: 'unavailable', service, path: String(req.url).slice(0, 120), code: err.code }));
-      res.writeHead(503, { 'content-type': 'application/json', 'retry-after': '5' });
-      res.end(JSON.stringify({ error: 'service_restarting', service, message: 'This part of SifterSearch is restarting — please retry in a few seconds.' }));
+      // a reset AFTER the retry window = the service gave up on a slow request (its own timeout), not a restart: a 504, counted
+      // apart, so 'unavailable' means restarts only (10-19: ten "unavailable" were 30 s searches cut off under load)
+      const timedOut = classifyFailure(err.code, Date.now() - started) === 'timeout';
+      if (timedOut) stats.timeouts = (stats.timeouts || 0) + 1; else stats.unavailable++;
+      noteUnavailable({ at: new Date().toISOString(), service, path: String(req.url).slice(0, 120), code: err.code, waited_ms: Date.now() - started, kind: timedOut ? 'timeout' : 'unavailable' });
+      console.error(JSON.stringify({ gateway: timedOut ? 'timeout' : 'unavailable', service, path: String(req.url).slice(0, 120), code: err.code }));
+      res.writeHead(timedOut ? 504 : 503, { 'content-type': 'application/json', ...(timedOut ? {} : { 'retry-after': '5' }) });
+      res.end(JSON.stringify(timedOut
+        ? { error: 'upstream_timeout', service, message: 'That took too long to answer — please try again.' }
+        : { error: 'service_restarting', service, message: 'This part of SifterSearch is restarting — please retry in a few seconds.' }));
     } else res.destroy(err);
   });
   // the reader went away before the answer finished: stop the work upstream (res 'close' — a request's own 'close' fires

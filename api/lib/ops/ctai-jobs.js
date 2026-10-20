@@ -9,6 +9,7 @@ import { getDoc, listDocs } from '../docs-repo.js';
 import { ctaiPairs, anchorsForDoc, insertLinks } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 import { withAIContext } from '../ai-context.js';
+import { isDraining } from '../drain.js';
 
 export const CTAI_DIR = "Baha'i/CTAI Originals";
 const attrsOf = (r) => { try { return JSON.parse(r.block_attrs || '{}'); } catch { return {}; } };
@@ -72,6 +73,9 @@ export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
   }
   const res = { files: rels.length, ok: 0, failed: [], statuses: {}, paced_ms: 0 };
   for (const rel of rels) {
+    // an update is waiting: stop between files — the service requeues the run and unchanged files are skipped by hash (10-19:
+    // a 10,797-file Phelps ingest would have held the reports service in 'draining' for hours)
+    if (isDraining()) { res.yielded = true; break; }
     await waitForQuietWriter();
     const abs = join(config.library.basePath, rel);
     if (!existsSync(abs)) { res.failed.push({ rel, error: 'no file' }); continue; }
