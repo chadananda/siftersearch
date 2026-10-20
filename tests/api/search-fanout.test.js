@@ -226,9 +226,9 @@ describe('multiIndexSearch propagates scope_config', () => {
     const getDocuments = vi.fn(async () => ({ results: [] }));
     meiliMock.index.mockImplementation(() => ({ search: vi.fn(async () => ({ hits: [], processingTimeMs: 1 })), getDocuments }));
     const r = await multiIndexSearch('test', { scope_config: { primary: true, sites: [] }, phraseLayer: true, qdrantKeyword: true });
-    // phrase three times: the open query + the CANON pass (OceanLibrary canonical texts, 10-10) + the AUTHORITATIVE pass
-    // (doctrinal writers as candidates; their tier weights apply only in a Bahá'í-scoped search, 10-20)
-    expect(qdrantCalls.sort()).toEqual(['phrase', 'phrase', 'phrase', 'qkeyword']);
+    // phrase twice: the open query + the CANON pass (OceanLibrary canonical texts, 10-10). The AUTHORITATIVE pass runs only
+    // in a Bahá'í-scoped search (10-20: unscoped it displaced other traditions)
+    expect(qdrantCalls.sort()).toEqual(['phrase', 'phrase', 'qkeyword']);
     const hit = r.hits.find(h => String(h.id) === '77');
     expect(hit).toBeTruthy();
     expect(hit.phrase_span).toEqual({ start: 3, end: 20 });
