@@ -37,3 +37,14 @@ describe('new files', () => {
     expect(run(['api/lib/old-computed.js'], [])).toEqual(['api', 'worker']);
   });
 });
+
+describe('ecosystem edits', () => {
+  it('only the apps whose own pm2 block changed are touched', async () => {
+    const { affectedApps } = await import('../../scripts/lib/import-graph.mjs');
+    const apps = [{ name: 'api', script: 'a' }, { name: 'worker', script: 'w' }];
+    const graphOf = () => new Set();
+    expect(Object.keys(affectedApps(['ecosystem.config.cjs'], apps, { root: '/', graphOf, configChanged: ['worker'] }))).toEqual(['worker']);
+    expect(Object.keys(affectedApps(['ecosystem.config.cjs'], apps, { root: '/', graphOf, configChanged: [] }))).toEqual([]);
+    expect(Object.keys(affectedApps(['ecosystem.config.cjs'], apps, { root: '/', graphOf })).sort()).toEqual(['api', 'worker']);   // unknown → all
+  });
+});

@@ -19,8 +19,19 @@ function resolveSpec(fromAbs, spec) {
   return null;
 }
 
-/** → Set of repo-relative paths the entry loads (itself included). */
+// one graph per entry per coordinator run (10-19: recomputing every service's graph for every lagging service pushed the
+// updater past pm2's memory limit — it was restarted every 30 s); resetGraphCache() at the start of each run
+const CACHE = new Map();
+export const resetGraphCache = () => CACHE.clear();
+
+/** → Set of repo-relative paths the entry loads (itself included). Cached per run. */
 export function importGraph(entry, { root }) {
+  const key = `${root}::${entry}`;
+  if (!CACHE.has(key)) CACHE.set(key, computeGraph(entry, { root }));
+  return CACHE.get(key);
+}
+
+function computeGraph(entry, { root }) {
   const seen = new Set();
   const stack = [join(root, entry)];
   while (stack.length) {
@@ -36,16 +47,19 @@ export function importGraph(entry, { root }) {
   return seen;
 }
 
-const GLOBAL = /^(package(-lock)?\.json|\.env-public|ecosystem\.config\.cjs)$/;
+const GLOBAL = /^(package(-lock)?\.json|\.env-public)$/;
+// ecosystem.config.cjs is NOT global: only the apps whose own block changed (configChanged) are touched (10-19: a one-line
+// change to the updater's memory limit would have drained every service)
 
 /** apps: [{ name, script }] → { [name]: [changed files it loads] } for the apps a change affects. */
-export function affectedApps(changed, apps, { root, graphOf = (s) => importGraph(s, { root }), added = [] }) {
+export function affectedApps(changed, apps, { root, graphOf = (s) => importGraph(s, { root }), added = [], configChanged = null }) {
   const runtime = changed.filter((f) => touchesRuntime([f]));
   const graphs = Object.fromEntries(apps.map((a) => [a.name, graphOf(a.script)]));
   const out = {};
   const hit = (name, f) => { (out[name] ||= []).push(f); };
   for (const f of runtime) {
     if (GLOBAL.test(f)) { for (const a of apps) hit(a.name, f); continue; }
+    if (f === 'ecosystem.config.cjs') { for (const a of apps) if (!configChanged || configChanged.includes(a.name)) hit(a.name, f); continue; }
     const owners = apps.filter((a) => graphs[a.name].has(f));
     if (owners.length) { for (const a of owners) hit(a.name, f); continue; }
     // reached by no graph: under api/ it may be a computed import — every app loading api/ code; elsewhere (a script the

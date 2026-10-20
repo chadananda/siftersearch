@@ -235,7 +235,7 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      max_memory_restart: '100M',
+      max_memory_restart: '512M',   // 10-19: the coordinator reads import graphs; at 100M pm2 restarted it every 30 s (289 restarts)
       env: {
         NODE_ENV: 'production',
         UPDATE_INTERVAL: '300000'

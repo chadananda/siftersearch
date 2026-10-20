@@ -696,7 +696,20 @@ async function deployPlan(fromSha, { quiet = false } = {}) {
     const changed = await changedFiles(fromSha);
     const { affectedApps } = await import('./lib/import-graph.mjs');
     const added = (await run(`git diff --name-only --diff-filter=A ${fromSha} HEAD`)).stdout.split('\n').filter(Boolean);
-    affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT, added });
+    // which apps' OWN pm2 blocks changed (the old config read from git): only those are touched by an ecosystem edit
+    let configChanged = null;
+    if (changed.includes('ecosystem.config.cjs')) {
+      try {
+        const { writeFileSync, unlinkSync } = await import('node:fs');
+        const tmp = join((await import('node:os')).tmpdir(), `sifter-ecosystem-${fromSha.slice(0, 12)}-${process.pid}.cjs`);
+        writeFileSync(tmp, (await run(`git show ${fromSha}:ecosystem.config.cjs`, { silent: true })).stdout.replace(/__dirname/g, JSON.stringify(PROJECT_ROOT)));
+        const old = Object.fromEntries(createRequire(import.meta.url)(tmp).apps.map((a) => [a.name, JSON.stringify(a)]));
+        unlinkSync(tmp);
+        configChanged = apps.filter((a) => old[a.name] !== JSON.stringify(a)).map((a) => a.name);
+        log('info', `  ecosystem.config.cjs changed the config of: ${configChanged.join(', ') || 'no running service'}`);
+      } catch (err) { log('warn', `  could not compare pm2 configs (${err.message}) — treating the change as touching every service`); }
+    }
+    affected = affectedApps(changed, apps.filter((a) => running.includes(a.name)).map((a) => ({ name: a.name, script: a.script })), { root: PROJECT_ROOT, added, configChanged });
     if (!quiet) for (const [n, files] of Object.entries(affected)) log('info', `  ${n} loads ${files.length} changed file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? ', …' : ''}`);
   }
   return running.map((name) => [name, affected && !affected[name] ? 'keep' : DRAIN.has(name) ? 'drain' : 'reload']);
@@ -906,6 +919,7 @@ async function reloadPm2Only(behind = [['siftersearch-api', 'reload'], ['sifters
  * Run a single update check
  */
 async function runOnce() {
+  (await import('./lib/import-graph.mjs')).resetGraphCache();   // one graph per service per run
   const versionBefore = getCurrentVersion();
 
   // First, check if node_modules needs repair (critical packages missing)
