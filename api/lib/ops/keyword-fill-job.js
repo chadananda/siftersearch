@@ -10,7 +10,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { bm25DocWithContext } from '../keyword-tokens.js';
 import { paragraphLang } from '../phrase-vectors.js';
-import { paragraphAuthor } from '../authorship/effective.js';
+import { paragraphAuthor, paragraphVoices } from '../authorship/effective.js';
 import { authorKey } from '../search/qdrant-layers.js';
 import { keywordGapDocs, keywordRowsForDoc, siteBoilerplateTexts, structuredDocs } from '../repos/keyword-repo.js';
 import { keepSiteParagraph } from '../site-boilerplate.js';
@@ -30,7 +30,7 @@ export function keywordPoint(p, avg) {
   if (!v) return null;
   const author = paragraphAuthor(p);
   return { id: p.id, vector: { bm25: v }, payload: { paragraph_id: p.id, doc_id: p.doc_id, lang_group: paragraphLang(p.text, p.language).group,
-    religion: p.religion, collection: p.collection, author, author_fold: authorKey(author), scope: p.scope, ...(p.section ? { section: p.section } : {}) } };
+    religion: p.religion, collection: p.collection, author, author_fold: authorKey(author), voices_fold: paragraphVoices(p).map(authorKey), scope: p.scope, ...(p.section ? { section: p.section } : {}) } };
 }
 
 async function upsert(points, fetchImpl = fetch) {
