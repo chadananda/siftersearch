@@ -61,3 +61,19 @@ describe('the gate never deflects a real question (10-19 battery)', () => {
     expect(hasSubstance('hi?')).toBe(false);
   });
 });
+
+describe('trace_source (Chad 10-19: a signpost points at something specific)', () => {
+  it('a House letter in the evidence is traced to the primary passage, which is what gets kept', async () => {
+    const { research } = await import('../../api/lib/assistant/researcher.js');
+    const UHJ = { id: 50, text: 'The Writings state that the soul of man is a sign of God…', title: 'Letter of the Universal House of Justice', author: 'Universal House of Justice' };
+    const GLEANINGS = { id: 51, text: 'Verily I say, the human soul is, in its essence, one of the signs of God…', title: 'Gleanings', author: 'Bahá’u’lláh' };
+    const replies = [
+      { tool_calls: [call('a', 'search_library', { query: 'soul sign of God' })] },
+      { tool_calls: [call('b', 'trace_source', { ref: 'P1' })] },
+      { content: 'BRIEF:\nReaching for: the soul\n- the soul is a sign of God: P2\nKEEP: P2' },
+    ];
+    const r = await research({ messages: [{ role: 'user', content: 'What is the soul?' }], create: async () => ({ choices: [{ message: replies.shift() }] }),
+      tools: { search: async () => [UHJ], trace: async (p) => (p.id === 50 ? [GLEANINGS] : []) } });
+    expect(r.passages.map((p) => p.id)).toEqual([51]);
+  });
+});
