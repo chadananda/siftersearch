@@ -28,8 +28,8 @@ hydrates each hit from its own store. Authority already treats scraped-site copi
 - Jobs that walk content (authorship, HyPE, coverage, keyword-fill) take a `store` param; default primary.
 
 ## Steps
-1. [ ] Stamp `site` on Qdrant supplemental points (phrases, paragraphs_kw, hype) — payload-only job, by doc batches (like stamp-voices).
-2. [ ] Store resolver in the repos + writer multi-store support; tests on an in-memory primary + site DB.
+1. [~] (stamp-site job 953f952a, queued 10-20) Stamp `site` on Qdrant supplemental points (phrases, paragraphs_kw, hype) — payload-only job, by doc batches (like stamp-voices).
+2. [ ] Store resolver in the repos + writer multi-store support. EXISTING base (10-20): db.js getSiteDb(siteId, prefix) → data/sites/<prefix>.db with runSiteMigrations (site schema), already used for site-only bahaiteachings by sites-ingester (isSiteOnly) and the worker's site-only sync — extend to supplemental sites; check the site schema covers what search/authorship/HyPE read; tests on an in-memory primary + site DB.
 3. [ ] Hydration by site (paragraphsByIds groups by store) — search unchanged for callers.
 4. [ ] Migrate **bahai-library** first: copy its docs/content (+ dependants: alignment, authors, sections, coverage rows) to
    `data/sites/bahai-library.db` → verify counts + spot reads through the API → delete from primary → `VACUUM INTO` a new
