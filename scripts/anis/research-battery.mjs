@@ -78,7 +78,12 @@ async function perplexity(messages) {
   return { text: j.choices?.[0]?.message?.content || `(error ${r.status})`, ms: Date.now() - t0 };
 }
 
-const JUDGE = `Criteria, each counted: DETAILED (real substance, not length for its own sake), DOCTRINAL (grounded in the authoritative texts, quoted and attributed correctly), NUANCED (distinctions, context, the reader's real question), INTERESTING (a genuine insight or thread worth pulling). You judge answers from study assistants to a reader of the world's sacred texts (here mostly the Bahá'í Writings). The standard: the most HELPFUL and INFORMATIVE answer for this reader — it takes up what they are reaching for and gives real substance (the texts' own words, originals where relevant, sound language knowledge), invites further exploration, never declines or quibbles. On doctrine, authority decides: the words of Bahá'u'lláh and the Báb and the authorised interpretation of 'Abdu'l-Bahá and Shoghi Effendi carry the answer; secondary views are illustration, and popular opinion is not doctrine. Penalise errors, invented quotations or sources, misattribution, padding and evasion. Judge each answer on its own merits — the labels are random.`;
+const JUDGE = `You judge answers from study assistants to a reader of the Bahá'í Writings (and other sacred texts). FIRST classify the question: DOCTRINAL (what the Faith teaches — God, the soul, the Manifestations, ethics, the meaning of a text), APPLICATION (how a law or the administrative order is applied — consent to marriage, elections, the Fund, the Plans), HISTORICAL (events and people), or PRACTICAL (programmes, compilations, devotional material).
+AUTHORITY DECIDES (Chad 10-19 — "quoting a third party scholar or the house of justice on a doctrinal issue is an antipattern, not better"):
+- DOCTRINAL: only the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi) count as support. An answer that rests a doctrinal point on the Universal House of Justice, a scholar, a pilgrim's note or a secondary book is making an AUTHORITY ERROR — score it down hard, however polished; quoting them beside the texts adds nothing.
+- APPLICATION: the Universal House of Justice is the right authority (after the texts it applies); scholars are not.
+- HISTORICAL: primary accounts (the Central Figures, Shoghi Effendi's histories, Nabíl) first; scholars only as labelled context.
+Then: the most HELPFUL and INFORMATIVE answer for this reader — takes up what they are reaching for, gives real substance from the right sources (their own words, originals where relevant, sound language knowledge), invites exploration, never declines or quibbles. Penalise errors, invented quotations or sources, misattribution, padding and evasion. Length is not substance. Judge each answer on its own merits — the labels are random.`;
 
 async function judge(c, answers) {
   const labels = Object.keys(answers).sort(() => Math.random() - 0.5);
@@ -90,6 +95,8 @@ async function judge(c, answers) {
     tools: [{ name: 'verdict', description: 'scores for every answer', input_schema: { type: 'object', required: ['scores', 'best'], properties: {
       scores: { type: 'array', items: { type: 'object', required: ['label', 'score', 'why'], properties: { label: { type: 'string' }, score: { type: 'number', description: '1–10' }, why: { type: 'string', description: 'one or two sentences: strengths, errors, what is missing' } } } },
       best: { type: 'string' },
+      question_kind: { type: 'string', enum: ['doctrinal', 'application', 'historical', 'practical'] },
+      authority_errors: { type: 'array', items: { type: 'string' }, description: 'per answer label: an authority error (a doctrinal point rested on the House, a scholar or a pilgrim note), e.g. "B: rests the station of the Báb on Taherzadeh"' },
       anis_gaps: { type: 'string', description: 'what the best non-Anís answer gave that the Anís answers lacked (texts, facts, structure, depth) — concrete, or "none"' } } } }],
     tool_choice: { type: 'auto' },   // Opus 5.5 rejects a forced tool choice
     messages: [{ role: 'user', content: `THE CONVERSATION:\n${convo}\n\n${body}\n\nScore every answer (1–10) and name the best, by calling the verdict tool.` }] });
@@ -99,7 +106,8 @@ async function judge(c, answers) {
   const lab = (l) => String(l || '').replace(/^answer\s+/i, '').trim().toUpperCase();
   for (const sc of v.scores || []) sc.label = lab(sc.label);
   v.best = lab(v.best);
-  return { scores: Object.fromEntries((v.scores || []).map((s) => [back[s.label] || s.label, { score: s.score, why: s.why }])), best: back[v.best] || v.best, gaps: v.anis_gaps || null };
+  return { scores: Object.fromEntries((v.scores || []).map((s) => [back[s.label] || s.label, { score: s.score, why: s.why }])), best: back[v.best] || v.best, gaps: v.anis_gaps || null, kind: v.question_kind || null,
+    authority_errors: (v.authority_errors || []).map((e) => e.replace(/^\s*(?:answer\s+)?([A-Z])\s*:/i, (m, l) => `${back[l.toUpperCase()] || l}:`)) };
 }
 
 const only = arg('only')?.split(',').map(Number);
@@ -123,8 +131,19 @@ async function runCase(c) {
 }
 const out = [];
 mkdirSync(join(ROOT, 'tmp'), { recursive: true });
+// --rejudge <battery.json>: score saved answers again under the current rubric (no new answers)
+const rejudge = arg('rejudge');
+if (rejudge) {
+  const prev = JSON.parse(readFileSync(rejudge, 'utf8')).cases;
+  const N2 = Number(arg('concurrency') || 4);
+  for (let i = 0; i < prev.length; i += N2) out.push(...await Promise.all(prev.slice(i, i + N2).map(async (c) => {
+    const verdict = await judge(c, c.answers).catch((e) => ({ error: e.message, scores: {} }));
+    console.log(`#${c.id} ${String(c.kind).padEnd(34)} [${verdict.kind}] ${Object.keys(c.answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}`);
+    return { ...c, verdict };
+  })));
+}
 const file = join(ROOT, 'tmp', `anis-battery-${immerseFile ? 'immerse-' : ''}${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-const todo = cases.filter((x) => !only || only.includes(x.id));
+const todo = rejudge ? [] : cases.filter((x) => !only || only.includes(x.id));
 const N = Number(arg('concurrency') || (immerseFile ? 3 : 1));
 for (let i = 0; i < todo.length; i += N) {
   out.push(...await Promise.all(todo.slice(i, i + N).map((c) => runCase(c).catch((e) => ({ ...c, answers: {}, verdict: { error: e.message, scores: {} } })))));
