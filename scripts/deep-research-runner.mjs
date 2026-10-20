@@ -119,4 +119,6 @@ async function main() {
   }
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+// EXIT when done: the imported search/progress modules keep refresh timers alive, so a returned main() never ended — a
+// `--status` from 10-11 ran their 10-11 table scans (the retired graph_enriched count, 26–83 s) for 8 days (found 10-19)
+main().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });

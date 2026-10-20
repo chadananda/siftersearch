@@ -46,3 +46,9 @@ describe('slowProbeCache', () => {
     expect(JSON.parse(readFileSync(file, 'utf8'))).toBeTruthy();
   });
 });
+
+describe('CLI scripts exit when done (10-19: an 8-day-old --status kept scanning)', () => {
+  it('deep-research-runner exits after main()', () => {
+    expect(src('deep-research-runner.mjs')).toMatch(/main\(\)\.then\(\(\) => process\.exit\(0\)\)/);
+  });
+});
