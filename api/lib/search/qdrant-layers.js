@@ -38,6 +38,10 @@ export function geminiQueryVector(text) {
 // The author as a filter KEY: accents, apostrophe variants and punctuation folded away — the same folding search.js's
 // authorMatches uses — so "Abdu'l-Bahá", "‘Abdu’l-Bahá" and "Abdu'l-Baha" are one author. Meili matches with CONTAINS over
 // apostrophe variants; a Qdrant keyword match is exact, so points carry `author_fold` and the filter folds too.
+// what fusion needs to weigh AUTHORITY from the outset (search/doctrinal-rank.js keyFactor): the writer, scope, collection
+export const RANK_PAYLOAD = ['author_fold', 'scope', 'collection'];
+export const rankFields = (p = {}) => Object.fromEntries(RANK_PAYLOAD.filter((k) => p[k] != null).map((k) => [k, p[k]]));
+
 export const authorKey = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').replace(/[^a-zA-Z0-9]+/g, '').toLowerCase();
 
@@ -133,7 +137,7 @@ export function bestPerParagraph(points, limit) {
  *  per paragraph). Only when fewer than `limit` distinct paragraphs come back does it fall back to the grouped query. */
 export async function searchPhrases(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.phrase } = {}) {
   const vector = await geminiQueryVector(query);
-  const payload = ['paragraph_id', 'doc_id', 'start', 'end'];
+  const payload = ['paragraph_id', 'doc_id', 'start', 'end', ...RANK_PAYLOAD];
   const filter = toQdrantFilter(filters);
   const res = await qdrant('/collections/phrases/points/query', {
     query: vector, using: 'literal', limit: limit * 4, with_payload: payload, params: searchParams(params), filter,
@@ -145,7 +149,7 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs, par
     }, timeoutMs);
     best = (g.groups || []).map((x) => x.hits[0]);
   }
-  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end } })) };
+  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end }, ...rankFields(p.payload) })) };
 }
 
 /** The quote's best-matching PHRASES inside one paragraph: [{ start, end, score }] (character spans of the indexed text) —
@@ -164,12 +168,12 @@ export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeout
 export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.hype } = {}) {
   const vector = await geminiQueryVector(query);
   const res = await qdrant('/collections/hype/points/query/groups', {
-    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'k'],
+    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD],
     params: searchParams(params), filter: toQdrantFilter(filters),
   }, timeoutMs);
   return { hits: (res.groups || []).map((g) => {
     const p = g.hits[0];
-    return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999 };
+    return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999, ...rankFields(p.payload) };
   }) };
 }
 
@@ -178,10 +182,10 @@ export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs, 
 export async function searchConceptsQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.concept } = {}) {
   const vector = await geminiQueryVector(query);
   const res = await qdrant('/collections/concepts/points/query/groups', {
-    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id'],
+    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', ...RANK_PAYLOAD],
     params: searchParams(params), filter: toQdrantFilter(filters),
   }, timeoutMs);
-  return { hits: (res.groups || []).map((g) => ({ paragraph_id: g.hits[0].payload.paragraph_id, doc_id: g.hits[0].payload.doc_id, score: g.hits[0].score })) };
+  return { hits: (res.groups || []).map((g) => ({ paragraph_id: g.hits[0].payload.paragraph_id, doc_id: g.hits[0].payload.doc_id, score: g.hits[0].score, ...rankFields(g.hits[0].payload) })) };
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — BM25 over whole paragraphs with our folding. */
@@ -189,7 +193,7 @@ export async function searchKeywordQdrant(query, { limit = 30, filters, timeoutM
   const sparse = bm25Query(query);
   if (!sparse.indices.length) return { hits: [] };
   const res = await qdrant('/collections/paragraphs_kw/points/query', {
-    query: sparse, using: 'bm25', limit, with_payload: ['paragraph_id', 'doc_id'], filter: toQdrantFilter(filters),
+    query: sparse, using: 'bm25', limit, with_payload: ['paragraph_id', 'doc_id', ...RANK_PAYLOAD], filter: toQdrantFilter(filters),
   }, timeoutMs);
-  return { hits: (res.points || []).map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score })) };
+  return { hits: (res.points || []).map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, ...rankFields(p.payload) })) };
 }

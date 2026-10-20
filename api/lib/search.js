@@ -1455,18 +1455,35 @@ export async function multiIndexSearch(query, options = {}) {
     }
   }
 
+  // AUTHORITATIVE PASS (Chad 10-20: "authority should weigh in from the outset"): the same phrase query restricted to the
+  // doctrinal writers (author or quoted voice: Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi) in the library — so the
+  // authoritative passages are always among the candidates, never crowded out by quoting copies on scraped sites.
+  let doctrinalResult = { hits: [] };
+  const wantsDoctrinal = phraseRan && !phraseResult.failed && !filters.author && (!filters.religion || filters.religion === "Baha'i");
+  if (wantsDoctrinal) {
+    try {
+      const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
+      doctrinalResult = await timed('doctrinal', searchPhrases(query, { limit: 15, filters: { ...qfilters, author: DOCTRINAL_KEYS, scope: 'primary' }, timeoutMs: 2500 }));
+    } catch (err) {
+      logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed');
+    }
+  }
+
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult]]) {
+  const { keyFactor, doctrinalFactor } = await import('./search/doctrinal-rank.js');
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
     (result.hits || []).forEach((hit, rank) => {
+      // authority FROM THE OUTSET: each layer's contribution is weighed by the passage's writer (Qdrant payload)
+      const af = keyFactor(hit.author_fold, hit.scope, hit.collection);
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
       // CANON on a quote (planner shape=quote → keywordLayer): a SHARP curve, so the authority-ordered first canonical hit —
       // the original — outweighs a quoting work that also collects phrase-layer credit (10-10: World Order kept beating
       // Gleanings under plain RRF). Elsewhere canon is one more RRF list.
-      cur.score += layer === 'canon' && (options.keywordLayer || canonVerbatim)
+      cur.score += af * (layer === 'canon' && (options.keywordLayer || canonVerbatim)
         ? (weights.canon ?? 0.05) / (1 + rank)
-        : (weights[layer] ?? 1.0) / (RRF_K + rank);
+        : (weights[layer] ?? 1.0) / (RRF_K + rank));
       cur[`${layer}Rank`] = rank;
       if (hit.span && !cur.phraseSpan) cur.phraseSpan = hit.span;
       if (!cur.paragraph) cur.paragraph = { id: pid, doc_id: hit.doc_id, _stub: true };
@@ -1518,14 +1535,35 @@ export async function multiIndexSearch(query, options = {}) {
       if (BISMILLAH_RE.test((e.paragraph.text || '').trim())) return false;
       return true;
     })
-    .sort((a, b) => {
-      if (needsAuthorityBlend) {
-        const authA = computeAuthorityScore({ ...a.paragraph, _rankingScore: a.score });
-        const authB = computeAuthorityScore({ ...b.paragraph, _rankingScore: b.score });
-        if (Math.abs(authB - authA) > 1e-7) return authB - authA;
-      }
-      return b.score - a.score;
-    });
+;
+  // RE-RANK (Chad 10-20: "further favor authoritative if it answers the question"): among passages relevant enough to
+  // answer (≥ half the best score), the paragraph writer's doctrinal authority multiplies the score; below that band
+  // authority cannot lift a passage that does not answer. Applies to every query shape (the old blend skipped some).
+  const topScore = Math.max(0, ...allSorted.map((e) => e.score));
+  const rankKey = (e) => {
+    if (e._rankKey != null) return e._rankKey;
+    let auth = 5;
+    try { auth = getAuthority({ author: e.paragraph.author || null, religion: e.paragraph.religion || null, collection: e.paragraph.collection || null, source_site: e.paragraph.source_site || null, title: e.paragraph.title || null, authority: null }); } catch { /* neutral */ }
+    e._factor = doctrinalFactor(e.paragraph, auth);
+    e._rankKey = e.score >= topScore * 0.5 ? e.score * e._factor : e.score * Math.min(1, e._factor);
+    return e._rankKey;
+  };
+  allSorted.sort((a, b) => rankKey(b) - rankKey(a));
+  // DEDUP TOWARD THE CANONICAL (Chad 10-20): one passage standing in several works (the original + quoting copies) keeps
+  // only its most authoritative copy, which inherits the copies' score.
+  const fold160 = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, ' ').toLowerCase().trim().slice(0, 160);
+  const byText = new Map();
+  for (const e of allSorted) {
+    const k = fold160(e.paragraph?.text);
+    if (k.length < 40) continue;   // too short to call two passages the same
+    const kept = byText.get(k);
+    if (!kept) { byText.set(k, e); continue; }
+    if ((e._factor ?? 1) > (kept._factor ?? 1)) { e.score += kept.score; e._rankKey = null; byText.set(k, e); kept._dropped = true; }
+    else { kept.score += e.score; e._dropped = true; }
+  }
+  for (let i = allSorted.length - 1; i >= 0; i--) if (allSorted[i]._dropped) allSorted.splice(i, 1);
+  for (const e of allSorted) e._rankKey = null;
+  allSorted.sort((a, b) => rankKey(b) - rankKey(a));
   // Deduplicate: cap at 1 paragraph per source document so multiple passages from
   // the same book don't crowd out content from other works.
   // Exception: when author filter is set we're intentionally searching within one
