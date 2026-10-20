@@ -95,6 +95,10 @@ async function judge(c, answers) {
     messages: [{ role: 'user', content: `THE CONVERSATION:\n${convo}\n\n${body}\n\nScore every answer (1–10) and name the best, by calling the verdict tool.` }] });
   const v = res.content.find((b) => b.type === 'tool_use')?.input || { scores: [] };
   const back = Object.fromEntries(Object.entries(tag).map(([k, t]) => [t, k]));
+  // the judge sometimes writes "Answer B" for "B" (10-19: those scores were dropped as '?')
+  const lab = (l) => String(l || '').replace(/^answer\s+/i, '').trim().toUpperCase();
+  for (const sc of v.scores || []) sc.label = lab(sc.label);
+  v.best = lab(v.best);
   return { scores: Object.fromEntries((v.scores || []).map((s) => [back[s.label] || s.label, { score: s.score, why: s.why }])), best: back[v.best] || v.best, gaps: v.anis_gaps || null };
 }
 

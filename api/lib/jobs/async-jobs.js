@@ -31,7 +31,9 @@ export function jobStore(dir = join(process.cwd(), 'data', 'jobs')) {
     write(key, rec);
     const p = Promise.resolve().then(fn)
       .then((result) => write(key, { ...rec, status: 'done', finished_at: Date.now(), result }))
-      .catch((err) => write(key, { ...rec, status: 'failed', finished_at: Date.now(), error: String(err?.message || err).slice(0, 500) }))
+      // the STACK too: a bare "Request timed out." (10-19) did not say which call
+      .catch((err) => { console.error(JSON.stringify({ job: key, failed: String(err?.message || err).slice(0, 300), stack: String(err?.stack || '').slice(0, 1500) }));
+        write(key, { ...rec, status: 'failed', finished_at: Date.now(), error: String(err?.message || err).slice(0, 500), stack: String(err?.stack || '').slice(0, 1500) }); })
       .finally(() => running.delete(key));
     running.set(key, p);
     return rec;
