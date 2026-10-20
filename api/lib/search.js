@@ -1459,7 +1459,11 @@ export async function multiIndexSearch(query, options = {}) {
   // doctrinal writers (author or quoted voice: Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi) in the library — so the
   // authoritative passages are always among the candidates, never crowded out by quoting copies on scraped sites.
   let doctrinalResult = { hits: [] };
-  const wantsDoctrinal = phraseRan && !phraseResult.failed && !filters.author && (!filters.religion || filters.religion === "Baha'i");
+  // only inside a BAHÁ'Í-scoped search: interfaith results give each tradition its own slots, ranked within it — an
+  // unscoped "what is nirvana" must not be handed Bahá'u'lláh's passages first (10-20 battery: nirvana, karma, Qur'anic
+  // patience lost to Bahá'í texts)
+  const bahaiScope = filters.religion === "Baha'i";
+  const wantsDoctrinal = phraseRan && !phraseResult.failed && !filters.author && bahaiScope;
   if (wantsDoctrinal) {
     try {
       const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
@@ -1481,7 +1485,7 @@ export async function multiIndexSearch(query, options = {}) {
   for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       // authority FROM THE OUTSET: each layer's contribution is weighed by the passage's writer (Qdrant payload)
-      const af = keyFactor(hit.author_fold, hit.scope, hit.collection);
+      const af = keyFactor(bahaiScope ? hit.author_fold : null, hit.scope, hit.collection);
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
       // CANON on a quote (planner shape=quote → keywordLayer): a SHARP curve, so the authority-ordered first canonical hit —
@@ -1554,7 +1558,8 @@ export async function multiIndexSearch(query, options = {}) {
     if (e._rankKey != null) return e._rankKey;
     let auth = 5;
     try { auth = getAuthority({ author: e.paragraph.author || null, religion: e.paragraph.religion || null, collection: e.paragraph.collection || null, source_site: e.paragraph.source_site || null, title: e.paragraph.title || null, authority: null }); } catch { /* neutral */ }
-    e._factor = doctrinalFactor(e.paragraph, auth);
+    // the Bahá'í doctrinal tiers inside a Bahá'í search; across traditions every passage by its own authority number
+    e._factor = doctrinalFactor(bahaiScope ? e.paragraph : { ...e.paragraph, author: null }, auth);
     e._rankKey = e.score >= topScore * 0.5 ? e.score * e._factor : e.score * Math.min(1, e._factor);
     return e._rankKey;
   };
