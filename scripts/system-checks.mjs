@@ -12,6 +12,7 @@ dotenv.config({ path: '.env-public' });
 
 // --report: the same checks, printed as JSON — no email, no state written (Chad 10-19: "check for these errors
 // periodically … seems stupid for the system to email me and then I tell you"): the agent's own watch reads this
+import { settleMs } from './lib/settle.mjs';
 const MODE = process.argv.includes('--daily') ? 'daily' : process.argv.includes('--report') ? 'report' : 'check';
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
 const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
@@ -57,9 +58,12 @@ const pm2List = () => { try { return JSON.parse(execSync('pm2 jlist', { encoding
 let procs = pm2List();
 // every instance online (cluster apps have several); a reload in progress shows 'launching' / 'stopping' for seconds — a
 // graceful deploy, not an outage (10-19: "pm2 siftersearch-api: launching" would have paged Chad at every deploy). Look
-// again for up to 60 s before calling it down.
+// again before calling it down — for as long as that process's own drain may take (its kill_timeout) plus a minute to
+// start: the writer finishes its batch first, and 10-19 a fixed 60 s window paged Chad for "siftersearch-worker stopping"
+// during an ordinary deploy.
 const statusOf = (list, name) => { const ps = list.filter((p) => p.name === name); return !ps.length ? 'missing' : ps.every((p) => p.pm2_env?.status === 'online') ? 'online' : ps.map((p) => p.pm2_env?.status).join('/'); };
-for (let i = 0; i < 12 && REQUIRED.some((n) => !['online', 'missing'].includes(statusOf(procs, n))); i++) {
+const transitioning = () => REQUIRED.filter((n) => !['online', 'missing'].includes(statusOf(procs, n)));
+for (const until = Date.now() + settleMs(procs, transitioning()); transitioning().length && Date.now() < until;) {
   await new Promise((r) => setTimeout(r, 5000));
   procs = pm2List();
 }
