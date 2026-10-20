@@ -147,9 +147,10 @@ export async function coverageOf(docId, deps = {}) {
   return (await q(
     `${coverageSelect(HYPE_MINLEN)},
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
-            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    // 7 = 5 coverageSelect subqueries (prose, disamb, hyped, extracted, hypeable) + clusters + decisions.
-    [docId, docId, docId, docId, docId, docId, docId], 'grounding:coverage-one-doc')) || {};
+            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions
+       FROM cov`,
+    // 3 = the coverage pass (one doc_id) + clusters + decisions.
+    [docId, docId, docId], 'grounding:coverage-one-doc')) || {};
 }
 
 /** Which gate blocks completion, in the order the decision applies them. null = nothing blocks. */

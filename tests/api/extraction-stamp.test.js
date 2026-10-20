@@ -140,3 +140,11 @@ describe('a note is extractable whatever version stamped it', () => {
     expect(stats.stamped).toBe(0);
   });
 });
+
+describe('coverage is ONE pass over the book (10-20: five passes took 8.8 s on the API main thread)', () => {
+  it('reads content once and binds the doc id once', () => {
+    const sql = coverageSelect(60);
+    expect(sql.match(/FROM content/g)).toHaveLength(1);
+    expect(sql.match(/\?/g)).toHaveLength(1);
+  });
+});

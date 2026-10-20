@@ -43,9 +43,10 @@ export async function resumeStageFor(docId, deps = {}) {
     `${coverageSelect(HYPE_MINLEN)},
             (SELECT COUNT(*) FROM entity_claims WHERE doc_id=? AND entity_id IS NOT NULL) claimsBound,
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
-            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    // 8 = 5 coverageSelect subqueries (prose, disamb, hyped, extracted, hypeable) + claimsBound + clusters + decisions.
-    [docId, docId, docId, docId, docId, docId, docId, docId], 'grounding:resume-stage');
+            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions
+       FROM cov`,
+    // 4 = the coverage pass (one doc_id) + claimsBound + clusters + decisions.
+    [docId, docId, docId, docId], 'grounding:resume-stage');
   const prose = r?.prose || 0;
   if (prose === 0) return null;                                              // no groundable content → skip
   if (!meetsDisambBar(r.disamb || 0, prose)) return {};                     // disambiguation incomplete → full

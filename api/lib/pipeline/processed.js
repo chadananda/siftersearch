@@ -62,13 +62,16 @@ export function meetsDisambBar(done, total, threshold = DISAMB_THRESHOLD) {
  * disambiguated column drifted in one, the two disagreed and books stalled. One builder ⇒ they cannot.
  * `hypeMinLen` is passed in because it belongs to the hype stage, not to this measure.
  */
+// ONE pass over the book's prose rows (10-20: five COUNT subqueries read a large book's rows five times — 8.8 s on the
+// API's main thread for the grounding processor). Binds doc_id ONCE; callers append their own columns and end with FROM cov.
 export function coverageSelect(hypeMinLen) {
-  const live = `doc_id=? AND ${PROSE_SQL}`;
-  return `SELECT (SELECT COUNT(*) FROM content WHERE ${live}) prose,
-            (SELECT COUNT(*) FROM content WHERE ${live} AND ${DISAMB_DONE_SQL}) disamb,
-            (SELECT COUNT(*) FROM content WHERE ${live} AND ${HYPE_DONE_SQL}) hyped,
-            (SELECT COUNT(*) FROM content WHERE ${live} AND ${EXTRACT_DONE_SQL}) extracted,
-            (SELECT COUNT(*) FROM content WHERE ${live} AND length(trim(text)) >= ${Number(hypeMinLen)}) hypeable`;
+  return `WITH cov AS (SELECT COUNT(*) prose,
+              COALESCE(SUM(CASE WHEN ${DISAMB_DONE_SQL} THEN 1 ELSE 0 END), 0) disamb,
+              COALESCE(SUM(CASE WHEN ${HYPE_DONE_SQL} THEN 1 ELSE 0 END), 0) hyped,
+              COALESCE(SUM(CASE WHEN ${EXTRACT_DONE_SQL} THEN 1 ELSE 0 END), 0) extracted,
+              COALESCE(SUM(CASE WHEN length(trim(text)) >= ${Number(hypeMinLen)} THEN 1 ELSE 0 END), 0) hypeable
+            FROM content WHERE doc_id=? AND ${PROSE_SQL})
+          SELECT cov.prose, cov.disamb, cov.hyped, cov.extracted, cov.hypeable`;
 }
 
 
