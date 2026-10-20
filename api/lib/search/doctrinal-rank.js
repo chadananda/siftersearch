@@ -42,7 +42,11 @@ export function numberFactor(auth) {
 export function doctrinalFactor(hit, auth) {
   // pilgrim notes and other authority-1 collections: never authority, whoever they quote
   if (/pilgrim notes/i.test(hit.collection || '') || Number(auth) <= 1) return 0.4;
-  const t = TIER.get(foldKey(hit.author));
+  let t = TIER.get(foldKey(hit.author));
+  // AUTHENTICATED TEXT FIRST: a central figure's words count in full only in an authoritative book (their own works, the
+  // compilations of the Writings, the House's) — quoted or recalled in a secondary book (a pilgrim's account, a paper) they
+  // are a pointer to the original, never its equal (10-20: "Visiting the Bahá'í World Centre" outranked the Íqán)
+  if (t != null && hit.book_authority != null && Number(hit.book_authority) < 7) t = Math.min(t, 1.3);
   let f = t ?? numberFactor(auth);
   // a copy on a scraped site (not OceanLibrary, not the library itself) yields to the library's own text
   const site = hit.source_site || '';

@@ -35,3 +35,12 @@ describe('a question is not a quotation (10-20: a PDF restating the question led
     expect(verbatimLead(q, 'The earth is but one country, and mankind its citizens', (e) => e.t)[0]).toBe(q[1]);
   });
 });
+
+describe('authenticated text first (10-20)', () => {
+  it("'Abdu'l-Bahá quoted in a secondary book counts less than in his own works", () => {
+    const own = doctrinalFactor({ author: "‘Abdu’l-Bahá", book_authority: 9 }, 9);
+    const recalled = doctrinalFactor({ author: "‘Abdu’l-Bahá", book_authority: 5 }, 7);
+    expect(own).toBeGreaterThan(2);
+    expect(recalled).toBeLessThanOrEqual(1.3);
+  });
+});

@@ -23,7 +23,7 @@ export function paragraphDoc(p, doc, authority = null) {
     // a part of a multi-part OceanLibrary work (KJV, Qur'an…) is titled — and so cited — "<work>, <part>" (ol-works.js)
     title: olCiteTitle(doc), author, filename: doc.filename,
     religion: doc.religion, collection: doc.collection, language: doc.language,
-    year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority,
+    year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority, book_authority: docAuthority,
     heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
     source_site: doc.source_site || null,
     source_url: doc.source_url || null,
