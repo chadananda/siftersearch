@@ -267,9 +267,12 @@ export async function planExhaustion({ deps = {} } = {}) {
   // at the prose count instead of inferring from the null.
   if (nullResume.length) {
     const ph = nullResume.map(() => '?').join(',');
+    // EXISTS stops at a book's first prose row; the old GROUP BY read every paragraph of ~600 books (30.4 s cold on the
+    // API main thread, 10-20 15:29 — gateway timeouts).
     const withProse = new Set((await qAll(
-      `SELECT doc_id FROM content WHERE doc_id IN (${ph}) AND ${PROSE_SQL} AND deleted_at IS NULL
-        GROUP BY doc_id`, nullResume)).map((r) => r.doc_id));
+      `SELECT d.id AS doc_id FROM docs d WHERE d.id IN (${ph})
+          AND EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND ${PROSE_SQL} AND c.deleted_at IS NULL)`,
+      nullResume)).map((r) => r.doc_id));
     for (const id of nullResume) {
       if (withProse.has(id)) { counts.complete++; detail.complete.push(id); }
       else { counts.husks++; detail.husks.push(id); }

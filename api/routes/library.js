@@ -21,7 +21,7 @@ import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence 
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
-import { findDocuments } from '../lib/docs-repo.js';
+import { findDocuments, docsForPathSlugs } from '../lib/docs-repo.js';
 import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
@@ -1757,12 +1757,7 @@ Return ONLY the description text, no quotes or formatting.`;
     // Handles old URLs without author prefix, dedup suffixes, etc.
     if (!document) {
       const { baseSlug, language: slugLang } = parseDocSlug(slug);
-      const candidates = await queryAll(`
-        SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
-        FROM docs
-        WHERE religion IS NOT NULL AND collection IS NOT NULL
-      `);
+      const candidates = await docsForPathSlugs(religionSlug, collectionSlug, slugifyPath);
 
       document = candidates.find(doc => {
         const docReligionSlug = slugifyPath(doc.religion || '');

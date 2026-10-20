@@ -249,3 +249,18 @@ describe('settled books are not re-probed', () => {
     expect(probes.filter((id) => id === 2)).toHaveLength(3);
   });
 });
+
+describe('planExhaustion prose check', () => {
+  it('asks EXISTS per book (stops at the first prose row) — never aggregates every paragraph', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const sqls = [];
+    await planExhaustion({ deps: {
+      list: async () => [], resumeStageFor: async () => null,
+      queryAll: async (sql) => { sqls.push(sql); return []; },
+      getProgress: async () => ({ phases: [{ books: [{ id: 91001, done: false }] }] }),
+    } });
+    const prose = sqls.find((s) => /FROM content|content c/.test(s));
+    expect(prose).toMatch(/EXISTS/);
+    expect(prose).not.toMatch(/GROUP BY/);
+  });
+});

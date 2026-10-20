@@ -484,3 +484,29 @@ export async function getParagraphsByRefs(refs) {
   }
   return out;
 }
+
+// Distinct collection names, from the collection index alone (no table rows). 10 min memo: collections change rarely.
+let _collections = { at: 0, names: [] };
+async function collectionNames() {
+  if (Date.now() - _collections.at < 10 * 60 * 1000) return _collections.names;
+  const rows = await queryAll('SELECT DISTINCT collection FROM docs WHERE collection IS NOT NULL', [], 'docs-repo:collection-names');
+  _collections = { at: Date.now(), names: rows.map((r) => r.collection) };
+  return _collections.names;
+}
+export function _resetCollectionNames() { _collections = { at: 0, names: [] }; }
+
+/**
+ * The library-page slug fallback's candidates: docs whose religion AND collection slugify to the URL's segments. It used
+ * to read EVERY doc row (~158k with descriptions) on the API main thread whenever a stale URL missed — 31.9 s cold
+ * (10-20 15:22, three gateway timeouts). Now: collection names from the index → only the matching collections' rows.
+ */
+export async function docsForPathSlugs(religionSlug, collectionSlug, slugify) {
+  const names = (await collectionNames()).filter((c) => slugify(c) === collectionSlug);
+  if (!names.length) return [];
+  const rows = await queryAll(
+    `SELECT id, title, author, religion, collection, language, year, description,
+            paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
+       FROM docs WHERE religion IS NOT NULL AND collection IN (${names.map(() => '?').join(',')})`,
+    names, 'docs-repo:path-slug-candidates');
+  return rows.filter((d) => slugify(d.religion || '') === religionSlug);
+}
