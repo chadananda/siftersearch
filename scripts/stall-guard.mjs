@@ -42,7 +42,7 @@ const writeState = (s) => { fs.mkdirSync(dirname(STATE), { recursive: true }); f
 
 async function groundingSpendToday() {
   const r = await queryOne(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
-                            WHERE provider='deepseek' AND service_type LIKE 'grounding%' AND date(timestamp)=date('now')`);
+                            WHERE provider='deepseek' AND timestamp >= date('now') AND service_type LIKE 'grounding%'`);   // uses index (provider, timestamp); wrapping the column in date() scanned all of ai_usage hourly (10-19)
   return Number(r?.s || 0);
 }
 // GROUNDING-WRITE signal — entity_mentions_v2 row count. Every book's grounding writes mentions here, so it climbs
@@ -51,7 +51,9 @@ async function groundingSpendToday() {
 // because this corpus reuses the same historical figures across books, so legit grounding would look "flat" and the
 // guard would FALSE-HALT healthy work. Progress = a book completed OR mentions grew. -1 = unknown → never stall.
 async function entityCount() {
-  const r = await queryOne(`SELECT COUNT(*) n FROM entity_mentions_v2`).catch(() => ({ n: -1 }));
+  // MAX(rowid) moves exactly when rows are appended, from the b-tree's last page; COUNT(*) read the whole table every hour,
+  // evicting the cache search hydrates from (10-19: primary-key lookups at 200–1000 ms, searches at 5–15 s)
+  const r = await queryOne(`SELECT MAX(rowid) n FROM entity_mentions_v2`).catch(() => ({ n: -1 }));
   return Number(r?.n ?? -1);
 }
 const MIN_ENTITIES = Number(process.env.STALL_MIN_ENTITIES || 50);  // grounding-write growth that counts as real progress

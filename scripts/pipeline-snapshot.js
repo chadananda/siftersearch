@@ -29,7 +29,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
 
-const { queryAll, queryOne } = await import('../api/lib/db.js');
+const db = await import('../api/lib/db.js');
+// slow probes (≥2 s last run) reuse their result for up to an hour — see scripts/lib/slow-probe-cache.mjs (10-19)
+const { slowProbeCache } = await import('./lib/slow-probe-cache.mjs');
+const probes = slowProbeCache(join(ROOT, 'data', 'pipeline-snapshot-slow-probes.json'));
+const queryAll = probes.wrap(db.queryAll), queryOne = probes.wrap(db.queryOne);
 const { config } = await import('../api/lib/config.js');
 const { cleanTitle } = await import('../api/lib/text/clean-title.js');
 const { buildHeldIndex } = await import('../api/lib/text/already-held.js');
@@ -703,6 +707,8 @@ async function main() {
 
   const dataDir = join(ROOT, 'data');
   try { mkdirSync(dataDir, { recursive: true }); } catch { /* exists */ }
+  probes.save();
+  snapshot.slow_probes = { ...probes.stats };
   writeFileSync(join(dataDir, 'pipeline-status.json'), JSON.stringify(snapshot, null, 2));
   console.log(`pipeline snapshot written in ${snapshot.computed_in_ms}ms (${books.length} books)`);
   if (probeErrors.length) {

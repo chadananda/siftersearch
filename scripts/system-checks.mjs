@@ -145,7 +145,10 @@ const metrics = {};
 if (db) {
   const g = (sql, label) => { try { return db.prepare(sql).get(); } catch { return null; } };
   const a = (sql) => { try { return db.prepare(sql).all(); } catch { return null; } };
-  metrics.embedBacklog = g(`SELECT COUNT(*) n FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND length(trim(text)) > 20`)?.n;
+  // WHOLE-TABLE scans of content (9M rows) only in the DAILY run: every 30 min they evicted the cache search hydrates from
+  // (10-19: primary-key lookups at 200–1000 ms, searches at 5–15 s). The half-hourly check stays on small tables.
+  const heavy = MODE === 'daily';
+  metrics.embedBacklog = heavy ? g(`SELECT COUNT(*) n FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND length(trim(text)) > 20`)?.n : undefined;
   if (metrics.embedBacklog != null) {
     const prev = state.embedBacklog;
     const growing = prev != null && metrics.embedBacklog > prev + 5000;
@@ -155,8 +158,10 @@ if (db) {
   metrics.cache24 = g(`SELECT COUNT(*) n FROM answer_cache WHERE created_at > unixepoch() - 86400`)?.n
     ?? g(`SELECT COUNT(*) n FROM answer_cache WHERE created_at > datetime('now','-24 hours')`)?.n;
   metrics.widget24 = g(`SELECT COUNT(*) n, COUNT(DISTINCT session_id) sessions FROM widget_events WHERE created_at > datetime('now','-24 hours')`);
-  metrics.paras = g(`SELECT COUNT(*) n FROM content WHERE deleted_at IS NULL`)?.n;
-  metrics.hypedDocs = g(`SELECT COUNT(DISTINCT doc_id) n FROM content WHERE hyp_questions IS NOT NULL`)?.n;
+  if (heavy) {
+    metrics.paras = g(`SELECT COUNT(*) n FROM content WHERE deleted_at IS NULL`)?.n;
+    metrics.hypedDocs = g(`SELECT COUNT(DISTINCT doc_id) n FROM content WHERE hyp_questions IS NOT NULL`)?.n;
+  }
   // Hollow-done guard (daily only — heavier query): a substantial book whose disambiguation is complete
   // but with ZERO extracted people or claims is a silent extraction failure being grandfathered as done,
   // never a "sparse book". These docs are full of historical gems; surface them instead of hiding them.
@@ -308,7 +313,7 @@ console.log(text);
 
 // Persist state for delta checks.
 fs.mkdirSync('logs', { recursive: true });
-const newState = { ...state, restarts, embedBacklog: metrics.embedBacklog, lastRun: Date.now() };
+const newState = { ...state, restarts, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
 
 // Decide whether to email. --daily always sends; --check only on criticals, and not the same
 // alert-set more than once per 6h (a down service at 2am = one email, not twelve).
