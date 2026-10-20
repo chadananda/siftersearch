@@ -32,7 +32,8 @@ export function parseStoredHypQuestions(raw) {
   if (raw.startsWith('[')) {
     try {
       const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) return arr.map(q => String(q).trim()).filter(Boolean);
+      // v14+ stores items as objects { q, a, deep?, seeker? } — String() of one is "[object Object]" (10-19)
+      if (Array.isArray(arr)) return arr.map((q) => (q && typeof q === 'object' ? String(q.q ?? q.question ?? '') : String(q)).trim()).filter(Boolean);
     } catch { /* fall through to newline split */ }
   }
   return raw.split('\n').map(s => s.trim()).filter(Boolean);
@@ -113,14 +114,14 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
   // past its PM2 memory cap. With the hint: <200ms on 4M rows.
   const rows = await queryAll(`
     SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions, c.hyp_thesis,
-           c.para_meta, c.authors, d.religion, d.collection, d.encumbered, d.title, d.author
+           c.para_meta, c.authors, d.religion, d.collection, d.encumbered, d.title, d.author,
+           (d.deleted_at IS NOT NULL) AS doc_deleted
     FROM content c INDEXED BY idx_content_hype_to_sync
     JOIN docs d ON d.id = c.doc_id
     WHERE c.enhanced_synced = 0
       AND (c.hyp_questions IS NOT NULL OR c.hyp_thesis IS NOT NULL)
       AND c.deleted_at IS NULL
       AND COALESCE(c.is_duplicate, 0) = 0
-      AND d.deleted_at IS NULL
     ORDER BY c.id
     LIMIT ?
   `, [limit]);
@@ -136,9 +137,13 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
   const questionTexts = [];
 
   for (const row of rows) {
+    // a row that will never be indexed is MARKED synced, never skipped: unmarked it stayed in the partial index and every
+    // batch re-read it first — paragraphs of deleted (retired) documents, and questions that parse to nothing, piled up
+    // ahead of the real work until one batch took 24 s on the single writer's thread and the watchdog restarted it (10-19)
+    if (row.doc_deleted) { sourceParagraphIds.push(row.paragraph_id); continue; }
     const questions = parseStoredHypQuestions(row.hyp_questions);
     const thesis = (row.hyp_thesis || '').trim();
-    if (questions.length === 0 && !thesis) continue;
+    if (questions.length === 0 && !thesis) { sourceParagraphIds.push(row.paragraph_id); continue; }
 
     // Skip pure citation/attribution lines — they're search noise and should
     // not generate HyPE question records in the index.
