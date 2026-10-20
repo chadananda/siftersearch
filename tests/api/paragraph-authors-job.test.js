@@ -67,3 +67,15 @@ describe('trailer paragraph keeps its quoted voices', () => {
     expect(n.authors.some((e) => e.role === 'quoted')).toBe(true);
   });
 });
+
+describe('spend cap', () => {
+  it('starts no book once maxLlm calls are reached', async () => {
+    const { paragraphAuthorsJob } = await import('../../api/lib/ops/paragraph-authors-job.js');
+    const { mkdtempSync } = await import('fs'); const { tmpdir } = await import('os'); const { join } = await import('path');
+    const books = [1, 2, 3].map((id) => ({ id, title: `B${id}`, author: 'X', religion: "Baha'i", paragraph_count: 1 }));
+    const r = await paragraphAuthorsJob({ maxLlm: 0, concurrency: 1, outDir: mkdtempSync(join(tmpdir(), 'pa-')) },
+      { ask: async () => ({}), chatCompletion: async () => '', docs: async () => ({ docs: books }), rowsOf: async () => [], writeAuthors: async () => {} });
+    expect(r.books).toBe(0);
+    expect(r.stopped_at_cap).toBe(3);
+  });
+});

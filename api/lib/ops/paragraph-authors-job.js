@@ -6,7 +6,7 @@
 // <outDir>/<id>.json and never asked again. Secondary books (scholars, compilations — authority < 8 or several authors) get
 // the secondary rules; a book of line fragments is listed, not written. With write, content.authors goes through the
 // writer, every previous value first appended to <outDir>/rollback.jsonl. Port of scripts/authorship/window-run.mjs,
-// which opened the database directly. params { religion = "Baha'i", ids?, write = false, limit?, concurrency = 4, outDir }.
+// which opened the database directly. params { religion = "Baha'i", ids?, write = false, limit?, concurrency = 4, outDir, maxLlm = 20000 (Haiku-call cap) }.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { getDoc, listDocs } from '../docs-repo.js';
@@ -20,7 +20,7 @@ const multiAuthor = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.tes
 export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
 
 export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, write = false, limit = 0, concurrency = 4,
-  outDir = '/tank/sifter/authorship/wrun-all' } = {}, deps = {}) {
+  outDir = '/tank/sifter/authorship/wrun-all', maxLlm = 20000 } = {}, deps = {}) {
   const { ask = (await import('../systemone.js')).ask, chatCompletion = (await import('../ai.js')).chatCompletion,
     rowsOf = authorshipRows, writeAuthors = writeParagraphAuthors, docs = listDocs, doc = getDoc } = deps;
   mkdirSync(outDir, { recursive: true });
@@ -99,6 +99,8 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
 
   await Promise.all(Array.from({ length: Math.max(1, concurrency) }, async () => {
     while (queue.length) {
+      // a SPEND CAP: no new book once the Haiku calls (briefs + escalations) reach maxLlm; the rest resume next run
+      if (cost.llm >= maxLlm) { stats.stopped_at_cap = queue.length; break; }
       const d = queue.shift();
       // one retry after a pause: a transient model / writer error must not drop a whole book (10-08: 6 of 6 failed once)
       for (let attempt = 1; attempt <= 2; attempt++) {
