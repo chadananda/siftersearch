@@ -71,12 +71,19 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
     const raw = new Map(lab.labels.map((l) => [l.id, l]));
     const byId = new Map();
     rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book, { secondary, prevRaw: raw.get(rows[i - 1]?.id) })); });
-    const updates = [...evidence];
-    const done = new Set(evidence.map((u) => u.id));
+    const updates = [];
+    const fromTrailer = new Map(evidence.map((u) => [u.id, u]));
     for (const r of rows) {
-      if (done.has(r.id)) { stats.paras++; continue; }
       stats.paras++;
+      // a trailer paragraph still gets the classifier's QUOTED voices (the author is locked: 'trailer' is a strong basis) —
+      // Shoghi Effendi's letter quoting Bahá'u'lláh keeps Bahá'u'lláh findable (10-19 dry run: skipping them lost ~1,000)
       const n = nextAuthors(r, byId.get(r.id), book, { noDemote: secondary });
+      const ev = fromTrailer.get(r.id);
+      if (ev) {
+        if (n?.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;
+        updates.push({ ...ev, authors: n?.authors || ev.authors });
+        continue;
+      }
       if (!n) continue;
       if (n.changed) stats.author_changed++;
       if (n.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;

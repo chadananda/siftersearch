@@ -57,3 +57,13 @@ describe('trailer evidence (Lights of Guidance, 10-19)', () => {
     expect(m.has(1)).toBe(false);
   });
 });
+
+describe('trailer paragraph keeps its quoted voices', () => {
+  it('nextAuthors on a trailer-locked row keeps the author and adds the quoted voice', async () => {
+    const { nextAuthors } = await import('../../api/lib/authorship/window-core.js');
+    const row = { id: 1, text: 'x', authors: JSON.stringify([{ name: 'Shoghi Effendi', role: 'author', basis: 'trailer' }]) };
+    const n = nextAuthors(row, { speaker: 'Helen Hornby', quotes: "Bahá'u'lláh" }, { author: 'Helen Hornby' });
+    expect(n.authors.find((e) => e.role === 'author')).toMatchObject({ name: 'Shoghi Effendi', basis: 'trailer' });
+    expect(n.authors.some((e) => e.role === 'quoted')).toBe(true);
+  });
+});
