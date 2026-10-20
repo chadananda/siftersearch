@@ -1539,8 +1539,12 @@ export async function multiIndexSearch(query, options = {}) {
   // RE-RANK (Chad 10-20: "further favor authoritative if it answers the question"): among passages relevant enough to
   // answer (≥ half the best score), the paragraph writer's doctrinal authority multiplies the score; below that band
   // authority cannot lift a passage that does not answer. Applies to every query shape (the old blend skipped some).
-  const topScore = Math.max(0, ...allSorted.map((e) => e.score));
+  // the band is measured WITHIN each tradition — interfaith results give each tradition its own slots, so a Bahá'í passage
+  // is judged against the best Bahá'í passage, not the Denkard's (10-20: a secondary book took the Bahá'í slot)
+  const topByReligion = new Map();
+  for (const e of allSorted) { const r = e.paragraph?.religion || ''; topByReligion.set(r, Math.max(topByReligion.get(r) || 0, e.score)); }
   const rankKey = (e) => {
+    const topScore = topByReligion.get(e.paragraph?.religion || '') || 0;
     if (e._rankKey != null) return e._rankKey;
     let auth = 5;
     try { auth = getAuthority({ author: e.paragraph.author || null, religion: e.paragraph.religion || null, collection: e.paragraph.collection || null, source_site: e.paragraph.source_site || null, title: e.paragraph.title || null, authority: null }); } catch { /* neutral */ }
