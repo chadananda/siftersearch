@@ -49,13 +49,24 @@ const site = await http('https://siftersearch.com/', { timeout: 12000 });
 add('Site siftersearch.com', site.status === 200, 'critical', site.status === 200 ? 'ok' : `status ${site.status}`);
 
 // ── 2. PM2 anomalies ─────────────────────────────────────────────────────────
-const REQUIRED = ['siftersearch-api', 'siftersearch-worker', 'siftersearch-embedding', 'siftersearch-deep-research', 'siftersearch-updater', 'cloudflared-tunnel'];
-let procs = [];
-try { procs = JSON.parse(execSync('pm2 jlist', { encoding: 'utf8', timeout: 20000 })); } catch { /* pm2 down is caught below */ }
+// the macro-services (docs/architecture/continuous-deploy.md, 10-19): the gateway carries every request; Anís, ops, the
+// indexer and the reports workers are services of their own and must be watched too
+const REQUIRED = ['siftersearch-gateway', 'siftersearch-api', 'siftersearch-anis', 'siftersearch-ops', 'siftersearch-worker', 'siftersearch-indexer',
+  'siftersearch-reports', 'siftersearch-embedding', 'siftersearch-deep-research', 'siftersearch-updater', 'cloudflared-tunnel'];
+const pm2List = () => { try { return JSON.parse(execSync('pm2 jlist', { encoding: 'utf8', timeout: 20000 })); } catch { return []; } };
+let procs = pm2List();
+// every instance online (cluster apps have several); a reload in progress shows 'launching' / 'stopping' for seconds — a
+// graceful deploy, not an outage (10-19: "pm2 siftersearch-api: launching" would have paged Chad at every deploy). Look
+// again for up to 60 s before calling it down.
+const statusOf = (list, name) => { const ps = list.filter((p) => p.name === name); return !ps.length ? 'missing' : ps.every((p) => p.pm2_env?.status === 'online') ? 'online' : ps.map((p) => p.pm2_env?.status).join('/'); };
+for (let i = 0; i < 12 && REQUIRED.some((n) => !['online', 'missing'].includes(statusOf(procs, n))); i++) {
+  await new Promise((r) => setTimeout(r, 5000));
+  procs = pm2List();
+}
 const byName = Object.fromEntries(procs.map((p) => [p.name, p]));
 for (const name of REQUIRED) {
-  const p = byName[name];
-  add(`pm2 ${name}`, p?.pm2_env?.status === 'online', 'critical', p ? p.pm2_env.status : 'missing');
+  const st = statusOf(procs, name);
+  add(`pm2 ${name}`, st === 'online', 'critical', st);
 }
 // Restart storms: +10 restarts since last run = something is crash-looping.
 const restarts = Object.fromEntries(procs.map((p) => [p.name, p.pm2_env?.restart_time || 0]));
