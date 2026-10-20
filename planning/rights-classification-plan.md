@@ -16,7 +16,9 @@ Dewey is served like a public-domain text.
   'model:0.82', 'chad') + `rights_checked_at` — the ONE source of truth, per document.
 - A `servingPolicy(rights)` table in one module decides every serving path (full text / reading guide / quote length / public
   API / download) — no path reads a boolean.
-- `encumbered` becomes derived (rights ∈ {copyrighted, unknown}) for the transition, then retired (ratchet: no new reads).
+- `encumbered` becomes derived (rights = copyrighted) for the transition, then retired (ratchet: no new reads).
+- Chad 10-20: "it's set overly broad" — collection/religion-level defaults restrict whole shelves. The new class is decided PER
+  DOCUMENT from evidence; nothing is restricted by where it sits.
 
 ## Classes
 | class | examples | restricted (full text never served) |
@@ -24,7 +26,7 @@ Dewey is served like a public-domain text.
 | `public-domain` | scripture translations in the public domain, pre-1930 publications, Phelps' renderings (PD, Chad 09-29) | no |
 | `shareable` | Bahá'í World Centre texts published for free distribution (bahai.org library), UHJ / BIC / ITC / OSED statements, author-licensed papers | no |
 | `copyrighted` | published books by living or recent authors (Saiedi, Redman, Stockman, Dunbar, Taherzadeh …), publisher editions | **yes** |
-| `unknown` | no publisher/date evidence | yes until reviewed (safe default) |
+| `unknown` | no publisher/date evidence | **no** — restricted only on evidence (Chad: the old flag was overly broad); listed for review |
 
 ## Evidence (cheap first)
 1. Explicit: frontmatter `rights:` / `license:`; collection meta.yaml.
@@ -34,8 +36,10 @@ Dewey is served like a public-domain text.
 5. Model (Haiku, one call, title + first pages + the above): only when 1–4 don't decide; low confidence → `unknown` → review.
 
 ## Steps
+0. [ ] Measure the current breadth: an ops report — docs encumbered by source (frontmatter vs collection vs religion
+   meta.yaml), per collection, with sample titles — so the redo shows exactly what it un-restricts.
 1. [ ] Migration: docs.rights / rights_basis / rights_checked_at; `servingPolicy()` module; `rightsClass()` pure classifier (evidence 1–4) with tests.
-2. [ ] Dewey intake sets `rights` (+ `encumbered`) on every new document; the review screen shows it.
+2. [ ] Dewey intake sets `rights` on every new document; the review screen shows it.
 3. [ ] `rights-backfill` ops report over the library (dry run → counts per class → Chad reviews `copyrighted`/`unknown` samples
    → write). Includes the 2,029 "extra Ocean books" being ingested now.
 4. [ ] Serving: every path asks servingPolicy(doc.rights) — encumbered reads replaced (ratchet), then the column retired. Verify every path (search hits, Anís quotes, reading guide, /documents full text, public API) respects
