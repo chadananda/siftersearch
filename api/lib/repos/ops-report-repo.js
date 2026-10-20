@@ -43,12 +43,15 @@ export async function claimNext({ skip = [], only = [] } = {}) {
 
 /** Drop a QUEUED run (a running one is left to finish). → the run row */
 export async function cancel(id) {
-  await query(`UPDATE ops_report_runs SET status = 'cancelled', finished_at = ? WHERE id = ? AND status = 'queued'`, [now(), id]);
+  // a RUNNING run can be cancelled too (10-20: a library-wide authorship run had to be paused overnight): it is marked now,
+  // stops at its next yield point when the service drains, and is never requeued (requeueStale takes 'running' only)
+  await query(`UPDATE ops_report_runs SET status = 'cancelled', finished_at = ? WHERE id = ? AND status IN ('queued', 'running')`, [now(), id]);
   return getRun(id);
 }
 
 export async function finish(id, { result = null, error = null, ms = null }) {
-  await query('UPDATE ops_report_runs SET status = ?, finished_at = ?, ms = ?, result = ?, error = ? WHERE id = ?',
+  // a run cancelled while it ran keeps 'cancelled' (its result is still recorded)
+  await query(`UPDATE ops_report_runs SET status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE ? END, finished_at = ?, ms = ?, result = ?, error = ? WHERE id = ?`,
     [error ? 'failed' : 'done', now(), ms, result == null ? null : JSON.stringify(result), error, id]);
 }
 
