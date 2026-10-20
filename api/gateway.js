@@ -24,6 +24,9 @@ const RETRY_MS = Number(process.env.GATEWAY_RETRY_MS || 10_000);
 const MAX_BODY = 25 * 1024 * 1024;
 const agents = Object.fromEntries(Object.keys(SERVICES).map((k) => [k, new http.Agent({ keepAlive: true, maxSockets: 512 })]));
 const stats = { inflight: 0, served: { search: 0, anis: 0, ops: 0 }, retried: 0, unavailable: 0 };
+// the last unavailable answers, WHAT and WHEN (10-19: the count rose 1→3 with nothing to trace it to a reload or a crash)
+const recent503 = [];
+export const noteUnavailable = (entry, list = recent503) => { list.push(entry); if (list.length > 20) list.shift(); return list; };
 
 function forward(service, req, res, body, started) {
   const up = http.request({ host: '127.0.0.1', port: SERVICES[service], method: req.method, path: req.url, agent: agents[service],
@@ -40,6 +43,8 @@ function forward(service, req, res, body, started) {
     }
     if (!res.headersSent) {
       stats.unavailable++;
+      noteUnavailable({ at: new Date().toISOString(), service, path: String(req.url).slice(0, 120), code: err.code, waited_ms: Date.now() - started });
+      console.error(JSON.stringify({ gateway: 'unavailable', service, path: String(req.url).slice(0, 120), code: err.code }));
       res.writeHead(503, { 'content-type': 'application/json', 'retry-after': '5' });
       res.end(JSON.stringify({ error: 'service_restarting', service, message: 'This part of SifterSearch is restarting — please retry in a few seconds.' }));
     } else res.destroy(err);
@@ -54,7 +59,7 @@ export function createGateway() {
   return http.createServer((req, res) => {
     if (req.url === '/gateway/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
-      return res.end(JSON.stringify({ ok: true, services: SERVICES, ...stats }));
+      return res.end(JSON.stringify({ ok: true, services: SERVICES, ...stats, recent_unavailable: recent503 }));
     }
     const service = routeFor(req.url);
     stats.inflight++; stats.served[service]++;

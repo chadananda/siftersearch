@@ -60,3 +60,14 @@ describe('gateway proxying', () => {
     expect(first).toBe('data: one\n\n');   // the first event arrived before the stream ended
   });
 });
+
+describe('unavailable answers are recorded (10-19: a rising count with nothing to trace)', () => {
+  it('keeps the last 20 with service, path and code', async () => {
+    const { noteUnavailable } = await import('../../api/gateway.js');
+    const list = [];
+    for (let i = 0; i < 25; i++) noteUnavailable({ at: `t${i}`, service: 'anis', path: '/api/chat', code: 'ECONNREFUSED' }, list);
+    expect(list).toHaveLength(20);
+    expect(list[0].at).toBe('t5');
+    expect(list.at(-1)).toMatchObject({ service: 'anis', code: 'ECONNREFUSED' });
+  });
+});
