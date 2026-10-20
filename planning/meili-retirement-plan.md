@@ -27,8 +27,8 @@ phrase points compete). Meili had both. SAME GAP as the HyPE layer (pilgrim note
 copy over quoting copies), proven on this battery + the doctrinal battery.
 
 ## Steps
-0. [ ] Authority-aware Qdrant fusion (see above) — then rerun the battery with no deploys during it.
-1. [ ] Battery `--qdrant=only` vs base (64/83) — flip `SEARCH_QDRANT=only` for api + anis only at parity or better.
+0. [x] Authority-aware Qdrant fusion (da42344a…0859aaa1: fusion, authoritative pass, canonical dedup, answer-band re-rank, authenticated-text cap, Bahá'í-scoped) (see above) — then rerun the battery with no deploys during it.
+1. [x] Battery `--qdrant=only` 66/83 vs base 63/83 (p50 1.6 s vs 4.4 s) → SEARCH_QDRANT=only (10-20). Was: Battery `--qdrant=only` vs base (64/83) — flip `SEARCH_QDRANT=only` for api + anis only at parity or better.
 2. [x] Concept + entity layers off Meili (876178b9).
 3. [ ] Site scopes: stamp `site` payload on supplemental points (balib, ool) so site filters work in Qdrant; decide bt.
 4. [ ] `documents` + `deep_research` callers → SQLite (docs_fts, repos).
