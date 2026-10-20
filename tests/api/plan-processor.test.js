@@ -229,3 +229,23 @@ describe('planExhaustion — is remaining plan work actually enqueueable, or onl
     expect(r.exhausted).toBe(true);
   });
 });
+
+// 10-20: once the plan was finished, refill() (every 3 min) and planExhaustion() re-probed all ~600 settled books on
+// the API main thread each time — 5–8 s 'grounding:resume-stage' spikes in front of search. A settled (null) answer
+// is remembered; work-remaining answers are always re-checked.
+describe('settled books are not re-probed', () => {
+  it('a finished book is probed once across ticks; a book with work is probed every tick', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const probes = [];
+    const resumeStageFor = async (id) => { probes.push(id); return id === 1 ? null : { from: 'hype' }; };
+    const deps = {
+      list: async () => [], queryAll: async () => [], resumeStageFor,
+      getProgress: async () => ({ phases: [{ books: [{ id: 1, done: false }, { id: 2, done: false }] }] }),
+    };
+    await planExhaustion({ deps });
+    await planExhaustion({ deps });
+    await followPlanTick({ lookahead: 5, deps: { ...deps, enqueue: async () => {}, tick: async () => {} } });
+    expect(probes.filter((id) => id === 1)).toHaveLength(1);
+    expect(probes.filter((id) => id === 2)).toHaveLength(3);
+  });
+});

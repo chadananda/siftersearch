@@ -73,6 +73,28 @@ export async function resumeStageFor(docId, deps = {}) {
   return { from: 'hype' };                                                   // tail done, only HyPE left
 }
 
+// SETTLED BOOKS ARE NOT RE-PROBED. resumeStageFor is a ~10–250 ms read per book on the API's main thread, and once the
+// plan is finished refill() (every 3 min) and planExhaustion() walk EVERY not-done plan book (~600) to learn that none
+// has work — a steady stream of blocking reads in front of search (10-20: 5–8 s 'grounding:resume-stage' spikes). A
+// null answer (finished, or no prose) changes only when the book is re-ingested or re-ground, so it is remembered for
+// GROUNDING_SETTLED_TTL_MS (30 min); work-remaining answers are never cached. Each real probe yields the event loop
+// first so a long walk interleaves with requests instead of holding them. Per resume function, so injected fakes stay
+// isolated.
+const _settled = new WeakMap();
+function settledResume(resume) {
+  let memo = _settled.get(resume);
+  if (!memo) { memo = new Map(); _settled.set(resume, memo); }
+  const ttl = Number(process.env.GROUNDING_SETTLED_TTL_MS || 30 * 60 * 1000);
+  return async (id) => {
+    const until = memo.get(id);
+    if (until && until > Date.now()) return null;
+    await new Promise((r) => setImmediate(r));
+    const opts = await resume(id);
+    if (opts == null) memo.set(id, Date.now() + ttl); else memo.delete(id);
+    return opts;
+  };
+}
+
 // Keep the next `lookahead` incomplete books queued, in the given order, each resuming from its real stage.
 // Idempotent: already-queued books are respected (never duplicated); position is pinned to the source index so
 // order can never drift. `orderedIds()` supplies the candidate order (plan order or library order per mode).
@@ -145,7 +167,7 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
   // never enqueued. Relies on docs.language being correct; scripts/relabel-languages.mjs detects + fixes
   // the `en`-mislabels (German/French/… histories) so this gate can see them.
 
-  const resume = deps.resumeStageFor || resumeStageFor;
+  const resume = settledResume(deps.resumeStageFor || resumeStageFor);
   const enq = deps.enqueue || enqueue;
   const doTick = deps.tick || tick;
   const ordered = await orderedIdsFn();
@@ -226,7 +248,7 @@ export function startProcessor() {
 export async function planExhaustion({ deps = {} } = {}) {
   const { quarantined, unsupportedLang } = await skipSets(deps);
   const qAll = deps.queryAll || queryAll;
-  const resume = deps.resumeStageFor || resumeStageFor;
+  const resume = settledResume(deps.resumeStageFor || resumeStageFor);
   const ordered = await planOrderedIds(deps);
   const counts = { enqueueable: 0, husks: 0, complete: 0, parked: 0, quarantined: 0 };
   const detail = { husks: [], complete: [], parked: [], quarantined: [] };
