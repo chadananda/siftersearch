@@ -19,7 +19,7 @@ import { query, queryOne, queryAll } from './db.js';
 import { logger } from './logger.js';
 
 // ── The search-quality version. Bump when retrieval or crafting changes answers. ──
-export const SEARCH_VERSION = '2026-10-20.2';   // bump: doctrinal authority throughout ranking (fusion, authoritative pass, canonical dedup, re-rank in the answer band; Chad 10-20)
+export const SEARCH_VERSION = '2026-10-20.3';   // bump: doctrinal authority throughout ranking (fusion, authoritative pass, canonical dedup, re-rank in the answer band; Chad 10-20)
 // WHY THIS MUST BE BUMPED WITH EVERY ANSWER-AFFECTING CHANGE.
 // On 2026-09-24 the title-ranking fix went live and the question that motivated it — "What does The
 // Dawn-Breakers say about the Conference of Badasht?" — kept returning the old wrong answer ("does not

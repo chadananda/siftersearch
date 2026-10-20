@@ -1463,7 +1463,9 @@ export async function multiIndexSearch(query, options = {}) {
   // unscoped "what is nirvana" must not be handed Bahá'u'lláh's passages first (10-20 battery: nirvana, karma, Qur'anic
   // patience lost to Bahá'í texts)
   const bahaiScope = filters.religion === "Baha'i";
-  const wantsDoctrinal = phraseRan && !phraseResult.failed && !filters.author && bahaiScope;
+  // the pass runs in a Bahá'í search AND an unscoped one (most readers never pick a tradition: "detachment from the world"
+  // found no Hidden Words) — its passages become CANDIDATES there; the tier weights below apply only in a Bahá'í search
+  const wantsDoctrinal = phraseRan && !phraseResult.failed && !filters.author && (!filters.religion || bahaiScope);
   if (wantsDoctrinal) {
     try {
       const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
