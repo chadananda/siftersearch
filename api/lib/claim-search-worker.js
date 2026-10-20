@@ -2,7 +2,7 @@
 // connection (tagged '<proc>/thread', never counted as blocking), folded in JS, refreshed every 30 min; answers
 // { id, terms, foldedQuery } with rankClaims' rows. Deps: entity-api (claimCorpusRows, foldText, rankClaims).
 import { parentPort } from 'worker_threads';
-import { claimCorpusRows, foldText, rankClaims } from './entity-api.js';
+import { claimCorpusRows, foldText, rankClaims, bioClaimRowsSql } from './entity-api.js';
 
 const REFRESH_MS = 30 * 60 * 1000;
 let corpus = null, loadedAt = 0, loading = null;
@@ -17,8 +17,10 @@ const ready = () => {
   return corpus ? null : loading;   // a refresh in progress never makes a query wait when a copy is in hand
 };
 
-parentPort.on('message', async ({ id, terms, foldedQuery, warm }) => {
+parentPort.on('message', async ({ id, terms, foldedQuery, warm, bio }) => {
   try {
+    // person-search claims: the SQL runs HERE, on this thread's own connection (10-20: 5.8 s on the API main thread)
+    if (bio) { parentPort.postMessage({ id, rows: await bioClaimRowsSql(bio.toks || [], bio.targetId || null) }); return; }
     await ready();
     if (warm) return;
     parentPort.postMessage({ id, rows: rankClaims(corpus, terms, foldedQuery) });

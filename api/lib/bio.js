@@ -676,15 +676,8 @@ export async function bioSearch(rawQ) {
   // this set is a strict superset of the claims that can influence the result.
   const preToks = [...new Set(norm(q).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t)))].slice(0, 8);
   if (!preToks.length && !connTarget) return { ids: [], q };
-  const tokPreds = [...preToks.map(() => `ec.hay_folded LIKE ?`), ...(connTarget ? ['ec.target_entity_id = ?'] : [])].join(' OR ');
-  const claimRows = await queryAll(`SELECT ec.entity_id eid, ge.canonical_name name, ge.importance imp, ec.relation, ec.target_entity_id tid,
-      ec.statement, ec.proof_verbatim proof, ec.doc_id doc, ec.para_id pid, ec.time_value tv, ec.time_basis tb
-    FROM entity_claims ec JOIN graph_entities ge ON ge.id = ec.entity_id
-    WHERE ge.entity_type = 'person' AND ge.religion = '' AND (ec.status IS NULL OR ec.status = 'supported')
-      AND ec.proof_verbatim IS NOT NULL AND TRIM(ec.proof_verbatim) <> ''
-      AND ${LIVE_SQL('ge.')}
-      AND (${tokPreds})`,
-    [...preToks.map((t) => `%${t}%`), ...(connTarget ? [connTarget.id] : [])]);
+  // OFF THE MAIN THREAD (10-20: this scan took 5.8 s on the API's event loop): the claim-search worker runs it
+  const claimRows = await (await import('./claim-search.js')).bioClaimRows(preToks, connTarget ? connTarget.id : null);
   // Resolve the SOURCE DOCUMENT for every cited claim from the docs table (NOT a hardcoded book list). Every claim
   // carries doc_id + para_id by construction, so every fact shows its book + paragraph citation; the clickable
   // oceanlibrary link is added when the book has a source_url. A fact without a citation cannot exist here.

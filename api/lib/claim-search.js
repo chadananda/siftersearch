@@ -29,5 +29,17 @@ export function claimRows(terms, foldedQuery) {
   });
 }
 
+/** Person-search claim rows (bio.js), queried on the worker thread. */
+export function bioClaimRows(toks, targetId) {
+  if (!worker) start();
+  const id = ++seq;
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => { pending.delete(id); reject(new Error('bio claim search timed out')); }, 60_000);
+    t.unref?.();
+    pending.set(id, { resolve: (v) => { clearTimeout(t); resolve(v); }, reject: (e) => { clearTimeout(t); reject(e); } });
+    worker.postMessage({ id, bio: { toks, targetId } });
+  });
+}
+
 /** Start the worker's load early (a serving process's warm-up), so the first person search does not wait. */
 export const warmClaimSearch = () => { if (!worker) start(); worker.postMessage({ id: 0, warm: true }); };

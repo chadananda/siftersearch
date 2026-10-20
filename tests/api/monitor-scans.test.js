@@ -60,3 +60,12 @@ describe('person pages label citations through the (doc_id, external_para_id) in
     expect(s).toMatch(/FROM content WHERE doc_id = \? AND external_para_id IN/);
   });
 });
+
+describe('person search claims run off the API main thread (10-20: 5.8 s)', () => {
+  it('bio.js no longer scans entity_claims.hay_folded itself — the claim-search worker does', () => {
+    const s = readFileSync(join(import.meta.dirname, '../../api/lib/bio.js'), 'utf8');
+    expect(s).not.toMatch(/hay_folded LIKE/);
+    expect(s).toMatch(/bioClaimRows\(/);
+    expect(readFileSync(join(import.meta.dirname, '../../api/lib/claim-search-worker.js'), 'utf8')).toMatch(/bioClaimRowsSql/);
+  });
+});

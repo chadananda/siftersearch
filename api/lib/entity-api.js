@@ -246,6 +246,20 @@ export const claimCorpusRows = () => queryAll(
     WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
       AND ${LIVE_SQL('ge.')}`);
 
+/** Person-search claims (bio.js bioSearch): supported, proof-bearing, live person claims whose folded haystack holds a
+ *  token, or typed to the connection target. Runs on the claim-search WORKER thread (10-20: 5.8 s on the API main thread). */
+export const bioClaimRowsSql = (toks, targetId) => {
+  const preds = [...toks.map(() => 'ec.hay_folded LIKE ?'), ...(targetId ? ['ec.target_entity_id = ?'] : [])].join(' OR ');
+  if (!preds) return Promise.resolve([]);
+  return queryAll(`SELECT ec.entity_id eid, ge.canonical_name name, ge.importance imp, ec.relation, ec.target_entity_id tid,
+      ec.statement, ec.proof_verbatim proof, ec.doc_id doc, ec.para_id pid, ec.time_value tv, ec.time_basis tb
+    FROM entity_claims ec JOIN graph_entities ge ON ge.id = ec.entity_id
+    WHERE ge.entity_type = 'person' AND ge.religion = '' AND (ec.status IS NULL OR ec.status = 'supported')
+      AND ec.proof_verbatim IS NOT NULL AND TRIM(ec.proof_verbatim) <> ''
+      AND ${LIVE_SQL('ge.')}
+      AND (${preds})`, [...toks.map((t) => `%${t}%`), ...(targetId ? [targetId] : [])]);
+};
+
 /** The rows a query matches, best first — any term in the folded statement; the whole phrase counts 10, each term 1
  *  (the ranking the SQL version used). rows carry `f` (folded statement). Pure. */
 export function rankClaims(rows, terms, foldedQuery, limit = 2000) {
