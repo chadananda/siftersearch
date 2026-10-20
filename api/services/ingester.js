@@ -6,6 +6,7 @@
  * NO embeddings generated here - that's the embedding-worker's job.
  */
 
+import { compilationAuthor } from '../lib/library/compilation-author.js';
 import { normLangOrNull } from '../lib/language-codes.js';
 import { createHash } from 'crypto';
 import { readFile, writeFile, rename, copyFile, mkdir } from 'fs/promises';
@@ -1430,7 +1431,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   const finalMeta = {
     title: extractedMeta.title || metadata.title || 'Untitled',
     // For author: prefer frontmatter, unless filename has real author and frontmatter doesn't
-    author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
+    // a Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler, never its first contributor
+    // (api/lib/library/compilation-author.js — the main ingester missed the 10-08 fix: Lights of Guidance 20804 'by Bahá’u’lláh')
+    author: compilationAuthor(extractedMeta, relativePath, pathReligion || existingDoc?.religion) || extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
     religion: pathReligion || existingDoc?.religion || null,
     collection: pathCollection || existingDoc?.collection || null,
     language: resolvedLanguage,

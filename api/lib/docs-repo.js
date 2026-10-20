@@ -174,6 +174,16 @@ export async function setDocReligion(docId, religion) {
 
 /** Set a document's title (paragraphs re-sync: search payloads and citations carry it). Live docs only. Used to repair
  *  "Untitled" rows whose frontmatter the ingester could not parse (scripts/library/library-fixes.mjs). */
+/** A document's author (an ingester credited a compilation to its first contributor — compilation-author.js). */
+export async function setDocAuthor(docId, author) {
+  const a = String(author || '').trim();
+  if (!a) throw new Error('setDocAuthor: empty author');
+  const id = Number(docId);
+  const r = await query('UPDATE docs SET author = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [a, id], 'docs-repo:set-author');
+  await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id], 'docs-repo:set-author-resync');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
 export async function setDocTitle(docId, title) {
   const t = String(title || '').trim();
   if (!t) throw new Error('setDocTitle: empty title');
