@@ -1060,7 +1060,9 @@ function startWriteServer() {
         const results = applyWriteBatch(db, statements);
         const ms = Date.now() - start;
         recordWrite({ caller, name, statements: statements.length, changes: results.reduce((n, r) => n + (r.changes || 0), 0), ms });
-        if (ms > 1000) logger.warn({ ms, count: statements.length, name, caller }, 'Slow write batch');
+        // an UNNAMED slow batch names itself by its first statement (10-20: 4–15 s single-statement writes from reports
+        // could not be traced to a job)
+        if (ms > 1000) logger.warn({ ms, count: statements.length, name, caller, ...(name ? {} : { sql: String(statements[0]?.sql || '').replace(/\s+/g, ' ').slice(0, 160) }) }, 'Slow write batch');
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ results }));
       } catch (err) {
