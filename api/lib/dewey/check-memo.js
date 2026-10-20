@@ -33,8 +33,10 @@ export async function checkWithMemo(input, run, { fresh = false, deps = {} } = {
   const { sha = contentSha, get = getCheck, save = saveCheck, hit = countHit, valid = stillValid } = deps;
   const sha256 = await sha(input);
   if (!fresh) {
-    const row = await get(sha256);
-    if (row && (await valid(row))) {
+    // the memo is an optimisation: a read failure (table not migrated yet, a locked read) is a miss, never a failed check
+    // (10-20: 'no such table: dewey_checks' 500'd every sweep for the minutes between the deploy and the migration)
+    const row = await get(sha256).catch(() => null);
+    if (row && (await valid(row).catch(() => false))) {
       await hit(sha256).catch(() => {});
       return { identified: row.identified, result: row.result, memo: { sha256, cached: true, checked_at: row.checked_at } };
     }

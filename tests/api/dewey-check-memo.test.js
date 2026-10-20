@@ -49,3 +49,11 @@ describe('holdings check memo', () => {
     expect(a).toBe(b);
   });
 });
+
+describe('the memo never fails a check', () => {
+  it('a memo read error (table not migrated yet) falls through to the real check', async () => {
+    const out = await checkWithMemo({ path: '/x' }, async () => ({ result: { verdict: 'not-held' } }), { deps: {
+      sha: async () => 'k', get: async () => { throw new Error('no such table: dewey_checks'); }, save: async () => { throw new Error('no such table'); }, hit: async () => {} } });
+    expect(out.result.verdict).toBe('not-held');
+  });
+});
