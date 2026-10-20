@@ -39,6 +39,6 @@ keyword → BM25 paragraphs_kw hydrated; hype → searchHypeQdrant) — every ca
 2. [x] Concept + entity layers off Meili (876178b9).
 3. [ ] Site scopes → folded into planning/site-databases-plan.md (one DB per scraped site, OceanLibrary stays primary; bt into Qdrant). Was: stamp `site` payload on supplemental points (balib, ool) so site filters work in Qdrant; decide bt.
 4. [ ] Route hybridSearch/keywordSearch/searchHypeQuestions to Qdrant under SEARCH_QDRANT=only (see above). documents/deep_research are write-only → just stop writing.
-5. [ ] Stop writers: unified-worker Meili sync cycles (paragraphs, hype sidecar, entity sidecar, outbox), library-watcher + indexer Meili writes, graph-meili-sync; admin Meili stats → Qdrant.
+5. [~] (unified-worker DONE 10-20: MEILI_WRITES=off — Meili was the largest I/O on /fast; dirty rows settled, Meili-only cycles skipped; remaining: library-watcher/indexer/deep-research writes) Stop writers: unified-worker Meili sync cycles (paragraphs, hype sidecar, entity sidecar, outbox), library-watcher + indexer Meili writes, graph-meili-sync; admin Meili stats → Qdrant.
 6. [ ] `systemctl --user stop meilisearch` (KEEP /fast/meilisearch-data for rollback ≥2 weeks); system-checks/critical-path stop probing Meili.
 7. [ ] Measure: ARC size, search p50, battery.

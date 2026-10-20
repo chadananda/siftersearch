@@ -28,6 +28,7 @@ import { getAuthority } from '../lib/authority.js';
 import { paragraphDoc } from '../lib/paragraphs-repo.js';
 import { drainIndexOutbox, paragraphIndexFor } from '../lib/index-outbox.js';
 import { qdrantRequest } from '../lib/search/qdrant-layers.js';
+import { meiliWritesOn, settleDirty } from '../lib/search/meili-writes.js';
 import { runMigrations } from '../lib/migrations.js';
 import { setSiteRegistry } from '../lib/search/scope.js';
 import { loadAllSiteConfigs } from '../services/sites-ingester.js';
@@ -202,6 +203,22 @@ async function processSyncJob(job) {
   let completedItems = job.completed_items || 0;
   let failedItems = job.failed_items || 0;
   let docsProcessed = 0;
+  // MEILI_WRITES=off (Meili retirement step 5): removals still reach Qdrant; changed rows are settled, not pushed
+  if (!meiliWritesOn()) {
+    try {
+      try { const d = await drainIndexOutbox({ meili: null, qdrant: qdrantRequest, registry: siteRegistryByDomain }); if (d.removed) logger.info(d, 'Index outbox drained'); }
+      catch (err) { logger.warn({ err: err.message }, 'Index outbox drain failed — will retry'); }
+      const n = await settleDirty({ docs: (l) => content.getDocsWithDirtyParagraphs(l), dirty: (id, l) => content.getDirtyParagraphsForDoc(id, l),
+        markSynced: (ids) => content.markSynced(ids), stop: () => isShuttingDown });
+      await query(`UPDATE sync_jobs SET status = 'completed', completed_at = datetime('now'), completed_items = ? WHERE id = ?`, [n, job.id]);
+      logger.info({ jobId: job.id, settled: n }, 'Sync job settled (Meili writes off)');
+    } catch (err) {
+      await query(`UPDATE sync_jobs SET status = 'failed', completed_at = datetime('now'), error = ? WHERE id = ?`, [err.message, job.id]).catch(() => {});
+      logger.error({ err: err.message }, 'Sync settle failed');
+    }
+    currentSyncJobId = null;
+    return;
+  }
   try {
     const meili = await getMeili();
     if (!meili) {
@@ -469,6 +486,7 @@ async function processSyncJob(job) {
 const RECONCILE_ENABLED = process.env.SYNC_RECONCILE === '1';
 
 async function runCleanupCycle() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   phase('runCleanupCycle');
   logger.info('Starting cleanup cycle');
   try {
@@ -526,6 +544,7 @@ async function runCleanupCycle() {
 }
 
 async function runFullSyncCheck() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   logger.info('Starting full sync check');
   try {
     const meili = await getMeili();
@@ -612,6 +631,7 @@ async function processTranslationAudioJob(job) {
 // index. Keeps newly-enriched content searchable within one minute, no manual
 // intervention required.
 async function runHypeSyncCycle() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   phase('runHypeSyncCycle');
   try {
     const result = await syncHypeBatch({ queryAll, query, getAuthority, limit: HYPE_SYNC_BATCH });
@@ -626,6 +646,7 @@ async function runHypeSyncCycle() {
 
 // Drain entity_mentions where em_synced=0 into the entity_mentions_idx sidecar.
 async function runEntitySyncCycle() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   phase('runEntitySyncCycle');
   try {
     const result = await syncEntityMentionsBatch({ queryAll, query, getAuthority, limit: ENTITY_SYNC_BATCH });
@@ -640,6 +661,7 @@ async function runEntitySyncCycle() {
 
 // Sync entity aliases as Meilisearch synonyms (paragraphs index).
 async function runAliasSyncCycle() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   phase('runAliasSyncCycle');
   try {
     const result = await syncAliasesToMeili();
@@ -666,6 +688,7 @@ async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 3600000) {
 // after Meili confirms the task. Per-site failures logged but never kill
 // the loop.
 async function runSiteOnlySyncCycle() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   phase('runSiteOnlySyncCycle');
   const meili = await getMeili();
   if (!meili) return;
@@ -798,6 +821,7 @@ const PERIODIC_TASK_TIMEOUT_MS = 90_000;   // < watchdog GRACE (240s) so the tim
 // Resolve meili_sync_tasks rows left 'processing'. Runs on a timer so it fires when the corpus is
 // IDLE — which is exactly when orphans exist and nothing else would clear them.
 async function runMeiliReconcileCycle() {
+  if (!meiliWritesOn()) return;   // Meili-only work (MEILI_WRITES=off)
   phase('runMeiliReconcileCycle');
   const meili = await getMeili();
   if (!meili) return;
