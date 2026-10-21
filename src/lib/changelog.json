@@ -1,6 +1,552 @@
 {
-  "generated": "2026-10-19T22:23:11.262Z",
+  "generated": "2026-10-21T01:05:07.871Z",
   "entries": [
+    {
+      "hash": "877c7da2",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Read roots include Public/Ocean-books and Public/pilgrim-notes (Chad's 10-20 sweeps were refused 400 'outside the folders Dewey may read'); test pin SEARCH_VERSION 2026-10-20.4",
+      "scope": "dewey"
+    },
+    {
+      "hash": "bf664bd9",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Migration 161 unreachable (CURRENT_VERSION not bumped) → every holdings check 500'd 'no such table: dewey_checks'; the memo read is now an optimisation — a failure is a miss, never a failed check",
+      "scope": "dewey"
+    },
+    {
+      "hash": "5d65908f",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Holdings-check memo — file content sha256 → last verdict (dewey_checks, migr 161); the same book checked again (renamed, moved) answers instantly; held stands while its document is live, other verdicts 7 days; ?fresh=1 (Chad 10-20)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "2b36e133",
+      "date": "2026-10-20",
+      "type": "Performance",
+      "description": "MEILI_WRITES=off — stop pushing paragraphs/HyPE/mentions/aliases to Meilisearch (retirement step 5); it was the largest I/O on /fast (20 MB/s r, 13 MB/s w) though search reads only Qdrant, while writes took 9–27 s and hydration 2–6 s. Dirty rows settled; removals still reach Qdrant",
+      "scope": "worker"
+    },
+    {
+      "hash": "5bb81653",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Stamp-voices/stamp-site yield to a drain and resume where they stopped — #973 held the indexer in 'draining' for hours; a yielding job's resume params are saved on the run (saveResume) so the requeue continues, not restarts",
+      "scope": "ops"
+    },
+    {
+      "hash": "05aaf916",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Two 30 s main-thread reads behind 10-20 gateway timeouts — library slug fallback read every docs row (now matching collections only, via docs-repo.docsForPathSlugs); planExhaustion prose check GROUP BY over ~600 books' paragraphs → EXISTS per book",
+      "scope": "api"
+    },
+    {
+      "hash": "b10d2cb2",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Settled plan books are not re-probed — refill (every 3 min) and planExhaustion walked all ~600 finished books on the API main thread each time (5–8 s resume-stage spikes); null answers remembered 30 min, each probe yields the loop",
+      "scope": "grounding"
+    },
+    {
+      "hash": "b39bc79c",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "The grounding exhaustion probe gets 30 s (it checks every plan book, 5–6 s) — the default 8 s timeout made an exhausted plan a CRITICAL 'nothing queued' alarm",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "791a3b06",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Rights classes per Chad's rule — Writings, institutional and anything online are shareable in full; only privately published books not found online are restricted",
+      "scope": null
+    },
+    {
+      "hash": "a97903a9",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Rights — the old encumbered flag is overly broad (collection/religion defaults); restrict only on per-document evidence, unknown stays shareable and goes to review; measure current breadth first (Chad 10-20)",
+      "scope": null
+    },
+    {
+      "hash": "81ac2d91",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Rights replaces the encumbered flag — per-document class + evidence, one servingPolicy module; encumbered derived then retired (Chad 10-20)",
+      "scope": null
+    },
+    {
+      "hash": "41d7f96d",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Rights classification — shareable in full vs copyrighted (encumbered) for every document; Dewey sets it at intake, backfill for the library (Chad 10-20)",
+      "scope": null
+    },
+    {
+      "hash": "eaf82123",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Keep only the newest 3 daily DB snapshots on /fast (Chad 10-20) — 31 dailies pinned ~60 GB of churned DB blocks and the pool hit 96%; full daily copies live on /tank",
+      "scope": null
+    },
+    {
+      "hash": "8bb2cf6b",
+      "date": "2026-10-20",
+      "type": "Docs",
+      "description": "Coverage one pass",
+      "scope": "blocking-queries"
+    },
+    {
+      "hash": "bb79d6eb",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Book coverage (prose/disamb/hyped/extracted/hypeable) is ONE pass over the book's rows, not five COUNT subqueries — grounding:resume-stage took 8.8 s on the API main thread for large books",
+      "scope": "blocking"
+    },
+    {
+      "hash": "37c5d4b5",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Site DBs — the per-site store already exists for site-only (getSiteDb); step 2 extends it",
+      "scope": null
+    },
+    {
+      "hash": "953f952a",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Stamp-site job — every scraped site's Qdrant points carry `site` (payload only, by doc-id batches, keyword index) so site scopes filter in Qdrant and hits can hydrate from per-site stores (planning/site-databases-plan.md step 1)",
+      "scope": "indexer"
+    },
+    {
+      "hash": "29b5b2da",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "One database per scraped site (bahai-library, oceanoflights, bahaiteachings); OceanLibrary.com stays in the primary DB as the canonical English collection (Chad 10-20)",
+      "scope": null
+    },
+    {
+      "hash": "6d3d616b",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "With no --qdrant flag the type battery uses the server's default search config — it sent qdrant:false and silently measured the legacy Meili path",
+      "scope": "battery"
+    },
+    {
+      "hash": "032ad179",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Spending Chad approved is not an alarm — the 24 h spend alert fires only above the base threshold plus the active approved allowances (data/approved-spend.json: doctrinal index 00/day, authorship 0/day, until 10-27)",
+      "scope": "alerts"
+    },
+    {
+      "hash": "46d01023",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "The authoritative pass runs only in a Bahá'í-scoped search again — unscoped it displaced other traditions (battery 66 → 60: karma, wu wei, nirvana, fasting). SEARCH_VERSION bumped",
+      "scope": "search"
+    },
+    {
+      "hash": "3241bdc4",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Under SEARCH_QDRANT=only hybridSearch / keywordSearch / searchHypeQuestions answer from Qdrant (authority-ranked multiIndexSearch with Meili off; BM25 for keyword mode) — every direct Meili caller (public /v1/search, keyword route, chat, deep research, grounding counts) moves at once; site-only scopes stay on Meili for now (Chad 10-20: retire Meilisearch)",
+      "scope": "search"
+    },
+    {
+      "hash": "ff21e14b",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Meili retirement — direct search callers inventoried; documents/deep_research write-only",
+      "scope": null
+    },
+    {
+      "hash": "f6351209",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "The authoritative pass also runs in UNSCOPED searches (most readers never pick a tradition — 'detachment from the world' found no Hidden Words) as candidates; the Bahá'í tier weights still apply only in a Bahá'í search, so interfaith slots stay fair. SEARCH_VERSION bumped",
+      "scope": "search"
+    },
+    {
+      "hash": "12e7dbd5",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Qdrant ranks alone (SEARCH_QDRANT=only) — with doctrinal-authority fusion the type battery scores 66/83 vs 63/83 on Meili, p50 1.6 s vs 4.4 s, p95 4.2 s vs 18 s (Chad 10-20: retire Meilisearch). Meili still receives writes; rollback = phrase,keyword",
+      "scope": "search"
+    },
+    {
+      "hash": "50673f8f",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Person-search claims (bioSearch hay_folded LIKE scan, 5.8 s) run on the claim-search worker thread's own connection — no longer on the API's event loop",
+      "scope": "blocking"
+    },
+    {
+      "hash": "718f27e4",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Each writer cycle leaves a phase breadcrumb (/tmp/siftersearch-writer-phase.json) and the watchdog logs it when it restarts the writer — a 45 s freeze at 07:08 left no trace (killed before any slow-query log); the watchdog never restarts twice within 2 min (the old writer is still draining)",
+      "scope": "writer"
+    },
+    {
+      "hash": "0859aaa1",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Bahá'í doctrinal tiers and the authoritative pass apply only inside a Bahá'í-scoped search — unscoped interfaith queries ('what is nirvana', Qur'anic patience, karma) were handed Bahá'í texts first; across traditions each passage ranks by its own authority within its tradition's slots. SEARCH_VERSION bumped",
+      "scope": "search"
+    },
+    {
+      "hash": "4dcfe658",
+      "date": "2026-10-20",
+      "type": "Chore",
+      "description": "Bump SEARCH_VERSION — doctrinal-authority ranking invalidates cached results",
+      "scope": "search"
+    },
+    {
+      "hash": "9670835e",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "The authoritative pass filters on the indexed author_fold only (a should over the unindexed voices_fold scanned 35M points — it timed out on every query) and also searches the doctrinal HyPE questions; voices_fold payload indexes created on phrases/hype/paragraphs_kw",
+      "scope": "search"
+    },
+    {
+      "hash": "8bcf9e96",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "The 'answers the question' band is measured within each tradition — interfaith results give each tradition its own slots, so a Bahá'í passage is judged against the best Bahá'í passage (a secondary book had taken the Bahá'í slot from Bahá'u'lláh's Tablets)",
+      "scope": "search"
+    },
+    {
+      "hash": "c7f033f1",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Authenticated text first — a central figure's words count in full only in an authoritative book (own works, compilations of the Writings, the House's); quoted or recalled in a secondary book their doctrinal factor is capped at 1.3, so the original outranks the account ('Visiting the Bahá'í World Centre' outranked the Íqán). Hits carry book_authority",
+      "scope": "search"
+    },
+    {
+      "hash": "00b2da7b",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "A question is not a quotation — the verbatim lead no longer promotes a passage that merely restates the question ('what is the purpose of prayer' led with a PDF over 'Abdu'l-Bahá's answer), and only an authoritative copy (doctrinal factor ≥ 1) leads a quotation",
+      "scope": "search"
+    },
+    {
+      "hash": "da42344a",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "DOCTRINAL AUTHORITY throughout ranking (Chad 10-20: authority from the outset; dedup favours canonical; re-rank favours the authoritative passage that answers) — Qdrant layers carry the writer (author_fold/scope/collection) and fusion weighs each contribution by it (Revelation ×3 > interpretation ×2.6 > the House ×1.6 > others; pilgrim notes ×0.4; scraped-site copies ×0.7); an authoritative pass retrieves the doctrinal writers' passages so they are always candidates; duplicate passages collapse to their most authoritative copy; final re-rank multiplies by the PARAGRAPH writer's factor within the answer band (≥½ the top score). Was: ×1.2 post-hoc blend on the book's author, skipped for some query shapes",
+      "scope": "search"
+    },
+    {
+      "hash": "2f7a8b4c",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Pre-deploy test boots run the production boot order (API_PREBOOT=1) under a 50 s deadline below pm2's 60 s listen_timeout — the fork-mode test listened first and passed in 5 s while the real preboot hung (10-20 search outage)",
+      "scope": "deploy"
+    },
+    {
+      "hash": "a4cf9d0f",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "The concept lexicon load blocked the API's event loop for minutes at boot (proofParagraph re-parsed/re-folded every row per entry) — the new search instance never listened and pm2 stopped the old one after listen_timeout. Rows indexed once (map lookup), yields every 200 entries; no lexicon warm-up at boot",
+      "scope": "outage"
+    },
+    {
+      "hash": "2c903108",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Meilisearch retirement plan — inventory of indexes and callers; Qdrant-only battery loses famous passages to secondary copies (no authority fusion) → authority-aware fusion first",
+      "scope": null
+    },
+    {
+      "hash": "876178b9",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Concept and entity layers read SQLite, not Meilisearch (Chad 10-20: retire Meilisearch) — the cited lexicon held in memory (warmed at boot, 30 min refresh), entity mentions by entity_id via entity-mentions-repo ranked by the paragraph author's authority",
+      "scope": "search"
+    },
+    {
+      "hash": "5cb231a9",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "A RUNNING ops run can be cancelled — marked now, stops at its next yield point when the service drains, keeps 'cancelled' through finish, never requeued",
+      "scope": "ops"
+    },
+    {
+      "hash": "398fff28",
+      "date": "2026-10-20",
+      "type": "Docs",
+      "description": "Bio citation labels",
+      "scope": "blocking-queries"
+    },
+    {
+      "hash": "3c9d64fb",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Person-page citation labels query content per document (index is doc_id, external_para_id) — a bare external_para_id IN (…) scanned all of content, 7 s on the API main thread",
+      "scope": "blocking"
+    },
+    {
+      "hash": "8d5e2763",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "An unnamed slow write batch logs its first statement's SQL — 4–15 s single-statement writes from reports could not be traced",
+      "scope": "writer"
+    },
+    {
+      "hash": "73b2578e",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Detached batch runs (hype-many, complete-concepts, complete-book) read in their own processes — not 'blocking'",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "fe87a654",
+      "date": "2026-10-20",
+      "type": "Docs",
+      "description": "Concept_entities full rebuild",
+      "scope": "blocking-queries"
+    },
+    {
+      "hash": "50aa6309",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Concept promote writes a DIFF of concept_entities in ≤500-statement chunks, not DELETE-all + ~29,000 INSERTs in one transaction — eight concept runs finishing together held the single writer 1.5–3 s each and the WAL churn stalled other writes 8–15 s (10-20); unchanged rows keep their ids",
+      "scope": "writer"
+    },
+    {
+      "hash": "a5eca859",
+      "date": "2026-10-19",
+      "type": "Docs",
+      "description": "Log the 10-19 writer, CLI-orphan and monitor-scan causes",
+      "scope": "blocking-queries"
+    },
+    {
+      "hash": "3a8a46a4",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "HyPE sidecar sync marks rows it will never index as synced (paragraphs of deleted documents, empty question lists) — skipped-but-unmarked rows stayed in the partial index and every batch re-read them on the single writer's thread (24 s batch → /health dead → watchdog restarts 17:35Z, 04:02Z, 05:37Z ×2); v14+ question objects were indexed as '[object Object]'",
+      "scope": "writer"
+    },
+    {
+      "hash": "7c06e511",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Deep-research-runner exits when its mode is done — imported refresh timers kept a 10-11 '--status' alive for 8 days running retired 26–83 s graph_enriched scans (the night's 'worst blocking query'); orphan killed",
+      "scope": "scripts"
+    },
+    {
+      "hash": "258bdf0e",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Ingest-files yields to a drain between files (a 10,797-file run held reports in 'draining'); the gateway answers a request its service cut off after the retry window as 504 upstream_timeout, counted apart — 'unavailable' now means restarts only (all 10 were 30 s searches under load)",
+      "scope": "ops,gateway"
+    },
+    {
+      "hash": "faa85398",
+      "date": "2026-10-19",
+      "type": "Performance",
+      "description": "The monitors stop evicting the database cache — pipeline-snapshot reuses any probe that took ≥2 s for up to an hour, system-checks scans content only in the daily run, stall-guard uses MAX(rowid) and an index-friendly date filter. Whole-table scans every 5/30/60 min kept SQLite pages out of ZFS ARC: search hydration (primary-key lookups) 200–1000 ms, searches 5–15 s",
+      "scope": "search"
+    },
+    {
+      "hash": "809e8ee9",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "/gateway/health lists the last 20 unavailable answers (time, service, path, error) and logs each — the count rose 1→3 with nothing to trace it",
+      "scope": "gateway"
+    },
+    {
+      "hash": "6570130c",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A resumable long job YIELDS to a drain between books (result.yielded → run left 'running', requeued on restart) — a multi-hour paragraph-authors run held the whole reports service in 'draining', so no lane (Phelps ingest, slow-queries) could run",
+      "scope": "ops"
+    },
+    {
+      "hash": "526b16d1",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Phelps' provisional English renderings of the tablets → library files (Tablet Translations/Stephen Phelps (provisional)/<author>/<PIN>.md), labelled provisional-phelps, credited to the tablet's author, linked to the original by PIN; official translations and unsegmented texts skipped (Chad 10-19)",
+      "scope": "library"
+    },
+    {
+      "hash": "10dbbfb0",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Reads in batch loops (indexer, reports-carry, embedding, audit) are not 'blocking' — no request waits on them",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "6c0aa009",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Person search off the serving thread — entitySearch scanned+folded all entity_claims per call (10–13 s, ~200×/day on api and anis main threads: the slow-query emails); claims now held folded on one worker thread (claim-search.js), queries scan in memory",
+      "scope": "blocking"
+    },
+    {
+      "hash": "299f6bc9",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Paragraph-authors job has a spend cap (maxLlm Haiku calls, default 20,000) — no new book past it; the rest resume next run",
+      "scope": "authorship"
+    },
+    {
+      "hash": "0c477195",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A process mid-reload is given its own drain time (kill_timeout) + 1 min before it pages — the writer drains its batch and took >60 s on an ordinary deploy (false critical 'siftersearch-worker stopping')",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "e27eeaa7",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Trailer paragraphs still get the classifier's quoted voices (author stays locked) — the 20804 dry run lost ~1,000 quoted voices by skipping them",
+      "scope": "authorship"
+    },
+    {
+      "hash": "e62ed885",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Keyword-fill points carry voices_fold too — a gap-filled paragraph quoting the Báb is findable by 'the Báb' at once, not after the next stamp-voices pass",
+      "scope": "search"
+    },
+    {
+      "hash": "6a29cce8",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Attribution trailers are EVIDENCE in the paragraph-authors job — a quotation followed by '(From a letter written on behalf of Shoghi Effendi …)' takes that writer (basis trailer) before the classifier runs; pandoc attribute tails stripped (Lights of Guidance quotations were labelled the compiler)",
+      "scope": "authorship"
+    },
+    {
+      "hash": "ad8980ee",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A service mid-reload (launching/stopping) is looked at again for up to 60 s before it pages anyone — graceful deploys were false criticals; the macro-services (gateway, anis, ops, indexer, reports) are now required and watched",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "12010d00",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Every VOICE is findable by author — points carry voices_fold (the paragraph's author + every quoted voice); an author filter matches writer OR quoted voice; stamp-voices job (indexer service) stamps existing points by paragraph, payload only; keyword indexer writes it (Chad 10-19: the Báb quoted by Mázandarání answers 'what did the Báb say')",
+      "scope": "search"
+    },
+    {
+      "hash": "7eb8e1ba",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler in the MAIN library ingester too — one shared rule (library/compilation-author.js); its copy of Lights of Guidance was 'by Bahá'u'lláh'. compilation-authors ops job finds and (with write) corrects existing library records (Chad 10-19)",
+      "scope": "ingest"
+    },
+    {
+      "hash": "505e0781",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Every paragraph its author, library-wide — the window classifier (v18b rules) as the 'paragraph-authors' ops job (reports service, own lane): reads via paragraphs-repo, writes through the writer with rollback, resumable per book, secondary rules for scholars/compilations; escalations on Haiku 5.5 (DeepSeek retired). Doctrine is then selected by PARAGRAPH author, not book (Chad 10-19)",
+      "scope": "authorship"
+    },
+    {
+      "hash": "e3afd7dc",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "Trace_source — a House letter, scholar or compilation stating a teaching is a signpost; the researcher traces it (quote links, else the closest passages of the four authoritative authors) and cites the primary passage (Chad 10-19)",
+      "scope": "anis researcher"
+    },
+    {
+      "hash": "8eed9f53",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Warm-ups (the ~24 s encounter query) run BEFORE listening — behind the gateway the old instance serves until 'ready', while warming after listen froze live Anís conversations (74 blocking reads in 'anis' in 3 h)",
+      "scope": "api services"
+    },
+    {
+      "hash": "d4e319e1",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "System-checks --report — the same checks as JSON, no email, no state (the agent's own periodic watch reads it)",
+      "scope": "ops"
+    },
+    {
+      "hash": "f9a9dc37",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "The updater restart storm (289 restarts, every 30 s) — pm2 killed it at its 100M memory limit once it computed every service's import graph per lagging service; graphs now cached per run, limit 512M. An ecosystem.config.cjs edit touches only the apps whose own pm2 block changed (old config read from git), not every service",
+      "scope": "coordinator"
+    },
+    {
+      "hash": "71e9b176",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Authority decides — doctrinal questions answered ONLY from the Revelation and its authorised interpretation; the House only for applying the law and the administration; scholars only labelled history. The judge and the auditor score a doctrinal point rested on the House or a scholar as an authority error, not a better answer (Chad 10-19: 'an antipattern, not better'); battery --rejudge",
+      "scope": "anis"
+    },
+    {
+      "hash": "70376a32",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A failed job records and logs its stack (a bare 'Request timed out' did not say which call); battery judge accepts 'Answer B' labels",
+      "scope": null
+    },
+    {
+      "hash": "26ba367b",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "From the 61-question Immerse battery — a real topic or pasted passage is never deflected as 'unclear'/'cut off'; references read in the reader's community and the present (ABS, the Nine Year Plan, the House, message paragraphs); study questions researched broadly and answered in full, organised; search API now serves only its own routes (Anís and ops via the gateway)",
+      "scope": "anis"
+    },
+    {
+      "hash": "b76dccc7",
+      "date": "2026-10-19",
+      "type": "Docs",
+      "description": "Macro-services behind the gateway — layout, ports, coordinator (CLAUDE.md + continuous-deploy.md)",
+      "scope": null
+    },
+    {
+      "hash": "ca353922",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Under pm2 cluster mode argv[1] is pm2's container — recognise the entry by pm_exec_path (the gateway never listened)",
+      "scope": "gateway"
+    },
+    {
+      "hash": "24e7e054",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "The API splits into macro-services behind a gateway — siftersearch-gateway (7839, where the tunnel points; routes by path, retries a restarting service, streams), siftersearch-api (search, 7845), siftersearch-anis (conversations/letters/reading/widget, 2 instances, 7844), siftersearch-ops (health/reports, 7843): an Anís update reloads only Anís (Chad 10-19: 3,000 readers/day, dozens of updates, no interrupted conversations). Shared runtime (api-runtime.js) + shared server (http-server.js) + route sets; every service answers /healthz; the coordinator boots each new build on a test port before any reload; stray-killer waits out the 300 s drain",
+      "scope": "services"
+    },
+    {
+      "hash": "5c1441ec",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A file ADDED in a deploy cannot be loaded by running code — no fallback reload for it (the new indexer entry reloaded writer, deep-research and embedding for nothing); behind-check logs quietly",
+      "scope": "coordinator"
+    },
+    {
+      "hash": "e0606135",
+      "date": "2026-10-19",
+      "type": "New",
+      "description": "INDEXING is its own macro-service (siftersearch-indexer: phrase/HyPE/concept/section vectors, BM25, coverage ledger) on a 57-file import graph with no Dewey or Anís code — other services' deploys leave it running; ops services share one runtime (drain, heartbeat, lanes, alerts); a restart requeues only ITS OWN interrupted jobs (reports used to requeue carry's live ones); the coordinator starts newly declared services (Chad 10-19)",
+      "scope": "services"
+    },
+    {
+      "hash": "e9df3d78",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "Answers as jobs (start + poll) — no request stays open for Cloudflare's 125 s limit or a reload (40 of 61 were 524s)",
+      "scope": "anis battery"
+    },
+    {
+      "hash": "d697ca68",
+      "date": "2026-10-19",
+      "type": "Fixed",
+      "description": "A service is behind only when its heartbeat commit lags HEAD in code IT loads (not pm2's package version); a version-only package.json bump is no change; a draining service is never signalled or verified twice (frontend deploy 2.187.723: mail drafts as jobs)",
+      "scope": "coordinator"
+    },
     {
       "hash": "2207e27a",
       "date": "2026-10-19",
@@ -2954,556 +3500,558 @@
       "type": "New",
       "description": "Hard rule — SQLite only through repos (shrink-only ratchet, 299 legacy files frozen); single writer records every batch per minute × caller × name (db_write_stats, migr 145, GET :7849/stats)",
       "scope": "db"
-    },
-    {
-      "hash": "3e25e050",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "On tower every non-writer process routes writes through the single writer by default — processes started without SIFTER_WRITER_URL wrote directly and locked the writer out ('database is locked')",
-      "scope": "db"
-    },
-    {
-      "hash": "a4ac3286",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "--retry-not-found re-places rows the ingester had joined from several file blocks",
-      "scope": "segment"
-    },
-    {
-      "hash": "8c855271",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Douay split on blank-line runs; book-title headings; chapter-line variants",
-      "scope": "library"
-    },
-    {
-      "hash": "2a6545f0",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Verse pn into scripture source files — Tanzil Qur'an (reference headings folded into the verse) + Douay-Rheims (pn names the book)",
-      "scope": "library"
-    },
-    {
-      "hash": "2a6ef8a7",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Segmentation = Haiku 5.5 in every language; LM Studio retired (its dead host hung segmenting ingests; 221/221 calls failed this week)",
-      "scope": "ai"
-    },
-    {
-      "hash": "c8aae491",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Local LLM client fails fast — 120 s timeout, 1 retry, 10-min breaker after a network failure (a retired LM Studio host hung an Arabic re-ingest for 2 h)",
-      "scope": "ai"
-    },
-    {
-      "hash": "7ba8d19c",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Write new paragraph breaks by word-walk splice — inline footnotes/page tags kept, headings in the same block untouched (7,255 of 10,205 never matched by block hash)",
-      "scope": "segment"
-    },
-    {
-      "hash": "108f524d",
-      "date": "2026-10-11",
-      "type": "Performance",
-      "description": "Apply hashes each file's blocks once (was quadratic, 40+ min dry run)",
-      "scope": "segment"
-    },
-    {
-      "hash": "6457dfc1",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Margin shows the verse pn (Bible, Qur'an) where a book has one",
-      "scope": "reader"
-    },
-    {
-      "hash": "6c9fccc3",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Reader/bilingual/content/stats never serve soft-deleted paragraphs; paragraphs carry pn",
-      "scope": "library"
-    },
-    {
-      "hash": "11ff31c0",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Verse-pn backfill numbers sup-less one-verse-per-block books by chapter heading (named docs only)",
-      "scope": "library"
-    },
-    {
-      "hash": "f4ac70fe",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Image-placeholder caption capped (a long alt is real text); verse-pn backfill includes NULL-blocktype rows",
-      "scope": null
-    },
-    {
-      "hash": "e3127f9b",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Backfill verse pn from stored rows (reaches rows with no para_N); image placeholders with nested captions",
-      "scope": "library"
-    },
-    {
-      "hash": "fb968821",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "OL adapter stores verse pn for <sup>c:v</sup> scripture (ILM pn wins); unresolved image placeholders are not paragraphs; majority chapter",
-      "scope": "sites"
-    },
-    {
-      "hash": "8ceb5e27",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Verse pn re-anchors at every marked block — a <sup> missing in the source never shifts other blocks; gaps reported",
-      "scope": "library"
-    },
-    {
-      "hash": "15d3bb4a",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Verse pn for grouped scripture — the chapter:verse a block starts at; <sup> verses are checksums (Chad 10-11)",
-      "scope": "library"
-    },
-    {
-      "hash": "3b4a9965",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Paragraph segmentation of oversized Arabic/Persian paragraphs by phrase index (Haiku 5.5 thinking, Message Batches at half price)",
-      "scope": "segment"
-    },
-    {
-      "hash": "bcaf0198",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Segmentation scale + cost model — tablets ≈$1.7–3.4; classical library 427M chars: $137 naive → ~$15–25 with rules + Laya + batch",
-      "scope": "planning"
-    },
-    {
-      "hash": "6eac920b",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Segmentation job B (paragraph starts) — Jev F1 0.76 vs Haiku-thinking; 64% of decisions at 88% (Laya candidate)",
-      "scope": "planning"
-    },
-    {
-      "hash": "cff14da9",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Arabic segmentation experiments — phrase-index Haiku (thinking) is the quality path; Jev confidently right on ~half the phrase decisions (Laya candidate)",
-      "scope": "planning"
-    },
-    {
-      "hash": "e80c6836",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "12k-char batches (40k made Haiku truncate or leave JSON; 76k chars of al-Istibsar → 202 sentences clean at 12k)",
-      "scope": "segment"
-    },
-    {
-      "hash": "c2a5f1fd",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "A hollow document is never 'unchanged' (main ingester) — same hash or same body with no live text re-ingests",
-      "scope": "ingest"
-    },
-    {
-      "hash": "91ac9dcd",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Arabic files are segmented once as they arrive (Haiku 5.5 file step) instead of sitting paused",
-      "scope": "ingest"
-    },
-    {
-      "hash": "81e05dcf",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "An already-marked file gets needs_segmentation: false so ingest stops pausing it",
-      "scope": "segment"
-    },
-    {
-      "hash": "085157e5",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Cost estimate calibrated on the al-Istibsar pilot (vowelled Arabic ≈1.6 input + 0.26 output tokens per char)",
-      "scope": "segment"
-    },
-    {
-      "hash": "298e691b",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Search no longer loops on 'Searching…' (effect untracked); covered results lead as cards, coverless as tiles",
-      "scope": "library"
-    },
-    {
-      "hash": "e9e004ac",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Visible search + scope, shelves two full rows wide, collections as a tile grid linking to their pages; navbar full width",
-      "scope": "library"
-    },
-    {
-      "hash": "1c4c6164",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Anthropic replies read every text block (5.x may lead with thinking); segmentation runs Haiku with thinking off and 16k output headroom",
-      "scope": "ai"
-    },
-    {
-      "hash": "71d82484",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Haiku 5.5 calls drop temperature (the 5.5 API rejects it); a failed batch stops file-segment instead of writing one-sentence paragraphs",
-      "scope": "segment"
-    },
-    {
-      "hash": "4a6d8128",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Alert severity — [PAGE] only when the site is down and automation could not fix it; [ACTION] for daylight work",
-      "scope": "ops"
-    },
-    {
-      "hash": "c1b133c8",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Watchdog no longer emails ACTION REQUIRED for a restart it completed itself",
-      "scope": "ops"
-    },
-    {
-      "hash": "30fe6ec0",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "One-time file-level Arabic/Persian sentence segmentation with Haiku 5.5 (cached prompt, <100k per call)",
-      "scope": "segment"
-    },
-    {
-      "hash": "0dc00171",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Registry current with Anthropic's live list — 5.5 family (Haiku/Sonnet/Opus) the only ones in use; Haiku 5.5's 5× past-100k pricing billed",
-      "scope": "models"
-    },
-    {
-      "hash": "178fe11e",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Library-fixes re-ingest uses node:http (undici's 5-min headers timeout killed it mid-book)",
-      "scope": "library"
-    },
-    {
-      "hash": "d4c695fc",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "A localOnly scope can no longer reach GPT-4o — forceLocal beats USE_REMOTE_AI; segmentation refuses a non-local provider under localOnly",
-      "scope": "ai"
-    },
-    {
-      "hash": "6c77f1b9",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Root cause of the 10,124 empty bahai-library rows — paragraph replacement is crash-safe; retired duplicates stay retired",
-      "scope": "ingest"
-    },
-    {
-      "hash": "67224b92",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "A failed paragraph write no longer leaves a hollow row behind a stored hash; --only-hollow repair mode; bounded agent watchers",
-      "scope": "ingest"
-    },
-    {
-      "hash": "566f382a",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "4k pilot — 14.3% → 79.9% agreement with Jev on the full 4,461 held-out set (majority 65.6%)",
-      "scope": "laya"
-    },
-    {
-      "hash": "d0b201bb",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Overnight battery — Qdrant-only now wins the type battery (65 vs 63) after CANON; Meili still wins quality (458 vs 433)",
-      "scope": "search"
-    },
-    {
-      "hash": "f71d269f",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Library-fixes moves only files inside the library; scrape rows are retired with their files untouched",
-      "scope": "library"
-    },
-    {
-      "hash": "d5994593",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Finetune.py — distil Jev's answer distributions into Laya (smoke: 7% → 93% agreement in 25 CPU steps)",
-      "scope": "laya"
-    },
-    {
-      "hash": "a643cde1",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "Strata on Boss — watched-launch plan (IQ3_S verified on boss; RAM sizing risk)",
-      "scope": "planning"
-    },
-    {
-      "hash": "bf5966f9",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "SetDocTitle + library-fixes title op (repair 'Untitled' rows whose frontmatter did not parse)",
-      "scope": "library"
-    },
-    {
-      "hash": "820085b2",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Jain category trimmed ('Jainism ' split the tradition); library-fixes.mjs applies reviewed audit decisions",
-      "scope": "library"
-    },
-    {
-      "hash": "6e62b0f2",
-      "date": "2026-10-10",
-      "type": "Chore",
-      "description": "Changelog after the 10-10 evening deploy",
-      "scope": null
-    },
-    {
-      "hash": "985edf6a",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Split Core Tablets by author (one row per Central Figure; small authors pooled)",
-      "scope": "library"
-    },
-    {
-      "hash": "09d0579e",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Inventory-dedupe — retire Partial Inventory tablets that duplicate an oceanoflights tablet, merging the PIN onto it",
-      "scope": "library"
-    },
-    {
-      "hash": "69db356e",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "One KJV under Christianity; work cards carry the Bindery collection cover and open every part in OceanLibrary order",
-      "scope": "library"
-    },
-    {
-      "hash": "05849aee",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Move non-catalogue OceanLibrary books into the main library (docs-repo.relocateDoc, ol-to-library.mjs)",
-      "scope": "library"
-    },
-    {
-      "hash": "fa470a4e",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Critical-path retries network errors 3x with backoff (tower's outbound connects hit 10 s timeouts under a saturated uplink)",
-      "scope": "ops"
-    },
-    {
-      "hash": "3dcfbeba",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Critical-path regression suite + updater safety rails — the 10-10 outage cannot recur silently",
-      "scope": "ops"
-    },
-    {
-      "hash": "232b9c82",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Import-covers falls back to a unique folded title (Bindery); 73 more covers imported (586/607)",
-      "scope": "covers"
-    },
-    {
-      "hash": "8bec83cd",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Import-covers matches by Bindery source URL when the bookid hash misses",
-      "scope": "covers"
-    },
-    {
-      "hash": "0a4aee7d",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Restore after a 30-min API outage; remove git hooks; explicit deploy pipeline",
-      "scope": "ops"
-    },
-    {
-      "hash": "e2e6c6b8",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Covers shown bare (they are transparent — no box behind them); shelves use the full page width",
-      "scope": "library"
-    },
-    {
-      "hash": "92a443d7",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Tower S3 gateway (versitygw) — the image Worker reads Tower originals the way it reads R2",
-      "scope": "storage"
-    },
-    {
-      "hash": "bbcff6ef",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Verbatim-canon rule needs >= 6 words and sim >= 0.875 ('How should I pray?' hit 0.861)",
-      "scope": "search"
-    },
-    {
-      "hash": "30a91d0c",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "A near-verbatim canonical match (phrase sim >= 0.86) is treated as a quote, whatever the planner said",
-      "scope": "search"
-    },
-    {
-      "hash": "e4f0f38a",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "On a quote, the canon layer's first (authority-ordered) hit carries a sharp weight",
-      "scope": "search"
-    },
-    {
-      "hash": "14bfcf91",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Canonical phrase matches of about equal score rank by author authority — the original first",
-      "scope": "search"
-    },
-    {
-      "hash": "4f5e4b09",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "CANON phrase layer — the original of a famous line always gets a candidate slot",
-      "scope": "search"
-    },
-    {
-      "hash": "febfc7e7",
-      "date": "2026-10-10",
-      "type": "Docs",
-      "description": "10-10 Meili vs Qdrant-only battery — Qdrant ranks better and wins cross-lingual, loses types + cross-tradition",
-      "scope": "search"
-    },
-    {
-      "hash": "4b74453f",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "/library is shelves of small cover cards — instant from the edge-cached index",
-      "scope": "library"
-    },
-    {
-      "hash": "4f584fa0",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Multi-part works by explicit list; author shelves by folder; outside-folder OL files to 'More works'",
-      "scope": "library"
-    },
-    {
-      "hash": "cf3962ec",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "In cluster mode the API finishes startup work before listening (API_PREBOOT)",
-      "scope": "deploy"
-    },
-    {
-      "hash": "9d17a734",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Shelf index — precomputed out of process, edge-cached; stale-collection URLs still resolve",
-      "scope": "library"
-    },
-    {
-      "hash": "ca44db03",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "OceanLibrary shelves vs multi-part works; parts cite as '<work>, <part>'",
-      "scope": "library"
-    },
-    {
-      "hash": "fd8a068d",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Footer sits at the bottom of short pages (body is a full-height flex column, footer margin-top:auto)",
-      "scope": "site"
-    },
-    {
-      "hash": "02b94aa7",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "API in pm2 cluster mode (1 instance) + bounded wait_ready — reloads without the ~30 s of 502s",
-      "scope": "deploy"
-    },
-    {
-      "hash": "e71f28e6",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "A refused connection during an API restart is retried (~70 s), not scored as a failure",
-      "scope": "battery"
-    },
-    {
-      "hash": "dfb021f5",
-      "date": "2026-10-10",
-      "type": "Chore",
-      "description": "Track the WorkPlan migration (a global *.sql ignore hid it; anis migrations are force-added too)",
-      "scope": "d1"
-    },
-    {
-      "hash": "237e5678",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "WorkPlan — live feature queue at /admin/workplan (D1 siftersearch-ops on the edge)",
-      "scope": "admin"
-    },
-    {
-      "hash": "78c7d1f8",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Immediate [ACTION REQUIRED] email when any AI provider is out of credit",
-      "scope": "alerts"
-    },
-    {
-      "hash": "c86ac6ab",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Wire the global footer + Anís button into layouts/Layout.astro (every public page)",
-      "scope": "site"
-    },
-    {
-      "hash": "ac554980",
-      "date": "2026-10-10",
-      "type": "New",
-      "description": "Toolbar trimmed (no Chat/Research/Docs/About), global footer, Anís button on every public page",
-      "scope": "site"
-    },
-    {
-      "hash": "81fcfdad",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "'Ask Jafar' → 'Ask Anís' on research pages, About, API docs and the chat's copy signature",
-      "scope": "copy"
-    },
-    {
-      "hash": "c8c5d5a8",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Render through Cloudflare's Images binding — WASM decodes ran out of memory under bursts (503s)",
-      "scope": "images"
-    },
-    {
-      "hash": "d60bc3f8",
-      "date": "2026-10-10",
-      "type": "Fixed",
-      "description": "Remaining raw images through the image service; test forbids raw R2/ImageKit URLs in page code",
-      "scope": "images"
     }
   ],
   "grouped": {
+    "2026-10-20": [
+      {
+        "hash": "877c7da2",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Read roots include Public/Ocean-books and Public/pilgrim-notes (Chad's 10-20 sweeps were refused 400 'outside the folders Dewey may read'); test pin SEARCH_VERSION 2026-10-20.4",
+        "scope": "dewey"
+      },
+      {
+        "hash": "bf664bd9",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Migration 161 unreachable (CURRENT_VERSION not bumped) → every holdings check 500'd 'no such table: dewey_checks'; the memo read is now an optimisation — a failure is a miss, never a failed check",
+        "scope": "dewey"
+      },
+      {
+        "hash": "5d65908f",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Holdings-check memo — file content sha256 → last verdict (dewey_checks, migr 161); the same book checked again (renamed, moved) answers instantly; held stands while its document is live, other verdicts 7 days; ?fresh=1 (Chad 10-20)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "2b36e133",
+        "date": "2026-10-20",
+        "type": "Performance",
+        "description": "MEILI_WRITES=off — stop pushing paragraphs/HyPE/mentions/aliases to Meilisearch (retirement step 5); it was the largest I/O on /fast (20 MB/s r, 13 MB/s w) though search reads only Qdrant, while writes took 9–27 s and hydration 2–6 s. Dirty rows settled; removals still reach Qdrant",
+        "scope": "worker"
+      },
+      {
+        "hash": "5bb81653",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Stamp-voices/stamp-site yield to a drain and resume where they stopped — #973 held the indexer in 'draining' for hours; a yielding job's resume params are saved on the run (saveResume) so the requeue continues, not restarts",
+        "scope": "ops"
+      },
+      {
+        "hash": "05aaf916",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Two 30 s main-thread reads behind 10-20 gateway timeouts — library slug fallback read every docs row (now matching collections only, via docs-repo.docsForPathSlugs); planExhaustion prose check GROUP BY over ~600 books' paragraphs → EXISTS per book",
+        "scope": "api"
+      },
+      {
+        "hash": "b10d2cb2",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Settled plan books are not re-probed — refill (every 3 min) and planExhaustion walked all ~600 finished books on the API main thread each time (5–8 s resume-stage spikes); null answers remembered 30 min, each probe yields the loop",
+        "scope": "grounding"
+      },
+      {
+        "hash": "b39bc79c",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "The grounding exhaustion probe gets 30 s (it checks every plan book, 5–6 s) — the default 8 s timeout made an exhausted plan a CRITICAL 'nothing queued' alarm",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "791a3b06",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Rights classes per Chad's rule — Writings, institutional and anything online are shareable in full; only privately published books not found online are restricted",
+        "scope": null
+      },
+      {
+        "hash": "a97903a9",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Rights — the old encumbered flag is overly broad (collection/religion defaults); restrict only on per-document evidence, unknown stays shareable and goes to review; measure current breadth first (Chad 10-20)",
+        "scope": null
+      },
+      {
+        "hash": "81ac2d91",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Rights replaces the encumbered flag — per-document class + evidence, one servingPolicy module; encumbered derived then retired (Chad 10-20)",
+        "scope": null
+      },
+      {
+        "hash": "41d7f96d",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Rights classification — shareable in full vs copyrighted (encumbered) for every document; Dewey sets it at intake, backfill for the library (Chad 10-20)",
+        "scope": null
+      },
+      {
+        "hash": "eaf82123",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Keep only the newest 3 daily DB snapshots on /fast (Chad 10-20) — 31 dailies pinned ~60 GB of churned DB blocks and the pool hit 96%; full daily copies live on /tank",
+        "scope": null
+      },
+      {
+        "hash": "8bb2cf6b",
+        "date": "2026-10-20",
+        "type": "Docs",
+        "description": "Coverage one pass",
+        "scope": "blocking-queries"
+      },
+      {
+        "hash": "bb79d6eb",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Book coverage (prose/disamb/hyped/extracted/hypeable) is ONE pass over the book's rows, not five COUNT subqueries — grounding:resume-stage took 8.8 s on the API main thread for large books",
+        "scope": "blocking"
+      },
+      {
+        "hash": "37c5d4b5",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Site DBs — the per-site store already exists for site-only (getSiteDb); step 2 extends it",
+        "scope": null
+      },
+      {
+        "hash": "953f952a",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Stamp-site job — every scraped site's Qdrant points carry `site` (payload only, by doc-id batches, keyword index) so site scopes filter in Qdrant and hits can hydrate from per-site stores (planning/site-databases-plan.md step 1)",
+        "scope": "indexer"
+      },
+      {
+        "hash": "29b5b2da",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "One database per scraped site (bahai-library, oceanoflights, bahaiteachings); OceanLibrary.com stays in the primary DB as the canonical English collection (Chad 10-20)",
+        "scope": null
+      },
+      {
+        "hash": "6d3d616b",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "With no --qdrant flag the type battery uses the server's default search config — it sent qdrant:false and silently measured the legacy Meili path",
+        "scope": "battery"
+      },
+      {
+        "hash": "032ad179",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Spending Chad approved is not an alarm — the 24 h spend alert fires only above the base threshold plus the active approved allowances (data/approved-spend.json: doctrinal index 00/day, authorship 0/day, until 10-27)",
+        "scope": "alerts"
+      },
+      {
+        "hash": "46d01023",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "The authoritative pass runs only in a Bahá'í-scoped search again — unscoped it displaced other traditions (battery 66 → 60: karma, wu wei, nirvana, fasting). SEARCH_VERSION bumped",
+        "scope": "search"
+      },
+      {
+        "hash": "3241bdc4",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Under SEARCH_QDRANT=only hybridSearch / keywordSearch / searchHypeQuestions answer from Qdrant (authority-ranked multiIndexSearch with Meili off; BM25 for keyword mode) — every direct Meili caller (public /v1/search, keyword route, chat, deep research, grounding counts) moves at once; site-only scopes stay on Meili for now (Chad 10-20: retire Meilisearch)",
+        "scope": "search"
+      },
+      {
+        "hash": "ff21e14b",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Meili retirement — direct search callers inventoried; documents/deep_research write-only",
+        "scope": null
+      },
+      {
+        "hash": "f6351209",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "The authoritative pass also runs in UNSCOPED searches (most readers never pick a tradition — 'detachment from the world' found no Hidden Words) as candidates; the Bahá'í tier weights still apply only in a Bahá'í search, so interfaith slots stay fair. SEARCH_VERSION bumped",
+        "scope": "search"
+      },
+      {
+        "hash": "12e7dbd5",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Qdrant ranks alone (SEARCH_QDRANT=only) — with doctrinal-authority fusion the type battery scores 66/83 vs 63/83 on Meili, p50 1.6 s vs 4.4 s, p95 4.2 s vs 18 s (Chad 10-20: retire Meilisearch). Meili still receives writes; rollback = phrase,keyword",
+        "scope": "search"
+      },
+      {
+        "hash": "50673f8f",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Person-search claims (bioSearch hay_folded LIKE scan, 5.8 s) run on the claim-search worker thread's own connection — no longer on the API's event loop",
+        "scope": "blocking"
+      },
+      {
+        "hash": "718f27e4",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Each writer cycle leaves a phase breadcrumb (/tmp/siftersearch-writer-phase.json) and the watchdog logs it when it restarts the writer — a 45 s freeze at 07:08 left no trace (killed before any slow-query log); the watchdog never restarts twice within 2 min (the old writer is still draining)",
+        "scope": "writer"
+      },
+      {
+        "hash": "0859aaa1",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Bahá'í doctrinal tiers and the authoritative pass apply only inside a Bahá'í-scoped search — unscoped interfaith queries ('what is nirvana', Qur'anic patience, karma) were handed Bahá'í texts first; across traditions each passage ranks by its own authority within its tradition's slots. SEARCH_VERSION bumped",
+        "scope": "search"
+      },
+      {
+        "hash": "4dcfe658",
+        "date": "2026-10-20",
+        "type": "Chore",
+        "description": "Bump SEARCH_VERSION — doctrinal-authority ranking invalidates cached results",
+        "scope": "search"
+      },
+      {
+        "hash": "9670835e",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "The authoritative pass filters on the indexed author_fold only (a should over the unindexed voices_fold scanned 35M points — it timed out on every query) and also searches the doctrinal HyPE questions; voices_fold payload indexes created on phrases/hype/paragraphs_kw",
+        "scope": "search"
+      },
+      {
+        "hash": "8bcf9e96",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "The 'answers the question' band is measured within each tradition — interfaith results give each tradition its own slots, so a Bahá'í passage is judged against the best Bahá'í passage (a secondary book had taken the Bahá'í slot from Bahá'u'lláh's Tablets)",
+        "scope": "search"
+      },
+      {
+        "hash": "c7f033f1",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Authenticated text first — a central figure's words count in full only in an authoritative book (own works, compilations of the Writings, the House's); quoted or recalled in a secondary book their doctrinal factor is capped at 1.3, so the original outranks the account ('Visiting the Bahá'í World Centre' outranked the Íqán). Hits carry book_authority",
+        "scope": "search"
+      },
+      {
+        "hash": "00b2da7b",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "A question is not a quotation — the verbatim lead no longer promotes a passage that merely restates the question ('what is the purpose of prayer' led with a PDF over 'Abdu'l-Bahá's answer), and only an authoritative copy (doctrinal factor ≥ 1) leads a quotation",
+        "scope": "search"
+      },
+      {
+        "hash": "da42344a",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "DOCTRINAL AUTHORITY throughout ranking (Chad 10-20: authority from the outset; dedup favours canonical; re-rank favours the authoritative passage that answers) — Qdrant layers carry the writer (author_fold/scope/collection) and fusion weighs each contribution by it (Revelation ×3 > interpretation ×2.6 > the House ×1.6 > others; pilgrim notes ×0.4; scraped-site copies ×0.7); an authoritative pass retrieves the doctrinal writers' passages so they are always candidates; duplicate passages collapse to their most authoritative copy; final re-rank multiplies by the PARAGRAPH writer's factor within the answer band (≥½ the top score). Was: ×1.2 post-hoc blend on the book's author, skipped for some query shapes",
+        "scope": "search"
+      },
+      {
+        "hash": "2f7a8b4c",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Pre-deploy test boots run the production boot order (API_PREBOOT=1) under a 50 s deadline below pm2's 60 s listen_timeout — the fork-mode test listened first and passed in 5 s while the real preboot hung (10-20 search outage)",
+        "scope": "deploy"
+      },
+      {
+        "hash": "a4cf9d0f",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "The concept lexicon load blocked the API's event loop for minutes at boot (proofParagraph re-parsed/re-folded every row per entry) — the new search instance never listened and pm2 stopped the old one after listen_timeout. Rows indexed once (map lookup), yields every 200 entries; no lexicon warm-up at boot",
+        "scope": "outage"
+      },
+      {
+        "hash": "2c903108",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Meilisearch retirement plan — inventory of indexes and callers; Qdrant-only battery loses famous passages to secondary copies (no authority fusion) → authority-aware fusion first",
+        "scope": null
+      },
+      {
+        "hash": "876178b9",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Concept and entity layers read SQLite, not Meilisearch (Chad 10-20: retire Meilisearch) — the cited lexicon held in memory (warmed at boot, 30 min refresh), entity mentions by entity_id via entity-mentions-repo ranked by the paragraph author's authority",
+        "scope": "search"
+      },
+      {
+        "hash": "5cb231a9",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "A RUNNING ops run can be cancelled — marked now, stops at its next yield point when the service drains, keeps 'cancelled' through finish, never requeued",
+        "scope": "ops"
+      },
+      {
+        "hash": "398fff28",
+        "date": "2026-10-20",
+        "type": "Docs",
+        "description": "Bio citation labels",
+        "scope": "blocking-queries"
+      },
+      {
+        "hash": "3c9d64fb",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Person-page citation labels query content per document (index is doc_id, external_para_id) — a bare external_para_id IN (…) scanned all of content, 7 s on the API main thread",
+        "scope": "blocking"
+      },
+      {
+        "hash": "8d5e2763",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "An unnamed slow write batch logs its first statement's SQL — 4–15 s single-statement writes from reports could not be traced",
+        "scope": "writer"
+      },
+      {
+        "hash": "73b2578e",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Detached batch runs (hype-many, complete-concepts, complete-book) read in their own processes — not 'blocking'",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "fe87a654",
+        "date": "2026-10-20",
+        "type": "Docs",
+        "description": "Concept_entities full rebuild",
+        "scope": "blocking-queries"
+      },
+      {
+        "hash": "50aa6309",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Concept promote writes a DIFF of concept_entities in ≤500-statement chunks, not DELETE-all + ~29,000 INSERTs in one transaction — eight concept runs finishing together held the single writer 1.5–3 s each and the WAL churn stalled other writes 8–15 s (10-20); unchanged rows keep their ids",
+        "scope": "writer"
+      }
+    ],
     "2026-10-19": [
+      {
+        "hash": "a5eca859",
+        "date": "2026-10-19",
+        "type": "Docs",
+        "description": "Log the 10-19 writer, CLI-orphan and monitor-scan causes",
+        "scope": "blocking-queries"
+      },
+      {
+        "hash": "3a8a46a4",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "HyPE sidecar sync marks rows it will never index as synced (paragraphs of deleted documents, empty question lists) — skipped-but-unmarked rows stayed in the partial index and every batch re-read them on the single writer's thread (24 s batch → /health dead → watchdog restarts 17:35Z, 04:02Z, 05:37Z ×2); v14+ question objects were indexed as '[object Object]'",
+        "scope": "writer"
+      },
+      {
+        "hash": "7c06e511",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Deep-research-runner exits when its mode is done — imported refresh timers kept a 10-11 '--status' alive for 8 days running retired 26–83 s graph_enriched scans (the night's 'worst blocking query'); orphan killed",
+        "scope": "scripts"
+      },
+      {
+        "hash": "258bdf0e",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Ingest-files yields to a drain between files (a 10,797-file run held reports in 'draining'); the gateway answers a request its service cut off after the retry window as 504 upstream_timeout, counted apart — 'unavailable' now means restarts only (all 10 were 30 s searches under load)",
+        "scope": "ops,gateway"
+      },
+      {
+        "hash": "faa85398",
+        "date": "2026-10-19",
+        "type": "Performance",
+        "description": "The monitors stop evicting the database cache — pipeline-snapshot reuses any probe that took ≥2 s for up to an hour, system-checks scans content only in the daily run, stall-guard uses MAX(rowid) and an index-friendly date filter. Whole-table scans every 5/30/60 min kept SQLite pages out of ZFS ARC: search hydration (primary-key lookups) 200–1000 ms, searches 5–15 s",
+        "scope": "search"
+      },
+      {
+        "hash": "809e8ee9",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "/gateway/health lists the last 20 unavailable answers (time, service, path, error) and logs each — the count rose 1→3 with nothing to trace it",
+        "scope": "gateway"
+      },
+      {
+        "hash": "6570130c",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A resumable long job YIELDS to a drain between books (result.yielded → run left 'running', requeued on restart) — a multi-hour paragraph-authors run held the whole reports service in 'draining', so no lane (Phelps ingest, slow-queries) could run",
+        "scope": "ops"
+      },
+      {
+        "hash": "526b16d1",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Phelps' provisional English renderings of the tablets → library files (Tablet Translations/Stephen Phelps (provisional)/<author>/<PIN>.md), labelled provisional-phelps, credited to the tablet's author, linked to the original by PIN; official translations and unsegmented texts skipped (Chad 10-19)",
+        "scope": "library"
+      },
+      {
+        "hash": "10dbbfb0",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Reads in batch loops (indexer, reports-carry, embedding, audit) are not 'blocking' — no request waits on them",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "6c0aa009",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Person search off the serving thread — entitySearch scanned+folded all entity_claims per call (10–13 s, ~200×/day on api and anis main threads: the slow-query emails); claims now held folded on one worker thread (claim-search.js), queries scan in memory",
+        "scope": "blocking"
+      },
+      {
+        "hash": "299f6bc9",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Paragraph-authors job has a spend cap (maxLlm Haiku calls, default 20,000) — no new book past it; the rest resume next run",
+        "scope": "authorship"
+      },
+      {
+        "hash": "0c477195",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A process mid-reload is given its own drain time (kill_timeout) + 1 min before it pages — the writer drains its batch and took >60 s on an ordinary deploy (false critical 'siftersearch-worker stopping')",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "e27eeaa7",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Trailer paragraphs still get the classifier's quoted voices (author stays locked) — the 20804 dry run lost ~1,000 quoted voices by skipping them",
+        "scope": "authorship"
+      },
+      {
+        "hash": "e62ed885",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Keyword-fill points carry voices_fold too — a gap-filled paragraph quoting the Báb is findable by 'the Báb' at once, not after the next stamp-voices pass",
+        "scope": "search"
+      },
+      {
+        "hash": "6a29cce8",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Attribution trailers are EVIDENCE in the paragraph-authors job — a quotation followed by '(From a letter written on behalf of Shoghi Effendi …)' takes that writer (basis trailer) before the classifier runs; pandoc attribute tails stripped (Lights of Guidance quotations were labelled the compiler)",
+        "scope": "authorship"
+      },
+      {
+        "hash": "ad8980ee",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A service mid-reload (launching/stopping) is looked at again for up to 60 s before it pages anyone — graceful deploys were false criticals; the macro-services (gateway, anis, ops, indexer, reports) are now required and watched",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "12010d00",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Every VOICE is findable by author — points carry voices_fold (the paragraph's author + every quoted voice); an author filter matches writer OR quoted voice; stamp-voices job (indexer service) stamps existing points by paragraph, payload only; keyword indexer writes it (Chad 10-19: the Báb quoted by Mázandarání answers 'what did the Báb say')",
+        "scope": "search"
+      },
+      {
+        "hash": "7eb8e1ba",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler in the MAIN library ingester too — one shared rule (library/compilation-author.js); its copy of Lights of Guidance was 'by Bahá'u'lláh'. compilation-authors ops job finds and (with write) corrects existing library records (Chad 10-19)",
+        "scope": "ingest"
+      },
+      {
+        "hash": "505e0781",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Every paragraph its author, library-wide — the window classifier (v18b rules) as the 'paragraph-authors' ops job (reports service, own lane): reads via paragraphs-repo, writes through the writer with rollback, resumable per book, secondary rules for scholars/compilations; escalations on Haiku 5.5 (DeepSeek retired). Doctrine is then selected by PARAGRAPH author, not book (Chad 10-19)",
+        "scope": "authorship"
+      },
+      {
+        "hash": "e3afd7dc",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "Trace_source — a House letter, scholar or compilation stating a teaching is a signpost; the researcher traces it (quote links, else the closest passages of the four authoritative authors) and cites the primary passage (Chad 10-19)",
+        "scope": "anis researcher"
+      },
+      {
+        "hash": "8eed9f53",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Warm-ups (the ~24 s encounter query) run BEFORE listening — behind the gateway the old instance serves until 'ready', while warming after listen froze live Anís conversations (74 blocking reads in 'anis' in 3 h)",
+        "scope": "api services"
+      },
+      {
+        "hash": "d4e319e1",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "System-checks --report — the same checks as JSON, no email, no state (the agent's own periodic watch reads it)",
+        "scope": "ops"
+      },
+      {
+        "hash": "f9a9dc37",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "The updater restart storm (289 restarts, every 30 s) — pm2 killed it at its 100M memory limit once it computed every service's import graph per lagging service; graphs now cached per run, limit 512M. An ecosystem.config.cjs edit touches only the apps whose own pm2 block changed (old config read from git), not every service",
+        "scope": "coordinator"
+      },
+      {
+        "hash": "71e9b176",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Authority decides — doctrinal questions answered ONLY from the Revelation and its authorised interpretation; the House only for applying the law and the administration; scholars only labelled history. The judge and the auditor score a doctrinal point rested on the House or a scholar as an authority error, not a better answer (Chad 10-19: 'an antipattern, not better'); battery --rejudge",
+        "scope": "anis"
+      },
+      {
+        "hash": "70376a32",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A failed job records and logs its stack (a bare 'Request timed out' did not say which call); battery judge accepts 'Answer B' labels",
+        "scope": null
+      },
+      {
+        "hash": "26ba367b",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "From the 61-question Immerse battery — a real topic or pasted passage is never deflected as 'unclear'/'cut off'; references read in the reader's community and the present (ABS, the Nine Year Plan, the House, message paragraphs); study questions researched broadly and answered in full, organised; search API now serves only its own routes (Anís and ops via the gateway)",
+        "scope": "anis"
+      },
+      {
+        "hash": "b76dccc7",
+        "date": "2026-10-19",
+        "type": "Docs",
+        "description": "Macro-services behind the gateway — layout, ports, coordinator (CLAUDE.md + continuous-deploy.md)",
+        "scope": null
+      },
+      {
+        "hash": "ca353922",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Under pm2 cluster mode argv[1] is pm2's container — recognise the entry by pm_exec_path (the gateway never listened)",
+        "scope": "gateway"
+      },
+      {
+        "hash": "24e7e054",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "The API splits into macro-services behind a gateway — siftersearch-gateway (7839, where the tunnel points; routes by path, retries a restarting service, streams), siftersearch-api (search, 7845), siftersearch-anis (conversations/letters/reading/widget, 2 instances, 7844), siftersearch-ops (health/reports, 7843): an Anís update reloads only Anís (Chad 10-19: 3,000 readers/day, dozens of updates, no interrupted conversations). Shared runtime (api-runtime.js) + shared server (http-server.js) + route sets; every service answers /healthz; the coordinator boots each new build on a test port before any reload; stray-killer waits out the 300 s drain",
+        "scope": "services"
+      },
+      {
+        "hash": "5c1441ec",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A file ADDED in a deploy cannot be loaded by running code — no fallback reload for it (the new indexer entry reloaded writer, deep-research and embedding for nothing); behind-check logs quietly",
+        "scope": "coordinator"
+      },
+      {
+        "hash": "e0606135",
+        "date": "2026-10-19",
+        "type": "New",
+        "description": "INDEXING is its own macro-service (siftersearch-indexer: phrase/HyPE/concept/section vectors, BM25, coverage ledger) on a 57-file import graph with no Dewey or Anís code — other services' deploys leave it running; ops services share one runtime (drain, heartbeat, lanes, alerts); a restart requeues only ITS OWN interrupted jobs (reports used to requeue carry's live ones); the coordinator starts newly declared services (Chad 10-19)",
+        "scope": "services"
+      },
+      {
+        "hash": "e9df3d78",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "Answers as jobs (start + poll) — no request stays open for Cloudflare's 125 s limit or a reload (40 of 61 were 524s)",
+        "scope": "anis battery"
+      },
+      {
+        "hash": "d697ca68",
+        "date": "2026-10-19",
+        "type": "Fixed",
+        "description": "A service is behind only when its heartbeat commit lags HEAD in code IT loads (not pm2's package version); a version-only package.json bump is no change; a draining service is never signalled or verified twice (frontend deploy 2.187.723: mail drafts as jobs)",
+        "scope": "coordinator"
+      },
       {
         "hash": "2207e27a",
         "date": "2026-10-19",
@@ -6473,554 +7021,6 @@
         "type": "New",
         "description": "Hard rule — SQLite only through repos (shrink-only ratchet, 299 legacy files frozen); single writer records every batch per minute × caller × name (db_write_stats, migr 145, GET :7849/stats)",
         "scope": "db"
-      },
-      {
-        "hash": "3e25e050",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "On tower every non-writer process routes writes through the single writer by default — processes started without SIFTER_WRITER_URL wrote directly and locked the writer out ('database is locked')",
-        "scope": "db"
-      },
-      {
-        "hash": "a4ac3286",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "--retry-not-found re-places rows the ingester had joined from several file blocks",
-        "scope": "segment"
-      },
-      {
-        "hash": "8c855271",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Douay split on blank-line runs; book-title headings; chapter-line variants",
-        "scope": "library"
-      },
-      {
-        "hash": "2a6545f0",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Verse pn into scripture source files — Tanzil Qur'an (reference headings folded into the verse) + Douay-Rheims (pn names the book)",
-        "scope": "library"
-      },
-      {
-        "hash": "2a6ef8a7",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Segmentation = Haiku 5.5 in every language; LM Studio retired (its dead host hung segmenting ingests; 221/221 calls failed this week)",
-        "scope": "ai"
-      },
-      {
-        "hash": "c8aae491",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Local LLM client fails fast — 120 s timeout, 1 retry, 10-min breaker after a network failure (a retired LM Studio host hung an Arabic re-ingest for 2 h)",
-        "scope": "ai"
-      },
-      {
-        "hash": "7ba8d19c",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Write new paragraph breaks by word-walk splice — inline footnotes/page tags kept, headings in the same block untouched (7,255 of 10,205 never matched by block hash)",
-        "scope": "segment"
-      },
-      {
-        "hash": "108f524d",
-        "date": "2026-10-11",
-        "type": "Performance",
-        "description": "Apply hashes each file's blocks once (was quadratic, 40+ min dry run)",
-        "scope": "segment"
-      },
-      {
-        "hash": "6457dfc1",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Margin shows the verse pn (Bible, Qur'an) where a book has one",
-        "scope": "reader"
-      },
-      {
-        "hash": "6c9fccc3",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Reader/bilingual/content/stats never serve soft-deleted paragraphs; paragraphs carry pn",
-        "scope": "library"
-      },
-      {
-        "hash": "11ff31c0",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Verse-pn backfill numbers sup-less one-verse-per-block books by chapter heading (named docs only)",
-        "scope": "library"
-      },
-      {
-        "hash": "f4ac70fe",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Image-placeholder caption capped (a long alt is real text); verse-pn backfill includes NULL-blocktype rows",
-        "scope": null
-      },
-      {
-        "hash": "e3127f9b",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Backfill verse pn from stored rows (reaches rows with no para_N); image placeholders with nested captions",
-        "scope": "library"
-      },
-      {
-        "hash": "fb968821",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "OL adapter stores verse pn for <sup>c:v</sup> scripture (ILM pn wins); unresolved image placeholders are not paragraphs; majority chapter",
-        "scope": "sites"
-      },
-      {
-        "hash": "8ceb5e27",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Verse pn re-anchors at every marked block — a <sup> missing in the source never shifts other blocks; gaps reported",
-        "scope": "library"
-      },
-      {
-        "hash": "15d3bb4a",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Verse pn for grouped scripture — the chapter:verse a block starts at; <sup> verses are checksums (Chad 10-11)",
-        "scope": "library"
-      },
-      {
-        "hash": "3b4a9965",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Paragraph segmentation of oversized Arabic/Persian paragraphs by phrase index (Haiku 5.5 thinking, Message Batches at half price)",
-        "scope": "segment"
-      },
-      {
-        "hash": "bcaf0198",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Segmentation scale + cost model — tablets ≈$1.7–3.4; classical library 427M chars: $137 naive → ~$15–25 with rules + Laya + batch",
-        "scope": "planning"
-      },
-      {
-        "hash": "6eac920b",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Segmentation job B (paragraph starts) — Jev F1 0.76 vs Haiku-thinking; 64% of decisions at 88% (Laya candidate)",
-        "scope": "planning"
-      },
-      {
-        "hash": "cff14da9",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Arabic segmentation experiments — phrase-index Haiku (thinking) is the quality path; Jev confidently right on ~half the phrase decisions (Laya candidate)",
-        "scope": "planning"
-      },
-      {
-        "hash": "e80c6836",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "12k-char batches (40k made Haiku truncate or leave JSON; 76k chars of al-Istibsar → 202 sentences clean at 12k)",
-        "scope": "segment"
-      },
-      {
-        "hash": "c2a5f1fd",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "A hollow document is never 'unchanged' (main ingester) — same hash or same body with no live text re-ingests",
-        "scope": "ingest"
-      },
-      {
-        "hash": "91ac9dcd",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Arabic files are segmented once as they arrive (Haiku 5.5 file step) instead of sitting paused",
-        "scope": "ingest"
-      },
-      {
-        "hash": "81e05dcf",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "An already-marked file gets needs_segmentation: false so ingest stops pausing it",
-        "scope": "segment"
-      },
-      {
-        "hash": "085157e5",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Cost estimate calibrated on the al-Istibsar pilot (vowelled Arabic ≈1.6 input + 0.26 output tokens per char)",
-        "scope": "segment"
-      },
-      {
-        "hash": "298e691b",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Search no longer loops on 'Searching…' (effect untracked); covered results lead as cards, coverless as tiles",
-        "scope": "library"
-      },
-      {
-        "hash": "e9e004ac",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Visible search + scope, shelves two full rows wide, collections as a tile grid linking to their pages; navbar full width",
-        "scope": "library"
-      },
-      {
-        "hash": "1c4c6164",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Anthropic replies read every text block (5.x may lead with thinking); segmentation runs Haiku with thinking off and 16k output headroom",
-        "scope": "ai"
-      },
-      {
-        "hash": "71d82484",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Haiku 5.5 calls drop temperature (the 5.5 API rejects it); a failed batch stops file-segment instead of writing one-sentence paragraphs",
-        "scope": "segment"
-      },
-      {
-        "hash": "4a6d8128",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Alert severity — [PAGE] only when the site is down and automation could not fix it; [ACTION] for daylight work",
-        "scope": "ops"
-      },
-      {
-        "hash": "c1b133c8",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Watchdog no longer emails ACTION REQUIRED for a restart it completed itself",
-        "scope": "ops"
-      },
-      {
-        "hash": "30fe6ec0",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "One-time file-level Arabic/Persian sentence segmentation with Haiku 5.5 (cached prompt, <100k per call)",
-        "scope": "segment"
-      },
-      {
-        "hash": "0dc00171",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Registry current with Anthropic's live list — 5.5 family (Haiku/Sonnet/Opus) the only ones in use; Haiku 5.5's 5× past-100k pricing billed",
-        "scope": "models"
-      },
-      {
-        "hash": "178fe11e",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Library-fixes re-ingest uses node:http (undici's 5-min headers timeout killed it mid-book)",
-        "scope": "library"
-      },
-      {
-        "hash": "d4c695fc",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "A localOnly scope can no longer reach GPT-4o — forceLocal beats USE_REMOTE_AI; segmentation refuses a non-local provider under localOnly",
-        "scope": "ai"
-      },
-      {
-        "hash": "6c77f1b9",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Root cause of the 10,124 empty bahai-library rows — paragraph replacement is crash-safe; retired duplicates stay retired",
-        "scope": "ingest"
-      },
-      {
-        "hash": "67224b92",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "A failed paragraph write no longer leaves a hollow row behind a stored hash; --only-hollow repair mode; bounded agent watchers",
-        "scope": "ingest"
-      },
-      {
-        "hash": "566f382a",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "4k pilot — 14.3% → 79.9% agreement with Jev on the full 4,461 held-out set (majority 65.6%)",
-        "scope": "laya"
-      }
-    ],
-    "2026-10-10": [
-      {
-        "hash": "d0b201bb",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Overnight battery — Qdrant-only now wins the type battery (65 vs 63) after CANON; Meili still wins quality (458 vs 433)",
-        "scope": "search"
-      },
-      {
-        "hash": "f71d269f",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Library-fixes moves only files inside the library; scrape rows are retired with their files untouched",
-        "scope": "library"
-      },
-      {
-        "hash": "d5994593",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Finetune.py — distil Jev's answer distributions into Laya (smoke: 7% → 93% agreement in 25 CPU steps)",
-        "scope": "laya"
-      },
-      {
-        "hash": "a643cde1",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "Strata on Boss — watched-launch plan (IQ3_S verified on boss; RAM sizing risk)",
-        "scope": "planning"
-      },
-      {
-        "hash": "bf5966f9",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "SetDocTitle + library-fixes title op (repair 'Untitled' rows whose frontmatter did not parse)",
-        "scope": "library"
-      },
-      {
-        "hash": "820085b2",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Jain category trimmed ('Jainism ' split the tradition); library-fixes.mjs applies reviewed audit decisions",
-        "scope": "library"
-      },
-      {
-        "hash": "6e62b0f2",
-        "date": "2026-10-10",
-        "type": "Chore",
-        "description": "Changelog after the 10-10 evening deploy",
-        "scope": null
-      },
-      {
-        "hash": "985edf6a",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Split Core Tablets by author (one row per Central Figure; small authors pooled)",
-        "scope": "library"
-      },
-      {
-        "hash": "09d0579e",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Inventory-dedupe — retire Partial Inventory tablets that duplicate an oceanoflights tablet, merging the PIN onto it",
-        "scope": "library"
-      },
-      {
-        "hash": "69db356e",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "One KJV under Christianity; work cards carry the Bindery collection cover and open every part in OceanLibrary order",
-        "scope": "library"
-      },
-      {
-        "hash": "05849aee",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Move non-catalogue OceanLibrary books into the main library (docs-repo.relocateDoc, ol-to-library.mjs)",
-        "scope": "library"
-      },
-      {
-        "hash": "fa470a4e",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Critical-path retries network errors 3x with backoff (tower's outbound connects hit 10 s timeouts under a saturated uplink)",
-        "scope": "ops"
-      },
-      {
-        "hash": "3dcfbeba",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Critical-path regression suite + updater safety rails — the 10-10 outage cannot recur silently",
-        "scope": "ops"
-      },
-      {
-        "hash": "232b9c82",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Import-covers falls back to a unique folded title (Bindery); 73 more covers imported (586/607)",
-        "scope": "covers"
-      },
-      {
-        "hash": "8bec83cd",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Import-covers matches by Bindery source URL when the bookid hash misses",
-        "scope": "covers"
-      },
-      {
-        "hash": "0a4aee7d",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Restore after a 30-min API outage; remove git hooks; explicit deploy pipeline",
-        "scope": "ops"
-      },
-      {
-        "hash": "e2e6c6b8",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Covers shown bare (they are transparent — no box behind them); shelves use the full page width",
-        "scope": "library"
-      },
-      {
-        "hash": "92a443d7",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Tower S3 gateway (versitygw) — the image Worker reads Tower originals the way it reads R2",
-        "scope": "storage"
-      },
-      {
-        "hash": "bbcff6ef",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Verbatim-canon rule needs >= 6 words and sim >= 0.875 ('How should I pray?' hit 0.861)",
-        "scope": "search"
-      },
-      {
-        "hash": "30a91d0c",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "A near-verbatim canonical match (phrase sim >= 0.86) is treated as a quote, whatever the planner said",
-        "scope": "search"
-      },
-      {
-        "hash": "e4f0f38a",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "On a quote, the canon layer's first (authority-ordered) hit carries a sharp weight",
-        "scope": "search"
-      },
-      {
-        "hash": "14bfcf91",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Canonical phrase matches of about equal score rank by author authority — the original first",
-        "scope": "search"
-      },
-      {
-        "hash": "4f5e4b09",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "CANON phrase layer — the original of a famous line always gets a candidate slot",
-        "scope": "search"
-      },
-      {
-        "hash": "febfc7e7",
-        "date": "2026-10-10",
-        "type": "Docs",
-        "description": "10-10 Meili vs Qdrant-only battery — Qdrant ranks better and wins cross-lingual, loses types + cross-tradition",
-        "scope": "search"
-      },
-      {
-        "hash": "4b74453f",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "/library is shelves of small cover cards — instant from the edge-cached index",
-        "scope": "library"
-      },
-      {
-        "hash": "4f584fa0",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Multi-part works by explicit list; author shelves by folder; outside-folder OL files to 'More works'",
-        "scope": "library"
-      },
-      {
-        "hash": "cf3962ec",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "In cluster mode the API finishes startup work before listening (API_PREBOOT)",
-        "scope": "deploy"
-      },
-      {
-        "hash": "9d17a734",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Shelf index — precomputed out of process, edge-cached; stale-collection URLs still resolve",
-        "scope": "library"
-      },
-      {
-        "hash": "ca44db03",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "OceanLibrary shelves vs multi-part works; parts cite as '<work>, <part>'",
-        "scope": "library"
-      },
-      {
-        "hash": "fd8a068d",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Footer sits at the bottom of short pages (body is a full-height flex column, footer margin-top:auto)",
-        "scope": "site"
-      },
-      {
-        "hash": "02b94aa7",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "API in pm2 cluster mode (1 instance) + bounded wait_ready — reloads without the ~30 s of 502s",
-        "scope": "deploy"
-      },
-      {
-        "hash": "e71f28e6",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "A refused connection during an API restart is retried (~70 s), not scored as a failure",
-        "scope": "battery"
-      },
-      {
-        "hash": "dfb021f5",
-        "date": "2026-10-10",
-        "type": "Chore",
-        "description": "Track the WorkPlan migration (a global *.sql ignore hid it; anis migrations are force-added too)",
-        "scope": "d1"
-      },
-      {
-        "hash": "237e5678",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "WorkPlan — live feature queue at /admin/workplan (D1 siftersearch-ops on the edge)",
-        "scope": "admin"
-      },
-      {
-        "hash": "78c7d1f8",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Immediate [ACTION REQUIRED] email when any AI provider is out of credit",
-        "scope": "alerts"
-      },
-      {
-        "hash": "c86ac6ab",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Wire the global footer + Anís button into layouts/Layout.astro (every public page)",
-        "scope": "site"
-      },
-      {
-        "hash": "ac554980",
-        "date": "2026-10-10",
-        "type": "New",
-        "description": "Toolbar trimmed (no Chat/Research/Docs/About), global footer, Anís button on every public page",
-        "scope": "site"
-      },
-      {
-        "hash": "81fcfdad",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "'Ask Jafar' → 'Ask Anís' on research pages, About, API docs and the chat's copy signature",
-        "scope": "copy"
-      },
-      {
-        "hash": "c8c5d5a8",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Render through Cloudflare's Images binding — WASM decodes ran out of memory under bursts (503s)",
-        "scope": "images"
-      },
-      {
-        "hash": "d60bc3f8",
-        "date": "2026-10-10",
-        "type": "Fixed",
-        "description": "Remaining raw images through the image service; test forbids raw R2/ImageKit URLs in page code",
-        "scope": "images"
       }
     ]
   }

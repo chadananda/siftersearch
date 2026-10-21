@@ -6,7 +6,7 @@
 
   let { id, onclose = () => {}, ondone = () => {} } = $props();
   let r = $state(null), error = $state(null), busy = $state(null);
-  let fileUrl = $state(null), fileErr = $state(null), tab = $state('file');
+  let fileUrl = $state(null), fileErr = $state(null), tab = $state('file'), converted = $state(false);
   let title = $state(''), author = $state(''), religion = $state(''), collection = $state('');
   const CHUNK = 60000;
   let shown = $state(CHUNK);   // characters of the text drawn so far
@@ -20,6 +20,11 @@
       if (!x.source) tab = 'text';
       else if (['pdf', 'png', 'jpg', 'jpeg', 'txt', 'md', 'html', 'htm'].includes(x.source.ext))
         dewey.file(id).then((b) => { if (!dead) fileUrl = url = URL.createObjectURL(b); }).catch((e) => { fileErr = e.message; });
+      // RTF, Word, WordPerfect, ODT, EPUB: the server converts them to sanitised HTML (shown in a sandboxed frame — Chad 10-20)
+      else if (['rtf', 'doc', 'docx', 'odt', 'wpd', 'wps', 'epub', 'webarchive'].includes(x.source.ext)) {
+        converted = true;
+        dewey.preview(id).then((b) => { if (!dead) fileUrl = url = URL.createObjectURL(b); }).catch((e) => { fileErr = e.message; if (x.text) tab = 'text'; });
+      }
       else { fileErr = `A .${x.source.ext} file can't be shown here`; if (x.text) tab = 'text'; }
     }).catch((e) => { error = e.message; });
     return () => { dead = true; if (url) URL.revokeObjectURL(url); };
@@ -38,6 +43,10 @@
       ondone(); onclose();
     } catch (e) { error = e.message; busy = null; }
   }
+  async function offer(how) {
+    busy = how; error = null;
+    try { const res = await dewey[how](id); ondone(res?.item); onclose(); } catch (e) { error = e.message; busy = null; }
+  }
   const onkey = (e) => { if (e.key === 'Escape') onclose(); };
 </script>
 
@@ -46,7 +55,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-label="Review">
     <header>
       <div class="min-w-0">
-        <div class="text-xs text-muted uppercase tracking-wide">Needs a person</div>
+        <div class="text-xs text-muted uppercase tracking-wide">{r?.item.state === 'offered' ? 'Not in the library — add it?' : 'Needs a person'}</div>
         <h2 class="text-primary font-semibold truncate">{r?.item.title || '…'}</h2>
       </div>
       <button class="x" onclick={onclose} aria-label="Close">✕</button>
@@ -62,7 +71,7 @@
             {#if fileUrl}<a class="open" href={fileUrl} target="_blank" rel="noopener">Open ↗</a>{/if}
           </div>
           {#if tab === 'file'}
-            {#if fileUrl}<iframe src={fileUrl} title="The original file"></iframe>
+            {#if fileUrl}{#if converted}<iframe src={fileUrl} title="The original file, converted for reading" sandbox=""></iframe>{:else}<iframe src={fileUrl} title="The original file"></iframe>{/if}
             {:else if fileErr}<p class="text-muted text-sm p-3">{fileErr}</p>
             {:else}<p class="text-muted text-sm p-3">Loading the file…</p>{/if}
           {:else if r.text}
@@ -90,11 +99,17 @@
             </label>
           </div>
           <div class="answers">
+            {#if r.item.state === 'offered'}
+              <!-- an OFFER (a file we lack): read it here, then decide (Chad 10-20) -->
+              <button class="ans primary" disabled={!!busy} onclick={() => offer('accept')}>{busy === 'accept' ? '…' : 'Add it'}<span class="hint">import it into the library{religion && collection ? ` — ${religion} › ${collection}` : ''}</span></button>
+              <button class="ans quiet" disabled={!!busy} onclick={() => offer('decline')}>{busy === 'decline' ? '…' : 'Not this one'}<span class="hint">not wanted</span></button>
+            {:else}
             {#each r.answers as a, i (a.action)}
               <button class="ans" class:primary={i === 0} class:quiet={a.action === 'decline'} disabled={!!busy} onclick={() => answer(a)} title={a.hint}>
                 {busy === a.action ? '…' : a.label}<span class="hint">{a.hint}</span>
               </button>
             {/each}
+            {/if}
           </div>
           {#if error}<p class="text-error text-xs">{error}</p>{/if}
           <details class="hist">

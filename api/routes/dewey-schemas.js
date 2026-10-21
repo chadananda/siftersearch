@@ -162,6 +162,7 @@ export const reviewSchema = {
     text: open({}, { nullable: true }), shelves: open({}), answers: { type: 'array', items: open({ action: { type: 'string' }, label: { type: 'string' }, hint: { type: 'string' }, fields: { type: 'boolean' } }) } }) },
 };
 export const itemFileSchema = { ...base('An item\'s original file', 'The archived original (PDF, Word, text…), served inline.'), params: idParam };
+export const itemPreviewSchema = { ...base('An item\'s original, readable', 'RTF, Word (.doc/.docx), WordPerfect, ODT, EPUB or a webarchive converted to sanitised HTML for display (no scripts, no external fetches). Other types: GET …/file.'), params: idParam };
 export const resolveSchema = {
   ...base('Answer an item', 'Carries out a person\'s answer: `import` (add it — waives the fragment, twin and page-limit guards; optional title, author, shelf), `use-ocr` (accept OCR text that failed the check), `retry-ocr`, or `decline`. Only the answers GET /review lists are accepted.'),
   params: idParam,

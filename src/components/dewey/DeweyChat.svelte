@@ -6,6 +6,7 @@
   import { tick } from 'svelte';
   import { getAccessToken, dewey } from '../../lib/api.js';
   import { svcFixed } from '../../lib/imagekit.js';
+  import DeweyReview from './DeweyReview.svelte';
 
   const API = import.meta.env.PUBLIC_API_URL || '';
   let turns = $state([]);   // [{ id, you: { text, photos, file }, parts: [{ kind: 'text'|'holdings'|'item', … }], busy, error }]
@@ -156,6 +157,7 @@
     try { const { item: next } = await dewey[how](item.id); Object.assign(item, next); turns = [...turns]; } catch (e) { item._err = e.message; turns = [...turns]; }
   }
   let sourceUrl = $state({});
+  let viewing = $state(null);   // an offered item open in the Review popup (read before deciding — Chad 10-20)
   async function attach(item, body) {
     try { const { item: next } = await dewey.attachSource(item.id, body); Object.assign(item, next); turns = [...turns]; } catch (e) { item._err = e.message; turns = [...turns]; }
   }
@@ -253,6 +255,7 @@
                 <div class="flex gap-1.5 mt-2">
                   <button class="act primary" onclick={() => decide(it, 'accept')}>Add it</button>
                   <button class="act" onclick={() => decide(it, 'decline')}>Not this one</button>
+                  <button class="act" onclick={() => (viewing = it)}>View it</button>
                 </div>
               {/if}
               {#if ['wanted', 'researched', 'needs-ocr', 'failed'].includes(it.state)}
@@ -297,6 +300,7 @@
     <label class="fab" title="Attach a file (PDF, DOCX, text) — checked at once" aria-label="Attach a file">📎<input type="file" accept=".pdf,.docx,.txt,.md,image/*" class="sr-only" onchange={addFile} /></label>
   </div>
 </div>
+{#if viewing}<DeweyReview id={viewing.id} onclose={() => (viewing = null)} ondone={(next) => { if (next) Object.assign(viewing, next); turns = [...turns]; }} />{/if}
 
 <style>
   .chat { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-1); }

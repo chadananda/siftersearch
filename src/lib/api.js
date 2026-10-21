@@ -1016,6 +1016,7 @@ export const dewey = {
   resolve: (id, body) => request(`/api/dewey/items/${id}/resolve`, { method: 'POST', body: JSON.stringify(body) }),
   // the original file as a blob (the bearer token can't ride an <iframe src>, so the popup shows an object URL)
   async file(id) { const r = await authenticatedFetch(`${API_URL}/api/dewey/items/${id}/file`); if (!r.ok) throw new Error(`could not load the file (${r.status})`); return r.blob(); },
+  async preview(id) { const r = await authenticatedFetch(`${API_URL}/api/dewey/items/${id}/preview`); if (!r.ok) throw new Error(`could not convert the file for display (${r.status})`); return new Blob([await r.text()], { type: 'text/html' }); },
 };
 
 export const librarian = {

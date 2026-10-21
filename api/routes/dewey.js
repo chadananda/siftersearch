@@ -20,6 +20,7 @@ import { identifyPhotos, identifyUrl, identifyText } from '../lib/dewey/identify
 import { checkHoldingsOffThread as checkHoldings, identifyAndCheckOffThread } from '../lib/dewey/holdings.js';   // off the event loop
 import { allowedPath } from '../lib/dewey/paths.js';
 import { checkWithMemo } from '../lib/dewey/check-memo.js';
+import { previewHtml } from '../lib/dewey/preview.js';
 import { ApiError } from '../lib/errors.js';
 import { readFileSync, createReadStream } from 'fs';
 import { stat } from 'fs/promises';
@@ -186,6 +187,17 @@ export default async function deweyRoutes(fastify) {
     reply.header('Content-Type', FILE_TYPES[ext] || 'application/octet-stream').header('Content-Length', info.size)
       .header('Content-Disposition', `inline; filename="${name}"`).header('Cache-Control', 'private, max-age=300');
     return reply.send(createReadStream(p));
+  });
+  // the original as readable HTML when the browser cannot show it (RTF, Word, WordPerfect, ODT, EPUB — Chad 10-20)
+  fastify.get('/items/:id/preview', { schema: S.itemPreviewSchema, preHandler: requireDewey }, async (request, reply) => {
+    const item = await getItem(request.params.id);
+    const p = item?.original_path;
+    if (!p || !(inArchive(p) || allowedPath(p))) throw new ApiError(404, 'no source file for this item');
+    const out = await previewHtml(p).catch((e) => { throw new ApiError(422, `could not convert the file for display: ${e.message}`); });
+    if (!out) throw new ApiError(400, 'this file type is shown as it is (GET …/file)');
+    reply.header('Content-Type', 'text/html; charset=utf-8').header('Cache-Control', 'private, max-age=300')
+      .header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'").header('X-Content-Type-Options', 'nosniff');
+    return reply.send(out.html);
   });
   fastify.post('/items/:id/resolve', { schema: S.resolveSchema, preHandler: requireDewey }, async (request) => {
     const { action, title, author, shelf } = request.body || {};
