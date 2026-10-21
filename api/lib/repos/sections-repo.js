@@ -117,3 +117,7 @@ export const autoInferCandidates = async ({ days = 7, limit = 20, minParagraphs 
 
 /** Inference was tried and refused: mark it so the loop does not pay for it again; a person reviews the refusal list. */
 export const markStructureRefused = (docId) => transaction([{ sql: `UPDATE doc_structure SET source = 'inferred-refused' WHERE doc_id = ? AND sections = 0`, args: [Number(docId)] }], 'sections:refused');
+
+/** A document's sections in order: [{ level, title, start_index, end_index }]. */
+export const sectionsOf = (docId) =>
+  queryAll('SELECT level, title, start_index, end_index FROM doc_sections WHERE doc_id = ? ORDER BY ord', [Number(docId)], 'sections:of-doc');

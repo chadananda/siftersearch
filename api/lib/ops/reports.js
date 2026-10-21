@@ -1,6 +1,7 @@
 // Ops reports — the named, server-side answers to "is the library healthy?". Each runs inside siftersearch-reports (never
 // the API: they scan whole tables), one at a time, and returns plain JSON stored in ops_report_runs. Add a report here,
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
+import { docOverlapJob } from './doc-overlap-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
 import { episodeExtractJob } from './episode-extract-job.js';
 import { refsAssignJob } from './refs-assign-job.js';
@@ -127,6 +128,7 @@ REPORTS['carry-verify'] = carryVerifyReport;     // params: { ids, backup? } —
 REPORTS['carry-repair'] = carryRepairJob;       // params: { ids } — re-apply the carry from the backup
 REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
 REPORTS['section-author'] = sectionAuthorJob;       // params: { docId, from, to, name, apply? } — dry run by default
+REPORTS['doc-overlap'] = docOverlapJob;   // params: { ids, level? } — per section: paragraphs held word for word elsewhere
 REPORTS['retire-duplicates'] = retireDuplicatesJob;   // params: { pairs:[{dup,keep,reason}], batch?, apply? } — dry run by default
 // HyPE coverage of a tradition (params { religion? }): paragraphs none / older version / current, by scope × language
 REPORTS['hype-coverage'] = async ({ religion = "Baha'i" } = {}) => {
@@ -228,7 +230,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   scout: ['dewey-scout'],
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 export { LANE_WORKERS } from './lane-workers.js';
 

@@ -127,3 +127,12 @@ export async function paragraphsAt(pairs) {
   return queryAll(`SELECT id, doc_id, paragraph_index, external_para_id, block_attrs, text FROM content WHERE deleted_at IS NULL AND (${where})`,
     ps.flatMap((p) => [Number(p.doc_id), Number(p.index)]), 'paragraphs-repo:at');
 }
+
+/** For each live paragraph of a document: another live, canonical document holding the same words (normalized_hash), or
+ *  null — the doc-overlap report (is a compilation of compilations already held piece by piece?). → [{ id, pidx, other }] */
+export async function paragraphsHeldElsewhere(docId) {
+  return queryAll(`SELECT c.id, c.paragraph_index pidx, (SELECT o.doc_id FROM content o JOIN docs d ON d.id = o.doc_id
+      WHERE o.normalized_hash = c.normalized_hash AND o.doc_id != c.doc_id AND o.deleted_at IS NULL AND d.deleted_at IS NULL
+        AND d.duplicate_of IS NULL LIMIT 1) AS other
+    FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL ORDER BY c.paragraph_index`, [Number(docId)], 'paragraphs-repo:held-elsewhere');
+}
