@@ -64,7 +64,7 @@ export async function waitForQuietWriter({ maxWaitMs = 30 * 60_000 } = {}) {
 
 const inQuietWindow = (d = new Date()) => { const h = d.getHours(); return h >= 22 || h < 7; };   // same window as ops/reports.js
 
-export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
+export async function ingestFilesJob({ paths = [], ids = [], reparse = false } = {}) {
   const { ingestDocument } = await import('../../services/ingester.js');
   const rels = [...paths];
   if (ids.length) for (let i = 0; i < ids.length; i += 500) {
@@ -81,7 +81,7 @@ export async function ingestFilesJob({ paths = [], ids = [] } = {}) {
     if (!existsSync(abs)) { res.failed.push({ rel, error: 'no file' }); continue; }
     const t0 = Date.now();
     try {
-      const r = await withAIContext({ caller: 'ops-ingest', localOnly: true }, () => ingestDocument(readFileSync(abs, 'utf8'), {}, rel));
+      const r = await withAIContext({ caller: 'ops-ingest', localOnly: true }, () => ingestDocument(readFileSync(abs, 'utf8'), reparse ? { reparse: true } : {}, rel));
       res.statuses[r.status] = (res.statuses[r.status] || 0) + 1;
       if (r.status === 'error') res.failed.push({ rel, error: r.error }); else res.ok++;
     } catch (err) { res.failed.push({ rel, error: String(err.message || err).slice(0, 200) }); }

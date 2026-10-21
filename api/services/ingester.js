@@ -1225,7 +1225,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   if (existingDoc && existingDoc.file_hash === fileHash && !hasLiveText) {
     logger.warn({ documentId: existingDoc.id, relativePath }, 'HOLLOW document (same hash, no live paragraphs) — re-ingesting');
   }
-  if (existingDoc && existingDoc.file_hash === fileHash && hasLiveText) {
+  // REPARSE (10-21): a change in how files are PARSED (Ibid expansion) reaches files whose text did not change — the
+  // unchanged-skips are bypassed and the paragraph diff below replaces only the paragraphs that now read differently
+  const reparse = metadata.reparse === true;
+  if (existingDoc && existingDoc.file_hash === fileHash && hasLiveText && !reparse) {
     // Content unchanged, but check if path-derived metadata changed (file moved)
     const pathChanged = existingDoc.file_path !== relativePath;
 
@@ -1286,7 +1289,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // This allows updating title, author, etc. without re-processing expensive content segmentation
   // (the metadata-only path also requires live text: adding a frontmatter flag to a HOLLOW file took this path, stored the
   // new hash and left it empty for good — al-Mawa'iz, 10-11)
-  if (existingDoc && existingDoc.body_hash === bodyHash && hasLiveText) {
+  if (existingDoc && existingDoc.body_hash === bodyHash && hasLiveText && !reparse) {
     // Body unchanged - only update metadata in docs table, skip content processing
     // Religion/collection come ONLY from path (folder structure = library organization)
     // Frontmatter religion/collection is ignored - it refers to archive codes, not library categories

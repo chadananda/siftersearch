@@ -917,6 +917,21 @@ Second paragraph content here.`;
     });
   });
 
+  describe('reparse (10-21: a parser change — Ibid expansion — must reach files whose text did not change)', () => {
+    it('an unchanged file is skipped; with reparse it goes through the paragraph diff', async () => {
+      const { hashContent } = await import('../../api/services/ingester.js');
+      const text = '---\ntitle: Same\n---\n\nFirst paragraph content here, long enough.\n\n(Ibid.)';
+      const body = 'First paragraph content here, long enough.\n\n(Ibid.)';
+      const doc = { id: 77, file_path: 'test/same.md', file_hash: hashContent(text.trim()), body_hash: hashContent(body.trim()), title: 'Same', religion: 'test', collection: 'test', language: 'en', slug: 'same' };
+      queryOne.mockImplementation((sql) => (sql.includes('WHERE id = ?') || sql.includes('WHERE file_path = ?') ? doc : sql.includes('SELECT 1 AS x FROM content') ? { x: 1 } : null));
+      queryAll.mockResolvedValue([]);
+      query.mockResolvedValue({ changes: 1 });
+      transaction.mockResolvedValue(undefined);
+      expect((await ingestDocument(text, {}, 'test/same.md')).status).toBe('unchanged');
+      expect((await ingestDocument(text, { reparse: true }, 'test/same.md')).status).not.toBe('unchanged');
+    });
+  });
+
   describe('Duplicate Detection Logic', () => {
     it('should skip duplicate detection logic when existingDoc is found', () => {
       // Test the logic flow without DB - when existingDoc is found,
