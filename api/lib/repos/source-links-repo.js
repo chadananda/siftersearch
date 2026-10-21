@@ -1,6 +1,6 @@
 // source-links-repo — quote → source links (content_source_links, migration 139) for the citation work
 // (planning/citation-links-plan.md). Read: coverage per compilation. Deps: db.js.
-import { queryAll } from '../db.js';
+import { queryAll, transaction } from '../db.js';
 
 // the doctrinal writers whose words compilations quote (paragraph voices are in content.authors, JSON names)
 export const WRITER_LIKE = { "Bahá'u'lláh": '%Bah%u%ll%h%', 'The Báb': '%The B%b%', "'Abdu'l-Bahá": '%Abdu%l-Bah%', 'Shoghi Effendi': '%Shoghi Effendi%' };
@@ -24,4 +24,20 @@ export async function sourceLinkCoverage({ collectionLike = ['%Compilation%'], r
     await new Promise((res) => setImmediate(res));
   }
   return out;
+}
+
+/** A compilation's paragraphs that voice one of the writers and have NO source link yet (the work list), after a paragraph id. */
+export async function unlinkedWriterParagraphs(docId, { afterId = 0, limit = 200 } = {}) {
+  const voice = Object.values(WRITER_LIKE).map((like) => `c.authors LIKE '${like.replace(/'/g, "''")}'`).join(' OR ');
+  return queryAll(`SELECT c.id, c.doc_id, c.text, c.authors FROM content c WHERE c.doc_id = ? AND c.id > ? AND c.deleted_at IS NULL
+      AND COALESCE(c.blocktype, 'paragraph') IN ('paragraph', 'quote') AND (${voice})
+      AND NOT EXISTS (SELECT 1 FROM content_source_links l WHERE l.quote_id = c.id) ORDER BY c.id LIMIT ?`, [Number(docId), afterId, limit], 'source-links:unlinked');
+}
+
+/** Store quote → source links (idempotent per pair). rows [{ quote_id, source_id, quote_doc, source_doc, coverage, share, basis, method }] */
+export async function saveSourceLinks(rows) {
+  if (!rows.length) return { written: 0 };
+  await transaction(rows.map((r) => ({ sql: `INSERT OR REPLACE INTO content_source_links (quote_id, source_id, quote_doc, source_doc, coverage, share, basis, method)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, args: [r.quote_id, r.source_id, r.quote_doc, r.source_doc, r.coverage ?? null, r.share ?? null, r.basis, r.method] })), 'source-links:save');
+  return { written: rows.length };
 }

@@ -31,6 +31,7 @@ import { paragraphAuthorsJob } from './paragraph-authors-job.js';
 import { compilationAuthorsJob } from './compilation-authors-job.js';
 import { docCorrectionsJob } from './doc-corrections-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
+import { sourceLinksBuildJob } from './source-links-build-job.js';
 export { INDEX_LANES, INDEX_JOB_NAMES };
 import { retireDuplicatesJob } from './library-jobs.js';
 import { sectionAuthorJob } from './section-author.js';
@@ -188,6 +189,7 @@ REPORTS['dewey-completeness'] = deweyCompletenessJob;   // params: { since? } �
 REPORTS['dewey-quality'] = deweyQualityJob;     // params: { limit?, since? } — every Dewey import inspected, worst first, causes tallied
 REPORTS['dewey-archive'] = deweyArchiveJob;     // one pass: every decided source onto the NAS archive, ingest copies out of Dropbox
 REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's final text from SearchLayerPDF, checked
+REPORTS['source-links-build'] = sourceLinksBuildJob;   // params { docIds?, limit, write } — compilation quotes of the Central Figures / Shoghi Effendi → their source (SourceHunt)
 REPORTS['letters-index'] = lettersIndexJob;   // params { author, collection } — an author's letters (books, chapters, dated messages) for the letter lookup
 REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, author?, translators? }], write } — a person's record corrections
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
@@ -224,7 +226,8 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
-  authorship: ['paragraph-authors'],   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
+  authorship: ['paragraph-authors'],
+  linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
   quick: ['spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 export { LANE_WORKERS } from './lane-workers.js';
