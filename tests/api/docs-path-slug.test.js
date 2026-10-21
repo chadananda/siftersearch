@@ -37,3 +37,12 @@ describe('docsForPathSlugs', () => {
     expect(seen.filter((s) => /collection IN/.test(s))).toHaveLength(0);
   });
 });
+
+describe('canonicalForPage', () => {
+  it('a duplicate that holds the slug yields to its canonical; a canonical stays', async () => {
+    const { canonicalForPage } = await import('../../api/lib/docs-repo.js');
+    const get = async (id, { follow }) => (follow && id === 16278 ? { id: 20880, title: 'Bahá’í Administration' } : null);
+    expect((await canonicalForPage({ id: 16278, duplicate_of: 20880 }, ['id'], { get })).id).toBe(20880);
+    expect((await canonicalForPage({ id: 20880, duplicate_of: null }, ['id'], { get })).id).toBe(20880);
+  });
+});

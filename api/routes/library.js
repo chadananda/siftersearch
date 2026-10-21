@@ -21,7 +21,7 @@ import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence 
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
-import { findDocuments, docsForPathSlugs } from '../lib/docs-repo.js';
+import { findDocuments, docsForPathSlugs, canonicalForPage } from '../lib/docs-repo.js';
 import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
@@ -1733,7 +1733,7 @@ Return ONLY the description text, no quotes or formatting.`;
     // Try direct lookup by stored slug first (efficient)
     let document = await queryOne(`
       SELECT id, title, author, religion, collection, language, year, description,
-             paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
+             paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at, duplicate_of
       FROM docs
       WHERE slug = ?
     `, [slug]);
@@ -1751,6 +1751,14 @@ Return ONLY the description text, no quotes or formatting.`;
         if ((n?.n ?? 0) === 1) document.moved_from_collection = collection;
         else document = null; // ambiguous slug → continue searching
       }
+    }
+
+    // a duplicate copy holding the slug is never the page — its canonical is (and paragraph anchors are the canonical's)
+    if (document) {
+      const moved = document.moved_from_collection;
+      document = await canonicalForPage(document, ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count',
+        'encumbered', 'purchase_url', 'cover_url', 'file_path', 'filename', 'slug', 'created_at', 'updated_at', 'duplicate_of']);
+      if (moved) document.moved_from_collection = moved;
     }
 
     // Fall back: regenerate slug from doc metadata and compare

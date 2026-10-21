@@ -2,6 +2,9 @@
 // /document/{id} → redirect to canonical /library/{religion}/{collection}/{slug}
 // Exists so that Jafar citation links (siftersearch.com/document/{id}) resolve
 // to real pages rather than 404ing.
+// A document with no STORED slug (the OceanLibrary canonicals, e.g. Bahá’í Administration 20880) used to fall to /library/ —
+// every Anís/Jafar citation to it landed on the front page (10-21). The slug is generated exactly as the library route does.
+import { generateDocSlug, slugifyPath } from '../../../api/lib/slug.js';
 const { id } = Astro.params;
 const docId = parseInt(id, 10);
 
@@ -14,8 +17,9 @@ if (docId > 0) {
     if (res.ok) {
       const data = await res.json();
       const doc = data?.document;
-      if (doc?.slug && doc?.religion && doc?.collection) {
-        redirectUrl = `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${doc.slug}`;
+      const slug = doc?.slug || (doc ? generateDocSlug(doc) : null);
+      if (slug && doc?.religion && doc?.collection) {
+        redirectUrl = `https://siftersearch.com/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${slug}`;
       }
     }
   } catch { /* fall through to library root */ }

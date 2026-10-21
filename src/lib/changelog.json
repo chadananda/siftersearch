@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-21T01:07:47.401Z",
+  "generated": "2026-10-21T13:43:04.372Z",
   "entries": [
+    {
+      "hash": "969f9ce6",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Doc-corrections job — a person's author/translator corrections through docs-repo (dry run first); docs-repo setDocTranslators (Chad 10-21)",
+      "scope": "ops"
+    },
+    {
+      "hash": "41680ec4",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Settled-book memo 6 h (30 min = the health probe's interval, so every /grounding/exhaustion probe walked cold, 26 s → gateway 30 s timeout 10-20 23:49); overlapping exhaustion calls share one walk",
+      "scope": "grounding"
+    },
+    {
+      "hash": "768a80de",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "A writer freeze is CRITICAL only within the last 3 h — a fixed 6-hour-old 46.7 s write re-paged as critical while ageing out of the 24 h window",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "9d1d5f21",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "Ingest folder _add-anyway/ — a person's decision adds a file the check calls held (the library copy is an excerpt; pilgrim notes held at 30–77%) (Chad 10-20)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "730a86f9",
+      "date": "2026-10-20",
+      "type": "Other",
+      "description": "Prune keeps 6 hourly + 3 daily DB snapshots on /fast, hourly cron (Chad 10-20: 24 hourlies pinned 62 GB, /fast 90%)",
+      "scope": "disk"
+    },
+    {
+      "hash": "e54f28c1",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Failed service probes report why (timeout/DNS/TLS/refused) — the 10-20 18:00 'Public API (tunnel): status 0' alert could not be traced",
+      "scope": "system-checks"
+    },
+    {
+      "hash": "6db12a4b",
+      "date": "2026-10-20",
+      "type": "Fixed",
+      "description": "Review popup on the solid surface (surface-1 is 80% alpha — the chat showed through the document)",
+      "scope": "dewey"
+    },
     {
       "hash": "1cfe8209",
       "date": "2026-10-20",
@@ -3451,59 +3500,61 @@
       "type": "New",
       "description": "Deletions-report — soft-deleted paragraphs per day × source (integrity-repo), to explain a content-drop alert",
       "scope": "ops"
-    },
-    {
-      "hash": "ae42f1d3",
-      "date": "2026-10-11",
-      "type": "Chore",
-      "description": "Current flash tier verified on official pricing pages 10-11 (Gemini 3.8 Flash / 3.1 Flash-Lite, GPT-5 nano/mini, GPT-5.4 nano/mini, deepseek-flash); retired local/obsolete models; fix Sonnet/Opus 5.5 name+type that were commented out",
-      "scope": "registry"
-    },
-    {
-      "hash": "73132e38",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "One role table (model-roles.js, modelFor) for search strategies + segmentation; monthly re-assessment (model-review, [ACTION] when a role is stale/deprecated/beaten by a newer cheaper model); hard-coded model ids ratcheted",
-      "scope": "models"
-    },
-    {
-      "hash": "e1801b62",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Deep-research → search strategy over plannedSearch",
-      "scope": "worklist"
-    },
-    {
-      "hash": "09df7fb0",
-      "date": "2026-10-11",
-      "type": "Refactor",
-      "description": "Deep-research reads/writes only through api/lib/repos/deep-research-repo.js (first D1 migration; legacy list 299 → 296)",
-      "scope": "db"
-    },
-    {
-      "hash": "b6819df9",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Worklist — order of operations, kept current",
-      "scope": "planning"
-    },
-    {
-      "hash": "48cececb",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Chapter dividers where a verse pn changes chapter; heading rows (heading2/3) render as headings, unnumbered",
-      "scope": "reader"
-    },
-    {
-      "hash": "b1e01757",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Hard rule — database access only through repos; phases D1–D5",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-10-21": [
+      {
+        "hash": "969f9ce6",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Doc-corrections job — a person's author/translator corrections through docs-repo (dry run first); docs-repo setDocTranslators (Chad 10-21)",
+        "scope": "ops"
+      },
+      {
+        "hash": "41680ec4",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Settled-book memo 6 h (30 min = the health probe's interval, so every /grounding/exhaustion probe walked cold, 26 s → gateway 30 s timeout 10-20 23:49); overlapping exhaustion calls share one walk",
+        "scope": "grounding"
+      }
+    ],
     "2026-10-20": [
+      {
+        "hash": "768a80de",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "A writer freeze is CRITICAL only within the last 3 h — a fixed 6-hour-old 46.7 s write re-paged as critical while ageing out of the 24 h window",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "9d1d5f21",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "Ingest folder _add-anyway/ — a person's decision adds a file the check calls held (the library copy is an excerpt; pilgrim notes held at 30–77%) (Chad 10-20)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "730a86f9",
+        "date": "2026-10-20",
+        "type": "Other",
+        "description": "Prune keeps 6 hourly + 3 daily DB snapshots on /fast, hourly cron (Chad 10-20: 24 hourlies pinned 62 GB, /fast 90%)",
+        "scope": "disk"
+      },
+      {
+        "hash": "e54f28c1",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Failed service probes report why (timeout/DNS/TLS/refused) — the 10-20 18:00 'Public API (tunnel): status 0' alert could not be traced",
+        "scope": "system-checks"
+      },
+      {
+        "hash": "6db12a4b",
+        "date": "2026-10-20",
+        "type": "Fixed",
+        "description": "Review popup on the solid surface (surface-1 is 80% alpha — the chat showed through the document)",
+        "scope": "dewey"
+      },
       {
         "hash": "1cfe8209",
         "date": "2026-10-20",
@@ -6972,55 +7023,6 @@
         "type": "New",
         "description": "Deletions-report — soft-deleted paragraphs per day × source (integrity-repo), to explain a content-drop alert",
         "scope": "ops"
-      },
-      {
-        "hash": "ae42f1d3",
-        "date": "2026-10-11",
-        "type": "Chore",
-        "description": "Current flash tier verified on official pricing pages 10-11 (Gemini 3.8 Flash / 3.1 Flash-Lite, GPT-5 nano/mini, GPT-5.4 nano/mini, deepseek-flash); retired local/obsolete models; fix Sonnet/Opus 5.5 name+type that were commented out",
-        "scope": "registry"
-      },
-      {
-        "hash": "73132e38",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "One role table (model-roles.js, modelFor) for search strategies + segmentation; monthly re-assessment (model-review, [ACTION] when a role is stale/deprecated/beaten by a newer cheaper model); hard-coded model ids ratcheted",
-        "scope": "models"
-      },
-      {
-        "hash": "e1801b62",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Deep-research → search strategy over plannedSearch",
-        "scope": "worklist"
-      },
-      {
-        "hash": "09df7fb0",
-        "date": "2026-10-11",
-        "type": "Refactor",
-        "description": "Deep-research reads/writes only through api/lib/repos/deep-research-repo.js (first D1 migration; legacy list 299 → 296)",
-        "scope": "db"
-      },
-      {
-        "hash": "b6819df9",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Worklist — order of operations, kept current",
-        "scope": "planning"
-      },
-      {
-        "hash": "48cececb",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Chapter dividers where a verse pn changes chapter; heading rows (heading2/3) render as headings, unnumbered",
-        "scope": "reader"
-      },
-      {
-        "hash": "b1e01757",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Hard rule — database access only through repos; phases D1–D5",
-        "scope": null
       }
     ]
   }

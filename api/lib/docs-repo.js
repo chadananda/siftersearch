@@ -69,7 +69,7 @@ export function scopeSql(scope = 'live') {
 
 const FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'external_id', 'scope', 'cover_url', 'encumbered',
   'description', 'file_path', 'file_hash', 'paragraph_count', 'source_site', 'source_url', 'duplicate_of', 'deleted_at',
-  'slug', 'created_at', 'updated_at', 'frontmatter']);
+  'slug', 'created_at', 'updated_at', 'frontmatter', 'purchase_url', 'filename']);
 
 function selectList(fields) {
   const asked = (Array.isArray(fields) ? fields : String(fields || '').split(','))
@@ -182,6 +182,14 @@ export async function setDocAuthor(docId, author) {
   const r = await query('UPDATE docs SET author = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [a, id], 'docs-repo:set-author');
   await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id], 'docs-repo:set-author-resync');
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
+/** A page's document: a DUPLICATE copy that answered a lookup (it holds the slug) yields to its canonical, with the same fields
+ *  (10-21: /library/bahai/shoghi-effendi/shoghi-effendi_bahai-administration served #16278, a duplicate of #20880). */
+export async function canonicalForPage(doc, fields, { get = getDoc } = {}) {
+  if (!doc?.duplicate_of) return doc;
+  const canon = await get(doc.id, { follow: true, fields });
+  return canon && canon.id !== doc.id ? canon : doc;
 }
 
 /** Translators of a document (docs.translators, migration 141): [{ name, basis }]. */
