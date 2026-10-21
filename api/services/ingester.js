@@ -15,6 +15,7 @@ import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
+import { expandIbid } from '../lib/refs/ibid.js';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
 import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
 import { applyPageBreaks, protectPageBreaks, hasPageBreaks } from '../lib/page-breaks.js';
@@ -852,6 +853,9 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   // after this function returns. This function only handles PARAGRAPH structure.
   // ───────────────────────────────────────────────────────────────────────────
   const blocks = parseMarkdownBlocks(text, { splitOversized: !keepParagraphs });
+  // Ibid. → the reference it stands for (Chad 10-21: "Ibid does not work for RAG") — before short blocks are joined, while
+  // "(Ibid.)" is still its own block
+  expandIbid(blocks.map((b) => b.content), blocks.map((b) => b.type)).forEach((t, i) => { blocks[i].content = t; });
 
   if (blocks.length === 0) {
     return { chunks: [], autoSegmented: false };
