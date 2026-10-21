@@ -275,7 +275,10 @@ const agoOf = (at) => {
     const top = g(`SELECT proc, kind, name, COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 10800 AND duration_ms >= ${blockMs} AND ${BATCH}
                     GROUP BY 1, 2, 3 ORDER BY n DESC LIMIT 1`);
     const isWriter = worst && /worker|write/i.test(String(worst.proc || ''));
-    add('Blocking queries (24h)', total === 0, worst && worst.kind === 'write' && isWriter ? 'critical' : 'warn',
+    // a frozen WRITER is critical while it is CURRENT (last 3 h); a resolved one stays a warning while it ages out of the 24 h
+    // window (10-20 21:30: a 6-hour-old 46.7 s write from the Meili I/O storm — fixed — re-paged as CRITICAL)
+    const writerFrozeRecently = worst && worst.kind === 'write' && isWriter && worst.at > Date.now() / 1000 - 10800;
+    add('Blocking queries (24h)', total === 0, writerFrozeRecently ? 'critical' : 'warn',
       total === 0 ? 'none over ' + blockMs + 'ms'
         : `${total} over ${blockMs}ms — last 3h: ${recent.n}${top ? ` (most: ${top.n}× ${top.kind} in '${top.proc}'${top.name ? ' ' + top.name : ''})` : ''}`
           + ` · worst ${(worst.worst / 1000).toFixed(1)}s ${worst.kind} in '${worst.proc}' ${agoOf(worst.at)}: ${String(worst.sql || '').slice(0, 90)}`);

@@ -82,3 +82,11 @@ describe('service probes say why they failed', () => {
     for (const v of ['api', 'writer', 'meili', 'tunnel', 'site']) expect(s).toContain(`: why(${v})`);
   });
 });
+
+describe('blocking-queries severity', () => {
+  it('a writer freeze pages CRITICAL only while it is recent (3 h); an old one is a warning', () => {
+    const s = src('system-checks.mjs');
+    expect(s).toMatch(/writerFrozeRecently = worst && worst\.kind === 'write' && isWriter && worst\.at > Date\.now\(\) \/ 1000 - 10800/);
+    expect(s).toMatch(/writerFrozeRecently \? 'critical' : 'warn'/);
+  });
+});
