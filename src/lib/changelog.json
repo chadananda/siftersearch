@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-21T01:05:07.871Z",
+  "generated": "2026-10-21T01:07:47.401Z",
   "entries": [
+    {
+      "hash": "1cfe8209",
+      "date": "2026-10-20",
+      "type": "New",
+      "description": "RTF/Word/WordPerfect/ODT/EPUB originals readable in the Review popup (server-converted, sanitised, sandboxed) + 'View it' on offer cards — read before Add it / Not this one (Chad 10-20)",
+      "scope": "dewey"
+    },
     {
       "hash": "877c7da2",
       "date": "2026-10-20",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Hard rule — database access only through repos; phases D1–D5",
       "scope": null
-    },
-    {
-      "hash": "197a2b4c",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Hard rule — SQLite only through repos (shrink-only ratchet, 299 legacy files frozen); single writer records every batch per minute × caller × name (db_write_stats, migr 145, GET :7849/stats)",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-10-20": [
+      {
+        "hash": "1cfe8209",
+        "date": "2026-10-20",
+        "type": "New",
+        "description": "RTF/Word/WordPerfect/ODT/EPUB originals readable in the Review popup (server-converted, sanitised, sandboxed) + 'View it' on offer cards — read before Add it / Not this one (Chad 10-20)",
+        "scope": "dewey"
+      },
       {
         "hash": "877c7da2",
         "date": "2026-10-20",
@@ -7014,13 +7021,6 @@
         "type": "Docs",
         "description": "Hard rule — database access only through repos; phases D1–D5",
         "scope": null
-      },
-      {
-        "hash": "197a2b4c",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Hard rule — SQLite only through repos (shrink-only ratchet, 299 legacy files frozen); single writer records every batch per minute × caller × name (db_write_stats, migr 145, GET :7849/stats)",
-        "scope": "db"
       }
     ]
   }

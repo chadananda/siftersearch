@@ -123,8 +123,8 @@
 </div>
 
 <style>
-  .backdrop { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, black 55%, transparent); display: flex; align-items: center; justify-content: center; padding: 1rem; }
-  .modal { width: min(1200px, 100%); height: min(860px, 100%); display: flex; flex-direction: column; background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 0.9rem; overflow: hidden; }
+  .backdrop { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, black 70%, transparent); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .modal { width: min(1200px, 100%); height: min(860px, 100%); display: flex; flex-direction: column; background: var(--surface-solid);   /* solid: the page surfaces are see-through (10-20 screenshot) */ border: 1px solid var(--border-subtle); border-radius: 0.9rem; overflow: hidden; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border-subtle); }
   .x { color: var(--text-muted); padding: 0.25rem 0.5rem; border-radius: 0.4rem; } .x:hover { color: var(--text-primary); background: var(--surface-2); }
   .body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
