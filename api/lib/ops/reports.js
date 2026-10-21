@@ -134,6 +134,14 @@ REPORTS['hype-coverage'] = async ({ religion = "Baha'i" } = {}) => {
   const tot = (state) => rows.filter((r) => r.state === state).reduce((n, r) => n + r.paragraphs, 0);
   return { religion, version: HYPE_VERSION, totals: { none: tot('none'), older: tot('older'), current: tot('current') }, rows };
 };
+// SOURCE-LINK COVERAGE (planning/citation-links-plan.md, Chad 10-21): per compilation, how many of the paragraphs voicing
+// Bahá'u'lláh, the Báb, 'Abdu'l-Bahá and Shoghi Effendi already link to their source. params { collectionLike?, docIds? }
+REPORTS['source-link-coverage'] = async (params = {}) => {
+  const { sourceLinkCoverage, WRITER_LIKE } = await import('../repos/source-links-repo.js');
+  const rows = await sourceLinkCoverage(params);
+  const tot = Object.fromEntries(Object.keys(WRITER_LIKE).map((w) => [w, rows.reduce((a, r) => ({ paras: a.paras + r.writers[w].paras, linked: a.linked + r.writers[w].linked }), { paras: 0, linked: 0 })]));
+  return { docs: rows.length, totals: tot, worst: rows.map((r) => ({ ...r, gap: Object.values(r.writers).reduce((n, w) => n + w.paras - w.linked, 0) })).sort((a, b) => b.gap - a.gap).slice(0, 60) };
+};
 // KNOWN-ITEM test (priority 1, Chad 10-16): can each retrieval layer find a real paragraph from its own fragment?
 // params { perBucket?, words?, religions? } — ~2 searches/s; costs a few cents of query embeddings.
 REPORTS['known-item'] = async ({ perBucket = 5, coreWeight = 3, depth = 30, variants, religions } = {}) => {
@@ -212,7 +220,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
 export const LANES = { extract: ['episode-extract', 'structure-infer'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
