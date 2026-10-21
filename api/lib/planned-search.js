@@ -10,6 +10,7 @@ import { correctQuery, vocabulary } from './search/spell.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
+const CLAIMS_GRACE_MS = Number(process.env.CLAIMS_GRACE_MS || 1500);
 const KEYWORD_ONLY = { keywordLayer: true, phraseLayer: false, semantic: false, hype: false, diversify: false };
 const MAX = 500;
 const cache = new Map();
@@ -240,7 +241,10 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // AFTER source resolution: a claim-cited paragraph is already the exact source; resolving it again relabelled it.
   let entities = null;
   let peopleAnswer = null;   // who-met-whom: met · contested (evidence both ways) · notMet (proof denies) · noEvidence
-  const pr = claimsP ? await claimsP : null;
+  // CLAIMS GRACE (10-21: after a restart the claim worker loads its corpus ~10 s, and the first people-ish searches waited it out
+  // — 10.6 s for "the role of the Hands of the Cause today", passages ready at 1.5 s): once the passages are in, the claims get
+  // CLAIMS_GRACE_MS more; late, the answer goes out without them (stages.claims_late) and the worker keeps warming
+  const pr = claimsP ? await Promise.race([claimsP, new Promise((ok) => { const t = setTimeout(() => { stages.claims_late = true; ok(null); }, CLAIMS_GRACE_MS); t.unref?.(); })]) : null;
   // A who-met-whom probe that found nothing on a non-people plan is not a people answer.
   if (pr && (layers.claims || pr.pattern)) {
     // A pattern answer (the encounter index answered the question) is COMPLETE — a group's whole roster — so it is

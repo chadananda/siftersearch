@@ -158,6 +158,18 @@ describe('plannedSearch', () => {
     expect(r.hits.at(-1)).toMatchObject({ id: 999, _source: { kind: 'evidence' } });
   });
 
+  it('a slow claims layer (cold worker after a restart) never holds the passages back', async () => {
+    const planPeople = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 }, author: { choice: 'none', confidence: 0.9 },
+      shape: { choice: 'enumerate', confidence: 0.9 }, about: { choice: 'people', confidence: 0.95 },
+    }, { given }), ms: 5 });
+    const people = () => new Promise((ok) => setTimeout(() => ok({ people: [] }), 10_000));
+    const t0 = Date.now();
+    const r = await plannedSearch('the role of the Hands of the Cause today', { planner: planPeople, engine: engine(() => many(5)).fn, people, encounterProbe: () => false, encounters: async () => null });
+    expect(Date.now() - t0).toBeLessThan(4000);
+    expect(r.hits.length).toBe(5);
+  });
+
   it('does not run the people layer for a question about what a text says', async () => {
     let called = false;
     await plannedSearch('x', { planner: planOf({}), engine: engine(() => many(3)).fn, people: async () => { called = true; return { people: [] }; } });
