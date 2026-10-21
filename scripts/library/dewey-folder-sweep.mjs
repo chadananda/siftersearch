@@ -73,8 +73,17 @@ async function check(p) {
 const queue = files.filter((p) => !done.has(relative(dir, p)));
 console.log(`${files.length} files, ${queue.length} to check`);
 let i = 0;
+// PACED BY THE CLOCK (10-21: a sweep's back-to-back holdings checks drove Qdrant to ~300 MB/s of reads and search to 4–14 s;
+// paused, search was 2–4 s): overnight (22:00–07:00) two at a time, no pause; by day ONE at a time with a pause between files —
+// a check-only sweep must never cost a reader their search. --pause=<sec> sets the daytime pause (default 30).
+const PAUSE = Number((argv.find((a) => a.startsWith('--pause=')) || '').split('=')[1] || 30) * 1000;
+const night = () => { const h = new Date().getHours(); return h >= 22 || h < 7; };
+let lane = 0;
 await Promise.all(Array.from({ length: CHAT ? 1 : 2 }, async () => {   // 2 at a time: the key allows 600 checks an hour   // chat: one at a time, in order, as a person would
+  const me = lane++;
   while (i < queue.length) {
+    if (!CHAT && !night()) { if (me > 0) { await new Promise((r) => setTimeout(r, 60000)); continue; } await new Promise((r) => setTimeout(r, PAUSE)); }
+    if (i >= queue.length) break;
     const p = queue[i++];
     const r = await check(p);
     appendFileSync(out, JSON.stringify(r) + '\n');
