@@ -218,6 +218,26 @@ describe('slpExtract stop', () => {
   });
 });
 
+describe('a drain never waits on SearchLayerPDF (10-21)', () => {
+  it('slpExtract stops waiting when the service drains — the job is NOT cancelled at SLP', async () => {
+    const calls = [];
+    const fetchImpl = vi.fn(async (url, opts = {}) => { calls.push(`${opts.method || 'GET'} ${url}`);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ status: 'processing' }) }; });
+    await expect(slpExtract({ path: '/x.pdf', resumeJobId: 'job_d' }, { fetchImpl, key: 'k', pollMs: 1, yieldNow: () => true })).rejects.toMatchObject({ yielded: true, job_id: 'job_d' });
+    expect(calls.some((c) => c.startsWith('DELETE'))).toBe(false);
+  });
+  it('the OCR job yields with the SLP job id on the item, and the next run resumes that job', async () => {
+    items.length = 0; items.push({ id: 8, title: 'Long scan', original_path: '/in/long.pdf', sha256: 'def', identified: {}, state: 'needs-ocr' });
+    const seen = [];
+    const d = { pdfInfo: async () => ({ pages: 1 }), save: async () => {}, receipt: async () => null, sample: async () => ({ text: slpToText(ROSENBERG).text }), queue: vi.fn(async () => {}), appraise: async () => ({ title: 'Long scan' }), draining: () => true,
+      extract: async ({ resumeJobId }, { yieldNow }) => { seen.push(resumeJobId); if (yieldNow()) throw Object.assign(new Error('draining'), { yielded: true, job_id: 'job_long' }); return { markdown: ROSENBERG, ...slpToText(ROSENBERG), job_id: 'job_long', pages: 1 }; } };
+    expect(await deweyOcrJob({ id: 8 }, d)).toMatchObject({ yielded: true, job_id: 'job_long' });
+    expect(items[0].identified.slp_progress.job_id).toBe('job_long');
+    expect(await deweyOcrJob({ id: 8 }, { ...d, draining: () => false })).toMatchObject({ state: 'source', job_id: 'job_long' });
+    expect(seen).toEqual([null, 'job_long']);
+  });
+});
+
 describe('slpExtract — SLP-side failure and cancel', () => {
   it('a job failed inside SLP is reprocessed once under the same id, then its result is used', async () => {
     let n = 0;

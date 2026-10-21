@@ -18,6 +18,7 @@ import { slpExtract, slpCheck, slpMaxPages, slpReceipt, slpToText } from '../dew
 import { researchWork } from '../dewey/research.js';
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
+import { isDraining } from '../drain.js';
 
 /** A title that only describes what could not be read ("title not legible", "untitled", "not stated in the excerpts"). Pure. */
 export const placeholderTitle = (t) => /\b(?:not (?:legible|stated|given|shown|visible|readable|included)|illegible|untitled|unknown title|title page (?:not|missing))\b/i.test(String(t || ''));
@@ -33,7 +34,7 @@ export async function deweyOcrJob(params = {}, deps = {}) {
 
 async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
   const { extract = slpExtract, receipt = slpReceipt, sample = ocrSample, pdfInfo = readPdf, queue = enqueue, appraise = appraiseDocument,
-    others = async () => listItems({ limit: 1000 }), save = async (p, t) => { await mkdir(join(p, '..'), { recursive: true }); await writeFile(p, t); } } = deps;
+    others = async () => listItems({ limit: 1000 }), draining = isDraining, save = async (p, t) => { await mkdir(join(p, '..'), { recursive: true }); await writeFile(p, t); } } = deps;
   const item = await getItem(id);
   if (!item?.original_path) throw new Error(`dewey item ${id} has no source`);
   // REFRESH (10-18: SLP fixed two handwritten letters under their original job ids): an imported document whose text came
@@ -109,7 +110,13 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
     // a job submitted before a restart is resumed (its id is on the item), never re-submitted
     // …including one SLP reported failed: SLP finishes failed jobs later under the same id (10-18), so ask that id first
     const resume = item.identified?.slp_progress?.job_id || null;
-    try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress, stop: declined }); } catch (err) {
+    try { out = await extract({ path: item.original_path, context, resumeJobId: resume }, { log: progress, stop: declined, yieldNow: draining }); } catch (err) {
+      if (err.yielded) {
+        // the service is restarting: the SLP job's id is saved on the item, the run is requeued on the next start, and it
+        // resumes polling that same job — never re-submitted, never paid twice
+        await updateItem(item.id, { identified: { ...item.identified, slp_progress: { ...(item.identified?.slp_progress || {}), job_id: err.job_id, step: 'yielded', at: new Date().toISOString() } } });
+        return { id, yielded: true, job_id: err.job_id };
+      }
       if (err.cancelled) {
         // cancelled because WE were declined → done; cancelled at SLP while the item is still wanted (10-19: the Greek New
         // Testament, stopped at 172/512 by mistake) → forget that job; the next round starts a new one, never a dead loop

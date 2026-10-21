@@ -139,7 +139,7 @@ export async function slpCancel(jobId, { fetchImpl = fetch, key = slpKey() } = {
  * A PDF (a server path) → SLP's { markdown, meta, text, job_id, score, cost_cents }. Polls until done (scans: a GPU pod
  * takes 2–3 min to come up, then ~9 s a page English, ~17 s Arabic) — `timeoutMs` bounds it. fetchImpl injectable.
  */
-export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, retryMs = 5000, timeoutMs = 3 * 3600000, log = () => {}, stop = async () => false } = {}) {
+export async function slpExtract({ path, context = '', resumeJobId = null }, { fetchImpl = fetch, key = slpKey(), pollMs = 20000, retryMs = 5000, timeoutMs = 3 * 3600000, log = () => {}, stop = async () => false, yieldNow = () => false } = {}) {
   if (!key) throw new Error('SearchLayerPDF is not configured (SEARCHLAYERPDF_API_KEY)');
   const H = { Authorization: `Bearer ${key}` };
   const json = async (r) => { const t = await r.text(); try { return JSON.parse(t); } catch { return { raw: t.slice(0, 200) }; } };
@@ -206,6 +206,9 @@ export async function slpExtract({ path, context = '', resumeJobId = null }, { f
       await slpCancel(job.job_id, { fetchImpl, key }).catch(() => null);
       throw Object.assign(new Error(`SLP job ${job.job_id} cancelled: the item was declined`), { cancelled: true });
     }
+    // the service is DRAINING for new code (10-21: one 2-hour SLP wait held the whole reports service — every lane, intake and
+    // citation linking too — in 'draining'): the job keeps running at SLP; this wait ends and the next start resumes its id
+    if (yieldNow()) throw Object.assign(new Error(`SLP job ${job.job_id} left running at SLP — the service is restarting`), { yielded: true, job_id: job.job_id });
     if (Date.now() - t0 > timeoutMs) throw new Error(`SLP job ${job.job_id} still ${s.status} after ${Math.round(timeoutMs / 60000)} min`);
     await new Promise((z) => setTimeout(z, pollMs));
   }
