@@ -102,9 +102,11 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
     }
   }
 
-  async function pass(book, rows, roster, prior, b) {
-    const labels = new Array(rows.length).fill(null);
-    for (let i0 = 0; i0 < rows.length; i0 += step) {
+  // at = { from, labels } resumes a book mid-way; each window ends with onWindow(next i0, labels) — a checkpoint, and the place a
+  // drain stops the book (10-21: one 15,600-paragraph Bahá'í World volume held the reports service in 'draining' for hours)
+  async function pass(book, rows, roster, prior, b, { at = null, onWindow = null } = {}) {
+    const labels = at?.labels?.length === rows.length ? [...at.labels] : new Array(rows.length).fill(null);
+    for (let i0 = at?.labels?.length === rows.length ? at.from : 0; i0 < rows.length; i0 += step) {
       const targets = rows.slice(i0, i0 + step).map((p) => ({ ...p, known: hybrid ? knownSpeaker(p, book) : null }));
       const anchors = rows.slice(Math.max(0, i0 - BACK), i0).map((p, k) => ({ ...p, label: labels[Math.max(0, i0 - BACK) + k] || {} }));
       const ahead = rows.slice(i0 + step, i0 + step + AHEAD);
@@ -123,15 +125,18 @@ export function createClassifier({ ask, chatCompletion, min = 0, step = 10, hybr
       }
       // "another person" is not an answer: the LLM names them, or the paragraph stays unresolved (null)
       got.forEach((l, k) => { labels[i0 + k] = refineLabel(l, rows[i0 + k], rows[i0 + k - 1], labels[i0 + k - 1], book); });
+      if (onWindow) await onWindow(i0 + step, labels);
     }
     return labels;
   }
 
   /** Classify `rows` (default: the whole book). The brief is always written from the book's own opening. */
-  async function classify(book, allRows, { rows = allRows, passes = 1 } = {}) {
-    const roster = initialRoster(book), base = [...roster];
-    const b = brief ? await makeBrief(book, allRows, roster) : null;
-    const p1 = await pass(book, rows, roster, null, b);
+  // resume = { from, labels, roster, brief } from a checkpoint; onWindow(state) after every window — state is the checkpoint
+  // ({ from, labels, roster, brief }); it may throw to stop the book (the checkpoint already saved)
+  async function classify(book, allRows, { rows = allRows, passes = 1, resume = null, onWindow = null } = {}) {
+    const roster = resume?.roster ? [...resume.roster] : initialRoster(book), base = initialRoster(book);
+    const b = resume ? resume.brief : brief ? await makeBrief(book, allRows, roster) : null;
+    const p1 = await pass(book, rows, roster, null, b, { at: resume, onWindow: onWindow && ((from, labels) => onWindow({ from, labels, roster, brief: b })) });
     const p2 = passes > 1 ? await pass(book, rows, roster, p1, b) : p1;
     return { roster, base, brief: b, p1, labels: p2 };
   }

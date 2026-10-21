@@ -116,3 +116,24 @@ describe('yields to a drain (10-19: a multi-hour run held the reports service in
     vi.doUnmock('../../api/lib/drain.js');
   });
 });
+
+describe('a drain stops a long book mid-way and the next run resumes it (10-21: a 15,600-paragraph volume held the service)', () => {
+  it('checkpoints, yields inside the book, then asks only for the windows left', async () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'pa-'));
+    const big = { id: 5, title: 'Big Volume', author: 'Some Assembly', religion: "Baha'i", paragraph_count: 60 };
+    const many = Array.from({ length: 60 }, (_, i) => ({ id: 1000 + i, pidx: i, text: `Paragraph ${i} of a long annual record of the community.`, heading: null, blocktype: 'paragraph', block_attrs: null, authors: null, authors_model: null }));
+    let asks = 0;
+    const deps = (drain) => ({ ask: async () => { asks++; return { answers: {} }; }, chatCompletion: async () => '', docs: async () => ({ docs: [big] }), doc: async () => big,
+      rowsOf: async () => many, writeAuthors: async () => {}, draining: drain });
+    const r1 = await paragraphAuthorsJob({ concurrency: 1, outDir, write: false }, deps(() => asks >= 3));
+    expect(r1.yielded).toBe(true);
+    expect(existsSync(join(outDir, '5.json'))).toBe(false);
+    expect(JSON.parse(readFileSync(join(outDir, '5.partial.json'), 'utf8')).from).toBe(30);
+    asks = 0;
+    const r2 = await paragraphAuthorsJob({ concurrency: 1, outDir, write: false }, deps(() => false));
+    expect(r2.yielded).toBeFalsy();
+    expect(asks).toBe(3);   // windows 30, 40, 50 — not the whole book again
+    expect(existsSync(join(outDir, '5.json'))).toBe(true);
+    expect(existsSync(join(outDir, '5.partial.json'))).toBe(false);
+  });
+});

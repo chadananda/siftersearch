@@ -7,7 +7,7 @@
 // the secondary rules; a book of line fragments is listed, not written. With write, content.authors goes through the
 // writer, every previous value first appended to <outDir>/rollback.jsonl. Port of scripts/authorship/window-run.mjs,
 // which opened the database directly. params { religion = "Baha'i", ids?, write = false, limit?, concurrency = 4, outDir, maxLlm = 20000 (Haiku-call cap) }.
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { getDoc, listDocs } from '../docs-repo.js';
 import { getAuthority } from '../authority.js';
@@ -23,7 +23,7 @@ export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
 export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, write = false, limit = 0, concurrency = 4,
   outDir = '/tank/sifter/authorship/wrun-all', maxLlm = 20000 } = {}, deps = {}) {
   const { ask = (await import('../systemone.js')).ask, chatCompletion = (await import('../ai.js')).chatCompletion,
-    rowsOf = authorshipRows, writeAuthors = writeParagraphAuthors, docs = listDocs, doc = getDoc } = deps;
+    rowsOf = authorshipRows, writeAuthors = writeParagraphAuthors, docs = listDocs, doc = getDoc, draining = isDraining } = deps;
   mkdirSync(outDir, { recursive: true });
   const { classify, cost } = createClassifier({ ask, chatCompletion });
   let books = [];
@@ -63,7 +63,18 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
     let lab;
     if (existsSync(file)) { lab = JSON.parse(readFileSync(file, 'utf-8')); stats.resumed++; }
     else {
-      const { roster, brief, labels } = await classify(book, rows);
+      // a CHECKPOINT every 20 windows (<id>.partial.json): a drain stops the book there and the next run resumes it — a
+      // 15,600-paragraph volume no longer holds the service in 'draining' until it ends (10-21)
+      const part = join(outDir, `${d.id}.partial.json`);
+      let resume = null;
+      try { const p = JSON.parse(readFileSync(part, 'utf-8')); if (p.labels?.length === rows.length) resume = p; } catch { /* none yet */ }
+      let w = 0;
+      const onWindow = (st) => {
+        if (++w % 20 === 0 || draining()) writeFileSync(part, JSON.stringify(st));
+        if (draining() && st.from < rows.length) throw Object.assign(new Error('drain'), { yielded: true });
+      };
+      const { roster, brief, labels } = await classify(book, rows, { resume, onWindow });
+      try { unlinkSync(part); } catch { /* none */ }
       lab = { id: d.id, title: d.title, author: d.author, secondary, roster, brief, labels: rows.map((r, i) => ({ id: r.id, ...labels[i] })) };
       writeFileSync(file, JSON.stringify(lab));
     }
@@ -103,12 +114,16 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
       // a SPEND CAP: no new book once the Haiku calls (briefs + escalations) reach maxLlm; the rest resume next run
       if (cost.llm >= maxLlm) { stats.stopped_at_cap = queue.length; break; }
       // an update is waiting: stop between books (every finished book is saved and written) — the service requeues the run
-      if (isDraining()) { stats.yielded = true; break; }
+      if (draining()) { stats.yielded = true; break; }
       const d = queue.shift();
       // one retry after a pause: a transient model / writer error must not drop a whole book (10-08: 6 of 6 failed once)
       for (let attempt = 1; attempt <= 2; attempt++) {
-        try { await runBook(d); break; } catch (e) { if (attempt === 2) stats.errors++; else await new Promise((r) => setTimeout(r, 30000)); }
+        try { await runBook(d); break; } catch (e) {
+          if (e.yielded) { stats.yielded = true; break; }
+          if (attempt === 2) stats.errors++; else await new Promise((r) => setTimeout(r, 30000));
+        }
       }
+      if (stats.yielded) break;
     }
   }));
   return { religion, write, outDir, total_books: books.length, ...stats, cost };
