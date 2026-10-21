@@ -118,3 +118,12 @@ export async function quotedVoiceRows({ afterId = 0, span = 100000 } = {}) {
   return queryAll(`SELECT c.id, c.doc_id, c.authors, d.author FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE c.id > ? AND c.id <= ? AND c.deleted_at IS NULL AND c.authors LIKE '%"quoted"%'`, [Number(afterId), Number(afterId) + Number(span)], 'paragraphs-repo:quoted-voices');
 }
+
+/** Paragraphs by (doc, paragraph_index) — what a link needs (OceanLibrary para id, block attrs, text). pairs [{ doc_id, index }]. */
+export async function paragraphsAt(pairs) {
+  const ps = (pairs || []).filter((p) => p && p.doc_id != null && p.index != null);
+  if (!ps.length) return [];
+  const where = ps.map(() => '(doc_id = ? AND paragraph_index = ?)').join(' OR ');
+  return queryAll(`SELECT id, doc_id, paragraph_index, external_para_id, block_attrs, text FROM content WHERE deleted_at IS NULL AND (${where})`,
+    ps.flatMap((p) => [Number(p.doc_id), Number(p.index)]), 'paragraphs-repo:at');
+}

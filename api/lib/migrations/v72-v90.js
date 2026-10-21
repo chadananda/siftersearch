@@ -1753,6 +1753,18 @@ export const migrations = {
       bytes INTEGER, file_name TEXT, checked_at TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 0)`);
     logger.info('Migration 161 complete: dewey_checks');
   },
+
+  162: async () => {
+    // AN AUTHOR'S LETTERS (Chad 10-21: "If someone writes a book about the most important letters of Shoghi Effendi, we should
+    // have all of them and be able to link to them"): each letter as a whole book, a chapter, or a dated message inside a
+    // compilation — its paragraph range in the canonical copy. Built by the letters-index ops job (api/lib/letters/letters.js).
+    await query(`CREATE TABLE IF NOT EXISTS work_letters (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT NOT NULL, doc_id INTEGER NOT NULL,
+      title TEXT, y INTEGER, m INTEGER, d INTEGER, start_index INTEGER NOT NULL, end_index INTEGER NOT NULL, kind TEXT NOT NULL, basis TEXT,
+      built_at TEXT NOT NULL
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_work_letters_author_date ON work_letters(author, y, m, d)');
+    logger.info('Migration 162 complete: work_letters');
+  },
 };
 
 export const graphMigrations = {

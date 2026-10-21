@@ -31,11 +31,13 @@ const TIME_COL = /_at$|^(timestamp|ts)$/i;
 
 function tablesFrom(src) {
   const out = [];
-  const re = /CREATE TABLE (?:IF NOT EXISTS )?[`"']?(\w+)[`"']?\s*\(([\s\S]*?)\n\s*\)/gi;
+  // a single-line CREATE ends at its own ")`" — before 10-21 the body ran on into the NEXT multi-line table, so single-line tables
+  // were never checked and their neighbours' columns were blamed on them
+  const re = /CREATE TABLE (?:IF NOT EXISTS )?[`"']?(\w+)[`"']?\s*\(([\s\S]*?)(?:\n\s*\)|\)\s*[`'"])/gi;
   let m;
   while ((m = re.exec(src))) {
     const cols = [];
-    for (const raw of m[2].split('\n')) {
+    for (const raw of m[2].split(/\n|,(?![^(]*\))/)) {
       const line = raw.replace(/--.*$/, '').trim().replace(/,$/, '');
       if (!line || /^(PRIMARY KEY|UNIQUE|FOREIGN KEY|CHECK|CONSTRAINT)\b/i.test(line)) continue;
       const cm = line.match(/^[`"']?(\w+)[`"']?\s+([A-Za-z]+)/);

@@ -472,7 +472,7 @@ export async function getLinkMeta(docIds) {
   const ids = [...new Set((docIds || []).map(Number).filter(Number.isFinite))];
   if (!ids.length) return new Map();
   const rows = await queryAll(
-    `SELECT id, source_url, source_site, metadata, slug, filename, religion, collection FROM docs WHERE id IN (${ids.map(() => '?').join(',')})`,
+    `SELECT id, title, author, language, external_id, source_url, source_site, metadata, slug, filename, religion, collection FROM docs WHERE id IN (${ids.map(() => '?').join(',')})`,
     ids, 'docs-repo:link-meta');
   return new Map(rows.map((r) => [r.id, r]));
 }

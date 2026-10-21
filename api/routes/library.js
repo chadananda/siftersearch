@@ -21,7 +21,11 @@ import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence 
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
-import { findDocuments, docsForPathSlugs, canonicalForPage } from '../lib/docs-repo.js';
+import { findDocuments, docsForPathSlugs, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
+import { lettersOf } from '../lib/repos/letters-repo.js';
+import { paragraphsAt } from '../lib/paragraphs-repo.js';
+import { matchLetters } from '../lib/letters/letters.js';
+import { linkFor, readerUrl } from '../lib/source-links.js';
 import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
@@ -1696,6 +1700,31 @@ Return ONLY the description text, no quotes or formatting.`;
    * - limit: number of paragraphs (default 50)
    * - offset: pagination offset (default 0)
    */
+  // LETTER LOOKUP (Chad 10-21): "Shoghi Effendi, letter of 28 July 1954" / "The Dispensation of Bahá'u'lláh" → the letter as a
+  // book, a chapter or a dated message in the canonical copy, with its link by policy (OceanLibrary first) and the reader range.
+  const lettersCache = new Map();   // author → { at, rows }
+  fastify.get('/letters', {
+    schema: { querystring: { type: 'object', properties: { author: { type: 'string', default: 'Shoghi Effendi' }, date: { type: 'string' },
+      title: { type: 'string' }, book: { type: 'string' }, limit: { type: 'integer', minimum: 1, maximum: 20, default: 5 } } } },
+  }, async (request) => {
+    const { author = 'Shoghi Effendi', date, title, book, limit = 5 } = request.query;
+    if (!date && !title) throw ApiError.badRequest('give a date and/or a title');
+    let c = lettersCache.get(author);
+    if (!c || Date.now() - c.at > 10 * 60 * 1000) { c = { at: Date.now(), rows: await lettersOf(author) }; lettersCache.set(author, c); }
+    const hits = matchLetters(c.rows, { date, title, book }).slice(0, limit);
+    const meta = await getLinkMeta(hits.map((h) => h.doc_id));
+    const starts = await paragraphsAt(hits.map((h) => ({ doc_id: h.doc_id, index: h.start })));
+    const at = new Map(starts.map((p) => [`${p.doc_id}:${p.paragraph_index}`, p]));
+    return { author, query: { date: date || null, title: title || null, book: book || null }, indexed: c.rows.length,
+      letters: hits.map((h) => {
+        const doc = { ...(meta.get(h.doc_id) || { id: h.doc_id }), ...(at.get(`${h.doc_id}:${h.start}`) || {}), id: h.doc_id };
+        const link = linkFor(doc, h.start);
+        const reader = readerUrl(doc, null);
+        return { title: h.title, book: h.book_title, doc_id: h.doc_id, kind: h.kind, date: h.y ? [h.y, h.m, h.d].filter(Boolean).map((n) => String(n).padStart(2, '0')).join('-') : null,
+          paragraphs: [h.start, h.end], score: Math.round(h.score), url: link.url, site: link.site, reader_url: `${reader}#p${h.start}-${h.end}` };
+      }) };
+  });
+
   fastify.get('/by-path/:religion/:collection/:slug', {
     preHandler: [optionalAuthenticate],
     schema: {
