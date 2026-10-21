@@ -87,3 +87,15 @@ describe('workKey: a generic lead-in is not the work (10-19: two pilgrim notes h
     expect(workKey('Resurrection and Renewal: The Making of the Babi Movement')).toBe(workKey('Resurrection and Renewal'));
   });
 });
+
+describe('add anyway', () => {
+  beforeEach(() => { items.length = 0; });
+  it('a held file under _add-anyway/ is added (a fuller copy than the library excerpt); elsewhere it is skipped', async () => {
+    const queued = [];
+    const d = { ...deps(queued), list: async () => [{ path: '/in/_add-anyway/fuller-held-copy.txt', ext: 'txt', size: 1e3 }, { path: '/in/held-copy.txt', ext: 'txt', size: 1e3 }] };
+    const r = await deweyIngestFolderJob({ batch: 5 }, d);
+    expect(r.queued).toEqual(['/in/_add-anyway/fuller-held-copy.txt']);
+    expect(r.held).toEqual(['/in/held-copy.txt']);
+    expect(items.find((i) => i.original_path === '/in/_add-anyway/fuller-held-copy.txt').log.at(-1).why).toMatch(/fuller copy/);
+  });
+});

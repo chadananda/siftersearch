@@ -66,7 +66,10 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     if (known && (DONE.has(known.state) || heldBefore)) { out.skipped++; continue; }
     // re-check just before adding: the library may hold it by now (another copy in this batch, a different edition)
     const doc = await check({ path: f.path });
-    if (doc.result.verdict === 'held') {
+    // ADD ANYWAY (Chad 10-20: "add them all"): a file under an `_add-anyway/` folder is a person's decision to add it even
+    // though the check calls it held — the library's copy is an excerpt (pilgrim notes held at 30–77%) and this file is fuller.
+    const approved = /(^|\/)_add-anyway\//.test(f.path);
+    if (doc.result.verdict === 'held' && !approved) {
       const top = doc.result.candidates?.[0];
       const item = known || await createItem({ title: doc.identified.title || f.path.split('/').pop(), identified: { ...doc.identified, file_name: f.path.split('/').pop() }, by, state: 'declined', why: HELD_WHY });
       await updateItem(item.id, { state: 'declined', sha256: hash, original_path: f.path }, `${HELD_WHY}${top ? ` — #${top.id} ${top.title}` : ''}; not added`);
@@ -115,7 +118,7 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
       continue;
     }
     await updateItem(item.id, { state: 'source', sha256: hash, original_path: f.path, title: a.title, author: a.author || item.author || null,
-      identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null } }, `ingest folder (round ${round}, easiest first): ${doc.result.verdict} → adding`);
+      identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null } }, `ingest folder (round ${round}, easiest first): ${doc.result.verdict}${approved && doc.result.verdict === 'held' ? ' (a fuller copy — added by a person\'s decision, _add-anyway)' : ''} → adding`);
     await queue('dewey-intake', { id: item.id }, by);
     out.queued.push(f.path);
   }
