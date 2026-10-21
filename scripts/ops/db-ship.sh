@@ -31,13 +31,19 @@ log() { echo "$(date -u +%FT%TZ) $*"; }
 NOW=ship-$(date -u +%Y%m%d-%H%M)
 PREV=$($Z list -t snapshot -H -o name -s creation "$SRC" 2>/dev/null | grep '@ship-' | tail -1)
 $Z snapshot "$SRC@$NOW" || { log "FAIL snapshot $SRC@$NOW"; exit 1; }
+# the /tank copy is ours alone: it inherits tank's com.sun:auto-snapshot (10-21: zfs-auto-snap 'frequent' landed on it every
+# 15 min), and a snapshot there newer than our base breaks the next incremental — so none are taken, and any found are dropped
+if $Z list "$DEST" >/dev/null 2>&1; then
+  $Z set com.sun:auto-snapshot=false "$DEST"
+  $Z list -t snapshot -H -o name "$DEST" | grep '@zfs-auto-snap_' | while read -r s; do $Z destroy "$s" && log "tank: dropped $s"; done
+fi
 # incremental only from a base /tank also holds; otherwise a full send (first run, or after a broken chain)
 if [ -n "$PREV" ] && $Z list -t snapshot "$DEST@${PREV##*@}" >/dev/null 2>&1; then
   nice -n 19 $Z send -i "$PREV" "$SRC@$NOW" | $Z recv -u -F "$DEST" || { log "FAIL incremental ${PREV##*@} → $NOW"; $Z destroy "$SRC@$NOW"; exit 1; }
   log "shipped ${PREV##*@} → $NOW"
 else
   $Z list "$DEST" >/dev/null 2>&1 && { log "FAIL $DEST exists without a common base — needs a person (zfs destroy -r $DEST to restart the chain)"; $Z destroy "$SRC@$NOW"; exit 1; }
-  nice -n 19 $Z send "$SRC@$NOW" | $Z recv -u -o mountpoint=none "$DEST" || { log "FAIL full send $NOW"; $Z destroy "$SRC@$NOW"; exit 1; }
+  nice -n 19 $Z send "$SRC@$NOW" | $Z recv -u -o mountpoint=none -o com.sun:auto-snapshot=false "$DEST" || { log "FAIL full send $NOW"; $Z destroy "$SRC@$NOW"; exit 1; }
   log "full send $NOW"
 fi
 # the SSD keeps only the new base

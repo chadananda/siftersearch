@@ -299,7 +299,7 @@ try {
 
 // ── 7. DB ship (scripts/ops/db-ship.sh): the newest /tank copy of the live DB is under 2 h old ─
 try {
-  const last = execSync('sudo -n zfs list -t snapshot -H -o name -s creation tank/backups/siftersearch-db 2>/dev/null | tail -1', { encoding: 'utf8', timeout: 10000 }).trim();
+  const last = execSync('sudo -n zfs list -t snapshot -H -o name -s creation tank/backups/siftersearch-db 2>/dev/null | grep @ship- | tail -1', { encoding: 'utf8', timeout: 10000 }).trim();
   const m = last.match(/@ship-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})$/);
   const ageH = m ? (Date.now() - Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])) / 3600000 : Infinity;
   add('DB ship to /tank', ageH < 2, ageH < 6 ? 'warn' : 'critical', m ? `newest ${last.split('@')[1]} (${ageH.toFixed(1)} h ago)` : 'no ship snapshot on tank/backups/siftersearch-db — see logs/db-ship.log');
