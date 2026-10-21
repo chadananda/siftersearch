@@ -1,11 +1,12 @@
 // Files Dewey may read IN PLACE on the server — a folder of the synced Dropbox (Chad 10-17: "check this set of books"; later
 // "spider many hard drives"). No upload, no size limit (a 280 MB scan cannot cross the tunnel's ~100 MB body cap), and the
-// original stays where it lives. Only under DEWEY_PATH_ROOTS (':'-separated; default the Ocean2.0 Supplemental folder);
+// original stays where it lives. Only under DEWEY_PATH_ROOTS (':'-separated; default the Ocean2.0 Supplemental folder, the ingest folder,
+// and the two Public folders Chad pointed Dewey at on 10-20: Public/Ocean-books and Public/pilgrim-notes — not all of Public);
 // symlinks are resolved first, so nothing escapes a root.
 import { realpathSync, statSync } from 'fs';
 import { resolve } from 'path';
 
-export const deweyRoots = () => (process.env.DEWEY_PATH_ROOTS || '/tank/dropbox/Ocean2.0 Supplemental:/tank/dewey-ingest').split(':').filter(Boolean).map((r) => r.replace(/\/+$/, ''));
+export const deweyRoots = () => (process.env.DEWEY_PATH_ROOTS || ['/tank/dropbox/Ocean2.0 Supplemental', '/tank/dewey-ingest', '/tank/dropbox/Public/Ocean-books', '/tank/dropbox/Public/pilgrim-notes'].join(':')).split(':').filter(Boolean).map((r) => r.replace(/\/+$/, ''));
 
 /** A server path Dewey may read → its real path; throws 400 otherwise. */
 export function allowedPath(p, roots = deweyRoots()) {
