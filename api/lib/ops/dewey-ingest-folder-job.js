@@ -63,7 +63,10 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     const known = await findBySha(hash);
     // handled already — or found held by an earlier round. (A file Chad once DECLINED but has now placed here is a yes.)
     const heldBefore = known?.state === 'declined' && String(known.log?.at(-1)?.why || '').startsWith(HELD_WHY);
-    if (known && (DONE.has(known.state) || heldBefore)) { out.skipped++; continue; }
+    // a file a person moved into _add-anyway/ is a decision that overrides an earlier "already held" (10-21: Egea's
+    // 'Abdu'l-Bahá in the West was declined as held in Promulgation — it quotes it, it is not it)
+    const approvedHere = /(^|\/)_add-anyway\//.test(f.path);
+    if (known && (DONE.has(known.state) || (heldBefore && !approvedHere))) { out.skipped++; continue; }
     // re-check just before adding: the library may hold it by now (another copy in this batch, a different edition)
     const doc = await check({ path: f.path });
     // ADD ANYWAY (Chad 10-20: "add them all"): a file under an `_add-anyway/` folder is a person's decision to add it even

@@ -99,3 +99,15 @@ describe('add anyway', () => {
     expect(items.find((i) => i.original_path === '/in/_add-anyway/fuller-held-copy.txt').log.at(-1).why).toMatch(/fuller copy/);
   });
 });
+
+describe('add anyway overrides an earlier held decline', () => {
+  beforeEach(() => { items.length = 0; });
+  it('a file once declined as held, moved to _add-anyway/, is added', async () => {
+    items.push({ id: 1, sha256: 'sha:/in/_add-anyway/egea.txt', state: 'declined', log: [{ why: 'ingest folder: already in the library — #20917 Promulgation; not added' }] });
+    const queued = [];
+    const d = { ...deps(queued), list: async () => [{ path: '/in/_add-anyway/egea.txt', ext: 'txt', size: 1e3 }],
+      check: async () => ({ identified: { title: 'Egea' }, excerpt: 'x', result: { verdict: 'held', candidates: [{ id: 20917, title: 'Promulgation' }] } }) };
+    const r = await deweyIngestFolderJob({ batch: 5 }, d);
+    expect(r.queued).toEqual(['/in/_add-anyway/egea.txt']);
+  });
+});
