@@ -122,5 +122,8 @@ export function matchLetters(letters, q = {}) {
     return { ...l, score };
   }).filter((l) => l.score > 30);
   const rank = { message: 0, chapter: 0, book: 1, section: 2 };
-  return scored.sort((a, b) => b.score - a.score || rank[a.kind] - rank[b.kind] || (a.end - a.start) - (b.end - b.start));
+  scored.sort((a, b) => b.score - a.score || rank[a.kind] - rank[b.kind] || (a.end - a.start) - (b.end - b.start));
+  // one letter, one answer: a range found two ways (a chapter that is also dated by its line; a twin section) is listed once
+  const seen = new Set();
+  return scored.filter((l) => { const k = `${l.doc_id}:${l.start}:${l.end}`; if (seen.has(k)) return false; seen.add(k); return true; });
 }

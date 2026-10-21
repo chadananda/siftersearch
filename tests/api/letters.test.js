@@ -75,3 +75,11 @@ describe('letters-index job', () => {
     expect(saved).toEqual([['Shoghi Effendi', 2]]);
   });
 });
+
+describe('one letter, one answer', () => {
+  it('the same range found as a chapter and as a dated message is listed once', () => {
+    const L = [{ doc_id: 2, title: 'The Dispensation of Bahá’u’lláh', y: 1934, m: 2, d: 8, start: 188, end: 318, kind: 'chapter' },
+      { doc_id: 2, title: 'The Dispensation of Bahá’u’lláh', y: 1934, m: 2, d: 8, start: 188, end: 318, kind: 'message' }];
+    expect(matchLetters(L, { title: 'The Dispensation of Bahaullah' })).toHaveLength(1);
+  });
+});
