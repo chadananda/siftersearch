@@ -75,3 +75,10 @@ describe('grounding exhaustion probe has time to answer (10-20 false critical)',
     expect(src('system-checks.mjs')).toMatch(/grounding\/exhaustion', \{ headers: H, timeout: 30000 \}/);
   });
 });
+
+describe('service probes say why they failed', () => {
+  it('a failed tunnel/API/writer probe reports the error, not a bare "status 0" (10-20 18:00 alert was untraceable)', () => {
+    const s = src('system-checks.mjs');
+    for (const v of ['api', 'writer', 'meili', 'tunnel', 'site']) expect(s).toContain(`: why(${v})`);
+  });
+});
