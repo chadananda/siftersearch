@@ -42,10 +42,11 @@ export function acceptSource(o, _writerHint, quoteDoc, collection = null) {
 
 export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit = 300, write = false, concurrency = 2, after = null } = {}, deps = {}) {
   const { coverage = sourceLinkCoverage, work = unlinkedWriterParagraphs, save = saveSourceLinks, draining = isDraining,
-    hunt = async (text, opts) => (await import('../source-hunt.js')).sourceHunt(text, {}, opts) } = deps;
+    hunt = async (text, opts) => (await import('../source-hunt.js')).sourceHunt(text, {}, opts),
+    docsOf = async (ids) => (await import('../paragraphs-repo.js')).paragraphsByIds(ids) } = deps;
   const docs = (await coverage({ ...(collectionLike ? { collectionLike } : {}), ...(docIds ? { docIds } : {}) }))
     .filter((d) => Object.values(d.writers).some((w) => w.paras > w.linked)).map((d) => d.id).sort((a, b) => a - b);
-  const out = { write, docs: docs.length, hunted: 0, linked: 0, verbatim: 0, translation: 0, not_found: 0, errors: 0, skipped: {}, rejected: {}, sample: [], rejected_sample: [] };
+  const out = { write, docs: docs.length, hunted: 0, linked: 0, verbatim: 0, translation: 0, not_found: 0, errors: 0, fallback: 0, skipped: {}, rejected: {}, sample: [], rejected_sample: [] };
   let start = after?.doc ? docs.indexOf(after.doc) : 0;
   if (start < 0) start = 0;
   for (let di = start; di < docs.length; di++) {
@@ -60,12 +61,18 @@ export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit
         const slice = batch.slice(i, i + concurrency);
         const who = slice.map(quoteWriter);
         const res = await Promise.all(slice.map((p, k) => (who[k].hunt ? hunt(p.text, { exclude: { documentIds: [p.doc_id] } }).catch((e) => ({ error: e.message })) : null)));
+        const consideredIds = res.flatMap((r) => (r?.considered || []).map((c) => c.id)).filter((id) => id != null);
+        const docOf = new Map((consideredIds.length ? await docsOf(consideredIds) : []).map((x) => [x.id, x.doc_id]));
         slice.forEach((p, k) => {
           if (!who[k].hunt) { out.skipped[who[k].reason] = (out.skipped[who[k].reason] || 0) + 1; return; }
           const r = res[k]; out.hunted++;
           if (r?.error) { out.errors++; return; }
-          const o = r?.origin;
-          const ok = acceptSource(o, who[k].writer, p.doc_id, (r?.considered || []).find((c) => c.id === o?.id)?.collection);
+          // SourceHunt's first answer, else the next CONSIDERED candidate that is the writer's own work (its top pick is
+          // sometimes the compilation that reprints the passage — "Through it the pillars of the Faith…" → a RD compilation)
+          const cands = [r?.origin, ...(r?.considered || []).filter((c) => c.id !== r?.origin?.id).map((c) => ({ id: c.id, documentId: docOf.get(c.id),
+            title: c.title, author: c.writer, bookAuthor: c.bookAuthor, site: c.site === 'library' ? null : c.site, overlap: c.overlap, collection: c.collection }))].filter(Boolean);
+          let o = cands[0], ok = acceptSource(o, who[k].writer, p.doc_id, (r?.considered || []).find((c) => c.id === o?.id)?.collection);
+          for (const c of cands.slice(1)) { if (ok.basis) break; const t = acceptSource(c, who[k].writer, p.doc_id, c.collection); if (t.basis) { o = c; ok = t; out.fallback++; } }
           if (!ok.basis) { out.rejected[ok.reason] = (out.rejected[ok.reason] || 0) + 1; if (ok.reason === 'not-found') out.not_found++;
             if (out.rejected_sample.length < 15 && o) out.rejected_sample.push({ reason: ok.reason, quote: String(p.text).slice(0, 90), source: o.title, author: o.author, overlap: o.overlap });
             return; }

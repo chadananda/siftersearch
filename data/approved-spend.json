@@ -1,6 +1,20 @@
 [
-  { "label": "Doctrinal index: HyPE + concepts + disambiguation (core works, Phelps, pilgrim notes, Star of the West)", "usd_per_day": 100, "until": "2026-10-27",
-    "approved": "Chad 10-19 'yes, that is the right approach' ($200 cap); 10-20 'I gave permission to hype index the core doctrinal works completely'; pilgrim notes + Star of the West added 10-20" },
-  { "label": "Paragraph authorship (doctrine-bearing books + pilgrim notes + Star of the West)", "usd_per_day": 70, "until": "2026-10-27",
-    "approved": "Chad 10-20: 'Doctrine-bearing books only' + 'author sweep … the pilgrim notes' + 'and star of the west'" }
+  {
+    "label": "Doctrinal index: HyPE + concepts + disambiguation (core works, Phelps, pilgrim notes, Star of the West)",
+    "usd_per_day": 100,
+    "until": "2026-10-27",
+    "approved": "Chad 10-19 'yes, that is the right approach' ($200 cap); 10-20 'I gave permission to hype index the core doctrinal works completely'; pilgrim notes + Star of the West added 10-20"
+  },
+  {
+    "label": "Paragraph authorship (doctrine-bearing books + pilgrim notes + Star of the West)",
+    "usd_per_day": 70,
+    "until": "2026-10-27",
+    "approved": "Chad 10-20: 'Doctrine-bearing books only' + 'author sweep … the pilgrim notes' + 'and star of the west'"
+  },
+  {
+    "label": "Citation linking: compilation quotes of the Central Figures / Shoghi Effendi → source (SourceHunt decisions)",
+    "usd_per_day": 30,
+    "until": "2026-10-28",
+    "approved": "Chad 10-21: 'You should be able to do all central figures and shoghi effendi in the compilations … use the SourceHunt API to help resolve'"
+  }
 ]

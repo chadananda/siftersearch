@@ -51,3 +51,19 @@ describe('gates (the 10-21 sample)', () => {
     expect(acceptSource({ ...o, author: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi' }, null, 7, 'Research Department Compilations').reason).toBe('compilation');
   });
 });
+
+describe('fallback to the next considered candidate', () => {
+  it('when the top answer is a compilation, the writer’s own work further down is linked', async () => {
+    const saved = [];
+    const r = await sourceLinksBuildJob({ write: true }, {
+      coverage: async () => [{ id: 7, writers: { 'Shoghi Effendi': { paras: 1, linked: 0 } } }],
+      work: async (doc, { afterId }) => (afterId ? [] : [{ id: 1, doc_id: 7, authors: '[]', text: 'Through it the pillars of the Faith on this earth will be firmly established and its laws enforced' }]),
+      hunt: async () => ({ origin: { id: 50, documentId: 20870, author: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi', overlap: 1 },
+        considered: [{ id: 50, collection: 'Research Department Compilations' }, { id: 60, writer: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi', site: 'library', overlap: 0.98, collection: 'Shoghi Effendi' }] }),
+      docsOf: async (ids) => ids.map((id) => ({ id, doc_id: id === 60 ? 20894 : 20870 })),
+      save: async (x) => saved.push(...x), draining: () => false,
+    });
+    expect(r).toMatchObject({ linked: 1, fallback: 1 });
+    expect(saved[0]).toMatchObject({ quote_id: 1, source_id: 60, source_doc: 20894, basis: 'verbatim' });
+  });
+});
