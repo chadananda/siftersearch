@@ -184,6 +184,13 @@ export async function setDocAuthor(docId, author) {
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 
+/** Translators of a document (docs.translators, migration 141): [{ name, basis }]. */
+export async function setDocTranslators(docId, translators) {
+  const list = (translators || []).map((t) => (typeof t === 'string' ? { name: t, basis: 'correction' } : t)).filter((t) => String(t?.name || '').trim());
+  const r = await query('UPDATE docs SET translators = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [JSON.stringify(list), Number(docId)], 'docs-repo:set-translators');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
 export async function setDocTitle(docId, title) {
   const t = String(title || '').trim();
   if (!t) throw new Error('setDocTitle: empty title');

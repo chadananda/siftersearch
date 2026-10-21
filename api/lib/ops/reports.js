@@ -29,6 +29,7 @@ import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js';
 import { paragraphAuthorsJob } from './paragraph-authors-job.js';
 import { compilationAuthorsJob } from './compilation-authors-job.js';
+import { docCorrectionsJob } from './doc-corrections-job.js';
 export { INDEX_LANES, INDEX_JOB_NAMES };
 import { retireDuplicatesJob } from './library-jobs.js';
 import { sectionAuthorJob } from './section-author.js';
@@ -178,6 +179,7 @@ REPORTS['dewey-completeness'] = deweyCompletenessJob;   // params: { since? } �
 REPORTS['dewey-quality'] = deweyQualityJob;     // params: { limit?, since? } — every Dewey import inspected, worst first, causes tallied
 REPORTS['dewey-archive'] = deweyArchiveJob;     // one pass: every decided source onto the NAS archive, ingest copies out of Dropbox
 REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's final text from SearchLayerPDF, checked
+REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, author?, translators? }], write } — a person's record corrections
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
