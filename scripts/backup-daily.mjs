@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// DAILY BACKUP — cron-owned (crontab: 0 10 * * * UTC), moved OUT of the unified worker (2026-08-08).
+// DAILY BACKUP — cron-owned (crontab: 0 3 * * * — tower cron runs on LOCAL time (MST): "0 10" ran it at 10 AM, in the middle of
+// the morning, for weeks (10-21: search 2–7 s during its quick_check) — 03:00 is the quiet hour), moved OUT of the unified worker (2026-08-08).
 // Why: runBackup()'s execSync steps (35GB sqlite .backup + ~100GB Meili rsync) blocked the worker's event
 // loop → the single-writer went deaf → the watchdog restarted it MID-BACKUP → interrupted rsyncs, orphaned
 // 18GB WAL litter, and a morning restart-loop (600+ lifetime restarts). In its own process, the backup can
