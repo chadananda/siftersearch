@@ -49,6 +49,8 @@ better. That way when we publish things with citations, they can be given real c
   his own books first (Unfolding Destiny, Arohanui, Dawn of a New Day, High Endeavours, Messages to Canada…). Gap to close:
   letters printed ONLY in compilations (Lights of Guidance, Research Dept) are rejected today as 'not-own-work' → fall back to
   the compilation that prints the letter itself (not one that only quotes it again).
-- Page citations to an edition we don't hold in that pagination: the author's citation text stays exactly as printed; the
-  link goes to the passage found by its QUOTED TEXT. A bare page reference with no quoted text links to the work, not a guessed
-  paragraph.
+- Rendering (Chad 10-21): the visible citation is NEVER changed — it becomes a markdown link, `[(Gleanings, p. 215)](<url>)`,
+  the href the properly formatted canonical link (OceanLibrary.com range link, OceanofLights.org, … per `linkFor()`). The link
+  target is the passage found by its QUOTED TEXT (the printed page is left as printed). In the DB every citation stores a
+  reference to the SOURCE content record (paragraph id) — a visible web of links and a DB web of connections. A bare page
+  reference with no quoted text links to the work, not a guessed paragraph.

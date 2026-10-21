@@ -23,3 +23,11 @@ describe('db-ship keep', () => {
     expect(keepOut(['t/db@zfs-auto-snap_daily-2026-10-01-1437', ...hourly(3)], '1', '1')).not.toContain('t/db@zfs-auto-snap_daily-2026-10-01-1437');
   });
 });
+
+describe('db-ship ssd-drop', () => {
+  it('drops older ships and auto-snapshots, never the 03:00 backup snapshot it is copying from', () => {
+    const out = spawnSync('bash', ['scripts/ops/db-ship.sh', 'ssd-drop', 'ship-20261021-2234'], { encoding: 'utf8',
+      input: ['f/db@zfs-auto-snap_daily-2026-10-20-1436', 'f/db@siftersearch-backup-1792634400000', 'f/db@ship-20261021-2227', 'f/db@ship-20261021-2234'].join('\n') + '\n' }).stdout.trim().split('\n');
+    expect(out).toEqual(['f/db@zfs-auto-snap_daily-2026-10-20-1436', 'f/db@ship-20261021-2227']);
+  });
+});
