@@ -43,7 +43,12 @@ better. That way when we publish things with citations, they can be given real c
 2. Citations of the Writings in those compilations (Gleanings, Íqán, Aqdas, SAQ, PT…) — refs + source links.
 3. Secondary books and papers (bahai-library copies included, but linking out to the canonical text).
 
-## Open questions for Chad
-- Letters "written on behalf of" Shoghi Effendi: link to the compilation that prints them (often the only published home), and
-  flag them as on-behalf (authority ×) — yes?
-- Page citations to editions we don't hold in that pagination: link the passage by its quoted text only (no page claim) — yes?
+## Decisions (Chad 10-21)
+- Letters written ON BEHALF of Shoghi Effendi ARE Shoghi Effendi's ("He had his secretary draft the letter at his instruction
+  then he approved before sending. He is author.") — no on-behalf flag, no lower authority. Linked like any letter of his: to
+  his own books first (Unfolding Destiny, Arohanui, Dawn of a New Day, High Endeavours, Messages to Canada…). Gap to close:
+  letters printed ONLY in compilations (Lights of Guidance, Research Dept) are rejected today as 'not-own-work' → fall back to
+  the compilation that prints the letter itself (not one that only quotes it again).
+- Page citations to an edition we don't hold in that pagination: the author's citation text stays exactly as printed; the
+  link goes to the passage found by its QUOTED TEXT. A bare page reference with no quoted text links to the work, not a guessed
+  paragraph.
