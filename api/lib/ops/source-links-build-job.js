@@ -20,17 +20,20 @@ export function quoteWriter(p) {
   const words = String(p.text || '').split(/\s+/).filter(Boolean).length;
   if (words < 12) return { reason: 'short' };
   if (NOT_A_QUOTE.test(p.text)) return { reason: 'not-a-quote' };
+  // the paragraph's tagged writer is only a hint — in compilations it is often the compiler or the wrong voice (10-21 sample:
+  // Hidden Words and Messages to America quotes tagged as someone else); the SOURCE found decides whose words these are
   const w = firstPerson(paragraphAuthor({ authors: p.authors, author: null }) || '');
-  return WRITERS.has(w) ? { writer: w } : { reason: 'not-the-writer' };
+  return { writer: WRITERS.has(w) ? w : null, hunt: true };
 }
 
 /** Is SourceHunt's answer the writer's OWN source? Their own work or authorized compilation of them, not a scraped mirror,
  *  with the wording verbatim or (another translation) sharing real wording. → basis, or null with a reason. Pure. */
-export function acceptSource(o, writerName, quoteDoc) {
-  const writer = firstPerson(writerName || '') || writerName;
+export function acceptSource(o, _writerHint, quoteDoc, collection = null) {
   if (!o?.id || o.documentId === quoteDoc) return { reason: 'not-found' };
-  if (firstPerson(o.author || '') !== writer) return { reason: 'other-writer' };
+  const writer = firstPerson(o.author || '');
+  if (!WRITERS.has(writer)) return { reason: 'other-writer' };
   if (firstPerson(o.bookAuthor || '') !== writer) return { reason: 'not-own-work' };
+  if (/compilation/i.test(collection || '')) return { reason: 'compilation' };   // a Research Department compilation is not the source
   if (o.site === 'bahai-library.com') return { reason: 'mirror' };
   const ov = o.overlap ?? 0;
   if (ov >= VERBATIM) return { basis: 'verbatim' };
@@ -56,13 +59,13 @@ export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit
       for (let i = 0; i < batch.length; i += concurrency) {
         const slice = batch.slice(i, i + concurrency);
         const who = slice.map(quoteWriter);
-        const res = await Promise.all(slice.map((p, k) => (who[k].writer ? hunt(p.text, { exclude: { documentIds: [p.doc_id] } }).catch((e) => ({ error: e.message })) : null)));
+        const res = await Promise.all(slice.map((p, k) => (who[k].hunt ? hunt(p.text, { exclude: { documentIds: [p.doc_id] } }).catch((e) => ({ error: e.message })) : null)));
         slice.forEach((p, k) => {
-          if (!who[k].writer) { out.skipped[who[k].reason] = (out.skipped[who[k].reason] || 0) + 1; return; }
+          if (!who[k].hunt) { out.skipped[who[k].reason] = (out.skipped[who[k].reason] || 0) + 1; return; }
           const r = res[k]; out.hunted++;
           if (r?.error) { out.errors++; return; }
           const o = r?.origin;
-          const ok = acceptSource(o, who[k].writer, p.doc_id);
+          const ok = acceptSource(o, who[k].writer, p.doc_id, (r?.considered || []).find((c) => c.id === o?.id)?.collection);
           if (!ok.basis) { out.rejected[ok.reason] = (out.rejected[ok.reason] || 0) + 1; if (ok.reason === 'not-found') out.not_found++;
             if (out.rejected_sample.length < 15 && o) out.rejected_sample.push({ reason: ok.reason, quote: String(p.text).slice(0, 90), source: o.title, author: o.author, overlap: o.overlap });
             return; }

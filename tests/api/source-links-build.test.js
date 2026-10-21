@@ -37,7 +37,8 @@ describe('gates (the 10-21 sample)', () => {
   it('only real quotations are hunted', () => {
     expect(quoteWriter({ text: 'Publishing Trust, 1998), pages 4–5) [1]', authors: BH }).reason).toBe('short');
     expect(quoteWriter({ text: 'William Hoar, Anna Hoar (pilgrim notes)\ntranslator: Unknown\nyear: 1900 and more words to pass the length check here', authors: BH }).reason).toBe('not-a-quote');
-    expect(quoteWriter({ text: 'a long enough paragraph that the Research Department wrote about a passage of the Writings', authors: JSON.stringify([{ name: 'Universal House of Justice', role: 'author' }]) }).reason).toBe('not-the-writer');
+    // a mis-tagged voice is still hunted — the source decides (Hidden Words quoted in a compilation tagged as its compiler)
+    expect(quoteWriter({ text: 'Breathe not the sins of others so long as thou art thyself a sinner. Shouldst thou transgress this command', authors: JSON.stringify([{ name: 'Universal House of Justice', role: 'author' }]) }).hunt).toBe(true);
   });
   it('a source must be the writer’s own work with real shared wording', () => {
     const o = { id: 1, documentId: 2, author: 'Bahá’u’lláh', bookAuthor: 'Bahá’u’lláh', overlap: 0.9 };
@@ -45,6 +46,8 @@ describe('gates (the 10-21 sample)', () => {
     expect(acceptSource({ ...o, bookAuthor: 'Star of the West' }, "Bahá'u'lláh", 7).reason).toBe('not-own-work');
     expect(acceptSource({ ...o, site: 'bahai-library.com' }, "Bahá'u'lláh", 7).reason).toBe('mirror');
     expect(acceptSource({ ...o, overlap: 0.07 }, "Bahá'u'lláh", 7).reason).toBe('weak-wording');
-    expect(acceptSource({ ...o, author: 'Shoghi Effendi' }, "Bahá'u'lláh", 7).reason).toBe('other-writer');
+    expect(acceptSource({ ...o, author: 'Universal House of Justice', bookAuthor: 'Universal House of Justice' }, null, 7).reason).toBe('other-writer');
+    expect(acceptSource({ ...o, author: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi' }, "Bahá'u'lláh", 7).basis).toBe('verbatim');   // the source decides
+    expect(acceptSource({ ...o, author: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi' }, null, 7, 'Research Department Compilations').reason).toBe('compilation');
   });
 });
