@@ -7,34 +7,66 @@
 // write = false, concurrency = 2, after? } — `after` = { doc, id } resume point.
 import { sourceLinkCoverage, unlinkedWriterParagraphs, saveSourceLinks } from '../repos/source-links-repo.js';
 import { isDraining } from '../drain.js';
+import { firstPerson } from '../authorship/reader.js';
+import { paragraphAuthor } from '../authorship/effective.js';
 
 const VERBATIM = 0.6;   // source-hunt.js: the wording is the source's own at this overlap
+const TRANSLATION_MIN = 0.3;   // another rendering must still share real wording (the 10-21 sample's 0–0.17 'translations' were wrong)
+const WRITERS = new Set(['Bahá’u’lláh', 'The Báb', '‘Abdu’l-Bahá', 'Shoghi Effendi']);   // reader.js PEOPLE names (curly)
+const NOT_A_QUOTE = /^\s*(?:translator|year|document\w*|title|author|source)\s*:|^\s*_?download|\.pdf\b|^[\s\\*\[]*see also/im;
+
+/** Is this paragraph a QUOTATION of one of the writers worth hunting? → the writer, or null with a reason. Pure. */
+export function quoteWriter(p) {
+  const words = String(p.text || '').split(/\s+/).filter(Boolean).length;
+  if (words < 12) return { reason: 'short' };
+  if (NOT_A_QUOTE.test(p.text)) return { reason: 'not-a-quote' };
+  const w = firstPerson(paragraphAuthor({ authors: p.authors, author: null }) || '');
+  return WRITERS.has(w) ? { writer: w } : { reason: 'not-the-writer' };
+}
+
+/** Is SourceHunt's answer the writer's OWN source? Their own work or authorized compilation of them, not a scraped mirror,
+ *  with the wording verbatim or (another translation) sharing real wording. → basis, or null with a reason. Pure. */
+export function acceptSource(o, writerName, quoteDoc) {
+  const writer = firstPerson(writerName || '') || writerName;
+  if (!o?.id || o.documentId === quoteDoc) return { reason: 'not-found' };
+  if (firstPerson(o.author || '') !== writer) return { reason: 'other-writer' };
+  if (firstPerson(o.bookAuthor || '') !== writer) return { reason: 'not-own-work' };
+  if (o.site === 'bahai-library.com') return { reason: 'mirror' };
+  const ov = o.overlap ?? 0;
+  if (ov >= VERBATIM) return { basis: 'verbatim' };
+  return ov >= TRANSLATION_MIN ? { basis: 'translation' } : { reason: 'weak-wording' };
+}
 
 export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit = 300, write = false, concurrency = 2, after = null } = {}, deps = {}) {
   const { coverage = sourceLinkCoverage, work = unlinkedWriterParagraphs, save = saveSourceLinks, draining = isDraining,
     hunt = async (text, opts) => (await import('../source-hunt.js')).sourceHunt(text, {}, opts) } = deps;
   const docs = (await coverage({ ...(collectionLike ? { collectionLike } : {}), ...(docIds ? { docIds } : {}) }))
     .filter((d) => Object.values(d.writers).some((w) => w.paras > w.linked)).map((d) => d.id).sort((a, b) => a - b);
-  const out = { write, docs: docs.length, hunted: 0, linked: 0, verbatim: 0, translation: 0, not_found: 0, errors: 0, sample: [] };
+  const out = { write, docs: docs.length, hunted: 0, linked: 0, verbatim: 0, translation: 0, not_found: 0, errors: 0, skipped: {}, rejected: {}, sample: [], rejected_sample: [] };
   let start = after?.doc ? docs.indexOf(after.doc) : 0;
   if (start < 0) start = 0;
   for (let di = start; di < docs.length; di++) {
     let afterId = di === start && after?.id ? after.id : 0;
     for (;;) {
       if (draining()) return { ...out, yielded: true, resume: { after: { doc: docs[di], id: afterId } } };
-      if (out.hunted >= limit) return { ...out, stopped: 'limit', next: { after: { doc: docs[di], id: afterId } } };
+      if (out.hunted + Object.values(out.skipped).reduce((a, b) => a + b, 0) >= limit) return { ...out, stopped: 'limit', next: { after: { doc: docs[di], id: afterId } } };
       const batch = await work(docs[di], { afterId, limit: Math.min(20, limit - out.hunted) });
       if (!batch.length) break;
       const rows = [];
       for (let i = 0; i < batch.length; i += concurrency) {
         const slice = batch.slice(i, i + concurrency);
-        const res = await Promise.all(slice.map((p) => hunt(p.text, { exclude: { documentIds: [p.doc_id] } }).catch((e) => ({ error: e.message }))));
+        const who = slice.map(quoteWriter);
+        const res = await Promise.all(slice.map((p, k) => (who[k].writer ? hunt(p.text, { exclude: { documentIds: [p.doc_id] } }).catch((e) => ({ error: e.message })) : null)));
         slice.forEach((p, k) => {
+          if (!who[k].writer) { out.skipped[who[k].reason] = (out.skipped[who[k].reason] || 0) + 1; return; }
           const r = res[k]; out.hunted++;
           if (r?.error) { out.errors++; return; }
           const o = r?.origin;
-          if (!o?.id || o.documentId === p.doc_id) { out.not_found++; return; }
-          const basis = (o.overlap ?? 0) >= VERBATIM ? 'verbatim' : 'translation';
+          const ok = acceptSource(o, who[k].writer, p.doc_id);
+          if (!ok.basis) { out.rejected[ok.reason] = (out.rejected[ok.reason] || 0) + 1; if (ok.reason === 'not-found') out.not_found++;
+            if (out.rejected_sample.length < 15 && o) out.rejected_sample.push({ reason: ok.reason, quote: String(p.text).slice(0, 90), source: o.title, author: o.author, overlap: o.overlap });
+            return; }
+          const basis = ok.basis;
           out.linked++; out[basis]++;
           rows.push({ quote_id: p.id, source_id: o.id, quote_doc: p.doc_id, source_doc: o.documentId, coverage: o.overlap ?? null, share: null, basis, method: 'sourcehunt' });
           if (out.sample.length < 25) out.sample.push({ quote: String(p.text).slice(0, 120), source: o.title, author: o.author, basis, overlap: o.overlap });

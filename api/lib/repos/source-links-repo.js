@@ -9,7 +9,9 @@ export const WRITER_LIKE = { "Bahá'u'lláh": '%Bah%u%ll%h%', 'The Báb': '%The 
 export async function sourceLinkCoverage({ collectionLike = ['%Compilation%'], religion = "Baha'i", docIds = null } = {}) {
   const docs = docIds?.length
     ? await queryAll(`SELECT id, title, collection FROM docs WHERE id IN (${docIds.map(() => '?').join(',')})`, docIds, 'source-links:docs')
+    // the library's own and OceanLibrary copies only: a scraped bahai-library.com copy is a mirror, not a compilation to link
     : await queryAll(`SELECT id, title, collection FROM docs WHERE religion = ? AND deleted_at IS NULL AND duplicate_of IS NULL
+        AND (source_site IS NULL OR source_site = 'oceanlibrary.com')
         AND (${collectionLike.map(() => 'collection LIKE ?').join(' OR ')})`, [religion, ...collectionLike], 'source-links:docs');
   const out = [];
   for (const d of docs) {
