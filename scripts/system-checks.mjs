@@ -116,7 +116,8 @@ if (db) {
   try { exh = JSON.parse((await http('http://127.0.0.1:7839/api/admin/grounding/exhaustion', { headers: H, timeout: 30000 })).body); }
   catch { /* endpoint unreachable → fall back to the old queue-depth-only reading (fail loud, not silent) */ }
   const idle = mode === 'plan' && liveRuns === 0 && queueDepth === 0 && done24 === 0;
-  const stalled = idle && !exh?.exhausted;
+  // a PENDING snapshot (first probe after a deploy — the walk is computing) is unknown, never a stall alarm
+  const stalled = idle && !exh?.exhausted && !exh?.pending;
   // Exhausted is a PASS carrying the reason, not an alarm: nothing is broken and there is nothing to fix, but
   // grounding will do nothing until an operator switches to 'general' — a spend decision. Reporting it in the
   // detail line keeps that fact in front of the operator every run without crying wolf on every run.
@@ -124,6 +125,7 @@ if (db) {
     ? `${mode} mode but nothing queued/running/completed in 24h${exh ? '' : ' (exhaustion endpoint unreachable — cause unverified)'}`
     : idle && exh?.exhausted
       ? `plan exhausted — no enqueueable work left (${exh.husks} husks, ${exh.parked} language-parked, ${exh.quarantined} quarantined); switch mode to 'general' when ready to spend`
+      : idle && exh?.pending ? 'plan exhaustion is being computed (first check after a restart) — next run will know'
       : `${done24} done / ${failed24} failed / ${liveRuns} running / ${queueDepth} queued (24h, mode=${mode})`;
   add('Grounding progress', !stalled, 'critical', detail);
   // Queue-not-draining (the 2026-08-12 gap): a NON-empty queue with nothing running and nothing

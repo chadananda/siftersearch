@@ -245,6 +245,17 @@ export function startProcessor() {
 //
 // `exhausted: true` means "there is no work the follower could start" — the plan is finished in every sense
 // that matters, and it is time to switch mode to 'general' (a spend decision, so never automatic).
+// SNAPSHOT for monitors (10-21: after a deploy the settled memo is empty and the cold walk of ~600 books took >30 s under load,
+// so the health probe timed out and paged CRITICAL 'nothing queued'). The last result is served at once and refreshed in the
+// background when older than maxAgeMs; with none yet → { pending: true } (the walk is started). ?fresh=1 still walks now.
+let _exhaustionLast = null;   // { at, result }
+export function planExhaustionSnapshot({ maxAgeMs = 15 * 60 * 1000, now = Date.now(), walk = () => planExhaustion() } = {}) {
+  const stale = !_exhaustionLast || now - _exhaustionLast.at > maxAgeMs;
+  if (stale) walk().then((result) => { _exhaustionLast = { at: Date.now(), result }; }).catch(() => {});
+  return _exhaustionLast ? { ...(_exhaustionLast.result), as_of: new Date(_exhaustionLast.at).toISOString(), refreshing: stale } : { pending: true };
+}
+export const _resetExhaustionSnapshot = () => { _exhaustionLast = null; };
+
 // One walk at a time: an overlapping call (the probe's retry, two pollers) shares the walk in progress (10-20 23:49–23:50).
 let _exhaustionInFlight = null;
 export function planExhaustion(opts = {}) {

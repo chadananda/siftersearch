@@ -90,3 +90,9 @@ describe('blocking-queries severity', () => {
     expect(s).toMatch(/writerFrozeRecently \? 'critical' : 'warn'/);
   });
 });
+
+describe('grounding probe: pending is not a stall', () => {
+  it('a pending exhaustion snapshot never pages CRITICAL', () => {
+    expect(src('system-checks.mjs')).toMatch(/const stalled = idle && !exh\?\.exhausted && !exh\?\.pending;/);
+  });
+});

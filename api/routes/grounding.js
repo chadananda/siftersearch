@@ -1532,7 +1532,8 @@ export default async function groundingRoutes(fastify) {
   // ground it at all. When every remaining book is a husk (zero prose), language-parked, or quarantined, the
   // queue drains to empty and STAYS empty — indistinguishable, to a queue-depth alarm, from a wedged pipeline.
   // system-checks reads this so `Grounding progress` can say "plan exhausted" instead of crying CRITICAL forever.
-  fastify.get('/grounding/exhaustion', admin, async () => processor.planExhaustion());
+  // instant snapshot (refreshed in the background); ?fresh=1 walks the plan now
+  fastify.get('/grounding/exhaustion', admin, async (request) => (request.query?.fresh ? processor.planExhaustion() : processor.planExhaustionSnapshot()));
 
   // ── Merge-tombstone integrity (2026-08-24). applyMerge used to mark merged duplicates by appending
   //    ' ⟨merged→N⟩' to canonical_name — a form no API reader checked — so 6,668 hollow entities were served

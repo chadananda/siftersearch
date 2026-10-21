@@ -282,3 +282,17 @@ describe('settled memo outlives the health probe interval', () => {
     } finally { Date.now = real; }
   });
 });
+
+describe('exhaustion snapshot (monitors never wait for the cold walk)', () => {
+  it('first call is pending and starts the walk; the next call serves its result instantly', async () => {
+    const { planExhaustionSnapshot, _resetExhaustionSnapshot } = await import('../../api/lib/pipeline/plan.js');
+    _resetExhaustionSnapshot();
+    let walks = 0;
+    const walk = async () => { walks++; return { exhausted: true, husks: 1 }; };
+    expect(planExhaustionSnapshot({ walk })).toEqual({ pending: true });
+    await new Promise((r) => setTimeout(r, 0));
+    const r = planExhaustionSnapshot({ walk });
+    expect(r).toMatchObject({ exhausted: true, husks: 1, refreshing: false });
+    expect(walks).toBe(1);
+  });
+});
