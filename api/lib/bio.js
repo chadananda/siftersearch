@@ -250,13 +250,17 @@ function computeInWorker() {
   });
 }
 
-export function getIntegrationProgress({ fresh = false } = {}) {
+// STALE WHILE REFRESHING (10-21: the hourly telemetry call and admin pages waited out a full recompute — >20 s under load —
+// and timed out): an expired entry is answered with its last VALUE while the next one computes; only a cold start waits.
+let _progressValue = null;
+export function getIntegrationProgress({ fresh = false, compute = () => (PROGRESS_IN_WORKER ? computeInWorker() : computeIntegrationProgress()) } = {}) {
   if (!fresh && _progress && (Date.now() - _progress.at < PROGRESS_TTL_MS)) return _progress.promise;
-  const entry = { at: Date.now(), promise: PROGRESS_IN_WORKER ? computeInWorker() : computeIntegrationProgress() };
-  entry.promise.catch(() => { if (_progress === entry) _progress = null; });
+  const entry = { at: Date.now(), promise: compute() };
+  entry.promise.then((v) => { _progressValue = v; }).catch(() => { if (_progress === entry) _progress = null; });
   _progress = entry;
-  return entry.promise;
+  return !fresh && _progressValue ? Promise.resolve(_progressValue) : entry.promise;
 }
+export const _resetProgress = () => { _progress = null; _progressValue = null; };
 
 export async function computeIntegrationProgress() {
   // genreOf is DISPLAY-ONLY now (the biographies/histories genre labels) — it no longer decides membership.

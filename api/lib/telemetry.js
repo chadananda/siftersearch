@@ -147,7 +147,7 @@ export async function buildSnapshot() {
     // through the API (its contract and cache — Chad 10-16), not by calling bio.js in this worker: there it returned
     // nothing and the home page showed People as '—'
     const v = await fetch(`${process.env.INTERNAL_API_URL || 'http://127.0.0.1:7839'}/api/admin/grounding/status`, {
-      headers: { 'x-internal-key': process.env.DEPLOY_SECRET || '' }, signal: AbortSignal.timeout(20000) })
+      headers: { 'x-internal-key': process.env.DEPLOY_SECRET || '' }, signal: AbortSignal.timeout(90000) })   // hourly, background: a cold roadmap after a restart takes >20 s
       .then((r) => (r.ok ? r.json() : null)).then((p) => p?.cumulativeUnique ?? null).catch(() => null);
     if (v != null) peopleMemo = { at: Date.now(), value: v };
   }
