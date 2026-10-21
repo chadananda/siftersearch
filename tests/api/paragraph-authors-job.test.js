@@ -58,6 +58,28 @@ describe('trailer evidence (Lights of Guidance, 10-19)', () => {
   });
 });
 
+describe('Ibid. and <br> trailers (Lights of Guidance 20804, 10-21: ~110 quotations left with no author)', () => {
+  it('"(Ibid.)" is the previous trailer\'s writer; a trailer ending ")<br>" before its attribute tail is still a trailer', async () => {
+    const { trailerAuthors } = await import('../../api/lib/authorship/trailers.js');
+    const m = trailerAuthors([
+      { id: 1, text: '“God judges each soul on its own merits.” {id="para_4623"}', blocktype: 'paragraph' },
+      { id: 2, text: '(From a letter written on behalf of the Guardian to an individual believer, March 26, 1950)<br>{id="para_4624" ilm_id="bl2tq"}', blocktype: 'paragraph' },
+      { id: 3, text: '**93. Preservation of Ballots** {id="para_335"}', blocktype: 'heading' },
+      { id: 4, text: '“A Board Member should not be given the opportunity to resign …” {id="para_333"}', blocktype: 'paragraph' },
+      { id: 5, text: '(Ibid.) {id="para_334" ilm_id="bl4s2"}', blocktype: 'paragraph' },
+      { id: 6, text: '“…it behooveth man, upon reaching the age of nineteen …”', blocktype: 'paragraph' },
+      { id: 7, text: '(Ibid., p. 89) [pg 140] {id="para_8121"}', blocktype: 'paragraph' },
+    ]);
+    expect(m.get(1)).toMatchObject({ name: 'Shoghi Effendi', on_behalf: true });
+    expect(m.get(4)).toMatchObject({ name: 'Shoghi Effendi', on_behalf: true });
+    expect(m.get(6)).toMatchObject({ name: 'Shoghi Effendi' });
+  });
+  it('an Ibid. with no trailer before it names nobody', async () => {
+    const { trailerAuthors } = await import('../../api/lib/authorship/trailers.js');
+    expect(trailerAuthors([{ id: 1, text: '“Some words of guidance for the friends here.”', blocktype: 'paragraph' }, { id: 2, text: '(Ibid.)', blocktype: 'paragraph' }]).has(1)).toBe(false);
+  });
+});
+
 describe('trailer paragraph keeps its quoted voices', () => {
   it('nextAuthors on a trailer-locked row keeps the author and adds the quoted voice', async () => {
     const { nextAuthors } = await import('../../api/lib/authorship/window-core.js');

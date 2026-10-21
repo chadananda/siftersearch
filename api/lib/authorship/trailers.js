@@ -114,7 +114,8 @@ export function parseTrailer(raw) {
 /** The text a trailer test reads: no sentence markers, and no pandoc attribute tail — a library copy of an OceanLibrary
  *  compilation still carries `{id="para_13" ilm_id="bl4rw" type="par"}` after its lines (10-19, Lights of Guidance 20804),
  *  which hid every "(From a letter …)" trailer behind its trailing brace. */
-export const trailerText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\s*\{[^{}]*\}\s*$/, '').trim();
+//  …and a line break before that tail (")<br>{id=…}", 10-21: 83 trailers of 20804 read as prose)
+export const trailerText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\s*\{[^{}]*\}\s*$/, '').replace(/(?:\s*<br\s*\/?>)+\s*$/i, '').trim();
 
 /**
  * EVIDENCE from a compilation's attribution trailers (Chad 10-19: a quotation followed by "(From a letter written on behalf
@@ -125,12 +126,14 @@ export const trailerText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').
  */
 export function trailerAuthors(rows) {
   const out = new Map();
-  let pending = [];
+  let pending = [], last = null;
   for (const r of rows) {
     const t = trailerText(r.text);
     if (!t || r.blocktype === 'footnote') continue;
     if (isTrailer(t)) {
-      const p = parseTrailer(t);
+      // "(Ibid.)" is the same source as the trailer before it (10-21: ~110 Lights of Guidance quotations had no author)
+      const p = parseTrailer(t).ibid ? (last ? { ...last, ibid: false } : { ibid: true }) : parseTrailer(t);
+      if (p.name) last = p;
       if (p.name && !p.ibid) for (const x of pending) out.set(x.id, { name: p.name, on_behalf: p.on_behalf, kind: p.kind, trailer_id: r.id });
       pending = [];
       continue;
