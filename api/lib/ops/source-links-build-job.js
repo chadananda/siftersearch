@@ -4,7 +4,7 @@
 // candidates, the holds/translation decision, own-work-first ranking), the compilation itself excluded; the found source
 // paragraph is stored in content_source_links (basis 'verbatim' or 'translation' by wording overlap, method 'sourcehunt').
 // Dry run lists what it would link. Yields to a drain with its resume point. params { docIds?, collectionLike?, limit = 300,
-// write = false, concurrency = 2, after? } — `after` = { doc, id } resume point.
+// write = false, concurrency = 1, pauseMs = 1500, after? } — `after` = { doc, id } resume point.
 import { sourceLinkCoverage, unlinkedWriterParagraphs, saveSourceLinks } from '../repos/source-links-repo.js';
 import { isDraining } from '../drain.js';
 import { firstPerson } from '../authorship/reader.js';
@@ -40,8 +40,10 @@ export function acceptSource(o, _writerHint, quoteDoc, collection = null) {
   return ov >= TRANSLATION_MIN ? { basis: 'translation' } : { reason: 'weak-wording' };
 }
 
-export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit = 300, write = false, concurrency = 2, after = null } = {}, deps = {}) {
-  const { coverage = sourceLinkCoverage, work = unlinkedWriterParagraphs, save = saveSourceLinks, draining = isDraining,
+// one hunt at a time with a breath between (10-21 09:49: two concurrent hunts + Qdrant's own threads took search from 1.6 s to
+// 5–11 s — a batch job must never cost a reader their answer)
+export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit = 300, write = false, concurrency = 1, pauseMs = 1500, after = null } = {}, deps = {}) {
+  const { sleep = (ms) => new Promise((r) => setTimeout(r, ms)), coverage = sourceLinkCoverage, work = unlinkedWriterParagraphs, save = saveSourceLinks, draining = isDraining,
     hunt = async (text, opts) => (await import('../source-hunt.js')).sourceHunt(text, {}, opts),
     docsOf = async (ids) => (await import('../paragraphs-repo.js')).paragraphsByIds(ids) } = deps;
   const docs = (await coverage({ ...(collectionLike ? { collectionLike } : {}), ...(docIds ? { docIds } : {}) }))
@@ -60,6 +62,7 @@ export async function sourceLinksBuildJob({ docIds = null, collectionLike, limit
       for (let i = 0; i < batch.length; i += concurrency) {
         const slice = batch.slice(i, i + concurrency);
         const who = slice.map(quoteWriter);
+        if (pauseMs && i > 0) await sleep(pauseMs);
         const res = await Promise.all(slice.map((p, k) => (who[k].hunt ? hunt(p.text, { exclude: { documentIds: [p.doc_id] } }).catch((e) => ({ error: e.message })) : null)));
         const consideredIds = res.flatMap((r) => (r?.considered || []).map((c) => c.id)).filter((id) => id != null);
         const docOf = new Map((consideredIds.length ? await docsOf(consideredIds) : []).map((x) => [x.id, x.doc_id]));

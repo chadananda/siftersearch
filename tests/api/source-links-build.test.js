@@ -18,16 +18,16 @@ const hunt = async (text, { exclude }) => {
 describe('source-links-build', () => {
   it('dry run: hunts only compilations with gaps, classifies verbatim vs another translation, writes nothing', async () => {
     const saved = [];
-    const r = await sourceLinksBuildJob({}, { coverage: cov, work, hunt, save: async (x) => saved.push(...x), draining: () => false });
+    const r = await sourceLinksBuildJob({}, { coverage: cov, work, hunt, save: async (x) => saved.push(...x), draining: () => false, sleep: async () => {} });
     expect(r).toMatchObject({ docs: 1, hunted: 3, linked: 2, verbatim: 1, translation: 1, not_found: 1 });
     expect(saved).toEqual([]);
   });
   it('write stores the links; a drain yields with the resume point', async () => {
     const saved = [];
-    await sourceLinksBuildJob({ write: true }, { coverage: cov, work, hunt, save: async (x) => saved.push(...x), draining: () => false });
+    await sourceLinksBuildJob({ write: true }, { coverage: cov, work, hunt, save: async (x) => saved.push(...x), draining: () => false, sleep: async () => {} });
     expect(saved.map((x) => [x.quote_id, x.source_id, x.basis, x.method])).toEqual([[1, 100, 'verbatim', 'sourcehunt'], [2, 200, 'translation', 'sourcehunt']]);
     let n = 0;
-    const y = await sourceLinksBuildJob({}, { coverage: cov, work, hunt, save: async () => {}, draining: () => ++n > 1 });
+    const y = await sourceLinksBuildJob({}, { coverage: cov, work, hunt, save: async () => {}, draining: () => ++n > 1, sleep: async () => {} });
     expect(y).toMatchObject({ yielded: true, resume: { after: { doc: 7, id: 3 } } });
   });
 });
@@ -61,9 +61,19 @@ describe('fallback to the next considered candidate', () => {
       hunt: async () => ({ origin: { id: 50, documentId: 20870, author: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi', overlap: 1 },
         considered: [{ id: 50, collection: 'Research Department Compilations' }, { id: 60, writer: 'Shoghi Effendi', bookAuthor: 'Shoghi Effendi', site: 'library', overlap: 0.98, collection: 'Shoghi Effendi' }] }),
       docsOf: async (ids) => ids.map((id) => ({ id, doc_id: id === 60 ? 20894 : 20870 })),
-      save: async (x) => saved.push(...x), draining: () => false,
+      save: async (x) => saved.push(...x), draining: () => false, sleep: async () => {},
     });
     expect(r).toMatchObject({ linked: 1, fallback: 1 });
     expect(saved[0]).toMatchObject({ quote_id: 1, source_id: 60, source_doc: 20894, basis: 'verbatim' });
+  });
+});
+
+describe('throttled', () => {
+  it('one hunt at a time with a pause between (search must not pay for the batch)', async () => {
+    let active = 0, peak = 0; const pauses = [];
+    await sourceLinksBuildJob({}, { coverage: cov, work, save: async () => {}, draining: () => false, sleep: async (ms) => pauses.push(ms),
+      hunt: async (t, o) => { active++; peak = Math.max(peak, active); await new Promise((r) => setTimeout(r, 5)); active--; return hunt(t, o); } });
+    expect(peak).toBe(1);
+    expect(pauses.length).toBe(2);
   });
 });
