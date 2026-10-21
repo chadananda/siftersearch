@@ -41,6 +41,7 @@ import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-anal
 import { keywordTradition } from '../lib/search-plan.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
+import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
@@ -1253,6 +1254,7 @@ export default async function publicApiRoutes(fastify) {
 
     const religionMap = new Map();
     for (const row of stats) {
+      if (HIDDEN().has(row.religion)) continue;   // a hidden tradition ("Other") is never listed
       if (!religionMap.has(row.religion)) {
         religionMap.set(row.religion, { name: row.religion, documentCount: 0, collections: [] });
       }

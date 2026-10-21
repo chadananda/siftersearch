@@ -65,7 +65,12 @@ function inlineCollections(shelves, lead = []) {
   return out;
 }
 
-export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], splitCounts = [], now = new Date() }) {
+export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], splitCounts = [], now = new Date(), hidden = new Set() }) {
+  // a HIDDEN tradition (meta.yaml hidden: true — "Other") is searchable but never shelved
+  if (hidden.size) {
+    const keep = (x) => !hidden.has(x.religion);
+    olDocs = olDocs.filter(keep); authorCounts = authorCounts.filter(keep); collectionCounts = collectionCounts.filter(keep); splitCounts = splitCounts.filter(keep);
+  }
   const trads = new Map();
   const trad = (name) => {
     if (!trads.has(name)) trads.set(name, { name, slug: slugifyPath(name), shelves: new Map(), library: [], total: 0 });

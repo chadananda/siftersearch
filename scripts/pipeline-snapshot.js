@@ -344,7 +344,7 @@ async function main() {
       const { docs } = await listDocs({ sourceSite: 'oceanlibrary.com', limit: 5000,
         fields: ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug', 'file_path', 'language', 'frontmatter'] });
       const olDocs = docs.map(({ frontmatter, ...d }) => ({ ...d, weight: olWeight(frontmatter) }));
-      const shelves = buildShelves({ olDocs, authorCounts: await groupCounts(['religion', 'author']),
+      const shelves = buildShelves({ hidden: (await import('../api/lib/authority.js')).hiddenReligions(), olDocs, authorCounts: await groupCounts(['religion', 'author']),
         collectionCounts: await groupCounts(['religion', 'collection', 'source_site']),
         splitCounts: await groupCounts(['religion', 'collection', 'author'], { collections: SPLIT_BY_AUTHOR }) });
       // small author shelves list every work inline (no "+6 more" for six books): one short indexed read per spelling

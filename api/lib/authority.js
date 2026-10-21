@@ -416,6 +416,13 @@ export function getEncumbered(doc) {
   return false;
 }
 
+/** Traditions marked `hidden: true` in their .religion/meta.yaml — searchable, never listed on the library shelves (Chad 10-21:
+ *  "Other" — works spanning traditions, related ideas, contrasting beliefs such as atheism and secularism). Pure over the meta. */
+export const hiddenFrom = (religionMeta = {}) => new Set(Object.entries(religionMeta).filter(([, m]) => m && m.hidden === true).map(([n]) => n));
+export function hiddenReligions() {
+  try { return hiddenFrom(loadLibraryAuthority().religionMeta); } catch { return new Set(); }
+}
+
 /**
  * Get metadata for a religion from its .religion/meta.yaml
  *

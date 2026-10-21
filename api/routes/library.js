@@ -21,6 +21,7 @@ import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence 
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { findDocuments, docsForPathSlugs, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
 import { lettersOf } from '../lib/repos/letters-repo.js';
 import { paragraphsAt } from '../lib/paragraphs-repo.js';
@@ -209,6 +210,7 @@ export default async function libraryRoutes(fastify) {
     // Build religion -> collections structure
     const religionMap = new Map();
     for (const row of stats) {
+      if (HIDDEN().has(row.religion)) continue;   // a hidden tradition ("Other") is never listed
       if (!religionMap.has(row.religion)) {
         religionMap.set(row.religion, { name: row.religion, count: 0, collections: [] });
       }
@@ -817,6 +819,7 @@ export default async function libraryRoutes(fastify) {
     const religionCounts = {};
     const collectionCounts = {};
     for (const row of docCounts) {
+      if (HIDDEN().has(row.religion)) continue;   // a hidden tradition ("Other") is never listed
       const religion = row.religion || 'Uncategorized';
       religionCounts[religion] = (religionCounts[religion] || 0) + row.count;
       // Skip metadata folders (.religion, .collection) and null collections
