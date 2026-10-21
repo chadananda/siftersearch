@@ -77,14 +77,14 @@ export async function resumeStageFor(docId, deps = {}) {
 // plan is finished refill() (every 3 min) and planExhaustion() walk EVERY not-done plan book (~600) to learn that none
 // has work — a steady stream of blocking reads in front of search (10-20: 5–8 s 'grounding:resume-stage' spikes). A
 // null answer (finished, or no prose) changes only when the book is re-ingested or re-ground, so it is remembered for
-// GROUNDING_SETTLED_TTL_MS (30 min); work-remaining answers are never cached. Each real probe yields the event loop
+// GROUNDING_SETTLED_TTL_MS (6 h — 30 min equalled the 30-min health probe's interval, so every probe walked cold: 26 s, 10-20 23:49); work-remaining answers are never cached. Each real probe yields the event loop
 // first so a long walk interleaves with requests instead of holding them. Per resume function, so injected fakes stay
 // isolated.
 const _settled = new WeakMap();
 function settledResume(resume) {
   let memo = _settled.get(resume);
   if (!memo) { memo = new Map(); _settled.set(resume, memo); }
-  const ttl = Number(process.env.GROUNDING_SETTLED_TTL_MS || 30 * 60 * 1000);
+  const ttl = Number(process.env.GROUNDING_SETTLED_TTL_MS || 6 * 3600 * 1000);
   return async (id) => {
     const until = memo.get(id);
     if (until && until > Date.now()) return null;
@@ -245,7 +245,14 @@ export function startProcessor() {
 //
 // `exhausted: true` means "there is no work the follower could start" — the plan is finished in every sense
 // that matters, and it is time to switch mode to 'general' (a spend decision, so never automatic).
-export async function planExhaustion({ deps = {} } = {}) {
+// One walk at a time: an overlapping call (the probe's retry, two pollers) shares the walk in progress (10-20 23:49–23:50).
+let _exhaustionInFlight = null;
+export function planExhaustion(opts = {}) {
+  if (opts.deps && Object.keys(opts.deps).length) return planExhaustionWalk(opts);   // injected fakes: never shared
+  if (!_exhaustionInFlight) _exhaustionInFlight = planExhaustionWalk(opts).finally(() => { _exhaustionInFlight = null; });
+  return _exhaustionInFlight;
+}
+async function planExhaustionWalk({ deps = {} } = {}) {
   const { quarantined, unsupportedLang } = await skipSets(deps);
   const qAll = deps.queryAll || queryAll;
   const resume = settledResume(deps.resumeStageFor || resumeStageFor);

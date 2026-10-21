@@ -264,3 +264,21 @@ describe('planExhaustion prose check', () => {
     expect(prose).not.toMatch(/GROUP BY/);
   });
 });
+
+describe('settled memo outlives the health probe interval', () => {
+  it('a finished book is still remembered 31 minutes later (the probe runs every 30 min)', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const real = Date.now; let t = real();
+    Date.now = () => t;
+    try {
+      const probes = [];
+      const resumeStageFor = async (id) => { probes.push(id); return null; };
+      const deps = { list: async () => [], queryAll: async () => [], resumeStageFor,
+        getProgress: async () => ({ phases: [{ books: [{ id: 7, done: false }] }] }) };
+      await planExhaustion({ deps });
+      t += 31 * 60 * 1000;
+      await planExhaustion({ deps });
+      expect(probes).toEqual([7]);
+    } finally { Date.now = real; }
+  });
+});
