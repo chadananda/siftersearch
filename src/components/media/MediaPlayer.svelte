@@ -42,6 +42,8 @@
   const now = () => (clip ? clip.start : 0) + (audio?.currentTime || 0);
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
   const photo = item.thumb?.kind === 'photo';
+  // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
+  const head = item.thumb?.url ? picture(item.thumb.url, 160, 160, { photo }) : { src: null, srcset: null };
   const when = [item.date || item.year, item.place, item.event].filter(Boolean);
 
   // ── highlight + follow ──
@@ -259,7 +261,6 @@
   <header class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start">
     {#if item.thumb?.url}
       <figure class="shrink-0">
-        {@const head = picture(item.thumb.url, 160, 160, { photo })}
         <img src={media.href(head.src)} srcset={head.srcset} width="160" height="160" alt={photo ? item.speaker || '' : ''} class="aspect-square w-28 rounded-xl border border-border-subtle bg-surface-2 object-cover sm:w-40" />
         {#if photo && (item.thumb.credit || item.thumb.artist || item.thumb.licence || item.thumb.source_url)}
           {@const credit = item.thumb.credit || item.thumb.artist}
