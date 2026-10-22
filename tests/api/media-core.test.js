@@ -204,3 +204,26 @@ describe('edits trimmed to the name (pilot, 2nd run)', () => {
     expect(trimEdit('the university', 'the Universal House of Justice')).toEqual({ from: 'university', to: 'Universal House of Justice' });
   });
 });
+
+describe('vocabulary hygiene and the no-added-words rule (10-22: "Nabips Narrative (Vol II)")', async () => {
+  const { cleanTerms, addsWords, buildVocab, guardEdits } = await import('../../api/lib/media/vocab.js');
+  const ws = (t) => t.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
+  it('graph names lose descriptive parentheticals; capitalised ones are aliases; volumes and digits are not names', () => {
+    expect(cleanTerms('Mullá Ḥusayn (marksman of Nayríz)')).toEqual(['Mullá Ḥusayn']);
+    expect(cleanTerms("The Dawn-Breakers (Nabíl's Narrative)")).toEqual(['The Dawn-Breakers', "Nabíl's Narrative"]);
+    expect(cleanTerms('Nabips Narrative (Vol II)')).toEqual(['Nabips Narrative']);
+    expect(cleanTerms('Star of the West vol. 3')).toEqual([]);
+    expect(buildVocab([['William I (Kaiser Wilhelm I)']]).terms.has('William I (Kaiser Wilhelm I)')).toBe(false);
+  });
+  it('a correction never adds words, brackets, digits or volume numbers', () => {
+    expect(addsWords("Nabeel's narrative,", 'Nabips Narrative (Vol II)')).toBe(true);
+    expect(addsWords("Nabeel's narrative", "Nabíl's Narrative of the Early Days")).toBe(true);
+    expect(addsWords('Sogefendik', 'Shoghi Effendi')).toBe(false);
+    expect(addsWords('Abdul Baha', '‘Abdu’l-Bahá')).toBe(false);
+    const vocab = { ...buildVocab([["Nabíl's Narrative"]]) };
+    vocab.terms.add('Nabips Narrative (Vol II)');   // even a junk term that slipped in cannot add words
+    const g = guardEdits(ws("he translated Nabeel's narrative, he wrote"), [{ from: "Nabeel's narrative,", to: 'Nabips Narrative (Vol II)' }], vocab);
+    expect(g.ok).toEqual([]);
+    expect(g.refused[0].why).toMatch(/adds words|sound/);
+  });
+});

@@ -13,7 +13,7 @@ Mullá ‘Alíy-i-Basṭámí|Letters of the Living|Sidratu’l-Muntahá|Hands o
 Tajallíyát|Kalimát-i-Firdawsíyyih|Ishráqát|Lawḥ-i-Ḥikmat|Súriy-i-Haykal|Súriy-i-Mulúk|Lawḥ-i-Aqdas|Súriy-i-Ra’ís|Lawḥ-i-Ra’ís|Lawḥ-i-Ibn-i-Dhi’b|
 Qayyúmu’l-Asmá’|Dalá’il-i-Sab‘ih|Kitáb-i-‘Ahd|Lawḥ-i-Karmil|Tablet of Carmel|Seven Valleys|Four Valleys|Hidden Words|Gleanings|
 Epistle to the Son of the Wolf|Some Answered Questions|The Secret of Divine Civilization|Tablets of the Divine Plan|Will and Testament|
-The Dispensation of Bahá’u’lláh|God Passes By|The Advent of Divine Justice|The Promised Day Is Come|The World Order of Bahá’u’lláh|The Dawn-Breakers|
+The Dispensation of Bahá’u’lláh|God Passes By|The Advent of Divine Justice|The Promised Day Is Come|The World Order of Bahá’u’lláh|The Dawn-Breakers|Nabíl’s Narrative|
 Universal House of Justice|Local Spiritual Assembly|National Spiritual Assembly|Continental Board of Counsellors|Auxiliary Board|Covenant-breaker|
 Covenant-breakers|Most Great Peace|Lesser Peace|Most Great Name|Alláh-u-Abhá|Yá Bahá’u’l-Abhá|Abhá Kingdom|Abhá Beauty|Blessed Beauty|Ancient Beauty|
 Greatest Holy Leaf|Purest Branch|Most Great Branch|Qá’im|Imám Ḥusayn|Imám ‘Alí|Muḥammad|Qur’án|Islám|Zoroaster|Ḥájí|Mírzá|Siyyid|Mullá|Shaykh|Khánum|Áqá|
@@ -31,10 +31,27 @@ Tákur|Ádhirbáyján|Bárfurúsh|Bushihr|Edirne|Gallipoli|Haifa|Bahá|Abhá|Tab
 export const keyOf = (s) => fold(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 const hasMarks = (s) => /[^\x00-\x7f]|['’‘-]/.test(String(s));
 
+/**
+ * A graph name as vocabulary entries (10-22: "Nabips Narrative (Vol II)" from the graph replaced a correctly heard
+ * "Nabeel's narrative"): a descriptive parenthetical is dropped ("Mullá Ḥusayn (marksman of Nayríz)" → "Mullá Ḥusayn"), a
+ * capitalised one is an alias of its own ("The Dawn-Breakers (Nabíl's Narrative)" → both); a name with digits, a volume,
+ * brackets left over or more than six words is not a spoken name. → [terms]
+ */
+export function cleanTerms(raw) {
+  const t = String(raw || '').replace(/\s+/g, ' ').trim();
+  const out = [];
+  const alias = [...t.matchAll(/\(([^)]*)\)/g)].map((m) => m[1].trim()).filter((x) => /^[A-Z‘’ʻ'ÁÍÚḤṢṬẒ]/.test(x));
+  for (const c of [t.replace(/\s*\([^)]*\)\s*/g, ' ').trim(), ...alias]) {
+    if (!c || /[\d()[\]{}]|\b(?:vol|volume|part|no)\.?\b/i.test(c) || c.split(/\s+/).length > 6 || c.length < 3) continue;
+    out.push(c);
+  }
+  return out;
+}
+
 /** A vocabulary: { terms: Set, byKey: Map(key → term), keys: [{ key, term }] }. Later entries never replace earlier ones. */
 export function buildVocab(lists = [CORE_TERMS]) {
   const byKey = new Map(), terms = new Set();
-  for (const t of lists.flat()) {
+  for (const t of lists.flat().flatMap(cleanTerms)) {
     const term = String(t || '').trim(); const k = keyOf(term);
     if (k.length < 3 || byKey.has(k)) continue;
     byKey.set(k, term); terms.add(term);
@@ -128,6 +145,18 @@ go goes wrote writes write explained explains spoke speaks speak asked asks answ
 think thought see saw seen made make makes gave give gives took take takes`.split(/\s+/));
 
 /** Neither edge of a multi-word edit may be a common English word the term itself lacks ("the Báb" may take "the"). Pure. */
+/**
+ * The FAITHFULNESS rule (Chad 10-22: "the cleanup must never add content"): a correction may respell what was said, never
+ * add to it — no more words than were heard (one garbled word may become a two-word name: "Sogefendik" → "Shoghi
+ * Effendi"), and no brackets, digits or volume numbers that were not in the heard words.
+ */
+export function addsWords(from, to) {
+  const fw = String(from || '').trim().split(/\s+/).filter(Boolean), tw = String(to || '').trim().split(/\s+/).filter(Boolean);
+  if (tw.length > fw.length + (fw.length === 1 ? 1 : 0)) return true;
+  const novel = (re) => re.test(String(to)) && !re.test(String(from));
+  return novel(/[()[\]{}]/) || novel(/\d/) || novel(/\b(?:vol|volume)\b/i);
+}
+
 export function edgesAlike(from, to) {
   const ws = String(from).split(/\s+/).map((w) => core(w).toLowerCase()).filter(Boolean);
   if (ws.length < 2) return true;
@@ -186,6 +215,7 @@ export function guardEdits(words, proposed, vocab) {
     if (from.split(/\s+/).length > 4) { refused.push({ from, to, why: 'more than four words' }); continue; }
     if (!soundsAlike(from, to)) { refused.push({ from, to, why: 'does not sound alike' }); continue; }
     if (!edgesAlike(from, to)) { refused.push({ from, to, why: 'would drop or change a word' }); continue; }
+    if (addsWords(from, to)) { refused.push({ from, to, why: 'adds words the speaker did not say' }); continue; }
     const i0 = findSpan(words, from);
     if (i0 < 0) { refused.push({ from, to, why: 'not in the text' }); continue; }
     const i1 = i0 + from.split(/\s+/).length;
