@@ -49,6 +49,37 @@
   --highlight-playing: light-dark(rgba(254, 240, 138, 0.55), rgba(253, 224, 71, 0.22));
   --highlight-range: light-dark(rgba(14, 165, 233, 0.08), rgba(56, 189, 248, 0.10));
 
+  /* The Listening Room (/media listing): a 1940s broadcast set — cream paper, walnut, brass, an amber dial in light mode;
+     valve-amp warmth (deep walnut, glowing amber) in dark mode. Era tints colour generated labels and waveforms by decade. */
+  --radio-room: light-dark(#f6efe1, #15100b);
+  --radio-paper: light-dark(#fbf6ea, #1e1711);
+  --radio-panel: light-dark(#efe3c8, #251b12);
+  --radio-walnut: light-dark(#5a3a22, #3a2618);
+  --radio-walnut-deep: light-dark(#3b2414, #120c07);
+  --radio-brass: light-dark(#9a7330, #d6ad5c);
+  --radio-brass-soft: light-dark(rgba(154, 115, 48, 0.18), rgba(214, 173, 92, 0.16));
+  --radio-amber: light-dark(#b45309, #ffb347);
+  --radio-glow: light-dark(rgba(245, 166, 35, 0.35), rgba(255, 170, 60, 0.30));
+  --radio-dial: light-dark(#f3dfa8, #2a1c0e);
+  --radio-dial-ink: light-dark(#3b2414, #ffd89a);
+  --radio-ink: light-dark(#2a1a0e, #f4e6cf);
+  --radio-ink-soft: light-dark(#6b4f36, #c9b394);
+  --radio-needle: light-dark(#b42318, #ff5a3c);
+  --radio-groove: light-dark(#1b1410, #0a0705);
+  --radio-groove-sheen: light-dark(rgba(255, 255, 255, 0.10), rgba(255, 220, 160, 0.08));
+  --radio-on-dark: #f8ecd4;
+  --radio-line: light-dark(rgba(59, 36, 20, 0.16), rgba(244, 230, 207, 0.12));
+  --era-1940: light-dark(#8a5a2b, #c98d4e);
+  --era-1950: light-dark(#a0662a, #d9984a);
+  --era-1960: light-dark(#b0742c, #e3a957);
+  --era-1970: light-dark(#9c6b1f, #d8b05a);
+  --era-1980: light-dark(#7d6a2a, #b9b061);
+  --era-1990: light-dark(#4f6b4a, #8fb08a);
+  --era-2000: light-dark(#356a73, #74b3bd);
+  --era-2010: light-dark(#34587e, #7aa6d4);
+  --era-2020: light-dark(#3f4f86, #93a3e0);
+  --era-undated: light-dark(#7a6a55, #b8a68a);
+
   /* Semantic colors */
   --success: light-dark(#16a34a, #22c55e);
   --warning: light-dark(#d97706, #fbbf24);
@@ -152,6 +183,28 @@
   /* Highlights (media player) */
   --color-highlight-playing: var(--highlight-playing);
   --color-highlight-range: var(--highlight-range);
+
+  /* The Listening Room (/media) */
+  --color-radio-room: var(--radio-room);
+  --color-radio-paper: var(--radio-paper);
+  --color-radio-panel: var(--radio-panel);
+  --color-radio-walnut: var(--radio-walnut);
+  --color-radio-walnut-deep: var(--radio-walnut-deep);
+  --color-radio-brass: var(--radio-brass);
+  --color-radio-brass-soft: var(--radio-brass-soft);
+  --color-radio-amber: var(--radio-amber);
+  --color-radio-glow: var(--radio-glow);
+  --color-radio-dial: var(--radio-dial);
+  --color-radio-dial-ink: var(--radio-dial-ink);
+  --color-radio-ink: var(--radio-ink);
+  --color-radio-ink-soft: var(--radio-ink-soft);
+  --color-radio-needle: var(--radio-needle);
+  --color-radio-groove: var(--radio-groove);
+  --color-radio-on-dark: var(--radio-on-dark);
+  --color-radio-line: var(--radio-line);
+  --font-dial: 'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif;
+  --font-marquee: 'Gloock', 'Libre Caslon Text', Georgia, serif;
+  --font-quote: 'Libre Caslon Text', Georgia, serif;
 
   /* Interactive */
   --color-hover: var(--hover-overlay);

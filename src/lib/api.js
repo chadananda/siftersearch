@@ -1560,6 +1560,7 @@ async function mediaGet(path) {
 export const media = {
   href: (p) => (p && p.startsWith('/api/') ? `${API_URL}${p}` : p),
   list: (query) => mediaGet(`/api/media?${query}`),
+  index: () => mediaGet('/api/media/index'),   // the Listening Room's whole listing index (compact rows + speakers)
   get: (slug) => mediaGet(`/api/media/${encodeURIComponent(slug)}`),
   // 'clips' items: a signed clip for start..end (end ≤ start + clip_cap) → { url, start, end }
   // fmt 'm4a' where the browser cannot play Ogg Opus (older Safari)

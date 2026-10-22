@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-22T14:05:26.141Z",
+  "generated": "2026-10-22T14:09:01.774Z",
   "entries": [
+    {
+      "hash": "b216c682",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "Deploy 2.187.730 (transcript name/work links, Contents panel from topic subheaders)",
+      "scope": null
+    },
     {
       "hash": "b6cb177e",
       "date": "2026-10-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Citation shelf styles ship with the page (a plain CSS imported by SourceHunt) — the spines rendered as a wall of links",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "c2740d32",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Results stream in one beat at a time — source → highlight → tablet → highlight → citations, spines one by one",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "b216c682",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "Deploy 2.187.730 (transcript name/work links, Contents panel from topic subheaders)",
+        "scope": null
+      },
       {
         "hash": "b6cb177e",
         "date": "2026-10-22",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-12",
         "type": "Fixed",
         "description": "Citation shelf styles ship with the page (a plain CSS imported by SourceHunt) — the spines rendered as a wall of links",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "c2740d32",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Results stream in one beat at a time — source → highlight → tablet → highlight → citations, spines one by one",
         "scope": "sourcehunt"
       }
     ]

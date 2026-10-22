@@ -1,35 +1,96 @@
 ---
-// /media — the talks library: filtered listing + search across every transcript. SSR fetches the first page (and facets)
-// at request time so the page paints full content; the MediaBrowser island then owns filtering (URL params mirror it).
+// /media — THE LISTENING ROOM (planning/media-listing-design.md). SSR fetches the listing index (GET /api/media/index; falls
+// back to the paged listing + speakers when the index is not there) and renders the first view complete: hero highlight,
+// ticker, the first jukebox cards (same seeded plan the client uses), eras. The ListeningRoom island then filters the
+// whole index as you type. ?q= ?p= ?era= ?speaker= are honoured on the server too, so shared links render filtered.
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
-import MediaBrowser from '../../components/media/MediaBrowser.svelte';
-import { filtersFromParams, apiQuery } from '../../lib/media.js';
+import ListeningRoom from '../../components/media/listening/ListeningRoom.svelte';
+import { shapeRow, shapeSpeakers, fold } from '../../../api/lib/media/listing-index.js';
+import { portraitSquare, daySeed, planLayout, pickHighlights, eras, topTopics, tickerLines } from '../../lib/media-listing.js';
 
 export const prerender = false;
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
-const filters = filtersFromParams(Astro.url.searchParams);
+const get = async (path) => {
+  const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`${path} ${res.status}`);
+  return res.json();
+};
 
-let initialData = null;
-let fetchError = null;
+let data = null, fetchError = null;
 try {
-  const res = await fetch(`${API_BASE}/api/media?${apiQuery(filters)}`, { signal: AbortSignal.timeout(15000) });
-  if (res.ok) initialData = await res.json();
-  else fetchError = `API returned ${res.status}`;
+  data = await get('/api/media/index');
 } catch (err) {
-  fetchError = err instanceof Error ? err.message : String(err);
-  console.error('media index fetch failed', fetchError);
+  try {   // the index endpoint not deployed yet / failing: the paged listing (no quotes, topics or waves) still makes a page
+    const [list, spk] = await Promise.all([get('/api/media?limit=200&facets=0&sort=recent'), get('/api/speakers')]);
+    const photo = new Map(spk.speakers.map((s) => [s.key, s.photo]));
+    const items = list.items.map((r) => shapeRow(r));
+    data = { items, speakers: shapeSpeakers(items, spk.speakers.map((s) => ({ key: s.key, name: s.name })), (s) => photo.get(s.key)), pending: 0 };
+  } catch (e2) {
+    fetchError = e2 instanceof Error ? e2.message : String(e2);
+    console.error('media index fetch failed', fetchError);
+  }
 }
 
+const items = data?.items || [];
+const speakers = data?.speakers || [];
+const byKey = new Map(speakers.map((s) => [s.k, s]));
+const seed = daySeed();
+const params = Astro.url.searchParams;
+let speakerParam = params.get('speaker') || '';
+if (speakerParam && !byKey.has(speakerParam)) speakerParam = speakers.find((s) => fold(s.n) === fold(speakerParam))?.k || fold(speakerParam).replace(/ /g, '-');
+const initialState = { q: params.get('q') || '', preset: params.get('p') || '', era: params.get('era') || '', speaker: speakerParam };
+
+const SSR_MAX = 160;
+const complete = items.length <= SSR_MAX && !data?.pending;
+const plan = planLayout(items, byKey, { seed });
+const cards = plan.slice(0, 30);
+const years = items.map((i) => i.y).filter(Boolean);
+const stats = {
+  total: items.length, hours: data?.hours ?? Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, voices: speakers.length,
+  span: years.length ? `${Math.min(...years)}–${Math.max(...years)}` : '',
+};
+const initial = {
+  seed, complete, stats, speakers,
+  items: complete ? items : items.slice(0, SSR_MAX),
+  cards: complete ? null : cards,
+  highlights: pickHighlights(items, byKey, { n: 8, seed }),
+  eras: eras(items), topics: topTopics(items), ticker: tickerLines(items, speakers),
+};
+
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=3600');
-const hours = initialData?.facets?.hours;
-const description = `Talks and recorded classes with aligned, searchable transcripts${hours ? ` — ${hours} hours` : ''}. Click any word to hear it; quotations are linked to their sources.`;
+const description = `The Listening Room: ${stats.total} recorded talks${stats.hours ? `, ${stats.hours} hours` : ''} from ${stats.voices} voices — Hands of the Cause, members of the Universal House of Justice, scholars and pilgrims — with word-aligned, searchable transcripts and every quotation linked to its source.`;
+const firstPortrait = initial.highlights[0] && byKey.get(initial.highlights[0].k)?.p;
+const heroPic = firstPortrait ? portraitSquare(firstPortrait, 112) : null;
+const listLd = {
+  '@context': 'https://schema.org', '@type': 'ItemList', name: 'The Listening Room — SifterSearch Media', numberOfItems: items.length,
+  itemListElement: items.slice(0, 50).map((it, i) => ({ '@type': 'ListItem', position: i + 1, url: `https://siftersearch.com/media/${it.s}`,
+    item: { '@type': 'AudioObject', name: it.t, url: `https://siftersearch.com/media/${it.s}`, ...(it.sp ? { author: { '@type': 'Person', name: it.sp } } : {}),
+      ...(it.y ? { dateCreated: String(it.y) } : {}), ...(it.d ? { duration: `PT${Math.floor(it.d / 60)}M${it.d % 60}S` } : {}), inLanguage: it.l } })),
+};
 ---
 
-<Layout title="Media — talks with searchable transcripts — SifterSearch" description={description}>
+<Layout title="The Listening Room — talks with searchable transcripts — SifterSearch" {description}>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Gloock&display=swap" rel="stylesheet" />
+    {heroPic && <link rel="preload" as="image" href={heroPic.src} imagesrcset={heroPic.srcset} />}
+    <script type="application/ld+json" set:html={JSON.stringify(listLd)} />
+  </Fragment>
   <NavBar client:idle currentPage="media" />
-  <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-    <MediaBrowser client:load {initialData} initialFilters={filters} {fetchError} />
+  <main class="listening-room bg-radio-room text-radio-ink">
+    <div class="mx-auto w-full max-w-7xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
+      {fetchError && !items.length ? (
+        <p class="my-16 rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">The Listening Room could not reach the library just now ({fetchError}). Please try again in a moment.</p>
+      ) : (
+        <ListeningRoom client:load {initial} {initialState} />
+      )}
+    </div>
   </main>
 </Layout>
+
+<style is:global>
+  .listening-room { min-height: 100vh; overflow-x: clip;
+    background-image: radial-gradient(1200px 500px at 85% -10%, var(--radio-glow), transparent 60%), radial-gradient(900px 600px at -10% 30%, var(--radio-brass-soft), transparent 60%); }
+</style>
