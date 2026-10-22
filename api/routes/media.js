@@ -82,6 +82,9 @@ async function mediaIndex(budget) {
   return built;
 }
 
+/** A moment's canonical page (the design agent's /media/<slug>/m/<key>; /m/<key> and ?m=<key> redirect there). */
+export const momentUrl = (slug, key) => `/media/${encodeURIComponent(slug)}/m/${encodeURIComponent(key)}`;
+
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
 
 export default async function mediaRoutes(fastify) {
@@ -135,7 +138,7 @@ export default async function mediaRoutes(fastify) {
     const m = await momentByKey(req.params.key);
     if (!m) return reply.code(404).send({ error: 'NotFound' });
     pub(reply, 300);
-    return { ...m, url: `/media/${m.slug}?m=${m.key}`, range: `?t=${(m.t0_ms / 1000).toFixed(1)}-${(m.t1_ms / 1000).toFixed(1)}` };
+    return { ...m, url: momentUrl(m.slug, m.key), range: `?t=${(m.t0_ms / 1000).toFixed(1)}-${(m.t1_ms / 1000).toFixed(1)}` };
   });
   // its QUOTE CARD (og:image): 1200×630 JPEG, rendered once per process and edge-cached for a week
   fastify.get('/moments/:key/card.jpg', async (req, reply) => {
@@ -197,7 +200,7 @@ export default async function mediaRoutes(fastify) {
       // audience (1 open … 5 internal) with its sections and introductory ranges; moments (verbatim, verified; no internal note)
       audience: meta.audience ? { score: meta.audience.score, label: meta.audience.label, rationale: meta.audience.rationale, tradition: meta.audience.tradition,
         sections: (meta.audience.sections || []).map(({ k, t0, t1, score, title, slug, intro }) => ({ k, t0, t1, score, title, slug, intro })), intro: meta.audience.intro || [] } : null,
-      moments: (meta.moments || []).map(({ key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, rank }) => ({ key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, rank, url: `/media/${it.slug}?m=${key}` })),
+      moments: (meta.moments || []).map(({ key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, rank }) => ({ key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, rank, url: momentUrl(it.slug, key) })),
       corrections: (tr.corrections || []).length, cleanup: tr.cleanup_stats || null, version: v,
       // the quality report, compact: overall grade, issues, and each dimension's grade + its headline value
       quality: meta.quality ? { overall: meta.quality.overall, primary_issue: meta.quality.primary_issue, secondary_issues: meta.quality.secondary_issues,

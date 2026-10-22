@@ -14,6 +14,9 @@ export const prerender = false;
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
 const { slug } = Astro.params;
+// the old moment link form /media/<slug>?m=<key> → the canonical moment page
+const mKey = Astro.url.searchParams.get('m');
+if (slug && mKey && /^[\w-]{4,16}$/.test(mKey)) return Astro.redirect(`/media/${encodeURIComponent(slug)}/m/${encodeURIComponent(mKey)}`, 301);
 
 let item = null;
 let fetchError = null;

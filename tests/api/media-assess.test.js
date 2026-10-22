@@ -41,3 +41,15 @@ describe('moments', () => {
     expect(momentKey('s', 'Prayer is  conversation')).toBe(momentKey('s', 'prayer is conversation'));
   });
 });
+
+describe('moment links', () => {
+  it('the API emits the canonical moment page; the item page redirects the old ?m= form', async () => {
+    const { momentUrl } = await import('../../api/routes/media.js');
+    expect(momentUrl('sears-x', 'Ab_c-12')).toBe('/media/sears-x/m/Ab_c-12');
+    const { readFileSync } = await import('fs');
+    const route = readFileSync(new URL('../../api/routes/media.js', import.meta.url), 'utf8');
+    expect(route).not.toMatch(/\?m=\$\{/);
+    const page = readFileSync(new URL('../../src/pages/media/[slug].astro', import.meta.url), 'utf8');
+    expect(page).toMatch(/searchParams\.get\('m'\)[\s\S]{0,200}Astro\.redirect\(`\/media\/\$\{encodeURIComponent\(slug\)\}\/m\//);
+  });
+});
