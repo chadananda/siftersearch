@@ -48,6 +48,7 @@ export async function tool(sub, input, opts = {}, { python = PY(), threads = def
 // untouched). Through a forced-command key (scripts/media/boss-asr-gate.sh): audio on stdin, JSON on stdout. ──
 export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
 export const asrThreads = () => Number(process.env.MEDIA_ASR_THREADS) || 24;
+let installedOn = null;
 
 /** The remote command line for the gate (one token per option; the prompt travels base64). Pure. */
 export function gateCommand(sub, ext, opts = {}) {
@@ -69,6 +70,8 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
   const { readFile, writeFile, unlink } = await import('fs/promises');
   const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
   try {
+    // the ASR host runs THIS checkout's media_tool.py: installed through the gate once per process (and after a deploy)
+    if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, 'install-tool'], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
     await run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000 });
     const cmd = gateCommand(sub, 'flac', { ...opts, threads });
     const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs, input: await readFile(flac) });

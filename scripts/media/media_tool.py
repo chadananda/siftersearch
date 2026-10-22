@@ -279,7 +279,7 @@ def main():
         s.add_argument('--diarize', action='store_true')
         s.add_argument('--speakers', type=int, default=-1)
         s.add_argument('--models', default=os.path.expanduser('~/sifter/venvs/media-models'))
-        s.add_argument('--cluster', type=float, default=0.8)
+        s.add_argument('--cluster', type=float, default=0.7)   # wespeaker: 0.6 → 12 voices on a 92-min Q&A (3dspeaker zh at 0.5: 131)
         s.add_argument('--emb', default='')
     a = p.parse_args()
     {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize}[a.cmd](a)

@@ -172,7 +172,9 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'transcribe') {
       const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.asr_input);
       const langs = v?.languages || [];
-      const mixed = new Set(langs.filter((l) => ['en', 'fa', 'ar'].includes(l))).size > 1 && langs.filter((l) => l === 'en').length < langs.length;
+      // an INTERPRETED talk: the probe excerpts heard more than one language (Furútan in Persian + English; Chad Jones in
+      // English + Romanian) → per-speaker-block language (media_tool.py --lang multi)
+      const mixed = new Set(langs.filter(Boolean)).size > 1;
       const lang = opts.lang || (mixed ? 'multi' : (/^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : (langs[0] || '')));
       const prompt = `${meta.title}${meta.speaker ? ` — a talk by ${meta.speaker}` : ''}. ${promptTerms({ title: meta.title, speaker: meta.speaker }, vocab).join(', ')}.`;
       const th = await threads();
