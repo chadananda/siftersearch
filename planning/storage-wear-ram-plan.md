@@ -435,6 +435,33 @@ qram-flush.timer`. Check first: `systemd-analyze verify` (on 10-21 its only comp
 - `upssched-cmd`: `powerdown) systemctl start sifter-powerdown.target; /sbin/upsmon -c fsd ;;`
 - Also email Chad on `ONBATT` (the spend-alerts mailer already exists).
 
+### 6.6 Phase 0: interim RAM disk until the MP44 (Chad 10-21)
+
+Chad: indexing must not stop or slow during the week before the MP44 arrives. With the `phrases` optimizer frozen (R3), new
+phrase points would pile up unindexed on `/fast` (brute-force scanned, and still EVO writes). Phase 0 is R14 sized for now:
+
+- **RAM disk:** `srv-qram.mount`, tmpfs **44 G** (`noswap`) at `/srv/qram`. ARC max lowered 128 → **48 GiB** first (R13 early).
+- **`qdrant-hot`** (system unit, ports 6335/6336, `Before=pm2-chad.service`) with storage on the tmpfs. Collection
+  **`phrases_hot`**: same metric, binary quantisation and payload indexes as `phrases`, but `datatype: float16` (lossless:
+  `vectors.db` holds f16; half the RAM). hype/concepts stay on `/fast`: their optimizers are not frozen and they grow by
+  tens of thousands of points per run.
+- **Indexer** (`QDRANT_HOT_URL` in `.env-public`): phrase-index sends NEW points to `phrases_hot` and marks them
+  `upserted = 2`; stale deletes go to both. It stops cleanly (and mails) if the RAM disk has < 6 GB free. No build staging or
+  scratch dirs exist in the indexer (it streams from `vectors.db`), so nothing else moves.
+- **Search** (C3, `api/lib/search/qdrant-layers.js`): phrase queries go to main + hot in parallel and merge (best score,
+  one per point id, hot wins); hot down or slow = main only. Writes to `phrases` (outbox deletes, stamp-voices,
+  stamp-site) are mirrored to `phrases_hot`; coverage counts both.
+- **Flush** (C4, `scripts/ops/qram.mjs`): `qram-flush.timer` every 6 h + qdrant-hot's `ExecStop`; snapshots of changed
+  collections to **`/crutch/qram-snapshots`** (sequential, rare: fine on the A400 for a week); 2 generations kept; snapshot
+  temp files on `/crutch` too, never in the tmpfs.
+- **What a crash or power loss loses: nothing paid, at most 6 h of upserts.** The embeddings are in `vectors.db` on disk.
+  At boot qdrant-hot restores the newest snapshot; the indexer service queues `phrase-hot-reconcile` at every start, which
+  checks every `upserted = 2` unit against `phrases_hot` and re-sends the missing ones from stored vectors (no Gemini spend).
+  Tested: `tests/api/qdrant-hot.test.js` (indexer against a fake Qdrant) and on tower (§6.6 log in `tmp/wear/changes.md`).
+- **When the MP44 arrives (R10–R12):** build `phrases_f16` on `/faster` from `vectors.db` (it contains every unit, main and
+  hot), swap the alias, then unset `QDRANT_HOT_URL`, drop `phrases_hot`, and mark `upserted = 2` → 1. R14 then re-uses the
+  same units at 64 G with snapshots on `/faster`.
+
 ---
 
 ## 7. Write-amplification fixes
@@ -686,7 +713,7 @@ decision from him, not just a go-ahead.
 | R11 | Move the vector stores `crutch` → `faster/vectors` (§8.3 step 1) and add them to db-ship | S (ops) **A** | symlinks back | indexer off the A400; faster builds |
 | R12 | Build `phrases_f16` in bulk mode on `/faster`; battery; alias swap (§8.3 step 2) | C **A** | alias back | `phrases` 388 → ~230 GB; EVO freed of Qdrant |
 | R13 | ARC cap 128 → 40 GiB (`zfs_arc_max`), min 32 GiB, after R12 (Qdrant no longer on ZFS) | S | echo the old value | frees RAM for the RAM disk |
-| R14 | RAM disk + `qdrant-hot` + `qram-flush` timer (phase 1: 6 h) + search layer URLs (C3, C4) | C + S **A** | layers back to main; stop the unit | hot layers in RAM; build staging |
+| R14 | RAM disk + `qdrant-hot` + `qram-flush` timer (phase 1: 6 h) + search layer URLs (C3, C4). **Phase 0 (44 G, `phrases_hot`, snapshots on /crutch) live 10-21, §6.6** | C + S **A** | layers back to main; stop the unit | hot layers in RAM; build staging |
 | R15 | Remove non-SifterSearch services (§9) | S **A** | reinstall or enable | RAM and root-SSD writes |
 | R16 | UPS + NUT + `sifter-powerdown.target`; flush interval → 24 h (phase 2) | H + S **A** | disable upssched | power cuts lose nothing |
 | R17 | `system-checks`: alarm on SSD TB/day above budget (C5) | C | revert | catches regressions within a day |

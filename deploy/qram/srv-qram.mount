@@ -1,10 +1,10 @@
-# RAM disk for qdrant-hot (storage plan §6.1, R14). Install: cp to /etc/systemd/system/, daemon-reload, enable.
+# RAM disk for qdrant-hot (storage plan §6.1). PHASE 0 (10-21, until the MP44): 44G. R14 (after R13 ARC cap): 64G.
 [Unit]
 Description=SifterSearch RAM disk (tmpfs, 64G, never swapped)
 [Mount]
 What=tmpfs
 Where=/srv/qram
 Type=tmpfs
-Options=size=64G,noswap,mode=0750,uid=1000,gid=1000
+Options=size=44G,noswap,mode=0750,uid=1000,gid=1000
 [Install]
 WantedBy=local-fs.target

@@ -1,24 +1,29 @@
-# Qdrant HOT: rebuildable collections on the RAM disk (storage plan §6, R14). Restores missing collections from the newest
-# complete snapshot at start; flushes changed collections BEFORE SIGTERM at stop. Snapshots go straight to the NVMe.
+# Qdrant HOT: rebuildable collections on the RAM disk (storage plan §6, §6.6). Restores missing collections from the newest
+# complete snapshot at start; flushes changed collections BEFORE SIGTERM at stop. Starts before pm2 (indexer, search).
+# PHASE 0 (until the MP44): snapshots on /crutch/qram-snapshots. R14: /faster/qram-snapshots (sed the three paths).
 [Unit]
 Description=Qdrant HOT (RAM disk; rebuildable collections)
 Requires=srv-qram.mount
-After=srv-qram.mount network.target
-RequiresMountsFor=/faster/qram-snapshots
+After=srv-qram.mount network.target zfs-mount.service
+Before=pm2-chad.service
+RequiresMountsFor=/crutch/qram-snapshots
 [Service]
 User=chad
 Group=chad
 EnvironmentFile=/home/chad/qdrant-next/env
 Environment=QDRANT__STORAGE__STORAGE_PATH=/srv/qram/storage
-Environment=QDRANT__STORAGE__SNAPSHOTS_PATH=/faster/qram-snapshots
+Environment=QDRANT__STORAGE__SNAPSHOTS_PATH=/crutch/qram-snapshots
+# snapshot archives are built here, not in the RAM disk (a 20 GB collection would need 20 GB more tmpfs while snapshotting)
+Environment=QDRANT__STORAGE__TEMP_PATH=/crutch/qram-snapshots/.tmp
+Environment=QDRANT__STORAGE__PERFORMANCE__MAX_OPTIMIZATION_THREADS=8
 Environment=QDRANT__SERVICE__HOST=127.0.0.1
 Environment=QDRANT__SERVICE__HTTP_PORT=6335
 Environment=QDRANT__SERVICE__GRPC_PORT=6336
 Environment=QDRANT__TELEMETRY_DISABLED=true
 Environment=QRAM_URL=http://127.0.0.1:6335
 Environment=QRAM_STORAGE=/srv/qram/storage
-Environment=QRAM_SNAPSHOTS=/faster/qram-snapshots
-ExecStartPre=/bin/mkdir -p /srv/qram/storage
+Environment=QRAM_SNAPSHOTS=/crutch/qram-snapshots
+ExecStartPre=/bin/mkdir -p /srv/qram/storage /crutch/qram-snapshots/.tmp
 # `$$` keeps systemd from expanding the shell's command substitution
 ExecStart=/bin/sh -c 'exec /home/chad/qdrant-next/qdrant $$(/usr/local/bin/qram-restore --args)'
 ExecStop=/usr/local/bin/qram-flush --all-dirty --wait

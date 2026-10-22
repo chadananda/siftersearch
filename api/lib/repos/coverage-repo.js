@@ -18,16 +18,23 @@ export const REFS_EXPECTED = new Set([21307]);   // The Kitáb-i-Aqdas: ¶1–19
 export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'refs', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 
-/** Points in a Qdrant collection for one document (exact count on the doc_id payload index). null when unreachable. */
+/** Points in a Qdrant collection for one document (exact count on the doc_id payload index). null when unreachable.
+ *  `phrases` also counts its phase-0 hot copy (QDRANT_HOT_URL; storage plan §6.6): absent there = 0, unreachable = null. */
 export async function qdrantCount(collection, docId, { fetchImpl = fetch } = {}) {
-  try {
-    const r = await fetchImpl(`${QD()}/collections/${collection}/points/count`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
-      body: JSON.stringify({ filter: { must: [{ key: 'doc_id', match: { value: Number(docId) } }] }, exact: true }), signal: AbortSignal.timeout(10000),
-    });
-    if (!r.ok) return null;
-    return (await r.json())?.result?.count ?? null;
-  } catch { return null; }
+  const one = async (base, coll) => {
+    try {
+      const r = await fetchImpl(`${base}/collections/${coll}/points/count`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
+        body: JSON.stringify({ filter: { must: [{ key: 'doc_id', match: { value: Number(docId) } }] }, exact: true }), signal: AbortSignal.timeout(10000),
+      });
+      if (r.status === 404 && base !== QD()) return 0;
+      if (!r.ok) return null;
+      return (await r.json())?.result?.count ?? null;
+    } catch { return null; }
+  };
+  const main = await one(QD(), collection);
+  const hot = collection === 'phrases' && process.env.QDRANT_HOT_URL ? await one(process.env.QDRANT_HOT_URL, process.env.QDRANT_HOT_PHRASES || 'phrases_hot') : 0;
+  return main == null || hot == null ? null : main + hot;
 }
 
 /** Every layer's numbers for one document → [{ layer, total, generated, current, indexed, version }]. */

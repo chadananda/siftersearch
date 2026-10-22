@@ -10,12 +10,23 @@ export function indexerArgs({ docs = null, scope = null, maxUsd, budgetKey = 'op
   if (field && !FIELD_TARGET[field]) throw new Error(`phrase-index: unknown field '${field}' (hype | concepts)`);
   const [store, collection] = FIELD_TARGET[field] || [];
   return ['scripts/phrase-index/indexer.mjs', ...(docs?.length ? ['--docs', docs.join(',')] : scope ? ['--scope', scope] : []),
-    ...(field ? ['--field', field, '--store', store, '--collection', collection] : []),
+    ...(field ? ['--field', field, '--store', store, '--collection', collection] : hotArgs()),
     '--embed', '--qdrant', '--max-usd', String(maxUsd), '--budget-key', budgetKey];
 }
 
-export function phraseIndexJob(params = {}) {
-  const args = indexerArgs(params);
+/** Phase 0 (storage plan §6.6): with QDRANT_HOT_URL set, NEW phrase points go to the RAM-disk Qdrant, not `phrases` on /fast. */
+export const hotArgs = (env = process.env) => (env.QDRANT_HOT_URL ? ['--hot-url', env.QDRANT_HOT_URL, '--hot-collection', env.QDRANT_HOT_PHRASES || 'phrases_hot'] : []);
+
+/** After a qdrant-hot restart or crash: re-send every phrase unit the RAM disk lost, from stored vectors (no spend). */
+export const reconcileArgs = (env = process.env) => {
+  if (!env.QDRANT_HOT_URL) throw new Error('phrase-hot-reconcile: QDRANT_HOT_URL is not set');
+  return ['scripts/phrase-index/indexer.mjs', '--qdrant', '--reconcile-hot', ...hotArgs(env)];
+};
+
+export const phraseHotReconcileJob = () => phraseIndexJob({}, reconcileArgs());
+
+export function phraseIndexJob(params = {}, prebuilt = null) {
+  const args = prebuilt || indexerArgs(params);
   return new Promise((resolve, reject) => {
     const child = spawn('nice', ['-n', '10', process.execPath, ...args], { cwd: process.cwd(), env: process.env });
     let last = null, tail = '', logged = 0;

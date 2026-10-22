@@ -10,7 +10,7 @@ User=chad
 EnvironmentFile=/home/chad/qdrant-next/env
 Environment=QRAM_URL=http://127.0.0.1:6335
 Environment=QRAM_STORAGE=/srv/qram/storage
-Environment=QRAM_SNAPSHOTS=/faster/qram-snapshots
+Environment=QRAM_SNAPSHOTS=/crutch/qram-snapshots
 Nice=10
 ExecStart=/usr/local/bin/qram-flush --all-dirty --wait
 TimeoutStartSec=900

@@ -65,5 +65,12 @@ async function keywordLoop() {
   }
 }
 
+// Phase 0 hot layer (storage plan §6.6): after any restart — of this service, of qdrant-hot, or of tower — re-send whatever
+// phrase points the RAM disk lost since its last snapshot. Cheap when nothing is missing (id lookups); the queue dedupes it.
+if (process.env.QDRANT_HOT_URL) {
+  await (await import('../lib/repos/ops-report-repo.js')).enqueue('phrase-hot-reconcile', null, 'indexer-start')
+    .catch((err) => logger.warn({ err: err.message }, 'phrase-hot-reconcile: enqueue failed'));
+}
+
 await runService({ name: process.env.name || 'siftersearch-indexer', registry: INDEX_REPORTS, lanes: INDEX_LANES, laneWorkers: LANE_WORKERS,
   loops: [rollingCoverage, keywordLoop] });

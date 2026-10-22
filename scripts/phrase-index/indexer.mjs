@@ -23,7 +23,7 @@
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
-import { mkdirSync } from 'fs';
+import { mkdirSync, statfsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { unitsOf, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
@@ -50,6 +50,11 @@ const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concur
 const CHUNK = +arg('chunk', 20000);                       // paragraphs per embed→upsert cycle
 const MAX_USD = +arg('max-usd', 0), BUDGET = arg('budget-key', 'library-build'), PRICE = 0.20;   // $ per 1M tokens (online)
 const QD = arg('qdrant-url', 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
+// PHASE 0 HOT LAYER (planning/storage-wear-ram-plan.md §6.6): --hot-url sends NEW points to --hot-collection in qdrant-hot (RAM
+// disk) instead of COLL on /fast; those units are marked upserted = 2 so --reconcile-hot can re-send any the RAM disk lost
+// (crash before a flush). Stale deletes go to both. Stops cleanly when the RAM disk (--hot-path) has < --hot-min-free-gb free.
+const HOT = arg('hot-url', ''), HOT_COLL = arg('hot-collection', 'phrases_hot'), HOT_PATH = arg('hot-path', '/srv/qram'), HOT_MIN_FREE = +arg('hot-min-free-gb', 6) * 1e9;
+const UP = HOT ? { url: HOT, coll: HOT_COLL, mark: 2 } : { url: QD, coll: COLL, mark: 1 };
 const log = (o) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
 
 mkdirSync(dirname(STORE), { recursive: true });
@@ -223,11 +228,11 @@ async function embedPending(pending) {
 
 // Retries socket errors: a keep-alive socket that sat idle (e.g. while SQLite sorts) is closed by Qdrant, and fetch
 // reuses it anyway → 'other side closed' / EPIPE (same race as the writer keepAlive bug, 2026-08-13).
-async function qd(method, path, body) {
+async function qd(method, path, body, base = QD) {
   const payload = body && JSON.stringify(body);
   for (let attempt = 0; ; attempt++) {
     try {
-      const r = await fetch(QD + path, { method, headers: { 'Content-Type': 'application/json', 'api-key': QK }, body: payload });
+      const r = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json', 'api-key': QK }, body: payload });
       if (!r.ok) throw Object.assign(new Error(`${method} ${path} → ${r.status} ${(await r.text()).slice(0, 200)}`), { http: true });
       return r.json();
     } catch (e) {
@@ -237,29 +242,61 @@ async function qd(method, path, body) {
   }
 }
 
-async function ensureCollection() {
-  const exists = await qd('GET', `/collections/${COLL}/exists`).then((r) => r.result.exists);
+async function ensureCollection({ url = UP.url, coll = UP.coll } = {}) {
+  const exists = await qd('GET', `/collections/${coll}/exists`, undefined, url).then((r) => r.result.exists);
   if (!exists) {
-    await qd('PUT', `/collections/${COLL}`, { vectors: { literal: { size: DIMS, distance: 'Cosine', on_disk: true } }, quantization_config: { binary: { always_ram: true } } });
-    log({ phase: 'collection-created', collection: COLL });
+    // the hot copy stores float16 (lossless: vectors.db holds f16) — half the RAM; same metric, quantization and indexes
+    const literal = { size: DIMS, distance: 'Cosine', on_disk: true, ...(url === HOT ? { datatype: 'float16' } : {}) };
+    await qd('PUT', `/collections/${coll}`, { vectors: { literal }, quantization_config: { binary: { always_ram: true } } }, url);
+    log({ phase: 'collection-created', collection: coll, url });
   }
   for (const [field_name, field_schema] of [['paragraph_id', 'integer'], ['doc_id', 'integer'], ['lang_group', 'keyword'], ['religion', 'keyword'],
-    ['author', 'keyword'], ['author_fold', 'keyword'], ['collection', 'keyword'], ['fa_share', 'float'], ['scope', 'keyword']])
-    await qd('PUT', `/collections/${COLL}/index?wait=true`, { field_name, field_schema }).catch(() => {});   // already there → fine
+    ['author', 'keyword'], ['author_fold', 'keyword'], ['voices_fold', 'keyword'], ['site', 'keyword'], ['collection', 'keyword'], ['fa_share', 'float'], ['scope', 'keyword']])
+    await qd('PUT', `/collections/${coll}/index?wait=true`, { field_name, field_schema }, url).catch(() => {});   // already there → fine
+}
+
+/** RAM disk free bytes (null when the path is absent — e.g. not on tower). */
+const hotFree = () => { try { const f = statfsSync(HOT_PATH); return f.bavail * f.bsize; } catch { return null; } };
+
+/** After a qdrant-hot loss: units marked as sent to hot (upserted = 2) but absent there go back to 0, so the next upsert
+ *  re-sends them from the stored vectors (no Gemini spend). */
+async function reconcileHot() {
+  const page = store.prepare('SELECT point_id FROM units WHERE upserted = 2 AND point_id > ? ORDER BY point_id LIMIT 1000');
+  const reset = store.prepare('UPDATE units SET upserted = 0 WHERE point_id = ?');
+  let after = -1, checked = 0, missing = 0;
+  for (;;) {
+    const rows = page.all(after); if (!rows.length) break;
+    after = rows[rows.length - 1].point_id;
+    const got = await qd('POST', `/collections/${HOT_COLL}/points`, { ids: rows.map((r) => r.point_id), with_payload: false, with_vector: false }, HOT);
+    const have = new Set((got.result || []).map((p) => Number(p.id)));
+    const miss = rows.filter((r) => !have.has(Number(r.point_id)));
+    if (miss.length) store.transaction(() => miss.forEach((r) => reset.run(r.point_id)))();
+    checked += rows.length; missing += miss.length;
+  }
+  log({ phase: 'reconcile-hot', checked, missing });
+  return { checked, missing };
 }
 
 const page = store.prepare(`SELECT u.*, v.v FROM units u JOIN vec v ON v.key = u.key WHERE u.upserted = 0 LIMIT 256`);
-const mark = store.prepare('UPDATE units SET upserted = 1 WHERE point_id = ?');
+const mark = store.prepare('UPDATE units SET upserted = ? WHERE point_id = ?');
 async function upsert() {
-  let sent = 0;
-  while (stale.length) await qd('POST', `/collections/${COLL}/points/delete?wait=true`, { points: stale.splice(0, 1000) });
+  let sent = 0, pages = 0;
+  while (stale.length) {
+    const points = stale.splice(0, 1000);
+    await qd('POST', `/collections/${COLL}/points/delete?wait=true`, { points });
+    if (HOT) await qd('POST', `/collections/${HOT_COLL}/points/delete?wait=true`, { points }, HOT);
+  }
   for (;;) {
+    if (HOT && pages++ % 20 === 0) {
+      const free = hotFree();
+      if (free != null && free < HOT_MIN_FREE) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${HOT_MIN_FREE / 1e9} GB): flush or fold before indexing more`; break; }
+    }
     const rows = page.all(); if (!rows.length) break;
-    await qd('PUT', `/collections/${COLL}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
+    await qd('PUT', `/collections/${UP.coll}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
       payload: { paragraph_id: Number(r.paragraph_id), doc_id: Number(r.doc_id), k: r.k, start: r.start, end: r.end, seg_v: r.seg_v,
         lang_group: r.lang_group || 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, author_fold: authorKey(r.author), collection: r.collection,
-        lang_label: r.lang_label, field: r.field || 'text', scope: r.scope || 'primary', ...(r.field === 'hype' ? { is_thesis: r.k === 999 } : {}) } })) });
-    store.transaction(() => rows.forEach((r) => mark.run(r.point_id)))();
+        lang_label: r.lang_label, field: r.field || 'text', scope: r.scope || 'primary', ...(r.field === 'hype' ? { is_thesis: r.k === 999 } : {}) } })) }, UP.url);
+    store.transaction(() => rows.forEach((r) => mark.run(UP.mark, r.point_id)))();
     sent += rows.length;
   }
   return sent;
@@ -308,5 +345,10 @@ async function build() {
 
 if (has('scan-only')) await scanOnly();
 else if (has('embed')) await build();
-else if (has('qdrant')) { await ensureCollection(); log({ phase: 'upsert-done', sent: await upsert() }); }
+else if (has('qdrant')) {
+  await ensureCollection();
+  if (HOT && has('reconcile-hot')) await reconcileHot();
+  const sent = await upsert();
+  log({ phase: stopped ? 'stopped' : 'upsert-done', reason: stopped, sent });
+}
 store.close();

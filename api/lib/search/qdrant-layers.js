@@ -10,6 +10,28 @@ import { docIdsInYearRange } from '../docs-repo.js';
 import { logAIUsage } from '../ai-services.js';
 
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
+// PHASE 0 HOT LAYER (planning/storage-wear-ram-plan.md §6.6, Chad 10-21): until the MP44 arrives, NEW phrase points go to
+// `phrases_hot` in a second Qdrant (qdrant-hot, storage on the /srv/qram RAM disk) while `phrases` on /fast stays frozen.
+// Search reads both and merges; writes to `phrases` (deletes, payload stamps) are mirrored to the hot copy. Unset = off.
+export const hotUrl = () => process.env.QDRANT_HOT_URL || '';
+export const HOT_PHRASES = () => process.env.QDRANT_HOT_PHRASES || 'phrases_hot';
+/** A `/collections/phrases/…` path → the same path on the hot collection; anything else → null. Pure. */
+export const hotPath = (path) => (/^\/collections\/phrases\//.test(path) ? path.replace(/^\/collections\/phrases\//, `/collections/${HOT_PHRASES()}/`) : null);
+/** Main + hot points as one list: best score first, one per point id (the hot copy is newer, so it wins a tie). Pure. */
+export function mergePoints(main = [], hot = []) {
+  const byId = new Map();
+  for (const p of hot) byId.set(p.id, p);
+  for (const p of main) if (!byId.has(p.id)) byId.set(p.id, p);
+  return [...byId.values()].sort((a, b) => b.score - a.score);
+}
+/** Grouped results (one hit per paragraph) from main + hot: best hit per group key, `limit` groups. Pure. */
+export function mergeGroups(main = [], hot = [], limit = Infinity) {
+  const best = new Map();
+  for (const g of [...hot, ...main]) { const k = g.id; const cur = best.get(k); if (!cur || g.hits[0].score > cur.hits[0].score) best.set(k, g); }
+  return [...best.values()].sort((a, b) => b.hits[0].score - a.hits[0].score).slice(0, limit);
+}
+let hotWarnedAt = 0;
+const hotFailed = (err) => { if (Date.now() - hotWarnedAt > 300000) { hotWarnedAt = Date.now(); console.warn(`qdrant-hot unavailable — phrases from main only: ${err.message}`); } };
 const MODEL = 'gemini-embedding-2', DIMS = 3072;
 
 const memo = new Map();   // query → { at, p }
@@ -95,8 +117,8 @@ export const SEARCH_PARAMS = Object.freeze({
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });
 
-async function qdrant(path, body, timeoutMs = 2500) {
-  const r = await fetch(QD() + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
+async function qdrant(path, body, timeoutMs = 2500, base = QD()) {
+  const r = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
     // 2.5 s: past the search budget a layer is dropped, not waited on — and the relax ladder re-runs the engine, so a stalled
     // Qdrant (a payload backfill or build beside it, 2026-10-04) cost 5 s per rung at the old 5 s.
     body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
@@ -113,14 +135,39 @@ export async function qdrantHealth(timeoutMs = 3000) {
       const j = r.ok ? (await r.json()).result : null;
       out[c] = j ? { status: j.status, points: j.points_count, unindexed: Math.max(0, (j.points_count || 0) - (j.indexed_vectors_count || 0)) } : { status: `http ${r.status}` };
     }
-    return { status: Object.values(out).every((x) => x.status === 'green' || x.status === 'yellow') ? 'ok' : 'error', collections: out };
+    // phase 0 hot layer: informational — search degrades to main without it, so it never fails health
+    let hot;
+    if (hotUrl()) {
+      hot = await fetch(`${hotUrl()}/collections/${HOT_PHRASES()}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(timeoutMs) })
+        .then(async (r) => (r.ok ? (({ status, points_count: points, indexed_vectors_count: ix }) => ({ status, points, unindexed: Math.max(0, (points || 0) - (ix || 0)) }))((await r.json()).result) : { status: `http ${r.status}` }))
+        .catch((err) => ({ status: 'unreachable', error: err.message }));
+    }
+    return { status: Object.values(out).every((x) => x.status === 'green' || x.status === 'yellow') ? 'ok' : 'error', collections: out, ...(hot ? { hot: { [HOT_PHRASES()]: hot } } : {}) };
   } catch (err) {
     return { status: 'error', error: err.message };
   }
 }
 
-/** Raw request for the index writer (deletes by filter from the outbox) — the only Qdrant WRITE path at runtime. */
-export const qdrantRequest = (path, body, timeoutMs = 15000) => qdrant(path, body, timeoutMs);
+/** Raw request for the index writer (deletes by filter from the outbox) — the only Qdrant WRITE path at runtime. A write to
+ *  `phrases` is mirrored to the hot copy (phase 0) so deletes and payload stamps reach the new points too; a hot failure is
+ *  logged, never fails the main write (a missing hot collection is a 404 — nothing there to change). */
+export async function qdrantRequest(path, body, timeoutMs = 15000) {
+  const hp = hotUrl() ? hotPath(path) : null;
+  const [main, hot] = await Promise.allSettled([qdrant(path, body, timeoutMs), hp ? qdrant(hp, body, timeoutMs, hotUrl()) : null]);
+  if (hot.status === 'rejected' && !/ 404 /.test(hot.reason?.message || '')) hotFailed(hot.reason);
+  if (main.status === 'rejected') throw main.reason;
+  return main.value;
+}
+
+/** A `phrases` query against main and (phase 0) hot, merged. Main failing fails the layer as before; hot failing or slow
+ *  degrades to main only. */
+async function queryPhrasesCollection(path, body, timeoutMs, { groups = false, limit } = {}) {
+  const hp = hotUrl() ? hotPath(path) : null;
+  const [main, hot] = await Promise.allSettled([qdrant(path, body, timeoutMs), hp ? qdrant(hp, body, timeoutMs, hotUrl()) : null]);
+  if (main.status === 'rejected') throw main.reason;
+  if (!hp || hot.status === 'rejected' || !hot.value) { if (hot.status === 'rejected' && !/ 404 /.test(hot.reason?.message || '')) hotFailed(hot.reason); return main.value; }
+  return groups ? { groups: mergeGroups(main.value.groups, hot.value.groups, limit) } : { points: mergePoints(main.value.points, hot.value.points).slice(0, body.limit) };
+}
 
 /** Best point per paragraph, in score order — what Qdrant's /query/groups computes, done on a plain top-N result. Pure. */
 export function bestPerParagraph(points, limit) {
@@ -142,14 +189,14 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs, par
   const vector = await geminiQueryVector(query);
   const payload = ['paragraph_id', 'doc_id', 'start', 'end', ...RANK_PAYLOAD];
   const filter = toQdrantFilter(filters);
-  const res = await qdrant('/collections/phrases/points/query', {
+  const res = await queryPhrasesCollection('/collections/phrases/points/query', {
     query: vector, using: 'literal', limit: limit * 4, with_payload: payload, params: searchParams(params), filter,
   }, timeoutMs);
   let best = bestPerParagraph(res.points || [], limit);
   if (best.length < limit && (res.points || []).length >= limit * 4) {
-    const g = await qdrant('/collections/phrases/points/query/groups', {
+    const g = await queryPhrasesCollection('/collections/phrases/points/query/groups', {
       query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: payload, params: searchParams(params), filter,
-    }, timeoutMs);
+    }, timeoutMs, { groups: true, limit });
     best = (g.groups || []).map((x) => x.hits[0]);
   }
   return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end }, ...rankFields(p.payload) })) };
@@ -159,7 +206,7 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs, par
  *  what SourceHunt highlights in an Arabic/Persian original. */
 export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeoutMs } = {}) {
   const vector = await geminiQueryVector(query);
-  const res = await qdrant('/collections/phrases/points/query', {
+  const res = await queryPhrasesCollection('/collections/phrases/points/query', {
     query: vector, using: 'literal', limit, with_payload: ['start', 'end'], params: searchParams(SEARCH_PARAMS.phrase),
     filter: { must: [{ key: 'paragraph_id', match: { value: Number(paragraphId) } }] },
   }, timeoutMs);

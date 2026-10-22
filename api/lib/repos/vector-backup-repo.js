@@ -6,7 +6,7 @@ import { Worker } from 'worker_threads';
 
 /** The three stores (the /tank/sifter/* paths are symlinks to wherever the store lives now) and the jobs that write them. */
 export const VECTOR_STORES = {
-  phrase: { src: '/tank/sifter/phrase-vectors/vectors.db', writers: ['phrase-index'] },
+  phrase: { src: '/tank/sifter/phrase-vectors/vectors.db', writers: ['phrase-index', 'phrase-hot-reconcile'] },
   hype: { src: '/tank/sifter/hype-vectors/vectors.db', writers: ['hype-index'] },
   concept: { src: '/tank/sifter/concept-vectors/vectors.db', writers: ['concept-index'] },
 };
