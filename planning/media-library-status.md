@@ -28,6 +28,23 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
 
 (see the sections below — filled from the review script)
 
+## Search latency and the thread cap (coordinator watch, 10-21 23:49)
+
+At 23:49 searches on tower took 5.8–6.0 s while a tower-side media process ran at ~1,100 % CPU (diarization at 12
+threads; the ASR itself runs on boss). Measured with `tmp/search-latency.mjs` on tower (12 FRESH queries each — random
+word pairs, so the answer cache never answers — POST `/api/search/multi`):
+
+| tower media work | median | p90 | max |
+|---|---|---|---|
+| none | 1.8–2.2 s | 2.4–3.0 s | 2.5–3.9 s |
+| diarization, 12 threads | 2.0 s | **3.8 s** | **5.3 s** |
+| diarization, 8 threads | 1.6 s | 2.1 s | 2.1 s |
+| diarization, 4 threads | 2.0 s | 2.6 s | 3.4 s |
+
+**Cap chosen: 8 threads** for every tower-side media process (`MEDIA_THREADS`, default 8: DeepFilterNet/torch and
+sherpa-onnx; ffmpeg filters are single-threaded), halved again while measured search latency is over 3 s (the governor in `api/lib/media/tools.js`). ASR,
+alignment and the probes run on boss and do not touch tower's CPU or memory bandwidth.
+
 ## Problems / notes
 
 * My first push touched `api/lib/model-roles.js`, which the indexer imports, so the indexer reloaded and a vectors-backup

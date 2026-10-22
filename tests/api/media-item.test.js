@@ -124,6 +124,18 @@ describe('media item stage machine', () => {
     expect(d.tools.asr.mock.calls.find((c) => c[0] === 'transcribe')[2].diarize).toBe(false);
   });
 
+  it('the transcript completes a surname-only speaker, never replaces it with someone else', async () => {
+    for (const [said, want] of [['Hartmut Grossmann', 'Hartmut Grossmann'], ['Someone Else Entirely', 'Grossmann']]) {
+      const d = fakes();
+      d.llm.nameItem = vi.fn(async () => ({ speaker: 'Grossmann', title: 'World Order 2', year: 1999 }));
+      d.llm.describeTalk = vi.fn(async () => ({ speaker: said, speakers: {}, chapters: [] }));
+      const r = await runItem({ id: 9, source_kind: 'file', source_ref: src }, {}, d);
+      expect(r.meta.speaker).toBe(want);
+      const { rmSync } = await import('fs');
+      rmSync(join(root, 'library'), { recursive: true, force: true });
+    }
+  });
+
   it('`from` redoes a stage and everything after it', async () => {
     const r = await runItem({ id: 3, source_kind: 'file', source_ref: src }, {}, fakes());
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);

@@ -219,7 +219,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       meta.speakers = desc.speakers || {};
       meta.chapters = (desc.chapters || []).filter((c) => byN.has(Number(c.p)) && c.title).map((c) => ({ p: Number(c.p), t: byN.get(Number(c.p)).t0, title: String(c.title).slice(0, 120) }));
       for (const k of ['place', 'event', 'date', 'year']) if (!meta[k] && desc[k]) meta[k] = desc[k];
-      if (!meta.speaker && desc.speaker) meta.speaker = desc.speaker;
+      // the transcript can name the speaker in full where the file name had a surname ("Nakhjavání" → "‘Alí Nakhjavání")
+      const sur = String(meta.speaker || '').split(/\s+/).pop()?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const full = String(desc.speaker || '');
+      if (!meta.speaker && full) meta.speaker = full;
+      else if (sur && full.length > String(meta.speaker).length && full.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(sur)) meta.speaker = full;
       rec.chapters = meta.chapters.length;
     }
 

@@ -11,7 +11,9 @@ export const TOOL = join(ROOT, 'scripts', 'media', 'media_tool.py');
 export const PY = () => process.env.MEDIA_PYTHON || join(homedir(), 'sifter', 'venvs', 'media', 'bin', 'python');
 export const PY_DFN = () => process.env.MEDIA_DFN_PYTHON || join(homedir(), 'sifter', 'venvs', 'media-dfn', 'bin', 'python');
 export const YTDLP = () => process.env.MEDIA_YTDLP || join(homedir(), 'sifter', 'venvs', 'media', 'bin', 'yt-dlp');
-export const defaultThreads = () => Math.max(2, Number(process.env.MEDIA_THREADS) || 12);
+// 8: measured 10-21 23:55 (12 fresh queries each, POST /api/search/multi): tower diarization at 12 threads → p90 3.8 s, max 5.3 s;
+// at 8 → median 1.6 s, p90 2.1 s; idle → 1.8–2.2 s, p90 2.4–3.0 s. Search stays in its usual range at 8.
+export const defaultThreads = () => Math.max(2, Number(process.env.MEDIA_THREADS) || 8);
 
 /** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
 export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
