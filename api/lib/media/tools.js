@@ -182,6 +182,13 @@ export async function ffprobe(path) {
     tags: Object.fromEntries(Object.entries({ ...(j.format?.tags || {}) }).map(([k, x]) => [k.toLowerCase(), String(x).slice(0, 300)])) };
 }
 
+/** An image's pixel size (ffprobe's first video stream). → { w, h } */
+export async function imageSize(path) {
+  const { stdout } = await run('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'json', path], { timeoutMs: 60_000 });
+  const st = JSON.parse(stdout).streams?.[0] || {};
+  return { w: Number(st.width) || 0, h: Number(st.height) || 0 };
+}
+
 export const ffmpeg = (args, opts = {}) => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', ...args], { timeoutMs: 3 * 3600_000, ...opts });   // opts.stop: drain-aware
 
 /** Mono PCM (Float32 from s16le) at `sr`, streamed to onChunk — memory stays flat on long talks. */

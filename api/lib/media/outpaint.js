@@ -47,6 +47,7 @@ export async function geminiOutpaint(png, { model, key = process.env.GEMINI_API_
  * { bytes, usage }, model }. → { bytes (JPEG 1152×2048), placement, model, prompt, usage, usd }
  */
 export async function extendPortrait(src, dims, deps) {
+  if (!(dims?.w > 0 && dims?.h > 0)) throw new Error(`no image size (${JSON.stringify(dims)})`);
   const work = join(tmpdir(), `outpaint-${process.pid}-${Date.now()}`);
   await mkdir(work, { recursive: true });
   const P = placement(dims);

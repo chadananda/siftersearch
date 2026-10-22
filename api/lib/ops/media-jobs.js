@@ -307,9 +307,9 @@ export async function mediaPortraitsExtendJob({ keys = null, force = false, limi
       const src = Buffer.from(await r.arrayBuffer());
       const tmp = join(tmpdir(), `portrait-${s.key}-${Date.now()}`);
       await wf(tmp, src);
-      const pr = await tools.ffprobe(tmp).finally(() => rmf(tmp, { force: true }));
-      const v = (pr.streams || []).find((x) => x.width) || {};
-      const ext = await op.extendPortrait(src, { w: v.width, h: v.height }, { model, ffmpeg: (args) => tools.ffmpeg(args, { timeoutMs: 120_000 }),
+      // the image's own size (tools.ffprobe is the audio prober: no width/height — 10-22: NaN sizes failed all 89)
+      const dims = await tools.imageSize(tmp).finally(() => rmf(tmp, { force: true }));
+      const ext = await op.extendPortrait(src, dims, { model, ffmpeg: (args) => tools.ffmpeg(args, { timeoutMs: 120_000 }),
         outpaint: (png) => op.geminiOutpaint(png, { model, fetchImpl }) });
       const file = await putCdnPortrait(`media-speakers/${s.key}-ext.jpg`, ext.bytes, 'image/jpeg', { fetchImpl });
       await repo.upsertSpeaker({ key: s.key, ext_file: file, ext_sha: createHash('sha256').update(ext.bytes).digest('hex'), ext_of: s.sha, ext_model: model,

@@ -22,5 +22,6 @@ describe('outpaint', () => {
     expect(calls[1]).toMatch(/\[bg\]\[fg\]overlay=174:216/);
     expect(r).toMatchObject({ model: 'm', prompt: OUTPAINT_PROMPT, usd: 0.0419 });
     expect(costOf({})).toBe(0);
+    await expect(extendPortrait(Buffer.from('x'), { w: undefined, h: undefined }, { ffmpeg, outpaint: vi.fn() })).rejects.toThrow(/no image size/);
   });
 });
