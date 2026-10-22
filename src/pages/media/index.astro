@@ -89,8 +89,18 @@ const listLd = {
       {fetchError && !items.length ? (
         <p class="my-16 rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">The Listening Room could not reach the library just now ({fetchError}). Please try again in a moment.</p>
       ) : (
+        <>
         <div class="room"><OnAir client:load highlights={initial.highlights} speakersByKey={heroSpeakers} stats={initial.stats} /></div>
+        <script is:inline>
+          // typing in the tuner before the listing hydrates: remember value, focus and caret (ListeningRoom applies them)
+          (function () {
+            var rec = function (e) { var t = e.target; if (!t || t.id !== 'tune-q') return;
+              window.__tuneEarly = { value: t.value, focused: document.activeElement === t, start: t.selectionStart, end: t.selectionEnd }; };
+            document.addEventListener('input', rec, true); document.addEventListener('focusin', rec, true); document.addEventListener('keyup', rec, true);
+          })();
+        </script>
         <ListeningRoom client:idle {initial} {initialState} />
+        </>
       )}
     </div>
   </main>

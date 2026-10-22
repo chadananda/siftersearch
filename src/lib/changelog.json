@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T17:03:18.279Z",
+  "generated": "2026-10-22T17:09:12.302Z",
   "entries": [
+    {
+      "hash": "d4ea66b5",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Status — compressed shorts, sizes, edge timing",
+      "scope": "media"
+    },
+    {
+      "hash": "a0b0eb1d",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Previews played 'undefined' — index rows' new 'au' field is the AUDIENCE level, not audio URLs",
+      "scope": "media"
+    },
     {
       "hash": "d410c8fa",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Citation passages shown without our copy's section numbers ([11.12])",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "cf858994",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Click a spine to view that source in its box; the box's corner link opens it",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "e4e5d19a",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Every band keeps a thin scrollbar track so scrolling and non-scrolling bands line up",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "d4ea66b5",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Status — compressed shorts, sizes, edge timing",
+        "scope": "media"
+      },
+      {
+        "hash": "a0b0eb1d",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Previews played 'undefined' — index rows' new 'au' field is the AUDIENCE level, not audio URLs",
+        "scope": "media"
+      },
       {
         "hash": "d410c8fa",
         "date": "2026-10-22",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-13",
         "type": "Fixed",
         "description": "Citation passages shown without our copy's section numbers ([11.12])",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "cf858994",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Click a spine to view that source in its box; the box's corner link opens it",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "e4e5d19a",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Every band keeps a thin scrollbar track so scrolling and non-scrolling bands line up",
         "scope": "sourcehunt"
       }
     ]

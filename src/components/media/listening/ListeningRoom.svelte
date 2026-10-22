@@ -84,7 +84,7 @@
   }
 
   function onInput(e) {
-    qInput = e.currentTarget.value;
+    qInput = (e.currentTarget || e.target).value;
     loadAll();
     clearTimeout(qTimer);
     qTimer = setTimeout(() => { q = qInput; limit = 30; sync(); }, 90);
@@ -123,6 +123,14 @@
   let sentinel, live = $state(false);
   onMount(() => {
     reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // keystrokes typed BEFORE this island hydrated (index.astro records them in window.__tuneEarly): apply them now and
+    // put focus and caret back where the visitor left them — nothing typed in the first second is lost
+    const early = window.__tuneEarly, el = document.getElementById('tune-q');
+    if (el && early && (early.value || early.focused)) {
+      if (early.value && early.value !== qInput) { el.value = early.value; onInput({ target: el }); }
+      if (early.focused) { el.focus(); try { el.setSelectionRange(early.start ?? el.value.length, early.end ?? el.value.length); } catch { /* type=search */ } }
+    }
+    window.__tuneEarly = null;
     // the ambient motion (drifts, glow, ticker) starts once the page has settled: first paint is the complete still frame
     // the hero (OnAir, its own small island above) shares the gate: .room wrappers go live together
     const wake = () => setTimeout(() => { live = true; document.querySelectorAll('.room').forEach((r) => r.classList.add('lr-live')); }, 2500);
