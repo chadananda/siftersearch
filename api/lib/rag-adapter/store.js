@@ -48,6 +48,29 @@ const PROSE = "blocktype IN ('paragraph','quote')";
 // Gazetteer path (env-overridable). Absent file → empty gazetteer → recall unchanged (graceful).
 const GAZETTEER_PATH = process.env.SIFTER_GAZETTEER || 'data/siftersearch-gazetteer.json';
 
+// GROUNDED CLAIMS, read ONCE per process per TTL (10-21: searchGrounded's `lower(statement) LIKE '%tok%'` over entity_claims
+// cannot use an index — every reconcile cluster re-scanned the whole table, 75×/hour in a grounding run, 3–7 s each,
+// docs/architecture/blocking-queries.md). Bound claims change only when a book completes, so a 30-min snapshot answers the
+// same question; matching is a JS substring test, in rowid order like the old scan.
+const GROUNDED_TTL_MS = Number(process.env.GROUNDED_CLAIMS_TTL_MS ?? 30 * 60 * 1000);
+let groundedSnap = null;   // { at, promise → { ids: Int32Array, text: string[] } }
+export function groundedClaims({ now = Date.now() } = {}) {
+  if (groundedSnap && now - groundedSnap.at < GROUNDED_TTL_MS) return groundedSnap.promise;
+  const entry = { at: now, promise: db.queryAll(
+    `SELECT entity_id id, statement FROM entity_claims NOT INDEXED WHERE entity_id IS NOT NULL AND (status IS NULL OR status='supported') ORDER BY rowid`,
+    [], 'grounded:claims-snapshot').then((rows) => ({ ids: Int32Array.from(rows, (r) => r.id), text: rows.map((r) => String(r.statement || '').toLowerCase()) })) };
+  entry.promise.catch(() => { if (groundedSnap === entry) groundedSnap = null; });
+  groundedSnap = entry;
+  return entry.promise;
+}
+export const _resetGroundedClaims = () => { groundedSnap = null; };
+/** Distinct entity ids (first `limit`, snapshot order) whose claim statement contains any token. Pure. */
+export function matchGrounded({ ids, text }, toks, limit = 40) {
+  const out = new Set();
+  for (let i = 0; i < text.length && out.size < limit; i++) if (toks.some((t) => text[i].includes(t))) out.add(ids[i]);
+  return [...out];
+}
+
 export function makeStore() {
   async function partnersOf(docId) {
       const out = new Map();
@@ -419,10 +442,7 @@ export function makeStore() {
         `SELECT DISTINCT entity_id id FROM entity_lookup_keys WHERE skeleton_key IN (${keys.map(() => '?').join(',')})`, keys
       )).forEach((r) => ids.add(r.id));
       const toks = [...new Set((String(query).toLowerCase().match(/[\p{L}]{4,}/gu) || []))].slice(0, 6);
-      if (toks.length) (await db.queryAll(
-        `SELECT DISTINCT entity_id id FROM entity_claims WHERE entity_id IS NOT NULL AND (status IS NULL OR status='supported')
-           AND (${toks.map(() => 'lower(statement) LIKE ?').join(' OR ')}) LIMIT 40`, toks.map((t) => `%${t}%`)
-      )).forEach((r) => ids.add(r.id));
+      if (toks.length) matchGrounded(await groundedClaims(), toks, 40).forEach((id) => ids.add(id));
       const idList = [...ids].slice(0, 12);
       if (!idList.length) return [];
       const rows = await db.queryAll(
