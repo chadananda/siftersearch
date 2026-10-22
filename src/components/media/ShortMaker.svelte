@@ -84,10 +84,10 @@
         </div>
         {#if error}<p class="mt-3 text-sm font-semibold text-radio-amber" role="alert">{error}</p>{/if}
         {#if video}
-          <div class="mt-5 grid gap-5 sm:grid-cols-[auto_1fr]">
+          <div class="result mt-5">
             <!-- svelte-ignore a11y_media_has_caption — captions are offered as .srt; the words are on the page above -->
             <video class="vid" src={media.href(video.url)} poster={video.poster ? media.href(video.poster) : undefined} controls playsinline preload="metadata"></video>
-            <div class="flex flex-col gap-3">
+            <div class="actions">
               {#if canShareFiles}
                 <button type="button" class="go" onclick={shareVideo} disabled={sharing}>{sharing ? 'Opening…' : 'Share video — YouTube, Instagram, TikTok, WhatsApp…'}</button>
               {/if}
@@ -124,6 +124,10 @@
   .go.alt:hover { color: var(--radio-amber); }
   .prog { position: relative; width: 10rem; height: 0.5rem; border-radius: 9999px; overflow: hidden; background: color-mix(in srgb, var(--radio-on-dark) 18%, transparent); }
   .prog i { position: absolute; inset: 0; background: var(--radio-amber); transform-origin: left; transition: transform 0.4s; }
+  .result { display: grid; gap: 1.25rem; }
+  @media (min-width: 640px) { .result { grid-template-columns: 15rem minmax(0, 1fr); align-items: start; } }
+  .actions { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+  .actions .go { justify-content: flex-start; border-radius: 0.8rem; text-align: left; }
   .vid { width: min(15rem, 100%); aspect-ratio: 9 / 16; border-radius: 0.9rem; background: #000; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
   .tips summary { cursor: pointer; font-weight: 600; text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px; }
   .tips p { margin-top: 0.5rem; font-size: 0.9rem; line-height: 1.5; opacity: 0.9; }

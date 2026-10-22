@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T16:27:05.396Z",
+  "generated": "2026-10-22T16:29:05.426Z",
   "entries": [
+    {
+      "hash": "a1df8eaf",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Media-shorts-moments — queue a short for the top moments (default 2) of every Hands of the Cause / House of Justice talk (≤ 60 s; template by content or rotation; rendered ones are reused)",
+      "scope": "media"
+    },
+    {
+      "hash": "cfd35a1b",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Make a short wired to the media pipeline's shorts API (moments): template choice (or best for the moment), elapsed-time progress, the video inline, Share video / Download / post text / .srt",
+      "scope": "media"
+    },
     {
       "hash": "13d1cca9",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "A note cites only its own target's evidence (a Nabíl fact came back labelled 'Revelation')",
       "scope": "reading"
-    },
-    {
-      "hash": "74949743",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Replies drafted every minute — the next page right away, ≥3 min after Anís's last letter",
-      "scope": "anis"
-    },
-    {
-      "hash": "dc562579",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Evidence only where it illuminates the noted words (no meta-commentary, no padding); reset option",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "a1df8eaf",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Media-shorts-moments — queue a short for the top moments (default 2) of every Hands of the Cause / House of Justice talk (≤ 60 s; template by content or rotation; rendered ones are reused)",
+        "scope": "media"
+      },
+      {
+        "hash": "cfd35a1b",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Make a short wired to the media pipeline's shorts API (moments): template choice (or best for the moment), elapsed-time progress, the video inline, Share video / Download / post text / .srt",
+        "scope": "media"
+      },
       {
         "hash": "13d1cca9",
         "date": "2026-10-22",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-13",
         "type": "Fixed",
         "description": "A note cites only its own target's evidence (a Nabíl fact came back labelled 'Revelation')",
-        "scope": "reading"
-      },
-      {
-        "hash": "74949743",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Replies drafted every minute — the next page right away, ≥3 min after Anís's last letter",
-        "scope": "anis"
-      },
-      {
-        "hash": "dc562579",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Evidence only where it illuminates the noted words (no meta-commentary, no padding); reset option",
         "scope": "reading"
       }
     ]
