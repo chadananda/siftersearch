@@ -17,8 +17,17 @@ export function costOf(role, usage) {
   return ((usage.prompt_tokens || 0) * p.input + (usage.completion_tokens || 0) * p.output) / 1000;
 }
 
-async function ask(role, prompt, { create = roleCreate, max = 6000, spend } = {}) {
-  const res = await create(role, { max_tokens: max, messages: [{ role: 'user', content: prompt }] });
+// a timed-out or dropped request is retried (twice, 5 s / 20 s apart) before it fails the item (10-22: a describe call timed
+// out and failed a whole talk); other errors are raised at once
+const TRANSIENT = /timed? ?out|timeout|connection error|ECONNRESET|ETIMEDOUT|fetch failed|overloaded|529|503/i;
+async function ask(role, prompt, { create = roleCreate, max = 6000, spend, retryMs = [5000, 20000] } = {}) {
+  let res;
+  for (let k = 0; ; k++) {
+    try { res = await create(role, { max_tokens: max, messages: [{ role: 'user', content: prompt }] }); break; } catch (err) {
+      if (k >= retryMs.length || !TRANSIENT.test(`${err?.message} ${err?.status ?? ''}`)) throw err;
+      await new Promise((r) => setTimeout(r, retryMs[k]));
+    }
+  }
   const usd = costOf(role, res?.usage);
   if (spend) { spend.usd = (spend.usd || 0) + usd; spend.calls = (spend.calls || 0) + 1; spend.in = (spend.in || 0) + (res?.usage?.prompt_tokens || 0); spend.out = (spend.out || 0) + (res?.usage?.completion_tokens || 0); }
   return jsonOf(res?.choices?.[0]?.message?.content);

@@ -39,3 +39,13 @@ describe('pronoun house style', () => {
     expect(judgeEdit(ws, { kind: 'capitalisation', from: 'He said', to: 'he said', confidence: 0.9 }).ok).toBeTruthy();
   });
 });
+
+describe('model calls survive a transient timeout (10-22: describe "Request timed out." failed a talk)', () => {
+  it('retries a timeout, raises other errors', async () => {
+    const { describeTalk } = await import('../../api/lib/media/llm.js');
+    let n = 0;
+    const create = async () => { if (n++ === 0) throw new Error('Request timed out.'); return { choices: [{ message: { content: '{"summary":"ok"}' } }], usage: {} }; };
+    expect(await describeTalk([{ n: 1, t0: 0, t1: 1, words: [{ w: 'x', s: 0, e: 1 }] }], {}, { create, retryMs: [1] })).toMatchObject({ summary: 'ok' });
+    await expect(describeTalk([{ n: 1, t0: 0, t1: 1, words: [{ w: 'x', s: 0, e: 1 }] }], {}, { create: async () => { throw new Error('400 bad request'); }, retryMs: [1] })).rejects.toThrow('400');
+  });
+});
