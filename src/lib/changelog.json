@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-22T13:27:21.893Z",
+  "generated": "2026-10-22T14:05:26.141Z",
   "entries": [
+    {
+      "hash": "b6cb177e",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Add api/lib/media/listing-index.js — GET /api/media/index (already committed in routes/media.js) imports it",
+      "scope": "media"
+    },
+    {
+      "hash": "43767749",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "NAME and WORK links in transcripts (Chad 10-22) — a links stage after quotes resolves the mentions the copy-edit pass returns: people through the biography set (names + aliases, then the identity lookup index; one unambiguous person or nothing) → /biography/<id>; works through the document finder by title variants (a derivative work never matches) → the canonical copy by the link policy (OceanLibrary first, English first), a named chapter through the section index; confidence ≥ 0.8, first mention per subheader section; the spoken words are the anchor (transcript.md, page.html, the item page; name/work clicks navigate, quoted words still play); links.json + transcript.json + media_links (migration 166, repo replaceMediaLinks). Remastering capped on tower (≤ 4 threads per run, ≤ 2 runs, nice 19; plan §12 thread budget)",
+      "scope": "media"
+    },
+    {
+      "hash": "5c12c666",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "The copy-edit pass runs on the Sonnet-tier role (Chad 10-22: choose on quality) — pilot comparison, 5.3 audio hours, same whole-talk context: Sonnet 209 substantive fixes vs Haiku 161, precision on a 25-edit read 24/25 vs 25/25, seeded checklist 28/38 applied + 8 flagged vs 31/38 + 2, $0.23 vs $0.024 per audio hour; a respelt or recapitalised word keeps its own comma/full stop; homophone/spelling spans up to four words (\"only foreigner of\" → \"only forerunner of\" was refused)",
+      "scope": "media"
+    },
+    {
+      "hash": "d2529fbd",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Faithfulness check aligns in order (resync on 3 matching words, case/punctuation edits are not content) — the time-only mapping raised false alarms where ASR segments overlap; one rule for the guard and the check: more words than heard only when it sounds like the whole of what was heard ('Sogefendik' → 'Shoghi Effendi' yes; 'Robart' → 'John Robarts' no). Audit of all 33 processed items: 3 insertions, all by the name pass ('(Vol II)', two added first names), none by the copy-edit. Whisper prompt leads with the English terms talks use and Whisper mishears (Forerunner, Will and Testament, World Order, Covenant, Bayán, Nabíl’s Narrative)",
+      "scope": "media"
+    },
+    {
+      "hash": "c89d5f52",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "FAITHFULNESS enforced (Chad 10-22: '(Vol II)' hallucinated — the most serious kind) — after the name pass and after the copy-edit, every edited region is aligned by time to the ASR's own words and anything that adds to what was heard (extra words, brackets, digits, volume numbers) is reverted to the heard words; counts per stage in meta.faithfulness and insertions_reverted in the quality report; audit script over the archive files (scripts/media/audit-insertions.mjs). The copy-edit pass now reads ~12-minute chunks with neighbouring paragraphs as context, framed with speaker/title/date, and uses the model's own knowledge of Bahá'í names, works and Shoghi Effendi's transliteration (kind 'name', same guard, never more words than heard); it also returns the works and people the talk names (mentions) for the link stage; media-clean-strong role (Sonnet tier) for the model comparison. Remaster A/B script (original / smart EQ / Resemble Enhance / VoiceFixer, loudness-matched, measured)",
+      "scope": "media"
+    },
+    {
+      "hash": "43b72d57",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The name pass never adds words (Chad 10-22: 'Nabips Narrative (Vol II)' — the ASR had heard \"Nabeel's narrative\" correctly; the name pass swapped in a junk graph title the vocabulary held) — graph names enter the vocabulary without descriptive parentheticals, capitalised parentheticals become aliases, names with digits/volumes/brackets are dropped; the guard refuses any correction with more words than were heard (one garbled word may become a two-word name) or new brackets/digits/volume numbers; Nabíl’s Narrative in the curated core",
+      "scope": "media"
+    },
+    {
+      "hash": "d8cb5410",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The citation IS the link (Chad 10-22: 'Don't show a reference and then a separate link read in context… just link the reference text') — breakouts on /media/<slug> and page.html link '— <author, work>' to the canonical passage; the bare ↗ after a quoted span is gone (the quoted words already link there); the photo credit links as 'Photo of <speaker>: <credit>' instead of 'source'; admin report title links instead of 'open'; test guards the media templates against generic anchor text. Deploy (frontend + Contents panel for topic subheaders)",
+      "scope": "media"
+    },
     {
       "hash": "12a5f4b6",
       "date": "2026-10-22",
@@ -3451,59 +3500,59 @@
       "type": "New",
       "description": "Results stream in one beat at a time — source → highlight → tablet → highlight → citations, spines one by one",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "d9d4f7ae",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "The linked original paragraph stands only if it is the closest (±0.02) — 'among the top 5' kept a neighbour",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "f3cb4220",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "A work Shoghi Effendi translated (Gleanings) outranks a committee volume reusing his rendering of the passage",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "49744b77",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Shoghi Effendi's translation ranks first among copies holding the words; the shown title is the publication the link opens",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "8f71d2d2",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "OceanLibrary copy of the same work under another title ('Fountain of Wisdom' = Tablets of Bahá’u’lláh) gets the range link; markers can never leak",
-      "scope": "links"
-    },
-    {
-      "hash": "13a5425e",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Best-publisher copy only for the SAME work (a compilation quoting the words keeps its own link)",
-      "scope": "links"
-    },
-    {
-      "hash": "15005c2d",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Every citation links the best PUBLISHER of the words — identical copy on OceanLibrary (range) → Ocean of Lights (page + range) → Phelps → bahai-library → siftersearch",
-      "scope": "links"
-    },
-    {
-      "hash": "1f00295e",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Ocean of Lights .docx sources link to their PAGE with a range, never the download (SourceHunt, Anís, search, API)",
-      "scope": "links"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "b6cb177e",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Add api/lib/media/listing-index.js — GET /api/media/index (already committed in routes/media.js) imports it",
+        "scope": "media"
+      },
+      {
+        "hash": "43767749",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "NAME and WORK links in transcripts (Chad 10-22) — a links stage after quotes resolves the mentions the copy-edit pass returns: people through the biography set (names + aliases, then the identity lookup index; one unambiguous person or nothing) → /biography/<id>; works through the document finder by title variants (a derivative work never matches) → the canonical copy by the link policy (OceanLibrary first, English first), a named chapter through the section index; confidence ≥ 0.8, first mention per subheader section; the spoken words are the anchor (transcript.md, page.html, the item page; name/work clicks navigate, quoted words still play); links.json + transcript.json + media_links (migration 166, repo replaceMediaLinks). Remastering capped on tower (≤ 4 threads per run, ≤ 2 runs, nice 19; plan §12 thread budget)",
+        "scope": "media"
+      },
+      {
+        "hash": "5c12c666",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "The copy-edit pass runs on the Sonnet-tier role (Chad 10-22: choose on quality) — pilot comparison, 5.3 audio hours, same whole-talk context: Sonnet 209 substantive fixes vs Haiku 161, precision on a 25-edit read 24/25 vs 25/25, seeded checklist 28/38 applied + 8 flagged vs 31/38 + 2, $0.23 vs $0.024 per audio hour; a respelt or recapitalised word keeps its own comma/full stop; homophone/spelling spans up to four words (\"only foreigner of\" → \"only forerunner of\" was refused)",
+        "scope": "media"
+      },
+      {
+        "hash": "d2529fbd",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Faithfulness check aligns in order (resync on 3 matching words, case/punctuation edits are not content) — the time-only mapping raised false alarms where ASR segments overlap; one rule for the guard and the check: more words than heard only when it sounds like the whole of what was heard ('Sogefendik' → 'Shoghi Effendi' yes; 'Robart' → 'John Robarts' no). Audit of all 33 processed items: 3 insertions, all by the name pass ('(Vol II)', two added first names), none by the copy-edit. Whisper prompt leads with the English terms talks use and Whisper mishears (Forerunner, Will and Testament, World Order, Covenant, Bayán, Nabíl’s Narrative)",
+        "scope": "media"
+      },
+      {
+        "hash": "c89d5f52",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "FAITHFULNESS enforced (Chad 10-22: '(Vol II)' hallucinated — the most serious kind) — after the name pass and after the copy-edit, every edited region is aligned by time to the ASR's own words and anything that adds to what was heard (extra words, brackets, digits, volume numbers) is reverted to the heard words; counts per stage in meta.faithfulness and insertions_reverted in the quality report; audit script over the archive files (scripts/media/audit-insertions.mjs). The copy-edit pass now reads ~12-minute chunks with neighbouring paragraphs as context, framed with speaker/title/date, and uses the model's own knowledge of Bahá'í names, works and Shoghi Effendi's transliteration (kind 'name', same guard, never more words than heard); it also returns the works and people the talk names (mentions) for the link stage; media-clean-strong role (Sonnet tier) for the model comparison. Remaster A/B script (original / smart EQ / Resemble Enhance / VoiceFixer, loudness-matched, measured)",
+        "scope": "media"
+      },
+      {
+        "hash": "43b72d57",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The name pass never adds words (Chad 10-22: 'Nabips Narrative (Vol II)' — the ASR had heard \"Nabeel's narrative\" correctly; the name pass swapped in a junk graph title the vocabulary held) — graph names enter the vocabulary without descriptive parentheticals, capitalised parentheticals become aliases, names with digits/volumes/brackets are dropped; the guard refuses any correction with more words than were heard (one garbled word may become a two-word name) or new brackets/digits/volume numbers; Nabíl’s Narrative in the curated core",
+        "scope": "media"
+      },
+      {
+        "hash": "d8cb5410",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The citation IS the link (Chad 10-22: 'Don't show a reference and then a separate link read in context… just link the reference text') — breakouts on /media/<slug> and page.html link '— <author, work>' to the canonical passage; the bare ↗ after a quoted span is gone (the quoted words already link there); the photo credit links as 'Photo of <speaker>: <credit>' instead of 'source'; admin report title links instead of 'open'; test guards the media templates against generic anchor text. Deploy (frontend + Contents panel for topic subheaders)",
+        "scope": "media"
+      },
       {
         "hash": "12a5f4b6",
         "date": "2026-10-22",
@@ -6974,55 +7023,6 @@
         "type": "New",
         "description": "Results stream in one beat at a time — source → highlight → tablet → highlight → citations, spines one by one",
         "scope": "sourcehunt"
-      },
-      {
-        "hash": "d9d4f7ae",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "The linked original paragraph stands only if it is the closest (±0.02) — 'among the top 5' kept a neighbour",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "f3cb4220",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "A work Shoghi Effendi translated (Gleanings) outranks a committee volume reusing his rendering of the passage",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "49744b77",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Shoghi Effendi's translation ranks first among copies holding the words; the shown title is the publication the link opens",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "8f71d2d2",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "OceanLibrary copy of the same work under another title ('Fountain of Wisdom' = Tablets of Bahá’u’lláh) gets the range link; markers can never leak",
-        "scope": "links"
-      },
-      {
-        "hash": "13a5425e",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Best-publisher copy only for the SAME work (a compilation quoting the words keeps its own link)",
-        "scope": "links"
-      },
-      {
-        "hash": "15005c2d",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Every citation links the best PUBLISHER of the words — identical copy on OceanLibrary (range) → Ocean of Lights (page + range) → Phelps → bahai-library → siftersearch",
-        "scope": "links"
-      },
-      {
-        "hash": "1f00295e",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Ocean of Lights .docx sources link to their PAGE with a range, never the download (SourceHunt, Anís, search, API)",
-        "scope": "links"
       }
     ]
   }
