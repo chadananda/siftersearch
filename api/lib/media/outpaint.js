@@ -17,7 +17,9 @@ export const OUTPAINT_PROMPT = 'Extend this photograph outward to fill the whole
 export function placement({ w, h }, canvas = CANVAS) {
   const s = Math.min((canvas.w * 0.8) / w, (canvas.h * 0.55) / h);
   const sw = 2 * Math.round((w * s) / 2), sh = 2 * Math.round((h * s) / 2);
-  const x = Math.round((canvas.w - sw) / 2), y = Math.max(0, Math.min(canvas.h - sh, Math.round(canvas.h * 0.38 - sh / 2)));
+  // even offsets: tower's ffmpeg refuses an odd pad offset on 4:2:0 frames ("Error reinitializing filters", 10-22)
+  const even = (v) => 2 * Math.round(v / 2);
+  const x = even((canvas.w - sw) / 2), y = even(Math.max(0, Math.min(canvas.h - sh, canvas.h * 0.38 - sh / 2)));
   return { sw, sh, x, y };
 }
 
@@ -52,7 +54,7 @@ export async function extendPortrait(src, dims, deps) {
   try {
     await writeFile(join(work, 'src'), src);
     // the padded canvas: the original scaled UNIFORMLY, neutral grey margins
-    await deps.ffmpeg(['-y', '-i', join(work, 'src'), '-vf', `scale=${P.sw}:${P.sh},pad=${CW}:${CH}:${P.x}:${P.y}:color=0x808080`, '-frames:v', '1', join(work, 'canvas.png')]);
+    await deps.ffmpeg(['-y', '-i', join(work, 'src'), '-vf', `scale=${P.sw}:${P.sh},format=rgb24,pad=${CW}:${CH}:${P.x}:${P.y}:color=0x808080`, '-frames:v', '1', join(work, 'canvas.png')]);
     const out = await deps.outpaint(await readFile(join(work, 'canvas.png')));
     await writeFile(join(work, 'gen'), out.bytes);
     // the generated canvas back to 1152×2048 (uniform scale + centre crop), then the ORIGINAL pixels pasted over their place
