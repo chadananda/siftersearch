@@ -261,7 +261,10 @@ def cmd_diarize(a):
     if a.output:
         with open(a.output, 'w') as f:
             json.dump({'turns': turns, 'threshold': a.cluster, 'emb': a.emb or EMB_MODELS[0]}, f)
-    print(json.dumps({'speakers': len(talk), 'talk_s': dict(sorted(talk.items(), key=lambda x: -x[1])), 'turns': len(turns), 'seconds': round(time.time() - t0, 1), 'threshold': a.cluster, 'emb': a.emb or 'default'}))
+    res = {'speakers': len(talk), 'talk_s': dict(sorted(talk.items(), key=lambda x: -x[1])), 'turns': len(turns), 'seconds': round(time.time() - t0, 1), 'threshold': a.cluster, 'emb': a.emb or 'default'}
+    if a.emit_turns:   # run remotely (boss, through the gate): the turns travel back on stdout
+        res['turn_list'] = turns
+    print(json.dumps(res))
 
 
 def cmd_grade(a):
@@ -408,6 +411,7 @@ def main():
         s.add_argument('--models', default=os.path.expanduser('~/sifter/venvs/media-models'))
         s.add_argument('--cluster', type=float, default=0.7)   # wespeaker: 0.6 → 12 voices on a 92-min Q&A (3dspeaker zh at 0.5: 131)
         s.add_argument('--emb', default='')
+        s.add_argument('--emit-turns', action='store_true')
     a = p.parse_args()
     {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd](a)
 

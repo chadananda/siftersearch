@@ -240,3 +240,40 @@ export async function renderShort(dir, { host = asrHost(), timeoutMs = 900_000, 
   if (mp4.length < 1000 || mp4.slice(4, 8).toString() !== 'ftyp') throw new Error(`render failed (${mp4.length} bytes)`);
   return mp4;
 }
+
+/** Search p90 on tower over n fresh probes (seconds; null when none answered). */
+export async function searchP90(n = 5, { probe = searchLatency } = {}) {
+  const xs = [];
+  for (let i = 0; i < n; i++) xs.push(await probe());
+  const ok = xs.filter((x) => x != null).sort((a, b) => a - b);
+  return ok.length ? ok[Math.min(ok.length - 1, Math.floor(ok.length * 0.9))] : null;
+}
+
+/**
+ * DIARIZATION ON BOSS (10-22 watch: pyannote on tower at ~630 % CPU took on-tower search to 6.6–8.6 s): the audio goes to
+ * boss through the gate, the turns come back and are written to `output`. Only when boss cannot be reached does it run on
+ * tower — detached, ≤ 4 threads, nice 19 — and never while search p90 is above 4 s (it waits, then gives up).
+ */
+export async function diarize(input, output, { host = asrHost(), threads = 16, stop = null, pidFile = `${output}.pid`, towerThreads = 4,
+  p90 = searchP90, maxWaitMs = 30 * 60_000, remote = asr, detached = detachedTool, pause: wait = pause } = {}) {
+  const { writeFile } = await import('fs/promises');
+  if (host) {
+    const unreachable = new Error('unreachable');
+    try {
+      const r = await remote('diarize', input, { 'emit-turns': true }, { host, threads, stop, timeoutMs: 3 * 3600_000, local: async () => { throw unreachable; } });
+      await writeFile(output, JSON.stringify({ turns: r.turn_list || [], threshold: r.threshold, emb: r.emb, host }));
+      const { turn_list, ...summary } = r;
+      return { ...summary, host };
+    } catch (err) { if (err !== unreachable) throw err; }
+  }
+  // tower fallback: guarded by search latency
+  const t0 = Date.now();
+  for (;;) {
+    const p = await p90();
+    if (p == null || p <= 4) break;
+    if (Date.now() - t0 > maxWaitMs) throw new Error(`diarization deferred: boss unreachable and tower search p90 ${p.toFixed(1)} s > 4 s`);
+    if (stop?.()) throw new DrainAbort('diarize (deferred)');
+    await wait(60_000);
+  }
+  return { ...(await detached('diarize', input, { output }, { pidFile, threads: Math.min(4, towerThreads), stop })), host: 'tower' };
+}

@@ -45,3 +45,36 @@ describe('detachedTool (tower-side, survives a drain)', () => {
     delete process.env.MEDIA_PYTHON;
   });
 });
+
+describe('diarization runs on boss; tower only as a guarded fallback (10-22 watch: search 6.6–8.6 s)', async () => {
+  const { diarize } = await import('../../api/lib/media/tools.js');
+  const { mkdtempSync, readFileSync } = await import('fs');
+  const { join } = await import('path');
+  const { tmpdir } = await import('os');
+  const out = () => join(mkdtempSync(join(tmpdir(), 'dz-')), 'diarization.json');
+  it('boss: turns come back on stdout and are written to the output file', async () => {
+    const o = out();
+    const remote = vi.fn(async (sub, input, opts) => { expect(sub).toBe('diarize'); expect(opts['emit-turns']).toBe(true); return { speakers: 2, turns: 3, turn_list: [{ start: 0, end: 1, speaker: 'S1' }], threshold: 0.7, emb: 'x' }; });
+    const detached = vi.fn();
+    const r = await diarize('/a.flac', o, { host: 'boss', remote, detached });
+    expect(r).toMatchObject({ host: 'boss', speakers: 2 });
+    expect(JSON.parse(readFileSync(o, 'utf8')).turns).toHaveLength(1);
+    expect(detached).not.toHaveBeenCalled();
+  });
+  it('boss unreachable: tower runs it with ≤ 4 threads, only once search p90 ≤ 4 s', async () => {
+    const remote = async (sub, input, opts, { local }) => local();
+    const detached = vi.fn(async () => ({ speakers: 1 }));
+    const p90s = [6.6, 8.1, 3.2];
+    const r = await diarize('/a.flac', out(), { host: 'boss', remote, detached, p90: async () => p90s.shift(), pause: async () => {}, towerThreads: 12 });
+    expect(r.host).toBe('tower');
+    expect(detached.mock.calls[0][3].threads).toBe(4);
+    expect(p90s).toEqual([]);
+  });
+  it('gives up rather than slow search', async () => {
+    let now = 0;
+    const realNow = Date.now; Date.now = () => (now += 20 * 60_000);
+    try {
+      await expect(diarize('/a.flac', out(), { host: null, detached: vi.fn(), p90: async () => 7, pause: async () => {} })).rejects.toThrow(/deferred/);
+    } finally { Date.now = realNow; }
+  });
+});

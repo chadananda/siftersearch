@@ -157,7 +157,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the recording's QUALITY, measured on the original before any processing (Chad 10-22): per-dimension grades and the
       // fix chain; intelligibility and per-speaker levels join after transcription (finishQuality, at catalog — or here
       // at once for an item that is already transcribed)
-      const m = await tools.tool('grade', join(dir, meta.original), {}, { threads: await threads(), stop, timeoutMs: 3600_000 });
+      // DNSMOS/NISQA on tower at ≤ 4 threads (models on short excerpts; tower's search must keep its normal latency)
+      const m = await tools.tool('grade', join(dir, meta.original), {}, { threads: Math.min(4, await threads()), stop, timeoutMs: 3600_000 });
       meta.quality = { measured_at: d.now(), raw: m, ...gradeReport(m) };
       if (existsSync(join(dir, 'transcript.raw.json'))) await finishQuality(meta, dir, d, item);
       rec.grade = meta.quality.overall; rec.primary_issue = meta.quality.primary_issue;
@@ -225,7 +226,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       const prompt = `${meta.title}${meta.speaker ? ` — a talk by ${meta.speaker}` : ''}. ${promptTerms({ title: meta.title, speaker: meta.speaker }, vocab).join(', ')}.`;
       const th = await threads();
       const out = join(dir, 'transcript.raw.json');
-      // ASR on boss and DIARIZATION on tower AT THE SAME TIME (10-21: diarization inside the boss run took 1,473 of 2,198 s);
+      // ASR (detached boss job) and DIARIZATION (attached, also on boss: 10-22 watch) AT THE SAME TIME (10-21: diarization inside
+      // the ASR run itself took 1,473 of 2,198 s, so they stay two processes);
       // an interpreted talk diarizes on boss first (its speaker blocks choose each block's language)
       const multi = lang === 'multi';
       const turnsFile = join(dir, 'diarization.json');
@@ -241,8 +243,9 @@ export async function runItem(item, opts = {}, deps = {}) {
       };
       const settled = await Promise.allSettled([
         viaJob(),
-        multi ? null : (tools.detachedTool ? tools.detachedTool('diarize', join(dir, v.file), { output: turnsFile }, { pidFile: join(dir, 'diarization.pid'), threads: th, stop })
-          : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: th, timeoutMs: 6 * 3600_000, stop })),
+        // diarization on BOSS beside the ASR job (tower only as a guarded, 4-thread fallback: tools.diarize)
+        multi ? null : (tools.diarize ? tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), stop })
+          : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: Math.min(4, th), timeoutMs: 6 * 3600_000, stop })),
       ]);
       const bad = settled.find((x) => x.status === 'rejected');
       if (bad) throw bad.reason;
