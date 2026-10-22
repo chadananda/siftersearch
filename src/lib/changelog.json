@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T15:52:39.309Z",
+  "generated": "2026-10-22T16:04:55.645Z",
   "entries": [
+    {
+      "hash": "10b37406",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "AUDIOGRAM SHORTS (Chad 10-22) — a vertical 1080×1920 (or 1:1) H.264/AAC clip of a moment or any range ≤ 60 s (≤ 180 s on request): captions from our word alignment (clean words, phrase-grouped 2–6 words at pauses/punctuation, the current word highlighted) + .srt/.vtt sidecars; five templates — On Air (tuning dial at the talk's year, amber valve glow, the portrait on a turning record, captions on a cream card) · Archive Tape (sepia portrait, grain and flicker, turning reels, typewriter captions) · Scripture Insert (the speaker's words above, the quoted passage and its citation on a card below) · Portrait Cinema (slow Ken Burns, big kinetic word-by-word captions) · Minimal (a page of the excerpt in a large serif, current word amber, later words dim) — chosen by content (a quotation of the Writings in range → Scripture Insert; recorded ≤ 1975 or grade D/E → Archive Tape) else rotated deterministically per moment; the link back baked in (a small URL watermark throughout, an end card with 'Hear the full talk', speaker and talk, the short URL and a QR code to the full talk at that moment); a ready-to-paste post (title, the quote, speaker, talk, link, hashtags). Rendered on boss's CPU through a new fixed-recipe gate verb (short: tar in, MP4 out; static layers computed once: 19 s clip in 3–8 s); cached per talk version × range × format × template in the item's shorts/; POST /api/media/shorts (public for a talk's moments, any range with the internal key; queue cap) + GET /api/media/shorts/run/:id; served wherever clips may be",
+      "scope": "media"
+    },
+    {
+      "hash": "fac2a020",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "'Heard in the transcripts' identifies the voice and highlights the match; fonts: optional display + self-hosted Observatory faces",
+      "scope": "media"
+    },
     {
       "hash": "4ab882bf",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Phone-sized pages, noted words highlighted, notes at the book's level",
       "scope": "reading"
-    },
-    {
-      "hash": "8ddbae40",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Cited sources renumbered S1, S2 … in order of first citation",
-      "scope": "reading"
-    },
-    {
-      "hash": "432a3efd",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "/api/v1/reading/turn + /session — the reading guide as its own API; sources carry publisher links",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "10b37406",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "AUDIOGRAM SHORTS (Chad 10-22) — a vertical 1080×1920 (or 1:1) H.264/AAC clip of a moment or any range ≤ 60 s (≤ 180 s on request): captions from our word alignment (clean words, phrase-grouped 2–6 words at pauses/punctuation, the current word highlighted) + .srt/.vtt sidecars; five templates — On Air (tuning dial at the talk's year, amber valve glow, the portrait on a turning record, captions on a cream card) · Archive Tape (sepia portrait, grain and flicker, turning reels, typewriter captions) · Scripture Insert (the speaker's words above, the quoted passage and its citation on a card below) · Portrait Cinema (slow Ken Burns, big kinetic word-by-word captions) · Minimal (a page of the excerpt in a large serif, current word amber, later words dim) — chosen by content (a quotation of the Writings in range → Scripture Insert; recorded ≤ 1975 or grade D/E → Archive Tape) else rotated deterministically per moment; the link back baked in (a small URL watermark throughout, an end card with 'Hear the full talk', speaker and talk, the short URL and a QR code to the full talk at that moment); a ready-to-paste post (title, the quote, speaker, talk, link, hashtags). Rendered on boss's CPU through a new fixed-recipe gate verb (short: tar in, MP4 out; static layers computed once: 19 s clip in 3–8 s); cached per talk version × range × format × template in the item's shorts/; POST /api/media/shorts (public for a talk's moments, any range with the internal key; queue cap) + GET /api/media/shorts/run/:id; served wherever clips may be",
+        "scope": "media"
+      },
+      {
+        "hash": "fac2a020",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "'Heard in the transcripts' identifies the voice and highlights the match; fonts: optional display + self-hosted Observatory faces",
+        "scope": "media"
+      },
       {
         "hash": "4ab882bf",
         "date": "2026-10-22",
@@ -7006,22 +7020,6 @@
         "date": "2026-10-13",
         "type": "New",
         "description": "Phone-sized pages, noted words highlighted, notes at the book's level",
-        "scope": "reading"
-      }
-    ],
-    "2026-10-12": [
-      {
-        "hash": "8ddbae40",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Cited sources renumbered S1, S2 … in order of first citation",
-        "scope": "reading"
-      },
-      {
-        "hash": "432a3efd",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "/api/v1/reading/turn + /session — the reading guide as its own API; sources carry publisher links",
         "scope": "reading"
       }
     ]

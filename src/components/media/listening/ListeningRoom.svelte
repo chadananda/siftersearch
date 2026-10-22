@@ -49,7 +49,7 @@
     const end = h.t1 && h.t1 > h.t0 ? Math.min(h.t1, h.t0 + 40) : h.t0 + 20;
     playExcerpt({ ...(t.row || { s: h.slug, t: t.title, sp: t.sp, y: t.y }), hl: [Math.max(0, h.t0 - 0.3), end] }, t.s ? { n: t.s.n, p: t.s.p } : null);
   }
-  let qTimer, hitTimer, hitSeq = 0;
+  let qTimer, hitTimer, hitSeq = 0, hitAbort = null;
 
   const active = $derived(!!(q.trim() || preset || decade || speaker));
   const results = $derived(active ? searchItems(index, { q, preset, decade, speaker }, speakersByKey) : items);
@@ -89,14 +89,24 @@
     if (text.length < 3) { hits = null; return; }
     hitTimer = setTimeout(async () => {
       const id = ++hitSeq;
+      hitAbort?.abort();
+      hitAbort = new AbortController();
       try {
-        const data = await media.list(`q=${encodeURIComponent(text)}&limit=60&facets=0`);
+        let found;
+        try { found = (await media.heard(text, hitAbort.signal)).hits || []; }
+        catch (e) {
+          if (e.name === 'AbortError') return;
+          // the engine route not there (yet): the transcript word search the listing API has always offered
+          const data = await media.list(`q=${encodeURIComponent(text)}&limit=60&facets=0`);
+          const meta = new Map((data.items || []).map((i) => [i.id, i]));
+          found = (data.hits || []).map((h) => ({ ...h, title: meta.get(h.item_id)?.title, speaker: meta.get(h.item_id)?.speaker, speaker_key: meta.get(h.item_id)?.speaker_key, year: meta.get(h.item_id)?.year }));
+        }
         if (id !== hitSeq) return;
-        hitItems = new Map((data.items || []).map((i) => [i.slug, i]));
+        hitItems = new Map(found.map((h) => [h.slug, { title: h.title, speaker: h.speaker, speaker_key: h.speaker_key, year: h.year }]));
         hitQuery = text; openTalks = new Set();
-        hits = (data.hits || []).slice(0, 40);
+        hits = found.slice(0, 40);
       } catch { if (id === hitSeq) hits = null; }
-    }, 550);
+    }, 300);
   }
 
   const setPreset = (id) => { preset = preset === id ? '' : id; limit = 30; loadAll(); sync(); };
@@ -178,7 +188,7 @@
                 </span>
               </div>
               {#each shown as h, i (`${h.t0}-${i}`)}
-                {@const sn = snippetAround(h.text, hitQuery, 230)}
+                {@const sn = snippetAround(h.text, [hitQuery, ...(h.terms || [])].join(' '), 230)}
                 <div class="heard-line">
                   <button type="button" class="heard-t" onclick={() => hearHit(h)} aria-label={`Hear ${t.title} from ${formatTime(h.t0)}`}
                     class:on={preview.playing && preview.item?.s === g.slug && Math.abs((preview.start ?? -9) - Math.max(0, h.t0 - 0.3)) < 0.5}>

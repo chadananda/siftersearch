@@ -6,6 +6,8 @@
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import MediaPlayer from '../../components/media/MediaPlayer.svelte';
+import TalkHero from '../../components/media/TalkHero.svelte';
+import { eraVar } from '../../lib/media-listing.js';
 import { parseRange } from '../../../api/lib/media/range.js';
 import { ikUrl } from '../../lib/imagekit.js';
 import { relatedTalks } from '../../lib/media-listing.js';
@@ -78,7 +80,10 @@ const ld = item ? [{
   <main class="listening-room bg-radio-room text-radio-ink">
     <div class="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
       {item ? (
-        <MediaPlayer client:load {item} {initialRange} {related} speakerKey={me?.k || null} {speakersByKey} />
+        <div style={`--tint:${eraVar(item.year)}`}>
+          <TalkHero {item} speakerKey={me?.k || null} />
+          <MediaPlayer client:load {item} {initialRange} {related} speakerKey={me?.k || null} {speakersByKey} />
+        </div>
       ) : (
         <section class="py-24 text-center">
           <p class="font-dial text-7xl font-extrabold text-radio-amber">404</p>

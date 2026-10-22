@@ -57,6 +57,7 @@ const INDEX_FILE = process.env.MEDIA_INDEX_CACHE || join(tmpdir(), 'siftersearch
 const INDEX_BUDGET = 25;
 let indexCache = null, indexBuilding = null;
 const momentCards = new Map();   // moment key → rendered quote card (JPEG)
+const heardCache = new Map();    // query → transcript hits (2 min)
 async function loadIndexCache() {
   if (indexCache) return indexCache;
   const saved = await readJson(INDEX_FILE);
@@ -195,6 +196,41 @@ export default async function mediaRoutes(fastify) {
   });
   // introductory clips: the best section-level ranges (rated open / seeker-friendly) across the library
   fastify.get('/intro-clips', async (req, reply) => { pub(reply, 300); return { clips: await introClips({ limit: Number(req.query?.limit) || 40 }) }; });
+
+  // HEARD IN THE TRANSCRIPTS (the /media tuner): the site's own search engine — semantic + keyword + phrase layers, no
+  // planner call — restricted to the Media collection, mapped back to talks and timestamps through the paragraph block
+  // attributes. Concepts match, not just words. Cached 2 min per query; edge-cached 60 s.
+  fastify.get('/heard', async (req, reply) => {
+    const q = String(req.query?.q || '').trim().slice(0, 200);
+    if (q.length < 2) return { hits: [] };
+    const key = q.toLowerCase();
+    const c = heardCache.get(key);
+    if (c && Date.now() - c.at < 120_000) { pub(reply, 60); return c.value; }
+    const t0 = Date.now();
+    const { multiIndexSearch } = await import('../lib/search.js');
+    const res = await multiIndexSearch(q, { limit: 40, filters: { collection: 'Media' }, diversify: false, phraseLayer: true, qdrantKeyword: true }).catch(() => ({ hits: [] }));
+    const order = [...new Set((res.hits || []).map((h) => h.paragraph_id ?? h.id).filter(Boolean))];
+    const terms = new Map((res.hits || []).map((h) => [h.paragraph_id ?? h.id,
+      [...new Set([...String(h._formatted?.text || '').matchAll(/<em>(.*?)<\/em>/g)].map((m) => m[1]))].slice(0, 12)]));
+    const rows = await mediaParagraphs(order);
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const items = await mediaByDocIds([...new Set(rows.map((r) => r.doc_id))]);
+    const byDoc = new Map(items.map((i) => [i.doc_id, i]));
+    const hits = [];
+    for (const id of order) {
+      const r = byId.get(id); const it = r && byDoc.get(r.doc_id);
+      if (!it || it.state !== 'done') continue;
+      let a = {}; try { a = JSON.parse(r.block_attrs || '{}'); } catch { /* none */ }
+      if (a.t0 == null) continue;   // a heading or the summary line: not a moment in the recording
+      hits.push({ slug: it.slug, title: it.title, speaker: it.speaker, speaker_key: it.speaker_key, year: it.year, t0: Number(a.t0) || 0, t1: Number(a.t1) || null,
+        text: String(r.text).slice(0, 900), terms: terms.get(id) || [] });
+    }
+    const value = { hits, ms: Date.now() - t0 };
+    if (heardCache.size > 500) heardCache.clear();
+    heardCache.set(key, { at: Date.now(), value });
+    pub(reply, 60);
+    return value;
+  });
 
   // one item: what the player needs (no audio bytes)
   fastify.get('/:slug', async (req, reply) => {
