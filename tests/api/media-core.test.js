@@ -177,3 +177,14 @@ describe('diarization smoothing', () => {
     expect(smoothTurns(turns).map((t) => t.speaker)).toEqual(['S1', 'S1', 'S1', 'S2']);
   });
 });
+
+describe('the guard keeps every spoken word (pilot finding)', () => {
+  it('refuses an edit that swallows a neighbouring word, keeps multi-word name fixes', () => {
+    const v = buildVocab();
+    const ws = 'and Shogu Effendi told us about the Haziratul Ghots'.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
+    const { ok, refused } = guardEdits(ws, [{ from: 'Shogu Effendi told', to: 'Shoghi Effendi' }, { from: 'Haziratul Ghots', to: 'Ḥaẓíratu’l-Quds' }], v);
+    expect(refused.map((r) => r.why)).toEqual(['would drop or change a word']);
+    expect(ok.map((e) => e.to)).toEqual(['Ḥaẓíratu’l-Quds']);
+    expect(guardEdits(ws, [{ from: 'Shogu Effendi', to: 'Shoghi Effendi' }], v).ok).toHaveLength(1);
+  });
+});

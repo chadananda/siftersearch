@@ -118,6 +118,23 @@ export function suspects(words, vocab, { maxN = 3, limit = 40 } = {}) {
   return out;
 }
 
+// common English words a misheard NAME is never made of: an edit whose first or last word is one of these swallowed a
+// spoken word (pilot, Nakhjavání talk: "Shogu Effendi told" → "Shoghi Effendi" lost "told")
+const COMMON = new Set(`a an the and or but if so as at by for from in into of on to with about after before over under up out
+i you he she it we they me him her us them my your his its our their this that these those there here then now when where who
+whom which what why how is was are were be been being am has have had do does did done will would shall should can could may
+might must not no yes very just also only even still always never ever again said says say told tell tells came come comes went
+go goes wrote writes write explained explains spoke speaks speak asked asks answered answers called calls know knew known
+think thought see saw seen made make makes gave give gives took take takes`.split(/\s+/));
+
+/** Neither edge of a multi-word edit may be a common English word the term itself lacks ("the Báb" may take "the"). Pure. */
+export function edgesAlike(from, to) {
+  const ws = String(from).split(/\s+/).map((w) => core(w).toLowerCase()).filter(Boolean);
+  if (ws.length < 2) return true;
+  const own = new Set(String(to).toLowerCase().split(/\s+/));
+  return ![ws[0], ws[ws.length - 1]].some((w) => COMMON.has(w) && !own.has(w));
+}
+
 /** Word-index span of `from` in the paragraph's words (punctuation and case ignored), at or after `start`; -1 when absent. */
 export function findSpan(words, from, start = 0) {
   const want = String(from).split(/\s+/).map((w) => keyOf(w)).filter(Boolean);
@@ -143,6 +160,7 @@ export function guardEdits(words, proposed, vocab) {
     if (!vocab.terms.has(to)) { refused.push({ from, to, why: 'not in the vocabulary' }); continue; }
     if (from.split(/\s+/).length > 4) { refused.push({ from, to, why: 'more than four words' }); continue; }
     if (!soundsAlike(from, to)) { refused.push({ from, to, why: 'does not sound alike' }); continue; }
+    if (!edgesAlike(from, to)) { refused.push({ from, to, why: 'would drop or change a word' }); continue; }
     const i0 = findSpan(words, from);
     if (i0 < 0) { refused.push({ from, to, why: 'not in the text' }); continue; }
     const i1 = i0 + from.split(/\s+/).length;
