@@ -201,14 +201,25 @@ export async function runItem(item, opts = {}, deps = {}) {
       // an interpreted talk diarizes on boss first (its speaker blocks choose each block's language)
       const multi = lang === 'multi';
       const turnsFile = join(dir, 'diarization.json');
-      // allSettled: when a drain kills one, the other is stopped too before the stage gives up (never orphaned)
+      // both run DETACHED (10-22: deploys every few minutes kept killing a 15-minute transcription): the boss job and the
+      // tower diarization keep running through a drain, and the resumed stage re-attaches to them (meta.asr_job, the pid
+      // file). allSettled: neither is left behind when the other fails.
+      const asrOpts = { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 };
+      if (!meta.asr_job?.id) { meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: tools.asrHost ? tools.asrHost() : null }; await save(); }
+      const viaJob = async () => {
+        if (!tools.asrJob || !meta.asr_job.host) return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop });
+        try { return await tools.asrJob(join(dir, v.file), asrOpts, { host: meta.asr_job.host, job: meta.asr_job.id, stop }); }
+        catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop }); }
+      };
       const settled = await Promise.allSettled([
-        tools.asr('transcribe', join(dir, v.file), { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 }, { timeoutMs: 12 * 3600_000, stop }),
-        multi ? null : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: th, timeoutMs: 6 * 3600_000, stop }),
+        viaJob(),
+        multi ? null : (tools.detachedTool ? tools.detachedTool('diarize', join(dir, v.file), { output: turnsFile }, { pidFile: join(dir, 'diarization.pid'), threads: th, stop })
+          : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: th, timeoutMs: 6 * 3600_000, stop })),
       ]);
       const bad = settled.find((x) => x.status === 'rejected');
       if (bad) throw bad.reason;
       const r = settled[0].value;
+      delete meta.asr_job;
       const raw = await readJson(out);
       if (!multi) {
         raw.turns = smoothTurns((await readJson(turnsFile, { turns: [] })).turns || []);

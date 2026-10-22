@@ -2,6 +2,7 @@
 // ffprobe and yt-dlp — every one at nice 19 with a thread cap, so a transcription never costs a reader their search. The
 // thread cap follows measured search latency on the gateway (MEDIA_THREADS default; halved while search is slow).
 import { spawn } from 'child_process';
+import { readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -106,6 +107,69 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
     if (err.code !== 'DRAIN' && /ssh exit 255|Connection|timed out|No route/i.test(err.message)) return local(sub, input, opts, { timeoutMs, stop });   // host unreachable → tower
     throw err;
   } finally { await unlink(flac).catch(() => {}); }
+}
+
+// ── DETACHED long work (survives this service's drains and restarts; 10-22: deploys every few minutes kept killing a
+// 15-minute transcription, so a 92-minute talk might never finish). The stage records the job; a resumed stage re-attaches.
+
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** A transcription on the ASR host as a detached job: start (unless `job` is already known there), poll every pollMs,
+ *  fetch. A drain (stop()) leaves the remote job RUNNING and throws DrainAbort — the resumed stage picks it up.
+ *  → { output, host, job, reattached } */
+export async function asrJob(input, opts = {}, { host = asrHost(), threads = asrThreads(), job, stop = null, pollMs = 15000, onStart = async () => {}, exec = run } = {}) {
+  const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs: 600_000, ...o });
+  const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
+  let st = await state().catch(() => ({ state: 'missing' }));
+  const reattached = st.state === 'running' || st.state === 'done';
+  if (!reattached) {
+    const { tmpdir } = await import('os');
+    const { readFile, unlink } = await import('fs/promises');
+    if (installedOn !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
+    const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
+    try {
+      await exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop });
+      await ssh(`start flac ${job} ${gateCommand('x', 'flac', { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });
+    } finally { await unlink(flac).catch(() => {}); }
+    await onStart();
+    st = { state: 'running' };
+  }
+  for (;;) {
+    if (st.state === 'done') break;
+    if (st.state === 'failed' || st.state === 'missing') throw new Error(`asr job ${job} ${st.state}: ${String(st.error || '').slice(-300)}`);
+    for (let waited = 0; waited < pollMs; waited += 1000) { if (stop?.()) throw new DrainAbort(`asr job ${job} (left running on ${host})`); await pause(1000); }
+    st = await state().catch(() => ({ state: 'running' }));   // a blip on the network is not a failure
+  }
+  const { stdout } = await ssh(`fetch ${job}`, { timeoutMs: 300_000 });
+  const { writeFile } = await import('fs/promises');
+  await writeFile(opts.output, stdout);
+  return { output: opts.output, host, job, reattached };
+}
+
+/** A tower-side tool as a DETACHED process (its pid in pidFile): a drain leaves it running; a resumed stage waits for it.
+ *  → the tool's JSON (from its stdout file) */
+export async function detachedTool(sub, input, opts = {}, { pidFile, threads = defaultThreads(), stop = null, pollMs = 2000 } = {}) {
+  const { readFile, writeFile } = await import('fs/promises');
+  const { openSync, closeSync, existsSync } = await import('fs');
+  const outFile = `${pidFile}.out`;
+  // alive = that pid exists AND is our tool (a recycled pid must not be waited on)
+  const alive = (pid) => { try { process.kill(pid, 0); } catch { return false; } try { return readFileSync(`/proc/${pid}/cmdline`, 'utf8').includes('media_tool'); } catch { return true; } };
+  let pid = Number(await readFile(pidFile, 'utf8').catch(() => 0)) || 0;
+  if (!pid || !alive(pid)) {
+    if (pid && existsSync(outFile) && (await readFile(outFile, 'utf8')).trim()) return JSON.parse((await readFile(outFile, 'utf8')).trim().split('\n').pop());
+    const args = [TOOL, sub, input, '--threads', String(threads)];
+    for (const [k, v] of Object.entries(opts)) { if (v === true) args.push(`--${k}`); else if (v != null && v !== false && v !== '') args.push(`--${k}`, String(v)); }
+    const out = openSync(outFile, 'w'), err = openSync(`${pidFile}.err`, 'w');
+    const tenv = { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads), CUDA_VISIBLE_DEVICES: '' };
+    const p = spawn('nice', ['-n', '19', PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
+    p.unref(); closeSync(out); closeSync(err);
+    pid = p.pid;
+    await writeFile(pidFile, String(pid));
+  }
+  while (alive(pid)) { if (stop?.()) throw new DrainAbort(`${sub} (left running, pid ${pid})`); await pause(pollMs); }
+  const text = (await readFile(outFile, 'utf8').catch(() => '')).trim();
+  if (!text) throw new Error(`${sub} ended without a result: ${(await readFile(`${pidFile}.err`, 'utf8').catch(() => '')).trim().split('\n').slice(-3).join(' | ').slice(0, 400)}`);
+  return JSON.parse(text.split('\n').pop());
 }
 
 export async function ffprobe(path) {
