@@ -5,7 +5,7 @@ import { parseMediaPath, makeSlug, uniqueSlug, dateIn, slugify } from '../../api
 import { parseTime, parseRange, rangeFrom, clampClip, formatTime, rangeParam } from '../../api/lib/media/range.js';
 import { computePeaks, normalizePeaks } from '../../api/lib/media/peaks.js';
 import { toParagraphs, flattenWords, paragraphText, endsSentence, assignSpeakers, smoothTurns } from '../../api/lib/media/paragraphs.js';
-import { buildVocab, exactEdits, guardEdits, applyEdits, suspects, keyOf, soundsAlike, promptTerms } from '../../api/lib/media/vocab.js';
+import { buildVocab, exactEdits, guardEdits, applyEdits, suspects, keyOf, soundsAlike, promptTerms, trimEdit } from '../../api/lib/media/vocab.js';
 
 describe('names', () => {
   it('reads speaker, title, date from the archive naming patterns', () => {
@@ -141,10 +141,10 @@ describe('vocabulary corrector', () => {
       { from: 'was told', to: 'was recounted' },          // rewording
       { from: 'story', to: 'Riḍván' },                    // not alike
       { from: 'absent words', to: 'Quddús' },             // not in text / not alike
-      { from: 'the story of Mulla Husein and', to: 'Mullá Ḥusayn' },   // too long
+      { from: 'the story of Mulla Husein and', to: 'Mullá Ḥusayn' },   // trimmed to the name, which is already fixed
     ], vocab);
     expect(ok.map((e) => e.to)).toEqual(['Mullá Ḥusayn', 'Ṭáhirih', 'Badasht']);
-    expect(refused.map((r) => r.why)).toEqual(['not in the vocabulary', 'does not sound alike', 'does not sound alike', 'more than four words']);
+    expect(refused.map((r) => r.why)).toEqual(['not in the vocabulary', 'does not sound alike', 'does not sound alike', 'overlaps another edit']);
     expect(soundsAlike('Shoghi Effendi', 'Shoghi Effendi')).toBe(true);
   });
   it('suspects are name-like runs near a vocabulary term', () => {
@@ -182,9 +182,25 @@ describe('the guard keeps every spoken word (pilot finding)', () => {
   it('refuses an edit that swallows a neighbouring word, keeps multi-word name fixes', () => {
     const v = buildVocab();
     const ws = 'and Shogu Effendi told us about the Haziratul Ghots'.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
+    // the swallowed "told" is trimmed off: the name is fixed and "told" stays in the text
     const { ok, refused } = guardEdits(ws, [{ from: 'Shogu Effendi told', to: 'Shoghi Effendi' }, { from: 'Haziratul Ghots', to: 'Ḥaẓíratu’l-Quds' }], v);
-    expect(refused.map((r) => r.why)).toEqual(['would drop or change a word']);
-    expect(ok.map((e) => e.to)).toEqual(['Ḥaẓíratu’l-Quds']);
+    expect(refused).toEqual([]);
+    expect(ok.map((e) => [e.from, e.to])).toEqual([['Shogu Effendi', 'Shoghi Effendi'], ['Haziratul Ghots', 'Ḥaẓíratu’l-Quds']]);
+    expect(applyEdits(ws, ok).map((w) => w.w).join(' ')).toBe('and Shoghi Effendi told us about the Ḥaẓíratu’l-Quds');
     expect(guardEdits(ws, [{ from: 'Shogu Effendi', to: 'Shoghi Effendi' }], v).ok).toHaveLength(1);
+  });
+});
+
+describe('edits trimmed to the name (pilot, 2nd run)', () => {
+  it('context words copied on both sides, swallowed common words and a name inside a longer span', () => {
+    const v = buildVocab();
+    const ws = 'as Sogefendik expressed it Shogu Fendi speaks of the revelation of Baula today'.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
+    const { ok } = guardEdits(ws, [
+      { from: 'Sogefendik expressed', to: 'Shoghi Effendi expressed' },
+      { from: 'Shogu Fendi speaks', to: 'Shoghi Effendi' },
+      { from: 'revelation of Baula', to: 'Bahá’u’lláh' },
+    ], v);
+    expect(ok.map((e) => [e.from, e.to])).toEqual([['Sogefendik', 'Shoghi Effendi'], ['Shogu Fendi', 'Shoghi Effendi'], ['Baula', 'Bahá’u’lláh']]);
+    expect(trimEdit('the university', 'the Universal House of Justice')).toEqual({ from: 'university', to: 'Universal House of Justice' });
   });
 });

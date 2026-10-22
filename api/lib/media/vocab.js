@@ -152,9 +152,34 @@ export function findSpan(words, from, start = 0) {
  * (≤ 4 words) and sound like it. Anything else is refused with its reason — the corrector never rewords.
  * → { ok: [{ i0, i1, from, to, method: 'model' }], refused: [{ from, to, why }] }
  */
+/** A proposed edit TRIMMED to the name itself: context words the model copied on both sides ("Sogefendik expressed" →
+ *  "Shoghi Effendi expressed") and common words it swallowed ("Shogu Fendi speaks" → "Shoghi Effendi") are taken off,
+ *  so the guard judges just the name (pilot, 2nd Grossmann run: 33 such edits were refused whole). Pure. */
+export function trimEdit(from, to, vocab = null) {
+  const fw = String(from || '').trim().split(/\s+/).filter(Boolean), tw = String(to || '').trim().split(/\s+/).filter(Boolean);
+  const k = (w) => keyOf(stripPoss(w));
+  // shared words come off only while the target is not yet a vocabulary term ("Mulla Husein" → "Mullá Ḥusayn" stays whole)
+  const isTerm = () => !!vocab && vocab.terms.has(tw.join(' ').replace(/[,.;:!?]+$/, ''));
+  while (!isTerm() && fw.length > 1 && tw.length > 1 && k(fw[fw.length - 1]) === k(tw[tw.length - 1])) { fw.pop(); tw.pop(); }
+  while (!isTerm() && fw.length > 1 && tw.length > 1 && k(fw[0]) === k(tw[0])) { fw.shift(); tw.shift(); }
+  const own = new Set(tw.map((w) => core(w).toLowerCase()));
+  while (fw.length > 1 && COMMON.has(core(fw[fw.length - 1]).toLowerCase()) && !own.has(core(fw[fw.length - 1]).toLowerCase())) fw.pop();
+  while (fw.length > 1 && COMMON.has(core(fw[0]).toLowerCase()) && !own.has(core(fw[0]).toLowerCase())) fw.shift();
+  return { from: fw.join(' '), to: tw.join(' ').replace(/[,.;:!?]+$/, '') };
+}
+
 export function guardEdits(words, proposed, vocab) {
   const ok = [], refused = [], used = new Set();
-  for (const e of proposed || []) {
+  for (const e0 of proposed || []) {
+    const e = trimEdit(e0?.from, e0?.to, vocab);
+    // still not alike: the name may sit inside the span ("revelation of Baula" → Bahá’u’lláh) — take the sub-span that is
+    if (e.from && e.to && vocab.terms.has(e.to) && !soundsAlike(e.from, e.to)) {
+      const ws = e.from.split(/\s+/);
+      outer: for (let n = Math.min(4, ws.length - 1); n >= 1; n--) for (let i = 0; i + n <= ws.length; i++) {
+        const sub = ws.slice(i, i + n).join(' ');
+        if (soundsAlike(sub, e.to) && edgesAlike(sub, e.to)) { e.from = sub; break outer; }
+      }
+    }
     const from = String(e?.from || '').trim(), to = String(e?.to || '').trim();
     if (!from || !to) { refused.push({ from, to, why: 'empty' }); continue; }
     if (!vocab.terms.has(to)) { refused.push({ from, to, why: 'not in the vocabulary' }); continue; }

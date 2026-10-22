@@ -11,22 +11,47 @@ export const okLicence = (l) => /^(public domain|pd|cc0|cc[ -]by(-sa)?[ -]?\d|cc
 /** Does a Wikidata description place the person in the Bahá'í Faith (or name the tradition we expect)? */
 export const describesBahai = (desc, tradition = "Baha'i") => (/bah[aá]/i.test(tradition) ? /bah[aá][’'‘]?[ií]/i.test(String(desc || '')) : !!desc);
 
+const BAHAI_FAITH = 'Q22679';   // Wikidata: Bahá'í Faith (religion, P140)
+const ascii = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘ʼ`´']/g, '').trim();
+
+/** Commons image info for a file name → { url, source_url, licence, artist } when its licence is accepted, else null. */
+async function commonsInfo(get, file) {
+  const ii = await get(`${COMMONS}?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=480&titles=${encodeURIComponent(file.startsWith('File:') ? file : `File:${file}`)}`);
+  const info = Object.values(ii?.query?.pages || {})[0]?.imageinfo?.[0];
+  const md = info?.extmetadata || {};
+  const licence = strip(md.LicenseShortName?.value);
+  if (!info?.thumburl || !okLicence(licence) || !/^image\/(jpeg|png)/.test(info.mime || 'image/jpeg')) return null;
+  return { url: info.thumburl, source_url: info.descriptionurl, licence, licence_url: md.LicenseUrl?.value || null, artist: strip(md.Artist?.value).slice(0, 200) };
+}
+
+/**
+ * 1) Wikidata: a person of that name whose description names the Bahá'í Faith or whose religion (P140) is the Bahá'í
+ *    Faith, with an image (P18); 2) Commons: a photo whose FILE NAME carries the person's first and last name. Licences:
+ *    public domain / CC BY / CC BY-SA only, author kept. (Names are searched without diacritics: Wikidata finds
+ *    "Ali Nakhjavani", not "‘Alí Nakhjavání".)
+ */
 export async function findSpeakerImage(name, { tradition = "Baha'i", fetchImpl = fetch } = {}) {
-  if (!name || String(name).split(/\s+/).length < 2) return null;   // a surname alone is too ambiguous to picture
+  const plain = ascii(name);
+  const toks = plain.toLowerCase().split(/[\s-]+/).filter((t) => t.length > 1);
+  if (toks.length < 2) return null;   // a surname alone is too ambiguous to picture
   const get = async (url) => (await fetchImpl(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15000) })).json();
-  const s = await get(`${WD}?action=wbsearchentities&format=json&language=en&type=item&limit=7&search=${encodeURIComponent(name)}`);
+  const s = await get(`${WD}?action=wbsearchentities&format=json&language=en&type=item&limit=7&search=${encodeURIComponent(plain)}`);
   for (const e of s?.search || []) {
-    if (!describesBahai(e.description, tradition)) continue;
-    const c = await get(`${WD}?action=wbgetclaims&format=json&property=P18&entity=${e.id}`);
-    const file = c?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+    const ent = await get(`${WD}?action=wbgetentities&format=json&props=claims&ids=${e.id}`);
+    const claims = ent?.entities?.[e.id]?.claims || {};
+    const religion = (claims.P140 || []).map((c) => c?.mainsnak?.datavalue?.value?.id);
+    if (!describesBahai(e.description, tradition) && !(/bah[aá]/i.test(tradition) && religion.includes(BAHAI_FAITH))) continue;
+    const file = claims.P18?.[0]?.mainsnak?.datavalue?.value;
     if (!file) continue;
-    const ii = await get(`${COMMONS}?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=480&titles=${encodeURIComponent(`File:${file}`)}`);
-    const info = Object.values(ii?.query?.pages || {})[0]?.imageinfo?.[0];
-    const md = info?.extmetadata || {};
-    const licence = strip(md.LicenseShortName?.value);
-    if (!info?.thumburl || !okLicence(licence)) continue;
-    return { url: info.thumburl, source_url: info.descriptionurl, licence, licence_url: md.LicenseUrl?.value || null, artist: strip(md.Artist?.value).slice(0, 200),
-      wikidata: e.id, who: `${e.label} — ${e.description}`, kind: 'photo' };
+    const info = await commonsInfo(get, file);
+    if (info) return { ...info, wikidata: e.id, who: `${e.label} — ${e.description || ''}`, kind: 'photo' };
+  }
+  const c = await get(`${COMMONS}?action=query&format=json&list=search&srnamespace=6&srlimit=10&srsearch=${encodeURIComponent(`"${plain}"`)}`);
+  for (const hit of c?.query?.search || []) {
+    const t = ascii(hit.title).toLowerCase();
+    if (!toks.every((k) => t.includes(k)) || !/\.(jpe?g|png)$/i.test(hit.title)) continue;
+    const info = await commonsInfo(get, hit.title);
+    if (info) return { ...info, who: hit.title, kind: 'photo', via: 'commons-search' };
   }
   return null;
 }

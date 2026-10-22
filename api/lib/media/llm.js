@@ -62,7 +62,8 @@ ${sus.map((s) => `[${s.p}] ${s.from} → ${s.candidates.join(' | ')}`).join('\n'
 VOCABULARY: ${offered.join(' | ')}
 TRANSCRIPT:
 ${ch.map((p) => `[${p.n}] ${paragraphText(byN.get(p.n))}`).join('\n')}
-Return JSON {"edits":[{"p": paragraph number, "from": "exact words from the transcript (1-4 words)", "to": "exact VOCABULARY entry"}]} — {"edits":[]} when nothing needs fixing.`, opts);
+Return JSON {"edits":[{"p": paragraph number, "from": "exact words from the transcript (1-4 words)", "to": "exact VOCABULARY entry"}]} — {"edits":[]} when nothing needs fixing.
+"from" holds ONLY the misheard name itself — never a neighbouring word: {"from": "Sogefendik", "to": "Shoghi Effendi"}, not {"from": "Sogefendik expressed", "to": "Shoghi Effendi expressed"}.`, opts);
     const byP = new Map();
     for (const e of out?.edits || []) { if (!byP.has(Number(e.p))) byP.set(Number(e.p), []); byP.get(Number(e.p)).push(e); }
     for (const [pn, edits] of byP) {

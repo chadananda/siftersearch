@@ -200,14 +200,20 @@ describe('sources and thumbnails', () => {
     expect(describesBahai('American football player')).toBe(false);
     expect(tileSvg({ speaker: 'Hooper Dunbar', peaks: [0, 10, -5, 5] })).toContain('>HD<');
   });
-  it('a photo only for a person described as Bahá’í, with an accepted licence', async () => {
+  it('a photo only for a Bahá’í of that name (description or religion claim), with an accepted licence; Commons by file name as fallback', async () => {
+    const info = (lic) => ({ query: { pages: { 1: { imageinfo: [{ thumburl: 'https://upload/jd.jpg', mime: 'image/jpeg', descriptionurl: 'https://commons/File:JD.jpg', extmetadata: { LicenseShortName: { value: lic }, Artist: { value: '<a>Someone</a>' } } }] } } } });
     const fetchImpl = vi.fn(async (url) => ({ json: async () => (url.includes('wbsearchentities')
-      ? { search: [{ id: 'Q1', label: 'John Doe', description: 'American actor' }, { id: 'Q2', label: 'John Doe', description: 'Bahá’í author' }] }
-      : url.includes('wbgetclaims') ? { claims: { P18: [{ mainsnak: { datavalue: { value: 'JD.jpg' } } }] } }
-        : { query: { pages: { 1: { imageinfo: [{ thumburl: 'https://upload/jd.jpg', descriptionurl: 'https://commons/File:JD.jpg', extmetadata: { LicenseShortName: { value: 'CC BY-SA 3.0' }, Artist: { value: '<a>Someone</a>' } } }] } } } }) }));
-    const r = await findSpeakerImage('John Doe', { fetchImpl });
+      ? { search: [{ id: 'Q1', label: 'John Doe', description: 'American actor' }, { id: 'Q2', label: 'John Doe', description: 'Iranian historian' }] }
+      : url.includes('wbgetentities') ? { entities: { [url.match(/ids=(Q\d+)/)[1]]: { claims: url.includes('Q2') ? { P140: [{ mainsnak: { datavalue: { value: { id: 'Q22679' } } } }], P18: [{ mainsnak: { datavalue: { value: 'JD.jpg' } } }] } : { P18: [{ mainsnak: { datavalue: { value: 'X.jpg' } } }] } } } }
+        : info('CC BY-SA 3.0')) }));
+    const r = await findSpeakerImage('Jóhn Dóe', { fetchImpl });
     expect(r).toMatchObject({ wikidata: 'Q2', licence: 'CC BY-SA 3.0', artist: 'Someone', url: 'https://upload/jd.jpg' });
+    expect(fetchImpl.mock.calls[0][0]).toContain('search=John%20Doe');   // searched without diacritics
     expect(await findSpeakerImage('Doe', { fetchImpl })).toBeNull();
+    // no Wikidata Bahá’í with an image → Commons, only a file whose name carries both names
+    const commons = vi.fn(async (url) => ({ json: async () => (url.includes('wbsearchentities') ? { search: [] }
+      : url.includes('list=search') ? { query: { search: [{ title: 'File:Jane Roe 1950.jpg' }, { title: 'File:John Doe portrait.jpg' }] } } : info('Public domain')) }));
+    expect(await findSpeakerImage('John Doe', { fetchImpl: commons })).toMatchObject({ via: 'commons-search', licence: 'Public domain' });
   });
   it('threads follow search latency', () => {
     expect(threadsFor([1.2, 1.5, 2.0], { base: 16 })).toBe(16);
