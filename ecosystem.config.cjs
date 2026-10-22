@@ -680,18 +680,18 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
-      // The MEDIA library pipeline (planning/media-library-plan.md): media-scan / media-item / media-vocab only (OPS_ONLY), in
-      // its own process so an hour-long transcription never shares a drain with the reports lanes (10-21: a media stage held
-      // dewey-ocr, source-links-build and every other lane in 'draining'). Its long stages also stop at once on a drain.
+      // The MEDIA library pipeline (planning/media-library-plan.md): media-scan / media-item / media-vocab, in its own process
+      // with its own small entry so an hour-long transcription never shares a drain with the reports lanes (10-21: a media
+      // stage held dewey-ocr, source-links-build and every other lane in 'draining'). Its long stages stop at once on a drain.
       name: 'siftersearch-media',
-      script: 'api/workers/reports-worker.js',
+      script: 'api/workers/media-worker.js',
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
       restart_delay: 30000,
       watch: false,
-      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849', OPS_ONLY: 'media-scan,media-item,media-vocab' },
+      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
       error_file: './logs/media-error.log',
       out_file: './logs/media-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'

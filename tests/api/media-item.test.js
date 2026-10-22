@@ -112,6 +112,26 @@ describe('media item stage machine', () => {
     expect(rest.done[0]).toBe('transcribe');
   });
 
+  it('when a drain kills the diarization, the ASR beside it is stopped too before the stage gives up (no orphan)', async () => {
+    const { run, liveChildren } = await import('../../api/lib/media/tools.js');
+    const d = fakes();
+    let draining = false;
+    d.drainingNow = () => draining;
+    d.tools.asr = vi.fn(async (sub, input, opts, o) => {
+      if (sub === 'probe' || sub === 'langid') return sub === 'probe' ? { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en' }] } : { excerpts: [] };
+      await run('sleep', ['30'], { stop: o.stop, pollMs: 300 });   // the boss ASR: its poll is slower
+      return {};
+    });
+    d.tools.tool = vi.fn(async (sub, input, opts, o = {}) => {
+      if (sub === 'dfn') { writeFileSync(opts.output, 'x'); return {}; }
+      if (sub === 'diarize') { draining = true; await run('sleep', ['30'], { stop: o.stop, pollMs: 20 }); }
+      return { snr_db: 20 };
+    });
+    const r = await runItem({ id: 11, source_kind: 'file', source_ref: src }, {}, d);
+    expect(r).toMatchObject({ yielded: true, resume: { stage: 'transcribe' } });
+    expect(liveChildren()).toBe(0);
+  });
+
   it('diarization runs beside the ASR (on tower) and its voices land on the words', async () => {
     const d = fakes();
     d.tools.tool = vi.fn(async (sub, input, opts) => {

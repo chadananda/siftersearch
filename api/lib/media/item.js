@@ -198,10 +198,14 @@ export async function runItem(item, opts = {}, deps = {}) {
       // an interpreted talk diarizes on boss first (its speaker blocks choose each block's language)
       const multi = lang === 'multi';
       const turnsFile = join(dir, 'diarization.json');
-      const [r] = await Promise.all([
+      // allSettled: when a drain kills one, the other is stopped too before the stage gives up (never orphaned)
+      const settled = await Promise.allSettled([
         tools.asr('transcribe', join(dir, v.file), { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 }, { timeoutMs: 12 * 3600_000, stop }),
         multi ? null : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: th, timeoutMs: 6 * 3600_000, stop }),
       ]);
+      const bad = settled.find((x) => x.status === 'rejected');
+      if (bad) throw bad.reason;
+      const r = settled[0].value;
       const raw = await readJson(out);
       if (!multi) {
         raw.turns = smoothTurns((await readJson(turnsFile, { turns: [] })).turns || []);

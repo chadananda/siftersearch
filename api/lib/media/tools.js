@@ -15,16 +15,24 @@ export const YTDLP = () => process.env.MEDIA_YTDLP || join(homedir(), 'sifter', 
 // at 8 → median 1.6 s, p90 2.1 s; idle → 1.8–2.2 s, p90 2.4–3.0 s. Search stays in its usual range at 8.
 export const defaultThreads = () => Math.max(2, Number(process.env.MEDIA_THREADS) || 8);
 
+// every live child, killed when this process exits — a drained service exits as soon as its job yields, and a sibling
+// child whose own stop-poll had not fired yet (the ssh beside a killed diarization, 10-22 00:13) was left orphaned
+const live = new Set();
+process.once('exit', () => { for (const c of live) { try { c.kill('SIGTERM'); } catch { /* gone */ } } });
+
 /** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
 export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
 
 /** Run a command at nice 19 → { code, stdout, stderr }; rejects on a non-zero exit with the stderr tail.
  *  stop: () => boolean, polled every pollMs — true (the service is draining) kills the child and rejects with DrainAbort, so a
  *  long transcription never holds a drain (10-21: a 37-minute stage parked every reports lane). */
+export const liveChildren = () => live.size;
 export function run(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
   return new Promise((resolve, reject) => {
     const tenv = threads ? { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads) } : {};
     const p = spawn('nice', ['-n', '19', cmd, ...args], { env: { ...process.env, ...tenv, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    live.add(p);
+    p.on('exit', () => live.delete(p));
     let out = '', err = '', stopped = false;
     const timer = setTimeout(() => p.kill('SIGKILL'), timeoutMs);
     const poll = stop ? setInterval(() => { if (!stopped && stop()) { stopped = true; p.kill('SIGTERM'); setTimeout(() => p.kill('SIGKILL'), 5000).unref?.(); } }, pollMs) : null;
