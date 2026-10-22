@@ -103,14 +103,16 @@ export function suspects(words, vocab, { maxN = 3, limit = 40 } = {}) {
       const from = words.slice(i, i + n).map((w) => core(w.w)).join(' ');
       const k = keyOf(stripPoss(from));
       if (k.length < 5 || seen.has(k) || vocab.byKey.has(k)) continue;
-      const allowed = Math.max(1, Math.ceil(k.length * 0.3));
+      // a misheard name often LOSES letters ("Baola" for Bahá’u’lláh): longer terms are searched too, and candidates rank by
+      // distance relative to the longer key, so the model sees Bahá’u’lláh beside Bahá
       const hits = [];
-      for (let L = k.length - allowed; L <= k.length + allowed; L++) for (const e of byLen.get(L) || []) {
+      for (let L = k.length - 2; L <= k.length + 5; L++) for (const e of byLen.get(L) || []) {
         if (e.key[0] !== k[0] && e.key[1] !== k[1]) continue;
+        const allowed = Math.ceil(Math.max(k.length, e.key.length) * 0.45);
         const d = levenshtein(k, e.key, allowed);
-        if (d <= allowed) hits.push({ term: e.term, d });
+        if (d <= allowed) hits.push({ term: e.term, r: d / Math.max(k.length, e.key.length) });
       }
-      if (hits.length) { seen.add(k); out.push({ from, candidates: hits.sort((a, b) => a.d - b.d).slice(0, 4).map((h) => h.term) }); }
+      if (hits.length) { seen.add(k); out.push({ from, candidates: hits.sort((a, b) => a.r - b.r).slice(0, 4).map((h) => h.term) }); }
     }
   }
   return out;

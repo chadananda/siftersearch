@@ -134,13 +134,18 @@ describe('quotations', () => {
   it('a teaching becomes a cross-reference only on a confident yes', async () => {
     const ps = [para(1, 'the Guardian taught that the Administrative Order is the channel of the spirit')];
     const deps = { searchHype: vi.fn(async () => ({ hits: [{ paragraph_id: 5 }] })), searchConcepts: vi.fn(async () => ({ hits: [] })), searchPhrases: vi.fn(async () => ({ hits: [{ paragraph_id: 6 }] })),
-      paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 50, paragraph_index: id, title: 'The World Order of Bahá’u’lláh', author: 'Shoghi Effendi', language: 'en', text: `passage ${id} `.repeat(20) }))),
+      paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 50, paragraph_index: id, title: 'The World Order of Bahá’u’lláh', author: 'Shoghi Effendi', language: 'en', book_authority: 10, text: `passage ${id} `.repeat(20) }))),
       linkFor: vi.fn(() => ({ url: 'https://oceanlibrary.com/wob' })) };
     const verify = vi.fn(async () => [{ i: 0, states: false, confidence: 0.9 }, { i: 1, states: true, confidence: 0.85, excerpt: 'channel of the spirit' }]);
     const r = await linkTeachings(ps, [{ p: 1, writer: 'the Guardian', claim: 'The Administrative Order is the channel of the spirit.', words: 'the Administrative Order is the channel of the spirit' }], verify, deps, { pauseMs: 0 });
     expect(r.linked[0]).toMatchObject({ kind: 'concept', writer: 'Shoghi Effendi', source: { id: 6 }, confidence: 0.85, excerpt: 'channel of the spirit' });
     const none = await linkTeachings(ps, [{ p: 1, writer: 'Shoghi Effendi', claim: 'x' }], vi.fn(async () => [{ i: 0, states: true, confidence: 0.5 }]), deps, { pauseMs: 0 });
     expect(none.linked).toHaveLength(0);
+    // a yes only from a visitor's account (low book authority) is not a canonical cross-reference
+    const low = { ...deps, paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 51, paragraph_index: id, title: 'A Visit to California', author: '‘Abdu’l-Bahá', language: 'en', book_authority: 4, text: 'passage '.repeat(20) }))) };
+    const r2 = await linkTeachings(ps, [{ p: 1, writer: '‘Abdu’l-Bahá', claim: 'y' }], vi.fn(async () => [{ i: 0, states: true, confidence: 0.9 }]), low, { pauseMs: 0 });
+    expect(r2.linked).toHaveLength(0);
+    expect(r2.rejected[0].why).toBe('stated only outside the canonical works');
   });
   it('quote and CR records become content_source_links rows on the transcript paragraphs', () => {
     const rows = linkRows({ quotes: [{ kind: 'quote', para: 2, source: { id: 9, doc_id: 90 }, overlap: 0.8, basis: 'verbatim' }],

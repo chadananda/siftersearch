@@ -153,3 +153,11 @@ describe('vocabulary corrector', () => {
     expect(t.length).toBeLessThanOrEqual(45);
   });
 });
+
+describe('vocabulary suspects (pilot findings)', () => {
+  it('offers the long name a speaker clipped ("Baola" → Bahá’u’lláh, not only Bahá)', () => {
+    const v = buildVocab();
+    const s = suspects([{ w: 'Baola', s: 0, e: 1 }, { w: 'says', s: 1, e: 2 }], v);
+    expect(s[0].candidates).toContain('Bahá’u’lláh');
+  });
+});

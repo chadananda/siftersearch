@@ -113,7 +113,7 @@ export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 
  * the phrase layer, restricted to the writer's own words; the model verifies yes/no; best confident yes wins (≥ minConf).
  * → [{ kind: 'concept', para, t0, writer, claim, said, source, url, cite, excerpt, confidence }] + rejected
  */
-export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { minConf = 0.7, perQuery = 6, pauseMs = 800, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { minConf = 0.7, minAuthority = 7, perQuery = 6, pauseMs = 800, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const d = { ...(deps.searchHype ? {} : await liveDeps()), ...deps };
   const byN = new Map(paragraphs.map((p) => [p.n, p]));
   const linked = [], rejected = [];
@@ -130,8 +130,12 @@ export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { 
     const rows = (await d.paragraphsByIds(ids)).filter((r) => (r.text || '').length > 60 && /^en/i.test(r.language || 'en'));
     if (!rows.length) { rejected.push({ ...t, why: 'no candidate passages' }); continue; }
     const answers = await verify({ writer, claim: t.claim, words: t.words }, rows.map((r) => ({ title: r.title, author: r.author, text: r.text })));
-    const yes = answers.filter((a) => a.states && Number(a.confidence) >= minConf).sort((a, b) => b.confidence - a.confidence)[0];
-    if (!yes) { rejected.push({ ...t, why: 'no passage states it', best: answers.sort((a, b) => b.confidence - a.confidence)[0] || null }); continue; }
+    // a CANONICAL passage (the writer's own authoritative works and letters: book authority ≥ minAuthority) — the pilot
+    // linked "‘Abdu’l-Bahá's Visit to California" (a visitor's account) for a teaching; the most authoritative yes wins
+    const auth = (a) => Number(rows[Number(a.i)]?.book_authority ?? rows[Number(a.i)]?.authority ?? 0);
+    const yes = answers.filter((a) => a.states && Number(a.confidence) >= minConf && auth(a) >= minAuthority)
+      .sort((a, b) => auth(b) - auth(a) || b.confidence - a.confidence)[0];
+    if (!yes) { rejected.push({ ...t, why: answers.some((a) => a.states && Number(a.confidence) >= minConf) ? 'stated only outside the canonical works' : 'no passage states it', best: answers.sort((a, b) => b.confidence - a.confidence)[0] || null }); continue; }
     const r = rows[Number(yes.i)];
     const link = d.linkFor(r, r.paragraph_index, { quote: yes.excerpt || null });
     const span = t.words ? locateSpan(p.words, t.words) : null;
