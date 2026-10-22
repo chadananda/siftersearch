@@ -87,3 +87,39 @@ final-phone-reduced-0 (reduced motion).
   in `listing-index.js`.
 * Ambient motion waits about 2.5 s after load (this is for performance), and the hero retunes every 8 s.
 * `/media/<slug>` keeps its own design; the old `MediaBrowser.svelte` is no longer used by /media.
+
+## The talk page (/media/<slug>), same language
+* **Broadcast card**: the speaker on a record (face-centred square; it spins while playing), a call-sign
+  breadcrumb, the Gloock title, the speaker linked to their voice in the tuner, and tube labels (audio grade and issue,
+  audience when the pipeline sets it, quotations linked). The summary, then the player on the amber dial glass: the
+  waveform scrubber with the subheaders as brass station ticks and moments as needle-red pins, the time in dial
+  figures, the section now playing, and the speed control. YouTube, standalone-page and download chips.
+* **Slim sticky bar** once the hero's player scrolls away: record, title, section now playing, slim scrubber, time.
+* **Transcript as a typeset document**: Caslon in a measured column, hyphenation, a drop cap, and the subheaders as
+  section breaks with log times (questions marked). Quotation, person and work links are styled apart. Paragraph play
+  buttons sit in the margin; an amber rule marks the paragraph now playing.
+* **Breakouts**: the Writings appear as "studio inserts" (paper with an era stripe for quotations, walnut for
+  cross-references; italic Caslon; the citation is the link). The speaker's own **moments** are on-air cards on the
+  amber dial glass in Gloock, with play-this-excerpt, the moment page link and a share row. A Highlights strip above
+  the transcript leads to them.
+* **Program log** (margin TOC, current segment marked; collapsible on phones), topics linking into the tuner, and
+  related talks (same voice first, at most 3, then shared topics).
+* Behaviour is unchanged: word click, paragraph buttons, FAB + Follow, ?t= ranges, selection links, Media Session,
+  keyboard. New: ?m=<key> opens at a moment with its range set.
+* JSON-LD AudioObject (with transcript) + BreadcrumbList.
+
+## Moments (shareable)
+* Canonical **/media/<slug>/m/<key>**; **/m/<key>** 301s there, and a renamed talk 301s to its current slug. The
+  page has the quote set large, the speaker's record, the excerpt's own waveform with play, "Hear it in context"
+  (talk at ?t= range + #moment), YouTube from that time, the Writings it touches, more moments, more from the
+  speaker, and back to the library. Share: copy, X, Facebook, WhatsApp, email, native. JSON-LD Quotation isPartOf
+  the AudioObject.
+* **Quote card** (og/twitter image): GET /api/media/moments/:key/card.jpg is a 1200×630 JPEG rendered on tower with
+  sharp + Pango and the bundled OFL fonts (api/assets/fonts). It is cached per process and at the edge for a week.
+  Bump `CARD_V` in the page when the design changes.
+* The display faces are self-hosted in public/fonts, preloaded, with metric fallbacks.
+
+## Measured (talk and moment pages, production, Lighthouse 12 mobile)
+Talk pages score 74–88 on performance (they vary run to run; CLS 0, TBT ≤ 40 ms), 96 on accessibility and 100 on
+SEO. FCP/LCP are bound by TTFB through the tunnel (~650 ms) and the render-blocking site-wide Google Fonts CSS
+(Amiri + Libre Caslon) in Layout.astro. Making that CSS non-blocking is the next lever; it is a site-wide change.
