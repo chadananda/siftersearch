@@ -452,12 +452,15 @@ phrase points would pile up unindexed on `/fast` (brute-force scanned, and still
   one per point id, hot wins); hot down or slow = main only. Writes to `phrases` (outbox deletes, stamp-voices,
   stamp-site) are mirrored to `phrases_hot`; coverage counts both.
 - **Flush** (C4, `scripts/ops/qram.mjs`): `qram-flush.timer` every 6 h + qdrant-hot's `ExecStop`; snapshots of changed
-  collections to **`/crutch/qram-snapshots`** (sequential, rare: fine on the A400 for a week); 2 generations kept; snapshot
-  temp files on `/crutch` too, never in the tmpfs.
+  collections to **`/crutch/qram-snapshots`** (sequential, rare: fine on the A400 for a week); 2 generations kept. Qdrant's
+  `temp_path` must stay on the tmpfs: CLI snapshot recovery unpacks into it and *renames* into storage, which fails across
+  filesystems (tower crash test 10-21). So the indexer stops when the RAM disk's free space would drop below the hot data
+  size (room for a snapshot's temp files): **usable hot capacity ≈ 22 GB ≈ 3 M phrase points** at float16.
 - **What a crash or power loss loses: nothing paid, at most 6 h of upserts.** The embeddings are in `vectors.db` on disk.
   At boot qdrant-hot restores the newest snapshot; the indexer service queues `phrase-hot-reconcile` at every start, which
   checks every `upserted = 2` unit against `phrases_hot` and re-sends the missing ones from stored vectors (no Gemini spend).
-  Tested: `tests/api/qdrant-hot.test.js` (indexer against a fake Qdrant) and on tower (§6.6 log in `tmp/wear/changes.md`).
+  Tested: `tests/api/qdrant-hot.test.js` (indexer against a fake Qdrant: 5 sent, 2 lost, 2 re-sent) and on tower with a
+  scratch collection: process crash → 0 lost; RAM wiped → restored to the last snapshot in 2 s; clean stop → flush → 0 lost.
 - **When the MP44 arrives (R10–R12):** build `phrases_f16` on `/faster` from `vectors.db` (it contains every unit, main and
   hot), swap the alias, then unset `QDRANT_HOT_URL`, drop `phrases_hot`, and mark `upserted = 2` → 1. R14 then re-uses the
   same units at 64 G with snapshots on `/faster`.

@@ -113,7 +113,9 @@ The system runs across **two surfaces** — keep this distinction in mind for ev
 - PM2 processes (live): `siftersearch-gateway`, `siftersearch-api`, `siftersearch-anis`, `siftersearch-ops`, `siftersearch-indexer`, `siftersearch-reports(-carry)`, `siftersearch-worker` (single writer, hosts `/write` :7849), `siftersearch-embedding`, `siftersearch-deep-research`, `siftersearch-library-watcher`, `siftersearch-updater`, `cloudflared-tunnel`
 - RETIRED 2026-07-10 (pm2-stopped, superseded by the unified enrichment pipeline — see below): `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor/promoter/resolver/validator`. Do not restart.
 - **Enrichment pipeline (v2):** ONE gated, ordered, idempotent orchestrator (DISAMBIGUATE→{HyPE∥EXTRACT}→RECONCILE, per-book, DeepSeek) replaces the six retired pollers. State in `doc_pipeline`; code in `api/lib/pipeline/` + `scripts/pipeline/`. Full design: `docs/architecture/unified-enrichment-pipeline.md`.
-- Meilisearch + Dropbox + boss vLLM (boss is a separate machine for local LLM inference)
+- Dropbox + boss vLLM (boss is a separate machine for local LLM inference). **Meilisearch RETIRED 10-21** (search = Qdrant only;
+  service stopped+disabled; data kept at /tank/meilisearch-live). Phase-0 `qdrant-hot` (:6335, RAM disk /srv/qram) holds new
+  phrase points until the MP44 — planning/storage-wear-ram-plan.md §6.6
 - **Deploy path:** push to GitHub → `siftersearch-updater` polls, pulls, restarts PM2 within ~5 min. No build step; runs raw JS.
 
 **Surface 2: Cloudflare Worker — single origin (frontend / edge, 2026-08-09)**
@@ -186,7 +188,7 @@ pm2 list
 **Retired 2026-07-10 (pm2-stopped; superseded by the unified enrichment pipeline — do not restart):** `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor`, `siftersearch-graph-promoter`, `siftersearch-graph-resolver`, `siftersearch-graph-validator`. (`siftersearch-db` is defined in ecosystem but not running.)
 
 **External Services:**
-- `meilisearch` - Runs as systemd user service (not PM2)
+- `meilisearch` - RETIRED 10-21 (user service disabled). `qdrant-next` (user unit, :6333) + `qdrant-hot` (system unit, :6335)
 - `dropbox` - Runs as systemd user service, syncs to `/tank/dropbox`
 
 **Database:** `~/sifter/siftersearch/data/sifter.db`

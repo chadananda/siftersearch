@@ -40,7 +40,7 @@ and `wip/` experimental scripts.
 - `segment-document.js`, `segment-calibrate.js` — segmenter manual runs.
 - `verify-deployment.js` — post-deploy smoke checks.
 
-## Meilisearch recovery — DO NOT use mass synced=0 reset
+## Meilisearch recovery — HISTORICAL (Meilisearch retired 10-21; MEILISEARCH_ENABLED=false). Kept for reference only.
 
 If Meilisearch needs re-indexing, restore from the rsync backup instead of
 resetting `synced=0` on all rows. Re-syncing 4.6M paragraphs at ~700/min takes
