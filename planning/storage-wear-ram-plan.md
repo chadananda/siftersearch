@@ -468,7 +468,7 @@ After=qram-flush.service
 
 | device | filesystem | holds | why |
 |---|---|---|---|
-| **New 4 TB NVMe** (arriving ~10-24) | **p1 ~2.9 TB XFS `/faster`** (noatime, weekly fstrim) | Qdrant main storage (`phrases` as float16 ~230 GB + growth), `qram-snapshots`, build overflow | in-place writes, single page cache, fastest flush target |
+| **New 4 TB NVMe: TEAMGROUP MP44** (TLC, 2,000 TBW, HMB; Slot1 Gen3 x4; arriving ~10-24) | **p1 ~2.9 TB XFS `/faster`** (noatime, weekly fstrim) | Qdrant main storage (`phrases` as float16 ~230 GB + growth), `qram-snapshots`, build overflow | in-place writes, single page cache, fastest flush target |
 | | **p2 ~0.8 TB ZFS pool `faster`** (`autotrim=on`, ashift=12) | `faster/vectors` (all three `vectors.db`, 260 GB → growing), snapshot-and-send to `tank/backups/vectors` with the db-ship procedure | paid data: checksums and cheap incremental backups; 4K records remove the record rewrite |
 | | ~10 % left unpartitioned | — | extra over-provisioning for a consumer drive [assume it helps; cheap] |
 | **970 EVO Plus 1 TB** (55 % worn) | ZFS `fast` (keep) | `fast/siftersearch-db` only, plus small read-mostly data (huggingface cache, `siftersearch-data` embedding cache 14 GB, sifter-vocab) | at about 0.05–0.09 TB/day the remaining ~430 TB lasts more than 10 years |
@@ -496,8 +496,82 @@ benefit.
    snapshots of the current instance. Switch search to it (C3). Rollback: the layer URL points back to the main instance.
 4. **Day +7:** destroy the `crutch` copies and turn auto-snapshots off for good. `/crutch` becomes cold storage.
 
-> **Hardware question.** The 7910 has no M.2 slot on the board, so the 970 EVO must sit in a PCIe adapter. The 4 TB drive
-> needs a second free PCIe x4 (or wider) slot and an adapter. **[Chad: confirm slot and adapter.]**
+### 8.4 The new drive: TEAMGROUP MP44 4 TB (TM8FPW004T0C101)
+
+| spec | value | source |
+|---|---|---|
+| Endurance | **2,000 TBW**, 5-year warranty, MTBF 1.6 M h | [TEAMGROUP product page](https://www.teamgroupinc.com/en/product-detail/ssd/T-FORCE/mp44/mp44-TM8FPW004T0C101/) |
+| NAND | **TLC** (not QLC). Most 4 TB units: Maxio MAP1602A + YMTC 232-layer TLC; TEAMGROUP also ships Phison E18/E27T with Kioxia BiCS5/6 TLC under the same part number | [Tom's Hardware review](https://www.tomshardware.com/reviews/teamgroup-mp44-ssd-review), [PC Gamer 4 TB review](https://pcgamer.com/hardware/ssds/team-group-mp44-4-tb-review), [TheOverclockingPage](https://theoverclockingpage.com/2025/09/10/teamgroup-mp44-1tb-ssd-affordable-fast-and-efficient-but-not-always-the-same/?lang=en) |
+| DRAM | **none (DRAM-less, uses HMB)**: borrows host RAM (typically 32–64 MB) for its mapping table | TEAMGROUP product page ("DRAM: No") |
+| Cache | dynamic SLC cache (large; full-drive SLC on an empty drive); speed drops to native TLC once full | Tom's Hardware |
+| Interface | PCIe 4.0 x4. On the 7910 (PCIe 3.0) it runs at **Gen3 x4, ~3.5 GB/s** at most | — |
+| Thermal | reviews note a low throttle limit: the Sabrent card's heatsink is worth having | Tom's Hardware |
+
+**What this changes in the plan:** the [assume] in §10 is resolved: TLC, 2,000 TBW. At the projected ~0.15 TB/day that is
+~36 years of rated endurance; even one full `phrases` rebuild a month adds only ~3.6 TB/yr. HMB is fine on Linux (the
+`nvme` driver grants it automatically); confirm with `nvme id-ctrl /dev/nvmeX | grep -E 'hmpre|hmmin'` (non-zero = HMB) and
+`nvme get-feature /dev/nvmeX -f 0x0d -H` (Host Memory Buffer enabled). Record which controller arrived (`nvme id-ctrl`
+`mn`/`fr` and `smart-log`) because the variant matters for sustained-write behaviour.
+
+### 8.5 Slots on the Precision 7910 (read-only check, 10-21: `dmidecode -t slot`, `lspci -vv`, `lspci -tv`)
+
+| slot (dmidecode) | electrical | CPU / root port | now |
+|---|---|---|---|
+| **Slot1** | **PCIe 3.0 x4** | **CPU1** (root port 00:01.1, bus 02) | **empty ("Available")** |
+| Slot2 | PCIe 3.0 x16 | CPU1 | empty |
+| Slot3 | PCIe **2.0** x4 | **chipset** (C610 root port 00:1c.4) | **970 EVO Plus** (link 5 GT/s x4: downgraded to Gen2, ~1.6 GB/s) |
+| Slot4 | PCIe 3.0 x16 | CPU1 (00:03.0) | **GTX 1070** (drives the monitor on DP-1, nvidia 580) |
+| Slot5 | 32-bit PCI | TI PCIe-to-PCI bridge | empty |
+| Slot1_CPU2 | PCIe 3.0 x16 | CPU2 | **Quadro K4000** (no working driver: Kepler is not supported by the 580 driver) |
+| Slot2_CPU2 | PCIe 3.0 x16 | CPU2 | empty |
+
+- **Slot #1 is right for the MP44:** Gen3 x4 straight off CPU1 (no chipset hop), and it is free. An x4 drive gains nothing
+  from an x16 slot, so the Sabrent card in Slot1 runs at the drive's full Gen3 speed (~3.5 GB/s). Slot1 sits at the top of
+  the board; the GTX 1070 in Slot4 is not next to it. **Chad: confirm by eye** that no GPU cooler or cable overhangs Slot1,
+  and that the Sabrent card's edge fits (Slot1 is an x16-length connector wired x4 on the 7910).
+- **Booting:** tower boots in UEFI from `sdb` (Kingston A400 240 GB: `/boot/efi` = sdb1, `/` = sdb2; boot entry
+  "Ubuntu" → sdb1 `shimx64.efi`). The MP44 is a **data drive only**, so the box's "BIOS NVMe support needed" note does not
+  apply: Linux's `nvme` driver finds it like the 970 EVO (which already works the same way in a PCIe adapter). Do not add a
+  boot entry for it.
+- **BIOS (A34) to check if the drive does not appear:** Settings → System Configuration → **Slots**: Slot1 must be
+  **Enabled** (some 7910s ship with unused slots disabled). Bifurcation settings are irrelevant: the Sabrent card holds one
+  drive and needs no lane splitting.
+- **Optional later:** Slot2 (Gen3 x16, CPU1) is also free. Moving the 970 EVO's adapter from Slot3 (Gen2, chipset) to Slot2
+  would double its link speed. Not needed for wear; only do it in the same shutdown if convenient.
+- The disks `sda`–`sdd` hang off an LSI SAS3008 HBA (`TRAN sas`); that HBA is why the A400s get no TRIM (§3.1).
+
+### 8.6 Installing the drive (Chad, hands-on; no partitioning until R10)
+
+1. **Before shutting down** (from a session on tower): drain the indexer (`pm2 stop siftersearch-indexer` after its jobs
+   yield, or wait for idle) and check no ops job is running (`node scripts/ops/ops.mjs reports`).
+2. `sudo shutdown -h now`. Unplug power; hold the power button 5 s.
+3. **Pull the Quadro K4000** from Slot1_CPU2 (see the GPU note below). Keep the GTX 1070 in Slot4: the monitor is on it.
+4. Put the MP44 on the Sabrent card (heatsink pad on, protective film off the pad), seat the card in **Slot1**, screw the
+   bracket.
+5. Boot. If the drive is missing, enter BIOS (F2) and enable Slot1 (above).
+6. **First-boot checks (read-only):**
+   - `sudo nvme list`: a second device (nvme1n1, ~4.0 TB, model "TEAMGROUP TM8FP…"). Device names can swap, so always use
+     `/dev/disk/by-id/nvme-…` from here on.
+   - `sudo lspci -vv -s $(lspci | awk '/Non-Volatile/{print $1}' | tail -1) | grep -E 'LnkCap|LnkSta'`: expect
+     **Speed 8GT/s, Width x4** (Gen3 x4). 2.5/5 GT/s or x1/x2 means a bad seat or the wrong slot.
+   - `sudo nvme smart-log /dev/nvme1n1 > /tank/sifter/wear/mp44-smart-day0.txt` and `sudo nvme id-ctrl /dev/nvme1n1 >
+     /tank/sifter/wear/mp44-idctrl.txt` (baseline: data_units_written, percentage_used, temperature; controller variant
+     and HMB fields).
+   - `zpool status` (all pools ONLINE), `pm2 list` (all services back), and a search through 127.0.0.1:7839.
+7. **Do not partition or format.** That is step R10 (§11), done as its own change with the layout in §8.2.
+
+### 8.7 Which GPU to keep (Chad is removing one)
+
+**Keep the GTX 1070; remove the Quadro K4000.**
+- The monitor is connected to the 1070 (DP-1), and the 1070 is the card the installed nvidia 580 driver drives. The K4000
+  (Kepler) has had no supported NVIDIA driver since the 470 legacy branch, which does not build on kernel 7.0: it does
+  nothing now.
+- Power: 1070 is 150 W TDP but idles at ~8–10 W; K4000 is 80 W TDP with ~15–20 W idle [spec/typical]. Removing the K4000
+  saves its idle draw on the UPS.
+- Outputs: 1070 has 3× DP 1.4, HDMI 2.0, DVI-D; K4000 has 2× DP 1.2 + DVI-I.
+- Future use: the 1070 (8 GB, Pascal, CUDA 6.1) is supported by the 580 branch (NVIDIA's last branch for Pascal, with long-term legacy fixes), so it can run small local
+  models or embeddings if the driver/library mismatch noted in §9 is fixed. The K4000 (3 GB, Kepler) cannot run modern CUDA.
+- Removing the K4000 also frees CPU2's x16 slot. No driver change is needed for this.
 
 ---
 
@@ -533,7 +607,7 @@ benefit.
 | device | before (10-13…10-20 avg) | now (10-21; 10-min extrapolation) | **after plan [est]** | rated / remaining | **life at "after" rate** |
 |---|---|---|---|---|---|
 | 970 EVO Plus (`/fast`) | **6.2 TB/day** | 0.09–0.13 | **0.05–0.09** (SQLite only, `logbias=throughput`) | ~430 TB to 100 % used [est] | **> 10 years** (age limits it first) |
-| new 4 TB NVMe, XFS (Qdrant) | — | — | **~0.03 steady**; a full `phrases` rebuild ≈ 0.25–0.3 TB per event; hot flush ≤ 0.025/day | 2,400 TBW if TLC [assume]; 800–1,000 if QLC | **> 20 years** TLC / **~10 years** QLC, even with a monthly full rebuild |
+| new 4 TB NVMe, XFS (Qdrant): **TEAMGROUP MP44, TLC, DRAM-less/HMB** (§8.4) | — | — | **~0.03 steady**; a full `phrases` rebuild ≈ 0.25–0.3 TB per event; hot flush ≤ 0.025/day | **2,000 TBW** (TEAMGROUP spec) | **> 20 years**, even with a monthly full rebuild |
 | new 4 TB NVMe, ZFS (`vectors`) | — | — | **~0.1 while indexing** (4K records), ~0 idle | (same drive) | (included above) |
 | A400 960 (`/crutch`) | 0.3–0.5 while indexing | 0 | **< 0.03** (daily snapshot copy) | 250 TB left of 300 | **> 20 years** |
 | A400 240 (`/`) | 0.03–0.11 | 0.056 | **~0.02** (no swap, no logs) | 61 TB left of 80 | **> 8 years** |
@@ -543,7 +617,7 @@ phrases/h. Each point is about 6 KiB as float16 plus payload and is written abou
 0.03 TB/day to Qdrant and about 0.05–0.1 TB/day to `vectors.db`.
 
 **Warning.** If the old pattern came back (Meilisearch-style 4 KiB fsync churn inside large ZFS records, or a Qdrant merge
-loop), even a 2,400 TBW drive would last about 13 months at 6 TB/day. **The configuration matters more than the drive.**
+loop), even the MP44's 2,000 TBW would last about 11 months at 6 TB/day. **The configuration matters more than the drive.**
 `system-checks` should alarm on NVMe `Data Units Written` rising more than 0.5 TB/day (code change C5).
 
 ---
@@ -579,9 +653,9 @@ decision from him, not just a go-ahead.
 
 ## 12. Open questions for Chad
 
-1. **UPS:** which model (the sizing is in §1)? Do the GPUs stay (GTX 1070 + Quadro K4000, about 40 W idle, and broken for
-   CUDA because of the driver mismatch)? Removing them lowers the UPS load and the heat.
-2. **The 4 TB NVMe:** exact model and TBW rating (TLC or QLC; DRAM or HMB)? Which PCIe slot and adapter?
+1. **UPS:** GoldenMate 1500VA/1000W LiFePO4 ordered (CyberPower CP1500PFCLCD if Linux cannot talk to it; NUT kit in
+   `deploy/nut/`). GPUs: Chad removes one; **keep the GTX 1070, pull the Quadro K4000** (§8.7).
+2. ~~The 4 TB NVMe~~ answered: TEAMGROUP MP44 4 TB, TLC, 2,000 TBW, DRAM-less (HMB); Sabrent adapter in Slot1 (§8.4–8.6).
 3. **Services leaving tower (§9):** confirm the list. Is minio / `siftersearch-s3` part of SifterSearch?
 4. **R1:** approve the `vectors.db` backup to `/tank` now? About 42 GB of paid vectors have no second copy.
 5. **Meilisearch:** stop it now? It is the largest writer on `/tank`.
@@ -595,4 +669,4 @@ decision from him, not just a go-ahead.
 - The effect of `logbias=throughput` on the DB's amplification. R5 measures it.
 - The exact source of the 12.7× on `/tank`. It is attributed to Meilisearch by elimination.
 - Rebuild times other than the measured 10 M points/h bulk load.
-- The 4 TB drive's endurance.
+- ~~The 4 TB drive's endurance~~ (2,000 TBW, §8.4). Which controller/NAND variant arrived: read `nvme id-ctrl` on day 0.
