@@ -35,7 +35,7 @@
 {/if}
 
 <style>
-  .dock { position: fixed; left: 0.75rem; right: 0.75rem; bottom: 0.75rem; z-index: 50; border-radius: 1rem; overflow: hidden; background: var(--radio-walnut-deep);
+  .dock { position: fixed; left: 0.75rem; right: 5.25rem; bottom: 0.75rem;   /* clear of the Anís bubble */ z-index: 50; border-radius: 1rem; overflow: hidden; background: var(--radio-walnut-deep);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px var(--radio-brass); animation: up 0.35s cubic-bezier(0.3, 0.7, 0.4, 1); }
   @keyframes up { from { transform: translateY(120%); } to { transform: none; } }
   .bar { position: absolute; left: 0; top: 0; height: 3px; width: 100%; background: var(--radio-amber); transform-origin: left; transition: transform 0.25s linear; }

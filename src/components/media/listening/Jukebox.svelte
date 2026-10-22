@@ -193,7 +193,7 @@
 
   /* portrait: 4:5 face-centred, caption over a soft fade */
   .portrait { padding: 0; background: var(--radio-walnut-deep); }
-  .portrait-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; transition: transform 0.8s; }
+  .portrait-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; transition: transform 0.8s; }
   .card:hover .portrait-img { transform: scale(1.04); }
   .portrait-cap { position: relative; margin-top: auto; padding: 3rem 1.1rem 1rem; background: linear-gradient(transparent, color-mix(in srgb, var(--radio-walnut-deep) 92%, transparent) 45%); }
 

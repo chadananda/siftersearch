@@ -89,10 +89,10 @@
                 {line.kind === 'quote' ? 'Quoted in this talk' : line.kind === 'question' ? 'A question this talk takes up' : 'Now playing'}{cur.y ? ` · tuned to ${cur.y}` : ''}
               </p>
               {#if line.kind === 'quote'}
-                <blockquote class="mt-2 font-quote text-lg italic leading-snug text-radio-on-dark sm:text-2xl">“{line.text}”</blockquote>
+                <blockquote class="mt-2 line-clamp-4 font-quote text-lg italic leading-snug text-radio-on-dark sm:line-clamp-3 sm:text-2xl">“{line.text}”</blockquote>
                 {#if line.cite}<p class="mt-1 text-sm text-radio-on-dark opacity-75">— {line.cite}</p>{/if}
               {:else}
-                <p class="mt-2 font-marquee text-2xl leading-tight text-radio-on-dark sm:text-4xl">{line.text}</p>
+                <p class="mt-2 line-clamp-3 font-marquee text-2xl leading-tight text-radio-on-dark sm:line-clamp-2 sm:text-4xl">{line.text}</p>
               {/if}
               <p class="mt-3 text-sm text-radio-on-dark opacity-90 sm:text-base">
                 <a href={`/media/${cur.s}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber focus-visible:outline-2 focus-visible:outline-radio-amber">{cur.t}</a>

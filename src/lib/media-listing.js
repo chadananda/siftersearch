@@ -166,7 +166,11 @@ export function pickHighlights(items, speakersByKey = new Map(), { n = 8, seed =
   const out = [], seen = new Set();
   for (const { it } of scored) { if (out.length >= n) break; if (it.k && seen.has(it.k)) continue; seen.add(it.k); out.push(it); }
   for (const { it } of scored) { if (out.length >= n) break; if (!out.includes(it)) out.push(it); }
-  return out;
+  // the longest line first: the hero's first frame is then the largest text it will ever show, so a later rotation never
+  // registers as a new (later) Largest Contentful Paint
+  const len = (it) => highlightLine(it).text.length + (highlightLine(it).kind === 'quote' ? 40 : 0);
+  const first = out.reduce((b, it) => (len(it) > len(b) ? it : b), out[0]);
+  return out.length ? [first, ...out.filter((x) => x !== first)] : out;
 }
 
 /** The line a highlight shows: its pull-quote, else its first question, else a statement subheader, else the summary. */

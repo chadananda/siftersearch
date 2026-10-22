@@ -89,9 +89,13 @@
   function clearAll() { qInput = ''; q = ''; preset = ''; decade = null; speaker = ''; hits = null; limit = 30; sync(); }
   function onDecadeSection(d) { setDecade(d); document.getElementById('tuner')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
 
-  let sentinel;
+  let sentinel, live = $state(false);
   onMount(() => {
     reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // the ambient motion (drifts, glow, ticker) starts once the page has settled: first paint is the complete still frame
+    const wake = () => setTimeout(() => (live = true), 2500);
+    if (document.readyState === 'complete') wake(); else addEventListener('load', wake, { once: true });
+    for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, () => (live = true), { once: true, passive: true });
     if (active) loadAll();
     else (window.requestIdleCallback || ((f) => setTimeout(f, 1200)))(() => loadAll(), { timeout: 3000 });
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting && limit < cards.length) limit += 24; }, { rootMargin: '600px' });
@@ -100,7 +104,7 @@
   });
 </script>
 
-<div class="room">
+<div class="room" class:lr-live={live}>
   <OnAir highlights={initial.highlights || []} {speakersByKey} stats={initial.stats || {}} />
 
   <div class="mt-6"><Ticker lines={initial.ticker || []} /></div>

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T14:09:01.774Z",
+  "generated": "2026-10-22T14:19:59.222Z",
   "entries": [
+    {
+      "hash": "4a3c325b",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Status update 10-22 afternoon (remastering listening test link and scores, faithfulness audit, copy-edit model choice, subheaders, citation links, grade, thread budget); remaster_ab --device auto (boss ROCm GPU, CPU fallback)",
+      "scope": "media"
+    },
+    {
+      "hash": "a2370365",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "THE LISTENING ROOM — /media redesigned as an old-time radio / jukebox (Chad 10-22)",
+      "scope": "media"
+    },
     {
       "hash": "b216c682",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Scale counts never cache a Qdrant timeout (page showed 0 phrase vectors for 10 min); 8 s timeout",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "5a445563",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Ocean of Lights range building froze the API — quadratic text normaliser (31 s → 0.13 s on 1.8 MB) + bounded phrases/budget",
-      "scope": "links"
-    },
-    {
-      "hash": "974a0506",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Citation shelf styles ship with the page (a plain CSS imported by SourceHunt) — the spines rendered as a wall of links",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "4a3c325b",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Status update 10-22 afternoon (remastering listening test link and scores, faithfulness audit, copy-edit model choice, subheaders, citation links, grade, thread budget); remaster_ab --device auto (boss ROCm GPU, CPU fallback)",
+        "scope": "media"
+      },
+      {
+        "hash": "a2370365",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "THE LISTENING ROOM — /media redesigned as an old-time radio / jukebox (Chad 10-22)",
+        "scope": "media"
+      },
       {
         "hash": "b216c682",
         "date": "2026-10-22",
@@ -7008,20 +7022,6 @@
         "date": "2026-10-12",
         "type": "Fixed",
         "description": "Scale counts never cache a Qdrant timeout (page showed 0 phrase vectors for 10 min); 8 s timeout",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "5a445563",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Ocean of Lights range building froze the API — quadratic text normaliser (31 s → 0.13 s on 1.8 MB) + bounded phrases/budget",
-        "scope": "links"
-      },
-      {
-        "hash": "974a0506",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Citation shelf styles ship with the page (a plain CSS imported by SourceHunt) — the spines rendered as a wall of links",
         "scope": "sourcehunt"
       }
     ]

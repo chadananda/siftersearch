@@ -34,7 +34,7 @@
           {#each row as s (s.k + copy)}
             <li aria-hidden={copy ? 'true' : undefined}>
               <a href={`/media?speaker=${encodeURIComponent(s.k)}`} tabindex={copy ? -1 : undefined} class="voice group" class:active={active === s.k}
-                onclick={(e) => pick(e, s)} aria-label={`${s.n}: ${s.c} talk${s.c === 1 ? '' : 's'}${ROLE[s.role] ? `, ${ROLE[s.role]}` : ''}`}>
+                onclick={(e) => pick(e, s)} title={ROLE[s.role] || undefined}>
                 <span class="disc"><span class="label"><RecordLabel name={s.n} photo={s.p} year={s.y0} size={64} /></span></span>
                 <span class="min-w-0">
                   <span class="block truncate font-marquee text-lg leading-tight text-radio-ink group-hover:text-radio-amber">{s.n}</span>

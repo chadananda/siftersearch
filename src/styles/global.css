@@ -68,6 +68,7 @@
   --radio-groove: light-dark(#1b1410, #0a0705);
   --radio-groove-sheen: light-dark(rgba(255, 255, 255, 0.10), rgba(255, 220, 160, 0.08));
   --radio-on-dark: #f8ecd4;
+  --radio-on-needle: light-dark(#fbf3e4, #1b0f08);
   --radio-line: light-dark(rgba(59, 36, 20, 0.16), rgba(244, 230, 207, 0.12));
   --era-1940: light-dark(#8a5a2b, #c98d4e);
   --era-1950: light-dark(#a0662a, #d9984a);
@@ -201,6 +202,7 @@
   --color-radio-needle: var(--radio-needle);
   --color-radio-groove: var(--radio-groove);
   --color-radio-on-dark: var(--radio-on-dark);
+  --color-radio-on-needle: var(--radio-on-needle);
   --color-radio-line: var(--radio-line);
   --font-dial: 'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif;
   --font-marquee: 'Gloock', 'Libre Caslon Text', Georgia, serif;

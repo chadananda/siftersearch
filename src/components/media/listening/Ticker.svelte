@@ -32,7 +32,7 @@
 
 <style>
   .ticker { display: flex; align-items: stretch; background: var(--radio-walnut-deep); color: var(--radio-on-dark); border-block: 2px solid var(--radio-brass); overflow: hidden; }
-  .callsign { flex: none; display: grid; place-items: center; padding: 0 1rem; background: var(--radio-needle); color: var(--radio-on-dark); font-weight: 800; letter-spacing: 0.18em; font-size: 1rem; z-index: 1; }
+  .callsign { flex: none; display: grid; place-items: center; padding: 0 1rem; background: var(--radio-needle); color: var(--radio-on-needle); font-weight: 800; letter-spacing: 0.18em; font-size: 1rem; z-index: 1; }
   .crawl { overflow: hidden; flex: 1; mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
   .row { display: flex; width: max-content; animation: crawl var(--dur) linear infinite; }
   .ticker:hover .row, .ticker:focus-within .row, .lr-paused .row { animation-play-state: paused; }
