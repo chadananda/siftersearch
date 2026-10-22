@@ -130,3 +130,11 @@ export async function personEntityId(folded, surname) {
   const hit = rows.filter((r) => f(r.cn) === folded).sort((a, b) => (b.importance || 0) - (a.importance || 0))[0];
   return hit?.id ?? null;
 }
+
+/** Set the playback level of items (all, or one source kind) → how many changed. */
+export async function setPlayback(level, { sourceKind = null } = {}) {
+  const r = await queryOne(`SELECT COUNT(*) n FROM media_items WHERE playback != ?${sourceKind ? ' AND source_kind = ?' : ''}`, sourceKind ? [level, sourceKind] : [level], 'media:playback-count');
+  await transaction([{ sql: `UPDATE media_items SET playback = ?, updated_at = ? WHERE playback != ?${sourceKind ? ' AND source_kind = ?' : ''}`, args: sourceKind ? [level, now(), level, sourceKind] : [level, now(), level] }], 'media:set-playback');
+  return r?.n || 0;
+}
+export const doneItemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' ORDER BY id`, [], 'media:done-ids')).map((r) => r.id);

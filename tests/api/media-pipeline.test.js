@@ -55,11 +55,11 @@ describe('renditions', () => {
 });
 
 describe('rights', () => {
-  it('defaults: YouTube full (Chad 10-21) unless the channel record says otherwise; local archive clips; Chad Jones full', () => {
+  it('defaults: everything full from our own copy (Chad 10-22) unless a channel record says otherwise', () => {
     expect(defaultPlayback({ sourceKind: 'youtube' })).toBe('full');
     expect(defaultPlayback({ sourceKind: 'youtube', channel: { playback: 'clips' } })).toBe('clips');
     expect(defaultPlayback({ sourceKind: 'youtube', channel: { playback: 'search' } })).toBe('search');
-    expect(defaultPlayback({ sourceKind: 'file', speaker: 'Hooper Dunbar' })).toBe('clips');
+    expect(defaultPlayback({ sourceKind: 'file', speaker: 'Hooper Dunbar' })).toBe('full');
     expect(defaultPlayback({ sourceKind: 'file', speaker: 'Chad Jones' })).toBe('full');
   });
   it('the full audio file is served only at level full', () => {

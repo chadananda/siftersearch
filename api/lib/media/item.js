@@ -12,7 +12,7 @@ import { computePeaks, normalizePeaks } from './peaks.js';
 import { toParagraphs, paragraphText, assignSpeakers, smoothTurns } from './paragraphs.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
-import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT } from './rights.js';
+import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
 
 export const STAGES = ['archive', 'enhance', 'web', 'transcribe', 'correct', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
@@ -129,7 +129,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       let channel = isYt && info.channel_id ? await repo.getChannel(info.channel_id) : null;
       if (isYt && info.channel_id && !channel) channel = await repo.upsertChannel({ channel_id: info.channel_id, name: info.channel, playback: youtubeDefault(), granted_by: YOUTUBE_GRANT });
       meta.rights = meta.rights || { playback: defaultPlayback({ sourceKind: item.source_kind, speaker, channel }), download: false,
-        basis: isYt ? `channel ${info.channel}: ${channel?.playback || youtubeDefault()} (${channel?.granted_by || YOUTUBE_GRANT})` : 'default for the local archive (Chad to confirm)' };
+        basis: isYt ? `channel ${info.channel}: ${channel?.playback || youtubeDefault()} (${channel?.granted_by || YOUTUBE_GRANT})` : 'Chad 10-22: everything plays from our own copy' };
       await repo.updateMediaItem(item.id, { slug: finalSlug, dir, title, speaker, tradition, collection, year, date: meta.date, duration_s: probe.duration_s, has_video: probe.has_video,
         sha256: sha, youtube_id: info?.youtube_id || null, channel: info?.channel || null, playback: meta.rights.playback });
       item = { ...item, dir, slug: finalSlug };
@@ -293,6 +293,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'render') {
+      // the playback level is the catalogue's (a person can change it there): the page is rendered for it
+      if (item.playback && LEVELS.includes(item.playback) && meta.rights) meta.rights.playback = item.playback;
       const work = await readJson(join(dir, 'transcript.work.json'));
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       const quotes = qj.quotes || [], crs = [...(qj.teachings || [])];

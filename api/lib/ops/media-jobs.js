@@ -206,3 +206,15 @@ export async function mediaSpeakersJob({ refresh = false, names = [], pauseMs = 
   await logActivity('media', `speaker portraits: ${out.found} new, ${out.kept} kept, ${out.none.length} without a photo, of ${out.speakers}`).catch(() => {});
   return out;
 }
+
+// media-playback { level = 'full', sourceKind? }: the catalogue's playback level for every item (Chad 10-22: "everything
+// should be local"), then each published item's page re-rendered for it (render → ingest → catalog).
+export async function mediaPlaybackJob({ level = 'full', sourceKind = null } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { LEVELS } = await import('../media/rights.js');
+  if (!LEVELS.includes(level)) throw new Error(`level must be one of ${LEVELS.join(', ')}`);
+  const changed = await repo.setPlayback(level, { sourceKind });
+  const ids = await repo.doneItemIds();
+  for (const id of ids) await (deps.queue || enqueue)('media-item', { id, from: 'render' }, 'media-playback');
+  return { level, changed, rerendered: ids.length };
+}

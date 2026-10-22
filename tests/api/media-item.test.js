@@ -70,7 +70,7 @@ describe('media item stage machine', () => {
     expect(statSync(src).mode & 0o200).toBe(0o200);
     const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
     expect(Object.keys(meta.stages)).toEqual(STAGES);
-    expect(meta).toMatchObject({ speaker: 'Hartmut Grossmann', rights: { playback: 'clips' }, doc_id: 777, asr: { host: 'boss' } });
+    expect(meta).toMatchObject({ speaker: 'Hartmut Grossmann', rights: { playback: 'full' }, doc_id: 777, asr: { host: 'boss' } });
     expect(meta.enhancement.asr_input).toBe('original');
     expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain('{id="para_1" t0=');
     const cat = d.repo.updateMediaItem.mock.calls.at(-1)[1];

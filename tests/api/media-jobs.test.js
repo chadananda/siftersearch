@@ -93,3 +93,14 @@ describe('media drop folder', () => {
     expect(q2).not.toHaveBeenCalled();
   });
 });
+
+describe('media-playback', () => {
+  it('sets every item\'s level and re-renders each published item', async () => {
+    const { mediaPlaybackJob } = await import('../../api/lib/ops/media-jobs.js');
+    const repo = { setPlayback: vi.fn(async () => 4), doneItemIds: vi.fn(async () => [1, 2]) };
+    const queue = vi.fn();
+    expect(await mediaPlaybackJob({ level: 'full' }, { repo, queue })).toEqual({ level: 'full', changed: 4, rerendered: 2 });
+    expect(queue.mock.calls).toEqual([['media-item', { id: 1, from: 'render' }, 'media-playback'], ['media-item', { id: 2, from: 'render' }, 'media-playback']]);
+    await expect(mediaPlaybackJob({ level: 'loud' }, { repo, queue })).rejects.toThrow('level must be');
+  });
+});

@@ -13,10 +13,13 @@ export const youtubeDefault = () => (LEVELS.includes(process.env.MEDIA_YOUTUBE_P
 export const YOUTUBE_GRANT = 'Chad 10-21 (full permission granted)';
 
 /** The default playback level for a new item. channel: the media_channels row for a YouTube item ({ playback }). */
+// Chad 10-22: "everything should be local. Youtube is only for linking out." — every item plays FULL from our own copy;
+// a channel record (or MEDIA_LOCAL_PLAYBACK) can still lower one source later.
+export const localDefault = () => (LEVELS.includes(process.env.MEDIA_LOCAL_PLAYBACK) ? process.env.MEDIA_LOCAL_PLAYBACK : 'full');
 export function defaultPlayback({ sourceKind = 'file', speaker = '', channel = null } = {}) {
   if (sourceKind === 'youtube') return LEVELS.includes(channel?.playback) ? channel.playback : youtubeDefault();
   if (OWN_SPEAKERS.test(String(speaker).trim())) return 'full';
-  return 'clips';
+  return localDefault();
 }
 
 /** Which published files a level may serve whole. page.html is served for every level: it plays clips when it must. */
