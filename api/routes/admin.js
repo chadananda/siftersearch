@@ -73,11 +73,11 @@ import { createApiKey, listApiKeys, revokeApiKey, getAllApiKeys } from '../lib/a
 // Track background tasks
 const backgroundTasks = new Map();
 
-// Pipeline status snapshot. Generated out-of-process by scripts/pipeline-snapshot.js
-// (PM2 cron every 5 min) so its heavy synchronous queries never block this API.
+// Pipeline status snapshot. Built in siftersearch-reports (api/lib/ops/pipeline-snapshot-job.js, every 10 min,
+// whole-table sections on TTLs) so its queries never block this API.
 // GET /api/admin/server/pipeline just reads this file.
 const PIPELINE_SNAPSHOT_PATH = join(process.cwd(), 'data', 'pipeline-status.json');
-const PIPELINE_STALE_S = 600; // flag snapshots older than 10 min
+const PIPELINE_STALE_S = 1500; // the snapshot is rebuilt every 10 min (siftersearch-reports); flag after 25
 
 // Test accounts (users.is_test=1, e.g. the QA test-admin) never appear in admin views or analytics.
 const NOT_TEST_USER = 'COALESCE(is_test, 0) = 0';
@@ -86,7 +86,7 @@ const NOT_TEST_EVENT = '(user_id IS NULL OR user_id NOT IN (SELECT id FROM users
 const NOT_TEST_SEARCH = `${NOT_TEST_EVENT} AND COALESCE(is_test, 0) = 0`;
 
 // Heavy admin rollups (library overview/bottlenecks, ai-usage summary) are precomputed
-// out-of-process by scripts/pipeline-snapshot.js — better-sqlite3 is synchronous, so a
+// out-of-process by api/lib/ops/pipeline-snapshot-job.js — better-sqlite3 is synchronous, so a
 // full content/ai_usage scan in-request blocks the ENTIRE API for its duration. Read the
 // snapshot here; fall back to live queries only when the section has never been computed
 // (dev, where the cron doesn't run and tables are small).
@@ -136,14 +136,14 @@ export default async function adminRoutes(fastify) {
   });
 
   // Low-token pipeline + Meili health snapshot. Reads the JSON written
-  // out-of-process by scripts/pipeline-snapshot.js (PM2 cron, ~5 min) so this
+  // out-of-process by api/lib/ops/pipeline-snapshot-job.js (siftersearch-reports, ~10 min) so this
   // endpoint never runs heavy queries on the live API. Instant file read.
   fastify.get('/server/pipeline', { preHandler: requireInternal }, async () => {
     let snap;
     try {
       snap = JSON.parse(readFileSync(PIPELINE_SNAPSHOT_PATH, 'utf8'));
     } catch {
-      return { status: 'unavailable', message: 'Snapshot not generated yet — pipeline-snapshot cron may not have run.' };
+      return { status: 'unavailable', message: 'Snapshot not generated yet — siftersearch-reports builds it within ~10 minutes of starting.' };
     }
     const ageS = snap.generated_at ? Math.round((Date.now() - Date.parse(snap.generated_at)) / 1000) : null;
     return { ...snap, age_s: ageS, stale: ageS != null && ageS > PIPELINE_STALE_S };
@@ -4589,7 +4589,7 @@ Collection: ${paragraph.collection || 'Unknown'}
     const mb = readAdminSnapshot()?.missingBooks;
     // haveSource is the current shape; a snapshot written by an older build has no two-list split,
     // so report pending rather than rendering empty queues until the next cron pass.
-    if (!mb?.haveSource) return { pending: true, message: 'Snapshot not generated yet — the pipeline-snapshot cron computes this section within ~5 minutes.' };
+    if (!mb?.haveSource) return { pending: true, message: 'Snapshot not generated yet — siftersearch-reports computes this section within ~10 minutes.' };
     return mb;
   });
 

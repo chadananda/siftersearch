@@ -22,8 +22,8 @@ describe('monitors do not scan whole tables on their frequent runs', () => {
       expect(before).toMatch(/heavy/);
     }
   });
-  it('pipeline-snapshot reads through the slow-probe cache', () => {
-    expect(src('pipeline-snapshot.js')).toMatch(/slowProbeCache/);
+  it('pipeline-snapshot cron touches no database (the snapshot is built in siftersearch-reports, 10-22)', () => {
+    expect(src('pipeline-snapshot.js')).not.toMatch(/db\.js|repos\/|better-sqlite3|queryAll|queryOne/);
   });
 });
 

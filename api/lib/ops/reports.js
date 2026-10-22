@@ -21,6 +21,7 @@ import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
 import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
+import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
@@ -203,6 +204,7 @@ REPORTS['media-vocab'] = mediaVocabJob;
 REPORTS['media-playback'] = mediaPlaybackJob;   // params { level = 'full', sourceKind? } — every item's playback level, pages re-rendered
 REPORTS['media-grade'] = mediaGradeJob;   // params { ids?, after? } — quality grade back-fill for processed items
 REPORTS['media-speakers'] = mediaSpeakersJob;   // params { refresh?, names? } — one canonical portrait per speaker (web search; face-centred crops via the image worker)   // params { minMentions? } — names for the transcript corrector's controlled vocabulary
+REPORTS['pipeline-snapshot'] = (p = {}) => pipelineSnapshotJob(p);   // params { rebaseIntegrity?, force? } — data/pipeline-status.json now (also every 10 min from the reports-worker loop)
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
 // paragraph inside the section (Chad 10-17: structure before BM25 "so that sections get indexed") — before/after measure.
@@ -237,7 +239,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   scout: ['dewey-scout'],
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade'];

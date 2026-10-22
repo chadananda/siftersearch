@@ -29,6 +29,21 @@ async function telemetryLoop() {
   }
 }
 
+// The admin pipeline snapshot (data/pipeline-status.json): cheap sections every 10 minutes, whole-table ones on their own
+// TTLs (api/lib/ops/pipeline-snapshot-job.js). Was a 5-minute cron script reading the DB directly — ~70 s and ~30 GB of
+// reads every hour, the recurring search slowdown (10-22).
+async function pipelineSnapshotLoop() {
+  const { pipelineSnapshotJob } = await import('../lib/ops/pipeline-snapshot-job.js');
+  await nap(30_000);   // not in the boot path
+  while (!isDraining()) {
+    try {
+      const r = await pipelineSnapshotJob();
+      if (r.computed_in_ms > 5000 || r.probe_errors.length) logger.info({ ms: r.computed_in_ms, ran: r.ran, section_ms: r.section_ms, errors: r.probe_errors }, 'pipeline snapshot');
+    } catch (err) { logger.warn({ err: err.message }, 'pipeline snapshot failed'); }
+    await nap(Number(process.env.PIPELINE_SNAPSHOT_EVERY_MS) || 10 * 60_000);
+  }
+}
+
 // PULSE (Chad 10-16: "the console is a bit dead … there is a ton of indexing activity going on"): the machinery's real
 // activity, from the two places everything passes through — the single writer's per-minute stats (every write batch,
 // attributed to its process and statement) and the vector collections' growth. One line per active writer caller per
@@ -134,4 +149,4 @@ const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).
 const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs (and MEDIA_JOBS, siftersearch-media's) — the main worker never claims (or requeues) them
 if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY });
 else await runService({ name: process.env.name || 'siftersearch-reports', registry: REPORTS, lanes: LANES, laneWorkers: LANE_WORKERS,
-  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop] });
+  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop] });

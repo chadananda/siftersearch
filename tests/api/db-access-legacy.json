@@ -229,7 +229,6 @@
   "scripts/phrase-index/keyword-index.mjs",
   "scripts/phrase-index/push-qdrant-authors.mjs",
   "scripts/phrase-index/refresh-payload.mjs",
-  "scripts/pipeline-snapshot.js",
   "scripts/pipeline/inventory.mjs",
   "scripts/pipeline/pair-originals.mjs",
   "scripts/pipeline/run-pipeline.mjs",
