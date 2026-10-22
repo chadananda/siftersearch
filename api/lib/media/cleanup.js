@@ -158,7 +158,7 @@ Edit kinds:
 - hallucination: an invented line in a silence ("Thank you for watching", subtitle credits) → to = ""
 - spelling: a misspelt ordinary word (same number of words)
 - homophone: a mis-heard ordinary word that sounds alike, clear from context
-- capitalisation: wrong capitals only
+- capitalisation: wrong capitals only. House style for pronouns: capitalise He / Him / His only for God and the Manifestations and Central Figures (Bahá’u’lláh, the Báb, Christ, Muḥammad, and by usage ‘Abdu’l-Bahá); never for Shoghi Effendi or anyone else. Decide from context who "he" refers to.
 - punctuation: a wrong sentence boundary → same words, corrected punctuation and capitals
 - broken: one word split apart → joined
 Each edit: "p" = paragraph number, "from" = the exact words from that paragraph (as few as possible), "to", "kind", "confidence" 0-1 (below 0.7 when unsure — only flagged for a person). Only edit paragraphs marked EDIT; lines marked CONTEXT are for reading only.

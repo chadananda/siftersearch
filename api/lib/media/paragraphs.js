@@ -7,6 +7,8 @@ const ENDS = /[.!?؟۔]["'”’)\]]*$/;
 export const endsSentence = (w) => ENDS.test(w) && !ABBR.test(w.replace(/["'”’)\]]+$/, ''));
 
 /** Every word of the transcript, in order, each with s/e (seconds): missing times are filled between their neighbours. */
+import { fixMojibake } from './text-repair.js';
+
 export function flattenWords(segments = []) {
   const out = [];
   for (const sg of segments) {
@@ -17,7 +19,8 @@ export function flattenWords(segments = []) {
       ws = toks.map((w, i) => ({ w, s: sg.s + i * d, e: sg.s + (i + 1) * d, spk: sg.spk }));
     }
     const base = out.length;
-    for (const w of ws) out.push({ w: String(w.w ?? w.word).trim(), s: w.s ?? null, e: w.e ?? null, p: w.p ?? null, spk: w.spk ?? sg.spk ?? null });
+    // Whisper's own mojibake ("ìWhy … book?î") is repaired here, where ASR words enter the pipeline (text-repair.js)
+    for (const w of ws) out.push({ w: fixMojibake(String(w.w ?? w.word).trim()), s: w.s ?? null, e: w.e ?? null, p: w.p ?? null, spk: w.spk ?? sg.spk ?? null });
     // fill gaps inside this segment: between the known neighbours, else the segment's own bounds
     for (let i = base; i < out.length; i++) {
       if (out[i].s != null && out[i].e != null) continue;

@@ -13,6 +13,7 @@ import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
 import { buildIndex, shapeSpeakers } from '../lib/media/listing-index.js';
+import { stripMdLinks } from '../lib/media/render.js';
 import { tmpdir } from 'os';
 import { writeFile, rename } from 'fs/promises';
 
@@ -107,7 +108,7 @@ export default async function mediaRoutes(fastify) {
         if (!it || it.state !== 'done') continue;
         let a = {}; try { a = JSON.parse(r.block_attrs || '{}'); } catch { /* none */ }
         if (a.t0 == null) continue;   // a chapter heading or the summary line: not a moment in the recording
-        hits.push({ slug: it.slug, item_id: it.id, t0: Number(a.t0) || 0, t1: Number(a.t1) || null, text: String(r.text).slice(0, 400) });
+        hits.push({ slug: it.slug, item_id: it.id, t0: Number(a.t0) || 0, t1: Number(a.t1) || null, text: stripMdLinks(r.text).slice(0, 400) });
       }
       ids = [...new Set(hits.map((h) => h.item_id))];
     }

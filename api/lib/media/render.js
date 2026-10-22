@@ -15,24 +15,15 @@ export function youtubeAt(meta, t = 0) {
 }
 
 /** A paragraph's words as Markdown, with each quotation's words linked to its source. quotes: [{ para, i0, i1, url, cite }] */
-export function paragraphMarkdown(p, quotes = [], links = []) {
-  // quotes link to their source; named people and works to their pages (the spoken words are the anchor text)
-  const spans = spansOf(p.n, quotes, links);
-  const shown = (ws) => ws.filter((w) => !w.hide).map((w) => w.w);
-  const out = [];
-  let i = 0;
-  for (const q of spans) {
-    if (q.i0 < i) continue;
-    out.push(...shown(p.words.slice(i, q.i0)));
-    const said = shown(p.words.slice(q.i0, q.i1)).join(' ');
-    const url = q.url.startsWith('/') ? `https://siftersearch.com${q.url}` : q.url;
-    const title = q.kind === 'quote' ? q.cite : q.kind === 'person' ? q.name : [q.title, q.section].filter(Boolean).join(', ');
-    if (said) out.push(`[${mdLinkText(said)}](${url}${title ? ` ${yq(title)}` : ''})`);
-    i = q.i1;
-  }
-  out.push(...shown(p.words.slice(i)));
-  return out.join(' ');
+/** A paragraph as INDEXED text: the shown words only, no markup. Quote, name and work links are NOT written inline (10-22:
+ *  "](https://…" polluted keyword search, embeddings and snippets); they live in transcript.json, content_source_links and
+ *  media_links, and the player renders them from there. */
+export function paragraphMarkdown(p) {
+  return p.words.filter((w) => !w.hide).map((w) => w.w).join(' ');
 }
+
+/** Any markdown link in a text → its words (snippets of transcripts ingested before 10-22). */
+export const stripMdLinks = (t) => String(t ?? '').replace(/!?\[([^\]]*)\]\((?:[^()]|\([^)]*\))*\)/g, '$1');
 
 /** transcript.md: frontmatter (title, speaker as author, date, language, the media page as source) + chapters + paragraphs. */
 export function transcriptMarkdown({ meta, paragraphs, quotes = [], links = [], chapters = [], headings = [] }) {
@@ -51,7 +42,7 @@ export function transcriptMarkdown({ meta, paragraphs, quotes = [], links = [], 
   for (const p of paragraphs) {
     if (hBy.has(p.n)) lines.push(`## ${hBy.get(p.n).text}`, '');
     while (c < chs.length && chs[c].t <= p.t0 + 0.5) { lines.push(`## ${chs[c].title}`, ''); c++; }
-    lines.push(paragraphMarkdown(p, quotes, links), `{id="para_${p.n}" t0="${p.t0.toFixed(2)}" t1="${p.t1.toFixed(2)}" spk="${p.spk || ''}"}`, '');
+    lines.push(paragraphMarkdown(p), `{id="para_${p.n}" t0="${p.t0.toFixed(2)}" t1="${p.t1.toFixed(2)}" spk="${p.spk || ''}"}`, '');
   }
   return `${lines.join('\n').trim()}\n`;
 }

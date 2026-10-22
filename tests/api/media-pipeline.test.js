@@ -23,12 +23,14 @@ const meta = { slug: 'grossmann-world-order-2-1999', title: 'World Order 2', spe
 describe('renditions', () => {
   const ps = [para(1, 'Bahá’u’lláh says O Son of Being love Me that I may love thee and so on.'), para(2, 'Then the next thought.', 20)];
   const quotes = [{ para: 1, i0: 2, i1: 12, url: 'https://oceanlibrary.com/x?paraId=1', cite: 'The Hidden Words, Arabic 5' }];
-  it('transcript.md: frontmatter, block ids with times, quotes as links on the speaker\'s own words', () => {
+  it('transcript.md: frontmatter, block ids with times, plain indexed text', () => {
     const md = transcriptMarkdown({ meta, paragraphs: ps, quotes, chapters: [{ t: 20, title: 'Next part' }] });
     expect(md).toMatch(/^---\ntitle: "World Order 2"\nauthor: "Hartmut Grossmann"/);
     expect(md).toContain('needs_segmentation: false');
     expect(md).toContain('source_url: "https://siftersearch.com/media/grossmann-world-order-2-1999"');
-    expect(md).toContain('Bahá’u’lláh says [O Son of Being love Me that I may love](https://oceanlibrary.com/x?paraId=1 "The Hidden Words, Arabic 5") thee and so on.');
+    // indexed text is plain (10-22): the quote link lives in transcript.json / content_source_links, not inline
+    expect(md).toContain('Bahá’u’lláh says O Son of Being love Me that I may love thee and so on.');
+    expect(md).not.toContain('](http');
     expect(md).toContain('## Next part');
     const attrs = md.split('\n').find((l) => l.startsWith('{id="para_2"'));
     expect(parseBlockAttrs(attrs)).toEqual({ id: 'para_2', t0: '20.00', t1: '24.00', spk: 'S1' });

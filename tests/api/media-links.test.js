@@ -56,8 +56,8 @@ describe('renditions with links', () => {
   const words = 'then the Master read the Íqán aloud'.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
   const p = { n: 1, t0: 0, t1: 7, spk: 'S1', words, sentences: [[0, 7]] };
   const links = [{ para: 1, i0: 1, i1: 3, kind: 'person', url: '/biography/7', name: '‘Abdu’l-Bahá' }, { para: 1, i0: 4, i1: 6, kind: 'work', url: 'https://oceanlibrary.com/44', title: 'Kitáb-i-Íqán' }];
-  it('transcript.md: the spoken words are the anchor text', () => {
-    expect(paragraphMarkdown(p, [], links)).toBe('then [the Master](https://siftersearch.com/biography/7 "‘Abdu’l-Bahá") read [the Íqán](https://oceanlibrary.com/44 "Kitáb-i-Íqán") aloud');
+  it('transcript.md stays plain text (links live in transcript.json and media_links, not in the indexed text)', () => {
+    expect(paragraphMarkdown(p, [], links)).toBe('then the Master read the Íqán aloud');
   });
   it('page.html: name links stay in the page, work links open the source; clicks on them navigate', () => {
     const html = pageHtml({ meta: { slug: 's', title: 'T', rights: { playback: 'full' }, source: { kind: 'file' } }, paragraphs: [p], links });

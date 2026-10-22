@@ -71,11 +71,11 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null } = {}, deps = {}) {
+export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null } = {}, deps = {}) {
   // ids: [..] or 'done' (every published item) → one media-item run each, same options (a back-fill: { ids: 'done', redo: [...] })
   if (id == null && ids) {
     const list = ids === 'done' ? await (deps.repo || await import('../repos/media-repo.js')).doneItemIds() : [].concat(ids).map(Number).filter(Boolean);
-    for (const one of list) await (deps.queue || enqueue)('media-item', Object.fromEntries(Object.entries({ id: one, from, only, redo, threads, lang, model }).filter(([, v]) => v != null)));
+    for (const one of list) await (deps.queue || enqueue)('media-item', Object.fromEntries(Object.entries({ id: one, from, only, redo, threads, lang, model, priority }).filter(([, v]) => v != null)));
     return { queued: list.length };
   }
   let item = await getMediaItem(id);
