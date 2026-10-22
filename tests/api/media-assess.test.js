@@ -53,3 +53,11 @@ describe('moment links', () => {
     expect(page).toMatch(/searchParams\.get\('m'\)[\s\S]{0,200}Astro\.redirect\(`\/media\/\$\{encodeURIComponent\(slug\)\}\/m\//);
   });
 });
+
+describe('the catalogue keeps the audience level', () => {
+  it('updateMediaItem writes audience (10-22: it was silently dropped, the listing facet stayed empty)', async () => {
+    const { readFileSync } = await import('fs');
+    const src = readFileSync(new URL('../../api/lib/repos/media-repo.js', import.meta.url), 'utf8');
+    expect(src).toMatch(/const COLS = new Set\(\[[^\]]*'audience'/);
+  });
+});

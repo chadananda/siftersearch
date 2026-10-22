@@ -6,7 +6,7 @@ import { LIVE_SQL } from '../entity-live.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
-const COLS = new Set(['grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
+const COLS = new Set(['audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
   'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
