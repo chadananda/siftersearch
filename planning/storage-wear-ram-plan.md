@@ -703,14 +703,14 @@ decision from him, not just a go-ahead.
 
 | # | step | type | rollback | expected effect |
 |---|---|---|---|---|
-| R1 | Back up the three `vectors.db` stores to `/tank` (server-side job using SQLite online backup, nice 19, indexer drained) | C (ops job) **A** | — | closes the 42 GB paid-data gap |
-| R2 | `zfs set com.sun:auto-snapshot=false crutch`; destroy its frequent/hourly snapshots | S | set true | less fragmentation on the no-TRIM A400 |
-| R3 | PATCH `phrases`: `optimizers_config.max_optimization_threads=0` (freeze until the move) | S | PATCH back to 1 | prevents a 190 GiB merge on the worn EVO |
-| R4 | `zpool set autotrim=on fast`; one `zpool trim fast` overnight | S | autotrim=off | lower internal amplification on the EVO |
-| R5 | `zfs set logbias=throughput fast/siftersearch-db`; re-measure for 24 h (tmp/wear/followup.md) | S | logbias=latency | expected: 3.4× → ~2× on DB writes [est] |
-| R6 | `flush_interval_sec` → 120 on the rebuildable collections | S | PATCH back | fewer small writebacks |
-| R7 | Swap file off plus zram 8 GB, swappiness 10; logs to `/tank` with logrotate | S | swapon | root SSD ~0.05 → ~0.02 TB/day |
-| R8 | Stop Meilisearch writes completely, or stop the service once no reader remains (retirement step 6) | S/C **A** | start the service | `/tank` 1.7 TB/day → ~0 |
+| R1 | Back up the three `vectors.db` stores to `/tank` (server-side job using SQLite online backup, nice 19). **DONE 10-22 01:32**: ops job `vectors-backup` (own lane, skips stores being written, sample-verifies big stores, adopts complete copies); add to the nightly backup | C (ops job) **A** | — | closes the 42 GB paid-data gap |
+| R2 | `zfs set com.sun:auto-snapshot=false crutch`; destroy its frequent/hourly snapshots. **DONE 10-21** | S | set true | less fragmentation on the no-TRIM A400 |
+| R3 | PATCH `phrases`: `optimizers_config.max_optimization_threads=0` (freeze until the move). **DONE 10-21** (red → green) | S | PATCH back to 1 | prevents a 190 GiB merge on the worn EVO |
+| R4 | `zpool set autotrim=on fast`; one `zpool trim fast` overnight. **DONE** (trim 23:30–23:51) | S | autotrim=off | lower internal amplification on the EVO |
+| R5 | `zfs set logbias=throughput fast/siftersearch-db`; re-measure for 24 h (tmp/wear/followup.md). **SET 10-21**, re-measure pending | S | logbias=latency | expected: 3.4× → ~2× on DB writes [est] |
+| R6 | `flush_interval_sec` → 120 on the rebuildable collections. **DONE 10-21** | S | PATCH back | fewer small writebacks |
+| R7 | Swap file off plus zram 8 GB, swappiness 10; logs to `/tank` with logrotate. **DONE 10-21** (logs = ZFS datasets tank/logs/*) | S | swapon | root SSD ~0.05 → ~0.02 TB/day |
+| R8 | Stop Meilisearch writes completely, or stop the service once no reader remains (retirement step 6). **DONE 10-21**: code retired, service stopped + disabled, data kept on /tank | S/C **A** | start the service | `/tank` 1.7 TB/day → ~0 |
 | R9 | Indexer: 2,000-point upserts, `wait=false`, batched upserted marks, `units.upserted_at`, reconcile command (C1, C2) | C | git revert | fewer segments and WAL frames; enables crash recovery |
 | R10 | 4 TB NVMe: install, partition, XFS `/faster` + pool `faster` (§8.2) | H **A** | remove the drive | — |
 | R11 | Move the vector stores `crutch` → `faster/vectors` (§8.3 step 1) and add them to db-ship | S (ops) **A** | symlinks back | indexer off the A400; faster builds |

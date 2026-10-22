@@ -1,8 +1,8 @@
 // Worker thread for vector-backup-repo. mode 'backup': SQLite online backup of one vectors.db, paced (Atomics.wait between
 // steps blocks only this thread), then the COPY goes to journal_mode=DELETE (one self-contained file), a completion marker
 // (<dest>.copied) is written, and the copy is verified. mode 'verify': verify an existing complete copy. Nice 19.
-// Checks: 'sample' (header + page count + size + random rows of every table compared with the source — seconds, even for
-// 240 GB on the HDD), 'quick_check' / 'integrity_check' (full scans: random reads, hours on the HDD for the phrase store).
+// Checks: 'sample' (header + page count + size + random rows of every table compared with the source — minutes (5 min for
+// 240 GB on the HDD), 'quick_check' / 'integrity_check' (full scans: random reads, many hours on the HDD for the phrase store).
 import os from 'os';
 import { createHash } from 'crypto';
 import { statSync, writeFileSync } from 'fs';

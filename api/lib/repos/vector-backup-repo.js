@@ -14,7 +14,7 @@ export const VECTOR_STORES = {
 
 /** Which check verifies the copy. Full scans on the HDD copy are random reads: hype's 20 GB integrity_check took 38 min and
  *  the 240 GB phrase quick_check fell to ~1 MB/s after 4 h (10-21). So: integrity_check < 2 GB, quick_check < 50 GB, and
- *  above that 'sample' (header + page count + size + random rows of every table compared with the source, seconds). A
+ *  above that 'sample' (header + page count + size + random rows of every table compared with the source: 5 min for 240 GB). A
  *  full check of the big store is an explicit, separate run (params.check 'quick' | 'integrity'), weekly at most. */
 export const checkFor = (bytes, { check = 'auto', fullBelowBytes = 2e9, quickBelowBytes = 50e9 } = {}) =>
   (check === 'integrity' ? 'integrity_check' : check === 'quick' ? 'quick_check' : check === 'sample' ? 'sample'
