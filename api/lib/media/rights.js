@@ -27,6 +27,8 @@ export function canServeFile(level, name) {
   const n = String(name || '');
   if (/^(waveform\.json|thumb\.(jpg|png|svg)|page\.html|transcript\.(json|md))$/.test(n)) return true;
   if (/^web\/[^/]+\.(ogg|opus|m4a|mp3)$/.test(n)) return level === 'full';
+  // audiogram shorts (≤ 3 min, made to be shared) and their captions/post text: wherever playback of a clip is allowed
+  if (/^shorts\/[0-9a-f]{12}\.(mp4|srt|vtt|json)$/.test(n)) return level === 'full' || level === 'clips';
   return false;
 }
 

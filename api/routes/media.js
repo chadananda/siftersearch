@@ -17,7 +17,7 @@ import { stripMdLinks } from '../lib/media/render.js';
 import { tmpdir } from 'os';
 import { writeFile, rename } from 'fs/promises';
 
-const TYPES = { '.ogg': 'audio/ogg', '.opus': 'audio/ogg', '.m4a': 'audio/mp4', '.mp3': 'audio/mpeg', '.json': 'application/json; charset=utf-8',
+const TYPES = { '.mp4': 'video/mp4', '.srt': 'application/x-subrip; charset=utf-8', '.vtt': 'text/vtt; charset=utf-8', '.ogg': 'audio/ogg', '.opus': 'audio/ogg', '.m4a': 'audio/mp4', '.mp3': 'audio/mpeg', '.json': 'application/json; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8', '.html': 'text/html; charset=utf-8', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const readJson = async (p) => { try { return JSON.parse(await readFile(p, 'utf8')); } catch { return null; } };
 
@@ -132,6 +132,34 @@ export default async function mediaRoutes(fastify) {
     const speakers = shapeSpeakers(items, await listSpeakers(), speakerThumb);
     reply.header('Cache-Control', pending ? 'public, max-age=15, s-maxage=15' : 'public, max-age=120, s-maxage=300, stale-while-revalidate=3600');
     return { v: 1, generated_at: new Date().toISOString(), pending, total: items.length, hours: Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, items, speakers };
+  });
+
+  // ── AUDIOGRAM SHORTS: POST { slug, start, end, format?, template? } → the files when already rendered (public, cached per
+  // talk version × range × format × template), else a queued render. Anyone may ask for a talk's MOMENTS (a fixed, small set:
+  // shared links reuse one file); any other range needs the internal key or an admin. At most SHORT_QUEUE renders wait.
+  fastify.post('/shorts', async (req, reply) => {
+    const b = req.body || {};
+    const it = await getMediaBySlug(b.slug);
+    const { planShort } = await import('../lib/media/short-job.js');
+    let plan;
+    try { plan = await planShort(it, b); } catch (err) { return reply.code(400).send({ error: err.message }); }
+    const { existsSync: ex } = await import('fs');
+    const files = { mp4: plan.files.mp4, srt: plan.files.srt, vtt: plan.files.vtt, post: plan.files.post };
+    if (ex(join(it.dir, 'shorts', `${plan.key}.mp4`))) return { status: 'done', key: plan.key, template: plan.template, ...files };
+    const internal = req.headers['x-internal-key'] && req.headers['x-internal-key'] === process.env.DEPLOY_SECRET;
+    if (!plan.moment && !internal) return reply.code(403).send({ error: 'only a talk\'s moments can be rendered on request', moments: `/api/media/${it.slug}` });
+    const { pendingRuns, enqueue } = await import('../lib/repos/ops-report-repo.js');
+    const pending = await pendingRuns('media-short');
+    if (!internal && pending.length >= Number(process.env.SHORT_QUEUE || 10)) return reply.code(429).send({ error: 'busy — try again in a few minutes' });
+    const run = await enqueue('media-short', { slug: it.slug, start: plan.range.start, end: plan.range.end, format: plan.range.format, ...(b.template ? { template: b.template } : {}) }, internal ? 'internal' : 'public');
+    return reply.code(202).send({ status: run.status, run: run.id, poll: `/api/media/shorts/run/${run.id}`, key: plan.key, template: plan.template, ...files });
+  });
+  fastify.get('/shorts/run/:id', async (req, reply) => {
+    const { getRun } = await import('../lib/repos/ops-report-repo.js');
+    const r = await getRun(Number(req.params.id));
+    if (!r || r.name !== 'media-short') return reply.code(404).send({ error: 'NotFound' });
+    reply.header('Cache-Control', 'no-store');
+    return { status: r.status, result: r.result || null, error: r.error ? String(r.error).slice(0, 300) : null };
   });
 
   // a MOMENT by its short key (shareable: the moment page and its social card draw from this)

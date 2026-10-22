@@ -245,3 +245,13 @@ export async function mediaGradeJob({ ids = null, after = 0 } = {}, deps = {}) {
   }
   return out;
 }
+
+// ── media-short { slug, start, end, format?, template? }: an audiogram short (api/lib/media/short-job.js), cached per
+// talk version × range × format × template; rendered on boss's CPU through the gate
+export async function mediaShortJob(params = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { renderShortFor } = deps.short || await import('../media/short-job.js');
+  const item = await repo.getMediaBySlug(params.slug);
+  const portraitUrl = async (it) => { const sp = it.speaker_key ? await repo.getSpeaker(it.speaker_key) : null; return sp?.file && sp.sha ? `https://siftersearch.com/img/cdn/siftersearch.com/${sp.file}?v=${sp.sha.slice(0, 16)}` : null; };
+  return renderShortFor(item, params, { portraitUrl, ...(deps.render || {}) });
+}

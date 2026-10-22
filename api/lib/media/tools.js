@@ -224,3 +224,19 @@ export function threadsFor(latencies, { base = defaultThreads(), slowS = 3, very
   if (med > slowS) return Math.max(4, Math.floor(base / 2));
   return base;
 }
+
+let rendererOn = null;
+export const SHORT_TOOL = join(ROOT, 'scripts', 'media', 'render_short.py');
+/** Render a short on the ASR host (boss CPU): the input dir goes as a tar, the MP4 comes back on stdout (binary). */
+export async function renderShort(dir, { host = asrHost(), timeoutMs = 900_000, stop = null } = {}) {
+  if (!host) throw new Error('no render host (MEDIA_ASR_HOST)');
+  const { readFile } = await import('fs/promises');
+  if (rendererOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, 'install-renderer'], { timeoutMs: 60_000, input: await readFile(SHORT_TOOL) }); rendererOn = host; }
+  const tar = [];
+  await run('tar', ['-C', dir, '-cf', '-', '.'], { timeoutMs: 60_000, onStdout: (d) => tar.push(d), env: { COPYFILE_DISABLE: '1' } });
+  const out = [];
+  await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=30', host, 'short'], { timeoutMs, stop, input: Buffer.concat(tar), onStdout: (d) => out.push(d) });
+  const mp4 = Buffer.concat(out);
+  if (mp4.length < 1000 || mp4.slice(4, 8).toString() !== 'ftyp') throw new Error(`render failed (${mp4.length} bytes)`);
+  return mp4;
+}

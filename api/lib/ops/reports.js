@@ -19,7 +19,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
+import { mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -202,6 +202,7 @@ REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch
 REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)
 REPORTS['media-vocab'] = mediaVocabJob;
 REPORTS['media-playback'] = mediaPlaybackJob;   // params { level = 'full', sourceKind? } — every item's playback level, pages re-rendered
+REPORTS['media-short'] = mediaShortJob;   // params { slug, start, end, format?, template? } — an audiogram short
 REPORTS['media-grade'] = mediaGradeJob;   // params { ids?, after? } — quality grade back-fill for processed items
 REPORTS['media-speakers'] = mediaSpeakersJob;   // params { refresh?, names? } — one canonical portrait per speaker (web search; face-centred crops via the image worker)   // params { minMentions? } — names for the transcript corrector's controlled vocabulary
 REPORTS['pipeline-snapshot'] = (p = {}) => pipelineSnapshotJob(p);   // params { rebaseIntegrity?, force? } — data/pipeline-status.json now (also every 10 min from the reports-worker loop)
@@ -242,7 +243,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
-export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade'];
+export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short'];
 export { LANE_WORKERS } from './lane-workers.js';
 
 export const reportNames = () => Object.keys(REPORTS);

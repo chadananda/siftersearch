@@ -7,11 +7,24 @@
 #   start <ext> <job> [--opt value …]                       a DETACHED transcription (survives the caller's restarts):
 #   poll <job> · fetch <job> · cancel <job>                 its state · its transcript JSON · stop it
 #   install-tool                                            replace media_tool.py with stdin (kept in sync from the repo)
+#   short · install-renderer                                an audiogram short (tar in, MP4 out) · replace render_short.py
 set -euo pipefail
 cd "$HOME/media-asr"
 read -r -a A <<< "${SSH_ORIGINAL_COMMAND:-}"
 verb="${A[0]:-}"
+watch_parent() { local sshd=$PPID; while kill -0 "$1" 2>/dev/null; do kill -0 "$sshd" 2>/dev/null || { kill "$1" 2>/dev/null; return; }; sleep 2; done; }
 if [[ "$verb" == "install-tool" ]]; then cat > media_tool.py.new && mv media_tool.py.new media_tool.py && echo '{"installed":true}'; exit 0; fi
+if [[ "$verb" == "install-renderer" ]]; then cat > render_short.py.new && mv render_short.py.new render_short.py && echo '{"installed":true}'; exit 0; fi
+# an audiogram SHORT: a tar (spec.json, audio.m4a, captions.ass, portrait.jpg?, qr.png) in, the MP4 out; fixed recipes only;
+# killed when the caller's ssh session goes (same watcher as the ASR verbs)
+if [[ "$verb" == "short" ]]; then
+  job=$(mktemp -d /tmp/media-short.XXXXXX); trap 'rm -rf "$job"' EXIT
+  tar -C "$job" -xf - --no-same-owner 2>/dev/null
+  for f in "$job"/* "$job"/.[!.]*; do [[ -e "$f" ]] || continue; [[ "$(basename "$f")" =~ ^(spec\.json|audio\.m4a|captions\.ass|portrait\.jpg|qr\.png)$ ]] || { echo '{"error":"unexpected file"}' >&2; exit 2; }; done
+  SHORT_THREADS=12 nice -n 10 python3 render_short.py "$job" >&2 &
+  py=$!; watch_parent "$py" & wait "$py"
+  cat "$job/out.mp4"; exit 0
+fi
 [[ "$verb" =~ ^(probe|langid|transcribe|diarize|start|poll|fetch|cancel)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
 
 # ── detached jobs: ~/media-asr/jobs/<job>/ (in.<ext>, out.json, pid, err.txt); kept two days ──
@@ -51,7 +64,6 @@ job=$(mktemp -d /tmp/media-asr.XXXXXX); trap 'rm -rf "$job"' EXIT
 cat > "$job/in.$ext"
 # attached work runs in the background and is killed when the caller's ssh session goes away (tower stopped it for a
 # drain) — it must never keep burning boss's CPU for a result nobody will read
-watch_parent() { local sshd=$PPID; while kill -0 "$1" 2>/dev/null; do kill -0 "$sshd" 2>/dev/null || { kill "$1" 2>/dev/null; return; }; sleep 2; done; }
 if [[ "$verb" == "transcribe" ]]; then
   nice -n 10 venv/bin/python media_tool.py transcribe "$job/in.$ext" --output "$job/out.json" --models "$HOME/media-asr/models" --prompt "$prompt" "${args[@]}" >"$job/summary.json" &
   py=$!; watch_parent "$py" & wait "$py"
