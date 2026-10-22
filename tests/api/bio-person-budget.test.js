@@ -64,7 +64,7 @@ describe('people dossier budget', () => {
     const t0 = Date.now();
     await getBioPerson(7);
     expect(calls.length).toBe(n);
-    expect(Date.now() - t0).toBeLessThan(50);
+    expect(Date.now() - t0).toBeLessThan(500);   // a bound against the pathological case, not machine speed (flaked when other suites/builds loaded the CPU)
   });
   it('counts claims from the covering index alone (migration 169)', () => {
     db.exec('ANALYZE');

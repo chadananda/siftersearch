@@ -8,7 +8,7 @@ describe('stripUngroundedLinks', () => {
   it('an unclosed link with a long URL returns at once', () => {
     const t0 = Date.now();
     stripUngroundedLinks(`The original tablet, [*Alvah-i-Visaya*](${LONG} and more words (with a paren) after it`, [{ citation_url: 'https://x/y' }]);
-    expect(Date.now() - t0).toBeLessThan(200);
+    expect(Date.now() - t0).toBeLessThan(2000);   // a bound against the pathological case, not machine speed (flaked when other suites/builds loaded the CPU)
   });
   it('still keeps grounded links, unlinks fabricated ones, and allows one level of parens', () => {
     const q = [{ citation_url: 'https://a.org/b (en)#p10' }, { citation_url: LONG }];

@@ -285,8 +285,14 @@
     window.addEventListener('touchmove', manual, { passive: true });
     document.addEventListener('selectionchange', onSelection);
     // the slim bar takes over once the hero's player has scrolled away
-    const io = new IntersectionObserver(([e]) => { heroOut = !e.isIntersecting && e.boundingClientRect.top < 0; });
-    if (heroPlayer) io.observe(heroPlayer);
+    // (an IntersectionObserver missed a jump from below the fold straight past the player — phones, where the player
+    // starts below the fold: not-intersecting → not-intersecting fires nothing — so the position is read on scroll)
+    let heroRaf = 0;
+    const heroCheck = () => { heroRaf = 0; if (heroPlayer) heroOut = heroPlayer.getBoundingClientRect().bottom < 0; };
+    const onHeroScroll = () => { if (!heroRaf) heroRaf = requestAnimationFrame(heroCheck); };
+    window.addEventListener('scroll', onHeroScroll, { passive: true });
+    heroCheck();
+    const io = { disconnect: () => { window.removeEventListener('scroll', onHeroScroll); cancelAnimationFrame(heroRaf); } };
     return () => {
       io.disconnect();
       cancelAnimationFrame(raf);

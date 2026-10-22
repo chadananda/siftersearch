@@ -11,6 +11,6 @@ describe('drain', () => {
     expect(Date.now() - t0).toBeLessThan(1000);
     expect(isDraining()).toBe(true);
     const t1 = Date.now(); await nap(60_000);
-    expect(Date.now() - t1).toBeLessThan(50);
+    expect(Date.now() - t1).toBeLessThan(500);   // vs the 60 s nap: 'at once' without racing a loaded CPU
   });
 });

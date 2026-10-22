@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T19:11:55.917Z",
+  "generated": "2026-10-22T19:35:33.523Z",
   "entries": [
+    {
+      "hash": "7771abbe",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Portrait extensions are recorded with a plain UPDATE (upsertSpeaker's INSERT needs the name: 89 masters were generated and uploaded, then not recorded) and an uploaded-but-unrecorded master is adopted, not regenerated",
+      "scope": "media"
+    },
+    {
+      "hash": "3b3aacfb",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Follow mode never holds the playing line under the nav + slim player; momentum scroll no longer cancels it",
+      "scope": "media"
+    },
     {
       "hash": "6944b38b",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Restore NOTE_LEVELS (dropped with the old prompt text — every page would have thrown)",
       "scope": "reading"
-    },
-    {
-      "hash": "fddae0f3",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Pages are the text and its notes only; notes extremely terse",
-      "scope": "reading"
-    },
-    {
-      "hash": "34039df5",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Every live call site takes its model from the role table — Haiku 5.5 for routine, Sonnet 5.5 for quality",
-      "scope": "models"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "7771abbe",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Portrait extensions are recorded with a plain UPDATE (upsertSpeaker's INSERT needs the name: 89 masters were generated and uploaded, then not recorded) and an uploaded-but-unrecorded master is adopted, not regenerated",
+        "scope": "media"
+      },
+      {
+        "hash": "3b3aacfb",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Follow mode never holds the playing line under the nav + slim player; momentum scroll no longer cancels it",
+        "scope": "media"
+      },
       {
         "hash": "6944b38b",
         "date": "2026-10-22",
@@ -7007,20 +7021,6 @@
         "type": "Fixed",
         "description": "Restore NOTE_LEVELS (dropped with the old prompt text — every page would have thrown)",
         "scope": "reading"
-      },
-      {
-        "hash": "fddae0f3",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Pages are the text and its notes only; notes extremely terse",
-        "scope": "reading"
-      },
-      {
-        "hash": "34039df5",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Every live call site takes its model from the role table — Haiku 5.5 for routine, Sonnet 5.5 for quality",
-        "scope": "models"
       }
     ]
   }

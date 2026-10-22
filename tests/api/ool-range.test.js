@@ -57,7 +57,9 @@ describe('bounded work (10-12: whole-book pages froze the API)', () => {
     const page = `${filler} ${quote} ${filler}`;
     const t0 = Date.now();
     const u = oolQuoteUrl('https://oceanoflights.org/x/', page, quote);
-    expect(Date.now() - t0).toBeLessThan(1000);
+    // the guard is against the pathological case (whole-book pages froze the API for many seconds), not machine speed:
+    // 1 s flaked under load (1.6–1.9 s with parallel suites); 4 s still catches a quadratic scan
+    expect(Date.now() - t0).toBeLessThan(4000);
     expect(u).toMatch(/^https:\/\/oceanoflights\.org\/x\/#\(word0\)\(word349\)$/);
   });
   it('a page past the size cap gets no range (the caller falls back to a text fragment)', async () => {

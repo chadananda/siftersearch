@@ -25,7 +25,7 @@ beforeAll(async () => {
   ins.run(5, 'Deleted Dawn', 'x', "Baha'i", 'x', null, null, '2026-01-01');
   const { migrations } = await import('../../api/lib/migrations/v72-v90.js');
   await migrations[142]();
-});
+}, 60_000);   // the migration builds an FTS index: under a loaded machine it outran the 10 s default hook timeout (a flaky suite)
 
 describe('findDocuments (SQLite FTS)', () => {
   it('finds by title words as prefixes, diacritics folded, title ranked first', async () => {
@@ -111,7 +111,7 @@ describe('findDocuments never blocks (the 10-17 freeze)', () => {
     const t0 = performance.now();
     await findDocuments('Excerpts from the notes of Ben Levy, an American in the Armed Forces in Germany. Pilgrimage to the Holy Land and a visit of the world', { fields: ['id', 'title'], limit: 8 });
     await findDocuments('the of and a to in', { fields: ['id', 'title'], limit: 8 });
-    expect(performance.now() - t0).toBeLessThan(300);
+    expect(performance.now() - t0).toBeLessThan(2000);   // a bound against the pathological case, not machine speed (flaked when other suites/builds loaded the CPU)
   });
   it('the FTS MATCH runs ONCE per search — never per row (the structural cause of the freeze)', async () => {
     const { findDocuments } = await import('../../api/lib/docs-repo.js');

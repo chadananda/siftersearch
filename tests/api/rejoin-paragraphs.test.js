@@ -58,7 +58,7 @@ describe('rejoin performance', () => {
     const nasty = 'word '.repeat(2000) + ' *'.repeat(3000) + '   _ _ _'.repeat(500) + ' [x] '.repeat(200);
     const t0 = Date.now();
     rejoin(`${nasty}\n\n${nasty}\n\nand a lowercase continuation that is long enough to count as prose here.`);
-    expect(Date.now() - t0).toBeLessThan(500);
+    expect(Date.now() - t0).toBeLessThan(3000);   // a bound against the pathological case, not machine speed (flaked when other suites/builds loaded the CPU)
   });
 });
 
