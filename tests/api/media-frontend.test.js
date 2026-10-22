@@ -79,3 +79,19 @@ describe('misc', () => {
     expect(bars[1]).toBeCloseTo(0.2);
   });
 });
+
+describe('media quality admin client', () => {
+  it('calls the repair list, one report, and the graded listing sorted by priority', async () => {
+    const { vi } = await import('vitest');
+    const calls = [];
+    vi.stubGlobal('fetch', async (url) => { calls.push(String(url)); return new Response('{"groups":[],"items":[]}', { status: 200, headers: { 'content-type': 'application/json' } }); });
+    const { admin } = await import('../../src/lib/api.js');
+    await admin.getMediaRepairs('D');
+    await admin.getMediaQuality('a b');
+    await admin.getMediaGraded('grade=C');
+    vi.unstubAllGlobals();
+    expect(calls[0]).toMatch(/\/api\/media\/admin\/repairs\?min=D$/);
+    expect(calls[1]).toMatch(/\/api\/media\/admin\/quality\/a%20b$/);
+    expect(calls[2]).toMatch(/\/api\/media\?facets=0&limit=200&sort=priority&grade=C$/);
+  });
+});

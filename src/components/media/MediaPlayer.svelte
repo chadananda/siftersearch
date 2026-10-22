@@ -16,6 +16,11 @@
   const level = item.rights?.playback || 'search';
   const canPlay = (level === 'full' && !!item.audio) || (level === 'clips' && !!item.clip_url);
   const duration = Number(item.duration_s) || 0;
+  // the recording's quality (Chad 10-22: a small public badge): overall grade + the main issue, details on hover/focus
+  const q = item.quality;
+  const ISSUE_LABEL = { muffled: 'muffled (narrow bandwidth)', noisy: 'background noise', hum: 'mains hum', reverberant: 'echoey room', clipped: 'distorted (clipped)', dropouts: 'dropouts', 'low-level': 'quiet or uneven levels', speed: 'speed off' };
+  const qualityTitle = q ? [`Recording quality ${q.overall}`, q.primary_issue && q.primary_issue !== 'ok' ? ISSUE_LABEL[q.primary_issue] || q.primary_issue : 'clear',
+    ...Object.entries(q.dimensions || {}).filter(([, x]) => x?.grade).map(([k, x]) => `${k} ${x.grade}`)].join(' · ') : '';
   const flat = flattenWords(item.paragraphs);
   const ytBase = item.youtube || (item.source?.kind === 'youtube' ? item.source.url : null);
 
@@ -276,7 +281,9 @@
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-primary sm:text-3xl">{item.title}</h1>
       {#if item.speaker}<p class="mt-1 text-lg text-secondary">{item.speaker}</p>{/if}
       {#if when.length || duration}
-        <p class="mt-1 text-sm text-muted">{[...when, duration ? formatTime(duration) : null].filter(Boolean).join(' · ')}</p>
+        <p class="mt-1 text-sm text-muted">{[...when, duration ? formatTime(duration) : null].filter(Boolean).join(' · ')}
+          {#if q?.overall}<span class="ml-2 inline-flex items-center gap-1 rounded border border-border-subtle px-1.5 text-xs text-muted" title={qualityTitle} aria-label={qualityTitle}>audio {q.overall}{q.primary_issue && q.primary_issue !== 'ok' ? ` · ${ISSUE_LABEL[q.primary_issue] || q.primary_issue}` : ''}</span>{/if}
+        </p>
       {/if}
       {#if item.summary}<p class="mt-3 max-w-3xl text-secondary">{item.summary}</p>{/if}
       <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">

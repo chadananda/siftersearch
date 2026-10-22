@@ -938,6 +938,11 @@ export const admin = {
     return request(`/api/admin/activity/search-log?${params.toString()}`);
   },
 
+  // Media library quality (/admin/media): the repair list grouped by fix chain, a full per-item report, the graded listing
+  async getMediaRepairs(min = 'C') { return request(`/api/media/admin/repairs?min=${encodeURIComponent(min)}`); },
+  async getMediaQuality(slug) { return request(`/api/media/admin/quality/${encodeURIComponent(slug)}`); },
+  async getMediaGraded(query = '') { return request(`/api/media?facets=0&limit=200&sort=priority${query ? `&${query}` : ''}`); },
+
   // Missing-books triage (snapshot-backed; see /admin/missing-books)
   async getMissingBooks() {
     return request('/api/admin/library/missing-books');

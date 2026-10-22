@@ -1,0 +1,10 @@
+---
+// Media library quality (Chad 10-22): every recording's grade by dimension, the repair list grouped by fix chain.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import MediaQualityAdmin from '../../components/admin/MediaQualityAdmin.svelte';
+---
+
+<AdminLayout title="Media quality">
+  <MediaQualityAdmin client:only="svelte"><IslandSkeleton slot="fallback" /></MediaQualityAdmin>
+</AdminLayout>
