@@ -6,7 +6,7 @@
   // position; wheel/touch/scroll keys drop Follow. ?t=a / ?t=a-b / #t=a,b set the start / a played-and-shaded range.
   import { onMount, tick } from 'svelte';
   import { media } from '../../lib/api.js';
-  import { flattenWords, wordAt, youtubeAtTime } from '../../lib/media.js';
+  import { flattenWords, wordAt, youtubeAtTime, picture } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -204,7 +204,7 @@
 
   function sessionSetup() {
     if (!('mediaSession' in navigator)) return;
-    const art = item.thumb?.url ? [{ src: new URL(media.href(item.thumb.url), location.href).href, sizes: '512x512', type: /\.svg/.test(item.thumb.url) ? 'image/svg+xml' : 'image/jpeg' }] : [];
+    const art = item.thumb?.url ? [{ src: new URL(media.href(picture(item.thumb.url, 512, 512, { photo: item.thumb.kind === 'photo' }).src), location.href).href, sizes: '512x512', type: /\.svg/.test(item.thumb.url) ? 'image/svg+xml' : 'image/webp' }] : [];
     navigator.mediaSession.metadata = new MediaMetadata({ title: item.title, artist: item.speaker || '', album: item.collection || 'SifterSearch Media', artwork: art });
     const set = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch { /* unsupported */ } };
     set('play', () => toggle());
@@ -259,11 +259,13 @@
   <header class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start">
     {#if item.thumb?.url}
       <figure class="shrink-0">
-        <img src={media.href(item.thumb.url)} alt={photo ? item.speaker || '' : ''} class="aspect-square w-28 rounded-xl border border-border-subtle bg-surface-2 object-cover sm:w-40" />
-        {#if photo && (item.thumb.artist || item.thumb.licence)}
+        {@const head = picture(item.thumb.url, 160, 160, { photo })}
+        <img src={media.href(head.src)} srcset={head.srcset} width="160" height="160" alt={photo ? item.speaker || '' : ''} class="aspect-square w-28 rounded-xl border border-border-subtle bg-surface-2 object-cover sm:w-40" />
+        {#if photo && (item.thumb.credit || item.thumb.artist || item.thumb.licence || item.thumb.source_url)}
+          {@const credit = item.thumb.credit || item.thumb.artist}
           <figcaption class="mt-1 max-w-40 text-xs text-muted">
-            Photo{item.thumb.artist ? `: ${item.thumb.artist}` : ''}{item.thumb.licence ? ` · ${item.thumb.licence}` : ''}
-            {#if item.thumb.source_url}<a href={item.thumb.source_url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover">source</a>{/if}
+            Photo{credit ? `: ${credit}` : ''}{item.thumb.licence ? ` · ${item.thumb.licence}` : ''}
+            {#if item.thumb.source_url || item.thumb.page_url}<a href={item.thumb.source_url || item.thumb.page_url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover">source</a>{/if}
           </figcaption>
         {/if}
       </figure>

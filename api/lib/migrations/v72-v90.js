@@ -1784,6 +1784,18 @@ export const migrations = {
       granted_by TEXT, note TEXT, updated_at TEXT NOT NULL)`);
     logger.info('Migration 163 complete: media_items, media_channels');
   },
+
+  164: async () => {
+    // SPEAKER PORTRAITS (Chad 10-22: "one canonical portrait per person … every item by that speaker reuses it"): one row per
+    // person (key = folded name slug; entity_id = the graph person when known). The master image lives on tower
+    // (MEDIA_SPEAKER_DIR) and is served through the image worker (/img/speakers/<key>?v=<sha>&tr=…, face-centred crops).
+    await query(`CREATE TABLE IF NOT EXISTS media_speakers (key TEXT PRIMARY KEY, name TEXT NOT NULL, entity_id INTEGER, file TEXT, sha TEXT,
+      width INTEGER, height INTEGER, origin TEXT, source_url TEXT, page_url TEXT, credit TEXT, licence TEXT, fetched_at TEXT, tried_at TEXT,
+      note TEXT, updated_at TEXT NOT NULL)`);
+    try { await query('ALTER TABLE media_items ADD COLUMN speaker_key TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_speaker_key ON media_items(speaker_key)');
+    logger.info('Migration 164 complete: media_speakers, media_items.speaker_key');
+  },
 };
 
 export const graphMigrations = {

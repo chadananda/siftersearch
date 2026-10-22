@@ -30,7 +30,7 @@ async function commonsInfo(get, file) {
  *    public domain / CC BY / CC BY-SA only, author kept. (Names are searched without diacritics: Wikidata finds
  *    "Ali Nakhjavani", not "‘Alí Nakhjavání".)
  */
-export async function findSpeakerImage(name, { tradition = "Baha'i", fetchImpl = fetch } = {}) {
+export async function findSpeakerImage(name, { tradition = "Baha'i", fetchImpl = fetch, commonsSearch = true } = {}) {
   const plain = ascii(name);
   const toks = plain.toLowerCase().split(/[\s-]+/).filter((t) => t.length > 1);
   if (toks.length < 2) return null;   // a surname alone is too ambiguous to picture
@@ -46,6 +46,9 @@ export async function findSpeakerImage(name, { tradition = "Baha'i", fetchImpl =
     const info = await commonsInfo(get, file);
     if (info) return { ...info, wikidata: e.id, who: `${e.label} — ${e.description || ''}`, kind: 'photo' };
   }
+  // (the file-name search finds namesakes — "Chad Jones" the economist, "Stephen Phelps House" — so the portrait finder
+  // in speakers.js turns it off and relies on Bahá'í-verified sources)
+  if (!commonsSearch) return null;
   const c = await get(`${COMMONS}?action=query&format=json&list=search&srnamespace=6&srlimit=10&srsearch=${encodeURIComponent(`"${plain}"`)}`);
   for (const hit of c?.query?.search || []) {
     const t = ascii(hit.title).toLowerCase();

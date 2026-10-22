@@ -50,6 +50,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     draining: async () => ++stagesSeen > drainAfter,
     quotes: { linkQuotes: vi.fn(async () => ({ linked: [], rejected: [] })), linkTeachings: vi.fn(async () => ({ linked: [], rejected: [] })), breakoutsOf: () => [] },
     thumbs: { findSpeakerImage: vi.fn(async () => null) },
+    portraits: { ensurePortrait: vi.fn(async (name) => ({ status: 'found', key: 'hartmut-grossmann' })) },
     ingest: vi.fn(async () => ({ documentId: 777, links: 0 })),
   };
 }
@@ -73,7 +74,8 @@ describe('media item stage machine', () => {
     expect(meta.enhancement.asr_input).toBe('original');
     expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain('{id="para_1" t0=');
     const cat = d.repo.updateMediaItem.mock.calls.at(-1)[1];
-    expect(cat).toMatchObject({ state: 'done', doc_id: 777, speaker: 'Hartmut Grossmann' });
+    expect(cat).toMatchObject({ state: 'done', doc_id: 777, speaker: 'Hartmut Grossmann', speaker_key: 'hartmut-grossmann' });
+    expect(d.portraits.ensurePortrait).toHaveBeenCalledWith('Hartmut Grossmann', {}, {});
     // a second run finds every stage done
     const again = await runItem({ id: 1, source_kind: 'file', source_ref: src, dir, slug: r.slug }, {}, fakes());
     expect(again.done).toEqual([]);

@@ -6,7 +6,7 @@ import { LIVE_SQL } from '../entity-live.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
-const COLS = new Set(['slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
+const COLS = new Set(['speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
   'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
@@ -63,7 +63,7 @@ export async function listMedia({ speaker, tradition, collection, year, language
   const order = sort === 'title' ? 'title COLLATE NOCASE' : sort === 'year' ? 'year DESC, title' : sort === 'speaker' ? 'speaker, year' : 'updated_at DESC';
   const w = where.join(' AND ');
   const total = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE ${w}`, args, 'media:count'))?.n || 0;
-  const items = (await queryAll(`SELECT id, slug, title, speaker, tradition, collection, language, year, date, duration_s, has_video, source_kind, youtube_id, channel,
+  const items = (await queryAll(`SELECT id, slug, title, speaker, speaker_key, tradition, collection, language, year, date, duration_s, has_video, source_kind, youtube_id, channel,
     playback, thumb, quotes_n, crs_n, words_n, doc_id, updated_at FROM media_items WHERE ${w} ORDER BY ${order} LIMIT ? OFFSET ?`,
   [...args, Math.min(200, Number(limit) || 50), Number(offset) || 0], 'media:list')).map(parse);
   return { items, total };
@@ -103,3 +103,30 @@ export async function upsertChannel({ channel_id, name = null, playback = 'clips
 export const vocabularyNames = async ({ limit = 6000 } = {}) => queryAll(`SELECT canonical_name name, entity_type type, importance n FROM graph_entities
   WHERE entity_type IN ('person', 'place', 'work', 'group', 'event', 'title') AND length(canonical_name) BETWEEN 4 AND 60
   AND ${LIVE_SQL()} ORDER BY COALESCE(importance, 0) DESC LIMIT ?`, [limit], 'media:vocab-names');
+
+// ── speaker portraits (migration 164) ──
+export const getSpeaker = async (key) => queryOne('SELECT * FROM media_speakers WHERE key = ?', [String(key)], 'media:speaker');
+export const speakersByKeys = async (keys) => (keys.length ? queryAll(`SELECT * FROM media_speakers WHERE key IN (${keys.map(() => '?').join(',')})`, keys, 'media:speakers') : []);
+export const listSpeakers = async () => queryAll('SELECT * FROM media_speakers ORDER BY name', [], 'media:speakers-all');
+const SPK = ['name', 'entity_id', 'file', 'sha', 'width', 'height', 'origin', 'source_url', 'page_url', 'credit', 'licence', 'fetched_at', 'tried_at', 'note'];
+export async function upsertSpeaker(row) {
+  const vals = SPK.map((k) => (row[k] === undefined ? null : row[k]));
+  await transaction([{ sql: `INSERT INTO media_speakers (key, ${SPK.join(', ')}, updated_at) VALUES (?, ${SPK.map(() => '?').join(', ')}, ?)
+    ON CONFLICT(key) DO UPDATE SET ${SPK.map((k) => `${k} = COALESCE(excluded.${k}, ${k})`).join(', ')}, updated_at = excluded.updated_at`,
+  args: [String(row.key), ...vals, now()] }], 'media:speaker-upsert');
+  return getSpeaker(row.key);
+}
+/** Distinct speakers of the catalogue (with their items' ids) — the portrait job's work list. */
+export const mediaSpeakerNames = async () => queryAll(`SELECT speaker, speaker_key, COUNT(*) n FROM media_items WHERE speaker IS NOT NULL AND speaker != ''
+  GROUP BY speaker, speaker_key ORDER BY n DESC`, [], 'media:speaker-names');
+export async function setItemsSpeakerKey(speaker, key) {
+  await transaction([{ sql: 'UPDATE media_items SET speaker_key = ? WHERE speaker = ?', args: [key, speaker] }], 'media:set-speaker-key');
+}
+/** The graph person for a name: live persons whose folded canonical name equals the folded name. → id or null */
+export async function personEntityId(folded, surname) {
+  const rows = await queryAll(`SELECT id, canonical_name cn, importance FROM graph_entities WHERE entity_type = 'person' AND canonical_name LIKE ? AND ${LIVE_SQL()} LIMIT 200`,
+    [`%${surname}%`], 'media:person-entity');
+  const f = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z]/g, '').toLowerCase();
+  const hit = rows.filter((r) => f(r.cn) === folded).sort((a, b) => (b.importance || 0) - (a.importance || 0))[0];
+  return hit?.id ?? null;
+}

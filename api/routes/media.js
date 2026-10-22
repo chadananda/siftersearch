@@ -5,7 +5,7 @@
 import { createReadStream, existsSync, statSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { join, normalize, extname } from 'path';
-import { listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds } from '../lib/repos/media-repo.js';
+import { listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
@@ -37,6 +37,16 @@ export function clipBudget(ip, { n = 40, windowMs = 10 * 60_000, now = Date.now(
   return b.used <= n;
 }
 
+/** A speaker's portrait as the page uses it: the image worker URL (face-centred crops by `tr=`), versioned by the master's
+ *  hash, with its credit. null without a portrait. Pure. */
+export function speakerThumb(s) {
+  if (!s?.file || !s.sha) return null;
+  // the master lives in the cdn-assets R2 bucket (biography/<id>.<ext> or media-speakers/<key>.<ext>): the image worker
+  // serves it at /img/cdn/siftersearch.com/<file>; the page asks for each size with fo-face (src/lib/imagekit.js helpers)
+  return { url: `https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, kind: 'photo', service: true, name: s.name, credit: s.credit || null, licence: s.licence || null,
+    source_url: s.source_url || null, page_url: s.page_url || null, fetched_at: s.fetched_at || null };
+}
+
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
 
 export default async function mediaRoutes(fastify) {
@@ -64,6 +74,13 @@ export default async function mediaRoutes(fastify) {
       ids = [...new Set(hits.map((h) => h.item_id))];
     }
     const list = await listMedia({ ...q, ids, limit: q.limit, offset: q.offset });
+    // every card's picture: the speaker's portrait (image worker) where there is one, else the item's generated tile
+    const spk = new Map((await speakersByKeys([...new Set(list.items.map((i) => i.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)]));
+    for (const it of list.items) {
+      const t = spk.get(it.speaker_key);
+      it.thumb_url = t?.url || (it.thumb ? `/api/media/${it.slug}/file/${it.thumb}` : null);
+      it.thumb_kind = t ? 'photo' : (it.thumb ? 'tile' : null);
+    }
     const facets = q.facets === '0' ? null : await mediaFacets();
     pub(reply, 60);
     return { ...list, facets, hits };
@@ -73,7 +90,8 @@ export default async function mediaRoutes(fastify) {
   fastify.get('/:slug', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
     if (!it || it.state !== 'done' || !it.dir) { reply.header('Cache-Control', 'public, max-age=60, s-maxage=60'); return reply.code(404).send({ error: 'NotFound' }); }
-    const [meta, tr] = await Promise.all([readJson(join(it.dir, 'meta.json')), readJson(join(it.dir, 'transcript.json'))]);
+    const [meta, tr, spk] = await Promise.all([readJson(join(it.dir, 'meta.json')), readJson(join(it.dir, 'transcript.json')), it.speaker_key ? getSpeaker(it.speaker_key) : null]);
+    const portrait = speakerThumb(spk);
     if (!meta || !tr) return reply.code(404).send({ error: 'NotFound' });
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
@@ -88,7 +106,7 @@ export default async function mediaRoutes(fastify) {
       audio: level === 'full' ? { ogg: `${base}/file/web/${it.slug}.ogg?v=${v}`, m4a: `${base}/file/web/${it.slug}.m4a?v=${v}` } : null,
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${v}`, page: `${base}/file/page.html?v=${v}`,
-      thumb: meta.thumb?.file ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null,
+      thumb: portrait || (meta.thumb?.file ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),
       // compact transcript: words as [text, start, end]
       paragraphs: tr.paragraphs.map((p) => ({ n: p.n, pi: meta.pi?.[p.n] ?? null, t0: p.t0, t1: p.t1, spk: p.spk, sentences: p.sentences, words: p.words.map((w) => [w.w, w.s, w.e]) })),
       quotes: (tr.quotes || []).map((q) => ({ para: q.para, i0: q.i0, i1: q.i1, t0: q.t0, t1: q.t1, url: q.url, cite: q.cite, writer: q.writer, excerpt: q.excerpt, basis: q.basis, gate: q.gate })),
@@ -166,4 +184,9 @@ export default async function mediaRoutes(fastify) {
     const run = await enqueue('media-scan', { urls, paths, roots: [], batch: Number(b.batch) || 1 }, req.user?.email || 'internal');
     return { queued: run };
   });
+}
+
+/** /api/speakers — the speakers and their canonical portraits (coverage). */
+export async function speakerRoutes(fastify) {
+  fastify.get('/', async (req, reply) => { pub(reply, 300); return { speakers: (await listSpeakers()).map((s) => ({ key: s.key, name: s.name, entity_id: s.entity_id, photo: speakerThumb(s) })) }; });
 }

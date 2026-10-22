@@ -138,3 +138,71 @@ export async function mediaDropPass(deps = {}) {
   if (!waiting) await queue('media-scan', { roots: [dir], batch: 1 }, 'media-drop');
   return { new: fresh.length, queued: !waiting };
 }
+
+// ── media-speakers { refresh?, names?, pauseMs? }: one canonical portrait per speaker (api/lib/media/speakers.js), the master
+// kept once in MEDIA_SPEAKER_DIR (served through the image worker, face-centred crops), every item linked by speaker_key.
+export const speakerDir = () => process.env.MEDIA_SPEAKER_DIR || '/tank/media/speakers';
+/** One person's canonical portrait: kept when held (unless refresh), retried after retryDays, else found (overrides first),
+ *  downloaded once into MEDIA_SPEAKER_DIR and recorded. → 'kept' | 'found' | 'none' (with the record). */
+export async function ensurePortrait(name, { refresh = false, retryDays = 7, overrides = null } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const sp = deps.speakers || await import('../media/speakers.js');
+  const fetchImpl = deps.fetchImpl || fetch;
+  const ov = overrides || deps.overrides || JSON.parse(await (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-speaker-portraits.json'), 'utf8').catch(() => '{}'));
+  const key = sp.speakerKey(name);
+  if (!key) return { status: 'none', key: null };
+  const cur = await repo.getSpeaker(key);
+  if (cur?.file && !refresh) return { status: 'kept', key, record: cur };
+  if (!refresh && cur?.tried_at && Date.now() - Date.parse(cur.tried_at) < retryDays * 86400_000 && !ov[key]) return { status: 'none', key, record: cur };
+  const clean = sp.cleanName(name), parts = sp.ascii(clean).split(/\s+/);
+  const entity_id = await repo.personEntityId(sp.ascii(clean).replace(/[^a-zA-Z]/g, '').toLowerCase(), parts[parts.length - 1]).catch(() => null);
+  const at = new Date().toISOString();
+  // 1) the biography pages' portrait of this person (Chad 10-22: reuse it before searching the web)
+  const bio = sp.biographyPortrait ? await sp.biographyPortrait(entity_id, { manifest: deps.bioManifest || null }).catch(() => null) : null;
+  if (bio?.cdn) {
+    const record = await repo.upsertSpeaker({ key, name: clean, entity_id, file: bio.cdn, sha: createHash('sha256').update(bio.cdn).digest('hex'), origin: 'biography',
+      source_url: bio.source_url || bio.url || null, page_url: `https://siftersearch.com/biography/${entity_id}`, credit: bio.credit || bio.author || null, licence: bio.license || null, fetched_at: at, tried_at: at });
+    return { status: 'found', key, record, origin: 'biography' };
+  }
+  // 2) the web (hand-found overrides, Bahaipedia/bahai.media, Wikidata/Commons, Wikipedia)
+  const p = await sp.portraitFor(name, { overrides: ov, fetchImpl }).catch(() => null);
+  if (!p?.url) return { status: 'none', key, record: await repo.upsertSpeaker({ key, name: clean, entity_id, tried_at: at }) };
+  const r = await fetchImpl(p.url, { headers: { 'User-Agent': 'SifterSearch media library (https://siftersearch.com)' }, signal: AbortSignal.timeout(30000) });
+  const type = r.headers?.get?.('content-type') || '';
+  const bytes = Buffer.from(await r.arrayBuffer());
+  if (!r.ok || !/^image\/(jpeg|png|webp)/.test(type) || bytes.length < 3000) {
+    return { status: 'none', key, record: await repo.upsertSpeaker({ key, name: clean, entity_id, tried_at: at, note: `download refused (${r.status} ${type})` }) };
+  }
+  const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+  const dir = deps.dir || speakerDir();
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, `${key}.${ext}`), bytes);   // the master, kept on tower too
+  const sha = createHash('sha256').update(bytes).digest('hex');
+  // stored ONCE in the cdn-assets bucket where the image worker reads it (as the biography portraits are)
+  const file = await (deps.putCdn || sp.putCdnPortrait)(`media-speakers/${key}.${ext}`, bytes, type, { fetchImpl });
+  const record = await repo.upsertSpeaker({ key, name: clean, entity_id, file, sha, width: p.width || null, height: p.height || null, origin: p.origin,
+    source_url: p.source_url || p.url, page_url: p.page_url || null, credit: p.credit || null, licence: p.licence || null, fetched_at: at, tried_at: at });
+  return { status: 'found', key, record, origin: p.origin };
+}
+
+export async function mediaSpeakersJob({ refresh = false, names = [], pauseMs = 1200, retryDays = 7 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const sp = deps.speakers || await import('../media/speakers.js');
+  const overrides = deps.overrides || JSON.parse(await (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-speaker-portraits.json'), 'utf8').catch(() => '{}'));
+  const people = [...(await repo.mediaSpeakerNames()).map((r) => r.speaker), ...names];
+  const out = { speakers: 0, found: 0, kept: 0, none: [], new: [] };
+  const seen = new Set();
+  for (const name of people) {
+    const key = sp.speakerKey(name);
+    if (!key) continue;
+    if (!names.includes(name)) await repo.setItemsSpeakerKey(name, key);
+    if (seen.has(key)) continue;
+    seen.add(key); out.speakers++;
+    const r = await ensurePortrait(name, { refresh, retryDays, overrides }, { ...deps, repo, speakers: sp });
+    if (r.status === 'kept') out.kept++;
+    else if (r.status === 'found') { out.found++; out.new.push(`${r.record?.name} (${r.origin})`); if (pauseMs) await new Promise((res) => setTimeout(res, pauseMs)); }
+    else out.none.push(name);
+  }
+  await logActivity('media', `speaker portraits: ${out.found} new, ${out.kept} kept, ${out.none.length} without a photo, of ${out.speakers}`).catch(() => {});
+  return out;
+}

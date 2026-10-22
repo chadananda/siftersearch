@@ -4,7 +4,8 @@
   // Deps: src/lib/media.js (query ↔ params), src/lib/api.js (media client), api/lib/media/range.js (formatTime).
   import { onMount } from 'svelte';
   import { media } from '../../lib/api.js';
-  import { DURATION_BUCKETS, SORTS, filtersFromParams, pageQuery, apiQuery, mediaFile } from '../../lib/media.js';
+  import { DURATION_BUCKETS, SORTS, filtersFromParams, pageQuery, apiQuery, mediaFile, picture } from '../../lib/media.js';
+  import { ikSrcset } from '../../lib/imagekit.js';
   import { formatTime } from '../../../api/lib/media/range.js';
 
   let { initialData = null, initialFilters = {}, fetchError = null } = $props();
@@ -146,7 +147,11 @@
         {@const it = titleById.get(h.item_id)}
         <li>
           <a href={`/media/${h.slug}?t=${Math.floor(h.t0)}`} class="block rounded-lg border border-border-subtle bg-surface-1 px-4 py-3 hover:border-border hover:bg-surface-2">
-            <span class="flex flex-wrap items-baseline gap-x-2 text-sm">
+            <span class="flex flex-wrap items-center gap-x-2 text-sm">
+              {#if it?.thumb_kind === 'photo'}
+                {@const av = picture(it.thumb_url, 32)}
+                <img src={av.src} srcset={av.srcset} alt="" width="32" height="32" loading="lazy" class="h-8 w-8 shrink-0 rounded-full object-cover" />
+              {/if}
               <span class="font-medium text-primary">{it?.title || h.slug}</span>
               {#if it?.speaker}<span class="text-muted">{it.speaker}</span>{/if}
               <span class="ml-auto font-mono text-xs text-accent">▶ {formatTime(h.t0)}</span>
@@ -170,8 +175,14 @@
     <li>
       <a href={`/media/${it.slug}`} class="group flex h-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface-1 transition hover:border-border hover:bg-surface-2">
         <div class="relative aspect-video overflow-hidden bg-surface-2">
-          {#if it.thumb}
-            <img src={media.href(mediaFile(it.slug, it.thumb))} alt="" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover" />
+          {#if it.thumb_url || it.thumb}
+            {#if it.thumb_kind === 'photo'}
+              <!-- the biography portraits' responsive helper, face-centred (fo-face) at the card's 16:9 -->
+              {@const pic = ikSrcset(it.thumb_url, [320, 480, 640, 960], { ratio: 16 / 9, q: 80, fo: 'face' }) || { src: it.thumb_url, srcset: null }}
+              <img src={pic.src} srcset={pic.srcset} sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" alt={it.speaker || ''} loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover" />
+            {:else}
+              <img src={media.href(it.thumb_url || mediaFile(it.slug, it.thumb))} alt="" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover" />
+            {/if}
           {/if}
           {#if it.duration_s}
             <span class="absolute bottom-2 right-2 rounded bg-surface-0 px-1.5 py-0.5 font-mono text-xs text-primary">{formatTime(it.duration_s)}</span>

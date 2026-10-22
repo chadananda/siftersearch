@@ -2,6 +2,7 @@
 // word-time lookup (binary search over aligned word starts), paragraph segmentation around quote spans, speaker turns.
 // No DOM, no deps (time parsing/formatting lives in api/lib/media/range.js). Tested in tests/api/media-frontend.test.js.
 
+import { svcFixed } from './imagekit.js';
 export const DURATION_BUCKETS = [
   { id: 'short', label: 'Under 15 min', maxDur: 900 },
   { id: 'medium', label: '15–45 min', minDur: 900, maxDur: 2700 },
@@ -45,6 +46,15 @@ export function apiQuery(f, { limit = 48, offset = 0 } = {}) {
   p.set('limit', String(limit));
   if (offset) p.set('offset', String(offset));
   return p.toString();
+}
+
+/** A picture at one fixed SIZE: a speaker portrait goes through the site's image service with the SAME helper and the same
+ *  face-centred crop the biography portraits use (src/lib/imagekit.js svcFixed, fo-face); a generated SVG tile is used as
+ *  is. → { src, srcset } (1× / 2×). */
+export function picture(url, w, h = w, { photo = true } = {}) {
+  if (!url) return { src: null, srcset: null };
+  if (!photo || !/^(https:\/\/siftersearch\.com)?\/img\//.test(url)) return { src: url, srcset: null };
+  return svcFixed(url, w, h, { q: 80, extra: 'fo-face,e-sharpen' });
 }
 
 /** The published file URL of an item (thumb.jpg, waveform.json, …), relative to the API origin. */

@@ -6,6 +6,7 @@ import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import MediaPlayer from '../../components/media/MediaPlayer.svelte';
 import { parseRange } from '../../../api/lib/media/range.js';
+import { ikUrl } from '../../lib/imagekit.js';
 
 export const prerender = false;
 
@@ -31,7 +32,9 @@ const initialRange = parseRange(Astro.url.searchParams.get('t'));
 const who = item ? [item.speaker, item.year].filter(Boolean).join(', ') : '';
 const title = item ? `${item.title}${who ? ` — ${who}` : ''} — SifterSearch Media` : 'Recording not found — SifterSearch Media';
 const description = item ? (item.summary || `${item.title}${item.speaker ? ` by ${item.speaker}` : ''}: a talk with a word-aligned, searchable transcript.`).slice(0, 300) : 'This recording could not be found.';
-const image = item?.thumb?.url && !/\.svg(\?|$)/.test(item.thumb.url) ? item.thumb.url : undefined;   // og:image must be raster
+// og:image must be raster and sized for cards: the portrait through the image worker, 1200×630, face-centred
+const image = item?.thumb?.kind === 'photo' ? ikUrl(item.thumb.url, 'w-1200,h-630,fo-face,q-80')
+  : item?.thumb?.url && !/\.svg(\?|$)/.test(item.thumb.url) ? item.thumb.url : undefined;
 ---
 
 <Layout {title} {description} {image} type={item ? 'article' : 'website'} noindex={!item}>
