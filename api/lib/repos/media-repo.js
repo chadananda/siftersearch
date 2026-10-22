@@ -51,11 +51,15 @@ export async function releaseHeldYoutube(hours) {
 export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY id LIMIT ?`, [limit], 'media:pending')).map(parse);
 
 /** The /media listing: published items (state 'done'), filtered. → { items, total } */
-export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {
+export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, audience, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {
   const where = ['state = ?'], args = [state];
   const eq = (col, v) => { if (v != null && v !== '') { where.push(`${col} = ?`); args.push(v); } };
   eq('speaker', speaker); eq('tradition', tradition); eq('collection', collection); eq('language', language); eq('primary_issue', issue);
   if (grade) { const gs = String(grade).toUpperCase().split(/[,\s]+/).filter((x) => /^[A-E]$/.test(x)); if (gs.length) { where.push(`grade IN (${gs.map(() => '?').join(',')})`); args.push(...gs); } }
+  // audience: a preset (newcomers 1–2, community 3–4, internal 5) or a level 1–5
+  const AUD = { newcomers: [1, 2], community: [3, 4], internal: [5] };
+  const lv = AUD[audience] || (/^[1-5]$/.test(String(audience ?? '')) ? [Number(audience)] : null);
+  if (lv) { where.push(`audience IN (${lv.map(() => '?').join(',')})`); args.push(...lv); }
   if (year) { where.push('year = ?'); args.push(Number(year)); }
   if (minDur) { where.push('duration_s >= ?'); args.push(Number(minDur)); }
   if (maxDur) { where.push('duration_s <= ?'); args.push(Number(maxDur)); }
@@ -65,7 +69,7 @@ export async function listMedia({ speaker, tradition, collection, year, language
   const w = where.join(' AND ');
   const total = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE ${w}`, args, 'media:count'))?.n || 0;
   const items = (await queryAll(`SELECT id, slug, title, speaker, speaker_key, tradition, collection, language, year, date, duration_s, has_video, source_kind, youtube_id, channel,
-    playback, thumb, quotes_n, crs_n, words_n, doc_id, grade, primary_issue, chain_key, priority, updated_at FROM media_items WHERE ${w} ORDER BY ${order} LIMIT ? OFFSET ?`,
+    playback, thumb, quotes_n, crs_n, words_n, doc_id, grade, primary_issue, chain_key, priority, audience, updated_at FROM media_items WHERE ${w} ORDER BY ${order} LIMIT ? OFFSET ?`,
   [...args, Math.min(200, Number(limit) || 50), Number(offset) || 0], 'media:list')).map(parse);
   return { items, total };
 }
@@ -77,9 +81,9 @@ export const mediaIndexRows = async () => queryAll(`SELECT id, slug, title, spea
 /** Filter facets for the listing: value → count, published items only. */
 export async function mediaFacets() {
   const facet = async (col) => (await queryAll(`SELECT ${col} v, COUNT(*) n FROM media_items WHERE state = 'done' AND ${col} IS NOT NULL GROUP BY ${col} ORDER BY n DESC LIMIT 200`, [], `media:facet-${col}`));
-  const [speaker, tradition, collection, year, language] = await Promise.all(['speaker', 'tradition', 'collection', 'year', 'language'].map(facet));
+  const [speaker, tradition, collection, year, language, audience] = await Promise.all(['speaker', 'tradition', 'collection', 'year', 'language', 'audience'].map(facet));
   const video = await queryOne(`SELECT SUM(has_video) v, COUNT(*) n, SUM(duration_s) secs FROM media_items WHERE state = 'done'`, [], 'media:facet-video');
-  return { speaker, tradition, collection, year, language, video: video?.v || 0, total: video?.n || 0, hours: Math.round((video?.secs || 0) / 360) / 10 };
+  return { speaker, tradition, collection, year, language, audience, video: video?.v || 0, total: video?.n || 0, hours: Math.round((video?.secs || 0) / 360) / 10 };
 }
 
 /** Pipeline counts by state (the status page and the morning summary). */
@@ -171,3 +175,34 @@ export async function replaceMediaLinks(itemId, rows = []) {
 /** Talks that name a person (for a biography page's "talks that mention" list later). */
 export const mediaLinksForEntity = async (entityId, { limit = 50 } = {}) => queryAll(`SELECT l.item_id, l.para, l.paragraph_index, l.text, m.slug, m.title, m.speaker
   FROM media_links l JOIN media_items m ON m.id = l.item_id WHERE l.entity_id = ? AND m.state = 'done' ORDER BY m.title LIMIT ?`, [Number(entityId), limit], 'media:links-entity');
+
+// ── moments and audience (migration 167) ──
+/** Replace an item's moments (keys are stable for the same words, so a shared link survives a re-run that keeps them). */
+export async function replaceMoments(itemId, moments = []) {
+  const ops = [{ sql: 'DELETE FROM media_moments WHERE item_id = ?', args: [Number(itemId)] }];
+  for (const m of moments) ops.push({ sql: `INSERT OR REPLACE INTO media_moments (item_id, key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, why, rank)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [Number(itemId), m.key, m.para ?? null, m.i0 ?? null, m.i1 ?? null, m.t0_ms ?? null, m.t1_ms ?? null,
+    m.text, m.context ?? null, m.kind ?? null, JSON.stringify(m.topics || []), m.why ?? null, m.rank ?? null] });
+  await transaction(ops, 'media:moments-replace');
+  return moments.length;
+}
+const momentRow = (r) => (r ? { ...r, topics: (() => { try { return JSON.parse(r.topics || '[]'); } catch { return []; } })() } : null);
+/** One moment by its short key, with its talk (for a shareable moment page). The internal note is not returned. */
+export const momentByKey = async (key) => momentRow(await queryOne(`SELECT mm.key, mm.para, mm.t0_ms, mm.t1_ms, mm.text, mm.context, mm.kind, mm.topics, mm.rank,
+  m.slug, m.title, m.speaker, m.speaker_key, m.year, m.playback, m.audience FROM media_moments mm JOIN media_items m ON m.id = mm.item_id
+  WHERE mm.key = ? AND m.state = 'done'`, [String(key)], 'media:moment'));
+/** Moments across the library (the ticker): best-ranked first, optionally only from talks up to an audience level. */
+export const listMoments = async ({ limit = 50, maxAudience = null, kind = null } = {}) => (await queryAll(`SELECT mm.key, mm.t0_ms, mm.t1_ms, mm.text, mm.context, mm.kind,
+  mm.topics, m.slug, m.title, m.speaker, m.audience FROM media_moments mm JOIN media_items m ON m.id = mm.item_id WHERE m.state = 'done'
+  ${maxAudience ? 'AND m.audience <= ?' : ''} ${kind ? 'AND mm.kind = ?' : ''} ORDER BY mm.rank, m.updated_at DESC LIMIT ?`,
+[...(maxAudience ? [Number(maxAudience)] : []), ...(kind ? [String(kind)] : []), Math.min(500, Number(limit) || 50)], 'media:moments')).map(momentRow);
+/** The best introductory ranges across the library (section-level, rated 1–2), from each item's catalogue meta. */
+export async function introClips({ limit = 40 } = {}) {
+  const rows = await queryAll(`SELECT slug, title, speaker, audience, meta FROM media_items WHERE state = 'done' AND meta LIKE '%"intro"%'`, [], 'media:intro-clips');
+  const out = [];
+  for (const r of rows) {
+    let m = {}; try { m = JSON.parse(r.meta || '{}'); } catch { /* none */ }
+    for (const c of m.audience_intro || []) out.push({ slug: r.slug, title: r.title, speaker: r.speaker, talk_audience: r.audience, ...c });
+  }
+  return out.sort((a, b) => a.score - b.score || (b.t1 - b.t0) - (a.t1 - a.t0)).slice(0, limit);
+}

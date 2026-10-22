@@ -144,6 +144,21 @@ Return JSON {"headings": [{"p": paragraph number where the part starts, "text": 
   return Array.isArray(out?.headings) ? out.headings : [];
 }
 
+/** AUDIENCE + MOMENTS (assess.js): one read of the whole talk with its sections. → raw JSON (validated by assess.js) */
+export async function assessTalk(paragraphs, sections, ctx = {}, opts = {}) {
+  const { assessLines, assessPrompt } = await import('./assess.js');
+  let lines = assessLines(paragraphs, sections);
+  if (lines.length > 300000) lines = `${lines.slice(0, 150000)}\n…\n${lines.slice(-150000)}`;
+  return (await ask('media-assess', assessPrompt(ctx, lines), { ...opts, max: 12000 })) || {};
+}
+
+/** The strict out-of-context check for a moment. → { ok, why } */
+export async function verifyMoment(m, ctxText, opts = {}) {
+  const { verifyPrompt } = await import('./assess.js');
+  const out = await ask('media-verify', verifyPrompt(m, ctxText), { ...opts, max: 1500 });
+  return { ok: out?.ok === true, why: out?.why || null };
+}
+
 /** The whole-talk copy-edit + names + mentions pass (cleanup.js). opts: { role ('media-clean' | 'media-clean-strong'), ctx, spend } */
 export async function cleanTranscript(paragraphs, { role = process.env.MEDIA_CLEAN_ROLE || 'media-clean-strong', ctx = {}, ...opts } = {}) {
   const { cleanParagraphs } = await import('./cleanup.js');

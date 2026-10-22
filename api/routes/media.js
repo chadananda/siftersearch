@@ -5,7 +5,7 @@
 import { createReadStream, existsSync, statSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { join, normalize, extname } from 'path';
-import { mediaIndexRows, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
+import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
@@ -129,6 +129,23 @@ export default async function mediaRoutes(fastify) {
     return { v: 1, generated_at: new Date().toISOString(), pending, total: items.length, hours: Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, items, speakers };
   });
 
+  // a MOMENT by its short key (shareable: the moment page and its social card draw from this)
+  fastify.get('/moments/:key', async (req, reply) => {
+    const m = await momentByKey(req.params.key);
+    if (!m) return reply.code(404).send({ error: 'NotFound' });
+    pub(reply, 300);
+    return { ...m, url: `/media/${m.slug}?m=${m.key}`, range: `?t=${(m.t0_ms / 1000).toFixed(1)}-${(m.t1_ms / 1000).toFixed(1)}` };
+  });
+  // moments across the library (the ticker): ?limit, ?audience=newcomers|community|internal (upper bound), ?kind
+  fastify.get('/moments', async (req, reply) => {
+    const q = req.query || {};
+    const max = { newcomers: 2, community: 4, internal: 5 }[q.audience] || null;
+    pub(reply, 300);
+    return { moments: await listMoments({ limit: q.limit, maxAudience: max, kind: q.kind || null }) };
+  });
+  // introductory clips: the best section-level ranges (rated open / seeker-friendly) across the library
+  fastify.get('/intro-clips', async (req, reply) => { pub(reply, 300); return { clips: await introClips({ limit: Number(req.query?.limit) || 40 }) }; });
+
   // one item: what the player needs (no audio bytes)
   fastify.get('/:slug', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
@@ -159,6 +176,10 @@ export default async function mediaRoutes(fastify) {
       cross_references: (tr.cross_references || []).map((c) => ({ para: c.para, i0: c.i0, i1: c.i1, t0: c.t0, url: c.url, cite: c.cite, writer: c.writer, claim: c.claim, excerpt: c.excerpt, confidence: c.confidence })),
       // named people → /biography/<id>; named works → their canonical copy (the spoken words are the anchor)
       links: (tr.links || []).map((l) => ({ para: l.para, i0: l.i0, i1: l.i1, kind: l.kind, url: l.url, name: l.name || null, title: l.title || null, section: l.section || null })),
+      // audience (1 open … 5 internal) with its sections and introductory ranges; moments (verbatim, verified; no internal note)
+      audience: meta.audience ? { score: meta.audience.score, label: meta.audience.label, rationale: meta.audience.rationale, tradition: meta.audience.tradition,
+        sections: (meta.audience.sections || []).map(({ k, t0, t1, score, title, slug, intro }) => ({ k, t0, t1, score, title, slug, intro })), intro: meta.audience.intro || [] } : null,
+      moments: (meta.moments || []).map(({ key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, rank }) => ({ key, para, i0, i1, t0_ms, t1_ms, text, context, kind, topics, rank, url: `/media/${it.slug}?m=${key}` })),
       corrections: (tr.corrections || []).length, cleanup: tr.cleanup_stats || null, version: v,
       // the quality report, compact: overall grade, issues, and each dimension's grade + its headline value
       quality: meta.quality ? { overall: meta.quality.overall, primary_issue: meta.quality.primary_issue, secondary_issues: meta.quality.secondary_issues,

@@ -110,6 +110,9 @@ export function shapeRow(row, { meta = null, quotes = [], wave = null } = {}) {
     cn: row.crs_n || 0, sum: meta?.summary ? pullQuote(meta.summary, 150) : null,
     tp: (meta?.topics || []).filter((x) => typeof x === 'string').slice(0, 4), h: heads, q: quote, w: waveString(wave),
     hl: highlightWindow({ quote, heads, duration: row.duration_s }),
+    // audience 1–5 (assess stage) and up to three verified moments (key, words, start ms, kind) for the dial / ticker
+    au: meta?.audience?.score ?? null,
+    mo: (meta?.moments || []).slice(0, 3).map((m) => ({ k: m.key, x: pullQuote(m.text, 200), t: m.t0_ms, kd: m.kind })),
     v: playback === 'full' ? v : 0,   // full playback: the web rendition is /api/media/<s>/file/web/<s>.{ogg,m4a}?v=<v> (audioUrls)
   };
 }

@@ -1830,6 +1830,23 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_links_doc ON media_links(target_doc_id)');
     logger.info('Migration 166 complete: media_links');
   },
+
+  167: async () => {
+    // AUDIENCE (1 open … 5 internal; Chad 10-22) per talk, and MOMENTS: verbatim excerptable spans with a stable short key
+    // (shareable links), verified to stand on their own; the "why notable" note is internal.
+    try { await query('ALTER TABLE media_items ADD COLUMN audience INTEGER'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_audience ON media_items(audience)');
+    await query(`CREATE TABLE IF NOT EXISTS media_moments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL,
+      key TEXT NOT NULL UNIQUE,
+      para INTEGER, i0 INTEGER, i1 INTEGER, t0_ms INTEGER, t1_ms INTEGER,
+      text TEXT NOT NULL, context TEXT, kind TEXT, topics TEXT, why TEXT, rank INTEGER,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_media_moments_item ON media_moments(item_id)');
+    logger.info('Migration 167 complete: media_items.audience, media_moments');
+  },
 };
 
 export const graphMigrations = {

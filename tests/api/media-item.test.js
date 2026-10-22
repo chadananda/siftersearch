@@ -44,6 +44,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     describeTalk: vi.fn(async () => ({ summary: 'A class.', topics: ['World Order'], speakers: { S1: 'Hartmut Grossmann' }, chapters: [{ p: 1, title: 'Start' }] })),
     findQuotations: vi.fn(async () => ({ quotes: [], teachings: [] })), verifyTeaching: vi.fn(),
     proposeHeadings: vi.fn(async () => []),
+    assessTalk: vi.fn(async () => ({ audience: { score: 3, rationale: 'r' }, sections: [], moments: [] })), verifyMoment: vi.fn(async () => ({ ok: true })),
   };
   const repo = { updateMediaItem: vi.fn(async () => ({})), slugTaken: vi.fn(async () => false), getChannel: vi.fn(async () => null), upsertChannel: vi.fn(async (c) => c) };
   return {
@@ -193,7 +194,7 @@ describe('media item stage machine', () => {
     const r = await runItem({ id: 3, source_kind: 'file', source_ref: src }, {}, fakes());
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
     const again = await runItem({ id: 3, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'quotes' }, fakes());
-    expect(again.done).toEqual(['quotes', 'links', 'thumb', 'render', 'ingest', 'catalog']);
+    expect(again.done).toEqual(['quotes', 'links', 'assess', 'thumb', 'render', 'ingest', 'catalog']);
   });
   it('the name pass cannot add to what was heard: an inserted "(Vol II)" is reverted and counted (10-22)', async () => {
     const f = fakes();
