@@ -115,8 +115,8 @@ export async function mediaItemJob({ id, from = null, only = null, threads = nul
   }
 }
 
-export async function mediaVocabJob({ minMentions = 8, limit = 6000, file = process.env.MEDIA_VOCAB_FILE || join(process.cwd(), 'data', 'media-vocab.json') } = {}) {
-  const rows = await vocabularyNames({ minMentions, limit });
+export async function mediaVocabJob({ limit = 6000, file = process.env.MEDIA_VOCAB_FILE || join(process.cwd(), 'data', 'media-vocab.json') } = {}) {
+  const rows = await vocabularyNames({ limit });
   const names = rows.filter((r) => /[^\x00-\x7f]|['’‘-]/.test(r.name) || /^[A-Z]/.test(r.name)).map((r) => ({ name: r.name, type: r.type, n: r.n }));
   await mkdir(dirname(file), { recursive: true });
   await writeFile(`${file}.tmp`, JSON.stringify({ built_at: new Date().toISOString(), names }, null, 0));

@@ -2,6 +2,7 @@
 // is the source of truth; these rows are what the /media listing filters and what the pipeline's state machine records.
 // Writes go through the single writer (transaction). Callers: routes/media.js, ops/media-jobs.js. Deps: db.js.
 import { queryAll, queryOne, transaction } from '../db.js';
+import { LIVE_SQL } from '../entity-live.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
@@ -97,6 +98,8 @@ export async function upsertChannel({ channel_id, name = null, playback = 'clips
   return getChannel(channel_id);
 }
 
-/** Vocabulary names from the entity graph (persons, places, works …) seen at least `minMentions` times — media-vocab job. */
-export const vocabularyNames = async ({ minMentions = 8, limit = 6000 } = {}) => queryAll(`SELECT canonical_name name, entity_type type, mention_count n FROM graph_entities
-  WHERE religion LIKE 'Bah%' AND mention_count >= ? AND length(canonical_name) BETWEEN 4 AND 60 ORDER BY mention_count DESC LIMIT ?`, [minMentions, limit], 'media:vocab-names');
+/** Vocabulary names from the entity graph — LIVE persons, places, works, groups, events, most important first (the pilot's
+ *  first build filtered on religion/mention_count, which these records do not carry: 0 names). — media-vocab job. */
+export const vocabularyNames = async ({ limit = 6000 } = {}) => queryAll(`SELECT canonical_name name, entity_type type, importance n FROM graph_entities
+  WHERE entity_type IN ('person', 'place', 'work', 'group', 'event', 'title') AND length(canonical_name) BETWEEN 4 AND 60
+  AND ${LIVE_SQL()} ORDER BY COALESCE(importance, 0) DESC LIMIT ?`, [limit], 'media:vocab-names');
