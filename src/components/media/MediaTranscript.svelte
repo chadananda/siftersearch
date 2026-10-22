@@ -6,12 +6,13 @@
   import { paragraphSegments, speakerLabels } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
 
-  let { paragraphs = [], quotes = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
+  let { paragraphs = [], headings = [], quotes = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
     playingPara = -1, playing = false, onword, onpara, root = $bindable() } = $props();
 
   const offsets = $derived(paragraphs.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + (paragraphs[i - 1].words?.length || 0) : 0); return acc; }, []));
   const labels = $derived(speakerLabels(paragraphs, speakers));
   const byPara = (list) => { const m = new Map(); for (const x of list) { if (!m.has(x.para)) m.set(x.para, []); m.get(x.para).push(x); } return m; };
+  const headingBy = $derived(new Map(headings.map((h) => [h.p, h])));
   const quotesBy = $derived(byPara(quotes.filter((q) => q.url)));
   const xrefsBy = $derived(byPara(crossRefs.filter((c) => c.url || c.excerpt)));
   // w[3] = 1: a word the copy-edit pass dropped (filler, stutter, loop) — kept for timing, never shown
@@ -35,6 +36,10 @@
 <div bind:this={root} class="transcript space-y-6 font-serif text-lg leading-relaxed text-primary" class:cursor-text={!canPlay} onclick={click}>
   {#each paragraphs as p, pi (p.n)}
     {@const segs = paragraphSegments(p.words.length, quotesBy.get(p.n) || [])}
+    {#if headingBy.has(p.n)}
+      {@const h = headingBy.get(p.n)}
+      <h2 id={h.slug} class="scroll-mt-24 pt-4 font-sans text-xl font-semibold tracking-tight text-primary lg:pl-16"><a href={`#${h.slug}`} class="hover:text-accent">{h.text}</a></h2>
+    {/if}
     <div class="relative flow-root lg:pl-16" id={`para_${p.n}`} data-p={pi}>
       {#if labels[pi]}
         <p class="mb-1 font-sans text-xs font-semibold uppercase tracking-wide text-accent-secondary">{labels[pi]}</p>

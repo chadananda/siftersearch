@@ -16,6 +16,8 @@
   const level = item.rights?.playback || 'search';
   const canPlay = (level === 'full' && !!item.audio) || (level === 'clips' && !!item.clip_url);
   const duration = Number(item.duration_s) || 0;
+  // the contents list: the topic subheaders (each a #slug anchor), else the coarser chapters
+  const toc = item.headings?.length ? item.headings.map((h) => ({ p: h.p, t: h.t, title: h.text, slug: h.slug })) : (item.chapters || []);
   // the recording's quality (Chad 10-22: a small public badge): overall grade + the main issue, details on hover/focus
   const q = item.quality;
   const ISSUE_LABEL = { muffled: 'muffled (narrow bandwidth)', noisy: 'background noise', hum: 'mains hum', reverberant: 'echoey room', clipped: 'distorted (clipped)', dropouts: 'dropouts', 'low-level': 'quiet or uneven levels', speed: 'speed off' };
@@ -161,9 +163,11 @@
     const p = item.paragraphs[pi];
     playFrom(p.t0 ?? p.words?.[0]?.[1] ?? 0, { el });
   };
-  function jump(e, t, p) {
+  function jump(e, t, p, slug = null) {
     e.preventDefault();
-    const el = document.getElementById(`para_${p}`);
+    // a subheader is the deep-link target (#slug) and where the page scrolls; the audio starts at its first paragraph
+    if (slug) history.replaceState(null, '', `#${slug}`);
+    const el = (slug && document.getElementById(slug)) || document.getElementById(`para_${p}`);
     if (playing) playFrom(t, { el: null });
     else { seek(t); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   }
@@ -307,13 +311,13 @@
     <!-- aside first in the DOM so chapters/topics come before the transcript on phones -->
     <aside class="mb-6 space-y-6 lg:order-2 lg:col-span-4 lg:mb-0">
       <div class="lg:sticky lg:top-20 space-y-6">
-        {#if item.chapters?.length}
-          <nav aria-label="Chapters" class="rounded-xl border border-border-subtle bg-surface-1 p-4">
-            <h2 class="mb-2 text-sm font-semibold text-primary">Chapters</h2>
-            <ol class="space-y-0.5">
-              {#each item.chapters as c, i (i)}
+        {#if toc.length}
+          <nav aria-label="Contents" class="rounded-xl border border-border-subtle bg-surface-1 p-4">
+            <h2 class="mb-2 text-sm font-semibold text-primary">Contents</h2>
+            <ol class="max-h-[60vh] space-y-0.5 overflow-y-auto">
+              {#each toc as c, i (i)}
                 <li>
-                  <a href={`?t=${Math.floor(c.t)}`} onclick={(e) => jump(e, c.t, c.p)}
+                  <a href={c.slug ? `#${c.slug}` : `?t=${Math.floor(c.t)}`} onclick={(e) => jump(e, c.t, c.p, c.slug)}
                     class="flex min-h-10 items-baseline gap-3 rounded-md px-2 py-1.5 text-sm text-secondary hover:bg-hover hover:text-primary">
                     <span class="w-14 shrink-0 font-mono text-xs tabular-nums text-accent">{formatTime(c.t)}</span><span>{c.title}</span>
                   </a>
@@ -382,7 +386,7 @@
         <audio bind:this={audio} preload="auto" class="hidden"></audio>
       </section>
 
-      <MediaTranscript bind:root paragraphs={item.paragraphs} quotes={item.quotes || []} crossRefs={item.cross_references || []}
+      <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara} />
     </div>
   </div>

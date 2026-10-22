@@ -130,6 +130,20 @@ Return JSON {"answers": [{"i": number, "states": true|false, "confidence": 0.0-1
 }
 
 /** The copy-edit pass (api/lib/media/cleanup.js) with the media-clean role. */
+/** Topic SUBHEADERS (Chad 10-22): a statement or a question the talk raises at each shift of subject, by the paragraph it
+ *  starts at. The guard in headings.js keeps only faithful, well-spaced ones. → [{ p, text }] */
+export async function proposeHeadings(paragraphs, hints = {}, opts = {}) {
+  const lines = asLines(paragraphs, false);
+  const text = lines.length > 300000 ? `${lines.slice(0, 150000)}\n…\n${lines.slice(-150000)}` : lines;
+  const minutes = Math.round((paragraphs.at(-1)?.t1 || 0) / 60);
+  const out = await ask('media-headings', `A transcript of a recorded talk (${minutes} min; lines: [paragraph @time] text). Talk: ${JSON.stringify(hints)}.
+Add SUBHEADERS where the subject shifts, so a reader can scan the talk and jump to a part. Place them by CONTENT, not by the clock — roughly one every 3 to 8 minutes, none in the first paragraph unless the talk opens on its subject.
+Each subheader is either a short STATEMENT of what that part says ("The station of the Guardian as interpreter") or a QUESTION that part answers ("Why did the Báb call Himself the Gate?"). Use the speaker's own key words and names. Say only what the following paragraphs actually discuss — never a conclusion they do not reach. At most 12 words; no quotation marks; no numbering.
+${text}
+Return JSON {"headings": [{"p": paragraph number where the part starts, "text": "…"}]}`, { ...opts, max: 8000 });
+  return Array.isArray(out?.headings) ? out.headings : [];
+}
+
 export async function cleanTranscript(paragraphs, opts = {}) {
   const { cleanParagraphs } = await import('./cleanup.js');
   return cleanParagraphs(paragraphs, (prompt) => ask('media-clean', prompt, { ...opts, max: 8000 }), opts);

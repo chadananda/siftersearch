@@ -66,6 +66,18 @@ describe('media-scan', () => {
     expect(retire).not.toHaveBeenCalled();
     expect(runItem.mock.calls[0][1]).toMatchObject({ from: null });
   });
+  it('ids fan out to one media-item run each (\'done\' = every published item); a resumed run drops `redo`', async () => {
+    const queue = vi.fn();
+    expect(await mediaItemJob({ ids: [9, 28], from: 'thumb' }, { queue })).toEqual({ queued: 2 });
+    expect(queue.mock.calls).toEqual([['media-item', { id: 9, from: 'thumb' }], ['media-item', { id: 28, from: 'thumb' }]]);
+    const q2 = vi.fn();
+    await mediaItemJob({ ids: 'done', redo: ['headings', 'render'] }, { queue: q2, repo: { doneItemIds: async () => [3] } });
+    expect(q2.mock.calls[0]).toEqual(['media-item', { id: 3, redo: ['headings', 'render'] }]);
+    store.items.push({ id: 14, state: 'running', slug: 'r', dir: '/tank/media/library/bahai/x/r' });
+    const runItem = vi.fn(async () => ({ slug: 'r', done: [] }));
+    await mediaItemJob({ id: 14, redo: ['headings'], stage: 'render' }, { runItem });
+    expect(runItem.mock.calls[0][1]).toMatchObject({ redo: null });
+  });
   it('a failing item is recorded on the item, not thrown (no alert mail per odd file)', async () => {
     store.items.push({ id: 13, state: 'scheduled', source_kind: 'file', source_ref: '/m/odd.wma' });
     const r = await mediaItemJob({ id: 13 }, { runItem: vi.fn(async () => { throw new Error('ffmpeg exit 1: Invalid data'); }) });

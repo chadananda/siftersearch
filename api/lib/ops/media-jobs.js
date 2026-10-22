@@ -71,13 +71,19 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null } = {}, deps = {}) {
+export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null } = {}, deps = {}) {
+  // ids: [..] or 'done' (every published item) → one media-item run each, same options (a back-fill: { ids: 'done', redo: [...] })
+  if (id == null && ids) {
+    const list = ids === 'done' ? await (deps.repo || await import('../repos/media-repo.js')).doneItemIds() : [].concat(ids).map(Number).filter(Boolean);
+    for (const one of list) await (deps.queue || enqueue)('media-item', Object.fromEntries(Object.entries({ id: one, from, only, redo, threads, lang, model }).filter(([, v]) => v != null)));
+    return { queued: list.length };
+  }
   let item = await getMediaItem(id);
   if (!item) throw new Error(`media item ${id} not found`);
   // a RESUMED run (a drain saved { stage } into its params) continues where it stopped: its `from` / `reslug` were done on
   // the first start and must not run again (10-22: a `from: web` run redid web on every resume; a reslug would have
   // deleted its own new folder)
-  if (stage) { from = null; reslug = false; }
+  if (stage) { from = null; reslug = false; redo = null; }
   // RESLUG (an unpublished item named badly): its folder under the archive root is removed and the item archived again
   // (force: also a published pilot item — its transcript document is retired and its library file removed first)
   if (reslug) {
@@ -95,7 +101,7 @@ export async function mediaItemJob({ id, from = null, only = null, threads = nul
   }
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');
   try {
-    const r = await runItem(item, { from, only, threads, lang, model });
+    const r = await runItem(item, { from, only, redo, threads, lang, model });
     if (r.yielded) return r;
     await logActivity('media', `▶ media ${r.slug}: ${r.done.join(' → ') || 'nothing to do'}`).catch(() => {});
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };

@@ -43,6 +43,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     correctParagraphs: vi.fn(async (ps) => ({ paragraphs: ps, diff: [{ p: 1, from: 'x', to: 'y' }], refused: [] })),
     describeTalk: vi.fn(async () => ({ summary: 'A class.', topics: ['World Order'], speakers: { S1: 'Hartmut Grossmann' }, chapters: [{ p: 1, title: 'Start' }] })),
     findQuotations: vi.fn(async () => ({ quotes: [], teachings: [] })), verifyTeaching: vi.fn(),
+    proposeHeadings: vi.fn(async () => []),
   };
   const repo = { updateMediaItem: vi.fn(async () => ({})), slugTaken: vi.fn(async () => false), getChannel: vi.fn(async () => null), upsertChannel: vi.fn(async (c) => c) };
   return {
@@ -192,5 +193,18 @@ describe('media item stage machine', () => {
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
     const again = await runItem({ id: 3, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'quotes' }, fakes());
     expect(again.done).toEqual(['quotes', 'thumb', 'render', 'ingest', 'catalog']);
+  });
+  it('`redo` re-runs only the named stages (a back-fill of a new stage keeps the rest)', async () => {
+    const r = await runItem({ id: 4, source_kind: 'file', source_ref: src }, {}, fakes());
+    const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+    const f = fakes();
+    f.llm.proposeHeadings = vi.fn(async (ps) => [{ p: ps[0].n, text: ps[0].words.slice(0, 4).map((w) => w.w).join(' ') }]);
+    const again = await runItem({ id: 4, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { redo: ['headings', 'render', 'ingest', 'catalog'] }, f);
+    expect(again.done).toEqual(['headings', 'render', 'ingest', 'catalog']);
+    expect(f.llm.findQuotations).not.toHaveBeenCalled();
+    const tr = JSON.parse(readFileSync(join(dir, 'transcript.json'), 'utf8'));
+    expect(tr.headings).toHaveLength(1);
+    expect(tr.headings[0]).toMatchObject({ kind: 'heading', source: 'generated', form: 'statement' });
+    expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain(`## ${tr.headings[0].text}`);
   });
 });

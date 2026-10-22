@@ -31,7 +31,7 @@ export function paragraphMarkdown(p, quotes = []) {
 }
 
 /** transcript.md: frontmatter (title, speaker as author, date, language, the media page as source) + chapters + paragraphs. */
-export function transcriptMarkdown({ meta, paragraphs, quotes = [], chapters = [] }) {
+export function transcriptMarkdown({ meta, paragraphs, quotes = [], chapters = [], headings = [] }) {
   const fm = [['title', meta.title], ['author', meta.speaker], ['language', meta.language || 'en'], ['date', meta.date], ['year', meta.year],
     ['collection', 'Media'], ['media_slug', meta.slug], ['media_kind', meta.has_video ? 'video' : 'audio'], ['duration', meta.duration_s ? formatTime(meta.duration_s) : null],
     ['source_url', `https://siftersearch.com/media/${meta.slug}`], ['youtube_url', youtubeAt(meta)], ['event', meta.event], ['place', meta.place],
@@ -39,9 +39,13 @@ export function transcriptMarkdown({ meta, paragraphs, quotes = [], chapters = [
     .filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}: ${/^(needs_segmentation|sentence_markers|year)$/.test(k) ? v : yq(v)}`);
   const lines = ['---', ...fm, '---', '', `# ${meta.title}`, ''];
   if (meta.summary) lines.push(`*${String(meta.summary).replace(/\*/g, '')}*`, '');
-  const chs = [...chapters].sort((a, b) => a.t - b.t);
+  // the topic subheaders when there are any (finer, faithful), else the chapters: markdown headings, so search and the
+  // section index see them (no {id/t0} attrs: a heading is not a moment in the recording)
+  const hBy = new Map((headings || []).map((h) => [h.p, h]));
+  const chs = hBy.size ? [] : [...chapters].sort((a, b) => a.t - b.t);
   let c = 0;
   for (const p of paragraphs) {
+    if (hBy.has(p.n)) lines.push(`## ${hBy.get(p.n).text}`, '');
     while (c < chs.length && chs[c].t <= p.t0 + 0.5) { lines.push(`## ${chs[c].title}`, ''); c++; }
     lines.push(paragraphMarkdown(p, quotes), `{id="para_${p.n}" t0="${p.t0.toFixed(2)}" t1="${p.t1.toFixed(2)}" spk="${p.spk || ''}"}`, '');
   }
@@ -54,7 +58,7 @@ const CSS = `:root{--bg:#fbfaf7;--fg:#1f1d1a;--muted:#6b665e;--line:#e6e1d8;--ac
 header{max-width:44rem;margin:0 auto;padding:1.5rem 1rem 0.5rem}h1{font-size:1.6rem;line-height:1.25;margin:.2rem 0}
 .meta{color:var(--muted);font:14px/1.5 system-ui,sans-serif}.meta a{color:var(--accent)}
 .src{display:inline-block;margin-top:.5rem;font:600 14px system-ui,sans-serif;color:var(--accent)}
-main{max-width:44rem;margin:0 auto;padding:0 1rem 8rem}h2{font-size:1.15rem;margin:2rem 0 .5rem}
+main{max-width:44rem;margin:0 auto;padding:0 1rem 8rem}.toc{font:15px/1.5 system-ui,sans-serif;margin:1rem 0 2rem;padding:.8rem 1rem;border:1px solid var(--line);border-radius:8px}.toc ol{margin:0;padding-left:1.2rem}.toc a{color:var(--accent);text-decoration:none}h2{font-size:1.15rem;margin:2rem 0 .5rem}
 .p{position:relative;margin:0 0 1.1rem}.p .play{position:absolute;left:-2.4rem;top:.15rem;width:1.8rem;height:1.8rem;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--accent);cursor:pointer;font-size:.8rem;opacity:.55}
 .p:hover .play,.p .play:focus{opacity:1}@media (max-width:52rem){.p .play{position:static;float:left;margin:.25rem .5rem 0 0}}
 .spk{font:600 12px system-ui,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block}
@@ -108,16 +112,18 @@ sel.onclick=()=>{const u=new URL(M.pageUrl||location.href);u.search='?t='+t0.toF
 tick(true)})();`;
 
 /** The standalone page. data: { meta, paragraphs, quotes, crs, chapters, speakers, audio, clipUrl, pageUrl, thumb } */
-export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [], speakers = {}, audio = null, clipUrl = null, pageUrl = null, thumb = null }) {
+export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [], headings = [], speakers = {}, audio = null, clipUrl = null, pageUrl = null, thumb = null }) {
   const yt = youtubeAt(meta);
   const qBy = new Map();
   for (const q of quotes.filter((x) => x.url)) { if (!qBy.has(q.para)) qBy.set(q.para, []); qBy.get(q.para).push(q); }
   const crBy = new Map();
   for (const c of crs) { if (!crBy.has(c.para)) crBy.set(c.para, []); crBy.get(c.para).push(c); }
-  const chs = [...chapters].sort((a, b) => a.t - b.t);
+  const hBy = new Map((headings || []).map((h) => [h.p, h]));
+  const chs = hBy.size ? [] : [...chapters].sort((a, b) => a.t - b.t);
   let c = 0, lastSpk = null;
   const body = [];
   for (const p of paragraphs) {
+    if (hBy.has(p.n)) body.push(`<h2 id="${esc(hBy.get(p.n).slug)}">${esc(hBy.get(p.n).text)}</h2>`);
     while (c < chs.length && chs[c].t <= p.t0 + 0.5) { body.push(`<h2 id="ch-${c + 1}">${esc(chs[c].title)}</h2>`); c++; }
     const qs = (qBy.get(p.n) || []).sort((a, b) => a.i0 - b.i0);
     const html = [];
@@ -138,13 +144,14 @@ export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [
       body.push(`<aside class="cr"><span class="k">${cr.kind === 'concept' ? 'Cross-reference' : 'Quoted'}</span><div>“${esc(cr.excerpt)}”</div><cite>${esc(cr.cite || '')}${cr.url ? ` · <a href="${esc(cr.url)}" target="_blank" rel="noopener">read in context</a>` : ''}</cite></aside>`);
     }
   }
+  const toc = hBy.size ? `<nav class="toc" aria-label="Contents"><ol>${[...hBy.values()].map((h) => `<li><a href="#${esc(h.slug)}">${esc(h.text)}</a></li>`).join('')}</ol></nav>` : '';
   const data = { title: meta.title, speaker: meta.speaker, playback: meta.rights?.playback || 'clips', audio, clipUrl, clipCap: 180, pageUrl, thumb };
   const when = [meta.speaker, meta.event, meta.place, meta.date || meta.year, meta.duration_s ? formatTime(meta.duration_s) : null].filter(Boolean).map(esc).join(' · ');
   const note = data.playback === 'clips' ? '<p class="note">Play any paragraph (up to three minutes at a time).</p>' : data.playback === 'search' ? '<p class="note">The recording is not available for playback here.</p>' : '';
   return `<!doctype html><html lang="${esc(meta.language || 'en')}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(meta.title)}${meta.speaker ? ` — ${esc(meta.speaker)}` : ''}</title><meta name="description" content="${esc(meta.summary || '')}"><style>${CSS}</style></head><body>
 <header><h1>${esc(meta.title)}</h1><div class="meta">${when}</div>${yt ? `<a class="src" href="${esc(yt)}" target="_blank" rel="noopener">Source: ${esc(meta.source?.channel || 'YouTube')} on YouTube — watch the full talk</a>` : ''}${note}</header>
-<main>${body.join('\n')}</main><button class="sel">Copy link to this passage</button>
+<main>${toc}${body.join('\n')}</main><button class="sel">Copy link to this passage</button>
 <div class="fab"><button class="follow" aria-label="Follow the audio">Follow</button><button class="pp" aria-label="Play or pause">▶ 0:00</button></div>
 <script>window.MEDIA=${JSON.stringify(data).replace(/</g, '\\u003c')}</script><script>${JS}</script></body></html>`;
 }

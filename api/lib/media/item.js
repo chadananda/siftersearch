@@ -1,5 +1,5 @@
 // ONE MEDIA ITEM through the pipeline (planning/media-library-plan.md): archive → enhance → web → transcribe → correct →
-// describe → quotes → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
+// describe → headings → quotes → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
@@ -16,7 +16,7 @@ import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights
 import { tileSvg } from './thumbs.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
-export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
+export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'headings', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
 const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
@@ -56,6 +56,8 @@ export async function runItem(item, opts = {}, deps = {}) {
   let meta = item.dir ? await readJson(join(item.dir, 'meta.json'), {}) : {};
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
   if (opts.from) for (const s of STAGES.slice(STAGES.indexOf(opts.from))) delete meta.stages[s];
+  // redo: only these stages again (a back-fill of a new stage: [new, 'render', 'ingest', 'catalog']), the rest kept
+  for (const s of opts.redo || []) if (STAGES.includes(s)) delete meta.stages[s];
   const spend = meta.cost;
   const done = [];
   let dir = item.dir;
@@ -285,6 +287,18 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.chapters = meta.chapters.length;
     }
 
+    if (stage === 'headings') {
+      // topic subheaders (structure only: no audio, no time of their own); the guard keeps faithful, well-spaced ones
+      const work = await readJson(join(dir, 'transcript.work.json'));
+      const { acceptHeadings } = await import('./headings.js');
+      const proposed = llm.proposeHeadings ? await llm.proposeHeadings(work.paragraphs, { title: meta.title, speaker: meta.speaker, summary: meta.summary }, { spend }) : [];
+      const model = (await import('../model-roles.js')).modelFor('media-headings')?.model || null;
+      const res = acceptHeadings(proposed, work.paragraphs, { model });
+      meta.headings = res.headings;
+      rec.headings = res.headings.length; rec.refused = res.refused.length;
+      if (res.refused.length) rec.refused_why = res.refused.slice(0, 8).map((r) => `${r.p}: ${r.why}`);
+    }
+
     if (stage === 'quotes') {
       const work = await readJson(join(dir, 'transcript.work.json'));
       const found = await llm.findQuotations(work.paragraphs, { spend });
@@ -320,14 +334,14 @@ export async function runItem(item, opts = {}, deps = {}) {
       const { breakoutsOf } = d.quotes || await import('./quotes.js');
       const raw = await readJson(join(dir, 'transcript.raw.json'));
       const transcript = { slug: meta.slug, language: meta.language, asr: meta.asr, enhancement: meta.enhancement ? { asr_input: meta.enhancement.asr_input, listening: meta.enhancement.listening } : null,
-        speakers: meta.speakers, chapters: meta.chapters, paragraphs: work.paragraphs, quotes, cross_references: crs,
+        speakers: meta.speakers, chapters: meta.chapters, headings: meta.headings || [], paragraphs: work.paragraphs, quotes, cross_references: crs,
         // the VERBATIM layer (before the copy-edit pass) and its log: every change, every flag for review
         verbatim: (work.verbatim || []).map((p) => ({ n: p.n, text: p.words.map((w) => w.w).join(' ') })), cleanup: work.cleanup || [], cleanup_stats: work.cleanup_stats || null,
         corrections: work.corrections, corrections_refused: work.refused, turns: raw?.turns || [] };
       await writeJson(join(dir, 'transcript.json'), transcript);
-      await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, chapters: meta.chapters }));
+      await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, chapters: meta.chapters, headings: meta.headings || [] }));
       const api = `/api/media/${meta.slug}`;
-      await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: work.paragraphs, quotes, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, speakers: meta.speakers,
+      await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: work.paragraphs, quotes, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, headings: meta.headings || [], speakers: meta.speakers,
         audio: meta.rights.playback === 'full' ? `web/${meta.slug}.ogg` : null, clipUrl: meta.rights.playback === 'clips' ? `${api}/clip-url` : null,
         pageUrl: `https://siftersearch.com/media/${meta.slug}`, thumb: meta.thumb?.file ? `${api}/file/${meta.thumb.file}` : null }));
       meta.words_n = work.paragraphs.reduce((a, p) => a + p.words.length, 0);
@@ -345,7 +359,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
         doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
-        meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
+        meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
         state: 'done', stage: 'catalog', why: null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
     }
 

@@ -95,10 +95,13 @@ export default async function mediaRoutes(fastify) {
     if (!meta || !tr) return reply.code(404).send({ error: 'NotFound' });
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
+    const tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
     pub(reply, 300);
     return {
       slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, place: meta.place, event: meta.event,
       language: meta.language, duration_s: meta.duration_s, has_video: meta.has_video, summary: meta.summary, topics: meta.topics || [], chapters: meta.chapters || [],
+      // topic subheaders: structure only (no audio of their own); t = the paragraph they open, for the contents list
+      headings: (meta.headings || []).filter((h) => tStart.has(h.p)).map((h) => ({ p: h.p, t: tStart.get(h.p), text: h.text, form: h.form, slug: h.slug })),
       tradition: meta.tradition, collection: meta.collection, doc_id: it.doc_id,
       source: meta.source?.kind === 'youtube' ? { kind: 'youtube', url: meta.source.url, youtube_id: meta.source.youtube_id, channel: meta.source.channel, upload_date: meta.source.upload_date } : { kind: 'archive' },
       youtube: youtubeAt(meta),
