@@ -9,7 +9,7 @@ import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
-import { toParagraphs, paragraphText } from './paragraphs.js';
+import { toParagraphs, paragraphText, assignSpeakers } from './paragraphs.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT } from './rights.js';
@@ -35,7 +35,8 @@ async function defaults() {
   const llm = await import('./llm.js');
   const repo = await import('../repos/media-repo.js');
   const youtube = await import('./youtube.js');
-  return { tools, llm, repo, youtube, now: () => new Date().toISOString(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), draining: async () => (await import('../drain.js')).isDraining() };
+  const { isDraining } = await import('../drain.js');
+  return { tools, llm, repo, youtube, now: () => new Date().toISOString(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), draining: async () => isDraining(), drainingNow: isDraining };
 }
 
 /** The controlled vocabulary: curated core + the media-vocab job's names file (when built). */
@@ -65,6 +66,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     return tools.threadsFor(latencies.slice(-6));
   };
   const vocab = await (d.loadVocab || loadVocab)();
+  // polled by every long child process: a drain stops the stage at once (it is redone after the restart, finished stages are kept)
+  const stop = d.drainingNow || (() => false);
 
   for (const stage of STAGES) {
     if (meta.stages[stage]?.at) continue;
@@ -73,6 +76,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     const t0 = Date.now();
     await repo.updateMediaItem(item.id, { stage, state: 'running' });
     const rec = {};
+    try {
 
     if (stage === 'archive') {
       const isYt = item.source_kind === 'youtube';
@@ -131,22 +135,22 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'enhance') {
       const orig = join(dir, meta.original);
       const th = await threads();
-      const m0 = await tools.tool('metrics', orig, {}, { threads: 2 });
+      const m0 = await tools.tool('metrics', orig, {}, { threads: 2, stop });
       await mkdir(join(dir, 'enhanced'), { recursive: true });
       const light = join(dir, 'enhanced', 'light.flac');
       const chain = lightChain({ ...m0, sample_rate: meta.source?.probe?.sample_rate });
-      await tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light]);
-      const m1 = await tools.tool('metrics', light, {}, { threads: 2 });
+      await tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light], { stop });
+      const m1 = await tools.tool('metrics', light, {}, { threads: 2, stop });
       const variants = [{ name: 'original', file: orig, ...m0 }, { name: 'light', file: light, ...m1 }];
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
         const dfn = join(dir, 'enhanced', 'dfn.flac');
-        await tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: th });
-        variants.push({ name: 'dfn', file: dfn, ...(await tools.tool('metrics', dfn, {}, { threads: 2 })) });
+        await tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: th, stop });
+        variants.push({ name: 'dfn', file: dfn, ...(await tools.tool('metrics', dfn, {}, { threads: 2, stop })) });
       }
       const starts = probeStarts(meta.duration_s).join(',');
       const lang = /^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '';
       for (const v of variants) {
-        const p = await tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang });
+        const p = await tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop });
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
       }
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);
@@ -159,8 +163,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       const src = join(dir, v.file);
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
-      await tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg]);
-      await tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a]);
+      await tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg], { stop });
+      await tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop });
       const parts = [];
       await tools.pcmStream(ogg, 8000, (f) => parts.push(f));
       const all = new Float32Array(parts.reduce((a, p) => a + p.length, 0));
@@ -179,8 +183,20 @@ export async function runItem(item, opts = {}, deps = {}) {
       const prompt = `${meta.title}${meta.speaker ? ` — a talk by ${meta.speaker}` : ''}. ${promptTerms({ title: meta.title, speaker: meta.speaker }, vocab).join(', ')}.`;
       const th = await threads();
       const out = join(dir, 'transcript.raw.json');
-      const r = await tools.asr('transcribe', join(dir, v.file), { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: true, output: out, batch: 8 }, { timeoutMs: 12 * 3600_000 });
+      // ASR on boss and DIARIZATION on tower AT THE SAME TIME (10-21: diarization inside the boss run took 1,473 of 2,198 s);
+      // an interpreted talk diarizes on boss first (its speaker blocks choose each block's language)
+      const multi = lang === 'multi';
+      const turnsFile = join(dir, 'diarization.json');
+      const [r] = await Promise.all([
+        tools.asr('transcribe', join(dir, v.file), { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 }, { timeoutMs: 12 * 3600_000, stop }),
+        multi ? null : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: th, timeoutMs: 6 * 3600_000, stop }),
+      ]);
       const raw = await readJson(out);
+      if (!multi) {
+        raw.turns = (await readJson(turnsFile, { turns: [] })).turns || [];
+        raw.segments = assignSpeakers(raw.segments, raw.turns);
+        await writeJson(out, raw);
+      }
       meta.language = raw.language; meta.asr = { model: raw.model, language: raw.language, languages: raw.languages, mode: lang === 'multi' ? 'interpreted' : 'single', prompt: raw.prompt,
         aligned: raw.aligned, align_score: raw.align_score, timings: raw.timings, host: r.host || 'tower', threads: r.host ? null : th, rtf: Math.round((r.seconds / Math.max(1, raw.duration_s)) * 1000) / 1000, input: meta.enhancement.asr_input,
         speakers: new Set(raw.turns.map((t) => t.speaker)).size };
@@ -265,6 +281,11 @@ export async function runItem(item, opts = {}, deps = {}) {
         state: 'done', stage: 'catalog', why: null });
     }
 
+    } catch (err) {
+      if (err.code !== 'DRAIN') throw err;
+      await save();
+      return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };
+    }
     meta.stages[stage] = { at: d.now(), ms: Date.now() - t0, ...rec };
     done.push(stage);
     await save();

@@ -664,8 +664,8 @@ async function ensureCronSchedule(name) {
  */
 // Long-lived services the coordinator manages, in swap order (user-facing first). Drain services finish their work first.
 const MANAGED = ['siftersearch-gateway', 'siftersearch-api', 'siftersearch-anis', 'siftersearch-ops', 'siftersearch-worker', 'siftersearch-deep-research', 'siftersearch-library-watcher',
-  'siftersearch-embedding', 'siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit'];
-const DRAIN = new Set(['siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-indexer', 'siftersearch-audit']);
+  'siftersearch-embedding', 'siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-media', 'siftersearch-indexer', 'siftersearch-audit'];
+const DRAIN = new Set(['siftersearch-reports', 'siftersearch-reports-carry', 'siftersearch-media', 'siftersearch-indexer', 'siftersearch-audit']);
 /** → [[name, 'keep'|'drain'|'reload']] for the RUNNING managed services. No previous commit known → every one is reloaded/drained. */
 /** [[service, 'drain'|'reload']] for running managed services whose heartbeat commit lags HEAD in code they load. */
 async function servicesBehind(head) {

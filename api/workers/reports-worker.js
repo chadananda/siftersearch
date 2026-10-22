@@ -4,7 +4,7 @@
 // its own service (api/workers/indexer-worker.js): this worker never claims an indexing job. Deps: reports, service-worker.
 import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
-import { REPORTS, LANES, LANE_WORKERS, INDEX_JOB_NAMES } from '../lib/ops/reports.js';
+import { REPORTS, LANES, LANE_WORKERS, INDEX_JOB_NAMES, MEDIA_JOBS } from '../lib/ops/reports.js';
 import { logActivity } from '../lib/repos/activity-repo.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
@@ -131,7 +131,7 @@ async function ocrLoop() {
 // OPS_ONLY="a,b": a second worker process that runs ONLY these jobs (10-12: carry runs waited hours behind a slow batch;
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
-const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs — the main worker never claims (or requeues) them
+const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs (and MEDIA_JOBS, siftersearch-media's) — the main worker never claims (or requeues) them
 if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY });
 else await runService({ name: process.env.name || 'siftersearch-reports', registry: REPORTS, lanes: LANES, laneWorkers: LANE_WORKERS,
-  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop] });
+  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop] });

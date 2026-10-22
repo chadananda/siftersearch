@@ -88,6 +88,42 @@ describe('media item stage machine', () => {
     expect(d.tools.ffprobe).not.toHaveBeenCalled();   // archive not redone
   });
 
+  it('a drain stops a long stage at once (the child is killed), yields, and the stage is redone on resume', async () => {
+    const d = fakes();
+    let draining = false;
+    d.drainingNow = () => draining;
+    d.tools.asr = vi.fn(async (sub, input, opts, o) => {
+      if (sub === 'probe') return { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en' }] };
+      draining = true;   // the deploy arrives mid-transcription
+      const { run } = await import('../../api/lib/media/tools.js');
+      await run('sleep', ['30'], { stop: o.stop, pollMs: 20 });
+      return {};
+    });
+    const t0 = Date.now();
+    const r = await runItem({ id: 4, source_kind: 'file', source_ref: src }, {}, d);
+    expect(Date.now() - t0).toBeLessThan(10000);
+    expect(r).toMatchObject({ yielded: true, resume: { id: 4, stage: 'transcribe' } });
+    expect(r.done).toEqual(['archive', 'enhance', 'web']);
+    const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+    expect(Object.keys(JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8')).stages)).toEqual(['archive', 'enhance', 'web']);
+    const rest = await runItem({ id: 4, source_kind: 'file', source_ref: src, dir, slug: r.slug }, {}, fakes());
+    expect(rest.done[0]).toBe('transcribe');
+  });
+
+  it('diarization runs beside the ASR (on tower) and its voices land on the words', async () => {
+    const d = fakes();
+    d.tools.tool = vi.fn(async (sub, input, opts) => {
+      if (sub === 'dfn') writeFileSync(opts.output, 'x');
+      if (sub === 'diarize') writeFileSync(opts.output, JSON.stringify({ turns: [{ start: 0, end: 4.5, speaker: 'S1' }, { start: 4.5, end: 600, speaker: 'S2' }] }));
+      return { snr_db: 20 };
+    });
+    const r = await runItem({ id: 5, source_kind: 'file', source_ref: src }, {}, d);
+    const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+    const raw = JSON.parse(readFileSync(join(dir, 'transcript.raw.json'), 'utf8'));
+    expect(raw.segments.map((s) => s.spk)).toEqual(['S1', 'S2', 'S2']);
+    expect(d.tools.asr.mock.calls.find((c) => c[0] === 'transcribe')[2].diarize).toBe(false);
+  });
+
   it('`from` redoes a stage and everything after it', async () => {
     const r = await runItem({ id: 3, source_kind: 'file', source_ref: src }, {}, fakes());
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);

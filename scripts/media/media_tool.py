@@ -258,6 +258,9 @@ def cmd_diarize(a):
     talk = {}
     for t in turns:
         talk[t['speaker']] = round(talk.get(t['speaker'], 0) + t['end'] - t['start'], 1)
+    if a.output:
+        with open(a.output, 'w') as f:
+            json.dump({'turns': turns, 'threshold': a.cluster, 'emb': a.emb or EMB_MODELS[0]}, f)
     print(json.dumps({'speakers': len(talk), 'talk_s': dict(sorted(talk.items(), key=lambda x: -x[1])), 'turns': len(turns), 'seconds': round(time.time() - t0, 1), 'threshold': a.cluster, 'emb': a.emb or 'default'}))
 
 

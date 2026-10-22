@@ -9,7 +9,7 @@ cd "$HOME/media-asr"
 read -r -a A <<< "${SSH_ORIGINAL_COMMAND:-}"
 verb="${A[0]:-}"
 if [[ "$verb" == "install-tool" ]]; then cat > media_tool.py.new && mv media_tool.py.new media_tool.py && echo '{"installed":true}'; exit 0; fi
-[[ "$verb" =~ ^(probe|langid|transcribe)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
+[[ "$verb" =~ ^(probe|langid|transcribe|diarize)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
 ext="${A[1]:-}"; [[ "$ext" =~ ^[a-z0-9]{2,5}$ ]] || { echo '{"error":"bad ext"}'; exit 2; }
 args=()
 for a in "${A[@]:2}"; do [[ "$a" =~ ^[A-Za-z0-9_.,:=+/-]*$ ]] || { echo '{"error":"bad arg"}'; exit 2; }; args+=("$a"); done
@@ -18,9 +18,15 @@ cat > "$job/in.$ext"
 # the prompt travels base64 (spaces and diacritics), decoded here
 prompt=""; if [[ -n "${MEDIA_PROMPT_B64:-}" ]]; then prompt=$(printf '%s' "$MEDIA_PROMPT_B64" | base64 -d); fi
 for i in "${!args[@]}"; do if [[ "${args[$i]}" == --prompt-b64=* ]]; then prompt=$(printf '%s' "${args[$i]#--prompt-b64=}" | base64 -d); unset 'args[i]'; fi; done
+# the work runs in the background and is killed when the caller's ssh session goes away (tower stopped it for a drain) —
+# a transcription must never keep burning boss's CPU for a result nobody will read
+watch_parent() { local sshd=$PPID; while kill -0 "$1" 2>/dev/null; do kill -0 "$sshd" 2>/dev/null || { kill "$1" 2>/dev/null; return; }; sleep 2; done; }
 if [[ "$verb" == "transcribe" ]]; then
-  nice -n 10 venv/bin/python media_tool.py transcribe "$job/in.$ext" --output "$job/out.json" --models "$HOME/media-asr/models" --prompt "$prompt" "${args[@]}" >"$job/summary.json"
+  nice -n 10 venv/bin/python media_tool.py transcribe "$job/in.$ext" --output "$job/out.json" --models "$HOME/media-asr/models" --prompt "$prompt" "${args[@]}" >"$job/summary.json" &
+  py=$!; watch_parent "$py" & wait "$py"
   cat "$job/out.json"
 else
-  nice -n 10 venv/bin/python media_tool.py "$verb" "$job/in.$ext" --prompt "$prompt" "${args[@]}" | tail -1
+  nice -n 10 venv/bin/python media_tool.py "$verb" "$job/in.$ext" --models "$HOME/media-asr/models" --prompt "$prompt" "${args[@]}" >"$job/res.txt" &
+  py=$!; watch_parent "$py" & wait "$py"
+  tail -1 "$job/res.txt"
 fi

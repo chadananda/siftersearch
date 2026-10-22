@@ -680,6 +680,23 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // The MEDIA library pipeline (planning/media-library-plan.md): media-scan / media-item / media-vocab only (OPS_ONLY), in
+      // its own process so an hour-long transcription never shares a drain with the reports lanes (10-21: a media stage held
+      // dewey-ocr, source-links-build and every other lane in 'draining'). Its long stages also stop at once on a drain.
+      name: 'siftersearch-media',
+      script: 'api/workers/reports-worker.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 30000,
+      watch: false,
+      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849', OPS_ONLY: 'media-scan,media-item,media-vocab' },
+      error_file: './logs/media-error.log',
+      out_file: './logs/media-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // Monthly model re-assessment (Chad 10-11): roles × registry × 30-day spend → ONE [ACTION] email listing roles to
       // re-measure (scripts/ops/model-review.mjs, table in api/lib/model-roles.js). 1st of the month, 08:00.
       name: 'siftersearch-model-review',

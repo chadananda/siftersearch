@@ -13,33 +13,41 @@ export const PY_DFN = () => process.env.MEDIA_DFN_PYTHON || join(homedir(), 'sif
 export const YTDLP = () => process.env.MEDIA_YTDLP || join(homedir(), 'sifter', 'venvs', 'media', 'bin', 'yt-dlp');
 export const defaultThreads = () => Math.max(2, Number(process.env.MEDIA_THREADS) || 12);
 
-/** Run a command at nice 19 → { code, stdout, stderr }; rejects on a non-zero exit with the stderr tail. */
-export function run(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null } = {}) {
+/** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
+export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
+
+/** Run a command at nice 19 → { code, stdout, stderr }; rejects on a non-zero exit with the stderr tail.
+ *  stop: () => boolean, polled every pollMs — true (the service is draining) kills the child and rejects with DrainAbort, so a
+ *  long transcription never holds a drain (10-21: a 37-minute stage parked every reports lane). */
+export function run(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
   return new Promise((resolve, reject) => {
     const tenv = threads ? { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads) } : {};
     const p = spawn('nice', ['-n', '19', cmd, ...args], { env: { ...process.env, ...tenv, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
-    let out = '', err = '';
+    let out = '', err = '', stopped = false;
     const timer = setTimeout(() => p.kill('SIGKILL'), timeoutMs);
+    const poll = stop ? setInterval(() => { if (!stopped && stop()) { stopped = true; p.kill('SIGTERM'); setTimeout(() => p.kill('SIGKILL'), 5000).unref?.(); } }, pollMs) : null;
     p.stdout.on('data', (d) => { if (onStdout) onStdout(d); else out += d; });
     p.stderr.on('data', (d) => { err = (err + d).slice(-8000); });
-    p.on('error', (e) => { clearTimeout(timer); reject(e); });
+    p.on('error', (e) => { clearTimeout(timer); if (poll) clearInterval(poll); reject(e); });
     p.on('close', (code, sig) => {
-      clearTimeout(timer);
-      if (code === 0) resolve({ code, stdout: out, stderr: err });
+      clearTimeout(timer); if (poll) clearInterval(poll);
+      if (stopped) reject(new DrainAbort(cmd.split('/').pop()));
+      else if (code === 0) resolve({ code, stdout: out, stderr: err });
       else reject(new Error(`${cmd.split('/').pop()} exit ${code ?? sig}: ${err.trim().split('\n').slice(-4).join(' | ').slice(0, 600)}`));
     });
+    p.stdin.on('error', () => {});   // a killed child closes its stdin under us
     if (input != null) p.stdin.end(input); else p.stdin.end();
   });
 }
 
 /** The Python worker: one subcommand → its JSON (the last stdout line). */
-export async function tool(sub, input, opts = {}, { python = PY(), threads = defaultThreads(), timeoutMs } = {}) {
+export async function tool(sub, input, opts = {}, { python = PY(), threads = defaultThreads(), timeoutMs, stop = null } = {}) {
   const args = [TOOL, sub, input, '--threads', String(threads)];
   for (const [k, v] of Object.entries(opts)) {
     if (v === true) args.push(`--${k}`);
     else if (v != null && v !== false && v !== '') args.push(`--${k}`, String(v));
   }
-  const { stdout } = await run(python, args, { threads, timeoutMs, env: { CUDA_VISIBLE_DEVICES: '' } });   // tower's CUDA driver is mismatched: CPU only
+  const { stdout } = await run(python, args, { threads, timeoutMs, stop, env: { CUDA_VISIBLE_DEVICES: '' } });   // tower's CUDA driver is mismatched: CPU only
   const line = stdout.trim().split('\n').filter(Boolean).pop();
   try { return JSON.parse(line); } catch { throw new Error(`media_tool ${sub}: no JSON result (${String(line).slice(0, 200)})`); }
 }
@@ -64,17 +72,17 @@ export function gateCommand(sub, ext, opts = {}) {
 
 /** probe / langid / transcribe on the ASR host: the audio is sent as 16 kHz mono FLAC (all Whisper uses). A transcribe
  *  result is written to opts.output. Falls back to tower when the host is unreachable. */
-export async function asr(sub, input, opts = {}, { host = asrHost(), threads = asrThreads(), timeoutMs = 6 * 3600_000, local = tool } = {}) {
-  if (!host) return local(sub, input, opts, { timeoutMs });
+export async function asr(sub, input, opts = {}, { host = asrHost(), threads = asrThreads(), timeoutMs = 6 * 3600_000, local = tool, stop = null } = {}) {
+  if (!host) return local(sub, input, opts, { timeoutMs, stop });
   const { tmpdir } = await import('os');
   const { readFile, writeFile, unlink } = await import('fs/promises');
   const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
   try {
     // the ASR host runs THIS checkout's media_tool.py: installed through the gate once per process (and after a deploy)
     if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, 'install-tool'], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
-    await run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000 });
+    await run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop });
     const cmd = gateCommand(sub, 'flac', { ...opts, threads });
-    const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs, input: await readFile(flac) });
+    const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs, stop, input: await readFile(flac) });
     if (sub === 'transcribe') {
       const j = JSON.parse(stdout);
       await writeFile(opts.output, stdout);
@@ -85,7 +93,7 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
     if (r.error) throw new Error(`asr gate: ${r.error}`);
     return { ...r, host };
   } catch (err) {
-    if (/ssh exit 255|Connection|timed out|No route/i.test(err.message)) return local(sub, input, opts, { timeoutMs });   // host unreachable → tower
+    if (err.code !== 'DRAIN' && /ssh exit 255|Connection|timed out|No route/i.test(err.message)) return local(sub, input, opts, { timeoutMs, stop });   // host unreachable → tower
     throw err;
   } finally { await unlink(flac).catch(() => {}); }
 }
@@ -100,7 +108,7 @@ export async function ffprobe(path) {
     tags: Object.fromEntries(Object.entries({ ...(j.format?.tags || {}) }).map(([k, x]) => [k.toLowerCase(), String(x).slice(0, 300)])) };
 }
 
-export const ffmpeg = (args, opts = {}) => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', ...args], { timeoutMs: 3 * 3600_000, ...opts });
+export const ffmpeg = (args, opts = {}) => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', ...args], { timeoutMs: 3 * 3600_000, ...opts });   // opts.stop: drain-aware
 
 /** Mono PCM (Float32 from s16le) at `sr`, streamed to onChunk — memory stays flat on long talks. */
 export function pcmStream(path, sr, onChunk) {

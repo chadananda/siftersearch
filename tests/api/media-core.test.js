@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { parseMediaPath, makeSlug, uniqueSlug, dateIn, slugify } from '../../api/lib/media/names.js';
 import { parseTime, parseRange, rangeFrom, clampClip, formatTime, rangeParam } from '../../api/lib/media/range.js';
 import { computePeaks, normalizePeaks } from '../../api/lib/media/peaks.js';
-import { toParagraphs, flattenWords, paragraphText, endsSentence } from '../../api/lib/media/paragraphs.js';
+import { toParagraphs, flattenWords, paragraphText, endsSentence, assignSpeakers } from '../../api/lib/media/paragraphs.js';
 import { buildVocab, exactEdits, guardEdits, applyEdits, suspects, keyOf, soundsAlike, promptTerms } from '../../api/lib/media/vocab.js';
 
 describe('names', () => {
@@ -94,6 +94,12 @@ describe('paragraphs', () => {
   it('a chapter start begins a new paragraph', () => {
     const ps = toParagraphs([seg(0, 5, 'One. Two.'), seg(5, 10, 'Three. Four.')], { chapters: [5] });
     expect(ps.length).toBe(2);
+  });
+  it('speaker turns land on the segments and words they overlap most', () => {
+    const out = assignSpeakers([seg(0, 4, 'one two three four', null), seg(4, 8, 'five six', null)], [{ start: 0, end: 2.9, speaker: 'S1' }, { start: 2.9, end: 9, speaker: 'S2' }]);
+    expect(out.map((s) => s.spk)).toEqual(['S1', 'S2']);
+    expect(out[0].words.map((w) => w.spk)).toEqual(['S1', 'S1', 'S1', 'S2']);
+    expect(assignSpeakers([seg(0, 1, 'x', 'S9')], [])[0].spk).toBe('S9');
   });
   it('abbreviations do not end sentences', () => {
     expect(endsSentence('Dr.')).toBe(false);

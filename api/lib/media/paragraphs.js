@@ -82,3 +82,16 @@ export function toParagraphs(segments, { gap = 1.8, minWords = 40, maxWords = 17
 
 export const paragraphText = (p) => p.words.map((w) => w.w).join(' ');
 export const sentenceText = (p, [i0, i1]) => p.words.slice(i0, i1).map((w) => w.w).join(' ');
+
+/** Speaker turns ([{ start, end, speaker }], from diarization run beside the ASR) → each segment and word gets the voice that
+ *  overlaps it most. Returns new segments. Pure. */
+export function assignSpeakers(segments = [], turns = []) {
+  if (!turns.length) return segments;
+  const ts = [...turns].sort((a, b) => a.start - b.start);
+  const at = (s, e) => {
+    let best = null, bo = 0;
+    for (const t of ts) { if (t.start > e) break; const o = Math.min(e, t.end) - Math.max(s, t.start); if (o > bo) { bo = o; best = t.speaker; } }
+    return best;
+  };
+  return segments.map((sg) => ({ ...sg, spk: at(sg.s, sg.e), words: (sg.words || []).map((w) => (w.s != null && w.e != null ? { ...w, spk: at(w.s, w.e) } : w)) }));
+}
