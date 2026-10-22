@@ -236,6 +236,52 @@ export function relatedTalks(items, slug, n = 6) {
   return out;
 }
 
+/** Clean transcript text for display: markdown links → their words, editorial [brackets] dropped (the words kept),
+ *  stray markup removed, spaces normalised. */
+export function cleanSnippet(text) {
+  return String(text || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\(https?:[^)\s]*\)/g, '').replace(/[[\]]/g, '')
+    .replace(/[*_`#>]+/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/** A passage windowed AROUND the first match of the query (≈ max chars), with the matched words marked: exact, prefix,
+ *  one-letter typo (5+ letters) or shared 5-letter stem count. → { lead, parts: [{ t, hit }], tail } (lead/tail '…'). */
+export function snippetAround(text, query, max = 220) {
+  const clean = cleanSnippet(text);
+  const q = tokens(query).filter((t) => t.length >= 2);
+  const words = [...clean.matchAll(/\S+/g)].map((m) => ({ w: m[0], i: m.index, f: fold(m[0]).replace(/ /g, '') }));
+  const isHit = (f) => !!f && q.some((t) => f === t || (t.length >= 3 && f.startsWith(t)) || (t.length >= 5 && f.length >= 4 && (within1(t, f) || within1(t, f.slice(0, t.length))))
+    || (t.length >= 6 && f.length >= 6 && f.slice(0, 5) === t.slice(0, 5)));
+  const hits = words.map((x) => isHit(x.f));
+  let first = hits.indexOf(true);
+  if (first < 0) first = 0;
+  // the window: start a little before the first hit, then as many words as fit
+  let a = first, used = words[first]?.w.length || 0;
+  while (a > 0 && used + words[a - 1].w.length + 1 < max * 0.35) { a--; used += words[a].w.length + 1; }
+  let b = first;
+  while (b < words.length - 1 && used + words[b + 1].w.length + 1 < max) { b++; used += words[b].w.length + 1; }
+  while (a > 0 && used + words[a - 1].w.length + 1 < max) { a--; used += words[a].w.length + 1; }
+  const parts = [];
+  for (let k = a; k <= b; k++) {
+    const t = (k > a ? ' ' : '') + words[k].w, hit = hits[k];
+    const last = parts[parts.length - 1];
+    if (!hit) { if (last && !last.hit) last.t += t; else parts.push({ t, hit: false }); continue; }
+    // mark the word, not the punctuation around it ("Guardian," → Guardian + ",")
+    const [, pre, core, post] = words[k].w.match(/^([“"‘'(\[]*)(.*?)([.,;:!?…”"’')\]]*)$/);
+    const lead = (k > a ? ' ' : '') + pre;
+    if (lead) { if (last && !last.hit) last.t += lead; else parts.push({ t: lead, hit: false }); }
+    parts.push({ t: core || words[k].w, hit: true });
+    if (post) parts.push({ t: post, hit: false });
+  }
+  return { lead: a > 0 ? '…' : '', parts, tail: b < words.length - 1 ? '…' : '' };
+}
+
+/** Transcript hits grouped by talk, in hit order: [{ slug, hits: [...] }], at most `talks` talks. */
+export function groupHits(hits = [], talks = 8) {
+  const m = new Map();
+  for (const h of hits) { if (!m.has(h.slug)) { if (m.size >= talks) continue; m.set(h.slug, []); } m.get(h.slug).push(h); }
+  return [...m].map(([slug, list]) => ({ slug, hits: list }));
+}
+
 // ── pictures ──
 /** Initials for a generated label: up to two letters from the folded name's significant words. */
 export function initials(name) {

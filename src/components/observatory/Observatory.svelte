@@ -120,8 +120,8 @@
 </script>
 
 <svelte:head>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+  <!-- IBM Plex Mono + Space Grotesk are self-hosted (global.css, /fonts): no render-blocking font stylesheet on the home page -->
+  <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-400-latin.woff2" crossorigin />
 </svelte:head>
 
 <section class="obs" aria-labelledby="obs-title">

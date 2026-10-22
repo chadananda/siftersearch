@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-22T15:36:47.495Z",
+  "generated": "2026-10-22T15:52:39.309Z",
   "entries": [
+    {
+      "hash": "4ab882bf",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A model call that times out or drops is retried twice (5 s, 20 s) before it fails the item — item 30 failed at describe on one 'Request timed out.'",
+      "scope": "media"
+    },
+    {
+      "hash": "62f828bc",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Whisper's mojibake and markup in indexed text (Chad 10-22 screenshots) — 'ìWhy … book?î' is in the recogniser's OWN output (transcript.raw.json; CP1252 punctuation read as MacRoman, learned from bad subtitles): repaired where ASR words enter (flattenWords → text-repair.js: quotes at word edges, English contractions on whitelisted stems so Bábís/Anís/Majíd/Idrís keep their í, double-encoded â€™/‚Äú/Ã©/√© forms); audit: 199 raw words in 14 items. transcript.md is plain text (348 inline quote/name/work links in 28 items had reached content.text, keyword search, embeddings and snippets — '[Shoghi Effendi](https://…'); links stay in transcript.json, content_source_links and media_links; snippet text of older ingests is stripped. Copy-edit house style: He/Him/His capitalised only for God, the Manifestations and ‘Abdu’l-Bahá — never Shoghi Effendi — decided from context. media-item fan-out passes priority",
+      "scope": "media"
+    },
+    {
+      "hash": "ae0d7f19",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "Fonts never block the first paint — Libre Caslon self-hosted with metric fallbacks; Amiri non-blocking",
+      "scope": "site"
+    },
     {
       "hash": "629e3d74",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "/api/v1/reading/turn + /session — the reading guide as its own API; sources carry publisher links",
       "scope": "reading"
-    },
-    {
-      "hash": "474b9c02",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Reading guide start path passes the reader's id (bookmark save failed: participant_id NOT NULL)",
-      "scope": "anis"
-    },
-    {
-      "hash": "dc9b5270",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "READING GUIDE — 'help me study <book>': a page per email, notes after each paragraph",
-      "scope": "anis"
-    },
-    {
-      "hash": "d5a1ad8e",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Reading guide — web only when the library cannot answer",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "4ab882bf",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A model call that times out or drops is retried twice (5 s, 20 s) before it fails the item — item 30 failed at describe on one 'Request timed out.'",
+        "scope": "media"
+      },
+      {
+        "hash": "62f828bc",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Whisper's mojibake and markup in indexed text (Chad 10-22 screenshots) — 'ìWhy … book?î' is in the recogniser's OWN output (transcript.raw.json; CP1252 punctuation read as MacRoman, learned from bad subtitles): repaired where ASR words enter (flattenWords → text-repair.js: quotes at word edges, English contractions on whitelisted stems so Bábís/Anís/Majíd/Idrís keep their í, double-encoded â€™/‚Äú/Ã©/√© forms); audit: 199 raw words in 14 items. transcript.md is plain text (348 inline quote/name/work links in 28 items had reached content.text, keyword search, embeddings and snippets — '[Shoghi Effendi](https://…'); links stay in transcript.json, content_source_links and media_links; snippet text of older ingests is stripped. Copy-edit house style: He/Him/His capitalised only for God, the Manifestations and ‘Abdu’l-Bahá — never Shoghi Effendi — decided from context. media-item fan-out passes priority",
+        "scope": "media"
+      },
+      {
+        "hash": "ae0d7f19",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "Fonts never block the first paint — Libre Caslon self-hosted with metric fallbacks; Amiri non-blocking",
+        "scope": "site"
+      },
       {
         "hash": "629e3d74",
         "date": "2026-10-22",
@@ -7002,27 +7023,6 @@
         "type": "New",
         "description": "/api/v1/reading/turn + /session — the reading guide as its own API; sources carry publisher links",
         "scope": "reading"
-      },
-      {
-        "hash": "474b9c02",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Reading guide start path passes the reader's id (bookmark save failed: participant_id NOT NULL)",
-        "scope": "anis"
-      },
-      {
-        "hash": "dc9b5270",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "READING GUIDE — 'help me study <book>': a page per email, notes after each paragraph",
-        "scope": "anis"
-      },
-      {
-        "hash": "d5a1ad8e",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Reading guide — web only when the library cannot answer",
-        "scope": "worklist"
       }
     ]
   }

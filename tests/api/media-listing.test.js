@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { fold, speakerRole, waveString, pullQuote, bestQuote, topHeadings, highlightWindow, shapeRow, shapeSpeakers, buildIndex, audioUrls } from '../../api/lib/media/listing-index.js';
 import { momentPath, shareLinks, momentShareText } from '../../src/lib/share.js';
-import { waveWindow, within1, buildSearch, searchItems, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, initials, labelPattern, eraKey, duration, waveHeights } from '../../src/lib/media-listing.js';
+import { cleanSnippet, snippetAround, groupHits, waveWindow, within1, buildSearch, searchItems, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, initials, labelPattern, eraKey, duration, waveHeights } from '../../src/lib/media-listing.js';
 
 const row = (o = {}) => ({ id: 1, slug: 'a', title: 'A talk', speaker: 'Hooper Dunbar', speaker_key: 'hooper-dunbar', year: 1988, duration_s: 1800, language: 'en',
   has_video: 0, source_kind: 'file', playback: 'full', grade: 'B', quotes_n: 2, crs_n: 1, updated_at: '2026-10-22T10:00:00.000Z', ...o });
@@ -176,5 +176,25 @@ describe('moments: share links and the excerpt waveform', () => {
     const quiet = waveWindow(wf, 10, 20, 8), loud = waveWindow(wf, 60, 70, 8);
     expect(quiet).toHaveLength(8); expect(Math.max(...quiet)).toBe(1); expect(loud.every((x) => x === 1)).toBe(true);
     expect(waveWindow(wf, 30, 20)).toEqual([]);
+  });
+});
+
+describe('transcript hits ("Heard in the transcripts")', () => {
+  it('cleans markdown links and editorial brackets', () => {
+    expect(cleanSnippet('[You might keep me safe, to quake.] See [Gleanings](https://x.org/a) now')).toBe('You might keep me safe, to quake. See Gleanings now');
+  });
+  it('windows around the match with ellipses and marks typo/stem matches', () => {
+    const text = `${'Opening words that go on. '.repeat(20)}And then the Guardian’s letters about the covenant were read aloud. ${'Closing words here. '.repeat(20)}`;
+    const s = snippetAround(text, 'guardian covenent', 140);
+    expect(s.lead).toBe('…'); expect(s.tail).toBe('…');
+    const hit = s.parts.filter((p) => p.hit).map((p) => p.t);
+    expect(hit).toEqual(['Guardian’s', 'covenant']);
+    expect(snippetAround('Ask the Guardian, then.', 'guardian').parts.filter((p) => p.hit).map((p) => p.t)).toEqual(['Guardian']);
+    expect(s.parts.map((p) => p.t).join('').length).toBeLessThanOrEqual(150);
+  });
+  it('starts at the beginning when the match is early, and groups by talk', () => {
+    expect(snippetAround('Soul and spirit.', 'soul').lead).toBe('');
+    const g = groupHits([{ slug: 'a' }, { slug: 'b' }, { slug: 'a' }, { slug: 'c' }], 2);
+    expect(g.map((x) => [x.slug, x.hits.length])).toEqual([['a', 2], ['b', 1]]);
   });
 });

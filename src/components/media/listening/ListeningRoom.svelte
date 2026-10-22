@@ -12,9 +12,10 @@
   import MiniPlayer from './MiniPlayer.svelte';
   import RecordLabel from './RecordLabel.svelte';
   import { media } from '../../../lib/api.js';
-  import { PRESETS, DECADES, buildSearch, searchItems, planLayout, eras as erasOf, topTopics, decadeOf } from '../../../lib/media-listing.js';
+  import { snippetAround, groupHits, fold, PRESETS, DECADES, buildSearch, searchItems, planLayout, eras as erasOf, topTopics, decadeOf } from '../../../lib/media-listing.js';
   import { formatTime } from '../../../../api/lib/media/range.js';
   import { pauseOffscreen } from '../../../lib/offscreen.js';
+  import { playExcerpt, preview } from '../../../lib/media-preview.svelte.js';
 
   let { initial = {}, initialState = {} } = $props();
 
@@ -34,7 +35,20 @@
   let speaker = $state(initialState.speaker || '');
   let reduced = $state(false);
   let limit = $state(30);
-  let hits = $state(null);
+  let hits = $state(null), hitQuery = $state(''), hitItems = $state(new Map()), openTalks = $state(new Set());
+  // transcript passages grouped by talk (≤ 2 shown per talk until "more from this talk"), each identified by its voice
+  const heard = $derived(hits ? groupHits(hits, 8) : []);
+  const rowBySlug = $derived(new Map(items.map((i) => [i.s, i])));
+  function talkOf(slug) {
+    const r = rowBySlug.get(slug), it = hitItems.get(slug);
+    const k = r?.k || it?.speaker_key || (it?.speaker ? fold(it.speaker).replace(/ /g, '-') : null);
+    return { title: r?.t || it?.title || slug, sp: r?.sp || it?.speaker || null, y: r?.y || it?.year || null, k, s: speakersByKey.get(k) || null, row: r };
+  }
+  function hearHit(h) {
+    const t = talkOf(h.slug);
+    const end = h.t1 && h.t1 > h.t0 ? Math.min(h.t1, h.t0 + 40) : h.t0 + 20;
+    playExcerpt({ ...(t.row || { s: h.slug, t: t.title, sp: t.sp, y: t.y }), hl: [Math.max(0, h.t0 - 0.3), end] }, t.s ? { n: t.s.n, p: t.s.p } : null);
+  }
   let qTimer, hitTimer, hitSeq = 0;
 
   const active = $derived(!!(q.trim() || preset || decade || speaker));
@@ -76,8 +90,11 @@
     hitTimer = setTimeout(async () => {
       const id = ++hitSeq;
       try {
-        const data = await media.list(`q=${encodeURIComponent(text)}&limit=1&facets=0`);
-        if (id === hitSeq) hits = (data.hits || []).slice(0, 6);
+        const data = await media.list(`q=${encodeURIComponent(text)}&limit=60&facets=0`);
+        if (id !== hitSeq) return;
+        hitItems = new Map((data.items || []).map((i) => [i.slug, i]));
+        hitQuery = text; openTalks = new Set();
+        hits = (data.hits || []).slice(0, 40);
       } catch { if (id === hitSeq) hits = null; }
     }, 550);
   }
@@ -145,12 +162,35 @@
       </p>
     </div>
 
-    {#if hits?.length}
-      <div class="mt-5">
+    {#if heard.length}
+      <div class="mt-6">
         <h2 class="font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">Heard in the transcripts</h2>
-        <ol class="mt-2 grid gap-2 md:grid-cols-2">
-          {#each hits as h, i (`${h.slug}-${h.t0}-${i}`)}
-            <li><a href={`/media/${h.slug}?t=${Math.floor(h.t0)}`} class="heard"><span class="t font-dial">{formatTime(h.t0)}</span><span class="line-clamp-2">{h.text}</span></a></li>
+        <ol class="mt-2 grid items-start gap-3 md:grid-cols-2">
+          {#each heard as g (g.slug)}
+            {@const t = talkOf(g.slug)}
+            {@const shown = openTalks.has(g.slug) ? g.hits : g.hits.slice(0, 2)}
+            <li class="heard">
+              <div class="heard-who">
+                <span class="h-8 w-8 flex-none overflow-hidden rounded-full"><RecordLabel name={t.s?.n || t.sp || t.title} photo={t.s?.p} year={t.y} size={32} /></span>
+                <span class="min-w-0 leading-tight">
+                  <span class="block truncate text-sm font-semibold text-radio-ink">{t.sp || 'Unknown voice'}</span>
+                  <a href={`/media/${g.slug}?t=${Math.floor(g.hits[0].t0)}`} class="heard-title">{t.title}{t.y ? ` (${t.y})` : ''}</a>
+                </span>
+              </div>
+              {#each shown as h, i (`${h.t0}-${i}`)}
+                {@const sn = snippetAround(h.text, hitQuery, 230)}
+                <div class="heard-line">
+                  <button type="button" class="heard-t" onclick={() => hearHit(h)} aria-label={`Hear ${t.title} from ${formatTime(h.t0)}`}
+                    class:on={preview.playing && preview.item?.s === g.slug && Math.abs((preview.start ?? -9) - Math.max(0, h.t0 - 0.3)) < 0.5}>
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>{formatTime(h.t0)}
+                  </button>
+                  <p class="heard-text">{sn.lead}{#each sn.parts as p, j (j)}{#if p.hit}<mark>{p.t}</mark>{:else}{p.t}{/if}{/each}{sn.tail}</p>
+                </div>
+              {/each}
+              {#if g.hits.length > 2 && !openTalks.has(g.slug)}
+                <button type="button" class="heard-more" onclick={() => { openTalks = new Set([...openTalks, g.slug]); }}>{g.hits.length - 2} more from this talk</button>
+              {/if}
+            </li>
           {/each}
         </ol>
       </div>
@@ -208,13 +248,26 @@
   .key:hover { background: var(--radio-dial); }
   .key[aria-pressed='true'] { transform: translateY(2px); background: var(--radio-walnut); color: var(--radio-on-dark); box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--radio-amber), 0 0 14px var(--radio-glow); }
   .key:disabled { opacity: 0.35; cursor: default; }
-  .key:focus-visible, .clear:focus-visible, .topic:focus-visible, .heard:focus-visible, .pin button:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  .key:focus-visible, .clear:focus-visible, .topic:focus-visible, .pin button:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .key.decade { min-width: 4.4rem; padding-inline: 0.7rem; }
   .pin { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.4rem 0.25rem 0.3rem; border-radius: 9999px; background: var(--radio-walnut); color: var(--radio-on-dark); font-weight: 600; }
   .pin button { width: 2rem; height: 2rem; border-radius: 9999px; font-size: 1.2rem; line-height: 1; color: var(--radio-on-dark); }
-  .heard { display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: 0.8rem; background: var(--radio-paper); color: var(--radio-ink); box-shadow: inset 0 0 0 1px var(--radio-line); font-size: 0.95rem; }
-  .heard:hover { box-shadow: inset 0 0 0 2px var(--radio-brass); }
-  .heard .t { flex: none; font-weight: 700; color: var(--radio-amber); }
+  .heard { padding: 0.8rem 0.95rem 0.9rem; border-radius: 0.9rem; background: var(--radio-paper); color: var(--radio-ink); box-shadow: inset 0 0 0 1px var(--radio-line); }
+  .heard-who { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
+  .heard-title { display: block; font-size: 0.85rem; color: var(--radio-ink-soft); text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .heard-title:hover { color: var(--radio-amber); }
+  .heard-line { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 0.45rem; }
+  .heard-t { flex: none; display: inline-flex; align-items: center; gap: 0.2rem; min-height: 2rem; padding: 0 0.55rem 0 0.4rem; border-radius: 9999px; margin-top: 0.05rem;
+    font: 700 0.85rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-amber); box-shadow: inset 0 0 0 1px var(--radio-line); }
+  .heard-t svg { width: 0.8rem; height: 0.8rem; }
+  .heard-t:hover, .heard-t.on { background: var(--radio-amber); color: var(--radio-walnut-deep); }
+  .heard-text { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 0.95rem; line-height: 1.55; }
+  .heard-text mark { background: transparent; color: inherit; text-decoration: underline; text-decoration-color: var(--radio-amber); text-decoration-thickness: 2px; text-underline-offset: 3px;
+    box-shadow: inset 0 -0.5em 0 var(--radio-brass-soft); border-radius: 2px; }
+  .heard-more { margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--radio-ink-soft); text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px; }
+  .heard-more:hover { color: var(--radio-amber); }
+  .heard-t:focus-visible, .heard-title:focus-visible, .heard-more:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .topic { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.95rem; border-radius: 9999px; font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1rem; color: var(--radio-ink);
     background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); transition: background 0.2s, box-shadow 0.2s; }
   .topic.big { font-size: 1.2rem; box-shadow: inset 0 0 0 1.5px var(--radio-brass); }
