@@ -29,7 +29,8 @@ const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => s
 const short = (s, n) => (s.length > n ? `${s.slice(0, s.lastIndexOf(' ', n))}…` : s);
 const title = m ? `“${short(m.text, 90)}” — ${m.speaker || 'The Listening Room'}` : 'Moment not found — SifterSearch Media';
 const description = m ? `${m.context ? `${m.context} ` : ''}From “${m.title}”${m.speaker ? ` by ${m.speaker}` : ''}${m.year ? `, ${m.year}` : ''}. Hear the moment and the whole talk with its searchable transcript.` : 'This moment could not be found.';
-const image = m ? `${SITE}/api/media/moments/${encodeURIComponent(m.key)}/card.jpg` : undefined;
+const CARD_V = 2;   // bump when the card design changes: the card is edge-cached for a week per URL
+const image = m ? `${SITE}/api/media/moments/${encodeURIComponent(m.key)}/card.jpg?v=${CARD_V}` : undefined;
 const url = m ? `${SITE}${momentPath(m.slug, m.key)}` : null;
 const ld = m ? {
   '@context': 'https://schema.org', '@type': 'Quotation', text: m.text, url, ...(image ? { image } : {}),

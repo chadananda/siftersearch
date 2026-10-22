@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T15:24:47.159Z",
+  "generated": "2026-10-22T15:25:44.433Z",
   "entries": [
+    {
+      "hash": "4c31a2a3",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "Pipeline snapshot moves into siftersearch-reports, incremental — ends the hourly 70 s / ~30 GB read burst that slowed search (10-22)",
+      "scope": "ops"
+    },
+    {
+      "hash": "57879b6c",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Quote card title stays inside the card (two centred lines under the record), typographer's apostrophes; cross-reference inserts keep a brass edge in dark mode",
+      "scope": "media"
+    },
     {
       "hash": "6f355021",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Section-author replaces reader placeholders ('the editor or reporter'); force corrects a named misattribution",
       "scope": "ops"
-    },
-    {
-      "hash": "91975565",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "No duplicate 'Read in the library' pill when it opens the same page as a source",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "f1d77f65",
-      "date": "2026-10-12",
-      "type": "Performance",
-      "description": "No multi-second freezes after start — claims read by id range; exclusion list via partial indexes, no count",
-      "scope": "boot"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "4c31a2a3",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "Pipeline snapshot moves into siftersearch-reports, incremental — ends the hourly 70 s / ~30 GB read burst that slowed search (10-22)",
+        "scope": "ops"
+      },
+      {
+        "hash": "57879b6c",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Quote card title stays inside the card (two centred lines under the record), typographer's apostrophes; cross-reference inserts keep a brass edge in dark mode",
+        "scope": "media"
+      },
       {
         "hash": "6f355021",
         "date": "2026-10-22",
@@ -7009,20 +7023,6 @@
         "type": "Fixed",
         "description": "Section-author replaces reader placeholders ('the editor or reporter'); force corrects a named misattribution",
         "scope": "ops"
-      },
-      {
-        "hash": "91975565",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "No duplicate 'Read in the library' pill when it opens the same page as a source",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "f1d77f65",
-        "date": "2026-10-12",
-        "type": "Performance",
-        "description": "No multi-second freezes after start — claims read by id range; exclusion list via partial indexes, no count",
-        "scope": "boot"
       }
     ]
   }
