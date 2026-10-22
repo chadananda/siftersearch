@@ -29,7 +29,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     tool: vi.fn(async (sub, input, opts) => { if (sub === 'dfn') touch(opts.output); return { snr_db: 20, hum50_db: 0, hum60_db: 0 }; }),
     asr: vi.fn(async (sub, input, opts) => {
       if (sub === 'probe') return { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en', text: 'x' }] };
-      if (sub === 'langid') return { excerpts: (store.langs || ['en', 'en']).map((language, i) => ({ start: i * 60, language, prob: 0.9 })) };
+      if (sub === 'langid') return { excerpts: (store.langs || Array(12).fill('en')).map((language, i) => ({ start: i * 60, language, prob: 0.9 })) };
       writeFileSync(opts.output, JSON.stringify({ language: 'en', model: 'large-v3-turbo', aligned: true, duration_s: 600, timings: { asr: 30 }, turns: [{ start: 0, end: 600, speaker: 'S1' }],
         segments: [seg(0, 'The Revelation of Baha\'u\'llah is sovereign.'), seg(5, 'Abdul Baha explained this.'), seg(40, 'A new part begins here.')] }));
       return { seconds: 36, host: 'boss' };
@@ -160,13 +160,29 @@ describe('media item stage machine', () => {
   });
 
   it('two languages heard in the unforced language ID → interpreted mode (diarized on boss, per-block language)', async () => {
-    store.langs = ['fa', 'en', 'fa', 'en', 'en', 'fa'];
+    store.langs = ['fa', 'en', 'fa', 'en', 'en', 'fa', 'en', 'en', 'en', 'en', 'en', 'en'];
     const d = fakes();
     const r = await runItem({ id: 10, source_kind: 'file', source_ref: src }, {}, d);
     store.langs = null;
     const call = d.tools.asr.mock.calls.find((c) => c[0] === 'transcribe');
     expect(call[2]).toMatchObject({ lang: 'multi', diarize: true, prompt: '' });
     expect(r.meta.asr.mode).toBe('interpreted');
+  });
+
+  it('one stray window in another language is not an interpreted talk', async () => {
+    store.langs = ['en', 'en', 'de', 'en', 'en', 'en', 'en', 'en', 'en', 'en', 'en', 'en'];
+    const d = fakes();
+    await runItem({ id: 15, source_kind: 'file', source_ref: src }, {}, d);
+    store.langs = null;
+    expect(d.tools.asr.mock.calls.find((c) => c[0] === 'transcribe')[2].lang).toBe('en');
+  });
+
+  it('a title that names nothing gives way to the subject the recording states', async () => {
+    const d = fakes();
+    d.llm.nameItem = vi.fn(async () => ({ speaker: 'Chad Jones', title: '01 (thursday)', year: 2012 }));
+    d.llm.describeTalk = vi.fn(async () => ({ title: 'The Covenant and the Dawn-Breakers', speakers: {}, chapters: [] }));
+    const r = await runItem({ id: 14, source_kind: 'file', source_ref: src }, {}, d);
+    expect(r.meta).toMatchObject({ title: 'The Covenant and the Dawn-Breakers', file_title: '01 (thursday)' });
   });
 
   it('`from` redoes a stage and everything after it', async () => {

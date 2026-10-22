@@ -181,14 +181,17 @@ export async function runItem(item, opts = {}, deps = {}) {
       // LANGUAGE ID on six unforced excerpts (the probe ran with the hinted language forced, so it always "heard" English —
       // 10-21: Furútan's interpreted talk looked English-only). Two languages heard clearly → an INTERPRETED talk
       // (Persian + English, Chad's English + Romanian) → per-speaker-block language (media_tool.py --lang multi)
-      if (!meta.languages) {
-        const starts = probeStarts(meta.duration_s, 6, 30).join(',');
-        const li = await tools.asr('langid', join(dir, meta.original), { model: 'large-v3-turbo', starts }, { stop }).catch(() => null);
+      // twelve SHORT windows (12 s): an interpreter alternates every few sentences, and a 30 s window hears only the
+      // dominant language (10-22: Chad's English + Romanian talk read as English in six 30 s windows)
+      if (!meta.languages?.length || meta.languages.length < 12) {
+        const starts = probeStarts(meta.duration_s, 12, 12).join(',');
+        const li = await tools.asr('langid', join(dir, meta.original), { model: 'large-v3-turbo', starts, len: 12 }, { stop }).catch(() => null);
         meta.languages = (li?.excerpts || []).map((e) => ({ at: e.start, language: e.language, prob: e.prob }));
       }
-      const heard = meta.languages.filter((x) => x.prob >= 0.5).map((x) => x.language);
+      const heard = meta.languages.filter((x) => x.prob >= 0.6).map((x) => x.language);
       const langs = heard.length ? heard : (v?.languages || []);
-      const mixed = new Set(langs.filter(Boolean)).size > 1;
+      const counts = langs.reduce((a, l) => ({ ...a, [l]: (a[l] || 0) + 1 }), {});
+      const mixed = Object.values(counts).filter((n) => n >= 2).length > 1;   // two languages, each heard at least twice
       const top = Object.entries(langs.reduce((a, l) => ({ ...a, [l]: (a[l] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1])[0]?.[0];
       const lang = opts.lang || (mixed ? 'multi' : (top || (/^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '')));
       const prompt = `${meta.title}${meta.speaker ? ` — a talk by ${meta.speaker}` : ''}. ${promptTerms({ title: meta.title, speaker: meta.speaker }, vocab).join(', ')}.`;
@@ -231,6 +234,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       const desc = await llm.describeTalk(work.paragraphs, { title: meta.title, speaker: meta.speaker, date: meta.date, year: meta.year, event: meta.event, place: meta.place, series: meta.series, source: meta.source?.kind === 'youtube' ? { channel: meta.source.channel, title: meta.source.title } : null }, { spend });
       const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
       meta.summary = desc.summary || null; meta.topics = desc.topics || [];
+      // a file-name title that names nothing ("01 (thursday)", "Class 5", "Part 2") gives way to the recording's own subject
+      if (desc.title && (String(meta.title || '').length < 14 || /^(?:\d+\b|part\b|class\b|session\b|day\b|talk\b|track\b|untitled)/i.test(String(meta.title || '').trim()))) {
+        meta.file_title = meta.title; meta.title = String(desc.title).slice(0, 160);
+      }
       meta.speakers = desc.speakers || {};
       meta.chapters = (desc.chapters || []).filter((c) => byN.has(Number(c.p)) && c.title).map((c) => ({ p: Number(c.p), t: byN.get(Number(c.p)).t0, title: String(c.title).slice(0, 120) }));
       for (const k of ['place', 'event', 'date', 'year']) if (!meta[k] && desc[k]) meta[k] = desc[k];

@@ -97,7 +97,7 @@ def cmd_langid(a):
     m = whisper_model(a.model, a.threads)
     res = []
     for s in [float(v) for v in a.starts.split(',')]:
-        x = load(a.input, start=s, dur=30)
+        x = load(a.input, start=s, dur=a.len if a.len and a.len < 30 else 30)
         lang, prob, allp = m.detect_language(x)
         res.append({'start': s, 'language': lang, 'prob': round(float(prob), 3), 'top': [(l, round(float(p), 3)) for l, p in allp[:3]]})
     print(json.dumps({'excerpts': res}))
