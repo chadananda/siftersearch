@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T16:20:03.309Z",
+  "generated": "2026-10-22T16:27:05.396Z",
   "entries": [
+    {
+      "hash": "13d1cca9",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Shorts' portrait fetch — three tries with backoff, the failure reason recorded (portrait_error)",
+      "scope": "media"
+    },
+    {
+      "hash": "63787c6c",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Moment/clip quote scales down with its length (long clips no longer fill three screens)",
+      "scope": "media"
+    },
     {
       "hash": "c885880f",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Evidence only where it illuminates the noted words (no meta-commentary, no padding); reset option",
       "scope": "reading"
-    },
-    {
-      "hash": "0972241f",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "'Dawn-Breakers, start from…' resolved to a letter naming it — strip the clause; skip books with no readable outline",
-      "scope": "reading"
-    },
-    {
-      "hash": "23e7f935",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Noted words highlighted and numbered — the note carries the same number",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "13d1cca9",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Shorts' portrait fetch — three tries with backoff, the failure reason recorded (portrait_error)",
+        "scope": "media"
+      },
+      {
+        "hash": "63787c6c",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Moment/clip quote scales down with its length (long clips no longer fill three screens)",
+        "scope": "media"
+      },
       {
         "hash": "c885880f",
         "date": "2026-10-22",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-13",
         "type": "Fixed",
         "description": "Evidence only where it illuminates the noted words (no meta-commentary, no padding); reset option",
-        "scope": "reading"
-      },
-      {
-        "hash": "0972241f",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "'Dawn-Breakers, start from…' resolved to a letter naming it — strip the clause; skip books with no readable outline",
-        "scope": "reading"
-      },
-      {
-        "hash": "23e7f935",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Noted words highlighted and numbered — the note carries the same number",
         "scope": "reading"
       }
     ]

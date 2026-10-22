@@ -2,43 +2,49 @@
   // MAKE A SHORT (moment and clip pages): render a vertical video of this excerpt with the media pipeline's short
   // renderer, show it inline, and hand it to the visitor's apps — Web Share with the file on phones (YouTube, Instagram,
   // TikTok, WhatsApp), Download elsewhere — with the post text (link back to the full talk) and .srt captions.
-  // API (media agent): GET /api/media/shorts/templates · POST /api/media/shorts { slug, start_ms, end_ms, template } →
-  // { id } · GET /api/media/shorts/:id → { status: queued|rendering|done|error, progress, url, srt_url, poster, error }.
-  // Hidden entirely until the templates endpoint answers.
+  // API (media agent, routes/media.js): POST /api/media/shorts { slug, start, end (s), template? } → { status: 'done', mp4,
+  // srt, … } when already rendered, else 202 { run, poll } → GET poll → { status, result: { url, srt, … }, error }.
+  // Anyone may render a talk's MOMENTS (a fixed set; shared links reuse one file); other ranges need staff, so the button
+  // shows on moment pages only.
   import { onMount } from 'svelte';
   import { media } from '../../lib/api.js';
   import { shortPostText } from '../../lib/share.js';
 
-  let { slug, startMs, endMs, text = '', speaker = '', title = '', year = null, talkUrl = '', pageUrl = '' } = $props();
+  let { slug, startMs, endMs, text = '', speaker = '', title = '', year = null, talkUrl = '', pageUrl = '', enabled = true } = $props();
+  const TEMPLATES = [{ id: null, name: 'Best for this moment' }, { id: 'on-air', name: 'On air' }, { id: 'archive-tape', name: 'Archive tape' },
+    { id: 'scripture-insert', name: 'With the Writings' }, { id: 'portrait-cinema', name: 'Portrait' }, { id: 'minimal', name: 'Minimal' }];
+  let elapsed = $state(0);
   let templates = $state([]), open = $state(false), template = $state(null);
   let job = $state(null), status = $state(''), progress = $state(0), video = $state(null), error = $state('');
   let canShareFiles = $state(false), copied = $state(false), sharing = $state(false);
   const post = $derived(shortPostText({ text, speaker, title, year, talkUrl }));
-  const api = (p) => media.href(`/api/media/shorts${p}`);
 
-  onMount(async () => {
-    try {
-      const r = await fetch(api('/templates'), { headers: { Accept: 'application/json' } });
-      if (r.ok) { const d = await r.json(); templates = d.templates || d || []; template = templates[0]?.id ?? null; }
-    } catch { /* not available: the button stays hidden */ }
+  onMount(() => {
+    templates = enabled ? TEMPLATES : [];
     try { canShareFiles = !!navigator.canShare?.({ files: [new File([new Blob()], 'x.mp4', { type: 'video/mp4' })] }); } catch { canShareFiles = false; }
   });
 
   async function render() {
-    error = ''; video = null; progress = 0; status = 'queued';
+    error = ''; video = null; progress = 0; status = 'queued'; elapsed = 0;
+    const tick = setInterval(() => (elapsed += 1), 1000);
     try {
-      const r = await fetch(api(''), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, start_ms: startMs, end_ms: endMs, template }) });
-      if (!r.ok) throw new Error(`could not start (${r.status})`);
-      job = (await r.json()).id;
-      for (let i = 0; i < 240; i++) {
-        await new Promise((res) => setTimeout(res, 1500));
-        const s = await (await fetch(api(`/${encodeURIComponent(job)}`))).json();
-        status = s.status; progress = Number(s.progress) || progress;
-        if (s.status === 'done') { video = s; return; }
-        if (s.status === 'error') throw new Error(s.error || 'the render failed');
+      const r = await fetch(media.href('/api/media/shorts'), { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, start: startMs / 1000, end: endMs / 1000, ...(template ? { template } : {}) }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 429) throw new Error('The studio is busy — try again in a few minutes.');
+      if (!r.ok) throw new Error(d.error || `could not start (${r.status})`);
+      if (d.status === 'done') { video = { url: d.mp4 || d.url, srt_url: d.srt }; return; }
+      job = d.run;
+      for (let i = 0; i < 300; i++) {
+        await new Promise((res) => setTimeout(res, 2000));
+        const s2 = await (await fetch(media.href(d.poll || `/api/media/shorts/run/${job}`))).json();
+        status = s2.status === 'running' ? 'rendering' : s2.status;
+        progress = Math.min(0.95, elapsed / 90);   // the renderer reports no percentage: an honest elapsed-time estimate
+        if (s2.status === 'done' || s2.result?.url) { video = { url: s2.result?.url || d.mp4, srt_url: s2.result?.srt || d.srt }; return; }
+        if (s2.status === 'error' || s2.status === 'failed') throw new Error(s2.error || 'the render failed');
       }
-      throw new Error('the render is taking too long — try again in a minute');
-    } catch (e) { error = e.message; status = ''; }
+      throw new Error('The render is taking too long — try again in a minute.');
+    } catch (e) { error = e.message; } finally { clearInterval(tick); status = video ? 'done' : ''; }
   }
 
   async function shareVideo() {
@@ -63,9 +69,9 @@
       <div class="panel">
         <p class="font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-brass-bright">Make a short</p>
         <div class="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Style">
-          {#each templates as t (t.id)}
+          {#each templates as t (t.id ?? 'auto')}
             <button type="button" role="radio" aria-checked={template === t.id} class="tpl" class:on={template === t.id} onclick={() => (template = t.id)}>
-              {#if t.preview}<img src={media.href(t.preview)} alt="" width="54" height="96" loading="lazy" />{/if}<span>{t.name || t.id}</span>
+              <span>{t.name}</span>
             </button>
           {/each}
         </div>
@@ -73,7 +79,7 @@
           <button type="button" class="go" onclick={render} disabled={!!status && status !== 'done'}>{video ? 'Render again' : 'Render the video'}</button>
           {#if status && status !== 'done'}
             <span class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)} aria-label="Rendering"><i style={`transform:scaleX(${Math.max(0.04, progress)})`}></i></span>
-            <span class="text-sm text-radio-on-dark opacity-80" aria-live="polite">{status === 'queued' ? 'Waiting for the studio…' : `Rendering… ${Math.round(progress * 100)}%`}</span>
+            <span class="text-sm text-radio-on-dark opacity-80" aria-live="polite">{status === 'queued' ? `Waiting for the studio… ${elapsed}s` : `Rendering… ${elapsed}s (usually under two minutes)`}</span>
           {/if}
         </div>
         {#if error}<p class="mt-3 text-sm font-semibold text-radio-amber" role="alert">{error}</p>{/if}

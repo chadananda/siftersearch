@@ -90,7 +90,7 @@
         {#if ytAt}<a href={ytAt} target="_blank" rel="noopener" class="ctx">Watch on YouTube{yt.channel ? ` (${yt.channel})` : ''} from {formatTime(t0)}</a>{/if}
       </div>
       <div class="mt-5"><ShareRow {url} text={shareText} title={`${m.speaker || ''} — ${m.title}`} tone="dark" /></div>
-      <ShortMaker slug={m.slug} startMs={m.t0_ms} endMs={m.t1_ms} text={m.text} speaker={m.speaker} title={m.title} year={m.year} talkUrl={`${SITE}${contextHref}`} pageUrl={url} />
+      <ShortMaker slug={m.slug} startMs={m.t0_ms} endMs={m.t1_ms} text={m.text} speaker={m.speaker} title={m.title} year={m.year} talkUrl={`${SITE}${contextHref}`} pageUrl={url} enabled={kind === 'moment'} />
     </div>
   </header>
 
