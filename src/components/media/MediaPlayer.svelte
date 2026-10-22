@@ -387,7 +387,7 @@
         <audio bind:this={audio} preload="auto" class="hidden"></audio>
       </section>
 
-      <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
+      <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara} />
     </div>
   </div>

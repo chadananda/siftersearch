@@ -1,5 +1,5 @@
 // ONE MEDIA ITEM through the pipeline (planning/media-library-plan.md): archive → enhance → web → transcribe → correct →
-// describe → headings → quotes → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
+// describe → headings → quotes → links → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
@@ -17,7 +17,7 @@ import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights
 import { tileSvg } from './thumbs.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
-export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'headings', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
+export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'thumb', 'render', 'ingest', 'catalog'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
 const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
@@ -39,6 +39,15 @@ async function defaults() {
   const youtube = await import('./youtube.js');
   const { isDraining } = await import('../drain.js');
   return { tools, llm, repo, youtube, now: () => new Date().toISOString(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), draining: async () => isDraining(), drainingNow: isDraining };
+}
+
+/** The link stage's lookups (server-side: bio set, identity lookup index, document finder, section index, link policy). */
+async function linkDeps() {
+  const [{ listBioPersons }, { entityLookup }, { findDocuments }, { findSections }, { linkFor }] = await Promise.all([
+    import('../bio.js'), import('../entity-api.js'), import('../docs-repo.js'), import('../repos/sections-repo.js'), import('../source-links.js')]);
+  const bio = (await listBioPersons())?.persons || [];
+  return { bio, lookup: (n) => entityLookup(n, { type: 'person', limit: 10 }), sections: (t) => findSections(t, { limit: 20 }), linkFor,
+    find: async (t) => (await findDocuments(t, { limit: 12, fields: 'id,title,author,religion,collection,language,source_site,source_url,slug,paragraph_count,external_id' }))?.docs || [] };
 }
 
 /** The controlled vocabulary: curated core + the media-vocab job's names file (when built). */
@@ -319,6 +328,17 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.quotes = lq.linked.length; rec.crs = lt.linked.length; rec.candidates = found.quotes.length + found.teachings.length;
     }
 
+    if (stage === 'links') {
+      // people → /biography/<id>, works → the canonical copy (OceanLibrary first): the copy-edit pass's mentions, resolved
+      // through our own layers, first mention per subheader section, only on a confident resolution
+      const work = await readJson(join(dir, 'transcript.work.json'));
+      const L = d.links || await linkDeps();
+      const { linkMentions } = await import('./links.js');
+      const res = await linkMentions(work.mentions || [], meta.headings || [], L);
+      await writeJson(join(dir, 'links.json'), res);
+      rec.people = res.links.filter((l) => l.kind === 'person').length; rec.works = res.links.filter((l) => l.kind === 'work').length; rec.unresolved = res.unresolved.length;
+    }
+
     if (stage === 'thumb') {
       // the SPEAKER's canonical portrait (one per person, reused by every item; face-centred crops via the image worker);
       // the generated tile below stays as the fallback
@@ -343,15 +363,16 @@ export async function runItem(item, opts = {}, deps = {}) {
       const quotes = qj.quotes || [], crs = [...(qj.teachings || [])];
       const { breakoutsOf } = d.quotes || await import('./quotes.js');
       const raw = await readJson(join(dir, 'transcript.raw.json'));
+      const links = (await readJson(join(dir, 'links.json'), { links: [] })).links || [];
       const transcript = { slug: meta.slug, language: meta.language, asr: meta.asr, enhancement: meta.enhancement ? { asr_input: meta.enhancement.asr_input, listening: meta.enhancement.listening } : null,
-        speakers: meta.speakers, chapters: meta.chapters, headings: meta.headings || [], paragraphs: work.paragraphs, quotes, cross_references: crs,
+        speakers: meta.speakers, chapters: meta.chapters, headings: meta.headings || [], paragraphs: work.paragraphs, quotes, cross_references: crs, links,
         // the VERBATIM layer (before the copy-edit pass) and its log: every change, every flag for review
         verbatim: (work.verbatim || []).map((p) => ({ n: p.n, text: p.words.map((w) => w.w).join(' ') })), cleanup: work.cleanup || [], cleanup_stats: work.cleanup_stats || null,
         corrections: work.corrections, corrections_refused: work.refused, turns: raw?.turns || [] };
       await writeJson(join(dir, 'transcript.json'), transcript);
-      await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, chapters: meta.chapters, headings: meta.headings || [] }));
+      await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, links, chapters: meta.chapters, headings: meta.headings || [] }));
       const api = `/api/media/${meta.slug}`;
-      await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: work.paragraphs, quotes, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, headings: meta.headings || [], speakers: meta.speakers,
+      await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: work.paragraphs, quotes, links, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, headings: meta.headings || [], speakers: meta.speakers,
         audio: meta.rights.playback === 'full' ? `web/${meta.slug}.ogg` : null, clipUrl: meta.rights.playback === 'clips' ? `${api}/clip-url` : null,
         pageUrl: `https://siftersearch.com/media/${meta.slug}`, thumb: meta.thumb?.file ? `${api}/file/${meta.thumb.file}` : null }));
       meta.words_n = work.paragraphs.reduce((a, p) => a + p.words.length, 0);
@@ -364,6 +385,9 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog') {
+      // the transcript's name/work links into the catalogue (paragraph_index = the ingested paragraph, for search hits)
+      const lk = (await readJson(join(dir, 'links.json'), { links: [] })).links || [];
+      if (repo.replaceMediaLinks) await repo.replaceMediaLinks(item.id, lk.map((l) => ({ ...l, paragraph_index: meta.pi?.[l.para] ?? null, target_doc_id: l.doc_id ?? null })));
       if (meta.quality && !meta.quality.final) await finishQuality(meta, dir, d, item);
       // faithfulness in the quality report: what the edit passes tried to add to the heard words and was reverted
       if (meta.quality) meta.quality.insertions_reverted = (meta.faithfulness?.correct || 0) + (meta.faithfulness?.clean || 0);

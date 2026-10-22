@@ -6,7 +6,7 @@
   import { paragraphSegments, speakerLabels } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
 
-  let { paragraphs = [], headings = [], quotes = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
+  let { paragraphs = [], headings = [], quotes = [], links = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
     playingPara = -1, playing = false, onword, onpara, root = $bindable() } = $props();
 
   const offsets = $derived(paragraphs.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + (paragraphs[i - 1].words?.length || 0) : 0); return acc; }, []));
@@ -14,6 +14,10 @@
   const byPara = (list) => { const m = new Map(); for (const x of list) { if (!m.has(x.para)) m.set(x.para, []); m.get(x.para).push(x); } return m; };
   const headingBy = $derived(new Map(headings.map((h) => [h.p, h])));
   const quotesBy = $derived(byPara(quotes.filter((q) => q.url)));
+  // named people and works link on the spoken words; a quote wins where they overlap
+  const spansBy = $derived(byPara([...quotes.filter((q) => q.url).map((q) => ({ ...q, kind: 'quote' })),
+    ...links.filter((l) => l.url && !quotes.some((q) => q.url && q.para === l.para && l.i0 < q.i1 && q.i0 < l.i1))]));
+  const linkTitle = (l) => (l.kind === 'quote' ? l.cite : l.kind === 'person' ? `${l.name} — biography` : [l.title, l.section].filter(Boolean).join(', '));
   const xrefsBy = $derived(byPara(crossRefs.filter((c) => c.url || c.excerpt)));
   // w[3] = 1: a word the copy-edit pass dropped (filler, stutter, loop) — kept for timing, never shown
   const wordClass = (w) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && 'cursor-pointer hover:bg-hover', inRange(w) && 'bg-highlight-range']);
@@ -25,6 +29,7 @@
     const sel = window.getSelection?.();
     if (sel && !sel.isCollapsed && String(sel).trim()) return;           // selecting text, not seeking
     const link = el.closest('a');
+    if (link?.dataset.nav) return;                                          // a name or a work: the link is the action
     if (link && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)) return;   // modified click: follow the link
     if (link) e.preventDefault();
     onword?.(Number(el.dataset.k), el);
@@ -35,7 +40,7 @@
      paragraph buttons, chapter links and the player controls are the keyboard path -->
 <div bind:this={root} class="transcript space-y-6 font-serif text-lg leading-relaxed text-primary" class:cursor-text={!canPlay} onclick={click}>
   {#each paragraphs as p, pi (p.n)}
-    {@const segs = paragraphSegments(p.words.length, quotesBy.get(p.n) || [])}
+    {@const segs = paragraphSegments(p.words.length, spansBy.get(p.n) || [])}
     {#if headingBy.has(p.n)}
       {@const h = headingBy.get(p.n)}
       <h2 id={h.slug} class="scroll-mt-24 pt-4 font-sans text-xl font-semibold tracking-tight text-primary lg:pl-16"><a href={`#${h.slug}`} class="hover:text-accent">{h.text}</a></h2>
@@ -62,8 +67,9 @@
       <p>
         {#each segs as s, si (si)}
           {#if s.quote}
-            <a href={s.quote.url} target="_blank" rel="noopener" title={s.quote.cite}
-              class="rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent">{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
+            <a href={s.quote.url} data-nav={s.quote.kind === 'quote' ? undefined : '1'} target={s.quote.kind === 'person' ? undefined : '_blank'} rel={s.quote.kind === 'person' ? undefined : 'noopener'} title={linkTitle(s.quote)}
+              class={s.quote.kind === 'quote' ? 'rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent'
+                : 'rounded-sm underline decoration-border decoration-1 underline-offset-4 hover:text-accent hover:decoration-current'}>{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
           {:else}
             {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{w[3] ? '' : ' '}{/each}
           {/if}

@@ -188,3 +188,13 @@ until that pipeline has run over the library)
 **Dependency summary:** phase 1 needs only the Media vectors and the quote/CR links (both live). Phases 2–3 need the
 concept-extraction pipeline and disambiguated entity mentions to cover transcripts. They are scheduled after
 concepts reach the corpus, not before.
+
+## 12. Tower thread budget (10-22 watch)
+
+Tower serves search; media work there must not move search latency out of its normal range (on-tower
+`POST 127.0.0.1:7839/api/search/multi`, fresh queries, ~2–3 s). Rule: **tower-side media work ≤ 8 threads in total**:
+pipeline tools at the measured cap (`threadsFor`, default 8), remastering at **≤ 4 threads per run, ≤ 2 runs at once, nice
+19** (baked into `scripts/media/remaster_ab.py`: OMP/MKL/OpenBLAS/torch threads set before torch loads). Incident: six
+parallel A/B runs at ~700 % CPU each (≈42 cores) took search to 7.9–9.1 s. Heavy model work (remastering, ASR, alignment,
+diarization, DNSMOS/NISQA) moves to **boss's GPU** (Strix Halo, ROCm), with a GPU-memory budget that leaves vLLM its share
+and a CPU fallback; tower keeps downloads, ffmpeg and indexing.

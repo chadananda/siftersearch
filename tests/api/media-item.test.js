@@ -53,6 +53,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     thumbs: { findSpeakerImage: vi.fn(async () => null) },
     portraits: { ensurePortrait: vi.fn(async (name) => ({ status: 'found', key: 'hartmut-grossmann' })) },
     ingest: vi.fn(async () => ({ documentId: 777, links: 0 })),
+    links: { bio: [], lookup: async () => [], find: async () => [], sections: async () => [], linkFor: () => ({ url: null }) },
   };
 }
 
@@ -192,7 +193,7 @@ describe('media item stage machine', () => {
     const r = await runItem({ id: 3, source_kind: 'file', source_ref: src }, {}, fakes());
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
     const again = await runItem({ id: 3, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'quotes' }, fakes());
-    expect(again.done).toEqual(['quotes', 'thumb', 'render', 'ingest', 'catalog']);
+    expect(again.done).toEqual(['quotes', 'links', 'thumb', 'render', 'ingest', 'catalog']);
   });
   it('the name pass cannot add to what was heard: an inserted "(Vol II)" is reverted and counted (10-22)', async () => {
     const f = fakes();

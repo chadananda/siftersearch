@@ -1,6 +1,7 @@
 // A media item's two text renditions: transcript.md (clean Markdown for search ingestion — one block per paragraph with
 // id="para_N" t0/t1/spk attributes, quotations as links on the speaker's own words) and page.html (standalone, no site
 // chrome, self-contained: player + transcript + quotation links + cross-reference breakouts). Pure.
+import { spansOf } from './links.js';
 import { formatTime } from './range.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -14,16 +15,19 @@ export function youtubeAt(meta, t = 0) {
 }
 
 /** A paragraph's words as Markdown, with each quotation's words linked to its source. quotes: [{ para, i0, i1, url, cite }] */
-export function paragraphMarkdown(p, quotes = []) {
-  const qs = quotes.filter((q) => q.para === p.n && q.url).sort((a, b) => a.i0 - b.i0);
+export function paragraphMarkdown(p, quotes = [], links = []) {
+  // quotes link to their source; named people and works to their pages (the spoken words are the anchor text)
+  const spans = spansOf(p.n, quotes, links);
   const shown = (ws) => ws.filter((w) => !w.hide).map((w) => w.w);
   const out = [];
   let i = 0;
-  for (const q of qs) {
+  for (const q of spans) {
     if (q.i0 < i) continue;
     out.push(...shown(p.words.slice(i, q.i0)));
     const said = shown(p.words.slice(q.i0, q.i1)).join(' ');
-    if (said) out.push(`[${mdLinkText(said)}](${q.url}${q.cite ? ` ${yq(q.cite)}` : ''})`);
+    const url = q.url.startsWith('/') ? `https://siftersearch.com${q.url}` : q.url;
+    const title = q.kind === 'quote' ? q.cite : q.kind === 'person' ? q.name : [q.title, q.section].filter(Boolean).join(', ');
+    if (said) out.push(`[${mdLinkText(said)}](${url}${title ? ` ${yq(title)}` : ''})`);
     i = q.i1;
   }
   out.push(...shown(p.words.slice(i)));
@@ -31,7 +35,7 @@ export function paragraphMarkdown(p, quotes = []) {
 }
 
 /** transcript.md: frontmatter (title, speaker as author, date, language, the media page as source) + chapters + paragraphs. */
-export function transcriptMarkdown({ meta, paragraphs, quotes = [], chapters = [], headings = [] }) {
+export function transcriptMarkdown({ meta, paragraphs, quotes = [], links = [], chapters = [], headings = [] }) {
   const fm = [['title', meta.title], ['author', meta.speaker], ['language', meta.language || 'en'], ['date', meta.date], ['year', meta.year],
     ['collection', 'Media'], ['media_slug', meta.slug], ['media_kind', meta.has_video ? 'video' : 'audio'], ['duration', meta.duration_s ? formatTime(meta.duration_s) : null],
     ['source_url', `https://siftersearch.com/media/${meta.slug}`], ['youtube_url', youtubeAt(meta)], ['event', meta.event], ['place', meta.place],
@@ -47,7 +51,7 @@ export function transcriptMarkdown({ meta, paragraphs, quotes = [], chapters = [
   for (const p of paragraphs) {
     if (hBy.has(p.n)) lines.push(`## ${hBy.get(p.n).text}`, '');
     while (c < chs.length && chs[c].t <= p.t0 + 0.5) { lines.push(`## ${chs[c].title}`, ''); c++; }
-    lines.push(paragraphMarkdown(p, quotes), `{id="para_${p.n}" t0="${p.t0.toFixed(2)}" t1="${p.t1.toFixed(2)}" spk="${p.spk || ''}"}`, '');
+    lines.push(paragraphMarkdown(p, quotes, links), `{id="para_${p.n}" t0="${p.t0.toFixed(2)}" t1="${p.t1.toFixed(2)}" spk="${p.spk || ''}"}`, '');
   }
   return `${lines.join('\n').trim()}\n`;
 }
@@ -63,7 +67,7 @@ main{max-width:44rem;margin:0 auto;padding:0 1rem 8rem}.toc{font:15px/1.5 system
 .p:hover .play,.p .play:focus{opacity:1}@media (max-width:52rem){.p .play{position:static;float:left;margin:.25rem .5rem 0 0}}
 .spk{font:600 12px system-ui,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block}
 .w{cursor:pointer;border-radius:3px}.w.on{background:var(--hl);box-shadow:0 0 0 2px var(--hl)}.w.rg{background:var(--range)}
-a.q{color:var(--quote);text-decoration:underline dotted;text-underline-offset:3px}
+a.q{color:var(--quote);text-decoration:underline dotted;text-underline-offset:3px}a.ln{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}a.ln:hover{color:var(--accent);text-decoration-color:currentColor}
 .cr{margin:.4rem 0 1.4rem 1rem;padding:.7rem 1rem;border-left:3px solid var(--accent);background:var(--card);font-size:.95rem;border-radius:0 6px 6px 0}
 .cr .k{font:600 11px system-ui,sans-serif;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}.cr cite{display:block;font:13px system-ui,sans-serif;color:var(--muted);margin-top:.3rem}.cr a{color:var(--accent);text-decoration:none}.cr a:hover{text-decoration:underline}
 .fab{position:fixed;right:1rem;bottom:1rem;display:flex;gap:.5rem;align-items:center;font:600 14px system-ui,sans-serif}
@@ -90,7 +94,7 @@ async function playFrom(t,end){try{const at=await load(t,end);const go=()=>{audi
 if(audio.readyState>=1)go();else audio.addEventListener('loadedmetadata',go,{once:true});audio.load&&audio.readyState<1&&audio.load();follow=true;folBtn.classList.remove('show')}catch(e){alert(M.playback==='search'?'This recording is not available for playback here.':'Playback is not available: '+e.message)}}
 function toggle(){if(audio.paused){if(!audio.src||audio.ended)playFrom(range?range.start:(cur>=0?words[cur].s:0),range?range.end:null);else audio.play()}else audio.pause()}
 fabBtn.onclick=toggle;folBtn.onclick=()=>{follow=true;folBtn.classList.remove('show');lastTop=null;tick(true)};
-document.addEventListener('click',e=>{const w=e.target.closest('.w');if(w&&!window.getSelection().toString()){e.preventDefault();playFrom(+w.dataset.s,null)}
+document.addEventListener('click',e=>{const w=e.target.closest('.w');if(w&&!e.target.closest('a.ln')&&!window.getSelection().toString()){e.preventDefault();playFrom(+w.dataset.s,null)}
 const b=e.target.closest('.play');if(b)playFrom(+b.dataset.t,null)});
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&!/input|textarea|button/i.test(e.target.tagName)){e.preventDefault();toggle()}
 if(/PageUp|PageDown|ArrowUp|ArrowDown|Home|End/.test(e.key))manual()});
@@ -112,10 +116,9 @@ sel.onclick=()=>{const u=new URL(M.pageUrl||location.href);u.search='?t='+t0.toF
 tick(true)})();`;
 
 /** The standalone page. data: { meta, paragraphs, quotes, crs, chapters, speakers, audio, clipUrl, pageUrl, thumb } */
-export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [], headings = [], speakers = {}, audio = null, clipUrl = null, pageUrl = null, thumb = null }) {
+export function pageHtml({ meta, paragraphs, quotes = [], links = [], crs = [], chapters = [], headings = [], speakers = {}, audio = null, clipUrl = null, pageUrl = null, thumb = null }) {
   const yt = youtubeAt(meta);
-  const qBy = new Map();
-  for (const q of quotes.filter((x) => x.url)) { if (!qBy.has(q.para)) qBy.set(q.para, []); qBy.get(q.para).push(q); }
+  // quote spans and name/work links on the spoken words (a quote wins where they overlap)
   const crBy = new Map();
   for (const c of crs) { if (!crBy.has(c.para)) crBy.set(c.para, []); crBy.get(c.para).push(c); }
   const hBy = new Map((headings || []).map((h) => [h.p, h]));
@@ -125,12 +128,13 @@ export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [
   for (const p of paragraphs) {
     if (hBy.has(p.n)) body.push(`<h2 id="${esc(hBy.get(p.n).slug)}">${esc(hBy.get(p.n).text)}</h2>`);
     while (c < chs.length && chs[c].t <= p.t0 + 0.5) { body.push(`<h2 id="ch-${c + 1}">${esc(chs[c].title)}</h2>`); c++; }
-    const qs = (qBy.get(p.n) || []).sort((a, b) => a.i0 - b.i0);
+    const qs = spansOf(p.n, quotes, links);
     const html = [];
     let qi = 0;
     for (let i = 0; i < p.words.length; i++) {
       const q = qs[qi];
-      if (q && i === q.i0) html.push(`<a class="q" href="${esc(q.url)}" title="${esc(q.cite || 'Source')}" target="_blank" rel="noopener">`);
+      if (q && i === q.i0) html.push(q.kind === 'quote' ? `<a class="q" href="${esc(q.url)}" title="${esc(q.cite || 'Source')}" target="_blank" rel="noopener">`
+        : `<a class="ln" href="${esc(q.url.startsWith('/') ? `https://siftersearch.com${q.url}` : q.url)}" title="${esc(q.kind === 'person' ? q.name : [q.title, q.section].filter(Boolean).join(', '))}"${q.kind === 'work' ? ' target="_blank" rel="noopener"' : ''}>`);
       const w = p.words[i];
       // a word the copy-edit pass dropped (a filler, a stutter) stays in the page for timing, never shown
       html.push(w.hide ? `<span class="w x" data-s="${w.s.toFixed(2)}" data-e="${w.e.toFixed(2)}" hidden></span>` : `<span class="w" data-s="${w.s.toFixed(2)}" data-e="${w.e.toFixed(2)}">${esc(w.w)}</span>`);

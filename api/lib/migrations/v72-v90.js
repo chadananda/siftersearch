@@ -1806,6 +1806,30 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_priority ON media_items(priority)');
     logger.info('Migration 165 complete: media_items grade, primary_issue, chain_key, priority');
   },
+
+  166: async () => {
+    // NAME AND WORK LINKS in transcripts (Chad 10-22): a named historical person → their biography (entity id), a named work →
+    // its canonical copy (doc id, section). One row per linked mention (first per subheader section); replaced per item.
+    await query(`CREATE TABLE IF NOT EXISTS media_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL,
+      para INTEGER NOT NULL,
+      paragraph_index INTEGER,
+      kind TEXT NOT NULL,
+      text TEXT,
+      entity_id INTEGER,
+      target_doc_id INTEGER,
+      section TEXT,
+      url TEXT,
+      confidence REAL,
+      basis TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_media_links_item ON media_links(item_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_links_entity ON media_links(entity_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_links_doc ON media_links(target_doc_id)');
+    logger.info('Migration 166 complete: media_links');
+  },
 };
 
 export const graphMigrations = {

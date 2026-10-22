@@ -4,6 +4,18 @@
 # archive (reads the original, writes only into --out). Usage: python remaster_ab.py <original> --start 600 --len 45 --out DIR
 import argparse, json, os, shutil, subprocess, sys, time
 
+# TOWER BUDGET (10-22 watch: six runs at ~700 % CPU each took search from ~2–3 s to 8–9 s): at most 4 threads per run, every
+# math library capped before torch loads, lowest CPU priority; the caller runs at most 2 at once (MAX_PARALLEL). Search
+# on tower must stay within its normal range; heavy model work belongs on boss's GPU.
+THREADS = max(1, min(4, int(os.environ.get('REMASTER_THREADS', '4'))))
+MAX_PARALLEL = 2
+for _k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'NUMEXPR_NUM_THREADS'):
+    os.environ[_k] = str(THREADS)
+try:
+    os.nice(19 - os.nice(0))
+except OSError:
+    pass
+
 MEDIA_PY = os.path.expanduser('~/sifter/venvs/media/bin/python')
 TOOL = next((t for t in (os.path.join(os.path.dirname(os.path.abspath(__file__)), 'media_tool.py'),
              os.path.expanduser('~/sifter/siftersearch/scripts/media/media_tool.py')) if os.path.exists(t)), 'media_tool.py')
@@ -23,7 +35,7 @@ def sh(args, **kw):
 
 
 def wav(src, dst, start=None, dur=None, sr=44100, af=None):
-    args = ['ffmpeg', '-y', '-v', 'error']
+    args = ['ffmpeg', '-y', '-v', 'error', '-threads', str(THREADS)]
     if start is not None:
         args += ['-ss', str(start)]
     args += ['-i', src]
@@ -53,11 +65,12 @@ def main():
     p.add_argument('--start', type=float, default=600)
     p.add_argument('--len', type=float, default=45)
     p.add_argument('--out', required=True)
-    p.add_argument('--threads', type=int, default=8)
+    p.add_argument('--threads', type=int, default=THREADS)
     a = p.parse_args()
     os.makedirs(a.out, exist_ok=True)
     import torch
-    torch.set_num_threads(a.threads)
+    torch.set_num_threads(min(a.threads, THREADS))
+    torch.set_num_interop_threads(1)
     res = {'input': a.input, 'start': a.start, 'len': a.len, 'variants': {}}
     base = os.path.join(a.out, 'original.wav')
     wav(a.input, base, a.start, a.len)

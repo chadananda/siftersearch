@@ -5,13 +5,16 @@
 import { createReadStream, existsSync, statSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { join, normalize, extname } from 'path';
-import { repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
+import { mediaIndexRows, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
 import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
+import { buildIndex, shapeSpeakers } from '../lib/media/listing-index.js';
+import { tmpdir } from 'os';
+import { writeFile, rename } from 'fs/promises';
 
 const TYPES = { '.ogg': 'audio/ogg', '.opus': 'audio/ogg', '.m4a': 'audio/mp4', '.mp3': 'audio/mpeg', '.json': 'application/json; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8', '.html': 'text/html; charset=utf-8', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
@@ -45,6 +48,37 @@ export function speakerThumb(s) {
   // serves it at /img/cdn/siftersearch.com/<file>; the page asks for each size with fo-face (src/lib/imagekit.js helpers)
   return { url: `https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, kind: 'photo', service: true, name: s.name, credit: s.credit || null, licence: s.licence || null,
     source_url: s.source_url || null, page_url: s.page_url || null, fetched_at: s.fetched_at || null };
+}
+
+// ── the listing index cache (GET /api/media/index): per item, keyed by updated_at; persisted so a restart reads one file
+// instead of every transcript. A request re-reads at most INDEX_BUDGET changed items; the rest continue in the background.
+const INDEX_FILE = process.env.MEDIA_INDEX_CACHE || join(tmpdir(), 'siftersearch-media-index.json');
+const INDEX_BUDGET = 25;
+let indexCache = null, indexBuilding = null;
+async function loadIndexCache() {
+  if (indexCache) return indexCache;
+  const saved = await readJson(INDEX_FILE);
+  indexCache = new Map(saved?.v === 1 ? saved.rows.map((x) => [x.id, { at: x.at, row: x.row }]) : []);
+  return indexCache;
+}
+async function readIndexFiles(r) {
+  if (!r.dir) return {};
+  const [meta, tr, wave] = await Promise.all([readJson(join(r.dir, 'meta.json')), readJson(join(r.dir, 'transcript.json')), readJson(join(r.dir, 'waveform.json'))]);
+  const tStart = new Map((tr?.paragraphs || []).map((p) => [p.n, p.t0]));
+  if (meta?.headings) meta.headings = meta.headings.filter((h) => tStart.has(h.p)).map((h) => ({ ...h, t: tStart.get(h.p) }));
+  return { meta, quotes: tr?.quotes || [], wave };
+}
+async function mediaIndex(budget) {
+  const cache = await loadIndexCache();
+  const rows = await mediaIndexRows();
+  // while the background pass runs, a request serves what is cached instead of re-reading the same files
+  const built = await buildIndex(rows, { readItem: readIndexFiles, cache, budget: indexBuilding && budget !== Infinity ? 0 : budget });
+  if (built.read) {
+    const tmp = `${INDEX_FILE}.${process.pid}.tmp`;
+    writeFile(tmp, JSON.stringify({ v: 1, rows: [...cache].map(([id, x]) => ({ id, at: x.at, row: x.row })) })).then(() => rename(tmp, INDEX_FILE)).catch(() => {});
+  }
+  if (built.pending && !indexBuilding) indexBuilding = mediaIndex(Infinity).catch(() => null).finally(() => { indexBuilding = null; });
+  return built;
 }
 
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
@@ -86,6 +120,15 @@ export default async function mediaRoutes(fastify) {
     return { ...list, facets, hits };
   });
 
+  // the LISTING INDEX: every published talk as one compact row + one row per speaker (the /media page filters it in the
+  // browser as you type). Edge-cached; a partial build (items still being read) is cached briefly.
+  fastify.get('/index', async (req, reply) => {
+    const { items, pending } = await mediaIndex(INDEX_BUDGET);
+    const speakers = shapeSpeakers(items, await listSpeakers(), speakerThumb);
+    reply.header('Cache-Control', pending ? 'public, max-age=15, s-maxage=15' : 'public, max-age=120, s-maxage=300, stale-while-revalidate=3600');
+    return { v: 1, generated_at: new Date().toISOString(), pending, total: items.length, hours: Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, items, speakers };
+  });
+
   // one item: what the player needs (no audio bytes)
   fastify.get('/:slug', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
@@ -114,6 +157,8 @@ export default async function mediaRoutes(fastify) {
       paragraphs: tr.paragraphs.map((p) => ({ n: p.n, pi: meta.pi?.[p.n] ?? null, t0: p.t0, t1: p.t1, spk: p.spk, sentences: p.sentences, words: p.words.map((w) => (w.hide ? [w.w, w.s, w.e, 1] : [w.w, w.s, w.e])) })),
       quotes: (tr.quotes || []).map((q) => ({ para: q.para, i0: q.i0, i1: q.i1, t0: q.t0, t1: q.t1, url: q.url, cite: q.cite, writer: q.writer, excerpt: q.excerpt, basis: q.basis, gate: q.gate })),
       cross_references: (tr.cross_references || []).map((c) => ({ para: c.para, i0: c.i0, i1: c.i1, t0: c.t0, url: c.url, cite: c.cite, writer: c.writer, claim: c.claim, excerpt: c.excerpt, confidence: c.confidence })),
+      // named people → /biography/<id>; named works → their canonical copy (the spoken words are the anchor)
+      links: (tr.links || []).map((l) => ({ para: l.para, i0: l.i0, i1: l.i1, kind: l.kind, url: l.url, name: l.name || null, title: l.title || null, section: l.section || null })),
       corrections: (tr.corrections || []).length, cleanup: tr.cleanup_stats || null, version: v,
       // the quality report, compact: overall grade, issues, and each dimension's grade + its headline value
       quality: meta.quality ? { overall: meta.quality.overall, primary_issue: meta.quality.primary_issue, secondary_issues: meta.quality.secondary_issues,

@@ -70,6 +70,10 @@ export async function listMedia({ speaker, tradition, collection, year, language
   return { items, total };
 }
 
+/** Every published item, the columns the /media listing index needs (+ dir to read its files), newest first. */
+export const mediaIndexRows = async () => queryAll(`SELECT id, slug, title, speaker, speaker_key, collection, language, year, duration_s, has_video, source_kind,
+  playback, thumb, quotes_n, crs_n, grade, priority, dir, updated_at FROM media_items WHERE state = 'done' ORDER BY updated_at DESC, id DESC`, [], 'media:index-rows');
+
 /** Filter facets for the listing: value → count, published items only. */
 export async function mediaFacets() {
   const facet = async (col) => (await queryAll(`SELECT ${col} v, COUNT(*) n FROM media_items WHERE state = 'done' AND ${col} IS NOT NULL GROUP BY ${col} ORDER BY n DESC LIMIT 200`, [], `media:facet-${col}`));
@@ -152,3 +156,18 @@ export async function repairList({ minGrade = 'C', limit = 500 } = {}) {
 export const gradeCounts = async () => queryAll(`SELECT grade, primary_issue, COUNT(*) n FROM media_items WHERE state = 'done' GROUP BY grade, primary_issue ORDER BY grade, n DESC`, [], 'media:grade-counts');
 /** Does another item hold the same speaker + title (another copy of the talk)? */
 export const sameTalkCount = async (speaker, title) => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE speaker = ? AND title = ? AND state != 'duplicate'`, [speaker, title], 'media:same-talk'))?.n || 0;
+
+// ── name and work links (migration 166) ──
+/** Replace an item's links (one transaction through the single writer). rows: [{ para, paragraph_index, kind, text, entity_id,
+ *  target_doc_id, section, url, confidence, basis }] */
+export async function replaceMediaLinks(itemId, rows = []) {
+  const ops = [{ sql: 'DELETE FROM media_links WHERE item_id = ?', args: [Number(itemId)] }];
+  for (const r of rows) ops.push({ sql: `INSERT INTO media_links (item_id, para, paragraph_index, kind, text, entity_id, target_doc_id, section, url, confidence, basis)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [Number(itemId), r.para, r.paragraph_index ?? null, r.kind, r.text ?? null, r.entity_id ?? null, r.target_doc_id ?? null,
+    r.section ?? null, r.url ?? null, r.confidence ?? null, r.basis ?? null] });
+  await transaction(ops, 'media:links-replace');
+  return rows.length;
+}
+/** Talks that name a person (for a biography page's "talks that mention" list later). */
+export const mediaLinksForEntity = async (entityId, { limit = 50 } = {}) => queryAll(`SELECT l.item_id, l.para, l.paragraph_index, l.text, m.slug, m.title, m.speaker
+  FROM media_links l JOIN media_items m ON m.id = l.item_id WHERE l.entity_id = ? AND m.state = 'done' ORDER BY m.title LIMIT ?`, [Number(entityId), limit], 'media:links-entity');
