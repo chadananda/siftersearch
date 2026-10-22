@@ -1,0 +1,3 @@
+#!/bin/sh
+# /usr/local/bin/qram-flush — wrapper for scripts/ops/qram.mjs flush (storage plan R14). Flags are accepted for the unit's readability.
+exec /usr/bin/node /home/chad/sifter/siftersearch/scripts/ops/qram.mjs flush "$@"

@@ -82,6 +82,40 @@ For that reason the flush target is the NVMe and never `/crutch`.
 - On `LOWBATT`: run the same thing immediately.
 - On power return before the timer fires: cancel the timer.
 
+### 1.1 UPS ordered (10-21) and the NUT test when it arrives
+
+Chad ordered a **GoldenMate 1500VA/1000W LiFePO4** (line-interactive, sine wave, wall-mount; vendor software is Windows-only).
+Linux support is unconfirmed: one owner of a GoldenMate Pro unit reports it working with NUT on ZimaOS, without naming the
+driver ([ZimaSpace forum](https://community.zimaspace.com/t/nut-tools-support-for-golden-mate-pro-ups-in-zimaos/8109)).
+Fallback: return it for a **CyberPower CP1500PFCLCD** (NUT `usbhid-ups`, well supported).
+
+The NUT kit is in the repo, **not installed**: `deploy/nut/` (nut.conf, ups.conf, upsd.conf, upsd.users, upsmon.conf,
+upssched.conf, upssched-cmd, sifter-ups-mail, sudoers.d-sifter-ups) and `scripts/ops/ups-mail.mjs` (mails through the ops
+alert mailer; `powerdown` is a `[PAGE]`).
+
+**Test procedure (about 30 min, no SifterSearch impact until the last step):**
+1. Plug the UPS's USB into tower. `lsusb` → note the new line's `ID vvvv:pppp` and name. `dmesg | tail` → does the kernel
+   bind it as `hid-generic` / "UPS" (HID power device: good sign for `usbhid-ups`) or as a serial device (`ttyUSB`, `cdc_acm`)?
+2. `sudo apt install nut` (nut-server, nut-client). Stop the units it starts until configured.
+3. `sudo nut-scanner -U` → it prints a ready `[nutdev1]` block with `driver = …`, `vendorid`, `productid` (and `subdriver`
+   for nutdrv_qx). Copy those into `deploy/nut/ups.conf`'s `[tower]` section.
+4. Install the configs (`sudo cp deploy/nut/{nut.conf,ups.conf,upsd.conf,upsd.users,upsmon.conf,upssched.conf} /etc/nut/`;
+   `sudo chown root:nut /etc/nut/*; sudo chmod 640 /etc/nut/*`; set the password in upsd.users + upsmon.conf;
+   `sudo install -m 755 deploy/nut/upssched-cmd deploy/nut/sifter-ups-mail /usr/local/bin/`; sudoers: `sudo visudo -cf
+   deploy/nut/sudoers.d-sifter-ups && sudo install -m 440 deploy/nut/sudoers.d-sifter-ups /etc/sudoers.d/sifter-ups`).
+5. Driver order: `sudo upsdrvctl -D start tower` with **`usbhid-ups`**. If it cannot claim the device, try **`nutdrv_qx`**
+   (Megatec/Q1 protocol, common on OEM units; `port = auto`, plus `subdriver` from nut-scanner, else try `cypress`, `phoenix`,
+   `fabula`, `krauler`), then **`blazer_usb`**. If none reads `ups.status`, **return it for the CyberPower**.
+6. `sudo systemctl restart nut-server` → `upsc tower` must show `ups.status: OL`, `battery.charge`, `ups.load`,
+   `battery.runtime` (record `ups.load` in watts: replaces the [est] wall-power rows in §1).
+7. **Dry-run the events** with the hook in test mode: in `/etc/nut/upssched.conf` temporarily use
+   `CMDSCRIPT /usr/bin/env SIFTER_TEST=1 /usr/local/bin/upssched-cmd` (logs "TEST would run…" instead of acting). Start
+   `nut-monitor`. **Pull the UPS's wall plug:** within ~5 s `journalctl -t upssched-cmd -f` shows `ONBATT`, and the
+   ON BATTERY mail arrives. Plug back in before 120 s → `ONLINE`, timer cancelled. Pull again and wait 120 s → the log shows
+   `TEST would run: … sifter-powerdown.target` and `… upsmon -c fsd`. Also check `upsc tower ups.status` reads `OB` on battery.
+8. Only after R14 (RAM disk) exists: remove `SIFTER_TEST=1`, and (planned window) do one real pull to the end: the RAM disk
+   flushes, tower powers off cleanly, and comes back (BIOS: AC recovery → **Power On**, so it boots when mains returns).
+
 ---
 
 ## 2. Memory: ECC verified
@@ -373,6 +407,15 @@ After=qram-flush.service
 [Install]
 # started by upssched-cmd: `systemctl start sifter-powerdown.target && /sbin/shutdown -h now`
 ```
+
+**Prepared, not installed (10-21):** the units above are in `deploy/qram/` (srv-qram.mount, qdrant-hot.service,
+qram-flush.service/.timer, sifter-powerdown.target, wrappers qram-flush / qram-restore) and the logic in
+`scripts/ops/qram.mjs` (tests: `tests/api/qram.test.js`). Install at R14 (after the MP44, `/faster`, and the float16
+`phrases` rebuild): `sudo install -m 755 deploy/qram/qram-{flush,restore} /usr/local/bin/`; `sudo cp
+deploy/qram/*.{mount,service,timer,target} /etc/systemd/system/`; `sudo mkdir -p /faster/qram-snapshots && sudo chown
+chad: /faster/qram-snapshots`; `sudo systemctl daemon-reload`; `sudo systemctl enable --now srv-qram.mount qdrant-hot
+qram-flush.timer`. Check first: `systemd-analyze verify` (on 10-21 its only complaint was the not-yet-installed
+/usr/local/bin/qram-flush), RAM free ≥ 64 GB + headroom (§4), and the ARC cap (R13) in place.
 
 `qram-flush` is a code change (C4). For each collection in `qdrant-hot` it:
 1. compares `points_count` and the newest segment mtime with the values recorded at the last flush;

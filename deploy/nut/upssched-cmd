@@ -1,0 +1,20 @@
+#!/bin/sh
+# /usr/local/bin/upssched-cmd — called by upssched (as the nut user; needs the sudoers line in sudoers.d-sifter-ups).
+# powerdown: flush the RAM disk (sifter-powerdown.target) THEN tell upsmon to shut everything down (FSD → SHUTDOWNCMD).
+# Every event is mailed (best effort; the router is on the UPS too). SIFTER_TEST=1 logs instead of acting.
+MAIL="/usr/local/bin/sifter-ups-mail"
+log() { logger -t upssched-cmd "$*"; }
+act() { if [ "${SIFTER_TEST:-0}" = 1 ]; then log "TEST would run: $*"; else "$@"; fi; }
+case "$1" in
+  onbatt)   log "ONBATT: on battery; powering down in 120 s unless power returns"; [ -x "$MAIL" ] && "$MAIL" onbatt "tower ON BATTERY" "Power down in 120 s unless mains returns." & ;;
+  online)   log "ONLINE: mains back; power-down cancelled"; [ -x "$MAIL" ] && "$MAIL" online "tower back on mains" "Power-down cancelled." & ;;
+  powerdown)
+    log "POWERDOWN: flushing the RAM disk, then FSD"
+    [ -x "$MAIL" ] && "$MAIL" powerdown "tower POWERING DOWN" "Battery timer or LOWBATT: flushing the RAM disk and shutting down." &
+    act sudo -n /bin/systemctl start sifter-powerdown.target || log "flush failed or timed out — shutting down anyway"
+    act /sbin/upsmon -c fsd ;;
+  commbad)  log "UPS communication lost"; [ -x "$MAIL" ] && "$MAIL" commbad "tower: UPS communication lost" "upsmon cannot reach the UPS for 5 min." & ;;
+  replbatt) log "UPS reports battery needs replacing"; [ -x "$MAIL" ] && "$MAIL" replbatt "tower: UPS battery needs replacing" & ;;
+  *)        log "unknown event: $1" ;;
+esac
+wait

@@ -1,0 +1,3 @@
+#!/bin/sh
+# /usr/local/bin/qram-restore — prints qdrant `--snapshot file:collection` args for collections missing from the RAM disk.
+exec /usr/bin/node /home/chad/sifter/siftersearch/scripts/ops/qram.mjs restore "$@"

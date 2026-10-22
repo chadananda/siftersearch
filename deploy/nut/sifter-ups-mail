@@ -1,0 +1,4 @@
+#!/bin/sh
+# /usr/local/bin/sifter-ups-mail <key> "<subject>" "<text>" — mails Chad via scripts/ops/ups-mail.mjs as chad (who can read
+# .env-secrets). Best effort, 10 s cap; failures go to syslog.
+sudo -n -u chad /usr/bin/node /home/chad/sifter/siftersearch/scripts/ops/ups-mail.mjs "$@" >/dev/null 2>&1 || logger -t sifter-ups-mail "mail failed: $2"

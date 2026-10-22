@@ -1,0 +1,6 @@
+# Pulled in by NUT's upssched-cmd before a power-off: flush the RAM disk first. A normal `shutdown` gives the same order
+# (qdrant-hot's ExecStop flushes), so this target only makes the flush explicit and waitable.
+[Unit]
+Description=Flush the RAM disk before power-off (SifterSearch)
+Requires=qram-flush.service
+After=qram-flush.service

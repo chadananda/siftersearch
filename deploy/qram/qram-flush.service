@@ -1,0 +1,16 @@
+# Flush changed qdrant-hot collections to snapshots on the NVMe (storage plan §5.2). Started by qram-flush.timer and by
+# sifter-powerdown.target.
+[Unit]
+Description=Flush the RAM-disk Qdrant collections that changed
+Requires=qdrant-hot.service
+After=qdrant-hot.service
+[Service]
+Type=oneshot
+User=chad
+EnvironmentFile=/home/chad/qdrant-next/env
+Environment=QRAM_URL=http://127.0.0.1:6335
+Environment=QRAM_STORAGE=/srv/qram/storage
+Environment=QRAM_SNAPSHOTS=/faster/qram-snapshots
+Nice=10
+ExecStart=/usr/local/bin/qram-flush --all-dirty --wait
+TimeoutStartSec=900

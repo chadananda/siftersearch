@@ -1,0 +1,10 @@
+# RAM disk for qdrant-hot (storage plan §6.1, R14). Install: cp to /etc/systemd/system/, daemon-reload, enable.
+[Unit]
+Description=SifterSearch RAM disk (tmpfs, 64G, never swapped)
+[Mount]
+What=tmpfs
+Where=/srv/qram
+Type=tmpfs
+Options=size=64G,noswap,mode=0750,uid=1000,gid=1000
+[Install]
+WantedBy=local-fs.target

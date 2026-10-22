@@ -1,0 +1,5 @@
+# /etc/nut/upsd.users — set a real password at install (sudo sed -i "s/CHANGE_ME/$(openssl rand -hex 16)/" in BOTH this file
+# and upsmon.conf, same value). chmod 640, owner root:nut.
+[upsmon]
+    password = CHANGE_ME
+    upsmon primary

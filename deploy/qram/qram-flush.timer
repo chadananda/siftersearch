@@ -1,0 +1,9 @@
+# Phase 1 (no UPS): every 6 h. Phase 2 (UPS + NUT live): OnCalendar=*-*-* 03:30:00 (storage plan §5.2).
+[Unit]
+Description=Flush the RAM-disk Qdrant every 6 h (phase 1)
+[Timer]
+OnCalendar=*-*-* 00/6:30:00
+Persistent=true
+RandomizedDelaySec=120
+[Install]
+WantedBy=timers.target

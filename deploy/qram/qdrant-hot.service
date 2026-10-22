@@ -1,0 +1,32 @@
+# Qdrant HOT: rebuildable collections on the RAM disk (storage plan §6, R14). Restores missing collections from the newest
+# complete snapshot at start; flushes changed collections BEFORE SIGTERM at stop. Snapshots go straight to the NVMe.
+[Unit]
+Description=Qdrant HOT (RAM disk; rebuildable collections)
+Requires=srv-qram.mount
+After=srv-qram.mount network.target
+RequiresMountsFor=/faster/qram-snapshots
+[Service]
+User=chad
+Group=chad
+EnvironmentFile=/home/chad/qdrant-next/env
+Environment=QDRANT__STORAGE__STORAGE_PATH=/srv/qram/storage
+Environment=QDRANT__STORAGE__SNAPSHOTS_PATH=/faster/qram-snapshots
+Environment=QDRANT__SERVICE__HOST=127.0.0.1
+Environment=QDRANT__SERVICE__HTTP_PORT=6335
+Environment=QDRANT__SERVICE__GRPC_PORT=6336
+Environment=QDRANT__TELEMETRY_DISABLED=true
+Environment=QRAM_URL=http://127.0.0.1:6335
+Environment=QRAM_STORAGE=/srv/qram/storage
+Environment=QRAM_SNAPSHOTS=/faster/qram-snapshots
+ExecStartPre=/bin/mkdir -p /srv/qram/storage
+# `$$` keeps systemd from expanding the shell's command substitution
+ExecStart=/bin/sh -c 'exec /home/chad/qdrant-next/qdrant $$(/usr/local/bin/qram-restore --args)'
+ExecStop=/usr/local/bin/qram-flush --all-dirty --wait
+KillSignal=SIGTERM
+TimeoutStartSec=900
+TimeoutStopSec=900
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=1048576
+[Install]
+WantedBy=multi-user.target
