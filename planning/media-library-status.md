@@ -30,7 +30,20 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
 * **Tower thread budget**: the first A/B batch (six runs, ~42 cores) took on-tower search to 7.9–9.1 s; stopped at once,
   capped in code (≤ 4 threads per run, ≤ 2 runs, nice 19); search back to 2.9 s median / 3.6 s p90. Heavy model work is
   moving to boss's GPU (ROCm PyTorch for gfx1151 being installed).
-* **Next**: biography + work links (mentions now come out of the copy-edit pass), related talks, GPU path on boss.
+* **Name and work links** (stage `links`): people → `/biography/<id>` via the biography set + identity lookup; works →
+  the canonical copy (OceanLibrary first) via the document finder and section index; ≥ 0.8 confidence, first mention per
+  subheader section; the spoken words are the anchor. `media_links` (migration 166).
+* **Audience + moments** (stage `assess`, Sonnet tier): audience 1 open … 5 internal per talk and per section, with intro
+  ranges; 3–8 verbatim moments per talk, verified out of context, stable short keys (`/api/media/moments/:key`,
+  `/moments`, `/intro-clips`, `?audience=`). Calibration on 15 talks: 1×1, 3×4, 4×10 (rubric then tightened so convention,
+  fundraising and Covenant-breaking addresses rate 5); 71 moments kept / 40 rejected. `media_moments` (migration 167).
+* **Back-fill**: run 1894 fanned out 33 re-runs from the name pass; they carry every new stage (faithfulness, Sonnet
+  copy-edit, subheaders, links, audience, moments). The media service runs one job at a time, behind ~40 earlier runs.
+* **Boss for model work**: ROCm PyTorch 2.10 (AMD TheRock, gfx1151) installed in `~/media-gpu/venv`, GPU visible; but
+  measured per 45 s excerpt — Resemble: tower CPU×8 198 s · boss GPU 295 s · **boss CPU×16 53 s**; VoiceFixer: 48 · 157 ·
+  **10 s**. The nightly ROCm stack is slower than boss's own CPU today (MIOpen untuned, GPU reports a low-power state), so
+  remastering belongs on boss's CPU now; vLLM was not touched (GPU memory 1 GB in use). ASR already runs on boss.
+* **Next**: related talks (phase 1), GPU tuning on boss (ask before touching vLLM), a review list for flagged copy-edits.
 
 ## What is built and live
 
