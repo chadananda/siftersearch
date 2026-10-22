@@ -24,7 +24,7 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
 * **Rights**: YouTube → full (Chad 10-21), one permission record per channel (`media_channels`, switchable to clips or
   search); downloads off; local archive → clips until Chad decides.
 
-## Pilot results (as of 01:15)
+## Pilot results (as of 02:40)
 
 | item | min | enhancement → ASR input · listening | ASR (boss) | quotes linked / candidates | CRs / candidates | corrections: marks / model | $ |
 |---|---|---|---|---|---|---|---|
@@ -32,8 +32,8 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
 | Cardell, Experiences with the Guardian (1988) — pilgrim recollection | 47 | original (= light) · light (DFN worse) | RTF 0.162, 3 voices | 1 / 11 | 4 / 15 | 35 / 10 | 0.031 |
 | Nakhjavání, Talk to the Youth Q&A (1997) — Q&A | 92 | original (DFN +0.027, under the margin) · DFN | RTF 0.149, 4 voices | 26 / 28 | 9 / 20 | 103 / 26 | 0.046 |
 | "Includes Martha Root" (1932 + narration) — old tape | 3 | original · DFN | RTF 0.169 | 0 | 0 | 0 / 0 | 0.002 |
-| Furútan, Talk to the Youth (1992) — interpreted fa+en | 71 | original · DFN | in progress (interpreted mode) | | | | |
-| Chad Jones 01 (en + Romanian interpreter, rights *full*) | 48 | queued | | | | | |
+| Furútan, Talk to the Youth (1992) — accented English (11 of 12 windows English, one Persian) | 71 | original · DFN | RTF 0.146, 2 voices | 6 / 12 | 3 / 5 | 141 marks+model | 0.025 |
+| Chad Jones 01 (English + Romanian interpreter; rights *full*) | 48 | original · DFN | first pass single-language; re-run queued in interpreted mode (12-window detection) | | | | 0.026 |
 | Furútan, Persian talk (YouTube) · Hooper Dunbar ×2 (YouTube) | | **held: YouTube bot check** (see problems) | | | | | |
 
 **Enhancement**: measured, not assumed. The ASR probe (same three minutes, Whisper turbo) preferred the ORIGINAL in all
@@ -41,8 +41,9 @@ five: the light chain lowered confidence on the low-bitrate 16 kHz MP3s (Grossma
 beat the original by the 0.03 margin. DeepFilterNet raised the blind SNR by 24–40 dB and became the listening copy in 4 of 5
 (not for Cardell, where it cost recognition). So: transcription from the original, listening from the enhanced copy.
 
-**Quotations** (read by hand: 31 linked quotations across the three talks): **30 / 31 point to the right passage** (97 %);
-the one doubtful is a Summons paragraph at overlap 0.50. Three of the right ones link a secondary copy (Bahá’í World
+**Quotations** (read by hand: 37 linked quotations across four talks): **34 / 37 point to the right passage** (92 %);
+the doubtful ones are a Summons paragraph at overlap 0.50 and two in Furútan's talk (a common phrase, "I want to be
+sacrificed for you" → Tablets of the Divine Plan at 0.40; and a line linked to a neighbouring paragraph). Three of the right ones link a secondary copy (Bahá’í World
 Faith, an Ocean of Lights PDF note, a scraped Sacred Writings book) rather than the canonical book. The spoken gate (0.45 /
 0.25) added two correct links (Gleanings "Now that ye have refused the Most Great Peace…" at 0.30, Íqán at 0.43).
 Nakhjavání's talk had 28 candidates, 26 linked.
@@ -90,13 +91,26 @@ alignment and the probes run on boss and do not touch tower's CPU or memory band
 * A hard link shares the source file's inode: the first item's `chmod 0444` made the source file read-only. Restored
   (644) and the code no longer chmods a linked original.
 
-## Links
+## Links (live)
 
-* Preview of the site with the media pages (not production): https://bbc25cc2-siftersearch.chadananda.workers.dev/media
-* A standalone page (production API): https://siftersearch.com/api/media/cardell-experiences-with-the-guardian-1988/file/page.html?v=1
-* A range link: https://bbc25cc2-siftersearch.chadananda.workers.dev/media/cardell-experiences-with-the-guardian-1988?t=754-812
+* **https://siftersearch.com/media** — the listing (deployed 02:06, site 2.187.727, after the preview was verified: clips,
+  full playback through the Worker's R2 cache with Range 206, word click, highlight, FAB, follow-scroll, ranges, mobile)
+* A player with quotations and cross-references: https://siftersearch.com/media/nakhjavani-talk-to-the-youth-q-and-a-1997
+* A range: https://siftersearch.com/media/cardell-experiences-with-the-guardian-1988?t=754-812
+* Full playback (Chad's own talk): https://siftersearch.com/media/jones-01-thursday
+* Standalone page: https://siftersearch.com/api/media/cardell-experiences-with-the-guardian-1988/file/page.html?v=1
 * API: https://siftersearch.com/api/media (listing, `?q=` searches all transcripts), `/api/media/<slug>`
-* Pipeline state: `GET /api/media/admin/status` (internal key) · review on tower: `node scripts/media/review.mjs --quotes`
+* Pipeline state: `GET /api/media/admin/status` (internal key) · on tower: `node scripts/media/review.mjs --quotes`
+
+## The full run (queued 02:15–02:45, running unattended)
+
+* `media-scan` of `/tank/media/Baha'i/talks` (449 recordings; byte-identical copies — the Acuto folders repeat the Dunbar
+  course — are recorded as duplicates, not processed twice), one item at a time, then the YouTube queue (881 talks) behind
+  it. YouTube items wait while YouTube is cooling down; local files go on.
+* `media-vocab` rebuilds the vocabulary from the entity graph (the first build found no names — fixed).
+* A failing recording is recorded on its item (`GET /api/media/admin/status`), never mailed per file.
+* Robustness: long stages run detached (boss job / tower process) and survive deploys; tower-side work is capped at 8
+  threads; a held YouTube item is retried once per 6-hour cool-down.
 
 ## YouTube is blocked for now
 
