@@ -52,7 +52,8 @@ describe('GET /api/media/index', () => {
     expect(it.w).toHaveLength(48);
     expect(body.speakers).toEqual([expect.objectContaining({ k: 'hooper-dunbar', c: 1, role: 'uhj', p: expect.stringContaining('/img/cdn/siftersearch.com/media-speakers/hooper-dunbar.jpg') })]);
     expect(res.headers['cache-control']).toMatch(/s-maxage=300/);
-    await new Promise((r) => setTimeout(r, 50));
+    // the cache file is written in the background: wait for it (bounded) instead of a fixed 50 ms, which a loaded machine missed
+    for (let i = 0; i < 100 && !existsSync(cacheFile); i++) await new Promise((r) => setTimeout(r, 50));
     expect(existsSync(cacheFile)).toBe(true);
   });
 });
