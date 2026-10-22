@@ -1,6 +1,468 @@
 {
-  "generated": "2026-10-21T13:43:04.372Z",
+  "generated": "2026-10-22T09:06:31.376Z",
   "entries": [
+    {
+      "hash": "2362c284",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Interpreted talks detected on twelve 12-second windows (two languages each heard twice) — six 30 s windows heard only the dominant language in Chad's English + Romanian talk; a file-name title that names nothing (\"01 (thursday)\", \"Class 5\") gives way to the recording's own subject",
+      "scope": "media"
+    },
+    {
+      "hash": "2b22b265",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Proposed corrections trimmed to the name itself (context words copied on both sides, swallowed common words, a name inside a longer span) — on the 2nd Grossmann run 50 of 57 refused edits become right fixes and no spoken word is lost; the prompt asks for the name only; speaker photos: Wikidata searched without diacritics, the Bahá'í religion claim accepted, Commons by file name as fallback",
+      "scope": "media"
+    },
+    {
+      "hash": "349eaff6",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Storage plan rollout status (R1–R8 done, R5 re-measure pending); backup check timings as measured",
+      "scope": null
+    },
+    {
+      "hash": "4140aea7",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The vocabulary's entity names come from LIVE graph entities by importance (the first build filtered on religion/mention_count, which these records do not carry, and found none)",
+      "scope": "media"
+    },
+    {
+      "hash": "8a09c007",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A failing recording is recorded on its item (admin status, morning summary) instead of raising an ops alert mail per file; ordered YouTube queue (881 talks: curated → single-speaker channels → other Hands/UHJ); status update",
+      "scope": "media"
+    },
+    {
+      "hash": "0e631a2b",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Vectors-backup never blocks indexing — own 'backup' lane; a store whose writer runs (or starts mid-copy) is skipped for the next run, not waited on; big stores verified by header + page count + size + random rows vs source (seconds) instead of a full quick_check (240 GB on the HDD fell to ~1 MB/s after 4 h); a complete .partial is adopted, never copied again (completion marker, or header/size/source-unchanged for older copies); failed copies kept as .bad",
+      "scope": "ops"
+    },
+    {
+      "hash": "d125d0ce",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A between-stages yield also records the stage it stops before (so the resumed run skips its from/reslug)",
+      "scope": "media"
+    },
+    {
+      "hash": "610cc8eb",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A resumed media-item run continues at its saved stage and never redoes its from / reslug (a from:web run redid web on every resume; a resumed reslug would have deleted its own new folder)",
+      "scope": "media"
+    },
+    {
+      "hash": "f188b83c",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The correction guard keeps every spoken word — an edit whose first or last word is a common English word the term lacks is refused (pilot: \"Shogu Effendi told\" → \"Shoghi Effendi\" dropped \"told\"; 4 such of 74 model edits, all now refused, no correct fix lost)",
+      "scope": "media"
+    },
+    {
+      "hash": "a1cc65aa",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "AAC clips (and the .m4a file) where the browser cannot play Ogg Opus (older Safari), in the site player and the standalone page",
+      "scope": "media"
+    },
+    {
+      "hash": "1f6ec5f9",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "No orphaned children on a drain — the transcribe stage waits for both its children (allSettled) and every live child is killed when the process exits (10-22 00:13 an ssh to boss outlived its drained service); the media service gets its own small entry (api/workers/media-worker.js) so other services' deploys do not drain a transcription",
+      "scope": "media"
+    },
+    {
+      "hash": "75b57d80",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Interpreted talks found by an UNFORCED language ID on six excerpts (the probe forced the hinted language, so Furútan's Persian+English talk read as English-only); the majority language when one; short misheard names are suspects too (\"Beloved Bob\" → the Báb)",
+      "scope": "media"
+    },
+    {
+      "hash": "dfdb6317",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Waveform normalisation looped instead of spreading 220k values (a 92-minute talk overflowed the stack and failed its web stage); a speaker written in the file name stands when the naming model leaves it out",
+      "scope": "media"
+    },
+    {
+      "hash": "d7db39e0",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Tower-side media processes capped at 8 threads (measured: diarization at 12 threads pushed search p90 to 3.8 s / max 5.3 s; at 8 search stayed at median 1.6 s, p90 2.1 s); the transcript completes a surname-only speaker; search-latency probe (fresh queries, API client)",
+      "scope": "media"
+    },
+    {
+      "hash": "20712188",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "YouTube rate limit (tower got 429 after the target-list discovery) holds the item without a failure alert and starts no YouTube work for a 6-hour cool-down (local files go on), then one polite retry; yt-dlp uses deno (user space) for YouTube's player; transcript search hits only at timed paragraphs",
+      "scope": "media"
+    },
+    {
+      "hash": "f014a562",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Dewey's media drop folder is watched (a dropped file queues the pipeline); diarization fragments folded into their neighbours (the pilot lecture came back as 94 voices) and unnamed voices get no label; status draft",
+      "scope": "media"
+    },
+    {
+      "hash": "7ec96925",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Cross-references only from canonical works (book authority ≥ 7, most authoritative yes wins — the pilot linked a visitor's account); a clipped name is offered its full form (\"Baola\" → Bahá’u’lláh, the pilot corrected it to Bahá)",
+      "scope": "media"
+    },
+    {
+      "hash": "e0641b51",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Drain-aware media pipeline — every long child process (ffmpeg, DeepFilterNet, ASR on boss, diarization) is killed the moment its service drains and the run yields with { resume: { id, stage } } (finished stages are the checkpoint; the gate on boss kills its work when the ssh session goes); diarization runs on tower beside the boss ASR; media jobs move to their own service siftersearch-media (OPS_ONLY) so a transcription never parks the reports lanes (10-21 watch finding)",
+      "scope": "media"
+    },
+    {
+      "hash": "4625e3ae",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Diarization on English speaker embeddings (wespeaker, threshold 0.7: a 92-min Q&A → 12 voices, the zh model gave 131); boss always runs this checkout's media_tool.py (installed through the gate); any two languages in the probe → interpreted mode (Chad's talks are English + Romanian)",
+      "scope": "media"
+    },
+    {
+      "hash": "b9b54fc7",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Search hits on a transcript link to the recording (▶ Listen → /media/<slug>?p=<paragraph_index>, mapped at ingest); force-reslug of a pilot item retires its transcript doc; diarize subcommand + English speaker embeddings (threshold tuning); pilot review script (reads the archive folders only)",
+      "scope": "media"
+    },
+    {
+      "hash": "c38fe3cf",
+      "date": "2026-10-21",
+      "type": "Docs",
+      "description": "Add single-speaker channels and Persian-name searches to the YouTube talk targets",
+      "scope": "media"
+    },
+    {
+      "hash": "d6291c3a",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Vectors-backup finishes the store in progress through an update drain (SIGHUP) and yields between stores; only a stop aborts — SQLite backup cannot resume, and another agent's deploy discarded 101 of 240 GB (10-21)",
+      "scope": "ops"
+    },
+    {
+      "hash": "6350ae6b",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "/media listing + /media/<slug> player (click a word to play, paragraph play buttons, FAB, follow-scroll, playing-word highlight token, ?t= ranges, Media Session, quotes + cross-reference breakouts); YouTube items default to full playback with a per-channel permission record (Chad 10-21), download off; Dewey add_media tool; linked originals never chmodded (a hard link shares the source's inode); the model's naming wins over folder guesses; reslug for unpublished items; Python tools forced to CPU",
+      "scope": "media"
+    },
+    {
+      "hash": "a7f43fb2",
+      "date": "2026-10-21",
+      "type": "Docs",
+      "description": "YouTube target list of talks by Hands of the Cause, UHJ members and the curated Sacred Traditions sheet",
+      "scope": "media"
+    },
+    {
+      "hash": "f063e75e",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Media library pipeline — per-item archive (original linked read-only, light/DeepFilterNet enhancement chosen by ASR probe), WhisperX on boss via a forced-command key (RTF 0.06 vs 0.36 on tower) with diarization (sherpa-onnx) and an interpreted-talk mode, vocabulary-guarded name corrections (Haiku role, diff logged, never rewording), quotations → SourceHunt + citation gates, attributed teachings → verified cross-references, transcript.md (para ids + t0/t1) ingested as collection Media with content_source_links, standalone page.html player, Opus/AAC + waveform; media_items/media_channels (migration 163), /api/media (listing, transcript search, Range files, signed ≤180 s clips), ops jobs media-scan/media-item/media-vocab (lane media), Worker R2 cache for versioned media files",
+      "scope": "media"
+    },
+    {
+      "hash": "bede88e1",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "Media library plan — per-item archive, enhancement by measurement, WhisperX + vocabulary corrections, quote linking via SourceHunt, /media pages, Worker R2 cache, rights; spend allowance for the pilot (≤ $20/day to 11-05, approved by Chad 10-21)",
+      "scope": "media"
+    },
+    {
+      "hash": "34a781d6",
+      "date": "2026-10-21",
+      "type": "Docs",
+      "description": "Meilisearch retired (CLAUDE.md, scripts/CLAUDE.md); plan §6.6 phase 0 — temp_path must stay on the RAM disk, usable hot capacity ≈ 22 GB, crash-test results",
+      "scope": null
+    },
+    {
+      "hash": "597c50a5",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Qdrant-hot temp_path stays on the RAM disk — CLI snapshot recovery renames temp → storage and cannot cross filesystems (every restore panicked in the tower crash test); indexer keeps RAM-disk free ≥ hot data so snapshot temp files fit",
+      "scope": "qram"
+    },
+    {
+      "hash": "2aa5bff6",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "A snapshot rewrites every segment.json, so counting it made each flush mark the next one dirty (measured on tower) — dirty detection ignores segment.json",
+      "scope": "qram"
+    },
+    {
+      "hash": "24c73f0b",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Phase 0 hot layer — new phrase points go to phrases_hot on the RAM-disk Qdrant (qdrant-hot :6335) while phrases on /fast stays frozen; search merges main + hot (hot down = main only); phrases writes mirrored; coverage counts both; units marked upserted=2 + phrase-hot-reconcile re-sends what a crash lost (queued at every indexer start); RAM-full guard; units at phase-0 values (44G, snapshots on /crutch) (storage plan §6.6)",
+      "scope": "index"
+    },
+    {
+      "hash": "f7e16181",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "RAM-disk kit (deploy/qram units, scripts/ops/qram.mjs flush/restore + tests) and NUT kit (deploy/nut, upssched powerdown hook, ups-mail) — committed, NOT installed; plan §1.1 UPS test procedure, §6.4 install steps",
+      "scope": "prep"
+    },
+    {
+      "hash": "54553550",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Retire Meilisearch — MEILISEARCH_ENABLED=false (no client, no startup spawn, no outbox deletes), health follows Qdrant, system-checks no longer probes :7700, daily backup skips the Meili rsync, cache prewarm no longer gated on Meili, Meili-only paths return empty (storage plan R8)",
+      "scope": "search"
+    },
+    {
+      "hash": "281ce13b",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Vectors-backup job — online SQLite backup of the three paid vectors.db stores to /tank/sifter/backups/vectors, paced in a nice-19 worker thread, copy verified (page count, size, quick/integrity check) before rotation; index lane, refuses while a writer runs, yields to drains (storage plan R1)",
+      "scope": "ops"
+    },
+    {
+      "hash": "424e10c8",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "MP44 specs (TLC, 2,000 TBW, HMB), 7910 slot map (Slot1 Gen3 x4 CPU1 free), drive install steps, keep GTX 1070 / pull K4000",
+      "scope": null
+    },
+    {
+      "hash": "c9fc194f",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "Storage wear + RAM plan — measured baseline (NVMe 6.2 TB/day 10-13..20 → 0.09 after MEILI_WRITES=off), RAM budget, RAM disk + flush, per-device layout, UPS sizing",
+      "scope": null
+    },
+    {
+      "hash": "9ea40d83",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "SearchGrounded reads bound claims once per process, not a LIKE scan per cluster",
+      "scope": "grounding"
+    },
+    {
+      "hash": "d3378832",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Anís overview off the event loop; docs listing counts once and pages by id",
+      "scope": "api"
+    },
+    {
+      "hash": "fb7e5cf2",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Paragraph-authors refuses without ids unless all:true; saved labels read once (an existsSync per sort comparison over 57,903 books froze the reports event loop — 'silent', cancel and drain unheard, 10-21)",
+      "scope": "authorship"
+    },
+    {
+      "hash": "f1bb121f",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Paragraph-authors checkpoints every 20 windows and yields to a drain INSIDE a book, resuming there (10-21: a 15,600-paragraph Bahá'í World volume held the reports service draining 70+ min)",
+      "scope": "authorship"
+    },
+    {
+      "hash": "8cf87ae2",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Db-ship's /tank copy takes no auto-snapshots (inherited from tank, they break incrementals); system-checks reads the newest SHIP snapshot (paged CRITICAL on a 'frequent' auto-snap)",
+      "scope": "backup"
+    },
+    {
+      "hash": "ef30afc5",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Doc-overlap report — per section, paragraphs held word for word elsewhere (Compilation of Compilations: extract what is missing, then retire)",
+      "scope": "ops"
+    },
+    {
+      "hash": "5e42366f",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Reparse flag — a parser change (Ibid expansion) reaches unchanged files; ingest-files { reparse }",
+      "scope": "ingest"
+    },
+    {
+      "hash": "dae2e020",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Ibid. expanded to the reference it stands for — compilation trailers and footnotes (Chad 10-21: 'Ibid does not work for RAG'); library files keep their wording",
+      "scope": "ingest"
+    },
+    {
+      "hash": "e3737a91",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "'(Ibid.)' trailers inherit the previous trailer's writer; a trailer ending ')<br>' before its attribute tail is still a trailer (10-21: ~110 Lights of Guidance quotations had no author)",
+      "scope": "authorship"
+    },
+    {
+      "hash": "3a1b58c1",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Db-ship never touches the 03:00 backup's snapshot; system-checks 'DB ship to /tank' freshness; prune-db-snapshots retired (db-ship keeps one SSD base). Plan: citations render as markdown links, DB stores the source record",
+      "scope": "backup"
+    },
+    {
+      "hash": "e4793108",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Db-ship — hourly ZFS snapshot on the SSD, incremental send to /tank, SSD keeps one base (Chad 10-21: fast backup then migrate off SSD; same for /faster)",
+      "scope": "backup"
+    },
+    {
+      "hash": "347e3995",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "Chad's 10-21 decisions — on-behalf letters are Shoghi Effendi's; page cites link by quoted text",
+      "scope": "citations"
+    },
+    {
+      "hash": "5bc6d6d9",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "An SLP wait yields to the drain — job id kept on the item, resumed on the next start (10-21: a 2-hour OCR wait held the reports service draining 1 h+, parking citation linking and intake)",
+      "scope": "dewey-ocr"
+    },
+    {
+      "hash": "228562bb",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Claims layer gets a 1.5 s grace after the passages — a cold claim worker after a restart held people-ish searches ~10 s (10-21: 10.6 s for 'the role of the Hands of the Cause today', passages ready at 1.5 s)",
+      "scope": "search"
+    },
+    {
+      "hash": "bd27646a",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Roadmap served stale while it refreshes; telemetry's hourly call waits 90 s — /grounding/status timed out (20 s) on cold recomputes after restarts (gateway timeouts 10-20, 10-21)",
+      "scope": "grounding"
+    },
+    {
+      "hash": "259091c4",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "/grounding/exhaustion serves a background-refreshed snapshot (pending right after a restart); system-checks treats pending as unknown — after deploys the cold 600-book walk took >30 s and paged CRITICAL 'nothing queued' (10-21 12:49)",
+      "scope": "grounding"
+    },
+    {
+      "hash": "7e15af74",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "_add-anyway overrides an earlier 'already held' decline (Egea's 'Abdu'l-Bahá in the West was declined as held in Promulgation — it quotes it, it is not it)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "f947ac2d",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Hidden traditions — meta.yaml hidden: true ('Other': works spanning traditions, related ideas, contrasting beliefs) are searchable but never shelved or listed (shelves, library religions, public API) (Chad 10-21)",
+      "scope": "library"
+    },
+    {
+      "hash": "1fd7625e",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Paced by the clock — overnight 2 at a time, by day one at a time with a 30 s pause; a sweep's back-to-back holdings checks drove Qdrant reads to ~300 MB/s and search to 4–14 s (paused: 2–4 s)",
+      "scope": "dewey-sweep"
+    },
+    {
+      "hash": "2db2c910",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "Daily backup runs at idle CPU+IO priority (nice 19, ionice idle) — at normal priority its quick_check took search to 39 s; idled live, search back to 0.3–0.6 s",
+      "scope": "backup"
+    },
+    {
+      "hash": "3506cd29",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "Daily backup at 03:00 local — tower cron runs on MST, so '0 10' (meant as 10 UTC) ran the 58 GB copy + quick_check at 10 AM, slowing search to 2–7 s every morning",
+      "scope": "backup"
+    },
+    {
+      "hash": "948d1a31",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "One hunt at a time + 1.5 s pause — two concurrent hunts took search from 1.6 s to 5–11 s (10-21 09:49)",
+      "scope": "source-links-build"
+    },
+    {
+      "hash": "aa9b75c8",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Fall back to the next considered candidate that is the writer's own work; approved spend for citation linking (Chad 10-21)",
+      "scope": "source-links-build"
+    },
+    {
+      "hash": "8e4e8749",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "The SOURCE decides whose words — a compilation's voice tag is only a hint (sample 2 rejected Hidden Words / Messages to America matches); source must be one of the four writers' own non-compilation work",
+      "scope": "source-links-build"
+    },
+    {
+      "hash": "0fff17b7",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "Gates from the 10-21 sample — hunt only real quotations (≥12 words, not metadata/citation fragments, the writer's own voice) in library/OceanLibrary compilations; accept only the writer's OWN work (not mirrors, not secondary books) with verbatim or ≥0.3 shared wording; rejects counted by reason",
+      "scope": "source-links-build"
+    },
+    {
+      "hash": "fb61e80e",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Source-links-build — compilation quotes of Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi → their source via SourceHunt (own work first, compilation excluded; verbatim vs translation); dry run default, limit, drain-resumable, own 'linking' lane (Chad 10-21)",
+      "scope": "ops"
+    },
+    {
+      "hash": "33b76324",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Source-link-coverage report — per compilation, paragraphs voicing Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi and how many link to their source (citation plan step 0, Chad 10-21)",
+      "scope": "ops"
+    },
+    {
+      "hash": "c6093c1e",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "One letter, one answer — a range found as chapter and dated message listed once",
+      "scope": "letters"
+    },
+    {
+      "hash": "10f28e47",
+      "date": "2026-10-21",
+      "type": "Other",
+      "description": "Every citation a real link — detect → resolve (source links, refs, letter lookup, pagination, phrase) → linkFor → render → measure (Chad 10-21)",
+      "scope": null
+    },
+    {
+      "hash": "0af772a0",
+      "date": "2026-10-21",
+      "type": "New",
+      "description": "Letter lookup — an author's letters as books, chapters and dated messages (work_letters, migr 162; letters-index job; GET /api/library/letters?date&title&book → canonical link + reader range). Timeline benchmark: 97/103 top-1 (rest = same-date twins / sub-section). schema-contract test now parses single-line CREATEs (Chad 10-21)",
+      "scope": "library"
+    },
+    {
+      "hash": "0dac8a84",
+      "date": "2026-10-21",
+      "type": "Fixed",
+      "description": "/document/:id generates the slug when none is stored (OceanLibrary canonicals — every Anís/Jafar citation to them landed on /library/); a duplicate holding a slug yields to its canonical on the page (Bahá’í Administration served dup #16278 not #20880)",
+      "scope": "library"
+    },
     {
       "hash": "969f9ce6",
       "date": "2026-10-21",
@@ -3038,472 +3500,474 @@
       "type": "New",
       "description": "Translator-coverage report (content.translator by basis, translation_by, docs.translators)",
       "scope": "ops"
-    },
-    {
-      "hash": "ce248044",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "A verbatim citation inherits the source's translator unless it records its own",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "3ebbf1a6",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Translated_by on the source and each citing publication (Chad 10-12)",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "488eb2eb",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Book-level OceanLibrary quote lookup falls back to 8 then 5 opening words (copies differ inside the quote)",
-      "scope": "links"
-    },
-    {
-      "hash": "ac1bb240",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Aborted deploy resets to the running commit and retries (alert at 3); smoke DB tests 15 s; textFragment replaces linkFor's marker",
-      "scope": "deploy+links"
-    },
-    {
-      "hash": "7db48689",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Quote markers escape ( ) ' ! * ~; no range hash on Ocean of Lights file downloads; book lookup picks the OceanLibrary site copy",
-      "scope": "links"
-    },
-    {
-      "hash": "e89de3d4",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Book-level OceanLibrary links with a known quote become range links (our main-library Gleanings → OL paragraph)",
-      "scope": "links"
-    },
-    {
-      "hash": "48afe374",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Ocean of Lights ranges from OUR stored copy of the page — no request to oceanoflights.org at search time (Chad 10-12)",
-      "scope": "links"
-    },
-    {
-      "hash": "037c9c3c",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Every OceanLibrary / Ocean of Lights link leaves as a range link (Chad 10-12)",
-      "scope": "links"
-    },
-    {
-      "hash": "112f2d1e",
-      "date": "2026-10-12",
-      "type": "Refactor",
-      "description": "Drop leftover MIN from Ocean of Lights phrase builder",
-      "scope": "links"
-    },
-    {
-      "hash": "9da9abbd",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Ocean of Lights phrase uniqueness ignores case — #(The)(knowledge) and #(the knowledge)(and the) (Chad 10-12)",
-      "scope": "links"
-    },
-    {
-      "hash": "6875305b",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Ocean of Lights phrases grow from ONE word — '(The)' when it is the first occurrence (Chad 10-12)",
-      "scope": "links"
-    },
-    {
-      "hash": "3f5ff378",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Ocean of Lights phrases start at two words — #(the knowledge)(and the) (Chad 10-12)",
-      "scope": "links"
-    },
-    {
-      "hash": "537255dc",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Ocean of Lights range links #(start)(end)[$N] — shortest first-occurrence fragments from the page's own text",
-      "scope": "links"
-    },
-    {
-      "hash": "2eedd83c",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Slow-query fixes; writer transaction follow-up",
-      "scope": "worklist"
-    },
-    {
-      "hash": "a1cb5c5d",
-      "date": "2026-10-12",
-      "type": "Performance",
-      "description": "Roadmap cache 30 min (was 5, per API worker) — ~1,600 slow 'doc_id IN (898)' reads/day at up to 62 s",
-      "scope": "bio"
-    },
-    {
-      "hash": "62d041d0",
-      "date": "2026-10-12",
-      "type": "Performance",
-      "description": "Cut the steady slow-read load (~100/h) — spend rollups every 30 min not 5, bio cost cache 1 h, retired graph_enriched count dropped; alert leads with last-3h top offender",
-      "scope": null
-    },
-    {
-      "hash": "286b7ac9",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Slow-queries report — slow_query_log per hour × process × caller (live cause vs stale 24h entry)",
-      "scope": "ops"
-    },
-    {
-      "hash": "23ba3e04",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "A collection card stands inline in the tradition's general row (no row of its own); opens below it",
-      "scope": "library"
-    },
-    {
-      "hash": "272fa10b",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Sikh books waiting on OceanLibrary export",
-      "scope": "worklist"
-    },
-    {
-      "hash": "90102a3a",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Sikh OL shelf follow-up",
-      "scope": "worklist"
-    },
-    {
-      "hash": "0d88daa3",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Swedenborg back to an author shelf (not an OL collection); Sahih Muslim + Revival of Religious Learnings box inside their shelves with Bindery covers",
-      "scope": "library"
-    },
-    {
-      "hash": "5b63b9ab",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Collection shelves close into one boxed card (Mormon Texts, Deuterocanonical, Swedenborg); ops retire-duplicates job",
-      "scope": "library"
-    },
-    {
-      "hash": "91a56659",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Handoff 10-12 06:30",
-      "scope": "worklist"
-    },
-    {
-      "hash": "33fa8a81",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "OPS_ONLY second worker (siftersearch-reports-carry) — carry runs start beside a slow batch without restarting the main worker",
-      "scope": "ops"
-    },
-    {
-      "hash": "9fb1fd71",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Overnight — carry 1,806 books, phrase indexes",
-      "scope": "worklist"
-    },
-    {
-      "hash": "351139ea",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Repair retires the links the pre-fix carry fanned out (keeps the corrected targets)",
-      "scope": "carry"
-    },
-    {
-      "hash": "f87d04c8",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Carry-repair in the quick lane",
-      "scope": "ops"
-    },
-    {
-      "hash": "947cfe15",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Merges pool HyPE questions (pilot lost 18%); graph mentions matched as INTEGER (were never found); links only to genuine split pieces; carry-repair re-applies from the backup; verify counts questions",
-      "scope": "carry"
-    },
-    {
-      "hash": "912d0c56",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Quick-report lane — a 1000-book batch can no longer hold spend/audit/verify answers for hours",
-      "scope": "ops"
-    },
-    {
-      "hash": "515f940d",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Bulk re-ingest jobs run localOnly — they must never spend (the ingester's Arabic branch called Haiku per file mid-batch, unapproved); spend report; quick reports jump the queue",
-      "scope": "ops"
-    },
-    {
-      "hash": "13511320",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Carry-verify — enrichment per book before (backup) vs after the carry",
-      "scope": "ops"
-    },
-    {
-      "hash": "f89ebe9e",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Reingest-carry runs ahead of plain re-ingest batches",
-      "scope": "ops"
-    },
-    {
-      "hash": "2fb5ce77",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Reingest-carry — re-ingest drifted books and carry HyPE/context/authorship/originals, alignment links and entity mentions to the new rows holding the same words (backup first, paced); ops worker lanes (phrase-index beside the main lane); overnight window 22–07",
-      "scope": "ops"
-    },
-    {
-      "hash": "61076264",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Bulk work never starves the system — ingest-files paces itself (writer ≤ ⅓ busy) and backs off while writer/API are slow; whole-table reports + phrase indexing run only 02:00–06:00; ops-worker batch reads reported as info, not 'blocking'",
-      "scope": "ops"
-    },
-    {
-      "hash": "e5845216",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Phrase-index job — the indexer runs as a child of the ops worker, one at a time (two indexers + a scan locked the vector store and killed a 10-11 run); spend cap required",
-      "scope": "ops"
-    },
-    {
-      "hash": "9e5577ba",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Watchdog stands down for 2 min after a deploy swap and re-checks 45 s before restarting — a [PAGE] fired 19 s into a 10-11 deploy for a worker the deploy brought up itself",
-      "scope": "ops"
-    },
-    {
-      "hash": "dffd19d0",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "CTAI originals from the English — done",
-      "scope": "worklist"
-    },
-    {
-      "hash": "e4cdef4f",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Reingest impact + decision",
-      "scope": "worklist"
-    },
-    {
-      "hash": "d92f628f",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Originals paragraphed FROM THE ENGLISH — ctai-originals writes one original-language library file per CTAI host (1 ¶ per English ¶, align + pn), ingest-files ingests in the ops worker, ctai-link adds 1:1 content_alignment (basis ctai-pair)",
-      "scope": "ctai"
-    },
-    {
-      "hash": "c4a2b8b5",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Reingest-impact report — enrichment (HyPE, translations, originals, alignment, mentions) on the drifted rows a re-ingest would replace; safe list vs at-risk books",
-      "scope": "ops"
-    },
-    {
-      "hash": "c8c7c54c",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Block-mismatch report — sample rows that don't match their file blocks (server-side); ops.mjs --ids",
-      "scope": "ops"
-    },
-    {
-      "hash": "2732021f",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Ops.mjs flushes stdout before exit (results were cut at 64 KB); updater kills only API strays older than 3 min (not a worker draining after reload)",
-      "scope": "ops"
-    },
-    {
-      "hash": "080c8b58",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "CTAI audit findings + plan",
-      "scope": "worklist"
-    },
-    {
-      "hash": "6dfef4c4",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Ctai-audit counts English rows carrying their CTAI original (original_text) + site ids",
-      "scope": "ops"
-    },
-    {
-      "hash": "d0e99901",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Block-attrs counts only TEXT rows as unmatched (headings never get ids); full need-reingest list",
-      "scope": "ops"
-    },
-    {
-      "hash": "1ebf0f8c",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Ctai-audit report — per CTAI English host: pn coverage, alignment rows (stale either side), per original: aligned share, pn match, one-to-many",
-      "scope": "ops"
-    },
-    {
-      "hash": "3af19fb2",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Ids written to library files",
-      "scope": "worklist"
-    },
-    {
-      "hash": "ea2d6ba4",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Block-attrs job — copies file ids/pn onto stored rows by word hash (no re-ingest, no re-embedding), run by siftersearch-reports over the ops API",
-      "scope": "ops"
-    },
-    {
-      "hash": "741d1b8d",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Stable paragraph ids + display numbers in library source files ({id=\"para_N\" pn=\"M\"}, OL-compatible; ids permanent, verse pn kept); a file with ids keeps its blocks at ingest. Pilot: 3 books re-ingested via the API, pn served",
-      "scope": "library"
-    },
-    {
-      "hash": "1446ec91",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Seg tail done; phrase coverage measured",
-      "scope": "worklist"
-    },
-    {
-      "hash": "7c0eeefc",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Ops API + legacy tool migration",
-      "scope": "worklist"
-    },
-    {
-      "hash": "808f36d9",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Scripts and agents never touch production data — internal ops API (/api/admin/ops/reports, ops.mjs CLI); health scans are reports run one at a time by siftersearch-reports (migr 146); ratchet: 195 scripts frozen, shrink-only",
-      "scope": "ops"
-    },
-    {
-      "hash": "0576b9fc",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Coverage report — paragraphs with phrase units vs live, per scope × religion, $ to finish (phrase-store-repo)",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "c8dbb2b3",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Reader verified; stale API workers found + fixed",
-      "scope": "worklist"
-    },
-    {
-      "hash": "b9541561",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Stray-API check ignores a deploy's own test API (< 3 min old)",
-      "scope": "ops"
-    },
-    {
-      "hash": "806c24bf",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Stale API cluster workers from 10-10 kept serving day-old code on :7839 — updater kills API processes PM2 doesn't manage after every swap, stops the test API for sure (SIGKILL after 5 s); critical path checks for strays",
-      "scope": "deploy"
-    },
-    {
-      "hash": "aa796d03",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Cleanup progress",
-      "scope": "worklist"
-    },
-    {
-      "hash": "ac2e513a",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "'Se' = Swedish here; relabelled docs re-sync their paragraphs",
-      "scope": "library"
-    },
-    {
-      "hash": "7bd1b306",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "ONE language normaliser (ISO 639-1); ingest + sites-ingest normalise; DB backfill script (per-doc, re-sync)",
-      "scope": "library"
-    },
-    {
-      "hash": "6ed455c0",
-      "date": "2026-10-11",
-      "type": "Fixed",
-      "description": "Writer up <5 min after a deploy = starting, not an [ACTION]; retire the legacy SQL migration runner (failed every deploy since 10-10) — npm run migrate = the JS runner. feat(bakeoff): scoring, blind judge (bakeoff-judge role, policy stage model-eval), multilingual scenarios; anisCraft per-model request shape + onUsage",
-      "scope": "ops"
-    },
-    {
-      "hash": "43e64c07",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Library cleanup first, then concepts/HyPE/Anís/Dewey; Strata waits on xswarm move",
-      "scope": "worklist"
-    },
-    {
-      "hash": "456d31f1",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Tidy",
-      "scope": "worklist"
-    },
-    {
-      "hash": "8d26ff90",
-      "date": "2026-10-11",
-      "type": "Docs",
-      "description": "Index caught up, drop explained, hollow check clean; bake-off plan",
-      "scope": "worklist"
-    },
-    {
-      "hash": "5f0b844c",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Hollow-report — live books with no text or with empty rows, per source (integrity-repo)",
-      "scope": "ops"
-    },
-    {
-      "hash": "cb27285a",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Content-drop tripwire can be rebased after an explained retirement (--rebase-integrity, recorded)",
-      "scope": "ops"
-    },
-    {
-      "hash": "5b83eafe",
-      "date": "2026-10-11",
-      "type": "New",
-      "description": "Deletions-report — soft-deleted paragraphs per day × source (integrity-repo), to explain a content-drop alert",
-      "scope": "ops"
     }
   ],
   "grouped": {
+    "2026-10-22": [
+      {
+        "hash": "2362c284",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Interpreted talks detected on twelve 12-second windows (two languages each heard twice) — six 30 s windows heard only the dominant language in Chad's English + Romanian talk; a file-name title that names nothing (\"01 (thursday)\", \"Class 5\") gives way to the recording's own subject",
+        "scope": "media"
+      },
+      {
+        "hash": "2b22b265",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Proposed corrections trimmed to the name itself (context words copied on both sides, swallowed common words, a name inside a longer span) — on the 2nd Grossmann run 50 of 57 refused edits become right fixes and no spoken word is lost; the prompt asks for the name only; speaker photos: Wikidata searched without diacritics, the Bahá'í religion claim accepted, Commons by file name as fallback",
+        "scope": "media"
+      },
+      {
+        "hash": "349eaff6",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Storage plan rollout status (R1–R8 done, R5 re-measure pending); backup check timings as measured",
+        "scope": null
+      },
+      {
+        "hash": "4140aea7",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The vocabulary's entity names come from LIVE graph entities by importance (the first build filtered on religion/mention_count, which these records do not carry, and found none)",
+        "scope": "media"
+      },
+      {
+        "hash": "8a09c007",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A failing recording is recorded on its item (admin status, morning summary) instead of raising an ops alert mail per file; ordered YouTube queue (881 talks: curated → single-speaker channels → other Hands/UHJ); status update",
+        "scope": "media"
+      },
+      {
+        "hash": "0e631a2b",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Vectors-backup never blocks indexing — own 'backup' lane; a store whose writer runs (or starts mid-copy) is skipped for the next run, not waited on; big stores verified by header + page count + size + random rows vs source (seconds) instead of a full quick_check (240 GB on the HDD fell to ~1 MB/s after 4 h); a complete .partial is adopted, never copied again (completion marker, or header/size/source-unchanged for older copies); failed copies kept as .bad",
+        "scope": "ops"
+      },
+      {
+        "hash": "d125d0ce",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A between-stages yield also records the stage it stops before (so the resumed run skips its from/reslug)",
+        "scope": "media"
+      },
+      {
+        "hash": "610cc8eb",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A resumed media-item run continues at its saved stage and never redoes its from / reslug (a from:web run redid web on every resume; a resumed reslug would have deleted its own new folder)",
+        "scope": "media"
+      },
+      {
+        "hash": "f188b83c",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The correction guard keeps every spoken word — an edit whose first or last word is a common English word the term lacks is refused (pilot: \"Shogu Effendi told\" → \"Shoghi Effendi\" dropped \"told\"; 4 such of 74 model edits, all now refused, no correct fix lost)",
+        "scope": "media"
+      },
+      {
+        "hash": "a1cc65aa",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "AAC clips (and the .m4a file) where the browser cannot play Ogg Opus (older Safari), in the site player and the standalone page",
+        "scope": "media"
+      },
+      {
+        "hash": "1f6ec5f9",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "No orphaned children on a drain — the transcribe stage waits for both its children (allSettled) and every live child is killed when the process exits (10-22 00:13 an ssh to boss outlived its drained service); the media service gets its own small entry (api/workers/media-worker.js) so other services' deploys do not drain a transcription",
+        "scope": "media"
+      },
+      {
+        "hash": "75b57d80",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Interpreted talks found by an UNFORCED language ID on six excerpts (the probe forced the hinted language, so Furútan's Persian+English talk read as English-only); the majority language when one; short misheard names are suspects too (\"Beloved Bob\" → the Báb)",
+        "scope": "media"
+      }
+    ],
     "2026-10-21": [
+      {
+        "hash": "dfdb6317",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Waveform normalisation looped instead of spreading 220k values (a 92-minute talk overflowed the stack and failed its web stage); a speaker written in the file name stands when the naming model leaves it out",
+        "scope": "media"
+      },
+      {
+        "hash": "d7db39e0",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Tower-side media processes capped at 8 threads (measured: diarization at 12 threads pushed search p90 to 3.8 s / max 5.3 s; at 8 search stayed at median 1.6 s, p90 2.1 s); the transcript completes a surname-only speaker; search-latency probe (fresh queries, API client)",
+        "scope": "media"
+      },
+      {
+        "hash": "20712188",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "YouTube rate limit (tower got 429 after the target-list discovery) holds the item without a failure alert and starts no YouTube work for a 6-hour cool-down (local files go on), then one polite retry; yt-dlp uses deno (user space) for YouTube's player; transcript search hits only at timed paragraphs",
+        "scope": "media"
+      },
+      {
+        "hash": "f014a562",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Dewey's media drop folder is watched (a dropped file queues the pipeline); diarization fragments folded into their neighbours (the pilot lecture came back as 94 voices) and unnamed voices get no label; status draft",
+        "scope": "media"
+      },
+      {
+        "hash": "7ec96925",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Cross-references only from canonical works (book authority ≥ 7, most authoritative yes wins — the pilot linked a visitor's account); a clipped name is offered its full form (\"Baola\" → Bahá’u’lláh, the pilot corrected it to Bahá)",
+        "scope": "media"
+      },
+      {
+        "hash": "e0641b51",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Drain-aware media pipeline — every long child process (ffmpeg, DeepFilterNet, ASR on boss, diarization) is killed the moment its service drains and the run yields with { resume: { id, stage } } (finished stages are the checkpoint; the gate on boss kills its work when the ssh session goes); diarization runs on tower beside the boss ASR; media jobs move to their own service siftersearch-media (OPS_ONLY) so a transcription never parks the reports lanes (10-21 watch finding)",
+        "scope": "media"
+      },
+      {
+        "hash": "4625e3ae",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Diarization on English speaker embeddings (wespeaker, threshold 0.7: a 92-min Q&A → 12 voices, the zh model gave 131); boss always runs this checkout's media_tool.py (installed through the gate); any two languages in the probe → interpreted mode (Chad's talks are English + Romanian)",
+        "scope": "media"
+      },
+      {
+        "hash": "b9b54fc7",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Search hits on a transcript link to the recording (▶ Listen → /media/<slug>?p=<paragraph_index>, mapped at ingest); force-reslug of a pilot item retires its transcript doc; diarize subcommand + English speaker embeddings (threshold tuning); pilot review script (reads the archive folders only)",
+        "scope": "media"
+      },
+      {
+        "hash": "c38fe3cf",
+        "date": "2026-10-21",
+        "type": "Docs",
+        "description": "Add single-speaker channels and Persian-name searches to the YouTube talk targets",
+        "scope": "media"
+      },
+      {
+        "hash": "d6291c3a",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Vectors-backup finishes the store in progress through an update drain (SIGHUP) and yields between stores; only a stop aborts — SQLite backup cannot resume, and another agent's deploy discarded 101 of 240 GB (10-21)",
+        "scope": "ops"
+      },
+      {
+        "hash": "6350ae6b",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "/media listing + /media/<slug> player (click a word to play, paragraph play buttons, FAB, follow-scroll, playing-word highlight token, ?t= ranges, Media Session, quotes + cross-reference breakouts); YouTube items default to full playback with a per-channel permission record (Chad 10-21), download off; Dewey add_media tool; linked originals never chmodded (a hard link shares the source's inode); the model's naming wins over folder guesses; reslug for unpublished items; Python tools forced to CPU",
+        "scope": "media"
+      },
+      {
+        "hash": "a7f43fb2",
+        "date": "2026-10-21",
+        "type": "Docs",
+        "description": "YouTube target list of talks by Hands of the Cause, UHJ members and the curated Sacred Traditions sheet",
+        "scope": "media"
+      },
+      {
+        "hash": "f063e75e",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Media library pipeline — per-item archive (original linked read-only, light/DeepFilterNet enhancement chosen by ASR probe), WhisperX on boss via a forced-command key (RTF 0.06 vs 0.36 on tower) with diarization (sherpa-onnx) and an interpreted-talk mode, vocabulary-guarded name corrections (Haiku role, diff logged, never rewording), quotations → SourceHunt + citation gates, attributed teachings → verified cross-references, transcript.md (para ids + t0/t1) ingested as collection Media with content_source_links, standalone page.html player, Opus/AAC + waveform; media_items/media_channels (migration 163), /api/media (listing, transcript search, Range files, signed ≤180 s clips), ops jobs media-scan/media-item/media-vocab (lane media), Worker R2 cache for versioned media files",
+        "scope": "media"
+      },
+      {
+        "hash": "bede88e1",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "Media library plan — per-item archive, enhancement by measurement, WhisperX + vocabulary corrections, quote linking via SourceHunt, /media pages, Worker R2 cache, rights; spend allowance for the pilot (≤ $20/day to 11-05, approved by Chad 10-21)",
+        "scope": "media"
+      },
+      {
+        "hash": "34a781d6",
+        "date": "2026-10-21",
+        "type": "Docs",
+        "description": "Meilisearch retired (CLAUDE.md, scripts/CLAUDE.md); plan §6.6 phase 0 — temp_path must stay on the RAM disk, usable hot capacity ≈ 22 GB, crash-test results",
+        "scope": null
+      },
+      {
+        "hash": "597c50a5",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Qdrant-hot temp_path stays on the RAM disk — CLI snapshot recovery renames temp → storage and cannot cross filesystems (every restore panicked in the tower crash test); indexer keeps RAM-disk free ≥ hot data so snapshot temp files fit",
+        "scope": "qram"
+      },
+      {
+        "hash": "2aa5bff6",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "A snapshot rewrites every segment.json, so counting it made each flush mark the next one dirty (measured on tower) — dirty detection ignores segment.json",
+        "scope": "qram"
+      },
+      {
+        "hash": "24c73f0b",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Phase 0 hot layer — new phrase points go to phrases_hot on the RAM-disk Qdrant (qdrant-hot :6335) while phrases on /fast stays frozen; search merges main + hot (hot down = main only); phrases writes mirrored; coverage counts both; units marked upserted=2 + phrase-hot-reconcile re-sends what a crash lost (queued at every indexer start); RAM-full guard; units at phase-0 values (44G, snapshots on /crutch) (storage plan §6.6)",
+        "scope": "index"
+      },
+      {
+        "hash": "f7e16181",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "RAM-disk kit (deploy/qram units, scripts/ops/qram.mjs flush/restore + tests) and NUT kit (deploy/nut, upssched powerdown hook, ups-mail) — committed, NOT installed; plan §1.1 UPS test procedure, §6.4 install steps",
+        "scope": "prep"
+      },
+      {
+        "hash": "54553550",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Retire Meilisearch — MEILISEARCH_ENABLED=false (no client, no startup spawn, no outbox deletes), health follows Qdrant, system-checks no longer probes :7700, daily backup skips the Meili rsync, cache prewarm no longer gated on Meili, Meili-only paths return empty (storage plan R8)",
+        "scope": "search"
+      },
+      {
+        "hash": "281ce13b",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Vectors-backup job — online SQLite backup of the three paid vectors.db stores to /tank/sifter/backups/vectors, paced in a nice-19 worker thread, copy verified (page count, size, quick/integrity check) before rotation; index lane, refuses while a writer runs, yields to drains (storage plan R1)",
+        "scope": "ops"
+      },
+      {
+        "hash": "424e10c8",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "MP44 specs (TLC, 2,000 TBW, HMB), 7910 slot map (Slot1 Gen3 x4 CPU1 free), drive install steps, keep GTX 1070 / pull K4000",
+        "scope": null
+      },
+      {
+        "hash": "c9fc194f",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "Storage wear + RAM plan — measured baseline (NVMe 6.2 TB/day 10-13..20 → 0.09 after MEILI_WRITES=off), RAM budget, RAM disk + flush, per-device layout, UPS sizing",
+        "scope": null
+      },
+      {
+        "hash": "9ea40d83",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "SearchGrounded reads bound claims once per process, not a LIKE scan per cluster",
+        "scope": "grounding"
+      },
+      {
+        "hash": "d3378832",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Anís overview off the event loop; docs listing counts once and pages by id",
+        "scope": "api"
+      },
+      {
+        "hash": "fb7e5cf2",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Paragraph-authors refuses without ids unless all:true; saved labels read once (an existsSync per sort comparison over 57,903 books froze the reports event loop — 'silent', cancel and drain unheard, 10-21)",
+        "scope": "authorship"
+      },
+      {
+        "hash": "f1bb121f",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Paragraph-authors checkpoints every 20 windows and yields to a drain INSIDE a book, resuming there (10-21: a 15,600-paragraph Bahá'í World volume held the reports service draining 70+ min)",
+        "scope": "authorship"
+      },
+      {
+        "hash": "8cf87ae2",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Db-ship's /tank copy takes no auto-snapshots (inherited from tank, they break incrementals); system-checks reads the newest SHIP snapshot (paged CRITICAL on a 'frequent' auto-snap)",
+        "scope": "backup"
+      },
+      {
+        "hash": "ef30afc5",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Doc-overlap report — per section, paragraphs held word for word elsewhere (Compilation of Compilations: extract what is missing, then retire)",
+        "scope": "ops"
+      },
+      {
+        "hash": "5e42366f",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Reparse flag — a parser change (Ibid expansion) reaches unchanged files; ingest-files { reparse }",
+        "scope": "ingest"
+      },
+      {
+        "hash": "dae2e020",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Ibid. expanded to the reference it stands for — compilation trailers and footnotes (Chad 10-21: 'Ibid does not work for RAG'); library files keep their wording",
+        "scope": "ingest"
+      },
+      {
+        "hash": "e3737a91",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "'(Ibid.)' trailers inherit the previous trailer's writer; a trailer ending ')<br>' before its attribute tail is still a trailer (10-21: ~110 Lights of Guidance quotations had no author)",
+        "scope": "authorship"
+      },
+      {
+        "hash": "3a1b58c1",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Db-ship never touches the 03:00 backup's snapshot; system-checks 'DB ship to /tank' freshness; prune-db-snapshots retired (db-ship keeps one SSD base). Plan: citations render as markdown links, DB stores the source record",
+        "scope": "backup"
+      },
+      {
+        "hash": "e4793108",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Db-ship — hourly ZFS snapshot on the SSD, incremental send to /tank, SSD keeps one base (Chad 10-21: fast backup then migrate off SSD; same for /faster)",
+        "scope": "backup"
+      },
+      {
+        "hash": "347e3995",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "Chad's 10-21 decisions — on-behalf letters are Shoghi Effendi's; page cites link by quoted text",
+        "scope": "citations"
+      },
+      {
+        "hash": "5bc6d6d9",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "An SLP wait yields to the drain — job id kept on the item, resumed on the next start (10-21: a 2-hour OCR wait held the reports service draining 1 h+, parking citation linking and intake)",
+        "scope": "dewey-ocr"
+      },
+      {
+        "hash": "228562bb",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Claims layer gets a 1.5 s grace after the passages — a cold claim worker after a restart held people-ish searches ~10 s (10-21: 10.6 s for 'the role of the Hands of the Cause today', passages ready at 1.5 s)",
+        "scope": "search"
+      },
+      {
+        "hash": "bd27646a",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Roadmap served stale while it refreshes; telemetry's hourly call waits 90 s — /grounding/status timed out (20 s) on cold recomputes after restarts (gateway timeouts 10-20, 10-21)",
+        "scope": "grounding"
+      },
+      {
+        "hash": "259091c4",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "/grounding/exhaustion serves a background-refreshed snapshot (pending right after a restart); system-checks treats pending as unknown — after deploys the cold 600-book walk took >30 s and paged CRITICAL 'nothing queued' (10-21 12:49)",
+        "scope": "grounding"
+      },
+      {
+        "hash": "7e15af74",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "_add-anyway overrides an earlier 'already held' decline (Egea's 'Abdu'l-Bahá in the West was declined as held in Promulgation — it quotes it, it is not it)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "f947ac2d",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Hidden traditions — meta.yaml hidden: true ('Other': works spanning traditions, related ideas, contrasting beliefs) are searchable but never shelved or listed (shelves, library religions, public API) (Chad 10-21)",
+        "scope": "library"
+      },
+      {
+        "hash": "1fd7625e",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Paced by the clock — overnight 2 at a time, by day one at a time with a 30 s pause; a sweep's back-to-back holdings checks drove Qdrant reads to ~300 MB/s and search to 4–14 s (paused: 2–4 s)",
+        "scope": "dewey-sweep"
+      },
+      {
+        "hash": "2db2c910",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "Daily backup runs at idle CPU+IO priority (nice 19, ionice idle) — at normal priority its quick_check took search to 39 s; idled live, search back to 0.3–0.6 s",
+        "scope": "backup"
+      },
+      {
+        "hash": "3506cd29",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "Daily backup at 03:00 local — tower cron runs on MST, so '0 10' (meant as 10 UTC) ran the 58 GB copy + quick_check at 10 AM, slowing search to 2–7 s every morning",
+        "scope": "backup"
+      },
+      {
+        "hash": "948d1a31",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "One hunt at a time + 1.5 s pause — two concurrent hunts took search from 1.6 s to 5–11 s (10-21 09:49)",
+        "scope": "source-links-build"
+      },
+      {
+        "hash": "aa9b75c8",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Fall back to the next considered candidate that is the writer's own work; approved spend for citation linking (Chad 10-21)",
+        "scope": "source-links-build"
+      },
+      {
+        "hash": "8e4e8749",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "The SOURCE decides whose words — a compilation's voice tag is only a hint (sample 2 rejected Hidden Words / Messages to America matches); source must be one of the four writers' own non-compilation work",
+        "scope": "source-links-build"
+      },
+      {
+        "hash": "0fff17b7",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "Gates from the 10-21 sample — hunt only real quotations (≥12 words, not metadata/citation fragments, the writer's own voice) in library/OceanLibrary compilations; accept only the writer's OWN work (not mirrors, not secondary books) with verbatim or ≥0.3 shared wording; rejects counted by reason",
+        "scope": "source-links-build"
+      },
+      {
+        "hash": "fb61e80e",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Source-links-build — compilation quotes of Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi → their source via SourceHunt (own work first, compilation excluded; verbatim vs translation); dry run default, limit, drain-resumable, own 'linking' lane (Chad 10-21)",
+        "scope": "ops"
+      },
+      {
+        "hash": "33b76324",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Source-link-coverage report — per compilation, paragraphs voicing Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi and how many link to their source (citation plan step 0, Chad 10-21)",
+        "scope": "ops"
+      },
+      {
+        "hash": "c6093c1e",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "One letter, one answer — a range found as chapter and dated message listed once",
+        "scope": "letters"
+      },
+      {
+        "hash": "10f28e47",
+        "date": "2026-10-21",
+        "type": "Other",
+        "description": "Every citation a real link — detect → resolve (source links, refs, letter lookup, pagination, phrase) → linkFor → render → measure (Chad 10-21)",
+        "scope": null
+      },
+      {
+        "hash": "0af772a0",
+        "date": "2026-10-21",
+        "type": "New",
+        "description": "Letter lookup — an author's letters as books, chapters and dated messages (work_letters, migr 162; letters-index job; GET /api/library/letters?date&title&book → canonical link + reader range). Timeline benchmark: 97/103 top-1 (rest = same-date twins / sub-section). schema-contract test now parses single-line CREATEs (Chad 10-21)",
+        "scope": "library"
+      },
+      {
+        "hash": "0dac8a84",
+        "date": "2026-10-21",
+        "type": "Fixed",
+        "description": "/document/:id generates the slug when none is stored (OceanLibrary canonicals — every Anís/Jafar citation to them landed on /library/); a duplicate holding a slug yields to its canonical on the page (Bahá’í Administration served dup #16278 not #20880)",
+        "scope": "library"
+      },
       {
         "hash": "969f9ce6",
         "date": "2026-10-21",
@@ -6558,470 +7022,6 @@
         "date": "2026-10-12",
         "type": "New",
         "description": "Translator-coverage report (content.translator by basis, translation_by, docs.translators)",
-        "scope": "ops"
-      },
-      {
-        "hash": "ce248044",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "A verbatim citation inherits the source's translator unless it records its own",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "3ebbf1a6",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Translated_by on the source and each citing publication (Chad 10-12)",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "488eb2eb",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Book-level OceanLibrary quote lookup falls back to 8 then 5 opening words (copies differ inside the quote)",
-        "scope": "links"
-      },
-      {
-        "hash": "ac1bb240",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Aborted deploy resets to the running commit and retries (alert at 3); smoke DB tests 15 s; textFragment replaces linkFor's marker",
-        "scope": "deploy+links"
-      },
-      {
-        "hash": "7db48689",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Quote markers escape ( ) ' ! * ~; no range hash on Ocean of Lights file downloads; book lookup picks the OceanLibrary site copy",
-        "scope": "links"
-      },
-      {
-        "hash": "e89de3d4",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Book-level OceanLibrary links with a known quote become range links (our main-library Gleanings → OL paragraph)",
-        "scope": "links"
-      },
-      {
-        "hash": "48afe374",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Ocean of Lights ranges from OUR stored copy of the page — no request to oceanoflights.org at search time (Chad 10-12)",
-        "scope": "links"
-      },
-      {
-        "hash": "037c9c3c",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Every OceanLibrary / Ocean of Lights link leaves as a range link (Chad 10-12)",
-        "scope": "links"
-      },
-      {
-        "hash": "112f2d1e",
-        "date": "2026-10-12",
-        "type": "Refactor",
-        "description": "Drop leftover MIN from Ocean of Lights phrase builder",
-        "scope": "links"
-      },
-      {
-        "hash": "9da9abbd",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Ocean of Lights phrase uniqueness ignores case — #(The)(knowledge) and #(the knowledge)(and the) (Chad 10-12)",
-        "scope": "links"
-      },
-      {
-        "hash": "6875305b",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Ocean of Lights phrases grow from ONE word — '(The)' when it is the first occurrence (Chad 10-12)",
-        "scope": "links"
-      },
-      {
-        "hash": "3f5ff378",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Ocean of Lights phrases start at two words — #(the knowledge)(and the) (Chad 10-12)",
-        "scope": "links"
-      },
-      {
-        "hash": "537255dc",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Ocean of Lights range links #(start)(end)[$N] — shortest first-occurrence fragments from the page's own text",
-        "scope": "links"
-      },
-      {
-        "hash": "2eedd83c",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Slow-query fixes; writer transaction follow-up",
-        "scope": "worklist"
-      },
-      {
-        "hash": "a1cb5c5d",
-        "date": "2026-10-12",
-        "type": "Performance",
-        "description": "Roadmap cache 30 min (was 5, per API worker) — ~1,600 slow 'doc_id IN (898)' reads/day at up to 62 s",
-        "scope": "bio"
-      },
-      {
-        "hash": "62d041d0",
-        "date": "2026-10-12",
-        "type": "Performance",
-        "description": "Cut the steady slow-read load (~100/h) — spend rollups every 30 min not 5, bio cost cache 1 h, retired graph_enriched count dropped; alert leads with last-3h top offender",
-        "scope": null
-      },
-      {
-        "hash": "286b7ac9",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Slow-queries report — slow_query_log per hour × process × caller (live cause vs stale 24h entry)",
-        "scope": "ops"
-      },
-      {
-        "hash": "23ba3e04",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "A collection card stands inline in the tradition's general row (no row of its own); opens below it",
-        "scope": "library"
-      },
-      {
-        "hash": "272fa10b",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Sikh books waiting on OceanLibrary export",
-        "scope": "worklist"
-      },
-      {
-        "hash": "90102a3a",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Sikh OL shelf follow-up",
-        "scope": "worklist"
-      },
-      {
-        "hash": "0d88daa3",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Swedenborg back to an author shelf (not an OL collection); Sahih Muslim + Revival of Religious Learnings box inside their shelves with Bindery covers",
-        "scope": "library"
-      },
-      {
-        "hash": "5b63b9ab",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Collection shelves close into one boxed card (Mormon Texts, Deuterocanonical, Swedenborg); ops retire-duplicates job",
-        "scope": "library"
-      },
-      {
-        "hash": "91a56659",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Handoff 10-12 06:30",
-        "scope": "worklist"
-      },
-      {
-        "hash": "33fa8a81",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "OPS_ONLY second worker (siftersearch-reports-carry) — carry runs start beside a slow batch without restarting the main worker",
-        "scope": "ops"
-      },
-      {
-        "hash": "9fb1fd71",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Overnight — carry 1,806 books, phrase indexes",
-        "scope": "worklist"
-      },
-      {
-        "hash": "351139ea",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Repair retires the links the pre-fix carry fanned out (keeps the corrected targets)",
-        "scope": "carry"
-      },
-      {
-        "hash": "f87d04c8",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Carry-repair in the quick lane",
-        "scope": "ops"
-      }
-    ],
-    "2026-10-11": [
-      {
-        "hash": "947cfe15",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Merges pool HyPE questions (pilot lost 18%); graph mentions matched as INTEGER (were never found); links only to genuine split pieces; carry-repair re-applies from the backup; verify counts questions",
-        "scope": "carry"
-      },
-      {
-        "hash": "912d0c56",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Quick-report lane — a 1000-book batch can no longer hold spend/audit/verify answers for hours",
-        "scope": "ops"
-      },
-      {
-        "hash": "515f940d",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Bulk re-ingest jobs run localOnly — they must never spend (the ingester's Arabic branch called Haiku per file mid-batch, unapproved); spend report; quick reports jump the queue",
-        "scope": "ops"
-      },
-      {
-        "hash": "13511320",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Carry-verify — enrichment per book before (backup) vs after the carry",
-        "scope": "ops"
-      },
-      {
-        "hash": "f89ebe9e",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Reingest-carry runs ahead of plain re-ingest batches",
-        "scope": "ops"
-      },
-      {
-        "hash": "2fb5ce77",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Reingest-carry — re-ingest drifted books and carry HyPE/context/authorship/originals, alignment links and entity mentions to the new rows holding the same words (backup first, paced); ops worker lanes (phrase-index beside the main lane); overnight window 22–07",
-        "scope": "ops"
-      },
-      {
-        "hash": "61076264",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Bulk work never starves the system — ingest-files paces itself (writer ≤ ⅓ busy) and backs off while writer/API are slow; whole-table reports + phrase indexing run only 02:00–06:00; ops-worker batch reads reported as info, not 'blocking'",
-        "scope": "ops"
-      },
-      {
-        "hash": "e5845216",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Phrase-index job — the indexer runs as a child of the ops worker, one at a time (two indexers + a scan locked the vector store and killed a 10-11 run); spend cap required",
-        "scope": "ops"
-      },
-      {
-        "hash": "9e5577ba",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Watchdog stands down for 2 min after a deploy swap and re-checks 45 s before restarting — a [PAGE] fired 19 s into a 10-11 deploy for a worker the deploy brought up itself",
-        "scope": "ops"
-      },
-      {
-        "hash": "dffd19d0",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "CTAI originals from the English — done",
-        "scope": "worklist"
-      },
-      {
-        "hash": "e4cdef4f",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Reingest impact + decision",
-        "scope": "worklist"
-      },
-      {
-        "hash": "d92f628f",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Originals paragraphed FROM THE ENGLISH — ctai-originals writes one original-language library file per CTAI host (1 ¶ per English ¶, align + pn), ingest-files ingests in the ops worker, ctai-link adds 1:1 content_alignment (basis ctai-pair)",
-        "scope": "ctai"
-      },
-      {
-        "hash": "c4a2b8b5",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Reingest-impact report — enrichment (HyPE, translations, originals, alignment, mentions) on the drifted rows a re-ingest would replace; safe list vs at-risk books",
-        "scope": "ops"
-      },
-      {
-        "hash": "c8c7c54c",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Block-mismatch report — sample rows that don't match their file blocks (server-side); ops.mjs --ids",
-        "scope": "ops"
-      },
-      {
-        "hash": "2732021f",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Ops.mjs flushes stdout before exit (results were cut at 64 KB); updater kills only API strays older than 3 min (not a worker draining after reload)",
-        "scope": "ops"
-      },
-      {
-        "hash": "080c8b58",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "CTAI audit findings + plan",
-        "scope": "worklist"
-      },
-      {
-        "hash": "6dfef4c4",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Ctai-audit counts English rows carrying their CTAI original (original_text) + site ids",
-        "scope": "ops"
-      },
-      {
-        "hash": "d0e99901",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Block-attrs counts only TEXT rows as unmatched (headings never get ids); full need-reingest list",
-        "scope": "ops"
-      },
-      {
-        "hash": "1ebf0f8c",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Ctai-audit report — per CTAI English host: pn coverage, alignment rows (stale either side), per original: aligned share, pn match, one-to-many",
-        "scope": "ops"
-      },
-      {
-        "hash": "3af19fb2",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Ids written to library files",
-        "scope": "worklist"
-      },
-      {
-        "hash": "ea2d6ba4",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Block-attrs job — copies file ids/pn onto stored rows by word hash (no re-ingest, no re-embedding), run by siftersearch-reports over the ops API",
-        "scope": "ops"
-      },
-      {
-        "hash": "741d1b8d",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Stable paragraph ids + display numbers in library source files ({id=\"para_N\" pn=\"M\"}, OL-compatible; ids permanent, verse pn kept); a file with ids keeps its blocks at ingest. Pilot: 3 books re-ingested via the API, pn served",
-        "scope": "library"
-      },
-      {
-        "hash": "1446ec91",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Seg tail done; phrase coverage measured",
-        "scope": "worklist"
-      },
-      {
-        "hash": "7c0eeefc",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Ops API + legacy tool migration",
-        "scope": "worklist"
-      },
-      {
-        "hash": "808f36d9",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Scripts and agents never touch production data — internal ops API (/api/admin/ops/reports, ops.mjs CLI); health scans are reports run one at a time by siftersearch-reports (migr 146); ratchet: 195 scripts frozen, shrink-only",
-        "scope": "ops"
-      },
-      {
-        "hash": "0576b9fc",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Coverage report — paragraphs with phrase units vs live, per scope × religion, $ to finish (phrase-store-repo)",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "c8dbb2b3",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Reader verified; stale API workers found + fixed",
-        "scope": "worklist"
-      },
-      {
-        "hash": "b9541561",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Stray-API check ignores a deploy's own test API (< 3 min old)",
-        "scope": "ops"
-      },
-      {
-        "hash": "806c24bf",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Stale API cluster workers from 10-10 kept serving day-old code on :7839 — updater kills API processes PM2 doesn't manage after every swap, stops the test API for sure (SIGKILL after 5 s); critical path checks for strays",
-        "scope": "deploy"
-      },
-      {
-        "hash": "aa796d03",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Cleanup progress",
-        "scope": "worklist"
-      },
-      {
-        "hash": "ac2e513a",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "'Se' = Swedish here; relabelled docs re-sync their paragraphs",
-        "scope": "library"
-      },
-      {
-        "hash": "7bd1b306",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "ONE language normaliser (ISO 639-1); ingest + sites-ingest normalise; DB backfill script (per-doc, re-sync)",
-        "scope": "library"
-      },
-      {
-        "hash": "6ed455c0",
-        "date": "2026-10-11",
-        "type": "Fixed",
-        "description": "Writer up <5 min after a deploy = starting, not an [ACTION]; retire the legacy SQL migration runner (failed every deploy since 10-10) — npm run migrate = the JS runner. feat(bakeoff): scoring, blind judge (bakeoff-judge role, policy stage model-eval), multilingual scenarios; anisCraft per-model request shape + onUsage",
-        "scope": "ops"
-      },
-      {
-        "hash": "43e64c07",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Library cleanup first, then concepts/HyPE/Anís/Dewey; Strata waits on xswarm move",
-        "scope": "worklist"
-      },
-      {
-        "hash": "456d31f1",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Tidy",
-        "scope": "worklist"
-      },
-      {
-        "hash": "8d26ff90",
-        "date": "2026-10-11",
-        "type": "Docs",
-        "description": "Index caught up, drop explained, hollow check clean; bake-off plan",
-        "scope": "worklist"
-      },
-      {
-        "hash": "5f0b844c",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Hollow-report — live books with no text or with empty rows, per source (integrity-repo)",
-        "scope": "ops"
-      },
-      {
-        "hash": "cb27285a",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Content-drop tripwire can be rebased after an explained retirement (--rebase-integrity, recorded)",
-        "scope": "ops"
-      },
-      {
-        "hash": "5b83eafe",
-        "date": "2026-10-11",
-        "type": "New",
-        "description": "Deletions-report — soft-deleted paragraphs per day × source (integrity-repo), to explain a content-drop alert",
         "scope": "ops"
       }
     ]
