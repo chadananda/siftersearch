@@ -15,7 +15,8 @@ export const escapeMarkup = (s) => String(s ?? '').replace(/&/g, '&amp;').replac
 
 /** Quote size by length: short lines large, long passages smaller (and cut at a word with an ellipsis past max). */
 export function quoteFit(text, max = 260) {
-  let t = String(text || '').replace(/\s+/g, ' ').trim();
+  // typographer's apostrophes: the transcript has straight ones ("we're" → "we’re")
+  let t = String(text || '').replace(/\s+/g, ' ').trim().replace(/(\w)'(\w)/g, '$1’$2');
   if (t.length > max) t = `${t.slice(0, t.lastIndexOf(' ', max))}…`;
   const n = t.length;
   const size = n <= 70 ? 62 : n <= 120 ? 52 : n <= 180 ? 44 : 38;
@@ -66,8 +67,9 @@ export async function renderMomentCard(m, photo = null, { sharp = null } = {}) {
     layers.push({ input: sp.data, left: 70, top: 478 });
   }
   if (m.title) {
-    const tt = await text(sharp, `<span foreground="${C.brass}">${escapeMarkup(m.title.length > 60 ? `${m.title.slice(0, 58)}…` : m.title)}</span>`, { font: 'Gloock 24', fontfile: GLOOCK, width: 520, align: 'centre' });
-    layers.push({ input: tt.data, left: Math.round(960 - tt.info.width / 2), top: 452 });
+    // under the record: at most two centred lines inside the card (the record's column is 1186 − 734 px wide)
+    const tt = await text(sharp, `<span foreground="${C.brass}">${escapeMarkup(m.title.length > 64 ? `${m.title.slice(0, 62)}…` : m.title)}</span>`, { font: 'Gloock 24', fontfile: GLOOCK, width: 400, align: 'centre' });
+    layers.push({ input: tt.data, left: Math.max(734, Math.min(1170 - tt.info.width, Math.round(960 - tt.info.width / 2))), top: 448 });
   }
   if (photo) {
     const mask = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><circle cx="90" cy="90" r="90"/></svg>');

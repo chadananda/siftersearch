@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-22T15:17:32.976Z",
+  "generated": "2026-10-22T15:24:47.159Z",
   "entries": [
+    {
+      "hash": "6f355021",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "MOMENTS — shareable moment pages, quote cards, inline moment cards (Chad 10-22)",
+      "scope": "media"
+    },
     {
       "hash": "619d072c",
       "date": "2026-10-22",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "No multi-second freezes after start — claims read by id range; exclusion list via partial indexes, no count",
       "scope": "boot"
-    },
-    {
-      "hash": "02956729",
-      "date": "2026-10-12",
-      "type": "Performance",
-      "description": "Warm-ups start 3 s after listen; claim text folded per page (2 s synchronous index build → paged)",
-      "scope": "boot"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "6f355021",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "MOMENTS — shareable moment pages, quote cards, inline moment cards (Chad 10-22)",
+        "scope": "media"
+      },
       {
         "hash": "619d072c",
         "date": "2026-10-22",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-12",
         "type": "Performance",
         "description": "No multi-second freezes after start — claims read by id range; exclusion list via partial indexes, no count",
-        "scope": "boot"
-      },
-      {
-        "hash": "02956729",
-        "date": "2026-10-12",
-        "type": "Performance",
-        "description": "Warm-ups start 3 s after listen; claim text folded per page (2 s synchronous index build → paged)",
         "scope": "boot"
       }
     ]

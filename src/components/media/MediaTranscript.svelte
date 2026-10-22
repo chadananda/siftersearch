@@ -208,7 +208,7 @@
   .quote-insert .insert-cite { color: var(--radio-ink-soft); }
   .quote-insert .insert-cite a { color: var(--radio-ink); text-decoration-color: var(--radio-amber); }
   .quote-insert .insert-cite a:hover { color: var(--radio-amber); }
-  .xref-insert { background: var(--radio-walnut-deep); color: var(--radio-on-dark);
+  .xref-insert { background: var(--radio-walnut-deep); color: var(--radio-on-dark); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-brass) 40%, transparent);
     background-image: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--tint, var(--radio-brass)) 30%, transparent), transparent 70%); }
   .xref-insert .insert-tag { color: var(--radio-brass-bright); }
   .xref-insert .claim { font-family: system-ui, sans-serif; font-size: 0.95rem; line-height: 1.5; opacity: 0.88; margin-bottom: 0.4rem; }
