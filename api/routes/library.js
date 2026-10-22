@@ -30,7 +30,7 @@ import { linkFor, readerUrl } from '../lib/source-links.js';
 import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
-import { slugifyPath, generateDocSlug, parseDocSlug, resolveByTitlePart } from '../lib/slug.js';
+import { slugifyPath, generateDocSlug, parseDocSlug, resolveByTitlePart, byPathApiLocation } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument, hashContent } from '../services/ingester.js';
@@ -1826,7 +1826,7 @@ Return ONLY the description text, no quotes or formatting.`;
         const meant = resolveByTitlePart(slug, candidates);
         if (meant?.slug) {
           reply.header('Cache-Control', 'public, max-age=3600');
-          return reply.redirect(`/library/${religionSlug}/${slugifyPath(meant.collection || '')}/${meant.slug}`, 301);
+          return reply.redirect(byPathApiLocation(`/library/${religionSlug}/${slugifyPath(meant.collection || '')}/${meant.slug}`, request.url), 301);
         }
       }
     }
@@ -1847,7 +1847,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
         // HTTP 301 Moved Permanently - SEO friendly, but limit cache to 1 hour
         reply.header('Cache-Control', 'public, max-age=3600');
-        return reply.redirect(redirect.new_path, 301);
+        return reply.redirect(byPathApiLocation(redirect.new_path, request.url), 301);
       }
 
       // Try partial slug match: find docs where slug ends with requested slug
@@ -1875,7 +1875,7 @@ Return ONLY the description text, no quotes or formatting.`;
           `, [requestedPath, correctPath, partialMatch.id]).catch(() => {});
           // HTTP 301 Moved Permanently - SEO friendly, but limit cache to 1 hour
           reply.header('Cache-Control', 'public, max-age=3600');
-          return reply.redirect(correctPath, 301);
+          return reply.redirect(byPathApiLocation(correctPath, request.url), 301);
         }
       }
 

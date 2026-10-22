@@ -209,3 +209,13 @@ export function resolveByTitlePart(slug, candidates = []) {
   const exact = hits.filter((d) => d.slug && slugTitlePart(d.slug) === want);
   return exact.length === 1 ? exact[0] : null;
 }
+
+/**
+ * A by-path redirect's Location: the canonical API path, never the HTML page — a fetch() follows it, so a page URL fed
+ * HTML to JSON callers (10-22). The SSR reader maps /api/library/by-path → /library for browsers. Keeps the query string.
+ * pagePath: '/library/<religion>/<collection>/<slug>'; rawUrl: the request's url (for ?limit=&offset=).
+ */
+export function byPathApiLocation(pagePath, rawUrl = '') {
+  const q = String(rawUrl).indexOf('?');
+  return `${String(pagePath).replace(/^\/library\//, '/api/library/by-path/')}${q >= 0 ? String(rawUrl).slice(q) : ''}`;
+}

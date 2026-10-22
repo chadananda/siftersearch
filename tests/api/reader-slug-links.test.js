@@ -47,3 +47,13 @@ describe('resolveByTitlePart (stale author prefix)', () => {
     expect(resolveByTitlePart('lights-of-guidance-a-bahai-reference-file', [lights])).toBeNull();   // no prefix → not this path
   });
 });
+
+describe('byPathApiLocation (by-path redirects stay on the API)', async () => {
+  const { byPathApiLocation } = await import('../../api/lib/slug.js');
+  it('points a fetch() at the canonical API path with its query, never the HTML page', () => {
+    const page = '/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file';
+    expect(byPathApiLocation(page, '/api/library/by-path/bahai/compilations/shoghi-effendi_lights-of-guidance-a-bahai-reference-file?limit=5&offset=0'))
+      .toBe('/api/library/by-path/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file?limit=5&offset=0');
+    expect(byPathApiLocation(page, '/api/library/by-path/x/y/z')).toBe('/api/library/by-path/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file');
+  });
+});

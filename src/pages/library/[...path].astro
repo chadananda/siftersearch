@@ -42,7 +42,8 @@ if (segments.length === 3) {
         // Convert API path to frontend path
         // API returns: /library/religion/collection/slug
         // We need: /library/religion/collection/slug (same, but on frontend domain)
-        const frontendPath = location.replace(/^\/api\/library\/by-path/, '/library');
+        // the API's Location keeps its own query (?limit=1) for fetch callers; the page URL must not carry it
+        const frontendPath = new URL(location, 'https://siftersearch.com').pathname.replace(/^\/api\/library\/by-path/, '/library');
         return Astro.redirect(frontendPath, 301);
       }
     }
