@@ -206,3 +206,12 @@ export async function introClips({ limit = 40 } = {}) {
   }
   return out.sort((a, b) => a.score - b.score || (b.t1 - b.t0) - (a.t1 - a.t0)).slice(0, limit);
 }
+
+/** Record an extended portrait master (or its failure) on an existing speaker: a plain UPDATE (upsertSpeaker's INSERT needs
+ *  the name — 10-22: 89 extensions were generated and uploaded but not recorded). */
+export async function setSpeakerExtension(key, f = {}) {
+  const cols = ['ext_file', 'ext_sha', 'ext_of', 'ext_model', 'ext_prompt', 'ext_usd', 'ext_at', 'ext_error'].filter((k) => f[k] !== undefined);
+  if (!cols.length) return getSpeaker(key);
+  await transaction([{ sql: `UPDATE media_speakers SET ${cols.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE key = ?`, args: [...cols.map((k) => f[k]), now(), String(key)] }], 'media:speaker-ext');
+  return getSpeaker(key);
+}

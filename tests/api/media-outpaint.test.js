@@ -25,3 +25,17 @@ describe('outpaint', () => {
     await expect(extendPortrait(Buffer.from('x'), { w: undefined, h: undefined }, { ffmpeg, outpaint: vi.fn() })).rejects.toThrow(/no image size/);
   });
 });
+
+describe('media-portraits-extend', () => {
+  it('records through a plain update, adopts an uploaded-but-unrecorded master, never pays twice', async () => {
+    const { mediaPortraitsExtendJob } = await import('../../api/lib/ops/media-jobs.js');
+    const set = vi.fn(async () => ({}));
+    const repo = { listSpeakers: async () => [{ key: 'a', file: 'media-speakers/a.jpg', sha: 's1' }, { key: 'b', file: 'media-speakers/b.jpg', sha: 's2', ext_file: 'x', ext_of: 's2' }], setSpeakerExtension: set };
+    const fetchImpl = vi.fn(async (u) => ({ ok: /a-ext\.jpg/.test(u), arrayBuffer: async () => new Uint8Array(30000).buffer }));
+    const outpaint = { extendPortrait: vi.fn(), geminiOutpaint: vi.fn(), OUTPAINT_PROMPT: 'p' };
+    const r = await mediaPortraitsExtendJob({}, { repo, fetchImpl, outpaint, tools: {}, speakers: { putCdnPortrait: vi.fn() } });
+    expect(r).toMatchObject({ speakers: 2, kept: 1, adopted: 1, extended: 0 });
+    expect(outpaint.extendPortrait).not.toHaveBeenCalled();
+    expect(set.mock.calls[0][1]).toMatchObject({ ext_file: 'media-speakers/a-ext.jpg', ext_of: 's1' });
+  });
+});

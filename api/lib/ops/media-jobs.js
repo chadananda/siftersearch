@@ -302,6 +302,16 @@ export async function mediaPortraitsExtendJob({ keys = null, force = false, limi
   for (const s of all.slice(0, limit)) {
     if (!force && s.ext_file && s.ext_of === s.sha) { out.kept++; continue; }
     try {
+      // already generated and uploaded but never recorded (10-22: the record failed after the upload): adopt it, don't pay twice
+      if (!s.ext_file && !force) {
+        const prev = await fetchImpl(`https://siftersearch.com/img/cdn/siftersearch.com/media-speakers/${s.key}-ext.jpg?v=adopt`, { signal: AbortSignal.timeout(30000) }).catch(() => null);
+        const buf = prev?.ok ? Buffer.from(await prev.arrayBuffer()) : null;
+        if (buf && buf.length > 20000) {
+          await repo.setSpeakerExtension(s.key, { ext_file: `media-speakers/${s.key}-ext.jpg`, ext_sha: createHash('sha256').update(buf).digest('hex'), ext_of: s.sha, ext_model: model,
+            ext_prompt: op.OUTPAINT_PROMPT, ext_usd: 0.042, ext_at: new Date().toISOString(), ext_error: '' });
+          out.adopted = (out.adopted || 0) + 1; continue;
+        }
+      }
       const r = await fetchImpl(`https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, { signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error(`original HTTP ${r.status}`);
       const src = Buffer.from(await r.arrayBuffer());
@@ -312,12 +322,12 @@ export async function mediaPortraitsExtendJob({ keys = null, force = false, limi
       const ext = await op.extendPortrait(src, dims, { model, ffmpeg: (args) => tools.ffmpeg(args, { timeoutMs: 120_000 }),
         outpaint: (png) => op.geminiOutpaint(png, { model, fetchImpl }) });
       const file = await putCdnPortrait(`media-speakers/${s.key}-ext.jpg`, ext.bytes, 'image/jpeg', { fetchImpl });
-      await repo.upsertSpeaker({ key: s.key, ext_file: file, ext_sha: createHash('sha256').update(ext.bytes).digest('hex'), ext_of: s.sha, ext_model: model,
+      await repo.setSpeakerExtension(s.key, { ext_file: file, ext_sha: createHash('sha256').update(ext.bytes).digest('hex'), ext_of: s.sha, ext_model: model,
         ext_prompt: ext.prompt, ext_usd: ext.usd, ext_at: new Date().toISOString(), ext_error: '' });
       out.extended++; out.usd = Math.round((out.usd + ext.usd) * 10000) / 10000;
     } catch (err) {
       out.failed.push({ key: s.key, error: String(err.message).slice(0, 160) });
-      await repo.upsertSpeaker({ key: s.key, ext_error: String(err.message).slice(0, 300) }).catch(() => {});
+      await repo.setSpeakerExtension(s.key, { ext_error: String(err.message).slice(0, 300) }).catch(() => {});
     }
   }
   await logActivity('media', `▶ portraits extended: ${out.extended} (${out.kept} kept, ${out.failed.length} failed) · $${out.usd}`).catch(() => {});
