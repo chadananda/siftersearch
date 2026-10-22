@@ -1,6 +1,36 @@
-# Media library — status (morning of 10-22)
+# Media library — status (morning of 10-22; update at the top, afternoon of 10-22)
 
 Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `node scripts/media/review.mjs --quotes --corrections` on tower.
+
+## Update — 10-22 afternoon
+
+* **Remastering listening test** (Chad picks by ear; production enhancement unchanged): **https://claude.ai/artifact/RFWUiPQwqrkitK1VvWcTj4** (private to Chad's account until shared)
+  Four worst high-priority talks by grade (Sears at Anchorage, Rúḥíyyih Khánum at the National Convention, Collis
+  Featherstone, Sears on Covenant-breaking): original / smart EQ / Resemble Enhance / VoiceFixer, level-matched, with
+  scores and a blind mode. NISQA, original → Resemble: 1.89 → 4.71, 2.02 → 3.92, 1.86 → 3.92, 2.73 → 4.73 (VoiceFixer
+  close behind; smart EQ ±0.3). Bandwidth 4–7 kHz → 13–18 kHz. 1932 Martha Root trial: NISQA 2.77 → 4.58 (Resemble) / 4.14 (VoiceFixer), bandwidth 8.3 → 19.5 / 13.1 kHz.
+* **Faithfulness incident ("Nabips Narrative (Vol II)")**: the ASR heard *Nabeel's narrative* correctly; the
+  **name-correction pass** swapped in a junk graph title held in the vocabulary. Fixed three ways: graph names enter the
+  vocabulary without parentheticals/volumes/digits; the guard refuses any correction that adds to what was heard; and every
+  edited layer is aligned with the ASR's words after the name pass and after the copy-edit, so added content is reverted
+  (counted per item in `meta.faithfulness`, `insertions_reverted` in the quality report). Audit of all 33 items
+  (`scripts/media/audit-insertions.mjs`): **3 insertions, all by the name pass** ("(Vol II)", "Robart" → "John Robarts" ×2),
+  **0 by the copy-edit**.
+* **Copy-edit pass, rebuilt with context** (Chad: "you had the right context to see the obvious error"): ~12-minute chunks
+  plus neighbouring paragraphs, framed with speaker/title/date, using the model's own knowledge of Bahá'í names, works and
+  Shoghi Effendi's transliteration. Model comparison on the pilot (5.3 h): **Sonnet tier chosen**: 209 substantive fixes
+  vs 161 (Haiku); precision on a 25-edit read 24/25 vs 25/25; seeded checklist of 38 real errors 28 applied + 8 flagged vs
+  31 + 2; **$0.23 vs $0.024 per audio hour**. Rolled out: all published items re-run from the name pass (run 1894).
+  Whisper's prompt now leads with Forerunner, Will and Testament, World Order, Covenant, Bayán, Nabíl’s Narrative.
+* **Topic subheaders**: a statement or a question at each shift of subject (~one per 3–5 min), Contents panel + `#slug`
+  deep links, markdown headings in transcript.md. ~$0.003 per talk.
+* **Citations are links**: "— ‘Abdu’l-Bahá, Tablets of the Divine Plan" is itself the link; no "read in context".
+* **Quality grade** in the pipeline + `/admin/media` (repair list grouped by fix chain, per-dimension report) + a small
+  public badge. Back-fill queued (run 1884).
+* **Tower thread budget**: the first A/B batch (six runs, ~42 cores) took on-tower search to 7.9–9.1 s; stopped at once,
+  capped in code (≤ 4 threads per run, ≤ 2 runs, nice 19); search back to 2.9 s median / 3.6 s p90. Heavy model work is
+  moving to boss's GPU (ROCm PyTorch for gfx1151 being installed).
+* **Next**: biography + work links (mentions now come out of the copy-edit pass), related talks, GPU path on boss.
 
 ## What is built and live
 

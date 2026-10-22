@@ -16,11 +16,11 @@ try:
 except OSError:
     pass
 
-MEDIA_PY = os.path.expanduser('~/sifter/venvs/media/bin/python')
+MEDIA_PY = os.environ.get('MEDIA_PY', os.path.expanduser('~/sifter/venvs/media/bin/python'))
 TOOL = next((t for t in (os.path.join(os.path.dirname(os.path.abspath(__file__)), 'media_tool.py'),
              os.path.expanduser('~/sifter/siftersearch/scripts/media/media_tool.py')) if os.path.exists(t)), 'media_tool.py')
 # resemble-enhance weights (HF ResembleAI/resemble-enhance; fetched with `hf download`, no git-lfs needed)
-RESEMBLE_DIR = os.environ.get('RESEMBLE_DIR', os.path.expanduser('~/sifter/remaster/resemble-model/enhancer_stage2'))
+RESEMBLE_DIR = os.environ.get('RESEMBLE_DIR', next((d for d in (os.path.expanduser('~/sifter/remaster/resemble-model/enhancer_stage2'), os.path.expanduser('~/media-gpu/resemble-model/enhancer_stage2')) if os.path.isdir(d)), ''))
 # speech EQ for a muffled recording: rumble cut, less mud, presence + air lifted (a shelf only raises what is there), gentle
 # compression; no denoise (that is a separate decision)
 SMART_EQ = ('highpass=f=80,equalizer=f=250:t=q:w=1.0:g=-3,equalizer=f=3000:t=o:w=1.5:g=5,'
@@ -66,12 +66,14 @@ def main():
     p.add_argument('--len', type=float, default=45)
     p.add_argument('--out', required=True)
     p.add_argument('--threads', type=int, default=THREADS)
+    p.add_argument('--device', default='auto', help='auto (GPU when torch sees one: boss ROCm), cuda or cpu')
     a = p.parse_args()
     os.makedirs(a.out, exist_ok=True)
     import torch
     torch.set_num_threads(min(a.threads, THREADS))
     torch.set_num_interop_threads(1)
-    res = {'input': a.input, 'start': a.start, 'len': a.len, 'variants': {}}
+    dev = ('cuda' if torch.cuda.is_available() else 'cpu') if a.device == 'auto' else a.device
+    res = {'input': a.input, 'start': a.start, 'len': a.len, 'device': dev, 'variants': {}}
     base = os.path.join(a.out, 'original.wav')
     wav(a.input, base, a.start, a.len)
     jobs = {'original': lambda o: shutil.copy(base, o),
@@ -90,12 +92,12 @@ def main():
         from resemble_enhance.enhancer.inference import enhance
         import torchaudio
         x, sr = torchaudio.load(base)
-        y, sr2 = enhance(x.mean(0), sr, 'cpu', nfe=64, solver='midpoint', lambd=0.9, tau=0.5, run_dir=Path(RESEMBLE_DIR))
+        y, sr2 = enhance(x.mean(0), sr, dev, nfe=64, solver='midpoint', lambd=0.9, tau=0.5, run_dir=Path(RESEMBLE_DIR))
         torchaudio.save(o, y.unsqueeze(0).cpu(), sr2)
 
     def voicefixer(o):
         from voicefixer import VoiceFixer
-        VoiceFixer().restore(input=base, output=o, cuda=False, mode=0)
+        VoiceFixer().restore(input=base, output=o, cuda=dev == 'cuda', mode=0)
 
     jobs['resemble-enhance'] = resemble
     jobs['voicefixer'] = voicefixer
