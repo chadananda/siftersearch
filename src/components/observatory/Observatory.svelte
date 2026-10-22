@@ -185,7 +185,8 @@
     <div class="dial-wrap" bind:this={dialEl}>
       {#if snap}<ObservatoryDial snapshot={snap} {activeRings} {now} onhover={(t) => (tip = t)} />
       {:else}<div class="dial-skel"><span class="mono">calibrating…</span></div>{/if}
-      {#if activeRings.length}<div class="dial-note mono">◉ live: {activeRings.join(' · ')}</div>{/if}
+      <!-- always present (empty when idle) so the line appearing never moves what is below it -->
+      <div class="dial-note mono" aria-hidden={!activeRings.length}>{#if activeRings.length}◉ live: {activeRings.join(' · ')}{/if}</div>
       <ImportActivity oncounts={(c) => (importCounts = c)} />
     </div>
 
@@ -322,6 +323,9 @@
   .mute { color: var(--obs-text-faint); }
   .mast { display: flex; flex-direction: column; gap: 6px; }
   .kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 600 11.5px/1 var(--obs-mono); letter-spacing: 0.16em; color: var(--obs-accent); }
+  /* one line, always: live items arriving (snapshot age, writer, jobs) never push the headline down — CLS */
+  .kicker { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; mask-image: linear-gradient(90deg, #000 92%, transparent); }
+  .kicker > * { flex: none; }
   .kicker .sep { color: var(--obs-text-faint); }
   .led { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; animation: blink 1.8s ease-in-out infinite; }
   h1 { margin: 0; font: 600 clamp(21px, 2.4vw, 34px)/1.1 var(--obs-sans); letter-spacing: -0.025em; text-wrap: balance; }
@@ -399,7 +403,7 @@
     border: 1px solid var(--glass-edge); box-shadow: inset 0 2px 1px var(--glass-shine), inset 0 -10px 30px var(--glass-rim), var(--glass-shadow); }
   .dial-wrap > :global(svg) { position: relative; }
   .dial-skel { aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--obs-line-strong); display: grid; place-items: center; color: var(--obs-text-faint); }
-  .dial-note { text-align: center; margin-top: 6px; font-size: 11px; color: var(--obs-accent); letter-spacing: 0.08em; }
+  .dial-note { min-height: 1.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-top: 6px; font-size: 11px; color: var(--obs-accent); letter-spacing: 0.08em; }
 
   .cap { display: flex; flex-direction: column; gap: 6px; }
   .cap-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 500; }

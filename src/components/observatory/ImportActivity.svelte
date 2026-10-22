@@ -74,7 +74,8 @@
 </section>
 
 <style>
-  .imports { margin-top: 14px; border-radius: 18px; padding: 13px 14px 12px; display: flex; flex-direction: column; gap: 9px;
+  /* a fixed height (the list scrolls inside): the board arriving or changing never moves the terminal below — CLS */
+  .imports { height: 340px; min-height: 0; margin-top: 14px; border-radius: 18px; padding: 13px 14px 12px; display: flex; flex-direction: column; gap: 9px;
     background: var(--obs-panel); border: 1px solid var(--obs-line); backdrop-filter: var(--glass-blur); }
   h2 { margin: 0; font: 600 12px/1.2 var(--obs-sans); letter-spacing: 0.16em; text-transform: uppercase; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
   .h-sub { font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--obs-text-dim); }
@@ -83,7 +84,7 @@
   .counts b { color: var(--obs-text); font-weight: 600; }
   .dim { color: var(--obs-text-faint); }
   .empty { font-size: 12px; margin: 0; }
-  .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; }
+  .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; }
   .row { display: flex; flex-direction: column; gap: 3px; padding: 8px 0 0; border-top: 1px solid var(--obs-line); }
   .row.live .title::before { content: '◉ '; color: var(--obs-sweep); }
   .top { display: flex; gap: 10px; align-items: baseline; }

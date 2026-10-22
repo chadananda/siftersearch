@@ -4,7 +4,6 @@
   // On Air hero → ticker → tuner → voices → jukebox → topics → eras, plus the docked preview player. SSR renders the first
   // view from the same pure plan (src/lib/media-listing.js), so hydration keeps every card in place.
   import { onMount } from 'svelte';
-  import OnAir from './OnAir.svelte';
   import Ticker from './Ticker.svelte';
   import Voices from './Voices.svelte';
   import Jukebox from './Jukebox.svelte';
@@ -125,9 +124,10 @@
   onMount(() => {
     reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     // the ambient motion (drifts, glow, ticker) starts once the page has settled: first paint is the complete still frame
-    const wake = () => setTimeout(() => (live = true), 2500);
+    // the hero (OnAir, its own small island above) shares the gate: .room wrappers go live together
+    const wake = () => setTimeout(() => { live = true; document.querySelectorAll('.room').forEach((r) => r.classList.add('lr-live')); }, 2500);
     if (document.readyState === 'complete') wake(); else addEventListener('load', wake, { once: true });
-    for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, () => (live = true), { once: true, passive: true });
+    for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, () => { live = true; document.querySelectorAll('.room').forEach((r) => r.classList.add('lr-live')); }, { once: true, passive: true });
     if (active) loadAll();
     else (window.requestIdleCallback || ((f) => setTimeout(f, 1200)))(() => loadAll(), { timeout: 3000 });
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting && limit < cards.length) limit += 24; }, { rootMargin: '600px' });
@@ -137,7 +137,6 @@
 </script>
 
 <div class="room" class:lr-live={live}>
-  <OnAir highlights={initial.highlights || []} {speakersByKey} stats={initial.stats || {}} />
 
   <div class="mt-6"><Ticker lines={initial.ticker || []} /></div>
 

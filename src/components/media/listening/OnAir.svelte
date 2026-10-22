@@ -10,14 +10,15 @@
   import { highlightLine, duration } from '../../../lib/media-listing.js';
   import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
 
-  let { highlights = [], speakersByKey = new Map(), stats = {} } = $props();
+  // its own island (index.astro), ahead of the listing's large props, so the first frame paints early
+  let { highlights = [], speakersByKey = {}, stats = {} } = $props();
 
   const Y0 = 1930, Y1 = 2030;
   let idx = $state(0);
   let held = $state(false), visible = $state(true), reduced = $state(false);
   let root;
   const cur = $derived(highlights[idx] || null);
-  const spk = $derived(cur ? speakersByKey.get(cur.k) : null);
+  const spk = $derived(cur ? (speakersByKey instanceof Map ? speakersByKey.get(cur.k) : speakersByKey[cur.k]) : null);
   const line = $derived(cur ? highlightLine(cur) : null);
   const pos = (y) => (y ? Math.min(1, Math.max(0, (y - Y0) / (Y1 - Y0))) : 0.985);
   const needle = $derived(pos(cur?.y));

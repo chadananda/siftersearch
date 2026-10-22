@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-22T16:29:05.426Z",
+  "generated": "2026-10-22T16:40:17.338Z",
   "entries": [
+    {
+      "hash": "7e45d737",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "People dossier 39.6 s cold → bounded; OceanLibrary link lookup indexed",
+      "scope": "people, ocean-links"
+    },
+    {
+      "hash": "52ae4a42",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Copy-edit guard narrows a same-length edit to the words that change — 'all of a sudden He said' → '… he said' (Shoghi Effendi, house style) was refused as too long; it is the one word 'He'",
+      "scope": "media"
+    },
+    {
+      "hash": "7ce168da",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Short result layout — video column and full-width share actions",
+      "scope": "media"
+    },
     {
       "hash": "a1df8eaf",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "Performance",
       "description": "Bulk ingest rests ½× its work overnight (2× by day) — heavy work belongs to the quiet window",
       "scope": "ops"
-    },
-    {
-      "hash": "cc8d1310",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Grade by who wrote the passage — 'Writings' first (incl. slug-authored site copies), then institutional, secondary",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "f512703c",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Graded source lists at the bottom of each box — no separate citation shelf",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "fc341475",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "A note cites only its own target's evidence (a Nabíl fact came back labelled 'Revelation')",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "7e45d737",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "People dossier 39.6 s cold → bounded; OceanLibrary link lookup indexed",
+        "scope": "people, ocean-links"
+      },
+      {
+        "hash": "52ae4a42",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Copy-edit guard narrows a same-length edit to the words that change — 'all of a sudden He said' → '… he said' (Shoghi Effendi, house style) was refused as too long; it is the one word 'He'",
+        "scope": "media"
+      },
+      {
+        "hash": "7ce168da",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Short result layout — video column and full-width share actions",
+        "scope": "media"
+      },
       {
         "hash": "a1df8eaf",
         "date": "2026-10-22",
@@ -7000,27 +7021,6 @@
         "type": "Performance",
         "description": "Bulk ingest rests ½× its work overnight (2× by day) — heavy work belongs to the quiet window",
         "scope": "ops"
-      },
-      {
-        "hash": "cc8d1310",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Grade by who wrote the passage — 'Writings' first (incl. slug-authored site copies), then institutional, secondary",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "f512703c",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Graded source lists at the bottom of each box — no separate citation shelf",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "fc341475",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "A note cites only its own target's evidence (a Nabíl fact came back labelled 'Revelation')",
-        "scope": "reading"
       }
     ]
   }
