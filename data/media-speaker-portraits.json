@@ -1,7 +1,361 @@
 {
- "dhikrullah-khadem": { "wiki": "Zikrullah Khadem" },
- "d-khadem": { "wiki": "Zikrullah Khadem" },
- "zikrullah-khadem": { "wiki": "Zikrullah Khadem" },
- "h-baluyzi": { "wiki": "Hasan Balyuzi" },
- "ali-muhammad-varqa": { "wiki": "‘Alí-Muḥammad Varqá" }
+ "dhikrullah-khadem": {
+  "wiki": "Zikrullah Khadem"
+ },
+ "d-khadem": {
+  "wiki": "Zikrullah Khadem"
+ },
+ "zikrullah-khadem": {
+  "wiki": "Zikrullah Khadem"
+ },
+ "h-baluyzi": {
+  "wiki": "Hasan Balyuzi"
+ },
+ "ali-muhammad-varqa": {
+  "wiki": "‘Alí-Muḥammad Varqá"
+ },
+ "steven-phelps": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2016/01/StevenPhelps-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/i-am-the-mystic-fane-the-nature-of-the-manifestation-in-the-bahai-writings-a-web-talk-on-may-15-by-dr-steven-phelps/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "536x720; WI media titled StevenPhelps, used on WI page for his web talk (Phelps of the Partial Inventory, ex-BWC Research Dept)",
+  "found": "2026-10-22 web search"
+ },
+ "shahrokh-monjazeb": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/ShahrokhMonjazeb.jpg",
+  "page_url": "https://wilmetteinstitute.org/a-video-feast-for-the-fast/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x289; alt 'Shahrokh Monjazeb', on WI page listing his talks; same man as the presenter headshot on his Síyáh-Chál talk page",
+  "found": "2026-10-22 web search"
+ },
+ "todd-lawson": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2017/01/ToddLawson1-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/dr-todd-lawson-three-web-talks-on-the-quran-excellent-for-interfaith-dialogue-and-significant-conversations-essential-for-bahais-learning-to-defend-islam/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "529x720; on WI page for Dr. Todd Lawson's Qur'an web talks (U of Toronto Islamic studies)",
+  "found": "2026-10-22 web search"
+ },
+ "moojan-momen": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Moojan-Momen.jpg",
+  "page_url": "https://wilmetteinstitute.org/twentieth-anniversary-web-talks-success-continues-with-dr-moojan-momens-discussion-of-the-re-creation-and-utilization-of-a-communitys-memories-shoghi-effendi-and-baha/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x293; alt 'Moojan Momen', on WI page for his web talk; solo portrait (bahai.media's image is with Wendi, so not used)",
+  "found": "2026-10-22 web search"
+ },
+ "robert-stockman": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/RStockmanPortrait.jpg",
+  "page_url": "https://wilmetteinstitute.org/wilmette-institute-at-american-academy-of-religion/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "760x878; alt 'Robert Stockman', WI director's portrait used on WI pages",
+  "found": "2026-10-22 web search"
+ },
+ "christopher-buck": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Christopher-George-Buck.png",
+  "page_url": "https://wilmetteinstitute.org/faculty/christopher-buck/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x209; featured image of his WI faculty page (Christopher Buck, PhD)",
+  "found": "2026-10-22 web search"
+ },
+ "julio-savi": {
+  "url": "https://file.bahai.media/4/45/Dr_Julio_Savi.jpg",
+  "page_url": "https://bahai.media/File:Dr_Julio_Savi.jpg",
+  "credit": "Bahá'í World News Service",
+  "licence": "BWNS photo (bahai.media 'Baha'i World News Service' licence template)",
+  "note": "1445x2027; caption 'Dr. Julio Savi', BWNS story 332; matches the WI 'Julio Savi' photo; speaking at a microphone, upper body",
+  "found": "2026-10-22 web search"
+ },
+ "john-hatcher": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/11/John-S-Hatcher-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/a-library-of-web-talks-247365-john-hatcher-on-the-bicentenary-and-paul-hanley-on-eleven/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "875x1206; alt 'Professor John S. Hatcher'; same man as the photo on the linked WI page about his bicentenary talk",
+  "found": "2026-10-22 web search"
+ },
+ "peter-smith": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2012/12/Peter-Smith-e1565871577566.jpg",
+  "page_url": "https://wilmetteinstitute.org/peter-smith-2-2-2/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x300; WI media 'Peter Smith'; the historian Peter Smith (Mahidol) teaches at WI; found only on the attachment page, no talk page links it",
+  "found": "2026-10-22 web search"
+ },
+ "paul-lample": {
+  "url": "https://file.bahai.media/0/0b/Paul_Lample.JPG",
+  "page_url": "https://bahai.media/File:Paul_Lample.JPG",
+  "credit": "Bahá'í World News Service",
+  "licence": "BWNS photo (bahai.media 'Baha'i World News Service' licence template)",
+  "note": "521x596 head-and-shoulders; caption 'Mr. Paul Lample', BWNS story 358, in bahai.media Category:Paul Lample",
+  "found": "2026-10-22 web search"
+ },
+ "kathryn-hogenson": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/05/Kathy-Hogenson-e1686578756175-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/what-listeners-say-hogensons-web-talk-first-western-pilgrimage/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "2777x3204; alt 'head shot of Kathy Hogenson'; same woman as the photo on the WI page about her First Western Pilgrimage talk",
+  "found": "2026-10-22 web search"
+ },
+ "arthur-lyon-dahl": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/ArthurDahl.jpg",
+  "page_url": "https://wilmetteinstitute.org/faculty/arthur-dahl/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x254; featured image of WI faculty page 'Arthur Dahl, PhD'",
+  "found": "2026-10-22 web search"
+ },
+ "augusto-lopez-claros": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2016/12/Augusto-Lopez-Claros-1.png",
+  "page_url": "https://wilmetteinstitute.org/meaningful-conversations-on-the-emergence-of-global-institutions/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "208x242; alt 'Augusto Lopez-Claros', on WI page for his global-institutions talk",
+  "found": "2026-10-22 web search"
+ },
+ "michael-penn": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/08/MichaelPennBoard-e1598625209147-1.png",
+  "page_url": "https://wilmetteinstitute.org/michaelpennboard/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "1995x2076; alt 'Michael Penn, Academic Advisory Board Member' (WI board psychologist)",
+  "found": "2026-10-22 web search"
+ },
+ "robert-weinberg": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2017/08/Robert-Weinberg-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/spiritual-and-intellectual-gifts-in-march-web-talks/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "841x720; on WI pages for his Mark Tobey web talk (the Bahá'í author, Haifa backdrop); not the MIT biologist",
+  "found": "2026-10-22 web search"
+ },
+ "sovaida-maani-ewing": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Sovaida-Maani-Ewing.jpg",
+  "page_url": "https://wilmetteinstitute.org/faculty/sovaida-maani-ewing/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x200; featured image of WI faculty page 'Sovaida Ma'ani Ewing, LLM'",
+  "found": "2026-10-22 web search"
+ },
+ "baharieh-rouhani-maani": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Bahrieh_2021-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/baharieh-maani-web-talk/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "371x400; presenter photo on the WI page for Baharieh Ma'ani's web talk",
+  "found": "2026-10-22 web search"
+ },
+ "anthony-vance": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2019/01/Anthony-Vance-sq-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/anthony-vance-sq/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "400x400; WI media 'Anthony-Vance-sq'; WI hosted his Louis Gregory talk",
+  "found": "2026-10-22 web search"
+ },
+ "ian-kluge": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2010/07/IAN-KLUGE-PICTURE-2016-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/ian-kluge-the-bahai-proofs-for-god/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "540x720; on WI page for Ian Kluge's 'Bahá'í Proofs for God' talk (WI also has an Ian Kluge 1948-2023 obituary page)",
+  "found": "2026-10-22 web search"
+ },
+ "roshan-danesh": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/01/RoshanDanesh-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/roshan-danesh-imagining-bahai-law/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "400x378 head-and-shoulders; alt 'Roshan Danesh'; same man as the photo on his 'Imagining Bahá'í Law' talk page",
+  "found": "2026-10-22 web search"
+ },
+ "louis-venters": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2016/06/Louis-Venters-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/how-did-the-bahai-community-of-south-carolina-emerge-from-the-jim-crow-south-sign-up-for-dr-louis-venters-web-talk-on-december-4/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "250x349; on WI page for Dr. Louis Venters' South Carolina Bahá'í history talk",
+  "found": "2026-10-22 web search"
+ },
+ "elena-mustakova-possardt": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2017/03/Elena-Mustakova-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/a-library-of-web-talks-24-7-365-a-psychology-that-responds-to-our-times/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "450x540; on WI page for her psychology web talk",
+  "found": "2026-10-22 web search"
+ },
+ "hooshmand-badee": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2022/01/photo-H.-Badee-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/hooshmand-badee-is-there-a-bahai-economic-system/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "804x861; presenter photo on WI page for his Bahá'í economics talk",
+  "found": "2026-10-22 web search"
+ },
+ "gregory-dahl": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2016/10/Grgeory-Dahl-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/our-email-box-about-greg-dahl-s-web-talk-on-economic-life-reflections-on-the-universal-house-of-justice-message-of-march-1-2017/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "706x720; on WI page about Greg Dahl's economic-life web talk",
+  "found": "2026-10-22 web search"
+ },
+ "trip-barthel": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2014/04/Trip-Barthel-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/trip-barthel-2/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "440x667; WI media titled 'Trip Barthel' (WI faculty)",
+  "found": "2026-10-22 web search"
+ },
+ "reba-carruth": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2012/12/Reba-Carruth-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/four-february-web-talks-the-spiritual-destiny-of-america-bahai-artist-mark-tobey-and-bahaullahs-letter-to-nasirid-din-shah/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "404x471; on WI page listing her web talk",
+  "found": "2026-10-22 web search"
+ },
+ "robert-atkinson": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2017/07/RobertAtkinson-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/robert-atkinson-webinar-series/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "556x640; WI media titled 'Robert Atkinson', uploaded with his 'The Story of Our Time' book material; page is his WI webinar series",
+  "found": "2026-10-22 web search"
+ },
+ "louise-profeit-leblanc": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Louise_Profeit-LeBlanc_2019_%28cropped%29.jpg",
+  "page_url": "https://commons.wikimedia.org/wiki/File:Louise_Profeit-LeBlanc_2019_(cropped).jpg",
+  "credit": "De.wong91",
+  "licence": "CC BY-SA 4.0",
+  "note": "457x635; lead image of her Wikipedia article (storyteller at OISE Library); matches the WI photo",
+  "found": "2026-10-22 web search"
+ },
+ "darius-shahrokh": {
+  "url": "https://bahai-library.com/wttp/pix/darius.jpg",
+  "page_url": "https://bahai-library.com/wttp/obit.html",
+  "credit": null,
+  "licence": null,
+  "note": "760x756 b/w portrait on his obituary page in the 'Windows to the Past' collection (Dr. Darius Shahrokh, 1931-2005)",
+  "found": "2026-10-22 web search"
+ },
+ "jena-khadem-khodadad": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/05/Jena-Khodadad-1.png",
+  "page_url": "https://wilmetteinstitute.org/jena-khodadad/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "1085x967; alt 'head shot of Jena Khodadad'; WI hosted her biotechnology and science web talks",
+  "found": "2026-10-22 web search"
+ },
+ "siyamak-zabihi-moghaddam": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2019/01/Siyamak-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/siyamak/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "613x792; WI media alt text 'Siyamak Zabihi-Moghaddam'",
+  "found": "2026-10-22 web search"
+ },
+ "ben-schewel": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2018/01/BenSchewel-1.png",
+  "page_url": "https://wilmetteinstitute.org/letter-to-the-editor-dr-benjamin-schewels-web-talk-on-seven-ways-of-looking-at-religion/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "285x342; on WI page about his 'Seven Ways of Looking at Religion' talk",
+  "found": "2026-10-22 web search"
+ },
+ "brian-aull": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2015/09/BrianAull-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/sign-up-now-to-hear-dr-brian-aull-discuss-consultation-a-revolutionary-model-of-democratic-governance-on-february-14/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "599x720; on WI page for Dr. Brian Aull's consultation/democratic governance talk",
+  "found": "2026-10-22 web search"
+ },
+ "michael-day": {
+  "url": "https://media.bahaiteachings.org/authors/Michael%20V%20Day-778__v200x200__crop_upscale.jpeg",
+  "page_url": "https://bahaiteachings.org/author/michael-v-day/",
+  "credit": "BahaiTeachings.org",
+  "licence": null,
+  "note": "200x200 (circular crop); author photo for Michael V. Day (Shrine of the Báb trilogy, ex-BWNS editor)",
+  "found": "2026-10-22 web search"
+ },
+ "susanne-alexander": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2013/02/Susanne-M.-Alexander-Headshot-in-Black-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/be-brave-and-arise/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "547x720; titled 'Susanne M. Alexander – Headshot in Black'; same woman as the photo on her WI book page",
+  "found": "2026-10-22 web search"
+ },
+ "sandra-lynn-hutchison": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Sandra-Hutchison-2024.jpg",
+  "page_url": "https://wilmetteinstitute.org/faculty/sandra-hutchison/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "329x370; featured image of WI faculty page 'Sandra Lynn Hutchison, PhD'",
+  "found": "2026-10-22 web search"
+ },
+ "armin-eschraghi": {
+  "url": "https://burhaninstitute.org/wp-content/uploads/2019/11/Armin-Eschragi.jpg",
+  "page_url": "https://burhaninstitute.org/armin-eschraghi",
+  "credit": "Burhan Institute",
+  "licence": null,
+  "note": "252x440; his profile page there (Frankfurt Islamic studies scholar); same man as the WI 'Armin Eschraghi' photo",
+  "found": "2026-10-22 web search"
+ },
+ "ismael-velasco": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2019/05/ismaelvelasco-e1589065883348-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/a-framework-for-action-how-bahais-work-to-change-the-world-today/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "200x169 (small); same face as the title card on his WI 'A Framework for Action' talk page",
+  "found": "2026-10-22 web search"
+ },
+ "roya-akhavan": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/05/Roya-Akhavan-photo-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/a-new-look-an-august-web-talk-on-tahirih-beyond-emancipation/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "366x400; alt 'Roya Akhavan photo'; same woman as the photo on her WI Ṭáhirih talk page",
+  "found": "2026-10-22 web search"
+ },
+ "paul-hanley": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2017/10/Paul-Hanley-head-and-shoulders-e1546100117763-1.jpeg",
+  "page_url": "https://wilmetteinstitute.org/a-library-of-web-talks-247365-john-hatcher-on-the-bicentenary-and-paul-hanley-on-eleven/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "424x521; on WI page for Paul Hanley's 'Eleven' talk (author of 'Man of the Trees')",
+  "found": "2026-10-22 web search"
+ },
+ "leonard-swidler": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Swidler_17_Nov_2005.jpg",
+  "page_url": "https://commons.wikimedia.org/wiki/File:Swidler_17_Nov_2005.jpg",
+  "credit": "Ingrid Shafer (Drshafer)",
+  "licence": "CC BY-SA 3.0",
+  "note": "800x1097; 'Leonard Swidler at Temple University', lead image of his Wikipedia article; matches the WI photo",
+  "found": "2026-10-22 web search"
+ },
+ "joann-borovicka": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/05/Jo-Ann-Borovicka-e1589093637663-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/jo-ann-borovicka-ten-plagues-of-the-exodus-in-the-light-of-the-bahai-writings/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "313x315 head-and-shoulders; same woman as the desk photo on her WI 'Ten Plagues' talk page",
+  "found": "2026-10-22 web search"
+ },
+ "baharieh-maani-rohani": {
+  "url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Bahrieh_2021-1.jpg",
+  "page_url": "https://wilmetteinstitute.org/baharieh-maani-web-talk/",
+  "credit": "Wilmette Institute",
+  "licence": null,
+  "note": "371x400; presenter photo on the WI page for Baharieh Ma'ani's web talk",
+  "found": "2026-10-22 web search"
+ }
 }
