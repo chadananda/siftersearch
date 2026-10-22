@@ -26,14 +26,18 @@ describe('captions', () => {
 });
 
 describe('templates', () => {
-  it('chosen by content, else rotated deterministically', () => {
+  it('Portrait Cinema by default (Chad 10-22: "#2 is best"); Scripture Insert when the Writings are quoted; asked wins', () => {
     expect(pickTemplate({ scripture: true }).template).toBe('scripture-insert');
-    expect(pickTemplate({ year: 1957 }).template).toBe('archive-tape');
-    expect(pickTemplate({ grade: 'E', year: 1999 }).template).toBe('archive-tape');
+    expect(pickTemplate({ year: 1957 }).template).toBe('portrait-cinema');
+    expect(pickTemplate({ grade: 'E' }).template).toBe('portrait-cinema');
+    expect(pickTemplate({ key: 'abc' })).toEqual({ template: 'portrait-cinema', why: 'default' });
     expect(pickTemplate({ asked: 'minimal', scripture: true }).template).toBe('minimal');
-    const a = pickTemplate({ key: 'abc' }).template;
-    expect(pickTemplate({ key: 'abc' }).template).toBe(a);
-    expect(['on-air', 'portrait-cinema', 'minimal']).toContain(a);
+  });
+  it('the renderer never stretches: every image is scaled uniformly (aspect kept) and cropped', () => {
+    const py = readFileSync(new URL('../../scripts/media/render_short.py', import.meta.url), 'utf8');
+    for (const m of py.matchAll(/\[1:v\]scale=([^,'"]+)/g)) expect(m[1]).toMatch(/force_original_aspect_ratio=increase|^\{lab\}|^\{kw\}/);
+    expect(py).toMatch(/scale=\{kw\}:\{kh\}:force_original_aspect_ratio=increase,crop=\{kw\}:\{kh\}/);
+    expect(py).not.toMatch(/scale=\{W\*2\}:-2,zoompan/);
   });
   it('every template carries the link back: a watermark through the clip and the end card', () => {
     for (const template of TEMPLATES) for (const format of ['vertical', 'square']) {

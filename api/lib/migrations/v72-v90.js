@@ -1863,6 +1863,15 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_ec_entity_status_time ON entity_claims(entity_id, status, time_value)');
     logger.info('Migration 169 complete: idx_ec_entity_status_time');
   },
+
+  170: async () => {
+    // EXTENDED PORTRAIT MASTERS (Chad 10-22: never stretch; "fill in with gemini once"): a 9:16 master whose margins are
+    // AI-extended (the original pixels untouched), made once per portrait (ext_of = the original's sha), with model, prompt, $
+    for (const col of ['ext_file TEXT', 'ext_sha TEXT', 'ext_of TEXT', 'ext_model TEXT', 'ext_prompt TEXT', 'ext_usd REAL', 'ext_at TEXT', 'ext_error TEXT']) {
+      try { await query(`ALTER TABLE media_speakers ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    logger.info('Migration 170 complete: media_speakers ext_*');
+  },
 };
 
 export const graphMigrations = {

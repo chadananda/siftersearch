@@ -48,7 +48,10 @@ export function speakerThumb(s) {
   if (!s?.file || !s.sha) return null;
   // the master lives in the cdn-assets R2 bucket (biography/<id>.<ext> or media-speakers/<key>.<ext>): the image worker
   // serves it at /img/cdn/siftersearch.com/<file>; the page asks for each size with fo-face (src/lib/imagekit.js helpers)
-  return { url: `https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, kind: 'photo', service: true, name: s.name, credit: s.credit || null, licence: s.licence || null,
+  // extended: the 9:16 master with AI-extended margins (original pixels untouched) — crop THIS for tall or wide boxes
+  const extended = s.ext_file && s.ext_sha && s.ext_of === s.sha ? { url: `https://siftersearch.com/img/cdn/siftersearch.com/${s.ext_file}?v=${s.ext_sha.slice(0, 16)}`,
+    width: 1152, height: 2048, ai_extended: true, model: s.ext_model || null } : null;
+  return { extended, url: `https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, kind: 'photo', service: true, name: s.name, credit: s.credit || null, licence: s.licence || null,
     source_url: s.source_url || null, page_url: s.page_url || null, fetched_at: s.fetched_at || null };
 }
 

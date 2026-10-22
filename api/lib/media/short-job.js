@@ -54,7 +54,10 @@ export async function renderShortFor(item, params, deps = {}) {
     for (let k = 0; purl && !portrait && k < 3; k++) {
       if (k) await new Promise((r) => setTimeout(r, 2000 * k));
       try {
-        const r = await (deps.fetchImpl || fetch)(`${purl}${purl.includes('?') ? '&' : '?'}tr=w-900,h-900,fo-face,q-85`, { signal: AbortSignal.timeout(30000) });
+        // the frame's own aspect, face-centred, from the (extended) master: never a square that the renderer would have to
+        // stretch or crop hard (10-22: "you are stretching the aspect ratio of pictures")
+        const box = range.format === 'square' ? 'w-1080,h-1080' : 'w-1080,h-1920';
+        const r = await (deps.fetchImpl || fetch)(`${purl}${purl.includes('?') ? '&' : '?'}tr=${box},fo-face,q-88`, { signal: AbortSignal.timeout(30000) });
         const buf = r.ok ? Buffer.from(await r.arrayBuffer()) : null;
         if (buf && buf.length > 2000) { await writeFile(join(work, 'portrait.jpg'), buf); portrait = true; portraitError = null; } else portraitError = `HTTP ${r.status}, ${buf?.length ?? 0} bytes`;
       } catch (err) { portraitError = String(err?.cause?.code || err?.message || err).slice(0, 120); }

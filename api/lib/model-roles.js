@@ -58,6 +58,8 @@ export const MODEL_ROLES = {
     why: 'THE copy-edit pass (chosen 10-22 on the pilot, 5.3 h: 209 substantive fixes vs 161 for Haiku, precision 24/25 vs 25/25 on a 25-edit read, catches context errors Haiku misses — Van Cortlandt Park, "the Bahá’í movement", The Priceless Pearl; $0.23 vs $0.024 per audio hour); media-clean (Haiku) stays as the fallback via MEDIA_CLEAN_ROLE' },
   'media-assess': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-22', needs: ['json', 'long-input', 'judgement'],
     why: 'whole-talk AUDIENCE (1–5, per section; tradition-agnostic rubric) and MOMENTS (verbatim excerptable spans) — Chad 10-22; one read per talk' },
+  'image-outpaint': { provider: 'gemini', model: 'gemini-3.1-flash-image', reviewed: '2026-10-22', needs: ['image-in', 'image-out'],
+    why: 'extended portrait masters (Chad 10-22: "fill in with gemini once"): fills only the margins of a 9:16 canvas around a speaker portrait; the original pixels are pasted back; ~$0.04 and ~12 s per person, once' },
   'media-headings': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'long-input'],
     why: 'topic subheaders (Chad 10-22): a statement or question at each subject shift; a guard keeps only well-spaced ones that share words with their section' },
   'media-people': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'persian-arabic-names', 'judgement'],

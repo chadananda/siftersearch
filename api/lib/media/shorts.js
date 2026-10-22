@@ -9,7 +9,7 @@
 // sidecars and the render spec (pure); scripts/media/render_short.py on boss composes the picture with ffmpeg.
 import { createHash } from 'crypto';
 
-export const SHORT_VERSION = 3;   // 3: bitrate cap, static archive grain (keys change: the edge caches by key)
+export const SHORT_VERSION = 4;   // 4: Portrait Cinema default, uniform face-centred Ken Burns on the extended master, light styling   // 3: bitrate cap, static archive grain (keys change: the edge caches by key)
 export const FORMATS = { vertical: { W: 1080, H: 1920 }, square: { W: 1080, H: 1080 } };
 export const TEMPLATES = ['on-air', 'archive-tape', 'scripture-insert', 'portrait-cinema', 'minimal'];
 const ROTATION = ['on-air', 'portrait-cinema', 'minimal'];
@@ -60,13 +60,12 @@ export function captionLines(words, { maxWords = 6, maxChars = 28, minWords = 2 
   return lines;
 }
 
-/** The template for a short: asked for, else by content, else rotated by the key (a re-render matches). */
-export function pickTemplate({ asked = null, year = null, grade = null, scripture = false, key = '' } = {}) {
+/** The template for a short: asked for, else Scripture Insert when the range quotes the Writings, else Portrait Cinema
+ *  (Chad 10-22: "#2 is best"; no rotation — the others stay available on request). */
+export function pickTemplate({ asked = null, scripture = false } = {}) {
   if (asked && TEMPLATES.includes(asked)) return { template: asked, why: 'asked' };
   if (scripture) return { template: 'scripture-insert', why: 'quotes the Writings' };
-  if ((year && Number(year) <= 1975) || ['D', 'E'].includes(grade)) return { template: 'archive-tape', why: year && Number(year) <= 1975 ? `recorded ${year}` : `grade ${grade}` };
-  const h = parseInt(createHash('sha1').update(String(key)).digest('hex').slice(0, 6), 16);
-  return { template: ROTATION[h % ROTATION.length], why: 'rotation' };
+  return { template: 'portrait-cinema', why: 'default' };
 }
 
 /** A quotation or cross-reference of the Writings inside the range (for Scripture Insert). */
@@ -195,6 +194,7 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
     // big kinetic captions, one word at a time with a small pop, over the slowly zooming portrait
     at('Name', 0, clip, esc(speaker), cx, s(200), 5, 2);
     at('Title', 0, clip, titleLine, cx, s(265), 5, 2);
+    shape(0, clip, cx - 120, s(1392), rect(240, 3), C.amber, { layer: 2, alpha: '30' });
     at('Brand', 0, clip, `THE LISTENING ROOM  ·  ${CALL_SIGN}`, cx, s(1420), 5, 2);
     words.forEach((w, i) => {
       const t1 = i + 1 < words.length ? Math.min(words[i + 1].s, w.e + 0.6) : Math.min(clip, w.e + 0.5);

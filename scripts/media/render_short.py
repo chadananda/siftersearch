@@ -46,8 +46,16 @@ elif ground == 'sepia':
     last = 'g0'
 else:   # deep: the portrait blurred and darkened
     if s.get('kenburns') and has_p:
-        g.append(f"[1:v]scale={W*2}:-2,zoompan=z='min(1.0+0.0007*on,1.25)':x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':d={frames}:s={W}x{H}:fps={fps},"
-                 f'eq=brightness=-0.22,vignette=PI/3,setsar=1[g0]')
+        # Portrait Cinema: the portrait scaled UNIFORMLY to cover 1.5× the frame and cropped (never stretched: zoompan's
+        # window keeps the frame's aspect), a slow face-centred push-in (1.00 → 1.12 over the clip, anchored at 38 % of the
+        # height where the face sits on the extended master); light styling: a gentle warm grade, a soft static vignette
+        # and a very fine static grain, looped (compression-friendly)
+        kw, kh = int(W * 1.5) // 2 * 2, int(H * 1.5) // 2 * 2
+        g.append(f"[1:v]scale={kw}:{kh}:force_original_aspect_ratio=increase,crop={kw}:{kh},setsar=1,"
+                 f"zoompan=z='1+0.12*on/{frames}':x='iw/2-(iw/zoom/2)':y='ih*0.38-(ih/zoom*0.38)':d=1:s={W}x{H}:fps={fps},"
+                 f'colorbalance=rs=0.05:gs=0.015:bs=-0.05:rm=0.03:bm=-0.03,eq=brightness=-0.06:saturation=0.9:contrast=1.04,vignette=PI/5,format=yuv420p[k0]')
+        g.append(f'color=c=gray:s={W}x{H}:r={fps}:d={1/fps:.4f},noise=alls=12:allf=u,format=yuv420p,{ONCE}[grain]')
+        g.append('[k0][grain]blend=all_mode=overlay:all_opacity=0.07[g0]')
     else:
         g.append(f'[1:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=30:2,eq=brightness=-0.34:saturation=0.6,setsar=1[g0]')
     last = 'g0'

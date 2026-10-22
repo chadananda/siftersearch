@@ -252,7 +252,12 @@ export async function mediaShortJob(params = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const { renderShortFor } = deps.short || await import('../media/short-job.js');
   const item = await repo.getMediaBySlug(params.slug);
-  const portraitUrl = async (it) => { const sp = it.speaker_key ? await repo.getSpeaker(it.speaker_key) : null; return sp?.file && sp.sha ? `https://siftersearch.com/img/cdn/siftersearch.com/${sp.file}?v=${sp.sha.slice(0, 16)}` : null; };
+  const portraitUrl = async (it) => {
+    const sp = it.speaker_key ? await repo.getSpeaker(it.speaker_key) : null;
+    // the extended 9:16 master when there is one for the current portrait (no stretching, room for every crop)
+    if (sp?.ext_file && sp.ext_sha && sp.ext_of === sp.sha) return `https://siftersearch.com/img/cdn/siftersearch.com/${sp.ext_file}?v=${sp.ext_sha.slice(0, 16)}`;
+    return sp?.file && sp.sha ? `https://siftersearch.com/img/cdn/siftersearch.com/${sp.file}?v=${sp.sha.slice(0, 16)}` : null;
+  };
   return renderShortFor(item, params, { portraitUrl, ...(deps.render || {}) });
 }
 
@@ -274,5 +279,47 @@ export async function mediaShortsMomentsJob({ per = 2, roles = ['hand', 'uhj'] }
     if (!ms.length) { out.no_moments++; continue; }
     for (const m of ms) { await queue('media-short', { slug: it.slug, start: m.t0_ms / 1000, end: Math.min(m.t1_ms / 1000, m.t0_ms / 1000 + 60), format: 'vertical' }, 'shorts-moments'); out.queued++; }
   }
+  return out;
+}
+
+// ── media-portraits-extend { keys?, force? }: one EXTENDED 9:16 master per speaker portrait (api/lib/media/outpaint.js) — the
+// margins filled once by the image-outpaint role, the original pixels pasted back; stored beside the original in cdn-assets
+// (media-speakers/<key>-ext.jpg) and recorded on the speaker (ext_*: AI-extended, model, prompt, $). Skips a speaker whose
+// extension was made from the current original.
+export async function mediaPortraitsExtendJob({ keys = null, force = false, limit = 500 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const op = deps.outpaint || await import('../media/outpaint.js');
+  const tools = deps.tools || await import('../media/tools.js');
+  const { putCdnPortrait } = deps.speakers || await import('../media/speakers.js');
+  const { modelFor } = await import('../model-roles.js');
+  const model = modelFor('image-outpaint').model;
+  const { createHash } = await import('crypto');
+  const { tmpdir } = await import('os');
+  const { writeFile: wf, rm: rmf } = await import('fs/promises');
+  const fetchImpl = deps.fetchImpl || fetch;
+  const all = (await repo.listSpeakers()).filter((s) => s.file && s.sha && (!keys || keys.includes(s.key)));
+  const out = { speakers: all.length, extended: 0, kept: 0, failed: [], usd: 0 };
+  for (const s of all.slice(0, limit)) {
+    if (!force && s.ext_file && s.ext_of === s.sha) { out.kept++; continue; }
+    try {
+      const r = await fetchImpl(`https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, { signal: AbortSignal.timeout(30000) });
+      if (!r.ok) throw new Error(`original HTTP ${r.status}`);
+      const src = Buffer.from(await r.arrayBuffer());
+      const tmp = join(tmpdir(), `portrait-${s.key}-${Date.now()}`);
+      await wf(tmp, src);
+      const pr = await tools.ffprobe(tmp).finally(() => rmf(tmp, { force: true }));
+      const v = (pr.streams || []).find((x) => x.width) || {};
+      const ext = await op.extendPortrait(src, { w: v.width, h: v.height }, { model, ffmpeg: (args) => tools.ffmpeg(args, { timeoutMs: 120_000 }),
+        outpaint: (png) => op.geminiOutpaint(png, { model, fetchImpl }) });
+      const file = await putCdnPortrait(`media-speakers/${s.key}-ext.jpg`, ext.bytes, 'image/jpeg', { fetchImpl });
+      await repo.upsertSpeaker({ key: s.key, ext_file: file, ext_sha: createHash('sha256').update(ext.bytes).digest('hex'), ext_of: s.sha, ext_model: model,
+        ext_prompt: ext.prompt, ext_usd: ext.usd, ext_at: new Date().toISOString(), ext_error: '' });
+      out.extended++; out.usd = Math.round((out.usd + ext.usd) * 10000) / 10000;
+    } catch (err) {
+      out.failed.push({ key: s.key, error: String(err.message).slice(0, 160) });
+      await repo.upsertSpeaker({ key: s.key, ext_error: String(err.message).slice(0, 300) }).catch(() => {});
+    }
+  }
+  await logActivity('media', `▶ portraits extended: ${out.extended} (${out.kept} kept, ${out.failed.length} failed) · $${out.usd}`).catch(() => {});
   return out;
 }
