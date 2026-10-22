@@ -49,3 +49,11 @@ describe('model calls survive a transient timeout (10-22: describe "Request time
     await expect(describeTalk([{ n: 1, t0: 0, t1: 1, words: [{ w: 'x', s: 0, e: 1 }] }], {}, { create: async () => { throw new Error('400 bad request'); }, retryMs: [1] })).rejects.toThrow('400');
   });
 });
+
+describe('a context-wrapped edit is narrowed to the words that change (10-22, item 30 ¶26)', () => {
+  it('"all of a sudden He said" → "… he said" applies to "He" only', () => {
+    const ws = 'when all of a sudden He said, why'.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
+    const j = judgeEdit(ws, { kind: 'capitalisation', from: 'all of a sudden He said,', to: 'all of a sudden he said,', confidence: 0.9 });
+    expect(j.ok).toMatchObject({ i0: 5, i1: 6, to: 'he' });
+  });
+});

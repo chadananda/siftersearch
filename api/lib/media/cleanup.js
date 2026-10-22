@@ -33,7 +33,17 @@ export function soundKey(w) {
  */
 export function judgeEdit(words, e, { minConfidence = 0.7 } = {}) {
   const kind = String(e?.kind || '').toLowerCase().replace('capitalization', 'capitalisation');
-  const from = String(e?.from || '').trim(), to = String(e?.to ?? '').trim();
+  let from = String(e?.from || '').trim(), to = String(e?.to ?? '').trim();
+  // same word count: identical words at either end are context, not the edit (10-22: "all of a sudden He said" → "… he
+  // said" was refused as too long; the edit is the one word "He")
+  {
+    const a = from.split(/\s+/), b = to.split(/\s+/);
+    if (to && a.length === b.length && a.length > 1 && !DROPS.has(kind)) {
+      while (a.length > 1 && a[0] === b[0]) { a.shift(); b.shift(); }
+      while (a.length > 1 && a.at(-1) === b.at(-1)) { a.pop(); b.pop(); }
+      from = a.join(' '); to = b.join(' ');
+    }
+  }
   if (!KINDS.includes(kind)) return { refused: `unknown kind "${e?.kind}"` };
   if (!from) return { refused: 'empty' };
   const fw = tokens(from), tw = tokens(to);
