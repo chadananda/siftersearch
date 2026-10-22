@@ -16,5 +16,11 @@
     "usd_per_day": 30,
     "until": "2026-10-28",
     "approved": "Chad 10-21: 'You should be able to do all central figures and shoghi effendi in the compilations … use the SourceHunt API to help resolve'"
+  },
+  {
+    "label": "Media pipeline pilot: transcript corrections, metadata and quotation detection (Haiku-class roles)",
+    "usd_per_day": 20,
+    "until": "2026-11-05",
+    "approved": "Chad 10-21: media library request (approved by Chad on 10-21)"
   }
 ]
