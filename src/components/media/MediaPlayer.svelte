@@ -123,7 +123,7 @@
         if (fresh || !clip || t < clip.start || t >= clip.end - 0.5 || (end != null && end > clip.end + 0.1)) {
           busy = true;
           const stop = Math.min(want, t + (item.rights.clip_cap || 180), duration || Infinity);
-          const c = await media.clip(item.clip_url, t.toFixed(1), stop.toFixed(1));
+          const c = await media.clip(item.clip_url, t.toFixed(1), stop.toFixed(1), audio.canPlayType('audio/ogg; codecs="opus"') ? null : 'm4a');
           clip = { start: c.start, end: c.end };
           audio.src = media.href(c.url);
           await waitMeta();

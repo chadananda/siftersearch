@@ -1557,5 +1557,6 @@ export const media = {
   list: (query) => mediaGet(`/api/media?${query}`),
   get: (slug) => mediaGet(`/api/media/${encodeURIComponent(slug)}`),
   // 'clips' items: a signed clip for start..end (end ≤ start + clip_cap) → { url, start, end }
-  clip: (clipUrl, start, end) => mediaGet(`${clipUrl}?t=${encodeURIComponent(`${start}-${end}`)}`),
+  // fmt 'm4a' where the browser cannot play Ogg Opus (older Safari)
+  clip: (clipUrl, start, end, fmt = null) => mediaGet(`${clipUrl}?t=${encodeURIComponent(`${start}-${end}`)}${fmt ? `&fmt=${fmt}` : ''}`),
 };

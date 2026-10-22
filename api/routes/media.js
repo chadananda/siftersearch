@@ -130,7 +130,8 @@ export default async function mediaRoutes(fastify) {
     if (!r) return reply.code(400).send({ error: 't=start-end required' });
     const c = clampClip(r, it.duration_s, CLIP_CAP);
     reply.header('Cache-Control', 'private, no-store');
-    return { url: `/api/media/${it.slug}/clip?${clipQuery({ slug: it.slug, start: c.start, end: c.end })}`, start: Number(c.start.toFixed(1)), end: Number(c.end.toFixed(1)) };
+    const fmt = req.query?.fmt === 'm4a' ? '&fmt=m4a' : '';   // older Safari plays no Ogg Opus: an AAC cut from the .m4a
+    return { url: `/api/media/${it.slug}/clip?${clipQuery({ slug: it.slug, start: c.start, end: c.end })}${fmt}`, start: Number(c.start.toFixed(1)), end: Number(c.end.toFixed(1)) };
   });
 
   // the clip itself: ≤ 180 s of the web rendition, stream-copied (no re-encode)
@@ -141,10 +142,12 @@ export default async function mediaRoutes(fastify) {
     if (!it || it.state !== 'done' || !r || r.end == null) return reply.code(404).send({ error: 'NotFound' });
     if (!verifyClip({ slug: it.slug, start: r.start, end: r.end, exp: q.exp, sig: q.sig })) return reply.code(403).send({ error: 'Forbidden', why: 'expired or unsigned clip' });
     if (r.end - r.start > CLIP_CAP + 0.5) return reply.code(400).send({ error: 'clip too long' });
-    const src = join(it.dir, 'web', `${it.slug}.ogg`);
+    const m4a = q.fmt === 'm4a';
+    const src = join(it.dir, 'web', `${it.slug}.${m4a ? 'm4a' : 'ogg'}`);
     const chunks = [];
-    await run('ffmpeg', ['-nostdin', '-v', 'error', '-ss', String(r.start), '-to', String(r.end), '-i', src, '-c', 'copy', '-f', 'ogg', '-'], { timeoutMs: 30_000, onStdout: (d) => chunks.push(d) });
-    reply.header('Content-Type', 'audio/ogg').header('Cache-Control', 'private, max-age=3600');
+    await run('ffmpeg', ['-nostdin', '-v', 'error', '-ss', String(r.start), '-to', String(r.end), '-i', src, '-c', 'copy',
+      ...(m4a ? ['-f', 'mp4', '-movflags', 'frag_keyframe+empty_moov'] : ['-f', 'ogg']), '-'], { timeoutMs: 30_000, onStdout: (d) => chunks.push(d) });
+    reply.header('Content-Type', m4a ? 'audio/mp4' : 'audio/ogg').header('Cache-Control', 'private, max-age=3600');
     return reply.send(Buffer.concat(chunks));
   });
 

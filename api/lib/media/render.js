@@ -76,9 +76,9 @@ const range=pr(new URLSearchParams(location.search).get('t'))||pr((location.hash
 let base=0,stopAt=null,clip=null,follow=true,cur=-1,lastTop=null;const fabBtn=$('.fab .pp'),folBtn=$('.fab .follow');
 function idxAt(t){let lo=0,hi=words.length-1,r=-1;while(lo<=hi){const m=(lo+hi)>>1;if(words[m].s<=t){r=m;lo=m+1}else hi=m-1}return r}
 if(range){for(const w of words)if(w.s>=range.start-0.05&&(range.end==null||w.e<=range.end+0.05))w.el.classList.add('rg');const i=idxAt(range.start);if(i>=0)setTimeout(()=>words[i].el.scrollIntoView({block:'center'}),50)}
-async function load(t,end){if(M.playback==='full'){if(!audio.src){audio.src=M.audio}base=0;stopAt=end??null;return t}
+async function load(t,end){if(M.playback==='full'){if(!audio.src){audio.src=audio.canPlayType('audio/ogg; codecs="opus"')?M.audio:M.audio.replace(/\\.ogg$/,'.m4a')}base=0;stopAt=end??null;return t}
 if(M.playback!=='clips'||!M.clipUrl)throw new Error('no playback');const e=Math.min(end??t+M.clipCap,t+M.clipCap);
-const r=await fetch(M.clipUrl+'?t='+t.toFixed(1)+'-'+e.toFixed(1));if(!r.ok)throw new Error('clip refused');const j=await r.json();
+const r=await fetch(M.clipUrl+'?t='+t.toFixed(1)+'-'+e.toFixed(1)+(audio.canPlayType('audio/ogg; codecs="opus"')?'':'&fmt=m4a'));if(!r.ok)throw new Error('clip refused');const j=await r.json();
 audio.src=j.url;clip=j;base=j.start;stopAt=j.end;return j.start}
 async function playFrom(t,end){try{const at=await load(t,end);const go=()=>{audio.currentTime=Math.max(0,t-base);audio.play()};
 if(audio.readyState>=1)go();else audio.addEventListener('loadedmetadata',go,{once:true});audio.load&&audio.readyState<1&&audio.load();follow=true;folBtn.classList.remove('show')}catch(e){alert(M.playback==='search'?'This recording is not available for playback here.':'Playback is not available: '+e.message)}}

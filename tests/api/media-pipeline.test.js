@@ -234,3 +234,11 @@ describe('transcript ingestion', () => {
     expect(saveLinks.mock.calls[0][0][0]).toMatchObject({ quote_id: 7001, source_id: 9, method: 'media-sourcehunt' });
   });
 });
+
+describe('older Safari (no Ogg Opus)', () => {
+  it('the standalone page asks for AAC clips and the .m4a file when Ogg Opus cannot play', () => {
+    const html = pageHtml({ meta, paragraphs: [para(1, 'a b c.')], clipUrl: '/api/media/x/clip-url', audio: 'web/x.ogg' });
+    expect(html).toContain("'&fmt=m4a'");
+    expect(html).toContain(".replace(/\\.ogg$/,'.m4a')");
+  });
+});
