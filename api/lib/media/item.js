@@ -93,7 +93,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const year = named.year || hints.year || null;
       let finalSlug = item.slug;
       if (!finalSlug) {
-        const base = makeSlug({ speaker, title: hints.part && !/\d$/.test(title) ? `${title} ${hints.part}` : title, year });
+        const base = makeSlug({ speaker, title: hints.part && !new RegExp(`\\b${hints.part}\\b`).test(title) ? `${title} ${hints.part}` : title, year });
         finalSlug = base;
         for (let i = 2; await repo.slugTaken(finalSlug); i++) finalSlug = `${base}-${i}`;
       }
@@ -251,7 +251,7 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'ingest') {
       const res = await (d.ingest || (await import('./ingest.js')).ingestTranscript)({ dir, meta });
-      meta.doc_id = res.documentId; rec.doc_id = res.documentId; rec.links = res.links;
+      meta.doc_id = res.documentId; meta.pi = res.pi || {}; rec.doc_id = res.documentId; rec.links = res.links;
     }
 
     if (stage === 'catalog') {

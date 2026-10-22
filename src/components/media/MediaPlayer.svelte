@@ -220,7 +220,13 @@
 
   onMount(() => {
     wordEls = Array.from(root.querySelectorAll('[data-k]'));
-    const r = rangeFrom({ search: location.search, hash: location.hash });
+    let r = rangeFrom({ search: location.search, hash: location.hash });
+    // ?p=<paragraph_index> — a search hit on the transcript document: start at that paragraph
+    const pq = new URLSearchParams(location.search).get('p');
+    if (!r && pq != null && /^\d+$/.test(pq)) {
+      const ps = (item.paragraphs || []).filter((x) => x.pi != null && x.pi <= Number(pq));
+      if (ps.length) r = { start: ps[ps.length - 1].t0, end: null };
+    }
     if (r) {
       startAt = r.start; current = r.start; limit = r.end ?? null;
       range = r.end != null ? r : null;

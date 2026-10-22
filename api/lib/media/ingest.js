@@ -32,11 +32,12 @@ export async function ingestTranscript({ dir, meta }, deps = {}) {
   if (!res?.documentId) throw new Error(`ingest failed: ${res?.error || res?.status || 'no document id'}`);
   const repo = deps.repo || await import('../repos/media-repo.js');
   const rows = await repo.docParagraphMap(res.documentId);
-  const paraIds = new Map();
-  for (const r of rows) { try { const id = JSON.parse(r.block_attrs || '{}').id; const m = /^para_(\d+)$/.exec(id || ''); if (m) paraIds.set(Number(m[1]), r.id); } catch { /* no attrs */ } }
+  const paraIds = new Map(), pi = {};
+  for (const r of rows) { try { const id = JSON.parse(r.block_attrs || '{}').id; const m = /^para_(\d+)$/.exec(id || ''); if (m) { paraIds.set(Number(m[1]), r.id); pi[m[1]] = r.paragraph_index; } } catch { /* no attrs */ } }
   let qj = {};
   try { qj = JSON.parse(await readFile(join(dir, 'quotes.json'), 'utf8')); } catch { /* no quotes stage */ }
   const links = linkRows(qj, paraIds, res.documentId);
   if (links.length) await (deps.saveLinks || (await import('../repos/source-links-repo.js')).saveSourceLinks)(links);
-  return { documentId: res.documentId, rel, paragraphs: rows.length, links: links.length, status: res.status };
+  // pi: transcript paragraph n → the document's paragraph_index (a search hit's ?p= on /media/<slug>)
+  return { documentId: res.documentId, rel, paragraphs: rows.length, links: links.length, status: res.status, pi };
 }

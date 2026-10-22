@@ -124,10 +124,14 @@ def cmd_dfn(a):
     print(json.dumps({'output': a.output, 'sr': sr, 'seconds': round(time.time() - t0, 1), 'atten_lim_db': a.atten}))
 
 
-def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5):
+EMB_MODELS = ('wespeaker_en_voxceleb_resnet34_LM.onnx', 'nemo_en_titanet_small.onnx', '3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx')
+
+
+def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name=''):
     import sherpa_onnx
     seg = os.path.join(models_dir, 'sherpa-onnx-pyannote-segmentation-3-0', 'model.onnx')
-    emb = os.path.join(models_dir, '3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx')
+    names = [emb_name] if emb_name else [n for n in EMB_MODELS if os.path.exists(os.path.join(models_dir, n))]
+    emb = os.path.join(models_dir, names[0])
     cfg = sherpa_onnx.OfflineSpeakerDiarizationConfig(
         segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
             pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads),
@@ -193,7 +197,7 @@ def cmd_transcribe(a):
     if a.diarize or multi:
         t2 = time.time()
         try:
-            turns = diarize(audio, a.threads, a.models, num_speakers=a.speakers)
+            turns = diarize(audio, a.threads, a.models, num_speakers=a.speakers, threshold=a.cluster, emb_name=a.emb)
         except Exception as err:
             print(f'diarize failed: {err}', file=sys.stderr)
         timings['diarize'] = round(time.time() - t2, 1)
@@ -245,10 +249,22 @@ def cmd_transcribe(a):
                       'timings': timings, 'seconds': round(time.time() - t0, 1), 'duration_s': round(len(audio) / SR, 2)}))
 
 
+def cmd_diarize(a):
+    """Diarization alone (threshold tuning): speakers and their talk time."""
+    import whisperx
+    audio = whisperx.load_audio(a.input)
+    t0 = time.time()
+    turns = diarize(audio, a.threads, a.models, num_speakers=a.speakers, threshold=a.cluster, emb_name=a.emb)
+    talk = {}
+    for t in turns:
+        talk[t['speaker']] = round(talk.get(t['speaker'], 0) + t['end'] - t['start'], 1)
+    print(json.dumps({'speakers': len(talk), 'talk_s': dict(sorted(talk.items(), key=lambda x: -x[1])), 'turns': len(turns), 'seconds': round(time.time() - t0, 1), 'threshold': a.cluster, 'emb': a.emb or 'default'}))
+
+
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ('metrics', 'probe', 'langid', 'dfn', 'transcribe'):
+    for name in ('metrics', 'probe', 'langid', 'dfn', 'transcribe', 'diarize'):
         s = sub.add_parser(name)
         s.add_argument('input')
         s.add_argument('--threads', type=int, default=8)
@@ -263,8 +279,10 @@ def main():
         s.add_argument('--diarize', action='store_true')
         s.add_argument('--speakers', type=int, default=-1)
         s.add_argument('--models', default=os.path.expanduser('~/sifter/venvs/media-models'))
+        s.add_argument('--cluster', type=float, default=0.8)
+        s.add_argument('--emb', default='')
     a = p.parse_args()
-    {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe}[a.cmd](a)
+    {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize}[a.cmd](a)
 
 
 if __name__ == '__main__':

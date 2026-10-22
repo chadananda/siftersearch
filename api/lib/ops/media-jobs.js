@@ -67,15 +67,22 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null, reslug = false } = {}, deps = {}) {
+export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null, reslug = false, force = false } = {}, deps = {}) {
   let item = await getMediaItem(id);
   if (!item) throw new Error(`media item ${id} not found`);
   // RESLUG (an unpublished item named badly): its folder under the archive root is removed and the item archived again
+  // (force: also a published pilot item — its transcript document is retired and its library file removed first)
   if (reslug) {
-    if (item.state === 'done') throw new Error('a published item keeps its slug');
+    if (item.state === 'done' && !force) throw new Error('a published item keeps its slug');
     const { archiveRoot } = await import('../media/item.js');
-    if (item.dir && item.dir.startsWith(`${archiveRoot()}/`)) await (deps.rm || (await import('fs/promises')).rm)(item.dir, { recursive: true, force: true });
-    item = await updateMediaItem(id, { slug: null, dir: null, state: 'running' });
+    const rm = deps.rm || (await import('fs/promises')).rm;
+    if (item.doc_id) {
+      await (deps.retire || (async (ids) => (await import('../docs-repo.js')).softDeleteDocs(ids, { reason: 'media reslug', allowLastCopy: true })))([item.doc_id]);
+      const { config } = await import('../config.js');
+      if (item.slug) await rm(join(config.library.basePath, item.tradition || "Baha'i", 'Media', `${item.slug}.md`), { force: true });
+    }
+    if (item.dir && item.dir.startsWith(`${archiveRoot()}/`)) await rm(item.dir, { recursive: true, force: true });
+    item = await updateMediaItem(id, { slug: null, dir: null, doc_id: null, state: 'running' });
     from = 'archive';
   }
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');

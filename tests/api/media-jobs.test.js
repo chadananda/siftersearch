@@ -42,6 +42,11 @@ describe('media-scan', () => {
     expect(runItem.mock.calls[0][0]).toMatchObject({ slug: null, dir: null });
     expect(runItem.mock.calls[0][1]).toMatchObject({ from: 'archive' });
     await expect(mediaItemJob({ id: 8, reslug: true }, { runItem, rm })).rejects.toThrow('keeps its slug');
+    store.items.find((i) => i.id === 8).doc_id = 55;
+    const retire = vi.fn(async () => ({}));
+    await mediaItemJob({ id: 8, reslug: true, force: true }, { runItem, rm, retire });
+    expect(retire).toHaveBeenCalledWith([55]);
+    expect(rm.mock.calls.some((c) => String(c[0]).endsWith('/Media/kept.md'))).toBe(true);
   });
   it('a bot check holds the item instead of failing it', async () => {
     store.items.push({ id: 1, state: 'scheduled', source_kind: 'youtube', source_ref: 'u' });

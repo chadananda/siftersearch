@@ -2137,6 +2137,11 @@
                   {#if showAuthor}{author} — {/if}{displayTitle}
                   {#if isAdmin}<span class="doc-id-debug" title="Document ID">#{docId}</span>{/if}
                 </span>
+                <!-- a recorded talk's transcript: play the paragraph at /media/<slug> (its file is Media/<slug>.md) -->
+                {#if collection === 'Media' && filename}
+                  <a class="citation-meta text-accent hover:text-accent-hover" href={`/media/${String(filename).split('/').pop().replace(/\.md$/, '')}?p=${result.paragraph_index ?? 0}`}
+                    onclick={(e) => e.stopPropagation()}>▶ Listen</a>
+                {/if}
               </div>
             </div>
           {/each}

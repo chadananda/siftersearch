@@ -211,3 +211,21 @@ describe('sources and thumbnails', () => {
     expect(threadsFor([null], { base: 16 })).toBe(16);
   });
 });
+
+describe('transcript ingestion', () => {
+  it('writes the library file, ingests it, links quotes on the right rows and maps para_N → paragraph_index', async () => {
+    const { mkdtempSync, writeFileSync, readFileSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const { join } = await import('path');
+    const { ingestTranscript } = await import('../../api/lib/media/ingest.js');
+    const dir = mkdtempSync(join(tmpdir(), 'mi-')), base = mkdtempSync(join(tmpdir(), 'lib-'));
+    writeFileSync(join(dir, 'transcript.md'), '---\ntitle: "T"\n---\n\nhello\n{id="para_1"}\n');
+    writeFileSync(join(dir, 'quotes.json'), JSON.stringify({ quotes: [{ kind: 'quote', para: 1, source: { id: 9, doc_id: 90 }, overlap: 0.7, basis: 'verbatim' }], teachings: [] }));
+    const saveLinks = vi.fn(async () => ({}));
+    const r = await ingestTranscript({ dir, meta: { slug: 's-1', tradition: "Baha'i" } }, { base, ingest: async () => ({ documentId: 500, status: 'ok' }),
+      repo: { docParagraphMap: async () => [{ id: 7001, paragraph_index: 1, block_attrs: '{"id":"para_1","t0":"0.00"}' }, { id: 7000, paragraph_index: 0, block_attrs: null }] }, saveLinks });
+    expect(readFileSync(join(base, "Baha'i", 'Media', 's-1.md'), 'utf8')).toContain('{id="para_1"}');
+    expect(r).toMatchObject({ documentId: 500, links: 1, pi: { 1: 1 } });
+    expect(saveLinks.mock.calls[0][0][0]).toMatchObject({ quote_id: 7001, source_id: 9, method: 'media-sourcehunt' });
+  });
+});
