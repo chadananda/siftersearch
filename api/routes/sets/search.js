@@ -31,6 +31,7 @@ import observatoryRoutes from '../observatory.js';
 import graphRoutes from '../graph.js';
 import peopleRoutes from '../people.js';
 import deepResearchRoutes from '../deep-research.js';
+import mediaRoutes from '../media.js';
 
 export const SEARCH_ROUTES = [
   [authRoutes, { prefix: '/api/auth' }],
@@ -65,4 +66,5 @@ export const SEARCH_ROUTES = [
   [graphRoutes, { prefix: '/api/graph' }],
   [peopleRoutes, { prefix: '/api/v1' }],
   [deepResearchRoutes, { prefix: '/api/v1' }],
+  [mediaRoutes, { prefix: '/api/media' }],   // the media library: listing, items, files (Range), signed clips (planning/media-library-plan.md)
 ];

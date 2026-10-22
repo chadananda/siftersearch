@@ -14,6 +14,7 @@ import { workRoute } from './ops/workplan.js';
 import { App } from 'astro/app';
 import { handle } from '@astrojs/cloudflare/handler';
 import { mailRoute, mailCron } from './mail/index.js';
+import { mediaFile, MEDIA_FILE } from './media.js';
 
 const API_ORIGIN = 'https://api.siftersearch.com';
 
@@ -54,6 +55,8 @@ export function createExports(manifest) {
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
         if (url.pathname.startsWith('/_work/')) return workRoute(request, env);
+        // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable
+        if (MEDIA_FILE.test(url.pathname)) { const r = await mediaFile(request, env, ctx, API_ORIGIN); if (r) return r; }
         if (isApiPath(url.pathname)) {
           const target = API_ORIGIN + url.pathname + url.search;
           // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.

@@ -1765,6 +1765,25 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_work_letters_author_date ON work_letters(author, y, m, d)');
     logger.info('Migration 162 complete: work_letters');
   },
+
+  163: async () => {
+    // THE MEDIA LIBRARY (Chad 10-21; planning/media-library-plan.md): one row per recording — the CATALOGUE of the per-item
+    // archive folder (/tank/media/library/…/<slug>/, whose meta.json is the source of truth). The /media listing filters
+    // here; the transcript itself is a library document (doc_id, collection Media). media_channels: per YouTube channel,
+    // the playback the owner permits (Chad edits it): 'full' with permission, else 'clips'.
+    await query(`CREATE TABLE IF NOT EXISTS media_items (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, title TEXT, speaker TEXT,
+      tradition TEXT, collection TEXT, language TEXT, year INTEGER, date TEXT, duration_s REAL, has_video INTEGER NOT NULL DEFAULT 0,
+      source_kind TEXT NOT NULL, source_ref TEXT NOT NULL, sha256 TEXT, youtube_id TEXT, channel TEXT, playback TEXT NOT NULL DEFAULT 'clips',
+      stage TEXT, state TEXT NOT NULL DEFAULT 'queued', why TEXT, dir TEXT, doc_id INTEGER, thumb TEXT, quotes_n INTEGER, crs_n INTEGER,
+      words_n INTEGER, asr_conf REAL, cost_usd REAL, meta TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_media_state ON media_items(state, updated_at)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_sha ON media_items(sha256)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_youtube ON media_items(youtube_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_doc ON media_items(doc_id)');
+    await query(`CREATE TABLE IF NOT EXISTS media_channels (channel_id TEXT PRIMARY KEY, name TEXT, playback TEXT NOT NULL DEFAULT 'clips',
+      granted_by TEXT, note TEXT, updated_at TEXT NOT NULL)`);
+    logger.info('Migration 163 complete: media_items, media_channels');
+  },
 };
 
 export const graphMigrations = {

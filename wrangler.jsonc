@@ -26,6 +26,8 @@
     // WorkPlan (worker/ops/workplan.js): the live feature queue behind /admin/workplan
     { "binding": "OPS_DB", "database_name": "siftersearch-ops", "database_id": "b8075ba4-1916-4284-811c-e6c7faeb643a", "migrations_dir": "worker/d1/ops" }
   ],
+  // Media library files (worker/media.js): each published version copied once from the tower origin, served with Range
+  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "siftersearch-media" }],
   // Anís mail (worker/mail/drafting.js): drafts every 5 min, outreach planning hourly, daily digest 14:00 UTC.
   "triggers": { "crons": ["* * * * *", "0 * * * *", "0 14 * * *"] },
   "observability": {

@@ -19,6 +19,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
+import { mediaScanJob, mediaItemJob, mediaVocabJob } from './media-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
@@ -196,6 +197,9 @@ REPORTS['letters-index'] = lettersIndexJob;   // params { author, collection } �
 REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, author?, translators? }], write } — a person's record corrections
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
+REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)
+REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)
+REPORTS['media-vocab'] = mediaVocabJob;   // params { minMentions? } — names for the transcript corrector's controlled vocabulary
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
 // paragraph inside the section (Chad 10-17: structure before BM25 "so that sections get indexed") — before/after measure.
@@ -229,6 +233,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
   authorship: ['paragraph-authors'],
+  media: ['media-scan', 'media-item', 'media-vocab'],   // hours of transcription (nice 19, thread cap) must not hold up intake or linking
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
   quick: ['doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);

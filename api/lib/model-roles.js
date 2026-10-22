@@ -47,6 +47,15 @@ export const MODEL_ROLES = {
     why: 'Dewey reads phone photos of covers, title pages and text pages (any script) into title/author/edition/printed lines; one call per check' },
   'toc-infer': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-17', needs: ['json', 'multilingual', 'long-input'],
     why: 'picks which candidate lines begin a section of a book (its Contents page and the work\'s standard structure as guidance); ~2 calls/book' },
+  // ── media library (planning/media-library-plan.md; Chad 10-21: "post processing using fast cheap LLM like haiku 5.5") ──
+  'media-meta': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['json', 'multilingual', 'long-input'],
+    why: 'names a recording from its path/tags, then describes it from the transcript (speakers, chapters, summary); 2 calls per item' },
+  'media-correct': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['json', 'persian-arabic-names'],
+    why: 'judges which misheard names are vocabulary terms; its edits pass a guard (vocabulary only, sounds-alike, ≤ 4 words) — never rewording' },
+  'media-quotes': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['json', 'long-input'],
+    why: 'marks recited Writings and attributed teachings in a transcript; SourceHunt and the gates decide the links' },
+  'media-verify': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['judgement', 'json'],
+    why: 'strict yes/no: does a canonical passage state the teaching a speaker attributes (cross-reference breakouts)' },
   // ── evaluation ──
   'eval-recall': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-16', needs: ['fast', 'multilingual'],
     why: 'known-item test: writes the 2–4 words a reader half-remembers from a passage (one synonym, maybe a misspelling); ~300 calls/run' },
