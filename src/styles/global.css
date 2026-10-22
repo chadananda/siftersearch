@@ -57,6 +57,7 @@
   --radio-walnut: light-dark(#5a3a22, #3a2618);
   --radio-walnut-deep: light-dark(#3b2414, #120c07);
   --radio-brass: light-dark(#9a7330, #d6ad5c);
+  --radio-brass-bright: light-dark(#e3bd6e, #e2b864);   /* brass lettering on walnut (both themes keep the cabinet dark) */
   --radio-brass-soft: light-dark(rgba(154, 115, 48, 0.18), rgba(214, 173, 92, 0.16));
   --radio-amber: light-dark(#b45309, #ffb347);
   --radio-glow: light-dark(rgba(245, 166, 35, 0.35), rgba(255, 170, 60, 0.30));
@@ -192,6 +193,7 @@
   --color-radio-walnut: var(--radio-walnut);
   --color-radio-walnut-deep: var(--radio-walnut-deep);
   --color-radio-brass: var(--radio-brass);
+  --color-radio-brass-bright: var(--radio-brass-bright);
   --color-radio-brass-soft: var(--radio-brass-soft);
   --color-radio-amber: var(--radio-amber);
   --color-radio-glow: var(--radio-glow);
@@ -475,3 +477,7 @@ mark {
   font-size: 1.0625rem;
   line-height: 1.8;
 }
+
+/* The Listening Room page ground (/media and /media/<slug>): cream paper or deep walnut with a warm glow */
+.listening-room { min-height: 100vh; overflow-x: clip;
+  background-image: radial-gradient(1200px 500px at 85% -10%, var(--radio-glow), transparent 60%), radial-gradient(900px 600px at -10% 30%, var(--radio-brass-soft), transparent 60%); }

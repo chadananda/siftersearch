@@ -56,7 +56,7 @@
               {/if}
             </div>
             <div class="min-w-0 self-end">
-              <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass">Box set{ROLE[s.role] ? ` · ${ROLE[s.role]}` : ''}</p>
+              <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">Box set{ROLE[s.role] ? ` · ${ROLE[s.role]}` : ''}</p>
               <h3 class="font-marquee text-2xl leading-tight text-radio-on-dark sm:text-3xl">{s.n}</h3>
               <p class="mt-1 font-dial text-base font-semibold uppercase tracking-wider text-radio-on-dark opacity-80">{s.c || c.total} talks{s.y0 ? ` · ${s.y0}${s.y1 && s.y1 !== s.y0 ? `–${s.y1}` : ''}` : ''}</p>
             </div>
@@ -87,7 +87,7 @@
         {@const it = c.it}
         {@const qn = it.h.find((h) => h.f === 'q') || it.h[0]}
         <article class="question h-full">
-          <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass">{qn.f === 'q' ? 'The question' : 'The theme'}</p>
+          <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">{qn.f === 'q' ? 'The question' : 'The theme'}</p>
           <h3 class="question-text"><a href={`/media/${it.s}${qn.t != null ? `?t=${qn.t}` : ''}`}>{qn.x}</a></h3>
           <footer class="mt-auto flex items-end gap-3 pt-3">
             <p class="min-w-0 flex-1 text-sm text-radio-on-dark opacity-85"><a href={`/media/${it.s}`} class="font-semibold underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">{it.t}</a>{by(it) ? ` · ${by(it)}` : ''}</p>

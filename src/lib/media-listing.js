@@ -214,6 +214,28 @@ export function tickerLines(items, speakers = [], { n = 10 } = {}) {
   return lines.slice(0, n);
 }
 
+/** Related talks for a talk page: the same voice first (nearest in year), then talks sharing topic words; never itself.
+ *  items: listing-index rows. → up to n rows */
+export function relatedTalks(items, slug, n = 6) {
+  const me = items.find((x) => x.s === slug);
+  if (!me) return [];
+  const STOP = new Set(['the', 'and', 'of', 'to', 'in', 'a', 'on', 'for', 'with', 'its', 'his', 'her', 'their', 'from', 'as', 'is', 'by', 'an']);
+  const words = (it) => new Set(tokens([...(it.tp || []), ...(it.h || []).map((h) => h.x), it.t].join(' ')).filter((w) => w.length > 3 && !STOP.has(w)));
+  const mine = words(me);
+  const scored = items.filter((x) => x.s !== slug).map((x) => {
+    let shared = 0;
+    for (const w of words(x)) if (mine.has(w)) shared++;
+    const same = me.k && x.k === me.k;
+    return { x, s: (same ? 10 : 0) + shared * 1.5 - (same && me.y && x.y ? Math.abs(me.y - x.y) / 20 : 0) + weight(x) * 0.1 };
+  }).filter((r) => r.s > 1);
+  scored.sort((a, b) => b.s - a.s);
+  // at most 3 by the same voice, so the list also opens a door to others
+  const out = [];
+  let same = 0;
+  for (const r of scored) { if (out.length >= n) break; if (me.k && r.x.k === me.k) { if (same >= 3) continue; same++; } out.push(r.x); }
+  return out;
+}
+
 // ── pictures ──
 /** Initials for a generated label: up to two letters from the folded name's significant words. */
 export function initials(name) {

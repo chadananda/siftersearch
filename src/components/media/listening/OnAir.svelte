@@ -85,7 +85,7 @@
         <div class="min-w-0" aria-live="polite">
           {#key cur.s}
             <div in:fade={{ duration: reduced ? 0 : 600, delay: reduced ? 0 : 150 }}>
-              <p class="font-dial text-xs font-semibold uppercase tracking-[0.24em] text-radio-brass">
+              <p class="font-dial text-xs font-semibold uppercase tracking-[0.24em] text-radio-brass-bright">
                 {line.kind === 'quote' ? 'Quoted in this talk' : line.kind === 'question' ? 'A question this talk takes up' : 'Now playing'}{cur.y ? ` · tuned to ${cur.y}` : ''}
               </p>
               {#if line.kind === 'quote'}

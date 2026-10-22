@@ -2,7 +2,7 @@
 // jukebox layout (src/lib/media-listing.js).
 import { describe, it, expect } from 'vitest';
 import { fold, speakerRole, waveString, pullQuote, bestQuote, topHeadings, highlightWindow, shapeRow, shapeSpeakers, buildIndex, audioUrls } from '../../api/lib/media/listing-index.js';
-import { within1, buildSearch, searchItems, planLayout, pickHighlights, eras, topTopics, tickerLines, initials, labelPattern, eraKey, duration, waveHeights } from '../../src/lib/media-listing.js';
+import { within1, buildSearch, searchItems, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, initials, labelPattern, eraKey, duration, waveHeights } from '../../src/lib/media-listing.js';
 
 const row = (o = {}) => ({ id: 1, slug: 'a', title: 'A talk', speaker: 'Hooper Dunbar', speaker_key: 'hooper-dunbar', year: 1988, duration_s: 1800, language: 'en',
   has_video: 0, source_kind: 'file', playback: 'full', grade: 'B', quotes_n: 2, crs_n: 1, updated_at: '2026-10-22T10:00:00.000Z', ...o });
@@ -141,6 +141,13 @@ describe('the jukebox layout', () => {
     expect(eras(items).map((e) => e.decade)).toEqual([1960, 1970, 1980, 1990, 2000]);
     expect(topTopics([{ tp: ['Covenant', 'Soul'], d: 60 }, { tp: ['covenant'], d: 60 }])[0]).toMatchObject({ label: 'Covenant', n: 2 });
     expect(tickerLines(items, speakers).length).toBeGreaterThan(3);
+  });
+  it('relates talks: same voice first (max 3), then shared topics, never itself', () => {
+    const r = relatedTalks(items, 'd1');
+    expect(r.map((x) => x.s)).not.toContain('d1');
+    expect(r.slice(0, 3).every((x) => x.k === 'hooper-dunbar')).toBe(true);
+    expect(r.filter((x) => x.k === 'hooper-dunbar')).toHaveLength(3);
+    expect(relatedTalks(items, 'nope')).toEqual([]);
   });
   it('makes generated labels stable per name', () => {
     expect(initials('‘Alí Nakhjavání')).toBe('AN');

@@ -3,6 +3,8 @@
   // highlight), a play button per paragraph (left margin ≥ lg, inline below), speaker labels at voice changes, quoted spans
   // as links, and "Quoted" / "Cross-reference" breakouts after their paragraph. Pure rendering: clicks go to onword/onpara;
   // the playing-word highlight is toggled on these spans by MediaPlayer (DOM classes, not reactive state, 60 fps).
+  // Typeset in the Listening Room language: a measured serif column, subheaders as section breaks with a log time, a drop
+  // cap, and the breakouts as cut-in "studio inserts" (styles at the bottom; tokens --radio-*, era tint --tint).
   import { paragraphSegments, speakerLabels } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
 
@@ -20,7 +22,7 @@
   const linkTitle = (l) => (l.kind === 'quote' ? l.cite : l.kind === 'person' ? `${l.name} — biography` : [l.title, l.section].filter(Boolean).join(', '));
   const xrefsBy = $derived(byPara(crossRefs.filter((c) => c.url || c.excerpt)));
   // w[3] = 1: a word the copy-edit pass dropped (filler, stutter, loop) — kept for timing, never shown
-  const wordClass = (w) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && 'cursor-pointer hover:bg-hover', inRange(w) && 'bg-highlight-range']);
+  const wordClass = (w) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && 'cursor-pointer hover:bg-radio-brass-soft', inRange(w) && 'bg-highlight-range']);
   const inRange = (w) => !!range && range.end != null && w[1] >= range.start - 0.05 && w[2] <= range.end + 0.05;
 
   function click(e) {
@@ -38,38 +40,39 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions — words are a pointer shortcut; the
      paragraph buttons, chapter links and the player controls are the keyboard path -->
-<div bind:this={root} class="transcript space-y-6 font-serif text-lg leading-relaxed text-primary" class:cursor-text={!canPlay} onclick={click}>
+<div bind:this={root} class="transcript" class:cursor-text={!canPlay} onclick={click}>
   {#each paragraphs as p, pi (p.n)}
     {@const segs = paragraphSegments(p.words.length, spansBy.get(p.n) || [])}
     {#if headingBy.has(p.n)}
       {@const h = headingBy.get(p.n)}
-      <h2 id={h.slug} class="scroll-mt-24 pt-4 font-sans text-xl font-semibold tracking-tight text-primary lg:pl-16"><a href={`#${h.slug}`} class="hover:text-accent">{h.text}</a></h2>
+      <h2 id={h.slug} class="section-h" class:question={h.form === 'question'}>
+        <span class="log-time">{h.t != null ? formatTime(h.t) : ''}</span>
+        <a href={`#${h.slug}`}>{h.text}</a>
+      </h2>
     {/if}
-    <div class="relative flow-root lg:pl-16" id={`para_${p.n}`} data-p={pi}>
+    <div class="para" class:first={pi === 0} class:now={playing && playingPara === pi} id={`para_${p.n}`} data-p={pi}>
       {#if labels[pi]}
-        <p class="mb-1 font-sans text-xs font-semibold uppercase tracking-wide text-accent-secondary">{labels[pi]}</p>
+        <p class="voice">{labels[pi]}</p>
       {/if}
       {#if canPlay}
-        <span class={['float-left mr-2 mt-0.5 flex flex-col items-center gap-0.5 lg:absolute lg:left-0 lg:float-none lg:mr-0 lg:w-12', labels[pi] ? 'lg:top-6' : 'lg:top-0']}>
-          <button type="button" class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-accent shadow-sm transition hover:border-accent hover:bg-surface-2 lg:h-10 lg:w-10"
-            class:border-accent={playing && playingPara === pi}
+        <span class="pplay" class:with-label={!!labels[pi]}>
+          <button type="button" class="pbtn" class:on={playing && playingPara === pi}
             aria-label={`Play from ${formatTime(p.t0)}`} title={`Play from ${formatTime(p.t0)}`}
             onclick={(e) => { e.stopPropagation(); onpara?.(pi, e.currentTarget.closest('[data-p]')); }}>
             {#if playing && playingPara === pi}
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
             {:else}
-              <svg class="ml-0.5 h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
+              <svg class="ml-0.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
             {/if}
           </button>
-          <span class="hidden font-sans text-xs tabular-nums text-muted lg:block">{formatTime(p.t0)}</span>
+          <span class="ptime">{formatTime(p.t0)}</span>
         </span>
       {/if}
-      <p>
+      <p class="ptext">
         {#each segs as s, si (si)}
           {#if s.quote}
             <a href={s.quote.url} data-nav={s.quote.kind === 'quote' ? undefined : '1'} target={s.quote.kind === 'person' ? undefined : '_blank'} rel={s.quote.kind === 'person' ? undefined : 'noopener'} title={linkTitle(s.quote)}
-              class={s.quote.kind === 'quote' ? 'rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent'
-                : 'rounded-sm underline decoration-border decoration-1 underline-offset-4 hover:text-accent hover:decoration-current'}>{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
+              class={s.quote.kind === 'quote' ? 'qlink' : s.quote.kind === 'person' ? 'nlink' : 'wlink'}>{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
           {:else}
             {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{w[3] ? '' : ' '}{/each}
           {/if}
@@ -78,24 +81,91 @@
 
       {#each quotesBy.get(p.n) || [] as q, qi (qi)}
         {#if q.excerpt}
-          <aside class="mt-4 rounded-r-lg border-l-4 border-accent-secondary bg-surface-1 px-4 py-3 font-sans text-base lg:ml-0">
-            <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-accent-secondary">Quoted</p>
-            <blockquote class="font-serif italic text-secondary">{q.excerpt}</blockquote>
+          <aside class="insert quote-insert" aria-label="Quoted passage">
+            <p class="insert-tag"><span class="dot" aria-hidden="true"></span>Studio insert · quoted</p>
+            <blockquote>{q.excerpt}</blockquote>
             <!-- the citation itself is the link (descriptive anchor text to the canonical passage; Chad 10-22) -->
-            <p class="mt-2 text-sm"><cite class="not-italic text-primary">— <a href={q.url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover hover:underline">{q.cite || 'the source passage'}</a></cite></p>
+            <p class="insert-cite"><cite>— <a href={q.url} target="_blank" rel="noopener">{q.cite || 'the source passage'}</a></cite></p>
           </aside>
         {/if}
       {/each}
       {#each xrefsBy.get(p.n) || [] as c, ci (ci)}
-        <aside class="mt-4 rounded-r-lg border-l-4 border-accent-tertiary bg-surface-2 px-4 py-3 font-sans text-base">
-          <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-accent-tertiary">Cross-reference</p>
-          {#if c.claim}<p class="mb-2 text-sm text-muted">On: {c.claim}</p>{/if}
-          {#if c.excerpt}<blockquote class="font-serif text-secondary">{c.excerpt}</blockquote>{/if}
+        <aside class="insert xref-insert" aria-label="Cross-reference">
+          <p class="insert-tag"><span class="dot" aria-hidden="true"></span>Cross-reference</p>
+          {#if c.claim}<p class="claim">On: {c.claim}</p>{/if}
+          {#if c.excerpt}<blockquote>{c.excerpt}</blockquote>{/if}
           {#if c.cite || c.url}
-            <p class="mt-2 text-sm"><cite class="not-italic text-primary">— {#if c.url}<a href={c.url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover hover:underline">{c.cite || 'the source passage'}</a>{:else}{c.cite}{/if}</cite></p>
+            <p class="insert-cite"><cite>— {#if c.url}<a href={c.url} target="_blank" rel="noopener">{c.cite || 'the source passage'}</a>{:else}{c.cite}{/if}</cite></p>
           {/if}
         </aside>
       {/each}
     </div>
   {/each}
 </div>
+
+<style>
+  .transcript { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.12rem; line-height: 1.8; color: var(--radio-ink); max-width: 44rem;
+    font-variant-ligatures: common-ligatures; font-kerning: normal; hyphens: auto; -webkit-hyphens: auto; }
+  @media (min-width: 1024px) { .transcript { padding-left: 4.5rem; max-width: 48.5rem; } }
+  .para { position: relative; margin-top: 1.15rem; display: flow-root; }
+  .ptext { text-wrap: pretty; }
+  .para.first .ptext::first-letter { float: left; font-family: 'Gloock', Georgia, serif; font-size: 4.1rem; line-height: 0.82; padding: 0.35rem 0.6rem 0 0; color: var(--tint, var(--radio-amber)); }
+  .voice { margin-bottom: 0.15rem; font: 700 0.85rem/1.2 'Big Shoulders Display', sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--radio-brass); }
+
+  /* the play button per paragraph: in the left margin from lg, floated inline below */
+  .pplay { float: left; margin: 0.2rem 0.6rem 0 0; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  @media (min-width: 1024px) { .pplay { position: absolute; float: none; margin: 0; left: -4.5rem; top: 0.15rem; width: 3rem; } .pplay.with-label { top: 1.4rem; } }
+  .pbtn { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 9999px; color: var(--radio-amber); background: var(--radio-paper);
+    box-shadow: inset 0 0 0 1.5px var(--radio-line); transition: box-shadow 0.2s, transform 0.2s, background 0.2s; }
+  .pbtn svg { width: 0.95rem; height: 0.95rem; }
+  .pbtn:hover { box-shadow: inset 0 0 0 2px var(--radio-amber); transform: scale(1.06); }
+  .pbtn.on { background: var(--radio-amber); color: var(--radio-walnut-deep); box-shadow: 0 0 0 5px var(--radio-glow); }
+  .pbtn:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  @media (min-width: 1024px) { .pbtn { width: 2.5rem; height: 2.5rem; } }
+  .ptime { display: none; font: 600 0.8rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.06em; color: var(--radio-ink-soft); }
+  @media (min-width: 1024px) { .ptime { display: block; } }
+  .para.now::before { content: ''; position: absolute; left: -1rem; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 2px; background: var(--radio-amber); }
+  @media (max-width: 1023px) { .para.now::before { left: -0.7rem; } }
+
+  /* the subheaders: section breaks with the log time; questions carry an amber query mark */
+  .section-h { scroll-margin-top: 7rem; margin: 3rem 0 0.4rem; padding-top: 1.1rem; border-top: 1px solid var(--radio-line); font: 400 1.6rem/1.2 'Gloock', Georgia, serif; color: var(--radio-ink); text-wrap: balance; }
+  .section-h a:hover { color: var(--radio-amber); }
+  .section-h a:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  .log-time { display: block; margin-bottom: 0.25rem; font: 700 0.85rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.18em; color: var(--tint, var(--radio-brass)); }
+  .section-h.question .log-time::after { content: ' · a question'; letter-spacing: 0.12em; text-transform: uppercase; }
+  @media (min-width: 640px) { .section-h { font-size: 1.85rem; } }
+
+  /* linked spans: quotations (dotted amber), people (biography) and works */
+  .transcript :global(.qlink) { color: inherit; text-decoration: underline dotted var(--radio-amber); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+  .transcript :global(.nlink), .transcript :global(.wlink) { color: inherit; text-decoration: underline solid var(--radio-brass); text-decoration-thickness: 1px; text-underline-offset: 5px; }
+  .transcript :global(.wlink) { font-style: italic; }
+  .transcript :global(.qlink:hover), .transcript :global(.nlink:hover), .transcript :global(.wlink:hover) { color: var(--radio-amber); }
+
+  /* studio inserts: cut-in breakouts that step out of the column */
+  .insert { position: relative; clear: both; margin: 1.6rem 0 1.4rem; padding: 1.1rem 1.3rem 1rem; border-radius: 0.9rem; font-size: 1rem; }
+  @media (min-width: 1024px) { .insert { margin-left: -1.5rem; margin-right: -2.5rem; } }
+  .insert-tag { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font: 700 0.8rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; }
+  .dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--radio-needle); box-shadow: 0 0 6px var(--radio-needle); }
+  .insert blockquote { font-size: 1.15rem; line-height: 1.6; }
+  .insert-cite { margin-top: 0.6rem; font-family: system-ui, sans-serif; font-size: 0.9rem; }
+  .insert-cite cite { font-style: normal; }
+  .insert-cite a { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .insert-cite a:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  .quote-insert { background: var(--radio-paper); box-shadow: inset 4px 0 0 var(--tint, var(--radio-amber)), 0 8px 24px var(--radio-brass-soft), inset 0 0 0 1px var(--radio-line); }
+  .quote-insert .insert-tag { color: var(--radio-ink-soft); }
+  .quote-insert blockquote { font-style: italic; color: var(--radio-ink); }
+  .quote-insert .insert-cite { color: var(--radio-ink-soft); }
+  .quote-insert .insert-cite a { color: var(--radio-ink); text-decoration-color: var(--radio-amber); }
+  .quote-insert .insert-cite a:hover { color: var(--radio-amber); }
+  .xref-insert { background: var(--radio-walnut-deep); color: var(--radio-on-dark);
+    background-image: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--tint, var(--radio-brass)) 30%, transparent), transparent 70%); }
+  .xref-insert .insert-tag { color: var(--radio-brass-bright); }
+  .xref-insert .claim { font-family: system-ui, sans-serif; font-size: 0.95rem; line-height: 1.5; opacity: 0.88; margin-bottom: 0.4rem; }
+  .xref-insert .insert-cite a { color: var(--radio-on-dark); text-decoration-color: var(--radio-brass); }
+  .xref-insert .insert-cite a:hover { color: var(--radio-amber); }
+  @supports (animation-timeline: view()) {
+    .insert { animation: cutIn linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+    @keyframes cutIn { from { opacity: 0.3; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+  }
+  @media (prefers-reduced-motion: reduce) { .insert { animation: none; transform: none; } .pbtn { transition: none; } }
+</style>

@@ -10,8 +10,10 @@
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
+  import RecordLabel from './listening/RecordLabel.svelte';
+  import { eraVar, duration as dur } from '../../lib/media-listing.js';
 
-  let { item, initialRange = null } = $props();
+  let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {} } = $props();
 
   const level = item.rights?.playback || 'search';
   const canPlay = (level === 'full' && !!item.audio) || (level === 'clips' && !!item.clip_url);
@@ -52,6 +54,13 @@
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
   const head = item.thumb?.url ? picture(item.thumb.url, 160, 160, { photo }) : { src: null, srcset: null };
   const when = [item.date || item.year, item.place, item.event].filter(Boolean);
+  // the Listening Room dressing: era tint, the subheaders as dial ticks, the section now playing, the sticky bar
+  const tint = eraVar(item.year);
+  const ticks = toc.map((c) => ({ t: c.t, title: c.title }));
+  const sectionAt = (t) => { let c = null; for (const x of toc) if (x.t != null && x.t <= t + 0.5) c = x; return c; };
+  const nowSection = $derived(sectionAt(current));
+  const audienceLabel = typeof item.audience === 'string' ? item.audience : item.audience?.label || null;
+  let heroPlayer = $state(), heroOut = $state(false), tocOpen = $state(false);
 
   // ── highlight + follow ──
   function mark(k) {
@@ -255,7 +264,11 @@
     window.addEventListener('wheel', manual, { passive: true });
     window.addEventListener('touchmove', manual, { passive: true });
     document.addEventListener('selectionchange', onSelection);
+    // the slim bar takes over once the hero's player has scrolled away
+    const io = new IntersectionObserver(([e]) => { heroOut = !e.isIntersecting && e.boundingClientRect.top < 0; });
+    if (heroPlayer) io.observe(heroPlayer);
     return () => {
+      io.disconnect();
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKey); window.removeEventListener('wheel', manual); window.removeEventListener('touchmove', manual);
       document.removeEventListener('selectionchange', onSelection);
@@ -265,62 +278,130 @@
   $effect(() => { if (audio) audio.playbackRate = rate; });
 </script>
 
-<article>
-  <!-- header -->
-  <header class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start">
-    {#if item.thumb?.url}
-      <figure class="shrink-0">
-        <img src={media.href(head.src)} srcset={head.srcset} width="160" height="160" alt={photo ? item.speaker || '' : ''} class="aspect-square w-28 rounded-xl border border-border-subtle bg-surface-2 object-cover sm:w-40" />
-        {#if photo && (item.thumb.credit || item.thumb.artist || item.thumb.licence || item.thumb.source_url)}
-          {@const credit = item.thumb.credit || item.thumb.artist}
-          {@const src = item.thumb.source_url || item.thumb.page_url}
-          <figcaption class="mt-1 max-w-40 text-xs text-muted">
-            <!-- the credit itself links to where the photo came from (descriptive anchor text, no bare "source") -->
-            {#if src}<a href={src} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover hover:underline">Photo of {item.speaker || 'the speaker'}{credit ? `: ${credit}` : ''}</a>{:else}Photo{credit ? `: ${credit}` : ''}{/if}{item.thumb.licence ? ` · ${item.thumb.licence}` : ''}
-          </figcaption>
+<article class="talk" style={`--tint:${tint}`}>
+  <!-- THE BROADCAST CARD: the speaker's record, call-sign line, title, and the player on the dial glass -->
+  <header class="cabinet relative overflow-hidden rounded-3xl bg-radio-walnut-deep p-2.5 sm:p-3">
+    <div class="cabinet-inner rounded-2xl bg-radio-walnut px-4 pb-5 pt-5 sm:px-8 sm:pb-7 sm:pt-7">
+      <nav class="flex flex-wrap items-center gap-x-2 font-dial text-sm font-semibold uppercase tracking-[0.22em] text-radio-on-dark" aria-label="Breadcrumb">
+        <span class="lamp" class:live={playing} aria-hidden="true"></span>
+        <a href="/media" class="hover:text-radio-amber">The Listening Room</a>
+        {#if item.collection}<span class="opacity-60" aria-hidden="true">/</span><span class="opacity-80">{item.collection}</span>{/if}
+      </nav>
+      <div class="mt-5 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8">
+        <figure class="mx-auto sm:mx-0">
+          <div class="record relative h-40 w-40 sm:h-48 sm:w-48" class:spinning={playing}>
+            <div class="vinyl absolute inset-0 rounded-full bg-radio-groove"></div>
+            <div class="absolute inset-[21%] label-ring overflow-hidden rounded-full">
+              <RecordLabel name={item.speaker || item.title} photo={photo ? item.thumb.url : null} year={item.year} size={112} eager alt={photo ? (item.speaker || '') : ''} />
+            </div>
+          </div>
+          {#if photo && (item.thumb.credit || item.thumb.artist || item.thumb.licence || item.thumb.source_url)}
+            {@const credit = item.thumb.credit || item.thumb.artist}
+            {@const src = item.thumb.source_url || item.thumb.page_url}
+            <figcaption class="mx-auto mt-2 max-w-48 text-center text-xs text-radio-on-dark opacity-70">
+              <!-- the credit itself links to where the photo came from (descriptive anchor text, no bare "source") -->
+              {#if src}<a href={src} target="_blank" rel="noopener" class="underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">Photo of {item.speaker || 'the speaker'}{credit ? `: ${credit}` : ''}</a>{:else}Photo{credit ? `: ${credit}` : ''}{/if}{item.thumb.licence ? ` · ${item.thumb.licence}` : ''}
+            </figcaption>
+          {/if}
+        </figure>
+        <div class="min-w-0">
+          <p class="font-dial text-sm font-bold uppercase tracking-[0.24em] text-radio-brass-bright">
+            {item.year ? `Recorded ${item.year}` : 'Undated recording'}{duration ? ` · ${dur(duration)}` : ''}{item.language && item.language !== 'en' ? ` · ${item.language}` : ''}
+          </p>
+          <h1 class="mt-2 font-marquee text-[2.1rem] leading-[1.02] text-radio-on-dark sm:text-5xl lg:text-6xl">{item.title}</h1>
+          {#if item.speaker}
+            <p class="mt-3 text-lg text-radio-on-dark sm:text-xl">
+              {#if speakerKey}<a href={`/media?speaker=${encodeURIComponent(speakerKey)}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber">{item.speaker}</a>{:else}<span class="font-semibold">{item.speaker}</span>{/if}
+            </p>
+          {/if}
+          {#if when.length > (item.year && !item.date ? 1 : 0)}<p class="mt-1 text-sm text-radio-on-dark opacity-75">{when.join(' · ')}</p>{/if}
+          <div class="mt-3 flex flex-wrap gap-2">
+            {#if q?.overall}
+              <span class="tube" title={qualityTitle} aria-label={qualityTitle}>Audio {q.overall}{q.primary_issue && q.primary_issue !== 'ok' ? ` · ${ISSUE_LABEL[q.primary_issue] || q.primary_issue}` : ' · clear'}</span>
+            {/if}
+            {#if audienceLabel}<span class="tube">{audienceLabel}</span>{/if}
+            {#if item.quotes?.length}<span class="tube">{item.quotes.length} quotation{item.quotes.length === 1 ? '' : 's'} linked</span>{/if}
+          </div>
+        </div>
+      </div>
+      {#if item.summary}<p class="mt-6 max-w-3xl text-base leading-relaxed text-radio-on-dark opacity-90 sm:text-lg">{item.summary}</p>{/if}
+
+      <!-- the player on the dial glass -->
+      <section bind:this={heroPlayer} aria-label="Player" class="dial mt-6 rounded-2xl bg-radio-dial p-3 sm:p-4">
+        {#if canPlay}
+          <div class="flex items-center gap-3 sm:gap-4">
+            <button type="button" onclick={toggle} disabled={busy} aria-label={playing ? 'Pause' : 'Play'} class="bigplay">
+              {#if busy}
+                <svg class="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+              {:else if playing}
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              {:else}
+                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+              {/if}
+            </button>
+            <div class="min-w-0 flex-1">
+              <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} />
+            </div>
+          </div>
+          <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-radio-dial-ink">
+            <span class="font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
+            {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
+            <label class="ml-auto flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Speed
+              <select bind:value={rate} class="speed rounded-md bg-radio-paper px-1.5 py-0.5 font-sans text-sm text-radio-ink">
+                {#each [0.75, 1, 1.25, 1.5, 2] as r (r)}<option value={r}>{r}×</option>{/each}
+              </select>
+            </label>
+          </div>
+          <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-radio-dial-ink opacity-80">
+            {#if range}
+              <span>Range {formatTime(range.start)}–{formatTime(range.end)}
+                <button type="button" class="ml-1 font-semibold underline hover:text-radio-amber" onclick={() => { range = null; limit = null; note = ''; }}>clear</button></span>
+            {:else if !started && startAt > 0}
+              <span>Starts at {formatTime(startAt)}</span>
+            {/if}
+            {#if level === 'clips'}<span title={item.rights?.basis || ''}>Plays in excerpts of up to {Math.round((item.rights?.clip_cap || 180) / 60)} min</span>{/if}
+            <span class="hidden sm:inline">Space = play/pause · click any word to play from it · select text to share a passage</span>
+          </div>
+          {#if note}<p class="mt-2 text-sm font-semibold text-radio-needle" role="status">{note}</p>{/if}
+        {:else}
+          <p class="text-sm text-radio-dial-ink">Text only — audio is not available for this recording{item.source?.kind === 'youtube' ? '; the full talk is on YouTube' : ''}.</p>
         {/if}
-      </figure>
-    {/if}
-    <div class="min-w-0 flex-1">
-      <p class="text-sm text-muted"><a href="/media" class="hover:text-accent">Media</a>{item.collection ? ` · ${item.collection}` : ''}</p>
-      <h1 class="mt-1 text-2xl font-semibold tracking-tight text-primary sm:text-3xl">{item.title}</h1>
-      {#if item.speaker}<p class="mt-1 text-lg text-secondary">{item.speaker}</p>{/if}
-      {#if when.length || duration}
-        <p class="mt-1 text-sm text-muted">{[...when, duration ? formatTime(duration) : null].filter(Boolean).join(' · ')}
-          {#if q?.overall}<span class="ml-2 inline-flex items-center gap-1 rounded border border-border-subtle px-1.5 text-xs text-muted" title={qualityTitle} aria-label={qualityTitle}>audio {q.overall}{q.primary_issue && q.primary_issue !== 'ok' ? ` · ${ISSUE_LABEL[q.primary_issue] || q.primary_issue}` : ''}</span>{/if}
-        </p>
-      {/if}
-      {#if item.summary}<p class="mt-3 max-w-3xl text-secondary">{item.summary}</p>{/if}
+        <!-- svelte-ignore a11y_media_has_caption — the transcript below is the caption track -->
+        <audio bind:this={audio} preload="auto" class="hidden"></audio>
+      </section>
+
       <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
         {#if item.source?.kind === 'youtube' && youtubeHref}
-          <a href={youtubeHref} target="_blank" rel="noopener" class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-error px-3 py-2 font-medium text-primary hover:bg-hover">
-            <svg class="h-4 w-4 text-error" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.75 15.02V8.98L15.5 12z"/></svg>
-            <span>Source: {item.source.channel || 'YouTube'} on YouTube — watch the full talk{current > 1 ? ` (from ${formatTime(current)})` : ''}</span>
+          <a href={youtubeHref} target="_blank" rel="noopener" class="chip">
+            <svg class="h-4 w-4 text-radio-needle" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.75 15.02V8.98L15.5 12z"/></svg>
+            <span>Watch on YouTube{item.source.channel ? ` (${item.source.channel})` : ''}{current > 1 ? ` from ${formatTime(current)}` : ''}</span>
           </a>
         {/if}
         {#if item.page}
-          <a href={media.href(item.page)} target="_blank" rel="noopener" class="inline-flex min-h-10 items-center rounded-lg border border-border px-3 py-2 text-secondary hover:bg-hover">Standalone page ↗</a>
+          <a href={media.href(item.page)} target="_blank" rel="noopener" class="chip">The transcript as a standalone page</a>
         {/if}
         {#if level === 'full' && item.rights?.download && item.audio?.m4a}
-          <a href={media.href(item.audio.m4a)} download class="inline-flex min-h-10 items-center rounded-lg border border-border px-3 py-2 text-secondary hover:bg-hover">Download audio</a>
+          <a href={media.href(item.audio.m4a)} download class="chip">Download the audio</a>
         {/if}
       </div>
     </div>
   </header>
 
-  <div class="lg:grid lg:grid-cols-12 lg:gap-10">
-    <!-- aside first in the DOM so chapters/topics come before the transcript on phones -->
-    <aside class="mb-6 space-y-6 lg:order-2 lg:col-span-4 lg:mb-0">
-      <div class="lg:sticky lg:top-20 space-y-6">
+  <div class="mt-10 lg:grid lg:grid-cols-12 lg:gap-10">
+    <!-- THE PROGRAM LOG (margin TOC); first in the DOM so the contents come before the transcript on phones -->
+    <aside class="mb-8 lg:order-2 lg:col-span-4 lg:mb-0">
+      <div class="space-y-8 lg:sticky lg:top-32">
         {#if toc.length}
-          <nav aria-label="Contents" class="rounded-xl border border-border-subtle bg-surface-1 p-4">
-            <h2 class="mb-2 text-sm font-semibold text-primary">Contents</h2>
-            <ol class="max-h-[60vh] space-y-0.5 overflow-y-auto">
+          <nav aria-label="Contents" class="log">
+            <button type="button" class="log-head" aria-expanded={tocOpen} onclick={() => (tocOpen = !tocOpen)}>
+              <span>Program log</span><span class="font-dial text-sm opacity-70">{toc.length} segments</span>
+              <svg class="h-4 w-4 transition-transform lg:hidden" class:rotate-180={tocOpen} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <ol class="log-list" class:open={tocOpen}>
               {#each toc as c, i (i)}
                 <li>
-                  <a href={c.slug ? `#${c.slug}` : `?t=${Math.floor(c.t)}`} onclick={(e) => jump(e, c.t, c.p, c.slug)}
-                    class="flex min-h-10 items-baseline gap-3 rounded-md px-2 py-1.5 text-sm text-secondary hover:bg-hover hover:text-primary">
-                    <span class="w-14 shrink-0 font-mono text-xs tabular-nums text-accent">{formatTime(c.t)}</span><span>{c.title}</span>
+                  <a href={c.slug ? `#${c.slug}` : `?t=${Math.floor(c.t)}`} onclick={(e) => jump(e, c.t, c.p, c.slug)} class="log-row" class:on={nowSection === c} aria-current={nowSection === c ? 'true' : undefined}>
+                    <span class="log-t">{formatTime(c.t)}</span><span class="min-w-0">{c.title}</span>
                   </a>
                 </li>
               {/each}
@@ -329,14 +410,14 @@
         {/if}
         {#if item.topics?.length}
           <div>
-            <h2 class="mb-2 text-sm font-semibold text-primary">Topics</h2>
+            <h2 class="mb-2 font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">On the program</h2>
             <ul class="flex flex-wrap gap-1.5">
-              {#each item.topics as t (t)}<li class="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-secondary">{t}</li>{/each}
+              {#each item.topics as t (t)}<li><a href={`/media?q=${encodeURIComponent(t)}`} class="topic">{t}</a></li>{/each}
             </ul>
           </div>
         {/if}
         {#if item.quotes?.length || item.cross_references?.length}
-          <p class="text-xs text-muted">
+          <p class="font-dial text-sm font-semibold uppercase tracking-wider text-radio-ink-soft">
             {item.quotes?.length || 0} quotation{item.quotes?.length === 1 ? '' : 's'} linked to source ·
             {item.cross_references?.length || 0} cross-reference{item.cross_references?.length === 1 ? '' : 's'}
           </p>
@@ -345,62 +426,55 @@
     </aside>
 
     <div class="min-w-0 lg:order-1 lg:col-span-8">
-      <!-- player card -->
-      <section aria-label="Player" class="mb-8 rounded-xl border border-border-subtle bg-surface-1 p-4">
-        {#if canPlay}
-          <div class="flex items-center gap-3">
-            <button type="button" onclick={toggle} disabled={busy} aria-label={playing ? 'Pause' : 'Play'}
-              class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-text shadow hover:bg-accent-hover disabled:opacity-60">
-              {#if busy}
-                <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
-              {:else if playing}
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-              {:else}
-                <svg class="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
-              {/if}
-            </button>
-            <div class="min-w-0 flex-1">
-              <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} />
-            </div>
-          </div>
-          <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-            <span class="font-mono tabular-nums text-secondary">{formatTime(current)} / {formatTime(duration)}</span>
-            <label class="flex items-center gap-1">Speed
-              <select bind:value={rate} class="rounded border border-border bg-surface-0 px-1 py-0.5 text-xs text-primary">
-                {#each [0.75, 1, 1.25, 1.5, 2] as r (r)}<option value={r}>{r}×</option>{/each}
-              </select>
-            </label>
-            {#if range}
-              <span>Range {formatTime(range.start)}–{formatTime(range.end)}
-                <button type="button" class="ml-1 text-accent hover:text-accent-hover" onclick={() => { range = null; limit = null; note = ''; }}>clear</button></span>
-            {:else if !started && startAt > 0}
-              <span>Starts at {formatTime(startAt)}</span>
-            {/if}
-            {#if level === 'clips'}<span title={item.rights?.basis || ''}>Plays in excerpts of up to {Math.round((item.rights?.clip_cap || 180) / 60)} min</span>{/if}
-            <span class="hidden sm:inline">Space = play/pause · click any word to play from it · select text to share a passage</span>
-          </div>
-          {#if note}<p class="mt-2 text-sm text-warning" role="status">{note}</p>{/if}
-        {:else}
-          <p class="text-sm text-secondary">Text only — audio is not available for this recording{item.source?.kind === 'youtube' ? '; the full talk is on YouTube (link above)' : ''}.</p>
-        {/if}
-        <!-- svelte-ignore a11y_media_has_caption — the transcript below is the caption track -->
-        <audio bind:this={audio} preload="auto" class="hidden"></audio>
-      </section>
-
       <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara} />
     </div>
   </div>
+
+  {#if related.length}
+    <section class="mt-16" aria-labelledby="related-h">
+      <h2 id="related-h" class="font-marquee text-3xl text-radio-ink sm:text-4xl">Also on the dial</h2>
+      <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {#each related as r (r.s)}
+          {@const sp = speakersByKey[r.k]}
+          <li>
+            <a href={`/media/${r.s}`} class="rel" style={`--rt:${eraVar(r.y)}`}>
+              <span class="rel-disc"><span class="rel-label"><RecordLabel name={sp?.n || r.sp || r.t} photo={sp?.p} year={r.y} size={56} /></span></span>
+              <span class="min-w-0">
+                <span class="block font-marquee text-lg leading-tight text-radio-ink">{r.t}</span>
+                <span class="mt-0.5 block text-sm text-radio-ink-soft">{[r.sp, r.y, dur(r.d)].filter(Boolean).join(' · ')}</span>
+              </span>
+            </a>
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 </article>
+
+<!-- the slim sticky bar: the hero player, condensed, once it has scrolled away -->
+{#if canPlay && heroOut}
+  <div class="slimbar" role="region" aria-label="Player (condensed)">
+    <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2 sm:px-6">
+      <span class="h-9 w-9 flex-none overflow-hidden rounded-full" class:spin={playing}><RecordLabel name={item.speaker || item.title} photo={photo ? item.thumb.url : null} year={item.year} size={36} /></span>
+      <div class="hidden min-w-0 sm:block sm:w-56">
+        <p class="truncate font-marquee text-base leading-tight text-radio-on-dark">{item.title}</p>
+        <p class="truncate text-xs text-radio-on-dark opacity-75">{nowSection ? `§ ${nowSection.title}` : item.speaker || ''}</p>
+      </div>
+      <div class="min-w-0 flex-1"><MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} variant="slim" label="Seek (condensed player)" /></div>
+      <span class="font-dial text-base font-bold tabular-nums text-radio-on-dark">{formatTime(current)}</span>
+    </div>
+  </div>
+{/if}
 
 <!-- selection → copy link -->
 {#if sel}
-  <div class="fixed z-40 flex gap-1 rounded-lg border border-border bg-surface-0 p-1 shadow-lg backdrop-blur" style={`left:${sel.x}px;top:${sel.y}px`}>
-    <button type="button" class="min-h-10 rounded-md px-3 text-sm text-primary hover:bg-hover" onmousedown={(e) => e.preventDefault()} onclick={copyLink}>
+  <div class="fixed z-40 flex gap-1 rounded-xl bg-radio-walnut-deep p-1 shadow-lg" style={`left:${sel.x}px;top:${sel.y}px`}>
+    <button type="button" class="min-h-10 rounded-lg px-3 text-sm text-radio-on-dark hover:bg-radio-walnut" onmousedown={(e) => e.preventDefault()} onclick={copyLink}>
       {copied ? 'Link copied' : 'Copy link to this passage'}
     </button>
     {#if canPlay}
-      <button type="button" class="min-h-10 rounded-md px-3 text-sm text-accent hover:bg-hover" onmousedown={(e) => e.preventDefault()} onclick={playSelection}>
+      <button type="button" class="min-h-10 rounded-lg px-3 text-sm font-semibold text-radio-amber hover:bg-radio-walnut" onmousedown={(e) => e.preventDefault()} onclick={playSelection}>
         ▶ {formatTime(sel.start)}–{formatTime(sel.end)}
       </button>
     {/if}
@@ -411,18 +485,87 @@
 {#if started && canPlay}
   <div class="fixed bottom-4 left-4 z-30 flex flex-col items-start gap-2 sm:bottom-6 sm:left-6">
     {#if !follow && playing}
-      <button type="button" onclick={resync} class="min-h-10 rounded-full border border-border bg-surface-0 px-4 text-sm font-medium text-accent shadow-lg backdrop-blur hover:bg-surface-1">
-        ↧ Follow
-      </button>
+      <button type="button" onclick={resync} class="follow">↧ Follow</button>
     {/if}
-    <button type="button" onclick={toggle} aria-label={playing ? 'Pause' : 'Play'}
-      class="flex h-14 items-center gap-2 rounded-full bg-accent pl-4 pr-5 text-accent-text shadow-xl hover:bg-accent-hover">
+    <button type="button" onclick={toggle} aria-label={playing ? 'Pause' : 'Play'} class="fab">
       {#if playing}
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
       {:else}
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
       {/if}
-      <span class="font-mono text-sm tabular-nums">{formatTime(current)}</span>
+      <span class="font-dial text-base font-bold tabular-nums tracking-wider">{formatTime(current)}</span>
     </button>
   </div>
 {/if}
+
+<style>
+  .cabinet-inner {
+    background-image:
+      repeating-linear-gradient(97deg, transparent 0 7px, color-mix(in srgb, var(--radio-walnut-deep) 18%, transparent) 7px 8px, transparent 8px 19px),
+      radial-gradient(110% 80% at 15% 0%, color-mix(in srgb, var(--tint) 30%, transparent), transparent 60%);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-brass) 45%, transparent), inset 0 2px 30px rgba(0, 0, 0, 0.35);
+  }
+  .lamp { width: 0.65rem; height: 0.65rem; border-radius: 9999px; background: var(--radio-needle); opacity: 0.45; margin-right: 0.25rem; }
+  .lamp.live { opacity: 1; box-shadow: 0 0 10px 2px var(--radio-needle); animation: lamp 2.4s ease-in-out infinite; }
+  @keyframes lamp { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .vinyl { background-image: repeating-radial-gradient(circle at 50% 50%, var(--radio-groove) 0 2px, color-mix(in srgb, var(--radio-groove) 80%, var(--radio-on-dark)) 2px 3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+  .vinyl::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 30deg, transparent 0 10%, var(--radio-groove-sheen) 14%, transparent 22% 55%, var(--radio-groove-sheen) 62%, transparent 70%); }
+  .record { animation: spin 2s linear infinite; animation-play-state: paused; }
+  .record.spinning { animation-play-state: running; }
+  .spin { animation: spin 1.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .label-ring { box-shadow: 0 0 0 2px var(--radio-brass); }
+  .speed { box-shadow: inset 0 0 0 1px var(--radio-line); }
+  .tube { display: inline-flex; align-items: center; padding: 0.25rem 0.7rem; border-radius: 9999px; font: 700 0.85rem/1.2 'Big Shoulders Display', sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--radio-on-dark); background: color-mix(in srgb, var(--radio-walnut-deep) 55%, transparent); box-shadow: inset 0 0 0 1px var(--radio-brass); }
+  .dial { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--radio-brass) 70%, transparent), inset 0 6px 18px rgba(0, 0, 0, 0.22);
+    background-image: radial-gradient(60% 140% at 50% 100%, var(--radio-glow), transparent 70%); }
+  .bigplay { flex: none; display: grid; place-items: center; width: 3.75rem; height: 3.75rem; border-radius: 9999px; background: var(--radio-amber); color: var(--radio-walnut-deep);
+    box-shadow: 0 0 0 0 var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); transition: transform 0.2s, box-shadow 0.3s; }
+  .bigplay:hover { transform: scale(1.05); box-shadow: 0 0 0 7px var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); }
+  .bigplay:disabled { opacity: 0.6; }
+  .bigplay:focus-visible, .chip:focus-visible, .log-row:focus-visible, .log-head:focus-visible, .rel:focus-visible, .topic:focus-visible, .fab:focus-visible, .follow:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  .chip { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.4rem 0.9rem; border-radius: 0.7rem; color: var(--radio-on-dark);
+    box-shadow: inset 0 0 0 1px var(--radio-brass); transition: background 0.2s; }
+  .chip:hover { background: var(--radio-walnut-deep); color: var(--radio-amber); }
+
+  /* the program log */
+  .log { border-radius: 1rem; background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); overflow: hidden; }
+  .log-list li + li .log-row { border-top: 1px dashed var(--radio-line); border-radius: 0; }
+  .log-head { display: flex; width: 100%; align-items: baseline; gap: 0.75rem; padding: 0.9rem 1rem 0.6rem; font: 400 1.35rem/1.1 'Gloock', Georgia, serif; color: var(--radio-ink); text-align: left;
+    border-bottom: 2px solid var(--tint); }
+  .log-head svg { margin-left: auto; align-self: center; }
+  .log-list { max-height: 62vh; overflow-y: auto; padding: 0.35rem; }
+  @media (max-width: 1023px) { .log-list:not(.open) { display: none; } }
+  @media (min-width: 1024px) { .log-head { pointer-events: none; } }
+  .log-row { position: relative; display: flex; align-items: baseline; gap: 0.75rem; min-height: 2.5rem; padding: 0.45rem 0.6rem; border-radius: 0.5rem; font-size: 0.92rem; color: var(--radio-ink-soft); transition: background 0.2s, color 0.2s; }
+  .log-row:hover { background: var(--radio-brass-soft); color: var(--radio-ink); }
+  .log-row.on { color: var(--radio-ink); background: var(--radio-brass-soft); }
+  .log-row.on::before { content: ''; position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem; width: 3px; border-radius: 2px; background: var(--radio-needle); }
+  .log-t { flex: none; width: 3.4rem; font: 700 0.9rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.06em; color: var(--radio-amber); font-variant-numeric: tabular-nums; }
+  .topic { display: inline-block; padding: 0.3rem 0.75rem; border-radius: 9999px; font-family: 'Libre Caslon Text', Georgia, serif; font-size: 0.92rem; color: var(--radio-ink);
+    background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); }
+  .topic:hover { box-shadow: inset 0 0 0 1.5px var(--radio-brass); }
+
+  /* related */
+  .rel { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 0.9rem 0.7rem 0.7rem; border-radius: 1rem; background: var(--radio-paper);
+    box-shadow: inset 0 0 0 1px var(--radio-line); transition: transform 0.25s, box-shadow 0.25s; }
+  .rel:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--rt), 0 8px 20px var(--radio-brass-soft); }
+  .rel-disc { position: relative; flex: none; width: 4.2rem; height: 4.2rem; border-radius: 9999px;
+    background: repeating-radial-gradient(circle, var(--radio-groove) 0 1.5px, color-mix(in srgb, var(--radio-groove) 78%, var(--radio-on-dark)) 1.5px 2.5px); transition: transform 0.6s; }
+  .rel:hover .rel-disc { transform: rotate(200deg); }
+  .rel-label { position: absolute; inset: 16%; border-radius: 9999px; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass); }
+
+  /* sticky slim bar + FAB */
+  .slimbar { position: fixed; left: 0; right: 0; top: 3.6rem; z-index: 35; background: color-mix(in srgb, var(--radio-walnut-deep) 94%, transparent); backdrop-filter: blur(8px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 -1px 0 var(--radio-brass); animation: drop 0.35s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  @keyframes drop { from { transform: translateY(-110%); opacity: 0; } to { transform: none; opacity: 1; } }
+  .fab { display: flex; height: 3.5rem; align-items: center; gap: 0.5rem; padding: 0 1.25rem 0 1rem; border-radius: 9999px; background: var(--radio-amber); color: var(--radio-walnut-deep);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 4px var(--radio-glow); }
+  .follow { min-height: 2.5rem; padding: 0 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.9rem; background: var(--radio-walnut-deep); color: var(--radio-amber); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 0 0 1px var(--radio-brass); }
+  @media (prefers-reduced-motion: reduce) {
+    .record, .spin, .lamp.live, .slimbar { animation: none; }
+    .rel, .rel-disc, .bigplay { transition: none; }
+  }
+</style>

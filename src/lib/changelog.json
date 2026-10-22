@@ -1,6 +1,41 @@
 {
-  "generated": "2026-10-22T14:19:59.222Z",
+  "generated": "2026-10-22T14:54:03.282Z",
   "entries": [
+    {
+      "hash": "cc1e4f78",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "By-path redirects point at the canonical API path (query kept), not the HTML page",
+      "scope": "library"
+    },
+    {
+      "hash": "9d657179",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Remaster_ab on boss — Resemble loads/saves with soundfile (torchaudio ≥ 2.9 needs torchcodec), the 4-thread cap is tower's (REMASTER_MAX_THREADS raises it on boss). Measured per 45 s excerpt: Resemble 198 s tower CPU ×8 · 295 s boss GPU (ROCm nightly, gfx1151, warm) · 53 s boss CPU ×16; VoiceFixer 48 s · 157 s · 10 s — boss CPU is the remastering path until the GPU stack is tuned",
+      "scope": "media"
+    },
+    {
+      "hash": "0761b604",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Reader URLs use the doc's stored slug, never the paragraph's author; stale author-prefix slugs 301 to the book",
+      "scope": "links"
+    },
+    {
+      "hash": "0d746b7d",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Listening Room design rationale, measurements, screenshots and taste calls",
+      "scope": "media"
+    },
+    {
+      "hash": "6e2c7722",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Listening Room polish — Lighthouse mobile 89–95 (was 78–81)",
+      "scope": "media"
+    },
     {
       "hash": "4a3c325b",
       "date": "2026-10-22",
@@ -3465,45 +3500,45 @@
       "type": "New",
       "description": "Section-author job — credit a book section to its real writer (Dawn-Breakers intro = George Townshend)",
       "scope": "ops"
-    },
-    {
-      "hash": "9ad2a5e8",
-      "date": "2026-10-12",
-      "type": "Performance",
-      "description": "No event-loop freezes at restart — running spend ledger; encounter index read in pages",
-      "scope": "boot"
-    },
-    {
-      "hash": "9bd05640",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Refuse migrating prod from the wrong DB; budget-check off the provider-only index; updater logs test-server errors",
-      "scope": "deploy"
-    },
-    {
-      "hash": "38813640",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Entity-mention + concept-lexicon layers in planned search — every index we build is read",
-      "scope": "search"
-    },
-    {
-      "hash": "483b1a29",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Qdrant phrase + keyword layers ON for planned search (Anís, site search, API) — type battery 72% → 77%",
-      "scope": "search"
-    },
-    {
-      "hash": "29d1919d",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Scale counts never cache a Qdrant timeout (page showed 0 phrase vectors for 10 min); 8 s timeout",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "cc1e4f78",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "By-path redirects point at the canonical API path (query kept), not the HTML page",
+        "scope": "library"
+      },
+      {
+        "hash": "9d657179",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Remaster_ab on boss — Resemble loads/saves with soundfile (torchaudio ≥ 2.9 needs torchcodec), the 4-thread cap is tower's (REMASTER_MAX_THREADS raises it on boss). Measured per 45 s excerpt: Resemble 198 s tower CPU ×8 · 295 s boss GPU (ROCm nightly, gfx1151, warm) · 53 s boss CPU ×16; VoiceFixer 48 s · 157 s · 10 s — boss CPU is the remastering path until the GPU stack is tuned",
+        "scope": "media"
+      },
+      {
+        "hash": "0761b604",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Reader URLs use the doc's stored slug, never the paragraph's author; stale author-prefix slugs 301 to the book",
+        "scope": "links"
+      },
+      {
+        "hash": "0d746b7d",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Listening Room design rationale, measurements, screenshots and taste calls",
+        "scope": "media"
+      },
+      {
+        "hash": "6e2c7722",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Listening Room polish — Lighthouse mobile 89–95 (was 78–81)",
+        "scope": "media"
+      },
       {
         "hash": "4a3c325b",
         "date": "2026-10-22",
@@ -6988,41 +7023,6 @@
         "type": "New",
         "description": "Section-author job — credit a book section to its real writer (Dawn-Breakers intro = George Townshend)",
         "scope": "ops"
-      },
-      {
-        "hash": "9ad2a5e8",
-        "date": "2026-10-12",
-        "type": "Performance",
-        "description": "No event-loop freezes at restart — running spend ledger; encounter index read in pages",
-        "scope": "boot"
-      },
-      {
-        "hash": "9bd05640",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Refuse migrating prod from the wrong DB; budget-check off the provider-only index; updater logs test-server errors",
-        "scope": "deploy"
-      },
-      {
-        "hash": "38813640",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Entity-mention + concept-lexicon layers in planned search — every index we build is read",
-        "scope": "search"
-      },
-      {
-        "hash": "483b1a29",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Qdrant phrase + keyword layers ON for planned search (Anís, site search, API) — type battery 72% → 77%",
-        "scope": "search"
-      },
-      {
-        "hash": "29d1919d",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Scale counts never cache a Qdrant timeout (page showed 0 phrase vectors for 10 min); 8 s timeout",
-        "scope": "sourcehunt"
       }
     ]
   }
