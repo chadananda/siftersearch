@@ -18,10 +18,11 @@ function ensure() {
     preview.t = audio.currentTime;
     if (audio.currentTime >= stopAt) { audio.pause(); preview.playing = false; preview.t = stopAt; }
   });
-  audio.addEventListener('playing', () => { preview.playing = true; preview.loading = false; });
+  const blip = () => audio.src.startsWith('blob:');   // the unlock blip, not the excerpt
+  audio.addEventListener('playing', () => { if (blip()) return; preview.playing = true; preview.loading = false; });
   audio.addEventListener('pause', () => { preview.playing = false; });
   audio.addEventListener('ended', () => { preview.playing = false; });
-  audio.addEventListener('error', () => { preview.loading = false; preview.playing = false; preview.error = 'This recording could not be played here.'; });
+  audio.addEventListener('error', () => { if (blip()) return; preview.loading = false; preview.playing = false; preview.error = 'This recording could not be played here.'; });
   return audio;
 }
 
@@ -36,6 +37,20 @@ function session(it, speaker) {
   } catch { /* older browsers */ }
 }
 
+// Browsers allow play() only inside the click; the clip URL fetch and the metadata wait come after an await. Playing a
+// tiny silent WAV synchronously in the click unlocks this element for the real source that follows (as on the talk page).
+let unlocked = false;
+function unlock(a) {
+  if (unlocked) return;
+  unlocked = true;
+  const n = 400, b = new DataView(new ArrayBuffer(44 + n)), w = (o, str) => [...str].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); b.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+  b.setUint32(24, 8000, true); b.setUint32(28, 8000, true); b.setUint16(32, 1, true); b.setUint16(34, 8, true); w(36, 'data'); b.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) b.setUint8(44 + i, 128);
+  a.src = URL.createObjectURL(new Blob([b.buffer], { type: 'audio/wav' }));
+  a.play().catch(() => {});
+}
+
 /** Play (or toggle) the ~20 s highlight of a listing row. */
 export async function playExcerpt(it, speaker = null) {
   const a = ensure();
@@ -44,10 +59,12 @@ export async function playExcerpt(it, speaker = null) {
     if (a.currentTime < stopAt - 0.5) { a.play().catch(() => {}); return; }
   }
   a.pause();
+  unlock(a);
   const [start, end] = it.hl || [0, 20];
   Object.assign(preview, { item: it, speaker, playing: false, loading: true, t: start, start, end, error: null });
   try {
-    const au = it.au || audioUrls(it);   // a moment page passes the item's own audio URLs
+    // a moment/clip page passes the item's own audio URLs as `audio` (index rows' `au` is the AUDIENCE level, not audio)
+    const au = (it.audio?.ogg || it.audio?.m4a) ? it.audio : audioUrls(it);
     if (au) {
       a.src = media.href(canOgg() ? au.ogg : au.m4a);
       stopAt = end;
@@ -62,7 +79,8 @@ export async function playExcerpt(it, speaker = null) {
     }
     session(it, speaker);
     await a.play();
-  } catch {
+  } catch (err) {
+    console.warn('preview excerpt failed', err);
     preview.loading = false;
     preview.error = 'This excerpt is not available to play here.';
   }

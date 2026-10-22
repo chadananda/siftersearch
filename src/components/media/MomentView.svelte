@@ -23,7 +23,7 @@
   const contextHref = `/media/${m.slug}?t=${Math.floor(m.t0_ms / 1000)}-${Math.ceil(m.t1_ms / 1000)}${m.key ? `#moment-${m.key}` : ''}`;
   const shareText = momentShareText(m);
   // the row the shared preview player understands: the talk, the window, its audio (full) or clip permission
-  const row = { s: m.slug, t: m.title, sp: m.speaker, y: m.year, hl: [t0, t1], au: item?.audio && item?.rights?.playback === 'full' ? item.audio : null };
+  const row = { s: m.slug, t: m.title, sp: m.speaker, y: m.year, hl: [t0, t1], audio: item?.audio && item?.rights?.playback === 'full' ? item.audio : null };
   const canPlay = !!item && (item.rights?.playback === 'full' ? !!item.audio : item?.rights?.playback === 'clips');
   const playingThis = $derived(preview.item?.s === m.slug && preview.start != null && preview.playing);
   const progress = $derived(preview.item?.s === m.slug && preview.end > preview.start ? Math.min(1, Math.max(0, (preview.t - preview.start) / (preview.end - preview.start))) : 0);

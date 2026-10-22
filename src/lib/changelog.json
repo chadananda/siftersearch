@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T16:59:22.928Z",
+  "generated": "2026-10-22T17:03:18.279Z",
   "entries": [
+    {
+      "hash": "d410c8fa",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "Deploy (edge caches shorts)",
+      "scope": null
+    },
+    {
+      "hash": "09feb3c7",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "Covering index for the dossier's claim count/sample (migration 169)",
+      "scope": "people"
+    },
     {
       "hash": "5afd16d6",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Every band keeps a thin scrollbar track so scrolling and non-scrolling bands line up",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "0d0b34dc",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Results animate English passage → Arabic passage → English band → Arabic band",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "69b5db24",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Band header one fixed line — spines of both boxes start at the same height",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "d410c8fa",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "Deploy (edge caches shorts)",
+        "scope": null
+      },
+      {
+        "hash": "09feb3c7",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "Covering index for the dossier's claim count/sample (migration 169)",
+        "scope": "people"
+      },
       {
         "hash": "5afd16d6",
         "date": "2026-10-22",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-13",
         "type": "Fixed",
         "description": "Every band keeps a thin scrollbar track so scrolling and non-scrolling bands line up",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "0d0b34dc",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Results animate English passage → Arabic passage → English band → Arabic band",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "69b5db24",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Band header one fixed line — spines of both boxes start at the same height",
         "scope": "sourcehunt"
       }
     ]
