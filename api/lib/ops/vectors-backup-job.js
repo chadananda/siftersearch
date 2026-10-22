@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, renameSync, rmSync, statSync, statfsSync, writeF
 import { join } from 'path';
 import { VECTOR_STORES, backupVectorStore, checkFor } from '../repos/vector-backup-repo.js';
 import { pendingRuns } from '../repos/ops-report-repo.js';
-import { isDraining } from '../drain.js';
+import { isDraining, drainReason } from '../drain.js';
 import { logActivity } from '../repos/activity-repo.js';
 
 export const DEFAULT_DEST = '/tank/sifter/backups/vectors';
@@ -25,6 +25,10 @@ export function storesToDo({ stores } = {}, map = VECTOR_STORES) {
   for (const s of list) if (!map[s]) throw new Error(`vectors-backup: unknown store '${s}' (${Object.keys(map).join(' | ')})`);
   return list;
 }
+
+/** Abort the store being copied only for a real STOP. An update drain (SIGHUP) lets it finish — SQLite's backup cannot
+ *  resume, and on 10-21 another agent's deploy threw away 101 of 240 GB — and the job yields between stores instead. */
+export const abortCopy = (draining = isDraining(), reason = drainReason()) => draining && reason !== 'SIGHUP';
 
 export async function vectorsBackupJob(params = {}, deps = {}) {
   const { backup = backupVectorStore, running = async (name) => (await pendingRuns(name)).filter((r) => r.status === 'running'), log = logActivity, storeMap = VECTOR_STORES } = deps;
@@ -49,10 +53,10 @@ export async function vectorsBackupJob(params = {}, deps = {}) {
     let r;
     try {
       r = await backup({ src, dest: p.partial, check, ...(params.pagesPerStep ? { pagesPerStep: params.pagesPerStep } : {}), ...(params.pauseMs != null ? { pauseMs: params.pauseMs } : {}) },
-        { shouldAbort: isDraining, onProgress: (m) => log('job', `vectors-backup · ${store} · ${(100 * (1 - m.remainingPages / m.totalPages)).toFixed(1)}%`) });
+        { shouldAbort: () => abortCopy(), onProgress: (m) => log('job', `vectors-backup · ${store} · ${(100 * (1 - m.remainingPages / m.totalPages)).toFixed(1)}%`) });
     } catch (err) {
       rmSync(p.partial, { force: true });
-      if (isDraining()) return { yielded: true, resume: { stores: todo.slice(i) }, done };
+      if (abortCopy()) return { yielded: true, resume: { stores: todo.slice(i) }, done };
       throw err;
     }
     if (!r.verdict.ok) {

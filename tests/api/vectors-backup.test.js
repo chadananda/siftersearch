@@ -6,7 +6,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import Database from 'better-sqlite3';
 import { backupVectorStore, checkFor, restarted, verdict } from '../../api/lib/repos/vector-backup-repo.js';
-import { vectorsBackupJob, storesToDo, backupPaths } from '../../api/lib/ops/vectors-backup-job.js';
+import { vectorsBackupJob, storesToDo, backupPaths, abortCopy } from '../../api/lib/ops/vectors-backup-job.js';
 import { INDEX_LANES, INDEX_REPORTS } from '../../api/lib/ops/index-reports.js';
 
 function store(dir, rows = 3000) {
@@ -57,6 +57,12 @@ describe('vectors-backup job', () => {
   it('is an indexer job in the index lane (never beside a phrase build)', () => {
     expect(INDEX_REPORTS['vectors-backup']).toBeTypeOf('function');
     expect(INDEX_LANES.index).toContain('vectors-backup');
+  });
+  it('an update drain (SIGHUP) lets the store in progress finish; a stop aborts it', () => {
+    expect(abortCopy(false, null)).toBe(false);
+    expect(abortCopy(true, 'SIGHUP')).toBe(false);
+    expect(abortCopy(true, 'SIGTERM')).toBe(true);
+    expect(abortCopy(true, 'SIGINT')).toBe(true);
   });
   it('unknown stores are refused', () => expect(() => storesToDo({ stores: ['phrases'] })).toThrow(/unknown store/));
   it('backs up, rotates the previous copy to vectors.prev.db and writes a manifest', async () => {
