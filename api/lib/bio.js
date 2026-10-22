@@ -521,6 +521,8 @@ export async function listBioPersons() {
 // for a central figure is several reads. Bahá'u'lláh (1247562) had 44,042 claims → a 13 MB response and 1,659 OceanLibrary
 // links to range-resolve: 39.6 s cold, two 19.6 s gateway timeouts (10-22). Claims are now sampled (CLAIMS_MAX).
 export const CLAIMS_MAX = 300;
+// index-only on idx_ec_entity_status_time (migration 169); on idx_ec_entity alone it was 1.9 s cold for 44k claims
+export const CLAIMS_COUNT_SQL = `SELECT COUNT(*) n FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported')`;
 const _personCache = new Map();   // id → { at, p: Promise }
 const PERSON_TTL_MS = 600000, PERSON_CACHE_MAX = 300;
 export function _resetBioPersonCache() { _personCache.clear(); }
@@ -571,7 +573,7 @@ async function buildBioPerson(id, claimsMax) {
   // NEW substrate first: cited claims (proof-gated, temporal, source-linked) from entity_claims — the reconciled
   // evidence base. Fall back to legacy facts2/episodes only for entities the pipeline hasn't covered. Same UI shape.
   // At most claimsMax, evenly spaced along the chronological order (a life still reads start to end); the total rides along.
-  const claimsTotal = (await queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported')`, [id]))?.n || 0;
+  const claimsTotal = (await queryOne(CLAIMS_COUNT_SQL, [id]))?.n || 0;
   const claimRows = claimsTotal <= claimsMax
     ? await queryAll(`SELECT relation, statement, proof_verbatim AS proof, doc_id, para_id, time_value AS tv, time_basis AS tb
        FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported') ORDER BY (tv IS NULL), tv, id`, [id])

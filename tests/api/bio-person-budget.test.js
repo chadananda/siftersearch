@@ -3,6 +3,8 @@
 // (evenly along the chronology), aggregates mentions in SQL, and is cached per id.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const db = new Database(':memory:');
 const calls = [];
@@ -11,7 +13,7 @@ vi.mock('../../api/lib/db.js', () => {
   return { queryAll: vi.fn(async (sql, params) => run(sql, params)), queryOne: vi.fn(async (sql, params) => run(sql, params)[0] ?? null),
     query: vi.fn(async (sql, params) => ({ rows: run(sql, params) })) };
 });
-const { getBioPerson, CLAIMS_MAX, _resetBioPersonCache } = await import('../../api/lib/bio.js');
+const { getBioPerson, CLAIMS_MAX, CLAIMS_COUNT_SQL, _resetBioPersonCache } = await import('../../api/lib/bio.js');
 
 const N_CLAIMS = 20000, N_MENTIONS = 30000;
 db.exec(`CREATE TABLE graph_entities (id INTEGER PRIMARY KEY, canonical_name TEXT, importance REAL, last_assessed_version TEXT, entity_type TEXT, religion TEXT);
@@ -21,6 +23,7 @@ db.exec(`CREATE TABLE graph_entities (id INTEGER PRIMARY KEY, canonical_name TEX
   CREATE TABLE entity_claims (id INTEGER PRIMARY KEY, entity_id INTEGER, relation TEXT, statement TEXT, proof_verbatim TEXT, doc_id INTEGER,
     para_id TEXT, time_value TEXT, time_basis TEXT, status TEXT);
   CREATE INDEX idx_ec_entity ON entity_claims(entity_id);
+  CREATE INDEX idx_ec_entity_status_time ON entity_claims(entity_id, status, time_value);
   CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, source_url TEXT);
   CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, external_para_id TEXT, paragraph_index INTEGER, text TEXT, heading TEXT);
   INSERT INTO graph_entities VALUES (7, 'Central Figure', 10, NULL, 'person', ''), (8, 'Minor Figure', 1, NULL, 'person', '');`);
@@ -62,5 +65,12 @@ describe('people dossier budget', () => {
     await getBioPerson(7);
     expect(calls.length).toBe(n);
     expect(Date.now() - t0).toBeLessThan(50);
+  });
+  it('counts claims from the covering index alone (migration 169)', () => {
+    db.exec('ANALYZE');
+    const plan = db.prepare(`EXPLAIN QUERY PLAN ${CLAIMS_COUNT_SQL}`).all(7).map((r) => r.detail).join(' | ');
+    expect(plan).toMatch(/COVERING INDEX idx_ec_entity_status_time/);
+    const src = readFileSync(join(import.meta.dirname, '..', '..', 'api/lib/migrations/v72-v90.js'), 'utf8');
+    expect(src).toMatch(/169: async[\s\S]*idx_ec_entity_status_time ON entity_claims\(entity_id, status, time_value\)/);
   });
 });

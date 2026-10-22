@@ -1855,6 +1855,14 @@ export const migrations = {
     try { await query('ANALYZE docs'); } catch { /* stats optional */ }
     logger.info('Migration 168 complete: idx_docs_source_url');
   },
+
+  169: async () => {
+    // The people dossier counts and samples a person's supported claims in chronological order (bio.js). On idx_ec_entity
+    // alone each of Bahá'u'lláh's 44k claims is a table-row lookup for status + time_value: 1.9 s cold on the API main
+    // thread (10-22). Covering (entity_id, status, time_value) → index-only count and sampling.
+    await query('CREATE INDEX IF NOT EXISTS idx_ec_entity_status_time ON entity_claims(entity_id, status, time_value)');
+    logger.info('Migration 169 complete: idx_ec_entity_status_time');
+  },
 };
 
 export const graphMigrations = {
