@@ -113,7 +113,8 @@ export async function apifyAudio(url, dir, actorKey, { token = process.env.APIFI
   const ext = /\.(m4a|mp3|webm|opus|ogg|wav)(\?|$)/i.exec(fileUrl)?.[1]?.toLowerCase() || (/(mp4|m4a)/.test(res.headers.get('content-type') || '') ? 'm4a' : 'mp3');
   const path = join(dir, `${youtubeId(url) || 'audio'}.${ext}`);
   await writeFile(path, bytes);
-  const usd = Number(run.usageTotalUsd || 0) + Object.entries(run.chargedEventCounts || {}).reduce((s, [k, n]) => s + n * Number(run.pricingInfo?.pricingPerEvent?.actorChargeEvents?.[k]?.eventPriceUsd || 0), 0);
+  // usageTotalUsd already includes a pay-per-event actor's charges (measured 10-22: Seemuapps $1.0002 = 10 × $0.10 + starts)
+  const usd = Number(run.usageTotalUsd || 0);
   return { path, sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length, route: actorKey, run_id: run.id, usd: Math.round(usd * 10000) / 10000 };
 }
 

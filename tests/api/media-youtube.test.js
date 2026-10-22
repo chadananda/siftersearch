@@ -33,7 +33,7 @@ describe('youtube fallbacks', () => {
       return ok({});
     });
     const r = await apifyAudio('https://youtu.be/dQw4w9WgXcQ', dir, 'titan', { token: 'SECRET', fetchImpl, pollMs: 1 });
-    expect(r).toMatchObject({ route: 'titan', bytes: 200_000, run_id: 'r1', usd: 0.0013 });
+    expect(r).toMatchObject({ route: 'titan', bytes: 200_000, run_id: 'r1', usd: 0.001 });
     expect(r.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(readFileSync(r.path).length).toBe(200_000);
     const bad = vi.fn(async () => ({ ok: false, text: async () => 'invalid token SECRET' }));
