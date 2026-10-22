@@ -11,12 +11,14 @@ vi.mock('../../api/lib/repos/media-repo.js', () => ({
   updateMediaItem: vi.fn(async (id, f) => Object.assign(store.items.find((i) => i.id === id), f)),
   pendingMedia: vi.fn(async (n) => store.items.filter((i) => ['queued', 'running'].includes(i.state)).slice(0, n)),
   vocabularyNames: vi.fn(async () => []),
+  youtubeHeldSince: vi.fn(async () => ({ n: store.cooling ? 1 : 0 })),
+  releaseHeldYoutube: vi.fn(async () => 0),
 }));
 vi.mock('../../api/lib/repos/activity-repo.js', () => ({ logActivity: vi.fn(async () => {}) }));
 vi.mock('../../api/lib/repos/ops-report-repo.js', () => ({ enqueue: vi.fn() }));
 import { mediaScanJob, mediaItemJob } from '../../api/lib/ops/media-jobs.js';
 
-beforeEach(() => { store.items = []; });
+beforeEach(() => { store.items = []; store.cooling = false; });
 
 describe('media-scan', () => {
   it('adds new recordings, records duplicates, queues one item and itself', async () => {
@@ -48,10 +50,18 @@ describe('media-scan', () => {
     expect(retire).toHaveBeenCalledWith([55]);
     expect(rm.mock.calls.some((c) => String(c[0]).endsWith('/Media/kept.md'))).toBe(true);
   });
+  it('while YouTube is cooling down after a bot check, only local files are started', async () => {
+    store.cooling = true;
+    store.items.push({ id: 1, state: 'queued', source_kind: 'youtube', source_ref: 'u' }, { id: 2, state: 'queued', source_kind: 'file', source_ref: '/m/x.mp3' });
+    const queue = vi.fn();
+    const r = await mediaScanJob({ roots: [], batch: 1, queueOnly: true }, { queue });
+    expect(r.queued).toEqual([2]);
+    expect(r.remaining).toBe(0);
+  });
   it('a bot check holds the item instead of failing it', async () => {
     store.items.push({ id: 1, state: 'scheduled', source_kind: 'youtube', source_ref: 'u' });
     const runItem = vi.fn(async () => { throw Object.assign(new Error('bot check'), { code: 'BOT_CHECK' }); });
-    await expect(mediaItemJob({ id: 1 }, { runItem })).rejects.toThrow('bot check');
+    expect(await mediaItemJob({ id: 1 }, { runItem })).toMatchObject({ id: 1, held: true });   // not thrown: no failure alert
     expect(store.items[0].state).toBe('held');
   });
 });

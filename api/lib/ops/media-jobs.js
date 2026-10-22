@@ -10,10 +10,10 @@ import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
-import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube, getMediaItem, updateMediaItem, pendingMedia, vocabularyNames } from '../repos/media-repo.js';
+import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube, getMediaItem, updateMediaItem, pendingMedia, vocabularyNames, youtubeHeldSince, releaseHeldYoutube } from '../repos/media-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
-import { youtubeId } from '../media/youtube.js';
+import { youtubeId, COOL_HOURS } from '../media/youtube.js';
 
 export const MEDIA_EXT = new Set(['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus', 'aiff', 'aif', 'wma', 'mp4', 'm4v', 'mov', 'mkv', 'webm', 'avi']);
 export const deweyMediaDir = () => process.env.DEWEY_MEDIA_DIR || '/tank/dewey-ingest/media';
@@ -59,9 +59,13 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
       out.added.push(it.id);
     }
   }
-  const next = (await pendingMedia(batch + 5)).filter((i) => i.state === 'queued').slice(0, batch);
+  // YouTube cool-down: after a bot check / 429 no YouTube item starts for COOL_HOURS (local files go on); then held ones get
+  // one polite retry
+  const cooling = (await youtubeHeldSince(COOL_HOURS))?.n > 0;
+  if (!cooling) await releaseHeldYoutube(COOL_HOURS);
+  const next = (await pendingMedia(batch + 200)).filter((i) => i.state === 'queued' && !(cooling && i.source_kind === 'youtube')).slice(0, batch);
   for (const it of next) { await updateMediaItem(it.id, { state: 'scheduled' }); await queue('media-item', { id: it.id }, by); out.queued.push(it.id); }
-  const remaining = (await pendingMedia(1000)).filter((i) => i.state === 'queued').length;
+  const remaining = (await pendingMedia(5000)).filter((i) => i.state === 'queued' && !(cooling && i.source_kind === 'youtube')).length;
   if (remaining > 0 && batch > 0) await queue('media-scan', { batch, round: round + 1, queueOnly: true }, by);
   await logActivity('media', `media scan round ${round}: ${out.added.length} added, ${out.held.length} held, ${out.queued.length} queued, ${remaining} waiting`).catch(() => {});
   return { ...out, remaining };
@@ -92,8 +96,13 @@ export async function mediaItemJob({ id, from = null, only = null, threads = nul
     await logActivity('media', `▶ media ${r.slug}: ${r.done.join(' → ') || 'nothing to do'}`).catch(() => {});
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };
   } catch (err) {
-    const held = err.code === 'BOT_CHECK';
-    await updateMediaItem(id, { state: held ? 'held' : 'failed', why: String(err.message).slice(0, 500) }).catch(() => {});
+    // a bot check / rate limit is not a failure (no alert mail): the item waits out the YouTube cool-down and is retried
+    if (err.code === 'BOT_CHECK') {
+      await updateMediaItem(id, { state: 'held', why: String(err.message).slice(0, 500) }).catch(() => {});
+      await logActivity('media', `⏸ media item ${id}: YouTube asked for a bot check / rate-limited — held for the cool-down`).catch(() => {});
+      return { id, held: true, why: String(err.message).slice(0, 300) };
+    }
+    await updateMediaItem(id, { state: 'failed', why: String(err.message).slice(0, 500) }).catch(() => {});
     throw err;
   }
 }

@@ -58,6 +58,7 @@ export default async function mediaRoutes(fastify) {
         const r = byId.get(id); const it = r && byDoc.get(r.doc_id);
         if (!it || it.state !== 'done') continue;
         let a = {}; try { a = JSON.parse(r.block_attrs || '{}'); } catch { /* none */ }
+        if (a.t0 == null) continue;   // a chapter heading or the summary line: not a moment in the recording
         hits.push({ slug: it.slug, item_id: it.id, t0: Number(a.t0) || 0, t1: Number(a.t1) || null, text: String(r.text).slice(0, 400) });
       }
       ids = [...new Set(hits.map((h) => h.item_id))];

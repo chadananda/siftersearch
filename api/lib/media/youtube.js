@@ -3,7 +3,12 @@
 // run (never bypassed). The id, URL, channel and upload metadata are kept in meta.json.
 import { readdir } from 'fs/promises';
 import { join } from 'path';
+import { existsSync } from 'fs';
+import { homedir } from 'os';
 import { run, YTDLP } from './tools.js';
+
+// yt-dlp needs a JavaScript runtime for YouTube's player now (deno, user space ~/.deno)
+const DENO = () => process.env.MEDIA_DENO || join(homedir(), '.deno', 'bin', 'deno');
 
 /** The video id in a YouTube URL (watch, youtu.be, shorts, embed, live), or null. */
 export function youtubeId(url) {
@@ -14,12 +19,16 @@ export function youtubeId(url) {
 /** A bot check / rate limit in yt-dlp's output → stop the run, do not retry around it. */
 export const isBotCheck = (text) => /sign in to confirm|not a bot|captcha|http error 429|too many requests|unusual traffic/i.test(String(text || ''));
 
+/** After a bot check / 429, no YouTube item is started for COOL_HOURS (one polite retry per cool-down, never a bypass). */
+export const COOL_HOURS = Number(process.env.MEDIA_YOUTUBE_COOL_HOURS) || 6;
+
 export class BotCheckError extends Error { constructor(msg) { super(msg); this.code = 'BOT_CHECK'; this.fatal = true; } }
 
 const BASE = ['--no-playlist', '--no-warnings', '--ignore-config', '--no-cookies', '--no-cookies-from-browser', '--socket-timeout', '30', '--sleep-requests', '2'];
 
 async function ytdlp(args, opts) {
-  try { return await run(YTDLP(), [...BASE, ...args], opts); }
+  const js = existsSync(DENO()) ? ['--js-runtimes', `deno:${DENO()}`] : [];
+  try { return await run(YTDLP(), [...BASE, ...js, ...args], opts); }
   catch (err) { if (isBotCheck(err.message)) throw new BotCheckError(`YouTube asked for a bot check — stopping (not bypassed): ${err.message.slice(0, 200)}`); throw err; }
 }
 

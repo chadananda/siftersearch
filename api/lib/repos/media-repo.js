@@ -34,6 +34,18 @@ export async function updateMediaItem(id, fields = {}) {
   return getMediaItem(id);
 }
 
+/** YouTube items held by a bot check / rate limit within the last `hours` (the cool-down before any YouTube work). */
+export const youtubeHeldSince = async (hours) => (await queryOne(`SELECT COUNT(*) n, MAX(updated_at) last FROM media_items WHERE source_kind = 'youtube' AND state = 'held'
+  AND updated_at >= ?`, [new Date(Date.now() - hours * 3600_000).toISOString()], 'media:youtube-held'));
+
+/** Held YouTube items whose cool-down has passed → queued again (one polite retry per cool-down). → how many */
+export async function releaseHeldYoutube(hours) {
+  const before = new Date(Date.now() - hours * 3600_000).toISOString();
+  const r = await queryOne(`SELECT COUNT(*) n FROM media_items WHERE source_kind = 'youtube' AND state = 'held' AND updated_at < ?`, [before], 'media:held-count');
+  if (r?.n) await transaction([{ sql: `UPDATE media_items SET state = 'queued', updated_at = ? WHERE source_kind = 'youtube' AND state = 'held' AND updated_at < ?`, args: [now(), before] }], 'media:release-held');
+  return r?.n || 0;
+}
+
 /** Items still to process (queued, or interrupted while running), oldest first. */
 export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY id LIMIT ?`, [limit], 'media:pending')).map(parse);
 
