@@ -45,7 +45,8 @@
       animate:flip={{ duration: reduced ? 0 : 450 }} in:fly={{ y: reduced ? 0 : 24, duration: reduced ? 0 : 420, delay: reduced ? 0 : (i % 12) * 35 }}>
       {#if c.kind === 'box'}
         {@const s = c.speaker}
-        {@const pic = s.p ? portraitTall(s.p, c.size === 'lg' ? 220 : 160) : null}
+        <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
+        {@const pic = s.p ? portraitTall(s.px || s.p, c.size === 'lg' ? 220 : 160) : null}
         <article class="box h-full">
           <header class="flex gap-4">
             <div class="box-pic">
@@ -97,7 +98,7 @@
       {:else if c.kind === 'portrait'}
         {@const it = c.it}
         {@const s = speakersByKey.get(it.k)}
-        {@const pic = portraitCard(s.p, 320)}
+        {@const pic = portraitCard(s.px || s.p, 320)}
         <article class="portrait h-full">
           <img src={pic.src} srcset={pic.srcset} alt={s.n} width="320" height="512" loading="lazy" decoding="async" class="portrait-img" />
           <div class="portrait-cap">

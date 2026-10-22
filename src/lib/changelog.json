@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T17:09:12.302Z",
+  "generated": "2026-10-22T17:25:03.805Z",
   "entries": [
+    {
+      "hash": "802a3c4b",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Diarization runs on BOSS (10-22 watch: pyannote on tower at ~630 % CPU took on-tower search to 6.6–8.6 s) — the audio goes through the gate's diarize verb beside the boss ASR job, the turns come back on stdout (media_tool --emit-turns); tower runs it only when boss is unreachable, detached at ≤ 4 threads and nice 19, and never while on-tower search p90 > 4 s (waits up to 30 min, then defers the item); the grade stage's models capped at 4 threads",
+      "scope": "media"
+    },
+    {
+      "hash": "378599c7",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Nothing typed before the listing hydrates is lost — an inline recorder keeps the tuner's value, focus and caret; ListeningRoom applies them on hydration (tested on a cold load at 6x CPU: 'sears' typed pre-hydration filters, keeps focus and caret)",
+      "scope": "media"
+    },
     {
       "hash": "d4ea66b5",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "The per-person daily cap limits only letters Anís starts — never replies",
       "scope": "anis"
-    },
-    {
-      "hash": "4ee8f56c",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Conversational replies advance the reading; notes levels; questions answered in the reading",
-      "scope": "reading"
-    },
-    {
-      "hash": "b3273452",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Citation passages shown without our copy's section numbers ([11.12])",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "802a3c4b",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Diarization runs on BOSS (10-22 watch: pyannote on tower at ~630 % CPU took on-tower search to 6.6–8.6 s) — the audio goes through the gate's diarize verb beside the boss ASR job, the turns come back on stdout (media_tool --emit-turns); tower runs it only when boss is unreachable, detached at ≤ 4 threads and nice 19, and never while on-tower search p90 > 4 s (waits up to 30 min, then defers the item); the grade stage's models capped at 4 threads",
+        "scope": "media"
+      },
+      {
+        "hash": "378599c7",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Nothing typed before the listing hydrates is lost — an inline recorder keeps the tuner's value, focus and caret; ListeningRoom applies them on hydration (tested on a cold load at 6x CPU: 'sears' typed pre-hydration filters, keeps focus and caret)",
+        "scope": "media"
+      },
       {
         "hash": "d4ea66b5",
         "date": "2026-10-22",
@@ -7007,20 +7021,6 @@
         "type": "Fixed",
         "description": "The per-person daily cap limits only letters Anís starts — never replies",
         "scope": "anis"
-      },
-      {
-        "hash": "4ee8f56c",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Conversational replies advance the reading; notes levels; questions answered in the reading",
-        "scope": "reading"
-      },
-      {
-        "hash": "b3273452",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Citation passages shown without our copy's section numbers ([11.12])",
-        "scope": "sourcehunt"
       }
     ]
   }

@@ -47,7 +47,11 @@ const who = item ? [item.speaker, item.year].filter(Boolean).join(', ') : '';
 const title = item ? `${item.title}${who ? ` — ${who}` : ''} — SifterSearch Media` : 'Recording not found — SifterSearch Media';
 const description = item ? (item.summary || `${item.title}${item.speaker ? ` by ${item.speaker}` : ''}: a talk with a word-aligned, searchable transcript.`).slice(0, 300) : 'This recording could not be found.';
 // og:image must be raster and sized for cards: the portrait through the image worker, 1200×630, face-centred
-const image = item?.thumb?.kind === 'photo' ? ikUrl(item.thumb.url, 'w-1200,h-630,fo-face,q-80')
+// og:image: the talk's best moment as a quote card (1200×630 by design) when it has one; else the portrait cropped
+// face-centred (cover — never stretched)
+const bestMoment = (item?.moments || []).slice().sort((x, y) => (x.rank ?? 9) - (y.rank ?? 9))[0];
+const image = bestMoment ? `https://siftersearch.com/api/media/moments/${encodeURIComponent(bestMoment.key)}/card.jpg?v=2`
+  : item?.thumb?.kind === 'photo' ? ikUrl(item.thumb.url, 'w-1200,h-630,fo-face,q-80')
   : item?.thumb?.url && !/\.svg(\?|$)/.test(item.thumb.url) ? item.thumb.url : undefined;
 const url = item ? `https://siftersearch.com/media/${item.slug}` : null;
 const iso = (s) => { s = Math.round(s || 0); return `PT${Math.floor(s / 3600) ? `${Math.floor(s / 3600)}H` : ''}${Math.floor((s % 3600) / 60)}M${s % 60}S`; };

@@ -126,7 +126,7 @@ export function shapeSpeakers(items, speakerRows = [], photoOf = () => null) {
     let s = out.get(it.k);
     if (!s) {
       const row = byKey.get(it.k), photo = row ? photoOf(row) : null;
-      s = { k: it.k, n: row?.name || it.sp, c: 0, p: photo?.url || null, cr: photo?.credit || null, role: null, y0: null, y1: null, at: null };
+      s = { k: it.k, n: row?.name || it.sp, c: 0, p: photo?.url || null, px: photo?.extended || null, cr: photo?.credit || null, role: null, y0: null, y1: null, at: null };
       out.set(it.k, s);
     }
     s.c++;
