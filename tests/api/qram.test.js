@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, utimesSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { isDirty, toPrune, newestComplete, restoreArgs, flush, restore } from '../../scripts/ops/qram.mjs';
+import { isDirty, toPrune, newestComplete, restoreArgs, flush, restore, countsForDirty } from '../../scripts/ops/qram.mjs';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -13,6 +13,10 @@ describe('qram pure logic', () => {
     expect(isDirty({ points: 5, mtimeMs: 100 }, { points: 5, mtimeMs: 100 })).toBe(false);
     expect(isDirty({ points: 5, mtimeMs: 100 }, { points: 6, mtimeMs: 100 })).toBe(true);
     expect(isDirty({ points: 5, mtimeMs: 100 }, { points: 5, mtimeMs: 101 })).toBe(true);
+  });
+  it('a snapshot rewriting segment.json does not make the collection dirty', () => {
+    expect(countsForDirty('segment.json')).toBe(false);
+    expect(countsForDirty('wal-0001')).toBe(true);
   });
   it('keeps the two newest snapshots', () => {
     const s = [{ name: 'a', creation_time: '2026-10-01T00:00:00' }, { name: 'c', creation_time: '2026-10-03T00:00:00' }, { name: 'b', creation_time: '2026-10-02T00:00:00' }];
@@ -56,6 +60,11 @@ describe('qram flush/restore against a fake qdrant-hot', () => {
     expect(calls).toContain('DELETE /collections/hype/snapshots/hype-1.snapshot?wait=true');
     expect(JSON.parse(readFileSync(join(snaps, 'state.json'), 'utf8')).hype).toMatchObject({ points: 10, snapshot: 'hype-3.snapshot' });
     expect(lines.some((l) => /t_ar: clean/.test(l))).toBe(true);
+    // a later flush with only segment.json rewritten (what a snapshot does) is clean for t_ar
+    writeFileSync(join(storage, 'collections', 't_ar', 'seg', 'segment.json'), '{}');
+    calls.length = 0;
+    await flush({ storage, snapshotsDir: snaps, log: () => {} });
+    expect(calls).not.toContain('POST /collections/t_ar/snapshots?wait=true');
     mkdirSync(join(snaps, 'concepts'));
     writeFileSync(join(snaps, 'concepts', 'c.snapshot'), 'x'); writeFileSync(join(snaps, 'concepts', 'c.snapshot.checksum'), 'x');
     expect(restore({ storage, snapshotsDir: snaps })).toEqual(['--snapshot', `${join(snaps, 'concepts', 'c.snapshot')}:concepts`]);

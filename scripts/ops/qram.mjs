@@ -41,9 +41,12 @@ export function restoreArgs({ snapshotsDir, snapshots, present }) {
     .flatMap(([c, name]) => ['--snapshot', `${join(snapshotsDir, c, name)}:${c}`]);
 }
 
+// Taking a snapshot rewrites every segment's segment.json (measured on tower 10-21, sometimes after the API returns), so
+// counting it made each flush mark the next one dirty: a data change always also writes WAL / vector / payload files.
+export const countsForDirty = (name) => name !== 'segment.json';
 const newestMtime = (dir) => {
   let m = 0;
-  const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) walk(p); else m = Math.max(m, statSync(p).mtimeMs); } };
+  const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) walk(p); else if (countsForDirty(e.name)) m = Math.max(m, statSync(p).mtimeMs); } };
   if (existsSync(dir)) walk(dir);
   return m;
 };
