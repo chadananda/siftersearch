@@ -3,7 +3,7 @@
 // BahaiLibrary.com → (another publisher) → SifterSearch.com. The document's own origin is docs.source_url OR docs.metadata.sourceUrl
 // (the importer stores frontmatter `sourceUrl` in the JSON) — reading only the column produced 0 BahaiLibrary links
 // in 435. Every result also carries a paragraph-exact SifterSearch reader link. Pure; deps: slug.js.
-import { generateDocSlug, slugifyPath } from './slug.js';
+import { slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { encodeMarker } from './ool-range.js';
 
@@ -47,9 +47,11 @@ function metaSourceUrls(metadata) {
   return [m.sourceUrl, m.bookid && oceanoflightsUrl(m.bookid), m.pin && inventoryUrl(m.pin)];
 }
 
-/** Paragraph-exact page on SifterSearch (always available). */
+/** Paragraph-exact page on SifterSearch (always available). The path uses the doc's STORED slug (docs.slug) only — never
+ *  one derived from author+title: a hit's `author` is the PARAGRAPH's writer (content.authors), so a derived slug named a
+ *  page that does not exist ("shoghi-effendi_lights-of-guidance…" for doc 8680, Chad 10-22). No slug → the id viewer. */
 export function readerUrl(doc, paragraphIndex) {
-  const slug = doc.slug || generateDocSlug(doc);
+  const slug = doc.slug || null;
   const base = slug && doc.religion && doc.collection
     ? `${SITE}/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${slug}`
     : `${SITE}/library/view?doc=${doc.doc_id ?? doc.document_id ?? doc.id}`;

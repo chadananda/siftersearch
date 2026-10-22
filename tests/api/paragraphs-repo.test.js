@@ -11,7 +11,7 @@ describe('paragraphDoc', () => {
     expect(d).toMatchObject({ id: 7, doc_id: 3, paragraph_index: 12, text: 'Small wonder…', title: doc.title, author: 'Shoghi Effendi',
       year: 1938, authority: 9, heading: '', blocktype: 'paragraph', pdf_page: 4, source_site: 'oceanlibrary.com', context: null });
     expect(Object.keys(d).sort()).toEqual(['author', 'authority', 'blocktype', 'book_authority', 'collection', 'context', 'doc_id', 'external_para_id', 'filename',
-      'heading', 'id', 'language', 'paragraph_index', 'pdf_page', 'religion', 'source_site', 'source_url', 'text', 'text_grounded', 'title',
+      'heading', 'id', 'language', 'paragraph_index', 'pdf_page', 'religion', 'slug', 'source_site', 'source_url', 'text', 'text_grounded', 'title',
       'translation', 'translation_segments', 'year'].sort());
   });
   it('the paragraph’s own writer is its author (a quotation keeps its writer)', () => {

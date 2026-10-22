@@ -30,7 +30,7 @@ import { linkFor, readerUrl } from '../lib/source-links.js';
 import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
-import { slugifyPath, generateDocSlug, parseDocSlug } from '../lib/slug.js';
+import { slugifyPath, generateDocSlug, parseDocSlug, resolveByTitlePart } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument, hashContent } from '../services/ingester.js';
@@ -1819,6 +1819,16 @@ Return ONLY the description text, no quotes or formatting.`;
 
         return false;
       });
+
+      // A link whose AUTHOR prefix is wrong (old builders slugged the paragraph's effective author, 10-22): the title
+      // part names the book within this religion/collection → 301 to its canonical URL (the #p anchor rides along).
+      if (!document) {
+        const meant = resolveByTitlePart(slug, candidates);
+        if (meant?.slug) {
+          reply.header('Cache-Control', 'public, max-age=3600');
+          return reply.redirect(`/library/${religionSlug}/${slugifyPath(meant.collection || '')}/${meant.slug}`, 301);
+        }
+      }
     }
 
     if (!document) {

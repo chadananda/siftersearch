@@ -21,7 +21,8 @@ export function paragraphDoc(p, doc, authority = null) {
     text_grounded: p.text_grounded || null,
     translation: p.translation || null, translation_segments: p.translation_segments || null,
     // a part of a multi-part OceanLibrary work (KJV, Qur'an…) is titled — and so cited — "<work>, <part>" (ol-works.js)
-    title: olCiteTitle(doc), author, filename: doc.filename,
+    // slug = the DOC's stored slug (docs.slug): links are built from it, never from the paragraph's author + title
+    title: olCiteTitle(doc), author, filename: doc.filename, slug: doc.slug || null,
     religion: doc.religion, collection: doc.collection, language: doc.language,
     year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority, book_authority: docAuthority,
     heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
@@ -42,7 +43,7 @@ export async function paragraphsByIds(ids) {
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.translation, c.translation_segments,
              c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors,
              d.title AS d_title, d.author AS d_author, d.religion AS d_religion, d.collection AS d_collection,
-             d.language AS d_language, d.year AS d_year, d.filename AS d_filename,
+             d.language AS d_language, d.year AS d_year, d.filename AS d_filename, d.slug AS d_slug,
              d.source_site AS d_source_site, d.source_url AS d_source_url
         FROM content c JOIN docs d ON d.id = c.doc_id
        WHERE c.id IN (${chunk.map(() => '?').join(',')}) AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0
@@ -50,7 +51,7 @@ export async function paragraphsByIds(ids) {
     chunk, 'search:hydrate');
     for (const r of rows) {
       const doc = { title: r.d_title, author: r.d_author, religion: r.d_religion, collection: r.d_collection, language: r.d_language,
-        year: r.d_year, filename: r.d_filename, source_site: r.d_source_site, source_url: r.d_source_url };
+        year: r.d_year, filename: r.d_filename, slug: r.d_slug, source_site: r.d_source_site, source_url: r.d_source_url };
       out.push(paragraphDoc(r, doc));
     }
   }

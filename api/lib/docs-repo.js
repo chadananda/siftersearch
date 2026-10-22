@@ -522,7 +522,8 @@ export async function docsForPathSlugs(religionSlug, collectionSlug, slugify) {
   if (!names.length) return [];
   const rows = await queryAll(
     `SELECT id, title, author, religion, collection, language, year, description,
-            paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
+            paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at,
+            deleted_at, duplicate_of
        FROM docs WHERE religion IS NOT NULL AND collection IN (${names.map(() => '?').join(',')})`,
     names, 'docs-repo:path-slug-candidates');
   return rows.filter((d) => slugify(d.religion || '') === religionSlug);

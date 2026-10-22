@@ -188,3 +188,24 @@ export function parseDocSlug(slug) {
 
   return { baseSlug: slug, language: null };
 }
+
+/** The title part of a doc slug: what follows the first "_" (the author prefix), or the whole slug when it has none. */
+export const slugTitlePart = (slug) => { const s = String(slug || ''); const i = s.indexOf('_'); return i >= 0 ? s.slice(i + 1) : s; };
+
+/**
+ * A stale reader slug whose AUTHOR prefix is wrong → the one doc it meant. Old link builders derived the slug from a
+ * paragraph's effective author ("shoghi-effendi_lights-of-guidance…" for "helen-hornby_lights-of-guidance…", 10-22), so
+ * the title part (after the first "_") is matched against each candidate's stored slug (and generated slug). Live,
+ * non-duplicate candidates only; more than one match is ambiguous → null (never guess between two books).
+ * candidates: doc rows in the URL's religion/collection ({ id, slug, title, author, language, deleted_at?, duplicate_of? }).
+ */
+export function resolveByTitlePart(slug, candidates = []) {
+  const want = slugTitlePart(slug);
+  if (!want || !String(slug).includes('_')) return null;
+  const live = candidates.filter((d) => !d.deleted_at && !d.duplicate_of);
+  const hits = live.filter((d) => (d.slug && slugTitlePart(d.slug) === want) || slugTitlePart(generateDocSlug(d)) === want);
+  if (hits.length === 1) return hits[0];
+  // several share the title part: the one whose STORED slug carries it exactly (generated-slug matches are weaker)
+  const exact = hits.filter((d) => d.slug && slugTitlePart(d.slug) === want);
+  return exact.length === 1 ? exact[0] : null;
+}

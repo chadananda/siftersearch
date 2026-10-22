@@ -45,7 +45,7 @@ import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
-import { slugifyPath, generateDocSlug } from '../lib/slug.js';
+import { slugifyPath } from '../lib/slug.js';
 import { participantId as resolveParticipant, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 import { resolveLinks, findOriginals, getPassages } from '../lib/passage-links.js';
@@ -86,7 +86,8 @@ const olSourceUrl = (doc) => {
 function getDocumentUrl(doc) {
   const ol = olSourceUrl(doc);
   if (ol) return ol.split('?')[0];   // doc-level OL link (drop any ?paraId anchor)
-  const docSlug = doc.slug || generateDocSlug(doc);
+  // the doc's STORED slug only: a search hit's `author` is the paragraph's writer, so author+title names no page (10-22)
+  const docSlug = doc.slug || null;
   if (!docSlug || !doc.religion || !doc.collection) {
     // Use document ID (doc_id/document_id), NOT paragraph ID (id)
     const docId = doc.doc_id || doc.document_id || doc.id;
@@ -619,7 +620,7 @@ export default async function publicApiRoutes(fastify) {
       score: result.score,
       summary: result.summary || result.briefAnswer || '',
       url: link.url,
-      documentUrl: link.tier < 5 ? link.url.split('?')[0] : getDocumentUrl(result),
+      documentUrl: link.tier < 5 ? link.url.split('?')[0] : getDocumentUrl({ ...result, slug: linkMeta.get(Number(result.document_id))?.slug ?? result.slug ?? null }),
       readerUrl: link.reader_url,
       link: { site: link.site, tier: link.tier, paragraph_level: link.paragraph_level },
     }; });
@@ -683,6 +684,9 @@ export default async function publicApiRoutes(fastify) {
     const startTime = Date.now();
 
     const searchResults = await keywordSearch(query, { limit, filters });
+    // the docs' stored slugs (a hit's author is the paragraph's writer — never build a page path from it)
+    const slugOf = await (await import('../lib/docs-repo.js')).getLinkMeta(searchResults.hits.map((h) => h.doc_id)).catch(() => new Map());
+    const withSlug = (hit) => ({ ...hit, slug: slugOf.get(Number(hit.doc_id))?.slug ?? hit.slug ?? null });
 
     // ANOTHER whitelist projection — same shape as the one in POST /search that silently dropped `heading`
     // for months (2026-08-18). documentId and paragraphIndex were likewise absent, so a caller holding a quick
@@ -699,8 +703,8 @@ export default async function publicApiRoutes(fastify) {
       religion: hit.religion,
       collection: hit.collection,
       score: hit._rankingScore,
-      url: getParagraphUrl(hit, hit.paragraph_index),
-      documentUrl: getDocumentUrl(hit)
+      url: getParagraphUrl(withSlug(hit), hit.paragraph_index),
+      documentUrl: getDocumentUrl(withSlug(hit))
     }));
     if (includeLinks) await attachLinks(results);
 
@@ -725,7 +729,7 @@ export default async function publicApiRoutes(fastify) {
     const paragraph = await queryOne(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
              c.translation, c.context, c.external_para_id,
-             d.title, d.author, d.religion, d.collection, d.language, d.year, d.source_url
+             d.title, d.author, d.religion, d.collection, d.language, d.year, d.source_url, d.slug
       FROM content c
       JOIN docs d ON c.doc_id = d.id
       WHERE c.id = ? AND c.deleted_at IS NULL AND d.deleted_at IS NULL
@@ -736,7 +740,7 @@ export default async function publicApiRoutes(fastify) {
     }
 
     const docInfo = {
-      title: paragraph.title, author: paragraph.author,
+      title: paragraph.title, author: paragraph.author, slug: paragraph.slug,
       religion: paragraph.religion, collection: paragraph.collection,
       language: paragraph.language, year: paragraph.year,
       // OceanLibrary paragraph deep-link: source_url + ?paraId (so getParagraphUrl yields the OL link, not a siftersearch one)
