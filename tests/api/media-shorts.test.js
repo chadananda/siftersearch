@@ -114,3 +114,19 @@ describe('end card address', () => {
     expect(short).toMatch(/\\fs52\\c&H3AB2F2&\}siftersearch\.com\/m\/Ab12cd34/);
   });
 });
+
+describe('shorts for the top moments of Hands / UHJ talks', () => {
+  it('queues the top N moments of those speakers only', async () => {
+    const { mediaShortsMomentsJob } = await import('../../api/lib/ops/media-jobs.js');
+    const dirs = {};
+    for (const [slug, sp] of [['sears-x', 'William Sears'], ['other-y', 'Jane Doe']]) {
+      const d = mkdtempSync(join(tmpdir(), 'sm-')); dirs[slug] = d;
+      writeFileSync(join(d, 'meta.json'), JSON.stringify({ moments: [{ t0_ms: 1000, t1_ms: 9000 }, { t0_ms: 20000, t1_ms: 95000 }, { t0_ms: 1, t1_ms: 2 }] }));
+    }
+    const items = { 1: { id: 1, slug: 'sears-x', speaker: 'William Sears', dir: dirs['sears-x'] }, 2: { id: 2, slug: 'other-y', speaker: 'Jane Doe', dir: dirs['other-y'] } };
+    const queue = vi.fn();
+    const r = await mediaShortsMomentsJob({ per: 2 }, { repo: { doneItemIds: async () => [1, 2], getMediaItem: async (id) => items[id] }, queue });
+    expect(r).toEqual({ talks: 1, queued: 2, no_moments: 0 });
+    expect(queue.mock.calls.map((c) => c[1])).toEqual([{ slug: 'sears-x', start: 1, end: 9, format: 'vertical' }, { slug: 'sears-x', start: 20, end: 80, format: 'vertical' }]);
+  });
+});

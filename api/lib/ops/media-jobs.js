@@ -255,3 +255,24 @@ export async function mediaShortJob(params = {}, deps = {}) {
   const portraitUrl = async (it) => { const sp = it.speaker_key ? await repo.getSpeaker(it.speaker_key) : null; return sp?.file && sp.sha ? `https://siftersearch.com/img/cdn/siftersearch.com/${sp.file}?v=${sp.sha.slice(0, 16)}` : null; };
   return renderShortFor(item, params, { portraitUrl, ...(deps.render || {}) });
 }
+
+// ── media-shorts-moments { per = 2, roles = ['hand', 'uhj'] }: queue a short for the top moments of the talks by Hands of the
+// Cause and House of Justice members (template chosen by content / rotation; already rendered ones are skipped by the job)
+export async function mediaShortsMomentsJob({ per = 2, roles = ['hand', 'uhj'] } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { speakerRole } = deps.listing || await import('../media/listing-index.js');
+  const queue = deps.queue || enqueue;
+  const { join: pj } = await import('path');
+  const { readFile: rf } = await import('fs/promises');
+  const out = { talks: 0, queued: 0, no_moments: 0 };
+  for (const id of await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir || !roles.includes(speakerRole(it.speaker, { year: it.year }))) continue;
+    out.talks++;
+    const meta = JSON.parse(await rf(pj(it.dir, 'meta.json'), 'utf8').catch(() => '{}'));
+    const ms = (meta.moments || []).slice(0, per);
+    if (!ms.length) { out.no_moments++; continue; }
+    for (const m of ms) { await queue('media-short', { slug: it.slug, start: m.t0_ms / 1000, end: Math.min(m.t1_ms / 1000, m.t0_ms / 1000 + 60), format: 'vertical' }, 'shorts-moments'); out.queued++; }
+  }
+  return out;
+}
