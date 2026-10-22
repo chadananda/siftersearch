@@ -7,7 +7,7 @@ import argparse, json, os, shutil, subprocess, sys, time
 # TOWER BUDGET (10-22 watch: six runs at ~700 % CPU each took search from ~2–3 s to 8–9 s): at most 4 threads per run, every
 # math library capped before torch loads, lowest CPU priority; the caller runs at most 2 at once (MAX_PARALLEL). Search
 # on tower must stay within its normal range; heavy model work belongs on boss's GPU.
-THREADS = max(1, min(4, int(os.environ.get('REMASTER_THREADS', '4'))))
+THREADS = max(1, min(int(os.environ.get('REMASTER_MAX_THREADS', '4')), int(os.environ.get('REMASTER_THREADS', '4'))))   # the 4 cap is TOWER's budget; boss may raise it
 MAX_PARALLEL = 2
 for _k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'NUMEXPR_NUM_THREADS'):
     os.environ[_k] = str(THREADS)
@@ -90,10 +90,11 @@ def main():
         sys.modules['deepspeed.runtime.engine'].DeepSpeedEngine = object
         sys.modules['deepspeed.runtime.utils'].clip_grad_norm_ = None
         from resemble_enhance.enhancer.inference import enhance
-        import torchaudio
-        x, sr = torchaudio.load(base)
-        y, sr2 = enhance(x.mean(0), sr, dev, nfe=64, solver='midpoint', lambd=0.9, tau=0.5, run_dir=Path(RESEMBLE_DIR))
-        torchaudio.save(o, y.unsqueeze(0).cpu(), sr2)
+        import soundfile as sf   # torchaudio ≥ 2.9 loads through torchcodec; soundfile works everywhere
+        data, sr = sf.read(base, dtype='float32', always_2d=True)
+        x = torch.from_numpy(data.mean(1))
+        y, sr2 = enhance(x, sr, dev, nfe=64, solver='midpoint', lambd=0.9, tau=0.5, run_dir=Path(RESEMBLE_DIR))
+        sf.write(o, y.detach().cpu().numpy().reshape(-1), int(sr2))
 
     def voicefixer(o):
         from voicefixer import VoiceFixer
