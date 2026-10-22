@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T16:13:48.032Z",
+  "generated": "2026-10-22T16:20:03.309Z",
   "entries": [
+    {
+      "hash": "c885880f",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Shorts — the portrait is fetched twice before falling back (the first short after a restart cached a portrait-less render), whether one was used is recorded; an internal force re-render; a long end-card address breaks onto two lines",
+      "scope": "media"
+    },
+    {
+      "hash": "f3eda818",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Share ANY passage — stateless clip pages, selection sharing, shareable transcript hits, 'Make a short'",
+      "scope": "media"
+    },
     {
       "hash": "50643add",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Noted words highlighted and numbered — the note carries the same number",
       "scope": "reading"
-    },
-    {
-      "hash": "c7cc28fe",
-      "date": "2026-10-13",
-      "type": "Docs",
-      "description": "Reading-guide notes cache plan (3 levels per paragraph; per-reader assembly)",
-      "scope": "worklist"
-    },
-    {
-      "hash": "1779b339",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Letter signature 'Ocean Study Companion AI' (Chad 10-13)",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "c885880f",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Shorts — the portrait is fetched twice before falling back (the first short after a restart cached a portrait-less render), whether one was used is recorded; an internal force re-render; a long end-card address breaks onto two lines",
+        "scope": "media"
+      },
+      {
+        "hash": "f3eda818",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Share ANY passage — stateless clip pages, selection sharing, shareable transcript hits, 'Make a short'",
+        "scope": "media"
+      },
       {
         "hash": "50643add",
         "date": "2026-10-22",
@@ -7007,20 +7021,6 @@
         "type": "New",
         "description": "Noted words highlighted and numbered — the note carries the same number",
         "scope": "reading"
-      },
-      {
-        "hash": "c7cc28fe",
-        "date": "2026-10-13",
-        "type": "Docs",
-        "description": "Reading-guide notes cache plan (3 levels per paragraph; per-reader assembly)",
-        "scope": "worklist"
-      },
-      {
-        "hash": "1779b339",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Letter signature 'Ocean Study Companion AI' (Chad 10-13)",
-        "scope": "anis"
       }
     ]
   }

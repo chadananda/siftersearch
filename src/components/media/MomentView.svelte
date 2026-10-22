@@ -52,7 +52,7 @@
       <div class="mt-8 grid items-center gap-8 lg:grid-cols-[1fr_auto]">
         <div class="min-w-0">
           {#if m.context}<p class="text-base text-radio-on-dark opacity-80 sm:text-lg">{m.context}</p>{/if}
-          <blockquote class="quote mt-3"><p>{m.text}</p></blockquote>
+          <blockquote class="quote mt-3" class:long={m.text.length > 160} class:xlong={m.text.length > 420}><p>{m.text}</p></blockquote>
           <p class="mt-5 text-lg text-radio-on-dark">
             — {#if speaker?.k}<a href={`/media?speaker=${encodeURIComponent(speaker.k)}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber">{m.speaker}</a>{:else}<span class="font-semibold">{m.speaker || 'Unknown voice'}</span>{/if},
             in <a href={`/media/${m.slug}`} class="italic underline decoration-radio-brass underline-offset-4 hover:text-radio-amber">{m.title}</a>{m.year ? ` (${m.year})` : ''}
@@ -151,6 +151,8 @@
   .lamp { width: 0.65rem; height: 0.65rem; border-radius: 9999px; background: var(--radio-needle); opacity: 0.5; margin-right: 0.25rem; }
   .lamp.live { opacity: 1; box-shadow: 0 0 10px 2px var(--radio-needle); }
   .quote { font: 400 clamp(1.9rem, 4.6vw, 3.6rem)/1.12 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--radio-on-dark); text-wrap: balance; }
+  .quote.long { font-size: clamp(1.5rem, 3.2vw, 2.5rem); line-height: 1.18; }
+  .quote.xlong { font-size: clamp(1.25rem, 2.2vw, 1.8rem); line-height: 1.3; }
   .quote p::before { content: '“'; color: var(--radio-amber); } .quote p::after { content: '”'; color: var(--radio-amber); }
   .record { position: relative; animation: spin 2s linear infinite; animation-play-state: paused; }
   .record.spinning { animation-play-state: running; }
