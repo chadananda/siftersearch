@@ -75,3 +75,13 @@ describe('applying and rendering', () => {
     ]);
   });
 });
+
+describe('copy-edit details (10-22 comparison findings)', () => {
+  it('a respelt word keeps its comma or full stop; a three-word homophone span is allowed', async () => {
+    const ps = [{ n: 1, t0: 0, t1: 9, words: W('he translated Nabeel’s narrative, he was only foreigner of the World Order, about the bow.'), sentences: [[0, 15]] }];
+    const ask = async () => ({ edits: [{ p: 1, from: 'narrative,', to: 'Narrative', kind: 'capitalisation', confidence: 0.9 },
+      { p: 1, from: 'only foreigner of', to: 'only forerunner of', kind: 'homophone', confidence: 0.9 }, { p: 1, from: 'the bow.', to: 'the Báb', kind: 'name', confidence: 0.9 }] });
+    const r = await cleanParagraphs(ps, ask);
+    expect(paragraphMarkdown(r.paragraphs[0], [])).toBe('he translated Nabeel’s Narrative, he was only forerunner of the World Order, about the Báb.');
+  });
+});

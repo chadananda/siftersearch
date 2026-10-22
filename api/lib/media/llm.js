@@ -145,7 +145,7 @@ Return JSON {"headings": [{"p": paragraph number where the part starts, "text": 
 }
 
 /** The whole-talk copy-edit + names + mentions pass (cleanup.js). opts: { role ('media-clean' | 'media-clean-strong'), ctx, spend } */
-export async function cleanTranscript(paragraphs, { role = process.env.MEDIA_CLEAN_ROLE || 'media-clean', ctx = {}, ...opts } = {}) {
+export async function cleanTranscript(paragraphs, { role = process.env.MEDIA_CLEAN_ROLE || 'media-clean-strong', ctx = {}, ...opts } = {}) {
   const { cleanParagraphs } = await import('./cleanup.js');
   return cleanParagraphs(paragraphs, (prompt) => ask(role, prompt, { ...opts, max: 16000 }), { ...opts, ctx });
 }

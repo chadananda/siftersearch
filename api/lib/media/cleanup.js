@@ -72,7 +72,7 @@ export function judgeEdit(words, e, { minConfidence = 0.7 } = {}) {
     return { ok: { i0, i1, kind, to } };
   }
   if (kind === 'spelling' || kind === 'homophone') {
-    if (fw.length !== tw.length || fw.length > 2) return { refused: 'a spelling fix keeps the word count' };
+    if (fw.length !== tw.length || fw.length > 4) return { refused: 'a spelling fix keeps the word count' };
     for (let i = 0; i < fk.length; i++) {
       const a = fk[i], b = tk[i];
       const close = levenshtein(a, b, 9) <= Math.max(2, Math.ceil(Math.max(a.length, b.length) * 0.34));
@@ -92,7 +92,14 @@ export function applyClean(words, oks) {
   for (const e of oks) {
     if (e.hide) { for (let k = e.i0; k < e.i1; k++) ws[k] = { ...ws[k], hide: true }; continue; }
     const tw = tokens(e.to);
-    if (tw.length === e.i1 - e.i0) tw.forEach((t, j) => { if (ws[e.i0 + j].w !== t) ws[e.i0 + j] = { ...ws[e.i0 + j], w: t, v: ws[e.i0 + j].v ?? ws[e.i0 + j].w }; });
+    // a respelling or a capital keeps the word's own edge punctuation unless the edit is about punctuation
+    const keepPunct = !['punctuation', 'broken'].includes(e.kind);
+    const edge = (orig, t) => {
+      if (!keepPunct) return t;
+      const head = (orig.match(/^[("“‘'\[]+/) || [''])[0], tail = (orig.match(/[)"”’'\],.;:!?؟]+$/) || [''])[0];
+      return `${/^[("“‘'\[]/.test(t) ? '' : head}${t}${/[)"”'\],.;:!?؟]$/.test(t) ? '' : tail}`;
+    };
+    if (tw.length === e.i1 - e.i0) tw.forEach((t0, j) => { const o = ws[e.i0 + j].w, t = edge(o, t0); if (o !== t) ws[e.i0 + j] = { ...ws[e.i0 + j], w: t, v: ws[e.i0 + j].v ?? o }; });
     else replace.push({ i0: e.i0, i1: e.i1, to: e.to });
   }
   if (replace.length) ws = applyEdits(ws, replace);

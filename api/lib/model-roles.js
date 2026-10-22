@@ -55,7 +55,7 @@ export const MODEL_ROLES = {
   'media-clean': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'english-editing'],
     why: 'copy-edit pass (Chad 10-22): fillers, stutters, ASR loops, hallucinations, spellings, homophones, capitals, sentence boundaries — every edit kind-checked by a guard, never rewording' },
   'media-clean-strong': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-22', needs: ['json', 'english-editing', 'persian-arabic-names', 'long-input'],
-    why: 'the same whole-talk copy-edit pass on a stronger model (Chad 10-22: choose on quality, cleanup is cheap per audio hour); compared with media-clean on the pilot' },
+    why: 'THE copy-edit pass (chosen 10-22 on the pilot, 5.3 h: 209 substantive fixes vs 161 for Haiku, precision 24/25 vs 25/25 on a 25-edit read, catches context errors Haiku misses — Van Cortlandt Park, "the Bahá’í movement", The Priceless Pearl; $0.23 vs $0.024 per audio hour); media-clean (Haiku) stays as the fallback via MEDIA_CLEAN_ROLE' },
   'media-headings': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'long-input'],
     why: 'topic subheaders (Chad 10-22): a statement or question at each subject shift; a guard keeps only well-spaced ones that share words with their section' },
   'media-people': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'persian-arabic-names', 'judgement'],
