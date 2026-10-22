@@ -11,6 +11,7 @@
 import { getMeili, INDEXES } from '../search.js';
 import { queryAll } from '../db.js';
 import { rowsForDoc } from '../repos/block-attrs-repo.js';
+import { createHash } from 'node:crypto';
 
 export const CONCEPT_SELECT = `
   SELECT id, canonical, root, renderings, concept_type, tradition, importance, summary
@@ -134,8 +135,18 @@ export function proofParagraphIndexed({ byBlock, flats }, { proof_para_id, proof
   if (hit && (!v || flat(hit.text).includes(v))) return hit.id;
   return (v && flats.find(([, f]) => f.includes(v))?.[0]) || hit?.id || null;
 }
-export async function loadLexicon({ rows: given = null, rowsOf = rowsForDoc } = {}) {
+/** What the proof resolution depends on, as one string: unchanged rows → the previous resolution is reused as is. Pure. */
+export function lexiconSignature(rows) {
+  const h = createHash('sha1');
+  for (const r of rows) h.update(`${r.id}\u0001${r.symbol}\u0001${r.interpretation}\u0001${r.authority}\u0001${r.authority_tier}\u0001${r.layer}\u0001${r.proof_doc_id}\u0001${r.proof_para_id}\u0001${r.proof_verbatim}\u0002`);
+  return `${rows.length}:${h.digest('hex')}`;
+}
+// previous: { sig, entries } from the last load. A REFRESH of an unchanged lexicon costs one SELECT: re-reading every proof
+// book (0.2–0.6 s of synchronous SQLite each, ~4 s in all) is what made the first search of a fresh API process 6–10 s (10-22).
+export async function loadLexicon({ rows: given = null, rowsOf = rowsForDoc, previous = null } = {}) {
   const rows = given || await queryAll(LEXICON_SELECT, [], 'concepts:lexicon-load');
+  const sig = lexiconSignature(rows);
+  if (previous?.sig === sig && previous.entries) return Object.assign(previous.entries, { sig });
   const idx = new Map();
   for (const d of new Set(rows.map((r) => r.proof_doc_id).filter(Boolean))) {
     idx.set(d, indexRows(await rowsOf(d).catch(() => [])));
@@ -147,15 +158,22 @@ export async function loadLexicon({ rows: given = null, rowsOf = rowsForDoc } = 
     out.push(lexiconDoc({ ...r, paragraph_id: r.proof_doc_id ? proofParagraphIndexed(idx.get(r.proof_doc_id) || indexRows([]), r) : null }));
     if (i % 200 === 199) await new Promise((res) => setImmediate(res));
   }
-  return out;
+  return Object.assign(out, { sig });
+}
+function startLexiconLoad() {
+  lexLoading = loadLexicon({ previous: lexicon ? { sig: lexicon.sig, entries: lexicon } : null })
+    .then((l) => { lexicon = l; lexAt = Date.now(); }).catch(() => {}).finally(() => { lexLoading = null; });
+  return lexLoading;
 }
 function lexiconNow() {
-  if (!lexLoading && (!lexicon || Date.now() - lexAt > LEX_TTL_MS)) {
-    lexLoading = loadLexicon().then((l) => { lexicon = l; lexAt = Date.now(); }).catch(() => {}).finally(() => { lexLoading = null; });
-  }
+  if (!lexLoading && (!lexicon || Date.now() - lexAt > LEX_TTL_MS)) startLexiconLoad();
   return lexicon || [];
 }
-export const warmLexicon = () => { lexiconNow(); };
+/** Load (or reuse) the lexicon OFF the request path — boot warm-up and the warm keeper. Resolves when it is in memory. */
+export const warmLexicon = () => { lexiconNow(); return lexLoading || Promise.resolve(); };
+/** Re-read now, whatever its age (the warm keeper, before the TTL makes a search do it); an unchanged lexicon is reused. */
+export const refreshLexicon = () => lexLoading || startLexiconLoad();
+export const lexiconLoaded = () => !!lexicon;
 
 /** CONCEPT LAYER: the authoritative interpretation of a symbol the question names (concept_lexicon, cited) → its proof
  *  paragraph, as a ranked list for multiIndexSearch. Empty unless a symbol is actually named. entries: tests. */

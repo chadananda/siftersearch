@@ -125,6 +125,15 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         // people search's claim corpus loads on its own worker thread (claim-search.js) — started here, never awaited
         await import('./claim-search.js').then((m) => m.warmClaimSearch()).catch(() => {});
         await warmOlDocIdCache().catch((err) => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
+        // The concept lexicon (~4 s: one synchronous read per proof book, yielding between them). Left lazy, the first search
+        // of every fresh process loaded it and took 6–10 s (10-22). BOUNDED: past 20 s this process listens anyway and the
+        // load finishes in the background — never again a warm-up that outlasts listen_timeout (10-20 outage).
+        if (role !== 'ops') {
+          const t = Date.now();
+          const lex = import('./search/concepts.js').then((m) => m.warmLexicon()).catch((err) => logger.warn({ err: err.message }, 'concept lexicon warm-up failed'));
+          await Promise.race([lex, new Promise((ok) => setTimeout(ok, 20000).unref())]);
+          logger.info({ ms: Date.now() - t }, 'concept lexicon warm-up');
+        }
       };
       // Preboot (pm2 cluster, behind the gateway): EVERYTHING before listening, warm-ups included. The old instance keeps
       // serving until this one sends 'ready', so a slow warm-up costs nothing — while warming AFTER listening froze the event
@@ -139,7 +148,10 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         setTimeout(() => import('./encounters.js').then((m) => m.getEncounterIndex()).catch((err) =>
           logger.warn({ err: err.message }, 'encounter index warm-up failed')), 20000).unref();
         await bootTasks();
+        if (role !== 'ops') setTimeout(() => import('./search/concepts.js').then((m) => m.warmLexicon()).catch(() => {}), 25000).unref();
       }
+      // Refresh those indexes on a timer, so a search never pays for a TTL refresh (search/warm-keeper.js).
+      if (role !== 'ops') import('./search/warm-keeper.js').then((m) => m.startWarmKeeper()).catch((err) => logger.warn({ err: err.message }, 'warm keeper not started'));
 
       // Stats cache no longer needs prewarm — counter table (migration 39) provides instant counts
 
