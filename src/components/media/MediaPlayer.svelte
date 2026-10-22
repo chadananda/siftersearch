@@ -11,6 +11,7 @@
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
   import RecordLabel from './listening/RecordLabel.svelte';
+  import { anchorFor as followAnchor, followStep, isManualScroll } from '../../lib/media-follow.js';
   import ShareRow from './ShareRow.svelte';
   import { CLIP_MAX_MS, clipPath } from '../../../api/lib/media/clip-text.js';
   import { SITE } from '../../lib/share.js';
@@ -94,19 +95,13 @@
   }
   function keepLine(el, force = false) {
     const r = el.getBoundingClientRect();
-    const top = r.top + window.scrollY;
-    if (!force && lastLineTop != null && Math.abs(top - lastLineTop) < 4) return;   // same line: nothing to do
-    lastLineTop = top;
-    const delta = r.top - anchorY;
-    if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: 'smooth' });
+    const step = followStep(r.top, window.scrollY, anchorY, force ? null : lastLineTop, force);
+    lastLineTop = step.pageTop;
+    if (step.delta) window.scrollBy({ top: step.delta, behavior: 'smooth' });
   }
-  const anchorFor = (el) => {
-    const top = el?.getBoundingClientRect().top;
-    const h = window.innerHeight;
-    return top != null && top > 72 && top < h * 0.75 ? top : Math.round(h * 0.35);
-  };
+  const anchorFor = (el) => followAnchor(el?.getBoundingClientRect().top ?? null, window.innerHeight);
   function resync() {
-    follow = true; anchorY = Math.round(window.innerHeight * 0.35); lastLineTop = null;
+    follow = true; anchorY = followAnchor(null, window.innerHeight); lastLineTop = null;
     if (wordEls[curK]) keepLine(wordEls[curK], true);
   }
 
@@ -230,15 +225,15 @@
 
   // ── keyboard, manual scroll, Media Session ──
   const typing = (t) => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-  const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End']);
   function onKey(e) {
     if (typing(e.target)) return;
     if (e.code === 'Space' && !e.repeat && !/^(BUTTON|A)$/.test(e.target?.tagName) && e.target?.getAttribute?.('role') !== 'slider') {
       e.preventDefault(); toggle(); return;
     }
-    if (SCROLL_KEYS.has(e.key) && playing) follow = false;
+    if (isManualScroll(e, { playing, sinceStartMs: performance.now() - startedAt })) follow = false;
   }
-  const manual = () => { if (playing) follow = false; };
+  let startedAt = 0;   // when playback last started: momentum wheel events right after the click are not a manual scroll
+  const manual = (e) => { if (isManualScroll(e, { playing, sinceStartMs: performance.now() - startedAt })) follow = false; };
 
   function sessionSetup() {
     if (!('mediaSession' in navigator)) return;
@@ -279,7 +274,7 @@
     }
     if (canPlay) sessionSetup();
     const silent = () => audio.src.startsWith('blob:');   // the unlock blip, not the talk
-    const onPlay = () => { if (silent()) return; playing = true; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
+    const onPlay = () => { if (silent()) return; playing = true; startedAt = performance.now(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
     const onPause = () => { if (silent()) return; playing = false; cancelAnimationFrame(raf); frame(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; sessionPosition(); };
     const onEnded = () => { if (silent()) return; onPause(); if (level === 'clips' && clip && clip.end < duration - 1 && (limit == null || clip.end < limit - 0.5)) note = 'Excerpt ended — press play to continue.'; };
     const onErr = () => { if (silent()) return; note = 'The audio could not be loaded.'; busy = false; };

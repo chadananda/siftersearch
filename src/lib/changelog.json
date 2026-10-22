@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-22T17:25:03.805Z",
+  "generated": "2026-10-22T19:11:55.917Z",
   "entries": [
+    {
+      "hash": "6944b38b",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Portrait extension reads the image's own size (tools.imageSize) — tools.ffprobe is the audio prober and has no width/height, so every size was NaN; extendPortrait refuses a missing size with a clear error",
+      "scope": "media"
+    },
+    {
+      "hash": "3a1d3f71",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Outpaint canvas offsets are even and padded in RGB — tower's ffmpeg 6.1 refused an odd pad offset on 4:2:0 frames (all 89 portraits failed: 'Error reinitializing filters')",
+      "scope": "media"
+    },
+    {
+      "hash": "11edf9de",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "No stretched pictures + one-time AI-extended portrait masters + Portrait Cinema by default (Chad 10-22) — the Portrait Cinema Ken Burns zoomed a square crop into a 9:16 frame (stretched): every image is now scaled uniformly and cropped (a test guards the renderer); a speaker portrait gets ONE extended 9:16 master (1152×2048): placed uniformly on the canvas, the margins filled by the image-outpaint role (gemini-3.1-flash-image, ~$0.04 and ~12 s each), the original pixels pasted back with a feathered edge — stored beside the original in cdn-assets (media-speakers/<key>-ext.jpg), recorded on media_speakers (ext_file/sha/of/model/prompt/usd/at/error, migration 170), job media-portraits-extend; shorts and the API's speaker portrait (thumb.extended) use it. Shorts default to Portrait Cinema (Scripture Insert when the range quotes the Writings; others on request) with a face-centred slow push-in and light styling: a gentle warm grade, a soft vignette, a fine static grain, a thin amber rule over the call-sign lower third; portraits are requested at the frame's own aspect; SHORT_VERSION 4",
+      "scope": "media"
+    },
+    {
+      "hash": "627e9c95",
+      "date": "2026-10-22",
+      "type": "Test",
+      "description": "Pictures never stretch — every media <img> in a box is object-fit: cover; the image service scales uniformly before cropping; quote cards resize with fit cover",
+      "scope": "media"
+    },
     {
       "hash": "802a3c4b",
       "date": "2026-10-22",
@@ -3472,38 +3500,38 @@
       "type": "New",
       "description": "Every live call site takes its model from the role table — Haiku 5.5 for routine, Sonnet 5.5 for quality",
       "scope": "models"
-    },
-    {
-      "hash": "209ce94a",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "The rag-adapter spend gate also allows Haiku 5.5 for hype + concept-extract (it would have aborted grounding runs)",
-      "scope": "models"
-    },
-    {
-      "hash": "5e604a0b",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "HyPE + concept extraction on Haiku 5.5 for every language; 100k long-context guard",
-      "scope": "models"
-    },
-    {
-      "hash": "0fa21073",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Replies understood by meaning (small model), rules only as the fallback",
-      "scope": "reading"
-    },
-    {
-      "hash": "6e65d1c9",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "The per-person daily cap limits only letters Anís starts — never replies",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "6944b38b",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Portrait extension reads the image's own size (tools.imageSize) — tools.ffprobe is the audio prober and has no width/height, so every size was NaN; extendPortrait refuses a missing size with a clear error",
+        "scope": "media"
+      },
+      {
+        "hash": "3a1d3f71",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Outpaint canvas offsets are even and padded in RGB — tower's ffmpeg 6.1 refused an odd pad offset on 4:2:0 frames (all 89 portraits failed: 'Error reinitializing filters')",
+        "scope": "media"
+      },
+      {
+        "hash": "11edf9de",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "No stretched pictures + one-time AI-extended portrait masters + Portrait Cinema by default (Chad 10-22) — the Portrait Cinema Ken Burns zoomed a square crop into a 9:16 frame (stretched): every image is now scaled uniformly and cropped (a test guards the renderer); a speaker portrait gets ONE extended 9:16 master (1152×2048): placed uniformly on the canvas, the margins filled by the image-outpaint role (gemini-3.1-flash-image, ~$0.04 and ~12 s each), the original pixels pasted back with a feathered edge — stored beside the original in cdn-assets (media-speakers/<key>-ext.jpg), recorded on media_speakers (ext_file/sha/of/model/prompt/usd/at/error, migration 170), job media-portraits-extend; shorts and the API's speaker portrait (thumb.extended) use it. Shorts default to Portrait Cinema (Scripture Insert when the range quotes the Writings; others on request) with a face-centred slow push-in and light styling: a gentle warm grade, a soft vignette, a fine static grain, a thin amber rule over the call-sign lower third; portraits are requested at the frame's own aspect; SHORT_VERSION 4",
+        "scope": "media"
+      },
+      {
+        "hash": "627e9c95",
+        "date": "2026-10-22",
+        "type": "Test",
+        "description": "Pictures never stretch — every media <img> in a box is object-fit: cover; the image service scales uniformly before cropping; quote cards resize with fit cover",
+        "scope": "media"
+      },
       {
         "hash": "802a3c4b",
         "date": "2026-10-22",
@@ -6993,34 +7021,6 @@
         "type": "New",
         "description": "Every live call site takes its model from the role table — Haiku 5.5 for routine, Sonnet 5.5 for quality",
         "scope": "models"
-      },
-      {
-        "hash": "209ce94a",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "The rag-adapter spend gate also allows Haiku 5.5 for hype + concept-extract (it would have aborted grounding runs)",
-        "scope": "models"
-      },
-      {
-        "hash": "5e604a0b",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "HyPE + concept extraction on Haiku 5.5 for every language; 100k long-context guard",
-        "scope": "models"
-      },
-      {
-        "hash": "0fa21073",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Replies understood by meaning (small model), rules only as the fallback",
-        "scope": "reading"
-      },
-      {
-        "hash": "6e65d1c9",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "The per-person daily cap limits only letters Anís starts — never replies",
-        "scope": "anis"
       }
     ]
   }
