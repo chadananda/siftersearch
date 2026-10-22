@@ -12,7 +12,7 @@ import { computePeaks, normalizePeaks } from './peaks.js';
 import { toParagraphs, paragraphText } from './paragraphs.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
-import { defaultPlayback } from './rights.js';
+import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT } from './rights.js';
 import { tileSvg } from './thumbs.js';
 
 export const STAGES = ['archive', 'enhance', 'web', 'transcribe', 'correct', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
@@ -86,7 +86,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       }
       const named = await llm.nameItem({ rel: isYt ? `${info.channel} / ${info.title}` : relative(mediaRoot(), src), tags: isYt ? { description: info.description.slice(0, 600), tags: info.tags } : probe.tags,
         hints, duration: isYt ? info.duration_s : probe.duration_s }, { spend });
-      const speaker = named.speaker || hints.speaker || null, title = named.title || hints.title || basename(src, extname(src));
+      // the model's reading of path + tags wins when it answered (a folder name like "Misc Other" is not a speaker); the parsed
+      // hints only when the model gave nothing
+      const answered = !!(named.title || named.speaker);
+      const speaker = answered ? (named.speaker || null) : (hints.speaker || null), title = named.title || hints.title || basename(src, extname(src));
       const year = named.year || hints.year || null;
       let finalSlug = item.slug;
       if (!finalSlug) {
@@ -102,11 +105,12 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (isYt) {
         original = await d.youtube.youtubeAudio(item.source_ref, join(dir, 'original'));
         probe = await tools.ffprobe(original);
+        await chmod(original, 0o444).catch(() => {});
       } else {
+        // a HARD LINK shares the source's inode: never chmod it (that would change the source file too); a copy is made read-only
         original = join(dir, 'original', basename(src));
-        if (!existsSync(original)) { try { await link(src, original); } catch { await copyFile(src, original); } }
+        if (!existsSync(original)) { try { await link(src, original); } catch { await copyFile(src, original); await chmod(original, 0o444).catch(() => {}); } }
       }
-      await chmod(original, 0o444).catch(() => {});
       const sha = item.sha256 || await sha256Of(original);
       meta = { ...meta, id: item.id, slug: finalSlug, title, speaker, date: named.date || hints.date || null, year, place: named.place || null, event: named.event || null,
         kind: named.kind || null, language_hint: named.language_hint || null, tradition, collection, series: hints.series || null, part: hints.part || null,
@@ -114,8 +118,11 @@ export async function runItem(item, opts = {}, deps = {}) {
         source: isYt ? { kind: 'youtube', url: info.url, youtube_id: info.youtube_id, channel: info.channel, channel_id: info.channel_id, channel_url: info.channel_url, upload_date: info.upload_date, title: info.title, license: info.license }
           : { kind: 'file', path: src, sha256: sha, bytes: (await stat(original)).size, probe },
         original: relative(dir, original), version: 1 };
-      const channel = isYt && info.channel_id ? await repo.getChannel(info.channel_id) : null;
-      meta.rights = meta.rights || { playback: defaultPlayback({ sourceKind: item.source_kind, speaker, channel }), basis: isYt ? (channel ? `channel permission (${channel.playback})` : 'YouTube, no permission on record') : 'default for the local archive (Chad to confirm)' };
+      // every YouTube channel gets its own permission record (Chad can switch one to clips/search if its owner objects)
+      let channel = isYt && info.channel_id ? await repo.getChannel(info.channel_id) : null;
+      if (isYt && info.channel_id && !channel) channel = await repo.upsertChannel({ channel_id: info.channel_id, name: info.channel, playback: youtubeDefault(), granted_by: YOUTUBE_GRANT });
+      meta.rights = meta.rights || { playback: defaultPlayback({ sourceKind: item.source_kind, speaker, channel }), download: false,
+        basis: isYt ? `channel ${info.channel}: ${channel?.playback || youtubeDefault()} (${channel?.granted_by || YOUTUBE_GRANT})` : 'default for the local archive (Chad to confirm)' };
       await repo.updateMediaItem(item.id, { slug: finalSlug, dir, title, speaker, tradition, collection, year, date: meta.date, duration_s: probe.duration_s, has_video: probe.has_video,
         sha256: sha, youtube_id: info?.youtube_id || null, channel: info?.channel || null, playback: meta.rights.playback });
       item = { ...item, dir, slug: finalSlug };

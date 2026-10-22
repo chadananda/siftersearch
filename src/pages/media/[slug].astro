@@ -1,0 +1,51 @@
+---
+// /media/<slug> — one talk: metadata + aligned transcript + player (MediaPlayer island). SSR fetches GET /api/media/:slug at
+// request time (404 when missing) so title, summary and the whole transcript paint before hydration. ?t=754 / ?t=754-812
+// is read here (the #t= fragment only on the client). Canonical is /media/<slug> (Layout drops the query string).
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+import MediaPlayer from '../../components/media/MediaPlayer.svelte';
+import { parseRange } from '../../../api/lib/media/range.js';
+
+export const prerender = false;
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
+const { slug } = Astro.params;
+
+let item = null;
+let fetchError = null;
+try {
+  const res = await fetch(`${API_BASE}/api/media/${encodeURIComponent(slug || '')}`, { signal: AbortSignal.timeout(15000) });
+  if (res.ok) item = await res.json();
+  else if (res.status !== 404) fetchError = `API returned ${res.status}`;
+} catch (err) {
+  fetchError = err instanceof Error ? err.message : String(err);
+  console.error('media item fetch failed', { slug, err: fetchError });
+}
+
+if (fetchError) return new Response(`Bad gateway: ${fetchError}`, { status: 502 });
+if (!item) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', item ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=60');
+
+const initialRange = parseRange(Astro.url.searchParams.get('t'));
+const who = item ? [item.speaker, item.year].filter(Boolean).join(', ') : '';
+const title = item ? `${item.title}${who ? ` — ${who}` : ''} — SifterSearch Media` : 'Recording not found — SifterSearch Media';
+const description = item ? (item.summary || `${item.title}${item.speaker ? ` by ${item.speaker}` : ''}: a talk with a word-aligned, searchable transcript.`).slice(0, 300) : 'This recording could not be found.';
+const image = item?.thumb?.url && !/\.svg(\?|$)/.test(item.thumb.url) ? item.thumb.url : undefined;   // og:image must be raster
+---
+
+<Layout {title} {description} {image} type={item ? 'article' : 'website'} noindex={!item}>
+  <NavBar client:idle currentPage="media" />
+  <main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+    {item ? (
+      <MediaPlayer client:load {item} {initialRange} />
+    ) : (
+      <section class="py-24 text-center">
+        <p class="text-6xl font-bold text-primary">404</p>
+        <h1 class="mt-4 text-2xl font-semibold text-primary">Recording not found</h1>
+        <p class="mt-3 text-secondary">There is no published recording at this address.</p>
+        <a href="/media" class="mt-6 inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-accent-text hover:bg-accent-hover">Browse the media library</a>
+      </section>
+    )}
+  </main>
+</Layout>

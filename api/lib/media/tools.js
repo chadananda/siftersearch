@@ -39,7 +39,7 @@ export async function tool(sub, input, opts = {}, { python = PY(), threads = def
     if (v === true) args.push(`--${k}`);
     else if (v != null && v !== false && v !== '') args.push(`--${k}`, String(v));
   }
-  const { stdout } = await run(python, args, { threads, timeoutMs });
+  const { stdout } = await run(python, args, { threads, timeoutMs, env: { CUDA_VISIBLE_DEVICES: '' } });   // tower's CUDA driver is mismatched: CPU only
   const line = stdout.trim().split('\n').filter(Boolean).pop();
   try { return JSON.parse(line); } catch { throw new Error(`media_tool ${sub}: no JSON result (${String(line).slice(0, 200)})`); }
 }

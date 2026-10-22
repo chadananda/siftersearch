@@ -45,6 +45,10 @@
   /* Highlighter pen (SourceHunt quote marks): light yellow ink; lower alpha in dark mode keeps light text readable */
   --highlight-pen: light-dark(rgba(253, 230, 90, 0.62), rgba(250, 214, 64, 0.30));
 
+  /* Media player (/media/<slug>): the word now playing (very light yellow) and a selected ?t=a-b range (subtle blue wash) */
+  --highlight-playing: light-dark(rgba(254, 240, 138, 0.55), rgba(253, 224, 71, 0.22));
+  --highlight-range: light-dark(rgba(14, 165, 233, 0.08), rgba(56, 189, 248, 0.10));
+
   /* Semantic colors */
   --success: light-dark(#16a34a, #22c55e);
   --warning: light-dark(#d97706, #fbbf24);
@@ -144,6 +148,10 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
+
+  /* Highlights (media player) */
+  --color-highlight-playing: var(--highlight-playing);
+  --color-highlight-range: var(--highlight-range);
 
   /* Interactive */
   --color-hover: var(--hover-overlay);

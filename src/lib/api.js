@@ -1544,3 +1544,18 @@ export const observatory = {
   activity: (limit = 80) => observatoryGet(`/api/observatory/activity?limit=${limit}`),
   imports: () => observatoryGet('/api/observatory/imports'),   // the import board: new books, stage by stage, with OCR receipts
 };
+
+/** The media library (/media): public, edge-cached GETs; no auth headers. `href` turns an API-relative path
+ *  (/api/media/…, as the API returns them) into a browser URL ('' in production = same origin). */
+async function mediaGet(path) {
+  const res = await fetch(`${API_URL}${path}`, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`${path} ${res.status}`);
+  return res.json();
+}
+export const media = {
+  href: (p) => (p && p.startsWith('/api/') ? `${API_URL}${p}` : p),
+  list: (query) => mediaGet(`/api/media?${query}`),
+  get: (slug) => mediaGet(`/api/media/${encodeURIComponent(slug)}`),
+  // 'clips' items: a signed clip for start..end (end ≤ start + clip_cap) → { url, start, end }
+  clip: (clipUrl, start, end) => mediaGet(`${clipUrl}?t=${encodeURIComponent(`${start}-${end}`)}`),
+};

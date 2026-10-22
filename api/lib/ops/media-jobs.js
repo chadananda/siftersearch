@@ -3,7 +3,7 @@
 //               or YouTube URLs) become queued items; a file whose sha256 is already held, or a YouTube id already held,
 //               is not added twice. Then queues the next `batch` media-item jobs and itself behind them (gradual, like the
 //               Dewey ingest folder). Dewey's drop folder for media: DEWEY_MEDIA_DIR (/tank/dewey-ingest/media).
-//   media-item  { id, from?, only?, threads?, lang?, model? } — one item through the stage machine (api/lib/media/item.js);
+//   media-item  { id, from?, only?, threads?, lang?, model?, reslug? } — one item through the stage machine (api/lib/media/item.js);
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
@@ -67,9 +67,17 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null } = {}, deps = {}) {
-  const item = await getMediaItem(id);
+export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null, reslug = false } = {}, deps = {}) {
+  let item = await getMediaItem(id);
   if (!item) throw new Error(`media item ${id} not found`);
+  // RESLUG (an unpublished item named badly): its folder under the archive root is removed and the item archived again
+  if (reslug) {
+    if (item.state === 'done') throw new Error('a published item keeps its slug');
+    const { archiveRoot } = await import('../media/item.js');
+    if (item.dir && item.dir.startsWith(`${archiveRoot()}/`)) await (deps.rm || (await import('fs/promises')).rm)(item.dir, { recursive: true, force: true });
+    item = await updateMediaItem(id, { slug: null, dir: null, state: 'running' });
+    from = 'archive';
+  }
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');
   try {
     const r = await runItem(item, { from, only, threads, lang, model });

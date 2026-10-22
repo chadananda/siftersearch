@@ -33,6 +33,16 @@ describe('media-scan', () => {
     const again = await mediaScanJob({ roots: ['/m'], urls: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'], batch: 1 }, { list: async () => files, sha, queue: vi.fn() });
     expect(again.added).toHaveLength(0);
   });
+  it('reslug removes an unpublished item\'s folder and archives it again; a published one keeps its slug', async () => {
+    process.env.MEDIA_ARCHIVE_ROOT = '/tank/media/library';
+    store.items.push({ id: 7, state: 'running', slug: 'bad-name', dir: '/tank/media/library/bahai/x/bad-name' }, { id: 8, state: 'done', slug: 'kept', dir: '/tank/media/library/bahai/x/kept' });
+    const rm = vi.fn(async () => {}), runItem = vi.fn(async () => ({ slug: 'good-name', done: ['archive'] }));
+    await mediaItemJob({ id: 7, reslug: true }, { runItem, rm });
+    expect(rm).toHaveBeenCalledWith('/tank/media/library/bahai/x/bad-name', { recursive: true, force: true });
+    expect(runItem.mock.calls[0][0]).toMatchObject({ slug: null, dir: null });
+    expect(runItem.mock.calls[0][1]).toMatchObject({ from: 'archive' });
+    await expect(mediaItemJob({ id: 8, reslug: true }, { runItem, rm })).rejects.toThrow('keeps its slug');
+  });
   it('a bot check holds the item instead of failing it', async () => {
     store.items.push({ id: 1, state: 'scheduled', source_kind: 'youtube', source_ref: 'u' });
     const runItem = vi.fn(async () => { throw Object.assign(new Error('bot check'), { code: 'BOT_CHECK' }); });

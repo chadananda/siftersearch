@@ -29,6 +29,7 @@ describe('names', () => {
     expect(makeSlug({ speaker: 'Nakhjavání', title: 'The Prayerful Attitude', year: 1996 })).toBe('nakhjavani-the-prayerful-attitude-1996');
     expect(makeSlug({ speaker: '‘Alí-Akbar Furútan', title: 'Talk to the Youth', year: 1992 })).toBe('furutan-talk-to-the-youth-1992');
     expect(makeSlug({ title: 'Bahá’u’lláh and the New Era' })).toBe('bahaullah-and-the-new-era');
+    expect(makeSlug({ title: 'Includes Martha Root, November 1932', year: 1932 })).toBe('includes-martha-root-november-1932');
     expect(uniqueSlug('a', new Set(['a', 'a-2']))).toBe('a-3');
     expect(slugify('x'.repeat(200)).length).toBeLessThanOrEqual(80);
   });

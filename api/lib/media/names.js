@@ -10,7 +10,7 @@ export const slugify = (s, max = 80) => fold(s).toLowerCase().replace(/'/g, '').
 export function makeSlug({ speaker, title, year } = {}) {
   const sp = slugify(String(speaker || '').split(/[,&]| and /)[0].trim().split(/\s+/).pop() || '');
   const t = slugify(title || 'untitled', 60);
-  const parts = [sp && !t.startsWith(sp) ? sp : '', t, year ? String(year) : ''].filter(Boolean);
+  const parts = [sp && !t.startsWith(sp) ? sp : '', t, year && !t.includes(String(year)) ? String(year) : ''].filter(Boolean);
   return slugify(parts.join('-'), 80) || 'untitled';
 }
 

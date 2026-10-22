@@ -160,6 +160,12 @@
           </svg>
           <span class="nav-label">Biography</span>
         </a>
+        <a href="/media" class="nav-link show-lg" class:active={currentPage === 'media'} title="Talks with searchable transcripts">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2zM3 15a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"/>
+          </svg>
+          <span class="nav-label">Media</span>
+        </a>
         <a href="/sourcehunt" class="nav-link show-md" class:active={currentPage === 'sourcehunt'} title="Find the source of a quotation">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="10" cy="10" r="7"/><path d="m20 20-4.9-4.9"/>
@@ -238,6 +244,12 @@
               </svg>
               Discuss
             </a>-->
+            <a href="/media" class="nav-dropdown-item hide-above-lg" class:active={currentPage === 'media'} role="menuitem" onclick={closeNavMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2zM3 15a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"/>
+              </svg>
+              Media
+            </a>
             <a href="/sourcehunt" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'sourcehunt'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="10" cy="10" r="7"/><path d="m20 20-4.9-4.9"/>

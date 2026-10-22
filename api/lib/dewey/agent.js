@@ -53,6 +53,10 @@ export const TOOLS = [
     parameters: { type: 'object', properties: { title: { type: 'string' }, author: { type: 'string' }, edition: { type: 'string' }, year: { type: 'string' } }, required: ['title'] } } },
   { type: 'function', function: { name: 'add_offered', description: 'The member said YES to adding offered uploads: import them (into the recommended shelf).',
     parameters: { type: 'object', properties: { item_ids: { type: 'array', items: { type: 'integer' } } }, required: ['item_ids'] } } },
+  // the media library (planning/media-library-plan.md): a recording by URL (YouTube or other) or a server path → the media
+  // pipeline (holdings check by sha256 / YouTube id, enhance, transcribe, quotes, page, search) — one at a time, paced
+  { type: 'function', function: { name: 'add_media', description: 'Add a recorded talk (audio/video) to the media library: a YouTube URL, or a file path on the server. The pipeline checks it is not already held, then transcribes it and publishes it at /media.',
+    parameters: { type: 'object', properties: { url: { type: 'string' }, path: { type: 'string' } } } } },
   { type: 'function', function: { name: 'list_wanted', description: 'The wanted list and intake queue: open items with their state.', parameters: { type: 'object', properties: {} } } },
 ];
 
@@ -99,6 +103,13 @@ export function makeTools({ by, emit, attachSource, accept }) {
     async appraise_work({ title, author, edition, year }) {
       const a = await appraiseWork({ title, author, edition, year }, 'not checked here', { emit });
       return JSON.stringify(a || { error: 'nothing found' });
+    },
+    async add_media({ url = null, path = null }) {
+      if (!url && !path) return JSON.stringify({ error: 'a URL or a server path is needed' });
+      if (path && !/^\/tank\/(media|dewey-ingest)\//.test(String(path)) || String(path || '').includes('..')) return JSON.stringify({ error: 'the path must be under /tank/media or /tank/dewey-ingest' });
+      if (url && !/^https?:\/\//.test(String(url))) return JSON.stringify({ error: 'not a URL' });
+      const run = await enqueue('media-scan', { urls: url ? [url] : [], paths: path ? [path] : [], roots: [], batch: 1 }, by || 'dewey');
+      return JSON.stringify({ queued: true, run: run?.id ?? null, note: 'the media pipeline will check holdings, then transcribe and publish it at /media' });
     },
     async list_wanted() {
       return JSON.stringify((await listItems({ limit: 30 })).map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, isbn: i.research?.isbn13 || null, shelf: i.identified?.shelf || null })));

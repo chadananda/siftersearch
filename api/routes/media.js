@@ -83,7 +83,7 @@ export default async function mediaRoutes(fastify) {
       tradition: meta.tradition, collection: meta.collection, doc_id: it.doc_id,
       source: meta.source?.kind === 'youtube' ? { kind: 'youtube', url: meta.source.url, youtube_id: meta.source.youtube_id, channel: meta.source.channel, upload_date: meta.source.upload_date } : { kind: 'archive' },
       youtube: youtubeAt(meta),
-      rights: { playback: level, clip_cap: CLIP_CAP, basis: meta.rights?.basis || null },
+      rights: { playback: level, download: level === 'full' && !!meta.rights?.download, clip_cap: CLIP_CAP, basis: meta.rights?.basis || null },
       audio: level === 'full' ? { ogg: `${base}/file/web/${it.slug}.ogg?v=${v}`, m4a: `${base}/file/web/${it.slug}.m4a?v=${v}` } : null,
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${v}`, page: `${base}/file/page.html?v=${v}`,

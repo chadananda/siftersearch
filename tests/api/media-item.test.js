@@ -42,7 +42,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     describeTalk: vi.fn(async () => ({ summary: 'A class.', topics: ['World Order'], speakers: { S1: 'Hartmut Grossmann' }, chapters: [{ p: 1, title: 'Start' }] })),
     findQuotations: vi.fn(async () => ({ quotes: [], teachings: [] })), verifyTeaching: vi.fn(),
   };
-  const repo = { updateMediaItem: vi.fn(async () => ({})), slugTaken: vi.fn(async () => false), getChannel: vi.fn(async () => null) };
+  const repo = { updateMediaItem: vi.fn(async () => ({})), slugTaken: vi.fn(async () => false), getChannel: vi.fn(async () => null), upsertChannel: vi.fn(async (c) => c) };
   return {
     tools, llm, repo, now: () => '2026-10-21T00:00:00Z', loadVocab: async () => buildVocab(),
     draining: async () => ++stagesSeen > drainAfter,
@@ -62,7 +62,9 @@ describe('media item stage machine', () => {
     for (const f of ['original/Grossmann - World Order 2 - 1999 07 05.mp3', 'enhanced/light.flac', `web/${r.slug}.ogg`, `web/${r.slug}.m4a`, 'waveform.json',
       'transcript.raw.json', 'transcript.json', 'transcript.md', 'page.html', 'meta.json', 'thumb.svg']) expect(existsSync(join(dir, f)), f).toBe(true);
     expect(readFileSync(join(dir, 'original', 'Grossmann - World Order 2 - 1999 07 05.mp3'), 'utf8')).toBe('ORIGINAL-BYTES');
-    expect(statSync(join(dir, 'original', 'Grossmann - World Order 2 - 1999 07 05.mp3')).mode & 0o222).toBe(0);   // read-only
+    // linked, not copied — and the source's own mode is never touched (a chmod on a hard link changes the source too)
+    expect(statSync(join(dir, 'original', 'Grossmann - World Order 2 - 1999 07 05.mp3')).ino).toBe(statSync(src).ino);
+    expect(statSync(src).mode & 0o200).toBe(0o200);
     const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
     expect(Object.keys(meta.stages)).toEqual(STAGES);
     expect(meta).toMatchObject({ speaker: 'Hartmut Grossmann', rights: { playback: 'clips' }, doc_id: 777, asr: { host: 'boss' } });

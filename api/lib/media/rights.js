@@ -1,16 +1,20 @@
-// Playback rights per media item: 'full' (stream + download) · 'clips' (ranges ≤ CLIP_CAP s, cut on demand, no full file,
-// no download) · 'search' (text only). Defaults (planning/media-library-plan.md §6, Chad to confirm): YouTube without the
-// channel owner's permission → clips (with the YouTube link prominent); a channel with permission → full; local archive
-// talks → clips, except Chad Jones's own → full. Clip URLs carry an HMAC token valid for an hour. Pure (node:crypto).
+// Playback rights per media item: 'full' (the whole recording streams; paragraph/range playback) · 'clips' (ranges ≤
+// CLIP_CAP s, cut on demand, no full file) · 'search' (text only). DOWNLOAD is a separate flag, off unless Chad asks.
+// Defaults: YouTube → the channel's record (media_channels), else MEDIA_YOUTUBE_PLAYBACK = 'full' (Chad 10-21, late: "full
+// permission granted. proceed." — each channel keeps its own record so one can be switched to clips/search if an owner
+// objects); local archive talks → clips (Chad to decide), Chad Jones's own → full. The YouTube source link stays on every
+// page. Clip URLs carry an HMAC token valid for an hour. Pure (node:crypto).
 import { createHmac, timingSafeEqual } from 'crypto';
 
 export const LEVELS = ['full', 'clips', 'search'];
 export const CLIP_CAP = 180;
 const OWN_SPEAKERS = /^chad jones$/i;
+export const youtubeDefault = () => (LEVELS.includes(process.env.MEDIA_YOUTUBE_PLAYBACK) ? process.env.MEDIA_YOUTUBE_PLAYBACK : 'full');
+export const YOUTUBE_GRANT = 'Chad 10-21 (full permission granted)';
 
 /** The default playback level for a new item. channel: the media_channels row for a YouTube item ({ playback }). */
 export function defaultPlayback({ sourceKind = 'file', speaker = '', channel = null } = {}) {
-  if (sourceKind === 'youtube') return LEVELS.includes(channel?.playback) ? channel.playback : 'clips';
+  if (sourceKind === 'youtube') return LEVELS.includes(channel?.playback) ? channel.playback : youtubeDefault();
   if (OWN_SPEAKERS.test(String(speaker).trim())) return 'full';
   return 'clips';
 }
