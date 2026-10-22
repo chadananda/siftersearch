@@ -45,7 +45,7 @@ const cost = { people: 0, tokens: 0, skipped: 0, failed: 0 };
 async function build(id) {
   const file = join(OUT, `${id}.json`);
   if (!FORCE && existsSync(file) && JSON.parse(readFileSync(file, 'utf8')).version === TIMELINE_VERSION) { cost.skipped++; return; }
-  const p = await getBioPerson(id);
+  const p = await getBioPerson(id, { allClaims: true });   // every claim (the API dossier samples CLAIMS_MAX)
   if (!p) return;
   const facts = selectFacts(p.characterizations);
   if (facts.length < 3) { console.log(JSON.stringify({ id, name: p.name, skip: 'too few facts', facts: facts.length })); return; }

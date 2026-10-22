@@ -1847,6 +1847,14 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_moments_item ON media_moments(item_id)');
     logger.info('Migration 167 complete: media_items.audience, media_moments');
   },
+
+  168: async () => {
+    // OceanLibrary range links look books up by source_url (docs-repo.oceanParagraphs). With no index the lookup was an
+    // OR-of-200 join scanned per response: 5.2 s blocking reads, 19.6 s gateway timeouts on /api/v1/people/:id (10-22).
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_source_url ON docs(source_url) WHERE source_url IS NOT NULL');
+    try { await query('ANALYZE docs'); } catch { /* stats optional */ }
+    logger.info('Migration 168 complete: idx_docs_source_url');
+  },
 };
 
 export const graphMigrations = {

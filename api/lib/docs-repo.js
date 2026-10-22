@@ -528,3 +528,39 @@ export async function docsForPathSlugs(religionSlug, collectionSlug, slugify) {
     names, 'docs-repo:path-slug-candidates');
   return rows.filter((d) => slugify(d.religion || '') === religionSlug);
 }
+
+/**
+ * OceanLibrary paragraphs for range links (ocean-links.js): [[slug, paraId]] → rows { slug, external_id, pid, text,
+ * block_attrs }. It was one OR-of-200 `(d.source_url IN (?,?) AND c.external_para_id = ?)` join that no index served —
+ * 5.2 s blocking reads and two 19.6 s gateway timeouts on /api/v1/people/:id (10-22, 1,659 links on one dossier). Now two
+ * indexed probes: the books by source_url (idx_docs_source_url, migration 168; both URL spellings), then each book's
+ * paragraphs by (doc_id, external_para_id) (idx_content_external_para). Only the site copy (external_id) can range-link.
+ */
+export const OCEAN_BOOKS_SQL = (n) => `SELECT id, source_url, external_id FROM docs
+  WHERE source_url IN (${Array(n).fill('?').join(',')}) AND source_site = 'oceanlibrary.com'
+    AND deleted_at IS NULL AND external_id IS NOT NULL`;
+export const OCEAN_PARAS_SQL = (n) => `SELECT external_para_id pid, text, block_attrs FROM content
+  WHERE doc_id = ? AND external_para_id IN (${Array(n).fill('?').join(',')}) AND deleted_at IS NULL`;
+export async function oceanParagraphs(pairs) {
+  const bySlug = new Map();
+  for (const [s, p] of pairs || []) (bySlug.get(s) || bySlug.set(s, new Set()).get(s)).add(p);
+  if (!bySlug.size) return [];
+  const slugs = [...bySlug.keys()], out = [];
+  const docs = [];
+  for (let i = 0; i < slugs.length; i += 200) {
+    const urls = slugs.slice(i, i + 200).flatMap((s) => [`https://oceanlibrary.com/${s}`, `https://oceanlibrary.com/${s}/`]);
+    docs.push(...await queryAll(OCEAN_BOOKS_SQL(urls.length), urls, 'docs-repo:ocean-books'));
+  }
+  const slugOf = (u) => String(u).replace(/\/$/, '').split('/').pop();
+  for (const d of docs) {
+    const slug = slugOf(d.source_url);
+    const pids = [...(bySlug.get(slug) || [])];
+    for (let i = 0; i < pids.length; i += 500) {
+      const chunk = pids.slice(i, i + 500);
+      for (const r of await queryAll(OCEAN_PARAS_SQL(chunk.length), [d.id, ...chunk], 'docs-repo:ocean-paras')) {
+        out.push({ slug, external_id: d.external_id, pid: r.pid, text: r.text, block_attrs: r.block_attrs });
+      }
+    }
+  }
+  return out;
+}

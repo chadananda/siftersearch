@@ -517,8 +517,25 @@ export async function listBioPersons() {
 }
 
 // Full dossier for one person: DB record + gathered portrait/bio.json + cross-corpus reach + GPB citations.
-export async function getBioPerson(rawId) {
+// Cached 10 min per id with in-flight sharing: the dossier changes only when the pipeline writes claims, and a cold build
+// for a central figure is several reads. Bahá'u'lláh (1247562) had 44,042 claims → a 13 MB response and 1,659 OceanLibrary
+// links to range-resolve: 39.6 s cold, two 19.6 s gateway timeouts (10-22). Claims are now sampled (CLAIMS_MAX).
+export const CLAIMS_MAX = 300;
+const _personCache = new Map();   // id → { at, p: Promise }
+const PERSON_TTL_MS = 600000, PERSON_CACHE_MAX = 300;
+export function _resetBioPersonCache() { _personCache.clear(); }
+export function getBioPerson(rawId, { allClaims = false } = {}) {
   const id = String(rawId).replace(/[^0-9]/g, '');
+  if (allClaims) return buildBioPerson(id, Infinity);   // offline builders (scripts/bio/build-timelines.mjs): every claim, uncached
+  const hit = _personCache.get(id);
+  if (hit && Date.now() - hit.at < PERSON_TTL_MS) return hit.p;
+  const p = buildBioPerson(id, CLAIMS_MAX).catch((err) => { _personCache.delete(id); throw err; });
+  _personCache.set(id, { at: Date.now(), p });
+  if (_personCache.size > PERSON_CACHE_MAX) _personCache.delete(_personCache.keys().next().value);
+  return p;
+}
+
+async function buildBioPerson(id, claimsMax) {
   const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, ge.last_assessed_version AS lav, er.side, er.summary,
       er.aliases, er.kinship, er.relations, er.research_notes, er.dates
     FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.id = ?`, [id]);
@@ -536,12 +553,12 @@ export async function getBioPerson(rawId) {
   let mentionCount = 0, books = [], gpbRefs = [];
   try {
     // Cross-corpus reach from the disambiguated v2 substrate (doc_id + para_id carried directly).
-    const ms = await queryAll('SELECT doc_id, para_id FROM entity_mentions_v2 WHERE entity_id = ?', [id]);
-    mentionCount = ms.length;
-    const dids = [...new Set(ms.map(m => m.doc_id))];
+    // aggregated in SQL: a central figure has ~48k mention rows, and only the count, the books and 24 GPB paragraphs are used
+    mentionCount = (await queryOne('SELECT COUNT(*) n FROM entity_mentions_v2 WHERE entity_id = ?', [id]))?.n || 0;
+    const dids = (await queryAll('SELECT DISTINCT doc_id FROM entity_mentions_v2 WHERE entity_id = ?', [id])).map(m => m.doc_id);
     if (dids.length) {
       books = (await queryAll(`SELECT DISTINCT title FROM docs WHERE id IN (${dids.map(() => '?').join(',')}) AND title IS NOT NULL`, dids)).map(b => b.title);
-      const gpids = [...new Set(ms.filter(m => m.doc_id === 21310 || m.doc_id === 57347).map(m => m.para_id))].slice(0, 24);
+      const gpids = (await queryAll(`SELECT DISTINCT para_id FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id IN (21310, 57347) LIMIT 24`, [id])).map(m => m.para_id);
       if (gpids.length) {
         const ph = gpids.map(() => '?').join(',');  // para_id stores either external_para_id or 'p'||content.id — match both
         const gp = await queryAll(`SELECT c.external_para_id AS pid, c.text, c.heading, d.source_url AS url FROM content c JOIN docs d ON d.id = c.doc_id
@@ -553,8 +570,16 @@ export async function getBioPerson(rawId) {
   const notes = obj(row.research_notes);
   // NEW substrate first: cited claims (proof-gated, temporal, source-linked) from entity_claims — the reconciled
   // evidence base. Fall back to legacy facts2/episodes only for entities the pipeline hasn't covered. Same UI shape.
-  const claimRows = await queryAll(`SELECT relation, statement, proof_verbatim AS proof, doc_id, para_id, time_value AS tv, time_basis AS tb
-     FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported') ORDER BY (tv IS NULL), tv`, [id]);
+  // At most claimsMax, evenly spaced along the chronological order (a life still reads start to end); the total rides along.
+  const claimsTotal = (await queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported')`, [id]))?.n || 0;
+  const claimRows = claimsTotal <= claimsMax
+    ? await queryAll(`SELECT relation, statement, proof_verbatim AS proof, doc_id, para_id, time_value AS tv, time_basis AS tb
+       FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported') ORDER BY (tv IS NULL), tv, id`, [id])
+    : await queryAll(`WITH s AS (SELECT id, ROW_NUMBER() OVER (ORDER BY (time_value IS NULL), time_value, id) - 1 AS rn
+         FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported'))
+       SELECT relation, statement, proof_verbatim AS proof, doc_id, para_id, time_value AS tv, time_basis AS tb
+       FROM entity_claims WHERE id IN (SELECT id FROM s WHERE (rn * ?) % ? < ?) ORDER BY (tv IS NULL), tv, id`,
+      [id, claimsMax, claimsTotal, claimsMax]);
   let characterizations;
   if (claimRows.length) {
     // Resolve each cited claim's source document (title + public url) from the docs table — NOT a hardcoded book list.
@@ -596,7 +621,7 @@ export async function getBioPerson(rawId) {
   try { timeline = JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'timelines', `${id}.json`), 'utf8')); } catch { /* not built yet */ }
   return { timeline, id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
-    dates: arr(row.dates), death: notes.death || null, characterizations,
+    dates: arr(row.dates), death: notes.death || null, characterizations, characterizationsTotal: claimRows.length ? claimsTotal : characterizations.length,
     facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
     possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
 }

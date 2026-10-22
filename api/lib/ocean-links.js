@@ -6,8 +6,7 @@
 // that already carries a selection, or whose paragraph lacks a stored block id, is left as it is.
 // Ocean of Lights (Chad 10-12): "oceanoflights.org/<page>/#~d=<doc>~q=<quote>" → "#(start)(end)" from our stored copy of
 // that page (lib/ool-range.js); not placeable → a browser text fragment.
-// Deps: db (read), docs-repo, ocean-range, ool-range.
-import { queryAll } from './db.js';
+// Deps: docs-repo (indexed reads), ocean-range, ool-range.
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { plainText, oolQuoteUrl, locateQuote, encodeMarker } from './ool-range.js';
 
@@ -19,24 +18,18 @@ export const oceanQuoteMarker = (url, quote) => (quote ? `${url}#~q=${encodeMark
 const cache = new Map();          // `${slug}|${para}` → { external_id, ilm, text } or null (no anchors)
 const CACHE_MAX = 50000;
 
-/** Resolve [slug, para] pairs to their range links (batched; cached). */
-async function resolve(pairs) {
-  const todo = pairs.filter(([s, p]) => !cache.has(`${s}|${p}`));
-  for (let i = 0; i < todo.length; i += 200) {
-    const chunk = todo.slice(i, i + 200);
-    const rows = await queryAll(
-      `SELECT d.source_url, d.external_id, c.external_para_id pid, c.text, c.block_attrs
-         FROM content c JOIN docs d ON d.id = c.doc_id
-        WHERE c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.source_site = 'oceanlibrary.com'
-          AND (${chunk.map(() => '(d.source_url IN (?, ?) AND c.external_para_id = ?)').join(' OR ')})`,
-      chunk.flatMap(([s, p]) => [`https://oceanlibrary.com/${s}`, `https://oceanlibrary.com/${s}/`, p]), 'ocean-links:resolve');
-    const found = new Map(rows.map((r) => [`${String(r.source_url).replace(/\/$/, '').split('/').pop()}|${r.pid}`, r]));
-    for (const [s, p] of chunk) {
-      const r = found.get(`${s}|${p}`);
-      let ilm = null;
-      try { ilm = r ? JSON.parse(r.block_attrs || '{}').ilm_id : null; } catch { /* no anchors */ }
-      cache.set(`${s}|${p}`, r && ilm && r.external_id ? { external_id: r.external_id, ilm, text: r.text } : null);
-    }
+/** Resolve [slug, para] pairs to their range links (batched, indexed lookups via docs-repo.oceanParagraphs; cached). */
+async function resolve(pairs, repo) {
+  const todo = [...new Map(pairs.filter(([s, p]) => !cache.has(`${s}|${p}`)).map((x) => [`${x[0]}|${x[1]}`, x])).values()];
+  if (!todo.length) return;
+  const lookup = repo?.oceanParagraphs || (await import('./docs-repo.js')).oceanParagraphs;
+  const found = new Map();
+  for (const r of await lookup(todo)) if (!found.has(`${r.slug}|${r.pid}`)) found.set(`${r.slug}|${r.pid}`, r);
+  for (const [s, p] of todo) {
+    const r = found.get(`${s}|${p}`);
+    let ilm = null;
+    try { ilm = r ? JSON.parse(r.block_attrs || '{}').ilm_id : null; } catch { /* no anchors */ }
+    cache.set(`${s}|${p}`, r && ilm && r.external_id ? { external_id: r.external_id, ilm, text: r.text } : null);
   }
   if (cache.size > CACHE_MAX) for (const k of [...cache.keys()].slice(0, cache.size - CACHE_MAX)) cache.delete(k);
 }
@@ -140,7 +133,7 @@ export async function upgradeOceanLinks(text, { loadParagraphs, repo } = {}) {
   if (s.includes('~q=')) s = await upgradeOlBookLinks(s, repo);
   const pairs = [...s.matchAll(OCEAN_PARA_URL)].map((m) => [decodeURIComponent(m[1]), m[2]]);
   if (!pairs.length) return dropMarkers(s);
-  await resolve(pairs);
+  await resolve(pairs, repo);
   return dropMarkers(s.replace(OCEAN_PARA_URL, (whole, slug, para, q) => {
     const a = cache.get(`${decodeURIComponent(slug)}|${para}`);
     const plain = whole.replace(/#~q=.*$/, '');                       // the private marker never leaves un-upgraded

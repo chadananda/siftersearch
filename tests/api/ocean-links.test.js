@@ -1,13 +1,12 @@
 // OceanLibrary paragraph links → range links at the output boundary (api/lib/ocean-links.js).
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('../../api/lib/db.js', () => ({
-  queryAll: vi.fn(async (_sql, params) => {
+vi.mock('../../api/lib/docs-repo.js', () => ({
+  oceanParagraphs: vi.fn(async (pairs) => {
     const rows = [];
-    for (let i = 0; i < params.length; i += 3) {
-      const [url, , pid] = params.slice(i, i + 3);
-      if (url.endsWith('/dawn-breakers_nabil') && pid === 'para_19') rows.push({ source_url: 'https://oceanlibrary.com/dawn-breakers_nabil', external_id: 'dawn-breakers-prod-version_en', pid, text: 'xx the empires of the S̱háh and the Sulṭán, and it did not occur to them', block_attrs: '{"ilm_id":"3a"}' });
-      if (url.endsWith('/peace_bahaullah') && pid === 'para_9') rows.push({ source_url: 'https://oceanlibrary.com/peace_bahaullah', external_id: 'peace_compilation_bahai_ocean_en', pid, text: 'old', block_attrs: null });
+    for (const [slug, pid] of pairs) {
+      if (slug === 'dawn-breakers_nabil' && pid === 'para_19') rows.push({ slug, external_id: 'dawn-breakers-prod-version_en', pid, text: 'xx the empires of the S̱háh and the Sulṭán, and it did not occur to them', block_attrs: '{"ilm_id":"3a"}' });
+      if (slug === 'peace_bahaullah' && pid === 'para_9') rows.push({ slug, external_id: 'peace_compilation_bahai_ocean_en', pid, text: 'old', block_attrs: null });
     }
     return rows;
   }),
