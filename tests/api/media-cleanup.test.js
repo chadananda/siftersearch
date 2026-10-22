@@ -48,6 +48,30 @@ describe('applying and rendering', () => {
     const r = await cleanParagraphs(ps, ask);
     expect(r.stats).toMatchObject({ applied: 3, hidden_words: 2, refused: 1 });
     expect(paragraphMarkdown(r.paragraphs[0], [])).toBe('so there is a way');
-    expect(r.log.map((l) => l.kind)).toEqual(['homophone', 'stutter', 'filler']);
+    expect(r.log.filter((l) => !l.refused).map((l) => l.kind)).toEqual(['homophone', 'stutter', 'filler']);
+    expect(r.log.find((l) => l.refused)).toMatchObject({ kind: 'spelling', from: 'a way', why: expect.any(String) });
+  });
+  it('names: the model knowledge respells a misheard title; never adds words (Chad 10-22 examples)', async () => {
+    const ps = [{ n: 2, t0: 0, t1: 9, words: W("he translated Nabips Narrative (Vol II), he was not only foreigner of Bahá’u’lláh"), sentences: [[0, 13]] }];
+    const ask = vi.fn(async () => ({ edits: [
+      { p: 2, from: 'Nabips', to: 'Nabíl’s', kind: 'name', confidence: 0.95 },
+      { p: 2, from: 'foreigner', to: 'forerunner', kind: 'homophone', confidence: 0.9 },
+      { p: 2, from: 'Narrative', to: 'Narrative, the Dawn-Breakers,', kind: 'name', confidence: 0.9 },   // adds words: refused
+    ], mentions: [{ p: 2, text: 'Nabíl’s Narrative', kind: 'work', canonical: 'The Dawn-Breakers: Nabíl’s Narrative', confidence: 0.95 }, { p: 9, text: 'x', kind: 'work' }] }));
+    const r = await cleanParagraphs(ps, ask, { ctx: { speaker: 'A. Furútan', title: 'Forerunner' } });
+    expect(paragraphMarkdown(r.paragraphs[0], [])).toBe('he translated Nabíl’s Narrative (Vol II), he was not only forerunner of Bahá’u’lláh');
+    expect(r.log.find((l) => l.refused)?.why).toMatch(/adds words/);
+    expect(r.mentions).toEqual([expect.objectContaining({ para: 2, i0: 2, i1: 4, text: 'Nabíl’s Narrative', kind: 'work' })]);
+    expect(ask.mock.calls[0][0]).toContain('Speaker: A. Furútan');
+    expect(ask.mock.calls[0][0]).toContain('Shoghi Effendi');
+  });
+  it('chunks by audio minutes, with two paragraphs before and one after as read-only context', async () => {
+    const { chunksOf } = await import('../../api/lib/media/cleanup.js');
+    const ps = Array.from({ length: 10 }, (_, i) => ({ n: i + 1, t0: i * 100, t1: i * 100 + 90 }));
+    expect(chunksOf(ps, { chunkSeconds: 300 })).toEqual([
+      { edit: [1, 2, 3, 4], before: [], after: [5] },
+      { edit: [5, 6, 7, 8], before: [3, 4], after: [9] },
+      { edit: [9, 10], before: [7, 8], after: [] },
+    ]);
   });
 });

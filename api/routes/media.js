@@ -119,7 +119,7 @@ export default async function mediaRoutes(fastify) {
       quality: meta.quality ? { overall: meta.quality.overall, primary_issue: meta.quality.primary_issue, secondary_issues: meta.quality.secondary_issues,
         chain: meta.quality.chain_key, dimensions: Object.fromEntries(Object.entries(meta.quality.dimensions || {}).map(([k, x]) => [k, { grade: x.grade,
           value: x.kHz ?? x.snr_db ?? x.c50_db ?? x.pct ?? x.per_hour ?? x.lufs ?? x.f0_median_hz ?? x.asr_logprob ?? null, type: x.type }])),
-        perceived: meta.quality.perceived || null } : null,
+        perceived: meta.quality.perceived || null, insertions_reverted: meta.quality.insertions_reverted ?? null } : null,
     };
   });
 

@@ -5,12 +5,16 @@
 // joined — and never a paraphrase. Dropped words are HIDDEN, not deleted (each keeps its time, so click-to-play and the
 // highlight stay aligned); replaced words share their span's time. Every change is logged; low-confidence ones are only
 // flagged for review. The verbatim words are kept beside the clean ones. Pure, except cleanParagraphs (model call injected).
-import { keyOf, levenshtein, findSpan, applyEdits } from './vocab.js';
+// 10-22 (Chad: "you had the right context to see the obvious error"): the model reads ~12-minute chunks with neighbouring
+// paragraphs, framed with who is speaking, the title and date, and uses its OWN knowledge of Bahá'í history, texts, names
+// and Shoghi Effendi's transliteration to respell misheard names and titles (kind 'name'); it also returns the works and
+// people the talk names (mentions) for the link stage. Every respelling still passes the guard; nothing is ever added.
+import { keyOf, levenshtein, findSpan, applyEdits, addsWords } from './vocab.js';
 import { sentencesOf } from './paragraphs.js';
 
 export const FILLERS = new Set(['um', 'uh', 'umm', 'uhm', 'er', 'erm', 'ah', 'hmm', 'mm', 'mhm', 'eh']);
 export const HALLUCINATION = /thanks? (?:you )?for watching|please subscribe|like and subscribe|subtitles? by|captions? by|transcri(?:bed|ption) by|amara\.org|translated by|www\.[a-z]+\.(?:com|org)|copyright ©/i;
-export const KINDS = ['filler', 'stutter', 'repeat', 'hallucination', 'spelling', 'homophone', 'capitalisation', 'punctuation', 'broken'];
+export const KINDS = ['filler', 'stutter', 'repeat', 'hallucination', 'spelling', 'homophone', 'capitalisation', 'punctuation', 'broken', 'name'];
 const DROPS = new Set(['filler', 'stutter', 'repeat', 'hallucination']);
 
 const tokens = (s) => String(s || '').trim().split(/\s+/).filter(Boolean);
@@ -59,6 +63,14 @@ export function judgeEdit(words, e, { minConfidence = 0.7 } = {}) {
   if (kind === 'capitalisation') return fk.join(' ') === tk.join(' ') && fw.length === tw.length ? { ok: { i0, i1, kind, to } } : { refused: 'not only the case' };
   if (kind === 'punctuation') return fk.join('') === tk.join('') && fw.length === tw.length ? { ok: { i0, i1, kind, to } } : { refused: 'letters changed' };
   if (kind === 'broken') return letters(from) === letters(to) && tw.length < fw.length ? { ok: { i0, i1, kind, to } } : { refused: 'not a broken word' };
+  if (kind === 'name') {
+    // a misheard proper name or title respelt: never more words than heard, and it must sound like what was heard
+    if (addsWords(from, to)) return { refused: 'adds words the speaker did not say' };
+    const a = fk.join(''), b = tk.join('');
+    const allowed = Math.max(2, Math.ceil(Math.max(a.length, b.length) * 0.45));
+    if (!a || !b || (levenshtein(a, b, allowed) > allowed && soundKey(a) !== soundKey(b))) return { refused: 'does not sound alike' };
+    return { ok: { i0, i1, kind, to } };
+  }
   if (kind === 'spelling' || kind === 'homophone') {
     if (fw.length !== tw.length || fw.length > 2) return { refused: 'a spelling fix keeps the word count' };
     for (let i = 0; i < fk.length; i++) {
@@ -103,35 +115,68 @@ export function judgeAll(words, proposals, opts) {
 }
 
 const displayText = (p) => p.words.filter((w) => !w.hide).map((w) => w.w).join(' ');
+const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
-/** The pass over a transcript. ask(prompt) → parsed JSON { edits: [...] } (the media-clean role). → { paragraphs, log, stats } */
-export async function cleanParagraphs(paragraphs, ask, { chunkWords = 1200 } = {}) {
-  const byN = new Map(paragraphs.map((p) => [p.n, { ...p, words: p.words.map((w) => ({ ...w })) }]));
-  const chunks = [];
-  let cur = [], n = 0;
-  for (const p of paragraphs) { cur.push(p.n); n += p.words.length; if (n >= chunkWords) { chunks.push(cur); cur = []; n = 0; } }
-  if (cur.length) chunks.push(cur);
-  const log = [], stats = { applied: 0, hidden_words: 0, refused: 0, flagged: 0, by_kind: {} };
-  for (const ch of chunks) {
-    const text = ch.map((pn) => `[${pn}] ${displayText(byN.get(pn))}`).join('\n');
-    const out = await ask(`You copy-edit a speech-recognition transcript of a recorded talk. Keep it VERBATIM-FAITHFUL: never paraphrase, summarise, reorder, add words or improve the speaker's wording; quotations stay exactly as spoken. Propose only these small edits, each with its kind:
+/** Chunks of ~chunkSeconds of audio (paragraph numbers), each with up to 2 paragraphs before and 1 after as read-only context. */
+export function chunksOf(paragraphs, { chunkSeconds = 720 } = {}) {
+  const out = [];
+  let cur = [], t0 = null;
+  for (const p of paragraphs) {
+    if (t0 == null) t0 = p.t0;
+    cur.push(p.n);
+    if (p.t1 - t0 >= chunkSeconds) { out.push(cur); cur = []; t0 = null; }
+  }
+  if (cur.length) out.push(cur);
+  const idx = new Map(paragraphs.map((p, i) => [p.n, i]));
+  return out.map((ns) => {
+    const a = idx.get(ns[0]), b = idx.get(ns[ns.length - 1]);
+    return { edit: ns, before: paragraphs.slice(Math.max(0, a - 2), a).map((p) => p.n), after: paragraphs.slice(b + 1, b + 2).map((p) => p.n) };
+  });
+}
+
+/** The framing prompt for one chunk. ctx: { speaker, title, date, year, event, place, language, summary }. */
+export function cleanPrompt(ctx, lines) {
+  const about = [ctx.speaker && `Speaker: ${ctx.speaker}`, ctx.title && `Title: ${ctx.title}`, (ctx.date || ctx.year) && `Date: ${ctx.date || ctx.year}`,
+    ctx.event && `Event: ${ctx.event}`, ctx.place && `Place: ${ctx.place}`, ctx.summary && `About: ${ctx.summary}`].filter(Boolean).join('\n');
+  return `You copy-edit a speech-recognition transcript of a recorded Bahá'í talk.
+${about}
+
+Use your own knowledge of Bahá'í history, the Writings, the names of people, places and works, and Shoghi Effendi's system of transliteration (as printed in Bahá'í books: Bahá’u’lláh, ‘Abdu’l-Bahá, the Báb, Ṭáhirih, Mullá Ḥusayn, Nabíl’s Narrative, Kitáb-i-Íqán) to correct OBVIOUS mishearings, e.g. "Nabips Narrative" → "Nabíl’s Narrative", "the Baab" → "the Báb".
+Keep it VERBATIM-FAITHFUL: never paraphrase, summarise, reorder, add words or improve the speaker's wording; never add titles, dates, volume numbers or explanations; quotations stay exactly as spoken.
+Edit kinds:
+- name: a misheard or misspelt proper name, title of a work, or religious term → its correct spelling (as few words as possible; never more words than were heard)
 - filler: drop "um", "uh", "er", "ah", "hmm" (to = "")
-- stutter: a false start or stammer ("the the", "I- I think") → keep only the last saying (to = the kept words)
-- repeat: an ASR loop (the same phrase repeated by mistake) → keep one (to = one copy)
+- stutter: a false start or stammer ("the the", "I- I think") → only the last saying
+- repeat: an ASR loop (the same phrase repeated by mistake) → one copy
 - hallucination: an invented line in a silence ("Thank you for watching", subtitle credits) → to = ""
-- spelling: a misspelled word → its spelling (same number of words)
-- homophone: a mis-heard word that sounds alike, clear from context ("their" for "there") → the right word
-- capitalisation: wrong capitals only (same letters)
-- punctuation: a run-on or a wrong sentence boundary → the same words with corrected punctuation and capitals
-- broken: one word split apart ("Bah ai") → joined
-Each edit: "from" = the exact words from the text (as few as possible), "to" = the replacement, "kind", "confidence" 0-1 (below 0.7 when unsure — those are only flagged for a person). Do not touch names and religious terms (already corrected).
-${text}
-Return JSON {"edits":[{"p": paragraph number, "from": "…", "to": "…", "kind": "…", "confidence": 0.0}]} — {"edits":[]} when nothing needs fixing.`);
+- spelling: a misspelt ordinary word (same number of words)
+- homophone: a mis-heard ordinary word that sounds alike, clear from context
+- capitalisation: wrong capitals only
+- punctuation: a wrong sentence boundary → same words, corrected punctuation and capitals
+- broken: one word split apart → joined
+Each edit: "p" = paragraph number, "from" = the exact words from that paragraph (as few as possible), "to", "kind", "confidence" 0-1 (below 0.7 when unsure — only flagged for a person). Only edit paragraphs marked EDIT; lines marked CONTEXT are for reading only.
+Also list MENTIONS in the EDIT paragraphs: every work the speaker names (a book, tablet, prayer, letter, compilation) and every historical person named or referred to by a title ("the Master", "the Guardian", "the Blessed Beauty"): "p", "text" = the words as they will read after your edits, "kind" = "work" or "person", "canonical" = the work's full title or the person's full name in Shoghi Effendi's spelling, "section" = the chapter or part referred to, if any, "confidence" 0-1.
+
+${lines}
+
+Return JSON {"edits":[{"p":0,"from":"…","to":"…","kind":"…","confidence":0.0}],"mentions":[{"p":0,"text":"…","kind":"work","canonical":"…","section":null,"confidence":0.0}]}`;
+}
+
+/** The pass over a transcript. ask(prompt) → parsed JSON { edits, mentions }. ctx: talk framing (cleanPrompt).
+ *  → { paragraphs, log, stats, mentions } */
+export async function cleanParagraphs(paragraphs, ask, { chunkSeconds = 720, ctx = {} } = {}) {
+  const byN = new Map(paragraphs.map((p) => [p.n, { ...p, words: p.words.map((w) => ({ ...w })) }]));
+  const log = [], stats = { applied: 0, hidden_words: 0, refused: 0, flagged: 0, by_kind: {}, mentions: 0 };
+  const mentions = [];
+  for (const ch of chunksOf(paragraphs, { chunkSeconds })) {
+    const line = (pn, tag) => { const p = byN.get(pn); return `[${pn} @${mmss(p.t0)} ${tag}] ${displayText(p)}`; };
+    const lines = [...ch.before.map((n) => line(n, 'CONTEXT')), ...ch.edit.map((n) => line(n, 'EDIT')), ...ch.after.map((n) => line(n, 'CONTEXT'))].join('\n');
+    const out = await ask(cleanPrompt(ctx, lines));
+    const own = new Set(ch.edit);
     const byP = new Map();
-    for (const e of out?.edits || []) { const pn = Number(e?.p); if (!byP.has(pn)) byP.set(pn, []); byP.get(pn).push(e); }
+    for (const e of out?.edits || []) { const pn = Number(e?.p); if (!own.has(pn)) continue; if (!byP.has(pn)) byP.set(pn, []); byP.get(pn).push(e); }
     for (const [pn, edits] of byP) {
       const p = byN.get(pn);
-      if (!p) continue;
       const j = judgeAll(p.words, edits);
       for (const e of j.ok) {
         log.push({ p: pn, at: p.words[e.i0]?.s ?? null, kind: e.kind, from: e.from, to: e.hide ? '' : e.to });
@@ -140,14 +185,27 @@ Return JSON {"edits":[{"p": paragraph number, "from": "…", "to": "…", "kind"
       }
       stats.refused += j.refused.length; stats.flagged += j.flagged.length;
       for (const f of j.flagged) log.push({ p: pn, flagged: true, kind: f.kind, from: f.from, to: f.to, why: f.why });
+      for (const r of j.refused) log.push({ p: pn, refused: true, kind: r.kind, from: r.from, to: r.to, why: r.why });
       p.words = applyClean(p.words, j.ok);
     }
+    // mentions are located on the EDITED words (their text is as it will read); unlocatable ones are dropped
+    for (const m of out?.mentions || []) {
+      const pn = Number(m?.p), p = byN.get(pn);
+      if (!own.has(pn) || !p || !m.text || !['work', 'person'].includes(m.kind)) continue;
+      const vis = p.words.map((w, i) => ({ ...w, i })).filter((w) => !w.hide);
+      const k = findSpan(vis, String(m.text));
+      if (k < 0) continue;
+      const n = String(m.text).trim().split(/\s+/).length;
+      mentions.push({ para: pn, i0: vis[k].i, i1: vis[k + n - 1].i + 1, text: vis.slice(k, k + n).map((w) => w.w).join(' '), kind: m.kind,
+        canonical: String(m.canonical || '').slice(0, 200) || null, section: m.section ? String(m.section).slice(0, 120) : null, confidence: Number(m.confidence) || 0 });
+    }
   }
+  stats.mentions = mentions.length;
   // the paragraph's sentences are word ranges: applyEdits may change the count (a broken word joined) — rebuild them
   const fixed = paragraphs.map((p0) => {
     const p = byN.get(p0.n);
     if (p.words.length === p0.words.length) return p;
     return { ...p, sentences: sentencesOf(p.words).map((x) => [x.i0, x.i1]) };
   });
-  return { paragraphs: fixed, log, stats };
+  return { paragraphs: fixed, log, stats, mentions };
 }

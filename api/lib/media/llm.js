@@ -144,7 +144,8 @@ Return JSON {"headings": [{"p": paragraph number where the part starts, "text": 
   return Array.isArray(out?.headings) ? out.headings : [];
 }
 
-export async function cleanTranscript(paragraphs, opts = {}) {
+/** The whole-talk copy-edit + names + mentions pass (cleanup.js). opts: { role ('media-clean' | 'media-clean-strong'), ctx, spend } */
+export async function cleanTranscript(paragraphs, { role = process.env.MEDIA_CLEAN_ROLE || 'media-clean', ctx = {}, ...opts } = {}) {
   const { cleanParagraphs } = await import('./cleanup.js');
-  return cleanParagraphs(paragraphs, (prompt) => ask('media-clean', prompt, { ...opts, max: 8000 }), opts);
+  return cleanParagraphs(paragraphs, (prompt) => ask(role, prompt, { ...opts, max: 16000 }), { ...opts, ctx });
 }

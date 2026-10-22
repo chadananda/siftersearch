@@ -9,7 +9,8 @@ import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
-import { toParagraphs, paragraphText, assignSpeakers, smoothTurns } from './paragraphs.js';
+import { toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
+import { revertInsertions } from './faithfulness.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
@@ -254,16 +255,25 @@ export async function runItem(item, opts = {}, deps = {}) {
       const raw = await readJson(join(dir, 'transcript.raw.json'));
       const paras = toParagraphs(raw.segments);
       const res = await llm.correctParagraphs(paras, vocab, { spend });
-      await writeJson(join(dir, 'transcript.work.json'), { paragraphs: res.paragraphs, corrections: res.diff, refused: res.refused });
-      rec.corrections = res.diff.length; rec.refused = res.refused.length;
+      // faithfulness: anything the pass added to what was heard is reverted to the heard words (10-22 "(Vol II)")
+      const fx = revertInsertions(flattenWords(raw.segments), res.paragraphs);
+      await writeJson(join(dir, 'transcript.work.json'), { paragraphs: fx.paragraphs, corrections: res.diff, refused: res.refused, reverted: fx.reverted });
+      rec.corrections = res.diff.length; rec.refused = res.refused.length; rec.insertions_reverted = fx.reverted.length;
+      meta.faithfulness = { ...(meta.faithfulness || {}), correct: fx.reverted.length };
     }
 
     if (stage === 'clean') {
       // the copy-edit pass, always from the VERBATIM (name-corrected) words, so a re-run never edits an edit
       const work = await readJson(join(dir, 'transcript.work.json'));
       const verbatim = work.verbatim || work.paragraphs;
-      const res = await (llm.cleanTranscript ? llm.cleanTranscript(verbatim, { spend }) : { paragraphs: verbatim, log: [], stats: {} });
-      await writeJson(join(dir, 'transcript.work.json'), { ...work, verbatim, paragraphs: res.paragraphs, cleanup: res.log, cleanup_stats: res.stats });
+      // framed with what is known before describe: who, what, when (the model brings its own knowledge of the Faith)
+      const ctx = { speaker: meta.speaker, title: meta.title, date: meta.date, year: meta.year, event: meta.event, place: meta.place, language: meta.language };
+      const res = await (llm.cleanTranscript ? llm.cleanTranscript(verbatim, { spend, ctx }) : { paragraphs: verbatim, log: [], stats: {}, mentions: [] });
+      const rawc = await readJson(join(dir, 'transcript.raw.json'));
+      const fx = revertInsertions(flattenWords(rawc.segments), res.paragraphs);
+      await writeJson(join(dir, 'transcript.work.json'), { ...work, verbatim, paragraphs: fx.paragraphs, cleanup: res.log, cleanup_stats: res.stats, mentions: res.mentions || [], cleanup_reverted: fx.reverted });
+      rec.insertions_reverted = fx.reverted.length;
+      meta.faithfulness = { ...(meta.faithfulness || {}), clean: fx.reverted.length };
       rec.applied = res.stats?.applied || 0; rec.hidden_words = res.stats?.hidden_words || 0; rec.flagged = res.stats?.flagged || 0;
     }
 
@@ -355,6 +365,8 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'catalog') {
       if (meta.quality && !meta.quality.final) await finishQuality(meta, dir, d, item);
+      // faithfulness in the quality report: what the edit passes tried to add to the heard words and was reverted
+      if (meta.quality) meta.quality.insertions_reverted = (meta.faithfulness?.correct || 0) + (meta.faithfulness?.clean || 0);
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
         doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,

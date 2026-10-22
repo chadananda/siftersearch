@@ -54,6 +54,8 @@ export const MODEL_ROLES = {
     why: 'judges which misheard names are vocabulary terms; its edits pass a guard (vocabulary only, sounds-alike, ≤ 4 words) — never rewording' },
   'media-clean': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'english-editing'],
     why: 'copy-edit pass (Chad 10-22): fillers, stutters, ASR loops, hallucinations, spellings, homophones, capitals, sentence boundaries — every edit kind-checked by a guard, never rewording' },
+  'media-clean-strong': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-22', needs: ['json', 'english-editing', 'persian-arabic-names', 'long-input'],
+    why: 'the same whole-talk copy-edit pass on a stronger model (Chad 10-22: choose on quality, cleanup is cheap per audio hour); compared with media-clean on the pilot' },
   'media-headings': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'long-input'],
     why: 'topic subheaders (Chad 10-22): a statement or question at each subject shift; a guard keeps only well-spaced ones that share words with their section' },
   'media-people': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'persian-arabic-names', 'judgement'],

@@ -7,7 +7,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
 import { runItem, STAGES } from '../../api/lib/media/item.js';
-import { buildVocab } from '../../api/lib/media/vocab.js';
+import { applyEdits, buildVocab } from '../../api/lib/media/vocab.js';
 
 let root, src;
 const store = { langs: null };
@@ -193,6 +193,16 @@ describe('media item stage machine', () => {
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
     const again = await runItem({ id: 3, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'quotes' }, fakes());
     expect(again.done).toEqual(['quotes', 'thumb', 'render', 'ingest', 'catalog']);
+  });
+  it('the name pass cannot add to what was heard: an inserted "(Vol II)" is reverted and counted (10-22)', async () => {
+    const f = fakes();
+    f.llm.correctParagraphs = vi.fn(async (ps) => ({ paragraphs: ps.map((p, i) => (i ? p : { ...p, words: applyEdits(p.words, [{ i0: 0, i1: 1, to: `${p.words[0].w} (Vol II)` }]) })), diff: [], refused: [] }));
+    const r = await runItem({ id: 5, source_kind: 'file', source_ref: src }, {}, f);
+    const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+    expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).not.toContain('(Vol II)');
+    const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+    expect(meta.faithfulness.correct).toBe(1);
+    expect(meta.stages.correct.insertions_reverted).toBe(1);
   });
   it('`redo` re-runs only the named stages (a back-fill of a new stage keeps the rest)', async () => {
     const r = await runItem({ id: 4, source_kind: 'file', source_ref: src }, {}, fakes());
