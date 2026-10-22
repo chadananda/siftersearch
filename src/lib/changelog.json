@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T16:50:52.001Z",
+  "generated": "2026-10-22T16:59:22.928Z",
   "entries": [
+    {
+      "hash": "5afd16d6",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Shorts compress (Chad 10-22: 'we do want to work with compression') — Archive Tape was 203 MB for 30 s: per-frame random grain → grain, sepia and vignette drawn once and looped, only a slow flicker moves; static grounds (no drifting gradient); every template CRF 26 capped at 1.2 Mbit/s, GOP 2 s, 30 fps, AAC 128k mono, faststart. Measured per 60 s: On Air 4.8 MB · Archive Tape 7.6 · Portrait Cinema 6.1 · Scripture Insert 4.2 · Minimal 3.5; captions and faces stay sharp. The edge keeps a short's content-keyed files in R2 (no ?v needed; immutable) and each render warms it, so the first viewer is served from the edge; SHORT_VERSION 3 (new keys)",
+      "scope": "media"
+    },
+    {
+      "hash": "2287476e",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "The listing island hydrates on idle (the hero is its own island), the hero's Caslon italic is preloaded — /media mobile 89–100",
+      "scope": "media"
+    },
     {
       "hash": "acb80e7e",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Band header one fixed line — spines of both boxes start at the same height",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "51bfa1f6",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Source bands pinned to the foot of each box so they line up",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "b7264b26",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "A compact spine band at the foot of each box — English and originals, best first",
-      "scope": "sourcehunt"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "5afd16d6",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Shorts compress (Chad 10-22: 'we do want to work with compression') — Archive Tape was 203 MB for 30 s: per-frame random grain → grain, sepia and vignette drawn once and looped, only a slow flicker moves; static grounds (no drifting gradient); every template CRF 26 capped at 1.2 Mbit/s, GOP 2 s, 30 fps, AAC 128k mono, faststart. Measured per 60 s: On Air 4.8 MB · Archive Tape 7.6 · Portrait Cinema 6.1 · Scripture Insert 4.2 · Minimal 3.5; captions and faces stay sharp. The edge keeps a short's content-keyed files in R2 (no ?v needed; immutable) and each render warms it, so the first viewer is served from the edge; SHORT_VERSION 3 (new keys)",
+        "scope": "media"
+      },
+      {
+        "hash": "2287476e",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "The listing island hydrates on idle (the hero is its own island), the hero's Caslon italic is preloaded — /media mobile 89–100",
+        "scope": "media"
+      },
       {
         "hash": "acb80e7e",
         "date": "2026-10-22",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-13",
         "type": "Fixed",
         "description": "Band header one fixed line — spines of both boxes start at the same height",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "51bfa1f6",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Source bands pinned to the foot of each box so they line up",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "b7264b26",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "A compact spine band at the foot of each box — English and originals, best first",
         "scope": "sourcehunt"
       }
     ]
