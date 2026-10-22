@@ -84,7 +84,7 @@ describe('the short job', () => {
     const item = setup();
     const ftyp = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom'), Buffer.alloc(2000)]);
     const tools = { ffmpeg: vi.fn(async (args) => writeFileSync(args.at(-1), 'a')), renderShort: vi.fn(async (d) => { expect(existsSync(join(d, 'captions.ass'))).toBe(true); return ftyp; }) };
-    const deps = { tools, portraitUrl: async () => null, qr: async () => Buffer.from('png') };
+    const deps = { tools, portraitUrl: async () => null, qr: async () => Buffer.from('png'), warm: false };
     const r = await renderShortFor(item, { slug: 'talk', start: 482.9, end: 502.3 }, deps);
     expect(r).toMatchObject({ cached: false, moment: 'Ab12cd34', url: expect.stringMatching(/^\/api\/media\/talk\/file\/shorts\/[0-9a-f]{12}\.mp4$/) });
     expect(r.post.text).toContain('https://siftersearch.com/media/talk?t=482');
@@ -128,5 +128,19 @@ describe('shorts for the top moments of Hands / UHJ talks', () => {
     const r = await mediaShortsMomentsJob({ per: 2 }, { repo: { doneItemIds: async () => [1, 2], getMediaItem: async (id) => items[id] }, queue });
     expect(r).toEqual({ talks: 1, queued: 2, no_moments: 0 });
     expect(queue.mock.calls.map((c) => c[1])).toEqual([{ slug: 'sears-x', start: 1, end: 9, format: 'vertical' }, { slug: 'sears-x', start: 20, end: 80, format: 'vertical' }]);
+  });
+});
+
+describe('size and edge (10-22: Archive Tape was 203 MB for 30 s; first byte ~4 s through the tunnel)', () => {
+  it('every render is bitrate-capped and the archive grain is drawn once', () => {
+    const py = readFileSync(new URL('../../scripts/media/render_short.py', import.meta.url), 'utf8');
+    expect(py).toMatch(/'-maxrate', '1200k', '-bufsize', '2400k'/);
+    expect(py).not.toMatch(/allf=t/);
+  });
+  it('the edge keeps the content-keyed files of a short without ?v', async () => {
+    const { mediaKey } = await import('../../worker/media.js');
+    expect(mediaKey('https://siftersearch.com/api/media/sears-x/file/shorts/5a9282612eb5.mp4')).toBe('sears-x/shorts/5a9282612eb5.mp4@s');
+    expect(mediaKey('https://siftersearch.com/api/media/sears-x/file/shorts/../x.mp4')).toBeNull();
+    expect(mediaKey('https://siftersearch.com/api/media/a-b/file/web/a-b.ogg')).toBeNull();
   });
 });

@@ -9,7 +9,7 @@
 // sidecars and the render spec (pure); scripts/media/render_short.py on boss composes the picture with ffmpeg.
 import { createHash } from 'crypto';
 
-export const SHORT_VERSION = 2;
+export const SHORT_VERSION = 3;   // 3: bitrate cap, static archive grain (keys change: the edge caches by key)
 export const FORMATS = { vertical: { W: 1080, H: 1920 }, square: { W: 1080, H: 1080 } };
 export const TEMPLATES = ['on-air', 'archive-tape', 'scripture-insert', 'portrait-cinema', 'minimal'];
 const ROTATION = ['on-air', 'portrait-cinema', 'minimal'];

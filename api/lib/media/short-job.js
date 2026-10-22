@@ -73,6 +73,9 @@ export async function renderShortFor(item, params, deps = {}) {
     await writeFile(join(dir, `${plan.key}.vtt`), vttOf(words));
     const post = postText({ words, speaker: meta.speaker, title: meta.title, year: meta.year, url: plan.urls.shown, fullUrl: plan.urls.full, topics: meta.topics || [], tradition: meta.tradition || "Bahá'í" });
     await writeFile(join(dir, `${plan.key}.json`), JSON.stringify({ ...result(), post, portrait, portrait_error: portraitError, render_ms: ms, clip_s: clip, bytes: video.length, at: new Date().toISOString() }, null, 1));
+    // warm the edge: one request through the site copies the file into R2, so the first person to open it is served from the
+    // edge, not through the tunnel
+    if (deps.warm !== false) await (deps.fetchImpl || fetch)(`https://siftersearch.com${plan.files.mp4}`, { signal: AbortSignal.timeout(120000) }).then((r) => r.arrayBuffer()).catch(() => null);
     return { ...result(), cached: false, portrait, portrait_error: portraitError, render_ms: ms, bytes: video.length, post };
   } finally { await rm(work, { recursive: true, force: true }); }
 }

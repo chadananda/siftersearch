@@ -1,7 +1,7 @@
 // Media files at the edge (planning/media-library-plan.md §5): /api/media/<slug>/file/<name>?v=<version> is served from R2
 // (MEDIA_BUCKET, key "<slug>/<name>@<v>") with HTTP Range; a miss is proxied to the tower origin (which supports Range
 // too) while the WHOLE file is copied into R2 in the background, so each version crosses the tunnel once. Only versioned
-// (immutable) URLs are kept; clips and unversioned files are plain pass-through. Pure helpers exported for tests.
+// (immutable) URLs and shorts' content-keyed files are kept; clips and unversioned files are plain pass-through. Pure helpers exported for tests.
 
 export const MEDIA_FILE = /^\/api\/media\/([a-z0-9][a-z0-9-]{0,99})\/file\/(.+)$/;
 
@@ -9,8 +9,12 @@ export const MEDIA_FILE = /^\/api\/media\/([a-z0-9][a-z0-9-]{0,99})\/file\/(.+)$
 export function mediaKey(url) {
   const u = typeof url === 'string' ? new URL(url) : url;
   const m = MEDIA_FILE.exec(u.pathname);
+  if (!m || m[2].includes('..')) return null;
+  // a SHORT's files are named by a content key (talk version × range × format × template × render version): immutable
+  // without ?v (10-22: the first byte of a short took ~4 s through the tunnel)
+  if (/^shorts\/[0-9a-f]{12}\.(mp4|srt|vtt|json)$/.test(m[2])) return `${m[1]}/${m[2]}@s`;
   const v = u.searchParams.get('v');
-  if (!m || !v || !/^\d{1,6}$/.test(v) || m[2].includes('..')) return null;
+  if (!v || !/^\d{1,6}$/.test(v)) return null;
   return `${m[1]}/${decodeURIComponent(m[2])}@${v}`;
 }
 

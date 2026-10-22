@@ -6,6 +6,10 @@
 #   record  the portrait as a circular label on a black disc, turning slowly (On Air)
 #   kenburns  a slow zoom on the portrait (Portrait Cinema)
 # then an amber waveform of the clip and the ASS layer; the audio is padded with silence under the end card.
+# COMPRESSION is a design rule (Chad 10-22): large areas stay static between frames (backgrounds, portraits, textures are
+# computed once and looped; the Ken Burns zoom is slow); motion lives in small regions (the current word, the waveform
+# strip, the needle, the record notch); gradients carry a light static dither against banding. Encoding follows the
+# Shorts/Reels specs: H.264 high, CRF 26 capped at 1.2 Mbit/s, GOP 2 s, 30 fps, AAC 128k mono, faststart (≤ 10 MB/min).
 import json, os, subprocess, sys
 
 d = sys.argv[1]
@@ -25,18 +29,20 @@ g, last = [], None
 ground = s.get('ground', 'deep')
 
 if ground == 'gradient' or not has_p and ground in ('sepia', 'deep'):
-    g.append(f'gradients=s={W}x{H}:c0=0x10202a:c1=0x2a1f14:x0=0:y0=0:x1={W}:y1={H}:speed=0.002:r={fps}:d={total:.2f},format=yuv420p[g0]')
+    g.append(f'gradients=s={W}x{H}:c0=0x10202a:c1=0x2a1f14:x0=0:y0=0:x1={W}:y1={H}:speed=0:r={fps}:d={1/fps:.4f},format=yuv420p,{ONCE}[g0]')
     last = 'g0'
 elif ground == 'warm':
     w4, h4 = W // 4, H // 4
     e = f'exp(-((X-{w4/2})^2+(Y-{h4*0.62})^2)/{180000/16})'
     g.append(f"color=c=0x14100c:s={w4}x{h4}:r={fps}:d={1/fps:.4f},format=rgb24,geq=r='20+90*{e}':g='16+55*{e}':b='12+12*{e}',"
-             f'scale={W}:{H}:flags=bicubic,format=yuv420p,{ONCE}[g0]')
+             f'scale={W}:{H}:flags=bicubic,noise=alls=3:allf=u,format=yuv420p,{ONCE}[g0]')
     last = 'g0'
 elif ground == 'sepia':
-    g.append(f'[1:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,'
+    # sepia + grain + vignette computed ONCE and looped (a fresh grain every frame made a 30 s short 203 MB); only a slow,
+    # gentle flicker moves, which compresses well
+    g.append(f'[1:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,trim=end_frame=1,'
              f'colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131,eq=brightness=-0.18:contrast=1.1,'
-             f"noise=alls=22:allf=t,eq=brightness='-0.02*sin(2*PI*t*1.7)':eval=frame,vignette=PI/4[g0]")
+             f"noise=alls=14:allf=u,vignette=PI/4,{ONCE},eq=brightness='-0.015*sin(2*PI*t*0.6)':eval=frame[g0]")
     last = 'g0'
 else:   # deep: the portrait blurred and darkened
     if s.get('kenburns') and has_p:
@@ -77,8 +83,9 @@ else:
     g.append(f"[g2]ass='{ass}',format=yuv420p[v]")
 g.append(f'[0:a]apad=whole_dur={total:.2f}[a]')
 args += ['-filter_complex', ';'.join(g), '-map', '[v]', '-map', '[a]', '-t', f'{total:.2f}', '-r', str(fps),
-         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-profile:v', 'high', '-pix_fmt', 'yuv420p',
-         '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', os.path.join(d, 'out.mp4')]
+         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-maxrate', '1200k', '-bufsize', '2400k', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-g', str(fps * 2), '-keyint_min', str(fps),
+         # ≤ 10 MB per 60 s for every template (1.2 Mbit/s video + 128 kbit/s audio ≈ 10 MB/min worst case)
+         '-c:a', 'aac', '-b:a', '128k', '-ac', '1', '-ar', '48000', '-movflags', '+faststart', os.path.join(d, 'out.mp4')]
 r = subprocess.run(['nice', '-n', '10'] + args, capture_output=True, text=True)
 if r.returncode:
     sys.stderr.write(r.stderr[-3000:])
