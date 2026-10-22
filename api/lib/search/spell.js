@@ -5,6 +5,7 @@
 // away — two for longer words — in its own script (Latin, Arabic/Persian, Hebrew). Pure core; the vocabulary file is built
 // by the vocab-build ops job (api/lib/ops/vocab-job.js) and loaded lazily.
 import { readFileSync, statSync } from 'fs';
+import { readFile } from 'fs/promises';
 
 /** A word folded as the indexes see it: lower case; no diacritics, apostrophes or Arabic tashkil/tatweel; ي/ى→ی, ك→ک. */
 export function foldWord(w) {
@@ -66,17 +67,42 @@ export function correctQuery(query, vocab) {
 // ── the vocabulary (built by ops job vocab-build; one "word<TAB>freq" per line, most frequent first) ──
 export const VOCAB_FILE = process.env.VOCAB_FILE || '/fast/sifter-vocab/vocab.tsv';
 const loaded = new Map();   // file → { mtime, vocab, at }
-/** The vocabulary Map for a file, reloaded when the file changes (checked at most once a minute); empty when absent. */
+const reloading = new Map();   // file → promise of a background (re)load
+const parseLines = (vocab, lines, from, to) => { for (let i = from; i < to; i++) { const line = lines[i]; const t = line.indexOf('\t'); if (t > 0) vocab.set(line.slice(0, t), Number(line.slice(t + 1))); } };
+/** The vocabulary Map for a file, reloaded when the file changes (checked at most once a minute); empty when absent.
+ *  Only a process that never warmed it reads it synchronously (~2 s for 1.8M words — the first search of a fresh API
+ *  process paid it, 10-22); a CHANGED file is reloaded in the background while the old vocabulary keeps serving. */
 export function vocabulary(file = VOCAB_FILE) {
   const cur = loaded.get(file);
   if (cur && Date.now() - cur.at < 60000) return cur.vocab;
   try {
     const m = statSync(file).mtimeMs;
-    if (!cur || m !== cur.mtime) {
+    if (!cur) {
       const vocab = new Map();
-      for (const line of readFileSync(file, 'utf8').split('\n')) { const t = line.indexOf('\t'); if (t > 0) vocab.set(line.slice(0, t), Number(line.slice(t + 1))); }
+      const lines = readFileSync(file, 'utf8').split('\n');
+      parseLines(vocab, lines, 0, lines.length);
       loaded.set(file, { mtime: m, vocab, at: Date.now() });
-    } else cur.at = Date.now();
-  } catch { loaded.set(file, { mtime: 0, vocab: new Map(), at: Date.now() }); }
+    } else {
+      cur.at = Date.now();
+      if (m !== cur.mtime) warmVocabulary(file);
+    }
+  } catch { if (!cur) loaded.set(file, { mtime: 0, vocab: new Map(), at: Date.now() }); }
   return loaded.get(file).vocab;
+}
+/** Load the vocabulary OFF the request path: an async read, parsed in slices that yield the event loop. Resolves to its size. */
+export function warmVocabulary(file = VOCAB_FILE, { slice = 50000 } = {}) {
+  if (reloading.has(file)) return reloading.get(file);
+  const p = (async () => {
+    const m = statSync(file).mtimeMs;
+    const lines = (await readFile(file, 'utf8')).split('\n');
+    const vocab = new Map();
+    for (let i = 0; i < lines.length; i += slice) {
+      parseLines(vocab, lines, i, Math.min(lines.length, i + slice));
+      await new Promise((ok) => setImmediate(ok));
+    }
+    loaded.set(file, { mtime: m, vocab, at: Date.now() });
+    return vocab.size;
+  })().catch(() => 0).finally(() => reloading.delete(file));
+  reloading.set(file, p);
+  return p;
 }

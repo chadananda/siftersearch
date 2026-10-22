@@ -130,9 +130,11 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         // load finishes in the background — never again a warm-up that outlasts listen_timeout (10-20 outage).
         if (role !== 'ops') {
           const t = Date.now();
+          // spell correction's vocabulary (1.8M words): read synchronously by the first search it was ~2.5 s of blocked loop
+          await import('./search/spell.js').then((m) => m.warmVocabulary()).catch(() => {});
           const lex = import('./search/concepts.js').then((m) => m.warmLexicon()).catch((err) => logger.warn({ err: err.message }, 'concept lexicon warm-up failed'));
           await Promise.race([lex, new Promise((ok) => setTimeout(ok, 20000).unref())]);
-          logger.info({ ms: Date.now() - t }, 'concept lexicon warm-up');
+          logger.info({ ms: Date.now() - t }, 'search warm-up (vocabulary + concept lexicon)');
         }
       };
       // Preboot (pm2 cluster, behind the gateway): EVERYTHING before listening, warm-ups included. The old instance keeps
@@ -148,7 +150,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         setTimeout(() => import('./encounters.js').then((m) => m.getEncounterIndex()).catch((err) =>
           logger.warn({ err: err.message }, 'encounter index warm-up failed')), 20000).unref();
         await bootTasks();
-        if (role !== 'ops') setTimeout(() => import('./search/concepts.js').then((m) => m.warmLexicon()).catch(() => {}), 25000).unref();
+        if (role !== 'ops') setTimeout(() => import('./search/spell.js').then((m) => m.warmVocabulary()).then(() => import('./search/concepts.js')).then((m) => m.warmLexicon()).catch(() => {}), 25000).unref();
       }
       // Refresh those indexes on a timer, so a search never pays for a TTL refresh (search/warm-keeper.js).
       if (role !== 'ops') import('./search/warm-keeper.js').then((m) => m.startWarmKeeper()).catch((err) => logger.warn({ err: err.message }, 'warm keeper not started'));

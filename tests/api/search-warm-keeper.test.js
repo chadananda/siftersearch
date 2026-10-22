@@ -2,7 +2,9 @@
 // read per proof book, ~4 s). Now: boot warms it (bounded), a timer refreshes it and the encounter index off the request
 // path, and an unchanged lexicon is reused without re-reading a single book.
 import { describe, it, expect, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, utimesSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 vi.mock('../../api/lib/search.js', () => ({ getMeili: () => null, INDEXES: {} }));
 
@@ -70,5 +72,35 @@ describe('api runtime wiring', () => {
   });
   it('starts the warm keeper for the services that search', () => {
     expect(src).toMatch(/startWarmKeeper\(\)/);
+  });
+});
+
+describe('spell vocabulary warms off the request path', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'vocab-'));
+  it('warmVocabulary loads in yielding slices; vocabulary() then serves it without a read', async () => {
+    const { warmVocabulary, vocabulary } = await import('../../api/lib/search/spell.js');
+    const file = join(dir, 'a.tsv');
+    writeFileSync(file, Array.from({ length: 1000 }, (_, i) => `w${i}\t${1000 - i}`).join('\n'));
+    let ticks = 0; const t = setInterval(() => { ticks++; }, 0);
+    expect(await warmVocabulary(file, { slice: 100 })).toBe(1000);
+    clearInterval(t);
+    expect(ticks).toBeGreaterThan(0);
+    expect(vocabulary(file).get('w0')).toBe(1000);
+  });
+  it('a changed file keeps the old vocabulary serving while the new one loads in the background', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const { warmVocabulary, vocabulary } = await import('../../api/lib/search/spell.js');
+      const file = join(dir, 'b.tsv');
+      writeFileSync(file, 'old\t5');
+      await warmVocabulary(file);
+      writeFileSync(file, 'new\t7');
+      utimesSync(file, new Date(), new Date(Date.now() + 5000));
+      vi.setSystemTime(Date.now() + 61000);
+      const served = vocabulary(file);
+      expect(served.get('old')).toBe(5);   // no synchronous re-read on the request
+      await warmVocabulary(file);          // the background reload in flight
+      expect(vocabulary(file).get('new')).toBe(7);
+    } finally { vi.useRealTimers(); }
   });
 });
