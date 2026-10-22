@@ -24,9 +24,44 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
 * **Rights**: YouTube → full (Chad 10-21), one permission record per channel (`media_channels`, switchable to clips or
   search); downloads off; local archive → clips until Chad decides.
 
-## Pilot results
+## Pilot results (as of 01:15)
 
-(see the sections below — filled from the review script)
+| item | min | enhancement → ASR input · listening | ASR (boss) | quotes linked / candidates | CRs / candidates | corrections: marks / model | $ |
+|---|---|---|---|---|---|---|---|
+| Grossmann, World Order 2 (1999) — clean lecture, German accent | 46 | original (light −0.333 vs −0.246: the light chain HURT) · DFN | RTF 0.156, 3 voices | 4 / 6 | 9 / 23 | 30 / 38 | 0.036 |
+| Cardell, Experiences with the Guardian (1988) — pilgrim recollection | 47 | original (= light) · light (DFN worse) | RTF 0.162, 3 voices | 1 / 11 | 4 / 15 | 35 / 10 | 0.031 |
+| Nakhjavání, Talk to the Youth Q&A (1997) — Q&A | 92 | original (DFN +0.027, under the margin) · DFN | RTF 0.149, 4 voices | 26 / 28 | 9 / 20 | 103 / 26 | 0.046 |
+| "Includes Martha Root" (1932 + narration) — old tape | 3 | original · DFN | RTF 0.169 | 0 | 0 | 0 / 0 | 0.002 |
+| Furútan, Talk to the Youth (1992) — interpreted fa+en | 71 | original · DFN | in progress (interpreted mode) | | | | |
+| Chad Jones 01 (en + Romanian interpreter, rights *full*) | 48 | queued | | | | | |
+| Furútan, Persian talk (YouTube) · Hooper Dunbar ×2 (YouTube) | | **held: YouTube bot check** (see problems) | | | | | |
+
+**Enhancement**: measured, not assumed. The ASR probe (same three minutes, Whisper turbo) preferred the ORIGINAL in all
+five: the light chain lowered confidence on the low-bitrate 16 kHz MP3s (Grossmann −0.25 → −0.33) and DeepFilterNet never
+beat the original by the 0.03 margin. DeepFilterNet raised the blind SNR by 24–40 dB and became the listening copy in 4 of 5
+(not for Cardell, where it cost recognition). So: transcription from the original, listening from the enhanced copy.
+
+**Quotations** (read by hand: 31 linked quotations across the three talks): **30 / 31 point to the right passage** (97 %);
+the one doubtful is a Summons paragraph at overlap 0.50. Three of the right ones link a secondary copy (Bahá’í World
+Faith, an Ocean of Lights PDF note, a scraped Sacred Writings book) rather than the canonical book. The spoken gate (0.45 /
+0.25) added two correct links (Gleanings "Now that ye have refused the Most Great Peace…" at 0.30, Íqán at 0.43).
+Nakhjavání's talk had 28 candidates, 26 linked.
+
+**Cross-references** (attributed teachings → a canonical passage that states them, strict yes/no by the Haiku role, read
+by hand: 22): **19 good, 3 weak** (two loose matches in Cardell, one from a pilgrim's notes). After the first item the
+search was restricted to canonical works (book authority ≥ 7) — a visitor's account had been used for ‘Abdu’l-Bahá.
+
+**Name/term corrections**: a deterministic pass restores marks on exact vocabulary matches (Bahá'u'lláh → Bahá’u’lláh,
+100 % right, 30–100 per talk); the model pass fixes mishearings against the vocabulary (Sogefendik / Sergei Fendi / Shogu
+Effendi → Shoghi Effendi, universal health justice → Universal House of Justice, Haziratul Ghots → Ḥaẓíratu’l-Quds,
+Nasruddin Shah → Náṣiri’d-Dín Sháh). Read: 74 model edits, **65 right**; the wrong ones were 4 that swallowed a spoken word
+("Shogu Effendi told" → "Shoghi Effendi"), 3 "Baola" → "Bahá" (should be Bahá’u’lláh) and 2 doubtful. Both fixed (the guard
+now refuses an edge that is a common English word; clipped names are offered their full form) and the two talks re-run.
+
+**Cost**: Haiku-class calls ≈ **$0.03–0.05 per hour of audio** (corrections, description, quotations, verification).
+SourceHunt, ASR and enhancement are local. **Speed**: ≈ 25 minutes of wall time per hour of audio, one item at a time
+(enhancement on tower ~8 min/h incl. three ASR probes, web renditions ~3 min/h, ASR + alignment on boss ~9 min/h —
+alignment is two thirds of it — quotes ~4 min/h). 450 local hours ≈ 8 days; the 824 YouTube hours ≈ 14 days.
 
 ## Search latency and the thread cap (coordinator watch, 10-21 23:49)
 
@@ -55,6 +90,23 @@ alignment and the probes run on boss and do not touch tower's CPU or memory band
 * A hard link shares the source file's inode: the first item's `chmod 0444` made the source file read-only. Restored
   (644) and the code no longer chmods a linked original.
 
+## Links
+
+* Preview of the site with the media pages (not production): https://bbc25cc2-siftersearch.chadananda.workers.dev/media
+* A standalone page (production API): https://siftersearch.com/api/media/cardell-experiences-with-the-guardian-1988/file/page.html?v=1
+* A range link: https://bbc25cc2-siftersearch.chadananda.workers.dev/media/cardell-experiences-with-the-guardian-1988?t=754-812
+* API: https://siftersearch.com/api/media (listing, `?q=` searches all transcripts), `/api/media/<slug>`
+* Pipeline state: `GET /api/media/admin/status` (internal key) · review on tower: `node scripts/media/review.mjs --quotes`
+
+## YouTube is blocked for now
+
+The first YouTube downloads hit "Sign in to confirm you're not a bot" (tower's address was already rate-limited by the
+target-list discovery). As instructed, nothing was bypassed (no cookies, no login): the items are **held**, and no
+YouTube work starts for a 6-hour cool-down, then one polite retry. Local talks continue meanwhile. The Persian pilot item
+and both Hooper Dunbar pilot items are among the held ones. The ordered YouTube queue (881 talks, 824 hours: curated
+sheet → single-speaker channels with Dunbar first → other Hands/UHJ talks; Shorts and "about" videos skipped, duplicate
+groups taken once) is in `planning/media-targets/youtube-queue.json`.
+
 ## Decisions for Chad
 
 1. **Rights default for the local talk archive** (now *clips*: ≤3-minute paragraph/range playback, no full stream).
@@ -62,3 +114,7 @@ alignment and the probes run on boss and do not touch tower's CPU or memory band
    appears only in interpreted Furútan talks). The Persian pilot item is a Furútan talk from YouTube.
 3. **GPU**: not needed for ASR now (boss CPU is fast enough). Tower's driver mismatch (kernel module 580.173 vs library
    580.178) is the kind a reboot fixes; not touched.
+4. **YouTube downloads**: wait for the rate limit to lift (the pipeline retries politely every 6 hours), or allow a
+   different route (another network, or the channel owners' own files — Sharaf could share the Dunbar archive directly).
+5. **Boss access**: tower now reaches boss through a restricted key (forced command `~/media-asr/asr-gate.sh`, from tower's
+   addresses only) for ASR. Remove the line in boss's `~/.ssh/authorized_keys` to revoke.

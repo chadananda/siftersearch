@@ -66,6 +66,12 @@ describe('media-scan', () => {
     expect(retire).not.toHaveBeenCalled();
     expect(runItem.mock.calls[0][1]).toMatchObject({ from: null });
   });
+  it('a failing item is recorded on the item, not thrown (no alert mail per odd file)', async () => {
+    store.items.push({ id: 13, state: 'scheduled', source_kind: 'file', source_ref: '/m/odd.wma' });
+    const r = await mediaItemJob({ id: 13 }, { runItem: vi.fn(async () => { throw new Error('ffmpeg exit 1: Invalid data'); }) });
+    expect(r).toMatchObject({ id: 13, failed: true });
+    expect(store.items.find((i) => i.id === 13)).toMatchObject({ state: 'failed', why: 'ffmpeg exit 1: Invalid data' });
+  });
   it('a bot check holds the item instead of failing it', async () => {
     store.items.push({ id: 1, state: 'scheduled', source_kind: 'youtube', source_ref: 'u' });
     const runItem = vi.fn(async () => { throw Object.assign(new Error('bot check'), { code: 'BOT_CHECK' }); });
