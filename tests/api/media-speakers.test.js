@@ -17,6 +17,8 @@ describe('names and pages', () => {
     expect(speakerKey('Mr. Hooper Dunbar')).toBe('hooper-dunbar');
     expect(speakerKey('Hooper C. Dunbar')).toBe('hooper-dunbar');
     expect(speakerKey("'Ali Nakhjavani")).toBe('ali-nakhjavani');
+    expect(speakerKey('H. Collis Featherstone')).toBe('collis-featherstone');
+    expect(speakerKey("'Ali-Muhammad Varqa (Trustee of Huququ'llah)")).toBe('ali-muhammad-varqa');
     expect(speakerKey('Hand of the Cause Dhikru’lláh Khádem')).toBe('dhikrullah-khadem');
     expect(speakerKey('Grossmann')).toBeNull();
     expect(speakerKey('Interpreter')).toBeNull();

@@ -8,6 +8,7 @@ import { homedir } from 'os';
 import { run, YTDLP } from './tools.js';
 
 // yt-dlp needs a JavaScript runtime for YouTube's player now (deno, user space ~/.deno)
+const POT_SCRIPT = () => process.env.MEDIA_POT_SCRIPT || join(homedir(), 'sifter', 'bgutil', 'server', 'build', 'generate_once.js');
 const DENO = () => process.env.MEDIA_DENO || join(homedir(), '.deno', 'bin', 'deno');
 
 /** The video id in a YouTube URL (watch, youtu.be, shorts, embed, live), or null. */
@@ -28,6 +29,9 @@ const BASE = ['--no-playlist', '--no-warnings', '--ignore-config', '--no-cookies
 
 async function ytdlp(args, opts) {
   const js = existsSync(DENO()) ? ['--js-runtimes', `deno:${DENO()}`] : [];
+  // a PO token (bgutil-ytdlp-pot-provider, script mode — no server, nothing listening) for YouTube's "not a bot" check;
+  // never cookies or an account (Chad 10-22)
+  if (existsSync(POT_SCRIPT())) js.push('--extractor-args', `youtubepot-bgutilscript:script_path=${POT_SCRIPT()}`);
   try { return await run(YTDLP(), [...BASE, ...js, ...args], opts); }
   catch (err) { if (isBotCheck(err.message)) throw new BotCheckError(`YouTube asked for a bot check — stopping (not bypassed): ${err.message.slice(0, 200)}`); throw err; }
 }
