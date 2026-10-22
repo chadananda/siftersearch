@@ -82,6 +82,7 @@ describe('media item stage machine', () => {
   it('yields to a drain between stages and resumes where it stopped', async () => {
     const first = await runItem({ id: 2, source_kind: 'file', source_ref: src }, {}, fakes({ drainAfter: 3 }));
     expect(first.yielded).toBe(true);
+    expect(first.resume).toEqual({ id: 2, stage: 'transcribe' });
     expect(first.done).toEqual(['archive', 'enhance', 'web']);
     const dir = join(root, 'library', 'bahai', 'grossman-various', first.slug);
     const d = fakes();

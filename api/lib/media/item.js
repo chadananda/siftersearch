@@ -72,7 +72,7 @@ export async function runItem(item, opts = {}, deps = {}) {
   for (const stage of STAGES) {
     if (meta.stages[stage]?.at) continue;
     if (opts.only && !opts.only.includes(stage)) continue;
-    if (await d.draining()) return { yielded: true, resume: { id: item.id }, slug: meta.slug, done };
+    if (await d.draining()) return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };   // stage: a resumed run never redoes its from/reslug
     const t0 = Date.now();
     await repo.updateMediaItem(item.id, { stage, state: 'running' });
     const rec = {};
