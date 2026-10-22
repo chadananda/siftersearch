@@ -57,6 +57,17 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
   3.9–8.3 MB per minute; served from R2 at the edge, first byte ~0.15–0.4 s (was ~4 s through the tunnel). `media-shorts-moments` pre-renders Hands/UHJ moments once they exist.
   YouTube upload would need OAuth on Chad's channel (YouTube Data API v3 videos.insert + captions.insert, a Google Cloud
   project, the youtube.upload scope, a quota of ~6 uploads/day by default) — not built.
+* **Diarization on boss** (10-22 watch: pyannote on tower took search to 6.6–8.6 s): through the gate beside the ASR job;
+  tower only as a 4-thread fallback that waits while search p90 > 4 s. Search afterwards: median 1.85 s, p90 3.1 s.
+* **No stretched pictures; extended portrait masters**: the old Portrait Cinema zoom stretched a square crop into 9:16 —
+  every image is now scaled uniformly and cropped. Each of the 89 speaker portraits has ONE 9:16 master (1152×2048) whose
+  margins were filled by gemini-3.1-flash-image (role image-outpaint; original pixels pasted back untouched): ~$0.042 each,
+  $3.74 total, recorded on media_speakers (ext_*: AI-extended, model, prompt). API: `thumb.extended { url, width, height,
+  ai_extended, model }` on items; the listing index carries it too.
+* **Shorts default to Portrait Cinema** (Chad's pick), with Scripture Insert when the range quotes the Writings; light
+  styling (warm grade, soft vignette, fine static grain, thin call-sign rule). Sample: Sears, Covenant Breaking 3:54–4:24 —
+  https://siftersearch.com/api/media/sears-covenant-breaking-part-3/file/shorts/ff6e5ab0312f.mp4 (3.96 MB / 33 s ≈ 7.2 MB
+  per minute; rendered on boss in 18.6 s).
 * **Next**: related talks (phase 1), GPU tuning on boss (ask before touching vLLM), a review list for flagged copy-edits.
 
 ## What is built and live
