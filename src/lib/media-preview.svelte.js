@@ -47,7 +47,7 @@ export async function playExcerpt(it, speaker = null) {
   const [start, end] = it.hl || [0, 20];
   Object.assign(preview, { item: it, speaker, playing: false, loading: true, t: start, start, end, error: null });
   try {
-    const au = audioUrls(it);
+    const au = it.au || audioUrls(it);   // a moment page passes the item's own audio URLs
     if (au) {
       a.src = media.href(canOgg() ? au.ogg : au.m4a);
       stopAt = end;

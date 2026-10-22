@@ -264,5 +264,21 @@ export function duration(s) {
   return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min` : `${m} min`;
 }
 
+/** The peaks of one stretch of a talk (a moment) from its BBC audiowaveform JSON → `bars` heights in 0..1 (loudest = 1). */
+export function waveWindow(wf, t0, t1, bars = 64) {
+  const d = wf?.data, ch = Number(wf?.channels) || 1, pps = (Number(wf?.sample_rate) || 8000) / (Number(wf?.samples_per_pixel) || 400);
+  if (!Array.isArray(d) || !(t1 > t0)) return [];
+  const pairs = Math.floor(d.length / (2 * ch)), a = Math.max(0, Math.floor(t0 * pps)), b = Math.min(pairs, Math.ceil(t1 * pps));
+  if (b <= a) return [];
+  const per = (b - a) / bars, out = [];
+  for (let i = 0; i < bars; i++) {
+    let m = 0;
+    for (let j = a + Math.floor(i * per); j < Math.min(b, a + Math.floor((i + 1) * per) || a + 1); j++) { const o = j * 2 * ch; m = Math.max(m, Math.abs(d[o]), Math.abs(d[o + 1])); }
+    out.push(m);
+  }
+  const top = Math.max(1, ...out);
+  return out.map((m) => Math.max(0.06, m / top));
+}
+
 /** Wave string (a … z per point) → heights in 0..1. */
 export const waveHeights = (w) => [...String(w || '')].map((c) => Math.max(0.06, (c.charCodeAt(0) - 96) / 26));

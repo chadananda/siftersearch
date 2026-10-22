@@ -158,7 +158,7 @@
   .vu { position: relative; width: 4.5rem; height: 2.4rem; border-radius: 0.4rem 0.4rem 0.2rem 0.2rem; background: var(--radio-dial); overflow: hidden;
     box-shadow: inset 0 0 0 1.5px var(--radio-brass); }
   .vu-needle { position: absolute; left: 50%; bottom: -0.2rem; width: 2px; height: 2.3rem; background: var(--radio-needle); transform-origin: bottom center; animation: vu 1.3s ease-in-out infinite alternate; }
-  .vu-scale { position: absolute; bottom: 0.1rem; left: 0.35rem; font: 700 0.55rem/1 'Big Shoulders Display', sans-serif; color: var(--radio-dial-ink); }
+  .vu-scale { position: absolute; bottom: 0.1rem; left: 0.35rem; font: 700 0.55rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; color: var(--radio-dial-ink); }
   @keyframes vu { 0% { transform: rotate(-42deg); } 35% { transform: rotate(8deg); } 55% { transform: rotate(-12deg); } 80% { transform: rotate(26deg); } 100% { transform: rotate(-20deg); } }
   .station-dot { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 9999px; }
   .station-dot i { width: 0.55rem; height: 0.55rem; border-radius: 9999px; background: var(--radio-on-dark); opacity: 0.35; transition: transform 0.3s, opacity 0.3s; }

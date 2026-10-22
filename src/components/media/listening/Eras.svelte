@@ -76,7 +76,7 @@
   .strip span { height: 1em; display: block; text-align: center; }
   .s { font-size: 0.45em; color: var(--radio-amber); margin-left: 0.1em; }
   .decade-h { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; border-bottom: 2px solid var(--tint); padding-bottom: 0.3rem; }
-  .decade-h a { font: 400 1.9rem/1.1 'Gloock', Georgia, serif; color: var(--tint); }
+  .decade-h a { font: 400 1.9rem/1.1 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--tint); }
   .decade-h a:hover { text-decoration: underline; }
   .decade-h a:focus-visible, .era-card:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .era-card { display: flex; gap: 0.9rem; align-items: center; padding: 0.8rem 1rem; border-radius: 0.9rem; background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); transition: transform 0.25s, box-shadow 0.25s; }

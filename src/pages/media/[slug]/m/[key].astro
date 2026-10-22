@@ -1,0 +1,63 @@
+---
+// /media/<slug>/m/<key> — one MOMENT's shareable page (canonical; /m/<key> redirects here). SSR: the moment
+// (GET /api/media/moments/:key), its talk (audio, cross-references, other moments) and the listing index (portrait, the
+// speaker's other talks). og:image is the generated quote card (GET /api/media/moments/:key/card.jpg, edge-cached).
+import Layout from '../../../../layouts/Layout.astro';
+import NavBar from '../../../../components/common/NavBar.svelte';
+import MomentView from '../../../../components/media/MomentView.svelte';
+import { relatedTalks } from '../../../../lib/media-listing.js';
+import { momentPath, SITE } from '../../../../lib/share.js';
+
+export const prerender = false;
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
+const { slug, key } = Astro.params;
+const get = (path, ms = 12000) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+
+const m = await get(`/api/media/moments/${encodeURIComponent(key || '')}`);
+if (m && m.slug !== slug) return Astro.redirect(momentPath(m.slug, m.key), 301);   // the talk was renamed: one canonical URL
+const [item, index] = m ? await Promise.all([get(`/api/media/${encodeURIComponent(m.slug)}`), get('/api/media/index', 6000)]) : [null, null];
+if (!m) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', m ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=60');
+
+const spk = index?.speakers?.find((s) => s.k === m?.speaker_key) || null;
+const speaker = spk ? { k: spk.k, n: spk.n, p: spk.p } : (m?.speaker_key ? { k: m.speaker_key, n: m.speaker, p: null } : null);
+const others = (item?.moments || []).filter((o) => o.key !== m?.key).sort((a, b) => (a.rank ?? 9) - (b.rank ?? 9)).slice(0, 6);
+const sameVoice = m && index ? relatedTalks(index.items, m.slug, 6) : [];
+const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => sameVoice.some((r) => r.k === s.k)).map((s) => [s.k, { n: s.n, p: s.p }]));
+
+const short = (s, n) => (s.length > n ? `${s.slice(0, s.lastIndexOf(' ', n))}…` : s);
+const title = m ? `“${short(m.text, 90)}” — ${m.speaker || 'The Listening Room'}` : 'Moment not found — SifterSearch Media';
+const description = m ? `${m.context ? `${m.context} ` : ''}From “${m.title}”${m.speaker ? ` by ${m.speaker}` : ''}${m.year ? `, ${m.year}` : ''}. Hear the moment and the whole talk with its searchable transcript.` : 'This moment could not be found.';
+const image = m ? `${SITE}/api/media/moments/${encodeURIComponent(m.key)}/card.jpg` : undefined;
+const url = m ? `${SITE}${momentPath(m.slug, m.key)}` : null;
+const ld = m ? {
+  '@context': 'https://schema.org', '@type': 'Quotation', text: m.text, url, ...(image ? { image } : {}),
+  ...(m.speaker ? { creator: { '@type': 'Person', name: m.speaker }, spokenByCharacter: { '@type': 'Person', name: m.speaker } } : {}),
+  ...(m.year ? { dateCreated: String(m.year) } : {}), ...(m.topics?.length ? { keywords: m.topics.join(', ') } : {}),
+  isPartOf: { '@type': 'AudioObject', name: m.title, url: `${SITE}/media/${m.slug}` },
+} : null;
+---
+
+<Layout {title} {description} {image} type={m ? 'article' : 'website'} noindex={!m}>
+  <Fragment slot="head">
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
+    {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
+  </Fragment>
+  <NavBar client:idle currentPage="media" />
+  <main class="listening-room bg-radio-room text-radio-ink">
+    <div class="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
+      {m ? (
+        <MomentView client:load {m} {item} {speaker} {others} {sameVoice} {speakersByKey} />
+      ) : (
+        <section class="py-24 text-center">
+          <p class="font-dial text-7xl font-extrabold text-radio-amber">404</p>
+          <h1 class="mt-4 font-marquee text-3xl text-radio-ink">This moment has gone off the air</h1>
+          <p class="mt-3 text-radio-ink-soft">There is no moment at this address.</p>
+          <a href={slug ? `/media/${slug}` : '/media'} class="mt-6 inline-block rounded-full bg-radio-amber px-6 py-3 font-dial text-lg font-bold uppercase tracking-wider text-radio-walnut-deep">{slug ? 'Go to the talk' : 'Back to the Listening Room'}</a>
+        </section>
+      )}
+    </div>
+  </main>
+</Layout>

@@ -1,0 +1,13 @@
+---
+// /m/<key> — the short form of a moment's link: 301 to its canonical page /media/<slug>/m/<key>.
+export const prerender = false;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const { key } = Astro.params;
+let slug = null;
+try {
+  const r = await fetch(`${API_BASE}/api/media/moments/${encodeURIComponent(key || '')}`, { signal: AbortSignal.timeout(8000) });
+  if (r.ok) slug = (await r.json()).slug;
+} catch { /* not found below */ }
+if (slug) return Astro.redirect(`/media/${encodeURIComponent(slug)}/m/${encodeURIComponent(key)}`, 301);
+return Astro.redirect('/media', 302);
+---

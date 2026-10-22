@@ -61,6 +61,21 @@
   const nowSection = $derived(sectionAt(current));
   const audienceLabel = typeof item.audience === 'string' ? item.audience : item.audience?.label || null;
   let heroPlayer = $state(), heroOut = $state(false), tocOpen = $state(false);
+  // MOMENTS: the speaker's notable statements — inline cards in the transcript, a highlights strip and pins on the scrubber
+  const moments = (item.moments || []).filter((m) => m.key && m.text).sort((a, b) => a.t0_ms - b.t0_ms);
+  const pins = moments.map((m) => m.t0_ms / 1000);
+  let momentNow = $state(null);
+  function onmoment(m) {
+    if (momentNow === m.key && playing) { audio.pause(); return; }
+    momentNow = m.key;
+    range = { start: m.t0_ms / 1000, end: m.t1_ms / 1000 };
+    playFrom(range.start, { end: range.end, el: document.getElementById(`moment-${m.key}`) });
+  }
+  function toMoment(e, m) {
+    e.preventDefault();
+    history.replaceState(null, '', `#moment-${m.key}`);
+    document.getElementById(`moment-${m.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   // ── highlight + follow ──
   function mark(k) {
@@ -247,6 +262,13 @@
       const ps = (item.paragraphs || []).filter((x) => x.pi != null && x.pi <= Number(pq));
       if (ps.length) r = { start: ps[ps.length - 1].t0, end: null };
     }
+    const mq = new URLSearchParams(location.search).get('m');
+    const mm = mq && moments.find((x) => x.key === mq);
+    if (!r && mm) {
+      r = { start: mm.t0_ms / 1000, end: mm.t1_ms / 1000 };
+      momentNow = mm.key;
+      tick().then(() => document.getElementById(`moment-${mm.key}`)?.scrollIntoView({ block: 'center' }));
+    }
     if (r) {
       startAt = r.start; current = r.start; limit = r.end ?? null;
       range = r.end != null ? r : null;
@@ -340,7 +362,7 @@
               {/if}
             </button>
             <div class="min-w-0 flex-1">
-              <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} />
+              <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} {pins} />
             </div>
           </div>
           <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-radio-dial-ink">
@@ -426,8 +448,19 @@
     </aside>
 
     <div class="min-w-0 lg:order-1 lg:col-span-8">
+      {#if moments.length}
+        <section class="mb-10" aria-labelledby="hl-h">
+          <h2 id="hl-h" class="mb-3 font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">Highlights · {moments.length} moment{moments.length === 1 ? '' : 's'} to share</h2>
+          <ol class="hl-strip">
+            {#each moments as m (m.key)}
+              <li><a href={`#moment-${m.key}`} onclick={(e) => toMoment(e, m)} class="hl"><span class="hl-t">{formatTime(m.t0_ms / 1000)}</span><span class="hl-q">“{m.text}”</span></a></li>
+            {/each}
+          </ol>
+        </section>
+      {/if}
       <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
-        speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara} />
+        speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara}
+        {moments} slug={item.slug} speaker={item.speaker || ''} {onmoment} {momentNow} />
     </div>
   </div>
 
@@ -517,7 +550,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .label-ring { box-shadow: 0 0 0 2px var(--radio-brass); }
   .speed { box-shadow: inset 0 0 0 1px var(--radio-line); }
-  .tube { display: inline-flex; align-items: center; padding: 0.25rem 0.7rem; border-radius: 9999px; font: 700 0.85rem/1.2 'Big Shoulders Display', sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
+  .tube { display: inline-flex; align-items: center; padding: 0.25rem 0.7rem; border-radius: 9999px; font: 700 0.85rem/1.2 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--radio-on-dark); background: color-mix(in srgb, var(--radio-walnut-deep) 55%, transparent); box-shadow: inset 0 0 0 1px var(--radio-brass); }
   .dial { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--radio-brass) 70%, transparent), inset 0 6px 18px rgba(0, 0, 0, 0.22);
     background-image: radial-gradient(60% 140% at 50% 100%, var(--radio-glow), transparent 70%); }
@@ -533,7 +566,7 @@
   /* the program log */
   .log { border-radius: 1rem; background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); overflow: hidden; }
   .log-list li + li .log-row { border-top: 1px dashed var(--radio-line); border-radius: 0; }
-  .log-head { display: flex; width: 100%; align-items: baseline; gap: 0.75rem; padding: 0.9rem 1rem 0.6rem; font: 400 1.35rem/1.1 'Gloock', Georgia, serif; color: var(--radio-ink); text-align: left;
+  .log-head { display: flex; width: 100%; align-items: baseline; gap: 0.75rem; padding: 0.9rem 1rem 0.6rem; font: 400 1.35rem/1.1 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--radio-ink); text-align: left;
     border-bottom: 2px solid var(--tint); }
   .log-head svg { margin-left: auto; align-self: center; }
   .log-list { max-height: 62vh; overflow-y: auto; padding: 0.35rem; }
@@ -543,10 +576,20 @@
   .log-row:hover { background: var(--radio-brass-soft); color: var(--radio-ink); }
   .log-row.on { color: var(--radio-ink); background: var(--radio-brass-soft); }
   .log-row.on::before { content: ''; position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem; width: 3px; border-radius: 2px; background: var(--radio-needle); }
-  .log-t { flex: none; width: 3.4rem; font: 700 0.9rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.06em; color: var(--radio-amber); font-variant-numeric: tabular-nums; }
+  .log-t { flex: none; width: 3.4rem; font: 700 0.9rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-amber); font-variant-numeric: tabular-nums; }
   .topic { display: inline-block; padding: 0.3rem 0.75rem; border-radius: 9999px; font-family: 'Libre Caslon Text', Georgia, serif; font-size: 0.92rem; color: var(--radio-ink);
     background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); }
   .topic:hover { box-shadow: inset 0 0 0 1.5px var(--radio-brass); }
+
+  /* highlights strip: the moments as broadcast tickets, scrolling sideways */
+  .hl-strip { display: flex; gap: 0.75rem; overflow-x: auto; padding: 0.2rem 0.1rem 0.8rem; scroll-snap-type: x proximity; }
+  .hl-strip li { flex: none; width: 17rem; scroll-snap-align: start; }
+  .hl { display: flex; flex-direction: column; gap: 0.45rem; height: 100%; padding: 0.8rem 0.95rem; border-radius: 0.9rem; background: var(--radio-dial); color: var(--radio-dial-ink);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--radio-brass) 60%, transparent); transition: transform 0.25s, box-shadow 0.25s; }
+  .hl:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--radio-needle), 0 8px 18px var(--radio-brass-soft); }
+  .hl:focus-visible { outline: 3px solid var(--radio-needle); outline-offset: 2px; }
+  .hl-t { font: 700 0.85rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.14em; color: var(--radio-needle); }
+  .hl-q { font: 400 1.05rem/1.3 'Gloock', 'Gloock Fallback', Georgia, serif; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
 
   /* related */
   .rel { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 0.9rem 0.7rem 0.7rem; border-radius: 1rem; background: var(--radio-paper);

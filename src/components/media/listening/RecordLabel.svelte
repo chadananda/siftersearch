@@ -39,7 +39,7 @@
     </g>
     <circle cx="50" cy="50" r="27" fill="var(--radio-paper)" opacity="0.92" />
     <circle cx="50" cy="50" r="27" fill="none" stroke={tint} stroke-width="1.2" />
-    <text x="50" y="51" text-anchor="middle" dominant-baseline="middle" font-family="Gloock, Georgia, serif" font-size="22" fill={tint}>{initials(name)}</text>
+    <text x="50" y="51" text-anchor="middle" dominant-baseline="middle" font-family="Gloock, 'Gloock Fallback', Georgia, serif" font-size="22" fill={tint}>{initials(name)}</text>
     <circle cx="50" cy="50" r="2.2" fill="var(--radio-groove)" opacity="0.6" />
   </svg>
 {/if}

@@ -2,7 +2,8 @@
 // jukebox layout (src/lib/media-listing.js).
 import { describe, it, expect } from 'vitest';
 import { fold, speakerRole, waveString, pullQuote, bestQuote, topHeadings, highlightWindow, shapeRow, shapeSpeakers, buildIndex, audioUrls } from '../../api/lib/media/listing-index.js';
-import { within1, buildSearch, searchItems, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, initials, labelPattern, eraKey, duration, waveHeights } from '../../src/lib/media-listing.js';
+import { momentPath, shareLinks, momentShareText } from '../../src/lib/share.js';
+import { waveWindow, within1, buildSearch, searchItems, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, initials, labelPattern, eraKey, duration, waveHeights } from '../../src/lib/media-listing.js';
 
 const row = (o = {}) => ({ id: 1, slug: 'a', title: 'A talk', speaker: 'Hooper Dunbar', speaker_key: 'hooper-dunbar', year: 1988, duration_s: 1800, language: 'en',
   has_video: 0, source_kind: 'file', playback: 'full', grade: 'B', quotes_n: 2, crs_n: 1, updated_at: '2026-10-22T10:00:00.000Z', ...o });
@@ -156,5 +157,24 @@ describe('the jukebox layout', () => {
     expect(eraKey(1932)).toBe('1940'); expect(eraKey(null)).toBe('undated'); expect(eraKey(2031)).toBe('2020');
     expect(duration(4380)).toBe('1 h 13 min'); expect(duration(37)).toBe('37 s');
     expect(waveHeights('az')[1]).toBe(1);
+  });
+});
+
+describe('moments: share links and the excerpt waveform', () => {
+  it('builds the canonical moment path and share URLs', () => {
+    expect(momentPath('dunbar-soul-1988', 'k3x9')).toBe('/media/dunbar-soul-1988/m/k3x9');
+    const l = shareLinks('https://siftersearch.com/media/a/m/b', '“Hi” — X');
+    expect(l.x).toContain('url=https%3A%2F%2Fsiftersearch.com%2Fmedia%2Fa%2Fm%2Fb');
+    expect(l.facebook).toContain('sharer.php?u=');
+    expect(l.whatsapp).toContain('wa.me');
+    expect(l.email.startsWith('mailto:?subject=')).toBe(true);
+    expect(momentShareText({ text: 'word '.repeat(100), speaker: 'S' }, 40)).toMatch(/…” — S$/);
+  });
+  it('slices the waveform to the moment', () => {
+    const data = []; for (let i = 0; i < 2000; i++) data.push(-1, i < 1000 ? 10 : 100);   // 20 px/s: loud after 50 s
+    const wf = { channels: 1, sample_rate: 8000, samples_per_pixel: 400, data };
+    const quiet = waveWindow(wf, 10, 20, 8), loud = waveWindow(wf, 60, 70, 8);
+    expect(quiet).toHaveLength(8); expect(Math.max(...quiet)).toBe(1); expect(loud.every((x) => x === 1)).toBe(true);
+    expect(waveWindow(wf, 30, 20)).toEqual([]);
   });
 });

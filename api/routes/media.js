@@ -55,6 +55,7 @@ export function speakerThumb(s) {
 const INDEX_FILE = process.env.MEDIA_INDEX_CACHE || join(tmpdir(), 'siftersearch-media-index.json');
 const INDEX_BUDGET = 25;
 let indexCache = null, indexBuilding = null;
+const momentCards = new Map();   // moment key → rendered quote card (JPEG)
 async function loadIndexCache() {
   if (indexCache) return indexCache;
   const saved = await readJson(INDEX_FILE);
@@ -135,6 +136,23 @@ export default async function mediaRoutes(fastify) {
     if (!m) return reply.code(404).send({ error: 'NotFound' });
     pub(reply, 300);
     return { ...m, url: `/media/${m.slug}?m=${m.key}`, range: `?t=${(m.t0_ms / 1000).toFixed(1)}-${(m.t1_ms / 1000).toFixed(1)}` };
+  });
+  // its QUOTE CARD (og:image): 1200×630 JPEG, rendered once per process and edge-cached for a week
+  fastify.get('/moments/:key/card.jpg', async (req, reply) => {
+    const m = await momentByKey(req.params.key);
+    if (!m) return reply.code(404).send({ error: 'NotFound' });
+    let buf = momentCards.get(m.key);
+    if (!buf) {
+      const thumb = m.speaker_key ? speakerThumb(await getSpeaker(m.speaker_key)) : null;
+      let photo = null;
+      if (thumb?.url) { try { const r = await fetch(`${thumb.url}&tr=w-360,h-360,fo-face,q-85,f-jpeg`, { signal: AbortSignal.timeout(8000) }); if (r.ok) photo = Buffer.from(await r.arrayBuffer()); } catch { /* the initials label */ } }
+      const { renderMomentCard } = await import('../lib/media/moment-card.js');
+      buf = await renderMomentCard({ text: m.text, speaker: m.speaker, title: m.title, year: m.year }, photo);
+      if (momentCards.size > 300) momentCards.clear();
+      momentCards.set(m.key, buf);
+    }
+    reply.header('Content-Type', 'image/jpeg').header('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+    return reply.send(buf);
   });
   // moments across the library (the ticker): ?limit, ?audience=newcomers|community|internal (upper bound), ?kind
   fastify.get('/moments', async (req, reply) => {

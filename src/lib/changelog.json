@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-22T14:54:03.282Z",
+  "generated": "2026-10-22T15:17:32.976Z",
   "entries": [
+    {
+      "hash": "619d072c",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Status — links, audience + moments, back-fill, boss CPU/GPU measurements",
+      "scope": "media"
+    },
+    {
+      "hash": "81aad926",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "AUDIENCE and MOMENTS (Chad 10-22) — an assess stage reads the whole talk with its subheader sections once (media-assess, Sonnet tier): audience 1 open … 5 internal on a tradition-agnostic rubric (Chad's internal examples: addresses to delegates, assembly business, Covenant-breaking matters), per talk and per section, with rationale, signals, tradition, model/version, and the best introductory ranges (sections rated 1–2, 2–25 min, with what they introduce); and 3–8 MOMENTS — verbatim spans of the clean words located with exact ms, a ≤15-word editorial context line, kind, topics, an internal 'why notable', each passed through a strict out-of-context faithfulness check (media-verify), with a stable short key. Calibration on 15 talks: audience 1×1, 3×4, 4×10 (sections 1:2 2:13 3:53 4:49 5:1); 71 moments kept, 40 rejected (dangling 'Because…', pronouns without antecedents, unfinished thoughts). migration 167 (media_items.audience, media_moments); API: item audience + moments, GET /api/media/moments/:key, /moments (ticker), /intro-clips, ?audience=newcomers",
+      "scope": "media"
+    },
+    {
+      "hash": "c99eaad4",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "The TALK PAGE in the Listening Room language (Chad 10-22)",
+      "scope": "media"
+    },
     {
       "hash": "cc1e4f78",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "Performance",
       "description": "Warm-ups start 3 s after listen; claim text folded per page (2 s synchronous index build → paged)",
       "scope": "boot"
-    },
-    {
-      "hash": "82edfe95",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "A compilation's original resolves to its standalone tablet, every copy listed; Arabic never linked to an English OL book",
-      "scope": "sourcehunt"
-    },
-    {
-      "hash": "839d0f37",
-      "date": "2026-10-12",
-      "type": "Performance",
-      "description": "API answers within ~1 s of start — warm-ups after listen; encounter authority by PK, not a docs title scan",
-      "scope": "boot"
-    },
-    {
-      "hash": "cda5aaf9",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Section-author job — credit a book section to its real writer (Dawn-Breakers intro = George Townshend)",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "619d072c",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Status — links, audience + moments, back-fill, boss CPU/GPU measurements",
+        "scope": "media"
+      },
+      {
+        "hash": "81aad926",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "AUDIENCE and MOMENTS (Chad 10-22) — an assess stage reads the whole talk with its subheader sections once (media-assess, Sonnet tier): audience 1 open … 5 internal on a tradition-agnostic rubric (Chad's internal examples: addresses to delegates, assembly business, Covenant-breaking matters), per talk and per section, with rationale, signals, tradition, model/version, and the best introductory ranges (sections rated 1–2, 2–25 min, with what they introduce); and 3–8 MOMENTS — verbatim spans of the clean words located with exact ms, a ≤15-word editorial context line, kind, topics, an internal 'why notable', each passed through a strict out-of-context faithfulness check (media-verify), with a stable short key. Calibration on 15 talks: audience 1×1, 3×4, 4×10 (sections 1:2 2:13 3:53 4:49 5:1); 71 moments kept, 40 rejected (dangling 'Because…', pronouns without antecedents, unfinished thoughts). migration 167 (media_items.audience, media_moments); API: item audience + moments, GET /api/media/moments/:key, /moments (ticker), /intro-clips, ?audience=newcomers",
+        "scope": "media"
+      },
+      {
+        "hash": "c99eaad4",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "The TALK PAGE in the Listening Room language (Chad 10-22)",
+        "scope": "media"
+      },
       {
         "hash": "cc1e4f78",
         "date": "2026-10-22",
@@ -7002,27 +7023,6 @@
         "type": "Performance",
         "description": "Warm-ups start 3 s after listen; claim text folded per page (2 s synchronous index build → paged)",
         "scope": "boot"
-      },
-      {
-        "hash": "82edfe95",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "A compilation's original resolves to its standalone tablet, every copy listed; Arabic never linked to an English OL book",
-        "scope": "sourcehunt"
-      },
-      {
-        "hash": "839d0f37",
-        "date": "2026-10-12",
-        "type": "Performance",
-        "description": "API answers within ~1 s of start — warm-ups after listen; encounter authority by PK, not a docs title scan",
-        "scope": "boot"
-      },
-      {
-        "hash": "cda5aaf9",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Section-author job — credit a book section to its real writer (Dawn-Breakers intro = George Townshend)",
-        "scope": "ops"
       }
     ]
   }

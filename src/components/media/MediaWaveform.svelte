@@ -8,13 +8,15 @@
   import { waveformBars } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
 
-  let { url = null, duration = 0, current = 0, range = null, disabled = false, onseek, ticks = [], variant = 'dial', label = 'Seek' } = $props();
+  let { url = null, duration = 0, current = 0, range = null, disabled = false, onseek, ticks = [], pins = [], variant = 'dial', label = 'Seek' } = $props();
 
   let bars = $state([]);
   let el;
   const N = variant === 'slim' ? 120 : 160;
   const pct = $derived(duration ? Math.min(100, (current / duration) * 100) : 0);
   const rangeBox = $derived(range?.end != null && duration ? { x: (range.start / duration) * N, w: ((range.end - range.start) / duration) * N } : null);
+  // moments: needle-red pins along the foot of the wave
+  const pinX = $derived(duration ? pins.filter((t) => t > 0 && t < duration).map((t) => (t / duration) * N) : []);
   const marks = $derived(duration ? ticks.filter((t) => t.t != null && t.t > 0 && t.t < duration).map((t) => ({ ...t, x: (t.t / duration) * N })) : []);
 
   const cache = (globalThis.__wfCache ??= new Map());
@@ -53,6 +55,7 @@
       <rect class="fill-radio-line" x="0" y="48" width={N} height="10" rx="2" />
       <rect class="fill-radio-amber" x="0" y="48" width={(pct / 100) * N} height="10" rx="2" />
     {/if}
+    {#each pinX as x, i (i)}<rect class="fill-radio-needle" x={x - 0.9} y="92" width="1.8" height="8" rx="0.6" />{/each}
     <rect class="fill-radio-needle" x={(pct / 100) * N - 0.35} y="0" width="0.7" height="100" />
   </svg>
   {#if variant === 'dial'}

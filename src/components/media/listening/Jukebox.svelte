@@ -167,13 +167,13 @@
     background: linear-gradient(90deg, var(--st) 0 6px, color-mix(in srgb, var(--radio-walnut-deep) 70%, transparent) 6px);
     box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: transform 0.2s, background 0.2s; }
   .spine:hover { transform: translateX(6px); background: linear-gradient(90deg, var(--st) 0 6px, var(--radio-walnut-deep) 6px); color: var(--radio-amber); }
-  .spine-meta { margin-left: auto; flex: none; font: 600 0.8rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.06em; opacity: 0.75; }
+  .spine-meta { margin-left: auto; flex: none; font: 600 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; opacity: 0.75; }
   .box-all { margin-top: 0.75rem; align-self: flex-start; font-weight: 600; font-size: 0.95rem; color: var(--radio-on-dark); text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .box-all:hover { color: var(--radio-amber); }
 
   /* pull-quote: cream paper, a huge brass quotation mark */
   .quote { background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); }
-  .qmark { font: 400 6rem/0.7 'Gloock', Georgia, serif; color: var(--tint); height: 2.6rem; display: block; }
+  .qmark { font: 400 6rem/0.7 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--tint); height: 2.6rem; display: block; }
   .quote-text { font-family: 'Libre Caslon Text', Georgia, serif; font-style: italic; font-size: 1.12rem; line-height: 1.45; color: var(--radio-ink);
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; overflow: hidden; }
   .quote-text, .quote-cite { flex: none; }
@@ -186,7 +186,7 @@
   /* question: deep walnut panel, the question as the headline */
   .question { background: var(--radio-walnut-deep); color: var(--radio-on-dark);
     background-image: radial-gradient(90% 80% at 100% 0%, color-mix(in srgb, var(--tint) 45%, transparent), transparent 70%); }
-  .question-text { margin-top: 0.4rem; font: 400 1.45rem/1.15 'Gloock', Georgia, serif; color: var(--radio-on-dark);
+  .question-text { margin-top: 0.4rem; font: 400 1.45rem/1.15 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--radio-on-dark);
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
   .s-wide .question-text { font-size: 1.85rem; -webkit-line-clamp: 2; }
   .question-text a:hover { color: var(--radio-amber); }

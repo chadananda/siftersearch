@@ -200,9 +200,9 @@
   .tune-box:focus-within .tune-knob { transform: rotate(120deg); }
   input[type='search']::-webkit-search-cancel-button { display: none; }
   .tune-box input, .tune-box input:focus, .tune-box input:focus-visible { outline: none; box-shadow: none; border: 0; }   /* the box's own ring shows focus */
-  .clear { flex: none; font: 700 0.95rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--radio-ink-soft); padding: 0.6rem 0.8rem; border-radius: 0.6rem; }
+  .clear { flex: none; font: 700 0.95rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--radio-ink-soft); padding: 0.6rem 0.8rem; border-radius: 0.6rem; }
   .clear:hover { color: var(--radio-amber); }
-  .key { min-height: 2.75rem; padding: 0.5rem 1rem; border-radius: 0.7rem; font: 700 1rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
+  .key { min-height: 2.75rem; padding: 0.5rem 1rem; border-radius: 0.7rem; font: 700 1rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--radio-ink); background: var(--radio-panel); box-shadow: inset 0 -3px 0 var(--radio-line), inset 0 0 0 1px var(--radio-line), 0 2px 0 var(--radio-line);
     transition: transform 0.12s, box-shadow 0.12s, background 0.2s, color 0.2s; }
   .key:hover { background: var(--radio-dial); }

@@ -7,9 +7,12 @@
   // cap, and the breakouts as cut-in "studio inserts" (styles at the bottom; tokens --radio-*, era tint --tint).
   import { paragraphSegments, speakerLabels } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
+  import ShareRow from './ShareRow.svelte';
+  import { momentPath, momentShareText, SITE } from '../../lib/share.js';
 
   let { paragraphs = [], headings = [], quotes = [], links = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
-    playingPara = -1, playing = false, onword, onpara, root = $bindable() } = $props();
+    playingPara = -1, playing = false, onword, onpara, root = $bindable(),
+    moments = [], slug = '', speaker = '', onmoment = null, momentNow = null } = $props();
 
   const offsets = $derived(paragraphs.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + (paragraphs[i - 1].words?.length || 0) : 0); return acc; }, []));
   const labels = $derived(speakerLabels(paragraphs, speakers));
@@ -21,6 +24,8 @@
     ...links.filter((l) => l.url && !quotes.some((q) => q.url && q.para === l.para && l.i0 < q.i1 && q.i0 < l.i1))]));
   const linkTitle = (l) => (l.kind === 'quote' ? l.cite : l.kind === 'person' ? `${l.name} — biography` : [l.title, l.section].filter(Boolean).join(', '));
   const xrefsBy = $derived(byPara(crossRefs.filter((c) => c.url || c.excerpt)));
+  // MOMENTS: the speaker's own notable statements, as on-air cards after their paragraph (share targets: /media/<slug>/m/<key>)
+  const momentsBy = $derived(byPara(moments.filter((m) => m.key && m.text)));
   // w[3] = 1: a word the copy-edit pass dropped (filler, stutter, loop) — kept for timing, never shown
   const wordClass = (w) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && 'cursor-pointer hover:bg-radio-brass-soft', inRange(w) && 'bg-highlight-range']);
   const inRange = (w) => !!range && range.end != null && w[1] >= range.start - 0.05 && w[2] <= range.end + 0.05;
@@ -79,6 +84,28 @@
         {/each}
       </p>
 
+      {#each momentsBy.get(p.n) || [] as m (m.key)}
+        <figure class="moment" id={`moment-${m.key}`} aria-label={`A moment from this talk at ${formatTime(m.t0_ms / 1000)}`}>
+          <p class="m-tag"><span class="m-dot" aria-hidden="true"></span>On the air{speaker ? ` · ${speaker}` : ''} · {formatTime(m.t0_ms / 1000)}</p>
+          {#if m.context}<p class="m-context">{m.context}</p>{/if}
+          <blockquote class="m-quote"><p>{m.text}</p></blockquote>
+          <figcaption class="m-row">
+            {#if canPlay && onmoment}
+              <button type="button" class="m-play" class:on={momentNow === m.key && playing} onclick={(e) => { e.stopPropagation(); onmoment(m); }}
+                aria-label={momentNow === m.key && playing ? 'Pause this moment' : `Hear this moment (${Math.round((m.t1_ms - m.t0_ms) / 1000)} seconds)`}>
+                {#if momentNow === m.key && playing}
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                {:else}
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+                {/if}
+                <span>{Math.round((m.t1_ms - m.t0_ms) / 1000)} s</span>
+              </button>
+            {/if}
+            <a class="m-page" href={momentPath(slug, m.key)}>The page for this moment</a>
+            <ShareRow url={`${SITE}${momentPath(slug, m.key)}`} text={momentShareText({ text: m.text, speaker })} compact />
+          </figcaption>
+        </figure>
+      {/each}
       {#each quotesBy.get(p.n) || [] as q, qi (qi)}
         {#if q.excerpt}
           <aside class="insert quote-insert" aria-label="Quoted passage">
@@ -109,8 +136,8 @@
   @media (min-width: 1024px) { .transcript { padding-left: 4.5rem; max-width: 48.5rem; } }
   .para { position: relative; margin-top: 1.15rem; display: flow-root; }
   .ptext { text-wrap: pretty; }
-  .para.first .ptext::first-letter { float: left; font-family: 'Gloock', Georgia, serif; font-size: 4.1rem; line-height: 0.82; padding: 0.35rem 0.6rem 0 0; color: var(--tint, var(--radio-amber)); }
-  .voice { margin-bottom: 0.15rem; font: 700 0.85rem/1.2 'Big Shoulders Display', sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--radio-brass); }
+  .para.first .ptext::first-letter { float: left; font-family: 'Gloock', 'Gloock Fallback', Georgia, serif; font-size: 4.1rem; line-height: 0.82; padding: 0.35rem 0.6rem 0 0; color: var(--tint, var(--radio-amber)); }
+  .voice { margin-bottom: 0.15rem; font: 700 0.85rem/1.2 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--radio-brass); }
 
   /* the play button per paragraph: in the left margin from lg, floated inline below */
   .pplay { float: left; margin: 0.2rem 0.6rem 0 0; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
@@ -122,16 +149,16 @@
   .pbtn.on { background: var(--radio-amber); color: var(--radio-walnut-deep); box-shadow: 0 0 0 5px var(--radio-glow); }
   .pbtn:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   @media (min-width: 1024px) { .pbtn { width: 2.5rem; height: 2.5rem; } }
-  .ptime { display: none; font: 600 0.8rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.06em; color: var(--radio-ink-soft); }
+  .ptime { display: none; font: 600 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-ink-soft); }
   @media (min-width: 1024px) { .ptime { display: block; } }
   .para.now::before { content: ''; position: absolute; left: -1rem; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 2px; background: var(--radio-amber); }
   @media (max-width: 1023px) { .para.now::before { left: -0.7rem; } }
 
   /* the subheaders: section breaks with the log time; questions carry an amber query mark */
-  .section-h { scroll-margin-top: 7rem; margin: 3rem 0 0.4rem; padding-top: 1.1rem; border-top: 1px solid var(--radio-line); font: 400 1.6rem/1.2 'Gloock', Georgia, serif; color: var(--radio-ink); text-wrap: balance; }
+  .section-h { scroll-margin-top: 7rem; margin: 3rem 0 0.4rem; padding-top: 1.1rem; border-top: 1px solid var(--radio-line); font: 400 1.6rem/1.2 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--radio-ink); text-wrap: balance; }
   .section-h a:hover { color: var(--radio-amber); }
   .section-h a:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
-  .log-time { display: block; margin-bottom: 0.25rem; font: 700 0.85rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.18em; color: var(--tint, var(--radio-brass)); }
+  .log-time { display: block; margin-bottom: 0.25rem; font: 700 0.85rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.18em; color: var(--tint, var(--radio-brass)); }
   .section-h.question .log-time::after { content: ' · a question'; letter-spacing: 0.12em; text-transform: uppercase; }
   @media (min-width: 640px) { .section-h { font-size: 1.85rem; } }
 
@@ -141,10 +168,34 @@
   .transcript :global(.wlink) { font-style: italic; }
   .transcript :global(.qlink:hover), .transcript :global(.nlink:hover), .transcript :global(.wlink:hover) { color: var(--radio-amber); }
 
+  /* moments: the SPEAKER's words, on the amber dial glass in Gloock (inserts of the Writings are paper/walnut and italic) */
+  .moment { hyphens: manual; -webkit-hyphens: manual; position: relative; clear: both; margin: 1.8rem 0 1.6rem; padding: 1.2rem 1.3rem 1rem 1.6rem; border-radius: 1rem; scroll-margin-top: 8rem;
+    background: var(--radio-dial); color: var(--radio-dial-ink); font-family: system-ui, sans-serif;
+    background-image: radial-gradient(70% 120% at 0% 100%, var(--radio-glow), transparent 70%),
+      repeating-linear-gradient(90deg, transparent 0 11px, color-mix(in srgb, var(--radio-dial-ink) 14%, transparent) 11px 12px);
+    background-size: auto, 100% 0.6rem; background-repeat: no-repeat, repeat-x; background-position: 0 0, 0 100%;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--radio-brass) 70%, transparent), 0 10px 26px var(--radio-brass-soft); }
+  @media (min-width: 1024px) { .moment { margin-left: -2.5rem; margin-right: -1.5rem; } }
+  .moment::before { content: ''; position: absolute; left: 0.7rem; top: 1rem; bottom: 1rem; width: 3px; border-radius: 2px; background: var(--radio-needle); box-shadow: 0 0 8px var(--radio-needle); }
+  .m-tag { display: flex; align-items: center; gap: 0.5rem; font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; }
+  .m-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--radio-needle); }
+  .m-context { margin-top: 0.45rem; font-size: 0.9rem; opacity: 0.8; }
+  .m-quote { margin-top: 0.5rem; font: 400 1.45rem/1.3 'Gloock', 'Gloock Fallback', Georgia, serif; text-wrap: pretty; }
+  .m-quote p::before { content: '“'; } .m-quote p::after { content: '”'; }
+  @media (min-width: 640px) { .m-quote { font-size: 1.7rem; } }
+  .m-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-top: 0.9rem; }
+  .m-play { display: inline-flex; align-items: center; gap: 0.4rem; height: 2.5rem; padding: 0 0.95rem 0 0.75rem; border-radius: 9999px; background: var(--radio-walnut-deep); color: var(--radio-amber);
+    font: 700 0.95rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.08em; }
+  .m-play svg { width: 1.05rem; height: 1.05rem; }
+  .m-play.on { box-shadow: 0 0 0 5px var(--radio-glow); }
+  .m-page { font-weight: 600; font-size: 0.9rem; text-decoration: underline; text-decoration-color: var(--radio-needle); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .m-page:hover { color: var(--radio-needle); }
+  .m-play:focus-visible, .m-page:focus-visible { outline: 3px solid var(--radio-needle); outline-offset: 2px; }
+
   /* studio inserts: cut-in breakouts that step out of the column */
   .insert { position: relative; clear: both; margin: 1.6rem 0 1.4rem; padding: 1.1rem 1.3rem 1rem; border-radius: 0.9rem; font-size: 1rem; }
   @media (min-width: 1024px) { .insert { margin-left: -1.5rem; margin-right: -2.5rem; } }
-  .insert-tag { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font: 700 0.8rem/1 'Big Shoulders Display', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; }
+  .insert-tag { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; }
   .dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--radio-needle); box-shadow: 0 0 6px var(--radio-needle); }
   .insert blockquote { font-size: 1.15rem; line-height: 1.6; }
   .insert-cite { margin-top: 0.6rem; font-family: system-ui, sans-serif; font-size: 0.9rem; }
