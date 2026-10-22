@@ -52,8 +52,9 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
   alignment + .srt/.vtt, link back baked in (watermark, end card, QR), ready-to-paste post text; rendered on boss's CPU in
   4–15 s per 30 s clip; POST /api/media/shorts (public for moments), cached per range × format × template. Samples (Sears,
   Covenant Breaking, 3:54–4:24): `https://siftersearch.com/api/media/sears-covenant-breaking-part-3/file/shorts/<key>.mp4`
-  with keys 3337949edabb (Portrait Cinema, auto) · f5830fa4345f (On Air) · 5a9282612eb5 (Archive Tape) · 50fea3ab8745
-  (Scripture Insert) · 88aed98a169f (Minimal). `media-shorts-moments` pre-renders Hands/UHJ moments once they exist.
+  with keys (render v3, compressed: 33 s incl. end card) 1f9e093e8bd3 Portrait Cinema 3.7 MB · c6ef34866fc8 On Air 3.0 MB ·
+  5b812db8bd74 Archive Tape 4.6 MB (was 203 MB) · 41867c799994 Scripture Insert 2.7 MB · 07a11bfc6922 Minimal 2.1 MB — i.e.
+  3.9–8.3 MB per minute; served from R2 at the edge, first byte ~0.15–0.4 s (was ~4 s through the tunnel). `media-shorts-moments` pre-renders Hands/UHJ moments once they exist.
   YouTube upload would need OAuth on Chad's channel (YouTube Data API v3 videos.insert + captions.insert, a Google Cloud
   project, the youtube.upload scope, a quota of ~6 uploads/day by default) — not built.
 * **Next**: related talks (phase 1), GPU tuning on boss (ask before touching vLLM), a review list for flagged copy-edits.
