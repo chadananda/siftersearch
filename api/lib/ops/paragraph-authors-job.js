@@ -32,10 +32,11 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
   let books = [];
   if (ids?.length) for (const id of ids) { const d = await doc(Number(id), { follow: false, fields: ['id', 'title', 'author', 'religion', 'collection', 'source_site', 'paragraph_count'] }); if (d) books.push(d); }
   else {
-    for (let offset = 0; ; offset += 1000) {
-      const page = await docs({ scope: 'canonicalWithProse', religion, fields: ['id', 'title', 'author', 'religion', 'collection', 'source_site', 'paragraph_count'], limit: 1000, offset, count: false });
+    for (let afterId = 0; ;) {   // keyset: each page a short read (OFFSET re-walked every skipped book)
+      const page = await docs({ scope: 'canonicalWithProse', religion, fields: ['id', 'title', 'author', 'religion', 'collection', 'source_site', 'paragraph_count'], limit: 1000, afterId, count: false });
       books.push(...page.docs);
       if (page.docs.length < 1000) break;
+      afterId = page.docs[page.docs.length - 1].id;
     }
   }
   if (limit) books = books.slice(0, limit);

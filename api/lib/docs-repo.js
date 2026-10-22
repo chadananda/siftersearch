@@ -110,7 +110,9 @@ export async function listDocs({
     [...params, Math.min(1000, limit), offset], 'docs-repo:list');
   // count:false skips the COUNT — a second full read when only the rows are wanted
   const total = count ? await queryOne(`SELECT COUNT(*) n FROM docs d ${clause}`, params, 'docs-repo:list-count') : null;
-  return { docs: rows, total: total?.n ?? (count ? 0 : null), scope, limit, offset };
+  // the cursor for the next keyset page (id order only): null when this page is the last
+  const next_after_id = orderBy !== 'title' && rows.length >= Math.min(1000, limit) && rows.length && rows[rows.length - 1].id != null ? rows[rows.length - 1].id : null;
+  return { docs: rows, total: total?.n ?? (count ? 0 : null), scope, limit, offset, next_after_id };
 }
 
 /** Ids of live docs whose year falls in [yearFrom, yearTo] — how a year filter reaches an engine whose points carry no

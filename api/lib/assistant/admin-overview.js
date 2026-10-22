@@ -101,3 +101,40 @@ function choices(answers) {
   for (const [q, a] of Object.entries(answers || {})) out[q] = a?.choice ?? a?.value ?? null;
   return out;
 }
+
+/** All four sections; each fails on its own (a missing store shows as unavailable, never breaks the page). */
+export async function computeAnisOverview(days = 30, { queryAll } = {}) {
+  const q = queryAll || (await import('../db.js')).queryAll;
+  const safe = async (fn) => { try { return await fn(); } catch (err) { return { available: false, error: String(err.message || err).slice(0, 200) }; } };
+  const [activity, costs, assessment, system1] = await Promise.all([
+    safe(() => anisActivity({ queryAll: q }, days)), safe(() => anisCosts({ queryAll: q }, days)),
+    safe(() => anisAssessment({}, days)), safe(() => anisSystem1({}, days)),
+  ]);
+  return { days, activity, costs, assessment, system1 };
+}
+
+// OFF THE EVENT LOOP (10-21: one cold /anis/overview held the search API's main thread 56 s — anisSystem1's synchronous reads of
+// the 14.7 GB System-1 log plus the ai_usage scan — and every request behind it, docs listings and the Observatory included,
+// timed out at the gateway; docs/architecture/blocking-queries.md). A worker thread with its own connections computes it,
+// time-limited; the answer is kept 5 min per window and an expired one is served while the next computes.
+const OVERVIEW_TTL_MS = 5 * 60 * 1000;
+const OVERVIEW_LIMIT_MS = 180_000;
+const overviewCache = new Map();   // days → { at, promise, value }
+function overviewInWorker(days) {
+  return import('worker_threads').then(({ Worker }) => new Promise((resolve, reject) => {
+    const w = new Worker(new URL('./overview-worker.js', import.meta.url), { workerData: { days } });
+    const timer = setTimeout(() => { w.terminate(); reject(new Error(`the Anís overview took over ${OVERVIEW_LIMIT_MS / 1000} s and was stopped`)); }, OVERVIEW_LIMIT_MS);
+    w.once('message', (m) => { clearTimeout(timer); w.terminate(); m.error ? reject(new Error(m.error)) : resolve(JSON.parse(m.json)); });
+    w.once('error', (e) => { clearTimeout(timer); reject(e); });
+    w.once('exit', (code) => { clearTimeout(timer); if (code !== 0) reject(new Error(`overview worker exited ${code}`)); });
+  }));
+}
+export function getAnisOverview(days = 30, { compute = process.env.VITEST ? computeAnisOverview : overviewInWorker, now = Date.now() } = {}) {
+  const hit = overviewCache.get(days);
+  if (hit && now - hit.at < OVERVIEW_TTL_MS) return hit.value !== undefined ? Promise.resolve(hit.value) : hit.promise;
+  const entry = { at: now, promise: compute(days), value: hit?.value };   // the last answer stays served while this computes
+  entry.promise.then((v) => { entry.value = v; }).catch(() => { if (overviewCache.get(days) === entry) overviewCache.delete(days); });
+  overviewCache.set(days, entry);
+  return entry.value !== undefined ? Promise.resolve(entry.value) : entry.promise;
+}
+export const _resetAnisOverview = () => overviewCache.clear();

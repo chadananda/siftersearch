@@ -22,7 +22,7 @@ export default async function docsRoutes(fastify) {
   /**
    * GET /docs — list under a named visibility policy.
    *   ?scope=live|canonical|withProse|canonicalWithProse|all   (default: live)
-   *   ?title=…&author=…&language=…&collection=…&sourceSite=canonical|<site>&fields=…&limit=&offset=
+   *   ?title=…&author=…&language=…&collection=…&sourceSite=canonical|<site>&fields=…&limit=&afterId=|offset=&count=
    *
    * An unknown scope is a 400 naming the valid ones, never a silent fallback: a caller that gets a policy it
    * did not ask for is exactly how tombstones end up in a listing.
@@ -36,6 +36,11 @@ export default async function docsRoutes(fastify) {
         language: q.language, sourceSite: q.sourceSite, fields: q.fields,
         ids: q.ids ? String(q.ids).split(',').map(Number).filter(Boolean) : undefined,
         limit: Number(q.limit) || 100, offset: Number(q.offset) || 0,
+        // keyset paging (?afterId= — pass the last page's next_after_id): each page a short indexed read. OFFSET re-evaluated
+        // every skipped row's prose EXISTS, and the total was recounted on EVERY page (10-21: 116 pages × 1–2 s on the search
+        // API's main thread). The total comes with the first page only, unless ?count=1 asks.
+        afterId: q.afterId != null && q.afterId !== '' ? Number(q.afterId) : undefined,
+        count: q.count != null ? !['0', 'false'].includes(String(q.count)) : !(Number(q.offset) > 0) && (q.afterId == null || q.afterId === ''),
       });
     } catch (err) { throw ApiError.badRequest(err.message); }
   });

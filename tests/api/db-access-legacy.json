@@ -71,7 +71,6 @@
   "api/routes/admin.js",
   "api/routes/anonymous.js",
   "api/routes/api-keys.js",
-  "api/routes/assistant-admin.js",
   "api/routes/assistant-mail.js",
   "api/routes/auth.js",
   "api/routes/book-notes.js",
