@@ -132,6 +132,15 @@ async function ocrLoop() {
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs (and MEDIA_JOBS, siftersearch-media's) — the main worker never claims (or requeues) them
-if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY });
+// the media service also watches Dewey's media drop folder (a dropped file starts the pipeline with no other step)
+async function mediaDropLoop() {
+  const { mediaDropPass } = await import('../lib/ops/media-jobs.js');
+  while (!isDraining()) {
+    try { const r = await mediaDropPass(); if (r.queued) logger.info(r, 'media drop folder: new files — media-scan queued'); }
+    catch (err) { logger.warn({ err: err.message }, 'media drop folder pass failed'); }
+    await nap(5 * 60_000);
+  }
+}
+if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY, loops: ONLY.includes('media-scan') ? [mediaDropLoop] : [] });
 else await runService({ name: process.env.name || 'siftersearch-reports', registry: REPORTS, lanes: LANES, laneWorkers: LANE_WORKERS,
   main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop] });

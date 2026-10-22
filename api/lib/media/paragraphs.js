@@ -95,3 +95,19 @@ export function assignSpeakers(segments = [], turns = []) {
   };
   return segments.map((sg) => ({ ...sg, spk: at(sg.s, sg.e), words: (sg.words || []).map((w) => (w.s != null && w.e != null ? { ...w, spk: at(w.s, w.e) } : w)) }));
 }
+
+/** Diarization FRAGMENTS folded away: a voice with under `minShare` of the talk time and under `minSeconds` is relabelled
+ *  as the voice of the turn before it (else after) — the pilot's 46-minute lecture came back as 94 "speakers". Pure. */
+export function smoothTurns(turns = [], { minSeconds = 20, minShare = 0.015 } = {}) {
+  const ts = [...turns].sort((a, b) => a.start - b.start);
+  const talk = new Map();
+  for (const t of ts) talk.set(t.speaker, (talk.get(t.speaker) || 0) + (t.end - t.start));
+  const total = [...talk.values()].reduce((a, b) => a + b, 0) || 1;
+  const keep = new Set([...talk].filter(([, s]) => s >= minSeconds || s / total >= minShare).map(([k]) => k));
+  if (!keep.size) return ts;
+  return ts.map((t, i) => {
+    if (keep.has(t.speaker)) return t;
+    const near = ts.slice(0, i).reverse().find((x) => keep.has(x.speaker)) || ts.slice(i + 1).find((x) => keep.has(x.speaker));
+    return { ...t, speaker: near ? near.speaker : t.speaker };
+  });
+}

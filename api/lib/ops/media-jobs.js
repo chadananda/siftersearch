@@ -106,3 +106,18 @@ export async function mediaVocabJob({ minMentions = 8, limit = 6000, file = proc
   await rename(`${file}.tmp`, file);
   return { names: names.length, file, top: names.slice(0, 10).map((n) => n.name) };
 }
+
+/** DEWEY'S MEDIA DROP FOLDER (Chad 10-21: "drop a file … and the pipeline runs"): one pass — a file in DEWEY_MEDIA_DIR not yet
+ *  known queues a media-scan of the folder, unless one is already waiting. → { new, queued }. Run every few minutes by the
+ *  media service (api/workers/reports-worker.js). */
+export async function mediaDropPass(deps = {}) {
+  const { list = mediaFiles, known = findMediaBySource, pending = async () => (await import('../repos/ops-report-repo.js')).pendingRuns('media-scan'), queue = enqueue } = deps;
+  const dir = deweyMediaDir();
+  const files = await list(dir);
+  const fresh = [];
+  for (const f of files) if (!(await known(f.path))) fresh.push(f.path);
+  if (!fresh.length) return { new: 0, queued: false };
+  const waiting = (await pending()).some((r) => (r.params?.roots || []).includes(dir) || (r.params?.paths || []).some((p) => fresh.includes(p)));
+  if (!waiting) await queue('media-scan', { roots: [dir], batch: 1 }, 'media-drop');
+  return { new: fresh.length, queued: !waiting };
+}

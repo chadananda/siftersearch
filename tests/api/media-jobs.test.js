@@ -55,3 +55,17 @@ describe('media-scan', () => {
     expect(store.items[0].state).toBe('held');
   });
 });
+
+describe('media drop folder', () => {
+  it('a new file queues one media-scan of the folder; nothing new or a scan already waiting queues nothing', async () => {
+    const { mediaDropPass } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn();
+    const list = async () => [{ path: '/tank/dewey-ingest/media/a.mp3' }, { path: '/tank/dewey-ingest/media/b.mp3' }];
+    expect(await mediaDropPass({ list, known: async (p) => p.endsWith('a.mp3'), pending: async () => [], queue })).toEqual({ new: 1, queued: true });
+    expect(queue).toHaveBeenCalledWith('media-scan', { roots: ['/tank/dewey-ingest/media'], batch: 1 }, 'media-drop');
+    expect(await mediaDropPass({ list, known: async () => true, pending: async () => [], queue: vi.fn() })).toEqual({ new: 0, queued: false });
+    const q2 = vi.fn();
+    expect(await mediaDropPass({ list, known: async () => false, pending: async () => [{ params: { roots: ['/tank/dewey-ingest/media'] } }], queue: q2 })).toEqual({ new: 2, queued: false });
+    expect(q2).not.toHaveBeenCalled();
+  });
+});

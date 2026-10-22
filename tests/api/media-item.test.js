@@ -114,7 +114,7 @@ describe('media item stage machine', () => {
     const d = fakes();
     d.tools.tool = vi.fn(async (sub, input, opts) => {
       if (sub === 'dfn') writeFileSync(opts.output, 'x');
-      if (sub === 'diarize') writeFileSync(opts.output, JSON.stringify({ turns: [{ start: 0, end: 4.5, speaker: 'S1' }, { start: 4.5, end: 600, speaker: 'S2' }] }));
+      if (sub === 'diarize') writeFileSync(opts.output, JSON.stringify({ turns: [{ start: 0, end: 4.5, speaker: 'S1' }, { start: 4.5, end: 300, speaker: 'S2' }, { start: 300, end: 330, speaker: 'S1' }, { start: 330, end: 600, speaker: 'S2' }] }));
       return { snr_db: 20 };
     });
     const r = await runItem({ id: 5, source_kind: 'file', source_ref: src }, {}, d);

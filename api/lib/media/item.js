@@ -9,7 +9,7 @@ import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
-import { toParagraphs, paragraphText, assignSpeakers } from './paragraphs.js';
+import { toParagraphs, paragraphText, assignSpeakers, smoothTurns } from './paragraphs.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT } from './rights.js';
@@ -193,7 +193,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       ]);
       const raw = await readJson(out);
       if (!multi) {
-        raw.turns = (await readJson(turnsFile, { turns: [] })).turns || [];
+        raw.turns = smoothTurns((await readJson(turnsFile, { turns: [] })).turns || []);
         raw.segments = assignSpeakers(raw.segments, raw.turns);
         await writeJson(out, raw);
       }

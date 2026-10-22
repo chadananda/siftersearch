@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { parseMediaPath, makeSlug, uniqueSlug, dateIn, slugify } from '../../api/lib/media/names.js';
 import { parseTime, parseRange, rangeFrom, clampClip, formatTime, rangeParam } from '../../api/lib/media/range.js';
 import { computePeaks, normalizePeaks } from '../../api/lib/media/peaks.js';
-import { toParagraphs, flattenWords, paragraphText, endsSentence, assignSpeakers } from '../../api/lib/media/paragraphs.js';
+import { toParagraphs, flattenWords, paragraphText, endsSentence, assignSpeakers, smoothTurns } from '../../api/lib/media/paragraphs.js';
 import { buildVocab, exactEdits, guardEdits, applyEdits, suspects, keyOf, soundsAlike, promptTerms } from '../../api/lib/media/vocab.js';
 
 describe('names', () => {
@@ -159,5 +159,12 @@ describe('vocabulary suspects (pilot findings)', () => {
     const v = buildVocab();
     const s = suspects([{ w: 'Baola', s: 0, e: 1 }, { w: 'says', s: 1, e: 2 }], v);
     expect(s[0].candidates).toContain('Bahá’u’lláh');
+  });
+});
+
+describe('diarization smoothing', () => {
+  it('folds fragment voices into their neighbours and keeps real ones', () => {
+    const turns = [{ start: 0, end: 600, speaker: 'S1' }, { start: 600, end: 605, speaker: 'S9' }, { start: 605, end: 900, speaker: 'S1' }, { start: 900, end: 960, speaker: 'S2' }];
+    expect(smoothTurns(turns).map((t) => t.speaker)).toEqual(['S1', 'S1', 'S1', 'S2']);
   });
 });

@@ -59,6 +59,9 @@ describe('speaker labels', () => {
   it('labels voice changes with the mapped name', () => {
     expect(speakerLabels(item.paragraphs, item.speakers)).toEqual(['Hartmut Grossmann', 'Questioner', 'Hartmut Grossmann']);
   });
+  it('unnamed voices get no label; a name shows only where it changes', () => {
+    expect(speakerLabels([{ spk: 'S1' }, { spk: 'S77' }, { spk: 'S1' }, { spk: 'S2' }], { S1: 'Hartmut Grossmann', S2: 'Questioner' })).toEqual(['Hartmut Grossmann', null, null, 'Questioner']);
+  });
   it('no labels with a single voice', () => {
     expect(speakerLabels([{ spk: 'S1' }, { spk: 'S1' }], {})).toEqual([null, null]);
   });

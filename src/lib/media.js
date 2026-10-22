@@ -85,14 +85,16 @@ export function paragraphSegments(nWords, quotes = []) {
   return segs;
 }
 
-/** Speaker label per paragraph: the name where the voice changes, null elsewhere (and everywhere when only one voice). */
+/** Speaker label per paragraph: the NAME where it changes, null elsewhere (and everywhere when only one voice). A voice the
+ *  description could not name (a diarization fragment, "S77") gets no label — the pilot showed a raw id on every few lines. */
 export function speakerLabels(paragraphs = [], speakers = {}) {
   const voices = new Set(paragraphs.map((p) => p.spk).filter(Boolean));
   if (voices.size < 2) return paragraphs.map(() => null);
   let prev = null;
   return paragraphs.map((p) => {
-    const label = p.spk && p.spk !== prev ? (speakers?.[p.spk] || p.spk) : null;
-    if (p.spk) prev = p.spk;
+    const name = p.spk ? speakers?.[p.spk] || null : null;
+    const label = name && name !== prev ? name : null;
+    if (name) prev = name;
     return label;
   });
 }
