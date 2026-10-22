@@ -11,6 +11,9 @@
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
   import RecordLabel from './listening/RecordLabel.svelte';
+  import ShareRow from './ShareRow.svelte';
+  import { CLIP_MAX_MS, clipPath } from '../../../api/lib/media/clip-text.js';
+  import { SITE } from '../../lib/share.js';
   import { eraVar, duration as dur } from '../../lib/media-listing.js';
 
   let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {} } = $props();
@@ -46,7 +49,8 @@
   let rate = $state(1);
   let playingPara = $state(-1);
   let sel = $state(null);                      // { start, end, x, y } of a transcript selection
-  let copied = $state(false);
+  let sharing = $state(false);   // the selection's share panel is open
+  const selUrl = $derived(sel ? `${SITE}${clipPath(item.slug, Math.floor(sel.start * 1000), Math.ceil(sel.end * 1000))}` : '');
 
   const now = () => (clip ? clip.start : 0) + (audio?.currentTime || 0);
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
@@ -209,14 +213,13 @@
       for (let k = 0; k < wordEls.length; k++) if (r.intersectsNode(wordEls[k])) { if (a < 0) a = k; b = k; } else if (a >= 0) break;
       if (a < 0) { sel = null; return; }
       const box = r.getBoundingClientRect();
-      sel = { start: flat.starts[a], end: Math.max(flat.ends[b], flat.starts[a] + 1), x: Math.min(Math.max(8, box.left), window.innerWidth - 280), y: Math.min(box.bottom + 8, window.innerHeight - 64) };
-      copied = false;
+      // snap to the words selected, capped at 3 minutes (a clip is ≤ 180 s): the clip URL is stateless
+      while (b > a && flat.ends[b] - flat.starts[a] > CLIP_MAX_MS / 1000) b--;
+      const words = [];
+      for (let k = a; k <= b; k++) { const el = wordEls[k]; if (el && !el.classList.contains('hidden')) words.push(el.textContent); }
+      sel = { start: flat.starts[a], end: Math.max(flat.ends[b], flat.starts[a] + 1), text: words.join(' '), x: Math.min(Math.max(8, box.left), window.innerWidth - 340), y: Math.min(box.bottom + 8, window.innerHeight - 64) };
+      sharing = false;
     }, 150);
-  }
-  async function copyLink() {
-    if (!sel) return;
-    const url = `${location.origin}/media/${item.slug}?t=${rangeParam(sel.start, sel.end)}`;
-    try { await navigator.clipboard.writeText(url); copied = true; } catch { window.prompt('Copy this link', url); }
   }
   function playSelection() {
     if (!sel) return;
@@ -462,16 +465,22 @@
   </div>
 {/if}
 
-<!-- selection → copy link -->
+<!-- selection → share this clip (a stateless /media/<slug>/clip/<startMs>-<endMs> page) -->
 {#if sel}
-  <div class="fixed z-40 flex gap-1 rounded-xl bg-radio-walnut-deep p-1 shadow-lg" style={`left:${sel.x}px;top:${sel.y}px`}>
-    <button type="button" class="min-h-10 rounded-lg px-3 text-sm text-radio-on-dark hover:bg-radio-walnut" onmousedown={(e) => e.preventDefault()} onclick={copyLink}>
-      {copied ? 'Link copied' : 'Copy link to this passage'}
-    </button>
-    {#if canPlay}
-      <button type="button" class="min-h-10 rounded-lg px-3 text-sm font-semibold text-radio-amber hover:bg-radio-walnut" onmousedown={(e) => e.preventDefault()} onclick={playSelection}>
-        ▶ {formatTime(sel.start)}–{formatTime(sel.end)}
+  <div class="selpop fixed z-40 rounded-xl bg-radio-walnut-deep p-1 shadow-lg" style={`left:${sel.x}px;top:${sel.y}px`} role="dialog" aria-label="Share this clip">
+    <div class="flex gap-1">
+      <button type="button" class="min-h-10 rounded-lg px-3 text-sm font-semibold text-radio-on-dark hover:bg-radio-walnut" onmousedown={(e) => e.preventDefault()} onclick={() => (sharing = !sharing)} aria-expanded={sharing}>
+        Share this clip · {formatTime(sel.start)}–{formatTime(sel.end)}
       </button>
+      {#if canPlay}
+        <button type="button" class="min-h-10 rounded-lg px-3 text-sm font-semibold text-radio-amber hover:bg-radio-walnut" onmousedown={(e) => e.preventDefault()} onclick={playSelection} aria-label={`Play ${formatTime(sel.start)} to ${formatTime(sel.end)}`}>▶</button>
+      {/if}
+    </div>
+    {#if sharing}
+      <div class="px-2 pb-2 pt-1" role="presentation" onmousedown={(e) => e.preventDefault()}>
+        <ShareRow url={selUrl} text={`“${sel.text.length > 200 ? `${sel.text.slice(0, sel.text.lastIndexOf(' ', 200))}…` : sel.text}”${item.speaker ? ` — ${item.speaker}` : ''}`} title={item.title} tone="dark" compact />
+        <a href={selUrl} class="mt-2 inline-block text-sm font-semibold text-radio-on-dark underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">Open the page for this clip</a>
+      </div>
     {/if}
   </div>
 {/if}

@@ -22,3 +22,13 @@ export function momentShareText(m, max = 200) {
   if (q.length > max) q = `${q.slice(0, q.lastIndexOf(' ', max))}…`;
   return `“${q}”${m.speaker ? ` — ${m.speaker}` : ''}`;
 }
+
+/** The post that goes with a video short (YouTube Shorts / Reels / TikTok): quote, who and where, the link back to the
+ *  full talk at that time, hashtags. */
+export function shortPostText({ text = '', speaker = '', title = '', year = null, talkUrl = '' }, max = 300) {
+  let q = String(text).replace(/\s+/g, ' ').trim();
+  if (q.length > max) q = `${q.slice(0, q.lastIndexOf(' ', max))}…`;
+  const who = [speaker, title ? `“${title}”` : '', year].filter(Boolean).join(', ');
+  const tags = ['#Bahai', '#BahaiFaith', speaker ? `#${speaker.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z]/g, '')}` : '', '#Shorts'].filter((t) => t && t !== '#').join(' ');
+  return [`“${q}”`, who ? `— ${who}` : '', talkUrl ? `Hear the whole talk: ${talkUrl}` : '', tags].filter(Boolean).join('\n\n');
+}

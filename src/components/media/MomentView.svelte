@@ -1,5 +1,5 @@
 <script>
-  // /media/<slug>/m/<key> — one MOMENT as a shareable page in the Listening Room style: the quote set large, the speaker on a
+  // /media/<slug>/m/<key> — one MOMENT (or, kind 'clip', any span: /media/<slug>/clip/<startMs>-<endMs>) as a shareable page in the Listening Room style: the quote set large, the speaker on a
   // record, the excerpt's own waveform with a play button (our aligned audio, exactly that span), "hear it in context",
   // share row, the cross-references the excerpt touches (citation = link), and the way back: the talk, its other moments,
   // the speaker's other talks, the library. Deps: media-preview (one sound at a time), media-listing, share.
@@ -13,12 +13,14 @@
   import { momentPath, momentShareText, SITE } from '../../lib/share.js';
   import { formatTime } from '../../../api/lib/media/range.js';
 
-  let { m, item = null, speaker = null, others = [], sameVoice = [], speakersByKey = {} } = $props();
+  let { m, item = null, speaker = null, others = [], sameVoice = [], speakersByKey = {}, kind = 'moment', pageUrl = null } = $props();
+  import ShortMaker from './ShortMaker.svelte';
 
   const t0 = m.t0_ms / 1000, t1 = m.t1_ms / 1000;
   const secs = Math.max(1, Math.round(t1 - t0));
   const tint = eraVar(m.year);
-  const url = `${SITE}${momentPath(m.slug, m.key)}`;
+  const url = pageUrl || `${SITE}${momentPath(m.slug, m.key)}`;
+  const contextHref = `/media/${m.slug}?t=${Math.floor(m.t0_ms / 1000)}-${Math.ceil(m.t1_ms / 1000)}${m.key ? `#moment-${m.key}` : ''}`;
   const shareText = momentShareText(m);
   // the row the shared preview player understands: the talk, the window, its audio (full) or clip permission
   const row = { s: m.slug, t: m.title, sp: m.speaker, y: m.year, hl: [t0, t1], au: item?.audio && item?.rights?.playback === 'full' ? item.audio : null };
@@ -65,10 +67,10 @@
       </div>
 
       <!-- the excerpt on the dial glass -->
-      <section class="dial mt-8 rounded-2xl bg-radio-dial p-3 sm:p-4" aria-label="This moment's audio">
+      <section class="dial mt-8 rounded-2xl bg-radio-dial p-3 sm:p-4" aria-label={`This ${kind}'s audio`}>
         <div class="flex items-center gap-4">
           {#if canPlay}
-            <button type="button" class="bigplay" onclick={() => playExcerpt(row, speaker ? { n: speaker.n, p: speaker.p } : null)} aria-label={playingThis ? 'Pause this moment' : `Hear this moment (${secs} seconds)`}>
+            <button type="button" class="bigplay" onclick={() => playExcerpt(row, speaker ? { n: speaker.n, p: speaker.p } : null)} aria-label={playingThis ? `Pause this ${kind}` : `Hear this ${kind} (${secs} seconds)`}>
               {#if playingThis}
                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
               {:else}
@@ -84,16 +86,17 @@
       </section>
 
       <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-        <a href={`/media/${m.slug}?t=${Math.floor(t0)}-${Math.ceil(t1)}#moment-${m.key}`} class="ctx">Hear it in context: {m.title} at {formatTime(t0)}</a>
+        <a href={contextHref} class="ctx">Hear it in context: {m.title} at {formatTime(t0)}</a>
         {#if ytAt}<a href={ytAt} target="_blank" rel="noopener" class="ctx">Watch on YouTube{yt.channel ? ` (${yt.channel})` : ''} from {formatTime(t0)}</a>{/if}
       </div>
       <div class="mt-5"><ShareRow {url} text={shareText} title={`${m.speaker || ''} — ${m.title}`} tone="dark" /></div>
+      <ShortMaker slug={m.slug} startMs={m.t0_ms} endMs={m.t1_ms} text={m.text} speaker={m.speaker} title={m.title} year={m.year} talkUrl={`${SITE}${contextHref}`} pageUrl={url} />
     </div>
   </header>
 
   {#if quotes.length || xrefs.length}
     <section class="mx-auto mt-12 max-w-3xl" aria-labelledby="refs-h">
-      <h2 id="refs-h" class="font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">The Writings this moment touches</h2>
+      <h2 id="refs-h" class="font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">The Writings this {kind} touches</h2>
       {#each quotes as q, i (i)}
         <aside class="insert paper"><blockquote>{q.excerpt}</blockquote><p class="cite">— <a href={q.url} target="_blank" rel="noopener">{q.cite || 'the source passage'}</a></p></aside>
       {/each}
@@ -109,7 +112,7 @@
 
   {#if others.length}
     <section class="mt-14" aria-labelledby="more-h">
-      <h2 id="more-h" class="font-marquee text-3xl text-radio-ink sm:text-4xl">More moments from {m.title}</h2>
+      <h2 id="more-h" class="font-marquee text-3xl text-radio-ink sm:text-4xl">{kind === 'clip' ? 'Moments' : 'More moments'} from {m.title}</h2>
       <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {#each others as o (o.key)}
           <li><a href={momentPath(m.slug, o.key)} class="ticket"><span class="t">{formatTime(o.t0_ms / 1000)}</span><span class="q">“{o.text}”</span></a></li>

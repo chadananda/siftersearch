@@ -11,6 +11,9 @@
   import Eras from './Eras.svelte';
   import MiniPlayer from './MiniPlayer.svelte';
   import RecordLabel from './RecordLabel.svelte';
+  import ShareRow from '../ShareRow.svelte';
+  import { clipPath } from '../../../../api/lib/media/clip-text.js';
+  import { SITE } from '../../../lib/share.js';
   import { media } from '../../../lib/api.js';
   import { snippetAround, groupHits, fold, PRESETS, DECADES, buildSearch, searchItems, planLayout, eras as erasOf, topTopics, decadeOf } from '../../../lib/media-listing.js';
   import { formatTime } from '../../../../api/lib/media/range.js';
@@ -35,6 +38,8 @@
   let speaker = $state(initialState.speaker || '');
   let reduced = $state(false);
   let limit = $state(30);
+  let shareHit = $state(null);   // the hit whose share row is open
+  const hitClip = (h) => `${SITE}${clipPath(h.slug, Math.floor(h.t0 * 1000), Math.ceil(Math.min(h.t1 && h.t1 > h.t0 ? h.t1 : h.t0 + 30, h.t0 + 90) * 1000))}`;
   let hits = $state(null), hitQuery = $state(''), hitItems = $state(new Map()), openTalks = $state(new Set());
   // transcript passages grouped by talk (≤ 2 shown per talk until "more from this talk"), each identified by its voice
   const heard = $derived(hits ? groupHits(hits, 8) : []);
@@ -195,7 +200,14 @@
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>{formatTime(h.t0)}
                   </button>
                   <p class="heard-text">{sn.lead}{#each sn.parts as p, j (j)}{#if p.hit}<mark>{p.t}</mark>{:else}{p.t}{/if}{/each}{sn.tail}</p>
+                  <button type="button" class="heard-share" aria-expanded={shareHit === `${g.slug}:${h.t0}`} aria-label={`Share this passage from ${t.title}`}
+                    onclick={() => (shareHit = shareHit === `${g.slug}:${h.t0}` ? null : `${g.slug}:${h.t0}`)}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4"/></svg>
+                  </button>
                 </div>
+                {#if shareHit === `${g.slug}:${h.t0}`}
+                  <div class="mt-2 pl-1"><ShareRow url={hitClip(h)} text={`“${sn.parts.map((p) => p.t).join('').trim()}”${t.sp ? ` — ${t.sp}` : ''}`} title={t.title} compact /></div>
+                {/if}
               {/each}
               {#if g.hits.length > 2 && !openTalks.has(g.slug)}
                 <button type="button" class="heard-more" onclick={() => { openTalks = new Set([...openTalks, g.slug]); }}>{g.hits.length - 2} more from this talk</button>
@@ -275,6 +287,10 @@
   .heard-text { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 0.95rem; line-height: 1.55; }
   .heard-text mark { background: transparent; color: inherit; text-decoration: underline; text-decoration-color: var(--radio-amber); text-decoration-thickness: 2px; text-underline-offset: 3px;
     box-shadow: inset 0 -0.5em 0 var(--radio-brass-soft); border-radius: 2px; }
+  .heard-share { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 9999px; color: var(--radio-ink-soft); }
+  .heard-share svg { width: 1rem; height: 1rem; }
+  .heard-share:hover, .heard-share[aria-expanded='true'] { color: var(--radio-amber); box-shadow: inset 0 0 0 1px var(--radio-line); }
+  .heard-share:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .heard-more { margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--radio-ink-soft); text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px; }
   .heard-more:hover { color: var(--radio-amber); }
   .heard-t:focus-visible, .heard-title:focus-visible, .heard-more:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }

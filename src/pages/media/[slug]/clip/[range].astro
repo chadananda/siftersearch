@@ -1,0 +1,65 @@
+---
+// /media/<slug>/clip/<startMs>-<endMs> — any span of a talk (≤ 3 min) as a shareable page: STATELESS (the URL is the clip;
+// no database row), canonical, SSR. The words come from the talk's clean transcript; the page is the moment page's
+// (MomentView, kind 'clip'); og:image = GET /api/media/<slug>/card/<startMs>-<endMs>.jpg (edge-cached).
+import Layout from '../../../../layouts/Layout.astro';
+import NavBar from '../../../../components/common/NavBar.svelte';
+import MomentView from '../../../../components/media/MomentView.svelte';
+import { relatedTalks } from '../../../../lib/media-listing.js';
+import { SITE } from '../../../../lib/share.js';
+import { parseClipRange, clipText, clipPath } from '../../../../../api/lib/media/clip-text.js';
+import { formatTime } from '../../../../../api/lib/media/range.js';
+
+export const prerender = false;
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
+const { slug, range } = Astro.params;
+const get = (path, ms = 12000) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+
+const r = parseClipRange(range);
+const [item, index] = r ? await Promise.all([get(`/api/media/${encodeURIComponent(slug || '')}`), get('/api/media/index', 6000)]) : [null, null];
+const text = item && r ? clipText(item.paragraphs, r.startMs, r.endMs) : '';
+if (r && item && `${r.startMs}-${r.endMs}` !== range) return Astro.redirect(clipPath(slug, r.startMs, r.endMs), 301);   // over 3 min: the capped clip
+const ok = !!(item && text);
+if (!ok) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', ok ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=60');
+
+const me = index?.items?.find((x) => x.s === item?.slug);
+const spk = index?.speakers?.find((s) => s.k === me?.k) || null;
+const speaker = spk ? { k: spk.k, n: spk.n, p: spk.p } : null;
+const m = ok ? { key: null, slug: item.slug, title: item.title, speaker: item.speaker, speaker_key: me?.k || null, year: item.year, t0_ms: r.startMs, t1_ms: r.endMs, text, context: null } : null;
+const others = (item?.moments || []).slice(0, 6);
+const sameVoice = ok && index ? relatedTalks(index.items, item.slug, 6) : [];
+const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => sameVoice.some((x) => x.k === s.k)).map((s) => [s.k, { n: s.n, p: s.p }]));
+
+const short = (s, n) => (s.length > n ? `${s.slice(0, s.lastIndexOf(' ', n))}…` : s);
+const url = ok ? `${SITE}${clipPath(item.slug, r.startMs, r.endMs)}` : null;
+const title = ok ? `“${short(text, 90)}” — ${item.speaker || 'The Listening Room'}` : 'Clip not found — SifterSearch Media';
+const description = ok ? `From “${item.title}”${item.speaker ? ` by ${item.speaker}` : ''}${item.year ? `, ${item.year}` : ''}, at ${formatTime(r.startMs / 1000)}. Hear the clip and the whole talk with its searchable transcript.` : 'This clip could not be found.';
+const image = ok ? `${SITE}/api/media/${encodeURIComponent(item.slug)}/card/${r.startMs}-${r.endMs}.jpg` : undefined;
+const ld = ok ? { '@context': 'https://schema.org', '@type': 'Quotation', text, url, image, ...(item.speaker ? { creator: { '@type': 'Person', name: item.speaker } } : {}),
+  isPartOf: { '@type': 'AudioObject', name: item.title, url: `${SITE}/media/${item.slug}` } } : null;
+---
+
+<Layout {title} {description} {image} type={ok ? 'article' : 'website'} noindex={!ok}>
+  <Fragment slot="head">
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
+    {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
+  </Fragment>
+  <NavBar client:idle currentPage="media" />
+  <main class="listening-room bg-radio-room text-radio-ink">
+    <div class="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
+      {ok ? (
+        <MomentView client:load {m} {item} {speaker} {others} {sameVoice} {speakersByKey} kind="clip" pageUrl={url} />
+      ) : (
+        <section class="py-24 text-center">
+          <p class="font-dial text-7xl font-extrabold text-radio-amber">404</p>
+          <h1 class="mt-4 font-marquee text-3xl text-radio-ink">This clip is not on the air</h1>
+          <p class="mt-3 text-radio-ink-soft">The talk or the time range could not be found.</p>
+          <a href={item ? `/media/${item.slug}` : '/media'} class="mt-6 inline-block rounded-full bg-radio-amber px-6 py-3 font-dial text-lg font-bold uppercase tracking-wider text-radio-walnut-deep">{item ? 'Go to the talk' : 'Back to the Listening Room'}</a>
+        </section>
+      )}
+    </div>
+  </main>
+</Layout>

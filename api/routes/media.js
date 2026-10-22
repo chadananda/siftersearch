@@ -13,6 +13,7 @@ import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
 import { buildIndex, shapeSpeakers } from '../lib/media/listing-index.js';
+import { parseClipRange, clipText } from '../lib/media/clip-text.js';
 import { stripMdLinks } from '../lib/media/render.js';
 import { tmpdir } from 'os';
 import { writeFile, rename } from 'fs/promises';
@@ -299,6 +300,30 @@ export default async function mediaRoutes(fastify) {
   });
 
   // a signed clip URL for a range of a 'clips' item (the player asks per paragraph / range)
+  // a CLIP's quote card (og:image for /media/<slug>/clip/<startMs>-<endMs>): the words of that span from the clean
+  // transcript, set like a moment card; stateless, edge-cached for a week
+  fastify.get('/:slug/card/:range', async (req, reply) => {
+    const r = parseClipRange(req.params.range);
+    const it = r && await getMediaBySlug(req.params.slug);
+    if (!r || !it || it.state !== 'done' || !it.dir) return reply.code(404).send({ error: 'NotFound' });
+    const ck = `${it.slug}:${r.startMs}-${r.endMs}:${it.updated_at}`;
+    let buf = momentCards.get(ck);
+    if (!buf) {
+      const tr = await readJson(join(it.dir, 'transcript.json'));
+      const text = clipText(tr?.paragraphs || [], r.startMs, r.endMs);
+      if (!text) return reply.code(404).send({ error: 'NotFound' });
+      const thumb = it.speaker_key ? speakerThumb(await getSpeaker(it.speaker_key)) : null;
+      let photo = null;
+      if (thumb?.url) { try { const f = await fetch(`${thumb.url}&tr=w-360,h-360,fo-face,q-85,f-jpeg`, { signal: AbortSignal.timeout(8000) }); if (f.ok) photo = Buffer.from(await f.arrayBuffer()); } catch { /* initials */ } }
+      const { renderMomentCard } = await import('../lib/media/moment-card.js');
+      buf = await renderMomentCard({ text, speaker: it.speaker, title: it.title, year: it.year }, photo);
+      if (momentCards.size > 300) momentCards.clear();
+      momentCards.set(ck, buf);
+    }
+    reply.header('Content-Type', 'image/jpeg').header('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+    return reply.send(buf);
+  });
+
   fastify.get('/:slug/clip-url', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
     if (!it || it.state !== 'done') return reply.code(404).send({ error: 'NotFound' });
