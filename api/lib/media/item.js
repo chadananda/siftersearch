@@ -80,9 +80,9 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'archive') {
       const isYt = item.source_kind === 'youtube';
-      let src = item.source_ref, probe, info = null, hints;
+      let src = item.source_ref, probe, info = null, hints, download = null;
       if (isYt) {
-        info = await d.youtube.youtubeInfo(item.source_ref);
+        info = await (d.youtube.youtubeInfoAny || d.youtube.youtubeInfo)(item.source_ref);
         hints = { speaker: null, title: info.title, date: info.upload_date, year: info.upload_date ? Number(info.upload_date.slice(0, 4)) : null, collection: info.channel };
       } else {
         probe = await tools.ffprobe(src);
@@ -110,8 +110,13 @@ export async function runItem(item, opts = {}, deps = {}) {
       await mkdir(join(dir, 'original'), { recursive: true });
       let original;
       if (isYt) {
-        original = await d.youtube.youtubeAudio(item.source_ref, join(dir, 'original'));
+        const got = d.youtube.fetchAudio ? await d.youtube.fetchAudio(item.source_ref, join(dir, 'original'))
+          : { path: await d.youtube.youtubeAudio(item.source_ref, join(dir, 'original')), route: 'yt-dlp' };
+        original = got.path;
+        download = { route: got.route, sha256: got.sha256 || null, usd: got.usd || 0, run_id: got.run_id || null, tried: got.tried || [], at: d.now() };
+        if (got.usd) { spend.usd += got.usd; spend.download_usd = (spend.download_usd || 0) + got.usd; }
         probe = await tools.ffprobe(original);
+        if (!info.duration_s) info.duration_s = probe.duration_s;
         await chmod(original, 0o444).catch(() => {});
       } else {
         // a HARD LINK shares the source's inode: never chmod it (that would change the source file too); a copy is made read-only
@@ -122,7 +127,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       meta = { ...meta, id: item.id, slug: finalSlug, title, speaker, date: named.date || hints.date || null, year, place: named.place || null, event: named.event || null,
         kind: named.kind || null, language_hint: named.language_hint || null, tradition, collection, series: hints.series || null, part: hints.part || null,
         duration_s: probe.duration_s, has_video: !!probe.has_video,
-        source: isYt ? { kind: 'youtube', url: info.url, youtube_id: info.youtube_id, channel: info.channel, channel_id: info.channel_id, channel_url: info.channel_url, upload_date: info.upload_date, title: info.title, license: info.license }
+        source: isYt ? { kind: 'youtube', download, url: info.url, youtube_id: info.youtube_id, channel: info.channel, channel_id: info.channel_id, channel_url: info.channel_url, upload_date: info.upload_date, title: info.title, license: info.license }
           : { kind: 'file', path: src, sha256: sha, bytes: (await stat(original)).size, probe },
         original: relative(dir, original), version: 1 };
       // every YouTube channel gets its own permission record (Chad can switch one to clips/search if its owner objects)
