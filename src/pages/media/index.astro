@@ -78,6 +78,8 @@ const listLd = {
   <Fragment slot="head">
     <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
+    <!-- the hero's pull-quote (the page's largest text) is set in Caslon italic: preloaded so it is never discovered late -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-italic-400-latin.woff2" crossorigin />
     {heroPic && <link rel="preload" as="image" href={heroPic.src} imagesrcset={heroPic.srcset} />}
     <script type="application/ld+json" set:html={JSON.stringify(listLd)} />
   </Fragment>
@@ -88,7 +90,7 @@ const listLd = {
         <p class="my-16 rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">The Listening Room could not reach the library just now ({fetchError}). Please try again in a moment.</p>
       ) : (
         <div class="room"><OnAir client:load highlights={initial.highlights} speakersByKey={heroSpeakers} stats={initial.stats} /></div>
-        <ListeningRoom client:load {initial} {initialState} />
+        <ListeningRoom client:idle {initial} {initialState} />
       )}
     </div>
   </main>

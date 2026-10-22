@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T16:40:17.338Z",
+  "generated": "2026-10-22T16:50:52.001Z",
   "entries": [
+    {
+      "hash": "acb80e7e",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Status — text fixes, audiogram shorts",
+      "scope": "media"
+    },
+    {
+      "hash": "fa97640f",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "/media hero as its own small island; home page reserves its live content's space (CLS)",
+      "scope": null
+    },
     {
       "hash": "7e45d737",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "A compact spine band at the foot of each box — English and originals, best first",
       "scope": "sourcehunt"
-    },
-    {
-      "hash": "9b3baca7",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Every background DeepSeek call waits for the half-price hours",
-      "scope": "cost"
-    },
-    {
-      "hash": "b1177440",
-      "date": "2026-10-13",
-      "type": "Performance",
-      "description": "Bulk ingest rests ½× its work overnight (2× by day) — heavy work belongs to the quiet window",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "acb80e7e",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Status — text fixes, audiogram shorts",
+        "scope": "media"
+      },
+      {
+        "hash": "fa97640f",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "/media hero as its own small island; home page reserves its live content's space (CLS)",
+        "scope": null
+      },
       {
         "hash": "7e45d737",
         "date": "2026-10-22",
@@ -7007,20 +7021,6 @@
         "type": "New",
         "description": "A compact spine band at the foot of each box — English and originals, best first",
         "scope": "sourcehunt"
-      },
-      {
-        "hash": "9b3baca7",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Every background DeepSeek call waits for the half-price hours",
-        "scope": "cost"
-      },
-      {
-        "hash": "b1177440",
-        "date": "2026-10-13",
-        "type": "Performance",
-        "description": "Bulk ingest rests ½× its work overnight (2× by day) — heavy work belongs to the quiet window",
-        "scope": "ops"
       }
     ]
   }
