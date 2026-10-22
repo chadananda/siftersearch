@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-22T15:25:44.433Z",
+  "generated": "2026-10-22T15:32:33.826Z",
   "entries": [
+    {
+      "hash": "93ad2247",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Moment links are canonical — the API emits /media/<slug>/m/<key> (the moment pages); the old /media/<slug>?m=<key> redirects there (301); no stored page embedded moment links, nothing to re-render",
+      "scope": "media"
+    },
+    {
+      "hash": "2ae81e96",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Talk page + moments design notes and measurements",
+      "scope": "media"
+    },
+    {
+      "hash": "4a93aadd",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Version the moment card URL (?v=) so a redesigned card is not held at the edge for a week",
+      "scope": "media"
+    },
     {
       "hash": "4c31a2a3",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "Docs",
       "description": "Reading-guide reply semantics + web depth layer (Perplexity, Parallel.ai)",
       "scope": "worklist"
-    },
-    {
-      "hash": "05473a2b",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Reading-guide subject format [Reading] <Book> #<ch>.<¶> - <topic>",
-      "scope": "worklist"
-    },
-    {
-      "hash": "5a296756",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Anís reading guide spec (Chad 10-12) — next build",
-      "scope": "worklist"
-    },
-    {
-      "hash": "51ebfde5",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Section-author replaces reader placeholders ('the editor or reporter'); force corrects a named misattribution",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "93ad2247",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Moment links are canonical — the API emits /media/<slug>/m/<key> (the moment pages); the old /media/<slug>?m=<key> redirects there (301); no stored page embedded moment links, nothing to re-render",
+        "scope": "media"
+      },
+      {
+        "hash": "2ae81e96",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Talk page + moments design notes and measurements",
+        "scope": "media"
+      },
+      {
+        "hash": "4a93aadd",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Version the moment card URL (?v=) so a redesigned card is not held at the edge for a week",
+        "scope": "media"
+      },
       {
         "hash": "4c31a2a3",
         "date": "2026-10-22",
@@ -7002,27 +7023,6 @@
         "type": "Docs",
         "description": "Reading-guide reply semantics + web depth layer (Perplexity, Parallel.ai)",
         "scope": "worklist"
-      },
-      {
-        "hash": "05473a2b",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Reading-guide subject format [Reading] <Book> #<ch>.<¶> - <topic>",
-        "scope": "worklist"
-      },
-      {
-        "hash": "5a296756",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Anís reading guide spec (Chad 10-12) — next build",
-        "scope": "worklist"
-      },
-      {
-        "hash": "51ebfde5",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Section-author replaces reader placeholders ('the editor or reporter'); force corrects a named misattribution",
-        "scope": "ops"
       }
     ]
   }
