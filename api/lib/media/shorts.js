@@ -224,7 +224,10 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
   shape(clip, total, 0, 0, rect(W, H), '&H0D1014&', { layer: 4, alpha: '10' });
   at('End', clip, total, 'Hear the full talk', cx, s(sq ? 300 : 420), 5, 5);
   at('Small', clip, total, `${esc(speaker)}  ·  ${titleLine}`, cx, s(sq ? 380 : 520), 5, 5);
-  at('End', clip, total, `{\\fs${sq ? 40 : 52}\\c${C.amber}}${esc(url)}`, cx, s(sq ? 450 : 620), 5, 5);
+  // a long address goes on two lines (the domain, then the path), smaller; a moment's /m/<key> fits on one
+  const m2 = url.length > 30 ? /^(siftersearch\.com\/[^/]+\/)(.+)$/.exec(url) : null;
+  const shown = m2 ? `{\\fs${sq ? 30 : 38}\\c${C.amber}}${esc(m2[1])}\\N${esc(m2[2])}` : `{\\fs${sq ? 40 : 52}\\c${C.amber}}${esc(url)}`;
+  at('End', clip, total, shown, cx, s(sq ? 450 : 620), 5, 5);
   at('Brand', clip, total, `THE LISTENING ROOM  ·  ${CALL_SIGN}`, cx, s(sq ? 1000 : 1330), 5, 5);
   return `[Script Info]\nScriptType: v4.00+\nPlayResX: ${W}\nPlayResY: ${H}\nWrapStyle: 2\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\n`
     + 'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'

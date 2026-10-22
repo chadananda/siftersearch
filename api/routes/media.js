@@ -147,13 +147,13 @@ export default async function mediaRoutes(fastify) {
     try { plan = await planShort(it, b); } catch (err) { return reply.code(400).send({ error: err.message }); }
     const { existsSync: ex } = await import('fs');
     const files = { mp4: plan.files.mp4, srt: plan.files.srt, vtt: plan.files.vtt, post: plan.files.post };
-    if (ex(join(it.dir, 'shorts', `${plan.key}.mp4`))) return { status: 'done', key: plan.key, template: plan.template, ...files };
     const internal = req.headers['x-internal-key'] && req.headers['x-internal-key'] === process.env.DEPLOY_SECRET;
+    if (!(internal && b.force) && ex(join(it.dir, 'shorts', `${plan.key}.mp4`))) return { status: 'done', key: plan.key, template: plan.template, ...files };
     if (!plan.moment && !internal) return reply.code(403).send({ error: 'only a talk\'s moments can be rendered on request', moments: `/api/media/${it.slug}` });
     const { pendingRuns, enqueue } = await import('../lib/repos/ops-report-repo.js');
     const pending = await pendingRuns('media-short');
     if (!internal && pending.length >= Number(process.env.SHORT_QUEUE || 10)) return reply.code(429).send({ error: 'busy — try again in a few minutes' });
-    const run = await enqueue('media-short', { slug: it.slug, start: plan.range.start, end: plan.range.end, format: plan.range.format, ...(b.template ? { template: b.template } : {}) }, internal ? 'internal' : 'public');
+    const run = await enqueue('media-short', { slug: it.slug, start: plan.range.start, end: plan.range.end, format: plan.range.format, ...(b.template ? { template: b.template } : {}), ...(internal && b.force ? { force: true } : {}) }, internal ? 'internal' : 'public');
     return reply.code(202).send({ status: run.status, run: run.id, poll: `/api/media/shorts/run/${run.id}`, key: plan.key, template: plan.template, ...files });
   });
   fastify.get('/shorts/run/:id', async (req, reply) => {

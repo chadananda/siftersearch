@@ -105,3 +105,12 @@ describe('the short job', () => {
     expect(canServeFile('full', 'shorts/../x.mp4')).toBe(false);
   });
 });
+
+describe('end card address', () => {
+  it('a long address breaks after the section; a moment address stays on one line', () => {
+    const long = buildAss({ template: 'minimal', words: W('one two three.'), speaker: 'S', title: 'T', url: 'siftersearch.com/media/sears-covenant-breaking-part-3?t=234', clip: 3 });
+    expect(long).toContain('siftersearch.com/media/\\Nsears-covenant-breaking-part-3?t=234');
+    const short = buildAss({ template: 'minimal', words: W('one two three.'), speaker: 'S', title: 'T', url: 'siftersearch.com/m/Ab12cd34', clip: 3 });
+    expect(short).toMatch(/\\fs52\\c&H3AB2F2&\}siftersearch\.com\/m\/Ab12cd34/);
+  });
+});
