@@ -178,11 +178,19 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'transcribe') {
       const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.asr_input);
-      const langs = v?.languages || [];
-      // an INTERPRETED talk: the probe excerpts heard more than one language (Furútan in Persian + English; Chad Jones in
-      // English + Romanian) → per-speaker-block language (media_tool.py --lang multi)
+      // LANGUAGE ID on six unforced excerpts (the probe ran with the hinted language forced, so it always "heard" English —
+      // 10-21: Furútan's interpreted talk looked English-only). Two languages heard clearly → an INTERPRETED talk
+      // (Persian + English, Chad's English + Romanian) → per-speaker-block language (media_tool.py --lang multi)
+      if (!meta.languages) {
+        const starts = probeStarts(meta.duration_s, 6, 30).join(',');
+        const li = await tools.asr('langid', join(dir, meta.original), { model: 'large-v3-turbo', starts }, { stop }).catch(() => null);
+        meta.languages = (li?.excerpts || []).map((e) => ({ at: e.start, language: e.language, prob: e.prob }));
+      }
+      const heard = meta.languages.filter((x) => x.prob >= 0.5).map((x) => x.language);
+      const langs = heard.length ? heard : (v?.languages || []);
       const mixed = new Set(langs.filter(Boolean)).size > 1;
-      const lang = opts.lang || (mixed ? 'multi' : (/^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : (langs[0] || '')));
+      const top = Object.entries(langs.reduce((a, l) => ({ ...a, [l]: (a[l] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1])[0]?.[0];
+      const lang = opts.lang || (mixed ? 'multi' : (top || (/^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '')));
       const prompt = `${meta.title}${meta.speaker ? ` — a talk by ${meta.speaker}` : ''}. ${promptTerms({ title: meta.title, speaker: meta.speaker }, vocab).join(', ')}.`;
       const th = await threads();
       const out = join(dir, 'transcript.raw.json');

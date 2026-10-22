@@ -10,6 +10,7 @@ import { runItem, STAGES } from '../../api/lib/media/item.js';
 import { buildVocab } from '../../api/lib/media/vocab.js';
 
 let root, src;
+const store = { langs: null };
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'media-'));
   mkdirSync(join(root, "Baha'i", 'talks', 'Grossman Various'), { recursive: true });
@@ -28,6 +29,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     tool: vi.fn(async (sub, input, opts) => { if (sub === 'dfn') touch(opts.output); return { snr_db: 20, hum50_db: 0, hum60_db: 0 }; }),
     asr: vi.fn(async (sub, input, opts) => {
       if (sub === 'probe') return { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en', text: 'x' }] };
+      if (sub === 'langid') return { excerpts: (store.langs || ['en', 'en']).map((language, i) => ({ start: i * 60, language, prob: 0.9 })) };
       writeFileSync(opts.output, JSON.stringify({ language: 'en', model: 'large-v3-turbo', aligned: true, duration_s: 600, timings: { asr: 30 }, turns: [{ start: 0, end: 600, speaker: 'S1' }],
         segments: [seg(0, 'The Revelation of Baha\'u\'llah is sovereign.'), seg(5, 'Abdul Baha explained this.'), seg(40, 'A new part begins here.')] }));
       return { seconds: 36, host: 'boss' };
@@ -134,6 +136,16 @@ describe('media item stage machine', () => {
       const { rmSync } = await import('fs');
       rmSync(join(root, 'library'), { recursive: true, force: true });
     }
+  });
+
+  it('two languages heard in the unforced language ID → interpreted mode (diarized on boss, per-block language)', async () => {
+    store.langs = ['fa', 'en', 'fa', 'en', 'en', 'fa'];
+    const d = fakes();
+    const r = await runItem({ id: 10, source_kind: 'file', source_ref: src }, {}, d);
+    store.langs = null;
+    const call = d.tools.asr.mock.calls.find((c) => c[0] === 'transcribe');
+    expect(call[2]).toMatchObject({ lang: 'multi', diarize: true, prompt: '' });
+    expect(r.meta.asr.mode).toBe('interpreted');
   });
 
   it('`from` redoes a stage and everything after it', async () => {

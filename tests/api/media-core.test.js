@@ -165,6 +165,10 @@ describe('vocabulary suspects (pilot findings)', () => {
     const s = suspects([{ w: 'Baola', s: 0, e: 1 }, { w: 'says', s: 1, e: 2 }], v);
     expect(s[0].candidates).toContain('Bahá’u’lláh');
   });
+  it('a short misheard name is a suspect too ("Beloved Bob" → the Báb)', () => {
+    const s = suspects([{ w: 'Beloved', s: 0, e: 1 }, { w: 'Bob', s: 1, e: 2 }], buildVocab());
+    expect(s.find((x) => x.from === 'Bob').candidates).toContain('Báb');
+  });
 });
 
 describe('diarization smoothing', () => {

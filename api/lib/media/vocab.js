@@ -5,7 +5,7 @@
 import { fold } from './names.js';
 
 /** Curated core — Shoghi Effendi's transliteration as the library prints it (curly apostrophes, ‘ for ‘ayn). */
-export const CORE_TERMS = `Bahá’u’lláh|the Báb|‘Abdu’l-Bahá|Shoghi Effendi|Bahá’í|Bahá’ís|Bahá’í Faith|Bábí|Bábís|Kitáb-i-Aqdas|Kitáb-i-Íqán|Íqán|Aqdas|Bayán|
+export const CORE_TERMS = `Bahá’u’lláh|the Báb|Báb|Anís|‘Abdu’l-Bahá|Shoghi Effendi|Bahá’í|Bahá’ís|Bahá’í Faith|Bábí|Bábís|Kitáb-i-Aqdas|Kitáb-i-Íqán|Íqán|Aqdas|Bayán|
 Ḥuqúqu’lláh|Mashriqu’l-Adhkár|Ḥaẓíratu’l-Quds|Riḍván|Naw-Rúz|Ayyám-i-Há|‘Akká|Bahjí|Shíráz|Ṭihrán|Tabríz|Baghdád|Iṣfahán|Mázindarán|Khurásán|Badasht|
 Shaykh Ṭabarsí|Nayríz|Zanján|Máh-Kú|Chihríq|Síyáh-Chál|Ṭáhirih|Quddús|Mullá Ḥusayn|Vaḥíd|Ḥujjat|Nabíl|Nabíl-i-A‘ẓam|Nabíl-i-Zarandí|Mírzá Yaḥyá|Ṣubḥ-i-Azal|
 Mírzá Muḥammad-‘Alí|Bahíyyih Khánum|Navváb|Ásíyih Khánum|Mírzá Mihdí|Munírih Khánum|Rúḥíyyih Khánum|Amatu’l-Bahá|Shaykh Aḥmad|Siyyid Káẓim|
@@ -102,7 +102,7 @@ export function suspects(words, vocab, { maxN = 3, limit = 40 } = {}) {
     for (let n = 1; n <= maxN && i + n <= words.length; n++) {
       const from = words.slice(i, i + n).map((w) => core(w.w)).join(' ');
       const k = keyOf(stripPoss(from));
-      if (k.length < 5 || seen.has(k) || vocab.byKey.has(k)) continue;
+      if (k.length < 3 || seen.has(k) || vocab.byKey.has(k)) continue;   // 3: "Bob" for the Báb (pilot, Furútan)
       // a misheard name often LOSES letters ("Baola" for Bahá’u’lláh): longer terms are searched too, and candidates rank by
       // distance relative to the longer key, so the model sees Bahá’u’lláh beside Bahá
       const hits = [];
