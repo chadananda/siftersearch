@@ -8,7 +8,7 @@ import NavBar from '../../components/common/NavBar.svelte';
 import ListeningRoom from '../../components/media/listening/ListeningRoom.svelte';
 import OnAir from '../../components/media/listening/OnAir.svelte';
 import { shapeRow, shapeSpeakers, fold } from '../../../api/lib/media/listing-index.js';
-import { portraitSquare, daySeed, planLayout, pickHighlights, eras, topTopics, tickerLines } from '../../lib/media-listing.js';
+import { safeIndex, portraitSquare, daySeed, planLayout, pickHighlights, eras, topTopics, tickerLines } from '../../lib/media-listing.js';
 
 export const prerender = false;
 
@@ -34,6 +34,7 @@ try {
   }
 }
 
+if (data) data = safeIndex(data);   // every field coerced, unusable rows skipped: one odd row can never truncate the page
 const items = data?.items || [];
 const speakers = data?.speakers || [];
 const byKey = new Map(speakers.map((s) => [s.k, s]));
@@ -60,7 +61,8 @@ const initial = {
   eras: eras(items), topics: topTopics(items), ticker: tickerLines(items, speakers),
 };
 
-Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=3600');
+// short: a bad render must not be served for an hour (10-22 outage)
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 const description = `The Listening Room: ${stats.total} recorded talks${stats.hours ? `, ${stats.hours} hours` : ''} from ${stats.voices} voices — Hands of the Cause, members of the Universal House of Justice, scholars and pilgrims — with word-aligned, searchable transcripts and every quotation linked to its source.`;
 // the hero island gets only its own speakers (a few rows), not the whole listing
 const heroSpeakers = Object.fromEntries(initial.highlights.map((h) => byKey.get(h.k)).filter(Boolean).map((s) => [s.k, { k: s.k, n: s.n, p: s.p }]));

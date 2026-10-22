@@ -5,7 +5,7 @@
 import Layout from '../../../../layouts/Layout.astro';
 import NavBar from '../../../../components/common/NavBar.svelte';
 import MomentView from '../../../../components/media/MomentView.svelte';
-import { relatedTalks } from '../../../../lib/media-listing.js';
+import { relatedTalks, safeIndex } from '../../../../lib/media-listing.js';
 import { momentPath, SITE } from '../../../../lib/share.js';
 
 export const prerender = false;
@@ -16,9 +16,9 @@ const get = (path, ms = 12000) => fetch(`${API_BASE}${path}`, { signal: AbortSig
 
 const m = await get(`/api/media/moments/${encodeURIComponent(key || '')}`);
 if (m && m.slug !== slug) return Astro.redirect(momentPath(m.slug, m.key), 301);   // the talk was renamed: one canonical URL
-const [item, index] = m ? await Promise.all([get(`/api/media/${encodeURIComponent(m.slug)}`), get('/api/media/index', 6000)]) : [null, null];
+const [item, index] = m ? await Promise.all([get(`/api/media/${encodeURIComponent(m.slug)}`), get('/api/media/index', 6000).then((x) => (x ? safeIndex(x) : null))]) : [null, null];
 if (!m) Astro.response.status = 404;
-Astro.response.headers.set('Cache-Control', m ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=60');
+Astro.response.headers.set('Cache-Control', m ? 'public, s-maxage=120, stale-while-revalidate=300' : 'public, s-maxage=60');
 
 const spk = index?.speakers?.find((s) => s.k === m?.speaker_key) || null;
 const speaker = spk ? { k: spk.k, n: spk.n, p: spk.p } : (m?.speaker_key ? { k: m.speaker_key, n: m.speaker, p: null } : null);

@@ -5,7 +5,7 @@
 import Layout from '../../../../layouts/Layout.astro';
 import NavBar from '../../../../components/common/NavBar.svelte';
 import MomentView from '../../../../components/media/MomentView.svelte';
-import { relatedTalks } from '../../../../lib/media-listing.js';
+import { relatedTalks, safeIndex } from '../../../../lib/media-listing.js';
 import { SITE } from '../../../../lib/share.js';
 import { parseClipRange, clipText, clipPath } from '../../../../../api/lib/media/clip-text.js';
 import { formatTime } from '../../../../../api/lib/media/range.js';
@@ -17,12 +17,12 @@ const { slug, range } = Astro.params;
 const get = (path, ms = 12000) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
 const r = parseClipRange(range);
-const [item, index] = r ? await Promise.all([get(`/api/media/${encodeURIComponent(slug || '')}`), get('/api/media/index', 6000)]) : [null, null];
+const [item, index] = r ? await Promise.all([get(`/api/media/${encodeURIComponent(slug || '')}`), get('/api/media/index', 6000).then((x) => (x ? safeIndex(x) : null))]) : [null, null];
 const text = item && r ? clipText(item.paragraphs, r.startMs, r.endMs) : '';
 if (r && item && `${r.startMs}-${r.endMs}` !== range) return Astro.redirect(clipPath(slug, r.startMs, r.endMs), 301);   // over 3 min: the capped clip
 const ok = !!(item && text);
 if (!ok) Astro.response.status = 404;
-Astro.response.headers.set('Cache-Control', ok ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=60');
+Astro.response.headers.set('Cache-Control', ok ? 'public, s-maxage=120, stale-while-revalidate=300' : 'public, s-maxage=60');
 
 const me = index?.items?.find((x) => x.s === item?.slug);
 const spk = index?.speakers?.find((s) => s.k === me?.k) || null;

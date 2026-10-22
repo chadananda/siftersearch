@@ -7,7 +7,7 @@
   import { fly } from 'svelte/transition';
   import RecordLabel from './RecordLabel.svelte';
   import Wave from './Wave.svelte';
-  import { portraitTall, portraitCard, duration, eraVar, waveHeights } from '../../../lib/media-listing.js';
+  import { tallSrc, portraitTall, portraitCard, duration, eraVar, waveHeights } from '../../../lib/media-listing.js';
   import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
 
   let { cards = [], speakersByKey = new Map(), onspeaker = () => {}, reduced = false } = $props();
@@ -46,7 +46,7 @@
       {#if c.kind === 'box'}
         {@const s = c.speaker}
         <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
-        {@const pic = s.p ? portraitTall(s.px || s.p, c.size === 'lg' ? 220 : 160) : null}
+        {@const pic = s.p ? portraitTall(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
         <article class="box h-full">
           <header class="flex gap-4">
             <div class="box-pic">
@@ -98,9 +98,9 @@
       {:else if c.kind === 'portrait'}
         {@const it = c.it}
         {@const s = speakersByKey.get(it.k)}
-        {@const pic = portraitCard(s.px || s.p, 320)}
+        {@const pic = portraitCard(tallSrc(s), 320)}
         <article class="portrait h-full">
-          <img src={pic.src} srcset={pic.srcset} alt={s.n} width="320" height="512" loading="lazy" decoding="async" class="portrait-img" />
+          {#if pic}<img src={pic.src} srcset={pic.srcset} alt={s.n} width="320" height="512" loading="lazy" decoding="async" class="portrait-img" />{/if}
           <div class="portrait-cap">
             <a href={`/media/${it.s}`} class="block font-marquee text-xl leading-tight text-radio-on-dark hover:text-radio-amber">{it.t}</a>
             <p class="mt-1 text-sm text-radio-on-dark opacity-85">{by(it)} · {duration(it.d)}</p>

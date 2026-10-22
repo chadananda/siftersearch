@@ -10,7 +10,7 @@ import TalkHero from '../../components/media/TalkHero.svelte';
 import { eraVar } from '../../lib/media-listing.js';
 import { parseRange } from '../../../api/lib/media/range.js';
 import { ikUrl } from '../../lib/imagekit.js';
-import { relatedTalks } from '../../lib/media-listing.js';
+import { relatedTalks, safeIndex } from '../../lib/media-listing.js';
 
 export const prerender = false;
 
@@ -35,9 +35,10 @@ try {
 
 if (fetchError) return new Response(`Bad gateway: ${fetchError}`, { status: 502 });
 if (!item) Astro.response.status = 404;
-Astro.response.headers.set('Cache-Control', item ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=60');
+Astro.response.headers.set('Cache-Control', item ? 'public, s-maxage=120, stale-while-revalidate=300' : 'public, s-maxage=60');
 
 if (item) index = await getIndex;
+if (index) index = safeIndex(index);
 const me = index?.items?.find((x) => x.s === item?.slug);
 const related = item && index ? relatedTalks(index.items, item.slug, 6) : [];
 const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => related.some((r) => r.k === s.k)).map((s) => [s.k, { n: s.n, p: s.p }]));

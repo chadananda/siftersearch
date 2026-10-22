@@ -25,6 +25,35 @@ export const eraKey = (y) => { const d = decadeOf(y); return d == null ? 'undate
 /** CSS custom property for an era's tint (tokens in global.css: --era-1940 … --era-2020, --era-undated). */
 export const eraVar = (y) => `var(--era-${eraKey(y)})`;
 
+// ── the payload, made safe to render ──
+const str = (v) => (typeof v === 'string' ? v : v == null ? null : String(v));
+const num = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
+const arr = (v) => (Array.isArray(v) ? v : []);
+/** One listing row with every field coerced to the shape the page renders (a changed or partial payload can never throw
+ *  mid-render and truncate the page — 10-22 outage: an object where a URL string was expected). null = unusable. */
+export function safeItem(it) {
+  if (!it || typeof it !== 'object' || typeof it.s !== 'string' || !it.s) return null;
+  const q = it.q && typeof it.q === 'object' && typeof it.q.x === 'string' ? { x: it.q.x, c: str(it.q.c), t0: num(it.q.t0) ?? 0, t1: num(it.q.t1) } : null;
+  return { ...it, t: str(it.t) || it.s, sp: str(it.sp), k: str(it.k), y: num(it.y), d: num(it.d) ?? 0, l: str(it.l) || 'en', g: str(it.g), col: str(it.col), at: str(it.at),
+    qn: num(it.qn) ?? 0, cn: num(it.cn) ?? 0, sum: str(it.sum), w: typeof it.w === 'string' ? it.w : '', q,
+    tp: arr(it.tp).filter((x) => typeof x === 'string'),
+    h: arr(it.h).filter((h) => h && typeof h.x === 'string').map((h) => ({ x: h.x, f: h.f === 'q' ? 'q' : 's', t: num(h.t) })),
+    hl: Array.isArray(it.hl) && it.hl.length === 2 ? [num(it.hl[0]) ?? 0, num(it.hl[1]) ?? 20] : [0, 20], v: num(it.v) ?? 0 };
+}
+/** One speaker row made safe: p a URL string or null; px kept only as { url } / string. */
+export function safeSpeaker(s) {
+  if (!s || typeof s !== 'object' || typeof s.k !== 'string') return null;
+  const px = typeof s.px === 'string' ? s.px : typeof s.px?.url === 'string' ? { ...s.px } : null;
+  return { ...s, n: str(s.n) || s.k, c: num(s.c) ?? 0, p: typeof s.p === 'string' ? s.p : null, px, role: str(s.role), y0: num(s.y0), y1: num(s.y1), cr: str(s.cr) };
+}
+/** The index payload made safe: bad rows dropped (and counted), the rest coerced. */
+export function safeIndex(data) {
+  const items = arr(data?.items).map(safeItem), speakers = arr(data?.speakers).map(safeSpeaker);
+  const dropped = items.filter((x) => !x).length + speakers.filter((x) => !x).length;
+  if (dropped) console.warn(`media index: ${dropped} unusable rows skipped`);
+  return { ...(data || {}), items: items.filter(Boolean), speakers: speakers.filter(Boolean) };
+}
+
 // ── stations (presets) ──
 const PILGRIM = /pilgrim|reminiscen|recollection|memories of/i;
 const QA = /\bq\s*(?:&|and)\s*a\b|\bquestions?\b|\banswers?\b/i;
@@ -298,6 +327,9 @@ export function labelPattern(name) {
 /** A face-centred square portrait at size px (1×/2×) through the image service. fo-face crops a square around the
  *  detected person's head, keeping the full height of a landscape source; squares and 4:5 never lose the head. */
 export const portraitSquare = (url, px) => (url ? svcFixed(url, px, px, { q: 80, extra: 'fo-face,e-sharpen' }) : null);
+/** The picture for a tall/wide crop: the speaker's EXTENDED (outpainted) master when the index carries one — `px` is
+ *  { url, width, height } (or a URL string) — else the portrait. Never throws on an unexpected shape. */
+export const tallSrc = (s) => (typeof s?.px === 'string' ? s.px : typeof s?.px?.url === 'string' ? s.px.url : null) || (typeof s?.p === 'string' ? s.p : null);
 /** The jukebox's tall portrait card (≈ 5:8, the card's own shape): a face-centred crop that only trims the sides. */
 export const portraitCard = (url, w) => (url ? svcFixed(url, w, Math.round(w * 1.6), { q: 78, extra: 'fo-face,e-sharpen' }) : null);
 export const portraitTall = (url, w) => (url ? svcFixed(url, w, Math.round(w * 1.25), { q: 80, extra: 'fo-face,e-sharpen' }) : null);

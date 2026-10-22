@@ -14,7 +14,7 @@
   import { clipPath } from '../../../../api/lib/media/clip-text.js';
   import { SITE } from '../../../lib/share.js';
   import { media } from '../../../lib/api.js';
-  import { snippetAround, groupHits, fold, PRESETS, DECADES, buildSearch, searchItems, planLayout, eras as erasOf, topTopics, decadeOf } from '../../../lib/media-listing.js';
+  import { safeIndex, snippetAround, groupHits, fold, PRESETS, DECADES, buildSearch, searchItems, planLayout, eras as erasOf, topTopics, decadeOf } from '../../../lib/media-listing.js';
   import { formatTime } from '../../../../api/lib/media/range.js';
   import { pauseOffscreen } from '../../../lib/offscreen.js';
   import { playExcerpt, preview } from '../../../lib/media-preview.svelte.js';
@@ -78,7 +78,7 @@
   async function loadAll() {
     if (complete) return;
     try {
-      const data = await media.index();
+      const data = safeIndex(await media.index());
       items = data.items; speakers = data.speakers; complete = !data.pending;
     } catch { /* keep the SSR slice */ }
   }

@@ -15,7 +15,7 @@ const KEY_PREFIX = 'siftersearch.com';   // site images in cdn-assets live under
 /** Any of our image URLs (public R2, old ImageKit, a cdn-assets-relative path, or an /img/ URL) → the service URL
  *  without a transform. Unknown hosts come back unchanged (null when not transformable). */
 export function toSvc(url) {
-  if (!url) return null;
+  if (!url || typeof url !== 'string') return null;   // a non-URL (an object from a changed payload) never crashes a render
   if (url.startsWith('/img/')) return `https://siftersearch.com${url}`;
   if (url.startsWith(`${SVC}/`)) return url;
   for (const [re, base] of R2_HOSTS) if (re.test(url)) return url.replace(re, base);
@@ -43,7 +43,7 @@ export function imgSet(url, widths, opts = {}) {
 /** src + 1x/2x srcset for a fixed box, e.g. a cover shown at 120×180 CSS px. */
 export function svcFixed(url, w, h, { q = 78, extra = 'e-sharpen' } = {}) {
   const base = toSvc(url);
-  if (!base) return url ? { src: url, srcset: null } : null;
+  if (!base) return typeof url === 'string' && url ? { src: url, srcset: null } : null;
   const tr = (d) => `w-${w},h-${h},dpr-${d},q-${q}${extra ? `,${extra}` : ''}`;
   return { src: svcUrl(base, tr(1)), srcset: `${svcUrl(base, tr(1))} 1x, ${svcUrl(base, tr(2))} 2x` };
 }

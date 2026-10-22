@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-22T19:35:33.523Z",
+  "generated": "2026-10-22T22:02:10.201Z",
   "entries": [
+    {
+      "hash": "e365b712",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Status — diarization on boss, extended portrait masters, Portrait Cinema default",
+      "scope": "media"
+    },
+    {
+      "hash": "5f7368b1",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "Spell vocabulary (1.8M words) warms at boot, off the request path",
+      "scope": "search"
+    },
+    {
+      "hash": "89757c4d",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "First search of a fresh API process no longer pays for the concept lexicon load (6–10 s → normal)",
+      "scope": "search"
+    },
+    {
+      "hash": "e3582d0b",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The catalogue writes the audience level (missing from updateMediaItem's column list, so ?audience= and its facet were empty)",
+      "scope": "media"
+    },
+    {
+      "hash": "798a12e0",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The shorts' URL watermark has a dark outline (it vanished on light backgrounds); SHORT_VERSION 5",
+      "scope": "media"
+    },
+    {
+      "hash": "716c7a7b",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Portraits get their own lane in the media service (minutes of image calls never wait behind transcription)",
+      "scope": "media"
+    },
+    {
+      "hash": "496f6aad",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Slim player appears after a jump past the hero (phones); test: the suite's flaky tests made load-proof",
+      "scope": "media"
+    },
     {
       "hash": "7771abbe",
       "date": "2026-10-22",
@@ -3451,59 +3500,59 @@
       "type": "New",
       "description": "Any language — the reader's language is detected per message and kept per book",
       "scope": "reading"
-    },
-    {
-      "hash": "87b886aa",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Passive WAL checkpoint every minute so a 15-min TRUNCATE never faces GBs",
-      "scope": "writer"
-    },
-    {
-      "hash": "d524d2ad",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "A deploy waits for each restarted service to be back online; the watchdog's settle window starts then",
-      "scope": "deploy"
-    },
-    {
-      "hash": "51ca97fa",
-      "date": "2026-10-13",
-      "type": "Chore",
-      "description": "Generated assistant test reports stay out of git (swept in by the folder rename)",
-      "scope": null
-    },
-    {
-      "hash": "4c0060b1",
-      "date": "2026-10-13",
-      "type": "Refactor",
-      "description": "The edited contents of the rename (import paths, roles, merged reading.js) — 73bcea0f staged only the moves",
-      "scope": null
-    },
-    {
-      "hash": "73bcea0f",
-      "date": "2026-10-13",
-      "type": "Refactor",
-      "description": "Name code by function, not persona; the reading guide is one file",
-      "scope": null
-    },
-    {
-      "hash": "bb5fb41b",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Replies carry no unsubscribe footer; reading subjects '[📖 Reading] <Book> #3.4, <topic>'",
-      "scope": "anis"
-    },
-    {
-      "hash": "5bbef66c",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Restore NOTE_LEVELS (dropped with the old prompt text — every page would have thrown)",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "e365b712",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Status — diarization on boss, extended portrait masters, Portrait Cinema default",
+        "scope": "media"
+      },
+      {
+        "hash": "5f7368b1",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "Spell vocabulary (1.8M words) warms at boot, off the request path",
+        "scope": "search"
+      },
+      {
+        "hash": "89757c4d",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "First search of a fresh API process no longer pays for the concept lexicon load (6–10 s → normal)",
+        "scope": "search"
+      },
+      {
+        "hash": "e3582d0b",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The catalogue writes the audience level (missing from updateMediaItem's column list, so ?audience= and its facet were empty)",
+        "scope": "media"
+      },
+      {
+        "hash": "798a12e0",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The shorts' URL watermark has a dark outline (it vanished on light backgrounds); SHORT_VERSION 5",
+        "scope": "media"
+      },
+      {
+        "hash": "716c7a7b",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Portraits get their own lane in the media service (minutes of image calls never wait behind transcription)",
+        "scope": "media"
+      },
+      {
+        "hash": "496f6aad",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Slim player appears after a jump past the hero (phones); test: the suite's flaky tests made load-proof",
+        "scope": "media"
+      },
       {
         "hash": "7771abbe",
         "date": "2026-10-22",
@@ -6971,55 +7020,6 @@
         "date": "2026-10-13",
         "type": "New",
         "description": "Any language — the reader's language is detected per message and kept per book",
-        "scope": "reading"
-      },
-      {
-        "hash": "87b886aa",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Passive WAL checkpoint every minute so a 15-min TRUNCATE never faces GBs",
-        "scope": "writer"
-      },
-      {
-        "hash": "d524d2ad",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "A deploy waits for each restarted service to be back online; the watchdog's settle window starts then",
-        "scope": "deploy"
-      },
-      {
-        "hash": "51ca97fa",
-        "date": "2026-10-13",
-        "type": "Chore",
-        "description": "Generated assistant test reports stay out of git (swept in by the folder rename)",
-        "scope": null
-      },
-      {
-        "hash": "4c0060b1",
-        "date": "2026-10-13",
-        "type": "Refactor",
-        "description": "The edited contents of the rename (import paths, roles, merged reading.js) — 73bcea0f staged only the moves",
-        "scope": null
-      },
-      {
-        "hash": "73bcea0f",
-        "date": "2026-10-13",
-        "type": "Refactor",
-        "description": "Name code by function, not persona; the reading guide is one file",
-        "scope": null
-      },
-      {
-        "hash": "bb5fb41b",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Replies carry no unsubscribe footer; reading subjects '[📖 Reading] <Book> #3.4, <topic>'",
-        "scope": "anis"
-      },
-      {
-        "hash": "5bbef66c",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Restore NOTE_LEVELS (dropped with the old prompt text — every page would have thrown)",
         "scope": "reading"
       }
     ]
