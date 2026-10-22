@@ -21,9 +21,9 @@ export const INDEX_REPORTS = {
   'coverage-refresh': coverageRefreshJob,   // params: { ids? | limit? } — re-measure docs into index_coverage
   'stamp-voices': stampVoicesJob,   // every quoted voice findable by author (Chad 10-19) — after each paragraph-authors run
   'stamp-site': stampSiteJob,
-  'vectors-backup': (p = {}) => vectorsBackupJob(p),   // paid vectors.db stores → /tank/sifter/backups/vectors (storage plan R1); index lane, never beside a phrase build   // `site` on every scraped-site point (planning/site-databases-plan.md, Chad 10-20)
+  'vectors-backup': (p = {}) => vectorsBackupJob(p),   // paid vectors.db stores → /tank/sifter/backups/vectors (storage plan R1); own lane — never blocks indexing   // `site` on every scraped-site point (planning/site-databases-plan.md, Chad 10-20)
 };
 // lanes: phrase indexing alone (measured: one at a time is fastest on the interim SSD); HyPE/concepts/sections beside it;
 // BM25 on /fast in its own lane; coverage re-measures
-export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile', 'vectors-backup'], index2: ['hype-index', 'concept-index', 'section-index'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site'] };
+export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile'], backup: ['vectors-backup'], index2: ['hype-index', 'concept-index', 'section-index'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site'] };
 export const INDEX_JOB_NAMES = Object.keys(INDEX_REPORTS);
