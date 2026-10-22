@@ -58,6 +58,14 @@ describe('media-scan', () => {
     expect(r.queued).toEqual([2]);
     expect(r.remaining).toBe(0);
   });
+  it('a resumed run (params carry the stage it stopped at) never redoes its from / reslug', async () => {
+    store.items.push({ id: 12, state: 'running', slug: 'new-name', dir: '/tank/media/library/bahai/x/new-name', doc_id: 9 });
+    const rm = vi.fn(), retire = vi.fn(), runItem = vi.fn(async () => ({ slug: 'new-name', done: ['quotes'] }));
+    await mediaItemJob({ id: 12, reslug: true, force: true, from: 'web', stage: 'quotes' }, { runItem, rm, retire });
+    expect(rm).not.toHaveBeenCalled();
+    expect(retire).not.toHaveBeenCalled();
+    expect(runItem.mock.calls[0][1]).toMatchObject({ from: null });
+  });
   it('a bot check holds the item instead of failing it', async () => {
     store.items.push({ id: 1, state: 'scheduled', source_kind: 'youtube', source_ref: 'u' });
     const runItem = vi.fn(async () => { throw Object.assign(new Error('bot check'), { code: 'BOT_CHECK' }); });

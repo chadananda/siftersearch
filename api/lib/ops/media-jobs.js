@@ -71,9 +71,13 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null, reslug = false, force = false } = {}, deps = {}) {
+export async function mediaItemJob({ id, from = null, only = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null } = {}, deps = {}) {
   let item = await getMediaItem(id);
   if (!item) throw new Error(`media item ${id} not found`);
+  // a RESUMED run (a drain saved { stage } into its params) continues where it stopped: its `from` / `reslug` were done on
+  // the first start and must not run again (10-22: a `from: web` run redid web on every resume; a reslug would have
+  // deleted its own new folder)
+  if (stage) { from = null; reslug = false; }
   // RESLUG (an unpublished item named badly): its folder under the archive root is removed and the item archived again
   // (force: also a published pilot item — its transcript document is retired and its library file removed first)
   if (reslug) {
