@@ -150,3 +150,41 @@ bandwidth restoration → speed → leveling. Priority = (5 − grade score) × 
 speaker tier (Hands of the Cause / UHJ 3, curated scholars 2, others 1; `data/media-speaker-tiers.json`) × uniqueness
 (0.5 when another copy exists) + plays/hits later. Surfaces: `GET /api/media/admin/repairs` (grouped by chain),
 `/api/media/admin/quality/<slug>`, the listing's `grade` / `issue` filters and `sort=priority`.
+
+## 11. Concept cross-linking (Chad 10-22, PLAN ONLY beyond phase 1)
+
+Goal: each talk links to related talks (media↔media) and to the source texts it discusses (media→texts), by
+CONCEPT and not only by shared words. Most of this waits for indexing and concept extraction (project order 10-16:
+findability → disambiguation + HyPE → concepts); phase 1 uses only what exists today.
+
+**Order:** after the quality grade surfaces and the remastering A/B demo, which come first.
+
+**Phase 1: cheap, built now from existing data**
+- *Related talks* on each item page: the ingested transcript paragraphs are already in the vector index
+  (collection `Media`). For a talk, take a handful of its paragraph vectors (e.g. one per chapter, or the summary
+  line's), search within `collection = Media` excluding the talk itself, and score talks by summed similarity of
+  their best-matching paragraphs. Keep the top 5, each with the matching moment (`?t=`) so the link lands on the
+  passage. Computed at the catalog stage, stored in meta.json `related` (no per-request search), refreshed
+  by a `media-related` job when new talks arrive.
+- *Related passages*: the talk's own quote and CR links (`content_source_links`, methods `media-sourcehunt` /
+  `media-cr`), listed together as "Texts discussed in this talk", ordered by first appearance.
+- Endpoint: `GET /api/media/:slug` gains `related: [{slug, title, speaker, t0, score}]`. The item page gets a
+  "Related talks" and "Texts discussed" panel. Tests: the scorer is pure (fixture vectors).
+
+**Phase 2: after the concept index covers the corpus** (depends on the concept-extraction pipeline:
+the kernel idea catalogue + canonical questions, `api/lib/pipeline/` and the monthly re-link pass. Do not start
+until that pipeline has run over the library)
+- Tag transcript paragraphs with the catalogue's ideas, using the same linker that tags text paragraphs, so talks
+  enter the concept layer like any document.
+- Concept pages then list both the canonical passages and the talks (with moments) that discuss each idea.
+- Talks link to each other through shared concepts (weighted by idea rarity), replacing or re-ranking the
+  phase-1 vector neighbours.
+
+**Phase 3: per-talk concept map and entity links**
+- A "concept map" panel per talk: the ideas it covers in order, each linked to its concept page and the moment.
+- Entity links: people and places mentioned (disambiguated mentions, same pipeline as texts) → biography pages
+  (`/biography/<id>`) and place pages.
+
+**Dependency summary:** phase 1 needs only the Media vectors and the quote/CR links (both live). Phases 2–3 need the
+concept-extraction pipeline and disambiguated entity mentions to cover transcripts. They are scheduled after
+concepts reach the corpus, not before.
