@@ -257,6 +257,11 @@ async function ensureCollection({ url = UP.url, coll = UP.coll } = {}) {
 
 /** RAM disk free bytes (null when the path is absent — e.g. not on tower). */
 const hotFree = () => { try { const f = statfsSync(HOT_PATH); return f.bavail * f.bsize; } catch { return null; } };
+/** RAM disk bytes in use. */
+const hotUsed = () => { try { const f = statfsSync(HOT_PATH); return (f.blocks - f.bfree) * f.bsize; } catch { return 0; } };
+/** Room to keep free: at least --hot-min-free-gb, and at least what is stored — a snapshot's temp files live on the RAM
+ *  disk too (Qdrant's snapshot restore cannot cross filesystems), so the data must never fill more than half of it. */
+const hotNeedFree = (used, minFree) => Math.max(minFree, used);
 
 /** After a qdrant-hot loss: units marked as sent to hot (upserted = 2) but absent there go back to 0, so the next upsert
  *  re-sends them from the stored vectors (no Gemini spend). */
@@ -288,8 +293,8 @@ async function upsert() {
   }
   for (;;) {
     if (HOT && pages++ % 20 === 0) {
-      const free = hotFree();
-      if (free != null && free < HOT_MIN_FREE) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${HOT_MIN_FREE / 1e9} GB): flush or fold before indexing more`; break; }
+      const free = hotFree(), need = hotNeedFree(hotUsed(), HOT_MIN_FREE);
+      if (free != null && free < need) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${(need / 1e9).toFixed(1)} GB: min ${HOT_MIN_FREE / 1e9} GB and room for a snapshot): fold into main or enlarge before indexing more`; break; }
     }
     const rows = page.all(); if (!rows.length) break;
     await qd('PUT', `/collections/${UP.coll}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },

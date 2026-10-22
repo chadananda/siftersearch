@@ -138,7 +138,8 @@ describe('hot layer: crash recovery (indexer against a fake Qdrant)', () => {
     try {
       const dir = mkdtempSync(join(tmpdir(), 'hot-'));
       const store = seedStore(dir, 5);
-      const base = ['--store', store, '--ledger', join(dir, 'spend.db'), '--qdrant-url', q.url, '--hot-url', q.url, '--hot-path', dir, '--hot-min-free-gb', '0'];
+      // no RAM disk here: an absent --hot-path disables the capacity guard (tested separately below)
+      const base = ['--store', store, '--ledger', join(dir, 'spend.db'), '--qdrant-url', q.url, '--hot-url', q.url, '--hot-path', join(dir, 'no-ram-disk')];
       const a = await run(['--qdrant', ...base]);
       expect(a.code).toBe(0);
       expect(q.hot.size).toBe(5);
