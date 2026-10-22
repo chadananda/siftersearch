@@ -16,15 +16,17 @@ export function youtubeAt(meta, t = 0) {
 /** A paragraph's words as Markdown, with each quotation's words linked to its source. quotes: [{ para, i0, i1, url, cite }] */
 export function paragraphMarkdown(p, quotes = []) {
   const qs = quotes.filter((q) => q.para === p.n && q.url).sort((a, b) => a.i0 - b.i0);
+  const shown = (ws) => ws.filter((w) => !w.hide).map((w) => w.w);
   const out = [];
   let i = 0;
   for (const q of qs) {
     if (q.i0 < i) continue;
-    while (i < q.i0) out.push(p.words[i++].w);
-    out.push(`[${mdLinkText(p.words.slice(q.i0, q.i1).map((w) => w.w).join(' '))}](${q.url}${q.cite ? ` ${yq(q.cite)}` : ''})`);
+    out.push(...shown(p.words.slice(i, q.i0)));
+    const said = shown(p.words.slice(q.i0, q.i1)).join(' ');
+    if (said) out.push(`[${mdLinkText(said)}](${q.url}${q.cite ? ` ${yq(q.cite)}` : ''})`);
     i = q.i1;
   }
-  while (i < p.words.length) out.push(p.words[i++].w);
+  out.push(...shown(p.words.slice(i)));
   return out.join(' ');
 }
 
@@ -124,7 +126,8 @@ export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [
       const q = qs[qi];
       if (q && i === q.i0) html.push(`<a class="q" href="${esc(q.url)}" title="${esc(q.cite || 'Source')}" target="_blank" rel="noopener">`);
       const w = p.words[i];
-      html.push(`<span class="w" data-s="${w.s.toFixed(2)}" data-e="${w.e.toFixed(2)}">${esc(w.w)}</span>`);
+      // a word the copy-edit pass dropped (a filler, a stutter) stays in the page for timing, never shown
+      html.push(w.hide ? `<span class="w x" data-s="${w.s.toFixed(2)}" data-e="${w.e.toFixed(2)}" hidden></span>` : `<span class="w" data-s="${w.s.toFixed(2)}" data-e="${w.e.toFixed(2)}">${esc(w.w)}</span>`);
       if (q && i === q.i1 - 1) { html.push('</a>'); qi++; }
     }
     const name = speakers[p.spk] || null;

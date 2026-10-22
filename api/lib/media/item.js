@@ -15,7 +15,7 @@ import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
 
-export const STAGES = ['archive', 'enhance', 'web', 'transcribe', 'correct', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
+export const STAGES = ['archive', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
 const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
@@ -245,6 +245,15 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.corrections = res.diff.length; rec.refused = res.refused.length;
     }
 
+    if (stage === 'clean') {
+      // the copy-edit pass, always from the VERBATIM (name-corrected) words, so a re-run never edits an edit
+      const work = await readJson(join(dir, 'transcript.work.json'));
+      const verbatim = work.verbatim || work.paragraphs;
+      const res = await (llm.cleanTranscript ? llm.cleanTranscript(verbatim, { spend }) : { paragraphs: verbatim, log: [], stats: {} });
+      await writeJson(join(dir, 'transcript.work.json'), { ...work, verbatim, paragraphs: res.paragraphs, cleanup: res.log, cleanup_stats: res.stats });
+      rec.applied = res.stats?.applied || 0; rec.hidden_words = res.stats?.hidden_words || 0; rec.flagged = res.stats?.flagged || 0;
+    }
+
     if (stage === 'describe') {
       const work = await readJson(join(dir, 'transcript.work.json'));
       const desc = await llm.describeTalk(work.paragraphs, { title: meta.title, speaker: meta.speaker, date: meta.date, year: meta.year, event: meta.event, place: meta.place, series: meta.series, source: meta.source?.kind === 'youtube' ? { channel: meta.source.channel, title: meta.source.title } : null }, { spend });
@@ -307,6 +316,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       const raw = await readJson(join(dir, 'transcript.raw.json'));
       const transcript = { slug: meta.slug, language: meta.language, asr: meta.asr, enhancement: meta.enhancement ? { asr_input: meta.enhancement.asr_input, listening: meta.enhancement.listening } : null,
         speakers: meta.speakers, chapters: meta.chapters, paragraphs: work.paragraphs, quotes, cross_references: crs,
+        // the VERBATIM layer (before the copy-edit pass) and its log: every change, every flag for review
+        verbatim: (work.verbatim || []).map((p) => ({ n: p.n, text: p.words.map((w) => w.w).join(' ') })), cleanup: work.cleanup || [], cleanup_stats: work.cleanup_stats || null,
         corrections: work.corrections, corrections_refused: work.refused, turns: raw?.turns || [] };
       await writeJson(join(dir, 'transcript.json'), transcript);
       await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, chapters: meta.chapters }));

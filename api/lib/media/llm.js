@@ -128,3 +128,9 @@ ${passages.map((p, i) => `#${i} ${p.title}${p.author ? ` — ${p.author}` : ''}:
 Return JSON {"answers": [{"i": number, "states": true|false, "confidence": 0.0-1.0, "excerpt": "the passage's own sentence(s) that state it, verbatim, at most 60 words, or null"}]}`, { ...opts, max: 5000 });
   return (out?.answers || []).filter((a) => Number.isInteger(Number(a.i)) && passages[Number(a.i)]);
 }
+
+/** The copy-edit pass (api/lib/media/cleanup.js) with the media-clean role. */
+export async function cleanTranscript(paragraphs, opts = {}) {
+  const { cleanParagraphs } = await import('./cleanup.js');
+  return cleanParagraphs(paragraphs, (prompt) => ask('media-clean', prompt, { ...opts, max: 8000 }), opts);
+}

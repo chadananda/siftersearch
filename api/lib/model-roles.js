@@ -52,6 +52,8 @@ export const MODEL_ROLES = {
     why: 'names a recording from its path/tags, then describes it from the transcript (speakers, chapters, summary); 2 calls per item' },
   'media-correct': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['json', 'persian-arabic-names'],
     why: 'judges which misheard names are vocabulary terms; its edits pass a guard (vocabulary only, sounds-alike, ≤ 4 words) — never rewording' },
+  'media-clean': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'english-editing'],
+    why: 'copy-edit pass (Chad 10-22): fillers, stutters, ASR loops, hallucinations, spellings, homophones, capitals, sentence boundaries — every edit kind-checked by a guard, never rewording' },
   'media-quotes': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['json', 'long-input'],
     why: 'marks recited Writings and attributed teachings in a transcript; SourceHunt and the gates decide the links' },
   'media-verify': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', needs: ['judgement', 'json'],

@@ -14,7 +14,8 @@
   const byPara = (list) => { const m = new Map(); for (const x of list) { if (!m.has(x.para)) m.set(x.para, []); m.get(x.para).push(x); } return m; };
   const quotesBy = $derived(byPara(quotes.filter((q) => q.url)));
   const xrefsBy = $derived(byPara(crossRefs.filter((c) => c.url || c.excerpt)));
-  const wordClass = (w) => ['rounded-sm', canPlay && 'cursor-pointer hover:bg-hover', inRange(w) && 'bg-highlight-range'];
+  // w[3] = 1: a word the copy-edit pass dropped (filler, stutter, loop) — kept for timing, never shown
+  const wordClass = (w) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && 'cursor-pointer hover:bg-hover', inRange(w) && 'bg-highlight-range']);
   const inRange = (w) => !!range && range.end != null && w[1] >= range.start - 0.05 && w[2] <= range.end + 0.05;
 
   function click(e) {
@@ -57,11 +58,11 @@
         {#each segs as s, si (si)}
           {#if s.quote}
             <a href={s.quote.url} target="_blank" rel="noopener" title={s.quote.cite}
-              class="rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent">{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 ? ' ' : ''}{/each}</a><a
+              class="rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent">{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a><a
               href={s.quote.url} target="_blank" rel="noopener" title={`Source: ${s.quote.cite}`} aria-label={`Source: ${s.quote.cite}`}
               class="ml-0.5 align-super font-sans text-xs text-accent hover:text-accent-hover">↗</a>{' '}
           {:else}
-            {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{' '}{/each}
+            {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{w[3] ? '' : ' '}{/each}
           {/if}
         {/each}
       </p>
