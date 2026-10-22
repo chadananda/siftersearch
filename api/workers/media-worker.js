@@ -21,4 +21,7 @@ async function mediaDropLoop() {
   }
 }
 
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, only: Object.keys(MEDIA_REGISTRY), loops: [mediaDropLoop] });
+// two lanes: the pipeline (one job at a time: hours of transcription) and SHORTS (seconds each, rendered on boss) — a person
+// asking for a short must not wait behind the whole archive
+export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => j !== 'media-short'), shorts: ['media-short'] };
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, loops: [mediaDropLoop] });
