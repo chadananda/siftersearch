@@ -292,17 +292,11 @@ export async function runItem(item, opts = {}, deps = {}) {
         const pr = meta.speaker ? await ensurePortrait(meta.speaker, {}, {}) : null;
         meta.speaker_key = pr?.key || null; rec.portrait = pr?.status || 'none';
       } catch (err) { rec.portrait = `error: ${String(err.message).slice(0, 80)}`; }
-      const finder = d.thumbs?.findSpeakerImage || (await import('./thumbs.js')).findSpeakerImage;
-      const found = meta.has_video ? null : await finder(meta.speaker, { tradition: meta.tradition }).catch(() => null);
-      if (found) {
-        const r = await fetch(found.url, { headers: { 'User-Agent': 'SifterSearch media library (https://siftersearch.com)' } });
-        await writeFile(join(dir, 'thumb.jpg'), Buffer.from(await r.arrayBuffer()));
-        meta.thumb = { file: 'thumb.jpg', ...found };
-      } else {
-        const peaks = (await readJson(join(dir, 'waveform.json')))?.data || [];
-        await writeFile(join(dir, 'thumb.svg'), tileSvg({ speaker: meta.speaker, title: meta.title, peaks }));
-        meta.thumb = { file: 'thumb.svg', kind: 'tile' };
-      }
+      // the item's own picture is the generated tile (the speaker's portrait is a PERSON record, above, shown in its place);
+      // the old per-item photo search found namesakes (10-22: "Chad Jones" the economist, a "Bob Harris")
+      const peaks = (await readJson(join(dir, 'waveform.json')))?.data || [];
+      await writeFile(join(dir, 'thumb.svg'), tileSvg({ speaker: meta.speaker, title: meta.title, peaks }));
+      meta.thumb = { file: 'thumb.svg', kind: 'tile' };
       rec.kind = meta.thumb.kind;
     }
 
@@ -336,7 +330,7 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'catalog') {
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
-      await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || null, title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
+      await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
         doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
