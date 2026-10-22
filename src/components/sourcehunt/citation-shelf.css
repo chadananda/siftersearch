@@ -11,7 +11,7 @@
     animation: cs-rise 520ms cubic-bezier(.2,.9,.25,1.15) both; animation-delay: var(--d);
     transition: transform 180ms, filter 180ms;
   } .citation-shelf .spine:hover, .citation-shelf .spine:focus-visible { transform: translateY(-10px); filter: brightness(1.12); outline: none; } .citation-shelf .spine-title {
-    writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Libre Caslon Text', Georgia, serif; font-size: 11px;
+    writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 11px;
     color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-height: calc(var(--h) - 34px);
     text-shadow: 0 1px 2px color-mix(in srgb, black 40%, transparent);
   } .citation-shelf .spine-count { font-size: 10px; font-weight: 700; color: white; opacity: .9; } .citation-shelf .site-ol { --c: var(--accent-primary); } .citation-shelf .site-bl { --c: var(--accent-tertiary); } .citation-shelf .site-oo { --c: var(--accent-secondary); } .citation-shelf .site-lib { --c: var(--warning); } .citation-shelf .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c); }

@@ -425,11 +425,11 @@
 
 <style>
   .sh { --rise: cubic-bezier(.2,.8,.2,1); }
-  .sh-title { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.01em; }
+  .sh-title { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.01em; }
   .sh-num { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
   @media (min-width: 640px) { .sh-num { font-size: 1.35rem; } }
   :global(.sh-label) { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--text-muted); }
-  .sh-quote { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.2rem; line-height: 1.55; min-height: 3rem; max-height: 40vh; overflow-y: auto; }
+  .sh-quote { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1.2rem; line-height: 1.55; min-height: 3rem; max-height: 40vh; overflow-y: auto; }
   .sh-input { transition: border-color 300ms, box-shadow 300ms; }
   .sh-input:focus-within, .sh-input.is-hunting { border-color: var(--accent-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 14%, transparent); }
   .sh-input.is-hunting { animation: breathe 1.8s ease-in-out infinite; }
@@ -456,8 +456,8 @@
   .sh-card { animation: rise 600ms var(--rise) both; }
   .cite-row { animation: rise 420ms var(--rise) both; animation-delay: var(--d, 0ms); }
   .sh-orig { animation-delay: 120ms; }
-  .sh-book { font-family: 'Libre Caslon Text', Georgia, serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.25; }
-  .sh-passage { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.08rem; line-height: 1.75; border-left: 3px solid var(--accent-primary); padding-left: 1rem; }
+  .sh-book { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.25; }
+  .sh-passage { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1.08rem; line-height: 1.75; border-left: 3px solid var(--accent-primary); padding-left: 1rem; }
   /* highlighter pen: light yellow ink swept left-to-right (English) and right-to-left (Arabic/Persian); wraps across lines.
      A <span>, not <mark>: the site's global `mark { background: none !important }` would pin the background so it could
      never animate. */

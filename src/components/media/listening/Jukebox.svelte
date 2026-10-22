@@ -174,7 +174,7 @@
   /* pull-quote: cream paper, a huge brass quotation mark */
   .quote { background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); }
   .qmark { font: 400 6rem/0.7 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--tint); height: 2.6rem; display: block; }
-  .quote-text { font-family: 'Libre Caslon Text', Georgia, serif; font-style: italic; font-size: 1.12rem; line-height: 1.45; color: var(--radio-ink);
+  .quote-text { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-style: italic; font-size: 1.12rem; line-height: 1.45; color: var(--radio-ink);
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; overflow: hidden; }
   .quote-text, .quote-cite { flex: none; }
   .s-wide .qmark { font-size: 4.5rem; height: 1.7rem; }

@@ -215,7 +215,7 @@
   .heard { display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: 0.8rem; background: var(--radio-paper); color: var(--radio-ink); box-shadow: inset 0 0 0 1px var(--radio-line); font-size: 0.95rem; }
   .heard:hover { box-shadow: inset 0 0 0 2px var(--radio-brass); }
   .heard .t { flex: none; font-weight: 700; color: var(--radio-amber); }
-  .topic { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.95rem; border-radius: 9999px; font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1rem; color: var(--radio-ink);
+  .topic { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.95rem; border-radius: 9999px; font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1rem; color: var(--radio-ink);
     background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); transition: background 0.2s, box-shadow 0.2s; }
   .topic.big { font-size: 1.2rem; box-shadow: inset 0 0 0 1.5px var(--radio-brass); }
   .topic:hover { background: var(--radio-dial); }

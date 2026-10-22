@@ -1874,7 +1874,7 @@
 
   /* Para anchor button in bilingual/study modes */
   .para-anchor-btn {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
     background: none;
@@ -2058,7 +2058,7 @@
     font-weight: 600;
     color: #1a1a1a;
     line-height: 1.3;
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif;
   }
 
   .doc-author {
@@ -2184,7 +2184,7 @@
   }
 
   .footer-title {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 1rem;
     font-weight: 600;
     color: #1a1a1a;
@@ -2192,7 +2192,7 @@
   }
 
   .footer-author {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 0.875rem;
     font-style: italic;
     color: #555;
@@ -2232,7 +2232,7 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 0.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif;
     /* Explicit light colors - not affected by dark mode */
     color: #1a1a1a;
     /* Allow corner icons to overflow */
@@ -2317,7 +2317,7 @@
     min-width: 2.5rem;                 /* grows for a verse pn like 119:176 */
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
     text-align: right;
@@ -2357,7 +2357,7 @@
   }
 
   .chapter-divider {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 0.95rem;
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -2463,7 +2463,7 @@
     align-items: flex-start;
     justify-content: center;
     padding: 0 0.75rem;
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
     min-width: 2.5rem;
@@ -2597,7 +2597,7 @@
   }
 
   .study-para-number .para-anchor-btn {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
     background: none;
@@ -2652,7 +2652,7 @@
 
   /* English translation - RIGHT column, left-aligned text */
   .study-phrase-translation {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 1.05rem;
     line-height: 1.6;
     color: #333;
@@ -2731,7 +2731,7 @@
 
   .study-phrase-text {
     display: block;
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 1.1rem;
     line-height: 1.25;
     color: #1a1a1a;

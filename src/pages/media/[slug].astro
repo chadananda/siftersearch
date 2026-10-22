@@ -71,6 +71,7 @@ const ld = item ? [{
   <Fragment slot="head">
     <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-normal-400-latin.woff2" crossorigin />
     {ld.map((x) => <script type="application/ld+json" set:html={JSON.stringify(x)} />)}
   </Fragment>
   <NavBar client:idle currentPage="media" />

@@ -262,7 +262,7 @@
   }
 
   .para-num {
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif;
     font-size: 0.6875rem;
     color: #999;
     text-align: center;
@@ -273,7 +273,7 @@
     flex: 1;
     min-width: 0;
     margin: 0;
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif;
     font-size: 0.9375rem;
     line-height: 1.65;
     color: #1a1a1a;
@@ -400,7 +400,7 @@
       position: absolute;
       left: 0.5rem;
       top: 0.875rem;
-      font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+      font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif;
       font-size: 0.6875rem;
       color: #999;
     }

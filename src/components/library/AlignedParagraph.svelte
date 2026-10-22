@@ -100,7 +100,7 @@
 
   .text-content {
     margin: 0;
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif;
     font-size: 0.9375rem;
     line-height: 1.65;
     color: #1a1a1a;

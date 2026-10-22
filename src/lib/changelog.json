@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-22T15:32:33.826Z",
+  "generated": "2026-10-22T15:36:47.495Z",
   "entries": [
+    {
+      "hash": "629e3d74",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "Deploy (moment ?m= redirect)",
+      "scope": null
+    },
     {
       "hash": "93ad2247",
       "date": "2026-10-22",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Reading guide — web only when the library cannot answer",
       "scope": "worklist"
-    },
-    {
-      "hash": "7a80a75c",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Reading-guide reply semantics + web depth layer (Perplexity, Parallel.ai)",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "629e3d74",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "Deploy (moment ?m= redirect)",
+        "scope": null
+      },
       {
         "hash": "93ad2247",
         "date": "2026-10-22",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-12",
         "type": "Docs",
         "description": "Reading guide — web only when the library cannot answer",
-        "scope": "worklist"
-      },
-      {
-        "hash": "7a80a75c",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Reading-guide reply semantics + web depth layer (Perplexity, Parallel.ai)",
         "scope": "worklist"
       }
     ]

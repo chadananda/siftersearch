@@ -122,11 +122,12 @@ const organizationSchema = {
     {app && <meta name="apple-mobile-web-app-title" content={app.name} />}
     {app && <meta name="theme-color" content={app.color} />}
 
-    <!-- Preload critical fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Fonts never block the first paint (Chad 10-22). Libre Caslon Text (English content) is self-hosted in
+         /fonts with metric-matched fallbacks (global.css; reading pages preload it). Amiri (Arabic/Persian) still
+         comes from Google Fonts, loaded as a non-blocking stylesheet (print → all swap) — only those scripts use it. -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Libre Caslon Text for English content, Amiri for Arabic/Persian -->
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" /></noscript>
 
     <!-- Additional head content slot (for page-specific meta tags, structured data) -->
     <slot name="head" />

@@ -577,7 +577,7 @@
   .log-row.on { color: var(--radio-ink); background: var(--radio-brass-soft); }
   .log-row.on::before { content: ''; position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem; width: 3px; border-radius: 2px; background: var(--radio-needle); }
   .log-t { flex: none; width: 3.4rem; font: 700 0.9rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-amber); font-variant-numeric: tabular-nums; }
-  .topic { display: inline-block; padding: 0.3rem 0.75rem; border-radius: 9999px; font-family: 'Libre Caslon Text', Georgia, serif; font-size: 0.92rem; color: var(--radio-ink);
+  .topic { display: inline-block; padding: 0.3rem 0.75rem; border-radius: 9999px; font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 0.92rem; color: var(--radio-ink);
     background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); }
   .topic:hover { box-shadow: inset 0 0 0 1.5px var(--radio-brass); }
 

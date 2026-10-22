@@ -54,7 +54,7 @@
 
   .orbit { position: absolute; inset: 0; animation: spin 26s linear infinite; }
   .orbit span {
-    position: absolute; left: 50%; top: 50%; font-family: 'Libre Caslon Text', Georgia, serif; font-size: calc(var(--s) * 0.13);
+    position: absolute; left: 50%; top: 50%; font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: calc(var(--s) * 0.13);
     color: var(--text-muted); opacity: 0.75;
     transform: rotate(calc(360deg / var(--n) * var(--i))) translateY(calc(var(--s) * -0.7)) rotate(calc(-360deg / var(--n) * var(--i)));
     transition: transform 900ms cubic-bezier(.2,.8,.2,1), opacity 600ms, color 600ms;

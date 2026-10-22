@@ -208,7 +208,7 @@
   --color-radio-line: var(--radio-line);
   --font-dial: 'Big Shoulders Display', 'Shoulders Fallback', 'Arial Narrow', sans-serif;
   --font-marquee: 'Gloock', 'Gloock Fallback', Georgia, serif;
-  --font-quote: 'Libre Caslon Text', Georgia, serif;
+  --font-quote: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
 
   /* Interactive */
   --color-hover: var(--hover-overlay);
@@ -453,7 +453,7 @@ mark {
   left: -2rem;
   top: 0.75rem;
   width: 1.5rem;
-  font-family: 'Libre Caslon Text', Georgia, serif;
+  font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
   font-size: 0.6875rem;
   color: #999;
   text-align: right;
@@ -467,7 +467,7 @@ mark {
 /* Para text - works inside .paper-paragraph or directly in .paper-scroll (for previews) */
 .para-text {
   margin: 0;
-  font-family: 'Libre Caslon Text', Georgia, serif;
+  font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
   font-size: 0.9375rem;
   line-height: 1.65;
   color: #1a1a1a;
@@ -488,6 +488,16 @@ mark {
 @font-face { font-family: 'Gloock'; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/gloock-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: 'Big Shoulders Display'; font-style: normal; font-weight: 600 800; font-display: swap; src: url(/fonts/big-shoulders-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: 'Big Shoulders Display'; font-style: normal; font-weight: 600 800; font-display: swap; src: url(/fonts/big-shoulders-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-/* metric stand-ins while the display faces load (keeps line breaks close, so the swap barely shifts the layout) */
-@font-face { font-family: 'Gloock Fallback'; src: local('Georgia'), local('Times New Roman'); size-adjust: 93%; ascent-override: 92%; descent-override: 24%; }
-@font-face { font-family: 'Shoulders Fallback'; src: local('Arial Narrow'), local('Roboto Condensed'), local('Helvetica Neue Condensed Bold'); size-adjust: 96%; }
+/* Libre Caslon Text (body serif: transcripts, quotations, library text): self-hosted like the display faces, so no
+   render-blocking third-party stylesheet; latin + latin-ext, regular / italic / bold. OFL. */
+@font-face { font-family: 'Libre Caslon Text'; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-italic-400-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-italic-400-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-normal-400-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-normal-400-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/libre-caslon-normal-700-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/libre-caslon-normal-700-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+/* Metric stand-ins while the web faces load: local fonts scaled to the web faces' advance widths and vertical metrics
+   (measured with fontTools against the same sentence), so the swap keeps line breaks and heights — no layout shift. */
+@font-face { font-family: 'Caslon Fallback'; src: local('Georgia'); size-adjust: 107.5%; ascent-override: 90%; descent-override: 24%; line-gap-override: 0%; }
+@font-face { font-family: 'Gloock Fallback'; src: local('Georgia'); size-adjust: 92%; ascent-override: 106%; descent-override: 24.5%; line-gap-override: 0%; }
+@font-face { font-family: 'Shoulders Fallback'; src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Narrow'), local('Roboto Condensed'); size-adjust: 110%; ascent-override: 89.5%; descent-override: 19.4%; line-gap-override: 0%; }

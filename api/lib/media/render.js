@@ -56,25 +56,35 @@ export function transcriptMarkdown({ meta, paragraphs, quotes = [], links = [], 
   return `${lines.join('\n').trim()}\n`;
 }
 
-const CSS = `:root{--bg:#fbfaf7;--fg:#1f1d1a;--muted:#6b665e;--line:#e6e1d8;--accent:#8a5a14;--hl:#fff4bf;--range:#f3ead6;--card:#f4f0e8;--quote:#2d5d8a}
-@media (prefers-color-scheme:dark){:root{--bg:#141311;--fg:#e9e5dc;--muted:#a19a8d;--line:#2c2a26;--accent:#e0a94a;--hl:rgba(255,226,120,.16);--range:rgba(224,169,74,.12);--card:#1d1b18;--quote:#8fb8e0}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.7 Georgia,'Iowan Old Style',serif}
-header{max-width:44rem;margin:0 auto;padding:1.5rem 1rem 0.5rem}h1{font-size:1.6rem;line-height:1.25;margin:.2rem 0}
-.meta{color:var(--muted);font:14px/1.5 system-ui,sans-serif}.meta a{color:var(--accent)}
-.src{display:inline-block;margin-top:.5rem;font:600 14px system-ui,sans-serif;color:var(--accent)}
-main{max-width:44rem;margin:0 auto;padding:0 1rem 8rem}.toc{font:15px/1.5 system-ui,sans-serif;margin:1rem 0 2rem;padding:.8rem 1rem;border:1px solid var(--line);border-radius:8px}.toc ol{margin:0;padding-left:1.2rem}.toc a{color:var(--accent);text-decoration:none}h2{font-size:1.15rem;margin:2rem 0 .5rem}
-.p{position:relative;margin:0 0 1.1rem}.p .play{position:absolute;left:-2.4rem;top:.15rem;width:1.8rem;height:1.8rem;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--accent);cursor:pointer;font-size:.8rem;opacity:.55}
-.p:hover .play,.p .play:focus{opacity:1}@media (max-width:52rem){.p .play{position:static;float:left;margin:.25rem .5rem 0 0}}
-.spk{font:600 12px system-ui,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block}
+// The Listening Room look (same tokens as the site's --radio-*): cream paper / walnut + amber, Gloock headings, Caslon
+// text, Big Shoulders figures. Fonts load from the site's /fonts (same origin as this page when served via siftersearch.com).
+const CSS = `@font-face{font-family:Gloock;src:url(/fonts/gloock-latin.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Big Shoulders Display';font-weight:600 800;src:url(/fonts/big-shoulders-latin.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Libre Caslon Text';src:url(/fonts/libre-caslon-normal-400-latin.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Libre Caslon Text';font-style:italic;src:url(/fonts/libre-caslon-italic-400-latin.woff2) format('woff2');font-display:swap}
+:root{--bg:#f6efe1;--paper:#fbf6ea;--fg:#2a1a0e;--muted:#6b4f36;--line:rgba(59,36,20,.16);--accent:#b45309;--brass:#9a7330;--wood:#3b2414;--on:#f8ecd4;--needle:#b42318;--hl:rgba(254,240,138,.6);--range:rgba(14,165,233,.08);--card:#fbf6ea;--quote:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#15100b;--paper:#1e1711;--fg:#f4e6cf;--muted:#c9b394;--line:rgba(244,230,207,.12);--accent:#ffb347;--brass:#d6ad5c;--wood:#120c07;--on:#f8ecd4;--needle:#ff5a3c;--hl:rgba(253,224,71,.22);--range:rgba(56,189,248,.1);--card:#1e1711;--quote:#ffb347}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.8 'Libre Caslon Text',Georgia,serif}
+header{max-width:46rem;margin:1rem auto 0;padding:1.6rem 1.4rem 1.4rem;background:var(--wood);color:var(--on);border-radius:1.2rem;box-shadow:inset 0 0 0 1px rgba(214,173,92,.45)}
+header::before{content:'● THE LISTENING ROOM';display:block;font:700 13px/1 'Big Shoulders Display',sans-serif;letter-spacing:.24em;color:#e3bd6e;margin-bottom:.8rem}
+h1{font:400 2.1rem/1.08 Gloock,Georgia,serif;margin:.2rem 0 .5rem}
+.meta{color:var(--on);opacity:.8;font:14px/1.5 system-ui,sans-serif}.meta a{color:#ffb347}
+.src{display:inline-block;margin-top:.7rem;font:600 14px system-ui,sans-serif;color:var(--on);text-decoration:underline;text-decoration-color:#e3bd6e;text-underline-offset:3px}
+main{max-width:46rem;margin:0 auto;padding:1.5rem 1.4rem 8rem}.toc{font:15px/1.5 system-ui,sans-serif;margin:0 0 2rem;padding:.9rem 1.1rem;background:var(--paper);border-radius:12px;box-shadow:inset 0 0 0 1px var(--line)}.toc ol{margin:0;padding-left:1.2rem}.toc a{color:var(--fg);text-decoration:none}.toc a:hover{color:var(--accent)}
+h2{font:400 1.6rem/1.2 Gloock,Georgia,serif;margin:2.6rem 0 .6rem;padding-top:1rem;border-top:1px solid var(--line)}
+.p{position:relative;margin:0 0 1.15rem}.p .play{position:absolute;left:-2.8rem;top:.2rem;width:2.1rem;height:2.1rem;border-radius:50%;border:0;box-shadow:inset 0 0 0 1.5px var(--line);background:var(--paper);color:var(--accent);cursor:pointer;font-size:.8rem}
+.p .play:hover,.p .play:focus{box-shadow:inset 0 0 0 2px var(--accent)}@media (max-width:52rem){.p .play{position:static;float:left;margin:.25rem .55rem 0 0}}
+.spk{font:700 13px 'Big Shoulders Display',system-ui,sans-serif;color:var(--brass);text-transform:uppercase;letter-spacing:.16em;display:block}
 .w{cursor:pointer;border-radius:3px}.w.on{background:var(--hl);box-shadow:0 0 0 2px var(--hl)}.w.rg{background:var(--range)}
-a.q{color:var(--quote);text-decoration:underline dotted;text-underline-offset:3px}a.ln{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}a.ln:hover{color:var(--accent);text-decoration-color:currentColor}
-.cr{margin:.4rem 0 1.4rem 1rem;padding:.7rem 1rem;border-left:3px solid var(--accent);background:var(--card);font-size:.95rem;border-radius:0 6px 6px 0}
-.cr .k{font:600 11px system-ui,sans-serif;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}.cr cite{display:block;font:13px system-ui,sans-serif;color:var(--muted);margin-top:.3rem}.cr a{color:var(--accent);text-decoration:none}.cr a:hover{text-decoration:underline}
-.fab{position:fixed;right:1rem;bottom:1rem;display:flex;gap:.5rem;align-items:center;font:600 14px system-ui,sans-serif}
-.fab button{border:0;border-radius:999px;background:var(--accent);color:var(--bg);height:3.2rem;min-width:3.2rem;padding:0 1rem;font:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
-.fab .follow{background:var(--card);color:var(--fg);border:1px solid var(--line);height:2.4rem;display:none}.fab .follow.show{display:inline-block}
-.sel{position:absolute;display:none;z-index:5;font:600 13px system-ui,sans-serif;background:var(--fg);color:var(--bg);border:0;border-radius:6px;padding:.35rem .6rem;cursor:pointer}
-.note{color:var(--muted);font:14px system-ui,sans-serif;margin:.5rem 0}`;
+a.q{color:inherit;text-decoration:underline dotted var(--quote);text-decoration-thickness:2px;text-underline-offset:5px}a.ln{color:inherit;text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:5px}a.ln:hover,a.q:hover{color:var(--accent)}
+.cr{margin:1.2rem 0 1.5rem;padding:1rem 1.2rem;background:var(--paper);border-radius:12px;box-shadow:inset 4px 0 0 var(--accent),inset 0 0 0 1px var(--line);font-size:1rem;font-style:italic}
+.cr .k{display:block;font:700 12px 'Big Shoulders Display',system-ui,sans-serif;font-style:normal;color:var(--muted);text-transform:uppercase;letter-spacing:.2em;margin-bottom:.3rem}.cr cite{display:block;font:600 13px system-ui,sans-serif;font-style:normal;color:var(--muted);margin-top:.5rem}.cr a{color:var(--fg);text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:2px}.cr a:hover{color:var(--accent)}
+.fab{position:fixed;left:1rem;bottom:1rem;display:flex;gap:.5rem;align-items:center;font:700 16px 'Big Shoulders Display',system-ui,sans-serif;letter-spacing:.06em}
+.fab button{border:0;border-radius:999px;background:var(--accent);color:var(--wood);height:3.3rem;min-width:3.3rem;padding:0 1.1rem;font:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.fab .follow{background:var(--wood);color:var(--accent);height:2.5rem;display:none}.fab .follow.show{display:inline-block}
+.sel{position:absolute;display:none;z-index:5;font:600 13px system-ui,sans-serif;background:var(--wood);color:var(--on);border:0;border-radius:8px;padding:.45rem .7rem;cursor:pointer}
+.note{color:var(--on);opacity:.75;font:14px system-ui,sans-serif;margin:.5rem 0}
+a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}`;
 
 /** The player script (vanilla; the Svelte /media page follows the same rules). Reads window.MEDIA. */
 const JS = `(()=>{const M=window.MEDIA,$=(s,r=document)=>r.querySelector(s);const audio=new Audio();audio.preload='none';

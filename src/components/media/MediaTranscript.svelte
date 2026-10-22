@@ -131,7 +131,7 @@
 </div>
 
 <style>
-  .transcript { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.12rem; line-height: 1.8; color: var(--radio-ink); max-width: 44rem;
+  .transcript { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1.12rem; line-height: 1.8; color: var(--radio-ink); max-width: 44rem;
     font-variant-ligatures: common-ligatures; font-kerning: normal; hyphens: auto; -webkit-hyphens: auto; }
   @media (min-width: 1024px) { .transcript { padding-left: 4.5rem; max-width: 48.5rem; } }
   .para { position: relative; margin-top: 1.15rem; display: flow-root; }

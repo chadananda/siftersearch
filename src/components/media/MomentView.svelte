@@ -160,7 +160,7 @@
   .ctx { color: var(--radio-on-dark); font-weight: 600; text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .ctx:hover { color: var(--radio-amber); }
   .insert { margin-top: 1rem; padding: 1.1rem 1.3rem; border-radius: 0.9rem; }
-  .insert blockquote { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.12rem; line-height: 1.6; }
+  .insert blockquote { font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1.12rem; line-height: 1.6; }
   .insert .cite { margin-top: 0.6rem; font-size: 0.9rem; }
   .insert .cite a { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
   .paper { background: var(--radio-paper); color: var(--radio-ink); box-shadow: inset 4px 0 0 var(--tint), inset 0 0 0 1px var(--radio-line); }

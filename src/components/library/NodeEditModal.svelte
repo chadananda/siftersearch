@@ -280,7 +280,7 @@
   }
 
   .modal-title {
-    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
