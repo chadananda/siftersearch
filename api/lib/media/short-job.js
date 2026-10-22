@@ -49,13 +49,15 @@ export async function renderShortFor(item, params, deps = {}) {
     await tools.ffmpeg(['-y', '-ss', String(range.start), '-to', String(range.end), '-i', join(item.dir, 'web', `${item.slug}.m4a`), '-vn', '-c:a', 'aac', '-b:a', '160k', join(work, 'audio.m4a')], { timeoutMs: 120_000 });
     let portrait = false;
     const purl = deps.portraitUrl ? await deps.portraitUrl(item) : null;
-    // the portrait: two tries (10-22: the first short after a restart got none and cached a portrait-less render)
-    for (let k = 0; purl && !portrait && k < 2; k++) {
+    // the portrait: three tries (10-22: the first short after a restart got none and cached a portrait-less render)
+    let portraitError = purl ? null : 'no portrait on record';
+    for (let k = 0; purl && !portrait && k < 3; k++) {
+      if (k) await new Promise((r) => setTimeout(r, 2000 * k));
       try {
         const r = await (deps.fetchImpl || fetch)(`${purl}${purl.includes('?') ? '&' : '?'}tr=w-900,h-900,fo-face,q-85`, { signal: AbortSignal.timeout(30000) });
         const buf = r.ok ? Buffer.from(await r.arrayBuffer()) : null;
-        if (buf && buf.length > 2000) { await writeFile(join(work, 'portrait.jpg'), buf); portrait = true; }
-      } catch { /* retry, then the template's own ground */ }
+        if (buf && buf.length > 2000) { await writeFile(join(work, 'portrait.jpg'), buf); portrait = true; portraitError = null; } else portraitError = `HTTP ${r.status}, ${buf?.length ?? 0} bytes`;
+      } catch (err) { portraitError = String(err?.cause?.code || err?.message || err).slice(0, 120); }
     }
     const qr = deps.qr || (async (text) => (await import('qrcode')).default.toBuffer(text, { margin: 2, width: 460, color: { dark: '#1A1F24', light: '#F6EEDC' } }));
     await writeFile(join(work, 'qr.png'), await qr(plan.urls.full));
@@ -70,7 +72,7 @@ export async function renderShortFor(item, params, deps = {}) {
     await writeFile(join(dir, `${plan.key}.srt`), srtOf(words));
     await writeFile(join(dir, `${plan.key}.vtt`), vttOf(words));
     const post = postText({ words, speaker: meta.speaker, title: meta.title, year: meta.year, url: plan.urls.shown, fullUrl: plan.urls.full, topics: meta.topics || [], tradition: meta.tradition || "Bahá'í" });
-    await writeFile(join(dir, `${plan.key}.json`), JSON.stringify({ ...result(), post, portrait, render_ms: ms, clip_s: clip, bytes: video.length, at: new Date().toISOString() }, null, 1));
-    return { ...result(), cached: false, portrait, render_ms: ms, bytes: video.length, post };
+    await writeFile(join(dir, `${plan.key}.json`), JSON.stringify({ ...result(), post, portrait, portrait_error: portraitError, render_ms: ms, clip_s: clip, bytes: video.length, at: new Date().toISOString() }, null, 1));
+    return { ...result(), cached: false, portrait, portrait_error: portraitError, render_ms: ms, bytes: video.length, post };
   } finally { await rm(work, { recursive: true, force: true }); }
 }
