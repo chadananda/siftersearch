@@ -7,7 +7,7 @@
 // the secondary rules; a book of line fragments is listed, not written. With write, content.authors goes through the
 // writer, every previous value first appended to <outDir>/rollback.jsonl. Port of scripts/authorship/window-run.mjs,
 // which opened the database directly. params { religion = "Baha'i", ids?, write = false, limit?, concurrency = 4, outDir, maxLlm = 20000 (Haiku-call cap) }.
-import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { getDoc, listDocs } from '../docs-repo.js';
 import { getAuthority } from '../authority.js';
@@ -20,8 +20,11 @@ import { isDraining } from '../drain.js';
 const multiAuthor = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.test(d.author || '');
 export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
 
-export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, write = false, limit = 0, concurrency = 4,
+export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all = false, write = false, limit = 0, concurrency = 4,
   outDir = '/tank/sifter/authorship/wrun-all', maxLlm = 20000 } = {}, deps = {}) {
+  // a whole tradition is never a DEFAULT (10-21: a run queued with params null set out to classify all 57,903 Bahá'í books —
+  // beyond the approved scope); it takes ids, or an explicit all: true
+  if (!ids?.length && !all) return { refused: 'no ids — pass ids, or all: true for every book of the tradition' };
   const { ask = (await import('../systemone.js')).ask, chatCompletion = (await import('../ai.js')).chatCompletion,
     rowsOf = authorshipRows, writeAuthors = writeParagraphAuthors, docs = listDocs, doc = getDoc, draining = isDraining } = deps;
   mkdirSync(outDir, { recursive: true });
@@ -36,7 +39,10 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, wri
     }
   }
   if (limit) books = books.slice(0, limit);
-  const saved = (id) => existsSync(join(outDir, `${id}.json`));
+  // the saved labels, read ONCE: an existsSync per sort comparison was ~1M synchronous calls over 57,903 books and froze the
+  // service's event loop for minutes (10-21: reports went 'silent'; its cancel and drain could not get through)
+  const savedIds = new Set(readdirSync(outDir).filter((f) => /^\d+\.json$/.test(f)).map((f) => Number(f.slice(0, -5))));
+  const saved = (id) => (savedIds.has(Number(id)) ? 1 : 0);
   // saved books first (no model calls), then the longest, so one 3,000-paragraph history does not run alone at the end
   const queue = books.sort((a, b) => (saved(b.id) - saved(a.id)) || ((b.paragraph_count || 0) - (a.paragraph_count || 0)));
   const stats = { books: 0, resumed: 0, paras: 0, author_changed: 0, quoted_added: 0, writes: 0, fragmented: 0, errors: 0 };

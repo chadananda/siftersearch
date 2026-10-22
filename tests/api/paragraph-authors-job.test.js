@@ -95,7 +95,7 @@ describe('spend cap', () => {
     const { paragraphAuthorsJob } = await import('../../api/lib/ops/paragraph-authors-job.js');
     const { mkdtempSync } = await import('fs'); const { tmpdir } = await import('os'); const { join } = await import('path');
     const books = [1, 2, 3].map((id) => ({ id, title: `B${id}`, author: 'X', religion: "Baha'i", paragraph_count: 1 }));
-    const r = await paragraphAuthorsJob({ maxLlm: 0, concurrency: 1, outDir: mkdtempSync(join(tmpdir(), 'pa-')) },
+    const r = await paragraphAuthorsJob({ all: true, maxLlm: 0, concurrency: 1, outDir: mkdtempSync(join(tmpdir(), 'pa-')) },
       { ask: async () => ({}), chatCompletion: async () => '', docs: async () => ({ docs: books }), rowsOf: async () => [], writeAuthors: async () => {} });
     expect(r.books).toBe(0);
     expect(r.stopped_at_cap).toBe(3);
@@ -109,7 +109,7 @@ describe('yields to a drain (10-19: a multi-hour run held the reports service in
     const { paragraphAuthorsJob } = await import('../../api/lib/ops/paragraph-authors-job.js');
     const { mkdtempSync } = await import('fs'); const { tmpdir } = await import('os'); const { join } = await import('path');
     const books = [1, 2].map((id) => ({ id, title: `B${id}`, author: 'X', religion: "Baha'i", paragraph_count: 1 }));
-    const r = await paragraphAuthorsJob({ concurrency: 1, outDir: mkdtempSync(join(tmpdir(), 'pa-')) },
+    const r = await paragraphAuthorsJob({ all: true, concurrency: 1, outDir: mkdtempSync(join(tmpdir(), 'pa-')) },
       { ask: async () => ({}), chatCompletion: async () => '', docs: async () => ({ docs: books }), rowsOf: async () => [], writeAuthors: async () => {} });
     expect(r.yielded).toBe(true);
     expect(r.books).toBe(0);
@@ -125,15 +125,24 @@ describe('a drain stops a long book mid-way and the next run resumes it (10-21: 
     let asks = 0;
     const deps = (drain) => ({ ask: async () => { asks++; return { answers: {} }; }, chatCompletion: async () => '', docs: async () => ({ docs: [big] }), doc: async () => big,
       rowsOf: async () => many, writeAuthors: async () => {}, draining: drain });
-    const r1 = await paragraphAuthorsJob({ concurrency: 1, outDir, write: false }, deps(() => asks >= 3));
+    const r1 = await paragraphAuthorsJob({ all: true, concurrency: 1, outDir, write: false }, deps(() => asks >= 3));
     expect(r1.yielded).toBe(true);
     expect(existsSync(join(outDir, '5.json'))).toBe(false);
     expect(JSON.parse(readFileSync(join(outDir, '5.partial.json'), 'utf8')).from).toBe(30);
     asks = 0;
-    const r2 = await paragraphAuthorsJob({ concurrency: 1, outDir, write: false }, deps(() => false));
+    const r2 = await paragraphAuthorsJob({ all: true, concurrency: 1, outDir, write: false }, deps(() => false));
     expect(r2.yielded).toBeFalsy();
     expect(asks).toBe(3);   // windows 30, 40, 50 — not the whole book again
     expect(existsSync(join(outDir, '5.json'))).toBe(true);
     expect(existsSync(join(outDir, '5.partial.json'))).toBe(false);
+  });
+});
+
+describe('a whole tradition is never the default (10-21: params null set out on 57,903 books)', () => {
+  it('no ids and no all:true → refused, nothing listed', async () => {
+    let listed = false;
+    const r = await paragraphAuthorsJob({ outDir: mkdtempSync(join(tmpdir(), 'pa-')) }, { docs: async () => { listed = true; return { docs: [] }; } });
+    expect(r.refused).toMatch(/no ids/);
+    expect(listed).toBe(false);
   });
 });
