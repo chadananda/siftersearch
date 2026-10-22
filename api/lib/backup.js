@@ -256,10 +256,9 @@ export async function runBackup() {
   }
   writeLastBackupTime();
 
-  // ── 2. Meilisearch index (rsync /fast → BACKUP_DIR/meilisearch) ─
-  // Independent failure isolation: if Meili rsync fails, SQLite backup
-  // still counted as successful and pruning still runs.
-  components.push(await runMeiliBackup());
+  // ── 2. Meilisearch index: RETIRED (storage plan R8, 10-21). Search no longer reads it and the service is stopped;
+  // its last data stays on /tank. runMeiliBackup() remains for a manual run only.
+  if (config.search.enabled) components.push(await runMeiliBackup());
 
   // ── 3. Embedding cache (small SQLite, fast .backup) ─────────────
   components.push(await runEmbeddingCacheBackup());

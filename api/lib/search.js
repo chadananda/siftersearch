@@ -1724,6 +1724,7 @@ export async function syncHypeBatch(opts = {}) {
  */
 export async function federatedSearch(queries, options = {}) {
   const meili = getMeili();
+  if (!meili) return { hits: [], processingTimeMs: 0, retired: 'meilisearch' };   // Meilisearch retired (storage plan R8)
   const { limit = 20, offset = 0 } = options;
 
   // For federated search, limit/offset go on federation object, not individual queries
@@ -1923,12 +1924,11 @@ export async function getStats() {
  * Health check
  */
 export async function healthCheck() {
-  // Both engines: Qdrant is the retirement target (planning/meili-retirement-map.md); `status` still follows Meili while
-  // production search ranks with it.
+  // Meilisearch retired (storage plan R8): with it disabled, `status` follows Qdrant, the engine search ranks with.
   const { qdrantHealth } = await import('./search/qdrant-layers.js');
   const qdrant = await qdrantHealth();
   if (!config.search.enabled) {
-    return { status: 'disabled', message: 'Meilisearch is disabled', qdrant };
+    return { status: qdrant.status, engine: 'qdrant', meilisearch: 'retired', qdrant };
   }
   try {
     const meili = getMeili();

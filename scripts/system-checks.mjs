@@ -44,8 +44,7 @@ const api = await http('http://127.0.0.1:7839/health');
 add('API :7839', api.status === 200, 'critical', api.status === 200 ? JSON.parse(api.body).version : why(api));
 const writer = await http('http://127.0.0.1:7849/health');
 add('Writer :7849', writer.status === 200, 'critical', writer.status === 200 ? 'ok' : why(writer));
-const meili = await http('http://127.0.0.1:7700/health');
-add('Meilisearch', meili.status === 200, 'critical', meili.status === 200 ? 'ok' : why(meili));
+// Meilisearch is retired (storage plan R8, 10-21): no probe, so a stopped Meili never pages anyone.
 const tunnel = await http('https://api.siftersearch.com/health', { timeout: 12000 });
 add('Public API (tunnel)', tunnel.status === 200, 'critical', tunnel.status === 200 ? 'ok' : why(tunnel));
 const site = await http('https://siftersearch.com/', { timeout: 12000 });

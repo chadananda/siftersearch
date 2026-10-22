@@ -43,6 +43,7 @@ export function conceptDoc(row) {
  * @returns {Promise<{indexed:number, taskUid?:number, skipped?:string}>}
  */
 export async function syncConcepts({ limit = 20000 } = {}) {
+  if (!getMeili()) return { indexed: 0, skipped: 'meilisearch retired' };   // storage plan R8
   const rows = await queryAll(`${CONCEPT_SELECT} LIMIT ?`, [limit], 'concepts:sync-read');
   // Ensure the index EXISTS even with nothing to write. Meili creates an index lazily on first document
   // write, so an empty concepts table left the index absent — a query for it 404s rather than returning
@@ -169,6 +170,7 @@ export async function searchConceptProofs(_deps, query, { limit = 8, entries = n
 
 /** Push lexicon entries into the concepts index. Full refresh, same reasoning as syncConcepts. */
 export async function syncLexicon({ limit = 50000 } = {}) {
+  if (!getMeili()) return { indexed: 0, skipped: 'meilisearch retired' };   // storage plan R8
   const rows = await queryAll(`${LEXICON_SELECT} LIMIT ?`, [limit], 'concepts:sync-lexicon');
   try {
     await getMeili().createIndex(INDEXES.CONCEPTS, { primaryKey: 'id' });

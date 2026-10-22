@@ -15,7 +15,7 @@ const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.na
 // Frozen 2026-10-09. Target: only api/lib/search/engine/* + api/lib/search/index-writer/* (P3), then nothing (P5).
 const ALLOWED = new Set([
   // config / env / health (move to engine.health() — P3)
-  'api/lib/config.js', 'api/lib/env-check.js', 'api/routes/search.js', 'scripts/health-check.mjs', 'scripts/system-checks.mjs',
+  'api/lib/config.js', 'api/lib/env-check.js', 'api/routes/search.js', 'scripts/health-check.mjs',
   'scripts/preflight.js', 'scripts/dev.js',
   // ranking + secondary indexes (behind engine.js — P3)
   'api/lib/search.js', 'api/lib/search/concepts.js', 'api/lib/search/entity.js', 'api/lib/search/hype.js',

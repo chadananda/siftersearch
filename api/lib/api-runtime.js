@@ -152,6 +152,9 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         } catch (err) {
           logger.warn({ err }, 'Failed to start sync worker');
         }
+      }
+      // Cache prewarm does NOT depend on Meilisearch (retired, storage plan R8): search ranks with Qdrant
+      if (PRIMARY) {
 
         // Embedding worker disabled in API — its getUnembedded() query scans 2.5M rows
         // every 5 seconds, blocking the event loop and causing health check timeouts.
@@ -162,7 +165,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         // Delayed by 5s to let Meilisearch finish any pending tasks first
         setTimeout(async () => {
           // Author/collection filters depend on this; initializeIndexes() does not run in the API.
-          ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
+          if (config.search.enabled) ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
           // OL doc ID cache — pre-warm immediately to prevent thundering-herd on first search wave
           if (!preboot) {   // preboot already built both before listening
             warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
@@ -176,9 +179,8 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
             logger.warn({ err }, 'Failed to pre-warm search cache');
           }
         }, 5000);
-      } else {
-        logger.info('Meilisearch disabled (MEILISEARCH_ENABLED=false), sync worker not started');
       }
+      if (!config.search.enabled) logger.info('Meilisearch retired (MEILISEARCH_ENABLED=false): no sync worker, no engine features');
 
       // Library watcher runs as separate PM2 process (siftersearch-library-watcher)
       // Do NOT start it inside the API — it duplicates work and consumes memory
