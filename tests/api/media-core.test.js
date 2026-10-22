@@ -17,6 +17,8 @@ describe('names', () => {
       .toMatchObject({ speaker: 'William Sears', title: 'Prophecies', part: 3, series: "Prophecies Fulfilled by Baha'u'llah" });
     expect(parseMediaPath('Sabri Iqan/Sabri, H. - Rendezvous of the Soul - 1992 10 14.mp3')).toMatchObject({ speaker: 'Sabri, H.', title: 'Rendezvous of the Soul' });
     expect(parseMediaPath('Discourse.mp3')).toMatchObject({ title: 'Discourse', speaker: null, collection: null });
+    expect(parseMediaPath('Grossman Various/Grossmann - World Order 2 - 1999 07 05.mp3').speakerFrom).toBe('file');
+    expect(parseMediaPath('Nakhjavani Various/full2.mp3')).toMatchObject({ speaker: 'Nakhjavani', speakerFrom: 'folder' });
   });
   it('finds dates in many spellings; the recording year is the last one', () => {
     expect(dateIn('Hooper Dunbar-Medford OR 20120623-1')).toEqual({ date: '2012-06-23', year: 2012 });
@@ -69,6 +71,9 @@ describe('peaks', () => {
     expect(p).toMatchObject({ version: 2, channels: 1, sample_rate: 100, samples_per_pixel: 100, bits: 8, length: 2 });
     expect(p.data).toEqual([0, 64, -127, 0]);
     expect(Math.max(...normalizePeaks({ ...p, data: [0, 10, -5, 0] }).data)).toBe(127);
+    // a 92-minute talk: 220k values must not overflow the stack
+    const big = normalizePeaks({ ...p, data: new Array(300000).fill(0).map((_, i) => (i % 2 ? 20 : -20)) });
+    expect(big.data[1]).toBe(127);
   });
 });
 

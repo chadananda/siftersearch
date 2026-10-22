@@ -93,7 +93,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the model's reading of path + tags wins when it answered (a folder name like "Misc Other" is not a speaker); the parsed
       // hints only when the model gave nothing
       const answered = !!(named.title || named.speaker);
-      const speaker = answered ? (named.speaker || null) : (hints.speaker || null), title = named.title || hints.title || basename(src, extname(src));
+      // …but a speaker written in the FILE NAME ("Grossmann - World Order 2 - …") stands when the model said nothing (10-21:
+      // the model left Grossmann out and the slug lost him)
+      const speaker = (answered ? named.speaker : null) || (hints.speakerFrom === 'file' || !answered ? hints.speaker : null) || null;
+      const title = named.title || hints.title || basename(src, extname(src));
       const year = named.year || hints.year || null;
       let finalSlug = item.slug;
       if (!finalSlug) {

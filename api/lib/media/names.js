@@ -54,15 +54,15 @@ export function parseMediaPath(rel) {
   const collection = segs.length ? tidy(segs[0]) : null;
   const series = segs.length > 1 ? tidy(segs[segs.length - 1]) : null;
   const { date, year } = dateIn(base);
-  let speaker = null, title = null, part = null;
+  let speaker = null, title = null, part = null, speakerFrom = null;
   // "William_Sears__Prophecies.03" → speaker "William Sears", title "Prophecies", part 3
   const dunder = base.match(/^(.+?)__(.+?)(?:\.(\d{1,3}))?$/);
   if (dunder) {
-    speaker = tidy(dunder[1]); title = tidy(dunder[2]); part = dunder[3] ? Number(dunder[3]) : null;
+    speaker = tidy(dunder[1]); title = tidy(dunder[2]); part = dunder[3] ? Number(dunder[3]) : null; speakerFrom = 'file';
   } else {
     const parts = base.split(/\s+-\s+/).map(tidy).filter(Boolean);
     while (parts.length > 1 && DATE_PART.test(parts[parts.length - 1])) parts.pop();
-    if (parts.length >= 2 && !NOT_SPEAKER.test(parts[0]) && parts[0].split(/\s+/).length <= 4) { speaker = parts[0]; title = parts.slice(1).join(' - '); }
+    if (parts.length >= 2 && !NOT_SPEAKER.test(parts[0]) && parts[0].split(/\s+/).length <= 4) { speaker = parts[0]; title = parts.slice(1).join(' - '); speakerFrom = 'file'; }
     else title = parts.join(' - ') || tidy(base);
   }
   if (title) {
@@ -73,8 +73,8 @@ export function parseMediaPath(rel) {
   // a speaker folder ("Taherzadeh Covenant of Baha'u'llah", "Nakhjavani Various", "sharaf's talks/William Sears/…")
   if (!speaker && segs.length) {
     const named = segs.map(tidy).find((s) => /^[A-Z][a-z]+(?: [A-Z][a-z.]+)?(?: Various)?$/.test(s) && !/talks|recordings|audio/i.test(s));
-    if (named) speaker = named.replace(/ Various$/, '');
+    if (named) { speaker = named.replace(/ Various$/, ''); speakerFrom = 'folder'; }
   }
   if (speaker) speaker = speaker.replace(/,\s*$/, '');
-  return { speaker, title, date, year, part, collection, series };
+  return { speaker, title, date, year, part, collection, series, speakerFrom };
 }

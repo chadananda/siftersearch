@@ -18,7 +18,8 @@ export function computePeaks(samples, sampleRate, { pixelsPerSecond = 20 } = {})
 
 /** Peaks scaled so the loudest pixel reaches full height (quiet old tapes still draw a readable wave). */
 export function normalizePeaks(p) {
-  const max = Math.max(1, ...p.data.map((v) => Math.abs(v)));
+  let max = 1;   // a loop, not Math.max(...data): a 92-minute talk has 220k values and the spread overflowed the stack (10-21)
+  for (const v of p.data) { const a = Math.abs(v); if (a > max) max = a; }
   const k = 127 / max;
   return { ...p, data: p.data.map((v) => Math.max(-128, Math.min(127, Math.round(v * k)))) };
 }
