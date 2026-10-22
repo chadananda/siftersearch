@@ -273,9 +273,10 @@
         <img src={media.href(head.src)} srcset={head.srcset} width="160" height="160" alt={photo ? item.speaker || '' : ''} class="aspect-square w-28 rounded-xl border border-border-subtle bg-surface-2 object-cover sm:w-40" />
         {#if photo && (item.thumb.credit || item.thumb.artist || item.thumb.licence || item.thumb.source_url)}
           {@const credit = item.thumb.credit || item.thumb.artist}
+          {@const src = item.thumb.source_url || item.thumb.page_url}
           <figcaption class="mt-1 max-w-40 text-xs text-muted">
-            Photo{credit ? `: ${credit}` : ''}{item.thumb.licence ? ` · ${item.thumb.licence}` : ''}
-            {#if item.thumb.source_url || item.thumb.page_url}<a href={item.thumb.source_url || item.thumb.page_url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover">source</a>{/if}
+            <!-- the credit itself links to where the photo came from (descriptive anchor text, no bare "source") -->
+            {#if src}<a href={src} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover hover:underline">Photo of {item.speaker || 'the speaker'}{credit ? `: ${credit}` : ''}</a>{:else}Photo{credit ? `: ${credit}` : ''}{/if}{item.thumb.licence ? ` · ${item.thumb.licence}` : ''}
           </figcaption>
         {/if}
       </figure>

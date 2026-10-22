@@ -65,7 +65,7 @@ main{max-width:44rem;margin:0 auto;padding:0 1rem 8rem}.toc{font:15px/1.5 system
 .w{cursor:pointer;border-radius:3px}.w.on{background:var(--hl);box-shadow:0 0 0 2px var(--hl)}.w.rg{background:var(--range)}
 a.q{color:var(--quote);text-decoration:underline dotted;text-underline-offset:3px}
 .cr{margin:.4rem 0 1.4rem 1rem;padding:.7rem 1rem;border-left:3px solid var(--accent);background:var(--card);font-size:.95rem;border-radius:0 6px 6px 0}
-.cr .k{font:600 11px system-ui,sans-serif;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}.cr cite{display:block;font:13px system-ui,sans-serif;color:var(--muted);margin-top:.3rem}.cr a{color:var(--accent)}
+.cr .k{font:600 11px system-ui,sans-serif;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}.cr cite{display:block;font:13px system-ui,sans-serif;color:var(--muted);margin-top:.3rem}.cr a{color:var(--accent);text-decoration:none}.cr a:hover{text-decoration:underline}
 .fab{position:fixed;right:1rem;bottom:1rem;display:flex;gap:.5rem;align-items:center;font:600 14px system-ui,sans-serif}
 .fab button{border:0;border-radius:999px;background:var(--accent);color:var(--bg);height:3.2rem;min-width:3.2rem;padding:0 1rem;font:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .fab .follow{background:var(--card);color:var(--fg);border:1px solid var(--line);height:2.4rem;display:none}.fab .follow.show{display:inline-block}
@@ -141,7 +141,7 @@ export function pageHtml({ meta, paragraphs, quotes = [], crs = [], chapters = [
     lastSpk = name;
     body.push(`<p class="p" id="p${p.n}"><button class="play" data-t="${p.t0.toFixed(2)}" aria-label="Play from ${formatTime(p.t0)}">▶</button>${spk}${html.join(' ')}</p>`);
     for (const cr of crBy.get(p.n) || []) {
-      body.push(`<aside class="cr"><span class="k">${cr.kind === 'concept' ? 'Cross-reference' : 'Quoted'}</span><div>“${esc(cr.excerpt)}”</div><cite>${esc(cr.cite || '')}${cr.url ? ` · <a href="${esc(cr.url)}" target="_blank" rel="noopener">read in context</a>` : ''}</cite></aside>`);
+      body.push(`<aside class="cr"><span class="k">${cr.kind === 'concept' ? 'Cross-reference' : 'Quoted'}</span><div>“${esc(cr.excerpt)}”</div><cite>— ${cr.url ? `<a href="${esc(cr.url)}" target="_blank" rel="noopener">${esc(cr.cite || 'the source passage')}</a>` : esc(cr.cite || '')}</cite></aside>`);
     }
   }
   const toc = hBy.size ? `<nav class="toc" aria-label="Contents"><ol>${[...hBy.values()].map((h) => `<li><a href="#${esc(h.slug)}">${esc(h.text)}</a></li>`).join('')}</ol></nav>` : '';

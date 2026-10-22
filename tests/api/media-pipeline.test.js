@@ -2,6 +2,7 @@
 // measurement, quote span location + gates, link rows for content_source_links, the edge R2 key/headers, the API's byte
 // ranges and clip budget, YouTube helpers, thumbnail licence rules, the search-latency thread governor and the scan job.
 import { describe, it, expect, vi } from 'vitest';
+import { readFileSync } from 'fs';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
 import { transcriptMarkdown, pageHtml, paragraphMarkdown, youtubeAt } from '../../api/lib/media/render.js';
 import { defaultPlayback, canServeFile, clipQuery, verifyClip } from '../../api/lib/media/rights.js';
@@ -246,5 +247,17 @@ describe('older Safari (no Ogg Opus)', () => {
     const html = pageHtml({ meta, paragraphs: [para(1, 'a b c.')], clipUrl: '/api/media/x/clip-url', audio: 'web/x.ogg' });
     expect(html).toContain("'&fmt=m4a'");
     expect(html).toContain(".replace(/\\.ogg$/,'.m4a')");
+  });
+});
+
+describe('breakout citations (Chad 10-22: the reference is the link, no separate "read in context")', () => {
+  it('page.html: the citation text is the anchor to the canonical passage', () => {
+    const html = pageHtml({ meta, paragraphs: [para(1, 'a b c.')], crs: [{ para: 1, kind: 'quote', excerpt: 'Be ye as the fingers of one hand', cite: '‘Abdu’l-Bahá, Tablets of the Divine Plan', url: 'https://oceanlibrary.com/x' }] });
+    expect(html).toContain('<cite>— <a href="https://oceanlibrary.com/x" target="_blank" rel="noopener">‘Abdu’l-Bahá, Tablets of the Divine Plan</a></cite>');
+    expect(html).not.toMatch(/in context/i);
+  });
+  it('no generic anchor text in the media templates', () => {
+    const src = readFileSync(new URL('../../src/components/media/MediaTranscript.svelte', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/in context|>\s*(?:↗|→|read more|here)\s*</i);
   });
 });

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-22T13:15:47.885Z",
+  "generated": "2026-10-22T13:27:21.893Z",
   "entries": [
+    {
+      "hash": "12a5f4b6",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Topic SUBHEADERS (Chad 10-22) — a headings stage after describe: the media-headings role proposes a statement or a question the talk raises at each shift of subject; a guard keeps those ≥ 2 min apart that share content words with the section they open; stored in transcript.json as kind 'heading' (source generated, model, #slug), markdown headings in transcript.md (no times: not a moment in the recording), anchored h2 + contents list in page.html, Contents panel + deep links on the item page (no word spans: click-to-play, highlight and ranges skip them). Trial: 11–14 per 46-min talk, ~$0.003 each. media-item takes ids (or 'done') and redo (re-run only the named stages; dropped on resume)",
+      "scope": "media"
+    },
+    {
+      "hash": "a2fbec88",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "Deploy 2.187.728 (media portraits via the image worker, hidden copy-edit words, full playback, quality badge, /admin/media)",
+      "scope": null
+    },
     {
       "hash": "14e94d92",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Ocean of Lights .docx sources link to their PAGE with a range, never the download (SourceHunt, Anís, search, API)",
       "scope": "links"
-    },
-    {
-      "hash": "084413f1",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Small author shelves list all the author's works inline (≤30) instead of '+N more' (Chad 10-12: 'why show two and hide six?')",
-      "scope": "library"
-    },
-    {
-      "hash": "cb6841ac",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "SourceHunt fixes from Liliane's BSW review",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "12a5f4b6",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Topic SUBHEADERS (Chad 10-22) — a headings stage after describe: the media-headings role proposes a statement or a question the talk raises at each shift of subject; a guard keeps those ≥ 2 min apart that share content words with the section they open; stored in transcript.json as kind 'heading' (source generated, model, #slug), markdown headings in transcript.md (no times: not a moment in the recording), anchored h2 + contents list in page.html, Contents panel + deep links on the item page (no word spans: click-to-play, highlight and ranges skip them). Trial: 11–14 per 46-min talk, ~$0.003 each. media-item takes ids (or 'done') and redo (re-run only the named stages; dropped on resume)",
+        "scope": "media"
+      },
+      {
+        "hash": "a2fbec88",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "Deploy 2.187.728 (media portraits via the image worker, hidden copy-edit words, full playback, quality badge, /admin/media)",
+        "scope": null
+      },
       {
         "hash": "14e94d92",
         "date": "2026-10-22",
@@ -7009,20 +7023,6 @@
         "type": "Fixed",
         "description": "Ocean of Lights .docx sources link to their PAGE with a range, never the download (SourceHunt, Anís, search, API)",
         "scope": "links"
-      },
-      {
-        "hash": "084413f1",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Small author shelves list all the author's works inline (≤30) instead of '+N more' (Chad 10-12: 'why show two and hide six?')",
-        "scope": "library"
-      },
-      {
-        "hash": "cb6841ac",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "SourceHunt fixes from Liliane's BSW review",
-        "scope": "worklist"
       }
     ]
   }

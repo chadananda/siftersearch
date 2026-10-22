@@ -83,8 +83,8 @@
   {#if report}
     <section class="mt-6 rounded-xl border border-border bg-surface-1 p-4">
       {#if report.error}<p class="text-error">{report.error}</p>{:else}
-        <h2 class="font-medium text-primary">{report.title} <span class="text-muted">— {report.speaker || ''}</span></h2>
-        <p class="mb-3 text-sm text-secondary">Overall <b class={tone(report.quality.overall)}>{report.quality.overall}</b> · primary issue {report.quality.primary_issue}{report.quality.secondary_issues?.length ? ` · also ${report.quality.secondary_issues.join(', ')}` : ''} · <a class="text-accent" href={`/media/${report.slug}`}>open</a></p>
+        <h2 class="font-medium text-primary"><a class="text-accent hover:underline" href={`/media/${report.slug}`}>{report.title}</a> <span class="text-muted">— {report.speaker || ''}</span></h2>
+        <p class="mb-3 text-sm text-secondary">Overall <b class={tone(report.quality.overall)}>{report.quality.overall}</b> · primary issue {report.quality.primary_issue}{report.quality.secondary_issues?.length ? ` · also ${report.quality.secondary_issues.join(', ')}` : ''}</p>
         <table class="mb-3 w-full text-sm">
           <thead><tr class="text-left text-muted"><th>Dimension</th><th>Grade</th><th>Measured</th><th>Fix</th></tr></thead>
           <tbody>

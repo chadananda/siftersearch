@@ -63,9 +63,7 @@
         {#each segs as s, si (si)}
           {#if s.quote}
             <a href={s.quote.url} target="_blank" rel="noopener" title={s.quote.cite}
-              class="rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent">{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a><a
-              href={s.quote.url} target="_blank" rel="noopener" title={`Source: ${s.quote.cite}`} aria-label={`Source: ${s.quote.cite}`}
-              class="ml-0.5 align-super font-sans text-xs text-accent hover:text-accent-hover">↗</a>{' '}
+              class="rounded-sm text-accent-secondary underline decoration-dotted decoration-2 underline-offset-4 hover:text-accent">{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
           {:else}
             {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{w[3] ? '' : ' '}{/each}
           {/if}
@@ -77,10 +75,8 @@
           <aside class="mt-4 rounded-r-lg border-l-4 border-accent-secondary bg-surface-1 px-4 py-3 font-sans text-base lg:ml-0">
             <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-accent-secondary">Quoted</p>
             <blockquote class="font-serif italic text-secondary">{q.excerpt}</blockquote>
-            <p class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-              <cite class="not-italic text-primary">— {q.cite}</cite>
-              <a href={q.url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover">Read in context →</a>
-            </p>
+            <!-- the citation itself is the link (descriptive anchor text to the canonical passage; Chad 10-22) -->
+            <p class="mt-2 text-sm"><cite class="not-italic text-primary">— <a href={q.url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover hover:underline">{q.cite || 'the source passage'}</a></cite></p>
           </aside>
         {/if}
       {/each}
@@ -89,10 +85,9 @@
           <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-accent-tertiary">Cross-reference</p>
           {#if c.claim}<p class="mb-2 text-sm text-muted">On: {c.claim}</p>{/if}
           {#if c.excerpt}<blockquote class="font-serif text-secondary">{c.excerpt}</blockquote>{/if}
-          <p class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-            {#if c.cite}<cite class="not-italic text-primary">— {c.cite}</cite>{/if}
-            {#if c.url}<a href={c.url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover">Read in context →</a>{/if}
-          </p>
+          {#if c.cite || c.url}
+            <p class="mt-2 text-sm"><cite class="not-italic text-primary">— {#if c.url}<a href={c.url} target="_blank" rel="noopener" class="text-accent hover:text-accent-hover hover:underline">{c.cite || 'the source passage'}</a>{:else}{c.cite}{/if}</cite></p>
+          {/if}
         </aside>
       {/each}
     </div>
