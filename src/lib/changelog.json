@@ -1,6 +1,118 @@
 {
-  "generated": "2026-10-22T09:06:31.376Z",
+  "generated": "2026-10-22T13:15:47.885Z",
   "entries": [
+    {
+      "hash": "14e94d92",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Quality surfaces (Chad 10-22) — /admin/media: the repair list grouped by fix chain (hours, summed priority), all graded recordings with a grade filter, and one recording's full report (each dimension's grade, measured values and fix, the chain with CPU cost, low-confidence spans); a small 'audio <grade> · <issue>' badge on the item page with the per-dimension grades on hover",
+      "scope": "media"
+    },
+    {
+      "hash": "ab081553",
+      "date": "2026-10-22",
+      "type": "Other",
+      "description": "Concept cross-linking — phase 1 related talks (Media vectors) + texts discussed (quote/CR links); phases 2–3 wait for the concept-extraction pipeline (concept tags, concept pages listing talks, concept map, entity → biography links)",
+      "scope": "media"
+    },
+    {
+      "hash": "1f6709c0",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Quality GRADE in the pipeline (Chad 10-22) — a stage after archive measures the original (bandwidth, SNR + DNSMOS BAK + mains-hum lines, clipping, dropouts + NISQA discontinuity, LUFS / loudness range, speaking pitch, DNSMOS + NISQA MOS) and after transcription adds intelligibility (probe log-prob, low-confidence spans) and per-speaker levels; a per-dimension report each with its grade and fix, overall grade, primary/secondary issues, the fix chain in processing order with CPU cost, and priority = (5 − grade) × speaker importance; repair list grouped by chain, listing filters, media-grade back-fill job (migration 165; thresholds in plan §10)",
+      "scope": "media"
+    },
+    {
+      "hash": "a7e853ed",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "An item's own picture is only its generated tile — the per-item photo search found namesakes (\"Chad Jones\" the economist, a \"Bob Harris\"); the speaker's portrait record is shown in its place; the catalogue always records the speaker key",
+      "scope": "media"
+    },
+    {
+      "hash": "ffba3042",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "An Apify run's cost is its usageTotalUsd (it already includes the actor's per-event charges)",
+      "scope": "media"
+    },
+    {
+      "hash": "ab110d5c",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "The copy-edit pass (Chad 10-22) — a new stage after the name corrections: the media-clean role proposes kind-tagged edits (filler, stutter, repeat loop, hallucination, spelling, homophone, capitalisation, punctuation, broken word) and a guard accepts only what it can verify (never a paraphrase; low confidence only flagged); dropped words are hidden with their time, so click-to-play and the highlight stay aligned; the verbatim layer and the full log are kept in transcript.json",
+      "scope": "media"
+    },
+    {
+      "hash": "5079e0e2",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "The full YouTube run (Chad 10-22: \"go ahead\") — audio by the first route that works: free yt-dlp with a PO token, then Titan Network, then Seemuapps (Apify, APIFI_API; the file taken at once and checksummed, the run's cost recorded on the item); metadata from oEmbed when yt-dlp is refused; the route, checksum and every failed attempt kept in meta.source.download",
+      "scope": "media"
+    },
+    {
+      "hash": "a866bd56",
+      "date": "2026-10-22",
+      "type": "Other",
+      "description": "40 speaker portraits found on the web (Wilmette Institute, bahai.media, Commons, Bahai Library, BahaiTeachings, Burhan Institute) — each checked to be the person, page and host credit kept",
+      "scope": "media"
+    },
+    {
+      "hash": "640d733d",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "YouTube audio via a PO token (bgutil-ytdlp-pot-provider, script mode — nothing listening, no cookies or account); archive.org alternate-source finder for the YouTube targets; speaker keys ignore initials and parentheticals; Bahaipedia aliases for portraits found under another spelling",
+      "scope": "media"
+    },
+    {
+      "hash": "4da5e277",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Everything plays FULL from our own copy (Chad 10-22: \"everything should be local. Youtube is only for linking out\") — default level full for every source, a media-playback job sets the catalogue and re-renders the published pages; channel records still lower one source; spend entry for the $25 YouTube download API test",
+      "scope": "media"
+    },
+    {
+      "hash": "2c356bbf",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The player header's portrait size computed in the script (a {@const} under <figure> broke the build)",
+      "scope": "media"
+    },
+    {
+      "hash": "7f4f1181",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "One canonical portrait per speaker (media_speakers, migration 164; keyed by folded name, linked to the graph person) — the biography portrait first, else found on the web (Bahaipedia/bahai.media with credit and source from the file page, Wikidata/Commons and Wikipedia only when the person is a Bahá'í; never a namesake or a group photo); the master stored once in the cdn-assets R2 bucket like the biography portraits and every size served by the image service with the biography helpers and fo-face (listing tile, player header, search avatar, OG 1200×630); credit shown on the item page; media-speakers job and the thumb stage for new items",
+      "scope": "media"
+    },
+    {
+      "hash": "1794557c",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Status — full local run queued (402 recordings, 31 duplicates), post-fix correction sample 20/20",
+      "scope": "media"
+    },
+    {
+      "hash": "398cfdb9",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Morning status — pilot results (enhancement by measurement, quote/CR precision read by hand, corrections, cost, speed), live links, the full run, YouTube block, decisions",
+      "scope": "media"
+    },
+    {
+      "hash": "4ce5126e",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Transcription and diarization run DETACHED — the boss ASR job (gate verbs start/poll/fetch/cancel) and the tower diarization keep running through a drain and the resumed stage re-attaches (meta.asr_job, the pid file); deploys every few minutes had kept killing a 15-minute stage",
+      "scope": "media"
+    },
+    {
+      "hash": "26ec693b",
+      "date": "2026-10-22",
+      "type": "Other",
+      "description": "2.187.727 — the /media pages (listing + player) and the Worker's R2 cache for media files",
+      "scope": "site"
+    },
     {
       "hash": "2362c284",
       "date": "2026-10-22",
@@ -3388,122 +3500,122 @@
       "type": "Docs",
       "description": "SourceHunt fixes from Liliane's BSW review",
       "scope": "worklist"
-    },
-    {
-      "hash": "70b1cef9",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Section markers ('[93.1] Know thou…') no longer stop the OceanLibrary range lookup (Liliane's BSW #98, #122 got book links)",
-      "scope": "links"
-    },
-    {
-      "hash": "528b7e9f",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Strategy-gaps report (the Anís audit work queue, server-side)",
-      "scope": "ops"
-    },
-    {
-      "hash": "30cda6e3",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Anís strategy work queue — audits ranked into strategy switches, unmet needs, shortfalls, data gaps, problems",
-      "scope": "admin"
-    },
-    {
-      "hash": "f4d3620f",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Audit-driven strategy extensions = highest priority (Chad 10-12)",
-      "scope": "worklist"
-    },
-    {
-      "hash": "0bd9f848",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Anís Threads says 'sign in as an admin' instead of loading forever",
-      "scope": "admin"
-    },
-    {
-      "hash": "bfa76eb2",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Term-study counts recorded as audit evidence (auditor called the CTAI chart 'fabricated'); Threads: problems parsed when JSON-encoded, names cached with 10 s timeout",
-      "scope": "anis"
-    },
-    {
-      "hash": "02b9c1e4",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Anís Threads — every conversation, each reply with its strategy audit; filter 'better strategy warranted'",
-      "scope": "admin"
-    },
-    {
-      "hash": "156a4f2e",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "DB-backed smoke checks retry once after 15 s (transient slowness under re-ingest aborted good deploys 3x on 10-12)",
-      "scope": "deploy"
-    },
-    {
-      "hash": "9fa287f6",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Writing to Anís is consent to engage — the writer joins the list (replies go at once, outreach cadence follows)",
-      "scope": "mail"
-    },
-    {
-      "hash": "fe39655b",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Term search strategy design; Liliane re-draft",
-      "scope": "worklist"
-    },
-    {
-      "hash": "b51be926",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Repair Latin words with stray Arabic letters ('Bahá’u’لlláh'); lint pipeline vocabulary ('authority layers', 'provided evidence')",
-      "scope": "anis"
-    },
-    {
-      "hash": "e8e3f67e",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "Inbound mail unwrapped (hard-wrapped plain text showed artificial breaks) and a wrapped 'On … wrote:' quote is cut",
-      "scope": "mail"
-    },
-    {
-      "hash": "44db3b42",
-      "date": "2026-10-12",
-      "type": "Fixed",
-      "description": "'What is Irfan in the Baha'i faith?' is a term question → CTAI term study (Liliane 10-12 got 'cannot find')",
-      "scope": "anis"
-    },
-    {
-      "hash": "e0526bc5",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Status 12:55 — carry 1,155/1,806, Arabic tail, phrase-index visibility, grounding spend",
-      "scope": "worklist"
-    },
-    {
-      "hash": "3a6af646",
-      "date": "2026-10-12",
-      "type": "Docs",
-      "description": "Range links done; translator mining job queued",
-      "scope": "worklist"
-    },
-    {
-      "hash": "d41f29f3",
-      "date": "2026-10-12",
-      "type": "New",
-      "description": "Translator-coverage report (content.translator by basis, translation_by, docs.translators)",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "14e94d92",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Quality surfaces (Chad 10-22) — /admin/media: the repair list grouped by fix chain (hours, summed priority), all graded recordings with a grade filter, and one recording's full report (each dimension's grade, measured values and fix, the chain with CPU cost, low-confidence spans); a small 'audio <grade> · <issue>' badge on the item page with the per-dimension grades on hover",
+        "scope": "media"
+      },
+      {
+        "hash": "ab081553",
+        "date": "2026-10-22",
+        "type": "Other",
+        "description": "Concept cross-linking — phase 1 related talks (Media vectors) + texts discussed (quote/CR links); phases 2–3 wait for the concept-extraction pipeline (concept tags, concept pages listing talks, concept map, entity → biography links)",
+        "scope": "media"
+      },
+      {
+        "hash": "1f6709c0",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Quality GRADE in the pipeline (Chad 10-22) — a stage after archive measures the original (bandwidth, SNR + DNSMOS BAK + mains-hum lines, clipping, dropouts + NISQA discontinuity, LUFS / loudness range, speaking pitch, DNSMOS + NISQA MOS) and after transcription adds intelligibility (probe log-prob, low-confidence spans) and per-speaker levels; a per-dimension report each with its grade and fix, overall grade, primary/secondary issues, the fix chain in processing order with CPU cost, and priority = (5 − grade) × speaker importance; repair list grouped by chain, listing filters, media-grade back-fill job (migration 165; thresholds in plan §10)",
+        "scope": "media"
+      },
+      {
+        "hash": "a7e853ed",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "An item's own picture is only its generated tile — the per-item photo search found namesakes (\"Chad Jones\" the economist, a \"Bob Harris\"); the speaker's portrait record is shown in its place; the catalogue always records the speaker key",
+        "scope": "media"
+      },
+      {
+        "hash": "ffba3042",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "An Apify run's cost is its usageTotalUsd (it already includes the actor's per-event charges)",
+        "scope": "media"
+      },
+      {
+        "hash": "ab110d5c",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "The copy-edit pass (Chad 10-22) — a new stage after the name corrections: the media-clean role proposes kind-tagged edits (filler, stutter, repeat loop, hallucination, spelling, homophone, capitalisation, punctuation, broken word) and a guard accepts only what it can verify (never a paraphrase; low confidence only flagged); dropped words are hidden with their time, so click-to-play and the highlight stay aligned; the verbatim layer and the full log are kept in transcript.json",
+        "scope": "media"
+      },
+      {
+        "hash": "5079e0e2",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "The full YouTube run (Chad 10-22: \"go ahead\") — audio by the first route that works: free yt-dlp with a PO token, then Titan Network, then Seemuapps (Apify, APIFI_API; the file taken at once and checksummed, the run's cost recorded on the item); metadata from oEmbed when yt-dlp is refused; the route, checksum and every failed attempt kept in meta.source.download",
+        "scope": "media"
+      },
+      {
+        "hash": "a866bd56",
+        "date": "2026-10-22",
+        "type": "Other",
+        "description": "40 speaker portraits found on the web (Wilmette Institute, bahai.media, Commons, Bahai Library, BahaiTeachings, Burhan Institute) — each checked to be the person, page and host credit kept",
+        "scope": "media"
+      },
+      {
+        "hash": "640d733d",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "YouTube audio via a PO token (bgutil-ytdlp-pot-provider, script mode — nothing listening, no cookies or account); archive.org alternate-source finder for the YouTube targets; speaker keys ignore initials and parentheticals; Bahaipedia aliases for portraits found under another spelling",
+        "scope": "media"
+      },
+      {
+        "hash": "4da5e277",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Everything plays FULL from our own copy (Chad 10-22: \"everything should be local. Youtube is only for linking out\") — default level full for every source, a media-playback job sets the catalogue and re-renders the published pages; channel records still lower one source; spend entry for the $25 YouTube download API test",
+        "scope": "media"
+      },
+      {
+        "hash": "2c356bbf",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The player header's portrait size computed in the script (a {@const} under <figure> broke the build)",
+        "scope": "media"
+      },
+      {
+        "hash": "7f4f1181",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "One canonical portrait per speaker (media_speakers, migration 164; keyed by folded name, linked to the graph person) — the biography portrait first, else found on the web (Bahaipedia/bahai.media with credit and source from the file page, Wikidata/Commons and Wikipedia only when the person is a Bahá'í; never a namesake or a group photo); the master stored once in the cdn-assets R2 bucket like the biography portraits and every size served by the image service with the biography helpers and fo-face (listing tile, player header, search avatar, OG 1200×630); credit shown on the item page; media-speakers job and the thumb stage for new items",
+        "scope": "media"
+      },
+      {
+        "hash": "1794557c",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Status — full local run queued (402 recordings, 31 duplicates), post-fix correction sample 20/20",
+        "scope": "media"
+      },
+      {
+        "hash": "398cfdb9",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Morning status — pilot results (enhancement by measurement, quote/CR precision read by hand, corrections, cost, speed), live links, the full run, YouTube block, decisions",
+        "scope": "media"
+      },
+      {
+        "hash": "4ce5126e",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Transcription and diarization run DETACHED — the boss ASR job (gate verbs start/poll/fetch/cancel) and the tower diarization keep running through a drain and the resumed stage re-attaches (meta.asr_job, the pid file); deploys every few minutes had kept killing a 15-minute stage",
+        "scope": "media"
+      },
+      {
+        "hash": "26ec693b",
+        "date": "2026-10-22",
+        "type": "Other",
+        "description": "2.187.727 — the /media pages (listing + player) and the Worker's R2 cache for media files",
+        "scope": "site"
+      },
       {
         "hash": "2362c284",
         "date": "2026-10-22",
@@ -6911,118 +7023,6 @@
         "type": "Docs",
         "description": "SourceHunt fixes from Liliane's BSW review",
         "scope": "worklist"
-      },
-      {
-        "hash": "70b1cef9",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Section markers ('[93.1] Know thou…') no longer stop the OceanLibrary range lookup (Liliane's BSW #98, #122 got book links)",
-        "scope": "links"
-      },
-      {
-        "hash": "528b7e9f",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Strategy-gaps report (the Anís audit work queue, server-side)",
-        "scope": "ops"
-      },
-      {
-        "hash": "30cda6e3",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Anís strategy work queue — audits ranked into strategy switches, unmet needs, shortfalls, data gaps, problems",
-        "scope": "admin"
-      },
-      {
-        "hash": "f4d3620f",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Audit-driven strategy extensions = highest priority (Chad 10-12)",
-        "scope": "worklist"
-      },
-      {
-        "hash": "0bd9f848",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Anís Threads says 'sign in as an admin' instead of loading forever",
-        "scope": "admin"
-      },
-      {
-        "hash": "bfa76eb2",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Term-study counts recorded as audit evidence (auditor called the CTAI chart 'fabricated'); Threads: problems parsed when JSON-encoded, names cached with 10 s timeout",
-        "scope": "anis"
-      },
-      {
-        "hash": "02b9c1e4",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Anís Threads — every conversation, each reply with its strategy audit; filter 'better strategy warranted'",
-        "scope": "admin"
-      },
-      {
-        "hash": "156a4f2e",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "DB-backed smoke checks retry once after 15 s (transient slowness under re-ingest aborted good deploys 3x on 10-12)",
-        "scope": "deploy"
-      },
-      {
-        "hash": "9fa287f6",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Writing to Anís is consent to engage — the writer joins the list (replies go at once, outreach cadence follows)",
-        "scope": "mail"
-      },
-      {
-        "hash": "fe39655b",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Term search strategy design; Liliane re-draft",
-        "scope": "worklist"
-      },
-      {
-        "hash": "b51be926",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Repair Latin words with stray Arabic letters ('Bahá’u’لlláh'); lint pipeline vocabulary ('authority layers', 'provided evidence')",
-        "scope": "anis"
-      },
-      {
-        "hash": "e8e3f67e",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "Inbound mail unwrapped (hard-wrapped plain text showed artificial breaks) and a wrapped 'On … wrote:' quote is cut",
-        "scope": "mail"
-      },
-      {
-        "hash": "44db3b42",
-        "date": "2026-10-12",
-        "type": "Fixed",
-        "description": "'What is Irfan in the Baha'i faith?' is a term question → CTAI term study (Liliane 10-12 got 'cannot find')",
-        "scope": "anis"
-      },
-      {
-        "hash": "e0526bc5",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Status 12:55 — carry 1,155/1,806, Arabic tail, phrase-index visibility, grounding spend",
-        "scope": "worklist"
-      },
-      {
-        "hash": "3a6af646",
-        "date": "2026-10-12",
-        "type": "Docs",
-        "description": "Range links done; translator mining job queued",
-        "scope": "worklist"
-      },
-      {
-        "hash": "d41f29f3",
-        "date": "2026-10-12",
-        "type": "New",
-        "description": "Translator-coverage report (content.translator by basis, translation_by, docs.translators)",
-        "scope": "ops"
       }
     ]
   }
