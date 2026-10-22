@@ -56,8 +56,10 @@ search was restricted to canonical works (book authority ≥ 7) — a visitor's 
 100 % right, 30–100 per talk); the model pass fixes mishearings against the vocabulary (Sogefendik / Sergei Fendi / Shogu
 Effendi → Shoghi Effendi, universal health justice → Universal House of Justice, Haziratul Ghots → Ḥaẓíratu’l-Quds,
 Nasruddin Shah → Náṣiri’d-Dín Sháh). Read: 74 model edits, **65 right**; the wrong ones were 4 that swallowed a spoken word
-("Shogu Effendi told" → "Shoghi Effendi"), 3 "Baola" → "Bahá" (should be Bahá’u’lláh) and 2 doubtful. Both fixed (the guard
-now refuses an edge that is a common English word; clipped names are offered their full form) and the two talks re-run.
+("Shogu Effendi told" → "Shoghi Effendi"), 3 "Baola" → "Bahá" (should be Bahá’u’lláh) and 2 doubtful. Fixed (edits are trimmed to the
+name itself — a swallowed or copied neighbouring word is taken off, never lost; clipped names are offered their full form)
+and the talks re-run: a random sample of 20 model edits on the re-run Nakhjavání talk is **20 / 20 right** (refused: 2,
+was 6); on the re-run Grossmann talk 50 of 57 formerly refused edits became right fixes.
 
 **Cost**: Haiku-class calls ≈ **$0.03–0.05 per hour of audio** (corrections, description, quotations, verification).
 SourceHunt, ASR and enhancement are local. **Speed**: ≈ 25 minutes of wall time per hour of audio, one item at a time
@@ -104,9 +106,9 @@ alignment and the probes run on boss and do not touch tower's CPU or memory band
 
 ## The full run (queued 02:15–02:45, running unattended)
 
-* `media-scan` of `/tank/media/Baha'i/talks` (449 recordings; byte-identical copies — the Acuto folders repeat the Dunbar
-  course — are recorded as duplicates, not processed twice), one item at a time, then the YouTube queue (881 talks) behind
-  it. YouTube items wait while YouTube is cooling down; local files go on.
+* `media-scan` of `/tank/media/Baha'i/talks` ran at 02:55: **402 recordings queued, 31 byte-identical duplicates** (the
+  Acuto folders repeat the Dunbar course) recorded and skipped; one item at a time, ≈ 8 days. The YouTube queue (881 talks)
+  is behind it. YouTube items wait while YouTube is cooling down; local files go on.
 * `media-vocab` rebuilds the vocabulary from the entity graph (the first build found no names — fixed).
 * A failing recording is recorded on its item (`GET /api/media/admin/status`), never mailed per file.
 * Robustness: long stages run detached (boss job / tower process) and survive deploys; tower-side work is capped at 8
