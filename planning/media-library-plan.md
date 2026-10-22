@@ -122,3 +122,31 @@ interpreted talk (Furutan, if language ID confirms) · Persian talk · Q&A (Nakh
 Measure per item: enhancement metrics (LUFS, WADA-SNR, hum, clipping) for original / light / DFN; ASR probe confidence on
 the same 3 × 60 s excerpts for each; chosen input; real-time factor per stage; correction count + 20 read by hand; quote
 count + precision sample; cost. Pass → process the rest of the talks with the same jobs, paced.
+
+## 10. Quality grade (Chad 10-22: grading in the normal pipeline, as detailed as possible, organised by solution)
+
+Stage `grade` (after archive, before enhancement; drain-aware) runs `media_tool.py grade` on the ORIGINAL and stores
+`meta.quality`: the raw measurements (with tool versions: DNSMOS pDNSMOS, NISQA v2 via torchmetrics 1.9), a report per
+dimension, the overall grade, primary/secondary issues, the fix chain with its cost, and the repair priority. After
+transcription (`catalog`) intelligibility and per-speaker loudness join and the item is re-graded. Code:
+`api/lib/media/grade.js` (thresholds below are its `THRESHOLDS`, calibrated on the pilot: the 1932 Martha Root tape grades
+A/B on bandwidth and noise; the 24 kbps Grossmann class grades E on bandwidth with a 50 Hz hum).
+
+| dimension | measured | A / B / C / D cut points | fix |
+|---|---|---|---|
+| bandwidth (muffled) | effective bandwidth of speech frames (kHz), NISQA coloration | ≥7 / 5.5 / 4 / 3 kHz; coloration ≥3.5 / 3.0 / 2.5 / 2.0 | bandwidth restoration (Resemble Enhance / AudioSR) |
+| noise | frame SNR (dB), DNSMOS BAK, mains-hum line prominence (type: hum / broadband / crowd-room) | SNR ≥32 / 27 / 22 / 17; BAK ≥3.8 / 3.4 / 3.0 / 2.5; hum ≥10 dB → C, ≥20 → D | notch · DeepFilterNet · Demucs |
+| reverb | Brouhaha C50 | not measured yet (not installed) | dereverb |
+| clipping | % of samples at full scale | <0.01 / 0.05 / 0.2 / 1 % | declip |
+| dropouts | sudden drops to silence per hour, NISQA discontinuity | ≤0.5 / 2 / 5 / 15 per h; disc. ≥3.5 / 3.0 / 2.5 / 2.0 | manual/spectral repair |
+| level | integrated LUFS, loudness range, per-speaker imbalance | LUFS in −26…−14 / −30…−12 / −34…−10 / −40…−8; imbalance <3 / 6 / 9 / 12 dB | leveling / per-speaker gain |
+| speed / pitch | median speaking F0 | 70–260 Hz A; 60–300 C; else D (a check by ear decides) | speed correction |
+| intelligibility | Whisper probe log-prob, share of words with alignment score < 0.4, low-confidence minutes and spans | log-prob ≥ −0.2 / −0.3 / −0.45 / −0.65; low share <2 / 5 / 12 / 25 % | — |
+| perceived | NISQA MOS, DNSMOS OVRL | MOS ≥3.6 / 3.0 / 2.4 / 1.8; OVRL ≥3.3 / 3.0 / 2.6 / 2.2 | — |
+
+Overall = 35 % intelligibility + 35 % perceived + 30 % the worst fixable dimension. Issues = fixable dimensions at C or
+worse; the chain is in processing order: declip → hum notch → denoise → vocal isolation → dereverb → spectral repair →
+bandwidth restoration → speed → leveling. Priority = (5 − grade score) × importance, grade score A=5 … E=1; importance =
+speaker tier (Hands of the Cause / UHJ 3, curated scholars 2, others 1; `data/media-speaker-tiers.json`) × uniqueness
+(0.5 when another copy exists) + plays/hits later. Surfaces: `GET /api/media/admin/repairs` (grouped by chain),
+`/api/media/admin/quality/<slug>`, the listing's `grade` / `issue` filters and `sort=priority`.

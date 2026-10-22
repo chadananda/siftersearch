@@ -6,7 +6,7 @@ import { LIVE_SQL } from '../entity-live.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
-const COLS = new Set(['speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
+const COLS = new Set(['grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
   'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
@@ -51,20 +51,21 @@ export async function releaseHeldYoutube(hours) {
 export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY id LIMIT ?`, [limit], 'media:pending')).map(parse);
 
 /** The /media listing: published items (state 'done'), filtered. → { items, total } */
-export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {
+export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {
   const where = ['state = ?'], args = [state];
   const eq = (col, v) => { if (v != null && v !== '') { where.push(`${col} = ?`); args.push(v); } };
-  eq('speaker', speaker); eq('tradition', tradition); eq('collection', collection); eq('language', language);
+  eq('speaker', speaker); eq('tradition', tradition); eq('collection', collection); eq('language', language); eq('primary_issue', issue);
+  if (grade) { const gs = String(grade).toUpperCase().split(/[,\s]+/).filter((x) => /^[A-E]$/.test(x)); if (gs.length) { where.push(`grade IN (${gs.map(() => '?').join(',')})`); args.push(...gs); } }
   if (year) { where.push('year = ?'); args.push(Number(year)); }
   if (minDur) { where.push('duration_s >= ?'); args.push(Number(minDur)); }
   if (maxDur) { where.push('duration_s <= ?'); args.push(Number(maxDur)); }
   if (hasVideo != null && hasVideo !== '') { where.push('has_video = ?'); args.push(hasVideo === true || hasVideo === '1' || hasVideo === 'true' ? 1 : 0); }
   if (ids) { if (!ids.length) return { items: [], total: 0 }; where.push(`id IN (${ids.map(() => '?').join(',')})`); args.push(...ids.map(Number)); }
-  const order = sort === 'title' ? 'title COLLATE NOCASE' : sort === 'year' ? 'year DESC, title' : sort === 'speaker' ? 'speaker, year' : 'updated_at DESC';
+  const order = sort === 'priority' ? 'COALESCE(priority, -1) DESC, id' : sort === 'grade' ? 'grade DESC, priority DESC' : sort === 'title' ? 'title COLLATE NOCASE' : sort === 'year' ? 'year DESC, title' : sort === 'speaker' ? 'speaker, year' : 'updated_at DESC';
   const w = where.join(' AND ');
   const total = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE ${w}`, args, 'media:count'))?.n || 0;
   const items = (await queryAll(`SELECT id, slug, title, speaker, speaker_key, tradition, collection, language, year, date, duration_s, has_video, source_kind, youtube_id, channel,
-    playback, thumb, quotes_n, crs_n, words_n, doc_id, updated_at FROM media_items WHERE ${w} ORDER BY ${order} LIMIT ? OFFSET ?`,
+    playback, thumb, quotes_n, crs_n, words_n, doc_id, grade, primary_issue, chain_key, priority, updated_at FROM media_items WHERE ${w} ORDER BY ${order} LIMIT ? OFFSET ?`,
   [...args, Math.min(200, Number(limit) || 50), Number(offset) || 0], 'media:list')).map(parse);
   return { items, total };
 }
@@ -138,3 +139,16 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
   return r?.n || 0;
 }
 export const doneItemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' ORDER BY id`, [], 'media:done-ids')).map((r) => r.id);
+
+/** The repair list: graded published items worth fixing, grouped by their recommended fix chain, most urgent first. */
+export async function repairList({ minGrade = 'C', limit = 500 } = {}) {
+  const rows = await queryAll(`SELECT id, slug, title, speaker, duration_s, grade, primary_issue, chain_key, priority FROM media_items
+    WHERE state = 'done' AND grade IS NOT NULL AND grade >= ? AND chain_key IS NOT NULL AND chain_key != 'none' ORDER BY priority DESC LIMIT ?`, [minGrade, limit], 'media:repairs');
+  const groups = new Map();
+  for (const r of rows) { if (!groups.has(r.chain_key)) groups.set(r.chain_key, { chain: r.chain_key, items: [], hours: 0, priority: 0 }); const gr = groups.get(r.chain_key); gr.items.push(r); gr.hours += (r.duration_s || 0) / 3600; gr.priority += r.priority || 0; }
+  return [...groups.values()].map((gr) => ({ ...gr, hours: Math.round(gr.hours * 10) / 10, priority: Math.round(gr.priority * 10) / 10 })).sort((a, b) => b.priority - a.priority);
+}
+/** Grade distribution of the published items. */
+export const gradeCounts = async () => queryAll(`SELECT grade, primary_issue, COUNT(*) n FROM media_items WHERE state = 'done' GROUP BY grade, primary_issue ORDER BY grade, n DESC`, [], 'media:grade-counts');
+/** Does another item hold the same speaker + title (another copy of the talk)? */
+export const sameTalkCount = async (speaker, title) => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE speaker = ? AND title = ? AND state != 'duplicate'`, [speaker, title], 'media:same-talk'))?.n || 0;

@@ -104,3 +104,15 @@ describe('media-playback', () => {
     await expect(mediaPlaybackJob({ level: 'loud' }, { repo, queue })).rejects.toThrow('level must be');
   });
 });
+
+describe('media-grade back-fill', () => {
+  it('grades each processed item once, counts grades, yields to a drain with its resume point', async () => {
+    const { mediaGradeJob } = await import('../../api/lib/ops/media-jobs.js');
+    const repo = { doneItemIds: async () => [1, 2, 3], getMediaItem: async (id) => ({ id, dir: `/d/${id}` }) };
+    const runItem = vi.fn(async (it) => ({ meta: { quality: { overall: it.id === 2 ? 'D' : 'B' } } }));
+    expect(await mediaGradeJob({}, { repo, runItem, draining: () => false })).toMatchObject({ graded: 3, grades: { B: 2, D: 1 } });
+    expect(runItem.mock.calls[0][1]).toEqual({ only: ['grade'] });
+    let n = 0;
+    expect(await mediaGradeJob({}, { repo, runItem, draining: () => ++n > 1 })).toMatchObject({ yielded: true, resume: { after: 1 } });
+  });
+});

@@ -6,11 +6,11 @@ import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
-import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob } from '../lib/ops/media-jobs.js';
+import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from '../lib/ops/media-jobs.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 
-export const MEDIA_REGISTRY = { 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob };
+export const MEDIA_REGISTRY = { 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
 
 // a file dropped in DEWEY_MEDIA_DIR starts the pipeline with no other step
 async function mediaDropLoop() {

@@ -1796,6 +1796,16 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_speaker_key ON media_items(speaker_key)');
     logger.info('Migration 164 complete: media_speakers, media_items.speaker_key');
   },
+
+  165: async () => {
+    // QUALITY GRADE per recording (Chad 10-22: grading in the normal pipeline): the overall grade, the primary issue and the
+    // recommended fix chain (the repair list groups by it) and the repair priority; the per-dimension report is in meta.
+    for (const col of ['grade TEXT', 'primary_issue TEXT', 'chain_key TEXT', 'priority REAL']) {
+      try { await query(`ALTER TABLE media_items ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_priority ON media_items(priority)');
+    logger.info('Migration 165 complete: media_items grade, primary_issue, chain_key, priority');
+  },
 };
 
 export const graphMigrations = {

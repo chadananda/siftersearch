@@ -218,3 +218,24 @@ export async function mediaPlaybackJob({ level = 'full', sourceKind = null } = {
   for (const id of ids) await (deps.queue || enqueue)('media-item', { id, from: 'render' }, 'media-playback');
   return { level, changed, rerendered: ids.length };
 }
+
+// media-grade { ids?, after? }: the quality grade for items already processed (back-fill; new items grade in the pipeline).
+// One item at a time; yields to a drain with its resume point.
+export async function mediaGradeJob({ ids = null, after = 0 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { runItem } = deps.runItem ? deps : await import('../media/item.js');
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
+  const list = (ids || await repo.doneItemIds()).filter((id) => id > after).sort((a, b) => a - b);
+  const out = { graded: 0, grades: {}, failed: [] };
+  for (const id of list) {
+    if (draining()) return { ...out, yielded: true, resume: { after: id - 1 } };
+    const item = await repo.getMediaItem(id);
+    if (!item?.dir) continue;
+    try {
+      const r = await runItem(item, { only: ['grade'] });
+      const gr = r.meta?.quality?.overall || '?';
+      out.graded++; out.grades[gr] = (out.grades[gr] || 0) + 1;
+    } catch (err) { out.failed.push({ id, why: String(err.message).slice(0, 120) }); }
+  }
+  return out;
+}

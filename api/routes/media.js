@@ -5,7 +5,7 @@
 import { createReadStream, existsSync, statSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { join, normalize, extname } from 'path';
-import { listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
+import { repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
@@ -112,6 +112,11 @@ export default async function mediaRoutes(fastify) {
       quotes: (tr.quotes || []).map((q) => ({ para: q.para, i0: q.i0, i1: q.i1, t0: q.t0, t1: q.t1, url: q.url, cite: q.cite, writer: q.writer, excerpt: q.excerpt, basis: q.basis, gate: q.gate })),
       cross_references: (tr.cross_references || []).map((c) => ({ para: c.para, i0: c.i0, i1: c.i1, t0: c.t0, url: c.url, cite: c.cite, writer: c.writer, claim: c.claim, excerpt: c.excerpt, confidence: c.confidence })),
       corrections: (tr.corrections || []).length, cleanup: tr.cleanup_stats || null, version: v,
+      // the quality report, compact: overall grade, issues, and each dimension's grade + its headline value
+      quality: meta.quality ? { overall: meta.quality.overall, primary_issue: meta.quality.primary_issue, secondary_issues: meta.quality.secondary_issues,
+        chain: meta.quality.chain_key, dimensions: Object.fromEntries(Object.entries(meta.quality.dimensions || {}).map(([k, x]) => [k, { grade: x.grade,
+          value: x.kHz ?? x.snr_db ?? x.c50_db ?? x.pct ?? x.per_hour ?? x.lufs ?? x.f0_median_hz ?? x.asr_logprob ?? null, type: x.type }])),
+        perceived: meta.quality.perceived || null } : null,
     };
   });
 
@@ -170,6 +175,15 @@ export default async function mediaRoutes(fastify) {
   });
 
   // ── admin ──
+  // the REPAIR LIST: graded items at C or worse, grouped by their recommended fix chain (a batch gets one treatment)
+  fastify.get('/admin/repairs', { preHandler: requireInternal }, async (req) => ({ groups: await repairList({ minGrade: /^[A-E]$/.test(req.query?.min || '') ? req.query.min : 'C' }), counts: await gradeCounts() }));
+  // one item's full quality report (every dimension, the chain with costs)
+  fastify.get('/admin/quality/:slug', { preHandler: requireInternal }, async (req, reply) => {
+    const it = await getMediaBySlug(req.params.slug);
+    const meta = it?.dir ? await readJson(join(it.dir, 'meta.json')) : null;
+    if (!meta?.quality) return reply.code(404).send({ error: 'not graded yet' });
+    return { slug: it.slug, title: meta.title, speaker: meta.speaker, quality: meta.quality };
+  });
   fastify.get('/admin/status', { preHandler: requireInternal }, async () => ({ states: await mediaStates(), channels: await listChannels() }));
   fastify.post('/admin/channels', { preHandler: requireInternal }, async (req, reply) => {
     const b = req.body || {};

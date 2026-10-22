@@ -264,10 +264,134 @@ def cmd_diarize(a):
     print(json.dumps({'speakers': len(talk), 'talk_s': dict(sorted(talk.items(), key=lambda x: -x[1])), 'turns': len(turns), 'seconds': round(time.time() - t0, 1), 'threshold': a.cluster, 'emb': a.emb or 'default'}))
 
 
+def cmd_grade(a):
+    """Signal measurements for the quality grade (the JS side grades them: api/lib/media/grade.js). Native-rate decode
+    for clipping and bandwidth; 16 kHz for the rest; DNSMOS + NISQA (torchmetrics) on up to three 20 s speech excerpts."""
+    import pyloudnorm as pyln
+    t0 = time.time()
+    probe = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=sample_rate', '-of', 'json', a.input],
+                                      capture_output=True, text=True).stdout or '{}')
+    sr_native = int((probe.get('streams') or [{}])[0].get('sample_rate') or 44100)
+    xn = load(a.input, sr=sr_native)
+    x = load(a.input, sr=SR)
+    out = {'duration_s': round(len(x) / SR, 1), 'sample_rate': sr_native, 'tools': {}}
+    # clipping: samples at (or within 0.1 % of) full scale on the native-rate decode
+    out['clip_pct'] = round(float(np.mean(np.abs(xn) >= 0.999)) * 100, 4)
+    # frames: 25 ms energy → speech/silence split by the noise floor
+    n = int(SR * 0.025)
+    f = x[: len(x) // n * n].reshape(-1, n)
+    e = 10 * np.log10(np.mean(f ** 2, axis=1) + 1e-12)
+    floor = float(np.percentile(e, 10))
+    speech = e > floor + 12
+    out['speech_share'] = round(float(np.mean(speech)), 3)
+    out['snr_db'] = round(float(np.percentile(e, 95) - floor), 1)
+    out['peak_dbfs'] = round(float(20 * np.log10(np.max(np.abs(xn)) + 1e-12)), 2)
+    # dropouts: a sudden fall of ≥ 35 dB to near-silence for 60-400 ms, inside speech on both sides
+    drop = 0
+    i = 0
+    while i < len(e) - 20:
+        if speech[i] and e[i + 1] < e[i] - 35 and e[i + 1] < floor + 3:
+            j = i + 1
+            while j < len(e) and e[j] < floor + 3 and j - i < 17:
+                j += 1
+            if 2 <= j - i <= 16 and j < len(e) and speech[j]:
+                drop += 1
+            i = j
+        i += 1
+    out['dropouts'] = drop
+    out['dropouts_per_hour'] = round(drop / max(1e-6, len(x) / SR / 3600), 1)
+    # loudness (EBU R128 integrated) and a loudness range from short-term blocks
+    meter = pyln.Meter(SR)
+    try:
+        out['lufs'] = round(float(meter.integrated_loudness(x.astype(np.float64))), 1)
+    except Exception:
+        out['lufs'] = None
+    blocks = [x[k:k + SR * 3] for k in range(0, len(x) - SR * 3, SR * 3)]
+    st = [20 * np.log10(np.sqrt(np.mean(b ** 2)) + 1e-12) for b in blocks if np.sqrt(np.mean(b ** 2)) > 1e-4]
+    out['loudness_range_db'] = round(float(np.percentile(st, 95) - np.percentile(st, 10)), 1) if st else None
+    # effective bandwidth: the highest frequency where the mean speech spectrum stays within 50 dB of its peak and 6 dB
+    # above the noise spectrum (silence frames) — a muffled tape stops early
+    nf = 2048
+    fr = xn[: len(xn) // nf * nf].reshape(-1, nf)
+    en = 10 * np.log10(np.mean(fr ** 2, axis=1) + 1e-12)
+    thr = np.percentile(en, 10)
+    win = np.hanning(nf)
+    loud = fr[en > thr + 12][:: max(1, int(np.sum(en > thr + 12) / 400))]
+    quiet = fr[en <= thr + 3][:: max(1, int(np.sum(en <= thr + 3) / 200))]
+    if len(loud):
+        S = 10 * np.log10(np.mean(np.abs(np.fft.rfft(loud * win, axis=1)) ** 2, axis=0) + 1e-20)
+        N = 10 * np.log10(np.mean(np.abs(np.fft.rfft(quiet * win, axis=1)) ** 2, axis=0) + 1e-20) if len(quiet) else np.full_like(S, -200)
+        freqs = np.fft.rfftfreq(nf, 1 / sr_native)
+        ok = (S > S.max() - 50) & (S > N + 6) & (freqs > 300)
+        idx = np.where(ok)[0]
+        out['bandwidth_khz'] = round(float(freqs[idx[-1]] / 1000), 2) if len(idx) else None
+    else:
+        out['bandwidth_khz'] = None
+    out['hum50_db'] = round(hum_db(x, SR, 50), 1)
+    out['hum60_db'] = round(hum_db(x, SR, 60), 1)
+    # pitch (tape speed): median F0 of loud frames by autocorrelation, 60-400 Hz
+    f0s = []
+    hop = SR // 10
+    for k in range(0, len(x) - 1024, hop * 5):
+        fr1 = x[k:k + 1024]
+        if np.sqrt(np.mean(fr1 ** 2)) < 10 ** ((floor + 20) / 20):
+            continue
+        ac = np.correlate(fr1, fr1, 'full')[1023:]
+        lo, hi = SR // 400, SR // 60
+        p = lo + int(np.argmax(ac[lo:hi]))
+        if ac[p] > 0.3 * ac[0]:
+            f0s.append(SR / p)
+    out['f0_median_hz'] = round(float(np.median(f0s)), 1) if f0s else None
+    # DNSMOS + NISQA on up to three 20 s excerpts of speech
+    try:
+        import torch
+        torch.set_num_threads(a.threads)
+        from torchmetrics.functional.audio import deep_noise_suppression_mean_opinion_score as dnsmos, non_intrusive_speech_quality_assessment as nisqa
+        d, q = [], []
+        L = SR * 20
+        for start in [int(len(x) * r) for r in (0.2, 0.5, 0.8)]:
+            seg = x[start:start + L]
+            if len(seg) < SR * 5:
+                continue
+            t = torch.from_numpy(seg.copy())
+            d.append(dnsmos(t, SR, False).tolist())
+            q.append(nisqa(t, SR).tolist())
+        if d:
+            m = np.mean(np.array(d), axis=0)
+            out['dnsmos'] = {'p808': round(float(m[0]), 2), 'sig': round(float(m[1]), 2), 'bak': round(float(m[2]), 2), 'ovrl': round(float(m[3]), 2)}
+            out['tools']['dnsmos'] = 'microsoft DNSMOS pDNSMOS sig_bak_ovr (torchmetrics 1.9)'
+        if q:
+            m = np.mean(np.array(q), axis=0)
+            out['nisqa'] = {'mos': round(float(m[0]), 2), 'noisiness': round(float(m[1]), 2), 'discontinuity': round(float(m[2]), 2), 'coloration': round(float(m[3]), 2), 'loudness': round(float(m[4]), 2)}
+            out['tools']['nisqa'] = 'NISQA v2.0 weights (torchmetrics 1.9)'
+    except Exception as err:
+        out['tools']['error'] = str(err)[:200]
+    out['seconds'] = round(time.time() - t0, 1)
+    print(json.dumps(out))
+
+
+def cmd_levels(a):
+    """Per-speaker loudness (dBFS RMS of each voice's diarized turns): --turns <json file with turns>."""
+    x = load(a.input, sr=SR)
+    turns = json.load(open(a.output)).get('turns', []) if a.output else []
+    acc = {}
+    for t in turns:
+        s, e = int(t['start'] * SR), int(t['end'] * SR)
+        seg = x[s:e]
+        if len(seg) < SR:
+            continue
+        acc.setdefault(t['speaker'], []).append(seg)
+    res = {}
+    for spk, segs in acc.items():
+        y = np.concatenate(segs)
+        res[spk] = {'seconds': round(len(y) / SR, 1), 'rms_dbfs': round(float(20 * np.log10(np.sqrt(np.mean(y ** 2)) + 1e-12)), 1)}
+    print(json.dumps({'speakers': res}))
+
+
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ('metrics', 'probe', 'langid', 'dfn', 'transcribe', 'diarize'):
+    for name in ('metrics', 'probe', 'langid', 'dfn', 'transcribe', 'diarize', 'grade', 'levels'):
         s = sub.add_parser(name)
         s.add_argument('input')
         s.add_argument('--threads', type=int, default=8)
@@ -285,7 +409,7 @@ def main():
         s.add_argument('--cluster', type=float, default=0.7)   # wespeaker: 0.6 → 12 voices on a 92-min Q&A (3dspeaker zh at 0.5: 131)
         s.add_argument('--emb', default='')
     a = p.parse_args()
-    {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize}[a.cmd](a)
+    {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd](a)
 
 
 if __name__ == '__main__':

@@ -14,8 +14,9 @@ import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
+import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
-export const STAGES = ['archive', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
+export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'quotes', 'thumb', 'render', 'ingest', 'catalog'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
 const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
@@ -138,6 +139,16 @@ export async function runItem(item, opts = {}, deps = {}) {
       await repo.updateMediaItem(item.id, { slug: finalSlug, dir, title, speaker, tradition, collection, year, date: meta.date, duration_s: probe.duration_s, has_video: probe.has_video,
         sha256: sha, youtube_id: info?.youtube_id || null, channel: info?.channel || null, playback: meta.rights.playback });
       item = { ...item, dir, slug: finalSlug };
+    }
+
+    if (stage === 'grade') {
+      // the recording's QUALITY, measured on the original before any processing (Chad 10-22): per-dimension grades and the
+      // fix chain; intelligibility and per-speaker levels join after transcription (finishQuality, at catalog — or here
+      // at once for an item that is already transcribed)
+      const m = await tools.tool('grade', join(dir, meta.original), {}, { threads: await threads(), stop, timeoutMs: 3600_000 });
+      meta.quality = { measured_at: d.now(), raw: m, ...gradeReport(m) };
+      if (existsSync(join(dir, 'transcript.raw.json'))) await finishQuality(meta, dir, d, item);
+      rec.grade = meta.quality.overall; rec.primary_issue = meta.quality.primary_issue;
     }
 
     if (stage === 'enhance') {
@@ -329,12 +340,13 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog') {
+      if (meta.quality && !meta.quality.final) await finishQuality(meta, dir, d, item);
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
         doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
-        state: 'done', stage: 'catalog', why: null });
+        state: 'done', stage: 'catalog', why: null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
     }
 
     } catch (err) {
@@ -347,6 +359,23 @@ export async function runItem(item, opts = {}, deps = {}) {
     await save();
   }
   return { slug: meta.slug, done, meta };
+}
+
+/** After transcription: ASR confidence (the chosen input's probe + the aligned word scores), per-speaker loudness, the
+ *  re-graded report and the repair priority; the catalogue row gets grade / issue / chain / priority. */
+export async function finishQuality(meta, dir, d, item) {
+  const raw = await readJson(join(dir, 'transcript.raw.json'));
+  const probe = meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null;
+  const asr = raw ? asrConfidence(raw.segments, probe) : null;
+  const turnsFile = existsSync(join(dir, 'diarization.json')) ? join(dir, 'diarization.json') : join(dir, 'transcript.raw.json');
+  const levels = (await d.tools.tool('levels', join(dir, meta.original), { output: turnsFile }, { threads: 2 }).catch(() => null))?.speakers || null;
+  const tiers = (await readJson(join(process.cwd(), 'data', 'media-speaker-tiers.json'), { tiers: {} })).tiers || {};
+  const key = meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null);
+  const copies = d.repo.sameTalkCount && meta.speaker && meta.title ? await d.repo.sameTalkCount(meta.speaker, meta.title).catch(() => 1) : 1;
+  const tier = tiers[key] || 1;
+  meta.quality = { ...meta.quality, ...gradeReport(meta.quality.raw, { asr, levels }), asr, levels, final: true, tier, unique: copies <= 1 };
+  meta.quality.priority = priorityOf(meta.quality.overall, { tier, unique: copies <= 1 });
+  if (item?.id && d.repo.updateMediaItem) await d.repo.updateMediaItem(item.id, { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority });
 }
 
 /** Files of an item folder that are published (served by the API, cached on R2). */
