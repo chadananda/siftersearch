@@ -43,6 +43,19 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
   measured per 45 s excerpt — Resemble: tower CPU×8 198 s · boss GPU 295 s · **boss CPU×16 53 s**; VoiceFixer: 48 · 157 ·
   **10 s**. The nightly ROCm stack is slower than boss's own CPU today (MIOpen untuned, GPU reports a low-power state), so
   remastering belongs on boss's CPU now; vLLM was not touched (GPU memory 1 GB in use). ASR already runs on boss.
+* **Text fixes (Chad's screenshots)**: "ìWhy … book?î" was Whisper's own output (CP1252 punctuation read as MacRoman) —
+  repaired where ASR words enter (199 words in 14 items before; Persian names keep their í); 348 inline markdown links in 28
+  items had reached the indexed text and snippets — transcript.md is now plain text, links live in transcript.json /
+  content_source_links / media_links; pronoun house style (He/Him only for God, the Manifestations, ‘Abdu’l-Bahá); a model
+  call that times out is retried. The 16:16 text was a transcript paragraph on /media/<slug> (item 30, ¶26).
+* **Audiogram shorts**: five templates (On Air, Archive Tape, Scripture Insert, Portrait Cinema, Minimal), captions from our
+  alignment + .srt/.vtt, link back baked in (watermark, end card, QR), ready-to-paste post text; rendered on boss's CPU in
+  4–15 s per 30 s clip; POST /api/media/shorts (public for moments), cached per range × format × template. Samples (Sears,
+  Covenant Breaking, 3:54–4:24): `https://siftersearch.com/api/media/sears-covenant-breaking-part-3/file/shorts/<key>.mp4`
+  with keys 3337949edabb (Portrait Cinema, auto) · f5830fa4345f (On Air) · 5a9282612eb5 (Archive Tape) · 50fea3ab8745
+  (Scripture Insert) · 88aed98a169f (Minimal). `media-shorts-moments` pre-renders Hands/UHJ moments once they exist.
+  YouTube upload would need OAuth on Chad's channel (YouTube Data API v3 videos.insert + captions.insert, a Google Cloud
+  project, the youtube.upload scope, a quota of ~6 uploads/day by default) — not built.
 * **Next**: related talks (phase 1), GPU tuning on boss (ask before touching vLLM), a review list for flagged copy-edits.
 
 ## What is built and live
