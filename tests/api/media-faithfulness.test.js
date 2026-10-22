@@ -29,6 +29,34 @@ describe('faithfulness', () => {
   });
   it('an added year or bracket in the clean layer is reverted', () => {
     const e = applyEdits(heard, [{ i0: 7, i1: 8, to: 'he (1957)' }]);
-    expect(revertInsertions(heard, para(e)).reverted[0].now).toBe('he (1957)');
+    const r = revertInsertions(heard, para(e));
+    expect(r.reverted[0]).toMatchObject({ heard: '', now: '(1957)' });
+    expect(r.paragraphs[0].words.map((w) => w.w).join(' ')).toBe(heard.map((w) => w.w).join(' '));
+  });
+});
+
+describe('faithfulness on real ASR quirks', () => {
+  it('overlapping segment times (a repeated phrase in the raw ASR) are not insertions', () => {
+    const raw = 'of the hunger strikes. the hunger strikes and it was'.split(' ').map((w, i) => ({ w, s: [2.2, 2.3, 3.0, 3.4, 2.8, 3.0, 3.4, 3.8, 3.9, 4.1][i], e: 0 }));
+    raw.forEach((w) => { w.e = w.s + 0.3; });
+    expect(regions(raw, para(raw.map((w) => ({ ...w }))))).toEqual([]);
+  });
+});
+
+describe('insertionOf (10-22 audit cases)', async () => {
+  const { insertionOf } = await import('../../api/lib/media/faithfulness.js');
+  it('respellings that split a garbled name pass; added content does not', () => {
+    expect(insertionOf("Abdu'l-Bahá, like Shoghi-Fezi,", '‘Abdu’l-Bahá, like Shoghi Effendi,')).toBeNull();
+    expect(insertionOf('follow, That Choghefendi', 'follow. That Shoghi Effendi')).toBeNull();
+    expect(insertionOf("Nabeel's narrative,", 'Nabips Narrative (Vol II),')).toMatch(/brackets/);
+    expect(insertionOf('', 'strength by your')).toMatch(/nothing was heard/);
+    expect(insertionOf('the book', 'the book of the Covenant')).toMatch(/more words/);
+    expect(insertionOf('foreigner', 'forerunner')).toBeNull();
+    expect(insertionOf('Robart.', 'John Robarts.')).toMatch(/more words/);
+  });
+  it('a capitalisation edit beside a repeated phrase is not an insertion (furutan 64:36)', () => {
+    const raw = 'serve the Faith by your energy, By your strength, by your health, and'.split(' ').map((w, i) => ({ w, s: i, e: i + 0.9 }));
+    const fin = raw.map((w) => ({ ...w })); fin[6] = { ...fin[6], w: 'by' }; fin[8] = { ...fin[8], w: 'strength' };
+    expect(regions(raw, para(fin))).toEqual([]);
   });
 });

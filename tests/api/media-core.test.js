@@ -156,6 +156,8 @@ describe('vocabulary corrector', () => {
     const t = promptTerms({ title: 'Revelation of Baha\'u\'llah', speaker: 'Taherzadeh' }, vocab);
     expect(t[0]).toBe('Bahá’u’lláh');
     expect(t.length).toBeLessThanOrEqual(45);
+    // the English terms talks use that Whisper mishears (10-22: "foreigner", "Real Testament")
+    for (const k of ['Forerunner', 'Will and Testament', 'World Order', 'Covenant', 'Bayán', 'Nabíl’s Narrative']) expect(t).toContain(k);
   });
 });
 

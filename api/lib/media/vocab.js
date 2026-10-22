@@ -152,9 +152,13 @@ think thought see saw seen made make makes gave give gives took take takes`.spli
  */
 export function addsWords(from, to) {
   const fw = String(from || '').trim().split(/\s+/).filter(Boolean), tw = String(to || '').trim().split(/\s+/).filter(Boolean);
-  if (tw.length > fw.length + (fw.length === 1 ? 1 : 0)) return true;
   const novel = (re) => re.test(String(to)) && !re.test(String(from));
-  return novel(/[()[\]{}]/) || novel(/\d/) || novel(/\b(?:vol|volume)\b/i);
+  if (novel(/[()[\]{}]/) || novel(/\d/) || novel(/\b(?:vol|volume|chapter|page)\b/i)) return true;
+  if (tw.length <= fw.length) return false;
+  // more words than heard: only a respelling that sounds like the whole of what was heard ("Sogefendik" → "Shoghi
+  // Effendi"); an added first name or phrase does not ("Robart" → "John Robarts", 10-22 audit)
+  const a = keyOf(from), b = keyOf(to);
+  return levenshtein(a, b, 99) > Math.max(2, Math.ceil(Math.max(a.length, b.length) * 0.35));
 }
 
 export function edgesAlike(from, to) {
@@ -254,6 +258,9 @@ export function applyEdits(words, edits) {
 export function promptTerms({ title = '', speaker = '', extra = [] } = {}, vocab, max = 45) {
   const meta = `${title} ${speaker}`;
   const inMeta = vocab.keys.filter((e) => e.key.length >= 4 && keyOf(meta).includes(e.key)).map((e) => e.term);
-  const first = ['Bahá’u’lláh', '‘Abdu’l-Bahá', 'the Báb', 'Shoghi Effendi', 'Bahá’í', 'Kitáb-i-Aqdas', 'Kitáb-i-Íqán', 'Universal House of Justice', 'Riḍván', 'Ṭáhirih', 'Quddús', 'Mullá Ḥusayn', '‘Akká', 'Bahjí', 'Ḥuqúqu’lláh', 'Mashriqu’l-Adhkár'];
+  // the words talks use most that Whisper mishears (10-22: "foreigner" for Forerunner, "Real Testament", "Nabips Narrative")
+  const first = ['Bahá’u’lláh', '‘Abdu’l-Bahá', 'the Báb', 'Shoghi Effendi', 'the Guardian', 'Bahá’í', 'Universal House of Justice', 'Covenant',
+    'Will and Testament', 'World Order', 'Forerunner', 'Bayán', 'Kitáb-i-Aqdas', 'Kitáb-i-Íqán', 'The Dawn-Breakers', 'Nabíl’s Narrative', 'Hands of the Cause',
+    'Riḍván', 'Ṭáhirih', 'Quddús', 'Mullá Ḥusayn', '‘Akká', 'Bahjí', 'Haifa', 'Ḥuqúqu’lláh', 'Mashriqu’l-Adhkár'];
   return [...new Set([...inMeta, ...extra, ...first, ...CORE_TERMS])].slice(0, max);
 }
