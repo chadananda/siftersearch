@@ -9,7 +9,7 @@
 // sidecars and the render spec (pure); scripts/media/render_short.py on boss composes the picture with ffmpeg.
 import { createHash } from 'crypto';
 
-export const SHORT_VERSION = 4;   // 4: Portrait Cinema default, uniform face-centred Ken Burns on the extended master, light styling   // 3: bitrate cap, static archive grain (keys change: the edge caches by key)
+export const SHORT_VERSION = 5;   // 4: Portrait Cinema default, uniform face-centred Ken Burns on the extended master, light styling   // 3: bitrate cap, static archive grain (keys change: the edge caches by key)
 export const FORMATS = { vertical: { W: 1080, H: 1920 }, square: { W: 1080, H: 1080 } };
 export const TEMPLATES = ['on-air', 'archive-tape', 'scripture-insert', 'portrait-cinema', 'minimal'];
 const ROTATION = ['on-air', 'portrait-cinema', 'minimal'];
@@ -218,7 +218,7 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
   }
 
   // the link back, baked in (links in Shorts/Reels descriptions are often not clickable): a small watermark throughout…
-  at('Small', 0, clip, esc(url), cx, s(60), 5, 6, '\\1a&H30&');
+  at('Small', 0, clip, esc(url), cx, s(60), 5, 6, '\\1a&H10&\\3c&H101418&\\3a&H40&\\bord2');   // readable on light and dark grounds
   // …and the end card: "Hear the full talk", the speaker and talk, the short URL, and (drawn by the renderer) a QR code to
   // the full talk at this moment, under the text
   shape(clip, total, 0, 0, rect(W, H), '&H0D1014&', { layer: 4, alpha: '10' });
