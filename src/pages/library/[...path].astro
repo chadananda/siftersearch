@@ -29,12 +29,16 @@ const viewMode = Astro.url.searchParams.get('view') || 'default';
 // For document pages, check for redirects server-side (SEO: real 301s), then use the same response for the real
 // <title>, description and h1 in the first HTML. An explicit API 404 is a real 404 (never cached at the edge: only
 // 200s are stored); an outage or 5xx keeps the generic page and lets the reader load client-side.
-let doc = null, notFound = false;
+// The same response is the reader's FIRST VIEW (Chad 10-23, "flash of unstyled content"): header + the first SSR_PARAS
+// paragraphs render in the HTML with their final styles and the component hydrates on top; the rest loads below the fold.
+// Both fetches go through the edge cache (worker/edge-cache.js API_ROUTES), so a revalidation rarely waits on tower.
+const SSR_PARAS = 40;
+let doc = null, notFound = false, initialData = null;
 if (segments.length === 3) {
   const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
   try {
     const res = await fetch(
-      `${API_BASE}/api/library/by-path/${encodeURIComponent(religion)}/${encodeURIComponent(collection)}/${encodeURIComponent(slug)}?limit=1`,
+      `${API_BASE}/api/library/by-path/${encodeURIComponent(religion)}/${encodeURIComponent(collection)}/${encodeURIComponent(slug)}?limit=${SSR_PARAS}`,
       { redirect: 'manual' }  // Don't follow redirects automatically
     );
 
@@ -51,7 +55,25 @@ if (segments.length === 3) {
       }
     }
     if (res.status === 404) notFound = true;
-    else if (res.ok) doc = (await res.json())?.document || null;
+    else if (res.ok) {
+      const data = await res.json();
+      doc = data?.document || null;
+      if (doc) {
+        // slim props: null fields dropped (the reader treats missing and null alike)
+        const slim = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
+        let about = null;   // "About this tablet" box, server-rendered so it never pushes the text down after load
+        try {   // edge-cached, normally ms; a slow origin never holds the page (unknown → the box fetches it client-side)
+          const a = await Promise.race([fetch(`${API_BASE}/api/documents/${doc.id}/about`), new Promise((r) => setTimeout(() => r(null), 500))]);
+          if (!a) about = undefined;
+          else if (a.ok) about = await a.json();
+        } catch { about = undefined; }
+        initialData = {
+          document: doc, paragraphs: (data.paragraphs || []).map(slim), total: data.total || 0, offset: data.offset || 0,
+          hasMore: !!data.hasMore, requiresAuth: !!data.requiresAuth, canEdit: !!data.canEdit, previewLimit: data.previewLimit ?? null,
+          about,
+        };
+      }
+    }
   } catch (e) {
     // If redirect check fails, continue with normal rendering
     // The client-side component will handle errors
@@ -140,6 +162,14 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
   <Fragment slot="head">
     <meta name="keywords" content={meta.keywords} />
     <link rel="canonical" href={canonicalUrl} />
+    {pageType === 'document' && (
+      <>
+        <!-- the reader's faces (font-display: optional): preloaded so the first view is set in them, no swap -->
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-normal-400-latin.woff2" crossorigin />
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-normal-700-latin.woff2" crossorigin />
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-italic-400-latin.woff2" crossorigin />
+      </>
+    )}
 
     <!-- Open Graph -->
     <meta property="og:title" content={meta.title} />
@@ -212,6 +242,7 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
       initialViewMode={viewMode}
       initialTitle={doc?.title || ''}
       initialAuthor={doc?.author && !/^unknown$/i.test(doc.author) ? doc.author : ''}
+      initialData={initialData}
     />
   )}
 

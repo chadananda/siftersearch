@@ -150,7 +150,13 @@ export function createExports(manifest) {
             // The EDGE keeps public API responses for their s-maxage; the BROWSER keeps none. The zone's Browser Cache TTL
             // rewrites max-age to 14400 on whatever leaves here, so the home-page Observatory read a 2.6-hour-old
             // telemetry snapshot for every refresh (2026-10-17) while the API served a fresh one. Edge hits are ~ms anyway.
-            const toBrowser = (r, state = 'BYPASS') => { const out = withState(r, state); out.headers.set('cache-control', 'no-store, max-age=0'); out.headers.delete('expires'); return out; };
+            // A content-addressed asset (origin says immutable, e.g. /widget/sifter-chat.js?v=<hash>) keeps its header: the
+            // browser holds it across visits (Chad 10-23, repeat loads re-fetched it every time). Everything else: no-store.
+            const toBrowser = (r, state = 'BYPASS') => {
+              const out = withState(r, state);
+              if (!/\bimmutable\b/.test(r.headers.get('cache-control') || '')) { out.headers.set('cache-control', 'no-store, max-age=0'); out.headers.delete('expires'); }
+              return out;
+            };
             const cache = caches.default;
             const hit = await cache.match(request);
             if (hit) return toBrowser(hit, 'HIT');

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-23T17:35:45.986Z",
+  "generated": "2026-10-23T17:52:46.021Z",
   "entries": [
+    {
+      "hash": "4f440442",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "A video link is a MEDIA holdings check — the talks library and its import queue, not the documents",
+      "scope": "dewey"
+    },
+    {
+      "hash": "afa83454",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Receipts name a held work as the library does; book requests skip file-name slugs, rank author matches first, never greet \"Dear Admin\"",
+      "scope": "dewey"
+    },
     {
       "hash": "734963d9",
       "date": "2026-10-23",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Episodes of God Passes By and The Dawn-Breakers from their own headings — episode-extract job + /documents/:id/episodes",
       "scope": "history"
-    },
-    {
-      "hash": "5d54da82",
-      "date": "2026-10-17",
-      "type": "Docs",
-      "description": "Retrieval additions 1-7 in Chad's order (10-17)",
-      "scope": "worklist"
-    },
-    {
-      "hash": "1ad8d057",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "BM25 for scraped sites (keyword-fill-sites, heavy lane) — page chrome counted unindexable; dial cells no longer pulse on their own",
-      "scope": "index"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "4f440442",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "A video link is a MEDIA holdings check — the talks library and its import queue, not the documents",
+        "scope": "dewey"
+      },
+      {
+        "hash": "afa83454",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Receipts name a held work as the library does; book requests skip file-name slugs, rank author matches first, never greet \"Dear Admin\"",
+        "scope": "dewey"
+      },
       {
         "hash": "734963d9",
         "date": "2026-10-23",
@@ -7001,20 +7015,6 @@
         "type": "New",
         "description": "Episodes of God Passes By and The Dawn-Breakers from their own headings — episode-extract job + /documents/:id/episodes",
         "scope": "history"
-      },
-      {
-        "hash": "5d54da82",
-        "date": "2026-10-17",
-        "type": "Docs",
-        "description": "Retrieval additions 1-7 in Chad's order (10-17)",
-        "scope": "worklist"
-      },
-      {
-        "hash": "1ad8d057",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "BM25 for scraped sites (keyword-fill-sites, heavy lane) — page chrome counted unindexable; dial cells no longer pulse on their own",
-        "scope": "index"
       }
     ]
   }

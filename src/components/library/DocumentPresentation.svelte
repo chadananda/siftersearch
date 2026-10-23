@@ -59,26 +59,32 @@
     pathSlug = '',
     initialViewMode = 'default',
     initialTitle = '',     // SSR'd from by-path so the first HTML carries the real h1 (SEO, link checks)
-    initialAuthor = ''
+    initialAuthor = '',
+    // SSR'd first view (Chad 10-23): { document, paragraphs, total, offset, hasMore, requiresAuth, canEdit, previewLimit, about }.
+    // When present the server renders the reader with its text and the client hydrates on top without refetching.
+    initialData = null
   } = $props();
 
   // Auth state
   const auth = getAuthState();
 
   // Document state
-  let document = $state(null);
-  let paragraphs = $state([]);
-  let loading = $state(true);
+  const ssr = initialData?.document ? initialData : null;
+  let document = $state(ssr?.document ?? null);
+  let paragraphs = $state(ssr?.paragraphs ?? []);
+  let loading = $state(!ssr);
   let loadingMore = $state(false);
   let error = $state(null);
 
   // Pagination state
-  let total = $state(0);
-  let offset = $state(0);
-  let hasMore = $state(false);
-  let requiresAuth = $state(false);
-  let canEdit = $state(false);
-  let previewLimit = $state(null);
+  let total = $state(ssr?.total ?? 0);
+  let offset = $state(ssr ? (ssr.offset || 0) + ssr.paragraphs.length : 0);
+  let hasMore = $state(ssr?.hasMore ?? false);
+  let requiresAuth = $state(ssr?.requiresAuth ?? false);
+  let canEdit = $state(ssr?.canEdit ?? false);
+  let previewLimit = $state(ssr?.previewLimit ?? null);
+  // window-only text is set after mount so the hydrated markup matches the server's
+  let pageUrl = $state('');
 
   // UI state
   let showMetadata = $state(false);
@@ -195,11 +201,22 @@
     // Listen for hash changes
     window.addEventListener('hashchange', parseAnchor);
 
+    pageUrl = window.location.href;
+
     // Initialize auth
     await initAuth();
 
-    // Load initial content
-    await loadDocument();
+    // Load initial content — unless the server already rendered it. A signed-in reader of a copyrighted book may see
+    // more than the anonymous first view, so that case refreshes in place (no spinner).
+    if (!ssr) await loadDocument();
+    else if (auth.isAuthenticated && document?.encumbered) await loadDocument({ silent: true });
+
+    // A #p/range anchor past the first view: load on until it is on the page
+    while (anchorEnd && hasMore && !requiresAuth && !paragraphs.some((p) => p.paragraph_index >= anchorEnd)) {
+      const before = paragraphs.length;
+      await loadMore();
+      if (paragraphs.length === before) break;
+    }
 
     // Check for any active translation jobs for this document
     await checkForActiveTranslation();
@@ -253,14 +270,14 @@
     stopTranslationPolling();
   });
 
-  async function loadDocument() {
+  async function loadDocument({ silent = false } = {}) {
     if (!pathReligion || !pathCollection || !pathSlug) {
       error = 'Invalid document path';
       loading = false;
       return;
     }
 
-    loading = true;
+    if (!silent) loading = true;
     error = null;
 
     try {
@@ -315,7 +332,8 @@
         updateMetaTag('keywords', keywords);
       }
     } catch (err) {
-      error = err.message;
+      if (silent) console.error('Document refresh failed:', err);   // keep the rendered view
+      else error = err.message;
     } finally {
       loading = false;
     }
@@ -1219,7 +1237,7 @@
             <p>{document.description}</p>
           </div>
         {/if}
-        {#if document.id}<TabletAbout documentId={document.id} />{/if}
+        {#if document.id}<TabletAbout documentId={document.id} initial={ssr && document.id === ssr.document.id ? ssr.about : undefined} />{/if}
         {#if document.id}<DocumentSource documentId={document.id} />{/if}
       </header>
 
@@ -1427,7 +1445,7 @@
               <p class="footer-author">by {document.author}</p>
             {/if}
             <p class="footer-collection">{document.religion}{document.collection ? ` · ${document.collection}` : ''}</p>
-            <p class="footer-url">{typeof window !== 'undefined' ? window.location.href : ''}</p>
+            <p class="footer-url">{pageUrl}</p>
           </div>
           <div class="footer-qr">
             {#if qrCodeUrl}

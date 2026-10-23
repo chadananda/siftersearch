@@ -19,6 +19,10 @@ describe('policyFor', () => {
     expect(pol('/api/media/a-talk')).toMatchObject({ mode: 'cache', fresh: 120 });
     expect(pol('/api/library/tree')).toMatchObject({ mode: 'cache' });
     expect(pol('/api/v1/people/123')).toMatchObject({ mode: 'cache' });
+    // the reader (SSR first view + load-more) and its tablet box; a signed-in editor (Authorization) bypasses
+    expect(pol('/api/library/by-path/bahai/bahaullah/bahaullah_the-kitab-i-iqan?limit=40')).toMatchObject({ mode: 'cache', fresh: 300, l2: false });
+    expect(pol('/api/documents/20810/about')).toMatchObject({ mode: 'cache', fresh: 300 });
+    expect(pol('/api/library/by-path/a/b/c', 'GET', { authorization: 'Bearer x' }).mode).toBe('bypass');
   });
   it('bypasses non-GET, credentials, auth/chat/admin routes and unlisted paths', () => {
     expect(pol('/media', 'POST').mode).toBe('bypass');

@@ -3,10 +3,12 @@
   // :deps: GET /api/documents/:id/about (api/routes/tablets.js) → merged record; renders nothing when a doc has none.
   // :rules: generated OOL titles are labelled; catalogue fields carry their source; links open the two catalogues.
   import { onMount } from 'svelte';
-  let { documentId } = $props();
+  // initial: the record the page server-rendered (null = none) so the box never appears late; undefined = fetch it here
+  let { documentId, initial = undefined } = $props();
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
-  let meta = $state(null);
+  let meta = $state(initial ?? null);
   onMount(async () => {
+    if (initial !== undefined) return;
     try {
       const r = await fetch(`${API_BASE}/api/documents/${documentId}/about`);
       if (r.ok) meta = await r.json();

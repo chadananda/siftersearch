@@ -27,6 +27,8 @@ const API_ROUTES = [
   [/^\/api\/library\/(tree|nodes|shelves|shelves\/items|documents|letters)$/, 300, false],
   [/^\/api\/library\/(nodes|documents)\/[^/]+$/, 300, false],
   [/^\/api\/library\/by-slug\/[^/]+(\/[^/]+)?$/, 300, false],
+  [/^\/api\/library\/by-path\/[^/]+\/[^/]+\/[^/]+$/, 300, false],   // the reader's pages (SSR first view + load-more); auth is header-only
+  [/^\/api\/documents\/\d+\/about$/, 300, false],               // the reader's "About this tablet" box
   [/^\/api\/v1\/people$/, 900, true],
   [/^\/api\/v1\/people\/[^/]+$/, 900, true],
   [/^\/api\/v1\/entities\/[^/]+$/, 900, false],
