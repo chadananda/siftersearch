@@ -18,6 +18,12 @@ export function flattenWords(segments = []) {
       const d = (Number(sg.e) - Number(sg.s)) / Math.max(1, toks.length);
       ws = toks.map((w, i) => ({ w, s: sg.s + i * d, e: sg.s + (i + 1) * d, spk: sg.spk }));
     }
+    // a LOSSY word (U+FFFD: a multi-byte letter split between two tokens in the word timestamps — Persian, 10-22) takes its
+    // text from the segment's own text, which was decoded whole, when the two split into the same number of words
+    if (ws.some((w) => String(w.w ?? w.word ?? '').includes('\uFFFD')) && sg.text && !String(sg.text).includes('\uFFFD')) {
+      const toks = String(sg.text).trim().split(/\s+/).filter(Boolean);
+      if (toks.length === ws.length) ws = ws.map((w, i) => ({ ...w, w: toks[i], word: toks[i] }));
+    }
     const base = out.length;
     // Whisper's own mojibake ("ìWhy … book?î") is repaired here, where ASR words enter the pipeline (text-repair.js)
     for (const w of ws) out.push({ w: fixMojibake(String(w.w ?? w.word).trim()), s: w.s ?? null, e: w.e ?? null, p: w.p ?? null, spk: w.spk ?? sg.spk ?? null });

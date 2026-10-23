@@ -64,3 +64,15 @@ describe('citation gate (QA fixtures: slug titles, contents)', async () => {
       text: '“Centuries, nay ages, must pass away,” He affirms in one of His earliest Tablets, “ere the Day-Star of Truth shineth again in its mid-summer splendour.”' })).toBeNull();
   });
 });
+
+describe('lossy words (U+FFFD) take the segment text', async () => {
+  const { flattenWords } = await import('../../api/lib/media/paragraphs.js');
+  it('a Persian word split between tokens is restored from the whole-decoded segment text', () => {
+    const sg = { s: 0, e: 3, text: 'از قبل عبدالبها', words: [{ w: 'از', s: 0, e: 1 }, { w: 'قب��', s: 1, e: 2 }, { w: 'عبدالبها', s: 2, e: 3 }] };
+    expect(flattenWords([sg]).map((w) => w.w)).toEqual(['از', 'قبل', 'عبدالبها']);
+  });
+  it('left alone when the counts differ (the gate then refuses it)', () => {
+    const sg = { s: 0, e: 2, text: 'از قبل عبدالبها', words: [{ w: 'از', s: 0, e: 1 }, { w: 'قب�', s: 1, e: 2 }] };
+    expect(flattenWords([sg])[1].w).toContain('�');
+  });
+});
