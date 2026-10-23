@@ -9,6 +9,11 @@
 #   start <ext> <job> --verb diarize|grade|dfn|encode             the same, for a diarization, a quality grade or a DeepFilterNet copy
 #   fetch-file <job>                                        a detached job's output FILE (the DeepFilterNet audio)
 #   running <tool>                                          the ids of the live detached jobs of that kind
+#   clean <job>                                             remove a finished job's folder (tower has fetched its result)
+#   df                                                      free space where the jobs live (+ the jobs' own size)
+# JANITOR (on 'start', at most every 10 min): job folders older than MEDIA_JOB_KEEP_HOURS (6) and not running are removed,
+# then the oldest finished ones until the jobs use ≤ MEDIA_JOB_CAP_GB (60). 10-23 16:09: aorus's 234 GB disk filled with
+# 1,484 job folders (169 GB) — nothing ever removed them — and every enhance/transcribe/diarize failed "No space left".
 # The same script serves every compute host (boss: CPU; aorus: CUDA): it runs from its own directory, with that host's venv
 # (venv/, venv-dfn/ for DeepFilterNet) and models (models/). Every model is local; nothing here reaches the internet.
 #   install-tool                                            replace media_tool.py with stdin (kept in sync from the repo)
@@ -32,7 +37,36 @@ if [[ "$verb" == "short" ]]; then
   py=$!; watch_parent "$py" & wait "$py"
   cat "$job/out.mp4"; exit 0
 fi
-[[ "$verb" =~ ^(probe|langid|transcribe|diarize|start|poll|fetch|fetch-file|cancel|running)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
+[[ "$verb" =~ ^(probe|langid|transcribe|diarize|start|poll|fetch|fetch-file|cancel|running|clean|df)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
+
+job_alive() { local pid; pid=$(cat "$1/pid" 2>/dev/null || echo 0); [[ "$pid" =~ ^[0-9]+$ && "$pid" != 0 ]] && kill -0 "$pid" 2>/dev/null; }
+janitor() {
+  mkdir -p jobs; local stamp=jobs/.janitor
+  [[ -f "$stamp" && -z "$(find "$stamp" -mmin +10 2>/dev/null)" ]] && return 0
+  touch "$stamp"
+  local keep_min=$(( ${MEDIA_JOB_KEEP_HOURS:-6} * 60 )) cap_kb=$(( ${MEDIA_JOB_CAP_GB:-60} * 1024 * 1024 )) d
+  while IFS= read -r d; do job_alive "$d" || rm -rf "$d"; done < <(find jobs -mindepth 1 -maxdepth 1 -type d -mmin +"$keep_min" 2>/dev/null)
+  local used; used=$(du -sk jobs 2>/dev/null | cut -f1)
+  if (( ${used:-0} > cap_kb )); then
+    while IFS= read -r d; do
+      (( ${used:-0} <= cap_kb )) && break
+      job_alive "$d" && continue
+      local sz; sz=$(du -sk "$d" 2>/dev/null | cut -f1); rm -rf "$d"; used=$(( used - ${sz:-0} ))
+    done < <(ls -1dtr jobs/*/ 2>/dev/null | sed 's:/$::')   # oldest first
+  fi
+}
+if [[ "$verb" == "df" ]]; then
+  mkdir -p jobs
+  read -r size avail pcent < <(df -Pk jobs | awk 'NR==2 {gsub("%","",$5); print $2, $4, $5}')
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs -mindepth 1 -maxdepth 1 -type d | wc -l)"
+  exit 0
+fi
+if [[ "$verb" == "clean" ]]; then
+  id="${A[1]:-}"; [[ "$id" =~ ^[a-z0-9-]{4,120}$ ]] || { echo '{"error":"bad job"}'; exit 2; }
+  d="jobs/$id"; [[ -d "$d" ]] || { echo '{"cleaned":false,"why":"missing"}'; exit 0; }
+  job_alive "$d" && { echo '{"cleaned":false,"why":"running"}'; exit 0; }
+  rm -rf "$d"; echo '{"cleaned":true}'; exit 0
+fi
 
 # ── running <tool>: the ids of this host's LIVE detached jobs of one kind (tower's slot count is checked against it: jobs
 # started before a tower restart and not yet re-attached are otherwise invisible to it — 10-23: 3 diarizations on aorus, cap 2)
@@ -74,7 +108,7 @@ for i in "${!args[@]}"; do if [[ "${args[$i]}" == --prompt-b64=* ]]; then prompt
 args=(${args[@]+"${args[@]}"})   # re-pack: the unset above leaves a hole, and a hole read under set -u is 'unbound variable'
 
 if [[ "$verb" == "start" ]]; then
-  find jobs -mindepth 1 -maxdepth 1 -type d -mtime +2 -exec rm -rf {} + 2>/dev/null || true
+  janitor || true
   d="jobs/$id"; rm -rf "$d"; mkdir -p "$d"
   cat > "$d/in.$ext"
   # a detached job is a transcription, or (--verb diarize) a diarization; both survive the caller's restarts

@@ -59,7 +59,7 @@ describe('tower stays light with four items in flight', () => {
     const src = readFileSync(new URL('../../api/lib/ops/media-jobs.js', import.meta.url), 'utf8');
     expect(src).toMatch(/const prior = \/\^retry:\\d\+\/\.exec\(item\.why/);
     const repo = readFileSync(new URL('../../api/lib/repos/media-repo.js', import.meta.url), 'utf8');
-    expect(repo).toMatch(/if \(n >= max\) continue;/);
+    expect(repo).toMatch(/if \(n >= max && !hostFault\) continue;/);   // a host-disk failure is retried regardless (media-disk.test.js)
   });
 });
 

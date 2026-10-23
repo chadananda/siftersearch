@@ -230,6 +230,19 @@ let newGpuIdleAt = state.gpuIdleAt || 0;
   }
 }
 
+// ── the compute hosts' disks (media job folders live there; 10-23 aorus filled up): WARN 85 %, CRITICAL 95 % ──
+{
+  const { diskCheck } = await import('./lib/host-disk.mjs');
+  const { gateWrap } = await import('../api/lib/media/tools.js');
+  const hosts = [process.env.MEDIA_GPU_HOST ?? 'aorus', process.env.MEDIA_ASR_HOST ?? 'boss'].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);
+  for (const host of hosts) {
+    let df = null;
+    try { df = JSON.parse(execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${host} ${JSON.stringify(gateWrap(host, 'df'))}`, { encoding: 'utf8', timeout: 30000 }).trim().split('\n').pop()); } catch { /* unreachable */ }
+    const c = diskCheck(host, df);
+    add(c.name, c.ok, c.level, c.detail);
+  }
+}
+
 // ── 5. Corpus + cache + widget metrics (report-only) ─────────────────────────
 const metrics = {};
 if (db) {

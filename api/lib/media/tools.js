@@ -110,6 +110,33 @@ export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
 /** The ASR HOSTS and their slots, fastest first: MEDIA_ASR_HOSTS="aorus:2,boss:4" (default: MEDIA_ASR_HOST with mediaParallel()
  *  slots). Measured 10-22 on a 46-min talk: aorus (RTX 3070, fp16) 26.6 audio-min per wall-min for ONE job; boss 14.4 for
  *  four jobs together. */
+// ── REMOTE DISK (10-23 16:09: aorus's disk filled with job folders — 28 failures "No space left on device", the GPU idle):
+// a host with < MEDIA_HOST_MIN_FREE_GB (20) free takes no NEW job; its free space (gate 'df') is re-read at most every
+// minute, in the background — a picker never waits on it. Unknown → OK (an unreachable host fails on its own).
+const diskInfo = new Map();   // host → { free_gb, used_pct, at, warnedAt }
+const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
+export function noteDisk(host, info, now = Date.now()) { diskInfo.set(host, { ...(diskInfo.get(host) || {}), ...info, at: now }); }
+export function diskOk(host, { now = Date.now(), refresh = refreshDisk } = {}) {
+  if (!host) return true;
+  const d = diskInfo.get(host);
+  if ((!d || now - d.at > 60_000) && !d?.pending) { noteDisk(host, { pending: true }, d?.at ?? 0); refresh(host).catch(() => {}).finally(() => { const x = diskInfo.get(host); if (x) x.pending = false; }); }
+  if (!d || d.free_gb == null) return true;
+  const ok = d.free_gb >= diskMinGb();
+  if (!ok && (!d.warnedAt || now - d.warnedAt > 10 * 60_000)) { d.warnedAt = now; console.warn(`[media] WARN ${host} has ${d.free_gb} GB free (< ${diskMinGb()} GB): no new jobs there`); }
+  return ok;
+}
+async function refreshDisk(host, { exec = run } = {}) {
+  const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
+  const j = JSON.parse(stdout.trim().split('\n').pop());
+  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, pending: false });
+  return j;
+}
+/** Remove a finished job's folder on its host (best effort; the gate refuses a running one and its janitor sweeps the rest). */
+export async function cleanRemote(host, job, { exec = run } = {}) {
+  const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `clean ${job}`)], { timeoutMs: 60_000 });
+  return /"cleaned":true/.test(stdout);
+}
+
 export function asrHosts() {
   const spec = process.env.MEDIA_ASR_HOSTS ?? 'aorus:2,boss:4';   // '' → MEDIA_ASR_HOST alone
   if (!spec) return asrHost() ? [{ host: asrHost(), slots: mediaParallel() }] : [];
@@ -137,7 +164,8 @@ const probeWaiters = [];
 export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 4], [asrHost(), 2]]).filter(([h]) => h) } = {}) {
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
-  const uniq = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
+  const uniq0 = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
+  const uniq = uniq0.filter(([h]) => diskOk(h)).length ? uniq0.filter(([h]) => diskOk(h)) : uniq0;
   if (!uniq.length) return fn(null);
   let host = null;
   for (;;) {
@@ -225,9 +253,10 @@ function releaseAsr(host) { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 
 export async function acquireAsrHost(hosts = asrHosts()) {
   if (!hosts.length) return { host: null, release: () => {} };
   for (;;) {
-    const h = hosts.find((x) => (asrBusy.get(x.host) || 0) < x.slots);
+    const h = hosts.find((x) => (asrBusy.get(x.host) || 0) < x.slots && diskOk(x.host));
     if (h) { asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; releaseAsr(h.host); } } }; }
-    await new Promise((r) => asrWaiters.push(r));
+    // a slot frees, or a minute passes (a host low on disk may have been cleaned)
+    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, 60_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
   }
 }
 const diarBusy = new Map();
@@ -277,7 +306,8 @@ export async function runningOn(host, verb = 'diarize', { exec = run } = {}) {
 /** A diarization's host when it is DISPATCHED: aorus while it has a free diarization slot, else boss (its CPU) — the rest
  *  stay on boss (10-23 watch). */
 export function pickDiarHost(busy = diarBusy) {
-  const order = [gpuHost(), asrHost()].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);   // the GPU host first
+  const all = [gpuHost(), asrHost()].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);   // the GPU host first
+  const order = all.filter((h) => diskOk(h)).length ? all.filter((h) => diskOk(h)) : all;   // never onto a full disk
   return order.find((h) => (busy.get(h) || 0) < (DIAR_SLOTS[h] || 3)) || order[0] || null;
 }
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
@@ -316,6 +346,7 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
   const { stdout } = await ssh(`fetch ${job}`, { timeoutMs: 300_000 });
   const { writeFile } = await import('fs/promises');
   await writeFile(opts.output, stdout);
+  await cleanRemote(host, job, { exec }).catch(() => {});   // the result is on tower: the job folder goes (10-23 disk leak)
   return { output: opts.output, host, job, reattached };
 }
 
@@ -508,10 +539,13 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
     await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `fetch-file ${job}`)], { timeoutMs: 600_000, onStdout: (d) => chunks.push(d) });
     const { writeFile } = await import('fs/promises');
     await writeFile(opts.output, Buffer.concat(chunks));
+    await cleanRemote(host, job, { exec }).catch(() => {});
     return { output: opts.output, host, job };
   }
   const { stdout } = await ssh(`fetch ${job}`, { timeoutMs: 120_000 });
-  return { ...JSON.parse(stdout.trim().split('\n').pop()), host, job };
+  const res = { ...JSON.parse(stdout.trim().split('\n').pop()), host, job };
+  await cleanRemote(host, job, { exec }).catch(() => {});
+  return res;
 }
 /** A fixed ENCODE recipe (light chain · ogg · m4a: media_tool.py encode) on the ASR host's spare CPU — measured 10-23 on a
  *  66-min talk: boss 49 / 28 / 19 s (+ ~3 s transfer) vs tower 129 / 91 / 68 s at tower's lowest priority — else on tower.
@@ -520,7 +554,7 @@ let encBusy = 0;
 const encWait = [];
 export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 4 } = {}) {   // boss prep 4 at a time (10-23 06:09: boss at load 9, prep the limit)
   const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
-  if (host && job) {
+  if (host && job && diskOk(host)) {
     // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
     if (encBusy >= slots) await new Promise((r) => encWait.push(r));
     encBusy++;
@@ -552,13 +586,15 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
     let took = false;
     if (!host) {
       for (;;) {
-        host = hosts.find(([h, n]) => (offBusy.get(h) || 0) < n)?.[0] || null;
+        const usable = hosts.filter(([h]) => diskOk(h));
+        if (!usable.length) break;   // every offload host is low on disk → the tower does it
+        host = usable.find(([h, n]) => (offBusy.get(h) || 0) < n)?.[0] || null;
         if (host) break;
         await new Promise((r) => offWait.push(r));
       }
-      offBusy.set(host, (offBusy.get(host) || 0) + 1); took = true;
+      if (host) { offBusy.set(host, (offBusy.get(host) || 0) + 1); took = true; }
     }
-    try { return await remoteJob(sub, input, { ...opts, ...(sub === 'dfn' && host !== gpuHost() ? { threads: 6 } : {}) }, { host, job: idOf(host), stop, file, exec, ...(pollMs != null ? { pollMs } : {}) }); }
+    if (host) try { return await remoteJob(sub, input, { ...opts, ...(sub === 'dfn' && host !== gpuHost() ? { threads: 6 } : {}) }, { host, job: idOf(host), stop, file, exec, ...(pollMs != null ? { pollMs } : {}) }); }
     // a drain leaves the remote job running (re-attached next time); anything else → the tower does it
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] ${sub} on ${host} failed — tower fallback: ${String(err.message).slice(0, 300)}`); }
     finally { if (took) { offBusy.set(host, offBusy.get(host) - 1); offWait.shift()?.(); } }

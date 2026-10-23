@@ -100,10 +100,13 @@ export async function retryTransientFailures({ olderThanMin = 30, max = 2 } = {}
   const ids = [];
   for (const r of rows) {
     const n = Number(/^retry:(\d+)/.exec(r.why || '')?.[1] || 0);
-    if (n >= max) continue;
+    // a HOST's fault is not the talk's: "No space left on device" (10-23 16:09, aorus's disk full of job folders) is retried
+    // without spending one of its retries
+    const hostFault = /No space left on device/i.test(r.why || '');
+    if (n >= max && !hostFault) continue;
     // a failure in an LLM stage goes straight back to the LLM lane ('transcribed'); a compute one to the compute queue
     const back = r.stage && !COMPUTE.includes(r.stage) ? 'transcribed' : 'queued';
-    await transaction([{ sql: `UPDATE media_items SET state = ?, why = ?, updated_at = ? WHERE id = ?`, args: [back, `retry:${n + 1} ${String(r.why || '').replace(/^retry:\d+\s*/, '')}`.slice(0, 500), now(), r.id] }], 'media:retry');
+    await transaction([{ sql: `UPDATE media_items SET state = ?, why = ?, updated_at = ? WHERE id = ?`, args: [back, `retry:${hostFault ? n : n + 1} ${String(r.why || '').replace(/^retry:\d+\s*/, '')}`.slice(0, 500), now(), r.id] }], 'media:retry');
     ids.push(r.id);
   }
   return ids;
