@@ -179,16 +179,28 @@ ${lines}
 Return JSON {"edits":[{"p":0,"from":"…","to":"…","kind":"…","confidence":0.0}],"mentions":[{"p":0,"text":"…","kind":"work","canonical":"…","section":null,"confidence":0.0}]}`;
 }
 
+async function pool(items, n, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => { for (let i = next++; i < items.length; i = next++) out[i] = await fn(items[i], i); };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(n, items.length)) }, worker));
+  return out;
+}
+
 /** The pass over a transcript. ask(prompt) → parsed JSON { edits, mentions }. ctx: talk framing (cleanPrompt).
  *  → { paragraphs, log, stats, mentions } */
-export async function cleanParagraphs(paragraphs, ask, { chunkSeconds = 720, ctx = {} } = {}) {
+export async function cleanParagraphs(paragraphs, ask, { chunkSeconds = 720, ctx = {}, fanout = Number(process.env.MEDIA_LLM_FANOUT) || 4 } = {}) {
   const byN = new Map(paragraphs.map((p) => [p.n, { ...p, words: p.words.map((w) => ({ ...w })) }]));
   const log = [], stats = { applied: 0, hidden_words: 0, refused: 0, flagged: 0, by_kind: {}, mentions: 0 };
   const mentions = [];
-  for (const ch of chunksOf(paragraphs, { chunkSeconds })) {
-    const line = (pn, tag) => { const p = byN.get(pn); return `[${pn} @${mmss(p.t0)} ${tag}] ${displayText(p)}`; };
-    const lines = [...ch.before.map((n) => line(n, 'CONTEXT')), ...ch.edit.map((n) => line(n, 'EDIT')), ...ch.after.map((n) => line(n, 'CONTEXT'))].join('\n');
-    const out = await ask(cleanPrompt(ctx, lines));
+  // every chunk reads the VERBATIM words (its context lines too), so the calls run at once (10-22: ~113 s one after another);
+  // the edits are applied chunk by chunk, in order
+  const chunks = chunksOf(paragraphs, { chunkSeconds });
+  const line = (pn, tag) => { const p = byN.get(pn); return `[${pn} @${mmss(p.t0)} ${tag}] ${displayText(p)}`; };
+  const prompts = chunks.map((ch) => cleanPrompt(ctx, [...ch.before.map((n) => line(n, 'CONTEXT')), ...ch.edit.map((n) => line(n, 'EDIT')), ...ch.after.map((n) => line(n, 'CONTEXT'))].join('\n')));
+  const outs = await pool(prompts, fanout, (pr) => ask(pr));
+  for (const [ci, ch] of chunks.entries()) {
+    const out = outs[ci];
     const own = new Set(ch.edit);
     const byP = new Map();
     for (const e of out?.edits || []) { const pn = Number(e?.p); if (!own.has(pn)) continue; if (!byP.has(pn)) byP.set(pn, []); byP.get(pn).push(e); }

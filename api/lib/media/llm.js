@@ -20,6 +20,15 @@ export function costOf(role, usage) {
 // a timed-out or dropped request is retried (twice, 5 s / 20 s apart) before it fails the item (10-22: a describe call timed
 // out and failed a whole talk); other errors are raised at once
 const TRANSIENT = /timed? ?out|timeout|connection error|ECONNRESET|ETIMEDOUT|fetch failed|overloaded|529|503/i;
+/** fn over items, at most n at a time; results in input order. */
+export async function mapPool(items, n, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => { for (let i = next++; i < items.length; i = next++) out[i] = await fn(items[i], i); };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(n, items.length)) }, worker));
+  return out;
+}
+
 async function ask(role, prompt, { create = roleCreate, max = 6000, spend, retryMs = [5000, 20000] } = {}) {
   let res;
   for (let k = 0; ; k++) {
@@ -61,11 +70,12 @@ export async function correctParagraphs(paragraphs, vocab, { chunkWords = 1500, 
   for (const p of ps) { cur.push(p); n += p.words.length; if (n >= chunkWords) { chunks.push(cur); cur = []; n = 0; } }
   if (cur.length) chunks.push(cur);
   const byN = new Map(ps.map((p) => [p.n, p]));
-  for (const ch of chunks) {
+  // the chunks hold disjoint paragraphs: their calls run AT ONCE (10-22: 96–162 s one after another), applied in order
+  const outs = await mapPool(chunks, Number(process.env.MEDIA_LLM_FANOUT) || 4, async (ch) => {
     const sus = ch.flatMap((p) => suspects(p.words, vocab, { limit: 15 }).map((s) => ({ ...s, p: p.n })));
-    if (!sus.length) continue;
+    if (!sus.length) return null;
     const offered = [...new Set(sus.flatMap((s) => s.candidates))];
-    const out = await ask('media-correct', `You correct a speech-recognition transcript of a talk about the Bahá'í Faith. Fix ONLY proper names and religious terms that were misheard, replacing them with the exact spelling from VOCABULARY. Never change any other word; never rephrase, never fix grammar, never add or remove words. When unsure, leave it.
+    return ask('media-correct', `You correct a speech-recognition transcript of a talk about the Bahá'í Faith. Fix ONLY proper names and religious terms that were misheard, replacing them with the exact spelling from VOCABULARY. Never change any other word; never rephrase, never fix grammar, never add or remove words. When unsure, leave it.
 SUSPECTS (paragraph: heard → possible spellings):
 ${sus.map((s) => `[${s.p}] ${s.from} → ${s.candidates.join(' | ')}`).join('\n')}
 VOCABULARY: ${offered.join(' | ')}
@@ -73,6 +83,9 @@ TRANSCRIPT:
 ${ch.map((p) => `[${p.n}] ${paragraphText(byN.get(p.n))}`).join('\n')}
 Return JSON {"edits":[{"p": paragraph number, "from": "exact words from the transcript (1-4 words)", "to": "exact VOCABULARY entry"}]} — {"edits":[]} when nothing needs fixing.
 "from" holds ONLY the misheard name itself — never a neighbouring word: {"from": "Sogefendik", "to": "Shoghi Effendi"}, not {"from": "Sogefendik expressed", "to": "Shoghi Effendi expressed"}.`, opts);
+  });
+  for (const out of outs) {
+    if (!out) continue;
     const byP = new Map();
     for (const e of out?.edits || []) { if (!byP.has(Number(e.p))) byP.set(Number(e.p), []); byP.get(Number(e.p)).push(e); }
     for (const [pn, edits] of byP) {

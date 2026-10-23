@@ -366,8 +366,9 @@ export async function runItem(item, opts = {}, deps = {}) {
       const work = await readJson(join(dir, 'transcript.work.json'));
       const found = await llm.findQuotations(work.paragraphs, { spend });
       const q = d.quotes || await import('./quotes.js');
-      const lq = await q.linkQuotes(work.paragraphs, found.quotes);
-      const lt = await q.linkTeachings(work.paragraphs, found.teachings, (t, ps) => llm.verifyTeaching(t, ps, { spend }));
+      // quotations (source hunt) and teachings (concept search + a verify call) use different services: both at once
+      const [lq, lt] = await Promise.all([q.linkQuotes(work.paragraphs, found.quotes),
+        q.linkTeachings(work.paragraphs, found.teachings, (t, ps) => llm.verifyTeaching(t, ps, { spend }))]);
       await writeJson(join(dir, 'quotes.json'), { candidates: found, quotes: lq.linked, quotes_rejected: lq.rejected, teachings: lt.linked, teachings_rejected: lt.rejected });
       rec.quotes = lq.linked.length; rec.crs = lt.linked.length; rec.candidates = found.quotes.length + found.teachings.length;
     }

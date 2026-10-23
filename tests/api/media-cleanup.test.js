@@ -85,3 +85,23 @@ describe('copy-edit details (10-22 comparison findings)', () => {
     expect(paragraphMarkdown(r.paragraphs[0], [])).toBe('he translated Nabeel’s Narrative, he was only forerunner of the World Order, about the Báb.');
   });
 });
+
+describe('the copy-edit chunks run at once (10-22 LLM latency)', () => {
+  it('asks for every chunk concurrently (fan-out) and applies the edits in order', async () => {
+    // four 15-minute paragraphs → four chunks at the 12-minute chunk size
+    const ps = [0, 1, 2, 3].map((k) => ({ n: k, t0: k * 900, t1: k * 900 + 899, words: W('um a word').map((w) => ({ ...w, s: w.s + k * 900, e: w.e + k * 900 })), sentences: [[0, 3]] }));
+    let live = 0, peak = 0;
+    const ask = vi.fn(async (prompt) => {
+      live++; peak = Math.max(peak, live);
+      await new Promise((r) => setTimeout(r, 20));
+      live--;
+      const pn = Number(/\[(\d+) @\S+ EDIT\]/.exec(prompt)[1]);
+      return { edits: [{ p: pn, from: 'um', to: '', kind: 'filler', confidence: 0.9 }] };
+    });
+    const r = await cleanParagraphs(ps, ask, { fanout: 4 });
+    expect(ask).toHaveBeenCalledTimes(4);
+    expect(peak).toBe(4);
+    expect(r.stats.applied).toBe(4);
+    expect(r.log.map((l) => l.p)).toEqual([0, 1, 2, 3]);
+  });
+});
