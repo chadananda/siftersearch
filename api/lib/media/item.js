@@ -58,6 +58,9 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
   return ['keyword-fill', 'section-index', 'phrase-index'];
 }
 
+// the speaker identities (data/media-speaker-people.json), loaded once per process
+let speakerPeople = null;
+
 export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
@@ -554,6 +557,20 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog' || stage === 'update') {
+      // SPEAKER IDENTITY: the name as said → one person (house-style name, the person's key); never a new person per
+      // spelling (identity.js). A YouTube year after the speaker's death is the UPLOAD year (Chad 10-23).
+      if (meta.speaker) {
+        const { resolveSpeaker, recordingYear } = await import('./identity.js');
+        const { loadSpeakerPeople, identityContext } = await import('../ops/media-jobs.js');
+        speakerPeople = speakerPeople || await loadSpeakerPeople();
+        const who = resolveSpeaker(meta.speaker, speakerPeople, identityContext(item, meta));
+        if (who.key) {
+          meta.speaker = who.display; meta.speaker_key = who.key;
+          const y = recordingYear({ year: meta.year, source_kind: item.source_kind, title: `${meta.title || ''} ${meta.source?.title || ''}`, description: meta.source?.description || '', file: item.source_ref || '' }, who.person);
+          if (item.source_kind === 'youtube' && y.uploaded_year && (y.flag || y.recorded_year)) { meta.year = y.recorded_year; meta.uploaded_year = y.uploaded_year; }
+          meta.date_flag = y.flag || undefined;
+        } else if (who.review) meta.speaker_review = who.review;
+      }
       // the transcript's name/work links into the catalogue (paragraph_index = the ingested paragraph, for search hits)
       const lk = (await readJson(join(dir, 'links.json'), { links: [] })).links || [];
       if (repo.replaceMoments && meta.moments) await repo.replaceMoments(item.id, meta.moments);

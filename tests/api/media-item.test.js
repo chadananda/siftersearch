@@ -161,7 +161,8 @@ describe('media item stage machine', () => {
   });
 
   it('the transcript completes a surname-only speaker, never replaces it with someone else', async () => {
-    for (const [said, want] of [['Hartmut Grossmann', 'Hartmut Grossmann'], ['Someone Else Entirely', 'Grossmann']]) {
+    // (since 10-23 the catalogue resolves the name to one person: 'Grossmann' + the World Order series = Hartmut Grossmann)
+    for (const [said, want] of [['Hartmut Grossmann', 'Hartmut Grossmann'], ['Someone Else Entirely', 'Hartmut Grossmann']]) {
       const d = fakes();
       d.llm.nameItem = vi.fn(async () => ({ speaker: 'Grossmann', title: 'World Order 2', year: 1999 }));
       d.llm.describeTalk = vi.fn(async () => ({ speaker: said, speakers: {}, chapters: [] }));

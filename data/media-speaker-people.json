@@ -1,0 +1,328 @@
+{
+ "note": "Speaker IDENTITIES for the media library (api/lib/media/identity.js): one person per entry, house-style display name, the name forms seen in files and YouTube, lifespan (to tell recording from upload dates), station, and works (evidence for a surname-only label). key = the media_speakers key (portrait, box set). Add a person here rather than letting a spelling make a new one. 'cb': true = Covenant-breaker, never linked. Lifespans only where certain (a wrong date would flag real recordings).",
+ "people": [
+  {
+   "key": "abul-qasim-faizi",
+   "name": "Abu’l-Qásim Faizí",
+   "aliases": [
+    "Abul-Qasim Faizi",
+    "Abu'l-Qasim Faizi",
+    "A. Q. Faizi",
+    "A.Q. Faizi",
+    "Abu'l-Qásim Fayzí",
+    "Faizi, Abu'l-Qasim"
+   ],
+   "born": 1906,
+   "died": 1980,
+   "role": "hand",
+   "works": [
+    "Milly",
+    "The Prince of Martyrs",
+    "Explanation of the Symbol of the Greatest Name"
+   ]
+  },
+  {
+   "key": "gloria-faizi",
+   "name": "Gloria Faizí",
+   "aliases": [
+    "Gloria Faizi",
+    "Mrs. Faizi"
+   ],
+   "works": [
+    "The Bahá'í Faith: An Introduction"
+   ]
+  },
+  {
+   "key": "ali-akbar-furutan",
+   "name": "‘Alí-Akbar Furútan",
+   "aliases": [
+    "Ali-Akbar Furutan",
+    "A. Furútan",
+    "A. A. Furutan",
+    "Alí-Akbar Furútan"
+   ],
+   "born": 1905,
+   "died": 2003,
+   "role": "hand",
+   "works": [
+    "Stories of Bahá'u'lláh",
+    "The Story of My Heart",
+    "Mothers, Fathers and Children"
+   ]
+  },
+  {
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum",
+   "aliases": [
+    "Amatu'l-Bahá Rúhíyyih Khánum",
+    "Ruhiyyih Khanum",
+    "Rúḥíyyih Khánum",
+    "Mary Sutherland Maxwell",
+    "Mary Maxwell",
+    "Khanum"
+   ],
+   "born": 1910,
+   "died": 2000,
+   "role": "hand",
+   "works": [
+    "The Priceless Pearl",
+    "Prescription for Living",
+    "The Ministry of the Custodians"
+   ]
+  },
+  {
+   "key": "zikrullah-khadem",
+   "name": "Dhikru’lláh Khádem",
+   "aliases": [
+    "Zikrullah Khadem",
+    "Zikru'llah Khadem",
+    "Dhikrullah Khadem",
+    "D. Khadem",
+    "Z. Khadem",
+    "Zekrullah Khadem"
+   ],
+   "born": 1904,
+   "died": 1986,
+   "role": "hand",
+   "works": [
+    "Carmel the Mountain of God",
+    "Bahá'u'lláh and His Most Holy Shrine"
+   ]
+  },
+  {
+   "key": "javidukht-khadem",
+   "name": "Javidukht Khadem",
+   "aliases": [
+    "Javidukht Khadem",
+    "Mrs. Khadem",
+    "J. Khadem"
+   ],
+   "works": [
+    "Zikrullah Khadem, The Itinerant Hand of the Cause of God"
+   ]
+  },
+  {
+   "key": "riaz-khadem",
+   "name": "Riaz Khadem",
+   "aliases": [
+    "Riaz Khadem",
+    "R. Khadem"
+   ],
+   "works": [
+    "Shoghi Effendi in Oxford",
+    "Prelude to the Guardianship"
+   ]
+  },
+  {
+   "key": "jena-khadem-khodadad",
+   "name": "Jena Khadem Khodadad",
+   "aliases": [
+    "Jena Khadem",
+    "Jena Khodadad"
+   ]
+  },
+  {
+   "key": "william-sears",
+   "name": "William Sears",
+   "aliases": [
+    "Bill Sears",
+    "William B. Sears",
+    "W. Sears",
+    "Sears"
+   ],
+   "born": 1911,
+   "died": 1992,
+   "role": "hand",
+   "works": [
+    "Thief in the Night",
+    "God Loves Laughter",
+    "Release the Sun",
+    "The Prisoner and the Kings",
+    "All Flags Flying"
+   ]
+  },
+  {
+   "key": "martha-root",
+   "name": "Martha Root",
+   "aliases": [
+    "Martha Louise Root",
+    "Martha L. Root"
+   ],
+   "born": 1872,
+   "died": 1939,
+   "role": "hand"
+  },
+  {
+   "key": "enoch-olinga",
+   "name": "Enoch Olinga",
+   "aliases": [
+    "E. Olinga"
+   ],
+   "born": 1926,
+   "died": 1979,
+   "role": "hand"
+  },
+  {
+   "key": "ugo-giachery",
+   "name": "Ugo Giachery",
+   "aliases": [
+    "U. Giachery",
+    "Dr. Ugo Giachery"
+   ],
+   "born": 1896,
+   "died": 1989,
+   "role": "hand",
+   "works": [
+    "Shoghi Effendi: Recollections"
+   ]
+  },
+  {
+   "key": "rahmatullah-muhajir",
+   "name": "Raḥmatu’lláh Muhájir",
+   "aliases": [
+    "Rahmatu'llah Muhajir",
+    "Rahmatullah Muhajir",
+    "R. Muhajir"
+   ],
+   "born": 1923,
+   "died": 1979,
+   "role": "hand"
+  },
+  {
+   "key": "ali-muhammad-varqa",
+   "name": "‘Alí-Muḥammad Varqá",
+   "aliases": [
+    "Ali-Muhammad Varqa",
+    "Alí-Muhammad Varqá",
+    "Ali Muhammad Varqa"
+   ],
+   "born": 1911,
+   "died": 2007,
+   "role": "hand"
+  },
+  {
+   "key": "hermann-grossmann",
+   "name": "Hermann Grossmann",
+   "aliases": [
+    "Dr. Hermann Grossmann",
+    "H. Grossmann"
+   ],
+   "born": 1899,
+   "died": 1968,
+   "role": "hand"
+  },
+  {
+   "key": "hartmut-grossmann",
+   "name": "Hartmut Grossmann",
+   "aliases": [
+    "Dr. Hartmut Grossmann"
+   ],
+   "role": "uhj",
+   "works": [
+    "World Order",
+    "Individual Rights and Freedoms",
+    "The Greatness of This Day",
+    "The Secret of Divine Civilization",
+    "The Four Year Plan"
+   ]
+  },
+  {
+   "key": "adib-taherzadeh",
+   "name": "Adib Taherzadeh",
+   "aliases": [
+    "A. Taherzadeh"
+   ],
+   "born": 1921,
+   "died": 2000,
+   "role": "uhj",
+   "works": [
+    "The Revelation of Bahá'u'lláh",
+    "Revelation of Baha'u'llah",
+    "The Covenant of Bahá'u'lláh",
+    "Covenant of Baha'u'llah",
+    "The Child of the Covenant",
+    "Child of the Covenant",
+    "Steadfastness in the Covenant",
+    "Covenant of the Bab",
+    "The Covenant of the Báb",
+    "Purpose of Life",
+    "Trustees of the Merciful"
+   ]
+  },
+  {
+   "key": "ali-nakhjavani",
+   "name": "‘Alí Nakhjavání",
+   "aliases": [
+    "Ali Nakhjavani",
+    "Alí Nakhjavání",
+    "A. Nakhjavani"
+   ],
+   "born": 1919,
+   "died": 2019,
+   "role": "uhj"
+  },
+  {
+   "key": "violette-nakhjavani",
+   "name": "Violette Nakhjavání",
+   "aliases": [
+    "Violette Nakhjavani",
+    "V. Nakhjavani"
+   ],
+   "works": [
+    "The Maxwells of Montreal",
+    "A Tribute to Amatu'l-Bahá Rúhíyyih Khánum"
+   ]
+  },
+  {
+   "key": "hooper-dunbar",
+   "name": "Hooper Dunbar",
+   "aliases": [
+    "Hooper C. Dunbar",
+    "H. Dunbar"
+   ],
+   "role": "uhj"
+  },
+  {
+   "key": "dorothy-baker",
+   "name": "Dorothy Baker",
+   "aliases": [
+    "Dorothy Beecher Baker"
+   ],
+   "born": 1898,
+   "died": 1954,
+   "role": "hand"
+  },
+  {
+   "key": "corinne-true",
+   "name": "Corinne True",
+   "aliases": [
+    "Corinne Knight True"
+   ],
+   "born": 1861,
+   "died": 1961,
+   "role": "hand"
+  },
+  {
+   "key": "leroy-ioas",
+   "name": "Leroy Ioas",
+   "aliases": [
+    "L. Ioas"
+   ],
+   "born": 1896,
+   "died": 1965,
+   "role": "hand"
+  },
+  {
+   "key": "peter-khan",
+   "name": "Peter Khan",
+   "aliases": [
+    "P. Khan",
+    "PKhan",
+    "Dr. Peter Khan"
+   ],
+   "born": 1936,
+   "died": 2011,
+   "role": "uhj"
+  }
+ ]
+}

@@ -315,7 +315,7 @@ export default async function mediaRoutes(fastify) {
     const tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
     pub(reply, 300);
     return {
-      slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, place: meta.place, event: meta.event,
+      slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, uploaded_year: meta.uploaded_year ?? null, date_flag: meta.date_flag ?? null, place: meta.place, event: meta.event,
       language: meta.language, duration_s: meta.duration_s, has_video: meta.has_video, summary: meta.summary, topics: meta.topics || [], chapters: meta.chapters || [],
       // topic subheaders: structure only (no audio of their own); t = the paragraph they open, for the contents list
       headings: (meta.headings || []).filter((h) => tStart.has(h.p)).map((h) => ({ p: h.p, t: tStart.get(h.p), text: h.text, form: h.form, slug: h.slug })),

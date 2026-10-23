@@ -673,3 +673,63 @@ export async function mediaMetaFixJob({ write = false, ids = null } = {}, deps =
   }
   return out;
 }
+
+// ── SPEAKER IDENTITY (Chad 10-23: one person, many name forms; api/lib/media/identity.js, data/media-speaker-people.json) ──
+export async function loadSpeakerPeople(read = async () => (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-speaker-people.json'), 'utf8')) {
+  try { return JSON.parse(await read()).people || []; } catch { return []; }
+}
+/** The identity context of one item (evidence for a surname-only or ambiguous name). */
+export function identityContext(item, meta = {}) {
+  const yt = item.source_kind === 'youtube';
+  const titleYears = [...String(`${meta.title || item.title || ''} ${meta.source?.title || ''}`).matchAll(/\b(19\d{2}|20\d{2})\b/g)].map((m) => Number(m[1]));
+  return { title: meta.title || item.title || '', collection: item.collection || meta.collection || '', series: meta.series || '', channel: meta.source?.channel || item.channel || '',
+    source_kind: item.source_kind, recorded_year: yt ? (titleYears.length ? Math.min(...titleYears) : null) : (meta.year || item.year || null) };
+}
+
+/** media-identity { write, ids? }: every published speaker → one person (or held for review); recording vs upload years.
+ *  write: meta.json (speaker = house-style name, speaker_key = the person's key, recorded/uploaded year + flag) and an
+ *  'update' run per changed talk (re-render, search, catalogue); busy talks are skipped. → the audit (clusters, review, flags). */
+export async function mediaIdentityJob({ write = false, ids = null } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const { resolveSpeaker, recordingYear } = await import('../media/identity.js');
+  const people = deps.people || await loadSpeakerPeople();
+  const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
+  const writeMeta = deps.writeMeta || (async (dir, m) => (await import('fs/promises')).writeFile(join(dir, 'meta.json'), JSON.stringify(m, null, 2)));
+  const busy = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const clusters = new Map(), review = [], flags = [], changed = [], skipped_busy = [];
+  for (const id of ids || await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const meta = await read(it.dir).catch(() => null);
+    if (!meta) continue;
+    const said = meta.speaker || it.speaker || null;
+    if (!said) continue;
+    const ctx = identityContext(it, meta);
+    const r = resolveSpeaker(said, people, ctx);
+    const fix = {};
+    if (r.key) {
+      if (!clusters.has(r.key)) clusters.set(r.key, { key: r.key, display: r.display, role: r.person?.role || null, forms: new Map() });
+      const c = clusters.get(r.key); const f = c.forms.get(said) || { n: 0, bases: new Set() }; f.n++; f.bases.add(r.basis); c.forms.set(said, f);
+      if (meta.speaker !== r.display) fix.speaker = r.display;
+      if (meta.speaker_key !== r.key || it.speaker_key !== r.key) fix.speaker_key = r.key;
+      const y = recordingYear({ year: meta.year || it.year, source_kind: it.source_kind, title: `${meta.title || ''} ${meta.source?.title || ''}`, description: meta.source?.description || '', file: it.source_ref || '' }, r.person);
+      if (y.flag) flags.push({ slug: it.slug, speaker: r.display, flag: y.flag });
+      if (it.source_kind === 'youtube' && y.uploaded_year && y.recorded_year !== (meta.year ?? null) && (y.flag || y.recorded_year)) { fix.year = y.recorded_year; fix.uploaded_year = y.uploaded_year; }
+      if (y.flag && meta.date_flag !== y.flag) fix.date_flag = y.flag;
+    } else if (r.review) review.push({ slug: it.slug, said, why: r.review, candidates: r.candidates || [] });
+    if (!Object.keys(fix).length) continue;
+    changed.push({ slug: it.slug, from: said, ...fix });
+    if (!write) continue;
+    if (busy.has(it.id)) { skipped_busy.push(it.slug); continue; }
+    await writeMeta(it.dir, { ...meta, ...fix });
+    if (fix.speaker_key && repo.upsertSpeaker) await repo.upsertSpeaker({ key: fix.speaker_key, name: fix.speaker || meta.speaker });
+    await queue('media-item', { id: it.id, redo: ['update'] }, 'media-identity');
+  }
+  return {
+    clusters: [...clusters.values()].map((c) => ({ key: c.key, display: c.display, role: c.role, forms: [...c.forms].map(([name, f]) => ({ name, talks: f.n, basis: [...f.bases].join('; ') })) }))
+      .sort((a, b) => b.forms.length - a.forms.length || a.display.localeCompare(b.display)),
+    review, date_flags: flags, changed, skipped_busy,
+  };
+}
