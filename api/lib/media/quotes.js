@@ -44,6 +44,32 @@ export function gateOf(overlap) {
   return null;
 }
 
+// THE PASSAGE GATE (Chad 10-22: a "quote" card showed a table of contents from a scraped PDF, cited by its file slug): a linked
+// source must be a sentence-level passage of a properly catalogued work — never a heading, contents/front matter, index or
+// numbered list, never a document whose title or author is a file name.
+const slugish = (s) => !s || /_|^pdf-|\.(pdf|docx?|html?|txt)$/i.test(s) || /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(s);
+/** Excerpt text without markup ("* *", "**", "#", links). Pure. */
+export const cleanExcerpt = (t) => String(t ?? '').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/(\*\*|__)(?=\S)(.+?)\1/g, '$2').replace(/(\*|_)(?=\S)([^*_]+?)\1/g, '$2')
+  .replace(/^[\s*#>_-]+/, '').replace(/(?:^|\s)[*#]+(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
+/** null when the passage may be linked, else the reason. row: { text, blocktype, heading, title, author }. Pure. */
+export function passageGate(row) {
+  if (!row?.text) return 'no passage';
+  if (/heading|toc|title|contents|index|list/i.test(String(row.blocktype || ''))) return 'a heading or contents block';
+  if (slugish(row.title) || slugish(row.author)) return 'not a properly catalogued work (file-name title or author)';
+  const t = cleanExcerpt(row.text);
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length < 8) return 'too short to be a passage';
+  const sentences = (t.match(/[.!?;:]["”’)\]]*(?=\s|$)/g) || []).length;
+  if (!sentences) return 'no sentence';
+  if (/^(?:preface|contents|table of contents|index|foreword|bibliography|acknowledg)/i.test(t) || (/\b(?:preface|table of contents|contents)\b/i.test(t.slice(0, 80)) && sentences < 3)) return 'front matter';
+  if ((t.match(/(?:^|\s)(?:[IVXL]+|\d{1,3})\.\s+[A-Z]/g) || []).length >= 3) return 'numbered entries (contents)';
+  const long = words.filter((w) => w.replace(/[^\p{L}]/gu, '').length > 3);
+  const caps = long.filter((w) => /^[\p{Lu}]/u.test(w.replace(/^[^\p{L}]+/u, ''))).length;
+  if (long.length >= 12 && caps / long.length > 0.55) return 'heading-like (title case)';
+  if (words.length >= 40 && sentences / words.length < 1 / 45) return 'not a sentence-level passage';
+  return null;
+}
+
 /** "Gleanings from the Writings of Bahá’u’lláh, ¶ 112" style citation. */
 export const citeOf = (o) => [o.author && !String(o.title || '').includes(o.author) ? o.author : null, o.title].filter(Boolean).join(', ');
 
@@ -67,7 +93,7 @@ async function englishLink(d, id, quote) {
     if (tr) { const [tp] = await d.paragraphsByIds([tr.id]); if (tp) { use = tp; via = 'translation'; } }
   }
   const link = d.linkFor(use, use.paragraph_index, { quote: via ? null : quote });
-  return { id: use.id, doc_id: use.doc_id, title: use.title, author: use.author, url: link?.url || link?.reader_url || null, language: use.language, via, text: use.text };
+  return { id: use.id, doc_id: use.doc_id, title: use.title, author: use.author, url: link?.url || link?.reader_url || null, language: use.language, via, text: use.text, blocktype: use.blocktype, heading: use.heading };
 }
 
 /**
@@ -88,21 +114,24 @@ export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 
     const r = await d.sourceHunt(said, {}, {}).catch((e) => ({ error: e.message }));
     if (r?.error || !r?.origin) { rejected.push({ ...c, said, why: r?.error ? `hunt failed: ${r.error}` : 'no source found' }); continue; }
     const cands = [r.origin, ...(r.considered || []).filter((x) => x.id !== r.origin.id).map((x) => ({ id: x.id, documentId: x.documentId, title: x.title, author: x.writer, bookAuthor: x.bookAuthor, site: x.site === 'library' ? null : x.site, overlap: x.overlap, collection: x.collection }))];
-    let pick = null, why = null;
+    let pick = null, why = null, src = null;
     for (const o of cands) {
       // the citation job's gate, at the SPOKEN threshold first: its writer/own-work/compilation/mirror checks are kept
       const a = acceptSource({ ...o, overlap: Math.max(Number(o.overlap) || 0, GATES.printed.verbatim) }, null, -1, o.collection);
       if (!a.basis) { why = why || a.reason; continue; }
       const g = gateOf(o.overlap);
       if (!g) { why = why || 'weak-wording'; continue; }
-      pick = { o, ...g }; break;
+      // the PASSAGE gate on the paragraph we would link (its English form): a real passage of a catalogued work
+      const s = await englishLink(d, o.id, said).catch(() => null);
+      const bad = passageGate(s);
+      if (bad) { why = why || bad; continue; }
+      pick = { o, ...g }; src = s; break;
     }
     if (!pick) { rejected.push({ ...c, said, why: why || 'not accepted', top: { title: r.origin.title, author: r.origin.author, overlap: r.origin.overlap } }); continue; }
-    const src = await englishLink(d, pick.o.id, said).catch(() => null);
     const w0 = p.words[span.i0], w1 = p.words[span.i1 - 1];
     linked.push({ kind: 'quote', para: p.n, i0: span.i0, i1: span.i1, t0: w0.s, t1: w1.e, said, writer: writerName(c.writer) || pick.o.author || null,
       overlap: Number(pick.o.overlap) || 0, basis: pick.basis, gate: pick.gate, source: src && { id: src.id, doc_id: src.doc_id, title: src.title, author: src.author, via: src.via },
-      found_id: pick.o.id, url: src?.url || r.origin.url || null, cite: citeOf(src || pick.o), excerpt: String(src?.text || r.origin.text || '').slice(0, 400) });
+      found_id: pick.o.id, url: src?.url || r.origin.url || null, cite: citeOf(src || pick.o), excerpt: cleanExcerpt(src?.text || r.origin.text || '').slice(0, 400) });
     log.push({ said: said.slice(0, 80), source: pick.o.title, overlap: pick.o.overlap, gate: pick.gate });
   }
   return { linked, rejected };
@@ -127,7 +156,7 @@ export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { 
     const hits = (await Promise.all([d.searchHype(t.claim, opts), d.searchConcepts(t.claim, opts), d.searchPhrases(t.claim, opts)].map((x) => x.catch(() => ({ hits: [] })))))
       .flatMap((r) => r.hits || []);
     const ids = [...new Set(hits.map((h) => h.paragraph_id))].slice(0, 12);
-    const rows = (await d.paragraphsByIds(ids)).filter((r) => (r.text || '').length > 60 && /^en/i.test(r.language || 'en'));
+    const rows = (await d.paragraphsByIds(ids)).filter((r) => (r.text || '').length > 60 && /^en/i.test(r.language || 'en') && !passageGate(r));
     if (!rows.length) { rejected.push({ ...t, why: 'no candidate passages' }); continue; }
     const answers = await verify({ writer, claim: t.claim, words: t.words }, rows.map((r) => ({ title: r.title, author: r.author, text: r.text })));
     // a CANONICAL passage (the writer's own authoritative works and letters: book authority ≥ minAuthority) — the pilot
@@ -141,7 +170,7 @@ export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { 
     const span = t.words ? locateSpan(p.words, t.words) : null;
     linked.push({ kind: 'concept', para: p.n, t0: span ? p.words[span.i0].s : p.t0, i0: span?.i0 ?? null, i1: span?.i1 ?? null, writer, claim: t.claim, said: t.words || null,
       source: { id: r.id, doc_id: r.doc_id, title: r.title, author: r.author }, url: link?.url || link?.reader_url || null, cite: citeOf(r),
-      excerpt: String(yes.excerpt || r.text).slice(0, 500), confidence: Number(yes.confidence) });
+      excerpt: cleanExcerpt(yes.excerpt || r.text).slice(0, 500), confidence: Number(yes.confidence) });
   }
   return { linked, rejected };
 }

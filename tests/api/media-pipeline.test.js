@@ -137,7 +137,7 @@ describe('quotations', () => {
   it('a teaching becomes a cross-reference only on a confident yes', async () => {
     const ps = [para(1, 'the Guardian taught that the Administrative Order is the channel of the spirit')];
     const deps = { searchHype: vi.fn(async () => ({ hits: [{ paragraph_id: 5 }] })), searchConcepts: vi.fn(async () => ({ hits: [] })), searchPhrases: vi.fn(async () => ({ hits: [{ paragraph_id: 6 }] })),
-      paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 50, paragraph_index: id, title: 'The World Order of Bahá’u’lláh', author: 'Shoghi Effendi', language: 'en', book_authority: 10, text: `passage ${id} `.repeat(20) }))),
+      paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 50, paragraph_index: id, title: 'The World Order of Bahá’u’lláh', author: 'Shoghi Effendi', language: 'en', book_authority: 10, text: `This is passage ${id}, which states the teaching plainly and at length. `.repeat(3) }))),
       linkFor: vi.fn(() => ({ url: 'https://oceanlibrary.com/wob' })) };
     const verify = vi.fn(async () => [{ i: 0, states: false, confidence: 0.9 }, { i: 1, states: true, confidence: 0.85, excerpt: 'channel of the spirit' }]);
     const r = await linkTeachings(ps, [{ p: 1, writer: 'the Guardian', claim: 'The Administrative Order is the channel of the spirit.', words: 'the Administrative Order is the channel of the spirit' }], verify, deps, { pauseMs: 0 });
@@ -145,7 +145,7 @@ describe('quotations', () => {
     const none = await linkTeachings(ps, [{ p: 1, writer: 'Shoghi Effendi', claim: 'x' }], vi.fn(async () => [{ i: 0, states: true, confidence: 0.5 }]), deps, { pauseMs: 0 });
     expect(none.linked).toHaveLength(0);
     // a yes only from a visitor's account (low book authority) is not a canonical cross-reference
-    const low = { ...deps, paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 51, paragraph_index: id, title: 'A Visit to California', author: '‘Abdu’l-Bahá', language: 'en', book_authority: 4, text: 'passage '.repeat(20) }))) };
+    const low = { ...deps, paragraphsByIds: vi.fn(async (ids) => ids.map((id) => ({ id, doc_id: 51, paragraph_index: id, title: 'A Visit to California', author: '‘Abdu’l-Bahá', language: 'en', book_authority: 4, text: 'This passage states the teaching plainly and at length. '.repeat(3) }))) };
     const r2 = await linkTeachings(ps, [{ p: 1, writer: '‘Abdu’l-Bahá', claim: 'y' }], vi.fn(async () => [{ i: 0, states: true, confidence: 0.9 }]), low, { pauseMs: 0 });
     expect(r2.linked).toHaveLength(0);
     expect(r2.rejected[0].why).toBe('stated only outside the canonical works');
@@ -261,5 +261,39 @@ describe('breakout citations (Chad 10-22: the reference is the link, no separate
   it('no generic anchor text in the media templates', () => {
     const src = readFileSync(new URL('../../src/components/media/MediaTranscript.svelte', import.meta.url), 'utf8');
     expect(src).not.toMatch(/in context|>\s*(?:↗|→|read more|here)\s*</i);
+  });
+});
+
+describe('the passage gate (Chad 10-22: a table of contents from a scraped PDF linked as a quote)', async () => {
+  const { passageGate, cleanExcerpt } = await import('../../api/lib/media/quotes.js');
+  it('refuses the screenshot case: a contents page of a PDF with a file-name title and author', () => {
+    const toc = { title: 'bahaullah_abdul-baha_sacred_writings_book', author: 'pdf-b-bahaullah',
+      text: "* * Bahá'í Sacred Writings Preface I. Selections from the Writings of Bahá'u'lláh 1 God and His Manifestations God's Unknowable Essence The Relationship Between God and His Manifestations The Oneness of the Manifestations" };
+    expect(passageGate(toc)).toMatch(/file-name/);
+    expect(passageGate({ ...toc, title: "Bahá'í Sacred Writings", author: 'Bahá’u’lláh' })).toMatch(/front matter|numbered|title case|sentence/);
+    expect(passageGate({ title: 'Gleanings', author: 'Bahá’u’lláh', blocktype: 'heading', text: 'The Relationship Between God and His Manifestations, and the rest of it.' })).toMatch(/heading/);
+  });
+  it('accepts a real passage of a catalogued work, and cleans the excerpt', () => {
+    expect(passageGate({ title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh',
+      text: 'To every discerning and illuminated heart it is evident that God, the unknowable Essence, the divine Being, is immensely exalted beyond every human attribute.' })).toBeNull();
+    expect(cleanExcerpt("* * **God** and His Manifestations [here](https://x)")).toBe('God and His Manifestations here');
+  });
+});
+
+describe('the quote audit', () => {
+  it('counts links the passage gate refuses and relinks the affected talks when writing', async () => {
+    const { mediaQuoteAuditJob } = await import('../../api/lib/ops/media-jobs.js');
+    const { mkdtempSync, writeFileSync } = await import('fs');
+    const { join } = await import('path');
+    const { tmpdir } = await import('os');
+    const dir = mkdtempSync(join(tmpdir(), 'qa-'));
+    writeFileSync(join(dir, 'quotes.json'), JSON.stringify({ quotes: [{ source: { id: 1 }, cite: 'pdf-b-bahaullah, bahaullah_abdul-baha_sacred_writings_book' }, { source: { id: 2 }, cite: 'Gleanings' }], teachings: [] }));
+    const queue = vi.fn();
+    const rows = [{ id: 1, title: 'bahaullah_abdul-baha_sacred_writings_book', author: 'pdf-b-bahaullah', text: 'Preface I. Selections 1 God' },
+      { id: 2, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', text: 'To every discerning and illuminated heart it is evident that God is exalted beyond every human attribute.' }];
+    const r = await mediaQuoteAuditJob({ write: true }, { repo: { doneItemIds: async () => [9], getMediaItem: async () => ({ id: 9, slug: 'freedom-1981', dir }) },
+      paragraphs: { paragraphsByIds: async (ids) => rows.filter((x) => ids.includes(x.id)) }, queue });
+    expect(r).toMatchObject({ talks: 1, quotes: 2, rejected_quotes: 1, affected: ['freedom-1981'] });
+    expect(queue).toHaveBeenCalledWith('media-item', { id: 9, redo: ['quotes', 'update'] }, 'media-quote-audit');
   });
 });

@@ -6,12 +6,12 @@ import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
-import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaFeedPass, mediaStagesSyncJob } from '../lib/ops/media-jobs.js';
+import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaFeedPass, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
 import { mediaParallel } from '../lib/media/tools.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 
-export const MEDIA_REGISTRY = { 'media-short': mediaShortJob, 'media-shorts-moments': mediaShortsMomentsJob, 'media-portraits-extend': mediaPortraitsExtendJob, 'media-fetch': mediaFetchJob, 'media-rank': mediaRankJob, 'media-stages-sync': mediaStagesSyncJob, 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
+export const MEDIA_REGISTRY = { 'media-short': mediaShortJob, 'media-shorts-moments': mediaShortsMomentsJob, 'media-portraits-extend': mediaPortraitsExtendJob, 'media-fetch': mediaFetchJob, 'media-rank': mediaRankJob, 'media-stages-sync': mediaStagesSyncJob, 'media-quote-audit': mediaQuoteAuditJob, 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
 
 // a file dropped in DEWEY_MEDIA_DIR starts the pipeline with no other step
 async function mediaDropLoop() {
@@ -26,8 +26,8 @@ async function mediaDropLoop() {
 // asking for a short must not wait behind the whole archive
 // …and PORTRAITS (an image call per speaker; minutes, never behind hours of transcription)
 // …and DOWNLOADS (YouTube into the archive, paced, independent of processing). The pipeline lane runs N items at once.
-export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => !['media-short', 'media-portraits-extend', 'media-speakers', 'media-fetch', 'media-rank', 'media-stages-sync'].includes(j)),
-  shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers'], downloads: ['media-fetch', 'media-rank', 'media-stages-sync'] };
+export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => !['media-short', 'media-portraits-extend', 'media-speakers', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit'].includes(j)),
+  shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers'], downloads: ['media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit'] };
 export const MEDIA_LANE_WORKERS = { pipeline: mediaParallel() };
 
 // the FEED: N new items in processing by rank, one download run queued (30 s)

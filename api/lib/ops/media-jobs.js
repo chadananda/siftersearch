@@ -455,3 +455,35 @@ export async function mediaStagesSyncJob(params = {}, deps = {}) {
   }
   return { synced: n };
 }
+
+// media-quote-audit { write? }: every published talk's quote and cross-reference links checked against the passage gate
+// (api/lib/media/quotes.js passageGate: no headings, contents, front matter or file-named works); with write, the affected
+// talks are relinked (redo quotes + update; the new gate picks the next good source)
+export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { paragraphsByIds } = deps.paragraphs || await import('../paragraphs-repo.js');
+  const { passageGate } = await import('../media/quotes.js');
+  const { readFile: rf } = await import('fs/promises');
+  const queue = deps.queue || enqueue;
+  const out = { talks: 0, quotes: 0, crs: 0, rejected_quotes: 0, rejected_crs: 0, reasons: {}, affected: [], sample: [] };
+  for (const id of await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const q = JSON.parse(await rf(join(it.dir, 'quotes.json'), 'utf8').catch(() => '{}'));
+    const links = [...(q.quotes || []).map((x) => ({ kind: 'quote', id: x.source?.id ?? x.found_id, cite: x.cite })), ...(q.teachings || []).map((x) => ({ kind: 'cr', id: x.source?.id, cite: x.cite }))].filter((x) => x.id);
+    if (!links.length) continue;
+    out.talks++;
+    const rows = new Map((await paragraphsByIds(links.map((x) => x.id))).map((r) => [r.id, r]));
+    let bad = 0;
+    for (const l of links) {
+      out[l.kind === 'quote' ? 'quotes' : 'crs']++;
+      const why = rows.has(l.id) ? passageGate(rows.get(l.id)) : 'source paragraph gone';
+      if (!why) continue;
+      bad++; out[l.kind === 'quote' ? 'rejected_quotes' : 'rejected_crs']++;
+      out.reasons[why] = (out.reasons[why] || 0) + 1;
+      if (out.sample.length < 12) out.sample.push({ slug: it.slug, kind: l.kind, cite: l.cite, why });
+    }
+    if (bad) { out.affected.push(it.slug); if (write) await queue('media-item', { id, redo: ['quotes', 'update'] }, 'media-quote-audit'); }
+  }
+  return out;
+}
