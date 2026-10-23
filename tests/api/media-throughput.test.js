@@ -248,3 +248,14 @@ describe('prep and ASR are separate lanes (10-22: ASR slots waited on tower prep
     expect(src).toMatch(/mediaAsrJob = .*\['transcribe'\], 'transcribed'\)/);
   });
 });
+
+describe('re-runs by slug', () => {
+  it('an audit names talks by slug: ids may be slugs', async () => {
+    const { mediaItemJob } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn();
+    const repo = { getMediaBySlug: async (s) => (s === 'sears-prophecies-3' ? { id: 41 } : null) };
+    const r = await mediaItemJob({ ids: ['sears-prophecies-3', '7', 'nope'], from: 'correct' }, { repo, queue });
+    expect(r).toEqual({ queued: 2 });
+    expect(queue.mock.calls.map((c) => c[1])).toEqual([{ id: 41, from: 'correct' }, { id: 7, from: 'correct' }]);
+  });
+});
