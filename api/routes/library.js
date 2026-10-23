@@ -998,7 +998,7 @@ export default async function libraryRoutes(fastify) {
     // Get all documents for this religion (for listing) with preview paragraphs (exclude soft-deleted)
     // Sort by collection authority (highest first), then collection name, then title
     const rawDocuments = await queryAll(`
-      SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug,
+      SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug, d.cover_url,
         (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
          FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
       FROM docs d
@@ -1101,7 +1101,7 @@ export default async function libraryRoutes(fastify) {
     }
     const [rawDocuments, countResult] = await Promise.all([
       queryAll(`
-        SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug,
+        SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug, d.cover_url,
           (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
            FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
         FROM docs d
