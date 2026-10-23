@@ -43,3 +43,36 @@ describe('GET /api/covers/:docId/original', () => {
     expect((await app.inject({ method: 'GET', url: '/api/covers/abc/original' })).statusCode).toBe(404);
   });
 });
+
+describe('POST /api/covers/:docId (internal)', () => {
+  const app = async (calls) => {
+    process.env.DEPLOY_SECRET = 'k';
+    const { default: coverRoutes } = await import('../../api/routes/covers.js');
+    const a = Fastify();
+    await a.register(coverRoutes, { prefix: '/api/covers', setDocCover: async (id, url) => { calls.push([id, url]); return { changed: id === 404 ? 0 : 1 }; },
+      fetchImage: async (url) => { calls.push(['fetch', url]); return PNG; } });
+    return a;
+  };
+  const post = (a, id, body, key = 'k') => a.inject({ method: 'POST', url: `/api/covers/${id}`, headers: { 'x-internal-key': key }, payload: body });
+
+  it('stores an uploaded image and points the doc at its content-hash URL', async () => {
+    const calls = []; const a = await app(calls);
+    const r = await post(a, 50, { image: PNG.toString('base64'), source: 'chad-upload', rights: 'own' });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().url).toMatch(/^\/img\/covers\/50\?v=[0-9a-f]{12}$/);
+    expect(calls).toEqual([[50, r.json().url]]);
+    expect(await readFile(join(dir, '50', 'original.png'))).toEqual(PNG);
+  });
+  it('copies from an allowed host only; refuses others, missing provenance, bad keys, unknown docs', async () => {
+    const calls = []; const a = await app(calls);
+    const ok = await post(a, 51, { url: 'https://bindery.lnker.com/img/sets/x/1.png', source: 'bindery' });
+    expect(ok.statusCode).toBe(200);
+    expect(calls[0]).toEqual(['fetch', 'https://bindery.lnker.com/img/sets/x/1.png']);
+    expect((await post(a, 52, { url: 'https://169.254.169.254/x.png', source: 'b' })).statusCode).toBe(400);
+    expect((await post(a, 52, { url: 'http://bindery.lnker.com/x.png', source: 'b' })).statusCode).toBe(400);
+    expect((await post(a, 52, { image: PNG.toString('base64') })).statusCode).toBe(400);
+    expect((await post(a, 52, { image: Buffer.from('nope').toString('base64'), source: 'b' })).statusCode).toBe(400);
+    expect((await post(a, 404, { image: PNG.toString('base64'), source: 'b' })).statusCode).toBe(404);
+    expect((await post(a, 53, { image: PNG.toString('base64'), source: 'b' }, 'wrong')).statusCode).not.toBe(200);
+  });
+});
