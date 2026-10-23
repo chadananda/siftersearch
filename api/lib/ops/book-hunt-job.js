@@ -86,7 +86,7 @@ export function applicable(found) {
   };
 }
 
-export async function bookHuntApplyJob({ write = false, ids = null } = {}, deps = {}) {
+export async function bookHuntApplyJob({ write = false, ids = null, sample = 40 } = {}, deps = {}) {
   const { rows = allHuntRows, apply = applyBookMeta, fetchImpl = fetch,
     storeCover = async (id, buf, m) => (await import('../covers.js')).storeCover(id, buf, m),
     setCover = async (id, url) => (await import('../docs-repo.js')).setDocCover(id, url),
@@ -100,6 +100,7 @@ export async function bookHuntApplyJob({ write = false, ids = null } = {}, deps 
     const { values, meta, cover } = applicable(found);
     for (const [k, v] of Object.entries(values)) if (v != null) out.would_apply[k] = (out.would_apply[k] || 0) + 1;
     if (cover) out.would_apply.cover = (out.would_apply.cover || 0) + 1;
+    if ((out.sample ||= []).length < sample && Object.values(values).some((v) => v != null)) out.sample.push({ doc_id: r.doc_id, ...values, cover, evidence: Object.fromEntries(Object.entries(meta).filter(([k]) => k !== 'hunt').map(([k, v]) => [k, v?.evidence ?? v])) });
     if (!write) continue;
     if (Object.values(values).some((v) => v != null) || Object.keys(meta).length) { await apply(r.doc_id, { ...values, meta }); out.applied++; }
     if (cover) {
