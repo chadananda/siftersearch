@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-23T01:37:15.770Z",
+  "generated": "2026-10-23T02:02:21.855Z",
   "entries": [
+    {
+      "hash": "18d5e049",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "/api/media/progress/live — by_stage for the process strip: { import, enhance, transcribe, correct, publish, subheaders, quotes, links, moments: { count, items: [{ slug, title, speaker, thumb, started_at }] (latest first, ≤ 12) } } + queued (count); each in-progress item also carries stage_started_at",
+      "scope": "media"
+    },
+    {
+      "hash": "c5d9d86c",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "The import in detail (Chad 10-22) — /api/media/progress adds enhanced, remastered, aligned, cross_referenced (+ quote_links, concept_crs) beside downloaded / transcribed / published / failed, from each item's completed stages (migration 173 stages_done, written after every stage; media-stages-sync back-fills from meta.json); GET /api/media/progress/live: the items being worked on now with their named steps (download · grade · enhance · transcribe · align · diarize · cleanup · faithfulness · publish · subheaders · crossref · links · assess · moments: done / running / pending / failed, ms) and the last six published — a handful of rows, memoised and edge-cached 10 s; media-rank registers EVERY target (the talks file's videos minus Shorts, 'about' videos and repeat uploads: the queue had skipped clips under ~4 min) and ranks them within their own section",
+      "scope": "media"
+    },
+    {
+      "hash": "8e3b5efb",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Tune-in — eval set, speaker aliases, transcript search fuses three layers, talk matches first",
+      "scope": "media"
+    },
     {
       "hash": "4dbbb4fe",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Every note rests on cited library evidence (uncited notes dropped in code); a 'worth a note' test bans glossing plain English, title translations, etymology and abjad trivia; advanced = weightier connections, not philology",
       "scope": "reading"
-    },
-    {
-      "hash": "b2b60b51",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Replies stay in the reader's Gmail thread (a new subject split the thread and looked like no answer); concepts roster + CTAI map move to the canonical OceanLibrary Gleanings 20783 / ESW 20780",
-      "scope": "anis"
-    },
-    {
-      "hash": "4a0aefda",
-      "date": "2026-10-13",
-      "type": "Test",
-      "description": "Seeker battery + HyPE A/B scorer; worklist: HyPE authority, interfaith, canonical copies",
-      "scope": "quality"
-    },
-    {
-      "hash": "abadf2c9",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Seeker questions keep the yes/no form people type; tiers survive the sliced path",
-      "scope": "hype"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "18d5e049",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "/api/media/progress/live — by_stage for the process strip: { import, enhance, transcribe, correct, publish, subheaders, quotes, links, moments: { count, items: [{ slug, title, speaker, thumb, started_at }] (latest first, ≤ 12) } } + queued (count); each in-progress item also carries stage_started_at",
+        "scope": "media"
+      },
+      {
+        "hash": "c5d9d86c",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "The import in detail (Chad 10-22) — /api/media/progress adds enhanced, remastered, aligned, cross_referenced (+ quote_links, concept_crs) beside downloaded / transcribed / published / failed, from each item's completed stages (migration 173 stages_done, written after every stage; media-stages-sync back-fills from meta.json); GET /api/media/progress/live: the items being worked on now with their named steps (download · grade · enhance · transcribe · align · diarize · cleanup · faithfulness · publish · subheaders · crossref · links · assess · moments: done / running / pending / failed, ms) and the last six published — a handful of rows, memoised and edge-cached 10 s; media-rank registers EVERY target (the talks file's videos minus Shorts, 'about' videos and repeat uploads: the queue had skipped clips under ~4 min) and ranks them within their own section",
+        "scope": "media"
+      },
+      {
+        "hash": "8e3b5efb",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Tune-in — eval set, speaker aliases, transcript search fuses three layers, talk matches first",
+        "scope": "media"
+      },
       {
         "hash": "4dbbb4fe",
         "date": "2026-10-22",
@@ -7000,27 +7021,6 @@
         "type": "Fixed",
         "description": "Every note rests on cited library evidence (uncited notes dropped in code); a 'worth a note' test bans glossing plain English, title translations, etymology and abjad trivia; advanced = weightier connections, not philology",
         "scope": "reading"
-      },
-      {
-        "hash": "b2b60b51",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Replies stay in the reader's Gmail thread (a new subject split the thread and looked like no answer); concepts roster + CTAI map move to the canonical OceanLibrary Gleanings 20783 / ESW 20780",
-        "scope": "anis"
-      },
-      {
-        "hash": "4a0aefda",
-        "date": "2026-10-13",
-        "type": "Test",
-        "description": "Seeker battery + HyPE A/B scorer; worklist: HyPE authority, interfaith, canonical copies",
-        "scope": "quality"
-      },
-      {
-        "hash": "abadf2c9",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Seeker questions keep the yes/no form people type; tiers survive the sliced path",
-        "scope": "hype"
       }
     ]
   }

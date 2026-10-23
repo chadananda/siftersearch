@@ -131,6 +131,18 @@ The system runs across **two surfaces** — keep this distinction in mind for ev
 - Zone routes `siftersearch.com/*` + `www.siftersearch.com/*` intercept ahead of the legacy Pages
   project (still exists, dormant) — removing routes + redeploy = instant rollback to Pages
 - External API consumers and third-party widget embeds keep calling `api.siftersearch.com` directly
+- **Edge SWR cache — pages never wait on tower (Chad 10-22)** (`worker/edge-cache.js`): public SSR pages and listed public
+  API reads are served from caches.default (L1) / KV `EDGE_CACHE` (L2, global) the moment ANY copy exists, however stale;
+  stale → background revalidate. SSR's own API fetches share the cache. HTML keys carry the build version; the minute cron
+  + `/_edge/warm` (run by `npm run deploy`) fill cold keys. Never cached: credentials, auth/chat/admin, non-200,
+  Set-Cookie, truncated HTML, renders that saw a failed data fetch. Response header `x-sifter-cache: HIT|STALE|MISS|BYPASS`
+  + `age`. New public page or API read → add it to `HTML_PAGES` / `API_ROUTES` (with a test). Simulate a dead tower:
+  `x-sifter-origin-test: down` (or `slow=<ms>`) + `x-internal-key`.
+- **Cached SSR + live refresh (the convention for every page):** SSR renders the complete first view from (cached) data;
+  every part that changes (counts, progress, new items) refreshes itself client-side with `liveRefresh(load, apply,
+  { every, el, same, initial })` from `src/lib/live-data.js` — fetch after idle, poll while on screen, apply only when
+  changed, keep the cached view on error. Reserve the space in SSR so the patch causes no layout shift. Example:
+  `ListeningRoom.svelte` (/media index).
 - **Deploy path:** `npm run deploy` (`scripts/deploy-site.sh`: bump → build → `wrangler deploy`). Preview:
   siftersearch.chadananda.workers.dev
 

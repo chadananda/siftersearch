@@ -17,6 +17,7 @@
   import { safeIndex, snippetAround, groupHits, fold, PRESETS, DECADES, buildSearch, searchItems, planLayout, eras as erasOf, topTopics, decadeOf } from '../../../lib/media-listing.js';
   import { formatTime } from '../../../../api/lib/media/range.js';
   import { pauseOffscreen } from '../../../lib/offscreen.js';
+  import { liveRefresh } from '../../../lib/live-data.js';
   import { playExcerpt, preview } from '../../../lib/media-preview.svelte.js';
 
   let { initial = {}, initialState = {} } = $props();
@@ -136,11 +137,15 @@
     const wake = () => setTimeout(() => { live = true; document.querySelectorAll('.room').forEach((r) => r.classList.add('lr-live')); }, 2500);
     if (document.readyState === 'complete') wake(); else addEventListener('load', wake, { once: true });
     for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, () => { live = true; document.querySelectorAll('.room').forEach((r) => r.classList.add('lr-live')); }, { once: true, passive: true });
-    if (active) loadAll();
-    else (window.requestIdleCallback || ((f) => setTimeout(f, 1200)))(() => loadAll(), { timeout: 3000 });
+    // cached SSR + live refresh (src/lib/live-data.js): this page may come from the edge cache, so the full index is read
+    // after first paint (at once when a filter is active) and every 5 min; new talks land in place, and only when the
+    // listing actually changed — an unchanged index never re-lays the cards
+    const sig = (d) => `${(d?.items || []).map((i) => `${i?.s}:${i?.t}`).join('|')}#${d?.pending || 0}`;
+    const stopLive = liveRefresh(() => media.index(), (d) => { const data = safeIndex(d); items = data.items; speakers = data.speakers; complete = !data.pending; },
+      { every: 300_000, idle: !active, same: (a, b) => sig(a) === sig(b), initial: complete ? { items, pending: 0 } : undefined });
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting && limit < cards.length) limit += 24; }, { rootMargin: '600px' });
     io.observe(sentinel);
-    return () => io.disconnect();
+    return () => { io.disconnect(); stopLive(); };
   });
 </script>
 

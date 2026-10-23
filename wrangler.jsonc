@@ -28,6 +28,8 @@
   ],
   // Media library files (worker/media.js): each published version copied once from the tower origin, served with Range
   "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "siftersearch-media" }],
+  // Edge SWR cache L2 (worker/edge-cache.js): public pages + API reads, global, so no colo waits on the tunnel
+  "kv_namespaces": [{ "binding": "EDGE_CACHE", "id": "3a513aa2850546769bf8baedc9c3bb34" }],
   // Anís mail (worker/mail/drafting.js): drafts every 5 min, outreach planning hourly, daily digest 14:00 UTC.
   "triggers": { "crons": ["* * * * *", "0 * * * *", "0 14 * * *"] },
   "observability": {

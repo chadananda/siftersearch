@@ -16,4 +16,11 @@ echo "[deploy-site] version $NEW_VERSION"
 PUBLIC_DEPLOY_SECRET="$DEPLOY_SECRET" npm run build
 node scripts/generate-changelog.js > /dev/null 2>&1 || true
 bash scripts/deploy-worker.sh
+# Pre-warm the edge cache for the new build (HTML keys carry the version, so every page is cold until rendered once).
+# The Worker's minute cron does the same within a minute; this just closes the gap. Never fails the deploy.
+WARM_KEY=$(grep -h '^INTERNAL_API_KEY=' .env-secrets 2>/dev/null | head -1 | cut -d= -f2-)
+if [ -n "$WARM_KEY" ]; then
+  sleep 8
+  curl -s -m 120 -H "x-internal-key: $WARM_KEY" "https://siftersearch.com/_edge/warm" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const c={};for(const r of j.report||[])c[r.state]=(c[r.state]||0)+1;console.log("[deploy-site] edge warm",j.version,j.ms+"ms",JSON.stringify(c))}catch{console.log("[deploy-site] edge warm: no report")}})' || true
+fi
 echo "[deploy-site] deployed $NEW_VERSION — now commit (package.json + src/lib/changelog.json are part of it) and push"
