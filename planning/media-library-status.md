@@ -213,3 +213,20 @@ groups taken once) is in `planning/media-targets/youtube-queue.json`.
    different route (another network, or the channel owners' own files — Sharaf could share the Dunbar archive directly).
 5. **Boss access**: tower now reaches boss through a restricted key (forced command `~/media-asr/asr-gate.sh`, from tower's
    addresses only) for ASR. Remove the line in boss's `~/.ssh/authorized_keys` to revoke.
+
+## For the design agent — data shapes (10-23)
+- `GET /api/media/progress` (edge 60 s): `{ total_targets, downloaded, enhanced, remastered, transcribed, aligned, cross_referenced,
+  published, failed, quote_links, concept_crs, items_per_hour, eta_iso, updated_at, by_source: [{ source: historic|hands|uhj|
+  historic-speakers|scholars, label, total, downloaded, …same counters }] }`
+- `GET /api/media/progress/live` (edge 10 s) — what is RUNNING NOW (items of running media runs, not the last stage written):
+  - `in_progress: [{ slug, title, speaker, source, thumb, duration_s, started_at, stage, stage_started_at,
+    stages: [{ name, state: done|running|failed|pending, ms? }] }]` — `stages` names, in order: download, grade, enhance,
+    transcribe, align, diarize, cleanup, faithfulness, publish, subheaders, crossref, links, assess, moments
+  - `by_stage: { <strip key>: { count, items: [{ slug, title, speaker, thumb, started_at }] } }` (≤ 12 items per stage)
+  - `queued` (number), `recently_published: [{ slug, title, speaker, thumb, duration_s, published_at }]`
+  - `health: { failed, failed_total, failed_by_stage, failed_items: [{ slug, stage, why, at }], compute_running, llm_running,
+    compute_backlog, asr_backlog, llm_backlog, published }` (last hour) — internal-looking; show or not as you like
+- speaker thumbs: `{ url, kind: 'photo', name, credit, licence, source_url, page_url, fetched_at, extended }`;
+  `extended = { url, width: 1152, height: 2048, ai_extended: true, model } | null` — the 9:16 master with AI-extended
+  margins (original pixels untouched): crop THIS for tall or wide boxes, never stretch `url`
+- talk titles in a series now read `"<Series> — Part N of M"` (series/part are kept in meta.json; not yet fields of the talk API)
