@@ -313,7 +313,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         // the DISPATCH log: which host took the transcription and the load it saw (10-22: 'why is aorus idle?')
         console.info(`[media] dispatch transcribe ${meta.slug} → ${meta.asr_job.host} (${tools.asrPickReason ? tools.asrPickReason(meta.asr_job.host) : 'single host'})`);
       } else console.info(`[media] re-attach transcribe ${meta.slug} → ${meta.asr_job.host} (job ${meta.asr_job.id})`);
-      if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.diarHost ? tools.diarHost() : null }; await save(); }
+      if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickDiarHost ? tools.pickDiarHost() : (tools.diarHost ? tools.diarHost() : null) }; await save(); }
       const viaJob = async () => {
         if (!tools.asrJob || !meta.asr_job.host) { slot?.release(); return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop }); }
         try { return await tools.asrJob(join(dir, v.file), asrOpts, { host: meta.asr_job.host, job: meta.asr_job.id, stop, reserved: !!slot }); }

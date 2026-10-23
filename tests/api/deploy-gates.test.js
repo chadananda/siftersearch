@@ -24,6 +24,12 @@ describe('syntax gate', () => {
 });
 
 describe('boot failures', () => {
+  it('clears after a clean restart: only lines after the current start count (pm2 time prefix)', () => {
+    const tail = "2026-10-23 03:41:00 -07:00: file:///x/api/workers/media-worker.js:36\n2026-10-23 03:41:00 -07:00: SyntaxError: Unexpected identifier 'mediaFeedLoop'\n2026-10-23 04:08:08 -07:00: [media] dfn on aorus failed — tower fallback";
+    const crashStart = Date.parse('2026-10-23T03:40:59-07:00'), cleanStart = Date.parse('2026-10-23T03:54:10-07:00');
+    expect(bootFailures([{ name: 'm', startedAt: crashStart, errMtime: Date.parse('2026-10-23T04:08:08-07:00'), errTail: tail }])).toHaveLength(1);
+    expect(bootFailures([{ name: 'm', startedAt: cleanStart, errMtime: Date.parse('2026-10-23T04:08:08-07:00'), errTail: tail }])).toEqual([]);
+  });
   const log = "file:///home/chad/sifter/siftersearch/api/workers/media-worker.js:36\nexport async function mediaFeedLoop() {\n^^^^^^\nSyntaxError: Unexpected token 'export'\n    at compileSourceTextModule";
   it('a SyntaxError written since the last start is a boot failure, named with file and line', () => {
     const f = bootFailures([{ name: 'siftersearch-media', startedAt: 1000, errMtime: 2000, errTail: log }]);

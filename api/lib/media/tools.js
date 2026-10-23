@@ -221,11 +221,20 @@ export async function acquireAsrHost(hosts = asrHosts()) {
 }
 const diarBusy = new Map();
 const diarWait = new Map();
-export async function diarSlot(host, fn, slots = Number(process.env.MEDIA_DIAR_SLOTS) || 3) {
+// per host: aorus 2 (≈1.5 GB RAM each on a 15 GB box beside two transcriptions; 10-23 watch: 6 at once, load 55, 3 GB free)
+const DIAR_SLOTS = { aorus: 2 };
+export async function diarSlot(host, fn, slots = Number(process.env.MEDIA_DIAR_SLOTS) || DIAR_SLOTS[host] || 3) {
   if (!diarWait.has(host)) diarWait.set(host, []);
   if ((diarBusy.get(host) || 0) >= slots) await new Promise((r) => diarWait.get(host).push(r));
   diarBusy.set(host, (diarBusy.get(host) || 0) + 1);
   try { return await fn(); } finally { diarBusy.set(host, diarBusy.get(host) - 1); diarWait.get(host).shift()?.(); }
+}
+/** A diarization's host when it is DISPATCHED: aorus while it has a free diarization slot, else boss (its CPU) — the rest
+ *  stay on boss (10-23 watch). */
+export function pickDiarHost() {
+  const first = diarHost(), second = asrHost();
+  if (first && (diarBusy.get(first) || 0) < (Number(process.env.MEDIA_DIAR_SLOTS) || DIAR_SLOTS[first] || 3)) return first;
+  return second || first;
 }
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
 export const diarHost = () => process.env.MEDIA_DIAR_HOST ?? gpuHost() ?? asrHost();
