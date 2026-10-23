@@ -68,13 +68,14 @@ export function applyWriteBatch(db, statements) {
 
 /**
  * Group commit over one connection. submit(statements, meta) → Promise<results> (rejects with that request's own error).
- * A group is flushed `windowMs` after its first request, or at once when it reaches maxStatements / maxRequests. A request
+ * A group is flushed `windowMs` after its first request (0 = the same event-loop turn, the default), or at once when it
+ * reaches maxStatements / maxRequests. A request
  * at or over maxStatements runs alone. While a flush runs (synchronously) new requests queue, so under load groups grow by
  * themselves and an idle writer adds only `windowMs`. onRequest({meta, ms, statements, changes, error}) and
  * onCommit({ms, requests, statements}) feed the write stats; ms per request includes its share of the COMMIT.
- * windowMs = 0 or SIFTER_GROUP_COMMIT=0 → every request is its own transaction (the pre-10-23 behaviour, also the rollback).
+ * SIFTER_GROUP_COMMIT=0 → every request is its own transaction (the pre-10-23 behaviour, also the rollback).
  */
-export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFTER_GROUP_COMMIT_MS ?? 3), maxStatements = 2000, maxRequests = 64,
+export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFTER_GROUP_COMMIT_MS ?? 0), maxStatements = 2000, maxRequests = 64,
   enabled = process.env.SIFTER_GROUP_COMMIT !== '0', now = () => performance.now(), onRequest = () => {}, onCommit = () => {} } = {}) {
   let queue = [], queued = 0, timer = null;
   let chain = Promise.resolve();   // groups run strictly in arrival order
@@ -103,8 +104,9 @@ export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFT
     }
   }
   const enqueueGroup = (group) => { chain = chain.then(() => runGroup(group)); return chain; };
+  const cancel = () => { if (timer) { if (windowMs > 0) clearTimeout(timer); else clearImmediate(timer); timer = null; } };
   function flush() {
-    if (timer) { clearTimeout(timer); timer = null; }
+    cancel();
     const group = queue; queue = []; queued = 0;
     return group.length ? enqueueGroup(group) : chain;
   }
@@ -116,7 +118,9 @@ export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFT
       if (queued + statements.length > maxStatements) flush();
       queue.push(req); queued += statements.length;
       if (queue.length >= maxRequests) flush();
-      else if (!timer) { timer = setTimeout(flush, windowMs); timer.unref?.(); }
+      // NOT unref'd: a pending group keeps the process alive until it commits. windowMs 0 (default) = setImmediate: no added
+      // wait — a group is what arrived in the same event-loop turn, and it grows by itself while a long flush blocks the loop
+      else if (!timer) timer = windowMs > 0 ? setTimeout(flush, windowMs) : setImmediate(flush);
     });
   }
   return { submit, flush, stats: () => ({ ...counters, pending: queue.length }) };
