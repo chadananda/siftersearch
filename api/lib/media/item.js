@@ -311,7 +311,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         // on aorus first (a 12-window language ID is seconds on its GPU; on a loaded boss it held ASR lane workers before
         // they could dispatch — 12:29)
         const lid = (host) => tools.asr('langid', join(dir, meta.original), { model: 'large-v3-turbo', starts, len: 12 }, { stop, ...(host ? { host } : {}) });
-        const li = await (tools.withProbeHost ? tools.withProbeHost(lid) : lid(null)).catch(() => null);
+        // NOT through the probe pool: 16 prep runs' probes fill it, and an ASR worker waiting there leaves aorus's
+        // transcription slots empty (13:29: aorus idle with 6 talks waiting) — straight to the GPU host, boss if it fails
+        const li = await lid(tools.gpuHost ? tools.gpuHost() : null).catch(() => lid(null)).catch(() => null);
         meta.languages = (li?.excerpts || []).map((e) => ({ at: e.start, language: e.language, prob: e.prob }));
       }
       const heard = meta.languages.filter((x) => x.prob >= 0.6).map((x) => x.language);
