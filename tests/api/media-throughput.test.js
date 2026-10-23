@@ -298,8 +298,8 @@ describe('diarization has its own lane (10-23 04:29)', () => {
     const { pickDiarHost } = await import('../../api/lib/media/tools.js');
     process.env.MEDIA_ASR_HOST = 'boss'; process.env.MEDIA_GPU_HOST = 'aorus';
     expect(pickDiarHost(new Map())).toBe('boss');
-    expect(pickDiarHost(new Map([['boss', 4]]))).toBe('aorus');
-    expect(pickDiarHost(new Map([['boss', 4], ['aorus', 1]]))).toBe('boss');
+    expect(pickDiarHost(new Map([['boss', 6]]))).toBe('aorus');
+    expect(pickDiarHost(new Map([['boss', 6], ['aorus', 1]]))).toBe('boss');
     delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
   });
 });

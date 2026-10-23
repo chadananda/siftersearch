@@ -363,7 +363,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         console.info(`[media] diarize ${meta.slug} → ${meta.diar_job.host || 'boss'} (job ${meta.diar_job.id})`);
         // a failed (or cancelled) diarization is dispatched afresh next time — never re-attached to the dead job on its host
         if (tools.diarize) {
-          try { await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 6 }); }
+          try { await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 4 }); }
           catch (err) { if (err?.code !== 'DRAIN') { delete meta.diar_job; await save(); } throw err; }
         }
         else await tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: 4, timeoutMs: 6 * 3600_000, stop });
