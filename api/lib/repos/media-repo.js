@@ -134,6 +134,7 @@ export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000
       SUM(CASE WHEN state IN ('queued','scheduled') AND COALESCE(stage, '') != 'download' AND (source_kind != 'youtube' OR dir IS NOT NULL) THEN 1 ELSE 0 END) compute_backlog,
       SUM(CASE WHEN state IN ('transcribed','llm_queued') THEN 1 ELSE 0 END) llm_backlog,
       SUM(CASE WHEN state IN ('prepped','asr_queued') THEN 1 ELSE 0 END) asr_backlog,
+      SUM(CASE WHEN state = 'done' AND why LIKE 'update failed:%' THEN 1 ELSE 0 END) published_problems,
       SUM(CASE WHEN published_at >= ? THEN 1 ELSE 0 END) published_window
     FROM media_items`, [sinceIso, sinceIso], 'media:health');
   const by = await queryAll(`SELECT COALESCE(stage, '?') stage, COUNT(*) n FROM media_items WHERE state = 'failed' AND updated_at >= ? GROUP BY stage`, [sinceIso], 'media:health-failed');
@@ -141,7 +142,7 @@ export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000
   const n = (k) => Number(r?.[k] || 0);
   return { since: sinceIso, failed: n('failed_window'), failed_total: n('failed_total'), failed_by_stage: Object.fromEntries(by.map((x) => [x.stage, x.n])),
     failed_items: recent.map((x) => ({ slug: x.slug, stage: x.stage, why: String(x.why || '').slice(0, 200), at: x.updated_at })),
-    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), asr_backlog: n('asr_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window') };
+    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), asr_backlog: n('asr_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window'), published_problems: n('published_problems') };
 }
 /** Items published since a time (throughput). */
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };

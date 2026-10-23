@@ -130,7 +130,10 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     // a failed ITEM is recorded on the item (the admin status and the morning summary list them) and the run ends normally:
     // a night of 450 recordings must not mail Chad once per odd file (each failure used to raise an ops alert)
     const prior = /^retry:\d+/.exec(item.why || '')?.[0];   // a retried item keeps its retry count (retryTransientFailures caps it)
-    await updateMediaItem(id, { state: 'failed', why: `${prior ? `${prior} ` : ''}${String(err.message)}`.slice(0, 500) }).catch(() => {});
+    // a PUBLISHED talk whose re-run failed stays published (10-23: blocked re-links took 15 talks off the catalogue): the
+    // failure is kept in why ('update failed: …') and the run's result; health counts these as published_problems
+    if (item.state === 'done' || item.published_at) await updateMediaItem(id, { state: 'done', why: `update failed: ${String(err.message)}`.slice(0, 500) }).catch(() => {});
+    else await updateMediaItem(id, { state: 'failed', why: `${prior ? `${prior} ` : ''}${String(err.message)}`.slice(0, 500) }).catch(() => {});
     await logActivity('media', `✗ media item ${id} failed: ${String(err.message).slice(0, 160)}`).catch(() => {});
     if (deps.throwOnFail) throw err;
     return { id, failed: true, why: String(err.message).slice(0, 300) };
