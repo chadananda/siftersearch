@@ -394,6 +394,8 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   // EVERY target is a catalogue row (Chad 10-22: "we should have close to 1400"): the talks file's videos that are not
   // Shorts, not "about" the speaker, one per duplicate group
   const t = JSON.parse(await rf(talks, 'utf8').catch(() => '{}'));
+  const { excludedBy } = await import('../media/exclusions.js');
+  const excludedTarget = deps.excluded || ((x) => !!(excludedBy({ speaker: x.speaker || '' }) || excludedBy({ title: x.title || '' })));
   const info = new Map();
   const registered = [];
   const seenGroup = new Set();
@@ -401,6 +403,7 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   for (const sec of ['hands_uhj', 'hooper_dunbar', 'curated_sacred_traditions']) {
     for (const x of t[sec] || []) {
       if (!x.video_id || x.is_short || x.relation === 'about') continue;
+      if (excludedTarget(x)) continue;   // data/media-exclusions.json (Chad 10-23)
       const g = x.duplicate_group || x.video_id;
       if (seenGroup.has(g)) continue;
       seenGroup.add(g);
@@ -748,6 +751,72 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
       .sort((a, b) => b.forms.length - a.forms.length || a.display.localeCompare(b.display)),
     review, date_flags: flags, changed, skipped_busy,
   };
+}
+
+/** The YouTube targets' own speaker + title by video id (a queued talk is not named until it is downloaded). */
+async function youtubeTargetInfo(files = ['youtube-talks.json', 'youtube-queue.json'].map((f) => join(process.cwd(), 'planning', 'media-targets', f))) {
+  const { readFile } = await import('fs/promises');
+  const info = new Map();
+  const walk = (x) => {
+    if (Array.isArray(x)) { for (const y of x) walk(y); return; }
+    if (!x || typeof x !== 'object') return;
+    if (x.video_id && (x.speaker || x.title)) { if (!info.has(x.video_id)) info.set(x.video_id, { speaker: x.speaker || '', title: x.title || '' }); return; }
+    for (const v of Object.values(x)) if (v && typeof v === 'object') walk(v);
+  };
+  for (const f of files) walk(JSON.parse(await readFile(f, 'utf8').catch(() => 'null')));
+  return info;
+}
+
+/** media-exclude { write }: talks by a speaker an exclusion rule names (data/media-exclusions.json; Chad 10-23 "no House
+ *  members elected after '88") → out of the library for good. write: state 'excluded' with the rule's reason (no lane picks
+ *  it up, no listing shows it, every /media route answers 404), its queued / running runs cancelled, its detached
+ *  transcription / diarization stopped on its host, its transcript document soft-deleted — paragraph by paragraph in short
+ *  chunks — so the index outbox takes it out of search. The archive folder and the original are kept. → the list. */
+export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const { excludedBy, loadExclusions } = await import('../media/exclusions.js');
+  const rules = deps.rules || loadExclusions();
+  const targets = deps.targets || await youtubeTargetInfo();
+  const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
+  const hits = [];
+  for (const it of await repo.exclusionCandidates()) {
+    const meta = it.dir ? await read(it.dir).catch(() => null) : null;
+    const t = it.youtube_id ? targets.get(it.youtube_id) : null;
+    const m = [it.speaker, meta?.speaker, t?.speaker].filter(Boolean).map((speaker) => excludedBy({ speaker }, rules)).find(Boolean)
+      || excludedBy({ title: it.title || meta?.title || '', sourceTitle: meta?.source?.title || t?.title || '' }, rules);
+    if (m) hits.push({ id: it.id, slug: it.slug, title: it.title || meta?.title || t?.title || null, speaker: it.speaker || meta?.speaker || t?.speaker || null, state: it.state,
+      published: it.state === 'done', doc_id: it.doc_id || meta?.doc_id || null, person: m.person, reason: m.reason, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) });
+  }
+  const by = (k) => Object.fromEntries([...new Set(hits.map((h) => h[k]))].map((v) => [v, hits.filter((h) => h[k] === v).length]));
+  const out = { matched: hits.length, published: hits.filter((h) => h.published).length, queued: hits.filter((h) => !h.published).length, by_person: by('person'), by_state: by('state'),
+    talks: hits.map(({ jobs, ...h }) => h) };
+  if (!write) return out;
+  const ids = new Set(hits.map((h) => h.id));
+  // 1. no lane picks them up again; a run in hand stops at its next stage (runItem checks the row)
+  for (const reason of new Set(hits.map((h) => h.reason))) await repo.excludeItems(hits.filter((h) => h.reason === reason).map((h) => h.id), reason);
+  // 2. their queued / running runs cancelled
+  out.runs_cancelled = 0;
+  for (const n of ['media-item', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-fetch']) {
+    for (const r of await ops.pendingRuns(n)) {
+      const rid = [r.params?.id, ...[].concat(r.params?.ids || [])].map(Number);
+      if (rid.some((x) => ids.has(x))) { await ops.cancel(r.id); out.runs_cancelled++; }
+    }
+  }
+  // 3. detached jobs stopped on their hosts
+  const tools = deps.tools || await import('../media/tools.js');
+  out.remote_cancelled = 0;
+  for (const h of hits) for (const j of h.jobs) if (await tools.cancelRemote(j.host, j.id).catch(() => false)) out.remote_cancelled++;
+  // 4. out of search: the transcript documents soft-deleted (chunked; the outbox de-indexes) — a transcript is its talk's
+  // only copy, so the last-copy guard is waived here on purpose; ≤ 20 per call (the delete circuit breaker is 25)
+  const docs = deps.docs || await late('api/lib/docs-repo.js');
+  const docIds = hits.map((h) => h.doc_id).filter(Boolean);
+  out.docs_deleted = 0; out.docs_refused = [];
+  for (let i = 0; i < docIds.length; i += 20) {
+    const r = await docs.softDeleteDocs(docIds.slice(i, i + 20), { reason: `media-exclude: ${hits[0].reason}`, allowLastCopy: true });
+    out.docs_deleted += r.deleted || 0; out.docs_refused.push(...(r.refused || []));
+  }
+  return out;
 }
 
 /** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from

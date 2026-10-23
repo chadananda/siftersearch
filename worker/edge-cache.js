@@ -153,6 +153,12 @@ function putL1(key, e, stale) {
   } }));
 }
 
+/** Drop a key from both layers (L1 caches.default, L2 KV). */
+export async function evict(key, env) {
+  await caches.default.delete(l1Url(key)).catch(() => {});
+  if (env?.EDGE_CACHE) await env.EDGE_CACHE.delete(key).catch(() => {});
+}
+
 async function store(key, policy, e, prev, env) {
   const kvDue = policy.l2 && env?.EDGE_CACHE && (!prev || Date.now() - (prev.kvAt || 0) > KV_MIN_GAP_MS);
   if (kvDue) {
@@ -174,6 +180,8 @@ async function refresh(key, policy, produce, prev, env) {
   const text = await res.text();
   const verdict = storable({ status: res.status, headers: res.headers, text, kind: policy.kind, tainted: isTainted(tainted) });
   if (verdict.ok) await store(key, policy, entryOf(res, text, policy), prev, env);
+  // GONE at the origin (a talk taken out of the library, 10-23): the stale copy must not answer for ever
+  else if (res.status === 404 || res.status === 410) await evict(key, env);
   return { stored: verdict.ok, why: verdict.why, res, text };
 }
 

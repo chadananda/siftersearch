@@ -6,13 +6,13 @@ import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
-import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaLanesFeedPass, mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaTrimAuditJob, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
+import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaLanesFeedPass, mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaTrimAuditJob, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
 import { mediaParallel, asrHosts } from '../lib/media/tools.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from '../lib/ops/media-gallery-jobs.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 
-export const MEDIA_REGISTRY = { 'media-short': mediaShortJob, 'media-shorts-moments': mediaShortsMomentsJob, 'media-portraits-extend': mediaPortraitsExtendJob, 'media-fetch': mediaFetchJob, 'media-compute': mediaComputeJob, 'media-asr': mediaAsrJob, 'media-diar': mediaDiarJob, 'media-meta-fix': mediaMetaFixJob, 'media-identity': mediaIdentityJob, 'media-trim-audit': mediaTrimAuditJob, 'media-llm': mediaLlmJob, 'media-rank': mediaRankJob, 'media-stages-sync': mediaStagesSyncJob, 'media-quote-audit': mediaQuoteAuditJob, 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
+export const MEDIA_REGISTRY = { 'media-short': mediaShortJob, 'media-shorts-moments': mediaShortsMomentsJob, 'media-portraits-extend': mediaPortraitsExtendJob, 'media-fetch': mediaFetchJob, 'media-compute': mediaComputeJob, 'media-asr': mediaAsrJob, 'media-diar': mediaDiarJob, 'media-meta-fix': mediaMetaFixJob, 'media-identity': mediaIdentityJob, 'media-exclude': mediaExcludeJob, 'media-trim-audit': mediaTrimAuditJob, 'media-llm': mediaLlmJob, 'media-rank': mediaRankJob, 'media-stages-sync': mediaStagesSyncJob, 'media-quote-audit': mediaQuoteAuditJob, 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
 
 // a file dropped in DEWEY_MEDIA_DIR starts the pipeline with no other step
 async function mediaDropLoop() {
@@ -28,9 +28,9 @@ async function mediaDropLoop() {
 // …and PORTRAITS (an image call per speaker; minutes, never behind hours of transcription)
 // …and DOWNLOADS (YouTube into the archive, paced, independent of processing). The pipeline lane runs N items at once.
 export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => !['media-short', 'media-portraits-extend', 'media-speakers', 'media-fetch', 'media-rank',
-  'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-trim-audit'].includes(j)),
+  'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-exclude', 'media-trim-audit'].includes(j)),
   compute: ['media-compute'], asr: ['media-asr'], diar: ['media-diar'], llm: ['media-llm'],
-  shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-meta-fix', 'media-identity', 'media-trim-audit'], downloads: ['media-fetch'] };
+  shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-meta-fix', 'media-identity', 'media-exclude', 'media-trim-audit'], downloads: ['media-fetch'] };
 // speaker galleries (Chad 10-23): the portraits lane (an image call each at most; never behind transcription)
 Object.assign(MEDIA_REGISTRY, { 'media-gallery': mediaGalleryJob, 'media-portrait-inventory': mediaPortraitInventoryJob });
 MEDIA_LANES.portraits.push('media-gallery', 'media-portrait-inventory');

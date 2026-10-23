@@ -31,8 +31,21 @@ export async function updateMediaItem(id, fields = {}) {
   if (set.has_video !== undefined) set.has_video = set.has_video ? 1 : 0;
   set.updated_at = now();
   const keys = Object.keys(set);
-  await transaction([{ sql: `UPDATE media_items SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, args: [...keys.map((k) => set[k]), Number(id)] }], 'media:update');
+  // an EXCLUDED talk stays excluded (10-23: a lane finishing its run would otherwise set it back to prepped / done)
+  const col = (k) => (k === 'state' ? `state = CASE WHEN state = 'excluded' THEN 'excluded' ELSE ? END` : `${k} = ?`);
+  await transaction([{ sql: `UPDATE media_items SET ${keys.map(col).join(', ')} WHERE id = ?`, args: [...keys.map((k) => set[k]), Number(id)] }], 'media:update');
   return getMediaItem(id);
+}
+
+/** Every catalogue row not yet excluded, with what the exclusion rules match on. */
+export const exclusionCandidates = async () => queryAll(`SELECT id, slug, title, speaker, speaker_key, state, doc_id, dir, source_kind, source_ref, youtube_id
+  FROM media_items WHERE state != 'excluded' ORDER BY id`, [], 'media:exclusion-candidates');
+/** Take talks out of the library for good: state 'excluded' (no lane picks it, no listing shows it), the reason kept. */
+export async function excludeItems(ids = [], why) {
+  for (let i = 0; i < ids.length; i += 200) {
+    await transaction(ids.slice(i, i + 200).map((id) => ({ sql: `UPDATE media_items SET state = 'excluded', why = ?, queue_rank = NULL, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), now(), Number(id)] })), 'media:exclude');
+  }
+  return ids.length;
 }
 
 /** YouTube items held by a bot check / rate limit within the last `hours` (the cool-down before any YouTube work). */

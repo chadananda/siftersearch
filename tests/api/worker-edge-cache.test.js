@@ -96,3 +96,27 @@ describe('helpers', () => {
     expect(sMaxAge('public, max-age=60')).toBe(null);
   });
 });
+
+describe('a page GONE at the origin leaves the cache (10-23: an excluded talk must not answer for ever from a stale copy)', () => {
+  it('a revalidation that gets 404 evicts the key from L1 and KV; a 200 stores it', async () => {
+    const { serveCached } = await import('../../worker/edge-cache.js');
+    const l1 = new Map(), kv = new Map();
+    globalThis.caches = { default: {
+      match: async (u) => (l1.has(u) ? new Response(l1.get(u).body, { headers: l1.get(u).h }) : undefined),
+      put: async (u, r) => { l1.set(u, { body: await r.text(), h: Object.fromEntries(r.headers) }); },
+      delete: async (u) => l1.delete(u) } };
+    const env = { EDGE_CACHE: { getWithMetadata: async (k) => (kv.has(k) ? kv.get(k) : { value: null }), put: async (k, v, o) => { kv.set(k, { value: v, metadata: o.metadata }); }, delete: async (k) => kv.delete(k) } };
+    const key = '/__edge/api/api/media/gone-talk', policy = { mode: 'cache', kind: 'api', fresh: 1, stale: 86400, l2: true };
+    const ok = async () => ({ res: new Response('{"ok":true}', { status: 200, headers: { 'content-type': 'application/json' } }) });
+    await serveCached({ key, policy, produce: ok, env, ctx: { waitUntil: () => {} }, warm: true });
+    expect(l1.size).toBe(1); expect(kv.size).toBe(1);
+    // stale now: the origin answers 404
+    const old = Date.now; Date.now = () => old() + 10_000;
+    try {
+      const gone = async () => ({ res: new Response('{"error":"NotFound"}', { status: 404, headers: { 'content-type': 'application/json' } }) });
+      await serveCached({ key, policy, produce: gone, env, ctx: { waitUntil: () => {} }, warm: true });
+    } finally { Date.now = old; }
+    expect(l1.size).toBe(0); expect(kv.size).toBe(0);
+    delete globalThis.caches;
+  });
+});

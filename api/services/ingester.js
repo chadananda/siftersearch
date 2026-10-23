@@ -1987,28 +1987,18 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       for (const { __old_text: oldText, ...row } of rows) stash.push({ table: d.table, col: d.col, row, oldText });
     }
   }
-  for (let i = 0; i < deleteStatements.length; i += BATCH_SIZE) {
-    const batch = deleteStatements.slice(i, i + BATCH_SIZE);
-    await transaction([...detachStatements(batch.map((s) => s.args[0]), tables), ...batch]);
-    await new Promise(resolve => setImmediate(resolve));
-  }
+  // each transaction kept short: a batch over ~1.5 s shrinks the next (10-23: a 100-row content batch held the writer 9.8 s)
+  const { adaptiveBatches } = await import('../lib/adaptive-batch.js');
+  await adaptiveBatches(deleteStatements, (batch) => transaction([...detachStatements(batch.map((s) => s.args[0]), tables), ...batch]), { start: BATCH_SIZE });
 
   // Stale paragraphs reach the search indexes through the index outbox: the DELETEs above enqueue them by trigger in the
   // same transaction (migration 143), and the worker removes them in bulk from every engine.
 
   // 2. Update existing paragraphs (position changes, preserves embeddings)
-  for (let i = 0; i < updateStatements.length; i += BATCH_SIZE) {
-    const batch = updateStatements.slice(i, i + BATCH_SIZE);
-    await transaction(batch);
-    await new Promise(resolve => setImmediate(resolve));
-  }
+  await adaptiveBatches(updateStatements, (batch) => transaction(batch), { start: BATCH_SIZE });
 
   // 3. Insert new paragraphs
-  for (let i = 0; i < insertStatements.length; i += BATCH_SIZE) {
-    const batch = insertStatements.slice(i, i + BATCH_SIZE);
-    await transaction(batch);
-    await new Promise(resolve => setImmediate(resolve));
-  }
+  await adaptiveBatches(insertStatements, (batch) => transaction(batch), { start: BATCH_SIZE });
 
   // 4. Re-attach stashed research quotes to the paragraph their text went into
   if (stash.length) {

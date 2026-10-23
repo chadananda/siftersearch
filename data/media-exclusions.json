@@ -1,0 +1,14 @@
+{
+  "note": "Speakers whose talks are never imported, processed or published (api/lib/media/exclusions.js). A rule names people; patterns match the speaker, the title or the YouTube target's own speaker field (case-insensitive).",
+  "rules": [
+    {
+      "id": "too-modern-uhj-after-1988",
+      "reason": "too-modern: UHJ elected after 1988",
+      "decided": "Chad 2026-10-23: remove talks by Firaydoun Javaheri and Gustavo Correa. Too modern. No House members elected after '88. (Further members: planning/media-uhj-exclusion.md, awaiting Chad.)",
+      "people": [
+        { "name": "Firaydoun Javaheri", "uhj_elected": 2003, "speaker": "\\b(?:f[ae]r[ae]?[iy]?d[o]?[ou]n\\s+)?jav[aā]h[eé]r[iī]\\b", "title": "\\bjav[aā]h[eé]r[iī]\\b" },
+        { "name": "Gustavo Correa", "uhj_elected": 2008, "speaker": "\\b(?:gustavo\\s+)?corr?[eê]a\\b", "title": "\\bgustavo\\s+corr?[eê]a\\b" }
+      ]
+    }
+  ]
+}

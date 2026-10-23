@@ -19,6 +19,7 @@ import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
 import { classifyScreen, screenEnabled, singleTurns } from './spkscreen.js';
+import { excludedBy } from './exclusions.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
 // tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs in TWO slots at 4 threads even when more items are
@@ -144,6 +145,13 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (meta.stages[stage]?.at) continue;
     if (opts.only && !opts.only.includes(stage)) continue;
     if (await d.draining()) return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };   // stage: a resumed run never redoes its from/reslug
+    // an EXCLUDED speaker (data/media-exclusions.json, Chad 10-23) — or a row media-exclude took out — goes no further
+    const ex = excludedBy({ speaker: meta.speaker || item.speaker || '' }) || excludedBy({ title: meta.title || '', sourceTitle: meta.source?.title || '' })
+      || ((await repo.getMediaItem?.(item.id))?.state === 'excluded' ? { reason: 'excluded' } : null);
+    if (ex) {
+      await repo.updateMediaItem(item.id, { state: 'excluded', why: ex.reason });
+      return { excluded: true, reason: ex.reason, slug: meta.slug, done };
+    }
     const t0 = Date.now();
     // a published talk stays published while later stages (or a re-run) work on it
     await repo.updateMediaItem(item.id, { stage, state: item.state === 'done' || meta.stages.catalog?.at ? 'done' : 'running' });
@@ -402,7 +410,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.asr_lang !== 'multi' && !(raw.turns || []).length && !meta.diar_job?.id && !meta.spkscreen && screenEnabled() && tools.tool) {
         try {
           const r = await screenSlot(() => tools.tool('spkscreen', join(dir, v.file), { segments: out }, { threads: 2, timeoutMs: 30 * 60_000, stop }));
-          meta.spkscreen = { ...classifyScreen({ sims: r.sims || [], title: meta.title, series: meta.series, asrLang: meta.asr_lang }), seconds: r.seconds, at: new Date().toISOString() };
+          meta.spkscreen = { ...classifyScreen({ sims: r.sims || [], title: meta.title, series: meta.series, asrLang: meta.asr_lang, texts: (raw.segments || []).map((g) => g.text) }), seconds: r.seconds, at: new Date().toISOString() };
         } catch (err) {
           if (err?.code === 'DRAIN') throw err;
           meta.spkscreen = { verdict: 'unsure', reason: `prescreen failed: ${String(err.message).slice(0, 160)}`, at: new Date().toISOString() };

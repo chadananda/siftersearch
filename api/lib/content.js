@@ -314,9 +314,14 @@ async function safeSoftDeleteDocs(docIds, { reason = 'unspecified', runId = null
     return { deleted: 0, protected_ol: olIds.size, aborted: true, would_delete: deletable.length };
   }
   const ts = now();
+  // the paragraphs in SHORT chunks (10-23: one UPDATE over a doc's ~1,000 rows, each firing the soft-delete, count and
+  // index-outbox triggers at 100+ ms on the loaded content table, would hold the single writer for minutes)
+  const { adaptiveBatches } = await import('./adaptive-batch.js');
   for (const id of deletable) {
     await query('UPDATE docs SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL', [ts, ts, id]);
-    await query('UPDATE content SET deleted_at = ?, synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [ts, id]);
+    const rows = await queryAll('SELECT id FROM content WHERE doc_id = ? AND deleted_at IS NULL', [id]);
+    await adaptiveBatches(rows.map((r) => r.id), (chunk) => query(`UPDATE content SET deleted_at = ?, synced = 0 WHERE id IN (${chunk.map(() => '?').join(',')}) AND deleted_at IS NULL`, [ts, ...chunk]),
+      { start: 25, max: 400 });
   }
   if (deletable.length) {
     logger.warn({ reason, runId, deleted: deletable.length, protected_ol: olIds.size, sample: deletable.slice(0, 50) },

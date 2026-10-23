@@ -7,9 +7,17 @@ describe('speaker prescreen verdict', () => {
   it('every window near the main voice → single', () => {
     expect(classifyScreen({ sims: near(200), title: 'The Nature of God' }).verdict).toBe('single');
   });
-  it('one stray far window in a long talk is still single; more than the allowance is not', () => {
-    expect(classifyScreen({ sims: [...near(199), 0.1] }).verdict).toBe('single');
-    expect(classifyScreen({ sims: [...near(198), 0.1, 0.1] }).verdict).not.toBe('single');
+  it('a few stray far windows in a long talk are still single; more than the allowance is not', () => {
+    const far = (n) => Array(n).fill(0.1);
+    expect(classifyScreen({ sims: [...near(200 - SCREEN.k), ...far(SCREEN.k)] }).verdict).toBe('single');
+    expect(classifyScreen({ sims: [...near(199 - SCREEN.k), ...far(SCREEN.k + 1)] }).verdict).not.toBe('single');
+  });
+  it('a transcript line that needs a second person (a question taken, an introduction) → not single, whatever the voices say', () => {
+    for (const line of ['Yes?', 'Pardon? I did not hear.', 'I have a question about the Covenant.', 'Mr. President, a quick one.',
+      'It is my pleasure to introduce our speaker.', 'Thank you very much for coming.', 'I just want to add something.']) {
+      expect(classifyScreen({ sims: near(200), texts: ['The Covenant is the axis of oneness.', line] }).verdict, line).toBe('unsure');
+    }
+    expect(classifyScreen({ sims: near(200), texts: ['What is the Covenant? It is the axis of oneness.', 'Yes, that is the point.'] }).verdict).toBe('single');
   });
   it('a recurring far voice → multi', () => {
     expect(classifyScreen({ sims: [...near(100), ...Array(12).fill(0.3)] }).verdict).toBe('multi');

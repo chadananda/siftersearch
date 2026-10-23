@@ -263,6 +263,11 @@ export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = 
   try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); }
 }
 async function countDiar(host, fn, job = `local-${++diarSeq}`) { idsOn(host).add(job); syncBusy(host); try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); } }
+/** Stop a detached job on its host (gate 'cancel <job>'): an excluded talk's transcription / diarization / DFN. */
+export async function cancelRemote(host, job, { exec = run } = {}) {
+  const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `cancel ${job}`)], { timeoutMs: 30_000 });
+  return /cancelled/.test(stdout);
+}
 /** The ids of the diarizations a host is running (gate 'running diarize'); null when it cannot say. */
 export async function runningOn(host, verb = 'diarize', { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `running ${verb}`)], { timeoutMs: 30_000 });
