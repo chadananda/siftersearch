@@ -78,7 +78,13 @@ if [[ "$verb" == "start" ]]; then
     nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "diarize" ]]; then
     # nice 19: a diarization (CPU) yields to the transcriptions feeding the GPU (10-23: ten on aorus starved its GPU)
-    nohup setsid nice -n 19 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+    # a host with venv-diar (aorus: sherpa-onnx built for CUDA) diarizes on its GPU, the CUDA libraries from the main venv
+    if [[ -x venv-diar/bin/python ]]; then
+      NV=$(ls -d "$PWD"/venv/lib/python3*/site-packages/nvidia/*/lib 2>/dev/null | tr '\n' ':')
+      LD_LIBRARY_PATH="$NV${LD_LIBRARY_PATH:-}" MEDIA_DIAR_PROVIDER=cuda nohup setsid nice -n 19 venv-diar/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} --threads 1 >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+    else
+      nohup setsid nice -n 19 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+    fi
   else
     nohup setsid nice -n 10 venv/bin/python media_tool.py transcribe "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" --prompt "$prompt" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
   fi

@@ -197,10 +197,21 @@ def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name
     seg = os.path.join(models_dir, 'sherpa-onnx-pyannote-segmentation-3-0', 'model.onnx')
     names = [emb_name] if emb_name else [n for n in EMB_MODELS if os.path.exists(os.path.join(models_dir, n))]
     emb = os.path.join(models_dir, names[0])
+    # MEDIA_DIAR_PROVIDER=cuda (aorus's venv-diar, a CUDA build of sherpa-onnx): on the GPU only with ≥ 1.5 GB free —
+    # the transcriptions keep the card; else the CPU (10-23: 600 s of audio in ~100 s on the GPU at 1 CPU thread)
+    prov = os.environ.get('MEDIA_DIAR_PROVIDER', 'cpu')
+    if prov == 'cuda':
+        try:
+            free = int(subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'], capture_output=True, text=True).stdout.split()[0])
+            if free < 1536:
+                prov = 'cpu'
+                print(f'GPU has {free} MiB free — diarizing on the CPU', file=sys.stderr)
+        except Exception:
+            prov = 'cpu'
     cfg = sherpa_onnx.OfflineSpeakerDiarizationConfig(
         segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
-            pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads),
-        embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb, num_threads=threads),
+            pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads, provider=prov),
+        embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb, num_threads=threads, provider=prov),
         clustering=sherpa_onnx.FastClusteringConfig(num_clusters=num_speakers, threshold=threshold),
         min_duration_on=0.3, min_duration_off=0.5)
     sd = sherpa_onnx.OfflineSpeakerDiarization(cfg)
@@ -317,8 +328,7 @@ def cmd_transcribe(a):
 
 def cmd_diarize(a):
     """Diarization alone (threshold tuning): speakers and their talk time."""
-    import whisperx
-    audio = whisperx.load_audio(a.input)
+    audio = load(a.input)   # 16 kHz mono float32 via ffmpeg (the CUDA diarize venv has no whisperx)
     t0 = time.time()
     turns = diarize(audio, a.threads, a.models, num_speakers=a.speakers, threshold=a.cluster, emb_name=a.emb)
     talk = {}

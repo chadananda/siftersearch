@@ -286,7 +286,7 @@ describe('restore published talks a failed re-run took off (watchdog 23:49)', ()
 });
 
 describe('diarization has its own lane (10-23 04:29)', () => {
-  it('asr_done items are fed to media-diar; diarize goes to boss first, aorus only when boss is full (1)', async () => {
+  it('asr_done items are fed to media-diar; diarize goes to aorus\'s GPU first (2), boss is the overflow (3)', async () => {
     const { mediaLanesFeedPass } = await import('../../api/lib/ops/media-jobs.js');
     const queue = vi.fn(); const upd = vi.fn();
     const repo = { nextAsrDone: vi.fn(async (n) => [{ id: 71 }, { id: 72 }].slice(0, n)), nextPrepped: async () => [], preppedCount: async () => 30, nextToProcess: async () => [],
@@ -297,9 +297,9 @@ describe('diarization has its own lane (10-23 04:29)', () => {
     expect(upd).toHaveBeenCalledWith(71, { state: 'diar_queued' });
     const { pickDiarHost } = await import('../../api/lib/media/tools.js');
     process.env.MEDIA_ASR_HOST = 'boss'; process.env.MEDIA_GPU_HOST = 'aorus';
-    expect(pickDiarHost(new Map())).toBe('boss');
-    expect(pickDiarHost(new Map([['boss', 3]]))).toBe('aorus');
-    expect(pickDiarHost(new Map([['boss', 3], ['aorus', 1]]))).toBe('boss');
+    expect(pickDiarHost(new Map())).toBe('aorus');   // its GPU first (10-23)
+    expect(pickDiarHost(new Map([['aorus', 2]]))).toBe('boss');
+    expect(pickDiarHost(new Map([['aorus', 2], ['boss', 3]]))).toBe('aorus');
     delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
   });
 });

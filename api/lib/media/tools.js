@@ -224,7 +224,9 @@ export async function acquireAsrHost(hosts = asrHosts()) {
 const diarBusy = new Map();
 const diarWait = new Map();
 // per host: aorus 2 (≈1.5 GB RAM each on a 15 GB box beside two transcriptions; 10-23 watch: 6 at once, load 55, 3 GB free)
-const DIAR_SLOTS = { aorus: 1, boss: 3 };   // boss 3 × 4 threads: at 6 (10:29, load 85) its transcriptions slowed to RTF 0.5–1.2 from ~0.3   // boss's CPU first; aorus 1 (its CPU feeds its GPU) — 10-23 04:29 watch
+// aorus diarizes on its GPU (venv-diar: sherpa-onnx built for CUDA; 600 s of audio in ~100 s at ONE CPU thread, vs boss's
+// CPU 112 s at 4 threads under load) — 2 at a time, ≥ 1.5 GB free or its CPU; boss is the overflow at 3 (10-23)
+const DIAR_SLOTS = { aorus: 2, boss: 3 };
 export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3) {
   if (!diarWait.has(host)) diarWait.set(host, []);
   if ((diarBusy.get(host) || 0) >= slots) await new Promise((r) => diarWait.get(host).push(r));
@@ -235,7 +237,7 @@ async function countDiar(host, fn) { diarBusy.set(host, (diarBusy.get(host) || 0
 /** A diarization's host when it is DISPATCHED: aorus while it has a free diarization slot, else boss (its CPU) — the rest
  *  stay on boss (10-23 watch). */
 export function pickDiarHost(busy = diarBusy) {
-  const order = [asrHost(), gpuHost()].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);
+  const order = [gpuHost(), asrHost()].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);   // the GPU host first
   return order.find((h) => (busy.get(h) || 0) < (DIAR_SLOTS[h] || 3)) || order[0] || null;
 }
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */

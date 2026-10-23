@@ -191,9 +191,11 @@ describe('diarization slots per host', () => {
 });
 
 describe('re-attached diarizations count toward the host cap', () => {
-  it('a re-attached job on aorus (cap 1) makes the next diarization go elsewhere', async () => {
+  it('a re-attached job on aorus counts: with its 2 slots filled the next diarization goes elsewhere', async () => {
     const { diarize, pickDiarHost } = await import('../../api/lib/media/tools.js');
-    process.env.MEDIA_ASR_HOST = 'aorus'; process.env.MEDIA_GPU_HOST = 'zgpu';
+    process.env.MEDIA_ASR_HOST = 'zgpu'; process.env.MEDIA_GPU_HOST = 'aorus';
+    const { diarSlot } = await import('../../api/lib/media/tools.js');
+    let free1; const one = diarSlot('aorus', () => new Promise((r) => { free1 = r; }));   // one of aorus's 2 slots in use
     const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
     const out = join(mkdtempSync(join(tmpdir(), 'rd-')), 'd.json');
     let release; const hold = new Promise((r) => { release = r; });
@@ -203,6 +205,7 @@ describe('re-attached diarizations count toward the host cap', () => {
     expect(pickDiarHost()).toBe('zgpu');
     release(); await p;
     expect(pickDiarHost()).toBe('aorus');
+    free1(); await one;
     delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
   });
 });
