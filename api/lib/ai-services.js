@@ -256,34 +256,41 @@ export function logAIUsage({
     const status = Number((/\b(402|403|429)\b/.exec(errorMessage) || [])[1]) || null;
     import('./spend-alerts.js').then((m) => m.noteProviderError(provider, { status, message: errorMessage })).catch(() => {});
   }
+  // The cost is computed NOW (pure), so a per-turn meter can read it (ai-context `meter`: Anís records model + cost per
+  // reply for the conversation digest); only the telemetry write is deferred.
+  let cost = 0;
+  try {
+    // The REGISTRY is the price source of truth; MODEL_PRICING is a legacy duplicate kept only for ids the
+    // registry doesn't carry. It silently lacked the models we actually run (deepseek-v4-flash), so a priced
+    // call logged $0 — a zero cost is indistinguishable from "no spend", which is how spend stays invisible.
+    const inputTokens = promptTokens || totalTokens;
+    // long-context surcharge (Haiku 5.5: 5× past 100k tokens) comes from the registry, per call size
+    const pricing = getModel(model) ? effectivePricing(model, inputTokens) : (MODEL_PRICING[model] || { input: 0, output: 0 });
+    // promptTokens is the WHOLE prompt (clients normalise this), so the cached portion is a subset of it.
+    // Cache reads bill ~0.1x; a cache WRITE bills ~1.25x (paid once per prefix, then amortised over the book).
+    const fresh = Math.max(0, inputTokens - cachedTokens - cacheWriteTokens);
+    // OFF-PEAK RATES. The scheduler PAUSES grounding through DeepSeek's full-price hours specifically to buy
+    // the discount (pipeline/peak.js), and the estimator then billed every one of those calls at list price.
+    // Result: $1,854 estimated all-time against an invoice of a few hundred (Chad, 2026-08-13) — a 4-6x
+    // overstatement in the number the BUDGET GATE stops work on. Reuse nowInPeak so the rate can never
+    // disagree with the schedule that earned it; a model with no offPeak block is unaffected.
+    const off = getModel(model)?.offPeak;
+    const inMult = off && !nowInPeak() ? off.input : 1;
+    const outMult = off && !nowInPeak() ? off.output : 1;
+    // Residual calibration against the real invoice: token counts are stored per call, so this is a dial,
+    // not a guess baked into history — and history can be recosted from the stored tokens at any time.
+    const cal = Number(process.env.AI_COST_CALIBRATION || 1);
+    const cacheRead = getModel(model)?.cacheRead ?? 0.1;   // per-model cache-hit share of the input rate (DeepSeek 2%)
+    const batchMult = batch ? (getModel(model)?.batch ?? 0.5) : 1;
+    cost = batchMult * cal * ((fresh * pricing.input + cachedTokens * pricing.input * cacheRead
+      + cacheWriteTokens * pricing.input * 1.25) * inMult + completionTokens * pricing.output * outMult) / 1000;
+  } catch { cost = 0; }
+  const meter = currentAIContext().meter;
+  if (Array.isArray(meter)) meter.push({ provider, model, usd: cost, tokens: (promptTokens || totalTokens) + completionTokens, success });
   // Telemetry write: use dedicated connection with 200ms busy_timeout so WAL
   // contention from the sync worker never freezes the event loop.
   setImmediate(() => {
     try {
-      // The REGISTRY is the price source of truth; MODEL_PRICING is a legacy duplicate kept only for ids the
-      // registry doesn't carry. It silently lacked the models we actually run (deepseek-v4-flash), so a priced
-      // call logged $0 — a zero cost is indistinguishable from "no spend", which is how spend stays invisible.
-      const inputTokens = promptTokens || totalTokens;
-      // long-context surcharge (Haiku 5.5: 5× past 100k tokens) comes from the registry, per call size
-      const pricing = getModel(model) ? effectivePricing(model, inputTokens) : (MODEL_PRICING[model] || { input: 0, output: 0 });
-      // promptTokens is the WHOLE prompt (clients normalise this), so the cached portion is a subset of it.
-      // Cache reads bill ~0.1x; a cache WRITE bills ~1.25x (paid once per prefix, then amortised over the book).
-      const fresh = Math.max(0, inputTokens - cachedTokens - cacheWriteTokens);
-      // OFF-PEAK RATES. The scheduler PAUSES grounding through DeepSeek's full-price hours specifically to buy
-      // the discount (pipeline/peak.js), and the estimator then billed every one of those calls at list price.
-      // Result: $1,854 estimated all-time against an invoice of a few hundred (Chad, 2026-08-13) — a 4-6x
-      // overstatement in the number the BUDGET GATE stops work on. Reuse nowInPeak so the rate can never
-      // disagree with the schedule that earned it; a model with no offPeak block is unaffected.
-      const off = getModel(model)?.offPeak;
-      const inMult = off && !nowInPeak() ? off.input : 1;
-      const outMult = off && !nowInPeak() ? off.output : 1;
-      // Residual calibration against the real invoice: token counts are stored per call, so this is a dial,
-      // not a guess baked into history — and history can be recosted from the stored tokens at any time.
-      const cal = Number(process.env.AI_COST_CALIBRATION || 1);
-      const cacheRead = getModel(model)?.cacheRead ?? 0.1;   // per-model cache-hit share of the input rate (DeepSeek 2%)
-      const batchMult = batch ? (getModel(model)?.batch ?? 0.5) : 1;
-      const cost = batchMult * cal * ((fresh * pricing.input + cachedTokens * pricing.input * cacheRead
-        + cacheWriteTokens * pricing.input * 1.25) * inMult + completionTokens * pricing.output * outMult) / 1000;
       // document_id is a TEXT column, so a bound JS number lands as '15254.0' and `WHERE document_id=15254`
       // then matches NOTHING (int vs text storage classes). Normalise to a clean integer string on write so a
       // book's spend is actually findable; readers additionally CAST for the legacy dotted-zero rows.

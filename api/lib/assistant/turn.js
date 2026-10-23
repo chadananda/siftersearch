@@ -8,6 +8,8 @@ import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
 import { lintReply } from './lint.js';
 import { channelFor } from './channels.js';
+import { turnMeta } from './turn-meta.js';
+import { withAIContext, currentAIContext } from '../ai-context.js';
 
 const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -31,8 +33,17 @@ async function defaultDeps() {
 /** A message worth researching: two real words, or a passage of 40+ characters. Pure. */
 export const hasSubstance = (text) => (String(text || '').match(/\p{L}{3,}/gu) || []).length >= 2 || String(text || '').trim().length >= 40;
 
-export async function anisTurn({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, llm = undefined, deps }) {
+// Every turn runs under a per-turn METER (ai-context): each model call's model and cost land in the turn's path.meta
+// (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
+export async function anisTurn(args) {
+  const outer = currentAIContext().meter;
+  if (Array.isArray(outer)) return turnBody(args, outer);
+  const meter = [];
+  return withAIContext({ meter }, () => turnBody(args, meter));
+}
+
+async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
+  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, llm = undefined, deps }, meter = []) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const channel = channelFor(channelName, { trusted });
   const text = lastUser(messages);
@@ -53,7 +64,7 @@ export async function anisTurn({ messages, channel: channelName = 'widget-chat',
     }
     await d.sleep(tp.delayMs);
     onEvent({ type: 'stage', stage: 'craft' }); onEvent({ type: 'text', content: tp.text });
-    if (ex) await d.close({ ...ex, reply: tp.text, status: 'tarpit', path: { gate: 'tarpit' }, channel: channel.id }).catch(() => {});
+    if (ex) await d.close({ ...ex, reply: tp.text, status: 'tarpit', path: { gate: 'tarpit', meta: turnMeta({ status: 'tarpit', meter, ms: Date.now() - t0 }) }, channel: channel.id }).catch(() => {});
     return { reply: tp.text, status: 'tarpit', citations: [], retrieved: [], plan: null, conversationId: ex?.conversationId ?? null,
       timings: { total_ms: Date.now() - t0 } };
   }
@@ -70,6 +81,7 @@ export async function anisTurn({ messages, channel: channelName = 'widget-chat',
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms };
   const finish = async (reply, status, extra = {}) => {
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop, ...extra };
+    path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
     // the Observatory terminal: that a turn happened, how it was routed — never its text or who asked
     import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('anis', `${channel.id} · ${status}${route.kind ? ` · ${route.kind}` : ''}${extra.recipe ? ` · ${extra.recipe}` : ''}${extra.retrieved != null ? ` · ${extra.retrieved} paragraphs` : ''} · ${((Date.now() - t0) / 1000).toFixed(1)} s`)).catch(() => {});

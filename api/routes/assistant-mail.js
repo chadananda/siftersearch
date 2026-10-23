@@ -54,13 +54,21 @@ export default async function anisRoutes(fastify) {
     const { listAnisThreads, anisThread, anisThreadMessages } = await import('../lib/repos/anis-threads-repo.js');
     const hours = Math.min(Number(request.query?.hours) || 24, 24 * 14);
     const exclude = String(request.query?.exclude || '').split(',').filter(Boolean);
-    return digestConversations({ listThreads: listAnisThreads, thread: anisThread, messages: anisThreadMessages }, { hours, exclude });
+    const until = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(String(request.query?.until || '')) ? request.query.until : null;   // a past window (the digest page)
+    return digestConversations({ listThreads: listAnisThreads, thread: anisThread, messages: anisThreadMessages }, { hours, exclude, until });
   });
 
   // A reply to an inbound email: one ordinary Anís turn on the email channel (triage gate, research, output check).
   // One draft: reading guide first (Chad 10-12: "help me study <book>", then next / again / back / skip to …), else an
   // ordinary Anís turn on the email channel. research / writer override ANIS_RESEARCH / the writer (the battery).
-  async function draftFor({ messages, email = '', research = undefined, writer = null }) {
+  // Every draft carries `meta` (type · models · usd · latency_ms, turn-meta.js) — stored with the letter by the Worker and
+  // shown in Chad's daily conversation digest (10-22).
+  async function draftFor(b) {
+    const { meterTurn, turnMeta } = await import('../lib/assistant/turn-meta.js');
+    const { result, meter, ms } = await meterTurn(() => draftBody(b));
+    return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
+  }
+  async function draftBody({ messages, email = '', research = undefined, writer = null }) {
     const { parseLlm } = await import('../lib/assistant/respond.js');
     const llm = writer ? parseLlm(writer) : undefined;
     const { readingTurn } = await import('../lib/assistant/reading.js');
@@ -69,6 +77,7 @@ export default async function anisRoutes(fastify) {
     const { anisTurn } = await import('../lib/assistant/turn.js');
     const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, llm });
     return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
+      recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,
       research: r.plan?.shape === 'research' ? { steps: r.plan.steps, ms: r.plan.ms } : null };
   }
   let jobs = null;

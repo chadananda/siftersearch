@@ -6,6 +6,7 @@
 //   GET  /_mail/messages     internal key; ?mailbox=anis|newsletter &status=&direction=&limit=
 //   GET|POST /_mail/pause    footer / List-Unsubscribe one-click: stops all outreach to that address (no login)
 //   GET|POST /_mail/review   Chad's signed review page for one draft: edit, send or discard (drafting.js)
+//   GET  /_mail/digest       signed: the day's conversation digest as a page (every conversation, no size cap)
 //   cron → mailCron          drafting, outreach planning, daily digest (drafting.js); POST /_mail/run?job=draft|outreach|welcome|digest runs one now
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 import { AwsClient } from 'aws4fetch';
@@ -14,7 +15,7 @@ import { verifySns, isAmazonUrl } from './sns.js';
 import { composeLetter } from './letter.js';
 import { renderEmail } from '../../api/lib/mail-render.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
-import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter } from './drafting.js';
+import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage } from './drafting.js';
 
 const REGION = 'us-west-2';
 const ACCOUNT = '409305238362';
@@ -168,7 +169,7 @@ export async function sendMail(env, { to, subject, text, html, inReplyTo, refere
   const headers = pause ? [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }] : [];
   if (inReplyTo) headers.push({ Name: 'In-Reply-To', Value: inReplyTo });
   if (references || inReplyTo) headers.push({ Name: 'References', Value: references || inReplyTo });
-  return sesSend(env, { addr, subject, text, html, headers });
+  return { ...(await sesSend(env, { addr, subject, text, html, headers })), sent: { text, html } };
 }
 
 async function sesSend(env, { addr, subject, text, html, headers }) {
@@ -218,9 +219,12 @@ export async function deliver(env, row) {
   }
   const r = await sendMail(env, { to: row.to_addr, subject: row.subject, text: row.text, html: row.html, inReplyTo: row.in_reply_to, references: row.thread_key, kind: row.kind });
   const status = r.suppressed ? 'suppressed' : r.error ? 'failed' : 'sent';
-  await db.prepare(`UPDATE mail_messages SET status = ?, ses_message_id = ?, error = ?, sent_at = CASE WHEN ? = 'sent' THEN datetime('now') END WHERE id = ?`)
-    .bind(status, r.sesMessageId ?? null, r.error ?? null, status, row.id).run();
-  return { id: row.id, status, ...r };
+  // the row keeps the EXACT letter that went out (the conversation digest shows it as the reader saw it, Chad 10-22)
+  await db.prepare(`UPDATE mail_messages SET status = ?, ses_message_id = ?, error = ?, sent_at = CASE WHEN ? = 'sent' THEN datetime('now') END,
+      html = coalesce(?, html) WHERE id = ?`)
+    .bind(status, r.sesMessageId ?? null, r.error ?? null, status, status === 'sent' ? r.sent?.html ?? null : null, row.id).run();
+  const { sent, ...out } = r;
+  return { id: row.id, status, ...out };
 }
 
 
@@ -292,6 +296,7 @@ export function mailRoute(request, env) {
   if (request.method === 'GET' && p === '/_mail/messages') return list(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/pause') return pausePage(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/review') return reviewPage(request, env);
+  if (request.method === 'GET' && p === '/_mail/digest') return digestPage(request, env);
   if (request.method === 'POST' && p === '/_mail/run') return runJob(request, env);
   if (request.method === 'POST' && p === '/_mail/support') return support(request, env);
   return null;
@@ -324,11 +329,11 @@ async function runJob(request, env) {
   const job = new URL(request.url).searchParams.get('job');
   const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest }[job];
   if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest' }, 400);
-  await fn(env);
-  return json({ ran: job });
+  const r = await fn(env);
+  return json({ ran: job, ...(r && typeof r === 'object' ? r : {}) });
 }
 
-/** Cron (wrangler.jsonc triggers): drafts every MINUTE (Chad 10-13: read, reply, get the next page right away), outreach hourly, the digest daily at 14:00 UTC (7 am Pacific). */
+/** Cron (wrangler.jsonc triggers): drafts every MINUTE (Chad 10-13: read, reply, get the next page right away), outreach hourly, the conversation digest daily at 14:00 UTC (07:00 MST, Chad). */
 export async function mailCron(cron, env) {
   if (cron === '0 14 * * *') return dailyDigest(env);
   if (cron === '0 * * * *') return planOutreach(env);

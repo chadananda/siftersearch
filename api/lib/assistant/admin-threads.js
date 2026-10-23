@@ -5,6 +5,7 @@
 import { auditsFor } from '../repos/audit-store-repo.js';
 import fs from 'fs';
 import { emailHash } from './pause-link.js';
+import { turnType } from './turn-meta.js';
 
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } };
 
@@ -120,7 +121,10 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
       const p = safeJson(r.path_json) || {};
       e.reply = { id: r.id, text: r.content, status: r.status, at: r.answered_at || r.created_at, channel: r.channel,
         route: { gate: p.gate || null, strategy: p.recipe || p.plan?.shape || null, format: p.format?.id || null, retrieved: p.retrieved ?? p.passages ?? null },
-        audit: auditView(byId.get(Number(r.id))) };
+        audit: auditView(byId.get(Number(r.id))),
+        // type · models · usd · latency (turn-meta.js; turns before 10-22 carry no meter → type and latency only)
+        meta: p.meta || { type: turnType({ status: r.status, gate: p.gate, kind: p.kind, recipe: p.recipe, format: p.format?.id ?? p.format }), models: [], usd: null,
+          latency_ms: p.timings?.total_ms ?? null } };
     }
   }
   return { id: t.id, channel: t.channel, title: t.title, started_at: t.started_at, last_activity: t.last_activity, person: personOf(t.participant_id, who), rounds: [...rounds.values()] };
@@ -157,18 +161,19 @@ export function strategyGaps(rows = []) {
  *  to head off poor answers"): every round answered in the last `hours`, grouped by person, each with its audit — the
  *  reviewer's own (test) questions left out. → { hours, people: [{ person, channel, rounds: [{ at, question, reply, status,
  *  route, audit }] }] } */
-export async function digestConversations({ listThreads, thread, messages, audits = auditsFor, people = mailPeople }, { hours = 24, exclude = [] } = {}) {
-  const since = Date.now() - hours * 3600e3;
+export async function digestConversations({ listThreads, thread, messages, audits = auditsFor, people = mailPeople }, { hours = 24, exclude = [], until = null } = {}) {
+  const end = until ? Date.parse(until) : Date.now();
+  const since = end - hours * 3600e3;
   const at = (s) => Date.parse(String(s || '').replace(' ', 'T') + (/[zZ+]/.test(String(s)) ? '' : 'Z'));
-  const rows = await listThreads({ days: Math.ceil(hours / 24) + 1, limit: 500 });
+  const rows = await listThreads({ days: Math.ceil((Date.now() - since) / 86400e3) + 1, limit: 500 });
   const skip = new Set(exclude.map((e) => String(e).toLowerCase()));
   const out = [];
   for (const t of rows) {
-    if (at(t.last_at) < since) continue;
+    if (at(t.last_at) < since) continue;   // (a thread active after `end` may still hold rounds inside the window)
     const d = await threadDetail({ thread, messages, audits, people }, t.id);
     if (!d || (d.person?.email && skip.has(d.person.email.toLowerCase()))) continue;
-    const rounds = d.rounds.filter((r) => r.reply && at(r.reply.at) >= since).map((r) => ({ at: r.reply.at, question: r.question?.text || '', reply: r.reply.text,
-      status: r.reply.status, channel: r.reply.channel || d.channel, route: r.reply.route, audit: r.reply.audit }));
+    const rounds = d.rounds.filter((r) => r.reply && at(r.reply.at) >= since && at(r.reply.at) < end).map((r) => ({ at: r.reply.at, asked_at: r.question?.at || null,
+      question: r.question?.text || '', reply: r.reply.text, status: r.reply.status, channel: r.reply.channel || d.channel, route: r.reply.route, audit: r.reply.audit, meta: r.reply.meta }));
     if (rounds.length) out.push({ thread: d.id, person: d.person, channel: d.channel, rounds });
   }
   return { hours, people: out };

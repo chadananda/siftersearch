@@ -81,7 +81,7 @@ describe('Anís replies: what SES is handed (no real send)', () => {
     const { sendMail } = await import('../../worker/mail/index.js');
     const env = { AWS_SES_ACCESS_KEY_ID: 'k', AWS_SES_SECRET_ACCESS_KEY: 's', ANIS_DB: { prepare: () => ({ bind: () => ({ first: async () => null }) }) } };
     const r = await sendMail(env, { to: 'reader@example.org', subject: 'Re: q', text: `Dear friend,\n\n${MD}\n\nWarmly,\nAnís`, kind: 'reply' });
-    expect(r).toEqual({ sesMessageId: 'm1' });
+    expect(r).toMatchObject({ sesMessageId: 'm1' });
     const body = bodies[0].Content.Simple.Body;
     expect(body.Html.Data).toMatch(/<strong style="[^"]*">ḥakam<\/strong>/);
     expect(body.Html.Data).toMatch(/<a [^>]*href="https:\/\/oceanlibrary.com\/sv#p1"/);

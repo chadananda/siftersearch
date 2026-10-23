@@ -10,7 +10,9 @@
 import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody, composeLetter } from './letter.js';
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
-import { digestHtml } from './digest-html.js';
+import { conversationDigest, chatReplyHtml } from './conversation-digest.js';
+import { emailDocument } from '../../api/lib/mail-render.js';
+import { pauseToken } from './rules.js';
 
 const TOWER = 'https://api.siftersearch.com/api/v1/anis';
 const SITE = 'https://siftersearch.com';
@@ -134,9 +136,10 @@ export async function draftReplies(env, limit = 4) {
       if (stop || personal) {                                            // no outreach after "stop" or a personal disclosure
         await db.prepare('INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, ?)').bind(await emailHash(m.from_addr), stop ? 'asked to stop' : 'personal disclosure').run();
       }
-      const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key, error)
-        VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, replySubject(m.subject, r.subject), tidy(r.reply), toHtml(tidy(r.reply)),
-        m.message_id, m.thread_key, `source:${m.id}; anis:${r.status}${r.triage?.stance ? `; stance:${r.triage.stance}` : ''}`).first();
+      const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key, error, meta_json)
+        VALUES ('anis', 'reply', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, m.from_addr, replySubject(m.subject, r.subject), tidy(r.reply), toHtml(tidy(r.reply)),
+        m.message_id, m.thread_key, `source:${m.id}; anis:${r.status}${r.triage?.stance ? `; stance:${r.triage.stance}` : ''}`,
+        JSON.stringify({ ...(r.meta || {}), conversation: r.conversationId ?? null })).first();
       await db.prepare(`UPDATE mail_messages SET status = 'drafted' WHERE id = ?`).bind(m.id).run();
       // Writing to Anís IS consent to engage (Chad 10-12: "a hyper-engagement tool … to expand the user base"): the writer
       // joins the list → this reply goes at once and the outreach cadence follows. Ignored senders never reach here
@@ -321,11 +324,126 @@ export async function dailyDigest(env) {
     ...(ignored.length ? [`Ignored senders: ${ignored.map((i) => `${i.pattern} (${i.hits} total)`).join(', ')}`] : []),
   ].join('\n');
   const mailHtml = `<pre style="font:13px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;color:#444">${esc(text).replace(/(https:\/\/siftersearch\.com\/_mail\/review\?t=[\w.]+)/g, '<a href="$1">review</a>')}</pre>`;
-  // her CONVERSATIONS first — every question and answer of the day, the ones the auditor flagged on top (Chad 10-19:
-  // "replicate [Jafar's digest] for Anis … follow conversations early on to head off poor answers"); the mail activity after
-  const conv = await fetch(`${TOWER}/digest?hours=24&exclude=${encodeURIComponent(settings.reviewer_email)}`, { headers: { 'x-internal-key': env.S1_KEY } })
-    .then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  const d = digestHtml(conv || { hours: 24, people: [] }, { mailHtml });
-  const html = conv ? d.html : `<p style="color:#b33">Conversations could not be read from the server today.</p>${mailHtml}`;
-  await sendMail(env, { to: settings.reviewer_email, subject: `Anís digest — ${new Date().toISOString().slice(0, 10)} · ${d.questions} question${d.questions === 1 ? '' : 's'}${d.flagged ? ` · ${d.flagged} need a look` : ''} · ${out.filter((o) => o.status === 'sent').length} sent${pending.length ? ` · ${pending.length} drafts waiting` : ''}`, text, html, system: true });
+  // EVERY CONVERSATION as the reader saw it (Chad 10-22: "daily digests of every Anís conversation … exactly as it is seen
+  // by the recipient so I can tweak"); the mail activity above becomes the appendix. No conversations → no email.
+  const until = new Date();
+  const g = await gatherConversations(env, { until, settings });
+  if (!g.conversations.length) return { sent: false, conversations: 0 };
+  const d = conversationDigest(g.conversations, { date: until.toISOString().slice(0, 10), reviewer: settings.reviewer_email,
+    fullUrl: await digestUrl(until, env.MAIL_LINK_SECRET), mailHtml, skipped: g.skipped });
+  const subject = `Anís conversations — ${until.toISOString().slice(0, 10)} · ${d.conversations} conversation${d.conversations === 1 ? '' : 's'} · ${d.replies} repl${d.replies === 1 ? 'y' : 'ies'}`
+    + `${d.flagged ? ` · ${d.flagged} flagged` : ''}${d.held ? ` · ${d.held} held` : ''}${g.towerDown ? ' · web chat unavailable' : ''}`;
+  await sendMail(env, { to: settings.reviewer_email, subject, text: `${d.text}\n\n${text}`, html: d.html, system: true });
+  return { sent: true, conversations: d.conversations, replies: d.replies, truncated: d.truncated };
+}
+
+// ── the conversation digest's data: email threads from D1 (the letters exactly as sent), web chat / widget rounds from
+// tower's exchange log (/anis/digest), joined on the reader and time so each letter gets its audit and thread ──
+const QUIET = new Set(['battery@siftersearch.com', 'test-rerun@siftersearch.com']);   // test batteries: counted, not shown
+const sqlTime = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+const atMs = (s) => Date.parse(String(s || '').replace(' ', 'T') + (/[zZ+]/.test(String(s)) ? '' : 'Z'));
+const LETTER_TYPE = { welcome: 'welcome letter', outreach: 'outreach letter' };
+const RECIPE = { define: 'CTAI term study', source: 'source hunt', original: 'original text', research: 'research answer', language: 'language answer', position: 'position answer' };
+const routeType = (route, status) => (!route ? null : status === 'canned' || route.gate === 'canned' ? 'canned' : route.gate === 'tarpit' ? 'triage: tarpit'
+  : RECIPE[route.strategy] || (route.strategy ? `answer (${route.strategy})` : null));
+// (the draft's error note 'source:N; anis:<status>' is cleared when it is sent, so this mostly sees drafts)
+const fromError = (row) => {
+  const anis = /anis:(\w+)/.exec(row.error || '')?.[1];
+  if (/^support letter/.test(row.error || '')) return 'support letter';
+  return LETTER_TYPE[row.kind] || { reading: 'reading guide', canned: 'canned', tarpit: 'triage: tarpit', answered: 'answer' }[anis] || 'reply';
+};
+
+/** → { conversations, skipped, towerDown } for the `hours` before `until`. */
+export async function gatherConversations(env, { until = new Date(), hours = 24, settings = null, fetchTower = null } = {}) {
+  const db = env.ANIS_DB;
+  settings ||= await loadSettings(db);
+  const end = until.getTime(), start = end - hours * 3600e3;
+  const rows = (await db.prepare(`SELECT * FROM mail_messages WHERE mailbox IN ('anis', 'support') AND created_at >= ? AND created_at < ?
+      AND NOT (direction = 'in' AND status IN ('spam', 'auto')) AND NOT (direction = 'out' AND status IN ('discarded', 'silent')) ORDER BY id`)
+    .bind(sqlTime(start), sqlTime(end)).all()).results;
+  const get = fetchTower || ((path) => fetch(`${TOWER}${path}`, { headers: { 'x-internal-key': env.S1_KEY } }).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  const tower = await get(`/digest?hours=${hours}&until=${encodeURIComponent(until.toISOString())}`);
+  // tower's email rounds, per reader, to give each letter its audit / meter / thread
+  const towerEmail = new Map();
+  for (const p of tower?.people || []) for (const r of p.rounds) {
+    if (r.channel !== 'email' || !p.person?.email) continue;
+    const k = p.person.email.toLowerCase();
+    towerEmail.set(k, [...(towerEmail.get(k) || []), { ...r, thread: p.thread, used: false }]);
+  }
+  const match = (addr, at) => {
+    const best = (towerEmail.get(String(addr).toLowerCase()) || []).filter((r) => !r.used && Math.abs(atMs(r.at) - atMs(at)) < 20 * 60e3)
+      .sort((a, b) => Math.abs(atMs(a.at) - atMs(at)) - Math.abs(atMs(b.at) - atMs(at)))[0];
+    if (best) best.used = true;
+    return best || null;
+  };
+  let skipped = 0;
+  const threads = new Map();
+  for (const m of rows) {
+    const key = m.thread_key || `id:${m.id}`;
+    if (!threads.has(key)) threads.set(key, { key, channel: 'email', thread: null, person: null, types: [], items: [] });
+    const c = threads.get(key);
+    if (m.direction === 'in') {
+      c.person ||= { email: m.from_addr, name: m.from_name };
+      c.items.push({ kind: 'in', at: m.created_at, from: m.from_addr, fromName: m.from_name, subject: m.subject, text: ownText(m.text || ''), status: m.status, channel: 'email' });
+      continue;
+    }
+    c.person ||= { email: m.to_addr, name: null };
+    const t = match(m.to_addr, m.created_at);
+    let meta = null; try { meta = m.meta_json ? JSON.parse(m.meta_json) : null; } catch { /* old row */ }
+    // rows from before 10-22 carry no meter: the type from tower's route, the latency = how long the reader waited
+    const lastIn = [...c.items].reverse().find((x) => x.kind === 'in');
+    meta ||= t?.meta || { type: routeType(t?.route, t?.status) || fromError(m), models: [], usd: null,
+      latency_ms: lastIn && m.kind === 'reply' ? atMs(m.sent_at || m.created_at) - atMs(lastIn.at) : null };
+    if (!meta.type) meta.type = fromError(m);
+    if (meta.conversation || t?.thread) c.thread ||= meta.conversation || t.thread;
+    // the letter as it went out: the stored send-time HTML; rows from before 10-22 lack the pause footer → composed again
+    let html = m.html;
+    if (!html || (m.status === 'sent' && m.kind !== 'reply' && !/Rather not hear/.test(html))) {
+      const pause = m.kind === 'reply' ? null : `${SITE}/_mail/pause?t=${await pauseToken(String(m.to_addr).toLowerCase(), env.MAIL_LINK_SECRET)}`;
+      html = composeLetter(m.text || '', pause).html;
+    }
+    c.items.push({ kind: 'out', at: m.sent_at || m.created_at, to: m.to_addr, subject: m.subject, html, text: m.text, status: m.status, channel: 'email',
+      meta, audit: t?.audit || null, review: await reviewUrl(m.id, env.MAIL_LINK_SECRET) });
+    if (!c.types.includes(meta.type)) c.types.push(meta.type);
+  }
+  const conversations = [];
+  for (const c of threads.values()) {
+    if (QUIET.has(String(c.person?.email || '').toLowerCase())) { skipped += c.items.filter((x) => x.kind === 'out').length; continue; }
+    conversations.push(c);
+  }
+  // web chat, widget — and email rounds tower answered that never went through the mailbox (none expected)
+  for (const p of tower?.people || []) {
+    const email = String(p.person?.email || '').toLowerCase();
+    const rounds = p.rounds.filter((r) => r.channel !== 'email' || !r.used && !(towerEmail.get(email) || []).find((x) => x.at === r.at && x.used));
+    if (!rounds.length) continue;
+    if (QUIET.has(email)) { skipped += rounds.length; continue; }
+    const c = { key: p.thread, channel: rounds[0].channel || p.channel, thread: p.thread, person: p.person, types: [], items: [] };
+    for (const r of rounds) {
+      c.items.push({ kind: 'in', at: r.asked_at || r.at, from: p.person?.email || '', fromName: p.person?.name || null, text: r.question, status: r.status === 'failed' ? 'failed' : null, channel: r.channel });
+      const meta = r.meta || { type: 'answer', models: [], usd: null, latency_ms: null };
+      c.items.push({ kind: 'out', at: r.at, to: p.person?.email || '', html: r.channel === 'email' ? composeLetter(r.reply || '', null).html : chatReplyHtml(r.reply), text: r.reply,
+        status: r.status, channel: r.channel, meta, audit: r.audit });
+      if (!c.types.includes(meta.type)) c.types.push(meta.type);
+    }
+    conversations.push(c);
+  }
+  conversations.sort((a, b) => atMs(a.items[0]?.at) - atMs(b.items[0]?.at));
+  return { conversations, skipped, towerDown: !tower };
+}
+
+// ── the digest as a page (signed link; the email links here when it passes ~1 MB) ──
+async function digestSig(untilSec, secret) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`anis-digest:${untilSec}`))).slice(0, 32);
+}
+export const digestUrl = async (until, secret) => { const u = Math.floor(until.getTime() / 1000); return `${SITE}/_mail/digest?t=${u}.${await digestSig(u, secret)}`; };
+export async function digestPage(request, env) {
+  const [u, s] = String(new URL(request.url).searchParams.get('t') || '').split('.');
+  if (!/^\d+$/.test(u || '') || s !== (await digestSig(u, env.MAIL_LINK_SECRET))) return page('<h1>This link is not valid</h1>');
+  const until = new Date(Number(u) * 1000);
+  const settings = await loadSettings(env.ANIS_DB);
+  const g = await gatherConversations(env, { until, settings });
+  const d = conversationDigest(g.conversations, { date: until.toISOString().slice(0, 10), reviewer: settings.reviewer_email, skipped: g.skipped, maxBytes: Infinity });
+  return new Response(emailDocument(d.html, { title: `Anís conversations ${until.toISOString().slice(0, 10)}` }),
+    { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
 }
