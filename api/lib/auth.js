@@ -65,6 +65,12 @@ export async function createRefreshToken(userId) {
 
 // Grace period in seconds for recently revoked tokens (handles navigation race condition)
 const REVOKE_GRACE_PERIOD_SECONDS = 30;
+// A token ROTATED away by /refresh (revoked = 2) stays acceptable much longer than one revoked by
+// logout/password change (revoked = 1). Every page load rotates; if the response carrying the new
+// cookie is lost (tunnel reconnect, 502/524 after the origin committed — the 10-22 storm), the browser
+// still holds the old cookie. With only 30 s of grace that browser was logged out for good on its next
+// visit. Access tokens already live 7 days, so a 24 h rotation window weakens nothing.
+const ROTATION_GRACE_SECONDS = parseInt(process.env.REFRESH_ROTATION_GRACE_SECONDS || String(24 * 60 * 60), 10);
 
 export async function verifyRefreshToken(tokenId) {
   const now = new Date().toISOString();
@@ -75,19 +81,18 @@ export async function verifyRefreshToken(tokenId) {
     [tokenId, now]
   );
 
-  // If not found, check for recently revoked token (grace period for navigation race condition)
-  // This handles the case where token was rotated but browser sent old cookie during navigation
+  // Recently revoked: 30 s for any revocation (navigation race), ROTATION_GRACE for rotation only.
   if (!token) {
-    // Calculate the cutoff time (now - grace period) in ISO format
-    const cutoffTime = new Date(Date.now() - REVOKE_GRACE_PERIOD_SECONDS * 1000).toISOString();
+    const cutoff = new Date(Date.now() - REVOKE_GRACE_PERIOD_SECONDS * 1000).toISOString();
+    const rotationCutoff = new Date(Date.now() - ROTATION_GRACE_SECONDS * 1000).toISOString();
     token = await queryOne(
       `SELECT * FROM refresh_tokens
        WHERE id = ?
-       AND revoked = 1
+       AND revoked IN (1, 2)
        AND revoked_at IS NOT NULL
        AND expires_at > ?
-       AND revoked_at > ?`,
-      [tokenId, now, cutoffTime]
+       AND revoked_at > CASE WHEN revoked = 2 THEN ? ELSE ? END`,
+      [tokenId, now, rotationCutoff, cutoff]
     );
   }
 
@@ -98,6 +103,16 @@ export async function revokeRefreshToken(tokenId) {
   const now = new Date().toISOString();
   await query(
     'UPDATE refresh_tokens SET revoked = 1, revoked_at = ? WHERE id = ?',
+    [now, tokenId]
+  );
+}
+
+// Rotation: mark the old token superseded (revoked = 2). Only a live token is touched, so replaying a
+// rotated token inside its grace window never extends that window.
+export async function rotateRefreshToken(tokenId) {
+  const now = new Date().toISOString();
+  await query(
+    'UPDATE refresh_tokens SET revoked = 2, revoked_at = ? WHERE id = ? AND revoked = 0',
     [now, tokenId]
   );
 }

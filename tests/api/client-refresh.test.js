@@ -85,3 +85,40 @@ describe('token refresh', () => {
     await expect(auth.refresh()).resolves.toBe(false);
   });
 });
+
+// 10-22: during a storm the tunnel flapped (Cloudflare 530s) and Chad's nav showed the guest
+// state. Only an authoritative 400/401/403 from our API may mean "signed out".
+describe('refresh outcome: denied vs transient', () => {
+  const failing = (status) => ({ ok: false, status, body: { cancel: vi.fn(async () => {}) }, json: async () => ({}) });
+  const okToken = (t) => ({ ok: true, status: 200, body: { cancel: vi.fn() }, json: async () => ({ accessToken: t }) });
+
+  it.each([530, 502, 503, 504, 524, 500, 429])('a %i is transient, not a sign-out', async (status) => {
+    fetchMock.mockResolvedValue(failing(status));
+    await expect(auth.refreshStatus()).resolves.toBe('transient');
+  });
+
+  it('a network error is transient', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    await expect(auth.refreshStatus()).resolves.toBe('transient');
+  });
+
+  it.each([400, 401, 403])('a %i is a definitive sign-out', async (status) => {
+    fetchMock.mockResolvedValue(failing(status));
+    await expect(auth.refreshStatus()).resolves.toBe('denied');
+  });
+
+  it('a transient failure keeps the in-memory access token', async () => {
+    const api = await import('../../src/lib/api.js');
+    fetchMock.mockResolvedValueOnce(okToken('tok_live'));
+    await auth.refreshStatus();
+    expect(api.getAccessToken()).toBe('tok_live');
+
+    fetchMock.mockResolvedValueOnce(failing(530));
+    await auth.refreshStatus();
+    expect(api.getAccessToken()).toBe('tok_live');
+
+    fetchMock.mockResolvedValueOnce(failing(401));
+    await auth.refreshStatus();
+    expect(api.getAccessToken()).toBe(null);
+  });
+});

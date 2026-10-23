@@ -12,27 +12,90 @@ let user = $state(null);
 let loading = $state(true);
 let error = $state(null);
 
+// Last user the server confirmed, so a page load during an outage shows who you are rather than
+// "Connect Free". Display only — it grants nothing; the API still requires the cookie/token.
+const LAST_USER_KEY = 'sifter_last_user';
+
+function readLastUser() {
+  try { return JSON.parse(localStorage.getItem(LAST_USER_KEY) || 'null'); } catch { return null; }
+}
+function rememberUser(u) {
+  try {
+    if (u) localStorage.setItem(LAST_USER_KEY, JSON.stringify(u));
+    else localStorage.removeItem(LAST_USER_KEY);
+  } catch { /* storage unavailable */ }
+}
+function setUser(u) {
+  user = u;
+  rememberUser(u);
+}
+
+const RETRY_BASE_MS = 2000;
+const RETRY_MAX_MS = 60000;
+let initInFlight = null;
+let retryTimer = null;
+let retryAttempt = 0;
+let onlineListener = null;
+
+function scheduleRetry() {
+  if (typeof window === 'undefined' || retryTimer) return;
+  const delay = Math.min(RETRY_MAX_MS, RETRY_BASE_MS * Math.pow(2, retryAttempt++));
+  retryTimer = setTimeout(() => { retryTimer = null; initAuth(); }, delay);
+  if (!onlineListener && typeof window.addEventListener === 'function') {
+    onlineListener = () => {
+      clearTimeout(retryTimer); retryTimer = null;
+      initAuth();
+    };
+    window.addEventListener('online', onlineListener);
+  }
+}
+function stopRetrying() {
+  clearTimeout(retryTimer); retryTimer = null; retryAttempt = 0;
+  if (onlineListener && typeof window !== 'undefined') window.removeEventListener?.('online', onlineListener);
+  onlineListener = null;
+}
+
 /**
- * Initialize auth state - check if user is logged in
+ * Initialize auth state - check if user is logged in.
  * Always attempts refresh since httpOnly cookies aren't visible to JavaScript.
- * The refresh endpoint will fail gracefully for anonymous users (no cookie).
+ * Signs the user out ONLY on an authoritative 400/401/403 from our API. A network error, 5xx,
+ * Cloudflare 530/52x or timeout means "unknown": keep the last known user and retry with backoff.
+ * Concurrent callers (NavBar, ChatInterface, admin pages) share one check.
  */
-export async function initAuth() {
-  loading = true;
+export function initAuth() {
+  if (!initInFlight) initInFlight = runInitAuth().finally(() => { initInFlight = null; });
+  return initInFlight;
+}
+
+async function runInitAuth() {
+  if (!user) loading = true;
   error = null;
 
   try {
-    // Always try to refresh - httpOnly cookies aren't visible to document.cookie
-    // The server will return 401 if no valid refresh token cookie exists (anonymous users)
-    // This silently fails for anonymous users which is the expected behavior
-    const refreshed = await authApi.refresh();
-    if (refreshed) {
-      const data = await authApi.me();
-      user = data.user;
+    const status = await authApi.refreshStatus();
+    if (status === 'denied') {
+      setUser(null);
+      stopRetrying();
+      return;
     }
-  } catch {
-    // Not logged in or token expired - this is expected for anonymous users
-    user = null;
+    if (status === 'transient') {
+      if (!user) user = readLastUser();
+      scheduleRetry();
+      return;
+    }
+    try {
+      const data = await authApi.me();
+      setUser(data.user);
+      stopRetrying();
+    } catch (err) {
+      if (err?.status === 401 || err?.status === 403) {
+        setUser(null);
+        stopRetrying();
+      } else {
+        if (!user) user = readLastUser();
+        scheduleRetry();
+      }
+    }
   } finally {
     loading = false;
   }
@@ -51,7 +114,7 @@ export async function login(email, password) {
 
   try {
     const data = await authApi.login(email, password);
-    user = data.user;
+    setUser(data.user);
     return { success: true };
   } catch (err) {
     error = err.message || 'Login failed';
@@ -69,7 +132,7 @@ export async function googleLogin(credential) {
   error = null;
   try {
     const data = await authApi.google(credential);
-    user = data.user;
+    setUser(data.user);
     return { success: true };
   } catch (err) {
     error = err.message || 'Google sign-in failed';
@@ -88,7 +151,7 @@ export async function signup(email, password, name, referralCode = null) {
 
   try {
     const data = await authApi.signup(email, password, name, referralCode);
-    user = data.user;
+    setUser(data.user);
     return { success: true };
   } catch (err) {
     error = err.message || 'Signup failed';
@@ -109,7 +172,8 @@ export async function logout() {
   } catch {
     // Ignore errors
   } finally {
-    user = null;
+    setUser(null);
+    stopRetrying();
     // Generate a fresh anonymous user ID for the logged-out session
     if (typeof localStorage !== 'undefined') {
       const newUserId = 'user_' + crypto.randomUUID();

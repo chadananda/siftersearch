@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-23T00:39:33.063Z",
+  "generated": "2026-10-23T00:49:10.177Z",
   "entries": [
+    {
+      "hash": "4020ff77",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "Deploy (media import progress on /admin/media)",
+      "scope": null
+    },
     {
       "hash": "d9aa15cc",
       "date": "2026-10-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Deep questions in their own field; yes/no and book-named questions dropped in code (Haiku broke both in the v14 sample)",
       "scope": "hype"
-    },
-    {
-      "hash": "731622ad",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Select paragraphs by paragraph_index",
-      "scope": "hype-sample"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "4020ff77",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "Deploy (media import progress on /admin/media)",
+        "scope": null
+      },
       {
         "hash": "d9aa15cc",
         "date": "2026-10-22",
@@ -7014,13 +7021,6 @@
         "type": "New",
         "description": "Deep questions in their own field; yes/no and book-named questions dropped in code (Haiku broke both in the v14 sample)",
         "scope": "hype"
-      },
-      {
-        "hash": "731622ad",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Select paragraphs by paragraph_index",
-        "scope": "hype-sample"
       }
     ]
   }

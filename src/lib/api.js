@@ -232,25 +232,44 @@ async function handleResponse(response) {
 let refreshInFlight = null;
 
 /**
- * Refresh the access token using the refresh token cookie
- * Silently returns false if no refresh token exists (anonymous users)
+ * Refresh the access token using the refresh token cookie.
+ * Resolves true/false; false covers both "not signed in" and "could not tell" — callers that must
+ * tell those apart (initAuth) use refreshStatus().
  */
 function refreshToken() {
+  return refreshStatus().then(s => s === 'ok');
+}
+
+// 'ok' | 'denied' | 'transient'. ONLY an authoritative answer from our API (400/401/403) is 'denied'.
+// A network error, a 5xx, a Cloudflare 52x/530 (tunnel down), a 429 or a timeout is 'transient': the
+// session is unknown, NOT gone — the cookie and any in-memory token are kept. (10-22: a storm made the
+// tunnel flap; every page load in that window read as "signed out".)
+function refreshStatus() {
   if (!refreshInFlight) {
     refreshInFlight = doRefreshToken().finally(() => { refreshInFlight = null; });
   }
   return refreshInFlight;
 }
 
+export function isDefinitiveAuthFailure(status) {
+  return status === 400 || status === 401 || status === 403;
+}
+
+const REFRESH_TIMEOUT_MS = 15000;
+
 async function doRefreshToken() {
+  let timer;
   try {
+    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    if (ctrl) timer = setTimeout(() => ctrl.abort(), REFRESH_TIMEOUT_MS);
     const response = await fetch(`${API_URL}/api/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
+      ...(ctrl ? { signal: ctrl.signal } : {})
     });
 
     if (!response.ok) {
@@ -260,16 +279,21 @@ async function doRefreshToken() {
       // idle — which is exactly what it did: two /api/auth/refresh fetches still in
       // flight 30s after a home page that finished loading in 880ms.
       await response.body?.cancel().catch(() => {});
-      clearAccessToken();
-      return false;
+      if (isDefinitiveAuthFailure(response.status)) {
+        clearAccessToken();
+        return 'denied';
+      }
+      return 'transient';
     }
 
     const data = await response.json();
+    if (!data?.accessToken) return 'transient'; // an HTML error page with 200, a proxy oddity
     accessToken = data.accessToken;
-    return true;
+    return 'ok';
   } catch {
-    clearAccessToken();
-    return false;
+    return 'transient';
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -316,6 +340,11 @@ export const auth = {
 
   async refresh() {
     return refreshToken();
+  },
+
+  /** 'ok' | 'denied' | 'transient' — see refreshStatus. */
+  async refreshStatus() {
+    return refreshStatus();
   }
 };
 

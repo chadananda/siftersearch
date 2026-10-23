@@ -21,6 +21,7 @@ import {
   createRefreshToken,
   verifyRefreshToken,
   revokeRefreshToken,
+  rotateRefreshToken,
   authenticate
 } from '../lib/auth.js';
 import { unifyUserId, temporaryIds, clearConnectedIdentity } from '../lib/anonymous.js';
@@ -484,9 +485,11 @@ export default async function authRoutes(fastify) {
         throw ApiError.unauthorized('Account not found or suspended');
       }
 
-      // Rotate refresh token
-      await revokeRefreshToken(tokenId);
+      // Rotate: mint the new token BEFORE retiring the old one, so a failed insert (writer down)
+      // never leaves the browser holding only a dead cookie; the old one is superseded (revoked = 2),
+      // not revoked, so a lost response is recoverable — see rotateRefreshToken.
       const newRefresh = await createRefreshToken(user.id);
+      await rotateRefreshToken(tokenId);
       const accessToken = createAccessToken(user);
 
       setRefreshCookie(reply, newRefresh);
