@@ -49,7 +49,7 @@
   --highlight-playing: light-dark(rgba(254, 240, 138, 0.55), rgba(253, 224, 71, 0.22));
   --highlight-range: light-dark(rgba(14, 165, 233, 0.08), rgba(56, 189, 248, 0.10));
 
-  /* The Listening Room (/media listing): a 1940s broadcast set — cream paper, walnut, brass, an amber dial in light mode;
+  /* The Fireside Room (/media listing): a 1940s broadcast set — cream paper, walnut, brass, an amber dial in light mode;
      valve-amp warmth (deep walnut, glowing amber) in dark mode. Era tints colour generated labels and waveforms by decade. */
   --radio-room: light-dark(#f6efe1, #15100b);
   --radio-paper: light-dark(#fbf6ea, #1e1711);
@@ -71,6 +71,52 @@
   --radio-on-dark: #f8ecd4;
   --radio-on-needle: light-dark(#fbf3e4, #1b0f08);
   --radio-line: light-dark(rgba(59, 36, 20, 0.16), rgba(244, 230, 207, 0.12));
+
+  /* The Library landing (/library, planning/library-landing-design.md): editorial and cover-first — warm paper and
+     ink by day, a gallery-dark room at night where the cover art glows. Section tints are taken from the covers' own
+     colours (oxblood and navy bindings, emerald, lacquer red…). Cloths bind the typographic covers of books without art. */
+  --lib-bg: light-dark(#f6f2ea, #0f0d0b);
+  --lib-raised: light-dark(#fffdf8, #1a1714);
+  --lib-sunk: light-dark(#ece6da, #161310);
+  --lib-ink: light-dark(#17130e, #f2ece2);
+  --lib-ink-soft: light-dark(#5e5548, #b7ad9e);
+  --lib-ink-faint: light-dark(#8a8072, #8a8174);
+  --lib-line: light-dark(rgba(23, 19, 14, 0.12), rgba(242, 236, 226, 0.12));
+  --lib-accent: light-dark(#8c2a1c, #f08a6c);
+  --lib-live: light-dark(#2f7d4f, #6fdc98);
+  --lib-shadow: light-dark(rgba(40, 26, 12, 0.28), rgba(0, 0, 0, 0.6));
+  --lib-glow: light-dark(rgba(255, 255, 255, 0.0), rgba(255, 220, 170, 0.06));
+  --lib-backdrop: light-dark(rgba(23, 19, 14, 0.55), rgba(0, 0, 0, 0.78));
+  --trad-bahai: light-dark(#7a1f2b, #d9737c);
+  --trad-judaism: light-dark(#22386e, #8aa6e6);
+  --trad-buddhist: light-dark(#9a2f1e, #ec8a6c);
+  --trad-islam: light-dark(#1d5a40, #6cc99a);
+  --trad-christian: light-dark(#6a2335, #e08aa0);
+  --trad-zoroastrian: light-dark(#a0461b, #f29c66);
+  --trad-tao: light-dark(#2d4a3e, #95cdb2);
+  --trad-hindu: light-dark(#a9581a, #f2aa5e);
+  --trad-confucian: light-dark(#a3301f, #f0866e);
+  --trad-sikh: light-dark(#233f78, #93b0ee);
+  --trad-jain: light-dark(#9a6a14, #eabd60);
+  --trad-other: light-dark(#4a4238, #c9bba6);
+  /* typographic covers are objects, bound the same in both themes */
+  --cloth-oxblood: #6b1d22;
+  --cloth-claret: #792538;
+  --cloth-navy: #1c2a50;
+  --cloth-prussian: #1a4152;
+  --cloth-forest: #1f4a35;
+  --cloth-teal: #1c544f;
+  --cloth-olive: #4f4c22;
+  --cloth-ochre: #94661c;
+  --cloth-saffron: #ad741b;
+  --cloth-rust: #873b1b;
+  --cloth-umber: #4a301f;
+  --cloth-plum: #4a2945;
+  --cloth-slate: #37434e;
+  --cloth-parchment: #ece1c6;
+  --cover-gilt: #e2c27a;
+  --cover-ink: #2b2014;
+  --cover-light: #f7eedb;
   --era-1940: light-dark(#8a5a2b, #c98d4e);
   --era-1950: light-dark(#a0662a, #d9984a);
   --era-1960: light-dark(#b0742c, #e3a957);
@@ -186,7 +232,7 @@
   --color-highlight-playing: var(--highlight-playing);
   --color-highlight-range: var(--highlight-range);
 
-  /* The Listening Room (/media) */
+  /* The Fireside Room (/media) */
   --color-radio-room: var(--radio-room);
   --color-radio-paper: var(--radio-paper);
   --color-radio-panel: var(--radio-panel);
@@ -206,6 +252,16 @@
   --color-radio-on-dark: var(--radio-on-dark);
   --color-radio-on-needle: var(--radio-on-needle);
   --color-radio-line: var(--radio-line);
+  /* The Library landing (/library) */
+  --color-lib-bg: var(--lib-bg);
+  --color-lib-raised: var(--lib-raised);
+  --color-lib-sunk: var(--lib-sunk);
+  --color-lib-ink: var(--lib-ink);
+  --color-lib-ink-soft: var(--lib-ink-soft);
+  --color-lib-ink-faint: var(--lib-ink-faint);
+  --color-lib-line: var(--lib-line);
+  --color-lib-accent: var(--lib-accent);
+  --color-lib-live: var(--lib-live);
   --font-dial: 'Big Shoulders Display', 'Shoulders Fallback', 'Arial Narrow', sans-serif;
   --font-marquee: 'Gloock', 'Gloock Fallback', Georgia, serif;
   --font-quote: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
@@ -478,11 +534,11 @@ mark {
   line-height: 1.8;
 }
 
-/* The Listening Room page ground (/media and /media/<slug>): cream paper or deep walnut with a warm glow */
+/* The Fireside Room page ground (/media and /media/<slug>): cream paper or deep walnut with a warm glow */
 .listening-room { min-height: 100vh; overflow-x: clip;
   background-image: radial-gradient(1200px 500px at 85% -10%, var(--radio-glow), transparent 60%), radial-gradient(900px 600px at -10% 30%, var(--radio-brass-soft), transparent 60%); }
 
-/* The Listening Room display faces (/media): self-hosted (public/fonts, same origin, preloaded) with
+/* The Fireside Room display faces (/media): self-hosted (public/fonts, same origin, preloaded) with
    metric-matched fallbacks so the swap barely moves a line; latin + latin-ext (transliteration: ḥ, ẓ, ‘). OFL. */
 @font-face { font-family: 'Gloock'; font-style: normal; font-weight: 400; font-display: optional; src: url(/fonts/gloock-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: 'Gloock'; font-style: normal; font-weight: 400; font-display: optional; src: url(/fonts/gloock-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }

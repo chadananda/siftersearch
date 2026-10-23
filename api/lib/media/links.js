@@ -2,7 +2,7 @@
 // /biography/<id> page"; "when books are mentioned, link the text to the book in OceanLibrary"). The copy-edit pass already
 // returns MENTIONS (the words as spoken, kind person|work, the model's canonical name/title, a section if one is named, a
 // confidence). Here each is resolved through our own layers — people against the biography set (names + aliases, then the
-// identity lookup index), works through the document finder by title variants (Dewey's rules) and the section index —
+// words decide — no lookup fallback, no Covenant-breakers), works through the document finder by title variants (Dewey's rules) and the section index —
 // and linked only on a confident, unambiguous resolution, the FIRST mention per section (subheader) only. The mention
 // text itself is the anchor. Pure; lookups injected.
 import { keyOf } from './vocab.js';
@@ -23,31 +23,54 @@ export function firstPerSection(mentions, headings = []) {
   });
 }
 
-/** The biography set as a name index: key(name or alias) → [ids]. bio: [{ id, name, aliases }] (aliases: array or JSON). */
+// PERSON LINKS (QA audit 10-22: 16 of 17 links made by the identity-lookup fallback were wrong — "Dr. Ḥakím" → Khayru'lláh, a
+// Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's guess "Muḥammad-‘Alí" = Quddús): the SPOKEN WORDS decide. A person
+// is linked only when the mention text is one person's name or alias, or a contiguous part of exactly one person's name or
+// alias; the model's canonical name only chooses among those; no lookup fallback; a Covenant-breaker is never linked.
+const TITLE_WORDS = /^(?:the|dr|doctor|mr|mrs|miss|ms|prof|jinab|jinabi|hand|of|cause|god|counsellor|amatul|baha)$/;
+const toks = (s) => String(s || '').replace(/\([^)]*\)/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[‘’'ʻ`]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+const covenantBreaker = (p) => /covenant.?breaker|arch.?breaker/i.test(`${p.side || ''} ${p.summary || ''} ${(Array.isArray(p.aliases) ? p.aliases : [p.aliases]).join(' ')}`);
+const namesOf = (p) => { let al = p.aliases; if (typeof al === 'string') { try { al = JSON.parse(al); } catch { al = []; } } return [p.name, ...(Array.isArray(al) ? al : [])].filter((n) => typeof n === 'string' && n.trim()); };
+
+/** The biography set as a name index (Covenant-breakers left out): exact name/alias keys → ids, and token lists for parts. */
 export function bioIndex(bio = []) {
-  const idx = new Map();
-  const add = (k, id) => { if (!k || k.length < 3) return; if (!idx.has(k)) idx.set(k, new Set()); idx.get(k).add(id); };
-  for (const p of bio) {
-    let al = p.aliases; if (typeof al === 'string') { try { al = JSON.parse(al); } catch { al = []; } }
-    for (const n of [p.name, ...(Array.isArray(al) ? al : [])]) add(keyOf(typeof n === 'string' ? n : n?.name), p.id);
+  const idx = new Map(), entries = [], cbEntries = [];
+  const people = bio.filter((p) => !covenantBreaker(p));
+  for (const p of bio.filter(covenantBreaker)) for (const n of namesOf(p)) cbEntries.push({ id: p.id, toks: toks(n), key: keyOf(n) });
+  for (const p of people) for (const n of namesOf(p)) {
+    const k = keyOf(n); if (k.length >= 3) { if (!idx.has(k)) idx.set(k, new Set()); idx.get(k).add(p.id); }
+    entries.push({ id: p.id, toks: toks(n) });
   }
-  return { idx, byId: new Map(bio.map((p) => [p.id, p])) };
+  return { idx, entries, cbEntries, byId: new Map(people.map((p) => [p.id, p])), excluded: bio.length - people.length };
+}
+/** The people whose name or alias is, or contains as a contiguous run, the mention's words (titles dropped). */
+export function candidatesFor(index, text) {
+  const exact = index.idx.get(keyOf(text));
+  if (exact?.size) return [...exact];
+  const want = toks(text).filter((t) => !TITLE_WORDS.test(t));
+  if (!want.length || want.join('').length < 3) return [];
+  const ids = new Set();
+  for (const e of index.entries) {
+    for (let i = 0; i + want.length <= e.toks.length; i++) if (want.every((w, k) => e.toks[i + k] === w)) { ids.add(e.id); break; }
+  }
+  return [...ids];
 }
 
-/** A person mention → { entity_id, name, basis } or { why }. lookup(name) → [{ id, canonical_match, shared_keys }]. */
-export async function resolvePerson(m, { index, lookup = null }) {
-  const names = [m.canonical, m.text].filter(Boolean);
-  for (const n of names) {
-    const ids = index.idx.get(keyOf(n));
-    if (ids?.size === 1) { const id = [...ids][0]; return { entity_id: id, name: index.byId.get(id)?.name, basis: 'name' }; }
-    if (ids?.size > 1) return { why: `ambiguous name (${ids.size} people)` };
-  }
-  if (lookup && m.canonical) {
-    const hits = (await lookup(m.canonical)).filter((h) => index.byId.has(h.id) && (h.canonical_match || h.shared_keys >= 2));
-    if (hits.length === 1) return { entity_id: hits[0].id, name: index.byId.get(hits[0].id)?.name, basis: 'lookup' };
-    if (hits.length > 1) return { why: `ambiguous lookup (${hits.length})` };
-  }
-  return { why: 'no biography page' };
+/** A person mention → { entity_id, name, basis } or { why }. */
+export async function resolvePerson(m, { index }) {
+  // words that also name a Covenant-breaker are never linked to anyone ("Muḥammad-‘Alí" in a talk about the Covenant)
+  const want = toks(m.text).filter((t) => !TITLE_WORDS.test(t));
+  const fitsCb = (index.cbEntries || []).some((e) => e.key === keyOf(m.text) || (want.length && e.toks.some((_, i) => want.every((w, k) => e.toks[i + k] === w))));
+  if (fitsCb || /covenant.?breaker/i.test(m.canonical || '')) return { why: 'the words also name a Covenant-breaker' };
+  const cands = candidatesFor(index, m.text);
+  if (!cands.length) return { why: 'no biography page for these words' };
+  if (cands.length === 1) return { entity_id: cands[0], name: index.byId.get(cands[0])?.name, basis: 'name' };
+  // several people carry these words: the model's canonical name may choose — only among them
+  const ck = keyOf(m.canonical || '');
+  const pick = ck ? cands.filter((id) => namesOf(index.byId.get(id)).some((n) => keyOf(n) === ck)) : [];
+  if (pick.length === 1) return { entity_id: pick[0], name: index.byId.get(pick[0])?.name, basis: 'name+context' };
+  return { why: `ambiguous (${cands.length} people carry these words)` };
 }
 
 /** Title variants a work is searched under (as Dewey's holdings check: as given, main title, the bracketed one, bare). */
@@ -90,8 +113,8 @@ export async function linkMentions(mentions, headings, deps, { minConf = MIN_CON
   const cache = new Map();
   for (const m of firstPerSection((mentions || []).filter((x) => x && x.text), headings)) {
     if ((m.confidence ?? 0) < minConf) { unresolved.push({ ...m, why: `low confidence (${m.confidence})` }); continue; }
-    const key = `${m.kind}|${keyOf(m.canonical || m.text)}|${m.section || ''}`;
-    if (!cache.has(key)) cache.set(key, m.kind === 'person' ? await resolvePerson(m, { index, lookup: deps.lookup }) : await resolveWork(m, deps));
+    const key = `${m.kind}|${keyOf(m.text)}|${keyOf(m.canonical || '')}|${m.section || ''}`;
+    if (!cache.has(key)) cache.set(key, m.kind === 'person' ? await resolvePerson(m, { index }) : await resolveWork(m, deps));
     const r = cache.get(key);
     if (r.why) { unresolved.push({ ...m, why: r.why }); continue; }
     const base = { kind: m.kind, para: m.para, i0: m.i0, i1: m.i1, text: m.text, confidence: m.confidence, basis: r.basis };

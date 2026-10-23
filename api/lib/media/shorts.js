@@ -4,7 +4,7 @@
 // punctuation), the current word highlighted; a sidecar .srt/.vtt goes with every short. Five TEMPLATES, chosen by content
 // (old or poor recordings → Archive Tape; a quotation of the Writings in the range → Scripture Insert) else rotated
 // deterministically per moment: On Air · Archive Tape · Scripture Insert · Portrait Cinema · Minimal. All carry the speaker,
-// the talk and year, Listening Room branding (call sign WSFT), an end card with the short URL, and keep inside the platform
+// the talk and year, Fireside Room branding (call sign WSFT), an end card with the short URL, and keep inside the platform
 // safe area (Shorts/Reels overlays: no text in the bottom ~22 % or the right ~12 %). This module builds the ASS file, the
 // sidecars and the render spec (pure); scripts/media/render_short.py on boss composes the picture with ffmpeg.
 import { createHash } from 'crypto';
@@ -153,7 +153,7 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
     const yx = year ? dx0 + 40 + ((Math.min(2020, Math.max(1920, Number(year))) - 1920) / 100) * (dw - 80) : cx;
     shape(0, clip, yx - 3, dy - 46, rect(6, 96), C.amber, { layer: 2 });
     shape(0, clip, cx, s(1180), circle(170), C.glow, { alpha: '90', blur: 60, extra: `\\t(0,${Math.round(clip * 1000)},\\1a&H70&)` });
-    at('Brand', 0, clip, `ON AIR  ·  THE LISTENING ROOM  ·  ${CALL_SIGN}`, cx, s(270), 5, 2);
+    at('Brand', 0, clip, `ON AIR  ·  THE FIRESIDE ROOM  ·  ${CALL_SIGN}`, cx, s(270), 5, 2);
     at('Name', 0, clip, esc(speaker), cx, s(1180), 5, 2);
     at('Title', 0, clip, titleLine, cx, s(1250), 5, 2);
     shape(0, clip, safeX, s(1330), rect(W - 2 * safeX, s(150)), C.cream, { layer: 1, extra: '\\bord0' });
@@ -178,7 +178,7 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
     }));
   } else if (template === 'scripture-insert') {
     // the speaker's words above; the passage they quote on a card below, with its citation
-    at('Brand', 0, clip, `THE LISTENING ROOM  ·  ${CALL_SIGN}`, cx, s(150), 5, 2);
+    at('Brand', 0, clip, `THE FIRESIDE ROOM  ·  ${CALL_SIGN}`, cx, s(150), 5, 2);
     at('Name', 0, clip, esc(speaker), cx, s(240), 5, 2);
     at('Title', 0, clip, titleLine, cx, s(305), 5, 2);
     highlight('Cap', s(560), C.amber, C.white);
@@ -195,7 +195,7 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
     at('Name', 0, clip, esc(speaker), cx, s(200), 5, 2);
     at('Title', 0, clip, titleLine, cx, s(265), 5, 2);
     shape(0, clip, cx - 120, s(1392), rect(240, 3), C.amber, { layer: 2, alpha: '30' });
-    at('Brand', 0, clip, `THE LISTENING ROOM  ·  ${CALL_SIGN}`, cx, s(1420), 5, 2);
+    at('Brand', 0, clip, `THE FIRESIDE ROOM  ·  ${CALL_SIGN}`, cx, s(1420), 5, 2);
     words.forEach((w, i) => {
       const t1 = i + 1 < words.length ? Math.min(words[i + 1].s, w.e + 0.6) : Math.min(clip, w.e + 0.5);
       at('Kinetic', w.s, t1, esc(w.w), cx, s(1050), 5, 3, '\\fscx88\\fscy88\\t(0,120,\\fscx100\\fscy100)');
@@ -228,7 +228,7 @@ export function buildAss({ template = 'on-air', format = 'vertical', words = [],
   const m2 = url.length > 30 ? /^(siftersearch\.com\/[^/]+\/)(.+)$/.exec(url) : null;
   const shown = m2 ? `{\\fs${sq ? 30 : 38}\\c${C.amber}}${esc(m2[1])}\\N${esc(m2[2])}` : `{\\fs${sq ? 40 : 52}\\c${C.amber}}${esc(url)}`;
   at('End', clip, total, shown, cx, s(sq ? 450 : 620), 5, 5);
-  at('Brand', clip, total, `THE LISTENING ROOM  ·  ${CALL_SIGN}`, cx, s(sq ? 1000 : 1330), 5, 5);
+  at('Brand', clip, total, `THE FIRESIDE ROOM  ·  ${CALL_SIGN}`, cx, s(sq ? 1000 : 1330), 5, 5);
   return `[Script Info]\nScriptType: v4.00+\nPlayResX: ${W}\nPlayResY: ${H}\nWrapStyle: 2\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\n`
     + 'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
     + `${styles(sq).join('\n')}\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${ev.join('\n')}\n`;

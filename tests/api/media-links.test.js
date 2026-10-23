@@ -9,14 +9,12 @@ const bio = [{ id: 7, name: '‘Abdu’l-Bahá', aliases: ['the Master', '‘Abb
 const m = (o) => ({ para: 1, i0: 0, i1: 1, text: 'x', kind: 'person', confidence: 0.95, ...o });
 
 describe('people', () => {
-  it('a name or an alias resolves to its one biography; a shared name is ambiguous; the lookup is a fallback', async () => {
+  it('a name or an alias resolves to its one biography; a shared name is ambiguous; no lookup fallback', async () => {
     const index = bioIndex(bio);
     expect(await resolvePerson(m({ canonical: '‘Abdu’l-Bahá', text: 'the Master' }), { index })).toMatchObject({ entity_id: 7 });
-    expect(await resolvePerson(m({ canonical: 'Shoghi Effendi (the Guardian)', text: 'the Guardian' }), { index })).toMatchObject({ entity_id: 9 });
-    expect((await resolvePerson(m({ canonical: 'Mullá Ḥusayn' }), { index })).why).toMatch(/ambiguous/);
-    const lookup = vi.fn(async () => [{ id: 9, canonical_match: false, shared_keys: 2 }, { id: 99, canonical_match: true }]);
-    expect(await resolvePerson(m({ canonical: 'Shoghí Effendí Rabbání' }), { index, lookup })).toMatchObject({ entity_id: 9, basis: 'lookup' });
-    expect((await resolvePerson(m({ canonical: 'Jane Doe' }), { index, lookup: async () => [] })).why).toBe('no biography page');
+    expect(await resolvePerson(m({ canonical: 'Shoghi Effendi', text: 'the Guardian' }), { index })).toMatchObject({ entity_id: 9 });
+    expect((await resolvePerson(m({ text: 'Mullá Ḥusayn' }), { index })).why).toMatch(/ambiguous/);
+    expect((await resolvePerson(m({ text: 'Shoghí Effendí Rabbání', canonical: 'Shoghi Effendi' }), { index })).why).toMatch(/no biography/);
   });
 });
 

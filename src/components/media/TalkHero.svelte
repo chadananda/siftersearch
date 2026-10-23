@@ -23,7 +23,7 @@
     <div class="cabinet-inner rounded-t-2xl bg-radio-walnut px-4 pb-1 pt-5 sm:px-8 sm:pt-7">
       <nav class="flex flex-wrap items-center gap-x-2 font-dial text-sm font-semibold uppercase tracking-[0.22em] text-radio-on-dark" aria-label="Breadcrumb">
         <span class="lamp" aria-hidden="true"></span>
-        <a href="/media" class="hover:text-radio-amber">The Listening Room</a>
+        <a href="/media" class="hover:text-radio-amber">The Fireside Room</a>
         {#if item.collection}<span class="opacity-60" aria-hidden="true">/</span><span class="opacity-80">{item.collection}</span>{/if}
       </nav>
       <div class="mt-5 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8">

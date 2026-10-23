@@ -29,11 +29,31 @@ export const eraVar = (y) => `var(--era-${eraKey(y)})`;
 const str = (v) => (typeof v === 'string' ? v : v == null ? null : String(v));
 const num = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
 const arr = (v) => (Array.isArray(v) ? v : []);
+const md = (t) => String(t || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/^[\s*#>_-]+/, '').replace(/[*_`#]+/g, '').replace(/\s+/g, ' ').trim();
+/** A citation that is really a file slug or path ("pdf-b-bahaullah, bahaullah_abdul-baha_sacred_writings_book") is not shown. */
+export const slugLike = (c) => !c || /(^|[\s,])pdf-|_[a-z]|^[a-z0-9]+(?:[-_][a-z0-9]+){2,}$/.test(String(c).trim()) || /\.(pdf|md|html?)\b/i.test(c);
+/** A "quote" that is a table of contents (numbered entries, mostly Title-Cased fragments, a Preface/Contents header). */
+export function tocLike(x) {
+  const t = String(x || '');
+  if (/\b(table of )?contents\b|\bpreface\b\s+[IVX]+\.?/i.test(t)) return true;
+  const nums = (t.match(/(^|\s)([IVX]{1,5}|\d{1,3})\.\s/g) || []).length;
+  const words = t.split(/\s+/).filter((w) => /[a-z]/i.test(w));
+  const caps = words.filter((w) => /^[A-Z‘’'“"(]/.test(w)).length;
+  return nums >= 2 || (words.length >= 6 && caps / words.length > 0.7);
+}
+/** A pull-quote made safe to show: markdown stripped, a slug-like citation dropped, a TOC dropped (null). */
+export function safeQuote(q) {
+  const x = md(q?.x);
+  if (x.length < 25 || tocLike(x)) return null;
+  const raw = String(q?.c || '').trim(), c = md(raw);
+  return { x, c: slugLike(raw) || slugLike(c) ? null : c, t0: num(q?.t0) ?? 0, t1: num(q?.t1) };
+}
+
 /** One listing row with every field coerced to the shape the page renders (a changed or partial payload can never throw
  *  mid-render and truncate the page — 10-22 outage: an object where a URL string was expected). null = unusable. */
 export function safeItem(it) {
   if (!it || typeof it !== 'object' || typeof it.s !== 'string' || !it.s) return null;
-  const q = it.q && typeof it.q === 'object' && typeof it.q.x === 'string' ? { x: it.q.x, c: str(it.q.c), t0: num(it.q.t0) ?? 0, t1: num(it.q.t1) } : null;
+  const q = it.q && typeof it.q === 'object' && typeof it.q.x === 'string' ? safeQuote(it.q) : null;
   return { ...it, t: str(it.t) || it.s, sp: str(it.sp), k: str(it.k), y: num(it.y), d: num(it.d) ?? 0, l: str(it.l) || 'en', g: str(it.g), col: str(it.col), at: str(it.at),
     qn: num(it.qn) ?? 0, cn: num(it.cn) ?? 0, sum: str(it.sum), w: typeof it.w === 'string' ? it.w : '', q,
     tp: arr(it.tp).filter((x) => typeof x === 'string'),

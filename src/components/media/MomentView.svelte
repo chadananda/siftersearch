@@ -1,5 +1,5 @@
 <script>
-  // /media/<slug>/m/<key> — one MOMENT (or, kind 'clip', any span: /media/<slug>/clip/<startMs>-<endMs>) as a shareable page in the Listening Room style: the quote set large, the speaker on a
+  // /media/<slug>/m/<key> — one MOMENT (or, kind 'clip', any span: /media/<slug>/clip/<startMs>-<endMs>) as a shareable page in the Fireside Room style: the quote set large, the speaker on a
   // record, the excerpt's own waveform with a play button (our aligned audio, exactly that span), "hear it in context",
   // share row, the cross-references the excerpt touches (citation = link), and the way back: the talk, its other moments,
   // the speaker's other talks, the library. Deps: media-preview (one sound at a time), media-listing, share.
@@ -44,7 +44,7 @@
     <div class="cab-in rounded-2xl bg-radio-walnut px-5 pb-7 pt-6 sm:px-10 sm:pb-10 sm:pt-8">
       <nav class="flex flex-wrap items-center gap-x-2 font-dial text-sm font-semibold uppercase tracking-[0.22em] text-radio-on-dark" aria-label="Breadcrumb">
         <span class="lamp" class:live={playingThis} aria-hidden="true"></span>
-        <a href="/media" class="hover:text-radio-amber">The Listening Room</a>
+        <a href="/media" class="hover:text-radio-amber">The Fireside Room</a>
         <span class="opacity-60" aria-hidden="true">/</span>
         <a href={`/media/${m.slug}`} class="hover:text-radio-amber">{m.title}</a>
       </nav>
@@ -136,10 +136,10 @@
           </li>
         {/each}
       </ul>
-      {#if speaker?.k}<p class="mt-4"><a class="back" href={`/media?speaker=${encodeURIComponent(speaker.k)}`}>Every talk by {m.speaker} in the Listening Room</a></p>{/if}
+      {#if speaker?.k}<p class="mt-4"><a class="back" href={`/media?speaker=${encodeURIComponent(speaker.k)}`}>Every talk by {m.speaker} in the Fireside Room</a></p>{/if}
     </section>
   {/if}
-  <p class="mt-10"><a class="back" href="/media">Back to the Listening Room</a></p>
+  <p class="mt-10"><a class="back" href="/media">Back to the Fireside Room</a></p>
 </article>
 
 <MiniPlayer />

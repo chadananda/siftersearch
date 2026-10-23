@@ -47,7 +47,7 @@ export function transcriptMarkdown({ meta, paragraphs, quotes = [], links = [], 
   return `${lines.join('\n').trim()}\n`;
 }
 
-// The Listening Room look (same tokens as the site's --radio-*): cream paper / walnut + amber, Gloock headings, Caslon
+// The Fireside Room look (same tokens as the site's --radio-*): cream paper / walnut + amber, Gloock headings, Caslon
 // text, Big Shoulders figures. Fonts load from the site's /fonts (same origin as this page when served via siftersearch.com).
 const CSS = `@font-face{font-family:Gloock;src:url(/fonts/gloock-latin.woff2) format('woff2');font-display:swap}
 @font-face{font-family:'Big Shoulders Display';font-weight:600 800;src:url(/fonts/big-shoulders-latin.woff2) format('woff2');font-display:swap}
@@ -57,7 +57,7 @@ const CSS = `@font-face{font-family:Gloock;src:url(/fonts/gloock-latin.woff2) fo
 @media (prefers-color-scheme:dark){:root{--bg:#15100b;--paper:#1e1711;--fg:#f4e6cf;--muted:#c9b394;--line:rgba(244,230,207,.12);--accent:#ffb347;--brass:#d6ad5c;--wood:#120c07;--on:#f8ecd4;--needle:#ff5a3c;--hl:rgba(253,224,71,.22);--range:rgba(56,189,248,.1);--card:#1e1711;--quote:#ffb347}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.8 'Libre Caslon Text',Georgia,serif}
 header{max-width:46rem;margin:1rem auto 0;padding:1.6rem 1.4rem 1.4rem;background:var(--wood);color:var(--on);border-radius:1.2rem;box-shadow:inset 0 0 0 1px rgba(214,173,92,.45)}
-header::before{content:'● THE LISTENING ROOM';display:block;font:700 13px/1 'Big Shoulders Display',sans-serif;letter-spacing:.24em;color:#e3bd6e;margin-bottom:.8rem}
+header::before{content:'● THE FIRESIDE ROOM';display:block;font:700 13px/1 'Big Shoulders Display',sans-serif;letter-spacing:.24em;color:#e3bd6e;margin-bottom:.8rem}
 h1{font:400 2.1rem/1.08 Gloock,Georgia,serif;margin:.2rem 0 .5rem}
 .meta{color:var(--on);opacity:.8;font:14px/1.5 system-ui,sans-serif}.meta a{color:#ffb347}
 .src{display:inline-block;margin-top:.7rem;font:600 14px system-ui,sans-serif;color:var(--on);text-decoration:underline;text-decoration-color:#e3bd6e;text-underline-offset:3px}

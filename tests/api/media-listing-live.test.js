@@ -3,7 +3,7 @@
 // complete, and a malformed payload must be coerced or skipped, never throw.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { safeIndex, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, tallSrc, portraitTall, portraitCard, portraitSquare, highlightLine, waveHeights, buildSearch, searchItems } from '../../src/lib/media-listing.js';
+import { safeQuote, slugLike, tocLike, safeIndex, planLayout, pickHighlights, eras, topTopics, tickerLines, relatedTalks, tallSrc, portraitTall, portraitCard, portraitSquare, highlightLine, waveHeights, buildSearch, searchItems } from '../../src/lib/media-listing.js';
 
 const live = JSON.parse(readFileSync(new URL('../fixtures/media-index-live.json', import.meta.url), 'utf8'));
 
@@ -46,5 +46,15 @@ describe('the /media page renders the live index', () => {
     const ok = r.items.find((i) => i.s === 'ok');
     expect(ok).toMatchObject({ t: '42', h: [{ x: 'Why?', f: 's', t: null }], tp: ['a'], q: null, hl: [0, 20], w: '' });
     expect(r.speakers.find((s) => s.k === 'z')).toMatchObject({ p: null, px: null });
+  });
+});
+
+describe('pull-quotes are made safe to show (10-22: a TOC with markdown and a slug as citation was rotating)', () => {
+  it('drops tables of contents and slug citations, strips markdown', () => {
+    expect(safeQuote({ x: '* * Bahá’í Sacred Writings Preface I. The Báb II. Bahá’u’lláh III. ‘Abdu’l-Bahá', c: 'pdf-b-bahaullah, bahaullah_abdul-baha_sacred_writings_book' })).toBe(null);
+    expect(safeQuote({ x: '**Say:** the soul is a [sign](https://x) of God, and its station is exalted above all.', c: 'bahaullah_gleanings' })).toEqual({ x: 'Say: the soul is a sign of God, and its station is exalted above all.', c: null, t0: 0, t1: null });
+    expect(safeQuote({ x: 'The world is in travail, and its agitation waxeth day by day.', c: 'Gleanings from the Writings of Bahá’u’lláh' }).c).toBe('Gleanings from the Writings of Bahá’u’lláh');
+    expect(slugLike('pdf-b-bahaullah')).toBe(true); expect(slugLike('Shoghi Effendi, Call to the Nations')).toBe(false);
+    expect(tocLike('I. The Báb II. Bahá’u’lláh III. Others')).toBe(true);
   });
 });

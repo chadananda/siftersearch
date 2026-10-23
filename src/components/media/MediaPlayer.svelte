@@ -59,7 +59,7 @@
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
   const head = item.thumb?.url ? picture(item.thumb.url, 160, 160, { photo }) : { src: null, srcset: null };
   const when = [item.date || item.year, item.place, item.event].filter(Boolean);
-  // the Listening Room dressing: era tint, the subheaders as dial ticks, the section now playing, the sticky bar
+  // the Fireside Room dressing: era tint, the subheaders as dial ticks, the section now playing, the sticky bar
   const tint = eraVar(item.year);
   const ticks = toc.map((c) => ({ t: c.t, title: c.title }));
   const sectionAt = (t) => { let c = null; for (const x of toc) if (x.t != null && x.t <= t + 0.5) c = x; return c; };

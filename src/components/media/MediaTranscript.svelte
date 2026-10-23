@@ -3,7 +3,7 @@
   // highlight), a play button per paragraph (left margin ≥ lg, inline below), speaker labels at voice changes, quoted spans
   // as links, and "Quoted" / "Cross-reference" breakouts after their paragraph. Pure rendering: clicks go to onword/onpara;
   // the playing-word highlight is toggled on these spans by MediaPlayer (DOM classes, not reactive state, 60 fps).
-  // Typeset in the Listening Room language: a measured serif column, subheaders as section breaks with a log time, a drop
+  // Typeset in the Fireside Room language: a measured serif column, subheaders as section breaks with a log time, a drop
   // cap, and the breakouts as cut-in "studio inserts" (styles at the bottom; tokens --radio-*, era tint --tint).
   import { paragraphSegments, speakerLabels } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';

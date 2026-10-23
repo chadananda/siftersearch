@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-23T02:02:21.855Z",
+  "generated": "2026-10-23T02:44:42.267Z",
   "entries": [
+    {
+      "hash": "efff025b",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "GET /api/library/landing — the /library landing's live numbers (Chad 10-22)",
+      "scope": "library"
+    },
+    {
+      "hash": "db82ea00",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The PASSAGE GATE for quote and cross-reference links (Chad 10-22: a 'quote' card showed a scraped PDF's table of contents, cited by its file slug) — a linked source must be a sentence-level passage of a properly catalogued work: no heading/contents/index blocks, no front matter, no numbered-entry or title-case runs, sentences required, no file-name titles or authors; the quote linker tries the next source when one fails, the cross-reference candidates are filtered the same way; excerpts lose their markup ('* *'); media-quote-audit checks the existing links and (write) relinks the affected talks",
+      "scope": "media"
+    },
+    {
+      "hash": "8eb277c3",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Pages never wait on tower — stale-while-revalidate edge cache in the Worker (Chad 10-22)",
+      "scope": "edge"
+    },
+    {
+      "hash": "ed330af0",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Every ingested talk queues its search layers at once (Chad 10-22: 'start ingesting for search') — keyword-fill (BM25), section-index (subheaders) and phrase-index (≤ $0.25 a talk) for the document right after ingest/update; coverage of the 73 published talks before: embedded 72, keyword 68, sections 11, phrases 0",
+      "scope": "media"
+    },
     {
       "hash": "18d5e049",
       "date": "2026-10-22",
@@ -3472,38 +3500,38 @@
       "type": "Chore",
       "description": "Interfaith HyPE waves under the $80 Anthropic ceiling",
       "scope": "worklist"
-    },
-    {
-      "hash": "cb6aaa3d",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Other traditions' core scripture recognised as scripture (doctrinal HyPE register); an operator stop is final (no auto-retry)",
-      "scope": "interfaith"
-    },
-    {
-      "hash": "e10af1ce",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "DeepSeek retired — every bulk stage, every language on Haiku 5.5 (claims + reconcile batched); any deepseek request served by Haiku at the call chokepoints; Persian disambig + bilingual extract off Sonnet; fr/es/de/it/la now enrichable; queue no longer peak-gates for DeepSeek",
-      "scope": "models"
-    },
-    {
-      "hash": "cac57674",
-      "date": "2026-10-13",
-      "type": "Chore",
-      "description": "Canonical copies plan, interfaith HyPE approved",
-      "scope": "worklist"
-    },
-    {
-      "hash": "cb9f619a",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Every note rests on cited library evidence (uncited notes dropped in code); a 'worth a note' test bans glossing plain English, title translations, etymology and abjad trivia; advanced = weightier connections, not philology",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "efff025b",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "GET /api/library/landing — the /library landing's live numbers (Chad 10-22)",
+        "scope": "library"
+      },
+      {
+        "hash": "db82ea00",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The PASSAGE GATE for quote and cross-reference links (Chad 10-22: a 'quote' card showed a scraped PDF's table of contents, cited by its file slug) — a linked source must be a sentence-level passage of a properly catalogued work: no heading/contents/index blocks, no front matter, no numbered-entry or title-case runs, sentences required, no file-name titles or authors; the quote linker tries the next source when one fails, the cross-reference candidates are filtered the same way; excerpts lose their markup ('* *'); media-quote-audit checks the existing links and (write) relinks the affected talks",
+        "scope": "media"
+      },
+      {
+        "hash": "8eb277c3",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Pages never wait on tower — stale-while-revalidate edge cache in the Worker (Chad 10-22)",
+        "scope": "edge"
+      },
+      {
+        "hash": "ed330af0",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Every ingested talk queues its search layers at once (Chad 10-22: 'start ingesting for search') — keyword-fill (BM25), section-index (subheaders) and phrase-index (≤ $0.25 a talk) for the document right after ingest/update; coverage of the 73 published talks before: embedded 72, keyword 68, sections 11, phrases 0",
+        "scope": "media"
+      },
       {
         "hash": "18d5e049",
         "date": "2026-10-22",
@@ -6993,34 +7021,6 @@
         "type": "Chore",
         "description": "Interfaith HyPE waves under the $80 Anthropic ceiling",
         "scope": "worklist"
-      },
-      {
-        "hash": "cb6aaa3d",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Other traditions' core scripture recognised as scripture (doctrinal HyPE register); an operator stop is final (no auto-retry)",
-        "scope": "interfaith"
-      },
-      {
-        "hash": "e10af1ce",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "DeepSeek retired — every bulk stage, every language on Haiku 5.5 (claims + reconcile batched); any deepseek request served by Haiku at the call chokepoints; Persian disambig + bilingual extract off Sonnet; fr/es/de/it/la now enrichable; queue no longer peak-gates for DeepSeek",
-        "scope": "models"
-      },
-      {
-        "hash": "cac57674",
-        "date": "2026-10-13",
-        "type": "Chore",
-        "description": "Canonical copies plan, interfaith HyPE approved",
-        "scope": "worklist"
-      },
-      {
-        "hash": "cb9f619a",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Every note rests on cited library evidence (uncited notes dropped in code); a 'worth a note' test bans glossing plain English, title translations, etymology and abjad trivia; advanced = weightier connections, not philology",
-        "scope": "reading"
       }
     ]
   }

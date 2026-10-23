@@ -1,4 +1,4 @@
-// The Listening Room's ONE preview player: every "play excerpt" button on /media goes through here, so one sound plays at a
+// The Fireside Room's ONE preview player: every "play excerpt" button on /media goes through here, so one sound plays at a
 // time. A 'full' talk streams its web rendition from the highlight's start and stops after the window; a 'clips' talk asks
 // for a signed clip. Media Session metadata (title, speaker, portrait) for the lock screen. Browser only; play on click only.
 import { media } from './api.js';
@@ -30,7 +30,7 @@ function session(it, speaker) {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
   const art = speaker?.p ? [96, 256, 512].map((px) => ({ src: portraitSquare(speaker.p, px).src, sizes: `${px}x${px}`, type: 'image/webp' })) : [];
   try {
-    navigator.mediaSession.metadata = new MediaMetadata({ title: it.t, artist: it.sp || 'SifterSearch Media', album: it.y ? `Recorded ${it.y}` : 'The Listening Room', artwork: art });
+    navigator.mediaSession.metadata = new MediaMetadata({ title: it.t, artist: it.sp || 'SifterSearch Media', album: it.y ? `Recorded ${it.y}` : 'The Fireside Room', artwork: art });
     navigator.mediaSession.setActionHandler('play', () => audio?.play());
     navigator.mediaSession.setActionHandler('pause', () => audio?.pause());
     navigator.mediaSession.setActionHandler('stop', stop);

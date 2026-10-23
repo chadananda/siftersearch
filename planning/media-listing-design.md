@@ -1,4 +1,4 @@
-# /media — The Listening Room (design, 2026-10-22)
+# /media — The Fireside Room (design, 2026-10-22)
 
 Live: https://siftersearch.com/media · code: `src/components/media/listening/`, `src/lib/media-listing.js`,
 `src/lib/media-preview.svelte.js`, `api/lib/media/listing-index.js` (GET /api/media/index), tokens `--radio-*` / `--era-*`

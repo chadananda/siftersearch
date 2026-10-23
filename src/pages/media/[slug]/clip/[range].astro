@@ -34,7 +34,7 @@ const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => s
 
 const short = (s, n) => (s.length > n ? `${s.slice(0, s.lastIndexOf(' ', n))}…` : s);
 const url = ok ? `${SITE}${clipPath(item.slug, r.startMs, r.endMs)}` : null;
-const title = ok ? `“${short(text, 90)}” — ${item.speaker || 'The Listening Room'}` : 'Clip not found — SifterSearch Media';
+const title = ok ? `“${short(text, 90)}” — ${item.speaker || 'The Fireside Room'}` : 'Clip not found — SifterSearch Media';
 const description = ok ? `From “${item.title}”${item.speaker ? ` by ${item.speaker}` : ''}${item.year ? `, ${item.year}` : ''}, at ${formatTime(r.startMs / 1000)}. Hear the clip and the whole talk with its searchable transcript.` : 'This clip could not be found.';
 const image = ok ? `${SITE}/api/media/${encodeURIComponent(item.slug)}/card/${r.startMs}-${r.endMs}.jpg` : undefined;
 const ld = ok ? { '@context': 'https://schema.org', '@type': 'Quotation', text, url, image, ...(item.speaker ? { creator: { '@type': 'Person', name: item.speaker } } : {}),
@@ -57,7 +57,7 @@ const ld = ok ? { '@context': 'https://schema.org', '@type': 'Quotation', text, 
           <p class="font-dial text-7xl font-extrabold text-radio-amber">404</p>
           <h1 class="mt-4 font-marquee text-3xl text-radio-ink">This clip is not on the air</h1>
           <p class="mt-3 text-radio-ink-soft">The talk or the time range could not be found.</p>
-          <a href={item ? `/media/${item.slug}` : '/media'} class="mt-6 inline-block rounded-full bg-radio-amber px-6 py-3 font-dial text-lg font-bold uppercase tracking-wider text-radio-walnut-deep">{item ? 'Go to the talk' : 'Back to the Listening Room'}</a>
+          <a href={item ? `/media/${item.slug}` : '/media'} class="mt-6 inline-block rounded-full bg-radio-amber px-6 py-3 font-dial text-lg font-bold uppercase tracking-wider text-radio-walnut-deep">{item ? 'Go to the talk' : 'Back to the Fireside Room'}</a>
         </section>
       )}
     </div>

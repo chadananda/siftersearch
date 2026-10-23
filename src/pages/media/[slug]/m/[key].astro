@@ -27,7 +27,7 @@ const sameVoice = m && index ? relatedTalks(index.items, m.slug, 6) : [];
 const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => sameVoice.some((r) => r.k === s.k)).map((s) => [s.k, { n: s.n, p: s.p }]));
 
 const short = (s, n) => (s.length > n ? `${s.slice(0, s.lastIndexOf(' ', n))}…` : s);
-const title = m ? `“${short(m.text, 90)}” — ${m.speaker || 'The Listening Room'}` : 'Moment not found — SifterSearch Media';
+const title = m ? `“${short(m.text, 90)}” — ${m.speaker || 'The Fireside Room'}` : 'Moment not found — SifterSearch Media';
 const description = m ? `${m.context ? `${m.context} ` : ''}From “${m.title}”${m.speaker ? ` by ${m.speaker}` : ''}${m.year ? `, ${m.year}` : ''}. Hear the moment and the whole talk with its searchable transcript.` : 'This moment could not be found.';
 const CARD_V = 2;   // bump when the card design changes: the card is edge-cached for a week per URL
 const image = m ? `${SITE}/api/media/moments/${encodeURIComponent(m.key)}/card.jpg?v=${CARD_V}` : undefined;
@@ -57,7 +57,7 @@ const ld = m ? {
           <p class="font-dial text-7xl font-extrabold text-radio-amber">404</p>
           <h1 class="mt-4 font-marquee text-3xl text-radio-ink">This moment has gone off the air</h1>
           <p class="mt-3 text-radio-ink-soft">There is no moment at this address.</p>
-          <a href={slug ? `/media/${slug}` : '/media'} class="mt-6 inline-block rounded-full bg-radio-amber px-6 py-3 font-dial text-lg font-bold uppercase tracking-wider text-radio-walnut-deep">{slug ? 'Go to the talk' : 'Back to the Listening Room'}</a>
+          <a href={slug ? `/media/${slug}` : '/media'} class="mt-6 inline-block rounded-full bg-radio-amber px-6 py-3 font-dial text-lg font-bold uppercase tracking-wider text-radio-walnut-deep">{slug ? 'Go to the talk' : 'Back to the Fireside Room'}</a>
         </section>
       )}
     </div>

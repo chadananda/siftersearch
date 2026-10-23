@@ -7,11 +7,12 @@
   import { fade } from 'svelte/transition';
   import RecordLabel from './RecordLabel.svelte';
   import Wave from './Wave.svelte';
+  import ImportReadout from './ImportReadout.svelte';
   import { highlightLine, duration } from '../../../lib/media-listing.js';
   import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
 
   // its own island (index.astro), ahead of the listing's large props, so the first frame paints early
-  let { highlights = [], speakersByKey = {}, stats = {} } = $props();
+  let { highlights = [], speakersByKey = {}, stats = {}, importProgress = null } = $props();
 
   const Y0 = 1930, Y1 = 2030;
   let idx = $state(0);
@@ -51,11 +52,9 @@
       </p>
       <div class="vu hidden sm:block" aria-hidden="true"><span class="vu-needle"></span><span class="vu-scale">VU</span></div>
     </div>
-    <h1 id="lr-title" class="mt-3 font-marquee text-[2.6rem] leading-[0.95] text-radio-on-dark sm:text-6xl lg:text-7xl">The Listening Room</h1>
-    <p class="mt-3 max-w-2xl text-base text-radio-on-dark opacity-85 sm:text-lg">
-      {stats.total || 0} recorded talks{stats.hours ? ` · ${stats.hours} hours` : ''}{stats.voices ? ` · ${stats.voices} voices` : ''}{stats.span ? `, ${stats.span}` : ''}.
-      Every word transcribed and searchable; every quotation linked to its source.
-    </p>
+    <h1 id="lr-title" class="mt-3 font-marquee text-[2.6rem] leading-[0.95] text-radio-on-dark sm:text-6xl lg:text-7xl">The Fireside Room</h1>
+    <!-- the subtitle is the live import readout (Chad 10-22); the library line is the fallback when it is unavailable -->
+    <ImportReadout progress={importProgress} {stats} />
 
     <!-- the dial -->
     <div class="dial relative mt-6 h-20 overflow-hidden rounded-xl bg-radio-dial sm:h-24" role="group" aria-label="Tuning dial: recordings by year">

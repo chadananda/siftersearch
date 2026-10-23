@@ -1,4 +1,4 @@
-// The MOMENT QUOTE CARD (og:image / twitter:image for /media/<slug>/m/<key>): 1200×630 JPEG in the Listening Room style —
+// The MOMENT QUOTE CARD (og:image / twitter:image for /media/<slug>/m/<key>): 1200×630 JPEG in the Fireside Room style —
 // walnut cabinet, the quote in Gloock, speaker + talk in brass/cream, the speaker's portrait on a record, a tuning dial
 // with the needle at the year, the call sign. Text is set by Pango (sharp text input) with the bundled OFL fonts so it
 // renders the same on any server; shapes are SVG (no text). Deps: sharp (transitive via astro). Pure given its inputs.
@@ -59,7 +59,7 @@ export async function renderMomentCard(m, photo = null, { sharp = null } = {}) {
   const quote = await text(sharp, `<span foreground="${C.cream}">“${escapeMarkup(q.text)}”</span>`, { font: `Gloock ${q.size}`, fontfile: GLOOCK, width: 700 });
   const qTop = Math.max(110, Math.round(300 - quote.info.height / 2));
   layers.push({ input: quote.data, left: 70, top: Math.min(qTop, 470 - quote.info.height) });
-  const call = await text(sharp, `<span foreground="${C.cream}" letter_spacing="4000" font_weight="bold">THE LISTENING ROOM · SIFTERSEARCH</span>`, { font: 'Big Shoulders Display 22', fontfile: SHOULDERS, width: 700 });
+  const call = await text(sharp, `<span foreground="${C.cream}" letter_spacing="4000" font_weight="bold">THE FIRESIDE ROOM · SIFTERSEARCH</span>`, { font: 'Big Shoulders Display 22', fontfile: SHOULDERS, width: 700 });
   layers.push({ input: call.data, left: 90, top: 50 });
   const who = [m.speaker, m.year].filter(Boolean).join(' · ');
   if (who) {
