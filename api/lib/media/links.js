@@ -88,15 +88,33 @@ const mainKey = (t) => fold(String(t || '').split(/\s*(?:[:;(\[—]|,?\s+vol(?:u
  * document finder); sections(text) → [{ doc_id, title, start_index, first_para_id }]. A doc matches when its main title is
  * one of the work's title variants; among matches the OceanLibrary copy wins, then the one by the named author.
  */
-export async function resolveWork(m, { find, sections = null }) {
+// the full title without its bracketed tail ("Tablet of Carmel (Muntakhabát-i-Áthár:11)" → "tablet of carmel")
+const fullKey = (t) => fold(String(t || '').replace(/\s*[(\[][^)\]]*[)\]]\s*/g, ' ')).replace(/^(?:the|a|an)\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+/** Why a found document is NOT the work itself (QA 10-22: 45 wrong work links), or null. */
+export function notTheWork(d, { lang = 'en', mentionText = '' } = {}) {
+  const t = String(d.title || ''), url = String(d.source_url || '');
+  if (/\b(?:notes?|study guide|guide|transcript|talk|summary|analysis|commentary|postures|leaflets?|review|essay|lecture|outline|presentation|introduction)\b/i.test(t.split(/\s*[:—]\s*/).slice(1).join(' '))) return 'a work about it, not the work';
+  if (/\b(?:talks?|papers?|essays?|articles?|newspapers?|theses)\b/i.test(String(d.collection || '')) || /\/(?:newspapers|bahai-talks|papers)\//i.test(url) || /\/(?:bahai-talks|papers)\//.test(String(d.slug || ''))) return 'a talk, paper or newspaper';
+  if (/\b(?:volume|vol\.?|issue|no\.)\s*[\dIVXLC]+\b/i.test(t) && !/\d|\b[IVXLC]+\b/.test(mentionText)) return 'one volume of a serial, none named';
+  if (/\/\d{1,3}\.html?$/i.test(url)) return 'one chapter page of the work';
+  if (/\([^)]*:\s*\d+\)/.test(t)) return 'an entry in an original-language compilation';   // 'Tablet of Carmel (Muntakhabát-i-Áthár:11)'
+  if (lang && d.language && !new RegExp(`^${lang}`, 'i').test(d.language)) return 'another language';
+  if (/\/(?:russian|persian|arabic|french|german|spanish)\//i.test(url) || /_(?:ar|fa|ru)$/.test(String(d.slug || ''))) return 'another language';
+  return null;
+}
+
+export async function resolveWork(m, { find, sections = null, lang = 'en' }) {
   const want = new Set([...titleVariants(m.canonical), m.text].filter(Boolean).map(mainKey).filter((k) => k.length >= 3));
+  const wantFull = new Set([...titleVariants(m.canonical), m.text].filter(Boolean).map(fullKey).filter((k) => k.length >= 3));
   const seen = new Map();
   for (const v of titleVariants(m.canonical || m.text)) for (const d of (await find(v)) || []) if (!seen.has(d.id)) seen.set(d.id, d);
-  const hits = [...seen.values()].filter((d) => want.has(mainKey(d.title)));
-  if (!hits.length) return { why: 'no held copy by that title' };
+  // the WORK itself: titled as named, and not a work ABOUT it (a subtitle saying notes / guide / transcript / summary — "Seven
+  // Valleys: Faculty notes" no longer passes for "The Seven Valleys"), a talk, paper, newspaper, one volume or another language
+  const titled = [...seen.values()].filter((d) => wantFull.has(fullKey(d.title)) || want.has(mainKey(d.title)));
+  const hits = titled.filter((d) => !notTheWork(d, { lang, mentionText: m.text }));
+  if (!hits.length) return { why: titled.length ? `held only as: ${notTheWork(titled[0], { lang, mentionText: m.text })}` : 'no held copy by that title' };
   const ol = (d) => (d.source_site === 'oceanlibrary.com' || /oceanlibrary\.com/.test(d.source_url || '') ? 0 : 1);
-  const en = (d) => (/^en/i.test(d.language || 'en') ? 0 : 1);   // a talk in English links the English copy first
-  hits.sort((a, b) => ol(a) - ol(b) || en(a) - en(b) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
+  hits.sort((a, b) => ol(a) - ol(b) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
   const doc = hits[0];
   let section = null;
   if (m.section && sections) section = ((await sections(`${m.section}`)) || []).find((s) => s.doc_id === doc.id) || null;

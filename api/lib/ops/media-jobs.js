@@ -86,8 +86,12 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     // ids or SLUGS (an audit names talks by slug)
     const list = ids === 'done' ? await R.doneItemIds()
       : (await Promise.all([].concat(ids).map(async (x) => (/^\d+$/.test(String(x)) ? Number(x) : (await R.getMediaBySlug(String(x)))?.id)))).filter(Boolean);
-    for (const one of list) await (deps.queue || enqueue)('media-item', Object.fromEntries(Object.entries({ id: one, from, only, redo, threads, lang, model, priority }).filter(([, v]) => v != null)));
-    return { queued: list.length };
+    // never a second run on an item with one queued or running (two runs on one item overwrite each other's files)
+    const ops = deps.ops || (deps.queue ? { pendingRuns: async () => [] } : await import('../repos/ops-report-repo.js'));
+    const busy = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+    const skipped = list.filter((x) => busy.has(x));
+    for (const one of list.filter((x) => !busy.has(x))) await (deps.queue || enqueue)('media-item', Object.fromEntries(Object.entries({ id: one, from, only, redo, threads, lang, model, priority }).filter(([, v]) => v != null)));
+    return skipped.length ? { queued: list.length - skipped.length, skipped_busy: skipped } : { queued: list.length };
   }
   let item = await getMediaItem(id);
   if (!item) throw new Error(`media item ${id} not found`);

@@ -76,3 +76,22 @@ describe('lossy words (U+FFFD) take the segment text', async () => {
     expect(flattenWords([sg])[1].w).toContain('�');
   });
 });
+
+describe('work links are the work itself (QA fixtures: 45 wrong work links)', async () => {
+  const { resolveWork } = await import('../../api/lib/media/links.js');
+  const cases = fx('wrong-work-links').cases.filter((c) => c.slug !== 'jones-01-thursday' || !/[ăâîșț]/.test(c.text));
+  const docOf = (c) => {
+    const path = /siftersearch\.com\/library\/(.+)$/.exec(c.url)?.[1] || '';
+    return { id: 1, title: c.linked_title, source_url: c.url, slug: path, collection: path.split('/')[1] || '', language: /_ar$|arabic/i.test(c.url) ? 'ar' : null };
+  };
+  it.each(cases.map((c, i) => [i, c.text, c]))('#%s "%s" is not linked to the wrong copy', async (_i, _t, c) => {
+    const r = await resolveWork({ text: c.text, canonical: c.text.replace(/[,.?]+$/, '') }, { find: async () => [docOf(c)] });
+    expect(r.doc).toBeUndefined();
+  });
+  it('the canonical OceanLibrary copy is linked', async () => {
+    const find = async () => [{ id: 2, title: 'The Hidden Words: Transcript of a talk by A. Q. Faizí', collection: 'bahai-talks' },
+      { id: 3, title: 'The Hidden Words', source_site: 'oceanlibrary.com', language: 'en' }, { id: 4, title: 'Seven Valleys: Faculty notes' }];
+    expect((await resolveWork({ text: 'Hidden Words', canonical: 'The Hidden Words' }, { find })).doc.id).toBe(3);
+    expect((await resolveWork({ text: 'The Bahá’í World', canonical: 'The Bahá’í World' }, { find: async () => [{ id: 5, title: "The Baha'i World: Volume XIII", language: 'en' }] })).doc).toBeUndefined();
+  });
+});

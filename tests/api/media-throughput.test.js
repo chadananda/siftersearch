@@ -259,3 +259,13 @@ describe('re-runs by slug', () => {
     expect(queue.mock.calls.map((c) => c[1])).toEqual([{ id: 41, from: 'correct' }, { id: 7, from: 'correct' }]);
   });
 });
+
+describe('one run per item', () => {
+  it('a re-run fan-out skips items with a run already queued or running', async () => {
+    const { mediaItemJob } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn();
+    const r = await mediaItemJob({ ids: [1, 2], redo: ['links'] }, { queue, repo: {}, ops: { pendingRuns: async (n) => (n === 'media-llm' ? [{ params: { id: 2 } }] : []) } });
+    expect(r).toEqual({ queued: 1, skipped_busy: [2] });
+    expect(queue).toHaveBeenCalledTimes(1);
+  });
+});

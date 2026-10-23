@@ -390,7 +390,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const work = await readJson(join(dir, 'transcript.work.json'));
       const L = d.links || await linkDeps();
       const { linkMentions } = await import('./links.js');
-      const res = await linkMentions(work.mentions || [], meta.headings || [], L);
+      const res = await linkMentions(work.mentions || [], meta.headings || [], { ...L, lang: /^[a-z]{2}/.test(meta.language || '') ? meta.language.slice(0, 2) : 'en' });
       await writeJson(join(dir, 'links.json'), res);
       rec.people = res.links.filter((l) => l.kind === 'person').length; rec.works = res.links.filter((l) => l.kind === 'work').length; rec.unresolved = res.unresolved.length;
     }
