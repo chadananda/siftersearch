@@ -29,5 +29,12 @@
     "usd_per_day": 25,
     "until": "2026-10-29",
     "approved": "Chad 10-22: 'happy to pay for an API' — test cap $25 total; the full run waits for his OK"
+  },
+  {
+    "label": "OceanLibrary export 2026-10-23: new English books — embeddings, phrase/keyword index, authorship, pipeline enrichment (planning/oceanlibrary-export-20261023-plan.md)",
+    "usd_total": 45,
+    "usd_per_day": 15,
+    "until": "2026-11-15",
+    "approved": "Chad 10-23 (via coordinator): 'Budget of about $25–45 is approved' for the OL export replace-in-place plan; writes still wait on the dry-run approval"
   }
 ]

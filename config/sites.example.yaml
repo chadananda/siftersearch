@@ -26,6 +26,8 @@
 #                         Use for crawler trees that live OUTSIDE the Dropbox
 #                         library (so Dropbox doesn't sync 1 GB+ of MD).
 #   cadence_minutes     - advisory; ingester ticks come from library-watcher
+#   paused              - bool; true = the automatic tick (ingestAllSites) skips this site.
+#                         Explicit runs (sites-ingest.mjs --site … --files …) still work.
 #   supersession_threshold - hash-overlap ratio for primary-corpus supersession
 #                            (only meaningful for the original oceanlibrary.com flow)
 #   religion_map        - adapter-specific frontmatter→canon mapping

@@ -95,6 +95,10 @@ function withDefaults(siteId, cfg) {
     // of <library>/-sites/<siteId>. Required for crawler trees outside the
     // Dropbox library so Dropbox doesn't try to sync 1 GB+ of MD.
     site_root: cfg.site_root || null,
+    // paused: true stops the AUTOMATIC tick (ingestAllSites) for this site — a re-ingest replaces every paragraph row,
+    // so a site whose files are being refreshed in place (OceanLibrary export 10-23, ops job ol-refresh) must not be
+    // re-ingested behind it. Explicit runs (ingestSite, scripts/sites-ingest.mjs --site … --files …) still work.
+    paused: cfg.paused === true,
     notes: cfg.notes || ''
   };
 }
@@ -892,6 +896,11 @@ export async function ingestAllSites(opts = {}) {
   }
   const results = [];
   for (const siteId of Object.keys(configs)) {
+    if (configs[siteId].paused) {
+      logger.info({ siteId }, 'Sites-ingester: site paused in sites.yaml — skipped');
+      results.push({ siteId, skipped: 'paused' });
+      continue;
+    }
     try {
       const r = await ingestSite(siteId, opts);
       results.push(r);

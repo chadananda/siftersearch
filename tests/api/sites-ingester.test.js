@@ -234,6 +234,10 @@ A third substantive paragraph, completing the section with a teaching on detachm
 `;
 
 const SITES_YAML = `sites:
+  paused-test:
+    adapter: oceanlibrary
+    scope: primary
+    paused: true
   testsite:
     adapter: oceanlibrary
     scope: primary
@@ -304,7 +308,9 @@ async function setupFixtureSite() {
   await mkdir(join(tmpBase, '-sites', 'testsite'), { recursive: true });
   await mkdir(join(tmpBase, '-sites', 'bt-test'), { recursive: true });
   await mkdir(join(tmpBase, '-sites', 'balib-test'), { recursive: true });
+  await mkdir(join(tmpBase, '-sites', 'paused-test'), { recursive: true });
   await writeFile(join(tmpBase, '-sites', 'sites.yaml'), SITES_YAML, 'utf-8');
+  await writeFile(join(tmpBase, '-sites', 'paused-test', 'paused-doc.md'), FIXTURE_OL_DOC, 'utf-8');
   await writeFile(join(tmpBase, '-sites', 'testsite', 'test-doc.md'), FIXTURE_OL_DOC, 'utf-8');
   await writeFile(join(tmpBase, '-sites', 'bt-test', 'unity.md'), FIXTURE_BAHAITEACHINGS, 'utf-8');
   await writeFile(join(tmpBase, '-sites', 'balib-test', 'pdf-doc.md'), FIXTURE_BAHAILIB_PDF, 'utf-8');
@@ -522,5 +528,12 @@ describe('Sites ingester (integration)', () => {
     // No assertion needed beyond "ingest succeeded without leaking to main"
     expect(r.errors).toBe(0);
     expect(rawDb.prepare(`SELECT COUNT(*) AS n FROM docs`).get().n).toBe(0);
+  });
+
+  it('a site marked paused: true is skipped by the automatic tick (ingestAllSites) and nothing of it is written', async () => {
+    const { sites } = await ingester.ingestAllSites({ force: true });
+    expect(sites.find((r) => r.siteId === 'paused-test')).toEqual({ siteId: 'paused-test', skipped: 'paused' });
+    expect(rawDb.prepare(`SELECT COUNT(*) AS n FROM docs WHERE file_path LIKE '%paused-doc%'`).get().n).toBe(0);
+    expect(sites.find((r) => r.siteId === 'testsite')?.stats).toBeDefined();   // other sites still run
   });
 });

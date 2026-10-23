@@ -29,6 +29,7 @@ import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
 import { normLang } from '../language-codes.js';
 import { spendSince } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
+import { olRefreshJob } from './ol-refresh-job.js';
 import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js';
 import { paragraphAuthorsJob } from './paragraph-authors-job.js';
@@ -124,6 +125,7 @@ REPORTS.spend = async ({ hours = 6 } = {}) => { const rows = await spendSince(ho
 REPORTS['block-attrs'] = blockAttrsJob;   // params: { ids?, limit? } — copy file ids/pn onto rows
 REPORTS['block-mismatch'] = blockMismatchReport;   // params: { ids } — why rows don't match file blocks
 REPORTS['reingest-impact'] = reingestImpactReport;
+REPORTS['ol-refresh'] = olRefreshJob;   // params: { dir, ids?, out?, liveCheck? } — OceanLibrary export applied IN PLACE (by ilm_id); DRY ONLY until Chad approves
 REPORTS['ctai-originals'] = ctaiOriginalsJob;   // write original-language files paragraphed from the English
 REPORTS['ingest-files'] = ingestFilesJob;       // params: { paths?, ids?, reparse? } — ingest in the ops worker
 REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by align
@@ -250,7 +252,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
 export const LANES = { extract: ['episode-extract', 'structure-infer'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'keyword-fill-sites', 'toc-candidates'],
+  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],

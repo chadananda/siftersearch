@@ -142,3 +142,11 @@ describe('sites.example.yaml — site_root convention', () => {
     expect(example['oceanlibrary.com'].site_root).toBeUndefined();
   });
 });
+
+describe('withDefaults — paused flag', () => {
+  it('is false unless set to true', () => {
+    expect(normalize('x', { adapter: 'oceanlibrary' }).paused).toBe(false);
+    expect(normalize('x', { adapter: 'oceanlibrary', paused: 'yes' }).paused).toBe(false);
+    expect(normalize('x', { adapter: 'oceanlibrary', paused: true }).paused).toBe(true);
+  });
+});

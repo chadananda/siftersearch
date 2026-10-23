@@ -6,6 +6,10 @@ import { queryAll, transaction } from '../db.js';
 export const rowsForDoc = (docId) =>
   queryAll('SELECT id, text, blocktype, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [docId]);
 
+/** A doc's live rows with position + OceanLibrary block id (external_para_id, block_attrs.ilm_id) — ops job ol-refresh. */
+export const olRowsForDoc = (docId) =>
+  queryAll('SELECT id, paragraph_index, text, blocktype, external_para_id, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index', [docId]);
+
 /** Write merged block_attrs JSON per row, in batches (single writer). changes: [{ id, attrs }] — attrs = full object. */
 export async function setBlockAttrs(changes, size = 500) {
   for (let i = 0; i < changes.length; i += size) {
