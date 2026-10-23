@@ -115,6 +115,8 @@ export function createExports(manifest) {
         }
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
+        // a contributor's item page from Dewey's receipts (signed link, rendered on tower; never cached)
+        if (request.method === 'GET' && /^\/dewey\/item\/\d+$/.test(url.pathname)) return fetch(`${API_ORIGIN}/api/v1/dewey-mail/item/${url.pathname.split('/').pop()}${url.search}`, { headers: { accept: 'text/html' } });
         if (url.pathname.startsWith('/_work/')) return workRoute(request, env);
         // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable
         if (MEDIA_FILE.test(url.pathname)) { const r = await mediaFile(request, env, ctx, API_ORIGIN); if (r) return r; }

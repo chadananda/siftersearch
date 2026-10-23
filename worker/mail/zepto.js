@@ -5,8 +5,8 @@
 const lower = (s) => String(s || '').trim().toLowerCase();
 
 /** The API body. Pure. */
-export function zeptoPayload({ from, fromName, to, toName = null, subject, text, html, inReplyTo = null, references = null, reference = null }) {
-  const mime = {};
+export function zeptoPayload({ from, fromName, to, toName = null, subject, text, html, inReplyTo = null, references = null, reference = null, headers = null }) {
+  const mime = { ...(headers || {}) };
   if (inReplyTo) mime['In-Reply-To'] = inReplyTo;
   if (references || inReplyTo) mime.References = references || inReplyTo;
   return {

@@ -9,6 +9,7 @@
 //   GET  /_mail/digest       signed: the day's conversation digest as a page (every conversation, no size cap)
 //   POST /_mail/zepto/events ZeptoMail webhook (Dewey's letters): bounces / complaints → mail_events + mail_suppression (zepto.js)
 //   POST /_mail/dewey/inject internal key: a raw letter to dewey@siftersearch.com stored as if delivered (dewey.js)
+//   GET|POST /_mail/dewey/pause · /_mail/dewey/approve  book requests: one-click pause; Chad's template approval (dewey.js)
 //   cron → mailCron          drafting, outreach planning, daily digest (drafting.js), Dewey's letters (dewey.js); POST /_mail/run?job=draft|outreach|welcome|digest|dewey runs one now
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 import { AwsClient } from 'aws4fetch';
@@ -18,7 +19,7 @@ import { composeLetter } from './letter.js';
 import { renderEmail } from '../../api/lib/mail-render.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
 import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage } from './drafting.js';
-import { deweyCron, injectInbound } from './dewey.js';
+import { deweyCron, deweyDaily, deweyLive, deweyRequests, injectInbound, pauseRequestsPage, approveRequestsPage } from './dewey.js';
 import { zeptoEvents } from './zepto.js';
 
 const REGION = 'us-west-2';
@@ -305,6 +306,8 @@ export function mailRoute(request, env) {
   if (request.method === 'POST' && p === '/_mail/support') return support(request, env);
   if (request.method === 'POST' && p === '/_mail/zepto/events') return zeptoEvents(request, env);
   if (request.method === 'POST' && p === '/_mail/dewey/inject') return injectInbound(request, env);
+  if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/dewey/pause') return pauseRequestsPage(request, env);
+  if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/dewey/approve') return approveRequestsPage(request, env);
   return null;
 }
 
@@ -333,8 +336,8 @@ async function adoptThread(db, mail) {
 async function runJob(request, env) {
   if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
   const job = new URL(request.url).searchParams.get('job');
-  const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest, dewey: deweyCron }[job];
-  if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest | dewey' }, 400);
+  const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest, dewey: deweyCron, 'dewey-live': deweyLive, 'dewey-requests': deweyRequests }[job];
+  if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest | dewey | dewey-live | dewey-requests' }, 400);
   const r = await fn(env);
   return json({ ran: job, ...(r && typeof r === 'object' ? r : {}) });
 }
@@ -342,7 +345,7 @@ async function runJob(request, env) {
 /** Cron (wrangler.jsonc triggers): drafts every MINUTE (Chad 10-13: read, reply, get the next page right away), outreach hourly, the conversation digest daily at 14:00 UTC (07:00 MST, Chad). */
 export async function mailCron(cron, env) {
   if (cron === '0 14 * * *') return dailyDigest(env);
-  if (cron === '0 * * * *') return planOutreach(env);
+  if (cron === '0 * * * *') return Promise.all([planOutreach(env), deweyDaily(env).catch(() => null)]);   // Dewey's daily work at its hour
   // * * * * * (also fires at :00 — each cron has one job, so nothing runs twice); Dewey's letters every minute beside Anís's
   return Promise.all([draftReplies(env), deweyCron(env).catch(() => null)]);
 }

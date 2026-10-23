@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-23T16:21:00.986Z",
+  "generated": "2026-10-23T17:21:38.485Z",
   "entries": [
+    {
+      "hash": "efd29b06",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A bare thank-you gets no letter back; greetings capitalise a lowercase display name",
+      "scope": "dewey"
+    },
     {
       "hash": "fda8557c",
       "date": "2026-10-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "BM25 ledger leaves out paragraphs with no words — 21,020 markup-only rows ('",
       "scope": "index"
-    },
-    {
-      "hash": "19038aa7",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Document structure is stage 3 — read every book for sub-documents and TOC right after ingestion",
-      "scope": "index"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "efd29b06",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A bare thank-you gets no letter back; greetings capitalise a lowercase display name",
+        "scope": "dewey"
+      },
       {
         "hash": "fda8557c",
         "date": "2026-10-23",
@@ -7007,13 +7014,6 @@
         "date": "2026-10-17",
         "type": "Fixed",
         "description": "BM25 ledger leaves out paragraphs with no words — 21,020 markup-only rows ('",
-        "scope": "index"
-      },
-      {
-        "hash": "19038aa7",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Document structure is stage 3 — read every book for sub-documents and TOC right after ingestion",
         "scope": "index"
       }
     ]

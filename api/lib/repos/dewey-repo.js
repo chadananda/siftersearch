@@ -33,6 +33,20 @@ export const findByDoc = async (docId) => parse(await queryOne('SELECT * FROM de
 export const itemsCreatedBy = async (email, limit = 12) => (await queryAll(`SELECT * FROM dewey_items WHERE LOWER(created_by) = LOWER(?) OR LOWER(created_by) LIKE LOWER(?)
   ORDER BY updated_at DESC LIMIT ?`, [String(email), `${String(email)} (%`, limit], 'dewey:by-creator')).map(parse);
 
+/** Items in any of these states, most recently changed first (the wanted pool for book requests). */
+export const itemsInStates = async (states, limit = 300) => (await queryAll(`SELECT * FROM dewey_items WHERE state IN (${states.map(() => '?').join(', ')})
+  ORDER BY updated_at DESC LIMIT ?`, [...states, limit], 'dewey:in-states')).map(parse);
+
+/** ACCEPTED contributions per contributor address (created_by's address, any suffix): total, since `since`, last. */
+export const ACCEPTED = ['source', 'processing', 'needs-ocr', 'needs-human', 'ingested'];
+export const contributorStats = async (since) => queryAll(`SELECT LOWER(CASE WHEN INSTR(created_by, ' ') > 0 THEN SUBSTR(created_by, 1, INSTR(created_by, ' ') - 1) ELSE created_by END) AS email,
+  COUNT(*) AS total, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS recent, MAX(created_at) AS last_at
+  FROM dewey_items WHERE created_by LIKE '%@%' AND state IN (${ACCEPTED.map(() => '?').join(', ')}) GROUP BY 1`, [since, ...ACCEPTED], 'dewey:contributor-stats');
+
+/** Works contributed BY EMAIL that are now in the library, changed since `since` (the "now live" notes). */
+export const ingestedByEmailSince = async (since, limit = 500) => (await queryAll(`SELECT * FROM dewey_items WHERE state = 'ingested' AND doc_id IS NOT NULL
+  AND created_by LIKE '% (email)' AND updated_at >= ? ORDER BY updated_at LIMIT ?`, [since, limit], 'dewey:ingested-by-email')).map(parse);
+
 /** Change fields and, when `state` changes, append { at, state, why } to the log. */
 export async function updateItem(id, fields = {}, why = null) {
   const cur = await getItem(id);

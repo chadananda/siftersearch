@@ -11,6 +11,7 @@ import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody, composeLet
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
 import { conversationDigest, chatReplyHtml, embeddable } from './conversation-digest.js';
+import { approveUrl } from './dewey.js';
 import { emailDocument } from '../../api/lib/mail-render.js';
 import { pauseToken } from './rules.js';
 
@@ -361,7 +362,7 @@ export async function gatherConversations(env, { until = new Date(), hours = 24,
   const end = until.getTime(), start = end - hours * 3600e3;
   // Dewey's letters too (mailbox 'dewey', channel 'dewey' → the digest's own "Dewey" section, Chad 10-23)
   const rows = (await db.prepare(`SELECT * FROM mail_messages WHERE mailbox IN ('anis', 'support', 'dewey') AND created_at >= ? AND created_at < ?
-      AND NOT (direction = 'in' AND status IN ('spam', 'auto')) AND NOT (direction = 'out' AND status IN ('discarded', 'silent')) ORDER BY id`)
+      AND NOT (direction = 'in' AND status IN ('spam', 'auto', 'bounce', 'list')) AND NOT (direction = 'out' AND status IN ('discarded', 'silent')) ORDER BY id`)
     .bind(sqlTime(start), sqlTime(end)).all()).results;
   const get = fetchTower || ((path) => fetch(`${TOWER}${path}`, { headers: { 'x-internal-key': env.S1_KEY } }).then((r) => (r.ok ? r.json() : null)).catch(() => null));
   const tower = await get(`/digest?hours=${hours}&until=${encodeURIComponent(until.toISOString())}`);
@@ -387,15 +388,21 @@ export async function gatherConversations(env, { until = new Date(), hours = 24,
     const c = threads.get(key);
     if (m.direction === 'in') {
       c.person ||= { email: m.from_addr, name: m.from_name };
-      c.items.push({ kind: 'in', at: m.created_at, from: m.from_addr, fromName: m.from_name, subject: m.subject, text: ownText(m.text || ''), status: m.status, channel: c.channel });
+      let im = null; try { im = m.meta_json ? JSON.parse(m.meta_json) : null; } catch { /* old row */ }
+      // Dewey: what the door rules / the screen / the reply rules decided, and why (Chad 10-23: silence + a note in the digest)
+      const why = dewey && !['answered', 'drafted', 'new'].includes(m.status) ? `${m.status}${m.error ? ` — ${m.error}` : ''}` : m.status;
+      const scr = dewey && im?.screen ? `screen: ${im.screen.reason}${im.screen_usd != null ? ` · $${Number(im.screen_usd).toFixed(5)}` : ''}` : dewey && im?.screen_error ? `screen failed (${im.screen_error}) — rules alone` : null;
+      c.items.push({ kind: 'in', at: m.created_at, from: m.from_addr, fromName: m.from_name, subject: m.subject, text: ownText(m.text || ''), status: why, channel: c.channel,
+        screen: scr, screen_usd: dewey ? Number(im?.screen_usd) || 0 : 0 });
       continue;
     }
     if (dewey) {                                   // Dewey's letter exactly as sent (its stored HTML); no tower round to match
       let meta = null; try { meta = m.meta_json ? JSON.parse(m.meta_json) : null; } catch { /* none */ }
-      const type = m.kind === 'stranger' ? 'how to contribute' : 'dewey reply';
+      const type = { stranger: 'how to contribute', live: 'now live', request: 'book request' }[m.kind] || 'dewey receipt';
       c.person ||= { email: m.to_addr, name: null };
       c.items.push({ kind: 'out', at: m.sent_at || m.created_at, to: m.to_addr, subject: m.subject, html: embeddable(m.html || ''), text: m.text, status: m.status, channel: 'dewey',
-        meta: { type, models: [], usd: null, latency_ms: null, ...(meta || {}), ...(meta?.type === 'dewey' ? { type } : {}) }, audit: null, review: null, error: m.error });
+        meta: { type, models: [], latency_ms: null, ...(meta || {}), usd: meta?.work_usd ?? meta?.usd ?? null, ...(meta?.type === 'dewey' ? { type } : {}) }, audit: null, error: m.error,
+        work_usd: Number(meta?.work_usd) || 0, review: m.kind === 'request' && m.status === 'draft' ? await approveUrl(env) : null });
       if (!c.types.includes(type)) c.types.push(type);
       continue;
     }

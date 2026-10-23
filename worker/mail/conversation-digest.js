@@ -66,6 +66,7 @@ function inboundHtml(m, reviewer) {
   return `<div style="margin:0 0 14px">
   <div style="font:12px/1.5 ui-monospace,Menlo,monospace;color:#7a8389">${esc(mst(m.at))} · ${esc(CHANNEL[m.channel] || m.channel)} · from ${esc(m.fromName ? `${reviewer && m.from === reviewer ? m.fromName : redactName(m.fromName)} ` : '')}&lt;${esc(redactEmail(m.from, reviewer))}&gt;${m.subject ? ` · <b>${esc(m.subject)}</b>` : ''}${m.status && !['new', 'drafted', 'answered'].includes(m.status) ? ` · ${chip(m.status, '#b33')}` : ''}</div>
   <div dir="auto" style="white-space:pre-wrap;font-size:15px;color:#222;background:#f6f4ef;border-left:3px solid #c9bfae;padding:8px 12px;border-radius:2px">${esc(String(m.text || '').slice(0, 6000))}</div>
+  ${m.screen ? `<div style="font:11.5px ui-monospace,Menlo,monospace;color:#7a8389;margin-top:3px">${esc(m.screen)}</div>` : ''}
 </div>`;
 }
 
@@ -84,7 +85,7 @@ function replyHtml(r, reviewer) {
   <div style="margin:3px 0 6px">${chips}</div>
   <div style="font:10px ui-monospace,Menlo,monospace;color:#9aa5aa;text-transform:uppercase;letter-spacing:.12em;margin:0 0 2px">${how}</div>
   <div style="border:1px solid #d9e2e6;border-radius:6px;padding:14px 18px;background:#fff">${r.html}</div>${problems}
-  ${r.review ? `<div style="font-size:12.5px;margin-top:4px"><a href="${esc(r.review)}" style="color:#1f6f8b">${st.held ? 'Review and send' : 'Open this letter’s review page'}</a></div>` : ''}
+  ${r.review ? `<div style="font-size:12.5px;margin-top:4px"><a href="${esc(r.review)}" style="color:#1f6f8b">${r.channel === 'dewey' ? 'Approve the book-request template' : st.held ? 'Review and send' : 'Open this letter’s review page'}</a></div>` : ''}
 </div>`;
 }
 
@@ -149,7 +150,12 @@ export function conversationDigest(conversations, { date = '', reviewer = '', fu
   const tail = `${mailHtml ? `<div style="margin-top:28px"><div style="font:11px monospace;color:#999;text-transform:uppercase;letter-spacing:.14em;margin:0 0 8px">Mail</div>${mailHtml}</div>` : ''}</div>`;
   let size = head.length + tail.length;
   let truncated = 0;
-  const DEWEY_HEAD = `<div style="font-family:'Palatino Linotype',Palatino,Georgia,serif;font-style:italic;font-size:24px;color:#6b4f2a;border-top:2px solid #e8dfd0;padding-top:14px;margin:34px 0 14px">Dewey — contributor mail</div>`;
+  // Dewey's costs: the cheap screen against the work it let through (Chad 10-23: "show the screen cost against the downstream cost")
+  const dItems = conversations.filter((c) => c.channel === 'dewey').flatMap((c) => c.items);
+  const dCost = { screen: dItems.reduce((n, x) => n + (Number(x.screen_usd) || 0), 0), work: dItems.reduce((n, x) => n + (Number(x.work_usd) || 0), 0),
+    letters: dItems.filter((x) => x.kind === 'in').length, replies: dItems.filter((x) => x.kind === 'out').length };
+  const DEWEY_HEAD = `<div style="font-family:'Palatino Linotype',Palatino,Georgia,serif;font-style:italic;font-size:24px;color:#6b4f2a;border-top:2px solid #e8dfd0;padding-top:14px;margin:34px 0 4px">Dewey — contributor mail</div>
+  <div style="font:12px ui-monospace,Menlo,monospace;color:#7a8389;margin:0 0 14px">${dCost.letters} letter${dCost.letters === 1 ? '' : 's'} in · ${dCost.replies} out · screen ${money(dCost.screen)} · downstream work ${money(dCost.work)}</div>`;
   const sections = conversations.map((c, i) => {
     const full = (i === firstDewey ? DEWEY_HEAD : '') + conversationHtml(c, i, reviewer);
     if (!truncated && size + full.length <= maxBytes) { size += full.length; return full; }
@@ -159,8 +165,8 @@ export function conversationDigest(conversations, { date = '', reviewer = '', fu
   const html = `${head}${truncated ? `<p style="color:#b33;font-size:14px">This digest passed ~1 MB: the last ${truncated} conversation${truncated === 1 ? ' is' : 's are'} on <a href="${esc(fullUrl)}">the digest page</a>.</p>` : ''}${sections.join('\n')}${tail}`;
   const text = [`Anís — every conversation · ${date} · last 24 h`, `${s.conversations} conversations · ${s.inbound} in · ${s.replies} replies · ${money(s.usd)}`,
     `Flagged ${s.flagged.length} · held ${s.held.length} · failed ${s.failed.length + s.failedInbound.length}`, fullUrl ? `Full digest: ${fullUrl}` : '', '',
-    ...conversations.map((c, i) => [...(i === firstDewey ? ['', '── DEWEY — contributor mail ──'] : []), `${i + 1}. ${c.person?.email ? redactEmail(c.person.email, reviewer) : 'web visitor'} · ${CHANNEL[c.channel] || c.channel}`,
-      ...c.items.map((x) => (x.kind === 'in' ? `  ${mst(x.at)} THEY WROTE: ${String(x.text || '').replace(/\s+/g, ' ').slice(0, 300)}`
+    ...conversations.map((c, i) => [...(i === firstDewey ? ['', `── DEWEY — contributor mail · screen ${money(dCost.screen)} · downstream ${money(dCost.work)} ──`] : []), `${i + 1}. ${c.person?.email ? redactEmail(c.person.email, reviewer) : 'web visitor'} · ${CHANNEL[c.channel] || c.channel}`,
+      ...c.items.map((x) => (x.kind === 'in' ? `  ${mst(x.at)} THEY WROTE${x.channel === 'dewey' && x.status && !['new', 'answered'].includes(x.status) ? ` [${x.status}]` : ''}: ${String(x.text || '').replace(/\s+/g, ' ').slice(0, 300)}${x.screen ? ` (${x.screen})` : ''}`
         : `  ${mst(x.at)} ${x.channel === 'dewey' ? 'DEWEY' : 'ANÍS'} (${x.meta?.type || 'reply'}, ${money(x.meta?.usd)}, ${secs(x.meta?.latency_ms)}${x.status && x.status !== 'sent' && x.status !== 'answered' ? `, ${x.status}` : ''}): ${plainText(x.text || '').replace(/\s+/g, ' ').slice(0, 400)}`)),
     ].join('\n'))].join('\n');
   return { html, text, conversations: s.conversations, replies: s.replies, flagged: s.flagged.length, held: s.held.length, truncated };
