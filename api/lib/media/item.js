@@ -2,6 +2,7 @@
 // describe → headings → quotes → links → assess → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
+import { late } from './late.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -69,7 +70,9 @@ const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
 
 const sha256Of = (path) => new Promise((res, rej) => { const h = createHash('sha256'); createReadStream(path).on('data', (d) => h.update(d)).on('end', () => res(h.digest('hex'))).on('error', rej); });
 const readJson = async (p, d = null) => { try { return JSON.parse(await readFile(p, 'utf8')); } catch { return d; } };
-async function writeJson(p, v) { await writeFile(`${p}.tmp`, JSON.stringify(v, null, 1)); await rename(`${p}.tmp`, p); }
+// a temp name of its own per write: checkpoints saved by parallel probes must not share one (10-23)
+let wseq = 0;
+async function writeJson(p, v) { const t = `${p}.${process.pid}.${++wseq}.tmp`; await writeFile(t, JSON.stringify(v, null, 1)); await rename(t, p); }
 
 /** The tradition a source path belongs to (first folder under the media root). */
 export function traditionOf(path) {
@@ -89,7 +92,7 @@ async function defaults() {
 /** The link stage's lookups (server-side: bio set, identity lookup index, document finder, section index, link policy). */
 async function linkDeps() {
   const [{ listBioPersons }, { entityLookup }, { findDocuments }, { findSections }, { linkFor }] = await Promise.all([
-    import('../bio.js'), import('../entity-api.js'), import('../docs-repo.js'), import('../repos/sections-repo.js'), import('../source-links.js')]);
+    late('api/lib/bio.js'), late('api/lib/entity-api.js'), late('api/lib/docs-repo.js'), late('api/lib/repos/sections-repo.js'), late('api/lib/source-links.js')]);
   const bio = (await listBioPersons())?.persons || [];
   return { bio, lookup: (n) => entityLookup(n, { type: 'person', limit: 10 }), sections: (t) => findSections(t, { limit: 20 }), linkFor,
     find: async (t) => (await findDocuments(t, { limit: 12, fields: 'id,title,author,religion,collection,language,source_site,source_url,slug,paragraph_count,external_id' }))?.docs || [] };
@@ -220,36 +223,53 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'enhance') {
+      // CHECKPOINTED per step (10-23: every drain threw a half-done enhance away and 16 prep runs started over): each
+      // finished step is recorded in meta.enh_ck and saved; a resumed stage skips it. Remote steps re-attach by job id.
+      const ck = meta.enh_ck = meta.enh_ck || { probes: {} };
+      const keep = async (k, v) => { ck[k] = v; await save(); return v; };
       const orig = join(dir, meta.original);
       const th = await threads();
-      const m0 = await towerLight(() => tools.tool('metrics', orig, {}, { threads: 2, stop }));
+      const m0 = ck.m0 || await keep('m0', await towerLight(() => tools.tool('metrics', orig, {}, { threads: 2, stop })));
       await mkdir(join(dir, 'enhanced'), { recursive: true });
       const light = join(dir, 'enhanced', 'light.flac');
       const chain = lightChain({ ...m0, sample_rate: meta.source?.probe?.sample_rate });
       const jobOf = (k) => { meta.enc_jobs = meta.enc_jobs || {}; meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110); return meta.enc_jobs[k]; };
       const lightLocal = () => towerLight(() => tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light], { stop }));
-      if (tools.encodeRemote) { jobOf('lc'); await save(); await tools.encodeRemote('light', orig, light, { af: chain, job: meta.enc_jobs.lc, stop, local: lightLocal }); delete meta.enc_jobs.lc; }
-      else await lightLocal();
-      const m1 = await towerLight(() => tools.tool('metrics', light, {}, { threads: 2, stop }));
+      if (!(ck.light && existsSync(light))) {
+        if (tools.encodeRemote) { jobOf('lc'); await save(); await tools.encodeRemote('light', orig, light, { af: chain, job: meta.enc_jobs.lc, stop, local: lightLocal }); delete meta.enc_jobs.lc; }
+        else await lightLocal();
+        await keep('light', true);
+      }
+      const m1 = ck.m1 || await keep('m1', await towerLight(() => tools.tool('metrics', light, {}, { threads: 2, stop })));
       const variants = [{ name: 'original', file: orig, ...m0 }, { name: 'light', file: light, ...m1 }];
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
         const dfn = join(dir, 'enhanced', 'dfn.flac');
-        if (!meta.dfn_job) { meta.dfn_job = `${meta.slug}-df-${Date.now().toString(36)}`.slice(0, 110); await save(); }
-        if (tools.gpuOrTower) await tools.gpuOrTower('dfn', light, { output: dfn }, { job: meta.dfn_job, pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), stop, file: true, slot: towerSlot });
-        else await towerSlot(() => tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop }));
-        delete meta.dfn_job;
-        variants.push({ name: 'dfn', file: dfn, ...(await towerLight(() => tools.tool('metrics', dfn, {}, { threads: 2, stop }))) });
+        if (!(ck.dfn && existsSync(dfn))) {
+          if (!meta.dfn_job) { meta.dfn_job = `${meta.slug}-df-${Date.now().toString(36)}`.slice(0, 110); await save(); }
+          if (tools.gpuOrTower) await tools.gpuOrTower('dfn', light, { output: dfn }, { job: meta.dfn_job, pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), stop, file: true, slot: towerSlot });
+          else await towerSlot(() => tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop }));
+          delete meta.dfn_job;
+          await keep('dfn', true);
+        }
+        const mdfn = ck.mdfn || await keep('mdfn', await towerLight(() => tools.tool('metrics', dfn, {}, { threads: 2, stop })));
+        variants.push({ name: 'dfn', file: dfn, ...mdfn });
       }
       const starts = probeStarts(meta.duration_s).join(',');
       const lang = /^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '';
-      // the variants' probes at once (the GPU host's memory lock paces them)
+      // the variants' probes at once (the GPU host's memory lock paces them); each result is kept as it arrives
       await Promise.all(variants.map(async (v) => {
-        const probe = (host) => tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(host ? { host } : {}) });
-        const p = tools.withProbeHost ? await tools.withProbeHost(probe, { long: (meta.duration_s || 0) > 5400 }) : await probe(tools.probeHost ? tools.probeHost() : null);
+        let p = ck.probes?.[v.name];
+        if (!p) {
+          const probe = (host) => tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(host ? { host } : {}) });
+          const r = tools.withProbeHost ? await tools.withProbeHost(probe, { long: (meta.duration_s || 0) > 5400 }) : await probe(tools.probeHost ? tools.probeHost() : null);
+          p = { avg_logprob: r.avg_logprob, words: r.words, seconds: r.seconds, excerpts: (r.excerpts || []).map((e) => ({ language: e.language, text: e.text })) };
+          ck.probes = { ...(ck.probes || {}), [v.name]: p }; await save();
+        }
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
       }));
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);
       meta.enhancement = { chain, variants: variants.map(({ file, ...v }) => ({ ...v, file: relative(dir, file) })), asr_input: asr.name, asr_why: asr.why, listening: listen.name, listening_why: listen.why };
+      delete meta.enh_ck;
       rec.threads = th;
     }
 
@@ -588,7 +608,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         const { resolveSpeaker, recordingYear } = await import('./identity.js');
         const { loadSpeakerPeople, identityContext } = await import('../ops/media-jobs.js');
         speakerPeople = speakerPeople || await loadSpeakerPeople();
-        const who = resolveSpeaker(meta.speaker, speakerPeople, identityContext(item, meta));
+        const who = resolveSpeaker(meta.speaker, speakerPeople, identityContext(item, meta), { notSpeakers: speakerPeople.notSpeakers || [] });
+        if (who.not_speaker) { meta.speaker_review = 'a series name, not a speaker'; meta.speaker = null; meta.speaker_key = null; }
         if (who.key) {
           meta.speaker = who.display; meta.speaker_key = who.key;
           const y = recordingYear({ year: meta.year, source_kind: item.source_kind, title: `${meta.title || ''} ${meta.source?.title || ''}`, description: meta.source?.description || '', file: item.source_ref || '' }, who.person);

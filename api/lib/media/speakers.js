@@ -4,6 +4,7 @@
 // (only a page that is about a Bahá'í). Each candidate must be a raster image of a usable size and a page whose title
 // carries the person's names. The master is kept once on tower; the image worker crops it face-centred per size.
 // fetch injected for tests.
+import { late } from './late.js';
 import { slugify } from './names.js';
 import { findSpeakerImage } from './thumbs.js';
 
@@ -116,7 +117,7 @@ export async function putCdnPortrait(key, bytes, contentType, { fetchImpl = fetc
 /** A biography portrait already held for this person (bio-assets manifest, keyed by entity id) → { cdn, … } or null. */
 export async function biographyPortrait(entityId, { manifest = null } = {}) {
   if (!entityId) return null;
-  const m = manifest || (await import('../bio.js')).readBioManifest();
+  const m = manifest || (await late('api/lib/bio.js')).readBioManifest();
   const e = m?.[String(entityId)];
   return e?.cdn ? e : null;
 }

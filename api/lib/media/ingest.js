@@ -2,6 +2,7 @@
 // and ingested through the ingester + single writer (the same path as Dewey's intake), so search hits land on its
 // paragraphs (block attrs t0/t1 → /media/<slug>?t=…). Its quotations and cross-references are stored as
 // content_source_links on the transcript's paragraphs (method media-sourcehunt / media-cr), like the compilation links.
+import { late } from './late.js';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { config } from '../config.js';
@@ -27,7 +28,7 @@ export async function ingestTranscript({ dir, meta }, deps = {}) {
   const md = await readFile(join(dir, 'transcript.md'), 'utf8');
   await mkdir(dirname(join(base, rel)), { recursive: true });
   await writeFile(join(base, rel), md);
-  const ingest = deps.ingest || (async (text, r) => (await import('../../services/ingester.js')).ingestDocument(text, {}, r));
+  const ingest = deps.ingest || (async (text, r) => (await late('api/services/ingester.js')).ingestDocument(text, {}, r));
   const res = await ingest(md, rel);
   if (!res?.documentId) throw new Error(`ingest failed: ${res?.error || res?.status || 'no document id'}`);
   const repo = deps.repo || await import('../repos/media-repo.js');
@@ -37,7 +38,7 @@ export async function ingestTranscript({ dir, meta }, deps = {}) {
   let qj = {};
   try { qj = JSON.parse(await readFile(join(dir, 'quotes.json'), 'utf8')); } catch { /* no quotes stage */ }
   const links = linkRows(qj, paraIds, res.documentId);
-  if (links.length) await (deps.saveLinks || (await import('../repos/source-links-repo.js')).saveSourceLinks)(links);
+  if (links.length) await (deps.saveLinks || (await late('api/lib/repos/source-links-repo.js')).saveSourceLinks)(links);
   // pi: transcript paragraph n → the document's paragraph_index (a search hit's ?p= on /media/<slug>)
   return { documentId: res.documentId, rel, paragraphs: rows.length, links: links.length, status: res.status, pi };
 }

@@ -6,6 +6,7 @@
 //   media-item  { id, from?, only?, threads?, lang?, model?, reslug? } — one item through the stage machine (api/lib/media/item.js);
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
+import { late } from '../media/late.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
@@ -106,7 +107,7 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     const { archiveRoot } = await import('../media/item.js');
     const rm = deps.rm || (await import('fs/promises')).rm;
     if (item.doc_id) {
-      await (deps.retire || (async (ids) => (await import('../docs-repo.js')).softDeleteDocs(ids, { reason: 'media reslug', allowLastCopy: true })))([item.doc_id]);
+      await (deps.retire || (async (ids) => (await late('api/lib/docs-repo.js')).softDeleteDocs(ids, { reason: 'media reslug', allowLastCopy: true })))([item.doc_id]);
       const { config } = await import('../config.js');
       if (item.slug) await rm(join(config.library.basePath, item.tradition || "Baha'i", 'Media', `${item.slug}.md`), { force: true });
     }
@@ -493,7 +494,7 @@ export async function mediaStagesSyncJob(params = {}, deps = {}) {
 // talks are relinked (redo quotes + update; the new gate picks the next good source)
 export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
-  const { paragraphsByIds } = deps.paragraphs || await import('../paragraphs-repo.js');
+  const { paragraphsByIds } = deps.paragraphs || await late('api/lib/paragraphs-repo.js');
   const { passageGate } = await import('../media/quotes.js');
   const { readFile: rf } = await import('fs/promises');
   const queue = deps.queue || enqueue;
@@ -678,7 +679,7 @@ export async function mediaMetaFixJob({ write = false, ids = null } = {}, deps =
 
 // ── SPEAKER IDENTITY (Chad 10-23: one person, many name forms; api/lib/media/identity.js, data/media-speaker-people.json) ──
 export async function loadSpeakerPeople(read = async () => (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-speaker-people.json'), 'utf8')) {
-  try { return JSON.parse(await read()).people || []; } catch { return []; }
+  try { const d = JSON.parse(await read()); const people = d.people || []; people.notSpeakers = d.not_speakers || []; return people; } catch { return []; }
 }
 /** The identity context of one item (evidence for a surname-only or ambiguous name). */
 export function identityContext(item, meta = {}) {
@@ -709,8 +710,9 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
     const said = meta.speaker || it.speaker || null;
     if (!said) continue;
     const ctx = identityContext(it, meta);
-    const r = resolveSpeaker(said, people, ctx);
+    const r = resolveSpeaker(said, people, ctx, { notSpeakers: people.notSpeakers || [] });
     const fix = {};
+    if (r.not_speaker) { fix.speaker = null; fix.speaker_key = null; review.push({ slug: it.slug, said, why: 'a series name, not a speaker — speaker cleared', candidates: [] }); }
     if (r.key) {
       if (!clusters.has(r.key)) clusters.set(r.key, { key: r.key, display: r.display, role: r.person?.role || null, forms: new Map() });
       const c = clusters.get(r.key); const f = c.forms.get(said) || { n: 0, bases: new Set() }; f.n++; f.bases.add(r.basis); c.forms.set(said, f);
@@ -727,15 +729,15 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
     // the catalogue row at once (the /media index groups by it) — also for a talk with a run queued: the row is not the
     // run's to write until its catalog stage, and the meta file below is left to that run
     const row0 = {};
-    if (fix.speaker) row0.speaker = fix.speaker;
-    if (fix.speaker_key) row0.speaker_key = fix.speaker_key;
+    if ('speaker' in fix) row0.speaker = fix.speaker;
+    if ('speaker_key' in fix) row0.speaker_key = fix.speaker_key;
     if ('year' in fix) row0.year = fix.year;
     if (busy.has(it.id)) { if (Object.keys(row0).length && repo.updateMediaItem) await repo.updateMediaItem(it.id, row0); skipped_busy.push(it.slug); continue; }
     await writeMeta(it.dir, { ...meta, ...fix });
     // the catalogue row at once (the /media index groups by it), the re-render follows in the update run
     const row = {};
-    if (fix.speaker) row.speaker = fix.speaker;
-    if (fix.speaker_key) row.speaker_key = fix.speaker_key;
+    if ('speaker' in fix) row.speaker = fix.speaker;
+    if ('speaker_key' in fix) row.speaker_key = fix.speaker_key;
     if ('year' in fix) row.year = fix.year;
     if (Object.keys(row).length && repo.updateMediaItem) await repo.updateMediaItem(it.id, row);
     if (fix.speaker_key && repo.upsertSpeaker) await repo.upsertSpeaker({ key: fix.speaker_key, name: fix.speaker || meta.speaker });

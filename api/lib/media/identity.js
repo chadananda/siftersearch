@@ -13,7 +13,7 @@ const SURNAME_VARIANTS = { fayzi: 'faizi', faizy: 'faizi', khadim: 'khadem', kha
 export function nameTokens(name) {
   let s = String(name ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\([^)]*\)/g, ' ')
     .replace(/[’‘ʼʻ`´'"“”]/g, '').toLowerCase();
-  s = s.replace(/hand of the cause(?: of god)?/g, ' ').replace(/amatu?l[\s-]*baha/g, ' ');
+  s = s.replace(/hand of the cause(?: of god)?/g, ' ').replace(/amatu?l[\s-]*baha/g, ' ').replace(/,?\s*knight of bahau?u?llah\b/g, ' ');
   const toks = s.replace(/[^a-z]+/g, ' ').trim().split(/\s+/).filter(Boolean);
   // strip leading titles only (a surname such as "Haney" stays)
   while (toks.length > 1 && TITLES.test(toks[0])) toks.shift();
@@ -62,9 +62,14 @@ export function evidenceFor(p, ctx = {}) {
  * A speaker string (+ the item's context) → { key, display, person, basis } | { review, candidates } | { unknown: true }.
  * people: [{ key, name (house style), aliases[], born?, died?, role?, works[]?, cb? }].
  */
-export function resolveSpeaker(name, people = [], ctx = {}) {
+export function resolveSpeaker(name, people = [], ctx = {}, { notSpeakers = [] } = {}) {
   const toks = nameTokens(name);
+  // a series or programme name taken for a speaker ("Echoes from the Lotus")
+  if (notSpeakers.some((n) => nameTokens(n).join(' ') === toks.join(' '))) return { not_speaker: true };
   if (!toks.length || /^(?:audience|questioner|interpreter|narrator|chair|various|unknown|misc|speaker)$/.test(toks.join(' '))) return { unknown: true };
+  // an exact known form of one person wins outright (aliases that change the surname: "Edward Prine" = Ed Price)
+  const exact = people.filter((p) => !p.cb && formsOf(p).some((f) => nameTokens(f).length >= 2 && nameTokens(f).join(' ') === toks.join(' ')));
+  if (exact.length === 1) return { key: exact[0].key, display: exact[0].name, person: exact[0], basis: 'known name form' };
   const sur = toks[toks.length - 1];
   const same = people.filter((p) => formsOf(p).some((f) => surnameOf(f) === sur));
   if (toks.length >= 2) {

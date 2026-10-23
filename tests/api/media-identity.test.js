@@ -84,3 +84,19 @@ describe('the identity job', async () => {
     expect(queued.sort()).toEqual([1, 2]);
   });
 });
+
+describe('the portrait agent’s merges (10-23)', async () => {
+  const data = JSON.parse(readFileSync(new URL('../../data/media-speaker-people.json', import.meta.url), 'utf8'));
+  const ps = data.people;
+  it.each([['Edward Prine', 'ed-price'], ['Elsie Austin Knight', 'elsie-austin'], ['Baharieh Maani Rohani', 'baharieh-rouhani-maani'],
+    ['Baharieh Rouhani Maani', 'baharieh-rouhani-maani'], ['Stephen Phelps', 'steven-phelps'], ['Hasan Muvaqqar Balyuzi', 'hasan-balyuzi'], ['Steve Birkland', 'stephen-birkland']])('%s → %s', (n, k) => {
+    expect(resolveSpeaker(n, ps).key).toBe(k);
+  });
+  it('a series is not a speaker', () => {
+    expect(resolveSpeaker('Echoes From The Lotus', ps, {}, { notSpeakers: data.not_speakers })).toEqual({ not_speaker: true });
+  });
+  it('every person key that has a gallery is the gallery key', () => {
+    const g = JSON.parse(readFileSync(new URL('../../data/media-speaker-gallery.json', import.meta.url), 'utf8')).speakers;
+    for (const k of ['elsie-austin', 'baharieh-rouhani-maani', 'steven-phelps', 'hasan-balyuzi', 'stephen-birkland', 'abul-qasim-faizi', 'adib-taherzadeh']) expect(g[k], k).toBeTruthy();
+  });
+});

@@ -1,5 +1,5 @@
 {
- "note": "Speaker IDENTITIES for the media library (api/lib/media/identity.js): one person per entry, house-style display name, the name forms seen in files and YouTube, lifespan (to tell recording from upload dates), station, and works (evidence for a surname-only label). key = the media_speakers key (portrait, box set). Add a person here rather than letting a spelling make a new one. 'cb': true = Covenant-breaker, never linked. Lifespans only where certain (a wrong date would flag real recordings).",
+ "note": "Speaker IDENTITIES for the media library (api/lib/media/identity.js): one person per entry, house-style display name, the name forms seen in files and YouTube, lifespan (to tell recording from upload dates), station, and works (evidence for a surname-only label). key = the media_speakers key (portrait, box set). Add a person here rather than letting a spelling make a new one. 'cb': true = Covenant-breaker, never linked. Lifespans only where certain (a wrong date would flag real recordings). not_speakers: series or programme names that were taken for a speaker; such talks get no speaker until one is known. A person's key is also its gallery key (data/media-speaker-gallery.json).",
  "people": [
   {
    "key": "abul-qasim-faizi",
@@ -323,6 +323,79 @@
    "born": 1936,
    "died": 2011,
    "role": "uhj"
+  },
+  {
+   "key": "ed-price",
+   "name": "Ed Price",
+   "aliases": [
+    "Edward A. Price",
+    "Edward Price",
+    "Edward Prine",
+    "Ed Prine"
+   ]
+  },
+  {
+   "key": "elsie-austin",
+   "name": "Elsie Austin",
+   "aliases": [
+    "Dr. Elsie Austin",
+    "Elsie Austin Knight",
+    "Elsie Austin, Knight of Bahá'u'lláh"
+   ]
+  },
+  {
+   "key": "baharieh-rouhani-maani",
+   "name": "Baharieh Rouhani Ma’ani",
+   "aliases": [
+    "Baharieh Rouhani Maani",
+    "Baharieh Rouhani-Ma'ani",
+    "Baharieh Maani Rohani",
+    "Baharieh Ma'ani Rohani",
+    "Baharieh Rouhani"
+   ]
+  },
+  {
+   "key": "steven-phelps",
+   "name": "Steven Phelps",
+   "aliases": [
+    "Stephen Phelps",
+    "Dr. Steven Phelps",
+    "Steve Phelps"
+   ]
+  },
+  {
+   "key": "hasan-balyuzi",
+   "name": "Ḥasan M. Balyuzi",
+   "aliases": [
+    "Hasan Muvaqqar Balyuzi",
+    "Hasan Balyuzi",
+    "H. M. Balyuzi",
+    "H. Balyuzi",
+    "Hasan M. Balyuzi",
+    "H Baluyzi"
+   ],
+   "born": 1908,
+   "died": 1980,
+   "role": "hand",
+   "works": [
+    "Bahá'u'lláh, The King of Glory",
+    "The Báb",
+    "'Abdu'l-Bahá"
+   ]
+  },
+  {
+   "key": "stephen-birkland",
+   "name": "Stephen Birkland",
+   "aliases": [
+    "Steve Birkland",
+    "Stephen J. Birkland"
+   ],
+   "role": "uhj"
   }
+ ],
+ "not_speakers": [
+  "Echoes from the Lotus",
+  "Echoes From The Lotus",
+  "Echos from the Lotus"
  ]
 }

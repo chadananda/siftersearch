@@ -254,3 +254,28 @@ describe('media item stage machine', () => {
     expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain(`## ${tr.headings[0].text}`);
   });
 });
+
+describe('prep survives a drain (10-23: 88 restarts a night)', () => {
+  it('a resumed enhance skips the probes and metrics it already finished', async () => {
+    const d = fakes();
+    let draining = false, probes = 0;
+    d.drainingNow = () => draining;
+    const realAsr = d.tools.asr;
+    d.tools.asr = vi.fn(async (sub, input, opts, o) => {
+      if (sub === 'probe') { probes++; if (probes === 3) { draining = true; const { run } = await import('../../api/lib/media/tools.js'); await run('sleep', ['30'], { stop: o.stop, pollMs: 20 }); } return { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en', text: 'x' }] }; }
+      return realAsr(sub, input, opts, o);
+    });
+    const r = await runItem({ id: 21, source_kind: 'file', source_ref: src }, {}, d);
+    expect(r).toMatchObject({ yielded: true, resume: { stage: 'enhance' } });
+    const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+    const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+    expect(Object.keys(meta.enh_ck.probes).length).toBe(2);   // two of three probes kept
+    const d2 = fakes(); let probes2 = 0;
+    const asr2 = d2.tools.asr;
+    d2.tools.asr = vi.fn(async (sub, ...a) => { if (sub === 'probe') probes2++; return asr2(sub, ...a); });
+    const rest = await runItem({ id: 21, source_kind: 'file', source_ref: src, dir, slug: r.slug }, {}, d2);
+    expect(rest.done[0]).toBe('enhance');
+    expect(probes2).toBe(1);   // only the unfinished probe again
+    expect(JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8')).enh_ck).toBeUndefined();
+  });
+});

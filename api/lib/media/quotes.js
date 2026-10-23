@@ -3,7 +3,7 @@
 // attributed teachings ("the Guardian taught that…") → a canonical passage that STATES it (HyPE/concept/phrase search in
 // the writer's own works, then a strict yes/no). The speaker's words never change: a quote is a word span that carries a
 // link; a teaching becomes a breakout (kind 'concept') after its paragraph. Deps injected; defaults are the live ones.
-import { acceptSource } from '../ops/source-links-build-job.js';
+import { late } from './late.js';
 import { keyOf } from './vocab.js';
 import { paragraphText } from './paragraphs.js';
 
@@ -79,11 +79,11 @@ export function passageGate(row) {
 export const citeOf = (o) => [o.author && !String(o.title || '').includes(o.author) ? o.author : null, o.title].filter(Boolean).join(', ');
 
 async function liveDeps() {
-  const { sourceHunt } = await import('../source-hunt.js');
-  const { paragraphsByIds } = await import('../paragraphs-repo.js');
-  const { linkFor } = await import('../source-links.js');
-  const { resolveLinks } = await import('../passage-links.js');
-  const q = await import('../search/qdrant-layers.js');
+  const { sourceHunt } = await late('api/lib/source-hunt.js');
+  const { paragraphsByIds } = await late('api/lib/paragraphs-repo.js');
+  const { linkFor } = await late('api/lib/source-links.js');
+  const { resolveLinks } = await late('api/lib/passage-links.js');
+  const q = await late('api/lib/search/qdrant-layers.js');
   return { sourceHunt, paragraphsByIds, linkFor, resolveLinks, searchHype: q.searchHypeQdrant, searchConcepts: q.searchConceptsQdrant, searchPhrases: q.searchPhrases };
 }
 
@@ -117,6 +117,7 @@ async function pool(items, n, fn) {
 // TWO hunts at a time per talk with a shorter breath (10-23: quotes was the slowest LLM-lane step, 57–172 s, almost all of it
 // one-at-a-time hunts and 1.5 s pauses); results kept in the candidates' order
 export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 750, concurrency = Number(process.env.MEDIA_QUOTE_CONCURRENCY) || 2, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = [] } = {}) {
+  const { acceptSource } = deps.acceptSource ? deps : await late('api/lib/ops/source-links-build-job.js');   // (late-bound: not in the media service's deploy graph)
   const d = { ...(deps.sourceHunt ? {} : await liveDeps()), ...deps };
   const byN = new Map(paragraphs.map((p) => [p.n, p]));
   const linked = [], rejected = [];
