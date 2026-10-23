@@ -10,7 +10,7 @@ import Database from 'better-sqlite3';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
 import {
-  BROWSE_INDEXES, PREVIEW_SQL, collectionSliceSql, sortedSql, narrowedCountsSql, filterSql,
+  BROWSE_INDEXES, PREVIEW_SQL, collectionSliceSql, sliceIndex, sortedSql, narrowedCountsSql, filterSql,
   countsFromFacets, orderCollections, planSlices, compareCollections,
 } from '../../api/lib/repos/library-browse-repo.js';
 
@@ -111,8 +111,11 @@ describe('browse plans (EXPLAIN QUERY PLAN): no temp B-tree over docs', () => {
     for (const f of FILTERS) {
       const { where, params } = filterSql(f, { withCollection: false });
       for (const dir of ['ASC', 'DESC']) {
-        const top = docsLevel(collectionSliceSql(where, dir), ['C3', ...params, 5, 0]).join(' | ');
-        expect(top, JSON.stringify(f)).toMatch(/idx_docs_live_coll_title/);
+        const top = docsLevel(collectionSliceSql(where, dir, sliceIndex(f)), ['C3', ...params, 5, 0]).join(' | ');
+        expect(top, JSON.stringify(f)).toMatch(new RegExp(sliceIndex(f)));
+        // the filter is part of the index key, not a row-lookup filter across the whole collection
+        if (f.author) expect(top).toMatch(/\(author=\? AND collection=\?\)/);
+        if (f.language && !f.author) expect(top).toMatch(/\(collection=\? AND language=\?\)/);
         expect(top, JSON.stringify(f)).not.toMatch(/TEMP B-TREE/);
       }
     }
@@ -136,7 +139,7 @@ describe('browse plans (EXPLAIN QUERY PLAN): no temp B-tree over docs', () => {
   it('author / year counts are narrowed by an index, never SCAN docs', () => {
     for (const f of [{ author: 'A7' }, { yearFrom: 1850, yearTo: 1900 }, { author: 'A7', religion: 'Islam' }]) {
       const { where, params } = filterSql(f);
-      const idx = f.author ? 'idx_docs_live_author_title' : 'idx_docs_live_year_title';
+      const idx = f.author ? 'idx_docs_live_author_coll_title' : 'idx_docs_live_year_title';
       expect(plan(narrowedCountsSql(where, idx), params).join(' | ')).toMatch(/SEARCH d USING (COVERING )?INDEX idx_docs_live_\w+ \((author|year)/);
     }
   });

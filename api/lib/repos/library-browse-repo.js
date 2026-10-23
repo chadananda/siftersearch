@@ -13,7 +13,15 @@ export const BROWSE_INDEXES = Object.freeze({
   idx_docs_live_coll_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_coll_title ON docs(collection, title) WHERE deleted_at IS NULL',
   idx_docs_live_author_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_author_title ON docs(author, title) WHERE deleted_at IS NULL',
   idx_docs_live_year_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_year_title ON docs(year, title) WHERE deleted_at IS NULL',
+  // migration 177: an author / language filter inside one big collection (Core Tablets 22k) was a row-lookup filter over
+  // the whole collection range (330-450 ms measured on tower 10-23); with the filter in the key it is an equality range.
+  idx_docs_live_author_coll_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_author_coll_title ON docs(author, collection, title) WHERE deleted_at IS NULL',
+  idx_docs_live_coll_lang_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_coll_lang_title ON docs(collection, language, title) WHERE deleted_at IS NULL',
 });
+
+/** The index a collection slice walks: the filter's own key when one narrows inside a collection. */
+export const sliceIndex = ({ author, language } = {}) => (author ? 'idx_docs_live_author_coll_title'
+  : language ? 'idx_docs_live_coll_lang_title' : 'idx_docs_live_coll_title');
 
 const FIELDS = `d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count,
   d.created_at, d.updated_at, d.cover_url, d.encumbered, d.filename, d.file_path, d.slug`;
@@ -26,8 +34,8 @@ export const PREVIEW_SQL = `(SELECT json_group_array(json_object('i', paragraph_
     ORDER BY paragraph_index LIMIT 3)) AS preview_json`;
 
 /** One collection's slice of the walk, in title order, straight off idx_docs_live_coll_title. */
-export const collectionSliceSql = (where, titleDir = 'ASC') => `SELECT ${FIELDS}, ${PREVIEW_SQL}
-  FROM docs d INDEXED BY idx_docs_live_coll_title
+export const collectionSliceSql = (where, titleDir = 'ASC', index = 'idx_docs_live_coll_title') => `SELECT ${FIELDS}, ${PREVIEW_SQL}
+  FROM docs d INDEXED BY ${index}
   WHERE d.collection IS ? AND ${where}
   ORDER BY d.title ${titleDir} LIMIT ? OFFSET ?`;
 
@@ -122,7 +130,7 @@ async function hinted(sql, params, name) {
 async function collectionCounts(filters) {
   if (filters.author || filters.yearFrom || filters.yearTo) {
     const { where, params } = filterSql(filters);
-    const index = filters.author ? 'idx_docs_live_author_title' : 'idx_docs_live_year_title';
+    const index = filters.author ? 'idx_docs_live_author_coll_title' : 'idx_docs_live_year_title';
     const rows = await hinted(narrowedCountsSql(where, index), params, 'library:browse-counts');
     return new Map(rows.map((r) => [r.collection ?? null, Number(r.n)]));
   }
@@ -159,7 +167,7 @@ export async function browseDocuments(filters = {}, { sort = 'title', sortDir, l
   const docs = [];
   for (const s of planSlices(orderCollections(counts, await collectionAuthority(authorityParent), authorityDir), offset, limit)) {
     // counts are up to one snapshot (≤5 min) old: a slice may come back short — the page is then short, never wrong-ordered
-    docs.push(...await hinted(collectionSliceSql(where, titleDir), [s.collection, ...params, s.limit, s.offset], 'library:browse-collection'));
+    docs.push(...await hinted(collectionSliceSql(where, titleDir, sliceIndex(filters)), [s.collection, ...params, s.limit, s.offset], 'library:browse-collection'));
   }
   return { docs, total };
 }
