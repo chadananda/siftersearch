@@ -46,8 +46,9 @@ export async function youtubeInfo(url) {
 }
 
 /** Best audio only, into dir as <id>.<ext> → the file path. */
-export async function youtubeAudio(url, dir) {
-  await ytdlp(['-f', 'bestaudio/best', '-x', '--limit-rate', '3M', '-o', join(dir, '%(id)s.%(ext)s'), url], { timeoutMs: 3600_000 });
+export async function youtubeAudio(url, dir, { stop = null } = {}) {
+  // stop: a drain kills the download (DrainAbort) — the item goes back to the queue and is fetched again after the restart
+  await ytdlp(['-f', 'bestaudio/best', '-x', '--limit-rate', '3M', '-o', join(dir, '%(id)s.%(ext)s'), url], { timeoutMs: 3600_000, stop });
   const id = youtubeId(url);
   const f = (await readdir(dir)).find((n) => !id || n.startsWith(id));
   if (!f) throw new Error('yt-dlp finished but no audio file was written');
@@ -87,7 +88,7 @@ export function audioUrlOf(item) {
 
 /** One video through an Apify actor: run, wait, take the file AT ONCE (its storage link is not kept), checksum it.
  *  → { path, sha256, bytes, route, run_id, usd } */
-export async function apifyAudio(url, dir, actorKey, { token = process.env.APIFI_API, fetchImpl = fetch, pollMs = 15000, maxUsd = 0.5, timeoutS = 5400 } = {}) {
+export async function apifyAudio(url, dir, actorKey, { token = process.env.APIFI_API, fetchImpl = fetch, pollMs = 15000, maxUsd = 0.5, timeoutS = 5400, stop = null } = {}) {
   if (!token) throw new Error('no Apify token (APIFI_API)');
   const a = APIFY_ACTORS[actorKey];
   const API = 'https://api.apify.com/v2';
@@ -97,6 +98,8 @@ export async function apifyAudio(url, dir, actorKey, { token = process.env.APIFI
   let run = started.data;
   for (let t = 0; !['SUCCEEDED', 'FAILED', 'ABORTED', 'TIMED-OUT'].includes(run.status); t += pollMs) {
     if (t > timeoutS * 1000) throw new Error(`${actorKey}: run did not finish`);
+    // a drain: abort the paid run (no charge for what is not finished beyond its start) and give the item back
+    if (stop?.()) { await j(`${API}/actor-runs/${run.id}/abort?token=${token}`, { method: 'POST' }).catch(() => {}); const { DrainAbort } = await import('./tools.js'); throw new DrainAbort(`${actorKey} download`); }
     await new Promise((r) => setTimeout(r, pollMs));
     run = (await j(`${API}/actor-runs/${run.id}?token=${token}`)).data || run;
   }
@@ -121,11 +124,12 @@ export async function apifyAudio(url, dir, actorKey, { token = process.env.APIFI
 /** The audio by the first route that works: free yt-dlp (PO token) → Titan → Seemuapps. → { path, route, sha256?, usd?, tried: [...] } */
 export async function fetchAudio(url, dir, deps = {}) {
   const tried = [];
-  try { const path = await (deps.ytdlp || youtubeAudio)(url, dir); return { path, route: 'yt-dlp', usd: 0, tried }; }
-  catch (err) { tried.push({ route: 'yt-dlp', error: String(err.message).slice(0, 160) }); }
+  try { const path = await (deps.ytdlp || youtubeAudio)(url, dir, { stop: deps.stop || null }); return { path, route: 'yt-dlp', usd: 0, tried }; }
+  catch (err) { if (err?.code === 'DRAIN') throw err; tried.push({ route: 'yt-dlp', error: String(err.message).slice(0, 160) }); }
   for (const k of deps.order || ['titan', 'seemu']) {
+    if (deps.stop?.()) { const { DrainAbort } = await import('./tools.js'); throw new DrainAbort('download'); }
     try { return { ...(await (deps.apify || apifyAudio)(url, dir, k, deps)), tried }; }
-    catch (err) { tried.push({ route: k, error: String(err.message).slice(0, 160) }); }
+    catch (err) { if (err?.code === 'DRAIN') throw err; tried.push({ route: k, error: String(err.message).slice(0, 160) }); }
   }
   const e = new BotCheckError(`no route could fetch the audio: ${tried.map((t) => `${t.route}: ${t.error}`).join(' | ')}`);
   e.tried = tried;

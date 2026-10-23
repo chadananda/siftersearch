@@ -173,7 +173,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       await mkdir(join(dir, 'original'), { recursive: true });
       let original;
       if (isYt) {
-        const got = d.youtube.fetchAudio ? await d.youtube.fetchAudio(item.source_ref, join(dir, 'original'))
+        const got = d.youtube.fetchAudio ? await d.youtube.fetchAudio(item.source_ref, join(dir, 'original'), { stop })
           : { path: await d.youtube.youtubeAudio(item.source_ref, join(dir, 'original')), route: 'yt-dlp' };
         original = got.path;
         download = { route: got.route, sha256: got.sha256 || null, usd: got.usd || 0, run_id: got.run_id || null, tried: got.tried || [], at: d.now() };

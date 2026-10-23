@@ -123,7 +123,9 @@ export const probeHost = () => gpuHost() || asrHost();
  *  fn(host) → its result. */
 const probeBusy = new Map();
 const probeWaiters = [];
-export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 4]] : [[gpuHost(), 2], [asrHost(), 4]]).filter(([h]) => h) } = {}) {
+// probes: aorus 4 (its GPU memory lock paces them; ~10 s each) before boss 2 (~80 s each on CPU) — 07:37: 16 prep runs all
+// waiting in enhance on probes queued for boss
+export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 4], [asrHost(), 2]]).filter(([h]) => h) } = {}) {
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
@@ -483,7 +485,7 @@ const offWait = [];
  *  transcriptions) and OVERFLOWS to boss's CPU venv (2 at a time; Chad 10-23: "free to use boss"); the grade to aorus only. */
 // boss's CPU DeepFilterNet (venv-dfn, installed 10-23) is OFF by default: on a loaded boss it took 20+ min for a 66-min talk
 // that aorus's GPU does in under a minute — MEDIA_DFN_OVERFLOW=boss uses it (1 at a time)
-export const offloadHosts = (sub) => (sub === 'dfn' ? [[gpuHost(), 1], [process.env.MEDIA_DFN_OVERFLOW || null, 1]] : [[gpuHost(), 3]]).filter(([h]) => h)
+export const offloadHosts = (sub) => (sub === 'dfn' ? [[gpuHost(), 2], [process.env.MEDIA_DFN_OVERFLOW || null, 1]] : [[gpuHost(), 3]]).filter(([h]) => h)
   .filter(([h], i, a) => a.findIndex(([x]) => x === h) === i);
 export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn(), hosts = offloadHosts(sub), exec, pollMs } = {}) {
   if (hosts.length && job) {

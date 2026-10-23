@@ -439,6 +439,8 @@ export async function mediaFetchJob({ limit = 6, ids = null, pauseMs = Number(pr
       await repo.updateMediaItem(it.id, { state: 'queued', stage: 'archive' });
       out.downloaded.push(it.id);
     } catch (err) {
+      // a drain stopped the download: this item and the rest go back to the queue (fetched again after the restart)
+      if (err.code === 'DRAIN') { await release(list.slice(k)); out.yielded = true; break; }
       if (err.code === 'BOT_CHECK') { await repo.updateMediaItem(it.id, { state: 'held', why: String(err.message).slice(0, 500) }); out.held.push(it.id); if (ids) await release(list.slice(k + 1)); break; }
       await repo.updateMediaItem(it.id, { state: 'failed', why: `download: ${String(err.message).slice(0, 480)}` });
       out.failed.push({ id: it.id, why: String(err.message).slice(0, 160) });
