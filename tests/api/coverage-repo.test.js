@@ -130,3 +130,25 @@ describe('a failed vector count is unknown, not zero', () => {
     expect(m.keyword.indexed).toBe(3);
   });
 });
+
+describe('unchanged re-measure writes nothing (db-write-path-20261023)', () => {
+  it('saveCoverage skips a document whose rows are unchanged; touchCoverage moves only its age', async () => {
+    const { transaction } = await import('../../api/lib/db.js');
+    const rows = await repo.measureDoc(1, { hypeVersion: 'v15', count });
+    expect(await repo.saveCoverage(1, rows, 100)).toBe(rows.length);
+    transaction.mockClear();
+    expect(await repo.saveCoverage(1, await repo.measureDoc(1, { hypeVersion: 'v15', count }), 200)).toBe(0);
+    expect(transaction).not.toHaveBeenCalled();
+    counts.hype = 15;   // a real change still writes
+    expect(await repo.saveCoverage(1, await repo.measureDoc(1, { hypeVersion: 'v15', count }), 300)).toBe(rows.length);
+    counts.hype = 14;
+    await repo.touchCoverage([1], 400);
+    expect(raw.prepare('SELECT DISTINCT updated_at AS u FROM index_coverage WHERE doc_id = 1').all().map((r) => r.u)).toEqual([400]);
+  });
+  it('sameAsStored compares every layer and value (core as 0/1, version null-safe)', () => {
+    const a = [{ layer: 'text', total: 3, generated: 3, current: 3, indexed: 2, version: null, core: 0 }];
+    expect(repo.sameAsStored(a, [{ ...a[0], core: false }])).toBe(true);
+    expect(repo.sameAsStored(a, [{ ...a[0], indexed: 1 }])).toBe(false);
+    expect(repo.sameAsStored(a, [])).toBe(false);
+  });
+});

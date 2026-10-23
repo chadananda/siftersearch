@@ -101,9 +101,13 @@ const REACHED = 'CASE WHEN o.indexed > 0 THEN o.total ELSE 0 END', WITH_DATA = '
 
 /** Write one document's rows (replace) AND move coverage_totals by the difference, in one transaction: its old rows
  *  are subtracted, the new ones added — the totals never need the whole ledger re-summed (Chad 10-16). */
-export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 1000)) {
+export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 1000), { skipUnchanged = true } = {}) {
   if (!rows.length) return 0;
   const id = Number(docId);
+  // UNCHANGED → no write (db-write-path-20261023: the rolling refresh re-saved ~300 documents a minute, 14 statements and a
+  // subtract-then-add of the totals each — 55 % of all single-writer time over 48 h — and nearly all re-measured the same).
+  // The read is one doc's ledger rows (primary key). Returns 0; the rolling refresh bumps their age in one batch (touchCoverage).
+  if (skipUnchanged && sameAsStored(rows, await queryAll('SELECT layer, total, generated, current, indexed, version, core FROM index_coverage WHERE doc_id = ?', [id], 'coverage:stored'))) return 0;
   await transaction([
     { sql: `UPDATE coverage_totals SET docs = coverage_totals.docs - 1, total = coverage_totals.total - o.total, generated = coverage_totals.generated - o.generated,
         current = coverage_totals.current - o.current, indexed = coverage_totals.indexed - o.indexed, reached = coverage_totals.reached - (${REACHED}),
@@ -119,6 +123,24 @@ export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 100
         current = current + excluded.current, indexed = indexed + excluded.indexed, reached = reached + excluded.reached, docs_with = docs_with + excluded.docs_with`, args: [id] },
   ], 'coverage:save');
   return rows.length;
+}
+
+const KEYS = ['total', 'generated', 'current', 'indexed', 'version', 'core'];
+const norm = (r, k) => (k === 'core' ? (r.core ? 1 : 0) : k === 'version' ? (r.version ?? null) : Number(r[k] ?? 0));
+/** The measured rows equal the stored ledger rows exactly (same layers, same numbers). Pure. */
+export function sameAsStored(rows, stored) {
+  if (rows.length !== stored.length) return false;
+  const by = new Map(stored.map((r) => [r.layer, r]));
+  return rows.every((r) => { const o = by.get(r.layer); return !!o && KEYS.every((k) => norm(r, k) === norm(o, k)); });
+}
+
+/** Mark documents as just re-measured without rewriting them: one UPDATE per ≤ 500 ids (the rolling refresh's unchanged docs). */
+export async function touchCoverage(ids, at = Math.floor(Date.now() / 1000)) {
+  for (let i = 0; i < ids.length; i += 500) {
+    const chunk = ids.slice(i, i + 500).map(Number);
+    await transaction([{ sql: `UPDATE index_coverage SET updated_at = ? WHERE doc_id IN (${chunk.map(() => '?').join(',')})`, args: [at, ...chunk] }], 'coverage:touch');
+  }
+  return ids.length;
 }
 
 /** A layer met paragraphs it cannot index in a document (keyword: no words) — the ledger leaves them out of its total. */

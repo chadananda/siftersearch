@@ -268,14 +268,28 @@ async function deleteParagraphsByDoc(docId) {
 }
 
 /**
- * Soft-delete all paragraphs for a document (preserves embeddings for reuse).
+ * A whole document's rows updated in SHORT chunks (db-write-path-20261023): the ids first (a read, off the writer), then
+ * UPDATEs of ≤ 400 ids sized by adaptiveBatches with a yield between — one statement over a 20k-row book held the single
+ * writer for seconds to minutes while every row fired its triggers. `where` is re-checked per chunk, so a rerun is a no-op.
+ * → { changes, rows: [{ changes }] } (the shape query() returns).
+ */
+export async function updateDocRowsChunked(docId, { set, setArgs = [], where, whereArgs = [], name = 'content:doc-rows' }, opts = {}) {
+  const ids = (await queryAll(`SELECT id FROM content WHERE doc_id = ? AND ${where}`, [docId, ...whereArgs], `${name}:ids`)).map((r) => r.id);
+  const { adaptiveBatches } = await import('./adaptive-batch.js');
+  let changes = 0;
+  await adaptiveBatches(ids, async (chunk) => {
+    const r = await query(`UPDATE content SET ${set} WHERE id IN (${chunk.map(() => '?').join(',')}) AND ${where}`, [...setArgs, ...chunk, ...whereArgs], name);
+    changes += r?.rows?.[0]?.changes || 0;
+  }, { start: 100, max: 400, ...opts });
+  return { changes, rows: [{ changes }] };
+}
+
+/**
+ * Soft-delete all paragraphs for a document (preserves embeddings for reuse). Chunked.
  */
 async function softDeleteByDoc(docId) {
   const ts = now();
-  return query(
-    'UPDATE content SET deleted_at = ?, synced = 0, updated_at = ? WHERE doc_id = ? AND deleted_at IS NULL',
-    [ts, ts, docId]
-  );
+  return updateDocRowsChunked(docId, { set: 'deleted_at = ?, synced = 0, updated_at = ?', setArgs: [ts, ts], where: 'deleted_at IS NULL', name: 'content:soft-delete-doc' });
 }
 
 /**
@@ -351,7 +365,7 @@ async function restoreRetiredDocs(docIds, { since, reason = 'unspecified', runId
   for (const id of ids) {
     const doc = await queryOne('SELECT deleted_at FROM docs WHERE id = ?', [id]);
     if (!doc?.deleted_at || doc.deleted_at < since) continue;
-    await query('UPDATE content SET deleted_at = NULL, synced = 0, updated_at = ? WHERE doc_id = ? AND deleted_at = ?', [ts, id, doc.deleted_at]);
+    await updateDocRowsChunked(id, { set: 'deleted_at = NULL, synced = 0, updated_at = ?', setArgs: [ts], where: 'deleted_at = ?', whereArgs: [doc.deleted_at], name: 'content:restore-run' });
     await query('UPDATE docs SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at = ?', [ts, id, doc.deleted_at]);
     restored++;
     try { const { audit } = await import('./audit.js'); await audit({ actor: 'restoreRetiredDocs', action: 'doc.restore', target: `doc:${id}`, docId: id, reason, runId }); } catch { /* witness only */ }
@@ -364,10 +378,7 @@ async function restoreRetiredDocs(docIds, { since, reason = 'unspecified', runId
  */
 async function restoreByDoc(docId) {
   const ts = now();
-  return query(
-    'UPDATE content SET deleted_at = NULL, synced = 0, updated_at = ? WHERE doc_id = ? AND deleted_at IS NOT NULL',
-    [ts, docId]
-  );
+  return updateDocRowsChunked(docId, { set: 'deleted_at = NULL, synced = 0, updated_at = ?', setArgs: [ts], where: 'deleted_at IS NOT NULL', name: 'content:restore-doc' });
 }
 
 /**
