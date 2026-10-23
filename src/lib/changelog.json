@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-23T05:34:51.825Z",
+  "generated": "2026-10-23T05:38:11.218Z",
   "entries": [
+    {
+      "hash": "55725abb",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "By-slug collection/religion listings carry cover_url",
+      "scope": "library"
+    },
+    {
+      "hash": "03533b7f",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "CUDA out of memory → the same work on the CPU (aorus's 8 GB is shared by two transcriptions, probes and DeepFilterNet; a third concurrent job ran out of memory — measured peak 7.8 GB — so aorus stays at 2 slots)",
+      "scope": "media"
+    },
+    {
+      "hash": "2688aeeb",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Collection pages broke client-side since same-origin (PUBLIC_API_URL='' → new URL('/api/…') throws 'Invalid URL'); resolve against window.location.origin. Deploy 2.187.777",
+      "scope": "library"
+    },
+    {
+      "hash": "08d7222d",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Aorus starved — the enhance probes ran on a loaded boss; feed deeper, two download runs, live view = running runs",
+      "scope": "media"
+    },
     {
       "hash": "fda665bd",
       "date": "2026-10-22",
@@ -3472,38 +3500,38 @@
       "type": "Fixed",
       "description": "The audit model refuses forced tool_choice — ask for the tool call instead",
       "scope": "anis-audit"
-    },
-    {
-      "hash": "8763225f",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "No 'library gap' without a catalogue check; correspondents named without the network",
-      "scope": "anis-audit"
-    },
-    {
-      "hash": "f2fdc4f8",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "Admin pages loaded the chat widget twice ('sifter-chat' already defined)",
-      "scope": "widget"
-    },
-    {
-      "hash": "87b49c1c",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "Threads name every correspondent and read as one exchange",
-      "scope": "anis-admin"
-    },
-    {
-      "hash": "7ebdcb0e",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "The 'authority layers' lecture paragraph is removed deterministically (it survived the prompt; Lal objected three times)",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "55725abb",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "By-slug collection/religion listings carry cover_url",
+        "scope": "library"
+      },
+      {
+        "hash": "03533b7f",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "CUDA out of memory → the same work on the CPU (aorus's 8 GB is shared by two transcriptions, probes and DeepFilterNet; a third concurrent job ran out of memory — measured peak 7.8 GB — so aorus stays at 2 slots)",
+        "scope": "media"
+      },
+      {
+        "hash": "2688aeeb",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Collection pages broke client-side since same-origin (PUBLIC_API_URL='' → new URL('/api/…') throws 'Invalid URL'); resolve against window.location.origin. Deploy 2.187.777",
+        "scope": "library"
+      },
+      {
+        "hash": "08d7222d",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Aorus starved — the enhance probes ran on a loaded boss; feed deeper, two download runs, live view = running runs",
+        "scope": "media"
+      },
       {
         "hash": "fda665bd",
         "date": "2026-10-22",
@@ -6991,34 +7019,6 @@
         "type": "Fixed",
         "description": "The audit model refuses forced tool_choice — ask for the tool call instead",
         "scope": "anis-audit"
-      },
-      {
-        "hash": "8763225f",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "No 'library gap' without a catalogue check; correspondents named without the network",
-        "scope": "anis-audit"
-      },
-      {
-        "hash": "f2fdc4f8",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "Admin pages loaded the chat widget twice ('sifter-chat' already defined)",
-        "scope": "widget"
-      },
-      {
-        "hash": "87b49c1c",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "Threads name every correspondent and read as one exchange",
-        "scope": "anis-admin"
-      },
-      {
-        "hash": "7ebdcb0e",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "The 'authority layers' lecture paragraph is removed deterministically (it survived the prompt; Lal objected three times)",
-        "scope": "anis"
       }
     ]
   }

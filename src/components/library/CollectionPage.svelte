@@ -252,7 +252,11 @@
         <!-- Flat list by title for easier scanning -->
         <div class="document-grid">
           {#each documents as doc}
-            <a href={getDocumentUrl(doc)} class="document-card">
+            <a href={getDocumentUrl(doc)} class="document-card" class:has-cover={doc.cover_url}>
+              {#if doc.cover_url}
+                <img class="doc-cover" src={`${doc.cover_url}&tr=w-160,q-80,e-sharpen`} srcset={`${doc.cover_url}&tr=w-160,q-80,e-sharpen 1x, ${doc.cover_url}&tr=w-320,q-80,e-sharpen 2x`} alt="" width="80" loading="lazy" decoding="async" />
+              {/if}
+              <div class="doc-body">
               <h3 class="doc-title">{doc.title}</h3>
               {#if doc.author}
                 <p class="doc-author">{doc.author}</p>
@@ -271,6 +275,7 @@
               {#if doc.description}
                 <p class="doc-description">{doc.description}</p>
               {/if}
+              </div>
             </a>
           {/each}
         </div>
@@ -509,6 +514,20 @@
     border-radius: 0.5rem;
     text-decoration: none;
     transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  /* the book's own cover beside its card (width-only transform: the art keeps its proportions) */
+  .document-card.has-cover {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .document-card .doc-cover {
+    width: 80px;
+    height: auto;
+    border-radius: 3px;
   }
 
   .document-card:hover {
