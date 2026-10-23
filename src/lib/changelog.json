@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-23T13:36:14.482Z",
+  "generated": "2026-10-23T13:39:07.102Z",
   "entries": [
+    {
+      "hash": "0935dc39",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Clear \"open the talk\" affordance + quiet studio inserts (Chad 10-23)",
+      "scope": "media"
+    },
+    {
+      "hash": "4348125a",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Silence trim, non-destructive (Chad 10-23: 'scanned cassettes had very long silences at the beginning')",
+      "scope": "media"
+    },
     {
       "hash": "ff4a9658",
       "date": "2026-10-23",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Radar returns — growth fronts flash as the sweep crosses them and fade; afterglow, beams, halos removed",
       "scope": "home"
-    },
-    {
-      "hash": "742d078b",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Radar afterglow — the active ring lights where the sweep crosses it and fades; comet removed",
-      "scope": "home"
-    },
-    {
-      "hash": "4c625554",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "The ring being built lights up and a bright comet sweeps it; growing cells get beams and a marching outline",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "0935dc39",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Clear \"open the talk\" affordance + quiet studio inserts (Chad 10-23)",
+        "scope": "media"
+      },
+      {
+        "hash": "4348125a",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Silence trim, non-destructive (Chad 10-23: 'scanned cassettes had very long silences at the beginning')",
+        "scope": "media"
+      },
       {
         "hash": "ff4a9658",
         "date": "2026-10-23",
@@ -7002,20 +7016,6 @@
         "date": "2026-10-16",
         "type": "New",
         "description": "Radar returns — growth fronts flash as the sweep crosses them and fade; afterglow, beams, halos removed",
-        "scope": "home"
-      },
-      {
-        "hash": "742d078b",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Radar afterglow — the active ring lights where the sweep crosses it and fades; comet removed",
-        "scope": "home"
-      },
-      {
-        "hash": "4c625554",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "The ring being built lights up and a bright comet sweeps it; growing cells get beams and a marching outline",
         "scope": "home"
       }
     ]
