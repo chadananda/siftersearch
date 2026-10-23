@@ -33,7 +33,10 @@ export function outlineSections(md, rows = []) {
     if (!h) continue;
     const attrs = h[3];
     if (/\btype="title"/.test(attrs)) continue;                         // the book's own title / author / copyright block
-    const num = Number(attrs.match(/\bid="para_(\d+)"/)?.[1]);
+    // id="para_N": the heading's own paragraph number; at="para_N": a heading placed just BEFORE paragraph N (a media
+    // transcript's subheaders — a heading there is not a moment in the recording, so it carries no id of its own)
+    const at = Number(attrs.match(/\bat="para_(\d+)"/)?.[1]);
+    const num = at ? at - 0.5 : Number(attrs.match(/\bid="para_(\d+)"/)?.[1]);
     if (!num) continue;
     const level = Number(attrs.match(/\.toc(\d)\b/)?.[1]) || h[1].length;
     const title = fold(h[2]);

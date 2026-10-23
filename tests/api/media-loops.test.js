@@ -24,7 +24,7 @@ describe('repetition loops (fixtures)', () => {
     const r = repairLoops(W('I became sick in Kermanshah. Karend, Karend, Karend, Karend, Karend, village and then'));
     expect(vis(r.words)).toBe('I became sick in Kermanshah. Karend, village and then');
     expect(r.words).toHaveLength(13);
-    expect(findLoops(W('holy, holy, holy is the Lord; very very good; the the'))).toEqual([]);
+    expect(findLoops(W('holy, holy, holy is the Lord; very very good; the the; Thank you. Thank you. Thank you. Yes, yes, yes, yes'))).toEqual([]);
     expect(repairLoops(W("where Bahá'áááááááá said")).words[1].w).toBe("Bahá'á");
   });
   it('per paragraph, with where it was', () => {

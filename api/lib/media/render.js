@@ -40,8 +40,9 @@ export function transcriptMarkdown({ meta, paragraphs, quotes = [], links = [], 
   const chs = hBy.size ? [] : [...chapters].sort((a, b) => a.t - b.t);
   let c = 0;
   for (const p of paragraphs) {
-    if (hBy.has(p.n)) lines.push(`## ${hBy.get(p.n).text}`, '');
-    while (c < chs.length && chs[c].t <= p.t0 + 0.5) { lines.push(`## ${chs[c].title}`, ''); c++; }
+    // {at="para_N"}: the section index's outline reads where each subheader starts (ingester headings are not stored)
+    if (hBy.has(p.n)) lines.push(`## ${hBy.get(p.n).text} {at="para_${p.n}"}`, '');
+    while (c < chs.length && chs[c].t <= p.t0 + 0.5) { lines.push(`## ${chs[c].title} {at="para_${p.n}"}`, ''); c++; }
     lines.push(paragraphMarkdown(p), `{id="para_${p.n}" t0="${p.t0.toFixed(2)}" t1="${p.t1.toFixed(2)}" spk="${p.spk || ''}"}`, '');
   }
   return `${lines.join('\n').trim()}\n`;

@@ -8,8 +8,8 @@ const norm = (w) => String(w?.w ?? w ?? '').toLowerCase().normalize('NFC').repla
 const CHAR_RUN = /(\p{L})\1{4,}/u;   // one letter five or more times ("Bahá'ááááá", "Nabiíííí")
 const MAX_N = 8;
 
-/** Loops in a word list: [{ i0, i1, n, k, kind: 'ngram'|'char', text }] (i1 exclusive). A single word repeated 4+ times, or a
- *  2–8 word phrase 3+ times, back to back; or a letter run in one word. Hidden words are skipped. */
+/** Loops in a word list: [{ i0, i1, n, k, kind: 'ngram'|'char', text }] (i1 exclusive). A single word repeated 5+ times, a
+ *  2-word phrase 4+ times or a 3–8 word phrase 3+ times, back to back; or a letter run in one word. Hidden words are skipped. */
 export function findLoops(words = []) {
   const vis = words.map((w, i) => ({ i, t: norm(w), raw: String(w?.w ?? '') })).filter((x, j) => !words[j]?.hide && x.t);
   const out = [];
@@ -19,7 +19,8 @@ export function findLoops(words = []) {
     for (let n = 1; n <= MAX_N && a + 2 * n <= vis.length; n++) {
       let k = 1;
       while (a + (k + 1) * n <= vis.length && vis.slice(a + k * n, a + (k + 1) * n).every((y, j) => y.t === vis[a + j].t)) k++;
-      if (k >= (n === 1 ? 4 : 3) && (!best || k * n > best.k * best.n)) best = { n, k };
+      // speech repeats too ('Thank you. Thank you. Thank you.', 'Yes, yes, yes, yes'): a loop is longer than that
+      if (k >= (n === 1 ? 5 : n === 2 ? 4 : 3) && (!best || k * n > best.k * best.n)) best = { n, k };
     }
     if (best) {
       const end = vis[a + best.k * best.n - 1];

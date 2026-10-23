@@ -448,6 +448,14 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the playback level is the catalogue's (a person can change it there): the page is rendered for it
       if (item.playback && LEVELS.includes(item.playback) && meta.rights) meta.rights.playback = item.playback;
       const work = await readJson(join(dir, 'transcript.work.json'));
+      // a talk transcribed before the loop repair is repaired here, on any render or update (10-22: the gate blocked the
+      // re-links of published talks on their old loops)
+      const lp0 = repairParagraphLoops(work.paragraphs || []);
+      if (lp0.repaired.length) {
+        work.paragraphs = lp0.paragraphs;
+        await writeJson(join(dir, 'transcript.work.json'), { ...work, loops: [...(work.loops || []), ...lp0.repaired] });
+        meta.asr_loops_repaired = (meta.asr_loops_repaired || 0) + lp0.repaired.length;
+      }
       // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published
       const problems = publishProblems(work.paragraphs || []);
       if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }

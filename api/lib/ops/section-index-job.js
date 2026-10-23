@@ -16,7 +16,7 @@ function fileOutline(doc, rows) {
   const path = doc.file_path && join(config.library.basePath, doc.file_path);
   if (!path || !existsSync(path)) return [];
   const md = readFileSync(path, 'utf8');
-  if (!/^#{1,6}\s.*\bid="para_\d+"/m.test(md)) return [];
+  if (!/^#{1,6}\s.*\b(?:id|at)="para_\d+"/m.test(md)) return [];   // at=: a media transcript's subheaders
   return outlineSections(md, rows.map((r) => ({ ...r, para_num: paraNum(r.block_attrs, r.external_para_id) })));
 }
 

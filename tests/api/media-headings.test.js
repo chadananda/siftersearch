@@ -43,9 +43,20 @@ describe('renditions with subheaders', () => {
   const headings = [{ p: 4, text: 'The station of the Guardian as interpreter', slug: 'the-station-of-the-guardian-as-interpreter' }];
   it('transcript.md: a markdown heading with no times before its paragraph; chapters give way to headings', () => {
     const md = transcriptMarkdown({ meta, paragraphs: ps, chapters: [{ t: 0, title: 'Old chapter' }], headings });
-    expect(md).toContain('## The station of the Guardian as interpreter\n\nNow the Guardian');
+    expect(md).toMatch(/## The station of the Guardian as interpreter \{at="para_\d+"\}\n\nNow the Guardian/);
     expect(md).not.toContain('Old chapter');
     expect(md.split('\n').find((l) => l.startsWith('## '))).not.toMatch(/t0=/);
+  });
+  it('the section index reads the subheaders as sections (at="para_N": a heading just before paragraph N)', async () => {
+    const { outlineSections } = await import('../../api/lib/sections.js');
+    const { parseMarkdownBlocks } = await import('../../api/services/block-parser.js');
+    const md = transcriptMarkdown({ meta, paragraphs: ps, headings });
+    const rows = ps.map((p, i) => ({ id: 100 + i, paragraph_index: i, para_num: p.n }));
+    const secs = outlineSections(md, rows);
+    expect(secs.length).toBe(headings.length);
+    expect(secs[0]).toMatchObject({ title: expect.stringMatching(/station of the guardian/i), first_para_id: 100 + ps.findIndex((p) => p.n === headings[0].p) });
+    const h = parseMarkdownBlocks(md).find((b) => /^heading/.test(b.type));
+    expect(h.content).not.toContain('{');   // the attribute never reaches the stored text
   });
   it('page.html: an anchored h2 (no word spans) and a contents list', () => {
     const html = pageHtml({ meta, paragraphs: ps, headings, audio: 'web/s.ogg' });
