@@ -209,3 +209,23 @@ describe('re-attached diarizations count toward the host cap', () => {
     delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
   });
 });
+
+describe('a transcription sends its audio as is', () => {
+  it('no tower ffmpeg conversion for a normal-size audio file; the gate gets its own extension', async () => {
+    const { asrJob } = await import('../../api/lib/media/tools.js');
+    const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
+    const d = mkdtempSync(join(tmpdir(), 'aj-')); const f = join(d, 'dfn.flac'); writeFileSync(f, 'x'.repeat(1000));
+    const cmds = []; let polled = 0;
+    const exec = async (cmd, args, o = {}) => {
+      cmds.push(cmd === 'ssh' ? args.at(-1) : cmd);
+      const c = args.at(-1);
+      if (cmd !== 'ssh') return { stdout: '' };
+      if (c.startsWith('poll')) return { stdout: JSON.stringify({ state: polled++ ? 'done' : 'missing' }) };
+      if (c.startsWith('fetch')) return { stdout: '{"segments":[]}' };
+      return { stdout: '{}' };
+    };
+    await asrJob(f, { lang: 'en', output: join(d, 'out.json') }, { host: 'h9', job: 'j-1', exec, pollMs: 0, count: false });
+    expect(cmds).not.toContain('ffmpeg');
+    expect(cmds.find((c) => c.startsWith('start'))).toMatch(/^start flac j-1 /);
+  });
+});

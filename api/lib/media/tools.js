@@ -260,11 +260,19 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
     const { tmpdir } = await import('os');
     const { readFile, unlink } = await import('fs/promises');
     if (installedOn !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
-    const flac = tempFlac(tmpdir());
+    // the audio file AS IS (the ASR host decodes it; media_tool loads through ffmpeg): no tower conversion at the lowest IO
+    // priority in the way (13:48 dispatch → still not started 13:57, while the ASR slot was held). A file over 800 MB is
+    // converted to 16 kHz first (a LAN upload of that size would take longer than the decode)
+    const { stat } = await import('fs/promises');
+    const ext = (input.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5);
+    const size = (await stat(input).catch(() => null))?.size || 0;
+    const direct = /^(flac|wav|mp3|m4a|ogg|opus|webm|aac|wma|mp4|mka)$/.test(ext) && size > 0 && size < 800 * 2 ** 20;
+    const flac = direct ? input : tempFlac(tmpdir());
     try {
-      await asrConvSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
-      await ssh(`start flac ${job} ${gateCommand('x', 'flac', { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });
-    } finally { await unlink(flac).catch(() => {}); }
+      if (!direct) await asrConvSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
+      const e = direct ? ext : 'flac';
+      await ssh(`start ${e} ${job} ${gateCommand('x', e, { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });
+    } finally { if (!direct) await unlink(flac).catch(() => {}); }
     await onStart();
     st = { state: 'running' };
   }
