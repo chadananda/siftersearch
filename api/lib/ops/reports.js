@@ -66,11 +66,12 @@ export const REPORTS = {
     return { hours, minMs, total: rows.reduce((n, r) => n + r.n, 0), by_proc: byProc, rows };
   },
   /** The single writer's load from db_write_stats: busy %, per caller × name batches/hour, rows, ms, p95, schedule.
-   *  params: { hours, top } (db-write-path-20261023) */
-  async 'write-stats'({ hours = 24, top = 25 } = {}) {
+   *  params: { hours, top } or { from, to } (ISO minutes, UTC — a before/after window) (db-write-path-20261023) */
+  async 'write-stats'({ hours = 24, top = 25, from = null, to = null } = {}) {
     const { writeStatsRows } = await import('../repos/write-stats-repo.js');
     const { summarizeWriteStats } = await import('../write-stats.js');
-    return summarizeWriteStats(await writeStatsRows({ hours }), { hours: Number(hours), top: Number(top) });
+    const span = from ? ((to ? Date.parse(`${to}:00Z`) : Date.now()) - Date.parse(`${from}:00Z`)) / 3600000 : Number(hours);
+    return { from, to, ...summarizeWriteStats(await writeStatsRows({ hours, from, to }), { hours: span, top: Number(top) }) };
   },
   /** Live books with no text, or with empty rows — per source, with sample ids. */
   async hollow() {
