@@ -179,7 +179,10 @@ export function readingIntent(text, { active = false } = {}) {
   if (jump && !/^the next\b/.test(jump[1])) return withLevel({ kind: 'jump', target: jump[1].trim() });
   if (/\b(try again|again|dig deeper|go deeper|not deep enough|redo)\b/.test(low) && !asks) return withLevel({ kind: 'again' });
   if (/\b(go back|previous page|last page)\b|^back\b/.test(low)) return withLevel({ kind: 'back' });
-  if (/\b(next|continue|go on|keep going|carry on|proceed|onward|read on|more please)\b/.test(low)) return withLevel({ kind: 'next' });
+  // a command word inside a real sentence is not a command (10-23: "…would continue to agitate…" in Chad's NEW question
+  // turned the next reading page)
+  const short = t.split(' ').length <= 12 && !asks;
+  if (short && /\b(next|continue|go on|keep going|carry on|proceed|onward|read on|more please)\b/.test(low)) return withLevel({ kind: 'next' });
   if (level && !asks) return { kind: 'again', level, relevel: true };   // "use simpler notes" alone → this page again at that level
   if (!low || /^(ok(ay)?|yes|good|great|thanks?|thank you|lovely|wonderful|beautiful|perfect|got it|nice)[\s.!,]*(thanks?|thank you)?[\s.!]*$/.test(low)) return { kind: 'next' };
   return { kind: 'question' };
@@ -221,6 +224,8 @@ export async function understandReply(text, { active = false, page = '', llm } =
     if (!active) return { kind: 'none', language };                      // only a start can open a reading
     if (j.kind === 'none') return { ...rules, language };
     const level = ['introductory', 'serious', 'advanced'].includes(j.level) ? j.level : rules.level || null;
+    // a real question always wins over a command reading of it (10-23)
+    if (['next', 'again'].includes(j.kind) && rules.kind === 'question' && /\?|^(who|what|why|how|when|which|is|was|did|does|can|could|tell me|explain|please (find|look|show|search))\b/i.test(String(text).trim())) return { ...rules, language };
     const out = { kind: j.kind, ...(level ? { level } : {}), ...(j.kind === 'jump' && j.target ? { target: j.target } : {}), language, by: 'model' };
     if (out.kind === 'jump' && !out.target) return { ...rules, language };
     return out;
@@ -592,10 +597,24 @@ function layoutReply(doc, outline, lang = 'en') {
 const langName = (code) => { try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code; } catch { return code; } };
 
 /** One reading turn. → null (not reading: ordinary Anís) | { reply, subject } */
-export async function readingTurn({ messages = [], participantId, reset = false, deps } = {}) {
+/** Out of a reading thread, only an explicit reading command may reach the guide: start ("help me study <book>") or a
+ *  short bare command ("next", "continue", "stop reading", "where are we"). Pure. */
+export function explicitReadingCommand(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  const r = readingIntent(t, { active: true });
+  if (r.kind === 'start') return r;
+  if (['next', 'again', 'back', 'jump', 'where', 'stop'].includes(r.kind) && t.split(' ').length <= 6 && !/\?/.test(t) && t.length > 0) return r;
+  return null;
+}
+
+/** inThread: the message replies to a reading email (the Worker knows from the thread; Chad 10-23 "WTH??" — a NEW email
+ *  with a real question, from an address with an open reading, got the next Dawn-Breakers page). Out of a reading thread
+ *  only an explicit command reaches the guide; anything else → null (the researcher answers). */
+export async function readingTurn({ messages = [], participantId, reset = false, deps, inThread = true } = {}) {
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
   const text = ownWords(lastUser?.content);
   if (!text || !participantId) return null;
+  if (!inThread && !explicitReadingCommand(text)) return null;
   const d = { ...(await defaults()), ...(deps || {}) };
   let session = await d.latestSession(participantId).catch(() => null);
   // a reply in a reading is understood by meaning (a small model, in the API: no waiting); the rules are the fallback

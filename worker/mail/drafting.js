@@ -83,8 +83,12 @@ export async function draftJob(env, db, m, { call = tower } = {}) {
   }
   // what the reader attached to THIS letter (photos of a page) goes along, read on tower (10-23: Liliane's photo was dropped)
   const attachments = env.MEDIA_BUCKET ? await attachmentsOf(env, [m.id]).catch(() => []) : [];
+  // in a reading thread? (their subject, or a reading page Anís sent in this thread) — else the guide only takes explicit
+  // commands (10-23: Chad's NEW question got the next Dawn-Breakers page)
+  const inThread = READING_THREAD.test(m.subject || '') || !!(await db.prepare(`SELECT 1 x FROM mail_messages WHERE thread_key = ? AND direction = 'out'
+    AND status = 'sent' AND subject LIKE '%Reading]%' LIMIT 1`).bind(m.thread_key).first());
   await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr,
-    ...(attachments.length ? { attachments } : {}) });
+    reading: { inThread }, ...(attachments.length ? { attachments } : {}) });
   return null;
 }
 

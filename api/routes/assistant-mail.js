@@ -68,13 +68,14 @@ export default async function anisRoutes(fastify) {
     const { result, meter, ms } = await meterTurn(() => draftBody(b));
     return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
   }
-  async function draftBody({ messages, email = '', research = undefined, writer = null, attachments = null }) {
+  async function draftBody({ messages, email = '', research = undefined, writer = null, attachments = null, reading = null }) {
     // what the reader attached (photos of a page) is read and becomes part of their message (10-23 Liliane's prayer photo)
     if (attachments?.length) messages = await (await import('../lib/assistant/attachments.js')).withAttachments(messages, attachments, { log: logger });
     const { parseLlm } = await import('../lib/assistant/respond.js');
     const llm = writer ? parseLlm(writer) : undefined;
     const { readingTurn } = await import('../lib/assistant/reading.js');
-    const rd = await readingTurn({ messages, participantId: who(email) }).catch((err) => { logger.error({ err: err.message }, 'anis: reading turn failed'); return null; });
+    // the reading guide only for a reply IN a reading thread (the Worker says) or an explicit reading command (10-23)
+    const rd = await readingTurn({ messages, participantId: who(email), inThread: !!reading?.inThread }).catch((err) => { logger.error({ err: err.message }, 'anis: reading turn failed'); return null; });
     if (rd?.reply) return { reply: rd.reply, subject: rd.subject || null, status: 'reading', triage: null, retrieved: 0, format: 'reading-guide' };
     const { anisTurn } = await import('../lib/assistant/turn.js');
     const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, llm });

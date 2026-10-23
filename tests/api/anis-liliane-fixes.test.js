@@ -109,3 +109,34 @@ describe('the researcher finds an original from an older English translation', (
     expect(RESEARCH_SYSTEM).toMatch(/ع ع\) is 'Abdu'l-Bahá's signature/);
   });
 });
+
+// 10-23 Chad "WTH??": a NEW email with a real question, from an address with an open reading, got the next reading page
+import { readingTurn, readingIntent, explicitReadingCommand } from '../../api/lib/assistant/reading.js';
+describe('the reading guide takes only replies in a reading thread or explicit commands', () => {
+  const CHAD = 'I seem to remember the Guardian used to explain that the Arabs would continue to agitate until they were ejected completely from the Holy Land. Can you look for all related passages so I can refresh my memory?';
+  const session = { doc_id: 1, title: 'The Dawn-Breakers', cursor: 5, pages: [{ from: 4, subject: 'Dawn-Breakers #Intro.4' }], explained: {} };
+  const deps = { latestSession: async () => session, understand: async () => ({ json: { kind: 'next', language: 'en' } }),
+    listDocs: async () => ({ docs: [{ id: 1, title: 'The Dawn-Breakers' }] }) };
+  it("Chad's new-thread question with an open reading → not the guide (null → the researcher)", async () => {
+    expect(await readingTurn({ messages: [{ role: 'user', content: CHAD }], participantId: 'email:x', inThread: false, deps })).toBeNull();
+  });
+  it('"continue" inside a sentence is not a command; a question wins over the model\'s "next"', async () => {
+    expect(readingIntent(CHAD, { active: true }).kind).toBe('question');
+    expect(explicitReadingCommand(CHAD)).toBeNull();
+    const { understandReply } = await import('../../api/lib/assistant/reading.js');
+    expect((await understandReply(CHAD, { active: true, llm: async () => ({ json: { kind: 'next', language: 'en' } }) })).kind).toBe('question');
+  });
+  it('"next" and "help me study <book>" are explicit commands anywhere; a reply in the reading thread reaches the guide', async () => {
+    expect(explicitReadingCommand('next')?.kind).toBe('next');
+    expect(explicitReadingCommand('continue please')?.kind).toBe('next');
+    expect(explicitReadingCommand('stop reading')?.kind).toBe('stop');
+    expect(readingIntent('help me study The Dawn-Breakers').kind).toBe('start');
+    let reached = false;
+    const d2 = { ...deps, latestSession: async () => { reached = true; return null; } };
+    await readingTurn({ messages: [{ role: 'user', content: 'lovely, more please' }], participantId: 'email:x', inThread: true, deps: d2 }).catch(() => null);
+    expect(reached).toBe(true);
+    reached = false;
+    await readingTurn({ messages: [{ role: 'user', content: 'next' }], participantId: 'email:x', inThread: false, deps: d2 }).catch(() => null);
+    expect(reached).toBe(true);
+  });
+});
