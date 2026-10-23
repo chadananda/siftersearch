@@ -98,4 +98,14 @@ describe('library-stats snapshot', () => {
     writeFileSync(p, JSON.stringify(shapeLibraryStats(rows)));
     expect(readLibraryStats(p).totals.documents).toBe(17);
   });
+  it('before the first build, bootstraps from pipeline-status.json corpus (the updater smoke test needs docs + religions)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'libstats-'));
+    writeFileSync(join(dir, 'pipeline-status.json'), JSON.stringify({ corpus: { generated_at: '2026-10-23T11:00:00Z', docs: 30, paras: 900,
+      byReligion: [{ religion: 'Islam', docs: 10, paras: 300 }, { religion: 'Judaism', docs: 20, paras: 600 }] } }));
+    const s = readLibraryStats(join(dir, 'library-stats.json'));
+    expect(s.fallback).toBe('pipeline-status.corpus');
+    expect(s.totals.documents).toBe(30);
+    expect(s.totals.paragraphs).toBe(900);
+    expect(Object.keys(s.religionCounts)).toHaveLength(2);
+  });
 });

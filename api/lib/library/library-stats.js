@@ -29,22 +29,36 @@ export function shapeLibraryStats({ facets = [], authors = 0, byEra = [], topAut
   return {
     generated_at: new Date(now).toISOString(),
     totals: { documents, docs_with_content: withContent, paragraphs, authors: Number(authors) || 0,
-      languages: new Set(facets.map((r) => r.language)).size, recently_updated: Number(recentlyUpdated) || 0 },
+      languages: new Set(facets.map((r) => r.language).filter((l) => l != null)).size, recently_updated: Number(recentlyUpdated) || 0 },
     religionCounts, religionParagraphs, collectionCounts, languageCounts,
     facets: facets.map((r) => ({ religion: r.religion ?? null, collection: r.collection ?? null, language: r.language ?? null, n: Number(r.n) || 0 })),
     byEra, topAuthors,
   };
 }
 
+/** Bootstrap before the first library-stats.json exists (fresh deploy, the updater's smoke server): the pipeline
+ *  snapshot's corpus section (docs/paras by religion, also built by siftersearch-reports). No collections/languages. */
+function fromCorpus(statusPath) {
+  try {
+    const c = JSON.parse(readFileSync(statusPath, 'utf8'))?.corpus;
+    if (!c?.byReligion?.length) return null;
+    const facets = c.byReligion.map((r) => ({ religion: r.religion, collection: null, language: null, n: r.docs, paras: r.paras, with_content: r.docs }));
+    return { ...shapeLibraryStats({ facets }, Date.parse(c.generated_at) || Date.now()), fallback: 'pipeline-status.corpus' };
+  } catch { return null; }
+}
+
 let cache = { path: null, mtime: -1, data: EMPTY };
-/** The latest snapshot (never queries). Missing/unreadable file → an empty snapshot with missing:true. */
+/** The latest snapshot (never queries). Missing file → the corpus bootstrap, else an empty snapshot with missing:true. */
 export function readLibraryStats(path = DEFAULT_PATH) {
   try {
     const m = statSync(path).mtimeMs;
     if (cache.path !== path || m !== cache.mtime) cache = { path, mtime: m, data: JSON.parse(readFileSync(path, 'utf8')) };
     return cache.data;
   } catch {
-    return cache.path === path && cache.data !== EMPTY ? cache.data : EMPTY;
+    if (cache.path === path && cache.data !== EMPTY && !cache.data.fallback) return cache.data;
+    const boot = fromCorpus(join(dirname(path), 'pipeline-status.json'));
+    if (boot) { cache = { path, mtime: -1, data: boot }; return boot; }
+    return EMPTY;
   }
 }
 
