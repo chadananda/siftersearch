@@ -95,3 +95,13 @@ describe('work links are the work itself (QA fixtures: 45 wrong work links)', as
     expect((await resolveWork({ text: 'The Bahá’í World', canonical: 'The Bahá’í World' }, { find: async () => [{ id: 5, title: "The Baha'i World: Volume XIII", language: 'en' }] })).doc).toBeUndefined();
   });
 });
+
+describe('letter runs are completed to the term they begin (watchdog 23:49)', async () => {
+  const { repairLoops: rl } = await import('../../api/lib/media/loops.js');
+  it.each([['Bahaííííííí', 'Bahá’í'], ['Bááááááá', 'Báb'], ["Abdu'l-Báááááá,", '‘Abdu’l-Bahá,'], ['Néhéééééé', 'Néhé']])('%s → %s', (w, want) => {
+    expect(rl([{ w, s: 0, e: 1 }]).words[0].w).toBe(want);
+  });
+  it('"No, no." and "no, no, no, no" are speech, not loops', () => {
+    expect(findLoops(W('No, no. I said no, no, no, no and then'))).toEqual([]);
+  });
+});

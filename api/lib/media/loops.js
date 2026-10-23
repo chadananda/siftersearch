@@ -3,6 +3,7 @@
 // repeats (the first saying stays, every word keeps its time) and collapsing a character run; the publish gate refuses a
 // transcript that still has one, or a lossy decode (U+FFFD) or mojibake. Pure.
 import { hasMojibake } from './text-repair.js';
+import { CORE_TERMS } from './vocab.js';
 
 const norm = (w) => String(w?.w ?? w ?? '').toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, '');
 const CHAR_RUN = /(\p{L})\1{4,}/u;   // one letter five or more times ("Bahá'ááááá", "Nabiíííí")
@@ -32,13 +33,27 @@ export function findLoops(words = []) {
   return out.sort((p, q) => p.i0 - q.i0);
 }
 
-/** Repair: repeats hidden (the first saying kept), letter runs collapsed to one. → { words, repaired: [loops] } */
+const fk = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+const TERMS = (Array.isArray(CORE_TERMS) ? CORE_TERMS : String(CORE_TERMS).split('|')).map((t) => String(t).trim().replace(/^the\s+/i, '')).filter((t) => fk(t).length >= 3);
+/** A word whose letter run was collapsed ("Bahaí", "Bá", "Abdu'l-Bá") → the shortest core term it begins (Bahá’í, Báb,
+ *  ‘Abdu’l-Bahá), its edge punctuation kept; else the collapsed word. */
+export function completeTerm(word) {
+  const lead = (String(word).match(/^[^\p{L}]*/u) || [''])[0], trail = (String(word).match(/[^\p{L}]*$/u) || [''])[0];
+  const core = String(word).slice(lead.length, String(word).length - trail.length);
+  const k = fk(core);
+  if (k.length < 2) return word;
+  const hit = TERMS.filter((t) => fk(t).startsWith(k)).sort((a, b) => fk(a).length - fk(b).length)[0];
+  return hit ? `${lead.replace(/['’‘]$/, '')}${hit}${trail}` : word;
+}
+
+/** Repair: repeats hidden (the first saying kept), letter runs collapsed and completed to the core term they begin
+ *  ("Bahaíííí…" → Bahá’í, "Báááá…" → Báb). → { words, repaired: [loops] } */
 export function repairLoops(words = []) {
   const loops = findLoops(words);
   if (!loops.length) return { words, repaired: [] };
   const ws = words.map((w) => ({ ...w }));
   for (const l of loops) {
-    if (l.kind === 'char') ws[l.i0].w = String(ws[l.i0].w).replace(/(\p{L})\1{4,}/gu, '$1');
+    if (l.kind === 'char') ws[l.i0].w = completeTerm(String(ws[l.i0].w).replace(/(\p{L})\1{4,}/gu, '$1'));
     else for (const i of l.hide) ws[i].hide = true;
   }
   return { words: ws, repaired: loops.map(({ hide, ...l }) => l) };

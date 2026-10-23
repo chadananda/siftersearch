@@ -269,3 +269,17 @@ describe('one run per item', () => {
     expect(queue).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('restore published talks a failed re-run took off (watchdog 23:49)', () => {
+  it('failed + once catalogued → done, reason kept as "update failed: …"; re-runs by "problems"', async () => {
+    const db = await import('../../api/lib/db.js');
+    db.queryAll.mockImplementationOnce(async (sql) => { expect(sql).toMatch(/published_at IS NOT NULL OR stages_done LIKE '%,catalog,%'/); return [{ id: 5, why: 'retry:1 publish blocked: x' }]; });
+    db.transaction.mockClear();
+    const { restorePublished } = await import('../../api/lib/repos/media-repo.js');
+    expect(await restorePublished()).toEqual([5]);
+    expect(db.transaction.mock.calls[0][0][0].args.slice(0, 1)).toEqual(['update failed: publish blocked: x']);
+    const { mediaItemJob } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn();
+    expect(await mediaItemJob({ ids: 'problems', redo: ['update'] }, { queue, repo: { publishedProblemIds: async () => [5, 6] } })).toEqual({ queued: 2 });
+  });
+});

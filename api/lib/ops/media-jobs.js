@@ -84,7 +84,7 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
   if (id == null && ids) {
     const R = deps.repo || await import('../repos/media-repo.js');
     // ids or SLUGS (an audit names talks by slug)
-    const list = ids === 'done' ? await R.doneItemIds()
+    const list = ids === 'done' ? await R.doneItemIds() : ids === 'problems' ? await R.publishedProblemIds()
       : (await Promise.all([].concat(ids).map(async (x) => (/^\d+$/.test(String(x)) ? Number(x) : (await R.getMediaBySlug(String(x)))?.id)))).filter(Boolean);
     // never a second run on an item with one queued or running (two runs on one item overwrite each other's files)
     const ops = deps.ops || (deps.queue ? { pendingRuns: async () => [] } : await import('../repos/ops-report-repo.js'));
@@ -132,7 +132,7 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     const prior = /^retry:\d+/.exec(item.why || '')?.[0];   // a retried item keeps its retry count (retryTransientFailures caps it)
     // a PUBLISHED talk whose re-run failed stays published (10-23: blocked re-links took 15 talks off the catalogue): the
     // failure is kept in why ('update failed: …') and the run's result; health counts these as published_problems
-    if (item.state === 'done' || item.published_at) await updateMediaItem(id, { state: 'done', why: `update failed: ${String(err.message)}`.slice(0, 500) }).catch(() => {});
+    if (item.state === 'done' || item.published_at || /,catalog,/.test(item.stages_done || '')) await updateMediaItem(id, { state: 'done', why: `update failed: ${String(err.message)}`.slice(0, 500) }).catch(() => {});
     else await updateMediaItem(id, { state: 'failed', why: `${prior ? `${prior} ` : ''}${String(err.message)}`.slice(0, 500) }).catch(() => {});
     await logActivity('media', `✗ media item ${id} failed: ${String(err.message).slice(0, 160)}`).catch(() => {});
     if (deps.throwOnFail) throw err;
@@ -560,6 +560,7 @@ export async function mediaLanesFeedPass(deps = {}) {
   const computeDepth = deps.computeDepth ?? (Number(process.env.MEDIA_COMPUTE_DEPTH) || 3 * (computeWorkers || 4));
   const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || 8);
   const out = { compute: [], llm: [] };
+  if (repo.restorePublished) { const back = await repo.restorePublished(); if (back.length) out.restored = back; }
   if (repo.retryTransientFailures) { const back = await repo.retryTransientFailures(); if (back.length) out.retried = back; }
   // ASR: every slot busy, as many again waiting — from the PREPPED buffer
   const asr = await ops.pendingRuns('media-asr');

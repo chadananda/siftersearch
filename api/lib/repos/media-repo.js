@@ -144,6 +144,16 @@ export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000
     failed_items: recent.map((x) => ({ slug: x.slug, stage: x.stage, why: String(x.why || '').slice(0, 200), at: x.updated_at })),
     compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), asr_backlog: n('asr_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window'), published_problems: n('published_problems') };
 }
+/** RESTORE: a talk once published (catalogued) that a failed re-run marked 'failed' goes back to 'done', its reason kept as
+ *  'update failed: …' (10-23: the publish gate took ~13 published talks off the site). → [ids] */
+export async function restorePublished() {
+  const rows = await queryAll(`SELECT id, why FROM media_items WHERE state = 'failed' AND (published_at IS NOT NULL OR stages_done LIKE '%,catalog,%')`, [], 'media:restore-published');
+  if (rows.length) await transaction(rows.map((r) => ({ sql: `UPDATE media_items SET state = 'done', why = ?, updated_at = ? WHERE id = ?`,
+    args: [`update failed: ${String(r.why || '').replace(/^(?:retry:\d+\s*)?(?:update failed:\s*)?/, '')}`.slice(0, 500), now(), r.id] })), 'media:restore-published');
+  return rows.map((r) => r.id);
+}
+/** Published talks whose last re-run failed ('update failed: …'), for a re-run. */
+export const publishedProblemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' AND why LIKE 'update failed:%'`, [], 'media:published-problems')).map((r) => r.id);
 /** Items published since a time (throughput). */
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };
 
