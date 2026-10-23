@@ -66,7 +66,10 @@ export function passageGate(row) {
   const long = words.filter((w) => w.replace(/[^\p{L}]/gu, '').length > 3);
   const caps = long.filter((w) => /^[\p{Lu}]/u.test(w.replace(/^[^\p{L}]+/u, ''))).length;
   if (long.length >= 12 && caps / long.length > 0.55) return 'heading-like (title case)';
-  if (words.length >= 40 && sentences / words.length < 1 / 45) return 'not a sentence-level passage';
+  // a long run with almost no sentence ends AND almost no commas is a list or contents, not prose (Shoghi Effendi's sentences
+  // run past 45 words, but they are full of commas: 10-22 audit refused 49 real passages before this)
+  const commas = (t.match(/[,;—–]/g) || []).length;
+  if (words.length >= 40 && sentences / words.length < 1 / 45 && commas / words.length < 1 / 25) return 'not a sentence-level passage';
   return null;
 }
 

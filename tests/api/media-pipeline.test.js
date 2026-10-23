@@ -297,3 +297,13 @@ describe('the quote audit', () => {
     expect(queue).toHaveBeenCalledWith('media-item', { id: 9, redo: ['quotes', 'update'] }, 'media-quote-audit');
   });
 });
+
+describe('the passage gate keeps long prose (10-22 audit: 49 real passages were refused)', async () => {
+  const { passageGate } = await import('../../api/lib/media/quotes.js');
+  it('a long sentence of Shoghi Effendi with commas passes; a comma-less run does not', () => {
+    const se = { title: 'The World Order of Bahá’u’lláh', author: 'Shoghi Effendi', text: 'The principle of the Oneness of Mankind, the pivot round which all the teachings of Bahá’u’lláh revolve, is no mere outburst of ignorant emotionalism or an expression of vague and pious hope, nor does it constitute merely the reawakening of the spirit of brotherhood and good-will among men, nor does it aim solely at the fostering of harmonious cooperation among individual peoples and nations, since its message is applicable not only to the individual, but concerns itself primarily with the nature of those essential relationships that must bind all the states and nations as members of one human family.' };
+    expect(passageGate(se)).toBeNull();
+    const run = { title: 'A Book', author: 'Someone', text: Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ') + '.' };
+    expect(passageGate(run)).toMatch(/sentence-level/);
+  });
+});
