@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-23T02:44:42.267Z",
+  "generated": "2026-10-23T03:48:16.249Z",
   "entries": [
+    {
+      "hash": "96f64465",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Daily digest of EVERY conversation exactly as the reader saw it (Chad 10-22: \"so I can tweak\")",
+      "scope": "anis"
+    },
+    {
+      "hash": "a8d52bd3",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "One email renderer — every mail multipart, Markdown rendered (Chad 10-22: \"Anís digests of unrendered markdown\")",
+      "scope": "mail"
+    },
+    {
+      "hash": "3bc80354",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "PERSON LINKS — the spoken words decide (QA audit 10-22: 16 of 17 lookup-fallback links were wrong: 'Dr. Ḥakím' → Khayru'lláh, a Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's 'Muḥammad-‘Alí' = Quddús): a person is linked only when the mention's words are one person's name or alias, or a contiguous part of exactly one person's name; the model's canonical name only chooses among those; the identity-lookup fallback is removed; Covenant-breakers are never linked, and words that also name one are linked to no one; the 18 QA cases are a test",
+      "scope": "media"
+    },
+    {
+      "hash": "473e14f6",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The passage gate keeps long prose — a long run counts as a list only when it has almost no sentence ends AND almost no commas (the first audit refused 49 real passages, e.g. Shoghi Effendi's long sentences in The World Order of Bahá’u’lláh)",
+      "scope": "media"
+    },
+    {
+      "hash": "a72df8b1",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "QA audit of the 73 published talks — 319 issues, 20 classes, prioritised fixes",
+      "scope": "media"
+    },
+    {
+      "hash": "572fbfbc",
+      "date": "2026-10-22",
+      "type": "Test",
+      "description": "QA audit fixtures for the 73 published talks (Chad 10-22: scrub them while we are early)",
+      "scope": "media"
+    },
+    {
+      "hash": "09675529",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "The queue by historical tier (Chad 10-22: 'first please focus on the historical materials') — 1 historic recordings (historic/pilgrim/early collections and the first generation: Martha Root, Louis Gregory, Dorothy Baker, …) · 2 Hands of the Cause · 3 members of the Universal House of Justice · 4 other historic speakers from the local collections · 5 modern scholars (the curated webinars) last; oldest first within a tier; rank = tier × 10⁷ + year × 10³ + order, for downloads and processing alike; /api/media/progress by_source = historic · hands · uhj · historic-speakers · scholars; the rank / stage-sync / quote-audit jobs run in the light portraits lane (the downloads lane is always busy)",
+      "scope": "media"
+    },
     {
       "hash": "efff025b",
       "date": "2026-10-22",
@@ -3451,59 +3500,59 @@
       "type": "Fixed",
       "description": "Real-time Anthropic replies join every text block (content[0].text was empty when the first block is not text); diagnostics carry finishReason + block types",
       "scope": "ai"
-    },
-    {
-      "hash": "2685ff80",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "RunLadder reports the swallowed call error; concept disambiguation surfaces it as lastError",
-      "scope": "kernel"
-    },
-    {
-      "hash": "fabbb74c",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Anthropic stage calls get ≥1500 output tokens — DeepSeek-tuned caps (450/500) truncated Haiku's JSON into failed verdicts",
-      "scope": "pipeline"
-    },
-    {
-      "hash": "fd0d0c77",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Disambiguation reads the JSON object, not the raw reply — Haiku fences its JSON and 267/269 Epistle paragraphs failed to parse",
-      "scope": "concepts"
-    },
-    {
-      "hash": "2d922087",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Batches always fill (cc=8 made 8-request batches, ~13h per book); a writer restart no longer crashes a run (read-only error message); a rehype is done only at the current HyPE version",
-      "scope": "grounding"
-    },
-    {
-      "hash": "81ddae7b",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Enqueue refuses identical pending work atomically — two instances racing the plan follower during a reload queued books 2-3×, so they re-ran",
-      "scope": "queue"
-    },
-    {
-      "hash": "8b5e52e8",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "The server owns the reported window — a cron curl timeout (90s) under load left the window un-advanced and the same books were re-sent every hour",
-      "scope": "digest"
-    },
-    {
-      "hash": "1d24ef94",
-      "date": "2026-10-13",
-      "type": "Chore",
-      "description": "Interfaith HyPE waves under the $80 Anthropic ceiling",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "96f64465",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Daily digest of EVERY conversation exactly as the reader saw it (Chad 10-22: \"so I can tweak\")",
+        "scope": "anis"
+      },
+      {
+        "hash": "a8d52bd3",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "One email renderer — every mail multipart, Markdown rendered (Chad 10-22: \"Anís digests of unrendered markdown\")",
+        "scope": "mail"
+      },
+      {
+        "hash": "3bc80354",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "PERSON LINKS — the spoken words decide (QA audit 10-22: 16 of 17 lookup-fallback links were wrong: 'Dr. Ḥakím' → Khayru'lláh, a Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's 'Muḥammad-‘Alí' = Quddús): a person is linked only when the mention's words are one person's name or alias, or a contiguous part of exactly one person's name; the model's canonical name only chooses among those; the identity-lookup fallback is removed; Covenant-breakers are never linked, and words that also name one are linked to no one; the 18 QA cases are a test",
+        "scope": "media"
+      },
+      {
+        "hash": "473e14f6",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The passage gate keeps long prose — a long run counts as a list only when it has almost no sentence ends AND almost no commas (the first audit refused 49 real passages, e.g. Shoghi Effendi's long sentences in The World Order of Bahá’u’lláh)",
+        "scope": "media"
+      },
+      {
+        "hash": "a72df8b1",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "QA audit of the 73 published talks — 319 issues, 20 classes, prioritised fixes",
+        "scope": "media"
+      },
+      {
+        "hash": "572fbfbc",
+        "date": "2026-10-22",
+        "type": "Test",
+        "description": "QA audit fixtures for the 73 published talks (Chad 10-22: scrub them while we are early)",
+        "scope": "media"
+      },
+      {
+        "hash": "09675529",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "The queue by historical tier (Chad 10-22: 'first please focus on the historical materials') — 1 historic recordings (historic/pilgrim/early collections and the first generation: Martha Root, Louis Gregory, Dorothy Baker, …) · 2 Hands of the Cause · 3 members of the Universal House of Justice · 4 other historic speakers from the local collections · 5 modern scholars (the curated webinars) last; oldest first within a tier; rank = tier × 10⁷ + year × 10³ + order, for downloads and processing alike; /api/media/progress by_source = historic · hands · uhj · historic-speakers · scholars; the rank / stage-sync / quote-audit jobs run in the light portraits lane (the downloads lane is always busy)",
+        "scope": "media"
+      },
       {
         "hash": "efff025b",
         "date": "2026-10-22",
@@ -6972,55 +7021,6 @@
         "type": "Fixed",
         "description": "Real-time Anthropic replies join every text block (content[0].text was empty when the first block is not text); diagnostics carry finishReason + block types",
         "scope": "ai"
-      },
-      {
-        "hash": "2685ff80",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "RunLadder reports the swallowed call error; concept disambiguation surfaces it as lastError",
-        "scope": "kernel"
-      },
-      {
-        "hash": "fabbb74c",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Anthropic stage calls get ≥1500 output tokens — DeepSeek-tuned caps (450/500) truncated Haiku's JSON into failed verdicts",
-        "scope": "pipeline"
-      },
-      {
-        "hash": "fd0d0c77",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Disambiguation reads the JSON object, not the raw reply — Haiku fences its JSON and 267/269 Epistle paragraphs failed to parse",
-        "scope": "concepts"
-      },
-      {
-        "hash": "2d922087",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Batches always fill (cc=8 made 8-request batches, ~13h per book); a writer restart no longer crashes a run (read-only error message); a rehype is done only at the current HyPE version",
-        "scope": "grounding"
-      },
-      {
-        "hash": "81ddae7b",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Enqueue refuses identical pending work atomically — two instances racing the plan follower during a reload queued books 2-3×, so they re-ran",
-        "scope": "queue"
-      },
-      {
-        "hash": "8b5e52e8",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "The server owns the reported window — a cron curl timeout (90s) under load left the window un-advanced and the same books were re-sent every hour",
-        "scope": "digest"
-      },
-      {
-        "hash": "1d24ef94",
-        "date": "2026-10-13",
-        "type": "Chore",
-        "description": "Interfaith HyPE waves under the $80 Anthropic ceiling",
-        "scope": "worklist"
       }
     ]
   }
