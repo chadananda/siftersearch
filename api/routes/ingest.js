@@ -751,22 +751,14 @@ export default async function ingestRoutes(fastify) {
     const since = Math.floor(Date.now() / 1000) - hours * 3600;
     // Group by NAME first — a query TYPE is what you act on. Unnamed statements fall back to their shape
     // and are reported as such, which doubles as a worklist: an expensive line with no name wants one.
-    const rows = await queryAll(
-      `SELECT proc, kind, label, MAX(name) name,
-              SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
-         FROM query_stats WHERE hour >= ?
-        GROUP BY proc, kind, label ORDER BY total_ms DESC LIMIT 60`, [since],
-      'admin:query-time-report').catch(() => []);
-    const perProc = await queryAll(
-      `SELECT proc, SUM(n) n, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC`,
-      [since]).catch(() => []);
+    const qh = await import('../lib/repos/query-health-repo.js');
+    const rows = await qh.queryTimeByLabel(since).catch(() => []);
+    const perProc = await qh.queryTimeByProc(since).catch(() => []);
     // frozenPct must divide by the span actually OBSERVED, not the span requested: query_stats began
     // collecting when migration 111 landed, so dividing one hour of data by a 24h window reported 0.8%
     // for a process that was really frozen 10.7% of the time it was measured — an instrument understating
     // the very problem it exists to find.
-    const span = await queryOne(
-      `SELECT MIN(hour) lo, MAX(hour) hi FROM query_stats WHERE hour >= ?`, [since], 'admin:query-time-span')
-      .catch(() => null);
+    const span = await qh.queryTimeSpan(since).catch(() => null);
     const observedHours = span?.lo != null ? Math.max(1, (span.hi - span.lo) / 3600 + 1) : hours;
     const wallMs = observedHours * 3600 * 1000;
     return {
@@ -802,16 +794,7 @@ export default async function ingestRoutes(fastify) {
     const hours = Math.min(Math.max(Number(req.query?.hours) || 24, 1), 24 * 30);
     const minMs = Math.max(Number(req.query?.minMs) || 1000, 0);
     const since = Math.floor(Date.now() / 1000) - hours * 3600;
-    const rows = await queryAll(
-      `SELECT fingerprint, kind, proc, db_name,
-              COUNT(*) n, MAX(duration_ms) worst_ms, SUM(duration_ms) total_ms,
-              CAST(AVG(duration_ms) AS INT) avg_ms, MAX(at) last_at,
-              MAX(sql_sample) sql_sample, MAX(query_plan) query_plan, MAX(name) name
-         FROM slow_query_log
-        WHERE at >= ? AND duration_ms >= ?
-        GROUP BY fingerprint, kind, proc, db_name
-        ORDER BY total_ms DESC
-        LIMIT 50`, [since, minMs]).catch(() => []);
+    const rows = await (await import('../lib/repos/query-health-repo.js')).slowQueryGroups(since, minMs).catch(() => []);
 
     // A slow WRITE is not just slow: better-sqlite3 is synchronous, so it froze that process. On the
     // worker — the single writer — that is why /write and /health stop answering and callers see

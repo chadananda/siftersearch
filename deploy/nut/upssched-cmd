@@ -1,18 +1,21 @@
 #!/bin/sh
-# /usr/local/bin/upssched-cmd — called by upssched (as the nut user; needs the sudoers line in sudoers.d-sifter-ups).
-# powerdown: flush the RAM disk (sifter-powerdown.target) THEN tell upsmon to shut everything down (FSD → SHUTDOWNCMD).
-# Every event is mailed (best effort; the router is on the UPS too). SIFTER_TEST=1 logs instead of acting.
+# /usr/local/bin/upssched-cmd — called by upssched as the nut user (sudoers.d-sifter-ups lets it run ups-power.sh as chad).
+#   readonly  on battery for 10 s: scripts/ops/ups-power.sh enter (drain → read-only → flush RAM to disk; reads keep serving)
+#   resume    mains back and stable 60 s: ups-power.sh resume
+#   lowbatt   final flush (fast — already done); upsmon then runs SHUTDOWNCMD (/usr/local/bin/sifter-ups-shutdown) by itself
+# ups-power.sh re-checks the live UPS status before acting and is inert without a UPS. SIFTER_TEST=1 logs instead of acting.
+UPS_POWER="sudo -n -u chad /home/chad/sifter/siftersearch/scripts/ops/ups-power.sh"
 MAIL="/usr/local/bin/sifter-ups-mail"
 log() { logger -t upssched-cmd "$*"; }
 act() { if [ "${SIFTER_TEST:-0}" = 1 ]; then log "TEST would run: $*"; else "$@"; fi; }
 case "$1" in
-  onbatt)   log "ONBATT: on battery; powering down in 120 s unless power returns"; [ -x "$MAIL" ] && "$MAIL" onbatt "tower ON BATTERY" "Power down in 120 s unless mains returns." & ;;
-  online)   log "ONLINE: mains back; power-down cancelled"; [ -x "$MAIL" ] && "$MAIL" online "tower back on mains" "Power-down cancelled." & ;;
-  powerdown)
-    log "POWERDOWN: flushing the RAM disk, then FSD"
-    [ -x "$MAIL" ] && "$MAIL" powerdown "tower POWERING DOWN" "Battery timer or LOWBATT: flushing the RAM disk and shutting down." &
-    act sudo -n /bin/systemctl start sifter-powerdown.target || log "flush failed or timed out — shutting down anyway"
-    act /sbin/upsmon -c fsd ;;
+  onbatt)   log "ONBATT: on battery; read-only in 10 s unless mains returns" ;;
+  online)   log "ONLINE: mains back; resume in 60 s if it stays" ;;
+  readonly) log "READONLY: 10 s on battery — entering read-only mode"; act $UPS_POWER enter ;;
+  resume)   log "RESUME: 60 s on mains — leaving read-only mode"; act $UPS_POWER resume ;;
+  lowbatt)  log "LOWBATT: final flush; upsmon shuts down"
+            [ -x "$MAIL" ] && "$MAIL" powerdown "tower LOW BATTERY — shutting down" "Runtime ≤ 3 min: clean OS shutdown. Everything was already flushed." &
+            act $UPS_POWER enter --grace 5 ;;
   commbad)  log "UPS communication lost"; [ -x "$MAIL" ] && "$MAIL" commbad "tower: UPS communication lost" "upsmon cannot reach the UPS for 5 min." & ;;
   replbatt) log "UPS reports battery needs replacing"; [ -x "$MAIL" ] && "$MAIL" replbatt "tower: UPS battery needs replacing" & ;;
   *)        log "unknown event: $1" ;;

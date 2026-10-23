@@ -1,0 +1,8 @@
+#!/bin/sh
+# /usr/local/bin/sifter-ups-shutdown — upsmon's SHUTDOWNCMD (runs as root) on LOW BATTERY only (OB + LB; ups.conf thresholds).
+# Make sure the flush is done (a no-op when read-only mode already flushed), flush the RAM disk once more, power off.
+logger -t sifter-ups-shutdown "LOW BATTERY: final flush, then clean shutdown"
+if [ "${SIFTER_TEST:-0}" = 1 ]; then logger -t sifter-ups-shutdown "TEST would flush + shutdown -h +0"; exit 0; fi
+sudo -n -u chad /home/chad/sifter/siftersearch/scripts/ops/ups-power.sh enter --grace 5 || true
+systemctl start sifter-powerdown.target || true
+exec /sbin/shutdown -h +0

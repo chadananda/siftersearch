@@ -26,7 +26,8 @@ export default async function opsReportRoutes(fastify) {
     } catch { /* no jobs yet */ }
     const runs = (await recent(40)).filter((r) => r.status === 'running' || r.status === 'queued')
       .map((r) => ({ id: r.id, name: r.name, status: r.status, started_at: r.started_at, requested_at: r.requested_at }));
-    return { head: headCommit(), services: readServices(), ops_jobs: runs, anis_answers: answers };
+    const { powerState, powerLine } = await import('../lib/power-mode.js');
+    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers };
   });
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {

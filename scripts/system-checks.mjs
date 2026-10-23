@@ -69,8 +69,14 @@ for (const until = Date.now() + settleMs(procs, transitioning()); transitioning(
   procs = pm2List();
 }
 const byName = Object.fromEntries(procs.map((p) => [p.name, p]));
+// POWER (UPS on battery — api/lib/power-mode.js): read-only mode is a STATE to show, not a fault; the writers it stopped
+// on purpose are expected to be stopped, and drains it caused are not stuck
+const { powerState, powerLine } = await import('../api/lib/power-mode.js');
+const power = powerState();
+if (power) add('POWER', false, 'critical', `${powerLine()} — writes refused, reads serving; stopped: ${(power.stopped || []).join(', ') || 'none'}${power.flushed_at ? `; flushed ${power.flushed_at}` : '; FLUSH NOT DONE YET'}`);
 for (const name of REQUIRED) {
   const st = statusOf(procs, name);
+  if (power?.stopped?.includes(name) && st !== 'online') { add(`pm2 ${name}`, true, 'info', `${st} (stopped by POWER read-only mode)`); continue; }
   add(`pm2 ${name}`, st === 'online', 'critical', st);
 }
 // BOOT FAILURES: a process whose error log since its last start holds a module-load error (a SyntaxError, a missing
@@ -100,9 +106,9 @@ let drainSeen = state.drainSeen || {};
   else {
     // a SILENT service (no heartbeat for 5 min) is not draining — it is not running (10-23: a module that would not load
     // showed as 'draining 13 min'): CRITICAL, with its commit and last beat
-    const silent = services.filter((x) => x.health === 'silent' || Number(x.age_s) > 300);
+    const silent = services.filter((x) => (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name));
     add('Services alive', !silent.length, 'critical', silent.length ? silent.map((x) => `${x.name} silent ${Math.round(Number(x.age_s) / 60)} min (last beat ${x.beat_at}, commit ${String(x.commit || '').slice(0, 8)})`).join(' · ') : 'ok');
-    const d = stuckDrains(services, { seen: drainSeen, limitMs: Number(process.env.DRAIN_WARN_MIN || 10) * 60_000 });
+    const d = power ? { stuck: [], seen: {} } : stuckDrains(services, { seen: drainSeen, limitMs: Number(process.env.DRAIN_WARN_MIN || 10) * 60_000 });   // a power drain is not stuck
     drainSeen = d.seen;
     add('Service drains', !d.stuck.length, 'warn', d.stuck.length
       ? d.stuck.map((x) => `${x.name} draining ${x.minutes} min, held by ${x.doing.join(', ') || 'nothing named'}`).join(' · ') : 'ok');
@@ -119,6 +125,13 @@ try {
   const Database = (await import('better-sqlite3')).default;
   db = new Database('data/sifter.db', { readonly: true });
 } catch (e) { add('sqlite read', false, 'warn', e.message); }
+// query_stats + slow_query_log live in the telemetry store next to sifter.db since db-write-path-20261023
+let tdb = db;
+try {
+  const { realpathSync, existsSync } = await import('node:fs');
+  const tp = (await import('node:path')).join((await import('node:path')).dirname(realpathSync('data/sifter.db')), 'telemetry.db');
+  if (existsSync(tp)) tdb = new (await import('better-sqlite3')).default(tp, { readonly: true });
+} catch { /* fall back to the content DB's (frozen) copies */ }
 
 if (db) {
   const day = Math.floor(Date.now() / 1000) - 86400;
@@ -220,7 +233,7 @@ let newGpuIdleAt = state.gpuIdleAt || 0;
 // ── 5. Corpus + cache + widget metrics (report-only) ─────────────────────────
 const metrics = {};
 if (db) {
-  const g = (sql, label) => { try { return db.prepare(sql).get(); } catch { return null; } };
+  const g = (sql, label) => { try { return (/\bslow_query_log\b/.test(sql) ? tdb : db).prepare(sql).get(); } catch { return null; } };
   const a = (sql) => { try { return db.prepare(sql).all(); } catch { return null; } };
   // WHOLE-TABLE scans of content (9M rows) only in the DAILY run: every 30 min they evicted the cache search hydrates from
   // (10-19: primary-key lookups at 200–1000 ms, searches at 5–15 s). The half-hourly check stays on small tables.
@@ -277,11 +290,11 @@ if (db) {
   if (MODE === 'daily') {
     try {
       const since = Math.floor(Date.now() / 1000) - 86400;
-      const sinks = db.prepare(
+      const sinks = tdb.prepare(
         `SELECT proc, label, MAX(name) name, SUM(n) n, SUM(total_ms) total_ms,
                 MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
            FROM query_stats WHERE hour >= ? GROUP BY proc, label ORDER BY total_ms DESC LIMIT 5`).all(since);
-      const procs = db.prepare(
+      const procs = tdb.prepare(
         `SELECT proc, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC LIMIT 3`).all(since);
       if (procs.length) {
         metrics.queryTime = procs.map((p) => `${p.proc} ${(p.total_ms / 60000).toFixed(0)}min`).join(' · ');

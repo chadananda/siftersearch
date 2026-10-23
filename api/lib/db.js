@@ -5,11 +5,12 @@
 import { isMainThread } from 'worker_threads';
 import os from 'os';
 import Database from 'better-sqlite3';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { logger } from './logger.js';
 import { runSiteMigrations } from './migrations/site.js';
 import { isWriteSql } from './write-server.js';
+import { isPowerReadOnly, PowerReadOnlyError } from './power-mode.js';
 
 // Single-writer routing. When SIFTER_WRITER_URL is set, content-db WRITES are
 // POSTed to the writer process (which owns the only write connection) instead
@@ -55,10 +56,13 @@ const isTransientWriteError = (e) => {
 const CALLER = process.env.SIFTER_CALLER || process.env.name || path.basename(process.argv[1] || 'node');
 const WRITE_ATTEMPTS = Number(process.env.SIFTER_WRITE_ATTEMPTS || 4);
 
-export async function postWriteBatch(statements, name = '') {
+export async function postWriteBatch(statements, name = '', { db } = {}) {
   // Bounded write: a slow/stuck write aborts as a catchable TimeoutError instead of an uncaught undici
   // headers-timeout crashing a long grounding run. Safe — writer transactions are atomic and the pipeline's
   // resume is idempotent per paragraph, so an aborted-but-maybe-committed write never duplicates.
+  // POWER READ-ONLY (UPS on battery, power-mode.js): refused here, before any network — never a 90 s wait. fatal, so a
+  // stage aborts its unit at once and resumes from its checkpoint when mains is back.
+  if (isPowerReadOnly()) throw Object.assign(new PowerReadOnlyError(name || 'write'), { fatal: true });
   try {
     let res, lastErr;
     for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
@@ -66,7 +70,7 @@ export async function postWriteBatch(statements, name = '') {
         res = await fetch(`${WRITER_URL}/write`, {
           method: 'POST',
           headers: { 'content-type': 'application/json', 'x-sifter-caller': CALLER },
-          body: JSON.stringify({ statements, name }),
+          body: JSON.stringify(db ? { statements, name, db } : { statements, name }),
           signal: AbortSignal.timeout(90000),
         });
         lastErr = null;
@@ -84,11 +88,13 @@ export async function postWriteBatch(statements, name = '') {
     if (lastErr) throw lastErr;
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
+      if (res.status === 503 && /read-only \(power\)/.test(detail)) throw Object.assign(new PowerReadOnlyError(name || 'write'), { fatal: true });
       throw new Error(`writer ${res.status}: ${detail.slice(0, 200)}`);
     }
     writeFailStreak = 0;
     return (await res.json()).results;
   } catch (e) {
+    if (e?.readonly) throw e;   // power read-only is a verdict, not a writer outage — no streak
     // The grounding pool()/stages tolerate a LONE write failure (a writer restart on deploy) by dropping that
     // paragraph — resume refills it. But when the writer is fully DOWN, every write fails; without a signal the
     // stage keeps calling the model + dropping each write as "per-item flake" → silent no-op churn that wastes
@@ -108,6 +114,12 @@ const siteDbCache = new Map();
 function stripFilePrefix(url) {
   if (!url) return null;
   return url.startsWith('file:') ? url.slice(5) : url;
+}
+
+/** The content DB's file (symlinks resolved — on tower data/sifter.db → /fast/siftersearch-db/sifter.db). */
+export function contentDbPath() {
+  const p = stripFilePrefix(process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db') || './data/sifter.db';
+  try { return realpathSync(p); } catch { return p; }
 }
 
 function createContentConnection() {
@@ -134,8 +146,28 @@ function createContentConnection() {
   db.pragma(`cache_size = ${-cacheMb * 1024}`);  // negative = KiB
   const mmapMb = parseInt(process.env.SQLITE_MMAP_MB || '1024', 10);
   db.pragma(`mmap_size = ${mmapMb * 1024 * 1024}`);
-  logger.info({ path }, 'Content DB connected (local)');
+  applyRamPragmas(db);
+  logger.info({ path, pragmas: pragmaSnapshot(db) }, 'Content DB connected (local)');
   return instrumentDb(db, 'content');
+}
+
+// RAM-leaning settings (db-write-path-20261023; Chad 10-23: ECC + UPS, literature not banking — trade a bounded window for
+// throughput). Sorts/temp indexes in RAM everywhere. On the WRITER only: the WAL may grow to SQLITE_WAL_AUTOCHECKPOINT
+// pages before a commit checkpoints inline (the checkpoint thread copies it every few seconds off the write path), and a
+// reset WAL is truncated to SQLITE_JOURNAL_LIMIT_MB. synchronous comes from SQLITE_SYNCHRONOUS (the writer runs OFF on ZFS:
+// txgs are atomic and ordered, so a crash loses ≤ one txg — zfs_txg_timeout 10 s — and never corrupts).
+export function applyRamPragmas(db, { writer = IS_WRITER } = {}) {
+  db.pragma(`temp_store = ${process.env.SQLITE_TEMP_STORE || 'MEMORY'}`);
+  if (writer) {
+    db.pragma(`wal_autocheckpoint = ${parseInt(process.env.SQLITE_WAL_AUTOCHECKPOINT || '20000', 10)}`);
+    db.pragma(`journal_size_limit = ${parseInt(process.env.SQLITE_JOURNAL_LIMIT_MB || '256', 10) * 1024 * 1024}`);
+  }
+}
+/** The settings a connection actually runs with (logged at open; tested). */
+export function pragmaSnapshot(db) {
+  const one = (p) => { try { return db.pragma(p, { simple: true }); } catch { return null; } };
+  return { journal_mode: one('journal_mode'), synchronous: one('synchronous'), cache_size: one('cache_size'), mmap_size: one('mmap_size'),
+    temp_store: one('temp_store'), wal_autocheckpoint: one('wal_autocheckpoint'), journal_size_limit: one('journal_size_limit'), busy_timeout: one('busy_timeout') };
 }
 
 function createUserConnection() {
@@ -566,37 +598,151 @@ export const batchTransaction = transaction;
 export const batchQueryOne = queryOne;
 export const batchQueryAll = queryAll;
 
-// Fire-and-forget write for telemetry (ai_usage, search_log).
-// Uses a dedicated connection with 200ms busy_timeout — if the WAL is contended
-// (sync worker holding write lock), the write fails quickly rather than freezing
-// the Node.js event loop for up to SQLITE_BUSY_TIMEOUT_MS (up to 120s).
+// ── TELEMETRY STORE (db-write-path-20261023) ─────────────────────────────────────────────────────────────────────────────
+// query_stats, slow_query_log and db_write_stats are high-volume, low-value, append/upsert-only: they live in their OWN
+// SQLite file (telemetry.db, next to sifter.db — same ZFS dataset, so db-ship snapshots it too). Content writes never
+// share a B-tree page, a WAL frame or a checkpoint with them. Writes still go through the single writer ({db:'telemetry'}
+// in the /write body), which owns this file's only write connection; any process READS it (telemetryAll / telemetryOne).
+// The writer creates the tables from sifter.db's own DDL and imports recent history once (ensureTelemetryStore).
+export const TELEMETRY_TABLES = ['query_stats', 'slow_query_log', 'db_write_stats'];
+const TELEMETRY_WRITE_RE = new RegExp(`^\\s*(?:INSERT(?:\\s+OR\\s+\\w+)?\\s+INTO|REPLACE\\s+INTO|UPDATE(?:\\s+OR\\s+\\w+)?|DELETE\\s+FROM)\\s+["\`]?(${TELEMETRY_TABLES.join('|')})\\b`, 'i');
+/** This write belongs to the telemetry store. */
+export const isTelemetryStoreSql = (sql) => TELEMETRY_WRITE_RE.test(String(sql || ''));
+export function telemetryStorePath() {
+  if (process.env.SIFTER_TELEMETRY_DB) return process.env.SIFTER_TELEMETRY_DB;
+  const content = stripFilePrefix(process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db') || './data/sifter.db';
+  let real = content;
+  try { real = realpathSync(content); } catch { /* not created yet */ }
+  return path.join(path.dirname(real), 'telemetry.db');
+}
+let telStore = null;
+/** The telemetry store connection (null when it does not exist yet and create is false). Uninstrumented: a slow
+ *  telemetry write must never record itself as telemetry. */
+export function getTelemetryStore({ create = false } = {}) {
+  if (telStore) return telStore;
+  const p = telemetryStorePath();
+  if (!create && !existsSync(p)) return null;
+  const db = new Database(p);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 2000');
+  db.pragma(`synchronous = ${process.env.SIFTER_TELEMETRY_SYNCHRONOUS || 'OFF'}`);   // low value; ZFS txg bounds the loss
+  db.pragma('cache_size = -65536');
+  db.pragma('temp_store = MEMORY');
+  telStore = db;
+  return db;
+}
+/** Create the telemetry tables + indexes from the content DB's own DDL (exactly production's shape). Idempotent. */
+export function ensureTelemetrySchema(tel, content) {
+  tel.exec('CREATE TABLE IF NOT EXISTS telemetry_meta (k TEXT PRIMARY KEY, v TEXT)');
+  const have = new Set(tel.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all().map((r) => r.name));
+  const ddl = content.prepare(`SELECT type, name, tbl_name, sql FROM sqlite_master WHERE tbl_name IN (${TELEMETRY_TABLES.map(() => '?').join(',')})
+    AND sql IS NOT NULL ORDER BY type = 'table' DESC`).all(...TELEMETRY_TABLES);
+  for (const o of ddl) {
+    if (o.type === 'table' && have.has(o.name)) continue;
+    if (o.type === 'trigger') continue;   // none today; a trigger would need its own review before moving
+    tel.exec(String(o.sql).replace(/^CREATE\s+(UNIQUE\s+)?(TABLE|INDEX)\s+(?!IF NOT EXISTS)/i, (m, u, k) => `CREATE ${u || ''}${k} IF NOT EXISTS `));
+  }
+  return TELEMETRY_TABLES.filter((t) => !have.has(t) && ddl.some((o) => o.name === t));
+}
+// recent history only: these tables answer "the last day or two"; older rows stay readable in sifter.db until dropped
+const IMPORT_SINCE = { query_stats: (now) => ['hour >= ?', Math.floor(now / 1000) - 7 * 86400],
+  slow_query_log: (now) => ['at >= ?', Math.floor(now / 1000) - 14 * 86400],
+  db_write_stats: (now) => ['minute >= ?', new Date(now - 7 * 86400000).toISOString().slice(0, 16)] };
+/** Copy recent rows of each table from sifter.db once (marker in telemetry_meta), in chunks with a yield between them so
+ *  the writer keeps serving. Buckets that exist on both sides (the hour/minute of the switch) are ADDED, not replaced. */
+export async function importTelemetryHistory(tel, content, { now = Date.now(), chunk = 5000, pause = () => new Promise((r) => setImmediate(r)) } = {}) {
+  const done = {};
+  for (const t of TELEMETRY_TABLES) {
+    if (tel.prepare('SELECT v FROM telemetry_meta WHERE k = ?').get(`imported:${t}`)) continue;
+    let exists = true;
+    try { content.prepare(`SELECT 1 FROM ${t} LIMIT 1`).get(); } catch { exists = false; }
+    if (!exists) { tel.prepare('INSERT OR REPLACE INTO telemetry_meta VALUES (?, ?)').run(`imported:${t}`, 'absent'); continue; }
+    const cols = content.prepare(`SELECT name FROM pragma_table_info(?)`).all(t).map((c) => c.name).filter((c) => !(t === 'slow_query_log' && c === 'id'));
+    const telCols = new Set(tel.prepare(`SELECT name FROM pragma_table_info(?)`).all(t).map((c) => c.name));
+    const use = cols.filter((c) => telCols.has(c));
+    const q = use.map((c) => `"${c}"`).join(', ');
+    const upsert = t === 'query_stats' ? ' ON CONFLICT(hour, proc, kind, label) DO UPDATE SET n = n + excluded.n, total_ms = total_ms + excluded.total_ms, max_ms = MAX(max_ms, excluded.max_ms)'
+      : t === 'db_write_stats' ? ' ON CONFLICT(minute, caller, name) DO UPDATE SET batches = batches + excluded.batches, statements = statements + excluded.statements, changes = changes + excluded.changes, errors = errors + excluded.errors, ms_total = ms_total + excluded.ms_total, ms_max = MAX(ms_max, excluded.ms_max)' : '';
+    const ins = tel.prepare(`INSERT INTO ${t} (${q}) VALUES (${use.map(() => '?').join(', ')})${upsert}`);
+    const [where, since] = IMPORT_SINCE[t](now);
+    let n = 0;
+    try {
+      // start at the window's first rowid (found through the time index), so no page walks years of old rows
+      let last = (content.prepare(`SELECT MIN(rowid) AS r FROM ${t} WHERE ${where}`).get(since)?.r ?? 1) - 1;
+      const page = content.prepare(`SELECT rowid AS _r, ${q} FROM ${t} WHERE rowid > ? AND ${where} ORDER BY rowid LIMIT ?`);
+      for (;;) {
+        const rows = page.all(last, since, chunk);
+        if (!rows.length) break;
+        tel.transaction(() => { for (const r of rows) ins.run(...use.map((c) => r[c])); })();
+        last = rows.at(-1)._r; n += rows.length;
+        await pause();
+      }
+    } catch (err) { logger.warn({ table: t, err: err.message, imported: n }, 'telemetry store: history import of a table stopped'); }
+    tel.prepare('INSERT OR REPLACE INTO telemetry_meta VALUES (?, ?)').run(`imported:${t}`, String(n));
+    done[t] = n;
+  }
+  return done;
+}
+/** Writer start: open (create) the store, create the tables, import recent history in the background. */
+export async function ensureTelemetryStore() {
+  const tel = getTelemetryStore({ create: true });
+  const content = await getDb();
+  const created = ensureTelemetrySchema(tel, content);
+  importTelemetryHistory(tel, content).then((done) => logger.info({ created, imported: done, path: telemetryStorePath() }, 'telemetry store ready'))
+    .catch((err) => logger.warn({ err: err.message }, 'telemetry store: history import failed (new rows still land)'));
+  return tel;
+}
+/** Read the telemetry store (any process). A store not yet created, or a table not yet there, reads as empty. */
+export async function telemetryAll(sql, params = [], name = '') {
+  const db = getTelemetryStore();
+  if (!db) return [];
+  const t0 = Date.now();
+  try { return db.prepare(sql).all(...params); } catch (e) { if (/no such table/i.test(e.message)) return []; throw e; } finally { accrueQueryTime(sql, Date.now() - t0, 'telemetry', 'read', name); }
+}
+export async function telemetryOne(sql, params = [], name = '') { return (await telemetryAll(sql, params, name))[0] || null; }
+
 /** Telemetry rows batched to the writer: push() queues, a batch goes when `max` rows wait or `delayMs` after the first.
- *  Fire-and-forget — a failed batch is logged, never thrown into the caller. Pure over `post`, so it is testable. */
-export function createTelemetryQueue(post, { max = 200, delayMs = 2000 } = {}) {
+ *  Fire-and-forget — a failed batch is logged, never thrown into the caller. Rows for the telemetry store and rows for
+ *  the content DB (ai_usage: the spend ledger stays with content) go as two posts. While power is READ-ONLY rows are
+ *  dropped (counted), never queued behind a refused writer. Pure over `post`, so it is testable. */
+export function createTelemetryQueue(post, { max = 200, delayMs = 2000, readOnly = () => isPowerReadOnly() } = {}) {
   const buf = [];
-  let timer = null;
+  let timer = null, dropped = 0;
   const flush = () => {
     if (timer) { clearTimeout(timer); timer = null; }
     const batch = buf.splice(0, buf.length);
     if (!batch.length) return Promise.resolve(0);
-    return Promise.resolve().then(() => post(batch, 'telemetry'))
-      .then(() => batch.length, (e) => { logger.warn({ err: e.message, rows: batch.length }, 'telemetry batch dropped'); return 0; });
+    if (readOnly()) { dropped += batch.length; return Promise.resolve(0); }
+    const store = batch.filter((s) => isTelemetryStoreSql(s.sql)), content = batch.filter((s) => !isTelemetryStoreSql(s.sql));
+    const send = (rows, opts) => (rows.length ? Promise.resolve().then(() => post(rows, 'telemetry', opts))
+      .then(() => rows.length, (e) => { logger.warn({ err: e.message, rows: rows.length }, 'telemetry batch dropped'); return 0; }) : 0);
+    return Promise.all([send(content), send(store, { db: 'telemetry' })]).then(([a, b]) => a + b);
   };
   const push = (sql, args) => {
     buf.push({ sql, args });
     if (buf.length >= max) flush();
     else if (!timer) { timer = setTimeout(flush, delayMs); timer.unref?.(); }
   };
-  return { push, flush, pending: () => buf.length };
+  return { push, flush, pending: () => buf.length, dropped: () => dropped };
 }
-const telemetryQueue = createTelemetryQueue((statements, name) => postWriteBatch(statements, name));
+const telemetryQueue = createTelemetryQueue((statements, name, opts) => postWriteBatch(statements, name, opts));
 process.once('beforeExit', () => { telemetryQueue.flush(); });
 
 // ai_usage rows. In a process whose writes are ROUTED they go to the writer in batches: the direct 50 ms-busy connection
 // below lost them whenever the writer held the lock — 87,495 usage rows from background runs on 10-13 alone, so the
 // spend ledger (and the budget gate reading it) undercounted grounding and concept spend.
+// Unrouted (the writer itself, dev): the telemetry store's tables go to its own connection, the rest as before.
 export function telemetryQuery(sql, params = []) {
   if (ROUTE_WRITES) return telemetryQueue.push(sql, params);
+  if (isPowerReadOnly()) return;
+  if (isTelemetryStoreSql(sql)) {
+    const tel = getTelemetryStore({ create: true });
+    try { tel.prepare(sql).run(...params); } catch (e) {
+      if (!/no such table/i.test(e.message) || !contentDb) throw e;
+      ensureTelemetrySchema(tel, contentDb); tel.prepare(sql).run(...params);
+    }
+    return;
+  }
   const db = getTelemetryDb();
   db.prepare(sql).run(...params);
 }

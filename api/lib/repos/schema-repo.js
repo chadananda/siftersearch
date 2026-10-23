@@ -1,7 +1,7 @@
 // schema-repo — read-only schema introspection for the ops reports 'table-schema' + 'index-sizes' (10-23 content write
 // cost: which indexes/triggers a row INSERT pays for, and which ones any plan uses). pragma_* table functions, not PRAGMA
 // statements (those route to the writer). Sizes walk every page of an index via dbstat — heavy lane only. Deps: db.js.
-import { queryAll } from '../db.js';
+import { queryAll, telemetryAll } from '../db.js';
 
 /** Every index + trigger on `table`: sql, partial/unique flags, key columns (expressions as '<expr>'), sqlite_stat1. */
 export async function tableSchema(table) {
@@ -30,9 +30,9 @@ export async function tableSchema(table) {
   return { table, nrow: statBy.get(table) ?? stat.find((r) => r.idx == null)?.stat ?? null, indexes, triggers, fk_children: children };
 }
 
-/** Recorded query plans (slow_query_log, indexed on `at`) that name a table or one of its indexes, newest first. */
+/** Recorded query plans (slow_query_log — in the telemetry store since db-write-path-20261023 — indexed on `at`) that name a table or one of its indexes, newest first. */
 export async function recordedPlans({ like = '%content%', days = 14, limit = 2000 } = {}) {
-  return queryAll(`SELECT proc, kind, name, duration_ms, sql_sample, query_plan FROM slow_query_log
+  return telemetryAll(`SELECT proc, kind, name, duration_ms, sql_sample, query_plan FROM slow_query_log
     WHERE at > unixepoch() - ? * 86400 AND query_plan IS NOT NULL AND (query_plan LIKE ? OR sql_sample LIKE ?)
     ORDER BY at DESC LIMIT ?`, [Number(days), like, like, Number(limit)], 'schema:recorded-plans');
 }
@@ -43,3 +43,6 @@ export async function btreeSize(name) {
     FROM dbstat WHERE name = ?`, [name], 'schema:btree-size');
   return { name, bytes: r?.bytes || 0, used: r?.used || 0, pages: r?.pages || 0 };
 }
+
+/** Every trigger in the database with its table and body (db-write-path-20261023: derived writes that run INSIDE a write). */
+export const allTriggers = () => queryAll(`SELECT name, tbl_name AS tbl, sql FROM sqlite_master WHERE type = 'trigger' ORDER BY tbl_name, name`, [], 'schema:triggers');

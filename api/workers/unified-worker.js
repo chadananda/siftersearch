@@ -17,9 +17,12 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { createServer } from 'node:http';
-import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
-import { applyWriteBatch } from '../lib/write-server.js';
+import { query, queryOne, queryAll, getSiteDb, getDb, getTelemetryStore, ensureTelemetryStore, contentDbPath } from '../lib/db.js';
+import { applyWriteBatch, createGroupCommitter, stmtCacheStats } from '../lib/write-server.js';
 import { recordWrite, recordCommit, drainWriteStats, peekWriteStats, latencySummary } from '../lib/write-stats.js';
+import { isPowerReadOnly, isPowerHold, powerState } from '../lib/power-mode.js';
+import { startCheckpointThread } from '../lib/repos/wal-checkpoint-thread.js';
+import { statSync } from 'node:fs';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
@@ -78,7 +81,8 @@ const MEILI_RECONCILE_INTERVAL_MS = 60 * 60 * 1000;   // 1h — resolve orphaned
 const ENTITY_SYNC_INTERVAL_MS = 30 * 1000;   // 30s — drain backlog faster
 const ENTITY_SYNC_BATCH = 1000;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
-const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
+const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — look at the WAL file; TRUNCATE (off-thread) only if it stayed big
+const WAL_TRUNCATE_ABOVE_BYTES = Number(process.env.SIFTER_WAL_TRUNCATE_MB || 512) * 1048576;
 
 // ============================================================
 // State
@@ -94,7 +98,8 @@ let lastMeiliReconcileTime = 0;
 let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
 let lastWalCheckpointTime = 0;
-let lastPassiveCheckpointTime = 0;
+let lastTelemetryPruneTime = Date.now();
+let checkpointer = null;   // the WAL checkpoint thread (startWriteServer)
 let activeHeartbeatInterval = null;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -867,39 +872,56 @@ async function runPeriodicTasks() {
   // mid-backup, interrupting the rsync and re-triggering the cycle on next boot (the morning restart-loop behind
   // this process's 600+ lifetime restarts). withTimeout() could not guard it: execSync blocks the thread, so no
   // timer can fire. The cron script also VERIFIES the snapshot and emails on failure. Do not re-add here.
-  // PASSIVE checkpoint every minute (10-13): copies only the last minute's pages and never waits on readers, so the WAL
-  // never piles up GBs between the 15-minute TRUNCATEs below — a TRUNCATE over a 4.6 GB WAL froze this (single-writer)
-  // event loop for tens of seconds, and a deploy landing then had to SIGKILL it ("keeps going down 3x in an hour").
-  if (now - lastPassiveCheckpointTime >= 60000) {
-    lastPassiveCheckpointTime = now;
-    try { const t0 = Date.now(); const [r] = (await getDb()).pragma('wal_checkpoint(PASSIVE)'); const ms = Date.now() - t0;
-      if (ms > 2000) logger.warn({ ms, ...r }, 'WAL checkpoint (PASSIVE) slow'); } catch (err) { logger.warn({ err: err.message }, 'WAL checkpoint (PASSIVE) failed'); }
-  }
-  // WAL checkpoint — TRUNCATE every 15 min to prevent WAL from growing to GB-scale.
-  // Restarts the API on block (API holds perpetual read marks; stateless, restarts in <5s).
+  // CHECKPOINTS (db-write-path-20261023): PASSIVE runs every few seconds on the checkpoint THREAD (its own connection), so
+  // neither this loop nor any commit pays for copying the WAL (10-13: a TRUNCATE over a 4.6 GB WAL froze this event loop for
+  // tens of seconds). A TRUNCATE is asked of the thread only when the WAL FILE stayed large — readers pinning old frames kept
+  // it from resetting — with a bounded 3 s wait; the old API-restart remedy stays for a WAL that still will not shrink.
   if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
-    try {
-      const db = await getDb();
-      const result = db.pragma('wal_checkpoint(TRUNCATE)');
-      const { busy, log, checkpointed } = result[0];
-      logger.info({ busy, log, checkpointed }, 'WAL checkpoint (TRUNCATE)');
-      if (busy && log > 50000) {
-        logger.warn({ log }, 'WAL checkpoint blocked — restarting siftersearch-api to release reader locks');
+    lastWalCheckpointTime = now;
+    let walBytes = 0;
+    try { walBytes = statSync(`${contentDbPath()}-wal`).size; } catch { /* no WAL file */ }
+    if (walBytes > WAL_TRUNCATE_ABOVE_BYTES && checkpointer) {
+      const r = await checkpointer.truncate(3000);
+      logger.info({ walMB: Math.round(walBytes / 1048576), ...r }, 'WAL checkpoint (TRUNCATE, off-thread)');
+      if (r.busy && r.log > 50000 && !isPowerHold()) {
+        logger.warn({ log: r.log }, 'WAL checkpoint blocked — restarting siftersearch-api to release reader locks');
         try {
           const { execSync } = await import('child_process');
           execSync('pm2 restart siftersearch-api', { timeout: 30000, stdio: 'inherit' });
-          await new Promise(r => setTimeout(r, 5000));
-          const result2 = db.pragma('wal_checkpoint(TRUNCATE)');
-          logger.info(result2[0], 'WAL checkpoint (TRUNCATE) after API restart');
-        } catch (restartErr) {
-          logger.warn({ err: restartErr.message }, 'API restart or re-checkpoint failed');
-        }
+          await new Promise(r2 => setTimeout(r2, 5000));
+          logger.info(await checkpointer.truncate(3000), 'WAL checkpoint (TRUNCATE) after API restart');
+        } catch (restartErr) { logger.warn({ err: restartErr.message }, 'API restart or re-checkpoint failed'); }
       }
-    } catch (err) {
-      logger.warn({ err: err.message }, 'WAL checkpoint failed');
     }
-    lastWalCheckpointTime = now;
   }
+  // telemetry retention: the store only answers recent questions; chunked deletes (≤ 500 rows a transaction, a yield
+  // between) keep each write short. Daily.
+  if (now - lastTelemetryPruneTime >= 24 * 3600 * 1000 && !isPowerHold()) {
+    lastTelemetryPruneTime = now;
+    pruneTelemetryStore().then((n) => n && logger.info({ deleted: n }, 'telemetry store pruned')).catch((err) => logger.warn({ err: err.message }, 'telemetry prune failed'));
+  }
+}
+
+const TELEMETRY_KEEP_DAYS = Number(process.env.SIFTER_TELEMETRY_KEEP_DAYS || 30);
+/** Delete telemetry rows older than the retention window in chunks of `chunk` rows, yielding between transactions. */
+export async function pruneTelemetryStore({ chunk = 500, keepDays = TELEMETRY_KEEP_DAYS } = {}) {
+  const tel = getTelemetryStore();
+  if (!tel) return 0;
+  const cut = Math.floor(Date.now() / 1000) - keepDays * 86400;
+  const plans = [['query_stats', 'hour < ?', cut], ['slow_query_log', 'at < ?', cut], ['db_write_stats', 'minute < ?', new Date(cut * 1000).toISOString().slice(0, 16)]];
+  let total = 0;
+  for (const [t, where, arg] of plans) {
+    let del;
+    try { del = tel.prepare(`DELETE FROM ${t} WHERE rowid IN (SELECT rowid FROM ${t} WHERE ${where} LIMIT ?)`); } catch { continue; }
+    for (;;) {
+      if (isPowerHold()) return total;
+      const n = del.run(arg, chunk).changes;
+      total += n;
+      if (n < chunk) break;
+      await new Promise((r) => setImmediate(r));
+    }
+  }
+  return total;
 }
 
 // ============================================================
@@ -989,6 +1011,9 @@ async function workerLoop() {
   // heartbeat (api/lib/service-heartbeat.js → GET /api/admin/ops/services)
   (await import('../lib/service-heartbeat.js')).startHeartbeat({ name: process.env.name || 'siftersearch-worker' });
   while (!isShuttingDown) {
+    // POWER HOLD (UPS on battery): the writer's own loop starts nothing — no sync, no jobs, no periodic writes. /write keeps
+    // answering (refusing writes once read-only); the loop resumes by itself when the flag clears.
+    if (isPowerHold()) { await delay(5000); continue; }
     try {
       let didWork = false;
       // 1. Check for pending sync jobs → process
@@ -1073,23 +1098,57 @@ function shutdown() {
 function startWriteServer() {
   const port = parseInt(process.env.SIFTER_WRITER_PORT || '', 10);
   if (!port) return;
+  // GROUP COMMIT (db-write-path-20261023): requests arriving within a few ms share one transaction, each in its own savepoint.
+  let lastContentWriteAt = 0;   // GET /power: the UPS drain waits for content writes to go quiet
+  const onRequest = ({ meta, ms, statements, changes, error }) => {
+    if (!String(meta.name || '').endsWith('@telemetry') && meta.name !== 'telemetry') lastContentWriteAt = Date.now();
+    recordWrite({ caller: meta.caller, name: meta.name, statements, changes, ms: Math.round(ms), error: !!error });
+    if (error) logger.error({ err: error.message, caller: meta.caller, name: meta.name }, 'Write batch failed');
+    // an UNNAMED slow batch names itself by its first statement (10-20: 4–15 s single-statement writes from reports
+    // could not be traced to a job)
+    else if (ms > 1000) logger.warn({ ms: Math.round(ms), count: statements, name: meta.name, caller: meta.caller, ...(meta.name ? {} : { sql: meta.sql0 }) }, 'Slow write batch');
+  };
+  const committer = createGroupCommitter(getDb, { onRequest, onCommit: ({ ms }) => recordCommit(ms) });
+  // the TELEMETRY STORE (query_stats, slow_query_log, db_write_stats): its own file + connection + committer — a telemetry
+  // batch never shares a transaction, a page or a WAL with content
+  let telReady = null;
+  const telDb = () => (telReady ||= ensureTelemetryStore().catch((err) => { telReady = null; throw err; }));
+  const telCommitter = createGroupCommitter(telDb, { onRequest: (r) => onRequest({ ...r, meta: { ...r.meta, name: r.meta.name ? `${r.meta.name}@telemetry` : 'telemetry' } }) });
+  telDb().catch((err) => logger.warn({ err: err.message }, 'telemetry store not ready — telemetry writes will retry'));
+  // checkpoints off the write path
+  checkpointer = startCheckpointThread({ path: contentDbPath(), onPassive: (r) => { if (r.ms > 2000 || r.error) logger.warn(r, 'WAL checkpoint (PASSIVE, off-thread) slow or failed'); },
+    onError: (err) => logger.warn({ err: err.message }, 'checkpoint thread error') });
+  const json = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
   const server = createServer((req, res) => {
     // Liveness probe for the writer watchdog. Touches the DB, so a FROZEN event loop (the 2026-07-18 deadlock:
     // pm2 still shows "online" while /write is wedged) OR a stuck DB connection both fail to answer within the
     // probe timeout — that silent gap, invisible to pm2, is exactly what the watchdog restarts on.
     if (req.method === 'GET' && req.url === '/health') {
       getDb()
-        .then((db) => { db.prepare('SELECT 1').get(); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); })
-        .catch((err) => { res.writeHead(500, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: err.message })); });
+        .then((db) => { db.prepare('SELECT 1').get(); json(res, 200, { ok: true, ...(powerState() ? { power: powerState().mode } : {}) }); })
+        .catch((err) => json(res, 500, { error: err.message }));
       return;
     }
     // exact batch latency + busy % from the in-memory ring (db_write_stats keeps only per-minute total + max)
     if (req.method === 'GET' && req.url.startsWith('/latency')) {
       const minutes = Number(new URL(req.url, 'http://x').searchParams.get('minutes')) || 15;
-      res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(latencySummary({ minutes }))); return;
+      json(res, 200, { ...latencySummary({ minutes }), group: committer.stats(), telemetry_group: telCommitter.stats(), stmt_cache: stmtCacheStats(), checkpoint: checkpointer?.stats() || null });
+      return;
     }
-    if (req.method === 'GET' && req.url === '/stats') {
-      res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(peekWriteStats())); return;
+    if (req.method === 'GET' && req.url === '/stats') { json(res, 200, peekWriteStats()); return; }
+    if (req.method === 'GET' && req.url === '/power') { json(res, 200, { ...(powerState() || { mode: 'normal' }), last_write_at: lastContentWriteAt, quiet_ms: lastContentWriteAt ? Date.now() - lastContentWriteAt : null }); return; }
+    // POWER FLUSH (scripts/ops/ups-power.sh, after writes are refused): checkpoint every WAL this process owns into its DB
+    // file and truncate it, so the files on disk are complete by themselves.
+    if (req.method === 'POST' && req.url === '/power/flush') {
+      (async () => {
+        await Promise.allSettled([committer.flush(), telCommitter.flush()]);
+        const out = { content: checkpointer ? await checkpointer.truncate(30000) : (await getDb()).pragma('wal_checkpoint(TRUNCATE)')[0] };
+        const tel = getTelemetryStore();
+        if (tel) out.telemetry = tel.pragma('wal_checkpoint(TRUNCATE)')[0];
+        logger.info(out, 'power flush: WAL checkpoints (TRUNCATE)');
+        json(res, 200, { ok: !out.content?.error && !out.content?.busy, ...out });
+      })().catch((err) => json(res, 500, { error: err.message }));
+      return;
     }
     if (req.method !== 'POST' || req.url !== '/write') {
       res.writeHead(404); res.end(); return;
@@ -1097,25 +1156,18 @@ function startWriteServer() {
     const caller = String(req.headers['x-sifter-caller'] || 'unknown').slice(0, 80);
     // Whole-body UTF-8 decode — per-chunk `body += c` split multi-byte letters into «��» (see http-body.js).
     readUtf8Body(req).then(async (body) => {
-      let statements = [], name;
+      let statements = [], name, db;
       try {
-        ({ statements, name } = JSON.parse(body));
-        const db = await getDb();
-        const start = Date.now();
-        const results = applyWriteBatch(db, statements);
-        const ms = Date.now() - start;
-        recordCommit(ms);
-        recordWrite({ caller, name, statements: statements.length, changes: results.reduce((n, r) => n + (r.changes || 0), 0), ms });
-        // an UNNAMED slow batch names itself by its first statement (10-20: 4–15 s single-statement writes from reports
-        // could not be traced to a job)
-        if (ms > 1000) logger.warn({ ms, count: statements.length, name, caller, ...(name ? {} : { sql: String(statements[0]?.sql || '').replace(/\s+/g, ' ').slice(0, 160) }) }, 'Slow write batch');
-        res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ results }));
+        ({ statements, name, db } = JSON.parse(body));
+      } catch (err) { json(res, 400, { error: `bad body: ${err.message}` }); return; }
+      // POWER READ-ONLY: refused with a clear status, never queued (power-mode.js)
+      if (isPowerReadOnly()) { json(res, 503, { error: 'read-only (power): tower is on UPS battery; writes resume when mains is back', readonly: true }); return; }
+      const meta = { caller, name, sql0: String(statements?.[0]?.sql || '').replace(/\s+/g, ' ').slice(0, 160) };
+      try {
+        const results = await (db === 'telemetry' ? telCommitter : committer).submit(statements || [], meta);
+        json(res, 200, { results });
       } catch (err) {
-        recordWrite({ caller, name, statements: statements?.length || 0, error: true });
-        logger.error({ err: err.message, caller, name }, 'Write batch failed');
-        res.writeHead(500, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message }));
+        json(res, 500, { error: err.message });
       }
     });
   });
@@ -1138,9 +1190,11 @@ function startWriteServer() {
   server.keepAliveTimeout = Number(process.env.SIFTER_WRITER_KEEPALIVE_MS || 76000);
   server.headersTimeout = server.keepAliveTimeout + 4000;
   // flush the per-minute write stats through the writer's own connection (it IS the writer)
+  // (into the telemetry store; kept in memory while power is read-only)
   setInterval(() => {
+    if (isPowerReadOnly()) return;
     const stmts = drainWriteStats();
-    if (stmts.length) getDb().then((db) => applyWriteBatch(db, stmts)).catch((err) => logger.warn({ err: err.message }, 'write-stats flush failed'));
+    if (stmts.length) telDb().then((tel) => applyWriteBatch(tel, stmts)).catch((err) => logger.warn({ err: err.message }, 'write-stats flush failed'));
   }, 60_000).unref();
   server.listen(port, '127.0.0.1', () => logger.info(
     { port, keepAliveTimeout: server.keepAliveTimeout, headersTimeout: server.headersTimeout },

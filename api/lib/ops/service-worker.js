@@ -8,7 +8,8 @@ import { logger } from '../logger.js';
 import { claimNext, finish, requeueStale, saveResume } from '../repos/ops-report-repo.js';
 import { sendEmail } from '../../services/email.js';
 import { logActivity } from '../repos/activity-repo.js';
-import { drainOnSignals, isDraining, nap } from '../drain.js';
+import { drainOnSignals, isDraining, nap, startDrain } from '../drain.js';
+import { watchPower, waitForNormalPower } from '../power-mode.js';
 import { startHeartbeat } from '../service-heartbeat.js';
 import { throttleStoppedShort } from './alert-throttle.js';
 
@@ -44,6 +45,12 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
   drainOnSignals((sig) => logger.info({ sig, service: name }, 'draining — finishing the jobs in hand, claiming nothing new'));
   const inHand = new Map();
   startHeartbeat({ name, state: () => ({ inflight: inHand.size, doing: [...inHand.values()] }) });
+  // POWER (UPS on battery, power-mode.js): a service that STARTS while power is held parks here — claims nothing, requeues
+  // nothing — until mains is back; one already running drains exactly as on SIGHUP (jobs in hand yield at their safe point
+  // and save where they stopped), exits 0, and its pm2 restart parks here. Resume needs no orchestration.
+  await waitForNormalPower({ onPark: (st) => logger.warn({ service: name, power: st }, 'power held (UPS on battery) — parked until mains is back') })
+    .then((parked) => parked && logger.info({ service: name }, 'power normal — starting'));
+  watchPower((st) => { logger.warn({ service: name, power: st }, 'power left normal — draining'); startDrain('power'); });
 
   const laneNames = Object.values(lanes).flat();
   const mine = only.length ? only : Object.keys(registry).filter((j) => !foreign.includes(j));

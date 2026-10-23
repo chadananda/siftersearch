@@ -272,6 +272,15 @@ REPORTS['table-schema'] = async ({ table = 'content', days = 14 } = {}) => {
   }
   return { ...schema, plans_scanned: plans.length, days };
 };
+/** Every trigger, grouped by table, with what each writes (INSERT/UPDATE/DELETE targets) — the inline derived updates. */
+REPORTS.triggers = async () => {
+  const { allTriggers } = await import('../repos/schema-repo.js');
+  const rows = await allTriggers();
+  const writes = (sql) => [...String(sql).matchAll(/\b(INSERT\s+(?:OR\s+\w+\s+)?INTO|UPDATE|DELETE\s+FROM)\s+["`]?(\w+)/gi)].map((m) => `${m[1].split(/\s+/)[0].toUpperCase()} ${m[2]}`);
+  const by = {};
+  for (const t of rows) (by[t.tbl] ||= []).push({ name: t.name, event: (String(t.sql).match(/\b(BEFORE|AFTER|INSTEAD OF)\s+(INSERT|UPDATE(?:\s+OF\s+[\w, ]+?)?|DELETE)\s+ON/i) || [])[0] || '', writes: [...new Set(writes(String(t.sql).replace(/^[\s\S]*?\bBEGIN\b/i, '')))] });
+  return { total: rows.length, tables: Object.keys(by).length, by_table: by, sql: Object.fromEntries(rows.map((t) => [t.name, t.sql])) };
+};
 /** On-disk size of a table and each of its indexes (dbstat walks every page: heavy lane). params: { table } */
 REPORTS['index-sizes'] = async ({ table = 'content' } = {}) => {
   const { tableSchema, btreeSize } = await import('../repos/schema-repo.js');
@@ -297,7 +306,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-trim-audit'];

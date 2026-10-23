@@ -197,11 +197,20 @@ module.exports = {
       // text + 600 embeddings (3072 dims × Float32) + Meili payload, plus
       // SQLite mmap. 1.5G was tight enough to SIGTERM mid-batch and burn
       // the embedding work.
-      max_memory_restart: '4G',
+      // 14G (db-write-path-20261023): the writer's SQLite page cache is 8 GB (SQLITE_CACHE_MB below) on top of ~2–4 G heap.
+      max_memory_restart: '14G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
         BACKUP_DIR: '/tank/backups/siftersearch',
+        // RAM-leaning writer (Chad 10-23: ECC + UPS; literature, not banking — planning/db-write-path-20261023.md):
+        //  · 8 GB page cache: the content table's ~35 indexes stay hot instead of being re-read from the ARC per row
+        //  · synchronous=OFF: no fsync at commit or checkpoint. sifter.db is on ZFS (fast/siftersearch-db): transaction
+        //    groups are atomic and applied in order, so a crash or power cut loses at most the last txg (zfs_txg_timeout
+        //    10 s; ≤ ~20 s with the txg's own write) and never corrupts the file. ROLLBACK: delete this line (→ NORMAL).
+        //  · checkpoints run on a thread (api/lib/repos/wal-checkpoint-thread.js); the inline autocheckpoint is a safety net
+        SQLITE_CACHE_MB: '8192',
+        SQLITE_SYNCHRONOUS: 'OFF',
         // 120s busy_timeout: with 7 concurrent writers (watcher, embedding, graph extractor,
         // graph resolver, graph validator, graph promoter, sync), write lock contention can
         // exceed 30s. 30s was causing repeated "database is locked" failures mid-sync.
