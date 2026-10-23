@@ -1,0 +1,125 @@
+/* The Library landing (/library): editorial, cover-first. Books (renderBook in src/lib/library-stacks.js) are HTML
+   strings drawn in SSR, the arrivals row, opened collections and the wall, so their styles are global here.
+   Colours are tokens only (--lib-*, --trad-*, --cloth-*, --cover-* in global.css). Motion: transform/opacity only,
+   ambient motion waits for .lib-live and runs only on screen; prefers-reduced-motion stills it.
+   Rationale: planning/library-landing-design.md. */
+
+.lib {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  background: var(--lib-bg); color: var(--lib-ink); min-height: 100vh; overflow-x: clip;
+}
+.lib a:focus-visible, .lib button:focus-visible, .lib input:focus-visible { outline: 2px solid var(--lib-accent); outline-offset: 3px; border-radius: 4px; }
+.lib .eyebrow { margin: 0; font-family: var(--mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--lib-ink-soft); }
+.lib .display { font-family: var(--font-marquee); font-weight: 400; letter-spacing: -0.01em; line-height: 0.98; }
+.lib .serif { font-family: var(--font-quote); }
+.lib .tlink { color: var(--lib-ink); text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--lib-line); text-underline-offset: 4px; transition: text-decoration-color 0.2s; }
+.lib .tlink:hover { text-decoration-color: var(--lib-accent); }
+
+/* ── a book: cover art (or its typographic cover) and an optional caption ──────────────────────────────────── */
+.bk { position: relative; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; color: inherit; text-decoration: none; }
+.bk-c { position: relative; display: block; width: 100%; aspect-ratio: 18 / 25; container-type: inline-size; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.bk:hover .bk-c, .bk:focus-visible .bk-c { transform: translateY(-6px); }
+.bk-c img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+.bk.has-art .tc { visibility: hidden; }
+.bk.no-art .tc { visibility: visible; }
+.bk.no-art img { display: none; }
+/* with JS: the art fades in once decoded; until then a quiet placeholder holds its place (no gap, no shift) */
+.lib-js .bk.has-art:not(.ld):not(.no-art) .bk-c { background: linear-gradient(100deg, var(--lib-sunk) 30%, color-mix(in oklab, var(--lib-sunk) 70%, var(--lib-raised)) 50%, var(--lib-sunk) 70%) 0 0 / 300% 100%; border-radius: 4px; }
+.lib-js.lib-live .bk.has-art:not(.ld):not(.no-art) .bk-c { animation: lib-shimmer 1.6s linear infinite; }
+@keyframes lib-shimmer { to { background-position: -150% 0; } }
+.lib-js .bk.has-art img { opacity: 0; transition: opacity 0.5s ease; }
+.lib-js .bk.has-art.ld img { opacity: 1; }
+.tc[style*='parchment'] { color: var(--cover-ink); }
+.tc[style*='parchment'] .tc-t::after, .tc[style*='parchment'].tc-star::after { background: var(--cover-ink); }
+.lift .bk-c img { filter: drop-shadow(0 12px 14px var(--lib-shadow)); }
+.bk-cap { display: flex; flex-direction: column; gap: 0.15rem; }
+.bk-t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--font-quote); font-size: 0.92rem; line-height: 1.3; color: var(--lib-ink); }
+.bk-a { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-quote); font-style: italic; font-size: 0.82rem; color: var(--lib-ink-soft); }
+.bk-n { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lib-ink-faint); }
+.bk:hover .bk-t { text-decoration: underline; text-decoration-color: var(--lib-accent); text-underline-offset: 3px; }
+
+/* the typographic cover: bound cloth, gilt title, in the idiom of the cover art beside it */
+.tc { position: absolute; inset: 0 0 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7cqw; padding: 15cqw 12cqw;
+  text-align: center; color: var(--cover-gilt); background-color: var(--cl); background-image: linear-gradient(90deg, color-mix(in oklab, var(--cl) 60%, black) 0 3.5cqw, transparent 3.5cqw 5cqw, color-mix(in oklab, var(--cl) 80%, black) 5cqw 5.6cqw, transparent 5.6cqw), var(--grain);
+  border-radius: 1.5cqw 3cqw 3cqw 1.5cqw; box-shadow: 0 10px 18px -10px var(--lib-shadow), inset 0 0 0 0.6cqw color-mix(in oklab, var(--cl) 75%, black); overflow: hidden; }
+.tc-t { font-family: var(--font-marquee); line-height: 1.08; overflow-wrap: anywhere; hyphens: auto; }
+.tc-s1 .tc-t { font-size: 15cqw; } .tc-s2 .tc-t { font-size: 12cqw; } .tc-s3 .tc-t { font-size: 9.6cqw; } .tc-s4 .tc-t { font-size: 8cqw; }
+.tc-a { font-family: var(--font-quote); font-style: italic; font-size: 6.4cqw; line-height: 1.2; opacity: 0.9; }
+.tc-frame::before { content: ''; position: absolute; inset: 8cqw 8cqw 8cqw 11cqw; border: 0.5cqw solid var(--cover-gilt); box-shadow: inset 0 0 0 1.3cqw var(--cl), inset 0 0 0 1.7cqw var(--cover-gilt); opacity: 0.85; pointer-events: none; }
+.tc-rule { justify-content: space-between; }
+.tc-rule .tc-t::after { content: ''; display: block; width: 30cqw; height: 0.6cqw; margin: 6cqw auto 0; background: var(--cover-gilt); }
+.tc-star::after { content: ''; order: 1; width: 22cqw; height: 22cqw; background: var(--cover-gilt); opacity: 0.85;
+  clip-path: polygon(50% 0, 61% 26%, 85% 15%, 74% 39%, 100% 50%, 74% 61%, 85% 85%, 61% 74%, 50% 100%, 39% 74%, 15% 85%, 26% 61%, 0 50%, 26% 39%, 15% 15%, 39% 26%); }
+.tc-star .tc-a { order: 2; }
+.tc-band { color: var(--cover-ink); justify-content: space-between; padding-top: 22cqw; }
+.tc-band .tc-t { width: 100%; padding: 6cqw 5cqw; color: var(--cover-light); background: var(--bd); box-shadow: 0 0 0 1cqw var(--bd), 0 0 0 1.5cqw var(--cover-gilt); }
+.tc-band .tc-a { color: var(--cover-ink); }
+
+/* ── rows that scroll sideways (real books only), with arrows on hover ───────────────────────────────────────── */
+.rowwrap { position: relative; }
+.row { display: grid; grid-auto-flow: column; grid-auto-columns: var(--bw, 9.25rem); gap: 1.4rem; align-items: start; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scrollbar-width: none; padding: 0.5rem 0 0.4rem; margin: -0.5rem 0 0; }
+.row::-webkit-scrollbar { display: none; }
+.row > * { scroll-snap-align: start; }
+.row.dragging { cursor: grabbing; scroll-snap-type: none; }
+.row.dragging .bk { pointer-events: none; }
+@media (max-width: 640px) { .row { --bw: 7.4rem; gap: 1rem; } }
+.arrow { position: absolute; z-index: 2; top: calc(var(--bw, 9.25rem) * 25 / 36); width: 2.6rem; height: 2.6rem; margin-top: -1.3rem; display: grid; place-items: center; border: 1px solid var(--lib-line);
+  border-radius: 999px; color: var(--lib-ink); background: var(--lib-raised); box-shadow: 0 6px 16px -6px var(--lib-shadow); cursor: pointer; opacity: 0; transition: opacity 0.2s, transform 0.2s; }
+.arrow.l { left: -1.1rem; } .arrow.r { right: -1.1rem; }
+.rowwrap:hover .arrow:not([disabled]), .arrow:focus-visible { opacity: 1; }
+.arrow:hover { transform: scale(1.06); }
+.arrow[disabled] { opacity: 0 !important; pointer-events: none; }
+@media (hover: none) { .arrow { display: none; } }
+.more-card { display: flex; flex-direction: column; justify-content: center; gap: 0.4rem; aspect-ratio: 18 / 25; padding: 1rem; border-radius: 6px; border: 1px dashed var(--lib-line); cursor: pointer;
+  background: var(--lib-sunk); color: var(--lib-ink); text-align: left; font: inherit; }
+.more-card b { font-family: var(--font-marquee); font-weight: 400; font-size: 1.6rem; line-height: 1; }
+.more-card span { font-family: var(--font-quote); font-size: 0.9rem; line-height: 1.35; color: var(--lib-ink-soft); }
+.more-card:hover { border-style: solid; border-color: var(--lib-accent); }
+.more-card[aria-busy='true'] { opacity: 0.7; cursor: progress; }
+.bk.arrive { animation: lib-arrive 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes lib-arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ── tradition sections ─────────────────────────────────────────────────────────────────────────────────────── */
+.trad { --tint: var(--trad-other); position: relative; scroll-margin-top: 6rem; padding-top: 2.5rem; border-top: 1px solid var(--lib-line); }
+.trad-head { position: relative; isolation: isolate; display: grid; gap: 1.4rem 2.5rem; grid-template-columns: 1fr; align-items: end; margin-bottom: 2rem; }
+@media (min-width: 900px) { .trad-head.has-lead { grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem); } }
+.trad-head .count { margin: 0.8rem 0 0; }
+.trad-head h2 { margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); }
+.trad-head h2 a { color: inherit; text-decoration: none; }
+.trad-head h2 a:hover { color: var(--tint); }
+.trad-head .count { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; color: var(--tint); }
+.trad-dot { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.5rem; background: var(--tint); vertical-align: 0.1em; }
+.trad-lead { position: relative; display: flex; flex-direction: column; gap: 0.6rem; }
+.trad-lead .bk { flex-direction: row; align-items: center; gap: 1.3rem; }
+.trad-lead .bk-c { width: 8.5rem; flex: none; }
+@media (max-width: 640px) { .trad-lead .bk-c { width: 6.5rem; } }
+.trad-lead .bk-t { font-family: var(--font-marquee); font-size: 1.45rem; line-height: 1.1; -webkit-line-clamp: 3; }
+.trad-lead .lead-wash { position: absolute; inset: -40% -10% -40% -30%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in oklab, var(--tint) 22%, transparent), transparent); pointer-events: none; }
+.trad-rows { display: flex; flex-direction: column; gap: 2.4rem; min-width: 0; }
+.row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.9rem; margin: 0 0 0.9rem; }
+.row-head h3 { margin: 0; font-family: var(--font-quote); font-weight: 700; font-size: 1.12rem; }
+.row-head .n { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; color: var(--lib-ink-faint); }
+.colls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.coll { display: inline-flex; align-items: baseline; gap: 0.55rem; padding: 0.5rem 0.85rem; border-radius: 999px; border: 1px solid var(--lib-line); background: var(--lib-raised); color: var(--lib-ink);
+  text-decoration: none; font: inherit; font-family: var(--font-quote); font-size: 0.92rem; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.coll small { font-family: var(--mono); font-size: 0.7rem; color: var(--lib-ink-faint); }
+.coll:hover { border-color: var(--tint); }
+.coll[aria-expanded='true'] { border-color: var(--tint); background: color-mix(in oklab, var(--tint) 12%, var(--lib-raised)); }
+.opened { margin-top: 1.4rem; }
+
+/* ── the wall of covers ──────────────────────────────────────────────────────────────────────────────────────── */
+.wall-chunk { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr)); gap: 1.4rem 1rem; content-visibility: auto; contain-intrinsic-size: auto 1400px; }
+.wall-chunk + .wall-chunk { margin-top: 1.4rem; }
+@media (max-width: 640px) { .wall-chunk { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 0.75rem; } }
+.js-wall .wall-chunk .bk { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.js-wall .wall-chunk .bk.in { opacity: 1; transform: none; }
+.wall .bk-cap { display: none; }
+.wall .bk:hover .bk-c, .wall .bk:focus-visible .bk-c { transform: translateY(-4px) scale(1.03); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lib *, .lib *::before, .lib *::after { animation: none !important; transition: none !important; }
+  .js-wall .wall-chunk .bk { opacity: 1; transform: none; }
+}
+@media (max-width: 640px) { .trad-lead .lead-wash { display: none; } }

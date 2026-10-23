@@ -12,6 +12,7 @@ import NavBar from '../../components/common/NavBar.svelte';
 import ReligionPage from '../../components/library/ReligionPage.svelte';
 import CollectionPage from '../../components/library/CollectionPage.svelte';
 import DocumentPresentation from '../../components/library/DocumentPresentation.svelte';
+import { coverImg } from '../../lib/library-stacks.js';
 
 // Disable prerendering - these pages fetch data client-side
 export const prerender = false;
@@ -25,8 +26,10 @@ const [religion, collection, slug] = segments;
 // Get view mode from query parameter (for shareable links)
 const viewMode = Astro.url.searchParams.get('view') || 'default';
 
-// For document pages, check for redirects server-side
-// This ensures proper SEO with HTTP 301 redirects
+// For document pages, check for redirects server-side (SEO: real 301s), then use the same response for the real
+// <title>, description and h1 in the first HTML. An explicit API 404 is a real 404 (never cached at the edge: only
+// 200s are stored); an outage or 5xx keeps the generic page and lets the reader load client-side.
+let doc = null, notFound = false;
 if (segments.length === 3) {
   const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
   try {
@@ -47,6 +50,8 @@ if (segments.length === 3) {
         return Astro.redirect(frontendPath, 301);
       }
     }
+    if (res.status === 404) notFound = true;
+    else if (res.ok) doc = (await res.json())?.document || null;
   } catch (e) {
     // If redirect check fails, continue with normal rendering
     // The client-side component will handle errors
@@ -55,10 +60,12 @@ if (segments.length === 3) {
 }
 
 // Determine page type based on segment count
-const pageType = segments.length === 1 ? 'religion'
+const pageType = notFound ? 'invalid'
+              : segments.length === 1 ? 'religion'
               : segments.length === 2 ? 'collection'
               : segments.length === 3 ? 'document'
               : 'invalid';
+if (pageType === 'invalid') Astro.response.status = 404;
 
 // Format religion/collection names for display (capitalize, handle diacritics display)
 function formatName(slug) {
@@ -92,6 +99,17 @@ function getPageMeta() {
       const viewSuffix = viewMode === 'sbs' ? ' (Side-by-Side)'
                       : viewMode === 'study' ? ' (Study Mode)'
                       : '';
+      if (doc?.title) {
+        const by = doc.author && !/^unknown$/i.test(doc.author) ? doc.author : '';
+        const plain = (t) => String(t || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+        const desc = plain(doc.description) && plain(doc.description) !== doc.title ? plain(doc.description)
+          : `${doc.title}${by ? ` by ${by}` : ''}${doc.religion ? ` (${doc.religion})` : ''}: read and search it passage by passage in the SifterSearch interfaith library.`;
+        return {
+          title: `${doc.title}${by ? ` — ${by}` : ''}${viewSuffix} - SifterSearch Library`,
+          description: desc.length > 300 ? `${desc.slice(0, 297).replace(/\s+\S*$/, '')}…` : desc,
+          keywords: [doc.title, by, doc.religion, doc.collection, 'interfaith library'].filter(Boolean).join(', '),
+        };
+      }
       return {
         title: `Document${viewSuffix} - SifterSearch Library`,
         description: `Read this document from the SifterSearch interfaith library${viewSuffix.toLowerCase()}.`,
@@ -115,6 +133,8 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
 <Layout
   title={meta.title}
   description={meta.description}
+  image={doc?.cover_url ? coverImg(doc.cover_url, [600])?.src : undefined}
+  noindex={pageType === 'invalid'}
 >
   <!-- Additional SEO meta tags -->
   <Fragment slot="head">
@@ -159,7 +179,7 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
         ...(slug ? [{
           "@type": "ListItem",
           "position": 4,
-          "name": formatName(slug),
+          "name": doc?.title || formatName(slug),
           "item": canonicalUrl
         }] : [])
       ]
@@ -190,6 +210,8 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
       pathCollection={collection}
       pathSlug={slug}
       initialViewMode={viewMode}
+      initialTitle={doc?.title || ''}
+      initialAuthor={doc?.author && !/^unknown$/i.test(doc.author) ? doc.author : ''}
     />
   )}
 

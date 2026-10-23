@@ -57,7 +57,9 @@
     pathReligion = '',
     pathCollection = '',
     pathSlug = '',
-    initialViewMode = 'default'
+    initialViewMode = 'default',
+    initialTitle = '',     // SSR'd from by-path so the first HTML carries the real h1 (SEO, link checks)
+    initialAuthor = ''
   } = $props();
 
   // Auth state
@@ -785,6 +787,10 @@
 
 <div class="presentation-container">
   {#if loading}
+    {#if initialTitle}
+      <h1 class="doc-title">{toCurlyQuotes(initialTitle)}</h1>
+      {#if initialAuthor}<p class="doc-author">by {initialAuthor}</p>{/if}
+    {/if}
     <div class="loading-state">
       <svg class="spinner" viewBox="0 0 24 24" width="32" height="32">
         <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>

@@ -23,6 +23,7 @@ const API_ROUTES = [
   [/^\/api\/media\/heard$/, 300, false],
   [/^\/api\/media\/(?!admin$|shorts$|progress$|index$)[^/]+$/, 120, true],   // a talk
   [/^\/api\/speakers$/, 300, true],
+  [/^\/api\/library\/landing$/, 30, true],          // the /library landing's live numbers + new arrivals
   [/^\/api\/library\/(tree|nodes|shelves|shelves\/items|documents|letters)$/, 300, false],
   [/^\/api\/library\/(nodes|documents)\/[^/]+$/, 300, false],
   [/^\/api\/library\/by-slug\/[^/]+(\/[^/]+)?$/, 300, false],

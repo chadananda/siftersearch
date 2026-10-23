@@ -24,7 +24,7 @@ installFetchCache();
 
 // Pre-warm (after deploy: /_edge/warm; cron every minute fills cold keys, every 10th minute refreshes stale ones) so a
 // visitor practically never meets a never-cached page. Talks: the first N of the media index.
-const WARM_API = ['/api/media/index', '/api/media/progress', '/api/media/progress/live', '/api/speakers', '/api/v1/pages'];
+const WARM_API = ['/api/media/index', '/api/media/progress', '/api/media/progress/live', '/api/speakers', '/api/v1/pages', '/api/library/landing', '/api/library/shelves'];
 const WARM_PAGES = ['/', '/media', '/library', '/biography', '/docs', '/dialogue', '/research', '/about'];
 const WARM_TALKS = 24;
 

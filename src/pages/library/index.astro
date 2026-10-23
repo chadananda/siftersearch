@@ -1,35 +1,211 @@
 ---
-/**
- * Library Index Page
- *
- * Main entry point for the library browser
- * Supports query params: ?view=recent&type=pending, etc.
- */
+// /library — THE LIBRARY landing (planning/library-landing-design.md): editorial and cover-first. SSR renders the whole
+// first view from edge-cached data — the shelves index (/api/library/shelves), the live numbers (/api/library/landing)
+// and the featured works' opening words (/api/library/documents/:id) — so it never waits on tower. Islands refresh the
+// figures, arrivals and process counts live (src/lib/library-feed.js → liveRefresh); rows, collections and the wall of
+// covers are plain HTML driven by src/lib/library-stacks-client.js. ?view=browse (recent/pending…) keeps the full browser.
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import LibraryBrowser from '../../components/library/LibraryBrowser.svelte';
-import LibraryShelves from '../../components/library/LibraryShelves.svelte';
+import Ledger from '../../components/library/stacks/Ledger.svelte';
+import Finder from '../../components/library/stacks/Finder.svelte';
+import Featured from '../../components/library/stacks/Featured.svelte';
+import Arrivals from '../../components/library/stacks/Arrivals.svelte';
+import Process from '../../components/library/stacks/Process.svelte';
+import Preview from '../../components/library/stacks/Preview.svelte';
+import { sectionsFrom, featured, renderBook, coveredBooks, shuffle, daySeed, coverImg, thousands, hash } from '../../lib/library-stacks.js';
+import '../../styles/library-stacks.css';
 
 export const prerender = false;
 
-// Get view mode and filters from query params
-// No ?view → the shelves (10-10). ?view=browse (or recent/pending…) → the full search-and-filter browser.
 const viewParam = Astro.url.searchParams.get('view');
-const shelves = !viewParam;
+const browse = !!viewParam;
 const view = viewParam === 'browse' ? 'all' : (viewParam || 'all');
 const type = Astro.url.searchParams.get('type') || 'all';
 const days = Astro.url.searchParams.get('days') || '30';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
+const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+let shelves = null, landing = null;
+if (!browse) {
+  [shelves, landing] = await Promise.all([soft('/api/library/shelves', 15000), soft('/api/library/landing', 6000)]);
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+}
+
+const sections = shelves ? sectionsFrom(shelves, landing) : [];
+const seed = daySeed();
+// featured works, with their opening words (a description, else the first real paragraph)
+const feat = browse ? [] : shuffle(featured(sections, 8), seed);
+const details = await Promise.all(feat.map((b) => soft(`/api/library/documents/${b.id}?paragraphLimit=4`, 5000)));
+const featItems = feat.map((b, i) => {
+  const d = details[i];
+  const desc = d?.document?.description && d.document.description !== b.title ? d.document.description : '';
+  const para = (d?.paragraphs || []).find((p) => p?.text?.length > 80 && !/heading|title/i.test(p.blocktype || ''))?.text || '';
+  const text = desc || para;
+  return { ...b, year: d?.document?.year || b.year || null, blurb: text.length > 360 ? `${text.slice(0, 360).replace(/\s+\S*$/, '')}…` : text };
+});
+const fallback = { documents: sections.reduce((n, s) => n + (s.total || 0), 0), traditions: sections.length, paragraphs: landing?.totals?.paragraphs ?? 0 };
+const totals = landing?.totals || fallback;
+// the wall's first chapter: covered books in today's order (the client continues from here with the same order)
+const WALL_SSR = 42;
+const wallFirst = shuffle(coveredBooks(shelves), seed).slice(0, WALL_SSR);
+const collParams = (l) => (l.site ? { site: l.site } : l.authors ? { collection: l.collection, authors: l.authors.join('|') } : { collection: l.collection || '' });
+const heroImg = featItems[0]?.cover ? coverImg(featItems[0].cover, [240, 360, 520, 720]) : null;
+
+const title = `The Library: ${thousands(totals.documents)} books from ${totals.traditions || 'many'} traditions — SifterSearch`;
+const description = `${thousands(totals.documents)} books in ${totals.traditions} traditions: the Bahá’í Writings with their Persian and Arabic originals, the scriptures and classics of the world’s faiths, and the scholarship around them. Every book restored, structured and linked, passage by passage.`;
+const ld = {
+  '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'The SifterSearch Library', url: 'https://siftersearch.com/library', description,
+  hasPart: sections.map((s) => ({ '@type': 'Collection', name: s.display, url: `https://siftersearch.com/library/${s.slug}`, collectionSize: s.total })),
+  mainEntity: { '@type': 'ItemList', numberOfItems: totals.documents,
+    itemListElement: sections.flatMap((s) => s.rows.flatMap((r) => r.items.slice(0, 6).map((b) => ({ s, b })))).slice(0, 40).map(({ s, b }, i) => ({
+      '@type': 'ListItem', position: i + 1, url: `https://siftersearch.com${b.url}`,
+      item: { '@type': 'Book', name: b.title, url: `https://siftersearch.com${b.url}`, ...(b.author && !/^unknown$/i.test(b.author) ? { author: { '@type': 'Person', name: b.author } } : {}), genre: s.display,
+        ...(b.cover ? { image: coverImg(b.cover, [360]).src } : {}) } })) },
+};
 ---
 
-<Layout
-  title="Library - SifterSearch"
-  description="Browse the SifterSearch interfaith library of sacred texts, scriptures, and scholarly works."
->
-  <NavBar client:load currentPage="library" />
-  {shelves ? <LibraryShelves client:load /> : <LibraryBrowser
-    client:load
-    initialView={view}
-    initialRecentType={type}
-    initialRecentDays={parseInt(days)}
-  />}
-</Layout>
+{browse ? (
+  <Layout title="Library - SifterSearch" description="Browse the SifterSearch interfaith library of sacred texts, scriptures, and scholarly works.">
+    <NavBar client:load currentPage="library" />
+    <LibraryBrowser client:load initialView={view} initialRecentType={type} initialRecentDays={parseInt(days)} />
+  </Layout>
+) : (
+  <Layout {title} {description} image={heroImg?.src}>
+    <Fragment slot="head">
+      <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
+      <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-italic-400-latin.woff2" crossorigin />
+      {heroImg && <link rel="preload" as="image" href={heroImg.src} imagesrcset={heroImg.srcset} imagesizes="(max-width: 640px) 52vw, 340px" fetchpriority="high" />}
+      <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+    </Fragment>
+    <NavBar client:idle currentPage="library" />
+    <main id="lib" class="lib">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-16 px-4 pb-24 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+        <header class="mast">
+          <div class="mast-l">
+            <p class="eyebrow">SifterSearch · the interfaith library</p>
+            <h1 class="display">The Library</h1>
+            <p class="serif lede">Scripture, letters, histories and scholarship from the world’s faiths, every book restored, structured and linked so it can be read and searched passage by passage.</p>
+            <Finder client:idle traditions={sections.map((s) => s.name)} total={totals.documents} />
+          </div>
+          <div class="mast-r"><Ledger client:idle {landing} {fallback} /></div>
+        </header>
+
+        {sections.length === 0 ? (
+          <>
+            <p class="serif note">The shelves are a moment away: they could not be fetched just now. This page will try again by itself, or search above.</p>
+            <script is:inline>(function () { try { var k = 'lib-retry', n = +(sessionStorage.getItem(k) || 0); if (n < 3) { sessionStorage.setItem(k, n + 1); setTimeout(function () { location.reload(); }, 6000 * (n + 1)); } } catch (e) {} })();</script>
+          </>
+        ) : (
+          <>
+            <script is:inline>try { sessionStorage.removeItem('lib-retry'); } catch (e) {}</script>
+            <Featured client:idle items={featItems} />
+            <Arrivals client:visible {landing} />
+            <Process client:visible {landing} />
+
+            <nav class="trad-index" aria-label="Traditions">
+              <p class="eyebrow">Browse by tradition</p>
+              <ul>
+                {sections.map((s) => (
+                  <li><a href={`#t-${s.slug}`} style={`--tint:var(--trad-${s.key})`}><span class="trad-dot" aria-hidden="true"></span>{s.display.replace(/^The /, '')} <small data-trad-count={s.name}>{thousands(s.total)}</small></a></li>
+                ))}
+              </ul>
+            </nav>
+
+            {sections.map((s) => {
+              const rows = s.rows.map((r) => ({ ...r, items: s.lead ? r.items.filter((b) => b.id !== s.lead.id) : r.items })).filter((r) => r.items.length || r.more);
+              const named = rows.filter((r) => r.name).length;
+              return (
+                <section class="trad" id={`t-${s.slug}`} style={`--tint:var(--trad-${s.key})`} aria-labelledby={`t-${s.slug}-h`}>
+                  <div class={`trad-head${s.lead ? ' has-lead' : ''}`}>
+                    <div>
+                      <p class="eyebrow"><span class="trad-dot" aria-hidden="true"></span>Tradition</p>
+                      <h2 id={`t-${s.slug}-h`} class="display"><a href={`/library/${s.slug}`}>{s.display}</a></h2>
+                      <p class="count"><span data-trad-count={s.name}>{thousands(s.total)}</span> books · <a class="tlink" href={`/library/${s.slug}`}>everything in {s.display.replace(/^The /, '')}</a></p>
+                    </div>
+                    {s.lead && (
+                      <div class="trad-lead">
+                        <span class="lead-wash" aria-hidden="true"></span>
+                        <p class="eyebrow lead-k">Signature work</p>
+                        <Fragment set:html={renderBook(s.lead, s.name, { cls: 'lift', sizes: '136px', widths: [136, 272] })} />
+                      </div>
+                    )}
+                  </div>
+                  <div class="trad-rows">
+                      {rows.map((r) => (
+                        <div>
+                          {(named > 0 || rows.length > 1) && <div class="row-head"><h3>{r.name || 'More works'}</h3><span class="n">{thousands(r.count)} on the shelf{r.more ? ` · ${thousands(r.more.count)} more` : ''}</span></div>}
+                          <div class="rowwrap">
+                            <button class="arrow l" type="button" aria-label={`Scroll ${r.name || 'more works'} back`}>←</button>
+                            <button class="arrow r" type="button" aria-label={`Scroll ${r.name || 'more works'} on`}>→</button>
+                            <div class="row" role="list" aria-label={`${r.name || 'More works'}, ${s.display}`}>
+                              <Fragment set:html={r.items.map((b) => `<div role="listitem">${renderBook(b, s.name, { cls: 'lift', sizes: '(max-width: 640px) 120px, 150px', widths: [150, 300] })}</div>`).join('')} />
+                              {r.more && (
+                                <button class="more-card" type="button" data-more={JSON.stringify({ religion: s.name, authors: r.more.authors.join('|'), total: r.more.count })}>
+                                  <b>+{thousands(r.more.count)}</b><span>more by {r.name} across the library. Bring them out</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {s.library.length > 0 && (
+                        <div>
+                          <div class="row-head"><h3>Collections</h3><span class="n">{s.library.length} · {thousands(s.library.reduce((n, l) => n + l.count, 0))} books</span></div>
+                          <div class="colls">
+                            {s.library.map((l) => l.url
+                              ? <a class="coll" href={l.url}>{l.name} <small>{thousands(l.count)}</small></a>
+                              : <button class="coll" type="button" aria-expanded="false" data-coll={JSON.stringify({ key: `${s.slug}-${hash(l.name)}`, name: l.name, count: l.count, religion: s.name, params: collParams(l) })}>{l.name} <small>{thousands(l.count)}</small></button>)}
+                          </div>
+                          <div class="opened"></div>
+                        </div>
+                      )}
+                  </div>
+                </section>
+              );
+            })}
+
+            <section class="wall-sec" aria-labelledby="wall-h">
+              <div class="wall-head">
+                <p class="eyebrow">Cover to cover</p>
+                <h2 id="wall-h" class="display">The whole library</h2>
+                <p class="serif">{thousands(totals.documents)} books, and the wall keeps going as you scroll: first the illustrated editions, then every collection in every tradition. Choose any book to look inside.</p>
+              </div>
+              <div class="wall" data-seed={seed} data-n={wallFirst.length}>
+                <div class="wall-chunk"><Fragment set:html={wallFirst.map((b) => renderBook(b, b.religion, { caption: false, sizes: '120px', widths: [120, 240] })).join('')} /></div>
+                <div class="wall-end" aria-hidden="true"></div>
+                <p class="wall-status serif" aria-live="polite"></p>
+              </div>
+            </section>
+            <p class="serif coda">Looking for something particular? <a class="tlink" href="/library?view=browse">Browse every document by language, year and collection</a>, or <a class="tlink" href="/">ask a question of the whole library</a>.</p>
+          </>
+        )}
+      </div>
+      <Preview client:idle />
+    </main>
+    <script>
+      import { initLibrary } from '../../lib/library-stacks-client.js';
+      initLibrary(document.getElementById('lib'));
+    </script>
+  </Layout>
+)}
+
+<style is:global>
+  .lib .mast { display: grid; gap: 2.5rem 4rem; grid-template-columns: 1fr; align-items: end; }
+  @media (min-width: 1024px) { .lib .mast { grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr); } }
+  .lib .mast h1 { margin: 0.6rem 0 0; font-size: clamp(3.4rem, 11vw, 8.4rem); line-height: 0.9; }
+  .lib .mast .lede { margin: 1.2rem 0 1.8rem; max-width: 38rem; font-style: italic; font-size: clamp(1.05rem, 2vw, 1.3rem); line-height: 1.55; color: var(--lib-ink-soft); }
+  .lib .note, .lib .coda { margin: 0; font-size: 1.05rem; color: var(--lib-ink-soft); }
+  .lib .trad-index { display: flex; flex-direction: column; gap: 0.9rem; }
+  .lib .trad-index ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .lib .trad-index a { display: inline-flex; align-items: center; gap: 0.1rem; padding: 0.55rem 0.95rem; border-radius: 999px; border: 1px solid var(--lib-line); background: var(--lib-raised);
+    color: var(--lib-ink); text-decoration: none; font-family: var(--font-quote); font-size: 1rem; transition: border-color 0.2s, transform 0.2s; }
+  .lib .trad-index a:hover { border-color: var(--tint); transform: translateY(-1px); }
+  .lib .trad-index small { margin-left: 0.45rem; font-family: var(--mono); font-size: 0.7rem; color: var(--lib-ink-faint); }
+  .lib .lead-k { color: var(--tint); }
+  .lib .wall-head { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.8rem; }
+  .lib .wall-head h2 { margin: 0; font-size: clamp(2.4rem, 6vw, 4.6rem); }
+  .lib .wall-head p.serif { margin: 0.4rem 0 0; max-width: 40rem; font-size: 1.05rem; line-height: 1.55; color: var(--lib-ink-soft); }
+  .lib .wall-end { height: 1px; }
+  .lib .wall-status { margin: 1.5rem 0 0; color: var(--lib-ink-soft); font-style: italic; min-height: 1.5em; }
+</style>
