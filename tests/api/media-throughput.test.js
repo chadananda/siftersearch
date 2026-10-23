@@ -112,3 +112,14 @@ describe('stage counters', () => {
     }
   });
 });
+
+describe('the process strip', () => {
+  it('groups live items by stage, most recent first, capped', async () => {
+    const { byStage } = await import('../../api/routes/media.js');
+    const items = [{ slug: 'a', stage: 'transcribe', started_at: '2026-10-23T01:00' }, { slug: 'b', stage: 'transcribe', started_at: '2026-10-23T02:00' },
+      { slug: 'c', stage: 'archive', started_at: 'x' }, { slug: 'd', stage: 'quotes', started_at: 'x' }, { slug: 'e', stage: 'update', started_at: 'x' }, { slug: 'f', stage: 'mystery' }];
+    const s = byStage(items, 1);
+    expect(s.transcribe).toEqual({ count: 2, items: [expect.objectContaining({ slug: 'b' })] });
+    expect([s.import.count, s.quotes.count, s.publish.count, s.moments.count]).toEqual([1, 1, 1, 0]);
+  });
+});

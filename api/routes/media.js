@@ -105,6 +105,20 @@ export function stepsOf(stages = {}, current = null, state = 'running') {
     return { name, state: st, ...(done && ms ? { ms } : {}) };
   });
 }
+// the process strip (design agent): which talks are in which stage now
+export const STRIP = [['import', ['archive']], ['enhance', ['grade', 'enhance', 'web']], ['transcribe', ['transcribe']], ['correct', ['correct', 'clean']],
+  ['publish', ['describe', 'thumb', 'render', 'ingest', 'catalog', 'update']], ['subheaders', ['headings']], ['quotes', ['quotes']], ['links', ['links']], ['moments', ['assess']]];
+/** Live items grouped by strip stage (most recent first, ≤ cap each). Pure. */
+export function byStage(items = [], cap = 12) {
+  const out = Object.fromEntries(STRIP.map(([k]) => [k, { count: 0, items: [] }]));
+  for (const it of [...items].sort((a, b) => String(b.started_at).localeCompare(String(a.started_at)))) {
+    const k = STRIP.find(([, inner]) => inner.includes(it.stage))?.[0];
+    if (!k) continue;
+    out[k].count++;
+    if (out[k].items.length < cap) out[k].items.push({ slug: it.slug, title: it.title, speaker: it.speaker, thumb: it.thumb, started_at: it.started_at });
+  }
+  return out;
+}
 /** A source key from a queue rank (the progress buckets). */
 export const sourceOfRank = (rank) => (rank == null ? 'other' : rank < 2000 ? 'curated' : rank < 3000 ? 'hooper-dunbar' : rank < 4000 ? 'hands-uhj' : rank < 6000 ? 'local' : 'other');
 /** The public progress shape. Pure (exported for tests). */
@@ -417,8 +431,8 @@ export default async function mediaRoutes(fastify) {
   // a handful of rows and their meta.json files, memoised 10 s, edge-cached 10 s
   fastify.get('/progress/live', async (req, reply) => {
     if (!liveMemo || Date.now() - liveMemo.at > 10_000) {
-      const { liveItems, recentlyPublished, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
-      const rows = await liveItems(12);
+      const { liveItems, recentlyPublished, queuedCount, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
+      const rows = await liveItems(40);
       const recent = await recentlyPublished(6);
       const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));
       const in_progress = await Promise.all(rows.map(async (r) => {
@@ -426,9 +440,10 @@ export default async function mediaRoutes(fastify) {
         const stages = meta?.stages || {};
         const startedAt = Object.values(stages).map((x) => x?.at).filter(Boolean).sort()[0] || r.updated_at;
         return { slug: r.slug, title: r.title || meta?.title || null, speaker: r.speaker || meta?.speaker || null, source: sourceOfRank(r.queue_rank), thumb: people.get(r.speaker_key) || null,
-          duration_s: r.duration_s || meta?.duration_s || null, started_at: startedAt, stage: r.stage, stages: stepsOf(stages, r.stage, r.state) };
+          duration_s: r.duration_s || meta?.duration_s || null, started_at: startedAt, stage: r.stage, stage_started_at: r.updated_at, stages: stepsOf(stages, r.stage, r.state) };
       }));
-      liveMemo = { at: Date.now(), value: { in_progress, recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
+      const by_stage = byStage(in_progress.map((x) => ({ ...x, started_at: x.stage_started_at })));
+      liveMemo = { at: Date.now(), value: { in_progress, by_stage, queued: await queuedCount(), recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
         duration_s: x.duration_s, published_at: x.published_at })), updated_at: new Date().toISOString() } };
     }
     pub(reply, 10);

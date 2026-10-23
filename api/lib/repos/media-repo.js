@@ -104,6 +104,7 @@ export async function importProgress() {
   return { rows, published_6h: recent };
 }
 /** The items being worked on now (downloading / processing / being enriched after publication): a handful of rows. */
+export const queuedCount = async () => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state IN ('queued', 'scheduled')`, [], 'media:queued-count'))?.n || 0;
 export const liveItems = async (limit = 12) => (await queryAll(`SELECT id, slug, title, speaker, speaker_key, source_kind, youtube_id, duration_s, dir, state, stage, queue_rank, updated_at
   FROM media_items WHERE state = 'running' OR (state = 'done' AND stage IS NOT NULL AND stage NOT IN ('catalog')) ORDER BY updated_at DESC LIMIT ?`, [limit], 'media:live')).map(parse);
 export const recentlyPublished = async (limit = 6) => queryAll(`SELECT slug, title, speaker, speaker_key, duration_s, published_at FROM media_items
