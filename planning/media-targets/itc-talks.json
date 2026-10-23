@@ -1,0 +1,93 @@
+{
+ "generated": "2026-10-23",
+ "note": "Counsellor members of the International Teaching Centre appointed before 1988 (Chad 10-23: 'We also want ITC members before 88'). Membership: bahaipedia.org/International_Teaching_Centre (membership table), UHJ message 19 May 1983 (Carney, Khamsi, Khan, Sabri), UHJ 4 July 1979 (Bopp). 1988 appointees (Arbab, Grossmann, King, Rogers, Stevenson, Vuyiya) are not 'before 88'. Read by media-rank (section itc_pre_1988); local recordings are already in the archive (media-scan) and ranked through data/media-speaker-people.json historical: first-hand.",
+ "members": [
+  {
+   "name": "Hooper Dunbar",
+   "appointed": 1973,
+   "served": "1973-1988"
+  },
+  {
+   "name": "Florence Mayberry",
+   "appointed": 1973,
+   "served": "1973-1983"
+  },
+  {
+   "name": "‘Azíz Yazdí",
+   "appointed": 1973,
+   "served": "1973-1988"
+  },
+  {
+   "name": "Anneliese Bopp",
+   "appointed": 1979,
+   "served": "1979-1988"
+  },
+  {
+   "name": "Magdalene Carney",
+   "appointed": 1983,
+   "served": "1983-1991"
+  },
+  {
+   "name": "Mas‘úd Khamsí",
+   "appointed": 1983,
+   "served": "1983-1993"
+  },
+  {
+   "name": "Peter Khan",
+   "appointed": 1983,
+   "served": "1983-1987"
+  },
+  {
+   "name": "Isobel Sabri",
+   "appointed": 1983,
+   "served": "1983-1992"
+  }
+ ],
+ "itc_pre_1988": [
+  {
+   "section": "itc_pre_1988",
+   "speaker": "‘Azíz Yazdí",
+   "role": "ITC Counsellor (pre-1988)",
+   "relation": "speaker",
+   "confidence": "medium",
+   "title": "'In the Eyes of His Beloved Servants' by Aziz Yazdi & other speakers",
+   "url": "https://www.youtube.com/watch?v=8ZqO39d_Vfg",
+   "video_id": "8ZqO39d_Vfg",
+   "note": "recollections session at the Second Bahá’í World Congress; several speakers"
+  }
+ ],
+ "local": {
+  "Mas‘úd Khamsí": [
+   "Baha'i/talks/Khamsi Various/Khamsi, Masud - Pilgrimage w the Guardian - 1988 05 09.mp3"
+  ],
+  "Isobel Sabri": [
+   "Baha'i/talks/Sabri Iqan/Sabri, I. - Our Responsibility to the Covenant - 1988 08 31.mp3"
+  ],
+  "Peter Khan": [
+   "Baha'i/talks/Historic recordings/Misc Other/PKhan on Shrines being closed.WMA"
+  ],
+  "Hooper Dunbar": [
+   "97 files (already queued/published)"
+  ]
+ },
+ "local_review": [
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 5 - 1995 09 05.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 1 - 1995 08 08.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 3 - 1995 08 22.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 6 - 1995 09 12.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 4 - 1995 08 29.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 9 - 1995 10 13.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 7 - 1995 09 19.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 8 - 1995 09 26.mp3",
+  "Baha'i/talks/Sabri Iqan/Sabri - Iqan 2 - 1995 08 15.mp3",
+  "Baha'i/talks/Khamsi Various/Khamsi-Dunbar,M. - Pioneering Latin America - 1991 11 06.mp3",
+  "Baha'i/talks/Ruhe Various/Ruhe-Sabri - Bahai Schools of Excellence - 1993 01 01.mp3"
+ ],
+ "not_found": [
+  "Florence Mayberry (YouTube hit is a school named after her)",
+  "Anneliese Bopp",
+  "Magdalene Carney (not searched: web search budget spent)",
+  "Isobel Sabri on YouTube (not searched)",
+  "Mas‘úd Khamsí on YouTube (not searched)"
+ ]
+}

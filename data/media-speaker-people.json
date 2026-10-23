@@ -19,7 +19,9 @@
     "Milly",
     "The Prince of Martyrs",
     "Explanation of the Symbol of the Greatest Name"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "gloria-faizi",
@@ -30,7 +32,9 @@
    ],
    "works": [
     "The Bahá'í Faith: An Introduction"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "widow of the Hand Abu’l-Qásim Faizí; pioneer — CONFIRM (planning/media-speaker-review.md)"
   },
   {
    "key": "ali-akbar-furutan",
@@ -48,7 +52,9 @@
     "Stories of Bahá'u'lláh",
     "The Story of My Heart",
     "Mothers, Fathers and Children"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "ruhiyyih-khanum",
@@ -68,7 +74,9 @@
     "The Priceless Pearl",
     "Prescription for Living",
     "The Ministry of the Custodians"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "zikrullah-khadem",
@@ -87,7 +95,9 @@
    "works": [
     "Carmel the Mountain of God",
     "Bahá'u'lláh and His Most Holy Shrine"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "javidukht-khadem",
@@ -99,7 +109,9 @@
    ],
    "works": [
     "Zikrullah Khadem, The Itinerant Hand of the Cause of God"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "widow of the Hand Dhikru’lláh Khádem; recollections of the Guardian — CONFIRM (planning/media-speaker-review.md)"
   },
   {
    "key": "riaz-khadem",
@@ -111,7 +123,9 @@
    "works": [
     "Shoghi Effendi in Oxford",
     "Prelude to the Guardianship"
-   ]
+   ],
+   "historical": "modern",
+   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
   },
   {
    "key": "jena-khadem-khodadad",
@@ -119,7 +133,9 @@
    "aliases": [
     "Jena Khadem",
     "Jena Khodadad"
-   ]
+   ],
+   "historical": "modern",
+   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
   },
   {
    "key": "william-sears",
@@ -139,7 +155,9 @@
     "Release the Sun",
     "The Prisoner and the Kings",
     "All Flags Flying"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "martha-root",
@@ -150,7 +168,9 @@
    ],
    "born": 1872,
    "died": 1939,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "enoch-olinga",
@@ -160,7 +180,9 @@
    ],
    "born": 1926,
    "died": 1979,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "ugo-giachery",
@@ -174,7 +196,9 @@
    "role": "hand",
    "works": [
     "Shoghi Effendi: Recollections"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "rahmatullah-muhajir",
@@ -186,7 +210,9 @@
    ],
    "born": 1923,
    "died": 1979,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "ali-muhammad-varqa",
@@ -198,7 +224,9 @@
    ],
    "born": 1911,
    "died": 2007,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "hermann-grossmann",
@@ -209,7 +237,9 @@
    ],
    "born": 1899,
    "died": 1968,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "hartmut-grossmann",
@@ -225,7 +255,9 @@
     "The Secret of Divine Civilization",
     "The Four Year Plan"
    ],
-   "uhj_elected": 2000
+   "uhj_elected": 2000,
+   "historical": "historian",
+   "historical_basis": "UHJ 2000 — kept: Chad 10-23 named him the cutoff"
   },
   {
    "key": "adib-taherzadeh",
@@ -249,7 +281,9 @@
     "Purpose of Life",
     "Trustees of the Merciful"
    ],
-   "uhj_elected": 1988
+   "uhj_elected": 1988,
+   "historical": "historian",
+   "historical_basis": "historian of the Revelation (The Revelation of Bahá’u’lláh); UHJ 1988"
   },
   {
    "key": "ali-nakhjavani",
@@ -262,7 +296,9 @@
    "born": 1919,
    "died": 2019,
    "role": "uhj",
-   "uhj_elected": 1963
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "UHJ 1963; served under the Guardian"
   },
   {
    "key": "violette-nakhjavani",
@@ -274,7 +310,9 @@
    "works": [
     "The Maxwells of Montreal",
     "A Tribute to Amatu'l-Bahá Rúhíyyih Khánum"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "travelled with Rúhíyyih Khánum (the Great Safari); companion of the Hands era"
   },
   {
    "key": "hooper-dunbar",
@@ -284,7 +322,10 @@
     "H. Dunbar"
    ],
    "role": "uhj",
-   "uhj_elected": 1988
+   "uhj_elected": 1988,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1973-1988); UHJ 1988",
+   "itc_appointed": 1973
   },
   {
    "key": "dorothy-baker",
@@ -294,7 +335,9 @@
    ],
    "born": 1898,
    "died": 1954,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "corinne-true",
@@ -304,7 +347,9 @@
    ],
    "born": 1861,
    "died": 1961,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "leroy-ioas",
@@ -314,7 +359,9 @@
    ],
    "born": 1896,
    "died": 1965,
-   "role": "hand"
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "peter-khan",
@@ -322,12 +369,16 @@
    "aliases": [
     "P. Khan",
     "PKhan",
-    "Dr. Peter Khan"
+    "Dr. Peter Khan",
+    "Peter J. Khan"
    ],
    "born": 1936,
    "died": 2011,
    "role": "uhj",
-   "uhj_elected": 1987
+   "uhj_elected": 1987,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1987); UHJ 1987",
+   "itc_appointed": 1983
   },
   {
    "key": "ed-price",
@@ -337,7 +388,9 @@
     "Edward Price",
     "Edward Prine",
     "Ed Prine"
-   ]
+   ],
+   "historical": "modern",
+   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
   },
   {
    "key": "elsie-austin",
@@ -346,7 +399,9 @@
     "Dr. Elsie Austin",
     "Elsie Austin Knight",
     "Elsie Austin, Knight of Bahá'u'lláh"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Knight of Bahá’u’lláh (Morocco, 1953)"
   },
   {
    "key": "baharieh-rouhani-maani",
@@ -357,7 +412,9 @@
     "Baharieh Maani Rohani",
     "Baharieh Ma'ani Rohani",
     "Baharieh Rouhani"
-   ]
+   ],
+   "historical": "historian",
+   "historical_basis": "historian (Leaves of the Twin Divine Trees)"
   },
   {
    "key": "steven-phelps",
@@ -366,7 +423,9 @@
     "Stephen Phelps",
     "Dr. Steven Phelps",
     "Steve Phelps"
-   ]
+   ],
+   "historical": "modern",
+   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
   },
   {
    "key": "hasan-balyuzi",
@@ -386,7 +445,9 @@
     "Bahá'u'lláh, The King of Glory",
     "The Báb",
     "'Abdu'l-Bahá"
-   ]
+   ],
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   },
   {
    "key": "stephen-birkland",
@@ -401,7 +462,9 @@
    "exclude_match": "\\bste(?:phen|ven|ve)\\s+(?:j\\.?\\s+)?birkland\\b",
    "exclude_title": "\\bste(?:phen|ven|ve)\\s+(?:j\\.?\\s+)?birkland\\b",
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*birkland\\s*$",
-   "exclude_surname_title": "\\bbirkland\\b"
+   "exclude_surname_title": "\\bbirkland\\b",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "douglas-martin",
@@ -415,7 +478,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\b(?:j\\.?\\s*)?doug(?:las)?\\s+martin\\b",
    "exclude_title": "\\b(?:j\\.?\\s*)?doug(?:las)?\\s+martin\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*martin\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*martin\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "farzam-arbab",
@@ -429,7 +494,9 @@
    "exclude_match": "\\bfarzam\\s+arbab\\b|\\bf\\.?\\s+arbab\\b|فرزام\\s+ارباب",
    "exclude_title": "\\bfarzam\\s+arbab\\b|\\bdr\\.?\\s+f\\.?\\s+arbab\\b|فرزام\\s+ارباب",
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*arbab\\s*$",
-   "exclude_surname_title": "\\barbab\\b"
+   "exclude_surname_title": "\\barbab\\b",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "kiser-barnes",
@@ -442,7 +509,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bkiser\\s+barnes\\b",
    "exclude_title": "\\bkiser\\s+barnes\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*barnes\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*barnes\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "firaydoun-javaheri",
@@ -457,7 +526,9 @@
    "exclude_match": "\\bf[aei]r[aeiy]{0,2}d[o]?[ou]n\\s+jav[aā]h[eé]r[iī]\\b|فریدون\\s+جواهری",
    "exclude_title": "\\bf[aei]r[aeiy]{0,2}d[o]?[ou]n\\s+jav[aā]h[eé]r[iī]\\b|فریدون\\s+جواهری",
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*jav[aā]h[eé]r[iī]\\s*$",
-   "exclude_surname_title": "\\bjav[aā]h[eé]r[iī]\\b|جواهری"
+   "exclude_surname_title": "\\bjav[aā]h[eé]r[iī]\\b|جواهری",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "payman-mohajer",
@@ -472,7 +543,9 @@
    "exclude_match": "\\bp[ae]yman\\s+m[ou]h[aā]j[eé]r\\b|پیمان\\s+مهاجر",
    "exclude_title": "\\bp[ae]yman\\s+m[ou]h[aā]j[eé]r\\b|پیمان\\s+مهاجر",
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*m[ou]h[aā]jj?[eéi]r\\s*$",
-   "exclude_keep": "ra[hḥ]mat|\\br\\.\\s*m[ou]h"
+   "exclude_keep": "ra[hḥ]mat|\\br\\.\\s*m[ou]h",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "paul-lample",
@@ -486,7 +559,9 @@
    "exclude_match": "\\bpaul\\s+lample\\b",
    "exclude_title": "\\bpaul\\s+lample\\b",
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*lample\\s*$",
-   "exclude_surname_title": "\\blample\\b"
+   "exclude_surname_title": "\\blample\\b",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "gustavo-correa",
@@ -499,7 +574,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bgustavo\\s+corr?[eê]a\\b",
    "exclude_title": "\\bgustavo\\s+corr?[eê]a\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*corr?[eê]a\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*corr?[eê]a\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "shahriar-razavi",
@@ -512,7 +589,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bshahri?ar\\s+razavi\\b",
    "exclude_title": "\\bshahri?ar\\s+razavi\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*razavi\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*razavi\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "stephen-hall",
@@ -523,7 +602,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bstephen\\s+hall\\b",
    "exclude_title": "\\bstephen\\s+hall\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*hall\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*hall\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "chuungu-malitonga",
@@ -535,7 +616,9 @@
    "exclude_match": "\\bchuungu\\s+malitonga\\b",
    "exclude_title": "\\bchuungu\\s+malitonga\\b",
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*malitonga\\s*$",
-   "exclude_surname_title": "\\bmalitonga\\b"
+   "exclude_surname_title": "\\bmalitonga\\b",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "ayman-rouhani",
@@ -546,7 +629,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bayman\\s+rouhani\\b",
    "exclude_title": "\\bayman\\s+rouhani\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*rouhani\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*rouhani\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "juan-francisco-mora",
@@ -559,7 +644,9 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bjuan\\s+(?:francisco\\s+)?mora\\b",
    "exclude_title": "\\bjuan\\s+(?:francisco\\s+)?mora\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*mora\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*mora\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
   },
   {
    "key": "praveen-mallik",
@@ -570,7 +657,231 @@
    "exclude": "newer-generation",
    "exclude_match": "\\bpraveen\\s+mallik\\b",
    "exclude_title": "\\bpraveen\\s+mallik\\b",
-   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*mallik\\s*$"
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*mallik\\s*$",
+   "historical": "modern",
+   "historical_basis": "excluded (newer-generation)"
+  },
+  {
+   "key": "florence-mayberry",
+   "name": "Florence Mayberry",
+   "aliases": [
+    "Florence V. Mayberry",
+    "Mrs. Florence Mayberry"
+   ],
+   "role": "itc",
+   "itc_appointed": 1973,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1973-1983)"
+  },
+  {
+   "key": "aziz-yazdi",
+   "name": "‘Azíz Yazdí",
+   "aliases": [
+    "Aziz Yazdi",
+    "Azíz Yazdí",
+    "Mr. Aziz Yazdi"
+   ],
+   "role": "itc",
+   "itc_appointed": 1973,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1973-1988)"
+  },
+  {
+   "key": "anneliese-bopp",
+   "name": "Anneliese Bopp",
+   "aliases": [
+    "Dr. Anneliese Bopp"
+   ],
+   "role": "itc",
+   "itc_appointed": 1979,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1979-1988)"
+  },
+  {
+   "key": "magdalene-carney",
+   "name": "Magdalene Carney",
+   "aliases": [
+    "Dr. Magdalene Carney",
+    "Magdalene M. Carney"
+   ],
+   "role": "itc",
+   "itc_appointed": 1983,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1991)"
+  },
+  {
+   "key": "masud-khamsi",
+   "name": "Mas‘úd Khamsí",
+   "aliases": [
+    "Masud Khamsi",
+    "Mas'ud Khamsi",
+    "Masʻúd Khamsí",
+    "Khamsi, Masud"
+   ],
+   "role": "itc",
+   "itc_appointed": 1983,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1993)"
+  },
+  {
+   "key": "isobel-sabri",
+   "name": "Isobel Sabri",
+   "aliases": [
+    "Mrs. Isobel Sabri",
+    "Isobel B. Sabri"
+   ],
+   "role": "itc",
+   "itc_appointed": 1983,
+   "historical": "first-hand",
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1992)"
+  },
+  {
+   "key": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam",
+   "aliases": [
+    "Hooshmand Fatheazam",
+    "Dr. Hushmand Fatheazam"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "UHJ 1963; served under the Guardian"
+  },
+  {
+   "key": "ian-semple",
+   "name": "Ian Semple",
+   "aliases": [
+    "Ian C. Semple"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "UHJ 1963; served under the Guardian"
+  },
+  {
+   "key": "charles-wolcott",
+   "name": "Charles Wolcott",
+   "aliases": [
+    "Charles M. Wolcott"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "UHJ 1963; served under the Guardian"
+  },
+  {
+   "key": "david-hofman",
+   "name": "David Hofman",
+   "aliases": [
+    "David Hoffman"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "UHJ 1963; served under the Guardian"
+  },
+  {
+   "key": "amoz-gibson",
+   "name": "Amoz Gibson",
+   "aliases": [],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "UHJ 1963; served under the Guardian"
+  },
+  {
+   "key": "david-ruhe",
+   "name": "David Ruhe",
+   "aliases": [
+    "David S. Ruhe",
+    "Dr. David Ruhe"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1968,
+   "historical": "historian",
+   "historical_basis": "UHJ 1968; author of Door of Hope (history of the Holy Land)"
+  },
+  {
+   "key": "glenford-mitchell",
+   "name": "Glenford Mitchell",
+   "aliases": [
+    "Glenford E. Mitchell"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1982,
+   "historical": "historian",
+   "historical_basis": "UHJ 1982"
+  },
+  {
+   "key": "collis-featherstone",
+   "name": "H. Collis Featherstone",
+   "aliases": [
+    "Collis Featherstone"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "john-robarts",
+   "name": "John Robarts",
+   "aliases": [
+    "John A. Robarts"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "tarazullah-samandari",
+   "name": "Ṭarázu’lláh Samandarí",
+   "aliases": [
+    "Tarazu'llah Samandari",
+    "Tarázu'lláh Samandarí",
+    "Tarazullah Samandari"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "paul-haney",
+   "name": "Paul E. Haney",
+   "aliases": [
+    "Paul Haney"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "musa-banani",
+   "name": "Músá Banání",
+   "aliases": [
+    "Musa Banani"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "shuaullah-alai",
+   "name": "Shu‘á‘u’lláh ‘Alá’í",
+   "aliases": [
+    "Shu'a'u'llah 'Ala'i"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "curtis-kelsey",
+   "name": "Curtis Kelsey",
+   "aliases": [
+    "Curtis D. Kelsey"
+   ],
+   "historical": "first-hand",
+   "historical_basis": "installed the lights at the Shrines for ‘Abdu’l-Bahá (1921)"
   }
  ],
  "not_speakers": [
