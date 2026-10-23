@@ -146,7 +146,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (opts.only && !opts.only.includes(stage)) continue;
     if (await d.draining()) return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };   // stage: a resumed run never redoes its from/reslug
     // an EXCLUDED speaker (data/media-exclusions.json, Chad 10-23) — or a row media-exclude took out — goes no further
-    const ex = excludedBy({ speaker: meta.speaker || item.speaker || '' }) || excludedBy({ title: meta.title || '', sourceTitle: meta.source?.title || '' })
+    const ex = excludedBy({ speaker: meta.speaker || item.speaker || '', title: meta.title || '', sourceTitle: meta.source?.title || '' })
       || ((await repo.getMediaItem?.(item.id))?.state === 'excluded' ? { reason: 'excluded' } : null);
     if (ex) {
       await repo.updateMediaItem(item.id, { state: 'excluded', why: ex.reason });

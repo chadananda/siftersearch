@@ -398,8 +398,10 @@
    "role": "uhj",
    "uhj_elected": 2010,
    "exclude": "newer-generation",
-   "exclude_match": "\\bste(?:ph|v)en\\s+(?:j\\.?\\s+)?birkland\\b|\\bbirkland\\b",
-   "exclude_title": "\\bbirkland\\b"
+   "exclude_match": "\\bste(?:phen|ven|ve)\\s+(?:j\\.?\\s+)?birkland\\b",
+   "exclude_title": "\\bste(?:phen|ven|ve)\\s+(?:j\\.?\\s+)?birkland\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*birkland\\s*$",
+   "exclude_surname_title": "\\bbirkland\\b"
   },
   {
    "key": "douglas-martin",
@@ -412,7 +414,8 @@
    "uhj_elected": 1993,
    "exclude": "newer-generation",
    "exclude_match": "\\b(?:j\\.?\\s*)?doug(?:las)?\\s+martin\\b",
-   "exclude_title": "\\b(?:j\\.?\\s*)?douglas\\s+martin\\b"
+   "exclude_title": "\\b(?:j\\.?\\s*)?doug(?:las)?\\s+martin\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*martin\\s*$"
   },
   {
    "key": "farzam-arbab",
@@ -423,8 +426,10 @@
    "role": "uhj",
    "uhj_elected": 1993,
    "exclude": "newer-generation",
-   "exclude_match": "\\bfarzam\\s+arbab\\b|^\\s*(?:dr\\.?\\s*)?arbab\\s*$",
-   "exclude_title": "\\bfarzam\\s+arbab\\b"
+   "exclude_match": "\\bfarzam\\s+arbab\\b|\\bf\\.?\\s+arbab\\b|فرزام\\s+ارباب",
+   "exclude_title": "\\bfarzam\\s+arbab\\b|\\bdr\\.?\\s+f\\.?\\s+arbab\\b|فرزام\\s+ارباب",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*arbab\\s*$",
+   "exclude_surname_title": "\\barbab\\b"
   },
   {
    "key": "kiser-barnes",
@@ -435,8 +440,9 @@
    "role": "uhj",
    "uhj_elected": 2000,
    "exclude": "newer-generation",
-   "exclude_match": "\\bkiser\\s+barnes\\b|^\\s*(?:dr\\.?\\s*)?barnes\\s*$",
-   "exclude_title": "\\bkiser\\s+barnes\\b"
+   "exclude_match": "\\bkiser\\s+barnes\\b",
+   "exclude_title": "\\bkiser\\s+barnes\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*barnes\\s*$"
   },
   {
    "key": "firaydoun-javaheri",
@@ -448,8 +454,10 @@
    "role": "uhj",
    "uhj_elected": 2003,
    "exclude": "newer-generation",
-   "exclude_match": "\\b(?:f[ae]r[ae]?[iy]?d[o]?[ou]n\\s+)?jav[aā]h[eé]r[iī]\\b",
-   "exclude_title": "\\bjav[aā]h[eé]r[iī]\\b"
+   "exclude_match": "\\bf[aei]r[aeiy]{0,2}d[o]?[ou]n\\s+jav[aā]h[eé]r[iī]\\b|فریدون\\s+جواهری",
+   "exclude_title": "\\bf[aei]r[aeiy]{0,2}d[o]?[ou]n\\s+jav[aā]h[eé]r[iī]\\b|فریدون\\s+جواهری",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*jav[aā]h[eé]r[iī]\\s*$",
+   "exclude_surname_title": "\\bjav[aā]h[eé]r[iī]\\b|جواهری"
   },
   {
    "key": "payman-mohajer",
@@ -461,8 +469,10 @@
    "role": "uhj",
    "uhj_elected": 2003,
    "exclude": "newer-generation",
-   "exclude_match": "\\bp[ae]yman\\s+mohajer\\b",
-   "exclude_title": "\\bp[ae]yman\\s+mohajer\\b"
+   "exclude_match": "\\bp[ae]yman\\s+m[ou]h[aā]j[eé]r\\b|پیمان\\s+مهاجر",
+   "exclude_title": "\\bp[ae]yman\\s+m[ou]h[aā]j[eé]r\\b|پیمان\\s+مهاجر",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*m[ou]h[aā]jj?[eéi]r\\s*$",
+   "exclude_keep": "ra[hḥ]mat|\\br\\.\\s*m[ou]h"
   },
   {
    "key": "paul-lample",
@@ -473,8 +483,10 @@
    "role": "uhj",
    "uhj_elected": 2005,
    "exclude": "newer-generation",
-   "exclude_match": "\\blample\\b",
-   "exclude_title": "\\blample\\b"
+   "exclude_match": "\\bpaul\\s+lample\\b",
+   "exclude_title": "\\bpaul\\s+lample\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*lample\\s*$",
+   "exclude_surname_title": "\\blample\\b"
   },
   {
    "key": "gustavo-correa",
@@ -485,8 +497,9 @@
    "role": "uhj",
    "uhj_elected": 2008,
    "exclude": "newer-generation",
-   "exclude_match": "\\b(?:gustavo\\s+)?corr?[eê]a\\b",
-   "exclude_title": "\\bgustavo\\s+corr?[eê]a\\b"
+   "exclude_match": "\\bgustavo\\s+corr?[eê]a\\b",
+   "exclude_title": "\\bgustavo\\s+corr?[eê]a\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*corr?[eê]a\\s*$"
   },
   {
    "key": "shahriar-razavi",
@@ -498,7 +511,8 @@
    "uhj_elected": 2008,
    "exclude": "newer-generation",
    "exclude_match": "\\bshahri?ar\\s+razavi\\b",
-   "exclude_title": "\\bshahri?ar\\s+razavi\\b"
+   "exclude_title": "\\bshahri?ar\\s+razavi\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*razavi\\s*$"
   },
   {
    "key": "stephen-hall",
@@ -508,7 +522,8 @@
    "uhj_elected": 2010,
    "exclude": "newer-generation",
    "exclude_match": "\\bstephen\\s+hall\\b",
-   "exclude_title": "\\bstephen\\s+hall\\b"
+   "exclude_title": "\\bstephen\\s+hall\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*hall\\s*$"
   },
   {
    "key": "chuungu-malitonga",
@@ -517,8 +532,10 @@
    "role": "uhj",
    "uhj_elected": 2013,
    "exclude": "newer-generation",
-   "exclude_match": "\\bmalitonga\\b",
-   "exclude_title": "\\bmalitonga\\b"
+   "exclude_match": "\\bchuungu\\s+malitonga\\b",
+   "exclude_title": "\\bchuungu\\s+malitonga\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*malitonga\\s*$",
+   "exclude_surname_title": "\\bmalitonga\\b"
   },
   {
    "key": "ayman-rouhani",
@@ -528,7 +545,8 @@
    "uhj_elected": 2013,
    "exclude": "newer-generation",
    "exclude_match": "\\bayman\\s+rouhani\\b",
-   "exclude_title": "\\bayman\\s+rouhani\\b"
+   "exclude_title": "\\bayman\\s+rouhani\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*rouhani\\s*$"
   },
   {
    "key": "juan-francisco-mora",
@@ -540,7 +558,8 @@
    "uhj_elected": 2018,
    "exclude": "newer-generation",
    "exclude_match": "\\bjuan\\s+(?:francisco\\s+)?mora\\b",
-   "exclude_title": "\\bjuan\\s+francisco\\s+mora\\b"
+   "exclude_title": "\\bjuan\\s+(?:francisco\\s+)?mora\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*mora\\s*$"
   },
   {
    "key": "praveen-mallik",
@@ -550,7 +569,8 @@
    "uhj_elected": 2023,
    "exclude": "newer-generation",
    "exclude_match": "\\bpraveen\\s+mallik\\b",
-   "exclude_title": "\\bpraveen\\s+mallik\\b"
+   "exclude_title": "\\bpraveen\\s+mallik\\b",
+   "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*mallik\\s*$"
   }
  ],
  "not_speakers": [

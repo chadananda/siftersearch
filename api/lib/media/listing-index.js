@@ -140,11 +140,13 @@ export function shapeSpeakers(items, speakerRows = [], photoOf = () => null) {
 
 /** Build (or refresh) the index. rows: published DB rows (with dir, updated_at); readItem(row) → { meta, quotes, wave };
  *  cache: Map id → { at, row }. Re-reads only rows whose updated_at changed, at most `budget` per call (the rest stay
- *  pending and are reported). → { items, pending } in rows' order. */
-export async function buildIndex(rows, { readItem, cache = new Map(), budget = Infinity } = {}) {
+ *  pending and are reported). exclude(row) → truthy drops the row (an excluded speaker — data/media-speaker-people.json —
+ *  never listed, whatever its state says). → { items, pending } in rows' order. */
+export async function buildIndex(rows, { readItem, cache = new Map(), budget = Infinity, exclude = null } = {}) {
   const items = [];
   let read = 0, pending = 0;
   for (const r of rows) {
+    if (exclude?.(r)) continue;
     const hit = cache.get(r.id);
     if (hit && hit.at === r.updated_at) { items.push(hit.row); continue; }
     if (read >= budget) { pending++; items.push(hit?.row || shapeRow(r)); continue; }

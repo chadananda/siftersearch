@@ -395,7 +395,7 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   // Shorts, not "about" the speaker, one per duplicate group
   const t = JSON.parse(await rf(talks, 'utf8').catch(() => '{}'));
   const { excludedBy } = await import('../media/exclusions.js');
-  const excludedTarget = deps.excluded || ((x) => !!(excludedBy({ speaker: x.speaker || '' }) || excludedBy({ title: x.title || '' })));
+  const excludedTarget = deps.excluded || ((x) => !!excludedBy({ speaker: x.speaker || '', title: x.title || '' }));
   const info = new Map();
   const registered = [];
   const seenGroup = new Set();
@@ -775,22 +775,27 @@ async function youtubeTargetInfo(files = ['youtube-talks.json', 'youtube-queue.j
 export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
-  const { excludedBy, loadExclusions } = await import('../media/exclusions.js');
+  const { excludedBy, unsureBy, loadExclusions } = await import('../media/exclusions.js');
   const rules = deps.rules || loadExclusions();
   const targets = deps.targets || await youtubeTargetInfo();
   const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
   const hits = [];
+  const unsure = [];   // surname only (Chad 10-23: "spelling is not trustworthy") — listed for Chad, NOT excluded
   for (const it of await repo.exclusionCandidates()) {
     const meta = it.dir ? await read(it.dir).catch(() => null) : null;
     const t = it.youtube_id ? targets.get(it.youtube_id) : null;
-    const m = [it.speaker, meta?.speaker, t?.speaker].filter(Boolean).map((speaker) => excludedBy({ speaker }, rules)).find(Boolean)
-      || excludedBy({ title: it.title || meta?.title || '', sourceTitle: meta?.source?.title || t?.title || '' }, rules);
-    if (m) hits.push({ id: it.id, slug: it.slug, title: it.title || meta?.title || t?.title || null, speaker: it.speaker || meta?.speaker || t?.speaker || null, state: it.state,
-      published: it.state === 'done', doc_id: it.doc_id || meta?.doc_id || null, person: m.person, reason: m.reason, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) });
+    const titles = { title: it.title || meta?.title || '', sourceTitle: meta?.source?.title || t?.title || '' };
+    const speakers = [it.speaker, meta?.speaker, t?.speaker].filter(Boolean);
+    const m = speakers.map((speaker) => excludedBy({ speaker, ...titles }, rules)).find(Boolean) || excludedBy(titles, rules);
+    const row = { id: it.id, slug: it.slug, title: it.title || meta?.title || t?.title || null, speaker: it.speaker || meta?.speaker || t?.speaker || null, state: it.state,
+      published: it.state === 'done', doc_id: it.doc_id || meta?.doc_id || null, year: meta?.year || null };
+    if (m) { hits.push({ ...row, person: m.person, reason: m.reason, evidence: m.evidence, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) }); continue; }
+    const u = speakers.map((speaker) => unsureBy({ speaker, ...titles }, rules)).find(Boolean) || unsureBy(titles, rules);
+    if (u) unsure.push({ ...row, might_be: u.person, evidence: u.evidence });
   }
   const by = (k) => Object.fromEntries([...new Set(hits.map((h) => h[k]))].map((v) => [v, hits.filter((h) => h[k] === v).length]));
   const out = { matched: hits.length, published: hits.filter((h) => h.published).length, queued: hits.filter((h) => !h.published).length, by_person: by('person'), by_state: by('state'),
-    talks: hits.map(({ jobs, ...h }) => h) };
+    talks: hits.map(({ jobs, ...h }) => h), unsure };
   if (!write) return out;
   const ids = new Set(hits.map((h) => h.id));
   // 1. no lane picks them up again; a run in hand stops at its next stage (runItem checks the row)
