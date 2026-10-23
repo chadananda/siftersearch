@@ -23,6 +23,8 @@ function fileOutline(doc, rows) {
 export async function sectionIndexJob({ ids = null, limit = 0, unread = false } = {}) {
   if (unread) { ids = await docsWithoutStructure(100000); if (!ids.length) return { docs: 0, with_sections: 0, from_outline: 0, sections: 0, largest: null }; }
   const stats = { docs: 0, with_sections: 0, from_outline: 0, sections: 0, largest: null };
+  // an EMPTY id list means nothing to do — not 'every document' (10-23: an empty list from a failed lookup re-read 500 docs)
+  if (Array.isArray(ids) && !ids.length) return stats;
   const of = ids?.length || null;
   let lastLog = Date.now();
   // pages of 500: by id chunks when given ids (an unread pass can be tens of thousands), else walking the table by id

@@ -16,8 +16,15 @@ def load(path, sr=SR, start=None, dur=None):
     if dur is not None:
         cmd += ['-t', str(dur)]
     cmd += ['-i', path, '-ac', '1', '-ar', str(sr), '-f', 'f32le', '-']
-    out = subprocess.run(cmd, capture_output=True, check=True).stdout
-    return np.frombuffer(out, dtype=np.float32).copy()
+    r = subprocess.run(cmd, capture_output=True)
+    if r.returncode != 0:   # once more after a breath: a busy host's decode has failed intermittently (10-23)
+        time.sleep(3)
+        r = subprocess.run(cmd, capture_output=True)
+    if r.returncode != 0:
+        # the command and its own error, not a traceback tail (10-23 watchdog)
+        raise RuntimeError(f'ffmpeg exit {r.returncode} on {os.path.basename(str(path))} (start {start}, dur {dur}): '
+                           f'{r.stderr.decode("utf8", "replace")[:2000].strip() or "no stderr"}')
+    return np.frombuffer(r.stdout, dtype=np.float32).copy()
 
 
 def frame_snr(x, sr=SR):

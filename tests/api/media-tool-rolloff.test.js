@@ -48,3 +48,18 @@ describe.skipIf(!ok || spawnSync('ffmpeg', ['-version']).status !== 0)('media_to
     expect(bad.stderr).toMatch(/filter not allowed/);
   });
 });
+
+describe.skipIf(!ok)('media_tool load', () => {
+  it('a failed decode names ffmpeg, the file and its error', () => {
+    const r = spawnSync('python3', ['-c', `
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location('mt', sys.argv[1]); mt = importlib.util.module_from_spec(spec); spec.loader.exec_module(mt)
+mt.time.sleep = lambda s: None
+try:
+    mt.load('/nonexistent/x.flac', start=10, dur=5)
+except RuntimeError as e:
+    print(str(e))
+`, join(process.cwd(), 'scripts/media/media_tool.py')], { encoding: 'utf8' });
+    expect(r.stdout).toMatch(/ffmpeg exit \d+ on x\.flac \(start 10, dur 5\): .*No such file/);
+  });
+});
