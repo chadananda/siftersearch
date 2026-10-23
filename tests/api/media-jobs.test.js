@@ -1,6 +1,7 @@
 // media-scan: new files and YouTube URLs become queued items; a file already held (same sha256) or a YouTube id already
 // held is not added twice; one item job is queued at a time and the scan re-queues itself behind it.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+process.env.MEDIA_FEED = '0';   // these cover the legacy one-at-a-time scan chain (the feed loop is the default)
 const store = { items: [] };
 vi.mock('../../api/lib/repos/media-repo.js', () => ({
   createMediaItem: vi.fn(async (f) => { const it = { id: store.items.length + 1, state: 'queued', ...f }; store.items.push(it); return it; }),

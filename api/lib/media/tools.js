@@ -14,7 +14,12 @@ export const PY_DFN = () => process.env.MEDIA_DFN_PYTHON || join(homedir(), 'sif
 export const YTDLP = () => process.env.MEDIA_YTDLP || join(homedir(), 'sifter', 'venvs', 'media', 'bin', 'yt-dlp');
 // 8: measured 10-21 23:55 (12 fresh queries each, POST /api/search/multi): tower diarization at 12 threads → p90 3.8 s, max 5.3 s;
 // at 8 → median 1.6 s, p90 2.1 s; idle → 1.8–2.2 s, p90 2.4–3.0 s. Search stays in its usual range at 8.
-export const defaultThreads = () => Math.max(2, Number(process.env.MEDIA_THREADS) || 8);
+// N items are processed at once (MEDIA_PARALLEL); tower's share stays ≤ 8 threads in total (plan §12), boss's ~30
+export const BOSS_THREADS = 32;   // boss: 16 cores / 32 threads
+// measured on boss 10-22 (10 min of audio, large-v3-turbo): 1 job × 24 threads 5.3 audio-min per wall-min · 2 × 12: 8.3 ·
+// 3 × 8: 9.4 · 4 × 6: 14.4 → four items at once, 6 ASR threads each (+ diarization beside them)
+export const mediaParallel = () => Math.max(1, Math.min(6, Number(process.env.MEDIA_PARALLEL) || 4));
+export const defaultThreads = () => Math.max(2, Number(process.env.MEDIA_THREADS) || Math.floor(8 / mediaParallel()));
 
 // every live child, killed when this process exits — a drained service exits as soon as its job yields, and a sibling
 // child whose own stop-poll had not fired yet (the ssh beside a killed diarization, 10-22 00:13) was left orphaned
@@ -66,7 +71,7 @@ export async function tool(sub, input, opts = {}, { python = PY(), threads = def
 // ── ASR on boss (measured 10-21: Zen 5 runs Whisper turbo at RTF 0.06 vs 0.36 on tower's Xeons; tower's search stays
 // untouched). Through a forced-command key (scripts/media/boss-asr-gate.sh): audio on stdin, JSON on stdout. ──
 export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
-export const asrThreads = () => Number(process.env.MEDIA_ASR_THREADS) || 24;
+export const asrThreads = () => Number(process.env.MEDIA_ASR_THREADS) || Math.max(4, Math.floor(BOSS_THREADS / mediaParallel()) - 2);
 let installedOn = null;
 
 /** The remote command line for the gate (one token per option; the prompt travels base64). Pure. */
@@ -261,7 +266,7 @@ export async function searchP90(n = 5, { probe = searchLatency } = {}) {
  * boss through the gate, the turns come back and are written to `output`. Only when boss cannot be reached does it run on
  * tower — detached, ≤ 4 threads, nice 19 — and never while search p90 is above 4 s (it waits, then gives up).
  */
-export async function diarize(input, output, { host = asrHost(), threads = 16, stop = null, pidFile = `${output}.pid`, towerThreads = 4,
+export async function diarize(input, output, { host = asrHost(), threads = Math.max(2, Math.floor(BOSS_THREADS / (2 * mediaParallel()))), stop = null, pidFile = `${output}.pid`, towerThreads = 4,
   p90 = searchP90, maxWaitMs = 30 * 60_000, remote = asr, detached = detachedTool, pause: wait = pause } = {}) {
   const { writeFile } = await import('fs/promises');
   if (host) {

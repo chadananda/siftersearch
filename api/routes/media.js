@@ -359,6 +359,12 @@ export default async function mediaRoutes(fastify) {
 
   // ── admin ──
   // the REPAIR LIST: graded items at C or worse, grouped by their recommended fix chain (a batch gets one treatment)
+  // PROGRESS by source (downloaded / in progress / published / failed / held / waiting) + throughput over the last 24 h
+  fastify.get('/admin/progress', { preHandler: requireInternal }, async () => {
+    const { progressCounts, publishedSince } = await import('../lib/repos/media-repo.js');
+    const day = await publishedSince(new Date(Date.now() - 24 * 3600_000).toISOString());
+    return { by_source: await progressCounts(), last_24h: { published: day.n || 0, audio_hours: Math.round(((day.secs || 0) / 3600) * 10) / 10 } };
+  });
   fastify.get('/admin/repairs', { preHandler: requireInternal }, async (req) => ({ groups: await repairList({ minGrade: /^[A-E]$/.test(req.query?.min || '') ? req.query.min : 'C' }), counts: await gradeCounts() }));
   // one item's full quality report (every dimension, the chain with costs)
   fastify.get('/admin/quality/:slug', { preHandler: requireInternal }, async (req, reply) => {

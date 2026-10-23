@@ -34,6 +34,8 @@ export async function mediaFiles(dir) {
   return out.sort((a, b) => a.size - b.size);
 }
 
+export const feedOn = () => process.env.MEDIA_FEED !== '0';
+
 export async function mediaScanJob({ roots = null, paths = [], urls = [], batch = 1, round = 1, queueOnly = false } = {}, deps = {}) {
   const { list = mediaFiles, sha = sha256Of, queue = enqueue, by = 'media-scan' } = deps;
   const out = { round, added: [], held: [], queued: [], skipped: 0 };
@@ -63,6 +65,11 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   // one polite retry
   const cooling = (await youtubeHeldSince(COOL_HOURS))?.n > 0;
   if (!cooling) await releaseHeldYoutube(COOL_HOURS);
+  // processing is fed by the media service's feed loop (N at once, by rank); the old one-at-a-time chain is off
+  if (feedOn()) {
+    await logActivity('media', `media scan round ${round}: ${out.added.length} added, ${out.held.length} held (the feed loop schedules them)`).catch(() => {});
+    return { ...out, remaining: null };
+  }
   const next = (await pendingMedia(batch + 200)).filter((i) => i.state === 'queued' && !(cooling && i.source_kind === 'youtube')).slice(0, batch);
   for (const it of next) { await updateMediaItem(it.id, { state: 'scheduled' }); await queue('media-item', { id: it.id }, by); out.queued.push(it.id); }
   const remaining = (await pendingMedia(5000)).filter((i) => i.state === 'queued' && !(cooling && i.source_kind === 'youtube')).length;
@@ -71,7 +78,7 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null } = {}, deps = {}) {
+export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null } = {}, deps = {}) {
   // ids: [..] or 'done' (every published item) → one media-item run each, same options (a back-fill: { ids: 'done', redo: [...] })
   if (id == null && ids) {
     const list = ids === 'done' ? await (deps.repo || await import('../repos/media-repo.js')).doneItemIds() : [].concat(ids).map(Number).filter(Boolean);
@@ -331,5 +338,78 @@ export async function mediaPortraitsExtendJob({ keys = null, force = false, limi
     }
   }
   await logActivity('media', `▶ portraits extended: ${out.extended} (${out.kept} kept, ${out.failed.length} failed) · $${out.usd}`).catch(() => {});
+  return out;
+}
+
+// ── THROUGHPUT (Chad 10-22: "about a month" at one item at a time) ──────────────────────────────────────────────────────
+// media-rank: the queue order — the curated sheet → Hooper Dunbar → other Hands/UHJ (the YouTube queue file's own order) →
+// local talks (Hands/UHJ speakers first) → anything else. Lower rank = sooner.
+export async function rankFor(row, ytOrder, role) {
+  if (row.source_kind === 'youtube') {
+    const q = ytOrder.get(row.youtube_id);
+    if (q) return (q.tier.startsWith('1-') ? 1000 : /Hooper C Dunbar/.test(q.tier) ? 2000 : 3000) + q.i;
+    return 6000 + row.id;
+  }
+  return (['hand', 'uhj'].includes(role) ? 4000 : 5000) + (row.id % 1000);
+}
+export async function mediaRankJob({ file = join(process.cwd(), 'planning', 'media-targets', 'youtube-queue.json') } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { speakerRole } = deps.listing || await import('../media/listing-index.js');
+  const { readFile: rf } = await import('fs/promises');
+  const list = JSON.parse(await rf(file, 'utf8').catch(() => '[]'));
+  const ytOrder = new Map(list.map((x, i) => [youtubeId(x.url), { tier: String(x.tier || ''), i }]).filter(([k]) => k));
+  const rows = await repo.rankRows();
+  const ranks = [];
+  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor(r, ytOrder, speakerRole(r.speaker || '', { year: r.year })) });
+  await repo.setQueueRanks(ranks);
+  const by = (lo, hi) => ranks.filter((x) => x.rank >= lo && x.rank < hi).length;
+  return { ranked: ranks.length, curated: by(1000, 2000), dunbar: by(2000, 3000), hands_uhj_youtube: by(3000, 4000), local_hands_uhj: by(4000, 5000), local_other: by(5000, 6000), other: by(6000, 1e9) };
+}
+
+// media-fetch { limit }: DOWNLOADS, apart from processing — the next YouTube items by rank go into the archive (audio via
+// yt-dlp + PO token → Titan → Seemuapps, the original kept, meta written), politely paced; the item goes back to 'queued'
+// for processing. A bot check stops the round and holds the item for the cool-down.
+export async function mediaFetchJob({ limit = 6, pauseMs = 25000 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { runItem } = deps.runItem ? deps : await import('../media/item.js');
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
+  const nap = deps.nap || ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const out = { downloaded: [], held: [], failed: [] };
+  if ((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0) return { ...out, cooling: true };
+  for (const it of await repo.nextToDownload(limit)) {
+    if (draining()) break;
+    await repo.updateMediaItem(it.id, { state: 'running', stage: 'archive' });
+    try {
+      await runItem(it, { only: ['archive'] });
+      await repo.updateMediaItem(it.id, { state: 'queued', stage: 'archive' });
+      out.downloaded.push(it.id);
+    } catch (err) {
+      if (err.code === 'BOT_CHECK') { await repo.updateMediaItem(it.id, { state: 'held', why: String(err.message).slice(0, 500) }); out.held.push(it.id); break; }
+      await repo.updateMediaItem(it.id, { state: 'failed', why: `download: ${String(err.message).slice(0, 480)}` });
+      out.failed.push({ id: it.id, why: String(err.message).slice(0, 160) });
+    }
+    await nap(pauseMs + Math.round(Math.random() * pauseMs));   // polite pacing
+  }
+  if (out.downloaded.length || out.failed.length) await logActivity('media', `⬇ media downloads: ${out.downloaded.length} in, ${out.failed.length} failed, ${out.held.length} held`).catch(() => {});
+  return out;
+}
+
+/** One FEED pass (the media service runs it every 30 s): keep N new items in processing (by rank, as priority runs so they
+ *  go ahead of re-runs of published items) and one download run queued. → { scheduled, inflight } */
+export async function mediaFeedPass(deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const parallel = deps.parallel || (await import('../media/tools.js')).mediaParallel();
+  const queue = deps.queue || ops.enqueue;
+  const pending = await ops.pendingRuns('media-item');
+  const inflight = pending.filter((r) => r.params?.feed).length;
+  const out = { scheduled: [], inflight };
+  for (const it of await repo.nextToProcess(Math.max(0, parallel - inflight))) {
+    await repo.updateMediaItem(it.id, { state: 'scheduled' });
+    await queue('media-item', { id: it.id, feed: true, priority: true }, 'media-feed');
+    out.scheduled.push(it.id);
+  }
+  const fetchPending = (await ops.pendingRuns('media-fetch')).length;
+  if (!fetchPending && (await repo.nextToDownload(1)).length && !((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0)) { await queue('media-fetch', { limit: 6 }, 'media-feed'); out.fetch = true; }
   return out;
 }

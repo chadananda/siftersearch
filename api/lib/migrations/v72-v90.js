@@ -1872,6 +1872,13 @@ export const migrations = {
     }
     logger.info('Migration 170 complete: media_speakers ext_*');
   },
+
+  171: async () => {
+    // THE MEDIA QUEUE ORDER (Chad 10-22): curated sheet → Hooper Dunbar → other Hands/UHJ → local talks (lower = sooner)
+    try { await query('ALTER TABLE media_items ADD COLUMN queue_rank INTEGER'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_queue ON media_items(state, queue_rank, id)');
+    logger.info('Migration 171 complete: media_items.queue_rank');
+  },
 };
 
 export const graphMigrations = {

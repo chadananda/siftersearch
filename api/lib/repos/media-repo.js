@@ -6,7 +6,7 @@ import { LIVE_SQL } from '../entity-live.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
-const COLS = new Set(['audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
+const COLS = new Set(['queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
   'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
@@ -48,7 +48,29 @@ export async function releaseHeldYoutube(hours) {
 }
 
 /** Items still to process (queued, or interrupted while running), oldest first. */
-export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY id LIMIT ?`, [limit], 'media:pending')).map(parse);
+export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY COALESCE(queue_rank, 9000000), id LIMIT ?`, [limit], 'media:pending')).map(parse);
+/** The next items to PROCESS, by rank: queued, and (a YouTube item) already downloaded — downloads have their own lane. */
+export const nextToProcess = async (limit = 3) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND (source_kind != 'youtube' OR dir IS NOT NULL)
+  ORDER BY COALESCE(queue_rank, 9000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
+/** The next YouTube items to DOWNLOAD, by rank (queued, not yet in the archive). */
+export const nextToDownload = async (limit = 5) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND source_kind = 'youtube' AND dir IS NULL
+  ORDER BY COALESCE(queue_rank, 9000000), id LIMIT ?`, [limit], 'media:next-download')).map(parse);
+/** Set queue ranks: rows [{ id, rank }] (one transaction). */
+export async function setQueueRanks(rows = []) {
+  for (let i = 0; i < rows.length; i += 500) await transaction(rows.slice(i, i + 500).map((r) => ({ sql: 'UPDATE media_items SET queue_rank = ? WHERE id = ?', args: [r.rank, r.id] })), 'media:ranks');
+  return rows.length;
+}
+/** Every item's id, source and identity (for ranking). */
+export const rankRows = async () => queryAll(`SELECT id, source_kind, youtube_id, speaker, year, state FROM media_items WHERE state NOT IN ('duplicate')`, [], 'media:rank-rows');
+/** Progress by source: downloaded (in the archive) / published / failed / held / waiting. */
+export const progressCounts = async () => queryAll(`SELECT source_kind source, COUNT(*) total,
+  SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
+  SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed, SUM(CASE WHEN state = 'held' THEN 1 ELSE 0 END) held,
+  SUM(CASE WHEN state IN ('scheduled', 'running') THEN 1 ELSE 0 END) in_progress, SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) waiting,
+  SUM(CASE WHEN state = 'done' THEN COALESCE(duration_s, 0) ELSE 0 END) published_s
+  FROM media_items WHERE state != 'duplicate' GROUP BY source_kind`, [], 'media:progress');
+/** Items published since a time (throughput). */
+export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };
 
 /** The /media listing: published items (state 'done'), filtered. → { items, total } */
 export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, audience, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {

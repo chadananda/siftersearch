@@ -7,7 +7,8 @@
   const DIMS = ['bandwidth', 'noise', 'reverb', 'clipping', 'dropouts', 'level', 'speed', 'intelligibility'];
   let tab = $state('repairs');
   let grade = $state('');
-  let repairs = $state(null), list = $state(null), report = $state(null), error = $state(null);
+  let repairs = $state(null), list = $state(null), report = $state(null), error = $state(null), progress = $state(null);
+  $effect(() => { admin.getMediaProgress().then((d) => (progress = d)).catch(() => {}); });
   const fmtMin = (s) => (s ? `${Math.round(s / 60)} min` : '');
   const tone = (g) => ({ A: 'text-success', B: 'text-success', C: 'text-warning', D: 'text-error', E: 'text-error' }[g] || 'text-muted');
 
@@ -20,6 +21,16 @@
   <h1 class="text-2xl font-semibold text-primary mb-1">Media quality</h1>
   <p class="text-muted mb-4">Each recording graded A–E per dimension on its original (before any processing). The repair list groups recordings by the fix chain they need, most urgent first (priority = (5 − grade) × speaker importance).</p>
   {#if error}<p class="text-error mb-4">{error}</p>{/if}
+  {#if progress}
+    <!-- the import, by source: downloaded / in progress / published / failed (Chad 10-22: "how is the import going") -->
+    <div class="mb-4 space-y-1 text-sm text-secondary">
+      {#each progress.by_source as p (p.source)}
+        <p><b class="text-primary">{p.source === 'youtube' ? 'YouTube' : 'Local recordings'}</b> · {p.total} targets · {p.downloaded} downloaded · {p.in_progress} in progress ·
+          {p.published} published ({Math.round(p.published_s / 360) / 10} h) · {p.waiting} waiting{p.failed ? ` · ${p.failed} failed` : ''}{p.held ? ` · ${p.held} held` : ''}</p>
+      {/each}
+      <p class="text-muted">Last 24 h: {progress.last_24h.published} published ({progress.last_24h.audio_hours} h of audio)</p>
+    </div>
+  {/if}
   {#if repairs?.counts}
     <p class="mb-4 text-sm text-secondary">
       {#each Object.entries(repairs.counts.reduce((a, r) => ({ ...a, [r.grade || '—']: (a[r.grade || '—'] || 0) + r.n }), {})) as [g, n] (g)}<span class="mr-3"><b class={tone(g)}>{g}</b> {n}</span>{/each}

@@ -939,6 +939,7 @@ export const admin = {
   },
 
   // Media library quality (/admin/media): the repair list grouped by fix chain, a full per-item report, the graded listing
+  async getMediaProgress() { return request('/api/media/admin/progress'); },
   async getMediaRepairs(min = 'C') { return request(`/api/media/admin/repairs?min=${encodeURIComponent(min)}`); },
   async getMediaQuality(slug) { return request(`/api/media/admin/quality/${encodeURIComponent(slug)}`); },
   async getMediaGraded(query = '') { return request(`/api/media?facets=0&limit=200&sort=priority${query ? `&${query}` : ''}`); },
