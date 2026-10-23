@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-23T17:21:38.485Z",
+  "generated": "2026-10-23T17:35:45.986Z",
   "entries": [
+    {
+      "hash": "734963d9",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Boss diarizes 3 at a time (was 6) — at 6 (load 85 on 32 threads) its transcriptions slowed to RTF 0.5–1.2 (was ~0.3); nice 19 alone did not protect them",
+      "scope": "media"
+    },
+    {
+      "hash": "61256c89",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Response rules, receipts, a cheap Jev screen, debounce, \"now live\" notes, book requests",
+      "scope": "dewey"
+    },
     {
       "hash": "efd29b06",
       "date": "2026-10-23",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "BM25 for scraped sites (keyword-fill-sites, heavy lane) — page chrome counted unindexable; dial cells no longer pulse on their own",
       "scope": "index"
-    },
-    {
-      "hash": "050cb369",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Keyword-fill only records rows with no words when a document is otherwise complete — no re-send",
-      "scope": "index"
-    },
-    {
-      "hash": "e233f52b",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "BM25 ledger leaves out paragraphs with no words — 21,020 markup-only rows ('",
-      "scope": "index"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "734963d9",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Boss diarizes 3 at a time (was 6) — at 6 (load 85 on 32 threads) its transcriptions slowed to RTF 0.5–1.2 (was ~0.3); nice 19 alone did not protect them",
+        "scope": "media"
+      },
+      {
+        "hash": "61256c89",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Response rules, receipts, a cheap Jev screen, debounce, \"now live\" notes, book requests",
+        "scope": "dewey"
+      },
       {
         "hash": "efd29b06",
         "date": "2026-10-23",
@@ -7000,20 +7014,6 @@
         "date": "2026-10-17",
         "type": "New",
         "description": "BM25 for scraped sites (keyword-fill-sites, heavy lane) — page chrome counted unindexable; dial cells no longer pulse on their own",
-        "scope": "index"
-      },
-      {
-        "hash": "050cb369",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Keyword-fill only records rows with no words when a document is otherwise complete — no re-send",
-        "scope": "index"
-      },
-      {
-        "hash": "e233f52b",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "BM25 ledger leaves out paragraphs with no words — 21,020 markup-only rows ('",
         "scope": "index"
       }
     ]

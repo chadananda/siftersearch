@@ -307,3 +307,15 @@ describe('the daily digest: a Dewey section — decisions, screen, costs, letter
     expect(conversationDigest(g.conversations, { reviewer: 'c', date: 't' }).html).toMatch(/_mail\/dewey\/approve\?t=[a-f0-9]{32}[\s\S]*Approve the book-request template/);
   });
 });
+
+describe('book-request greeting', () => {
+  it('uses the name they sign with, never a role word like "Admin"', async () => {
+    const call = vi.fn(async () => ({ contributors: [{ email: 'chad@example.org', name: 'Admin', total: 20, recent: 6, picks: [{ title: 'A Work', author: 'B', why: 'wanted' }] }] }));
+    await deweyRequests(env, { call });
+    expect(rows(`SELECT text FROM mail_messages WHERE kind = 'request'`)[0].text).toMatch(/^Dear friend,/);
+    env.ANIS_DB.raw.prepare(`DELETE FROM mail_messages`).run();
+    env.ANIS_DB.raw.prepare(`INSERT INTO mail_messages (mailbox, direction, status, from_addr, from_name) VALUES ('dewey', 'in', 'answered', 'chad@example.org', 'Chad Jones')`).run();
+    await deweyRequests(env, { call });
+    expect(rows(`SELECT text FROM mail_messages WHERE kind = 'request'`)[0].text).toMatch(/^Dear Chad,/);
+  });
+});

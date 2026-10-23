@@ -397,7 +397,10 @@ export async function deweyRequests(env, { call = tower } = {}) {
     }, { gapDays: Number(s.dewey_request_gap_days ?? 21) });
     if (!due.ok) { out.push({ email: addr, skipped: due.reason }); continue; }
     const picks = (c.picks || []).slice(0, 10);
-    const r = await sendDewey(env, { to: addr, toName: c.name, subject: 'A few books we are looking for', md: requestLetter(c.name, { total: c.total, recent: c.recent, picks }), kind: 'request',
+    // the name they sign with (their letters to Dewey), else the account's — never a role word like "Admin"
+    const signed = (await db.prepare(`SELECT from_name FROM mail_messages WHERE mailbox = 'dewey' AND direction = 'in' AND from_addr = ? AND from_name IS NOT NULL ORDER BY id DESC LIMIT 1`).bind(addr).first())?.from_name;
+    const name = signed || (/^(admin(istrator)?|user|test|member|librarian)\b/i.test(c.name || '') ? null : c.name);
+    const r = await sendDewey(env, { to: addr, toName: name, subject: 'A few books we are looking for', md: requestLetter(name, { total: c.total, recent: c.recent, picks }), kind: 'request',
       meta: { type: 'book request', picks: picks.length }, footer: { label: 'Pause book requests', url: await requestPauseUrl(env, addr), unsubscribe: true },
       hold: s.dewey_requests_approved === 'on' ? null : 'awaiting Chad’s approval of the book-request template' });
     out.push({ email: addr, id: r.id, status: r.status });

@@ -28,6 +28,10 @@ export function interests(items = []) {
 
 const WHY = { 'no-source': 'listed in our catalogue, but we have no copy', wanted: 'on our wanted list', researched: 'researched — we still need a copy',
   'to-buy': 'on our list to buy', lead: 'a lead our scouts found' };
+/** A row fit to show a person: a real title (not a file-name slug like "bia_blogging_suggestions"), a real author or none. Pure. */
+export const presentable = (p) => !/_|\.(pdf|docx?|html?)$/i.test(p.title || '') && /\s/.test(String(p.title || '').trim())
+  && !/^(pdf|doc|file|scan|unknown)[-_]|^[a-z0-9-]+-[a-z0-9-]+$/i.test(String(p.author || '').trim());
+
 /** Pool entries → the contributor's 5–10 best matches: [{ title, author, why, source }]. Pure.
  *  pool: [{ title, author, religion?, collection?, identified?, source: 'no-source'|state, since? }]; own: their items (never asked back). */
 export function pickRequests(pool = [], own = [], { min = 5, max = 10 } = {}) {
@@ -37,11 +41,12 @@ export function pickRequests(pool = [], own = [], { min = 5, max = 10 } = {}) {
   const scored = [];
   for (const p of pool) {
     const t = fold(p.title);
-    if (!t || t.length < 4 || mine.has(t) || seen.has(t)) continue;
+    if (!t || t.length < 4 || mine.has(t) || seen.has(t) || !presentable(p)) continue;
     seen.add(t);
     const s = shelfOf(p);
     const a = like.authors.get(fold(p.author)) || 0, c = s?.collection ? like.collections.get(`${fold(s.religion)}|${fold(s.collection)}`) || 0 : 0, r = like.religions.get(fold(s?.religion)) || 0;
-    const score = (a ? 6 + a : 0) + (c ? 3 + c : 0) + (r ? 1 : 0) + (p.source === 'no-source' ? 0.5 : 0);
+    // an author they send is the strongest sign; counts are capped so one huge shelf cannot outrank every author match
+    const score = (a ? 10 + Math.min(a, 3) : 0) + (c ? 4 + Math.min(c, 3) : 0) + (r ? 1 : 0) + (p.source === 'no-source' ? 0.5 : 0);
     const because = a ? `you have sent us other works by ${p.author}` : c ? `it fills a gap in ${s.religion} › ${s.collection}, where you have contributed` : r ? `it is in ${s.religion}, where you contribute` : null;
     scored.push({ title: p.title, author: p.author || null, why: `${WHY[p.source] || 'wanted'}${because ? `; ${because}` : ''}`, source: p.source, score, matched: !!(a || c || r) });
   }

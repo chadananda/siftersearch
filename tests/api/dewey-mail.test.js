@@ -168,8 +168,10 @@ New to the library — I have archived your copy and queued it for processing; i
 With thanks,`);
   });
   it('a single held work: linked to the library page, nothing added', () => {
-    const t = composeReply({ name: 'Ann', results: [{ verb: 'intake', label: 'ch.pdf', verdict: 'held', identified: { title: 'The Chosen Highway' }, candidates: [{ id: 12361, title: 'The Chosen Highway', author: 'Lady Blomfield' }] }] });
-    expect(t).toMatch(/\*\*Already in the library: \*The Chosen Highway\*\*\*\n\nYour file \*ch\.pdf\* is a copy of a work we hold, so nothing new was added\. \[Read it here\.\]\(https:\/\/siftersearch\.com\/document\/12361\)/);
+    const t = composeReply({ name: 'Ann', results: [{ verb: 'intake', label: 'ch.pdf', verdict: 'held', identified: { title: 'THE CHOSEN HIGHWAY' }, candidates: [{ id: 12361, title: 'The Chosen Highway', author: 'Lady Blomfield' }] }] });
+    expect(t).toContain('**Already in the library: *The Chosen Highway* by Lady Blomfield**\n\nYour file *ch.pdf* is a copy of a work we already hold, so nothing new was added. [Read it here.](https://siftersearch.com/document/12361)');
+    const part = composeReply({ results: [{ verb: 'intake', label: 'pt.txt', verdict: 'held', identified: { title: 'PARIS TALKS' }, candidates: [{ id: 20908, title: 'Paris Talks', author: "'Abdu'l-Bahá", relation: 'inside' }] }] });
+    expect(part).toContain("**Already in the library: *Paris Talks* by 'Abdu'l-Bahá**\n\nYour file *pt.txt* is part of this work, which we already hold, so nothing new was added.");
   });
   it('several works: a one-line total and a TABLE (Title · Author · Status · Link)', () => {
     const results = [
@@ -182,7 +184,7 @@ With thanks,`);
     expect(t).toContain('**5 works: 1 new, 1 already held, 1 better copy, 1 needs OCR, 1 couldn\'t read.**');
     expect(t).toContain('| Title | Author | Status | Link |');
     expect(t).toContain('| New Book | N. Author | new | [progress](https://s/i/1) |');
-    expect(t).toContain('| Held Book | — | held | [read it](https://siftersearch.com/document/2) |');
+    expect(t).toContain('| Held Book | H. Author | held | [read it](https://siftersearch.com/document/2) |');
     expect(t).toContain('| Fuller Book | — | better copy | [progress](https://s/i/3) |');
     expect(t).toContain('| Old Scan | — | needs OCR | [progress](https://s/i/5) |');
     expect(t).toContain("| x.heic | — | couldn't read | — |");
@@ -278,5 +280,19 @@ describe('names', () => {
   it('a lowercase display name is capitalised; no name → "friend"', () => {
     expect(composeReply({ name: 'chad', results: [{ verb: 'status', items: [] }] })).toMatch(/^Dear Chad,/);
     expect(isAck('got it')).toBe(true);
+  });
+});
+
+describe('book-request quality', () => {
+  it('file-name slugs and slug authors never reach a person; an author match outranks a big shelf', () => {
+    const own = [...Array.from({ length: 50 }, (_, i) => ({ title: `Note ${i}`, author: 'Z', identified: { shelf: { religion: "Baha'i", collection: 'Pilgrim Notes' } } })),
+      { title: 'Early Book', author: 'Moojan Momen' }];
+    const pool = [
+      { title: 'bia_blogging_suggestions_approaches', author: 'pdf-b-bia', religion: "Baha'i", collection: 'Pilgrim Notes', source: 'no-source' },
+      { title: 'Haifa Diary', author: 'Q', religion: "Baha'i", collection: 'Pilgrim Notes', source: 'no-source' },
+      { title: 'Later Book by Momen', author: 'Moojan Momen', source: 'to-buy' },
+    ];
+    const picks = pickRequests(pool, own);
+    expect(picks.map((p) => p.title)).toEqual(['Later Book by Momen', 'Haifa Diary']);
   });
 });

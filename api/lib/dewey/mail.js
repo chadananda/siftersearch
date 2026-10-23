@@ -175,7 +175,8 @@ export function workRows(results = [], unread = []) {
     const c = r.candidates?.[0] || {};
     const w = r.identified?.title ? r.identified : { title: r.source === 'title' ? r.label : c.title || r.label, author: c.author || null };
     if (r.verb === 'intake') {
-      if (r.verdict === 'held') rows.push({ ...w, status: 'held', link: docLink(c.id), note: c.relation && c.relation !== 'same' ? RELATION[c.relation] || c.relation : null, file: r.label });
+      // held: named as the LIBRARY names it (a file's own title page may shout "PARIS TALKS")
+      if (r.verdict === 'held') rows.push({ ...w, title: c.title || w.title, author: c.author || w.author, status: 'held', link: docLink(c.id), part: c.relation === 'inside', file: r.label });
       else if (r.item?.existing) rows.push({ ...w, status: r.item.state === 'ingested' ? 'held' : 'already received', link: r.item.doc_id ? docLink(r.item.doc_id) : r.item.url, note: `you sent this file before — it is ${STATE[r.item.state] || r.item.state}`, file: r.label });
       else rows.push({ ...w, status: r.better ? 'better copy' : r.needs_ocr ? 'needs OCR' : 'new', link: r.item?.url || null, needs_ocr: r.needs_ocr, held: r.better ? c : null, file: r.label, facts: facts(r.identified) });
       continue;
@@ -204,7 +205,7 @@ function single(r) {
   switch (r.status) {
     case 'new': case 'needs OCR': return `**Received: ${what}**\n\nNew to the library — I have archived your copy and queued it for processing; it is ${r.status === 'needs OCR' ? ETA.ocr : ETA.text}.${link('Follow its progress here.')}`;
     case 'better copy': return `**Received: a fuller copy of ${what}**\n\nWe hold only part of this work (${named(r.held || {})}), so I have archived your copy and queued it to complete ours; it is ${r.needs_ocr ? ETA.ocr : ETA.text}.${link('Follow its progress here.')}`;
-    case 'held': return `**Already in the library: ${named(r)}**\n\n${r.file ? `Your file *${r.file}* is a copy of a work we hold${r.note ? ` (${r.note})` : ''}, so nothing new was added.` : 'We hold this already.'}${link('Read it here.')}`;
+    case 'held': return `**Already in the library: ${named(r)}**\n\n${r.file ? `Your file *${r.file}* is ${r.part ? 'part of this work, which' : 'a copy of a work'} we already hold, so nothing new was added.` : 'We hold this already.'}${link('Read it here.')}`;
     case 'already received': return `**Already received: ${named(r)}**\n\n${cap(r.note)}.${link('See where it stands.')}`;
     case 'not held — wanted': return `**Not in the library yet: ${named(r)}**\n\nIt is ${r.note === 'already on our wanted list' ? 'already' : 'now'} on our wanted list, and I will look for a copy we can add. If you have a PDF or a link to one, send it and processing starts at once.${link('Its page.')}`;
     case 'possibly held': case 'held in part': return `**${r.status === 'held in part' ? 'Held in part' : 'Possibly held'}: ${named(r)}**\n\n${cap(r.note)}.${link('Take a look.')}`;
