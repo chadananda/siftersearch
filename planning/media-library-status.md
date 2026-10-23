@@ -68,6 +68,17 @@ Plan: `planning/media-library-plan.md`. Pilot review (reads the archive only): `
   styling (warm grade, soft vignette, fine static grain, thin call-sign rule). Sample: Sears, Covenant Breaking 3:54–4:24 —
   https://siftersearch.com/api/media/sears-covenant-breaking-part-3/file/shorts/ff6e5ab0312f.mp4 (3.96 MB / 33 s ≈ 7.2 MB
   per minute; rendered on boss in 18.6 s).
+* **The import's targets** (registered as catalogue rows, each with its status; /api/media/progress):
+  YouTube target list 1,480 entries = 1,450 distinct videos (30 listed twice across sections) → 66 Shorts and 243 videos
+  *about* a speaker (not by them) excluded → 1,141 → 186 repeat uploads of the same talk (138 duplicate groups, one taken
+  each) → 955 → the queue had also skipped 76 clips under ~4 min (registered now, ranked within their own section) → 881
+  queued + 76 = **957 YouTube targets** (curated 137 + 4 clips, Hooper Dunbar 169, other Hands/UHJ 575 + 72 clips).
+  Local: 449 files in /tank/media/Baha'i/talks → 31 byte-identical copies (the Acuto folders repeat the Dunbar course) →
+  **408 local recordings** (47 by Hands/UHJ, 361 others). Total ≈ **1,365 targets**; "1,880" counted every duplicate.
+* **Throughput** (Chad 10-22: "about a month"): downloads have their own lane (~22 YouTube talks/h, paced); four items are
+  processed at once (boss measured: 4 ASR jobs × 6 threads = 14.4 audio-min per minute vs 5.3 for one job × 24); talks are
+  published as soon as the core is done; re-runs go behind new items. Measured: before 2.4 talks / 0.9 audio h per hour;
+  after (first hour) 11.8 talks / 2.9 audio h per hour (≈ 3.2×).
 * **Next**: related talks (phase 1), GPU tuning on boss (ask before touching vLLM), a review list for flagged copy-edits.
 
 ## What is built and live

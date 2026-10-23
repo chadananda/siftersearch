@@ -97,3 +97,18 @@ describe('live steps and sources', () => {
     expect(set.mock.calls[0][0]).toEqual([{ id: 101, rank: 1901 }, { id: 1, rank: 1000 }]);
   });
 });
+
+describe('stage counters', () => {
+  it('the catalogue records completed stages in the form the progress counters match', async () => {
+    const { stagesDone } = await import('../../api/lib/media/item.js');
+    const s = stagesDone({ archive: { at: 'x' }, enhance: { at: 'x' }, transcribe: { at: 'x' }, quotes: { at: 'x' }, links: {} });
+    expect(s).toBe(',archive,enhance,transcribe,quotes,');
+    const { readFileSync } = await import('fs');
+    const repo = readFileSync(new URL('../../api/lib/repos/media-repo.js', import.meta.url), 'utf8');
+    for (const st of ['enhance', 'transcribe', 'quotes']) {
+      const pat = new RegExp(`stages_done LIKE '%,${st},%'`);
+      expect(repo).toMatch(pat);
+      expect(s.includes(`,${st},`)).toBe(true);
+    }
+  });
+});
