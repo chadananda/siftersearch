@@ -54,6 +54,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     thumbs: { findSpeakerImage: vi.fn(async () => null) },
     portraits: { ensurePortrait: vi.fn(async (name) => ({ status: 'found', key: 'hartmut-grossmann' })) },
     ingest: vi.fn(async () => ({ documentId: 777, links: 0 })),
+    searchFollowUp: vi.fn(async () => ['keyword-fill', 'section-index', 'phrase-index']),
     links: { bio: [], lookup: async () => [], find: async () => [], sections: async () => [], linkFor: () => ({ url: null }) },
   };
 }
@@ -205,6 +206,16 @@ describe('media item stage machine', () => {
     const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
     expect(meta.faithfulness.correct).toBe(1);
     expect(meta.stages.correct.insertions_reverted).toBe(1);
+  });
+  it('an ingested talk queues its search layers (keyword, sections, phrases) at once', async () => {
+    const { searchFollowUp } = await import('../../api/lib/media/item.js');
+    const queue = vi.fn();
+    expect(await searchFollowUp(42, { queue })).toEqual(['keyword-fill', 'section-index', 'phrase-index']);
+    expect(queue.mock.calls.map((c) => [c[0], c[1]])).toEqual([['keyword-fill', { ids: [42] }], ['section-index', { ids: [42] }], ['phrase-index', { docs: [42], maxUsd: 0.25, budgetKey: 'media-phrase-index' }]]);
+    const f = fakes();
+    const r = await runItem({ id: 8, source_kind: 'file', source_ref: src }, {}, f);
+    expect(f.searchFollowUp).toHaveBeenCalledWith(777);
+    expect(r.meta.stages.ingest.search_followups).toEqual(['keyword-fill', 'section-index', 'phrase-index']);
   });
   it('publishes before the enrichment: catalog comes before headings/quotes/links/assess, then one in-place update', async () => {
     const r = await runItem({ id: 6, source_kind: 'file', source_ref: src }, {}, fakes());

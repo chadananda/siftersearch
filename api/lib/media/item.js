@@ -29,6 +29,15 @@ export function towerSlot(fn) { const run = towerChain.then(fn, fn); towerChain 
 /** The completed stages as the catalogue keeps them (",archive,grade,…,"; LIKE '%,quotes,%' counts them). */
 export const stagesDone = (stages = {}) => `,${STAGES.filter((s) => stages[s]?.at).join(',')},`;
 
+/** Queue the search layers for one ingested media document (deduplicated by the ops queue: same job + params = one run). */
+export async function searchFollowUp(docId, { queue = null } = {}) {
+  const q = queue || (await import('../repos/ops-report-repo.js')).enqueue;
+  await q('keyword-fill', { ids: [docId] }, 'media-ingest');
+  await q('section-index', { ids: [docId] }, 'media-ingest');
+  await q('phrase-index', { docs: [docId], maxUsd: 0.25, budgetKey: 'media-phrase-index' }, 'media-ingest');
+  return ['keyword-fill', 'section-index', 'phrase-index'];
+}
+
 export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
@@ -415,6 +424,9 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'ingest' || stage === 'update') {
       const res = await (d.ingest || (await import('./ingest.js')).ingestTranscript)({ dir, meta });
       meta.doc_id = res.documentId; meta.pi = res.pi || {}; rec.doc_id = res.documentId; rec.links = res.links;
+      // SEARCH at once (Chad 10-22: "start ingesting for search"): the keyword (BM25) layer, the section index (subheaders)
+      // and the phrase layer are filled by their own jobs — queue them for this document now (embedding follows ingest)
+      if (res.documentId) { try { rec.search_followups = await (d.searchFollowUp || searchFollowUp)(res.documentId); } catch (err) { rec.search_followups = `error: ${String(err.message).slice(0, 80)}`; } }
     }
 
     if (stage === 'catalog' || stage === 'update') {
