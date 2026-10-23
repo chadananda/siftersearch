@@ -1,0 +1,137 @@
+{
+ "expect": "flag and repair: ì→“, î→”, í→’ when used as quotes (Mac-Roman/Windows-1252 double decode); U+FFFD means a lossy decode upstream",
+ "cases": [
+  {
+   "slug": "cardell-experiences-with-the-guardian-1988",
+   "para": 39,
+   "t0": 959.71,
+   "clean_excerpt": "Later that night, when we were gathered upstairs, Ugo said, ìOh, how the beloved was suffering tonight.î If you could imagine, the vision that was before him was that there was going"
+  },
+  {
+   "slug": "cardell-experiences-with-the-guardian-1988",
+   "para": 98,
+   "t0": 2611.682,
+   "clean_excerpt": " African working in the garden, I was pulling the weeds, and the minister said, ìOh, this is Joseph, he's a kunyama.î And I practically leapt out of my skin. I pretended not to notice anything, I just s"
+  },
+  {
+   "slug": "cardell-experiences-with-the-guardian-1988",
+   "para": 99,
+   "t0": 2684.991,
+   "clean_excerpt": "o I showed this translation He does this and he laughed very heartily. He said, ìIt's terrible.î So I said, ìWell, do you know a translator?î He said, ìYes, I have a great friend who's a very good trans"
+  },
+  {
+   "slug": "furutan-holy-places-part-1",
+   "para": 13,
+   "t0": 833.811,
+   "clean_excerpt": "ال اشتعال و شوق و فره و طرب مراجعت نما و اهبای الهی را تکبیر و تهییت و سنا از قب�� عبدالبها برسم در نوعی دیگر این بیانات مبارکه از یراعیل مرکز نیساق صادر ای موغین به کلمه الهوهی جناب اخری هزار فرسنگ تی"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 1,
+   "t0": 4.854,
+   "clean_excerpt": " that were done when the power of the Spirit wasn't there. And the Master said, ìWhen the power of the Spirit is absent, the human being can revert to almost any condition, and even worse than the anima"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 2,
+   "t0": 68.892,
+   "clean_excerpt": "It says, ìMan is not man because of learning and refinement, clothing and adornment. Man is man when he is imbued with the attribut"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 7,
+   "t0": 373.234,
+   "clean_excerpt": "n't get anywhere else. And this statement the Master made on page 562, he says, ìAll the people have formed a God in the world of thought.î So he didn't qualify. He said, ìAll the people have formed a G"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 9,
+   "t0": 481.258,
+   "clean_excerpt": "s called the inferior tribe of people who are worshipping objects, and he said, ìThis object you worship is a false god. I'll spit on it. It won't do anything to me.î And he says, ìNo, it won't, but we "
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 13,
+   "t0": 640.221,
+   "clean_excerpt": " one that partakes of this Divine Spirit is living. And then down here he says, ìThis quickening spirit hath spontaneous emanation from the sun of reality.î And then down below he says, ìBut this realit"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 17,
+   "t0": 892.274,
+   "clean_excerpt": " packing every day on something, but I pick myself up because the man who says, ìIf you look at your own shortcomings, youíll be discouraged. You should know about them, but donít look at them.î But by "
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 23,
+   "t0": 1180.677,
+   "clean_excerpt": "n he had quit smoking. You see, so we have to watch these things. It says here, ìDo not overlook these obvious truths, for it is self-evident fact that a child cannot be instructed without a teacher, an"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 26,
+   "t0": 1320.836,
+   "clean_excerpt": "Now, over in the same tablet, the third one, He says, ìThe little knowledge we can have regarding this subject has been disclosed to us by Bahá’u’lláh, and he has revealed it o"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 38,
+   "t0": 1790.471,
+   "clean_excerpt": "We reverse it. I am a rational human soul. And the Master said, ìThis rational human soul has inherent qualities. And inherent qualities, you can't think of a person without sight, heari"
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-2",
+   "para": 10,
+   "t0": 535.206,
+   "clean_excerpt": "making a speech of welcome. So somebody was translating for me, and he went on, ìWe poor ignorant Indians.î And then he said something, you know, welcoming me, and then the next sentence began, ìWe poor"
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-2",
+   "para": 13,
+   "t0": 717.92,
+   "clean_excerpt": "d then at the end of the meeting, I admired a mountain in the distance. I said, ìThat's a nice mountain you have over there.î And they told a very old, beautiful Indian legend in connection with this mo"
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-2",
+   "para": 17,
+   "t0": 936.789,
+   "clean_excerpt": "d all the ladies down the table and this man sat there. And I marveled. I said, ìThis is the way it ought to be."
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-2",
+   "para": 20,
+   "t0": 1145.822,
+   "clean_excerpt": "h is across the street, the Master's house, he said every single time, he said, ìOh, I like that man so much. He's such a fine man. I like him so much.î He very seldom said that. Are you sure you couldn"
+  },
+  {
+   "slug": "nakhjavani-talk-to-the-youth-q-and-a-1997",
+   "para": 164,
+   "t0": 5149.529,
+   "clean_excerpt": "One of them called his servant. He came in. He said, ìDo you know where the Volkswagen agency is?î He said, ìYes, sir, I do.î He said, ìOkay, here is ten dollars. You go and b"
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-3",
+   "para": 1,
+   "t0": 0.098,
+   "clean_excerpt": "ìPúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúú"
+  }
+ ],
+ "must_not_flag": [
+  "Bahá’í",
+  "Bahá’u’lláh",
+  "‘Abdu’l-Bahá",
+  "Anís",
+  "Ṭáhirih",
+  "Kitáb-i-Íqán",
+  "Bábí",
+  "Núr",
+  "Ḥusayn",
+  "Iṣfahán",
+  "Mázindarán",
+  "Rúḥíyyih Khánum",
+  "naïve",
+  "Zoë",
+  "Shíráz",
+  "Ridván"
+ ]
+}

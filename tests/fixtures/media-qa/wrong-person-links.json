@@ -1,0 +1,203 @@
+{
+ "expect": "every case must be rejected or resolved to the expected person (null = no link: biblical prophets, non-Bahá’í figures not in the graph); basis \"lookup\" produced 16/17 wrong links",
+ "cases": [
+  {
+   "slug": "cardell-experiences-with-the-guardian-1988",
+   "t0": 609.41,
+   "text": "Dr. Ḥakím",
+   "linked_to": "Ibráhím Khayru'lláh",
+   "url": "/biography/1248006",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "But it was a sweet thing when Dr. Ḥakím became a member, because at that time he was working as a kind of",
+   "expected": "Dr. Luṭfu’lláh Ḥakím"
+  },
+  {
+   "slug": "cardell-experiences-with-the-guardian-1988",
+   "t0": 2461,
+   "text": "Ioas,",
+   "linked_to": "Laura Barney",
+   "url": "/biography/1248048",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "only single Bahá’í who'd had African experience that I knew of. So I sent a message to Leroy, Ioas, saying, I didn't know whether I should go direct to South-West Africa or make",
+   "expected": "Leroy Ioas"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "t0": 1434.285,
+   "text": "Muḥammad-‘Alí",
+   "linked_to": "Quddús",
+   "url": "/biography/1247552",
+   "basis": "name",
+   "confidence": 0.85,
+   "context": "the very night, the very day of Bahá’u’lláh’s passing, while ‘Abdu’l-Bahá’s hands were washing the body of Bahá’u’lláh, Muḥammad-‘Alí grabbed the satchels and said, these are going to get wet, I'll take care",
+   "expected": "Mírzá Muḥammad-‘Alí (Covenant-breaker)"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "t0": 1750.582,
+   "text": "Muḥammad-‘Alí,",
+   "linked_to": "Quddús",
+   "url": "/biography/1247552",
+   "basis": "name",
+   "confidence": 0.9,
+   "context": "the things that was in the second volume, a number of things, the stories about the brothers, about Muḥammad-‘Alí, the greatness of Muḥammad-‘Alí and Badí‘u’lláh, this was because they were the holy family",
+   "expected": "Mírzá Muḥammad-‘Alí (Covenant-breaker)"
+  },
+  {
+   "slug": "featherstone-echoes-from-the-lotus-part-2",
+   "t0": 877.207,
+   "text": "Ḥájí Mírzá ‘Abdu’lláh-i-Ṣaḥíḥ-Furúsh",
+   "linked_to": "‘Abdu’l-Bahá",
+   "url": "/biography/1247563",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "This insignificant servant Some time passed when one day I received a message from Ḥájí Mírzá ‘Abdu’lláh-i-Ṣaḥíḥ-Furúsh who was a well-known figure among the Bahá’ís and a channel of communication with",
+   "expected": "Ḥájí Mírzá ‘Abdu’lláh-i-Ṣaḥíḥ-Furúsh"
+  },
+  {
+   "slug": "harris-the-choice-wine-2",
+   "t0": 560.503,
+   "text": "Leroy Ioas,",
+   "linked_to": "Laura Barney",
+   "url": "/biography/1248048",
+   "basis": "lookup",
+   "confidence": 0.9,
+   "context": "of you are students. And ‘Abdu’l-Bahá passed away. And years later, he told the Hand of the Cause, Leroy Ioas, that he had no idea whatsoever that he would be called upon to become",
+   "expected": "Leroy Ioas"
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-5",
+   "t0": 733.897,
+   "text": "Sutherland Maxwell,",
+   "linked_to": "May Maxwell",
+   "url": "/biography/1248041",
+   "basis": "lookup",
+   "confidence": 0.95,
+   "context": "Sutherland Maxwell, the father of Amat al-Bahá, Rúḥí Khanom, that after his passing, the beloved Shoghi",
+   "expected": "Sutherland Maxwell"
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-6",
+   "t0": 296.566,
+   "text": "Valíyu’lláh Varqá,",
+   "linked_to": "Rúḥu’lláh Varqá",
+   "url": "/biography/1248134",
+   "basis": "lookup",
+   "confidence": 0.85,
+   "context": "man. That was Horace Holley. Mr. Varqá, I mentioned the father of our beloved hand here. Mr. Varqá, Valíyu’lláh Varqá, who was one of the entourage of ‘Abdu’l-Bahá, and the beloved Shoghi Effendi said",
+   "expected": "Valíyu’lláh Varqá"
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-2",
+   "t0": 847.577,
+   "text": "Ioas,",
+   "linked_to": "Laura Barney",
+   "url": "/biography/1248048",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "over to the pilgrim house to have his meals, the doorbell of the pilgrim house rang, and Mr. Ioas, who was handy, went and opened the door. And he told me and his",
+   "expected": "Leroy Ioas"
+  },
+  {
+   "slug": "recollections-hooper-dunbar-2016",
+   "t0": 375.369,
+   "text": "Leroy Ioas.",
+   "linked_to": "Laura Barney",
+   "url": "/biography/1248048",
+   "basis": "lookup",
+   "confidence": 0.9,
+   "context": "I went and collected. And it was dated four or five days before the Guardian's passing, written by Leroy Ioas. Said the Guardian thanked for the contribution and he also significantly said and after",
+   "expected": "Leroy Ioas"
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-2",
+   "t0": 96.77,
+   "text": "Beethoven,",
+   "linked_to": "Paul von Hindenburg",
+   "url": "/biography/1248235",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "a power was released in every country. Then came the supplemental goals. And like the Ninth Symphony of Beethoven, when all the music comes pouring down the hill toward the sea, those are",
+   "expected": null
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-2",
+   "t0": 426.561,
+   "text": "Haggai,",
+   "linked_to": "Mrs. E. Hoagg",
+   "url": "/biography/1254929",
+   "basis": "lookup",
+   "confidence": 0.85,
+   "context": "All the promises of Isaiah, Micah, Haggai, and the prophets of old in their vision for the house of God have",
+   "expected": null
+  },
+  {
+   "slug": "sears-arise-at-anchorage-conference-3",
+   "t0": 954.529,
+   "text": "John Robarts,",
+   "linked_to": "St. John the Divine",
+   "url": "/biography/1247673",
+   "basis": "lookup",
+   "confidence": 0.85,
+   "context": "will be the beginning of such a victory. So on behalf of all the standard-bearers in North America, John Robarts, Zikru’lláh Khádem, myself, especially on behalf of the standard-bearer, the precious gift of love",
+   "expected": "John Robarts"
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-3",
+   "t0": 998.297,
+   "text": "Robert Quigley",
+   "linked_to": "Róbert Nádler",
+   "url": "/biography/1248107",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "mean. Well, Mr. Anthony Leese, as you can see, is with us again tonight, and we've also asked Robert Quigley to help out. Tony has found some very thrilling quotations to help us get",
+   "expected": null
+  },
+  {
+   "slug": "sears-prophecies-5",
+   "t0": 834.217,
+   "text": "George Washington Carver",
+   "linked_to": "Sir Stewart Symes",
+   "url": "/biography/1248180",
+   "basis": "lookup",
+   "confidence": 0.95,
+   "context": "prophet. They need delay no longer. It was not a Bahá’í but a Christian educator and scholar, Dr. George Washington Carver of Tuskegee Institute.",
+   "expected": null
+  },
+  {
+   "slug": "sears-prophecies-part-7",
+   "t0": 694.749,
+   "text": "Hosea",
+   "linked_to": "S̱hayḵh ‘Alí (son of S̱hayḵh Aḥmad-i-Aḥsá’í)",
+   "url": "/biography/1249148",
+   "basis": "lookup",
+   "confidence": 0.85,
+   "context": "The shrine of Bahá’u’lláh stands there on the historic plain of ‘Akká. It is the area which Hosea said would be a door of hope for mankind. All the world knows where",
+   "expected": null
+  },
+  {
+   "slug": "shrines-being-closed",
+   "t0": 38.11,
+   "text": "Frank Wyss,",
+   "linked_to": "Stephen Wise",
+   "url": "/biography/1248113",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "closed, and this seems like a very raw deal, you know, sort of There was a Bahá’í called Frank Wyss, who I presume some of you know was the Knight of Bahá’u’lláh to Cocos",
+   "expected": "Frank Wyss (Knight of Bahá’u’lláh)"
+  },
+  {
+   "slug": "shrines-being-closed",
+   "t0": 66.558,
+   "text": "Frank Wyss",
+   "linked_to": "Stephen Wise",
+   "url": "/biography/1248113",
+   "basis": "lookup",
+   "confidence": 0.8,
+   "context": "that's my pilgrim note. And lo and behold, the Guardian unwittingly agrees with Stephanie. The Guardian, from what Frank Wyss said, said that in future, and this is my record of what Frank said,",
+   "expected": "Frank Wyss (Knight of Bahá’u’lláh)"
+  }
+ ]
+}

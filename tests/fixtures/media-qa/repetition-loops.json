@@ -1,0 +1,167 @@
+{
+ "expect": "a detector must flag every case; collapse runs of one character (>4) and n-grams repeated >=3 times back to one occurrence, or re-transcribe the span",
+ "cases": [
+  {
+   "slug": "furutan-talk-to-the-youth-1992",
+   "para": 20,
+   "t0": 871.358,
+   "kind": "repetition-char",
+   "summary": "clean p20: …You know this from Nabiííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííí",
+   "clean_excerpt": "You know this from Nabiííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííííí When he became martyr, he was seventeen. And you know, in old Persia, hundred years ago, seventeen years old girl or boy, they were like two years old right now. Ignorant people, no school, no environment",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "furutan-talk-to-the-youth-1992",
+   "para": 58,
+   "t0": 2334.911,
+   "kind": "repetition-ngram",
+   "summary": "clean p58: \"karend\" x49",
+   "clean_excerpt": "an. Then they wanted to send me to my home, to Europe, after everything was quiet. I became sick in Kermanshah. Karand, Karend, village, Karend, Karend, Karend, village, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Karend, Ka",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "furutan-talk-to-the-youth-1992",
+   "para": 88,
+   "t0": 3552.771,
+   "kind": "repetition-ngram",
+   "summary": "clean p88: \"vaḥíd\" x22",
+   "clean_excerpt": "Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd.",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "furutan-talk-to-the-youth-1992",
+   "para": 89,
+   "t0": 3568.416,
+   "kind": "repetition-ngram",
+   "summary": "clean p89: \"vaḥíd\" x28",
+   "clean_excerpt": "Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd. Vaḥíd That is, we have nineteen days in our months and nineteen months in our year.",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "gems-of-divine-mysteries-7-14-2014",
+   "para": 3,
+   "t0": 142.889,
+   "kind": "repetition-char",
+   "summary": "clean p3: …art, part one of the Kitáb-i-Íqán, Bahá'ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá",
+   "clean_excerpt": "of the Gospels in the New Testament, and this is also what takes up the larger part, part one of the Kitáb-i-Íqán, Bahá'áááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá Other signs, and many of which were familiar, particularly paragraph 11. Bahá’ís, I think, are particularly familiar with these passages because they're often connected to, they're often used to, as proof of the Bahá’í Faith, you know, that there are indications in In the writings and",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-3-of-14-2014",
+   "para": 1,
+   "t0": 0.586,
+   "kind": "repetition-char",
+   "summary": "clean p1: …tween impure and pure souls, where Bahá'ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá",
+   "clean_excerpt": "he truth that it's conveying, we'll get the message. So there is a difference between impure and pure souls, where Bahá'áááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá He makes this point strongly in words and seven values.",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-3-of-14-2014",
+   "para": 8,
+   "t0": 430.358,
+   "kind": "repetition-char",
+   "summary": "clean p8: … we got something different. And Bahá'áhááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá",
+   "clean_excerpt": "idea of what the question was. And the question was, this is what we expect, and we got something different. And Bahá'áhááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá And second of all, the way you've been reading it, trying to read each word as literal, you're reading poetry as prose. You're taking something which is meant to convey a spirit and you're crystallizing, ",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "khadem-carmel-the-mountain-of-god-2",
+   "para": 7,
+   "t0": 399.327,
+   "kind": "repetition-ngram",
+   "summary": "clean p7: \"come and say\" x7",
+   "clean_excerpt": "blet of Carmel, the city of God, the shrine of the Báb, that Bahá’u’lláh in that tablet calls Zion, call out to Zion to come and say, come and say, come and say, come and say, come and say, come and say, come and say, the city of God. The day the beloved Shoghi Effendi shared this with me, believe me, I could not, I was someone else. I just cried and cried. I could not understand. That was a very historic day. He said this was a mystery, and the guardian revealed it.",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-2",
+   "para": 19,
+   "t0": 562.486,
+   "kind": "repetition-ngram",
+   "summary": "clean p19: \"da\" x9",
+   "clean_excerpt": "And I recalled We were there for the convention, the national convention, and I recall Shoghi Effendi coming in one day and he said, I have laid out the Arc on Mount Carmel today. And he said, this is the point of the ark opposite the monument gardens where the tomb of Bahíyyih Khánum is. That would be where the house would be here at the top. And he described how it would be the building for the hand and all as it is. And when I was back 20 years later, it just was a thrill to recall that, because of that trip, all you heard was ",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-2",
+   "para": 24,
+   "t0": 862.394,
+   "kind": "repetition-char",
+   "summary": "clean p24: …Aláááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá",
+   "clean_excerpt": "Aláááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá Ḥuq’l-Adhká, Shíjáh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-2",
+   "para": 24,
+   "t0": 862.394,
+   "kind": "repetition-ngram",
+   "summary": "clean p24: \"cháh\" x50",
+   "clean_excerpt": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá Ḥuq’l-Adhká, Shíjáh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Cháh-Ch وَاسْتَبَعُوا الْنُورَ الَّذ۪ي, Yalooho, Ve Yuzi'i, Min Fajr Al-Khuda, Min Badí‘, Yalooho, Ve Yuzi'i, Min Fajr Al-Hudá, Min Va'dí, A'la, Vahubhá, Farun, Mugadasun, Mub",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-3",
+   "para": 1,
+   "t0": 0.098,
+   "kind": "repetition-char",
+   "summary": "clean p1: …ìPúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúú",
+   "clean_excerpt": "ìPúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúúú And let it be us.",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "sears-prophecies-3",
+   "para": 39,
+   "t0": 1085.262,
+   "kind": "repetition-char",
+   "summary": "clean p39: …aters cover the sea. That's what Bahá'á'áááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá",
+   "clean_excerpt": " the earth shall be filled with the knowledge of the glory of the Lord, as the waters cover the sea. That's what Bahá'á'ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá That the prophecy about the house of the Lord was fulfilled with the coming of Bahá’u’lláh. The house of the Lord was established as soon as Bahá’u’lláh appeared on that mountain. That is the fulfillment of",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "sears-prophecies-part-4",
+   "para": 18,
+   "t0": 430.006,
+   "kind": "repetition-ngram",
+   "summary": "clean p18: \"mázindarán\" x22",
+   "clean_excerpt": "Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán, Mázindarán.",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "sears-prophecies-part-4",
+   "para": 19,
+   "t0": 459.626,
+   "kind": "repetition-ngram",
+   "summary": "clean p19: \"his teachings spread to our land\" x4",
+   "clean_excerpt": "He spoke of life, He spoke of justice, He spoke to man of unity. His teaching spread, Samoth, His teachings spread to our land. His teachings spread to our land. His teachings spread to our land. His teachings spread to our land.",
+   "verbatim_has_same": true,
+   "note": "possibly genuine (sung chorus) — verify by ear before collapsing"
+  },
+  {
+   "slug": "sears-prophecies-part-4",
+   "para": 20,
+   "t0": 532.851,
+   "kind": "repetition-ngram",
+   "summary": "clean p20: \"his teachings spread to our land\" x6",
+   "clean_excerpt": "His teachings spread to our land. His teachings spread to our land. His teachings spread to our land. His teachings spread to our land. His teachings spread to our land. His teachings spread to our land. Thank you. Thank you.",
+   "verbatim_has_same": true,
+   "note": "possibly genuine (sung chorus) — verify by ear before collapsing"
+  },
+  {
+   "slug": "sears-prophecies-part-7",
+   "para": 29,
+   "t0": 613.814,
+   "kind": "repetition-char",
+   "summary": "clean p29: … the Holy Land where the feet of Bahá'áváááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá",
+   "clean_excerpt": "Wherever you go in the Holy Land where the feet of Bahá'ávááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá You will see some of the most beautiful gardens to be found in all of the world. And these are all places where the feet of Bahá’u’lláh, the glory of the Lord, have walked on the mountain of God and in the plain of",
+   "verbatim_has_same": true
+  },
+  {
+   "slug": "jones-01-thursday",
+   "para": 106,
+   "t0": 2775.971,
+   "kind": "sentence-loop (interpreter Romanian)",
+   "clean_excerpt": "Și, în mod specific, Iluzia, de fapt, este Iluzia Fericirii. Și, în mod specific, Iluzia Fericirii. și găsim în cele șapte văi descrierea căutătorului, călătorului, care vede în Toate lucrurile îl vede pe prieten. I think sometimes this is a description of people chasing after the material shadows, hoping for happiness."
+  }
+ ]
+}

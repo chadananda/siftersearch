@@ -1,0 +1,35 @@
+{
+ "expect": "interpreted talk: interpreter turns (ro) separated from speaker turns (en) and labelled; no foreign-language loop inside an English paragraph",
+ "slug": "jones-01-thursday",
+ "asr": {
+  "en": 2219,
+  "pl": 2.1,
+  "ro": 551.8
+ },
+ "paragraphs": [
+  {
+   "n": 105,
+   "t0": 2681.896,
+   "spk": "S1",
+   "clean": "And ‘Abdu’l-Bahá dismisses this idea and proves how it's a false idea. But perhaps the more important But a greater level of materialism is when Inima omului este îndreptată către lumea materială și nu către Dumnezeu. Now we already read the quote about how the material world is the world of pain and the world of suffering and the world of agony and egotism. Why would the heart want to turn towards it? And I think the answer is in how ‘Abdu’l-Bahá also describes the material world as a world of "
+  },
+  {
+   "n": 106,
+   "t0": 2775.971,
+   "spk": "S1",
+   "clean": "Și, în mod specific, Iluzia, de fapt, este Iluzia Fericirii. Și, în mod specific, Iluzia Fericirii. și găsim în cele șapte văi descrierea căutătorului, călătorului, care vede în Toate lucrurile îl vede pe prieten. I think sometimes this is a description of people chasing after the material shadows, hoping for happiness."
+  },
+  {
+   "n": 107,
+   "t0": 2806.086,
+   "spk": "S5",
+   "clean": "În umbra lucrurilor materiale fericirea."
+  },
+  {
+   "n": 109,
+   "t0": 2831.614,
+   "spk": "S3",
+   "clean": "Vreau niște întrebări despre materialism și spiritualitate."
+  }
+ ]
+}

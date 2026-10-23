@@ -1,0 +1,67 @@
+{
+ "expect": "clean must never be worse than verbatim; moment text must equal the transcript words i0..i1 (i1 exclusive) exactly — the moment stage silently removes repeats",
+ "clean_worse_than_verbatim": [
+  {
+   "slug": "sears-prophecies-5",
+   "note": "verbatim \"What drama there is in the story\" → clean \"is him the story\"",
+   "clean": "What drama there is him the story of the martyrdom",
+   "verbatim": "What drama there is in the story of the martyrdom"
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-5",
+   "note": "verbatim \"monthly or daily\" → clean \"monthly are daily\"",
+   "clean": "not a monthly are daily thing",
+   "verbatim": "not a monthly or daily thing"
+  }
+ ],
+ "moments_not_verbatim": [
+  {
+   "slug": "2-14-gems-of-divine-mysteries",
+   "key": "jJUpMC5m",
+   "t0_ms": 704455,
+   "moment_text": "Bahá’u’lláh is not bringing anarchy. The message is not anarchy. Complete dissolution of all existing structures. The message is more that the changes that the world needs, both the structural changes, the power structure changes, as well as the changes in religious thinking, have to happen in a non-violent and evolutionary way.",
+   "words_span": "Bahá’u’lláh is not bringing anarchy. The message is not anarchy. The message is not anarchy. Complete dissolution of all existing structures. The message is more that the changes that the world needs, both the structural changes, the power structure changes, as well as the changes in religious thinking, have to happen in a non-violent and evolutionary way."
+  },
+  {
+   "slug": "gems-of-divine-mysteries-7-14-2014",
+   "key": "ufSTunDB",
+   "t0_ms": 327672,
+   "moment_text": "You know, Bahá’u’lláh’s, one of the central messages of Bahá’u’lláh’s revelation is that the revelation is progressive, and that it comes periodically through a chain of divine revelators, who are all connected, in a way, to those that came before, who fulfill prophecies to those that came before, and interpret for us and explain for us things that people before had said.",
+   "words_span": "You know, Bahá’u’lláh, Bahá’u’lláh’s, one of the central messages of Bahá’u’lláh’s revelation is that the revelation is progressive, and that it comes periodically through a chain of divine revelators, who are all connected, in a way, to those that came before, who fulfill prophecies to those that came before, and interpret for us and explain for us things that people before had said."
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-5",
+   "key": "5tJIitzO",
+   "t0_ms": 188984,
+   "moment_text": "The ring of Quddús, a turkeys, mounted on a silver ring, which, as far as its value is concerned, is not very precious. But it's wrapped In a paper, in which the father of the beloved Shoghi Effendi has written, on such and such a time when the guardian was a small child, the ‘Abdu’l-Bahá called me and said to me, this is the ring of Quddús, it's very precious, you keep it and give to the apple of your eyes Shoghi Effendis.",
+   "words_span": "The ring of Quddús, a turkeys, mounted on a silver ring, which, as far as its value is concerned, is not very precious. But it's wrapped in In a paper, in which the father of the beloved Shoghi Effendi has written, on such and such a time when the guardian was a small child, the ‘Abdu’l-Bahá called me and said to me, this is the ring of Quddús, it's very precious, you keep it and give to the apple of your eyes Shoghi Effendis."
+  },
+  {
+   "slug": "khanum-address-to-the-national-convention-1",
+   "key": "7ln_Mlv3",
+   "t0_ms": 814947,
+   "moment_text": "There may be Bahá’ís in this hall older than I, but I've been a Bahá’í now for almost 73 years, and even as a child I used to go to Bahá’í conventions and gatherings. And I am a witness that never in our whole lives, never could we dream that this miracle would take place for us to see The beginning of the emancipation of the faith and certainly the proclamation of the faith.",
+   "words_span": "There may be Bahá’ís in this hall older than I, but I've been a Bahá’í now for almost 73 years, and even as a child I used to go to Bahá’í conventions and gatherings. And I am a witness that never in our whole lives, never could we dream that this miracle would take place for us to see the The beginning of the emancipation of the faith and certainly the proclamation of the faith."
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "key": "333ICSIE",
+   "t0_ms": 190992,
+   "moment_text": "And oftentimes when prophets come they are preceded by a prophetic figure Who sort of looks forward or anticipates that event. So for Jesus, John the Baptist came, and sort of not that long before the coming of Jesus, there was a figure who was preparing the way.",
+   "words_span": "And oftentimes when prophets come they are preceded by a prophetic figure who Who sort of looks forward or anticipates that event. So for Jesus, John the Baptist came, and sort of not that long before the coming of Jesus, there was a figure who was preparing the way."
+  },
+  {
+   "slug": "sears-crisis-and-opportunities-1",
+   "key": "9bpG55ay",
+   "t0_ms": 910312,
+   "moment_text": "One thing and only one thing will unfailingly and alone secure The undoubted triumph of this sacred cause. Namely, the extent to which our inner life and private character mirror forth in their manifold aspects the splendor of those eternal principles proclaimed by Bahá’u’lláh.",
+   "words_span": "One thing and only one thing will unfailingly and alone secure the undoubted triumph The undoubted triumph of this sacred cause. Namely, the extent to which our inner life and private character mirror forth in their manifold aspects the splendor of those eternal principles proclaimed by Bahá’u’lláh."
+  },
+  {
+   "slug": "cardell-experiences-with-the-guardian-1988",
+   "key": "TRuSwIjG",
+   "suspect": "homophone in a headline moment: \"anything you could ever do with a father\" — context says the question was about the family farm",
+   "moment_text": "But in regard to the faith, pioneering is of infinitely more value than anything you could ever do with a father."
+  }
+ ]
+}

@@ -1,0 +1,619 @@
+{
+ "expect": "speaker resolved from series siblings / file name (e.g. \"PKhan\" → Peter Khan, \"Mrs Banani\", \"Martha Root\"); one title pattern per series; duration from the web encode, not the original header",
+ "cases": [
+  {
+   "slug": "10-14-gems-of-divine-mysteries-2014",
+   "title": "10/14 Gems of Divine Mysteries",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "2-14-gems-of-divine-mysteries",
+   "title": "2/14 Gems of Divine Mysteries",
+   "speaker": null,
+   "year": null,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "4-14-gems-of-divine-mysteries-2014",
+   "title": "4/14 Gems of Divine Mysteries",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "9-14-gems-of-divine-mysteries-2014",
+   "title": "9/14 Gems of Divine Mysteries",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "featherstone-collis-featherstone-3",
+   "title": "Collis Featherstone",
+   "speaker": "Collis Featherstone",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Echos from the Lotus/Echoes_From_The_Lotus__Collis_Featherstone.03.mp3",
+   "problems": [
+    "title equals speaker name"
+   ]
+  },
+  {
+   "slug": "featherstone-echoes-from-the-lotus-part-2",
+   "title": "Echoes From The Lotus, Part 2",
+   "speaker": "Collis Featherstone",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Echos from the Lotus/Echoes_From_The_Lotus__Collis_Featherstone.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.1 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "forerunner-1985",
+   "title": "Forerunner",
+   "speaker": null,
+   "year": 1985,
+   "collection": "Pilgrim recollections (Shoghi Effendi)",
+   "source_path": "/tank/media/Baha'i/talks/Pilgrim recollections (Shoghi Effendi)/Khadem Forerunner 1985.mp3",
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "freedom-1981",
+   "title": "Freedom",
+   "speaker": null,
+   "year": 1981,
+   "collection": "Historic recordings",
+   "source_path": "/tank/media/Baha'i/talks/Historic recordings/Misc Other/Khanum-Freedom_1981.mp3",
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "gems-of-divine-mysteries-2014",
+   "title": "Gems of Divine Mysteries",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "gems-of-divine-mysteries-2014-2",
+   "title": "Gems of Divine Mysteries",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "gems-of-divine-mysteries-7-14-2014",
+   "title": "Gems of Divine Mysteries (7/14)",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-3-of-14-2014",
+   "title": "Gems of Divine Mysteries (part 3 of 14)",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-6-of-14-2014",
+   "title": "Gems of Divine Mysteries (part 6 of 14)",
+   "speaker": null,
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "hand-great-grandmother",
+   "title": "Hand Great Grandmother",
+   "speaker": null,
+   "year": null,
+   "collection": "Earl SE Audio",
+   "source_path": "/tank/media/Baha'i/talks/Earl SE Audio/Various Mrs Banani Hand Great Grandmother.mp3",
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "harris-the-choice-wine-2",
+   "title": "The Choice Wine",
+   "speaker": "Bob Harris",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Ed Harris/The Choice of Wine/Bob_Harris__The_Choice_Wine.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "includes-martha-root-1932",
+   "title": "Includes Martha Root",
+   "speaker": null,
+   "year": 1932,
+   "collection": "Historic recordings",
+   "source_path": "/tank/media/Baha'i/talks/Historic recordings/Misc Other/Includes Martha Root Nov 1932.mp3",
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "jones-01-thursday",
+   "title": "01 (thursday)",
+   "speaker": "Chad Jones",
+   "year": null,
+   "collection": "Chad Jones",
+   "source_path": "/tank/media/Baha'i/talks/Chad Jones/CHAD JONES - 01 (thursday).mp3",
+   "problems": [
+    "title is a file name"
+   ]
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-2",
+   "title": "Address From The Hand Of The Cause",
+   "speaker": "D. Khadem",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Z. Khadem/Address of Hands of Cause/D_Khadem__Address_From_The_Hand_Of_The_Cause.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-3",
+   "title": "Address From The Hand Of The Cause",
+   "speaker": "D Khadem",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Z. Khadem/Address of Hands of Cause/D_Khadem__Address_From_The_Hand_Of_The_Cause.03.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.8 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-4",
+   "title": "Address From The Hand Of The Cause",
+   "speaker": "D Khadem",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Z. Khadem/Address of Hands of Cause/D_Khadem__Address_From_The_Hand_Of_The_Cause.04.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-5",
+   "title": "Address From The Hand Of The Cause",
+   "speaker": "D. Khadem",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Z. Khadem/Address of Hands of Cause/D_Khadem__Address_From_The_Hand_Of_The_Cause.05.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1204.2 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-1",
+   "title": "Address to the 6th Annual Conference",
+   "speaker": "Ruhiyyih Khanum",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Ruhiyyih Khanum/Address to the 6th Annual Conference/R_Khanum__Address_To_The_6th_Annual_Conf.01.mp3",
+   "problems": [
+    "duration_s 1200.4 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-2",
+   "title": "Address to the 6th Annual Conference",
+   "speaker": "Rúhíyyih Khánum",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Ruhiyyih Khanum/Address to the 6th Annual Conference/R_Khanum__Address_To_The_6th_Annual_Conf.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.3 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-3",
+   "title": "Address to the 6th Annual Conference",
+   "speaker": "Rúhíyyih Khánum",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Ruhiyyih Khanum/Address to the 6th Annual Conference/R_Khanum__Address_To_The_6th_Annual_Conf.03.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.1 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "khanum-address-to-the-national-convention-1",
+   "title": "Address to the National Convention",
+   "speaker": "Rúhíyyih Khánum",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Ruhiyyih Khanum/Address to the National Conference/R_Khanum__Address_To_The_National_Convention.01.mp3",
+   "problems": [
+    "duration_s 1200.4 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "lotus-afshin-3",
+   "title": "Afshin",
+   "speaker": "Echoes From The Lotus",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Echos from the Lotus/Echoes_From_The_Lotus__Afshin.03.mp3",
+   "problems": [
+    "series name used as speaker"
+   ]
+  },
+  {
+   "slug": "lotus-afshin-part-2",
+   "title": "Afshin (Part 2)",
+   "speaker": "Echoes From The Lotus",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Echos from the Lotus/Echoes_From_The_Lotus__Afshin.02.mp3",
+   "problems": [
+    "series name used as speaker",
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "nakhjavani-02a-ali-nakhjavani-eng",
+   "title": "02A-Ali Nakhjavani-ENG",
+   "speaker": "‘Alí Nakhjavání",
+   "year": null,
+   "collection": "Nakhjavani-neu-mp3",
+   "source_path": "/tank/media/Baha'i/talks/Nakhjavani-neu-mp3/02A-Ali Nakhjavani-ENG(14).mp3",
+   "problems": [
+    "title is a file name"
+   ]
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "title": "Gems of Divine Mysteries (1/14)",
+   "speaker": "Steven Phelps",
+   "year": 2014,
+   "collection": "dawnbreaker1844",
+   "source_path": null,
+   "problems": [
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "recollections-hooper-dunbar-2016",
+   "title": "Recollections - Hooper Dunbar",
+   "speaker": "Hooper Dunbar",
+   "year": 2016,
+   "collection": "Hooper C Dunbar - Talks",
+   "source_path": null,
+   "problems": [
+    "date 2020-11-17 vs year 2016"
+   ]
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-1-of-2-2002",
+   "title": "Reminiscences of Shoghi Effendi (Part 1 of 2)",
+   "speaker": null,
+   "year": 2002,
+   "collection": "Pilgrim recollections (Shoghi Effendi)",
+   "source_path": "/tank/media/Baha'i/talks/Pilgrim recollections (Shoghi Effendi)/Reminiscences of Shoghi Effendi 1.mp3",
+   "problems": [
+    "speaker missing",
+    "part number inside title, inconsistent across series"
+   ]
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-2",
+   "title": "Reminiscences of Shoghi Effendi, Part 2",
+   "speaker": null,
+   "year": null,
+   "collection": "Pilgrim recollections (Shoghi Effendi)",
+   "source_path": "/tank/media/Baha'i/talks/Pilgrim recollections (Shoghi Effendi)/Reminiscences of Shoghi Effendi 2.mp3",
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-1",
+   "title": "Address to the National Convention",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Address to the National Convention/William_Sears__Address_To_The_National_Convention.01.mp3",
+   "problems": [
+    "duration_s 1200.4 < last word 1203.4 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-2",
+   "title": "Address to the National Convention",
+   "speaker": "William Sears",
+   "year": 1983,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Address to the National Convention/William_Sears__Address_To_The_National_Convention.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-arise-at-anchorage-conference-part-2",
+   "title": "Arise at Anchorage Conference, Part 2",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Talk Arise at Anchorage Conference/William_Sears__Talk_Arise_At_Anchokage_Conf.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.9 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-covenant-breaking-1",
+   "title": "Covenant Breaking",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Covenant Breaking/William_Sears__Covenant_Breaking.01.mp3",
+   "problems": [
+    "duration_s 1200.4 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-covenant-breaking-2",
+   "title": "Covenant Breaking",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Covenant Breaking/William_Sears__Covenant_Breaking.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-covenant-breaking-part-3",
+   "title": "Covenant Breaking, Part 3",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Covenant Breaking/William_Sears__Covenant_Breaking.03.mp3",
+   "problems": [
+    "duration_s 668.5 < last word 671.1 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-crisis-and-opportunities-1",
+   "title": "Crisis and Opportunities",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Crisis & Opportunities/William_Sears__Crisis_And_Opportunities.01.mp3",
+   "problems": [
+    "duration_s 1200.4 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-crisis-and-opportunities-2",
+   "title": "Crisis And Opportunities",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Crisis & Opportunities/William_Sears__Crisis_And_Opportunities.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1204.6 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-4",
+   "title": "Enrolling The Masses",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.04.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-7",
+   "title": "Enrolling the Masses",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.07.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-1",
+   "title": "Enrolling the Masses (Part 1)",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.01.mp3",
+   "problems": [
+    "duration_s 1200.4 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-2",
+   "title": "Enrolling the Masses (Part 2)",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.9 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-3",
+   "title": "Enrolling The Masses (Part 3)",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.03.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-5",
+   "title": "Enrolling The Masses, Part 5",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.05.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-8",
+   "title": "Enrolling the Masses, Part 8",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Enrolling the Masses/William_Sears__Enrolling_The_Masses.08.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.6 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-prophecies-3",
+   "title": "Prophecies",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Prophecies Fulfilled by Baha'u'llah/William_Sears__Prophecies.03.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.2 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-prophecies-5",
+   "title": "Prophecies",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Prophecies Fulfilled by Baha'u'llah/William_Sears__Prophecies.05.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.9 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-prophecies-part-2",
+   "title": "Prophecies (Part 2)",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Prophecies Fulfilled by Baha'u'llah/William_Sears__Prophecies.02.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.4 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-prophecies-part-4",
+   "title": "Prophecies, Part 4",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Prophecies Fulfilled by Baha'u'llah/William_Sears__Prophecies.04.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1205.9 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-prophecies-part-7",
+   "title": "Prophecies, Part 7",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/William Sears/Prophecies Fulfilled by Baha'u'llah/William_Sears__Prophecies.07.mp3",
+   "problems": [
+    "duration_s 1200.3 < last word 1206.0 (probe of original under-reports)"
+   ]
+  },
+  {
+   "slug": "sears-william-sears-3",
+   "title": "William Sears",
+   "speaker": "William Sears",
+   "year": null,
+   "collection": "sharaf's talks",
+   "source_path": "/tank/media/Baha'i/talks/sharaf's talks/Echos from the Lotus/Echoes_From_The_Lotus__William_Sears.03.mp3",
+   "problems": [
+    "title equals speaker name"
+   ]
+  },
+  {
+   "slug": "shrines-being-closed",
+   "title": "Shrines being closed",
+   "speaker": null,
+   "year": null,
+   "collection": "Historic recordings",
+   "source_path": "/tank/media/Baha'i/talks/Historic recordings/Misc Other/PKhan on Shrines being closed.WMA",
+   "problems": [
+    "speaker missing"
+   ]
+  },
+  {
+   "slug": "various-khadem-will-1957",
+   "title": "Various Khadem Will",
+   "speaker": null,
+   "year": 1957,
+   "collection": "Pilgrim recollections (Shoghi Effendi)",
+   "source_path": "/tank/media/Baha'i/talks/Pilgrim recollections (Shoghi Effendi)/1957 Various Khadem Will.mp3",
+   "problems": [
+    "speaker missing"
+   ]
+  }
+ ]
+}

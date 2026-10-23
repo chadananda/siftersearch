@@ -1,0 +1,365 @@
+{
+ "expect": "a spoken book title must link to the work itself (canonical English OceanLibrary copy), never to a talk/notes/study guide/paper about it, a foreign-language edition, or one newspaper issue",
+ "cases": [
+  {
+   "slug": "10-14-gems-of-divine-mysteries-2014",
+   "para": 3,
+   "text": "the seven valleys.",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "9-14-gems-of-divine-mysteries-2014",
+   "para": 9,
+   "text": "Seven Valleys.",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "para": 20,
+   "text": "The Dispensation of Bahá’u’lláh,",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "para": 33,
+   "text": "The Dispensation of Bahá’u’lláh,",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "para": 48,
+   "text": "King of Glory,",
+   "linked_title": "Baha'u'llah: Warwick Leaflets",
+   "url": "https://bahai-library.com/warwick_bahaullah",
+   "basis": "title (4 copies, best chosen)"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "para": 52,
+   "text": "the Dispensation",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "dunbar-about-the-bab-2019",
+   "para": 65,
+   "text": "the Persian Bayán,",
+   "linked_title": "Persian Bayán: Summary and Thematic Analysis",
+   "url": "https://siftersearch.com/library/bahai/papers/peter-terry_persian-bayan-summary-and-thematic-analysis",
+   "basis": "title (11 copies, best chosen)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-7-14-2014",
+   "para": 1,
+   "text": "Seven Valleys,",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-6-of-14-2014",
+   "para": 1,
+   "text": "Seven Valleys.",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-6-of-14-2014",
+   "para": 4,
+   "text": "Qur’án",
+   "linked_title": "The Qur'an (Arabic, Simple Text)",
+   "url": "https://siftersearch.com/library/islam/foundational-texts/muhammad_the-quran-arabic-simple-text_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-part-6-of-14-2014",
+   "para": 8,
+   "text": "Qur’án.",
+   "linked_title": "The Qur'an (Arabic, Simple Text)",
+   "url": "https://siftersearch.com/library/islam/foundational-texts/muhammad_the-quran-arabic-simple-text_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "grossmann-world-order-2-1999",
+   "para": 35,
+   "text": "dispensation of Bahá’u’lláh",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "jones-01-thursday",
+   "para": 66,
+   "text": "long obligatory prayer",
+   "linked_title": "Long Obligatory Prayer: Postures",
+   "url": "https://bahai-library.com/6071",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "jones-01-thursday",
+   "para": 106,
+   "text": "cele șapte văi",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 22,
+   "text": "The Bahá’í World",
+   "linked_title": "The Baha'i World: An International Record, Volume XIII (1954–1963)",
+   "url": "https://siftersearch.com/library/bahai/compilations/universal-house-of_the-bahai-world-an-international-record-volume-xiii-1954-1963",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "kelsey-fruits-of-creation",
+   "para": 25,
+   "text": "Hidden Word",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "kelsey-stories-of-abdul-baha-2",
+   "para": 7,
+   "text": "Hidden Words,",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "kelsey-stories-of-abdul-baha-2",
+   "para": 17,
+   "text": "Hidden Words",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-2",
+   "para": 19,
+   "text": "Tablet of Carmel,",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-2",
+   "para": 21,
+   "text": "Tablet of Carmel,",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-3",
+   "para": 2,
+   "text": "Tablet of Carmel?",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "khadem-address-from-the-hand-of-the-cause-6",
+   "para": 6,
+   "text": "Hidden Words.",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "khadem-carmel-the-mountain-of-god-2",
+   "para": 5,
+   "text": "tablet of Carmel.",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "khadem-carmel-the-mountain-of-god-2",
+   "para": 7,
+   "text": "tablet of Carmel,",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "khanum-address-to-the-6th-annual-conference-4",
+   "para": 4,
+   "text": "Hidden Words,",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "khanum-address-to-the-national-convention-1",
+   "para": 3,
+   "text": "Tablet of Carmel.",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "lotus-afshin-part-2",
+   "para": 19,
+   "text": "Hidden Word",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "nakhjavani-talk-to-the-youth-q-and-a-1997",
+   "para": 33,
+   "text": "Qur’án,",
+   "linked_title": "The Qur'an (Arabic, Simple Text)",
+   "url": "https://siftersearch.com/library/islam/foundational-texts/muhammad_the-quran-arabic-simple-text_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "nakhjavani-talk-to-the-youth-q-and-a-1997",
+   "para": 57,
+   "text": "Hidden Words",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "para": 4,
+   "text": "the Hidden Words,",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "para": 4,
+   "text": "the Seven Valleys,",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "para": 5,
+   "text": "Hidden Words,",
+   "linked_title": "The Hidden Words: Transcript of a talk by Hand of the Cause of God A. Q. Faizí'",
+   "url": "https://siftersearch.com/library/bahai/bahai-talks/abul-qasim-faizi_the-hidden-words-transcript-of-a-talk-by-hand-of-the-cause-of-god-a-q-faizi",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "para": 6,
+   "text": "The Seven Valleys.",
+   "linked_title": "Seven Valleys: Faculty notes",
+   "url": "https://bahai-library.com/resources/tablets-notes/haft-vadi/notes.html",
+   "basis": "title (5 copies, best chosen)"
+  },
+  {
+   "slug": "phelps-gems-of-divine-mysteries-1-14-2014",
+   "para": 9,
+   "text": "Qur’án,",
+   "linked_title": "The Qur'an (Arabic, Simple Text)",
+   "url": "https://siftersearch.com/library/islam/foundational-texts/muhammad_the-quran-arabic-simple-text_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-1-of-2-2002",
+   "para": 31,
+   "text": "Dispensation of Bahá’u’lláh.",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-1-of-2-2002",
+   "para": 37,
+   "text": "The Dispensation of Bahá’u’lláh,",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-1",
+   "para": 11,
+   "text": "The Bahá’í World,",
+   "linked_title": "The Baha'i World: An International Record, Volume XIII (1954–1963)",
+   "url": "https://siftersearch.com/library/bahai/compilations/universal-house-of_the-bahai-world-an-international-record-volume-xiii-1954-1963",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "sears-address-to-the-national-convention-2",
+   "para": 20,
+   "text": "Tablet of Carmel.",
+   "linked_title": "Tablet of Carmel (Muntakhabát-i-Áthár:11)",
+   "url": "https://siftersearch.com/library/bahai/muntakhabati-az-athar-i-hadrat-i-bahaullah/bahaullah_tablet-of-carmel_ar",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "sears-covenant-breaking-2",
+   "para": 5,
+   "text": "Bahá’í News",
+   "linked_title": "Bahai News -",
+   "url": "https://bahai-library.com/newspapers/2000/120400-1.html",
+   "basis": "title (8 copies, best chosen)"
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-1",
+   "para": 8,
+   "text": "The Dispensation of Bahá’u’lláh",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-2",
+   "para": 11,
+   "text": "The Bahá’í World,",
+   "linked_title": "The Baha'i World: An International Record, Volume XIII (1954–1963)",
+   "url": "https://siftersearch.com/library/bahai/compilations/universal-house-of_the-bahai-world-an-international-record-volume-xiii-1954-1963",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "sears-enrolling-the-masses-part-2",
+   "para": 23,
+   "text": "Bahá’í News",
+   "linked_title": "Bahai News -",
+   "url": "https://bahai-library.com/newspapers/2000/120400-1.html",
+   "basis": "title (8 copies, best chosen)"
+  },
+  {
+   "slug": "sears-prophecies-part-7",
+   "para": 22,
+   "text": "Prayers and Meditations of Bahá’u’lláh.",
+   "linked_title": "Prayers and Meditations of Bahá'u'lláh",
+   "url": "https://bahai-library.com/writings/bahaullah/pm/002.html",
+   "basis": "title (10 copies, best chosen)"
+  },
+  {
+   "slug": "sears-william-sears-3",
+   "para": 1,
+   "text": "the promise of world peace.",
+   "linked_title": "Promise of World Peace",
+   "url": "https://bahai-library.com/russian/uhj/peace_stmt.htm",
+   "basis": "title (6 copies, best chosen)"
+  },
+  {
+   "slug": "various-khadem-will-1957",
+   "para": 2,
+   "text": "Dispensation of Bahá’u’lláh.",
+   "linked_title": "Dispensation of Baha'u'llah: Study Guide",
+   "url": "https://bahai-library.com/shakib_dispensation_bahaullah_guide",
+   "basis": "title (2 copies, best chosen)"
+  }
+ ]
+}
