@@ -1,18 +1,19 @@
 <script>
   // The aligned transcript of one talk: paragraphs of word spans (data-k = flat word index, for the player's binary-search
   // highlight), a play button per paragraph (left margin ≥ lg, inline below), speaker labels at voice changes, quoted spans
-  // as links, and "Quoted" / "Cross-reference" breakouts after their paragraph. Pure rendering: clicks go to onword/onpara;
+  // as links (a click on a link opens it, never seeks; Alt-click plays), and "Quoted" / "Cross-reference" breakouts after their paragraph. Pure rendering: clicks go to onword/onpara;
   // the playing-word highlight is toggled on these spans by MediaPlayer (DOM classes, not reactive state, 60 fps).
   // Typeset in the Fireside Room language: a measured serif column, subheaders as section breaks with a log time, a drop
   // cap, and the breakouts as cut-in "studio inserts" (styles at the bottom; tokens --radio-*, era tint --tint).
-  import { paragraphSegments, speakerLabels } from '../../lib/media.js';
+  import { paragraphSegments, speakerLabels, transcriptClickWord } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
   import ShareRow from './ShareRow.svelte';
+  import RecordLabel from './listening/RecordLabel.svelte';
   import { momentPath, momentShareText, SITE } from '../../lib/share.js';
 
   let { paragraphs = [], headings = [], quotes = [], links = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
     playingPara = -1, playing = false, onword, onpara, root = $bindable(),
-    moments = [], slug = '', speaker = '', onmoment = null, momentNow = null, skips = [] } = $props();
+    moments = [], slug = '', speaker = '', portrait = null, year = null, onmoment = null, momentNow = null, skips = [] } = $props();
   // a dead gap (a tape flip, ≥ 20 s with no speech) before a paragraph: a quiet divider (the player skips the gap)
   const gapBefore = $derived(new Map(paragraphs.map((p, i) => [p.n, i ? (skips || []).find((g) => g.from >= paragraphs[i - 1].t1 - 2 && g.to <= p.t0 + 2) : null]).filter(([, g]) => g)));
 
@@ -24,23 +25,21 @@
   // named people and works link on the spoken words; a quote wins where they overlap
   const spansBy = $derived(byPara([...quotes.filter((q) => q.url).map((q) => ({ ...q, kind: 'quote' })),
     ...links.filter((l) => l.url && !quotes.some((q) => q.url && q.para === l.para && l.i0 < q.i1 && q.i0 < l.i1))]));
-  const linkTitle = (l) => (l.kind === 'quote' ? l.cite : l.kind === 'person' ? `${l.name} — biography` : [l.title, l.section].filter(Boolean).join(', '));
+  const linkTitle = (l) => (l.kind === 'quote' ? `Open source${l.cite ? ` — ${l.cite}` : ''}${canPlay ? ' (Alt-click to play)' : ''}` : l.kind === 'person' ? `${l.name} — biography` : [l.title, l.section].filter(Boolean).join(', '));
   const xrefsBy = $derived(byPara(crossRefs.filter((c) => c.url || c.excerpt)));
   // MOMENTS: the speaker's own notable statements, as on-air cards after their paragraph (share targets: /media/<slug>/m/<key>)
   const momentsBy = $derived(byPara(moments.filter((m) => m.key && m.text)));
   // w[3] = 1: a word the copy-edit pass dropped (filler, stutter, loop) — kept for timing, never shown
-  const wordClass = (w) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && 'cursor-pointer hover:bg-radio-brass-soft', inRange(w) && 'bg-highlight-range']);
+  const wordClass = (w, inLink = false) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && !inLink && 'cursor-pointer hover:bg-radio-brass-soft', inRange(w) && 'bg-highlight-range']);
   const inRange = (w) => !!range && range.end != null && w[1] >= range.start - 0.05 && w[2] <= range.end + 0.05;
 
   function click(e) {
-    const el = e.target.closest?.('[data-k]');
-    if (!el || !canPlay) return;
+    if (!canPlay) return;
     const sel = window.getSelection?.();
     if (sel && !sel.isCollapsed && String(sel).trim()) return;           // selecting text, not seeking
-    const link = el.closest('a');
-    if (link?.dataset.nav) return;                                          // a name or a work: the link is the action
-    if (link && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)) return;   // modified click: follow the link
-    if (link) e.preventDefault();
+    const el = transcriptClickWord(e);                                      // inside a link: the link is the action
+    if (!el) return;
+    if (e.target.closest('a')) e.preventDefault();                          // Alt-click on a link: play it instead
     onword?.(Number(el.dataset.k), el);
   }
 </script>
@@ -83,7 +82,7 @@
         {#each segs as s, si (si)}
           {#if s.quote}
             <a href={s.quote.url} data-nav={s.quote.kind === 'quote' ? undefined : '1'} target={s.quote.kind === 'person' ? undefined : '_blank'} rel={s.quote.kind === 'person' ? undefined : 'noopener'} title={linkTitle(s.quote)}
-              class={s.quote.kind === 'quote' ? 'qlink' : s.quote.kind === 'person' ? 'nlink' : 'wlink'}>{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
+              class={s.quote.kind === 'quote' ? 'qlink' : s.quote.kind === 'person' ? 'nlink' : 'wlink'}>{#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w, true)}>{w[0]}</span>{s.i0 + j < s.i1 - 1 && !w[3] ? ' ' : ''}{/each}</a>{' '}
           {:else}
             {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{w[3] ? '' : ' '}{/each}
           {/if}
@@ -92,7 +91,11 @@
 
       {#each momentsBy.get(p.n) || [] as m (m.key)}
         <figure class="moment" id={`moment-${m.key}`} aria-label={`A moment from this talk at ${formatTime(m.t0_ms / 1000)}`}>
-          <p class="m-tag"><span class="m-dot" aria-hidden="true"></span>On the air{speaker ? ` · ${speaker}` : ''} · {formatTime(m.t0_ms / 1000)}</p>
+          <div class="m-head">
+            <span class="m-face" aria-hidden="true"><RecordLabel name={speaker} photo={portrait} {year} size={40} /></span>
+            <p class="m-tag"><span class="m-dot" aria-hidden="true"></span>On the air{speaker ? ` · ${speaker}` : ''}</p>
+            <span class="m-time">{formatTime(m.t0_ms / 1000)}–{formatTime(m.t1_ms / 1000)}</span>
+          </div>
           {#if m.context}<p class="m-context">{m.context}</p>{/if}
           <blockquote class="m-quote"><p>{m.text}</p></blockquote>
           <figcaption class="m-row">
@@ -104,10 +107,10 @@
                 {:else}
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
                 {/if}
-                <span>{Math.round((m.t1_ms - m.t0_ms) / 1000)} s</span>
+                <span>Play · {Math.round((m.t1_ms - m.t0_ms) / 1000)} s</span>
               </button>
             {/if}
-            <a class="m-page" href={momentPath(slug, m.key)}>The page for this moment</a>
+            <a class="m-page" href={momentPath(slug, m.key)}>Moment page</a>
             <ShareRow url={`${SITE}${momentPath(slug, m.key)}`} text={momentShareText({ text: m.text, speaker })} compact />
           </figcaption>
         </figure>
@@ -174,15 +177,17 @@
   .transcript :global(.qlink) { color: inherit; text-decoration: underline dotted var(--radio-amber); text-decoration-thickness: 2px; text-underline-offset: 5px; }
   .transcript :global(.nlink), .transcript :global(.wlink) { color: inherit; text-decoration: underline solid var(--radio-brass); text-decoration-thickness: 1px; text-underline-offset: 5px; }
   .transcript :global(.wlink) { font-style: italic; }
+  .transcript :global(.qlink), .transcript :global(.nlink), .transcript :global(.wlink) { cursor: pointer; }
   .transcript :global(.qlink:hover), .transcript :global(.nlink:hover), .transcript :global(.wlink:hover) { color: var(--radio-amber); }
+  .transcript :global(.qlink:hover) { text-decoration-style: solid; }
 
   /* WHAT THE STUDIO INSERTS (moments, quoted passages, cross-references) DECORATES the talk, it does not crowd it out (Chad
      10-23): indented under a thin muted rule, ~0.9em, muted ink, no card box or shadow, tight spacing; the hues stay but
      desaturated (--radio-*-muted, global.css) and come back to full colour on hover/focus. Controls are small and quiet. */
-  .moment, .insert { position: relative; clear: both; margin: 0.55rem 0 0.9rem 1.1rem; padding: 0.2rem 0 0.25rem 0.95rem; font-size: 0.9em; line-height: 1.6;
+  .insert { position: relative; clear: both; margin: 0.55rem 0 0.9rem 1.1rem; padding: 0.2rem 0 0.25rem 0.95rem; font-size: 0.9em; line-height: 1.6;
     color: var(--radio-insert-ink); border-left: 2px solid var(--rule, var(--radio-brass-muted)); hyphens: manual; -webkit-hyphens: manual; transition: border-color 0.2s; }
-  @media (min-width: 640px) { .moment, .insert { margin-left: 1.75rem; } }
-  .moment:hover, .moment:focus-within, .insert:hover, .insert:focus-within { border-left-color: var(--rule-on, var(--radio-brass)); }
+  @media (min-width: 640px) { .insert { margin-left: 1.75rem; } }
+  .insert:hover, .insert:focus-within { border-left-color: var(--rule-on, var(--radio-brass)); }
   .insert-tag, .m-tag { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; font: 700 0.7rem/1.2 'Big Shoulders Display', 'Shoulders Fallback', sans-serif;
     letter-spacing: 0.18em; text-transform: uppercase; color: var(--radio-insert-ink); }
   .dot, .m-dot { flex: none; width: 0.4rem; height: 0.4rem; border-radius: 9999px; background: var(--dot, var(--radio-needle-muted)); }
@@ -199,19 +204,30 @@
   /* cross-reference: brass rule, the claim as a small lead-in */
   .xref-insert { --rule: var(--radio-brass-muted); --rule-on: var(--radio-brass); --dot: var(--radio-brass-muted); }
   .xref-insert .claim { font-family: system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; margin-bottom: 0.15rem; }
-  /* moment: the speaker's own line, set in Gloock but at reading size; needle rule */
-  .moment { scroll-margin-top: 8rem; --rule: var(--radio-needle-muted); --rule-on: var(--radio-needle); }
-  .m-context { margin-top: 0.1rem; font-family: system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; }
-  .m-quote { margin-top: 0.2rem; font: 400 1.05rem/1.4 'Gloock', 'Gloock Fallback', Georgia, serif; text-wrap: pretty; }
+  /* MOMENT = a SHARE CARD, never confused with the sources (Chad 10-23): the inserts above are muted, indented rules;
+     a moment is a contained, tinted, rounded card in full ink — eyebrow, the speaker's face in the corner, the excerpt in
+     a larger upright serif, time range alongside, Play / page / Share actions. */
+  .moment { position: relative; clear: both; scroll-margin-top: 8rem; margin: 1rem 0 1.4rem; padding: 0.9rem 1rem 0.8rem; border-radius: 1rem;
+    color: var(--radio-ink); background: color-mix(in oklab, var(--radio-paper) 93%, var(--radio-needle)); border: 1px solid color-mix(in oklab, var(--radio-line) 70%, var(--radio-needle));
+    box-shadow: 0 1px 2px var(--radio-line), 0 6px 18px -10px var(--radio-glow); font-size: 0.95em; line-height: 1.55; transition: box-shadow 0.2s, border-color 0.2s; }
+  @media (min-width: 640px) { .moment { padding: 1.1rem 1.35rem 0.95rem; } }
+  .moment:hover, .moment:focus-within { border-color: var(--radio-needle-muted); box-shadow: 0 1px 2px var(--radio-line), 0 10px 26px -12px var(--radio-glow); }
+  .m-head { display: flex; align-items: center; gap: 0.6rem; min-height: 2.5rem; }
+  .m-face { order: 3; flex: none; width: 2.5rem; height: 2.5rem; margin-left: auto; overflow: hidden; border-radius: 9999px; box-shadow: 0 0 0 2px var(--radio-paper), 0 0 0 3px var(--radio-needle-muted); }
+  .moment .m-tag { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; margin: 0; color: var(--radio-needle); --dot: var(--radio-needle); }
+  .m-time { font: 600 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-ink-soft); white-space: nowrap; }
+  .m-context { margin-top: 0.35rem; font-family: system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; color: var(--radio-ink-soft); }
+  .m-quote { margin-top: 0.4rem; font: 400 1.2rem/1.42 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--radio-ink); text-wrap: pretty; }
+  @media (min-width: 640px) { .m-quote { font-size: 1.3rem; } }
   .m-quote p::before { content: '“'; } .m-quote p::after { content: '”'; }
-  .m-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; margin-top: 0.35rem; }
-  .m-play { display: inline-flex; align-items: center; gap: 0.25rem; height: 1.9rem; padding: 0 0.55rem 0 0.4rem; border-radius: 9999px; color: var(--radio-insert-ink);
-    box-shadow: inset 0 0 0 1px var(--radio-line); font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.08em; transition: color 0.2s, box-shadow 0.2s; }
+  .m-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px solid var(--radio-line); }
+  .m-play { display: inline-flex; align-items: center; gap: 0.3rem; height: 2.1rem; padding: 0 0.8rem 0 0.6rem; border-radius: 9999px; color: var(--radio-on-needle); background: var(--radio-needle);
+    font: 700 0.85rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.08em; transition: filter 0.2s, box-shadow 0.2s; }
   .m-play svg { width: 0.85rem; height: 0.85rem; }
-  .m-play:hover, .m-play.on { color: var(--radio-amber); box-shadow: inset 0 0 0 1.5px var(--radio-amber); }
-  .m-page { font-size: 0.8rem; font-family: system-ui, sans-serif; }
+  .m-play:hover, .m-play.on { filter: brightness(1.1); box-shadow: 0 0 0 3px var(--radio-glow); }
+  .m-page { font-size: 0.8rem; font-family: system-ui, sans-serif; color: var(--radio-ink-soft); }
   /* the share row inside a moment: icon-sized and muted until hovered */
-  .moment :global(.s-btn) { height: 1.9rem; min-width: 1.9rem; padding: 0 0.45rem; font-size: 0.75rem; color: var(--radio-insert-ink); background: transparent; box-shadow: none; }
+  .moment :global(.s-btn) { height: 1.9rem; min-width: 1.9rem; padding: 0 0.45rem; font-size: 0.75rem; color: var(--radio-ink-soft); background: transparent; box-shadow: none; }
   .moment :global(.s-btn svg) { width: 0.85rem; height: 0.85rem; }
   .moment :global(.s-btn:hover) { color: var(--radio-amber); box-shadow: inset 0 0 0 1px var(--radio-amber); background: transparent; }
   @supports (animation-timeline: view()) {

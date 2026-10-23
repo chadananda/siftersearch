@@ -79,6 +79,16 @@ export function wordAt(starts, t) {
   return ans;
 }
 
+/** A click on the transcript: the word element to seek to, or null. A click inside a link (a linked quotation, a person, a
+ *  work) OPENS the link — links are prioritised over play position (Chad 10-23); only a plain Alt-click on a link plays it. */
+export function transcriptClickWord(e) {
+  const el = e?.target?.closest?.('[data-k]');
+  if (!el) return null;
+  const link = e.target.closest('a');
+  if (!link) return el;
+  return e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey && (e.button ?? 0) === 0 ? el : null;
+}
+
 /** One paragraph's words split around its quote spans: [{ i0, i1, quote|null }] covering [0, nWords) in order.
  *  Quotes are { i0, i1 (exclusive) }; overlapping or out-of-range spans are clipped/skipped. */
 export function paragraphSegments(nWords, quotes = []) {

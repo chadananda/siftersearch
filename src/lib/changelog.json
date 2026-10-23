@@ -1,6 +1,41 @@
 {
-  "generated": "2026-10-23T22:20:15.551Z",
+  "generated": "2026-10-23T22:52:00.081Z",
   "entries": [
+    {
+      "hash": "4d4ee49c",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Drop 6 redundant content indexes, index content's FK child keys (migration 180) + planning/content-write-cost-20261023.md",
+      "scope": "db"
+    },
+    {
+      "hash": "f4f77f90",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Exclusions are an explicit per-person list (Chad 10-23 final: newer-generation UHJ members out)",
+      "scope": "media"
+    },
+    {
+      "hash": "3a36a735",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "'write-stats' report (writer busy %, per caller×name batches/h, rows, ms, p95, schedule from db_write_stats) + writer GET /latency (exact batch p50/p95/p99 + busy % from an in-memory ring) — the before-measurement for db-write-path-20261023",
+      "scope": "ops"
+    },
+    {
+      "hash": "98a87e07",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Content's docs_with_content triggers ask NOT EXISTS, not COUNT(*) per row (migration 179) + ops reports table-schema / index-sizes",
+      "scope": "db"
+    },
+    {
+      "hash": "35a2a0d1",
+      "date": "2026-10-23",
+      "type": "Chore",
+      "description": "Deploy 2.187.795 (edge cache evicts a key the origin answers 404/410)",
+      "scope": null
+    },
     {
       "hash": "e82860b8",
       "date": "2026-10-23",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "'Title by Author' typed as one string is held on the title alone — agents send it that way",
       "scope": "dewey"
-    },
-    {
-      "hash": "14c3228a",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Gemini's per-minute 429 (billing boilerplate, 'PerMinute' metric id) is not out of credit — it killed phrase-index #106; job errors keep the Error line",
-      "scope": "alerts"
-    },
-    {
-      "hash": "7d2e2c7c",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Dewey in the OpenAPI spec — every /api/dewey route with request/response schemas, tag Dewey, X-API-Key or Bearer; contract test",
-      "scope": "dewey"
-    },
-    {
-      "hash": "3b50aadc",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "A photo sends itself (clearing the picker after an await threw and stopped it); Dewey's *italic* / **bold** rendered",
-      "scope": "dewey"
-    },
-    {
-      "hash": "fb0bba75",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "An upload is one step — checked, appraised, and imported at once when we lack it and it belongs; errors stay visible; no indexing status in the library column",
-      "scope": "dewey"
-    },
-    {
-      "hash": "7d40b0c1",
-      "date": "2026-10-17",
-      "type": "Chore",
-      "description": "Log the shape of a refused model request",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "4d4ee49c",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Drop 6 redundant content indexes, index content's FK child keys (migration 180) + planning/content-write-cost-20261023.md",
+        "scope": "db"
+      },
+      {
+        "hash": "f4f77f90",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Exclusions are an explicit per-person list (Chad 10-23 final: newer-generation UHJ members out)",
+        "scope": "media"
+      },
+      {
+        "hash": "3a36a735",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "'write-stats' report (writer busy %, per caller×name batches/h, rows, ms, p95, schedule from db_write_stats) + writer GET /latency (exact batch p50/p95/p99 + busy % from an in-memory ring) — the before-measurement for db-write-path-20261023",
+        "scope": "ops"
+      },
+      {
+        "hash": "98a87e07",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Content's docs_with_content triggers ask NOT EXISTS, not COUNT(*) per row (migration 179) + ops reports table-schema / index-sizes",
+        "scope": "db"
+      },
+      {
+        "hash": "35a2a0d1",
+        "date": "2026-10-23",
+        "type": "Chore",
+        "description": "Deploy 2.187.795 (edge cache evicts a key the origin answers 404/410)",
+        "scope": null
+      },
       {
         "hash": "e82860b8",
         "date": "2026-10-23",
@@ -6979,41 +7014,6 @@
         "date": "2026-10-17",
         "type": "Fixed",
         "description": "'Title by Author' typed as one string is held on the title alone — agents send it that way",
-        "scope": "dewey"
-      },
-      {
-        "hash": "14c3228a",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Gemini's per-minute 429 (billing boilerplate, 'PerMinute' metric id) is not out of credit — it killed phrase-index #106; job errors keep the Error line",
-        "scope": "alerts"
-      },
-      {
-        "hash": "7d2e2c7c",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Dewey in the OpenAPI spec — every /api/dewey route with request/response schemas, tag Dewey, X-API-Key or Bearer; contract test",
-        "scope": "dewey"
-      },
-      {
-        "hash": "3b50aadc",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "A photo sends itself (clearing the picker after an await threw and stopped it); Dewey's *italic* / **bold** rendered",
-        "scope": "dewey"
-      },
-      {
-        "hash": "fb0bba75",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "An upload is one step — checked, appraised, and imported at once when we lack it and it belongs; errors stay visible; no indexing status in the library column",
-        "scope": "dewey"
-      },
-      {
-        "hash": "7d40b0c1",
-        "date": "2026-10-17",
-        "type": "Chore",
-        "description": "Log the shape of a refused model request",
         "scope": "dewey"
       }
     ]

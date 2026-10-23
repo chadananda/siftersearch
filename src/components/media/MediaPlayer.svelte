@@ -432,7 +432,7 @@
       {/if}
       <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara}
-        {moments} slug={item.slug} speaker={item.speaker || ''} {onmoment} {momentNow} {skips} />
+        {moments} slug={item.slug} speaker={item.speaker || ''} portrait={photo ? item.thumb.url : null} year={item.year} {onmoment} {momentNow} {skips} />
     </div>
   </div>
 
