@@ -218,7 +218,9 @@
     align-items: center;
     gap: 0.9rem;
   }
-  .google-btn-slot { min-height: 44px; display: flex; justify-content: center; }
+  /* clipped to exactly the button's pill so no iframe canvas shows (see NavBar .guest-google-slot) */
+  .google-btn-slot { height: 40px; max-width: 100%; margin: 0 auto; border-radius: 20px; overflow: hidden; color-scheme: light; }
+  .google-btn-slot :global(iframe) { color-scheme: light; background: transparent; }
   .or-rule {
     width: 100%;
     display: flex;

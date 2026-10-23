@@ -46,13 +46,36 @@ export async function promptOneTap({ force = false } = {}) {
   gsi?.prompt();
 }
 
-// Render the "Continue with Google" button into a container (AuthModal).
+// Site theme: data-theme on <html>, or the OS preference when the attribute is absent ("system").
+export function siteIsDark() {
+  if (typeof document === 'undefined') return false;
+  const t = document.documentElement.getAttribute('data-theme');
+  if (t === 'dark') return true;
+  if (t === 'light') return false;
+  return typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+// Calls cb when the site theme flips (ThemeToggle sets data-theme; "system" follows the OS). Returns an unsubscribe.
+export function onSiteThemeChange(cb) {
+  if (typeof document === 'undefined') return () => {};
+  const mo = typeof MutationObserver === 'function' ? new MutationObserver(cb) : null;
+  mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  const mq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+  mq?.addEventListener?.('change', cb);
+  return () => { mo?.disconnect(); mq?.removeEventListener?.('change', cb); };
+}
+
+// Render the "Continue with Google" button into a container (AuthModal, guest menu). Theme follows the
+// site: 'filled_black' on dark, 'outline' on light (a white button on the dark panel clashed, Chad 10-22).
+// Re-renders only when width or theme changed, so repeated calls are cheap.
 export async function renderGoogleButton(el, { width = 280 } = {}) {
   const gsi = await ensureInit();
   if (!gsi || !el) return;
-  // Re-render only when the width changed (or the slot is empty), so repeated calls are cheap.
-  if (el.childElementCount && el.dataset?.gsiWidth === String(width)) return;
+  const theme = siteIsDark() ? 'filled_black' : 'outline';
+  const key = `${width}|${theme}`;
+  if (el.childElementCount && el.dataset?.gsiKey === key) return;
   if (el.childElementCount) el.innerHTML = '';
-  if (el.dataset) el.dataset.gsiWidth = String(width);
-  gsi.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width });
+  if (el.dataset) el.dataset.gsiKey = key;
+  if (el.style) el.style.width = `${width}px`; // the host is clipped to exactly the button's pill
+  gsi.renderButton(el, { type: 'standard', theme, size: 'large', text: 'continue_with', shape: 'pill', width });
 }

@@ -22,7 +22,7 @@
   let connectionStatus = $state(getConnectionStatus());
   $effect(() => onConnectionStatusChange(s => { connectionStatus = s; }));
 
-  import { promptOneTap, renderGoogleButton } from '../../lib/google-signin.js';
+  import { promptOneTap, renderGoogleButton, onSiteThemeChange } from '../../lib/google-signin.js';
 
   // Guest clicking the account pill = asking to sign in (Chad 10-22). Ask Google for One Tap
   // (forced past our once-per-session guard), AND render a real "Continue with Google" button plus
@@ -38,12 +38,13 @@
   $effect(() => {
     if (!showNavMenu || !guestGoogleEl || auth.isAuthenticated) return;
     const el = guestGoogleEl;
-    const fit = () => renderGoogleButton(el, { width: Math.max(200, Math.min(400, Math.floor(el.clientWidth || 240))) });
+    const fit = () => renderGoogleButton(el, { width: Math.max(200, Math.min(400, Math.floor(el.parentElement?.clientWidth || 240))) });
     fit();
     let t;
     const onResize = () => { clearTimeout(t); t = setTimeout(fit, 150); };
     window.addEventListener('resize', onResize);
-    return () => { clearTimeout(t); window.removeEventListener('resize', onResize); };
+    const offTheme = onSiteThemeChange(fit);
+    return () => { clearTimeout(t); window.removeEventListener('resize', onResize); offTheme(); };
   });
 
   // Local state — showNavMenu drives the ONE combined pill menu (nav + account)
@@ -335,7 +336,7 @@
             {:else}
               <div class="guest-signin" role="group" aria-label="Sign in">
                 <div class="guest-signin-title">Connect free — save your research</div>
-                <div bind:this={guestGoogleEl} class="guest-google-slot"></div>
+                <div class="guest-google-row"><div bind:this={guestGoogleEl} class="guest-google-slot"></div></div>
                 <button class="dropdown-item connect-item" role="menuitem" onclick={() => { showNavMenu = false; showAuthModal = true; }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
@@ -565,7 +566,14 @@
   .guest-signin { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 0.25rem 0.25rem; }
   .guest-signin { width: 260px; max-width: 100%; }
   .guest-signin-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary, inherit); padding: 0 0.5rem; white-space: normal; overflow-wrap: anywhere; }
-  .guest-google-slot { min-height: 40px; width: 100%; display: flex; justify-content: center; overflow: hidden; }
+  /* The Google button is clipped to exactly its own pill (width set by renderGoogleButton, 40 px high,
+     radius 20 px). GSI's iframe is larger than the button (margin -2px -10px) and, once it swaps in the
+     PERSONALISED "Continue as …" button, can paint an opaque canvas — the white square-cornered
+     rectangle Chad saw flip in after a correct first paint. Clipped to the pill, only the button shows.
+     color-scheme: light matches the iframe document so Chrome keeps its canvas transparent anyway. */
+  .guest-google-row { width: 100%; display: flex; justify-content: center; }
+  .guest-google-slot { height: 40px; max-width: 100%; border-radius: 20px; overflow: hidden; background: transparent; color-scheme: light; }
+  .guest-google-slot :global(iframe) { color-scheme: light; background: transparent; }
   .pill-guest {
     background: var(--surface-3);
     color: var(--text-muted);

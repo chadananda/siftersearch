@@ -38,6 +38,27 @@ describe('guest sign-in', () => {
     expect(gsi.renderButton.mock.calls[1][1].width).toBe(210);
   });
 
+  it('the button theme follows the site: filled_black on dark, outline on light, re-rendered on a flip', async () => {
+    let theme = 'dark';
+    vi.stubGlobal('document', { documentElement: { getAttribute: () => theme } });
+    const el = { childElementCount: 0, dataset: {} };
+    await mod.renderGoogleButton(el, { width: 240 });
+    expect(gsi.renderButton.mock.calls[0][1]).toMatchObject({ theme: 'filled_black', shape: 'pill' });
+    theme = 'light';
+    await mod.renderGoogleButton(el, { width: 240 });
+    expect(gsi.renderButton.mock.calls[1][1]).toMatchObject({ theme: 'outline', shape: 'pill' });
+    await mod.renderGoogleButton(el, { width: 240 });
+    expect(gsi.renderButton).toHaveBeenCalledTimes(2);
+    const src = readFileSync(resolve(__dirname, '../../src/components/common/NavBar.svelte'), 'utf8');
+    expect(src).toMatch(/onSiteThemeChange\(fit\)/);
+    expect(src).toMatch(/\.guest-google-slot \{[^}]*color-scheme: light/);
+    // clipped to exactly the button's pill: an opaque personalised-iframe canvas cannot show around it
+    expect(src).toMatch(/\.guest-google-slot \{[^}]*height: 40px[^}]*border-radius: 20px[^}]*overflow: hidden/);
+    const host = { childElementCount: 0, dataset: {}, style: {} };
+    await mod.renderGoogleButton(host, { width: 252 });
+    expect(host.style.width).toBe('252px');
+  });
+
   it('the menu is right-aligned to the pill and capped to the viewport (was centred → clipped on the right)', () => {
     const src = readFileSync(resolve(__dirname, '../../src/components/common/NavBar.svelte'), 'utf8');
     const css = src.match(/\.nav-dropdown \{[^}]*\}/)[0];
