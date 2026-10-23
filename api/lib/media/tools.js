@@ -153,7 +153,7 @@ export async function asrJob(input, opts = {}, { host = asrHost(), threads = asr
 
 /** A tower-side tool as a DETACHED process (its pid in pidFile): a drain leaves it running; a resumed stage waits for it.
  *  → the tool's JSON (from its stdout file) */
-export async function detachedTool(sub, input, opts = {}, { pidFile, threads = defaultThreads(), stop = null, pollMs = 2000 } = {}) {
+export async function detachedTool(sub, input, opts = {}, { pidFile, threads = defaultThreads(), stop = null, pollMs = 2000, python = null } = {}) {
   const { readFile, writeFile } = await import('fs/promises');
   const { openSync, closeSync, existsSync } = await import('fs');
   const outFile = `${pidFile}.out`;
@@ -166,7 +166,7 @@ export async function detachedTool(sub, input, opts = {}, { pidFile, threads = d
     for (const [k, v] of Object.entries(opts)) { if (v === true) args.push(`--${k}`); else if (v != null && v !== false && v !== '') args.push(`--${k}`, String(v)); }
     const out = openSync(outFile, 'w'), err = openSync(`${pidFile}.err`, 'w');
     const tenv = { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads), CUDA_VISIBLE_DEVICES: '' };
-    const p = spawn('nice', ['-n', '19', PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
+    const p = spawn('nice', ['-n', '19', python || PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
     p.unref(); closeSync(out); closeSync(err);
     pid = p.pid;
     await writeFile(pidFile, String(pid));
@@ -266,10 +266,18 @@ export async function searchP90(n = 5, { probe = searchLatency } = {}) {
  * boss through the gate, the turns come back and are written to `output`. Only when boss cannot be reached does it run on
  * tower — detached, ≤ 4 threads, nice 19 — and never while search p90 is above 4 s (it waits, then gives up).
  */
-export async function diarize(input, output, { host = asrHost(), threads = Math.max(2, Math.floor(BOSS_THREADS / (2 * mediaParallel()))), stop = null, pidFile = `${output}.pid`, towerThreads = 4,
+export async function diarize(input, output, { host = asrHost(), job = null, deps = {}, threads = Math.max(2, Math.floor(BOSS_THREADS / (2 * mediaParallel()))), stop = null, pidFile = `${output}.pid`, towerThreads = 4,
   p90 = searchP90, maxWaitMs = 30 * 60_000, remote = asr, detached = detachedTool, pause: wait = pause } = {}) {
   const { writeFile } = await import('fs/promises');
-  if (host) {
+  // DETACHED on boss (10-22: the attached call died with every service restart, so a diarization never finished)
+  if (host && job) {
+    try {
+      const r = await (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop });
+      const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
+      return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
+    } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }
+  }
+  if (host && !job) {
     const unreachable = new Error('unreachable');
     try {
       const r = await remote('diarize', input, { 'emit-turns': true }, { host, threads, stop, timeoutMs: 3 * 3600_000, local: async () => { throw unreachable; } });

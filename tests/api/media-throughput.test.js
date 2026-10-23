@@ -132,3 +132,34 @@ describe('the process strip', () => {
     expect([s.import.count, s.quotes.count, s.publish.count, s.moments.count]).toEqual([1, 1, 1, 0]);
   });
 });
+
+describe('stage lanes (Chad 10-22: no internet dependencies on GPU processing)', () => {
+  it('the feed keeps the compute and LLM queues deep, separately', async () => {
+    const { mediaLanesFeedPass } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn();
+    const repo = { nextToProcess: vi.fn(async (n) => [{ id: 1 }, { id: 2 }, { id: 3 }].slice(0, n)), nextTranscribed: vi.fn(async (n) => [{ id: 9 }].slice(0, n)),
+      updateMediaItem: vi.fn(), nextToDownload: async () => [], youtubeHeldSince: async () => ({ n: 0 }) };
+    const ops = { pendingRuns: async (name) => (name === 'media-compute' ? [{}, {}] : name === 'media-llm' ? [] : []) };
+    const r = await mediaLanesFeedPass({ repo, ops, queue, computeDepth: 4, llmDepth: 2 });
+    expect(r).toMatchObject({ compute: [1, 2], llm: [9], compute_pending: 2, llm_pending: 0 });
+    expect(queue.mock.calls.map((c) => c[0])).toEqual(['media-compute', 'media-compute', 'media-llm']);
+    expect(repo.updateMediaItem.mock.calls).toContainEqual([9, { state: 'llm_queued' }]);
+  });
+  it('the compute job runs only the LAN stages and hands the item to the LLM lane', async () => {
+    const { mediaComputeJob, COMPUTE_STAGES } = await import('../../api/lib/ops/media-jobs.js');
+    expect(COMPUTE_STAGES).toEqual(['archive', 'grade', 'enhance', 'web', 'transcribe']);
+    expect(COMPUTE_STAGES.some((s) => ['correct', 'clean', 'describe', 'quotes', 'links', 'assess'].includes(s))).toBe(false);
+  });
+  it('a diarization with a job id is a detached boss job (re-attached after a restart)', async () => {
+    const { diarize } = await import('../../api/lib/media/tools.js');
+    const { mkdtempSync, writeFileSync } = await import('fs');
+    const { join } = await import('path');
+    const { tmpdir } = await import('os');
+    const out = join(mkdtempSync(join(tmpdir(), 'dj-')), 'd.json');
+    const asrJob = vi.fn(async (input, opts, o) => { writeFileSync(opts.output, JSON.stringify({ turns: [{ speaker: 'S1' }, { speaker: 'S2' }] })); return { reattached: true }; });
+    const r = await diarize('/a.flac', out, { host: 'boss', job: 'talk-dz-1', deps: { asrJob } });
+    expect(asrJob.mock.calls[0][1]).toEqual({ verb: 'diarize', output: out });
+    expect(asrJob.mock.calls[0][2]).toMatchObject({ host: 'boss', job: 'talk-dz-1' });
+    expect(r).toMatchObject({ speakers: 2, turns: 2, reattached: true });
+  });
+});

@@ -54,12 +54,22 @@ if [[ "$verb" == "start" ]]; then
   find jobs -mindepth 1 -maxdepth 1 -type d -mtime +2 -exec rm -rf {} + 2>/dev/null || true
   d="jobs/$id"; rm -rf "$d"; mkdir -p "$d"
   cat > "$d/in.$ext"
-  nohup setsid nice -n 10 venv/bin/python media_tool.py transcribe "$d/in.$ext" --output "$d/out.json" --models "$HOME/media-asr/models" --prompt "$prompt" "${args[@]}" >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+  # a detached job is a transcription, or (--verb diarize) a diarization; both survive the caller's restarts
+  tool=transcribe; rest2=()
+  for ((k=0; k<${#args[@]}; k++)); do if [[ "${args[$k]}" == "--verb" ]]; then tool="${args[$((k+1))]}"; k=$((k+1)); else rest2+=("${args[$k]}"); fi; done
+  [[ "$tool" =~ ^(transcribe|diarize)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
+  export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # every model is local: no internet in the compute lane
+  if [[ "$tool" == "diarize" ]]; then
+    nohup setsid nice -n 10 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$HOME/media-asr/models" "${rest2[@]}" >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+  else
+    nohup setsid nice -n 10 venv/bin/python media_tool.py transcribe "$d/in.$ext" --output "$d/out.json" --models "$HOME/media-asr/models" --prompt "$prompt" "${rest2[@]}" >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+  fi
   echo $! > "$d/pid"
   printf '{"job":"%s","started":true}\n' "$id"
   exit 0
 fi
 
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # every model is local: no internet in the compute lane
 job=$(mktemp -d /tmp/media-asr.XXXXXX); trap 'rm -rf "$job"' EXIT
 cat > "$job/in.$ext"
 # attached work runs in the background and is killed when the caller's ssh session goes away (tower stopped it for a

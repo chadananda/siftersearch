@@ -504,3 +504,49 @@ export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
   }
   return out;
 }
+
+// ── STAGE LANES (Chad 10-22: "no internet dependencies on GPU processing. Queue up work and keep them busy") ─────────────────
+// COMPUTE (LAN only: archive · grade · enhance · web renditions · transcription with alignment and diarization on boss) and
+// LLM (names · copy-edit · description · publish · subheaders · quotes · links · assess · update; API-bound) are separate
+// jobs with their own lanes: an item leaves the compute lane 'transcribed' and the LLM feed picks it up — an API storm never
+// holds a compute slot, and the compute machines never wait for the internet.
+export const COMPUTE_STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe'];
+export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
+  const before = await (deps.repo?.getMediaItem || getMediaItem)(id);
+  const r = await mediaItemJob({ id, ...rest, only: COMPUTE_STAGES }, deps);
+  if (!r?.failed && !r?.held && !r?.yielded) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : 'transcribed' });
+  return r;
+}
+export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
+  // everything after the compute stages (they are recorded done, so runItem skips them)
+  return mediaItemJob({ id, ...rest }, deps);
+}
+
+/** The FEED for both lanes (30 s): keep the compute queue `computeDepth` deep (by rank; YouTube items once downloaded) and the
+ *  LLM queue `llmDepth` deep (transcribed items by rank); one download run queued; transient failures back after 30 min. */
+export async function mediaLanesFeedPass(deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || ops.enqueue;
+  const computeDepth = deps.computeDepth ?? (Number(process.env.MEDIA_COMPUTE_DEPTH) || 8);
+  const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || 8);
+  const out = { compute: [], llm: [] };
+  if (repo.retryTransientFailures) { const back = await repo.retryTransientFailures(); if (back.length) out.retried = back; }
+  const compute = await ops.pendingRuns('media-compute');
+  out.compute_pending = compute.length;
+  for (const it of await repo.nextToProcess(Math.max(0, computeDepth - compute.length))) {
+    await repo.updateMediaItem(it.id, { state: 'scheduled' });
+    await queue('media-compute', { id: it.id, priority: true }, 'media-feed');
+    out.compute.push(it.id);
+  }
+  const llm = await ops.pendingRuns('media-llm');
+  out.llm_pending = llm.length;
+  for (const it of await repo.nextTranscribed(Math.max(0, llmDepth - llm.length))) {
+    await repo.updateMediaItem(it.id, { state: 'llm_queued' });
+    await queue('media-llm', { id: it.id, priority: true }, 'media-feed');
+    out.llm.push(it.id);
+  }
+  const fetchPending = (await ops.pendingRuns('media-fetch')).length;
+  if (!fetchPending && (await repo.nextToDownload(1)).length && !((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0)) { await queue('media-fetch', { limit: 6 }, 'media-feed'); out.fetch = true; }
+  return out;
+}

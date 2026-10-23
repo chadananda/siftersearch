@@ -52,6 +52,8 @@ export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM
 /** The next items to PROCESS, by rank: queued, and (a YouTube item) already downloaded — downloads have their own lane. */
 export const nextToProcess = async (limit = 3) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND (source_kind != 'youtube' OR dir IS NOT NULL)
   ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
+/** Items whose compute stages are done, waiting for the LLM lane, by rank. */
+export const nextTranscribed = async (limit = 8) => (await queryAll(`SELECT * FROM media_items WHERE state = 'transcribed' ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next-llm')).map(parse);
 /** The next YouTube items to DOWNLOAD, by rank (queued, not yet in the archive). */
 export const nextToDownload = async (limit = 5) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND source_kind = 'youtube' AND dir IS NULL
   ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next-download')).map(parse);
