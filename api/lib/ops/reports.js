@@ -20,6 +20,7 @@ import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
 import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
+import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -218,6 +219,8 @@ REPORTS['media-shorts-moments'] = mediaShortsMomentsJob;   // params { per?, rol
 REPORTS['media-short'] = mediaShortJob;   // params { slug, start, end, format?, template? } — an audiogram short
 REPORTS['media-grade'] = mediaGradeJob;   // params { ids?, after? } — quality grade back-fill for processed items
 REPORTS['media-speakers'] = mediaSpeakersJob;   // params { refresh?, names? } — one canonical portrait per speaker (web search; face-centred crops via the image worker)   // params { minMentions? } — names for the transcript corrector's controlled vocabulary
+REPORTS['media-gallery'] = mediaGalleryJob;   // { write, keys?, extend, maxUsd } — speaker galleries from data/media-speaker-gallery.json (+ AI-extended masters once)
+REPORTS['media-portrait-inventory'] = mediaPortraitInventoryJob;   // every speaker of the catalogue (published + queued), talks and photos
 REPORTS['pipeline-snapshot'] = (p = {}) => pipelineSnapshotJob(p);   // params { rebaseIntegrity?, force? } — data/pipeline-status.json now (also every 10 min from the reports-worker loop)
 REPORTS['dewey-intake'] = deweyIntakeJob;       // params: { id } — its attached source → library document → the automatic index chain
 // Can a section be found by its own title? A fixed sample (same sections every run) searched on BM25 alone; a hit is a
@@ -257,6 +260,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-trim-audit'];
+MEDIA_JOBS.push('media-gallery', 'media-portrait-inventory');
 export { LANE_WORKERS } from './lane-workers.js';
 
 export const reportNames = () => Object.keys(REPORTS);

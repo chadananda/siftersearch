@@ -1893,6 +1893,18 @@ export const migrations = {
     try { await query('ALTER TABLE media_items ADD COLUMN stages_done TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 173 complete: media_items.stages_done');
   },
+
+  174: async () => {
+    // SPEAKER GALLERIES (Chad 10-23: "numerous photos of each speaker so we can rotate them"): several verified photos per
+    // person (speaker_key = the media_speakers key), ordered (rank 0 = primary), each with its own credit, licence, year and
+    // dHash; the original kept once in cdn-assets R2 (media-speakers/<key>/<sha16>.jpg), crops by the image worker; an
+    // AI-extended 9:16 master only where the crop needs canvas (ext_*). Synced from data/media-speaker-gallery.json.
+    await query(`CREATE TABLE IF NOT EXISTS media_speaker_photos (speaker_key TEXT NOT NULL, sha TEXT NOT NULL, rank INTEGER NOT NULL DEFAULT 100,
+      file TEXT NOT NULL, phash TEXT, width INTEGER, height INTEGER, face TEXT, origin TEXT, source_url TEXT, page_url TEXT, credit TEXT, licence TEXT,
+      year INTEGER, note TEXT, needs_ext INTEGER NOT NULL DEFAULT 0, ext_file TEXT, ext_sha TEXT, ext_model TEXT, ext_usd REAL, ext_at TEXT, ext_error TEXT,
+      updated_at TEXT NOT NULL, PRIMARY KEY (speaker_key, sha))`);
+    logger.info('Migration 174 complete: media_speaker_photos');
+  },
 };
 
 export const graphMigrations = {

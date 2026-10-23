@@ -324,3 +324,27 @@ export async function setSpeakerExtension(key, f = {}) {
   await transaction([{ sql: `UPDATE media_speakers SET ${cols.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE key = ?`, args: [...cols.map((k) => f[k]), now(), String(key)] }], 'media:speaker-ext');
   return getSpeaker(key);
 }
+
+// ── speaker galleries (migration 174) ──
+/** Gallery rows of these people (all when keys is null), in rank order. */
+export const galleryRows = async (keys = null) => (keys && !keys.length ? [] : queryAll(`SELECT * FROM media_speaker_photos${keys ? ` WHERE speaker_key IN (${keys.map(() => '?').join(',')})` : ''}
+  ORDER BY speaker_key, rank`, keys || [], 'media:gallery'));
+const GAL = ['rank', 'file', 'phash', 'width', 'height', 'face', 'origin', 'source_url', 'page_url', 'credit', 'licence', 'year', 'note', 'needs_ext'];
+/** Apply one person's gallery sync (planGallerySync): upserts keep any extended master already made; deletes by sha. */
+export async function applyGallery(key, { upserts = [], deletes = [] }) {
+  const ops = deletes.map((sha) => ({ sql: 'DELETE FROM media_speaker_photos WHERE speaker_key = ? AND sha = ?', args: [String(key), sha] }));
+  for (const r of upserts) ops.push({ sql: `INSERT INTO media_speaker_photos (speaker_key, sha, ${GAL.join(', ')}, updated_at) VALUES (?, ?, ${GAL.map(() => '?').join(', ')}, ?)
+    ON CONFLICT(speaker_key, sha) DO UPDATE SET ${GAL.map((k) => `${k} = excluded.${k}`).join(', ')}, updated_at = excluded.updated_at`,
+  args: [String(key), r.sha, ...GAL.map((k) => r[k] ?? null), now()] });
+  if (ops.length) await transaction(ops, 'media:gallery-sync');
+  return ops.length;
+}
+/** Record a gallery photo's AI-extended master (or its failure). */
+export async function setGalleryExtension(key, sha, f = {}) {
+  const cols = ['ext_file', 'ext_sha', 'ext_model', 'ext_usd', 'ext_at', 'ext_error'].filter((k) => f[k] !== undefined);
+  if (cols.length) await transaction([{ sql: `UPDATE media_speaker_photos SET ${cols.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE speaker_key = ? AND sha = ?`,
+    args: [...cols.map((k) => f[k]), now(), String(key), sha] }], 'media:gallery-ext');
+}
+/** Every speaker string of the catalogue by state (published, queued, …) — the portrait inventory's work list. */
+export const speakerStateCounts = async () => queryAll(`SELECT speaker, speaker_key, state, COUNT(*) n FROM media_items WHERE speaker IS NOT NULL AND speaker != ''
+  GROUP BY speaker, speaker_key, state`, [], 'media:speaker-states');

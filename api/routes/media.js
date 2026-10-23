@@ -13,6 +13,7 @@ import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
 import { buildIndex, shapeSpeakers } from '../lib/media/listing-index.js';
+import { speakerGallery, compactGallery } from '../lib/media/gallery.js';
 import { parseClipRange, clipText } from '../lib/media/clip-text.js';
 import { stripMdLinks } from '../lib/media/render.js';
 import { tmpdir } from 'os';
@@ -53,6 +54,19 @@ export function speakerThumb(s) {
     width: 1152, height: 2048, ai_extended: true, model: s.ext_model || null } : null;
   return { extended, url: `https://siftersearch.com/img/cdn/siftersearch.com/${s.file}?v=${s.sha.slice(0, 16)}`, kind: 'photo', service: true, name: s.name, credit: s.credit || null, licence: s.licence || null,
     source_url: s.source_url || null, page_url: s.page_url || null, fetched_at: s.fetched_at || null };
+}
+
+/** Speaker GALLERIES (Chad 10-23: several photos per person, rotated by the pages): key → [photo] (primary first; the
+ *  media_speakers portrait leads when the gallery does not hold it). speakerRows: their media_speakers rows when at hand. */
+export async function galleriesFor(keys, speakerRows = null) {
+  const ks = [...new Set(keys.filter(Boolean))];
+  if (!ks.length) return new Map();
+  const { galleryRows } = await import('../lib/repos/media-repo.js');
+  const [rows, spk] = await Promise.all([galleryRows(ks).catch(() => []), speakerRows || speakersByKeys(ks)]);
+  const prim = new Map(spk.map((s) => [s.key, speakerThumb(s)]));
+  const by = new Map();
+  for (const r of rows) { if (!by.has(r.speaker_key)) by.set(r.speaker_key, []); by.get(r.speaker_key).push(r); }
+  return new Map(ks.map((k) => [k, speakerGallery(by.get(k) || [], prim.get(k))]).filter(([, g]) => g.length));
 }
 
 // ── the listing index cache (GET /api/media/index): per item, keyed by updated_at; persisted so a restart reads one file
@@ -188,7 +202,16 @@ export default async function mediaRoutes(fastify) {
   // browser as you type). Edge-cached; a partial build (items still being read) is cached briefly.
   fastify.get('/index', async (req, reply) => {
     const { items, pending } = await mediaIndex(INDEX_BUDGET);
-    const speakers = shapeSpeakers(items, await listSpeakers(), speakerThumb);
+    const spkRows = await listSpeakers();
+    const speakers = shapeSpeakers(items, spkRows, speakerThumb);
+    // each speaker's gallery (the pages rotate through it); a person without a media_speakers portrait gets the gallery's first
+    const gal = await galleriesFor(speakers.map((s) => s.k), spkRows);
+    for (const s of speakers) {
+      const g = gal.get(s.k);
+      if (!g) continue;
+      s.g = compactGallery(g);
+      if (!s.p) { s.p = g[0].url; s.px = g[0].extended; s.cr = g[0].credit; }
+    }
     reply.header('Cache-Control', pending ? 'public, max-age=15, s-maxage=15' : 'public, max-age=120, s-maxage=300, stale-while-revalidate=3600');
     return { v: 1, generated_at: new Date().toISOString(), pending, total: items.length, hours: Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, items, speakers };
   });
@@ -308,7 +331,9 @@ export default async function mediaRoutes(fastify) {
     const it = await getMediaBySlug(req.params.slug);
     if (!it || it.state !== 'done' || !it.dir) { reply.header('Cache-Control', 'public, max-age=60, s-maxage=60'); return reply.code(404).send({ error: 'NotFound' }); }
     const [meta, tr, spk] = await Promise.all([readJson(join(it.dir, 'meta.json')), readJson(join(it.dir, 'transcript.json')), it.speaker_key ? getSpeaker(it.speaker_key) : null]);
-    const portrait = speakerThumb(spk);
+    const gallery = it.speaker_key ? (await galleriesFor([it.speaker_key], spk ? [spk] : [])).get(it.speaker_key) || [] : [];
+    const portrait = speakerThumb(spk) || (gallery[0] ? { ...gallery[0], kind: 'photo', service: true, name: it.speaker } : null);
+    if (portrait && gallery.length > 1) portrait.gallery = gallery;
     if (!meta || !tr) return reply.code(404).send({ error: 'NotFound' });
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
@@ -502,5 +527,17 @@ export default async function mediaRoutes(fastify) {
 
 /** /api/speakers — the speakers and their canonical portraits (coverage). */
 export async function speakerRoutes(fastify) {
-  fastify.get('/', async (req, reply) => { pub(reply, 300); return { speakers: (await listSpeakers()).map((s) => ({ key: s.key, name: s.name, entity_id: s.entity_id, photo: speakerThumb(s) })) }; });
+  fastify.get('/', async (req, reply) => {
+    pub(reply, 300);
+    const rows = await listSpeakers();
+    const gal = await galleriesFor(rows.map((s) => s.key), rows);
+    return { speakers: rows.map((s) => ({ key: s.key, name: s.name, entity_id: s.entity_id, photo: speakerThumb(s), photos: gal.get(s.key)?.length || 0 })) };
+  });
+  // one person's gallery, primary first, with every photo's credit, licence, year and source
+  fastify.get('/:key/gallery', async (req, reply) => {
+    const g = (await galleriesFor([String(req.params.key)])).get(String(req.params.key));
+    if (!g) return reply.code(404).send({ error: 'NotFound' });
+    pub(reply, 300);
+    return { key: req.params.key, gallery: g };
+  });
 }
