@@ -188,7 +188,7 @@ With thanks,`);
     expect(t).toContain('| Fuller Book | — | better copy | [progress](https://s/i/3) |');
     expect(t).toContain('| Old Scan | — | needs OCR | [progress](https://s/i/5) |');
     expect(t).toContain("| x.heic | — | couldn't read | — |");
-    expect(t).toMatch(/Could not read: \*x\.heic\* \(an HEIC photo\)\. Please send it again/);
+    expect(t).toMatch(/Could not read: \*x\.heic\* \(an HEIC photo\)\. Please send it again as a PDF/);
   });
   it('the total line counts by status', () => {
     expect(totalLine(workRows([{ verb: 'holdings', source: 'title', label: 'A', verdict: 'held', candidates: [{ id: 1, title: 'A' }] }, { verb: 'holdings', source: 'title', label: 'B', verdict: 'not-held', candidates: [] }])))

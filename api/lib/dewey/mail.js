@@ -41,10 +41,10 @@ export function planVerbs({ subject = '', text = '', attachments = [] } = {}) {
   for (const a of attachments) {
     const name = a.name || 'attachment', type = a.type || '';
     if (a.size > LIMITS.fileBytes) plan.unread.push({ name, why: 'too large to take by email (25 MB at most) — a link to it works' });
-    else if (HEIC.test(type) || /\.hei[cf]$/i.test(name)) plan.unread.push({ name, why: 'an HEIC photo, which I cannot open — please send it as a JPEG (most phones offer “Most Compatible”)' });
+    else if (HEIC.test(type) || /\.hei[cf]$/i.test(name)) plan.unread.push({ name, why: 'an HEIC photo, which I cannot open' });
     else if (IMAGE.test(type) || IMAGE_EXT.test(name)) (plan.photos.length < LIMITS.photos ? plan.photos : plan.unread).push(plan.photos.length < LIMITS.photos ? a : { name, why: `more than ${LIMITS.photos} photos in one letter` });
     else if (DOC_TYPE.test(type) || DOC_EXT.test(name)) (plan.files.length < LIMITS.files ? plan.files : plan.unread).push(plan.files.length < LIMITS.files ? a : { name, why: `more than ${LIMITS.files} files in one letter` });
-    else plan.unread.push({ name, why: 'not a kind of file I can read — send a PDF, EPUB, Word or text file, or a photo' });
+    else plan.unread.push({ name, why: 'not a kind of file I can read' });
   }
   const body = String(text || '').replace(/\r\n/g, '\n');
   for (const raw of body.match(/https?:\/\/[^\s<>"')\]]+/g) || []) {
@@ -238,7 +238,7 @@ function single(r) {
     case 'already received': return `**Already received: ${named(r)}**\n\n${cap(r.note)}.${link('See where it stands.')}`;
     case 'not held — wanted': return `**Not in the library yet: ${named(r)}**\n\nIt is ${r.note === 'already on our wanted list' ? 'already' : 'now'} on our wanted list, and I will look for a copy we can add. If you have a PDF or a link to one, send it and processing starts at once.${link('Its page.')}`;
     case 'possibly held': case 'held in part': return `**${r.status === 'held in part' ? 'Held in part' : 'Possibly held'}: ${named(r)}**\n\n${cap(r.note)}.${link('Take a look.')}`;
-    default: return `**I could not read ${r.title ? `*${r.title}*` : 'what you sent'}**\n\n${cap(r.note) || 'It could not be opened'}. Could you send it again in another form (a PDF, EPUB or Word file, or a JPEG photo)?`;
+    default: return `**I could not read ${r.title ? `*${r.title}*` : 'what you sent'}**\n\n${cap(r.note) || 'It could not be opened'}. Could you send it again as a PDF, EPUB, Word or text file, or a JPEG photo?`;
   }
 }
 
@@ -257,7 +257,7 @@ export function composeReply({ name = null, results = [], unread = [], refused =
     if (rows.some((r) => r.status === 'needs OCR')) notes.push('Scans need their text recognised first — usually searchable within 1–2 days.');
     for (const r of rows.filter((x) => x.media && x.status !== 'held')) notes.push(`*${r.title}*: ${r.note}.`);
     const fix = rows.filter((r) => r.status === "couldn't read");
-    if (fix.length) notes.push(`Could not read: ${fix.map((r) => `*${r.title}* (${r.note})`).join('; ')}. Please send ${fix.length > 1 ? 'them' : 'it'} again in another form.`);
+    if (fix.length) notes.push(`Could not read: ${fix.map((r) => `*${r.title}* (${r.note})`).join('; ')}. Please send ${fix.length > 1 ? 'them' : 'it'} again as a PDF, EPUB, Word or text file, or a JPEG photo.`);
     if (notes.length) parts.push(notes.join(' '));
   }
   if (status.length) parts.push(`**Your contributions**\n\n${status.join('\n')}`);
