@@ -7,6 +7,8 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
 import { shapeLibraryStats, LIBRARY_STATS_FILE } from '../library/library-stats.js';
+import { shapeLibrarySitemap, LIBRARY_SITEMAP_FILE } from '../library/library-sitemap.js';
+import { hiddenReligions } from '../authority.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MIN = 60_000, HOUR = 60 * MIN;
@@ -21,6 +23,7 @@ export const TTL = {
   activity: 30 * MIN,       // search_log windows
   shelves: 30 * MIN,        // /library index (data/library-shelves.json)
   libraryStats: 5 * MIN,    // docs-table aggregates the API serves (data/library-stats.json) — i.e. every run
+  librarySitemap: 3 * HOUR, // every public reader URL (data/library-sitemap.json → /sitemap-library*.xml)
   entityReview: HOUR,       // data/entity-review-model.json
   cloudflare: 20 * MIN,     // external API
   answerCache: 30 * MIN,
@@ -346,6 +349,15 @@ export async function buildPipelineSnapshot({ rebaseIntegrity = false, force = f
     await probe('library-stats', async () => {
       writeJson(statsPath, shapeLibraryStats(await repo.libraryStatsRows({ recentSince: fmtTs(now - 4 * HOUR) }), now));
       state.library_stats_at = new Date(now).toISOString();
+    }, null);
+  }
+
+  // The library sitemap (GET /api/library/sitemap → siftersearch.com/sitemap-library*.xml) — one docs pass, never in the API.
+  const sitemapPath = join(dataDir, LIBRARY_SITEMAP_FILE);
+  if (force || !fresh({ generated_at: state.library_sitemap_at }, TTL.librarySitemap, now)) {
+    await probe('library-sitemap', async () => {
+      writeJson(sitemapPath, shapeLibrarySitemap(await repo.sitemapRows(), { hidden: hiddenReligions(), now }));
+      state.library_sitemap_at = new Date(now).toISOString();
     }, null);
   }
 

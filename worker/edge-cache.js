@@ -24,6 +24,7 @@ const API_ROUTES = [
   [/^\/api\/media\/(?!admin$|shorts$|progress$|index$)[^/]+$/, 120, true],   // a talk
   [/^\/api\/speakers$/, 300, true],
   [/^\/api\/library\/landing$/, 30, true],          // the /library landing's live numbers + new arrivals
+  [/^\/api\/library\/sitemap(\/[a-z0-9-]+)?$/, 3600, true],   // the library sitemap's data (reports snapshot, 3 h)
   [/^\/api\/library\/(tree|nodes|shelves|shelves\/items|documents|letters)$/, 300, false],
   [/^\/api\/library\/(nodes|documents)\/[^/]+$/, 300, false],
   [/^\/api\/library\/by-slug\/[^/]+(\/[^/]+)?$/, 300, false],
@@ -40,6 +41,8 @@ const API_ROUTES = [
 
 // Public SSR pages (none reads cookies; only /admin's middleware does). Fresh = the page's own s-maxage, else 60 s.
 const HTML_PAGES = /^\/(|media(\/.*)?|library(\/.*)?|biography(\/.*)?|docs(\/.*)?|who-was-at\/.+|dialogue(\/.*)?|research(\/.*)?|document\/.+|m\/.+|about|changelog|privacy|terms|contact|contribute|dewey|sourcehunt)\/?$/;
+// The library sitemap (index + parts): SSR endpoints rendering XML, cached like pages but validated as a whole sitemap.
+const XML_PAGES = /^\/sitemap-library(-[a-z0-9-]+)?\.xml$/;
 const HTML_NEVER = /^\/(admin|profile|settings|referrals|print|community\/(new|post)|support\/success)(\/|$)/;
 const TRACKING = /^(utm_.*|fbclid|gclid|msclkid|mc_cid|mc_eid|ref)$/;
 
@@ -61,6 +64,7 @@ export function policyFor(url, method, headers) {
     return r ? { mode: 'cache', kind: 'api', fresh: r[1], stale: 2 * DAY, l2: r[2] } : { mode: 'bypass', why: 'not-listed' };
   }
   if (p.startsWith('/_') || p.startsWith('/widget') || p === '/health') return { mode: 'bypass', why: 'internal' };
+  if (XML_PAGES.test(p)) return { mode: 'cache', kind: 'xml', fresh: 3600, stale: 7 * DAY, l2: true };
   if (HTML_NEVER.test(p) || !HTML_PAGES.test(p)) return { mode: 'bypass', why: 'not-listed' };
   return { mode: 'cache', kind: 'html', fresh: 60, stale: 7 * DAY, l2: true };
 }
@@ -69,7 +73,7 @@ export function policyFor(url, method, headers) {
 export function cacheKey(url, kind, version) {
   const q = [...url.searchParams].filter(([k]) => !TRACKING.test(k)).sort(([a, x], [b, y]) => (a === b ? (x < y ? -1 : 1) : a < b ? -1 : 1));
   const qs = q.length ? '?' + new URLSearchParams(q).toString() : '';
-  const ns = kind === 'html' ? `h-${version}` : API_NS;
+  const ns = kind === 'api' ? API_NS : `${kind === 'html' ? 'h' : kind}-${version}`;
   const path = url.pathname.length > 1 ? url.pathname.replace(/\/$/, '') : '/';
   return `/__edge/${ns}${path}${qs}`;
 }
@@ -96,6 +100,12 @@ export function storable({ status, headers, text, kind, tainted = false }) {
     if (!ct.includes('text/html')) return { ok: false, why: 'content-type' };
     if (tainted) return { ok: false, why: 'tainted render' };
     if (!isCompleteHtml(text)) return { ok: false, why: 'truncated' };
+  } else if (kind === 'xml') {
+    if (!ct.includes('xml')) return { ok: false, why: 'content-type' };
+    if (tainted) return { ok: false, why: 'tainted render' };
+    // a whole sitemap with at least one entry: an empty <urlset> is exactly the failure that must never be pinned here
+    if (!/<\/(urlset|sitemapindex)>\s*$/.test(text || '')) return { ok: false, why: 'truncated' };
+    if (!/<loc>/.test(text || '')) return { ok: false, why: 'empty sitemap' };
   } else {
     if (!ct.includes('json')) return { ok: false, why: 'content-type' };
     try { JSON.parse(text); } catch { return { ok: false, why: 'truncated json' }; }

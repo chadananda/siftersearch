@@ -153,6 +153,12 @@ export async function libraryStatsRows({ recentSince }) {
   return { facets, authors, byEra, topAuthors, recentlyUpdated };
 }
 
+/** Every live, non-duplicate document's reader path parts (data/library-sitemap.json → /sitemap-library*.xml): one
+ *  docs-table pass (~150k rows), out of process only. */
+export const sitemapRows = () => queryAll(`SELECT religion, collection, slug, updated_at FROM docs
+   WHERE deleted_at IS NULL AND duplicate_of IS NULL AND slug IS NOT NULL AND slug != ''
+     AND religion IS NOT NULL AND religion != '' AND collection IS NOT NULL AND collection != ''`, [], 'snapshot:library-sitemap');
+
 // ── missing books (6 h): stubs LIKE-scan low-¶ docs' content (~6 s) ─────────────────────────────────────────────────
 // Catalogue rows (Phelps inventory / bibliography) are not missing books.
 const NOT_CATALOGUE = `

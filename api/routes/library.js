@@ -20,6 +20,7 @@
 import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence to a genuinely absent table
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { readLibraryStats, religionCollectionCounts } from '../lib/library/library-stats.js';
+import { readLibrarySitemap } from '../lib/library/library-sitemap.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
@@ -1626,6 +1627,24 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   // ── Shelves (the /library page, 10-10) ───────────────────────────────────────────────────────────────────────────
+  // The library sitemap, served from the reports-built snapshot (data/library-sitemap.json; never a docs query here).
+  // /sitemap → the part index; /sitemap/:part → that part's [[path, lastmod], …]. The site renders both as XML
+  // (src/pages/sitemap-library*.xml.js); both are edge-cached (worker/edge-cache.js). 503 until the first snapshot.
+  fastify.get('/sitemap', async (request, reply) => {
+    const snap = readLibrarySitemap();
+    if (!snap) return reply.code(503).header('Cache-Control', 'no-store').send({ error: 'sitemap snapshot not built yet' });
+    reply.header('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return { generated_at: snap.generated_at, chunk: snap.chunk, total: snap.total, parts: snap.index };
+  });
+  fastify.get('/sitemap/:part', async (request, reply) => {
+    const snap = readLibrarySitemap();
+    if (!snap) return reply.code(503).header('Cache-Control', 'no-store').send({ error: 'sitemap snapshot not built yet' });
+    const urls = Object.hasOwn(snap.parts || {}, request.params.part) ? snap.parts[request.params.part] : null;
+    if (!urls) return reply.code(404).send({ error: 'no such sitemap part' });
+    reply.header('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return { generated_at: snap.generated_at, part: request.params.part, urls };
+  });
+
   // The index is precomputed out of process (pipeline-snapshot → data/library-shelves.json) and edge-cached here, so the
   // page renders from one small cached response instead of the 10 s nodes + 3 s documents queries.
   let shelvesCache = { at: 0, mtime: 0, body: null };

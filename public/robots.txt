@@ -15,7 +15,7 @@ Disallow: /_astro/
 # Sitemap locations
 # Main sitemap (static pages)
 Sitemap: https://siftersearch.com/sitemap-index.xml
-# Library documents sitemap (5000+ documents)
+# Library sitemap INDEX: every public reader page, per tradition in parts of <=25k URLs, + tradition/collection pages
 Sitemap: https://siftersearch.com/sitemap-library.xml
 
 # Crawl delay (optional, be nice to crawlers)

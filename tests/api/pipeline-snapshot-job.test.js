@@ -84,6 +84,7 @@ describe('snapshot sections run on their own clocks', () => {
       corpusSummary: f('corpusSummary', { docs: 1, paras: 2, byReligion: [] }), stubDocs: f('stubDocs', []), huskDocs: f('huskDocs', []),
       heldDocs: f('heldDocs', []), stubLinkText: f('stubLinkText', ''),
       libraryStatsRows: f('libraryStatsRows', { facets: [], authors: 0, byEra: [], topAuthors: [], recentlyUpdated: 0 }),
+      sitemapRows: f('sitemapRows', [{ religion: 'Jain', collection: 'Agamas', slug: 'akaranga', updated_at: '2026-10-13 13:33:44' }]),
     } };
   }
   it('a steady-state run touches only the cheap probes and the new ai_usage rows', async () => {
@@ -96,11 +97,13 @@ describe('snapshot sections run on their own clocks', () => {
     const first = { ...calls };
     expect(first.liveParagraphs).toBe(1);
     expect(first.stubDocs).toBe(1);
+    expect(first.sitemapRows).toBe(1);   // the library sitemap: one docs pass → data/library-sitemap.json
+    expect(JSON.parse(readFileSync(join(dataDir, 'library-sitemap.json'), 'utf8')).parts['jain-1']).toEqual([['/library/jain/agamas/akaranga', '2026-10-13']]);
     for (const k of Object.keys(calls)) delete calls[k];
 
     t += 10 * 60_000; bump(40);
     const r = await buildPipelineSnapshot({}, deps);
-    for (const heavy of ['liveParagraphs', 'byLanguage', 'pendingEmbeddingByDoc', 'stubDocs', 'huskDocs', 'heldDocs', 'corpusSummary', 'searchActivity', 'usageNames', 'usageFirstSince']) {
+    for (const heavy of ['sitemapRows', 'liveParagraphs', 'byLanguage', 'pendingEmbeddingByDoc', 'stubDocs', 'huskDocs', 'heldDocs', 'corpusSummary', 'searchActivity', 'usageNames', 'usageFirstSince']) {
       expect(calls[heavy], heavy).toBeUndefined();
     }
     expect(calls.usageDelta).toBe(1);

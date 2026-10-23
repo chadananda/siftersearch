@@ -98,8 +98,8 @@ export default defineConfig({
         changefreq: item.url === 'https://siftersearch.com/' ? 'weekly' : 'monthly',
         priority: item.url === 'https://siftersearch.com/' ? 1.0 : 0.8,
       }),
+      // (sitemap-library.xml is a sitemap INDEX, submitted via robots.txt — never listed as a page)
       customPages: [
-        'https://siftersearch.com/sitemap-library.xml',
         'https://siftersearch.com/sitemap-dialogue.xml'
       ]
     }),

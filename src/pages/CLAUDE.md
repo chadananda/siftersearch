@@ -9,7 +9,7 @@ File-based routing. Each `.astro` is one route. Server-rendered.
 - `404.astro` — not-found.
 - `changelog.astro` — generated changelog viewer.
 - `contribute.astro`, `referrals.astro`, `support.astro`, `settings.astro`, `profile.astro` — user/community pages.
-- `sitemap-dialogue.xml.js`, `sitemap-library.xml.js` — XML sitemap generators.
+- `sitemap-dialogue.xml.js` — dialogue sitemap. `sitemap-library.xml.js` (index) + `sitemap-library-[part].xml.js` — library sitemap from GET /api/library/sitemap (reports snapshot), edge-cached.
 
 ## Subdirectories
 - `library/` — `[religion]/[collection]/[doc-slug].astro` dynamic doc pages, redirects, browse views.
