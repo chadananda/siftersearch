@@ -5,6 +5,7 @@
   // a still, scrollable shelf.
   import { onMount } from 'svelte';
   import RecordLabel from './RecordLabel.svelte';
+  import { dayPick } from '../../../lib/speaker-gallery.js';
 
   let { speakers = [], active = '', onpick = () => {} } = $props();
 
@@ -36,7 +37,7 @@
             <li aria-hidden={copy ? 'true' : undefined}>
               <a href={`/media?speaker=${encodeURIComponent(s.k)}`} tabindex={copy ? -1 : undefined} class="voice group" class:active={active === s.k}
                 onclick={(e) => pick(e, s)} title={ROLE[s.role] || undefined}>
-                <span class="disc"><span class="label"><RecordLabel name={s.n} photo={s.p} year={s.y0} size={64} /></span></span>
+                <span class="disc"><span class="label"><RecordLabel name={s.n} photo={dayPick(s).p} year={s.y0} size={64} /></span></span>
                 <span class="min-w-0">
                   <span class="block truncate font-marquee text-lg leading-tight text-radio-ink group-hover:text-radio-amber">{s.n}</span>
                   <span class="block font-dial text-sm font-semibold uppercase tracking-wider text-radio-ink-soft">{s.c} talk{s.c === 1 ? '' : 's'}{ROLE[s.role] ? ` · ${s.role === 'hand' ? 'Hand' : 'House'}` : ''}</span>

@@ -9,6 +9,7 @@
   import Wave from './Wave.svelte';
   import { tallSrc, portraitTall, portraitCard, duration, eraVar, waveHeights } from '../../../lib/media-listing.js';
   import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
+  import { dayPick } from '../../../lib/speaker-gallery.js';
 
   let { cards = [], speakersByKey = new Map(), onspeaker = () => {}, reduced = false } = $props();
 
@@ -54,14 +55,14 @@
     <li class={`card k-${c.kind} s-${c.size}`} style={`--tint:${eraVar(c.it?.y ?? c.speaker?.y0)};--tilt:${i % 2 ? 0.5 : -0.5}deg`}
       animate:flip={{ duration: reduced ? 0 : 450 }} in:fly={{ y: reduced ? 0 : 24, duration: reduced ? 0 : 420, delay: reduced ? 0 : (i % 12) * 35 }}>
       {#if c.kind === 'box'}
-        {@const s = c.speaker}
+        {@const s = dayPick(c.speaker)}   <!-- today's photo from the speaker's gallery (Chad 10-23) -->
         <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
         {@const pic = s.p ? portraitTall(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
         <article class="box h-full">
           <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-head flex gap-4" onclick={(e) => toSpeaker(e, s.k)} aria-label={`All ${s.c || c.total} talks by ${s.n}`}>
             <div class="box-pic">
               {#if pic}
-                <img src={pic.src} srcset={pic.srcset} alt={s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * 1.25)} loading="lazy" decoding="async" class="h-full w-full object-cover" />
+                <img src={pic.src} srcset={pic.srcset} alt={s.n} title={s.cr ? `${s.n} — photo: ${s.cr}` : s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * 1.25)} loading="lazy" decoding="async" class="h-full w-full object-cover" />
               {:else}
                 <div class="h-full w-full p-2"><RecordLabel name={s.n} year={s.y0} size={120} /></div>
               {/if}
@@ -113,10 +114,10 @@
         </article>
       {:else if c.kind === 'portrait'}
         {@const it = c.it}
-        {@const s = speakersByKey.get(it.k)}
+        {@const s = dayPick(speakersByKey.get(it.k))}
         {@const pic = portraitCard(tallSrc(s), 320)}
         <article class="portrait h-full">
-          {#if pic}<img src={pic.src} srcset={pic.srcset} alt={s.n} width="320" height="512" loading="lazy" decoding="async" class="portrait-img" />{/if}
+          {#if pic}<img src={pic.src} srcset={pic.srcset} alt={s.n} title={s.cr ? `${s.n} — photo: ${s.cr}` : s.n} width="320" height="512" loading="lazy" decoding="async" class="portrait-img" />{/if}
           <div class="portrait-cap">
             <a href={`/media/${it.s}`} class="above block font-marquee text-xl leading-tight text-radio-on-dark hover:text-radio-amber hover:underline">{it.t}</a>
             <p class="mt-1 text-sm text-radio-on-dark opacity-85">{by(it)} · {duration(it.d)}</p>

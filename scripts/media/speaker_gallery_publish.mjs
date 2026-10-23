@@ -54,20 +54,31 @@ async function wikiCredit(origin, title) {
 async function bytesFor(key, c) {
   // a video still IS our crop (saved by the harvest); anything else: the downloaded rendition, re-fetched and checked
   if (c.origin === 'youtube-still') return readFileSync(join(ROOT, key, c.file));
-  const r = await fetch(c.thumb || c.url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(30000) });
+  let r = await fetch(c.thumb || c.url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(30000) });
+  // some sites (Wilmette Institute) refuse a non-browser agent without a Referer: one retry as a browser from the page
+  if ((r.status === 403 || r.status === 406) && c.page) r = await fetch(c.thumb || c.url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36', Referer: c.page }, signal: AbortSignal.timeout(30000) });
   if (!r.ok) throw new Error(`download ${r.status}`);
   return Buffer.from(await r.arrayBuffer());
 }
 
 const out = { ...prev.speakers };
 const report = { people: 0, photos: 0, uploaded: 0, dupes: 0, failed: [] };
-for (const key of readdirSync(ROOT).filter((d) => existsSync(join(ROOT, d, 'review.json')))) {
+for (const key of readdirSync(ROOT).filter((d) => existsSync(join(ROOT, d, 'review.json')) || existsSync(join(ROOT, d, 'review-web.json')))) {
   if (keysArg && !keysArg.includes(key)) continue;
   const { candidates } = readJson(join(ROOT, key, 'candidates.json'));
-  const review = readJson(join(ROOT, key, 'review.json'));
+  // the review of the first harvest + the review of the web finds (a "better copy" replaces the earlier photo); a person
+  // reviewed only for web finds keeps their current portrait first
+  const review = readJson(join(ROOT, key, 'review.json'), { approved: candidates.filter((c) => c.origin === 'current-primary').map((c) => ({ n: c.n, primary: true, note: 'current primary portrait' })) });
+  const web = readJson(join(ROOT, key, 'review-web.json'), { approved: [] });
+  // (the portrait already in use stays: a better copy of IT would only show the same photograph twice)
+  const isPrimary = (n) => candidates.find((c) => c.n === n)?.origin === 'current-primary';
+  const webOk = web.approved.filter((a) => a.better_copy_of == null || !isPrimary(a.better_copy_of));
+  const replaced = new Set(webOk.map((a) => a.better_copy_of).filter((n) => n != null));
+  const approved = [...(review.approved || []).filter((a) => !replaced.has(a.n)), ...webOk.map((a) => ({ ...a, primary: replaced.has(a.better_copy_of) && (review.approved || []).some((r) => r.n === a.better_copy_of && r.primary) }))];
+  if (approved.length && !approved.some((a) => a.primary)) approved[0] = { ...approved[0], primary: true };
   const byN = new Map(candidates.map((c) => [c.n, c]));
   const list = [];
-  for (const a of review.approved || []) {
+  for (const a of approved) {
     const c = byN.get(a.n);
     if (!c) { report.failed.push(`${key} #${a.n}: no candidate`); continue; }
     if (list.some((e) => e.phash && c.dhash && ham(e.phash, c.dhash) <= 6)) { report.dupes++; continue; }

@@ -1,6 +1,6 @@
 {
  "note": "Speaker GALLERIES (Chad 10-23): verified photos per person (key = media_speakers key), primary first; originals in cdn-assets R2 (media-speakers/<key>/<sha16>.<ext>). Built by scripts/media/speaker_gallery_publish.mjs from a reviewed harvest; synced by the media-gallery ops job. Credits as the source states them; youtube-still = a crop of the talk video's own frame; needs_ext = the tall crop needs canvas (one Gemini-extended master, marked AI-extended).",
- "generated": "2026-10-23T14:04:59.302Z",
+ "generated": "2026-10-23T14:29:39.592Z",
  "speakers": {
   "abul-qasim-faizi": [
    {
@@ -188,6 +188,52 @@
     "note": "titled portrait, younger",
     "primary": false,
     "needs_ext": true
+   },
+   {
+    "file": "media-speakers/adelbert-muhlschlegel/b03c0b62fddfb912.png",
+    "sha": "b03c0b62fddfb912b397e7b5367525549174f09ea46e8939c404aa9118e82ea1",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/b/b3/Dr_Muhlschlegel.png",
+    "page_url": "https://bahai.media/File:Dr_Muhlschlegel.png",
+    "credit": "source: {{bns|545|4}}",
+    "licence": "bahai.media licence template: Bn-excerpt",
+    "phash": "09195959515918b8",
+    "width": 1428,
+    "height": 829,
+    "face": {
+     "x": 608,
+     "y": 124,
+     "w": 337,
+     "h": 447,
+     "s": 0.89
+    },
+    "year": 1976,
+    "note": "profile, matches #1 reference; Bahá’í News crop",
+    "primary": false,
+    "needs_ext": true
+   },
+   {
+    "file": "media-speakers/adelbert-muhlschlegel/ec7104c77f626393.png",
+    "sha": "ec7104c77f626393bf0f1881f8874bed03050c27986d1649287411fc02f1e1a9",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/a/a8/Dr_Muhlschlegel_question_and_answer_period.png",
+    "page_url": "https://bahai.media/File:Dr_Muhlschlegel_question_and_answer_period.png",
+    "credit": "source: {{bns|369|13}}",
+    "licence": "bahai.media licence template: Bn-excerpt",
+    "phash": "26e767e222b699c5",
+    "width": 543,
+    "height": 500,
+    "face": {
+     "x": 182,
+     "y": 120,
+     "w": 82,
+     "h": 106,
+     "s": 0.83
+    },
+    "year": 1961,
+    "note": "seated at table, matches reference; small but clear",
+    "primary": false,
+    "needs_ext": false
    }
   ],
   "adib-taherzadeh": [
@@ -1101,6 +1147,175 @@
     "needs_ext": false
    }
   ],
+  "anne-pearson": [
+   {
+    "file": "media-speakers/anne-pearson/06423495afad81bc.jpg",
+    "sha": "06423495afad81bc3b097ba4f9e43d3410cfb8fad17d02a3fa9233acf09288bb",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2010/07/AnnePearson2017-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/wp-json/wp/v2/media?search=AnnePearson2017",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "cf97978f97333155",
+    "width": 667,
+    "height": 720,
+    "face": {
+     "x": 214,
+     "y": 103,
+     "w": 224,
+     "h": 317,
+     "s": 0.95
+    },
+    "year": 2017,
+    "note": "WI faculty media 'AnnePearson2017'; single clear person",
+    "primary": true,
+    "needs_ext": false
+   }
+  ],
+  "anthony-vance": [
+   {
+    "file": "media-speakers/anthony-vance.jpg",
+    "sha": "48ba212835011e02",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/anthony-vance-sq/",
+    "page_url": "https://wilmetteinstitute.org/anthony-vance-sq/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "4c9696968e2b39b9",
+    "width": 400,
+    "height": 400,
+    "face": {
+     "x": 122,
+     "y": 44,
+     "w": 167,
+     "h": 231,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   }
+  ],
+  "armin-eschraghi": [
+   {
+    "file": "media-speakers/armin-eschraghi.jpg",
+    "sha": "7b5c5f306d8e571b",
+    "origin": "current-primary",
+    "source_url": "https://burhaninstitute.org/armin-eschraghi",
+    "page_url": "https://burhaninstitute.org/armin-eschraghi",
+    "credit": "Burhan Institute",
+    "licence": null,
+    "phash": "0f6151151342c4e4",
+    "width": 252,
+    "height": 440,
+    "face": {
+     "x": 42,
+     "y": 70,
+     "w": 179,
+     "h": 237,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/armin-eschraghi/8137ae49b2bb9152.jpg",
+    "sha": "8137ae49b2bb9152bcd3b46537e8fdb46cdb145ba9a0f76ebd4468d052f4a227",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2018/12/IMG_5993-e1545827179547-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/img_5993/",
+    "credit": null,
+    "licence": null,
+    "phash": "8d36168f9f9f0f09",
+    "width": 792,
+    "height": 720,
+    "face": {
+     "x": 197,
+     "y": 125,
+     "w": 351,
+     "h": 480,
+     "s": 0.9
+    },
+    "year": null,
+    "note": "headshot, matches #0 (older)",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
+  "arthur-lyon-dahl": [
+   {
+    "file": "media-speakers/arthur-lyon-dahl.jpg",
+    "sha": "1f4652e313a423af",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/faculty/arthur-dahl/",
+    "page_url": "https://wilmetteinstitute.org/faculty/arthur-dahl/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "31e17144e1e94171",
+    "width": 200,
+    "height": 254,
+    "face": {
+     "x": 48,
+     "y": 37,
+     "w": 107,
+     "h": 135,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/arthur-lyon-dahl/87bb71df6936201d.jpg",
+    "sha": "87bb71df6936201d0001351d64aa689f96ba96dd6401e8c5b71badb38c6a4023",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/c/c5/Arthur_Dahl_displays_the_front_page_of_The_Independent.jpg",
+    "page_url": "https://bahai.media/File:Arthur_Dahl_displays_the_front_page_of_The_Independent.jpg",
+    "credit": "Photograph by Gemma Parsons (Bahá’í World News Service)",
+    "licence": "Baha'i World News Service (bahai.media licence template)",
+    "phash": "b42c6d696cf6f4e9",
+    "width": 1620,
+    "height": 1080,
+    "face": {
+     "x": 1046,
+     "y": 407,
+     "w": 304,
+     "h": 504,
+     "s": 0.86
+    },
+    "year": 2006,
+    "note": "matches #0; profile, holding newspaper (bahai.media named)",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/arthur-lyon-dahl/ccc33659893071b5.jpg",
+    "sha": "ccc33659893071b5db14aadd3f742c661d97e78015f844da5e8cee5b44465888",
+    "origin": "web",
+    "source_url": "https://weadapt.org/wp-content/uploads/2023/04/adahl0605w.jpg",
+    "page_url": "https://weadapt.org/member/arthur-dahl/",
+    "credit": null,
+    "licence": null,
+    "phash": "3ef2f9fce46968b8",
+    "width": 420,
+    "height": 439,
+    "face": {
+     "x": 131,
+     "y": 86,
+     "w": 190,
+     "h": 269,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "matches #0; weADAPT profile",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
   "augusto-lopez-claros": [
    {
     "file": "media-speakers/augusto-lopez-claros/2909915e671112de.jpg",
@@ -1146,6 +1361,196 @@
     "year": null,
     "note": "current primary, but only 208x242",
     "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/augusto-lopez-claros/41345fde0bb3f05c.jpg",
+    "sha": "41345fde0bb3f05c62b25727e4f1ae99584974bb3a7e1e7905ee3a396882b4fb",
+    "origin": "web",
+    "source_url": "https://globalgovernanceforum.org/wp-content/uploads/2021/10/Augusto-Lopez-Claros.jpg",
+    "page_url": "https://globalgovernanceforum.org/working-groups-member/augusto-lopez-claros/augusto-lopez-claros-2/",
+    "credit": null,
+    "licence": null,
+    "phash": "9060e0c863737246",
+    "width": 700,
+    "height": 890,
+    "face": {
+     "x": 178,
+     "y": 157,
+     "w": 307,
+     "h": 449,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "GGF headshot, matches #0/#1",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/augusto-lopez-claros/6a4a017d8da0fcfa.jpg",
+    "sha": "6a4a017d8da0fcfac577f6d56f77bf16608040ccb8e4246ee0133797932cf8fe",
+    "origin": "web",
+    "source_url": "https://globalgovernanceforum.org/wp-content/uploads/2021/05/augusto-talk-ontario.jpg",
+    "page_url": "https://globalgovernanceforum.org/global-governance-and-the-emergence-of-of-global-institutions-for-the-21st-century/augusto-talk-ontario/",
+    "credit": null,
+    "licence": null,
+    "phash": "3c3c3c3636363636",
+    "width": 700,
+    "height": 533,
+    "face": {
+     "x": 281,
+     "y": 37,
+     "w": 116,
+     "h": 168,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "speaking at Ontario talk, matches",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "baharieh-maani-rohani": [
+   {
+    "file": "media-speakers/baharieh-maani-rohani.jpg",
+    "sha": "6b546c493a209637",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/baharieh-maani-web-talk/",
+    "page_url": "https://wilmetteinstitute.org/baharieh-maani-web-talk/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "4c06272287cde351",
+    "width": 371,
+    "height": 400,
+    "face": {
+     "x": 118,
+     "y": 88,
+     "w": 142,
+     "h": 184,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/baharieh-maani-rohani/6db09eb58d1fb5e4.png",
+    "sha": "6db09eb58d1fb5e4bbf7f3b5ed8c7d581e331e1ba46b4fc15e03d6be96713c94",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Baharieh-Rouhani-Maani.png",
+    "page_url": "https://wilmetteinstitute.org/baharieh-rouhani-maani-2/",
+    "credit": null,
+    "licence": null,
+    "phash": "4e8e9692ceb27569",
+    "width": 400,
+    "height": 400,
+    "face": {
+     "x": 146,
+     "y": 93,
+     "w": 110,
+     "h": 147,
+     "s": 0.94
+    },
+    "year": 2012,
+    "note": "outdoor portrait, matches #0",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "baharieh-rouhani-maani": [
+   {
+    "file": "media-speakers/baharieh-rouhani-maani.jpg",
+    "sha": "6b546c493a209637",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/baharieh-maani-web-talk/",
+    "page_url": "https://wilmetteinstitute.org/baharieh-maani-web-talk/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "4c06272287cde351",
+    "width": 371,
+    "height": 400,
+    "face": {
+     "x": 118,
+     "y": 88,
+     "w": 142,
+     "h": 184,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/baharieh-rouhani-maani/6db09eb58d1fb5e4.png",
+    "sha": "6db09eb58d1fb5e4bbf7f3b5ed8c7d581e331e1ba46b4fc15e03d6be96713c94",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/Baharieh-Rouhani-Maani.png",
+    "page_url": "https://wilmetteinstitute.org/baharieh-rouhani-maani-2/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "4e8e9692ceb27569",
+    "width": 400,
+    "height": 400,
+    "face": {
+     "x": 146,
+     "y": 93,
+     "w": 110,
+     "h": 147,
+     "s": 0.94
+    },
+    "year": 2020,
+    "note": "matches #0; outdoor headshot, WI",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/baharieh-rouhani-maani/4b1d947010a85e97.png",
+    "sha": "4b1d947010a85e97ff99c6a157a4e30411544785ced1b6c2f59f5bdfac96c030",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2019/02/BahariehMaaniSpeaker-1.png",
+    "page_url": "https://wilmetteinstitute.org/bahariehmaanispeaker/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "e6a4a4a0a4a5c5e7",
+    "width": 910,
+    "height": 720,
+    "face": {
+     "x": 571,
+     "y": 172,
+     "w": 216,
+     "h": 288,
+     "s": 0.93
+    },
+    "year": 2019,
+    "note": "matches #0; profile at WI booth",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "bob-harris": [
+   {
+    "file": "media-speakers/bob-harris/9dd18328d56a604b.jpg",
+    "sha": "9dd18328d56a604bf2373324417a61775696ff0bf6c9b8e0cc075a7b55556dd1",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/9/93/Counsellor_Robert_Harris_conducting_class_at_28th_Green_Lake_Baha%27i_Conference%2C_1987.jpg",
+    "page_url": "https://bahai.media/File:Counsellor_Robert_Harris_conducting_class_at_28th_Green_Lake_Baha'i_Conference,_1987.jpg",
+    "credit": null,
+    "licence": null,
+    "phash": "e4d3c1c186351c8c",
+    "width": 1451,
+    "height": 1056,
+    "face": {
+     "x": 341,
+     "y": 155,
+     "w": 106,
+     "h": 136,
+     "s": 0.81
+    },
+    "year": 1987,
+    "note": "caption names Counsellor Robert Harris teaching at Green Lake; single speaker, audience backs only",
+    "primary": true,
     "needs_ext": false
    }
   ],
@@ -1287,6 +1692,77 @@
     },
     "year": null,
     "note": "speaking at microphone",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "christopher-buck": [
+   {
+    "file": "media-speakers/christopher-buck.png",
+    "sha": "a43a9aa599fc3d4a",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/faculty/christopher-buck/",
+    "page_url": "https://wilmetteinstitute.org/faculty/christopher-buck/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "98793939185838b2",
+    "width": 200,
+    "height": 209,
+    "face": {
+     "x": 56,
+     "y": 31,
+     "w": 82,
+     "h": 112,
+     "s": 0.91
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/christopher-buck/22a6c25e9f6a8b41.png",
+    "sha": "22a6c25e9f6a8b41bb7f2b63bc412f86ad5b2ec239719fb6a99b2d37337a3439",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2010/07/ChrisBuck3-1.png",
+    "page_url": "https://wilmetteinstitute.org/chrisbuck3/",
+    "credit": null,
+    "licence": null,
+    "phash": "a3bcf83011848dc3",
+    "width": 518,
+    "height": 538,
+    "face": {
+     "x": 266,
+     "y": 72,
+     "w": 156,
+     "h": 204,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "seated at event, matches #0 (small © mark)",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/christopher-buck/235bf9c5b0ff1e14.jpg",
+    "sha": "235bf9c5b0ff1e14a2fb64871077c3933da107fc1cf3c1558d18ea0efeb981a8",
+    "origin": "web",
+    "source_url": "https://bahaiteachings.s3.us-west-1.amazonaws.com/2014/10/Chris-Buck-by-Headstone-of-Alain-Locke.jpg",
+    "page_url": "https://bahaiteachings.org/sing-the-ballad-of-alain-locke-burying-the-black-plato/chris-buck-by-headstone-of-alain-locke/#main",
+    "credit": null,
+    "licence": null,
+    "phash": "0fcb53466c632d2d",
+    "width": 548,
+    "height": 595,
+    "face": {
+     "x": 135,
+     "y": 50,
+     "w": 79,
+     "h": 104,
+     "s": 0.91
+    },
+    "year": 2014,
+    "note": "at Alain Locke headstone, matches #0; others in background",
     "primary": false,
     "needs_ext": false
    }
@@ -1621,6 +2097,29 @@
     "note": "seated, late 1950s/early 1960s",
     "primary": false,
     "needs_ext": false
+   },
+   {
+    "file": "media-speakers/david-hofman/128503855d69f113.png",
+    "sha": "128503855d69f113e566b6ec0e23a57e175edaff816d86b5dc3ddfba9186b12c",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/f/f6/David_Hofman_Universal_House_of_Justice.png",
+    "page_url": "https://bahai.media/File:David_Hofman_Universal_House_of_Justice.png",
+    "credit": "source: {{bns|709|5}}",
+    "licence": "bahai.media licence template: Bn-excerpt",
+    "phash": "e66969d96c6483c8",
+    "width": 694,
+    "height": 951,
+    "face": {
+     "x": 337,
+     "y": 59,
+     "w": 206,
+     "h": 298,
+     "s": 0.77
+    },
+    "year": null,
+    "note": "elderly, bow tie, at microphone; matches #0",
+    "primary": false,
+    "needs_ext": false
    }
   ],
   "david-ruhe": [
@@ -1667,6 +2166,29 @@
     },
     "year": null,
     "note": "at US National Center, early 1960s",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/david-ruhe/2a16b475db7a368d.png",
+    "sha": "2a16b475db7a368d16db4a154fa11d653dc23612f668b111effb9c84f4e7980d",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/5/5d/Dr_David_Ruhe_at_Maxwell_Bahai_School.png",
+    "page_url": "https://bahai.media/File:Dr_David_Ruhe_at_Maxwell_Bahai_School.png",
+    "credit": "source: {{bns|692|5}}",
+    "licence": "bahai.media licence template: Bn-excerpt",
+    "phash": "8c8c3231e522aa8a",
+    "width": 698,
+    "height": 1096,
+    "face": {
+     "x": 266,
+     "y": 49,
+     "w": 156,
+     "h": 221,
+     "s": 0.88
+    },
+    "year": 1988,
+    "note": "speaking at Maxwell school, matches #0",
     "primary": false,
     "needs_ext": false
    }
@@ -1857,6 +2379,100 @@
     "note": "lecturing at microphone; VHS quality · from “1992 Baha'i World Congress: Turning Point for the World”",
     "primary": false,
     "needs_ext": false
+   },
+   {
+    "file": "media-speakers/douglas-martin/25553af9780bbf32.jpg",
+    "sha": "25553af9780bbf321528c6a194dc6448b8481c174aae2f636534c428b7b0769d",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/5/55/Douglas_Martin_2007.jpg",
+    "page_url": "https://bahai.media/File:Douglas_Martin_2007.jpg",
+    "credit": "Photo by Louis Brunet; bahainews.ca/en/070910shrine",
+    "licence": null,
+    "phash": "3c3c342c4617b672",
+    "width": 1474,
+    "height": 853,
+    "face": {
+     "x": 675,
+     "y": 98,
+     "w": 245,
+     "h": 363,
+     "s": 0.93
+    },
+    "year": 2007,
+    "note": "speaking at Montreal Shrine re-opening, matches #2",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/douglas-martin/c18d5413cdee4337.jpg",
+    "sha": "c18d5413cdee43373ac42bd5215e64782fc9cacfa30340dff8b664237b83bfd1",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/d/d4/Douglas_Martin_urged_scholars_to_pay_attention_to_the_process_of_learning.jpg",
+    "page_url": "https://bahai.media/File:Douglas_Martin_urged_scholars_to_pay_attention_to_the_process_of_learning.jpg",
+    "credit": "Bahá’í World News Service story 387 (via bahai.media)",
+    "licence": "bahai.media licence template: Baha'i World News Service",
+    "phash": "e3e9c6d693d65646",
+    "width": 1777,
+    "height": 1927,
+    "face": {
+     "x": 740,
+     "y": 265,
+     "w": 265,
+     "h": 373,
+     "s": 0.92
+    },
+    "year": 2005,
+    "note": "seated outdoors, matches #2 (caption says lectern but face clearly him)",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/douglas-martin/74652adc255e05a1.png",
+    "sha": "74652adc255e05a1cc36ba53334d4c19c17d33cd105933a4783316eb63db3e9f",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/8/86/Douglas_Martin_ABS_Conference.png",
+    "page_url": "https://bahai.media/File:Douglas_Martin_ABS_Conference.png",
+    "credit": "source: {{bns|681|7}}",
+    "licence": "bahai.media licence template: Bn-excerpt",
+    "phash": "6771f4e3af3b3187",
+    "width": 705,
+    "height": 1202,
+    "face": {
+     "x": 221,
+     "y": 152,
+     "w": 158,
+     "h": 206,
+     "s": 0.87
+    },
+    "year": 1987,
+    "note": "at ABS lectern, younger; matches",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "elena-mustakova-possardt": [
+   {
+    "file": "media-speakers/elena-mustakova-possardt.jpg",
+    "sha": "63d16c7175a76459",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/a-library-of-web-talks-24-7-365-a-psychology-that-responds-to-our-times/",
+    "page_url": "https://wilmetteinstitute.org/a-library-of-web-talks-24-7-365-a-psychology-that-responds-to-our-times/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "9b1f6e47672e9991",
+    "width": 450,
+    "height": 540,
+    "face": {
+     "x": 87,
+     "y": 138,
+     "w": 137,
+     "h": 167,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
    }
   ],
   "elsie-austin": [
@@ -1928,6 +2544,29 @@
     "note": "speaking at lectern holding book, later years",
     "primary": false,
     "needs_ext": false
+   },
+   {
+    "file": "media-speakers/elsie-austin/ee23ea077e87ed3b.jpg",
+    "sha": "ee23ea077e87ed3bf7b89c07bdba82263eeb8817faeb90f7a267b0a6d9ac2c28",
+    "origin": "web",
+    "source_url": "https://home.nps.gov/mamc/learn/historyculture/images/OIP-64.jpg",
+    "page_url": "https://home.nps.gov/mamc/learn/historyculture/h-elsie-austin.htm",
+    "credit": null,
+    "licence": null,
+    "phash": "61e8e4f0787e7cd1",
+    "width": 474,
+    "height": 623,
+    "face": {
+     "x": 99,
+     "y": 153,
+     "w": 254,
+     "h": 287,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "distinct smiling portrait (NPS), matches #0/#2; larger than bahai.media Elsie_Austin.png",
+    "primary": false,
+    "needs_ext": true
    }
   ],
   "enoch-olinga": [
@@ -3098,6 +3737,52 @@
     "note": "talk thumbnail, different photo, face matches · from “\"Is There a Baha'i Economic System?\" | Hooshmand Badee”",
     "primary": false,
     "needs_ext": true
+   },
+   {
+    "file": "media-speakers/hooshmand-badee/cf875d11346111a5.jpg",
+    "sha": "cf875d11346111a53924f56e0cc28edaf2700230b412eb6d248609810f55abc1",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2012/12/Hooshmand2018.jpg",
+    "page_url": "https://wilmetteinstitute.org/hooshmand2018/",
+    "credit": null,
+    "licence": null,
+    "phash": "8c969696969b3b32",
+    "width": 757,
+    "height": 720,
+    "face": {
+     "x": 206,
+     "y": 95,
+     "w": 311,
+     "h": 429,
+     "s": 0.93
+    },
+    "year": 2018,
+    "note": "matches #0/#1; WI 'Hooshmand Badee'",
+    "primary": false,
+    "needs_ext": true
+   },
+   {
+    "file": "media-speakers/hooshmand-badee/caf689e5648b0d40.jpg",
+    "sha": "caf689e5648b0d408a8b5bfef3b6df8a7bd3405876aecd1960a0bcbb0d36ccb0",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2012/12/Hooshmandbadee.jpg",
+    "page_url": "https://wilmetteinstitute.org/hooshmandbadee/",
+    "credit": null,
+    "licence": null,
+    "phash": "cccc8ccc9c36765e",
+    "width": 960,
+    "height": 720,
+    "face": {
+     "x": 368,
+     "y": 98,
+     "w": 215,
+     "h": 318,
+     "s": 0.94
+    },
+    "year": 2012,
+    "note": "matches #0/#1; older WI upload",
+    "primary": false,
+    "needs_ext": false
    }
   ],
   "hushmand-fatheazam": [
@@ -3451,6 +4136,29 @@
     "note": "reference portrait (small, 313px)",
     "primary": true,
     "needs_ext": false
+   },
+   {
+    "file": "media-speakers/joann-borovicka/a7379a943573704e.png",
+    "sha": "a7379a943573704e4d681c105ba48d5a1859b8e2995ab7a37a37962be1cf3205",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2019/02/JoAnnBorovickaSpeaker-e1589413763314-1.png",
+    "page_url": "https://wilmetteinstitute.org/joannborovickaspeaker/",
+    "credit": null,
+    "licence": null,
+    "phash": "78f06ae065331f5f",
+    "width": 632,
+    "height": 721,
+    "face": {
+     "x": 192,
+     "y": 116,
+     "w": 318,
+     "h": 402,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "close-up at event, matches #0 (mic in frame)",
+    "primary": false,
+    "needs_ext": true
    }
   ],
   "john-esslemont": [
@@ -3524,6 +4232,54 @@
     "needs_ext": false
    }
   ],
+  "john-hatcher": [
+   {
+    "file": "media-speakers/john-hatcher.jpg",
+    "sha": "ea658215f6e5de06",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/a-library-of-web-talks-247365-john-hatcher-on-the-bicentenary-and-paul-hanley-on-eleven/",
+    "page_url": "https://wilmetteinstitute.org/a-library-of-web-talks-247365-john-hatcher-on-the-bicentenary-and-paul-hanley-on-eleven/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "72f1f0f878793176",
+    "width": 875,
+    "height": 1206,
+    "face": {
+     "x": 223,
+     "y": 325,
+     "w": 418,
+     "h": 584,
+     "s": 0.87
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/john-hatcher/09ba380fb92e1b3a.jpg",
+    "sha": "09ba380fb92e1b3aaffc1135e72c1f26b1828898dd75368ac1e55f992b8af66f",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2014/12/John-Hatcher-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/john-hatcher/",
+    "credit": null,
+    "licence": null,
+    "phash": "70f0e0e1e1c3840c",
+    "width": 682,
+    "height": 720,
+    "face": {
+     "x": 199,
+     "y": 89,
+     "w": 289,
+     "h": 390,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "outdoor portrait, matches #0",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
   "john-henry-hyde-dunn": [
    {
     "file": "media-speakers/john-henry-hyde-dunn/110c5ff90a9279eb.jpg",
@@ -3546,6 +4302,29 @@
     "year": null,
     "note": "File:Hyde Dunn.jpg, clear portrait, bow tie",
     "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/john-henry-hyde-dunn/d9859e9949f42650.jpg",
+    "sha": "d9859e9949f42650c903a4d06025d7dfae2771cf1c699d5527790f09bddf2454",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/d/d6/Hyde_Dunn-MA.jpg",
+    "page_url": "https://bahai.media/File:Hyde_Dunn-MA.jpg",
+    "credit": "Messages to the Antipodes, between pp. 232–233 (via bahai.media)",
+    "licence": null,
+    "phash": "0c26676763733716",
+    "width": 1290,
+    "height": 1965,
+    "face": {
+     "x": 359,
+     "y": 300,
+     "w": 452,
+     "h": 637,
+     "s": 0.91
+    },
+    "year": null,
+    "note": "distinct vignetted studio portrait, matches #0",
+    "primary": false,
     "needs_ext": false
    }
   ],
@@ -3618,6 +4397,31 @@
     "note": "younger portrait from Baha'i World Vol 13",
     "primary": false,
     "needs_ext": true
+   }
+  ],
+  "judy-hannen-moe": [
+   {
+    "file": "media-speakers/judy-hannen-moe/56a201cd4caf58cf.jpg",
+    "sha": "56a201cd4caf58cfea899f6c7872f7c40c5c3e38ec3ba8e1f8deb2b0421d985a",
+    "origin": "web",
+    "source_url": "https://www.bahaiblog.net/wp-content/uploads/2022/05/Judy-Hannen-Moe-400x533-1.jpg",
+    "page_url": "https://www.bahaiblog.net/articles/books/aflame-with-devotion-a-new-biography-about-the-hannen-and-knobloch-families/",
+    "credit": null,
+    "licence": null,
+    "phash": "39399934383c9e76",
+    "width": 400,
+    "height": 533,
+    "face": {
+     "x": 149,
+     "y": 85,
+     "w": 92,
+     "h": 116,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "Bahá'í Blog 'Author Judy Hannen Moe' holding her book",
+    "primary": true,
+    "needs_ext": false
    }
   ],
   "kathryn-hogenson": [
@@ -3715,6 +4519,100 @@
     "year": null,
     "note": "reference portrait",
     "primary": true,
+    "needs_ext": false
+   }
+  ],
+  "leonard-swidler": [
+   {
+    "file": "media-speakers/leonard-swidler.jpg",
+    "sha": "e0bb86b1ed503bc6",
+    "origin": "current-primary",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Swidler_17_Nov_2005.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Swidler_17_Nov_2005.jpg",
+    "credit": "Ingrid Shafer (Drshafer)",
+    "licence": "CC BY-SA 3.0",
+    "phash": "cd26672b2b192c6c",
+    "width": 800,
+    "height": 1097,
+    "face": {
+     "x": 184,
+     "y": 256,
+     "w": 397,
+     "h": 546,
+     "s": 0.9
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/leonard-swidler/e279e968a959ada5.webp",
+    "sha": "e279e968a959ada51cd063977e13ac5e075635f86574d92addd1448a00ed9d82",
+    "origin": "web",
+    "source_url": "https://static1.squarespace.com/static/5464ade0e4b055bfb204446e/t/69cd8d9e5b6cca5ecf8512f4/1775078814041/484827995_1067732225400408_1902297748708892234_n.jpg?format=1500w",
+    "page_url": "https://www.dialogueinstitute.org/our-founder",
+    "credit": null,
+    "licence": null,
+    "phash": "c0b0f4d2c89ab848",
+    "width": 900,
+    "height": 600,
+    "face": {
+     "x": 364,
+     "y": 97,
+     "w": 137,
+     "h": 193,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "matches #0; Dialogue Institute founder page",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/leonard-swidler/231a9627bbef9d8d.jpg",
+    "sha": "231a9627bbef9d8d5879a41d28bc75dab3eb160287749ed94af10a09f191f111",
+    "origin": "web",
+    "source_url": "https://www.kurdistanchronicle.com/upload/images/wena/main_7becad0513fa168344c9f1efebd84e3f.jpg",
+    "page_url": "https://kurdistanchronicle.com/b/3673",
+    "credit": null,
+    "licence": null,
+    "phash": "3c6a3a7a69213333",
+    "width": 1200,
+    "height": 658,
+    "face": {
+     "x": 752,
+     "y": 120,
+     "w": 124,
+     "h": 179,
+     "s": 0.89
+    },
+    "year": 2025,
+    "note": "matches #0; B&W beside Peacemakers poster",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/leonard-swidler/d1614efd609387a5.png",
+    "sha": "d1614efd609387a597688c8b9c4c0546c045af1241a842c1ba4a99d10c3a4b54",
+    "origin": "web",
+    "source_url": "https://kurdistanchronicle.com/upload/images/kon/22/Screenshot_2025-02-20_at_91624PM.png",
+    "page_url": "https://kurdistanchronicle.com/b/3673",
+    "credit": null,
+    "licence": null,
+    "phash": "8b999898ba325b38",
+    "width": 1718,
+    "height": 1360,
+    "face": {
+     "x": 862,
+     "y": 217,
+     "w": 452,
+     "h": 656,
+     "s": 0.88
+    },
+    "year": 2025,
+    "note": "matches #0; green African shirt",
+    "primary": false,
     "needs_ext": false
    }
   ],
@@ -3929,6 +4827,77 @@
     "needs_ext": false
    }
   ],
+  "louis-venters": [
+   {
+    "file": "media-speakers/louis-venters.jpg",
+    "sha": "da474e408698828c",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/how-did-the-bahai-community-of-south-carolina-emerge-from-the-jim-crow-south-sign-up-for-dr-louis-venters-web-talk-on-december-4/",
+    "page_url": "https://wilmetteinstitute.org/how-did-the-bahai-community-of-south-carolina-emerge-from-the-jim-crow-south-sign-up-for-dr-louis-venters-web-talk-on-december-4/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "32b1b878f9ec2ca5",
+    "width": 250,
+    "height": 349,
+    "face": {
+     "x": 69,
+     "y": 60,
+     "w": 114,
+     "h": 161,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/louis-venters/6b61bc0b485f93bd.jpg",
+    "sha": "6b61bc0b485f93bd87aa827a31f7b047d34017448ca6a51c43881f38f1d82cf9",
+    "origin": "web",
+    "source_url": "https://www.fmarion.edu/wp-content/uploads/2020/01/1.24.2020_Venters.jpg",
+    "page_url": "https://www.fmarion.edu/history/faculty/",
+    "credit": null,
+    "licence": null,
+    "phash": "f0c8ccc8c4968686",
+    "width": 900,
+    "height": 600,
+    "face": {
+     "x": 341,
+     "y": 95,
+     "w": 164,
+     "h": 218,
+     "s": 0.94
+    },
+    "year": 2020,
+    "note": "matches #0; FMU faculty portrait",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/louis-venters/7283c1f0767b083a.png",
+    "sha": "7283c1f0767b083ab1adb96adf3f5d5e0c6bf83efffe8eabb67e0f989c9fed46",
+    "origin": "web",
+    "source_url": "https://www.bahaiblog.net/wp-content/uploads/2022/05/louis-venters-400x600-1.png",
+    "page_url": "https://www.bahaiblog.net/?p=42094",
+    "credit": null,
+    "licence": null,
+    "phash": "d070646426337333",
+    "width": 400,
+    "height": 600,
+    "face": {
+     "x": 141,
+     "y": 166,
+     "w": 97,
+     "h": 125,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "matches #0; Bahá'í Blog",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
   "louise-profeit-leblanc": [
    {
     "file": "media-speakers/louise-profeit-leblanc.jpg",
@@ -3974,6 +4943,31 @@
     "year": null,
     "note": "presenting at podium",
     "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "mariette-leong": [
+   {
+    "file": "media-speakers/mariette-leong/cf5ac74934a15836.jpg",
+    "sha": "cf5ac74934a158365283b90f02d966e2e6e8379cb17d8ef8debefb406233fd5d",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2017/12/MarietteLeong-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/marietteleong/",
+    "credit": null,
+    "licence": null,
+    "phash": "ecdcbcb4f4f4b3b3",
+    "width": 587,
+    "height": 720,
+    "face": {
+     "x": 191,
+     "y": 228,
+     "w": 123,
+     "h": 167,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "no reference; WI page names her, single clear person (framed photo of parents behind)",
+    "primary": true,
     "needs_ext": false
    }
   ],
@@ -4048,6 +5042,79 @@
     "needs_ext": false
    }
   ],
+  "masud-khamsi": [
+   {
+    "file": "media-speakers/masud-khamsi/4ddc58ae2e6817c3.jpg",
+    "sha": "4ddc58ae2e6817c394543d2c876556d07532594842f45cd37e09c40c8b05ad52",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/f/fa/Mas%E2%80%99ud_Khamsi.jpg",
+    "page_url": "https://bahai.media/File:Mas’ud_Khamsi.jpg",
+    "credit": null,
+    "licence": null,
+    "phash": "030f078687333461",
+    "width": 1620,
+    "height": 2000,
+    "face": {
+     "x": 505,
+     "y": 502,
+     "w": 539,
+     "h": 737,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "bahai.media named studio portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/masud-khamsi/06a7126939b5e63a.png",
+    "sha": "06a7126939b5e63ae121a851fbf0d3a742d14aae1cf1f7955bff7a42e6624e90",
+    "origin": "web",
+    "source_url": "https://file.bahai.media/5/55/Mas%27ud_Khamsi.png",
+    "page_url": "https://bahai.media/File:Mas'ud_Khamsi.png",
+    "credit": null,
+    "licence": null,
+    "phash": "d9f2333f396858d2",
+    "width": 556,
+    "height": 873,
+    "face": {
+     "x": 108,
+     "y": 162,
+     "w": 360,
+     "h": 447,
+     "s": 0.86
+    },
+    "year": null,
+    "note": "same man, different sitting; bahai.media named",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
+  "michael-day": [
+   {
+    "file": "media-speakers/michael-day/ca019dcf868a1b47.jpg",
+    "sha": "ca019dcf868a1b475469d20e3651577385b925276a5fd55356d137d44d98b3b7",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2018/12/Michael-V.-Day-e1589208823910-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/michael-v-day/",
+    "credit": null,
+    "licence": null,
+    "phash": "3a32707272393133",
+    "width": 471,
+    "height": 513,
+    "face": {
+     "x": 154,
+     "y": 111,
+     "w": 178,
+     "h": 243,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "no reference; WI page names Michael V. Day (Shrine of the Báb author), single clear headshot",
+    "primary": true,
+    "needs_ext": false
+   }
+  ],
   "michael-penn": [
    {
     "file": "media-speakers/michael-penn.png",
@@ -4115,6 +5182,148 @@
     },
     "year": null,
     "note": "lecturing at Hebrew University, small in frame",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/michael-penn/15e24df94a615a75.jpg",
+    "sha": "15e24df94a615a75cf68571dc23501009f39e7d3393dff493cd0b4fc360dee2c",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2015/01/Michael-Penn-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/michael-penn-web-talk/",
+    "credit": null,
+    "licence": null,
+    "phash": "6d4c484d262b4b0b",
+    "width": 604,
+    "height": 466,
+    "face": {
+     "x": 215,
+     "y": 56,
+     "w": 121,
+     "h": 159,
+     "s": 0.94
+    },
+    "year": 2015,
+    "note": "matches #1; outdoors, WI web-talk page",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "mikhail-sergeev": [
+   {
+    "file": "media-speakers/mikhail-sergeev/f4290bf664ec91ea.jpg",
+    "sha": "f4290bf664ec91ea5fa83cec1727a0ff892b0bc75a76b94baa4a7f9280f26a2b",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2019/04/SergeevPortrait-e1588969947604-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/wp-json/wp/v2/media?search=SergeevPortrait",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "e1f1f1b1b1312131",
+    "width": 3171,
+    "height": 2304,
+    "face": {
+     "x": 1334,
+     "y": 523,
+     "w": 876,
+     "h": 1112,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "WI 'SergeevPortrait'; same face as WI flyers (Bahá'í scholar, not Commons namesake)",
+    "primary": true,
+    "needs_ext": true
+   },
+   {
+    "file": "media-speakers/mikhail-sergeev/3f4bc042b995561d.jpg",
+    "sha": "3f4bc042b995561d9b5146bfc7459ec6faaaf4f7dbaee5ee453cdc7c85b2596e",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2017/10/Misha-Sergeev-New-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/wp-json/wp/v2/media?search=Misha",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "442020c0c8d132c2",
+    "width": 624,
+    "height": 720,
+    "face": {
+     "x": 148,
+     "y": 160,
+     "w": 305,
+     "h": 394,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "same sitting as #0, different frame; WI 'Mikhail Sergeev'",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
+  "moojan-momen": [
+   {
+    "file": "media-speakers/moojan-momen.jpg",
+    "sha": "31ac7da8d4c7aaa8",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/twentieth-anniversary-web-talks-success-continues-with-dr-moojan-momens-discussion-of-the-re-creation-and-utilization-of-a-communitys-memories-shoghi-effendi-and-baha/",
+    "page_url": "https://wilmetteinstitute.org/twentieth-anniversary-web-talks-success-continues-with-dr-moojan-momens-discussion-of-the-re-creation-and-utilization-of-a-communitys-memories-shoghi-effendi-and-baha/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "070931b4d9f9286a",
+    "width": 200,
+    "height": 293,
+    "face": {
+     "x": 53,
+     "y": 68,
+     "w": 95,
+     "h": 127,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/moojan-momen/75d38f6f9cef4c76.jpg",
+    "sha": "75d38f6f9cef4c76006e6d576e48c4983a2723c68af6ec975e58a5163931d57d",
+    "origin": "web",
+    "source_url": "https://www.bahaiblog.net/wp-content/uploads/2022/04/Dr.-Moojan-Momen-450x675-1.jpg",
+    "page_url": "https://www.bahaiblog.net/?p=30562",
+    "credit": "Courtesy of Immersed Photography",
+    "licence": null,
+    "phash": "c6f2a2c74f4b0f0f",
+    "width": 450,
+    "height": 675,
+    "face": {
+     "x": 186,
+     "y": 167,
+     "w": 95,
+     "h": 127,
+     "s": 0.93
+    },
+    "year": 2022,
+    "note": "matches #0; named Bahá'í Blog interview",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/moojan-momen/e3f008770b75c1f7.png",
+    "sha": "e3f008770b75c1f785c6773da4ddd982778c7acf51c92d00f663196cf3ce93b0",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2019/02/MoojanMomenSpeaker-1.png",
+    "page_url": "https://wilmetteinstitute.org/moojanmomenspeaker/",
+    "credit": null,
+    "licence": null,
+    "phash": "52929271f1f0f0f0",
+    "width": 850,
+    "height": 655,
+    "face": {
+     "x": 408,
+     "y": 99,
+     "w": 101,
+     "h": 131,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "matches #0; at podium, WI",
     "primary": false,
     "needs_ext": false
    }
@@ -4284,6 +5493,54 @@
     "needs_ext": false
    }
   ],
+  "paul-hanley": [
+   {
+    "file": "media-speakers/paul-hanley.jpg",
+    "sha": "10de10e8782d9420",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/a-library-of-web-talks-247365-john-hatcher-on-the-bicentenary-and-paul-hanley-on-eleven/",
+    "page_url": "https://wilmetteinstitute.org/a-library-of-web-talks-247365-john-hatcher-on-the-bicentenary-and-paul-hanley-on-eleven/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "df8d0d8c0765694b",
+    "width": 424,
+    "height": 521,
+    "face": {
+     "x": 104,
+     "y": 67,
+     "w": 146,
+     "h": 206,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/paul-hanley/0b0d8e8d194740fa.png",
+    "sha": "0b0d8e8d194740fa3d1c1cdb900b7a10ad041379b9749b7a343b52c364402c47",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/PaulHanley2020-1.png",
+    "page_url": "https://wilmetteinstitute.org/paulhanley2020/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "30b3e366e4e6e5e9",
+    "width": 848,
+    "height": 797,
+    "face": {
+     "x": 240,
+     "y": 149,
+     "w": 218,
+     "h": 297,
+     "s": 0.9
+    },
+    "year": 2020,
+    "note": "matches #0; speaking on stage",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
   "paul-lample": [
    {
     "file": "media-speakers/paul-lample.jpg",
@@ -4397,6 +5654,29 @@
     },
     "year": null,
     "note": "lecturing still (ABS banner behind), face matches · from “Paul Lample on a Framework for Action”",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/paul-lample/b8ea450eebf1b25d.jpg",
+    "sha": "b8ea450eebf1b25d42c7aa2044d020109e916a206086f4dec9f38c94fb28446a",
+    "origin": "web",
+    "source_url": "https://images.prismic.io/bahaistudies/cf63c447-112d-4950-9f34-3e8fab4c0998_Lample.JPG",
+    "page_url": "https://www.bahaistudies.ca/watch/a-still-more-superb-mission",
+    "credit": "Association for Bahá’í Studies",
+    "licence": null,
+    "phash": "0672703070d8c4d6",
+    "width": 3456,
+    "height": 5184,
+    "face": {
+     "x": 1328,
+     "y": 1094,
+     "w": 1081,
+     "h": 1492,
+     "s": 0.94
+    },
+    "year": 2024,
+    "note": "ABS speaker portrait, large, matches #0",
     "primary": false,
     "needs_ext": false
    }
@@ -4777,6 +6057,290 @@
     "needs_ext": false
    }
   ],
+  "robert-atkinson": [
+   {
+    "file": "media-speakers/robert-atkinson.jpg",
+    "sha": "54bb7dff688c5683",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/robert-atkinson-webinar-series/",
+    "page_url": "https://wilmetteinstitute.org/robert-atkinson-webinar-series/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "6b7b6b67b92de0f0",
+    "width": 556,
+    "height": 640,
+    "face": {
+     "x": 166,
+     "y": 81,
+     "w": 250,
+     "h": 345,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/robert-atkinson/1c0b973599b31b76.jpg",
+    "sha": "1c0b973599b31b76b25881129beeab9b12abe54cb2267cdddf779f1b067284cb",
+    "origin": "web",
+    "source_url": "https://www.robertatkinson.net/wp-content/uploads/2015/01/BobAtkinsonM.jpg",
+    "page_url": "https://www.robertatkinson.net/home/bobatkinsonm/",
+    "credit": null,
+    "licence": null,
+    "phash": "80e0644c8cccccaa",
+    "width": 1466,
+    "height": 1000,
+    "face": {
+     "x": 515,
+     "y": 199,
+     "w": 358,
+     "h": 482,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "author-site photo, matches #0",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
+  "robert-stockman": [
+   {
+    "file": "media-speakers/robert-stockman.jpg",
+    "sha": "7a97c638398701b0",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/wilmette-institute-at-american-academy-of-religion/",
+    "page_url": "https://wilmetteinstitute.org/wilmette-institute-at-american-academy-of-religion/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "4d646c7cc97b71b3",
+    "width": 760,
+    "height": 878,
+    "face": {
+     "x": 196,
+     "y": 192,
+     "w": 325,
+     "h": 474,
+     "s": 0.91
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/robert-stockman/e2a863d8f91b6afd.jpg",
+    "sha": "e2a863d8f91b6afdb4454d0b2df9af806baaf753d77f609b24de776964c78fd5",
+    "origin": "web",
+    "source_url": "https://clas.iusb.edu/philosophy/images/Robert-Stockman-Portrait.jpg",
+    "page_url": "https://clas.iusb.edu/philosophy/faculty-and-staff/stockman.html",
+    "credit": null,
+    "licence": null,
+    "phash": "f4c7cfc9cbe78716",
+    "width": 960,
+    "height": 960,
+    "face": {
+     "x": 376,
+     "y": 282,
+     "w": 294,
+     "h": 428,
+     "s": 0.89
+    },
+    "year": null,
+    "note": "matches #0; IU South Bend faculty",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/robert-stockman/a90c4b4aaeca5eee.jpg",
+    "sha": "a90c4b4aaeca5eeed3c27af5d6d7c0fcd8fc058d62d15cf777ed65f41412c34f",
+    "origin": "web",
+    "source_url": "https://imagesinternational.org/sites/imagesinternational.org/files/2003-abs-san-francisco-robert-stockman.jpg",
+    "page_url": "https://imagesinternational.org/people/mr-robert-stockman",
+    "credit": "Images International",
+    "licence": null,
+    "phash": "f9cdc79797d293b1",
+    "width": 3008,
+    "height": 2000,
+    "face": {
+     "x": 1058,
+     "y": 526,
+     "w": 711,
+     "h": 915,
+     "s": 0.93
+    },
+    "year": 2003,
+    "note": "matches #0; younger, ABS San Francisco",
+    "primary": false,
+    "needs_ext": true
+   },
+   {
+    "file": "media-speakers/robert-stockman/0121fcd0d3113de0.jpg",
+    "sha": "0121fcd0d3113de00d352c4126183e37223f940c8d9742a9db1cf9f342271081",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2019/03/RStockman29April2017-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/robert-stockman",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "b271d16970686869",
+    "width": 596,
+    "height": 720,
+    "face": {
+     "x": 169,
+     "y": 148,
+     "w": 242,
+     "h": 295,
+     "s": 0.95
+    },
+    "year": 2017,
+    "note": "matches #0; at microphone",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/robert-stockman/1e9a0ce4cbd7971a.jpg",
+    "sha": "1e9a0ce4cbd7971a58a38ed11ba11e8463729790b8d663cfa3c399597dab9aa1",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2017/10/UTSBDaysRob-1.jpeg",
+    "page_url": "https://wilmetteinstitute.org/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "d0d3f21b3336b081",
+    "width": 533,
+    "height": 720,
+    "face": {
+     "x": 228,
+     "y": 192,
+     "w": 124,
+     "h": 157,
+     "s": 0.94
+    },
+    "year": 2017,
+    "note": "matches #0; seated at panel",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "robert-weinberg": [
+   {
+    "file": "media-speakers/robert-weinberg.jpg",
+    "sha": "60e0fc8f031b2a55",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/spiritual-and-intellectual-gifts-in-march-web-talks/",
+    "page_url": "https://wilmetteinstitute.org/spiritual-and-intellectual-gifts-in-march-web-talks/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "9b3d3fbdba343627",
+    "width": 841,
+    "height": 720,
+    "face": {
+     "x": 171,
+     "y": 120,
+     "w": 348,
+     "h": 457,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/robert-weinberg/d3cc2864d9bba9e6.jpg",
+    "sha": "d3cc2864d9bba9e6807af4cc4d952a5fd4be7b44950f45a4ee32f41297132c67",
+    "origin": "web",
+    "source_url": "https://www.bahaiblog.net/wp-content/uploads/2022/04/Weinberg.jpg",
+    "page_url": "https://www.bahaiblog.net/?p=10103",
+    "credit": null,
+    "licence": null,
+    "phash": "f4dec9a92158d99a",
+    "width": 746,
+    "height": 960,
+    "face": {
+     "x": 257,
+     "y": 74,
+     "w": 229,
+     "h": 297,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "matches #0; holding his Lady Blomfield book",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/robert-weinberg/2af33733b1a50cdc.jpg",
+    "sha": "2af33733b1a50cdc071a51fdf85a869ad996c6f906452bd1838b6ebbf2f02a40",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2021/01/RobertWeinberg-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/robertweinberg/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "b2f070f0ec8f9bb0",
+    "width": 1304,
+    "height": 1681,
+    "face": {
+     "x": 246,
+     "y": 273,
+     "w": 810,
+     "h": 1008,
+     "s": 0.8
+    },
+    "year": 2021,
+    "note": "matches #0; WI media, large",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
+  "roshan-danesh": [
+   {
+    "file": "media-speakers/roshan-danesh.jpg",
+    "sha": "4a6bc07ec921bd3e",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/roshan-danesh-imagining-bahai-law/",
+    "page_url": "https://wilmetteinstitute.org/roshan-danesh-imagining-bahai-law/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "6464e26331391929",
+    "width": 400,
+    "height": 378,
+    "face": {
+     "x": 96,
+     "y": 36,
+     "w": 151,
+     "h": 199,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/roshan-danesh/693a0571df24a548.jpg",
+    "sha": "693a0571df24a54849e38e12a94c873fe44a0bba5f4664a2be375b3ea76d9407",
+    "origin": "web",
+    "source_url": "https://dafoefoundation.ca/wp-content/uploads/2025/09/Roshan_Danesh.jpeg",
+    "page_url": "https://dafoefoundation.ca/?p=726",
+    "credit": "Mary Danesh (per thebcreview.ca filename 'photo-credit_-mary-danesh' and festivalofauthors.ca 'credit-Mary-Danesh')",
+    "licence": null,
+    "phash": "3c0797878360c4cc",
+    "width": 853,
+    "height": 1280,
+    "face": {
+     "x": 246,
+     "y": 202,
+     "w": 432,
+     "h": 631,
+     "s": 0.91
+    },
+    "year": 2024,
+    "note": "Dafoe page names him (Reconciling History co-author); older than #0 but consistent",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
   "roy-wilhelm": [
    {
     "file": "media-speakers/roy-wilhelm/1928016054ed4ef5.jpg",
@@ -4823,6 +6387,54 @@
     "note": "second portrait, bow tie, older scan",
     "primary": false,
     "needs_ext": true
+   }
+  ],
+  "roya-akhavan": [
+   {
+    "file": "media-speakers/roya-akhavan.jpg",
+    "sha": "137f6693ab1c3917",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/a-new-look-an-august-web-talk-on-tahirih-beyond-emancipation/",
+    "page_url": "https://wilmetteinstitute.org/a-new-look-an-august-web-talk-on-tahirih-beyond-emancipation/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "e8d4f2f0f0d890b6",
+    "width": 366,
+    "height": 400,
+    "face": {
+     "x": 113,
+     "y": 94,
+     "w": 142,
+     "h": 174,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/roya-akhavan/8ee2603321fda9c1.jpg",
+    "sha": "8ee2603321fda9c1ce884fa9b7f3dcb6f67dff7d38f6e9725a0714779ab3f1af",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2020/05/RoyaAkhavan2-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/royaakhavan2-2/",
+    "credit": null,
+    "licence": null,
+    "phash": "4d0e12164edc968d",
+    "width": 569,
+    "height": 720,
+    "face": {
+     "x": 172,
+     "y": 180,
+     "w": 239,
+     "h": 296,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "studio portrait, matches #0",
+    "primary": false,
+    "needs_ext": false
    }
   ],
   "ruhiyyih-khanum": [
@@ -5011,6 +6623,54 @@
     "needs_ext": false
    }
   ],
+  "sandra-lynn-hutchison": [
+   {
+    "file": "media-speakers/sandra-lynn-hutchison.jpg",
+    "sha": "45cc62a6c131ec29",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/faculty/sandra-hutchison/",
+    "page_url": "https://wilmetteinstitute.org/faculty/sandra-hutchison/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "069b9f37151d3c34",
+    "width": 329,
+    "height": 370,
+    "face": {
+     "x": 121,
+     "y": 66,
+     "w": 150,
+     "h": 206,
+     "s": 0.92
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/sandra-lynn-hutchison/15d613e97fe5503a.jpg",
+    "sha": "15d613e97fe5503ac6ba65be2e4c4a2a2c422619e120feb3af125ee6cdb366f3",
+    "origin": "web",
+    "source_url": "https://www.elixir-journal.org/img/SandraLynnHutchison.jpg",
+    "page_url": "https://www.elixir-journal.org/about.php",
+    "credit": null,
+    "licence": null,
+    "phash": "f63e725cde92e39f",
+    "width": 648,
+    "height": 960,
+    "face": {
+     "x": 211,
+     "y": 160,
+     "w": 198,
+     "h": 267,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "matches #0; elixir journal founding editor",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
   "shahriar-razavi": [
    {
     "file": "media-speakers/shahriar-razavi/71b409894f991537.png",
@@ -5032,6 +6692,31 @@
     },
     "year": 2003,
     "note": "titled, at podium 2003 (face small)",
+    "primary": true,
+    "needs_ext": false
+   }
+  ],
+  "shahrokh-monjazeb": [
+   {
+    "file": "media-speakers/shahrokh-monjazeb.jpg",
+    "sha": "09355a2d0e9ac524",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/a-video-feast-for-the-fast/",
+    "page_url": "https://wilmetteinstitute.org/a-video-feast-for-the-fast/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "63c99a92ce6b390c",
+    "width": 200,
+    "height": 289,
+    "face": {
+     "x": 33,
+     "y": 33,
+     "w": 127,
+     "h": 179,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "current primary portrait",
     "primary": true,
     "needs_ext": false
    }
@@ -5130,6 +6815,56 @@
     "needs_ext": false
    }
   ],
+  "sohrab-kourosh": [
+   {
+    "file": "media-speakers/sohrab-kourosh/3ed8efa322f63213.jpg",
+    "sha": "3ed8efa322f632133060189e14e06b9bdfa3f4e1d69800a35a0691c8f8805ec0",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2017/05/SohrabK-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/letter-to-the-editor-the-seven-valleys/",
+    "credit": null,
+    "licence": null,
+    "phash": "488c8c8c070b1113",
+    "width": 431,
+    "height": 434,
+    "face": {
+     "x": 133,
+     "y": 78,
+     "w": 136,
+     "h": 184,
+     "s": 0.94
+    },
+    "year": 2017,
+    "note": "WI alt names him; matches face in #1 tile",
+    "primary": true,
+    "needs_ext": false
+   }
+  ],
+  "sovaida-maani-ewing": [
+   {
+    "file": "media-speakers/sovaida-maani-ewing.jpg",
+    "sha": "6509fcaf4b26554a",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/faculty/sovaida-maani-ewing/",
+    "page_url": "https://wilmetteinstitute.org/faculty/sovaida-maani-ewing/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "3c70f0b0b2929293",
+    "width": 200,
+    "height": 200,
+    "face": {
+     "x": 70,
+     "y": 40,
+     "w": 61,
+     "h": 77,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   }
+  ],
   "stephen-birkland": [
    {
     "file": "media-speakers/stephen-birkland.jpg",
@@ -5223,6 +6958,242 @@
     "year": null,
     "note": "current primary portrait",
     "primary": true,
+    "needs_ext": false
+   }
+  ],
+  "steve-friberg": [
+   {
+    "file": "media-speakers/steve-friberg/2419bbb4889f807e.jpg",
+    "sha": "2419bbb4889f807eadca82122a5004b6ef2012466c3aad0a9b7da512c1b85d87",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2020/04/stephen-friberg.jpg",
+    "page_url": "https://wilmetteinstitute.org/faculty/stephen-friberg/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "8e1e1f1f1e1b1912",
+    "width": 1216,
+    "height": 1120,
+    "face": {
+     "x": 312,
+     "y": 272,
+     "w": 500,
+     "h": 632,
+     "s": 0.81
+    },
+    "year": 2019,
+    "note": "WI faculty page names him; single clear person",
+    "primary": true,
+    "needs_ext": true
+   },
+   {
+    "file": "media-speakers/steve-friberg/cf0b58f3e560bf04.jpg",
+    "sha": "cf0b58f3e560bf040259ed26c55fcd7c70effb1baa0fdfbffc899ee6ea8d324b",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2013/05/Stephen-Friberg.jpg",
+    "page_url": "https://wilmetteinstitute.org/stephen-friberg-2/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "8c96868686848f17",
+    "width": 602,
+    "height": 484,
+    "face": {
+     "x": 185,
+     "y": 84,
+     "w": 208,
+     "h": 279,
+     "s": 0.95
+    },
+    "year": 2013,
+    "note": "same man as #0; WI media",
+    "primary": false,
+    "needs_ext": true
+   }
+  ],
+  "steven-phelps": [
+   {
+    "file": "media-speakers/steven-phelps.jpg",
+    "sha": "602f9fb322e42a13",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/i-am-the-mystic-fane-the-nature-of-the-manifestation-in-the-bahai-writings-a-web-talk-on-may-15-by-dr-steven-phelps/",
+    "page_url": "https://wilmetteinstitute.org/i-am-the-mystic-fane-the-nature-of-the-manifestation-in-the-bahai-writings-a-web-talk-on-may-15-by-dr-steven-phelps/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "069b3b9f9f496962",
+    "width": 536,
+    "height": 720,
+    "face": {
+     "x": 144,
+     "y": 109,
+     "w": 266,
+     "h": 384,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/steven-phelps/0669ed2c4db6ce75.png",
+    "sha": "0669ed2c4db6ce7571bad5cc6e6c5341cbb380853f1beff09cb4e6c0f7ed5217",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2018/12/self-1-e1589113393274-1.png",
+    "page_url": "https://wilmetteinstitute.org/self-1/",
+    "credit": null,
+    "licence": null,
+    "phash": "4e96922e7633d5ed",
+    "width": 442,
+    "height": 440,
+    "face": {
+     "x": 156,
+     "y": 88,
+     "w": 152,
+     "h": 204,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "matches #0 (older, beard); WI media",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "susanne-alexander": [
+   {
+    "file": "media-speakers/susanne-alexander.jpg",
+    "sha": "3d3c6ada6f383157",
+    "origin": "current-primary",
+    "source_url": "https://wilmetteinstitute.org/be-brave-and-arise/",
+    "page_url": "https://wilmetteinstitute.org/be-brave-and-arise/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "0e1a173b33133364",
+    "width": 547,
+    "height": 720,
+    "face": {
+     "x": 148,
+     "y": 108,
+     "w": 242,
+     "h": 337,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "current primary portrait",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/susanne-alexander/9684d5c96c8d9476.png",
+    "sha": "9684d5c96c8d9476dcb8469172f8c61edad7e783a5b81f573c3bd12cd5ad2afe",
+    "origin": "web",
+    "source_url": "https://marriagetransformation.com/wp-content/uploads/2025/03/Susanne-Head-Shot.png",
+    "page_url": "https://marriagetransformation.com/susanne-head-shot/",
+    "credit": null,
+    "licence": null,
+    "phash": "0c9d9e9e0d143373",
+    "width": 1293,
+    "height": 1084,
+    "face": {
+     "x": 418,
+     "y": 199,
+     "w": 400,
+     "h": 570,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "matches #0; her company headshot",
+    "primary": false,
+    "needs_ext": true
+   },
+   {
+    "file": "media-speakers/susanne-alexander/a267516499317a7f.png",
+    "sha": "a267516499317a7fdcc1ae8253c5950e61981f3c0ccb28ae5d903240a4d9e901",
+    "origin": "web",
+    "source_url": "https://marriagetransformation.com/wp-content/uploads/2025/03/Susanne-Presenting.png",
+    "page_url": "https://marriagetransformation.com/susanne-presenting/",
+    "credit": null,
+    "licence": null,
+    "phash": "830b0a0a4e0e4e4d",
+    "width": 940,
+    "height": 788,
+    "face": {
+     "x": 386,
+     "y": 81,
+     "w": 156,
+     "h": 211,
+     "s": 0.94
+    },
+    "year": null,
+    "note": "matches #0; presenting",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/susanne-alexander/3d9f4abd16935b92.jpg",
+    "sha": "3d9f4abd16935b921d674d482d0b530871c97413bcf287c421de3c160c10742a",
+    "origin": "web",
+    "source_url": "https://marriagetransformation.com/wp-content/uploads/2017/11/Susanne-M.-Alexander-Headshot-in-Red.jpg",
+    "page_url": "https://marriagetransformation.com/susanne-m-alexander-headshot-in-red/",
+    "credit": null,
+    "licence": null,
+    "phash": "1e3a6f6b3f4d79d9",
+    "width": 791,
+    "height": 1200,
+    "face": {
+     "x": 212,
+     "y": 191,
+     "w": 375,
+     "h": 513,
+     "s": 0.93
+    },
+    "year": null,
+    "note": "matches #0; red top headshot",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/susanne-alexander/e10cffa4265347ce.jpg",
+    "sha": "e10cffa4265347ceed97ae45e82a6f059abcb39a377f2cee6b0326f768f86462",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2019/07/Susanne-M.-Alexander-Sitting-in-BlackB-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/susanne-m-alexander-sitting-in-blackb/",
+    "credit": null,
+    "licence": null,
+    "phash": "0f960b3153116ddb",
+    "width": 1077,
+    "height": 1548,
+    "face": {
+     "x": 372,
+     "y": 244,
+     "w": 370,
+     "h": 496,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "matches #0; seated, WI",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/susanne-alexander/4e6db93c4ba936e9.jpg",
+    "sha": "4e6db93c4ba936e9fd185ecc6815403dbff81b6952f64f7f746d6c1d64495fd6",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2013/02/Susanne-M-Alexander1-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/susanne-m-alexander-2/",
+    "credit": null,
+    "licence": null,
+    "phash": "4e163233336070e4",
+    "width": 579,
+    "height": 720,
+    "face": {
+     "x": 206,
+     "y": 92,
+     "w": 180,
+     "h": 255,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "matches #0; red scarf, WI",
+    "primary": false,
     "needs_ext": false
    }
   ],
@@ -5412,6 +7383,29 @@
     "note": "webcam talk still in study; glasses/hair match · from “\"Baha’u’llah - The Return of Joseph\" | Todd Lawson”",
     "primary": false,
     "needs_ext": false
+   },
+   {
+    "file": "media-speakers/todd-lawson/b2759701375c88ec.jpg",
+    "sha": "b2759701375c88ecbb65fd44c2bbb7cb405c0164dea29d84ee806aa6f1208038",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2014/05/Todd-Lawson-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/todd-lawson-2/",
+    "credit": null,
+    "licence": null,
+    "phash": "7070d4f4b4b45c19",
+    "width": 600,
+    "height": 462,
+    "face": {
+     "x": 92,
+     "y": 118,
+     "w": 134,
+     "h": 173,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "distinct outdoor photo, matches #0; composite - crop to LEFT panel only (right half is artwork)",
+    "primary": false,
+    "needs_ext": false
    }
   ],
   "ugo-giachery": [
@@ -5550,6 +7544,79 @@
     },
     "year": null,
     "note": "lecture still, face matches (mustache, bald, elderly) · from “Glimpses from The Baha'i History”",
+    "primary": false,
+    "needs_ext": false
+   }
+  ],
+  "valerie-phillips": [
+   {
+    "file": "media-speakers/valerie-phillips/7e369ddda956a668.jpg",
+    "sha": "7e369ddda956a668b2a3fe5aca16ce4a7c086fad11ba1742e8d56532709c6943",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2015/10/Valerie-Phillips-1.jpg",
+    "page_url": "https://wilmetteinstitute.org/valerie-jean-phillips/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "3333617361636677",
+    "width": 709,
+    "height": 616,
+    "face": {
+     "x": 197,
+     "y": 115,
+     "w": 353,
+     "h": 496,
+     "s": 0.91
+    },
+    "year": 2015,
+    "note": "WI media 'Valerie Jean Phillips' (WI hosted her talk); single clear person, no face reference",
+    "primary": true,
+    "needs_ext": true
+   }
+  ],
+  "vasu-mohan": [
+   {
+    "file": "media-speakers/vasu-mohan/594d8cd29c0ece0a.jpg",
+    "sha": "594d8cd29c0ece0a3beb9ab99ab3214663b0d3c817378af0eb6a34401d9900d2",
+    "origin": "web",
+    "source_url": "https://wilmetteinstitute.org/wp-content/uploads/2017/10/VasuMohanNew-1.jpeg",
+    "page_url": "https://wilmetteinstitute.org/vasumohannew/",
+    "credit": "Wilmette Institute",
+    "licence": null,
+    "phash": "080c303022044445",
+    "width": 482,
+    "height": 720,
+    "face": {
+     "x": 220,
+     "y": 94,
+     "w": 184,
+     "h": 245,
+     "s": 0.93
+    },
+    "year": 2017,
+    "note": "WI media names him; grey suit, brick wall",
+    "primary": true,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/vasu-mohan/881d6073b845a413.jpg",
+    "sha": "881d6073b845a413f912556772ef5775a8f4a8ebcdc3c43deda4f1a638463c45",
+    "origin": "web",
+    "source_url": "https://sojo.net/files/headshots/Vasu.jpg",
+    "page_url": "https://sojo.net/node/219111",
+    "credit": "Sojourners",
+    "licence": null,
+    "phash": "4e1acdcc9a1b1838",
+    "width": 939,
+    "height": 877,
+    "face": {
+     "x": 368,
+     "y": 56,
+     "w": 240,
+     "h": 331,
+     "s": 0.95
+    },
+    "year": null,
+    "note": "same man; Sojourners author photo",
     "primary": false,
     "needs_ext": false
    }
@@ -5740,6 +7807,29 @@
     },
     "year": null,
     "note": "later portrait",
+    "primary": false,
+    "needs_ext": false
+   },
+   {
+    "file": "media-speakers/william-sutherland-maxwell/9a1531ea092be5ec.jpg",
+    "sha": "9a1531ea092be5ecaf0bb781076d20cac73fefbcd2e0e5b0a72469170b53e94a",
+    "origin": "web",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/73/William_Sutherland_Maxwell.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:William_Sutherland_Maxwell.jpg",
+    "credit": "Wm. Notman & Son; McCord Stewart Museum II-197989",
+    "licence": "Public domain",
+    "phash": "0919103019a9a0b4",
+    "width": 530,
+    "height": 749,
+    "face": {
+     "x": 230,
+     "y": 130,
+     "w": 166,
+     "h": 213,
+     "s": 0.94
+    },
+    "year": 1913,
+    "note": "younger 1913 portrait, named on Commons/McCord; features consistent",
     "primary": false,
     "needs_ext": false
    }

@@ -131,9 +131,34 @@ def still_crop(img, f0):
     box = tuple(int(round(v)) for v in (left, top, left + bw, bot))
     return box if min(box[2] - box[0], box[3] - box[1]) >= MIN_SHORT else None
 
+BROWSER = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36'}
+
+def fetch_img(url, page=None):
+    """Some sites (Wilmette Institute) refuse a non-browser agent without a Referer: one retry as a browser from the page."""
+    r = S.get(url, timeout=30)
+    if r.status_code in (403, 406) and page:
+        r = requests.get(url, timeout=30, headers={**BROWSER, 'Referer': page})
+    return r
+
+def wilmette(person):
+    """The Wilmette Institute's own media library (WordPress REST): files whose title or alt text carries the full name."""
+    last = fold(person['name']).replace('-', ' ').split()[-1]
+    first = fold(person['name']).split()[0]
+    try: j = requests.get('https://wilmetteinstitute.org/wp-json/wp/v2/media', params={'search': last, 'per_page': 40}, headers=BROWSER, timeout=20).json()
+    except Exception: return []
+    out = []
+    for m in j if isinstance(j, list) else []:
+        label = fold(f"{m.get('title', {}).get('rendered', '')} {m.get('alt_text', '')} {m.get('source_url', '').rsplit('/', 1)[-1]}").replace('-', ' ').replace('_', ' ')
+        flat = label.replace(' ', '')
+        if not ((first in label or first in flat) and (last in label or last.replace(' ', '') in flat)): continue
+        if not re.search(r'\.(jpe?g|png|webp)$', m.get('source_url', ''), re.I): continue
+        out.append({'title': m.get('alt_text') or m['title']['rendered'], 'url': m['source_url'], 'thumb': m['source_url'], 'page': m.get('link') or 'https://wilmetteinstitute.org/',
+                    'origin': 'web', 'credit': 'Wilmette Institute', 'licence': None, 'date': (m.get('date') or '')[:4] or None, 'desc': 'Wilmette Institute media library'})
+    return out
+
 def evaluate(c):
     try:
-        r = S.get(c['thumb'], timeout=30)
+        r = fetch_img(c['thumb'], c.get('page'))
         if not r.ok or len(r.content) < 4000: return None
         img = Image.open(io.BytesIO(r.content)); img = ImageOps.exif_transpose(img).convert('RGB')
     except Exception: return None
@@ -207,6 +232,8 @@ def harvest_web(person):
     done = {c.get('url') for c in old}
     todo = [{'title': i.get('caption') or '', 'url': i['url'], 'thumb': i['url'], 'page': i.get('page'), 'origin': 'web', 'credit': i.get('credit'), 'licence': i.get('licence'),
              'date': str(i['year']) if i.get('year') else None, 'desc': i.get('note')} for i in web.get('images', []) if i.get('url') and i['url'] not in done]
+    seen_u = {t['url'] for t in todo} | done
+    todo += [w for w in wilmette(person) if w['url'] not in seen_u]
     with cf.ThreadPoolExecutor(4) as ex: got = [g for g in ex.map(evaluate, todo) if g]
     new, n0 = [], (max([c['n'] for c in old]) + 1 if old else 0)
     for g in got:

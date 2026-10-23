@@ -1,6 +1,76 @@
 {
-  "generated": "2026-10-23T13:39:07.102Z",
+  "generated": "2026-10-23T14:30:14.699Z",
   "entries": [
+    {
+      "hash": "0f299f15",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Media-identity corrects the catalogue row also for talks with a run queued (129 of 131 were busy with the first pass's update runs, so /media still showed three Faizi box sets)",
+      "scope": "media"
+    },
+    {
+      "hash": "47ae30a6",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Published Aqdas numbering via a local override table (PN_OVERRIDES, keyed by bookid → block id)",
+      "scope": "ol"
+    },
+    {
+      "hash": "0913d925",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Ol-refresh new-book check uses OL's catalog (Bindery), drafts never imported; dry-run summary for Chad",
+      "scope": "ol"
+    },
+    {
+      "hash": "332f60e7",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "10-23 OceanLibrary export applied in place — sites.yaml pause flag, display-id rules, ol-refresh dry run",
+      "scope": "ol"
+    },
+    {
+      "hash": "c5fe8177",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Media-identity also corrects the catalogue row at once (speaker, person key, year) — the /media index groups by it, and the 155 update re-runs take a while; a rerun compares the row as well as meta.json",
+      "scope": "media"
+    },
+    {
+      "hash": "9e82ff40",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Identity evidence — the station named beside a bare surname ('Hand of the Cause of God - Mr Faizi') identifies the one Hand of that name; the YouTube title is part of the evidence",
+      "scope": "media"
+    },
+    {
+      "hash": "2e685cb2",
+      "date": "2026-10-23",
+      "type": "Other",
+      "description": "Speaker galleries, first set — 247 verified photos of 66 people (bahai.media, Commons, talk stills)",
+      "scope": "media"
+    },
+    {
+      "hash": "b69f169e",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Speaker galleries — several verified photos per person, rotated by the pages (Chad 10-23: 'never be at a loss for an image like with Adib Taherzadeh')",
+      "scope": "media"
+    },
+    {
+      "hash": "a75bc55d",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Identity — a full given name outranks an initials-only alias (Hartmut ≠ 'H. Grossmann'), reviewed surname-only forms confirm via data; trim — a gap is skipped only when DEAD (95th pct < 40 % of speech; the dry run marked 258 gaps, much of it quiet music); ASR lane + 4 workers so a freed aorus slot is taken at once (06:50: 3-min clips finish in 12 s, the GPU idled between them); planning/media-speaker-identities.md (the audit)",
+      "scope": "media"
+    },
+    {
+      "hash": "2f300ca1",
+      "date": "2026-10-23",
+      "type": "Chore",
+      "description": "Deploy v2.187.780 (media open-talk affordance + quiet inserts)",
+      "scope": null
+    },
     {
       "hash": "0935dc39",
       "date": "2026-10-23",
@@ -3430,80 +3500,80 @@
       "type": "New",
       "description": "The stage being built lists its unfinished traditions — progress, paragraphs left, a dot on those that grew",
       "scope": "home"
-    },
-    {
-      "hash": "ff6c202b",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "A stage being built shows 4 decimals, interpolated at its measured rate, plus its live point count",
-      "scope": "home"
-    },
-    {
-      "hash": "27c44019",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "BM25 comes right after ingestion — ledger-driven keyword-fill job (core first) for the 666K-paragraph gap; stages say indexing/idle",
-      "scope": "index"
-    },
-    {
-      "hash": "2976b901",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "The sweep is a soft green phosphor trace with a glow trailing a couple of pixels",
-      "scope": "home"
-    },
-    {
-      "hash": "b79f8d04",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "Soft sweep arm again; persistence is a conic CSS mask on the lit layer, pinned to the sweep's clock (the SVG mask repainted lazily and drifted)",
-      "scope": "home"
-    },
-    {
-      "hash": "20764907",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Radar persistence masks only the lit cells — dark tracks and labels never swept; no lit wedge",
-      "scope": "home"
-    },
-    {
-      "hash": "61c42aea",
-      "date": "2026-10-16",
-      "type": "Performance",
-      "description": "Phrase indexing back to one job at a time — three saturated the interim SSD and ran slower (91K vs 142K phrases/h)",
-      "scope": "ops"
-    },
-    {
-      "hash": "500c22a5",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "Radar paint stays in step with the sweep — every animation pinned to one turn origin; brighter fresh redraw",
-      "scope": "home"
-    },
-    {
-      "hash": "f62512e9",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "PPI scope — the whole dial fades behind the trace and is redrawn as it passes; active cells' outlines painted in P7 afterglow",
-      "scope": "home"
-    },
-    {
-      "hash": "759cf24c",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "A real radar — a bright beam line paints the returns slice by slice; phosphor decay",
-      "scope": "home"
-    },
-    {
-      "hash": "57cf2da3",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Radar returns — growth fronts flash as the sweep crosses them and fade; afterglow, beams, halos removed",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "0f299f15",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Media-identity corrects the catalogue row also for talks with a run queued (129 of 131 were busy with the first pass's update runs, so /media still showed three Faizi box sets)",
+        "scope": "media"
+      },
+      {
+        "hash": "47ae30a6",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Published Aqdas numbering via a local override table (PN_OVERRIDES, keyed by bookid → block id)",
+        "scope": "ol"
+      },
+      {
+        "hash": "0913d925",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Ol-refresh new-book check uses OL's catalog (Bindery), drafts never imported; dry-run summary for Chad",
+        "scope": "ol"
+      },
+      {
+        "hash": "332f60e7",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "10-23 OceanLibrary export applied in place — sites.yaml pause flag, display-id rules, ol-refresh dry run",
+        "scope": "ol"
+      },
+      {
+        "hash": "c5fe8177",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Media-identity also corrects the catalogue row at once (speaker, person key, year) — the /media index groups by it, and the 155 update re-runs take a while; a rerun compares the row as well as meta.json",
+        "scope": "media"
+      },
+      {
+        "hash": "9e82ff40",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Identity evidence — the station named beside a bare surname ('Hand of the Cause of God - Mr Faizi') identifies the one Hand of that name; the YouTube title is part of the evidence",
+        "scope": "media"
+      },
+      {
+        "hash": "2e685cb2",
+        "date": "2026-10-23",
+        "type": "Other",
+        "description": "Speaker galleries, first set — 247 verified photos of 66 people (bahai.media, Commons, talk stills)",
+        "scope": "media"
+      },
+      {
+        "hash": "b69f169e",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Speaker galleries — several verified photos per person, rotated by the pages (Chad 10-23: 'never be at a loss for an image like with Adib Taherzadeh')",
+        "scope": "media"
+      },
+      {
+        "hash": "a75bc55d",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Identity — a full given name outranks an initials-only alias (Hartmut ≠ 'H. Grossmann'), reviewed surname-only forms confirm via data; trim — a gap is skipped only when DEAD (95th pct < 40 % of speech; the dry run marked 258 gaps, much of it quiet music); ASR lane + 4 workers so a freed aorus slot is taken at once (06:50: 3-min clips finish in 12 s, the GPU idled between them); planning/media-speaker-identities.md (the audit)",
+        "scope": "media"
+      },
+      {
+        "hash": "2f300ca1",
+        "date": "2026-10-23",
+        "type": "Chore",
+        "description": "Deploy v2.187.780 (media open-talk affordance + quiet inserts)",
+        "scope": null
+      },
       {
         "hash": "0935dc39",
         "date": "2026-10-23",
@@ -6944,78 +7014,6 @@
         "date": "2026-10-17",
         "type": "New",
         "description": "The stage being built lists its unfinished traditions — progress, paragraphs left, a dot on those that grew",
-        "scope": "home"
-      },
-      {
-        "hash": "ff6c202b",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "A stage being built shows 4 decimals, interpolated at its measured rate, plus its live point count",
-        "scope": "home"
-      }
-    ],
-    "2026-10-16": [
-      {
-        "hash": "27c44019",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "BM25 comes right after ingestion — ledger-driven keyword-fill job (core first) for the 666K-paragraph gap; stages say indexing/idle",
-        "scope": "index"
-      },
-      {
-        "hash": "2976b901",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "The sweep is a soft green phosphor trace with a glow trailing a couple of pixels",
-        "scope": "home"
-      },
-      {
-        "hash": "b79f8d04",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "Soft sweep arm again; persistence is a conic CSS mask on the lit layer, pinned to the sweep's clock (the SVG mask repainted lazily and drifted)",
-        "scope": "home"
-      },
-      {
-        "hash": "20764907",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Radar persistence masks only the lit cells — dark tracks and labels never swept; no lit wedge",
-        "scope": "home"
-      },
-      {
-        "hash": "61c42aea",
-        "date": "2026-10-16",
-        "type": "Performance",
-        "description": "Phrase indexing back to one job at a time — three saturated the interim SSD and ran slower (91K vs 142K phrases/h)",
-        "scope": "ops"
-      },
-      {
-        "hash": "500c22a5",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "Radar paint stays in step with the sweep — every animation pinned to one turn origin; brighter fresh redraw",
-        "scope": "home"
-      },
-      {
-        "hash": "f62512e9",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "PPI scope — the whole dial fades behind the trace and is redrawn as it passes; active cells' outlines painted in P7 afterglow",
-        "scope": "home"
-      },
-      {
-        "hash": "759cf24c",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "A real radar — a bright beam line paints the returns slice by slice; phosphor decay",
-        "scope": "home"
-      },
-      {
-        "hash": "57cf2da3",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Radar returns — growth fronts flash as the sweep crosses them and fade; afterglow, beams, halos removed",
         "scope": "home"
       }
     ]
