@@ -219,6 +219,14 @@ export async function acquireAsrHost(hosts = asrHosts()) {
     await new Promise((r) => asrWaiters.push(r));
   }
 }
+const diarBusy = new Map();
+const diarWait = new Map();
+export async function diarSlot(host, fn, slots = Number(process.env.MEDIA_DIAR_SLOTS) || 3) {
+  if (!diarWait.has(host)) diarWait.set(host, []);
+  if ((diarBusy.get(host) || 0) >= slots) await new Promise((r) => diarWait.get(host).push(r));
+  diarBusy.set(host, (diarBusy.get(host) || 0) + 1);
+  try { return await fn(); } finally { diarBusy.set(host, diarBusy.get(host) - 1); diarWait.get(host).shift()?.(); }
+}
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
 export const diarHost = () => process.env.MEDIA_DIAR_HOST ?? gpuHost() ?? asrHost();
 async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, stop = null, pollMs = 15000, onStart = async () => {}, exec = run } = {}) {
@@ -377,7 +385,8 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
   // DETACHED on boss (10-22: the attached call died with every service restart, so a diarization never finished)
   if (host && job) {
     try {
-      const r = await (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
+      // at most MEDIA_DIAR_SLOTS (3) diarizations per host at once (10-23: five at 8 threads on aorus's 24 cores)
+      const r = await diarSlot(host, () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false }));
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
     } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }

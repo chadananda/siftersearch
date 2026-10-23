@@ -180,3 +180,12 @@ describe('transcription slots are separate from diarization (10-23)', () => {
     got.release(); b.release();
   });
 });
+
+describe('diarization slots per host', () => {
+  it('3 at a time on one host', async () => {
+    const { diarSlot } = await import('../../api/lib/media/tools.js');
+    let live = 0, peak = 0;
+    await Promise.all(Array.from({ length: 7 }, () => diarSlot('h1', async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 10)); live--; })));
+    expect(peak).toBe(3);
+  });
+});
