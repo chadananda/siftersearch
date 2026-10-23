@@ -180,7 +180,7 @@ describe('readingTurn', () => {
       },
     };
   };
-  it('a start with a starting point sends the first page with its subject; next continues; questions are answered in place', async () => {
+  it('a start with a starting point sends the first page with its subject; next continues; questions go to the researcher, the bookmark unmoved', async () => {
     const f = fake();
     {
       const msg = (t) => [{ role: 'user', content: t }];
@@ -197,11 +197,21 @@ describe('readingTurn', () => {
       expect(r1.page.paragraphs[0].highlights).toEqual([{ name: 'Bahá’í Movement', start: 4, end: 19 }]);
       const r2 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
       expect(r2.subject).toMatch(/^\[📖 Reading\] Dawn-Breakers #1\.1, /);
-      const q = await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps });   // answered IN the reading
-      expect(q.reply).toContain('Nabíl was the chronicler [S1].');
-      expect(q.reply).toContain('[S1] [God Passes By](https://oceanlibrary.com/gpb)');
-      expect(q.subject).toBeNull();                                                                   // same thread, bookmark unmoved
+      // a question in the reading (Chad 10-23): the RESEARCHER answers it, with the page as context; the bookmark stays
+      const n = f.saved.length;
+      const q = await readingTurn({ messages: msg('Who was Nabíl?'), participantId: 'email:x', deps: f.deps });
+      expect(q).toMatchObject({ research: true, thenNext: false, book: 'The Dawn-Breakers' });
+      expect(q.context).toMatch(/#1\.1/);
+      expect(f.saved.length).toBe(n);
       expect(f.saved.at(-1).cursor).toBe(4);
+      // a question and "then continue": answer first, then the next page (assistant-mail.js draftBody)
+      const both = await readingTurn({ messages: msg('Who was Nabíl? And then continue.'), participantId: 'email:x', deps: f.deps });
+      expect(both).toMatchObject({ research: true, thenNext: true });
+      expect(f.saved.length).toBe(n);
+      // "next" advances
+      const r3 = await readingTurn({ messages: msg('next'), participantId: 'email:x', deps: f.deps });
+      expect(r3.reply).toBeTruthy();                       // the next page (or the book's end — the fixture is short)
+      expect(r3.research).toBeUndefined();
     }
   });
 });

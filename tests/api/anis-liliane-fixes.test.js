@@ -140,3 +140,16 @@ describe('the reading guide takes only replies in a reading thread or explicit c
     expect(reached).toBe(true);
   });
 });
+
+import { replyKind } from '../../api/lib/assistant/reading.js';
+describe('a reply in a reading: question / next / both (Chad 10-23)', () => {
+  it('rules', () => {
+    expect(replyKind('Who was Mullá Ḥusayn?')).toBe('question');
+    expect(replyKind('Can you explain what the Shaykhís believed')).toBe('question');
+    expect(replyKind('next')).toBe('next');
+    expect(replyKind('go on please')).toBe('next');
+    expect(replyKind('Who was Mullá Ḥusayn? And then continue.')).toBe('both');
+    expect(replyKind('I seem to remember the Guardian used to explain that the Arabs would continue to agitate until they were ejected completely from the Holy Land.')).toBeNull();
+    expect(replyKind('lovely')).toBeNull();
+  });
+});

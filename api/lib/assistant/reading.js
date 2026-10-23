@@ -607,6 +607,25 @@ export function explicitReadingCommand(text) {
   return null;
 }
 
+/** What a reply in a reading wants (Chad 10-23: "Anís should discriminate between a request for another reading vs a general
+ *  question … it should be able to engage in question answering before I request the next paragraph"): 'question' (answered
+ *  by the researcher, position unchanged), 'next' (an explicit next / continue / more), 'both' (a question AND "then
+ *  continue" — answer first, then the next page), or null = unclear (the small model decides). Rules only. Pure. */
+export function replyKind(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  const low = t.toLowerCase();
+  const words = t ? t.split(' ').length : 0;
+  const cmd = /\b(next( page| paragraph| passage)?|continue|go on|keep going|carry on|read on|more please|on to the next)\b/.test(low);
+  const question = /\?/.test(t) || /^(who|what|why|how|when|where(?! are we)|which|is|was|were|did|does|do|can|could|would|tell me|explain|please (?:find|look|show|search|explain|tell))\b/.test(low)
+    || /\b(can|could|would) you (look|find|search|explain|tell|show|help)\b/.test(low) || /\b(i (?:wonder|don't understand|do not understand)|what does .* mean)\b/.test(low);
+  // a command word inside a long statement ("…would continue to agitate…") is not a command
+  const commandClause = cmd && (words <= 12 || /\b(then|and|now|please)\s+(continue|go on|carry on|read on|the next)\b|\b(continue|next)[.!]?\s*$/.test(low));
+  if (question && commandClause && words > 3) return 'both';
+  if (question) return 'question';
+  if (commandClause) return 'next';
+  return null;
+}
+
 /** inThread: the message replies to a reading email (the Worker knows from the thread; Chad 10-23 "WTH??" — a NEW email
  *  with a real question, from an address with an open reading, got the next Dawn-Breakers page). Out of a reading thread
  *  only an explicit command reaches the guide; anything else → null (the researcher answers). */
@@ -627,8 +646,15 @@ export async function readingTurn({ messages = [], participantId, reset = false,
   // easily switch") — the latest message decides; kept per book for the pages that follow
   const lang = intent.language || session?.explained?.__prefs?.language || 'en';
   if (session && intent.language) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), language: intent.language } } };
-  // a question about the page being read is answered IN the reading (10-13: it fell through to an ordinary answer)
-  if (intent.kind === 'question' && session?.pages?.length) return answerInReading(d, { session, text });
+  // INTENT decides, in the thread too (Chad 10-23): a question — about the page or anything else — is answered by the
+  // researcher with the page as context; the position does not move. "Both" = answer, then the next page. Rules first; the
+  // small model's reading of an unclear reply (above) is used only when the rules cannot tell.
+  const rk = replyKind(text);
+  const kind = rk === 'question' || rk === 'both' ? rk : rk === 'next' ? 'next' : intent.kind;
+  if ((kind === 'question' || kind === 'both') && session?.pages?.length) {
+    return { research: true, thenNext: kind === 'both', book: session.title || null, context: await pageContext(d, session).catch(() => '') };
+  }
+  if (rk === 'next' && intent.kind !== 'next' && session?.pages?.length && intent.kind !== 'stop') Object.assign(intent, { kind: 'next' });
   if (intent.kind === 'none' || intent.kind === 'question') {
     // a session waiting for its starting point: a reply naming one ("the introduction", "chapter 3") starts it
     if (session && !session.pages?.length && intent.kind === 'question') {
@@ -691,7 +717,17 @@ answer it, say so briefly. 1–3 short paragraphs, speakable. Spell names as the
 Reply with JSON only: {"answer":"…"}`;
 
 /** A question about the page just read — answered in the reading's context; the bookmark does not move. */
-async function answerInReading(d, { session, text }) {
+/** The page just sent, as context for a question asked in the reading. */
+async function pageContext(d, session) {
+  const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
+  if (!doc) return '';
+  const { outline } = await outlineOf(d, doc);
+  const last = session.pages.at(-1);
+  return outline.paragraphs.slice(last.from, last.to + 1).map((p) => `${addressOf(p)} ${p.text}`).join('\n\n').slice(0, 4000);
+}
+
+// (superseded 10-23 by the researcher answering questions in a reading — kept for the web reading route's history)
+export async function answerInReading(d, { session, text }) {
   const doc = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
   if (!doc) return null;
   const { outline } = await outlineOf(d, doc);
