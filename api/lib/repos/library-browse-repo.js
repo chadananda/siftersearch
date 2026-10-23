@@ -13,7 +13,7 @@ export const BROWSE_INDEXES = Object.freeze({
   idx_docs_live_coll_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_coll_title ON docs(collection, title) WHERE deleted_at IS NULL',
   idx_docs_live_author_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_author_title ON docs(author, title) WHERE deleted_at IS NULL',
   idx_docs_live_year_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_year_title ON docs(year, title) WHERE deleted_at IS NULL',
-  // migration 177: an author / language filter inside one big collection (Core Tablets 22k) was a row-lookup filter over
+  // migration 178: an author / language filter inside one big collection (Core Tablets 22k) was a row-lookup filter over
   // the whole collection range (330-450 ms measured on tower 10-23); with the filter in the key it is an equality range.
   idx_docs_live_author_coll_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_author_coll_title ON docs(author, collection, title) WHERE deleted_at IS NULL',
   idx_docs_live_coll_lang_title: 'CREATE INDEX IF NOT EXISTS idx_docs_live_coll_lang_title ON docs(collection, language, title) WHERE deleted_at IS NULL',

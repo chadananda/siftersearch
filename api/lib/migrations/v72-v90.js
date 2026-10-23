@@ -1927,13 +1927,6 @@ export const migrations = {
   },
 
   177: async () => {
-    // author / language filters get their own key inside a collection (BROWSE_INDEXES; idempotent, re-creates none of 176)
-    const { BROWSE_INDEXES } = await import('../repos/library-browse-repo.js');
-    for (const sql of Object.values(BROWSE_INDEXES)) await query(sql);
-    logger.info('Migration 177 complete: idx_docs_live_author_coll_title, idx_docs_live_coll_lang_title');
-  },
-
-  177: async () => {
     // BOOK METADATA HUNT (Chad 10-23: "go on an ISBN hunt … look for author image, publishing date, Amazon link etc. anyway"):
     // per book what was found, with confidence + evidence per field (book_hunt, one row per book = the resume checkpoint);
     // the applied values on docs (publisher, pub_year, edition, author_image; isbn + purchase_url + cover_url already exist)
@@ -1944,6 +1937,13 @@ export const migrations = {
       try { await query(`ALTER TABLE docs ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     }
     logger.info('Migration 177 complete: book_hunt, docs.publisher/pub_year/edition/author_image/book_meta');
+  },
+
+  178: async () => {
+    // author / language browse filters get their own key inside a collection (BROWSE_INDEXES; idempotent over 176's)
+    const { BROWSE_INDEXES } = await import('../repos/library-browse-repo.js');
+    for (const sql of Object.values(BROWSE_INDEXES)) await query(sql);
+    logger.info('Migration 178 complete: idx_docs_live_author_coll_title, idx_docs_live_coll_lang_title');
   },
 };
 
