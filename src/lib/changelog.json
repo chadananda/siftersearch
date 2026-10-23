@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-23T18:12:24.955Z",
+  "generated": "2026-10-23T18:39:12.227Z",
   "entries": [
+    {
+      "hash": "558199a5",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Translations use what exists first — find_translation tool, labelled sources, bilingual block (Chad 10-23)",
+      "scope": "anis"
+    },
+    {
+      "hash": "488c49c5",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "An original beside its translation renders as a two-column bilingual table, never one bidi run (Chad 10-23)",
+      "scope": "mail"
+    },
+    {
+      "hash": "145daf6f",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Browse never sorts the docs table — the authority order is walked over indexes (10-23 5.6 s freeze)",
+      "scope": "library"
+    },
+    {
+      "hash": "913c0e15",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A copyrighted book cannot be paged out another way — search, mentions, v1 paragraph/quotes, translate-batch, Anís (Chad 10-23)",
+      "scope": "rights"
+    },
+    {
+      "hash": "7799e6c6",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "System-checks no longer calls prep backpressure 'compute idle' — warn only when compute is idle AND the ASR buffer is under its target (12) or the ASR hosts are idle (scripts/lib/lane-idle.mjs, tested)",
+      "scope": "ops"
+    },
+    {
+      "hash": "5f431822",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "ISBN-rule dry run — 20 non-canonical books with their own ISBN would be encumbered (not applied; awaiting Chad)",
+      "scope": "rights"
+    },
+    {
+      "hash": "b13aeb41",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "A non-canonical BOOK with its own ISBN is copyrighted — the first 40 paragraphs, enforced by the server (Chad 10-23)",
+      "scope": "rights"
+    },
     {
       "hash": "2c238562",
       "date": "2026-10-23",
@@ -3451,59 +3500,59 @@
       "type": "Fixed",
       "description": "Structure-infer accounts for every model call (parsed, kept, invented, finish) and uses 120-line calls; an unusable reply blocks the write",
       "scope": "structure"
-    },
-    {
-      "hash": "2d10e7db",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Structure-infer — candidate heading lines, Haiku picks section starts by paragraph number (Contents page + standard structure as guidance), code builds and checks",
-      "scope": "structure"
-    },
-    {
-      "hash": "50a9875a",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Toc-candidates report — structureless books carrying their own Contents page",
-      "scope": "structure"
-    },
-    {
-      "hash": "6ad35606",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "/search/multi returns the resolved citation",
-      "scope": "search"
-    },
-    {
-      "hash": "23cedc1b",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "A typed citation leads — 'Gleanings CXXV', 'Íqán ¶12', 'Arabic Hidden Words 5' resolve to their paragraph by the verified numbering",
-      "scope": "search"
-    },
-    {
-      "hash": "4df1b3b6",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Structure before BM25 — keyword points carry the section path at 0.3 weight; section-findability measures it",
-      "scope": "index"
-    },
-    {
-      "hash": "fdb3b926",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Refs-assign show — every paragraph with the number it would get",
-      "scope": "refs"
-    },
-    {
-      "hash": "b0d92feb",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Gleanings (I–CLXVI, CXXV.2…), Aqdas (1–190, Q&A 1–107) and Íqán (1–290) numbering, each verified against its totals",
-      "scope": "refs"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "558199a5",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Translations use what exists first — find_translation tool, labelled sources, bilingual block (Chad 10-23)",
+        "scope": "anis"
+      },
+      {
+        "hash": "488c49c5",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "An original beside its translation renders as a two-column bilingual table, never one bidi run (Chad 10-23)",
+        "scope": "mail"
+      },
+      {
+        "hash": "145daf6f",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Browse never sorts the docs table — the authority order is walked over indexes (10-23 5.6 s freeze)",
+        "scope": "library"
+      },
+      {
+        "hash": "913c0e15",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A copyrighted book cannot be paged out another way — search, mentions, v1 paragraph/quotes, translate-batch, Anís (Chad 10-23)",
+        "scope": "rights"
+      },
+      {
+        "hash": "7799e6c6",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "System-checks no longer calls prep backpressure 'compute idle' — warn only when compute is idle AND the ASR buffer is under its target (12) or the ASR hosts are idle (scripts/lib/lane-idle.mjs, tested)",
+        "scope": "ops"
+      },
+      {
+        "hash": "5f431822",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "ISBN-rule dry run — 20 non-canonical books with their own ISBN would be encumbered (not applied; awaiting Chad)",
+        "scope": "rights"
+      },
+      {
+        "hash": "b13aeb41",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "A non-canonical BOOK with its own ISBN is copyrighted — the first 40 paragraphs, enforced by the server (Chad 10-23)",
+        "scope": "rights"
+      },
       {
         "hash": "2c238562",
         "date": "2026-10-23",
@@ -6966,55 +7015,6 @@
         "type": "Fixed",
         "description": "Structure-infer accounts for every model call (parsed, kept, invented, finish) and uses 120-line calls; an unusable reply blocks the write",
         "scope": "structure"
-      },
-      {
-        "hash": "2d10e7db",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Structure-infer — candidate heading lines, Haiku picks section starts by paragraph number (Contents page + standard structure as guidance), code builds and checks",
-        "scope": "structure"
-      },
-      {
-        "hash": "50a9875a",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Toc-candidates report — structureless books carrying their own Contents page",
-        "scope": "structure"
-      },
-      {
-        "hash": "6ad35606",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "/search/multi returns the resolved citation",
-        "scope": "search"
-      },
-      {
-        "hash": "23cedc1b",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "A typed citation leads — 'Gleanings CXXV', 'Íqán ¶12', 'Arabic Hidden Words 5' resolve to their paragraph by the verified numbering",
-        "scope": "search"
-      },
-      {
-        "hash": "4df1b3b6",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Structure before BM25 — keyword points carry the section path at 0.3 weight; section-findability measures it",
-        "scope": "index"
-      },
-      {
-        "hash": "fdb3b926",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Refs-assign show — every paragraph with the number it would get",
-        "scope": "refs"
-      },
-      {
-        "hash": "b0d92feb",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Gleanings (I–CLXVI, CXXV.2…), Aqdas (1–190, Q&A 1–107) and Íqán (1–290) numbering, each verified against its totals",
-        "scope": "refs"
       }
     ]
   }
