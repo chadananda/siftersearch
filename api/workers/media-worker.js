@@ -33,7 +33,7 @@ export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) =>
 // compute: one per ASR slot on boss (4 × 6 threads measured best); llm: API-bound, wide; pipeline: re-runs of published talks
 // asr: + 4 because a run also waits on its diarization; the SLOTS (acquireAsrHost) cap transcriptions
 export const MEDIA_LANE_WORKERS = { compute: Number(process.env.MEDIA_PREP_WORKERS) || 8, asr: asrHosts().reduce((n, h) => n + h.slots, 0) || mediaParallel(),
-  diar: Number(process.env.MEDIA_DIAR_WORKERS) || 5,
+  diar: Number(process.env.MEDIA_DIAR_WORKERS) || 10,   // boss 4 + aorus 1 started; the rest re-attach or wait
   llm: Number(process.env.MEDIA_LLM_WORKERS) || 6, pipeline: 3, downloads: Number(process.env.MEDIA_FETCH_RUNS) || 2 };
 
 // the FEED: N new items in processing by rank, one download run queued (30 s)

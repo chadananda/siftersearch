@@ -394,7 +394,11 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
   if (host && job) {
     try {
       // at most MEDIA_DIAR_SLOTS (3) diarizations per host at once (10-23: five at 8 threads on aorus's 24 cores)
-      const r = await diarSlot(host, () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false }));
+      // a job ALREADY running (or done) on its host is re-attached outside the slots — the slots limit what we START
+      // (10-23: re-attached aorus jobs held the diar lane in aorus's single slot while boss sat idle)
+      const live = deps.asrJob ? null : await remoteJob('poll-only', input, {}, { host, job, probeOnly: true }).catch(() => null);
+      const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
+      const r = live === 'running' || live === 'done' ? await go() : await diarSlot(host, go);
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
     } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }
