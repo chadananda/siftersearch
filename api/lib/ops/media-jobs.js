@@ -229,7 +229,7 @@ export async function mediaPlaybackJob({ level = 'full', sourceKind = null } = {
   if (!LEVELS.includes(level)) throw new Error(`level must be one of ${LEVELS.join(', ')}`);
   const changed = await repo.setPlayback(level, { sourceKind });
   const ids = await repo.doneItemIds();
-  for (const id of ids) await (deps.queue || enqueue)('media-item', { id, from: 'render' }, 'media-playback');
+  for (const id of ids) await (deps.queue || enqueue)('media-item', { id, redo: ['update'] }, 'media-playback');
   return { level, changed, rerendered: ids.length };
 }
 

@@ -113,7 +113,7 @@ describe('media-playback', () => {
     const repo = { setPlayback: vi.fn(async () => 4), doneItemIds: vi.fn(async () => [1, 2]) };
     const queue = vi.fn();
     expect(await mediaPlaybackJob({ level: 'full' }, { repo, queue })).toEqual({ level: 'full', changed: 4, rerendered: 2 });
-    expect(queue.mock.calls).toEqual([['media-item', { id: 1, from: 'render' }, 'media-playback'], ['media-item', { id: 2, from: 'render' }, 'media-playback']]);
+    expect(queue.mock.calls).toEqual([['media-item', { id: 1, redo: ['update'] }, 'media-playback'], ['media-item', { id: 2, redo: ['update'] }, 'media-playback']]);
     await expect(mediaPlaybackJob({ level: 'loud' }, { repo, queue })).rejects.toThrow('level must be');
   });
 });

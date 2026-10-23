@@ -22,7 +22,12 @@ import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 let towerChain = Promise.resolve();
 export function towerSlot(fn) { const run = towerChain.then(fn, fn); towerChain = run.catch(() => {}); return run; }
 
-export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess', 'thumb', 'render', 'ingest', 'catalog'];
+// PUBLISH EARLY (Chad 10-22: "talks should be published as they are completed … start ingesting for search"): the core —
+// transcript, name corrections, the copy-edit with its faithfulness check, a short description — is rendered, ingested for
+// search and catalogued (published) at once; the enrichment (subheaders, quotes, links, audience + moments) follows and
+// 'update' re-renders, re-ingests (only changed paragraphs: the ingester diffs) and re-catalogues the published talk in place
+export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+  'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
 const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
@@ -71,7 +76,7 @@ export async function runItem(item, opts = {}, deps = {}) {
   let meta = item.dir ? await readJson(join(item.dir, 'meta.json'), {}) : {};
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
   if (opts.from) for (const s of STAGES.slice(STAGES.indexOf(opts.from))) delete meta.stages[s];
-  // redo: only these stages again (a back-fill of a new stage: [new, 'render', 'ingest', 'catalog']), the rest kept
+  // redo: only these stages again (a back-fill of a new stage: [new, 'update'] — update re-renders, re-ingests, re-catalogues), the rest kept
   for (const s of opts.redo || []) if (STAGES.includes(s)) delete meta.stages[s];
   const spend = meta.cost;
   const done = [];
@@ -92,7 +97,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (opts.only && !opts.only.includes(stage)) continue;
     if (await d.draining()) return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };   // stage: a resumed run never redoes its from/reslug
     const t0 = Date.now();
-    await repo.updateMediaItem(item.id, { stage, state: 'running' });
+    // a published talk stays published while later stages (or a re-run) work on it
+    await repo.updateMediaItem(item.id, { stage, state: item.state === 'done' || meta.stages.catalog?.at ? 'done' : 'running' });
     const rec = {};
     try {
 
@@ -378,7 +384,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.kind = meta.thumb.kind;
     }
 
-    if (stage === 'render') {
+    if (stage === 'render' || stage === 'update') {
       // the playback level is the catalogue's (a person can change it there): the page is rendered for it
       if (item.playback && LEVELS.includes(item.playback) && meta.rights) meta.rights.playback = item.playback;
       const work = await readJson(join(dir, 'transcript.work.json'));
@@ -403,12 +409,12 @@ export async function runItem(item, opts = {}, deps = {}) {
       meta.version = (meta.version || 1) + (meta.stages.render ? 1 : 0);
     }
 
-    if (stage === 'ingest') {
+    if (stage === 'ingest' || stage === 'update') {
       const res = await (d.ingest || (await import('./ingest.js')).ingestTranscript)({ dir, meta });
       meta.doc_id = res.documentId; meta.pi = res.pi || {}; rec.doc_id = res.documentId; rec.links = res.links;
     }
 
-    if (stage === 'catalog') {
+    if (stage === 'catalog' || stage === 'update') {
       // the transcript's name/work links into the catalogue (paragraph_index = the ingested paragraph, for search hits)
       const lk = (await readJson(join(dir, 'links.json'), { links: [] })).links || [];
       if (repo.replaceMoments && meta.moments) await repo.replaceMoments(item.id, meta.moments);
