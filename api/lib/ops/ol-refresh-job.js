@@ -19,8 +19,8 @@ const attrsOf = (r) => { try { return (r.block_attrs ? JSON.parse(r.block_attrs)
 const wkey = (t) => words(t).join('');
 
 /** Pure: one book's export blocks + its stored rows → the in-place plan (what a write would do) and its counts. */
-export function planOlBook(blocks, rows) {
-  const nb = numberBook(blocks);
+export function planOlBook(blocks, rows, { bookid = null } = {}) {
+  const nb = numberBook(blocks, { bookid });
   const dupSet = new Set(nb.dups);
   const byIlm = new Map(); blocks.forEach((b, i) => { if (b.ilm) byIlm.set(b.ilm, i); });
   const isPar = (i) => blocks[i]?.type === 'par';
@@ -143,7 +143,7 @@ export async function olRefreshJob({ dir = '/tank/sifter/ol-export-20261023', id
     const e = d.external_id && exp.get(d.external_id);
     if (!e) continue;
     const rows = await rowsFor(d.id);
-    const p = planOlBook(e.blocks, rows);
+    const p = planOlBook(e.blocks, rows, { bookid: d.external_id });
     const enrichment = p.atRisk.length ? await risk(p.atRisk) : null;
     totals.books++; totals.rows += rows.length; totals[p.status]++; add(p.counts);
     books.push({ doc: d.id, bookid: d.external_id, title: d.title, status: p.status, counts: p.counts, dup_ids_n: p.dup_ids.length, dup_ids: p.dup_ids.slice(0, 40),

@@ -114,3 +114,26 @@ describe('numberBook', () => {
     expect(d.invocations).toEqual([{ num: '1', ilm: 'bl2z', text: expect.stringMatching(/^In the name of Him/) }]);
   });
 });
+
+describe('PN_OVERRIDES — the published Aqdas numbering (Chad 10-23)', () => {
+  const aqdas = `---\nbookid: "kitab_i_aqdas_bahai_en"\n---\n\n${[
+    'In the name of Him Who is the Supreme Ruler over all that hath been and all that is to be. {id="bl2z" num="1" type="par"}',
+    `The first duty prescribed by God ${LONG} {id="bl30" num="2" type="par"}`,
+    `They whom God hath endued with insight ${LONG} {id="bl31" num="2" type="par"}`,
+    `O ye peoples of the world! ${LONG} {id="bl32" num="3" type="par"}`,
+  ].join('\n\n')}\n`;
+  it('invocation unnumbered, "The first duty" = 1, "They whom God" = 2, the rest as exported', () => {
+    const { blocks } = parseExport(aqdas);
+    const nb = numberBook(blocks, { bookid: 'kitab_i_aqdas_bahai_en' });
+    expect(nb.blocks.map((o) => [o.pn, o.cite])).toEqual([[null, false], ['1', true], ['2', true], ['3', true]]);
+    expect(nb.dups).toEqual([]);
+    expect(nb.blocks[0].invocationNumbered).toBe(false);
+  });
+  it('is a no-op once the export carries the published numbers, and the defect report still sees the raw export', () => {
+    const fixed = aqdas.replace('id="bl2z" num="1" ', 'id="bl2z" ').replace('id="bl30" num="2"', 'id="bl30" num="1"');
+    const a = numberBook(parseExport(fixed).blocks, { bookid: 'kitab_i_aqdas_bahai_en' }).blocks.map((o) => o.pn);
+    const b = numberBook(parseExport(fixed).blocks).blocks.map((o) => o.pn);
+    expect(a).toEqual(b);
+    expect(numberingDefects(parseExport(aqdas).blocks).invocations).toHaveLength(1);
+  });
+});

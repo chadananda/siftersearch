@@ -105,10 +105,10 @@ There are 122 held books with at least one number shared by two content paragrap
 | 21204 | Salat -The Muslim Prayer Book | 112 | 28 | 476 |
 | 21312 | Unfolding Destiny | 102 | 51 | 2384 |
 
-**Aqdas (doc 21307), flagged and not corrected:**
-- The invocation is numbered `1`, and "The first duty…" and "They whom God…" both carry `2`.
-- As exported, `#2` is withheld and the invocation would cite as `#1`.
-- This waits on Chad.
+**Aqdas (doc 21307): use the published numbering (Chad 10-23).**
+- The local override (`PN_OVERRIDES`) leaves the invocation unnumbered and makes "The first duty…" #1 and "They whom God…" #2.
+- Checked against the production rows: 297 numbered, all citable, none withheld.
+- Run 6333 predates the override, so its Aqdas row still shows the raw export.
 
 ## New books in the export
 
@@ -149,4 +149,3 @@ Chad's decision moves these to the supplemental library and drops their OL link;
 2. The 32 text-changed books, especially the two where an id now holds a different paragraph (Mahābhārata 8, Jeremiah) and Additional Prayers by ‘Abdu’l-Bahá, where blocks were merged.
 3. Import the 36 catalogued English books. Decide on the 13 uncatalogued books (Lights of Guidance, Ḥuqúqu’lláh, Japan Will Turn Ablaze, the Báb's Qur'an commentary…).
 4. The 19 catalogued-but-not-exported books: keep and request a re-export (recommended), or move them to supplemental as decided.
-5. Aqdas numbering.

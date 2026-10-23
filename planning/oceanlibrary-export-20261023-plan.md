@@ -172,7 +172,15 @@ The `reingest-carry` job exists but wraps the main ingester, never the OL path. 
   - Books with real content collisions: **142 of 627** (Bahá'í: 45 of 137). This replaces the earlier "107 noisy". 484 books are clean.
   - Most collisions are in Kāfī, Bukhārī, Bihar and Yashts, where numbering restarts per sub-book. Among Bahá'í books: Messages to Canada (385), Light of Divine Guidance I (180), Uncompiled Letters (128), Lights of Guidance (127), and Letters to Australia and NZ (111).
 - **Lights of Guidance:** items cite as the item number (`#37`); a paragraph inside an item cites as OL assigned it (`#1.37.1`). The stray numbers on source lines are ignored.
-- **Aqdas: not corrected (Chad 10-23).** The export numbers the invocation `1` and gives "The first duty…" and "They whom God…" both the number `2`. As exported, `#2` is withheld as a collision and the invocation would cite as `#1`. The dry run and the defect report flag it, and Chad decides.
+- **Aqdas: use the published numbering (Chad 10-23).**
+  - A local override table, `PN_OVERRIDES` in `ol-display-ids.js` (keyed by bookid → block id), makes:
+    - the invocation `bl2z` unnumbered;
+    - `bl30` "The first duty…" = **1**;
+    - `bl31` "They whom God…" = **2**;
+    - everything after that as exported.
+  - Once OL's export carries the same numbers, the entry is a no-op. This is tested.
+  - It is applied in the write phase. On production rows it gives 297 numbered and all citable, with nothing withheld.
+  - The defect report still lists the raw export's error for Oleksandr.
 - **Reference text:** `${citeAuthor}, ${olCiteTitle} #${pn}`.
   - Example: *Bahá’u’lláh, Kitáb-i-Íqán #72*.
   - Multi-part works use "<work>, <part>".
@@ -264,7 +272,7 @@ alignment all stay on unchanged row ids.
 
 ## 8. Decisions (Chad 10-23)
 1. **Numbering:** OL's numbering wins everywhere, as Arabic numerals; front and back matter keep OL's prefixes. Local schemes are replaced.
-2. **Aqdas:** do not auto-correct; flag it in the dry run. (The coordinator is explaining it to Chad.)
+2. **Aqdas:** use the published 1992 numbering through the local override table: invocation unnumbered, "The first duty…" = 1, "They whom God…" = 2. Applied at write.
 3. **Duplicates:** books import normally; only the duplicated numbers lose `#` references, listed per book. Source, signature and header lines are never citable.
 4. **Unnumbered blocks:** the body under a Hidden Word cites as that Hidden Word's number; invocations get no number.
 5. **Pause:** the per-site `sites.yaml` flag is built and OceanLibrary is paused.
@@ -274,5 +282,4 @@ alignment all stay on unchanged row ids.
 
 **Still waiting on Chad:**
 - the dry-run approval;
-- the Aqdas decision;
 - whether the 19 move while their pages are still live on OceanLibrary.

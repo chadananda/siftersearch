@@ -75,15 +75,23 @@ export function olPn(num) {
   return s.split(/([.:])/).map((seg) => (seg && ROMAN.test(seg) ? String(romanInt(seg)) : seg)).join('');
 }
 
+/** Local overrides of OL's numbering, by bookid → block id → number (null = unnumbered). Only where the PUBLISHED edition
+ *  differs from the export; once OL's export carries the same number the entry is a no-op (and can be dropped).
+ *  Aqdas (Chad 10-23): the 1992 edition leaves the invocation unnumbered; "The first duty…" is ¶1, "They whom God…" ¶2. */
+export const PN_OVERRIDES = Object.freeze({
+  kitab_i_aqdas_bahai_en: Object.freeze({ bl2z: null, bl30: '1', bl31: '2' }),
+});
+
 /**
  * blocks (parseExport) → per block { kind, pn, cite, dup, invocationNumbered } and the book's duplicate content ids.
  * kind: struct | source | signature | lead-in | content. pn: the number shown/cited (lead-in = its paragraph's; an
  * unnumbered content block after a numbered one with no header/hr between inherits it; source/signature/struct: null).
  * cite: may be cited as "Book #pn" (content, has pn, pn not shared by another content block).
  */
-export function numberBook(blocks) {
+export function numberBook(blocks, { bookid = null, overrides = PN_OVERRIDES } = {}) {
   const kinds = blocks.map((b, i) => baseKind(b, blocks[i + 1] ? (blocks[i + 1].type === 'par' ? 'par' : blocks[i + 1].type) : 'end'));
-  const pns = blocks.map((b) => olPn(b.num));
+  const ov = (bookid && overrides[bookid]) || {};
+  const pns = blocks.map((b) => (b.ilm && Object.hasOwn(ov, b.ilm) ? ov[b.ilm] : olPn(b.num)));
   // a short content block whose number the very next content block also carries = its lead-in (salutation, invocation)
   for (let i = 0; i < blocks.length - 1; i++) {
     if (kinds[i] !== 'content' || !pns[i] || kinds[i + 1] !== 'content' || pns[i + 1] !== pns[i]) continue;
