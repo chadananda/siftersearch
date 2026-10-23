@@ -19,7 +19,7 @@ import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
 import { classifyScreen, screenEnabled, singleTurns } from './spkscreen.js';
-import { excludedBy } from './exclusions.js';
+import { decide } from './exclusions.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
 // tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs in TWO slots at 4 threads even when more items are
@@ -146,7 +146,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (opts.only && !opts.only.includes(stage)) continue;
     if (await d.draining()) return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };   // stage: a resumed run never redoes its from/reslug
     // an EXCLUDED speaker (data/media-exclusions.json, Chad 10-23) — or a row media-exclude took out — goes no further
-    const ex = excludedBy({ speaker: meta.speaker || item.speaker || '', title: meta.title || '', sourceTitle: meta.source?.title || '' })
+    const ex = decide({ speakers: [meta.speaker, item.speaker], title: meta.title || '', sourceTitle: meta.source?.title || '' })?.excluded
       || ((await repo.getMediaItem?.(item.id))?.state === 'excluded' ? { reason: 'excluded' } : null);
     if (ex) {
       await repo.updateMediaItem(item.id, { state: 'excluded', why: ex.reason });

@@ -50,3 +50,18 @@ export function unsureBy({ speaker = '', title = '', sourceTitle = '' } = {}, ru
   }
   return null;
 }
+
+/** THE decision for one talk (job, index, rank, runItem all ask this). speakers: every label the talk carries (resolved
+ *  identity, file label, target file). → { excluded } (given name in a title, or a full-name speaker attribution and no
+ *  title naming only the surname) | { unsure } (surname only — Chad decides) | null. */
+export function decide({ speakers = [], title = '', sourceTitle = '' } = {}, rules = loadExclusions()) {
+  const titles = { title, sourceTitle };
+  const inTitle = excludedBy(titles, rules);
+  if (inTitle) return { excluded: inTitle };
+  const surnameTitle = unsureBy(titles, rules);
+  const spk = speakers.filter(Boolean).map((speaker) => excludedBy({ speaker, ...titles }, rules)).find(Boolean);
+  if (spk && !surnameTitle) return { excluded: { ...spk, evidence: `${spk.evidence} (attributed; the title names no one)` } };
+  if (spk) return { unsure: { rule: spk.rule, person: spk.person, evidence: `${surnameTitle.evidence}; attributed to ${spk.person}` } };
+  const u = surnameTitle || speakers.filter(Boolean).map((speaker) => unsureBy({ speaker, ...titles }, rules)).find(Boolean);
+  return u ? { unsure: u } : null;
+}

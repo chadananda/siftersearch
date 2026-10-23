@@ -12,6 +12,7 @@ import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
 import { parseMediaPath, seriesTitle, partTitle } from '../media/names.js';
+import { historicalIndex, historicalTier } from '../media/historical.js';
 import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube, getMediaItem, updateMediaItem, pendingMedia, vocabularyNames, youtubeHeldSince, releaseHeldYoutube } from '../repos/media-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
@@ -374,15 +375,17 @@ export function tierOf({ source_kind, collection = '', path = '', speaker = '', 
   return 5;
 }
 export const rankOf = (tier, year, order) => tier * 1e7 + Math.min(9999, year || 9999) * 1e3 + Math.min(999, order % 1000);
-export async function rankFor(row, info, speakerRole) {
+// historicalOf(name) → { historical } (api/lib/media/historical.js): first-hand speakers rank beside the Hands (Chad 10-23)
+export async function rankFor(row, info, speakerRole, historicalOf = () => null) {
   if (row.source_kind === 'youtube') {
     const x = info.get(row.youtube_id) || {};
-    const tier = tierOf({ source_kind: 'youtube', speaker: x.speaker || row.speaker || '', ytRole: x.role || null });
+    const speaker = x.speaker || row.speaker || '';
+    const tier = historicalTier(tierOf({ source_kind: 'youtube', speaker, ytRole: x.role || null }), historicalOf(speaker)?.historical);
     return rankOf(tier, yearOf(x.title, row.year), x.i ?? row.id);
   }
   const p = parseMediaPath(row.rel || '');
   const speaker = row.speaker || p.speaker || '';
-  const tier = tierOf({ source_kind: 'file', collection: row.collection || p.collection || '', path: row.rel || '', speaker, role: speakerRole(speaker, { year: row.year || p.year }) });
+  const tier = historicalTier(tierOf({ source_kind: 'file', collection: row.collection || p.collection || '', path: row.rel || '', speaker, role: speakerRole(speaker, { year: row.year || p.year }) }), historicalOf(speaker)?.historical);
   return rankOf(tier, row.year || p.year || yearOf(row.rel), row.id);
 }
 export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'media-targets', 'youtube-talks.json'), register = true } = {}, deps = {}) {
@@ -394,13 +397,17 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   // EVERY target is a catalogue row (Chad 10-22: "we should have close to 1400"): the talks file's videos that are not
   // Shorts, not "about" the speaker, one per duplicate group
   const t = JSON.parse(await rf(talks, 'utf8').catch(() => '{}'));
-  const { excludedBy } = await import('../media/exclusions.js');
-  const excludedTarget = deps.excluded || ((x) => !!excludedBy({ speaker: x.speaker || '', title: x.title || '' }));
+  // ITC Counsellors appointed before 1988 (Chad 10-23), kept in their own targets file
+  const itc = JSON.parse(await rf(deps.itcTalks || join(dirname(talks), 'itc-talks.json'), 'utf8').catch(() => '{}'));
+  t.itc_pre_1988 = itc.itc_pre_1988 || [];
+  const historicalOf = deps.historicalOf || historicalIndex(await loadSpeakerPeople());
+  const { decide } = await import('../media/exclusions.js');
+  const excludedTarget = deps.excluded || ((x) => !!decide({ speakers: [x.speaker], title: x.title || '' })?.excluded);
   const info = new Map();
   const registered = [];
   const seenGroup = new Set();
   let order = 0;
-  for (const sec of ['hands_uhj', 'hooper_dunbar', 'curated_sacred_traditions']) {
+  for (const sec of ['hands_uhj', 'hooper_dunbar', 'itc_pre_1988', 'curated_sacred_traditions']) {
     for (const x of t[sec] || []) {
       if (!x.video_id || x.is_short || x.relation === 'about') continue;
       if (excludedTarget(x)) continue;   // data/media-exclusions.json (Chad 10-23)
@@ -416,7 +423,7 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   }
   const rows = await repo.rankRows();
   const ranks = [];
-  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor({ ...r, rel: r.source_kind === 'youtube' ? '' : relative(mediaRoot(), r.source_ref || '') }, info, speakerRole) });
+  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor({ ...r, rel: r.source_kind === 'youtube' ? '' : relative(mediaRoot(), r.source_ref || '') }, info, speakerRole, historicalOf) });
   await repo.setQueueRanks(ranks);
   const tiers = Object.fromEntries(TIERS.map(([n, key]) => [key, ranks.filter((x) => Math.floor(x.rank / 1e7) === n).length]));
   return { registered: registered.length, ranked: ranks.length, tiers };
@@ -775,7 +782,7 @@ async function youtubeTargetInfo(files = ['youtube-talks.json', 'youtube-queue.j
 export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
-  const { excludedBy, unsureBy, loadExclusions } = await import('../media/exclusions.js');
+  const { decide, loadExclusions } = await import('../media/exclusions.js');
   const rules = deps.rules || loadExclusions();
   const targets = deps.targets || await youtubeTargetInfo();
   const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
@@ -786,12 +793,12 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
     const t = it.youtube_id ? targets.get(it.youtube_id) : null;
     const titles = { title: it.title || meta?.title || '', sourceTitle: meta?.source?.title || t?.title || '' };
     const speakers = [it.speaker, meta?.speaker, t?.speaker].filter(Boolean);
-    const m = speakers.map((speaker) => excludedBy({ speaker, ...titles }, rules)).find(Boolean) || excludedBy(titles, rules);
+    const dec = decide({ speakers, ...titles }, rules);
+    const m = dec?.excluded;
     const row = { id: it.id, slug: it.slug, title: it.title || meta?.title || t?.title || null, speaker: it.speaker || meta?.speaker || t?.speaker || null, state: it.state,
       published: it.state === 'done', doc_id: it.doc_id || meta?.doc_id || null, year: meta?.year || null };
     if (m) { hits.push({ ...row, person: m.person, reason: m.reason, evidence: m.evidence, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) }); continue; }
-    const u = speakers.map((speaker) => unsureBy({ speaker, ...titles }, rules)).find(Boolean) || unsureBy(titles, rules);
-    if (u) unsure.push({ ...row, might_be: u.person, evidence: u.evidence });
+    if (dec?.unsure) unsure.push({ ...row, might_be: dec.unsure.person, evidence: dec.unsure.evidence });
   }
   const by = (k) => Object.fromEntries([...new Set(hits.map((h) => h[k]))].map((v) => [v, hits.filter((h) => h[k] === v).length]));
   const out = { matched: hits.length, published: hits.filter((h) => h.published).length, queued: hits.filter((h) => !h.published).length, by_person: by('person'), by_state: by('state'),

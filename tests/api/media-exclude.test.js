@@ -3,7 +3,7 @@
 // the rank job never registering an excluded target, and the soft delete's short paragraph chunks.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(async () => ({})), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { excludedBy, unsureBy } from '../../api/lib/media/exclusions.js';
+import { excludedBy, unsureBy, decide } from '../../api/lib/media/exclusions.js';
 import { mediaExcludeJob } from '../../api/lib/ops/media-jobs.js';
 
 describe('exclusion matcher', () => {
@@ -28,13 +28,20 @@ describe('exclusion matcher', () => {
     expect(unsureBy({ speaker: 'Raḥmatu’lláh Muhájir' })).toBeNull();
     expect(unsureBy({ speaker: 'Farzam Arbab' })).toBeNull();   // excluded, not unsure
   });
+  it('decide: a title naming only the surname makes a full-name attribution UNSURE; a nameless title keeps it excluded', () => {
+    expect(decide({ speakers: ['Stephen Birkland'], title: '2013 09 21 Mr Birkland at SON' })).toMatchObject({ unsure: { person: 'Stephen Birkland' } });
+    expect(decide({ speakers: ['Farzam Arbab'], title: 'US National Convention' })).toMatchObject({ excluded: { person: 'Farzam Arbab', evidence: expect.stringMatching(/attributed/) } });
+    expect(decide({ speakers: [null], title: 'x', sourceTitle: '2007. Paul Lample. Becoming Champions of Justice' })).toMatchObject({ excluded: { person: 'Paul Lample', evidence: expect.stringMatching(/^source title/) } });
+    expect(decide({ speakers: ['Dr. Mohajer'], title: 'Lawḥ-i-Iḥtiráq (Fire Tablet)' })).toMatchObject({ unsure: { person: 'Payman Mohajer' } });
+    expect(decide({ speakers: ['Hooper Dunbar'], title: 'Martin and the Guardian' })).toBeNull();
+  });
 });
 
 describe('the /media index never lists an excluded speaker', () => {
   it('buildIndex(exclude) drops the row whatever its state', async () => {
     const { buildIndex } = await import('../../api/lib/media/listing-index.js');
     const rows = [{ id: 1, slug: 'a', speaker: 'Farzam Arbab', updated_at: 1 }, { id: 2, slug: 'b', speaker: 'Hooper Dunbar', updated_at: 1 }, { id: 3, slug: 'c', speaker: 'Dr. Mohajer', updated_at: 1 }];
-    const { items } = await buildIndex(rows, { readItem: async () => ({}), exclude: (r) => excludedBy({ speaker: r.speaker || '', title: r.title || '' }) });
+    const { items } = await buildIndex(rows, { readItem: async () => ({}), exclude: (r) => decide({ speakers: [r.speaker], title: r.title || '' })?.excluded });
     expect(items.map((i) => i.s)).toEqual(['b', 'c']);
   });
 });

@@ -13,7 +13,7 @@ import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
 import { buildIndex, shapeSpeakers } from '../lib/media/listing-index.js';
-import { excludedBy } from '../lib/media/exclusions.js';
+import { decide } from '../lib/media/exclusions.js';
 import { speakerGallery, compactGallery } from '../lib/media/gallery.js';
 import { parseClipRange, clipText } from '../lib/media/clip-text.js';
 import { stripMdLinks } from '../lib/media/render.js';
@@ -94,7 +94,7 @@ async function mediaIndex(budget) {
   const cache = await loadIndexCache();
   const rows = await mediaIndexRows();
   // while the background pass runs, a request serves what is cached instead of re-reading the same files
-  const built = await buildIndex(rows, { exclude: (r) => excludedBy({ speaker: r.speaker || '', title: r.title || '' }), readItem: readIndexFiles, cache, budget: indexBuilding && budget !== Infinity ? 0 : budget });
+  const built = await buildIndex(rows, { exclude: (r) => decide({ speakers: [r.speaker], title: r.title || '' })?.excluded, readItem: readIndexFiles, cache, budget: indexBuilding && budget !== Infinity ? 0 : budget });
   if (built.read) {
     const tmp = `${INDEX_FILE}.${process.pid}.tmp`;
     writeFile(tmp, JSON.stringify({ v: 1, rows: [...cache].map(([id, x]) => ({ id, at: x.at, row: x.row })) })).then(() => rename(tmp, INDEX_FILE)).catch(() => {});
