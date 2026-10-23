@@ -65,6 +65,13 @@ export const REPORTS = {
     for (const r of rows) { const k = `${r.proc}/${r.kind}${r.name ? ' ' + r.name : ''}`; byProc[k] = (byProc[k] || 0) + r.n; }
     return { hours, minMs, total: rows.reduce((n, r) => n + r.n, 0), by_proc: byProc, rows };
   },
+  /** The single writer's load from db_write_stats: busy %, per caller × name batches/hour, rows, ms, p95, schedule.
+   *  params: { hours, top } (db-write-path-20261023) */
+  async 'write-stats'({ hours = 24, top = 25 } = {}) {
+    const { writeStatsRows } = await import('../repos/write-stats-repo.js');
+    const { summarizeWriteStats } = await import('../write-stats.js');
+    return summarizeWriteStats(await writeStatsRows({ hours }), { hours: Number(hours), top: Number(top) });
+  },
   /** Live books with no text, or with empty rows — per source, with sample ids. */
   async hollow() {
     const rows = await hollowDocs();
@@ -290,7 +297,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-exclude', 'media-trim-audit'];

@@ -19,7 +19,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { createServer } from 'node:http';
 import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
 import { applyWriteBatch } from '../lib/write-server.js';
-import { recordWrite, drainWriteStats, peekWriteStats } from '../lib/write-stats.js';
+import { recordWrite, recordCommit, drainWriteStats, peekWriteStats, latencySummary } from '../lib/write-stats.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
@@ -1083,6 +1083,11 @@ function startWriteServer() {
         .catch((err) => { res.writeHead(500, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: err.message })); });
       return;
     }
+    // exact batch latency + busy % from the in-memory ring (db_write_stats keeps only per-minute total + max)
+    if (req.method === 'GET' && req.url.startsWith('/latency')) {
+      const minutes = Number(new URL(req.url, 'http://x').searchParams.get('minutes')) || 15;
+      res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(latencySummary({ minutes }))); return;
+    }
     if (req.method === 'GET' && req.url === '/stats') {
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(peekWriteStats())); return;
     }
@@ -1099,6 +1104,7 @@ function startWriteServer() {
         const start = Date.now();
         const results = applyWriteBatch(db, statements);
         const ms = Date.now() - start;
+        recordCommit(ms);
         recordWrite({ caller, name, statements: statements.length, changes: results.reduce((n, r) => n + (r.changes || 0), 0), ms });
         // an UNNAMED slow batch names itself by its first statement (10-20: 4–15 s single-statement writes from reports
         // could not be traced to a job)
