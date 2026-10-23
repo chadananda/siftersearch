@@ -40,3 +40,17 @@ describe('olRefreshJob', () => {
     await expect(olRefreshJob({ dry: false })).rejects.toThrow(/not enabled/);
   });
 });
+
+import { classifyNewBook } from '../../api/lib/ops/ol-refresh-job.js';
+describe('classifyNewBook', () => {
+  it('imports catalogued books, holds uncatalogued ones, never imports drafts', () => {
+    expect(classifyNewBook({ bookid: 'nehemiah-ot_en', title: 'Nehemiah', paragraphs: 287 }, { inCatalog: true }).action).toBe('import');
+    expect(classifyNewBook({ bookid: 'lights_of_guidance_baha_i_ocean_en', title: 'Lights of Guidance', paragraphs: 7798 }, { inCatalog: false }).action).toBe('hold');
+    expect(classifyNewBook({ bookid: 'arem_sprint_159', title: 'Arem 09.2023', paragraphs: 253 }, { inCatalog: true }).action).toBe('junk');
+    expect(classifyNewBook({ bookid: 'the_brothers_karamazov_ffa_en', title: 'Copy-The Kitáb-I-Íqán 06.08', paragraphs: 292 }).action).toBe('junk');
+    expect(classifyNewBook({ bookid: 'test_taoism_part_ii_en', title: 'The Texts of Taoism Part II', paragraphs: 764 }, { inCatalog: true }).action).toBe('import');
+    expect(classifyNewBook({ bookid: 'dawn_breakers_temporary_copy_en', title: 'The Dawn-Breakers', paragraphs: 1248 }, { inCatalog: false }).action).toBe('junk');
+    expect(classifyNewBook({ bookid: 'x', title: 'Messages to Canada', paragraphs: 3156 }, { secondCopyOf: 21311 }).action).toBe('junk');
+    expect(classifyNewBook({ bookid: 'omal', title: 'A Dog’s Tale', paragraphs: 0 }).action).toBe('junk');
+  });
+});

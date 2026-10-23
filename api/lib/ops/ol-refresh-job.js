@@ -4,7 +4,7 @@
 // per book it reports rows matched (exact / merged), text changes, added + removed blocks, display numbers (OL's `num`,
 // api/lib/library/ol-display-ids.js) set / same / changed / cleared, ids withheld as content collisions, para_N shifts,
 // enrichment on rows that would change; plus new export books (English, publish-checked) and held books missing from
-// the export (live-checked). Write mode lands only after Chad approves the dry run.
+// the export (checked against OL's catalog). Write mode lands only after Chad approves the dry run.
 // params { dir, ids?, out?, liveCheck? }. Deps: docs-repo, block-attrs-repo, enrichment-repo, ol-display-ids.
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
@@ -90,7 +90,27 @@ export function planOlBook(blocks, rows) {
   return { status, counts: { ...c, added, roman_converted: roman }, dup_ids: nb.dups, invocations, samples: { ...s, added: addedSamples }, changes, atRisk };
 }
 
-const JUNKISH = /(?:^|[_\s-])test|arem|temporary|reimport|^copy-|broken|postponed/i;
+// test / draft books OL's editors left in the export: names and date-stamped titles ("Arem 09.2023", "Copy-… 06.08")
+const JUNKISH = /(?:^|[\s_-])test|arem|temporary|reimport|^copy-|broken|postponed|smoke|\d\d\.\d\d/i;
+
+/** Pure: what to do with an export book we do not hold. OL's own catalog (Bindery) is the publish signal — its SSR page
+ *  renders drafts and test books too, so "the page renders" proves nothing. → { action: import|hold|junk, reason } */
+export function classifyNewBook({ bookid, title, paragraphs }, { inCatalog = null, secondCopyOf = null } = {}) {
+  if (!paragraphs) return { action: 'junk', reason: 'no paragraphs' };
+  if (JUNKISH.test(title)) return { action: 'junk', reason: 'test/draft title' };
+  if (secondCopyOf) return { action: 'junk', reason: `second copy of held doc ${secondCopyOf}` };
+  if (JUNKISH.test(bookid) && inCatalog !== true) return { action: 'junk', reason: 'test/draft id, not in the OL catalog' };
+  if (inCatalog === false) return { action: 'hold', reason: 'not in the OL catalog (Bindery) — unpublished?' };
+  return { action: 'import', reason: inCatalog ? 'in the OL catalog' : 'catalog not checked' };
+}
+
+/** OL's published catalog: Set of bookids (bindery.lnker.com, the app OceanLibrary.com is built from) | null on error */
+async function catalogIds(fetchImpl = fetch) {
+  try {
+    const r = await fetchImpl('https://bindery.lnker.com/api/libraries/oceanlibrary', { signal: AbortSignal.timeout(60000) });
+    const j = await r.json(); return new Set((j?.project?.books || []).map((b) => b.id));
+  } catch { return null; }
+}
 
 /** All export books in dir (nested) → Map(bookid → { path, fm, blocks }). */
 function readExport(dir) {
@@ -100,15 +120,9 @@ function readExport(dir) {
   return out;
 }
 
-/** Is an OceanLibrary page live with content? (its SSR page carries data-ilmid per paragraph) → count | null on error */
-async function liveBlocks(slugOrUrl, fetchImpl = fetch) {
-  const url = /^https?:/.test(slugOrUrl) ? slugOrUrl.replace(/\/?$/, '/') : `https://oceanlibrary.com/${slugOrUrl}/`;
-  try { const r = await fetchImpl(url, { signal: AbortSignal.timeout(30000) }); if (!r.ok) return 0; return ((await r.text()).match(/data-ilmid=/g) || []).length; } catch { return null; }
-}
-
 export async function olRefreshJob({ dir = '/tank/sifter/ol-export-20261023', ids = null, out = null, liveCheck = true, dry = true } = {}, deps = {}) {
   if (dry === false) throw new Error('ol-refresh write mode is not enabled: it lands after Chad approves the dry run (planning/oceanlibrary-export-20261023-plan.md)');
-  const { list = listDocs, rowsFor = olRowsForDoc, risk = enrichmentOnRows, live = liveBlocks, pause = (ms) => new Promise((r) => setTimeout(r, ms)) } = deps;
+  const { list = listDocs, rowsFor = olRowsForDoc, risk = enrichmentOnRows, catalogFn = catalogIds } = deps;
   const exp = readExport(dir);
   const docs = [];
   for (let after = 0; ;) {
@@ -135,36 +149,37 @@ export async function olRefreshJob({ dir = '/tank/sifter/ol-export-20261023', id
     books.push({ doc: d.id, bookid: d.external_id, title: d.title, status: p.status, counts: p.counts, dup_ids_n: p.dup_ids.length, dup_ids: p.dup_ids.slice(0, 40),
       invocations: p.invocations, enrichment_at_risk: enrichment, samples: p.samples });
   }
-  // export books we do not hold: English only for now (Chad 10-23); test/draft books never; publish check decides
-  const newBooks = { english: [], skipped_language: [], junk: [], held_as_duplicate: [] };
+  // export books we do not hold: English only for now (Chad 10-23); OL's catalog decides published; drafts never
+  const catalog = liveCheck ? await catalogFn() : null;
+  const newBooks = { import: [], hold: [], junk: [], skipped_language: [], held_as_duplicate: [] };
   const heldTitles = new Map(liveDocs.map((d) => [String(d.title || '').trim().toLowerCase(), d]));
   for (const [bookid, e] of exp) {
     if (heldByExt.has(bookid)) continue;
     const title = String(e.fm.title || '').trim(); const lang = e.fm.language || '';
     const pars = e.blocks.filter((b) => b.type === 'par').length;
-    const row = { bookid, title, author: e.fm.author || '', language: lang, slug: e.fm.slug || '', paragraphs: pars, category: (e.fm.ocean_category || '').trim() };
+    const row = { bookid, title, author: e.fm.author || '', language: lang, slug: e.fm.slug || '', paragraphs: pars, category: (e.fm.ocean_category || '').trim(),
+      in_catalog: catalog ? catalog.has(bookid) : null };
     if (anyByExt.has(bookid)) { newBooks.held_as_duplicate.push({ ...row, doc: anyByExt.get(bookid).id, duplicate_of: anyByExt.get(bookid).duplicate_of }); continue; }
     if (lang !== 'en') { newBooks.skipped_language.push(row); continue; }
     const same = heldTitles.get(title.toLowerCase());
-    const sameHeldStillExported = same && exp.has(same.external_id);
-    let reason = !pars ? 'no paragraphs' : JUNKISH.test(`${bookid} ${title}`) ? 'test/draft name' : sameHeldStillExported ? `second copy of held doc ${same.id}` : null;
-    if (liveCheck && row.slug) { row.live_blocks = await live(row.slug); await pause(1000); }
-    if (reason && liveCheck && row.live_blocks > 0 && reason === 'test/draft name') reason = null;   // a real published page wins over a test-like id
-    if (reason) newBooks.junk.push({ ...row, reason });
-    else newBooks.english.push({ ...row, ...(same && !sameHeldStillExported ? { replaces_doc: same.id } : {}), ...(liveCheck && !row.live_blocks ? { warning: 'page not live on oceanlibrary.com' } : {}) });
+    const stillExported = same && exp.has(same.external_id);
+    const v = classifyNewBook(row, { inCatalog: row.in_catalog, secondCopyOf: stillExported ? same.id : null });
+    newBooks[v.action].push({ ...row, reason: v.reason, ...(same && !stillExported ? { replaces_doc: same.id } : {}) });
   }
-  // held OceanLibrary books the export lacks: Chad 10-23 → leave the OL collection for the supplemental library (not deleted)
+  // held OceanLibrary books the export lacks: Chad 10-23 → leave the OL collection for the supplemental library (not
+  // deleted). In OL's catalog = the export is incomplete (ask for a re-export) rather than OL having dropped the book.
   const missing = [];
   for (const d of liveDocs) {
     if (d.external_id && exp.has(d.external_id)) continue;
-    const m = { doc: d.id, bookid: d.external_id, title: d.title, paragraphs: d.paragraph_count, source_url: d.source_url, file_path: d.file_path };
-    if (liveCheck && d.source_url) { m.live_blocks = await live(d.source_url); await pause(1000); }
-    missing.push(m);
+    missing.push({ doc: d.id, bookid: d.external_id, title: d.title, paragraphs: d.paragraph_count, source_url: d.source_url, file_path: d.file_path,
+      in_catalog: catalog && d.external_id ? catalog.has(d.external_id) : catalog ? false : null });
   }
+  const catalogNotExported = catalog ? [...catalog].filter((id) => !exp.has(id) && !/^col-|^[0-9a-f]{32}$/.test(id)) : null;
   const result = { dir, export_books: exp.size, held_live: liveDocs.length, totals, sums: sum,
-    new_books: { english: newBooks.english.length, skipped_language: newBooks.skipped_language.length, junk: newBooks.junk.length, held_as_duplicate: newBooks.held_as_duplicate.length,
-      english_paragraphs: newBooks.english.reduce((n, b) => n + b.paragraphs, 0) },
-    held_not_in_export: missing.length, books_with_content_collisions: books.filter((b) => b.dup_ids_n).length };
+    new_books: { import: newBooks.import.length, hold: newBooks.hold.length, junk: newBooks.junk.length, skipped_language: newBooks.skipped_language.length,
+      held_as_duplicate: newBooks.held_as_duplicate.length, import_paragraphs: newBooks.import.reduce((n, b) => n + b.paragraphs, 0) },
+    held_not_in_export: missing.length, held_not_in_export_but_in_catalog: missing.filter((m) => m.in_catalog).length,
+    catalog_not_exported: catalogNotExported, books_with_content_collisions: books.filter((b) => b.dup_ids_n).length };
   const file = out || `/tank/sifter/ol-refresh/dry-${new Date().toISOString().slice(0, 10)}.json`;
   try { mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, JSON.stringify({ ...result, books, newBooks, missing }, null, 1)); result.file = file; } catch (err) { result.file_error = err.message; }
   return { ...result, newBooks, missing, books: books.map((b) => ({ doc: b.doc, title: b.title, status: b.status, rows: b.counts.rows, text_changed: b.counts.text_changed,

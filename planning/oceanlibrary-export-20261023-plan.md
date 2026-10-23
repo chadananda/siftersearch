@@ -7,7 +7,8 @@ Source: `~/Downloads/MD_Export(23-Oct-2026 6-29 UTC).zip`. Examined only: nothin
   - Ops job `ol-refresh` built (dry only).
   - Numbering-defect report for OceanLibrary written: `planning/oceanlibrary-export-20261023-numbering-defects.md`, with every block in the `.tsv` beside it.
   - Budget recorded in `data/approved-spend.json`.
-- **Next:** the dry run, which Chad approves before any write.
+- **Dry run done:** run 6333, summarised in `planning/oceanlibrary-export-20261023-dryrun.md`.
+- **Next:** Chad approves the dry run before any write.
 
 Per-book table: `planning/oceanlibrary-export-20261023-books.tsv` (650 rows: status, prod doc id, id grade, diff counts).
 Production figures come from `corpus-status.mjs` (80,836 docs live) and `/api/admin/docs?sourceSite=oceanlibrary.com`
@@ -201,7 +202,7 @@ The `reingest-carry` job exists but wraps the main ingester, never the OL path. 
 4. **Held books missing from the export (Chad 10-23): move them to the supplemental library.** They are not deleted.
    - Each moves out of `-sites/oceanlibrary.com` into the supplemental library: same doc id, `source_site` changed, OceanLibrary link dropped.
    - This needs a move job that keeps doc and row ids (`docs-repo` file move, as in 10-10).
-   - **Evidence to resolve first:** on 10-23 the 17 Research Department compilations, The Masnavi and II Chronicles **render with content on oceanlibrary.com** (e.g. `/youth_bahaullah/` shows 120 paragraphs), so they look like an incomplete export rather than books OL dropped. The dry run re-checks every one live. If they are live, Chad should confirm the move or ask Oleksandr for a re-export first.
+   - **Evidence from the dry run (run 6333):** OceanLibrary's own catalog (Bindery, 620 books) **still lists 19 of these 23**: the 17 Research Department compilations, II Chronicles and the Masnavi. So the export is incomplete, rather than OL having dropped them. The catalog also lists Sikh Religion vols 1–6, which no export contains. **Recommendation:** keep the 19 and ask Oleksandr for a re-export. Chad decides.
    - Tablet to the Hague, Seven Valleys `_bahai_en`, Avesta Selections and the Greek-titled John/Matthew are no longer live. They are superseded by re-keyed books, so each moves (or becomes `duplicate_of` the new copy) after review.
 
 ## 4. Dry run (before any write)
