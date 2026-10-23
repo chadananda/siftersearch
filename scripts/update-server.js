@@ -50,6 +50,7 @@ const execAsync = promisify(exec);
 
 import { touchesRuntime } from './lib/runtime-files.js';
 import { syntaxProblems } from './lib/syntax-gate.mjs';
+import { importProblems } from './lib/import-gate.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 
@@ -771,6 +772,21 @@ async function applyUpdates() {
       return false;
     }
     log('info', `Syntax gate: ${changed.filter((f) => /\.(?:m?js|cjs)$/.test(f)).length} changed JS file(s) parse`);
+    // IMPORT gate (10-23 16:08: a pushed file imported a module that was never committed — node --check passes that): every
+    // import of a changed file and of its importers resolves, every named import is exported; static, nothing is started
+    const imp = importProblems(changed, { root: PROJECT_ROOT });
+    for (const w of imp.filter((x) => x.warn)) log('warn', `Import gate (dynamic import, not blocking): ${w.file}:${w.line} ${w.error}`);
+    const broken = imp.filter((x) => !x.warn);
+    if (broken.length) {
+      const head = (await run('git rev-parse HEAD')).stdout.trim();
+      log('error', `Refusing deploy of ${head}: ${broken.length} broken import(s) — ${broken.map((b) => `${b.file}:${b.line} ${b.error}`).join('; ')}`);
+      await run(`git reset --hard ${prevSha}`);
+      blockedRemote = head;
+      await alertNow('deploy-blocked', 'SifterSearch deploy refused — a module would not load',
+        `Commit ${head} was NOT deployed; tower stays on ${prevSha} (every process keeps running).\n\n${broken.map((b) => `- ${b.file}:${b.line} ${b.error}`).join('\n')}\n\nCommit the missing file (or fix the import) and push a new commit.`);
+      return false;
+    }
+    log('info', `Import gate: every import resolves`);
   }
 
   // Skip npm ci if package-lock.json didn't change
