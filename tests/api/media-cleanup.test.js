@@ -126,3 +126,13 @@ describe('the series frames the copy-edit (QA: "Gems of Vyad Mysteries")', async
     expect(cleanPrompt({ speaker: 'Steven Phelps', series: 'Gems of Divine Mysteries', part: 3 }, '[1] x')).toMatch(/Series: Gems of Divine Mysteries \(part 3\)/);
   });
 });
+
+describe('findQuotations reads its chunks at once', async () => {
+  const { mapPool } = await import('../../api/lib/media/llm.js');
+  it('mapPool: n at a time, results in order', async () => {
+    let live = 0, peak = 0;
+    const r = await mapPool([1, 2, 3, 4, 5, 6], 4, async (x) => { live++; peak = Math.max(peak, live); await new Promise((res) => setTimeout(res, 10)); live--; return x * 2; });
+    expect(r).toEqual([2, 4, 6, 8, 10, 12]);
+    expect(peak).toBe(4);
+  });
+});

@@ -128,13 +128,14 @@ export async function findQuotations(paragraphs, { chunkWords = 2000, ...opts } 
   let cur = [], n = 0;
   for (const p of paragraphs) { cur.push(p); n += p.words.length; if (n >= chunkWords) { chunks.push(cur); cur = []; n = 0; } }
   if (cur.length) chunks.push(cur);
-  for (const ch of chunks) {
-    const out = await ask('media-quotes', `A transcript of a talk (lines: [paragraph @time voice] text). Find two things.
+  // the chunks are independent reads: all at once (10-23: find took 23–96 s of the quotes stage, one chunk after another)
+  const outs = await mapPool(chunks, Number(process.env.MEDIA_LLM_FANOUT) || 4, (ch) => ask('media-quotes', `A transcript of a talk (lines: [paragraph @time voice] text). Find two things.
 (a) QUOTATIONS — where the speaker recites or reads the words of Bahá'u'lláh, the Báb, ‘Abdu'l-Bahá, Shoghi Effendi or the Universal House of Justice: introduced ("Bahá'u'lláh says: …", "as the Guardian wrote, …") or recited without introduction (recognisable scripture, often elevated language: "O Son of Spirit! …"). Give the recited words EXACTLY as they appear in the transcript (at least 6 words; leave out the introduction).
 (b) ATTRIBUTED TEACHINGS — where the speaker states in their own words what one of them taught or explained ("the Guardian taught that…", "‘Abdu'l-Bahá explains that the soul…"). Give the teaching as one plain sentence and the speaker's words that state it (exact, at most 30 words).
 Only these five writers; not the speaker's own views, not other authors.
 ${asLines(ch)}
-Return JSON {"quotes": [{"p": number, "text": "exact recited words", "writer": "Bahá’u’lláh|The Báb|‘Abdu’l-Bahá|Shoghi Effendi|Universal House of Justice|unknown", "intro": "the introducing words or null"}], "teachings": [{"p": number, "writer": "…", "claim": "one plain sentence", "words": "the speaker's exact words"}]}`, { ...opts, max: 8000 });
+Return JSON {"quotes": [{"p": number, "text": "exact recited words", "writer": "Bahá’u’lláh|The Báb|‘Abdu’l-Bahá|Shoghi Effendi|Universal House of Justice|unknown", "intro": "the introducing words or null"}], "teachings": [{"p": number, "writer": "…", "claim": "one plain sentence", "words": "the speaker's exact words"}]}`, { ...opts, max: 8000 }));
+  for (const out of outs) {
     quotes.push(...(out?.quotes || []).filter((q) => q?.text && Number(q.p)));
     teachings.push(...(out?.teachings || []).filter((t) => t?.claim && Number(t.p)));
   }
