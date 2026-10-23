@@ -5,7 +5,7 @@
 // Chad see every service at a glance. File-based: no writer, no DB. Deps: node:fs, drain.js.
 import { mkdirSync, writeFileSync, renameSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { isDraining } from './drain.js';
+import { isDraining, drainSince } from './drain.js';
 
 const DIR = () => join(process.cwd(), 'data', 'run', 'services');
 const STALE_MS = 60_000;
@@ -28,7 +28,8 @@ export function startHeartbeat({ name = process.env.name || 'unknown', every = 1
   try { mkdirSync(dir, { recursive: true }); } catch { /* read-only: no heartbeat */ }
   const beat = () => {
     try {
-      const rec = { ...base, beat_at: new Date().toISOString(), state: isDraining() ? 'draining' : 'running', ...state() };
+      const rec = { ...base, beat_at: new Date().toISOString(), state: isDraining() ? 'draining' : 'running',
+        ...(isDraining() && drainSince() ? { draining_since: new Date(drainSince()).toISOString() } : {}), ...state() };
       const f = join(dir, `${name}.json`);
       writeFileSync(`${f}.tmp`, JSON.stringify(rec)); renameSync(`${f}.tmp`, f);
     } catch { /* a missed beat shows as silent */ }

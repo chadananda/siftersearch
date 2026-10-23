@@ -80,8 +80,23 @@ for (const [name, n] of Object.entries(restarts)) {
   if (prev != null && n - prev >= 10 && REQUIRED.includes(name)) add(`pm2 ${name} restart storm`, false, 'critical', `+${n - prev} restarts since last check`);
 }
 
-// ── 3. Grounding pipeline ────────────────────────────────────────────────────
+// ── 2b. Stuck drains (10-22: dewey-scout #2819 held siftersearch-reports 'draining' 30+ min — nothing claimed) ─────
 const H = { 'X-Internal-Key': KEY };
+let drainSeen = state.drainSeen || {};
+{
+  const { stuckDrains } = await import('./lib/stuck-drains.mjs');
+  const r = await http('http://127.0.0.1:7839/api/admin/ops/services', { headers: H, timeout: 15000 });
+  let services = null; try { services = r.status === 200 ? JSON.parse(r.body).services : null; } catch { /* not JSON */ }
+  if (!services) add('Service drains', true, 'info', `services unavailable (${why(r)})`);
+  else {
+    const d = stuckDrains(services, { seen: drainSeen, limitMs: Number(process.env.DRAIN_WARN_MIN || 10) * 60_000 });
+    drainSeen = d.seen;
+    add('Service drains', !d.stuck.length, 'warn', d.stuck.length
+      ? d.stuck.map((x) => `${x.name} draining ${x.minutes} min, held by ${x.doing.join(', ') || 'nothing named'}`).join(' · ') : 'ok');
+  }
+}
+
+// ── 3. Grounding pipeline ────────────────────────────────────────────────────
 let mode = '?', queueDepth = 0, liveRuns = 0, failed24 = 0, done24 = 0;
 const modeRes = await http('http://127.0.0.1:7839/api/admin/grounding/mode', { headers: H });
 try { mode = JSON.parse(modeRes.body).mode; } catch { /* api down already flagged */ }
@@ -358,7 +373,7 @@ console.log(text);
 
 // Persist state for delta checks.
 fs.mkdirSync('logs', { recursive: true });
-const newState = { ...state, restarts, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
+const newState = { ...state, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
 
 // Decide whether to email. --daily always sends; --check only on criticals, and not the same
 // alert-set more than once per 6h (a down service at 2am = one email, not twelve).

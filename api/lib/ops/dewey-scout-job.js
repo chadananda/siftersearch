@@ -2,6 +2,9 @@
 // researched list: core-books for a tradition, bahai-publications, bahai-pilgrim-notes) → for each work not handled
 // before: held? → every channel searched → offered (a copy found and checked) | lead | to-buy. `limit` works a run; the
 // next run continues where this one stopped. params { list, collections?, religion?, limit? }.
+// YIELDS TO A DRAIN (10-22: #2819 held siftersearch-reports 'draining' 30+ min, claiming nothing): stops between works/
+// channels/copies → { yielded, resume: { limit: what is left of it, prior: counts so far } }; the requeued run skips works
+// already handled (their items) and scouts only the rest of the limit.
 import { scoutList } from '../dewey/scout/scout.js';
 import { bahaiLibraryList, researchedList } from '../dewey/scout/lists.js';
 import { checkHoldings, identifyAndCheck } from '../dewey/holdings.js';
@@ -12,6 +15,7 @@ import { withAIContext } from '../ai-context.js';
 import { deweyDir } from '../dewey/research.js';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { isDraining } from '../drain.js';
 
 // a researched list costs a research run: kept 30 days, then researched again (new scholarship, a better list)
 async function cachedList(list, religion, make) {
@@ -34,20 +38,27 @@ export function autoAddRule({ cap = 15, addedToday = 0 } = {}) {
   };
 }
 
-export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pilgrims'], religion = null, limit = 20, autoAdd = false, cap = 15, addedToday = 0, retry = null } = {}, deps = {}) {
+// counts of a run that yielded, added to the resumed run's
+const addCounts = (a = {}, b = {}) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = (o[k] || 0) + v; return o; };
+const yieldedResult = (r, limit, prior) => ({ ...r, yielded: true, resume: { limit: Math.max(0, limit - r.outcomes.length), prior: addCounts(prior, r.counts) } });
+
+export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pilgrims'], religion = null, limit = 20, autoAdd = false, cap = 15, addedToday = 0, retry = null, prior = null } = {}, deps = {}) {
+  deps = { draining: isDraining, ...deps };
+  if (limit <= 0) return { list, religion, listed: 0, counts: prior || {}, outcomes: [], remaining: null, resumed: !!prior };
   // RE-SCOUT (10-19: broken channels sent The Rule of Saint Benedict to "buy" after "7 places searched"): works left as
   // to-buy / lead are searched again with today's channels; the old item is closed, a new outcome replaces it
   if (retry?.length) {
     const { listItems, updateItem } = await import('../repos/dewey-repo.js');
     const old = (await listItems({ limit: 5000 })).filter((i) => i.created_by === 'dewey-scout' && retry.includes(i.state));
-    const works = [];
-    for (const i of old.slice(0, limit)) {   // only those searched again this run are closed
+    const works = old.slice(0, limit).map((i) => {
       const sc = i.identified?.scout || {};
-      works.push({ title: sc.sought || i.title, author: sc.author || i.author, kind: i.kind, why: sc.why, importance: sc.importance ?? 3, list: sc.list, page: sc.page || null });
-      await updateItem(i.id, { state: 'declined' }, 'scouted again with the improved channels — see the newer item');
-    }
-    const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, items: async () => [], ...deps } });
-    return { retry, listed: works.length, ...r };
+      return { title: sc.sought || i.title, author: sc.author || i.author, kind: i.kind, why: sc.why, importance: sc.importance ?? 3, list: sc.list, page: sc.page || null, retryOf: i.id };
+    });
+    // only those searched again are closed — each as its new outcome lands (a drain mid-run leaves the rest open for the resume)
+    const onOutcome = (w) => updateItem(w.retryOf, { state: 'declined' }, 'scouted again with the improved channels — see the newer item');
+    const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, items: async () => [], onOutcome, ...deps } });
+    if (r.yielded) return { retry, listed: works.length, ...yieldedResult(r, limit, prior) };
+    return { retry, listed: works.length, ...r, counts: addCounts(prior, r.counts) };
   }
   if (autoAdd && !deps.items) {   // today's pulse additions so far (the cap is per day, across the day's runs)
     const { listItems } = await import('../repos/dewey-repo.js');
@@ -59,6 +70,8 @@ export async function deweyScoutJob({ list = 'bahai-library', collections = ['Pi
     // most important first; bahai-library keeps its own order
     if (list !== 'bahai-library') works.sort((a, b) => (b.importance ?? 3) - (a.importance ?? 3));
     const r = await scoutList(works, { limit, deps: { check: checkHoldings, checkFile: identifyAndCheck, appraise: appraiseDocument, archive: archiveFile, autoAdd: autoAdd ? autoAddRule({ cap, addedToday }) : null, ...deps } });
+    if (r.yielded) return { list, religion, listed: works.length, ...yieldedResult(r, limit, prior) };
+    r.counts = addCounts(prior, r.counts);
     await logActivity('job', `dewey scout (${list}${religion ? ` · ${religion}` : ''}): ${Object.entries(r.counts).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing new'}; ${r.remaining} left on the list`).catch(() => {});
     return { list, religion, listed: works.length, ...r };
   });

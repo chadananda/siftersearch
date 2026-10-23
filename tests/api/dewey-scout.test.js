@@ -181,3 +181,43 @@ describe('an incomplete copy tells us the work exists (10-19)', () => {
     expect(created[0]).toMatchObject({ state: 'to-buy', title: "'Abdu'l-Bahá in Europe" });
   });
 });
+
+describe('a drain mid-scout (10-22: #2819 held siftersearch-reports "draining" 30+ min, claiming nothing)', () => {
+  const three = [{ ...work, title: 'First Work' }, { ...work, title: 'Second Work' }, { ...work, title: 'Third Work' }];
+  // three channels; the drain arrives while the SECOND work's first channel is being searched
+  const setup = () => {
+    const { created, deps } = mk();
+    let drain = false, calls = 0;
+    const ch = (n) => vi.fn(async (w) => { calls++; if (w.title === 'Second Work' && n === 'a') drain = true; return []; });
+    const channels = { a: ch('a'), b: ch('b'), c: ch('c') };
+    return { created, deps: { ...deps, channels, draining: () => drain, items: async () => created.map((x) => ({ title: x.title, identified: x.identified })) }, calls: () => calls };
+  };
+  it('yields within one unit: no further channel searched, nothing written for the work in hand', async () => {
+    const s = setup();
+    const r = await scoutList(three, { limit: 10, deps: s.deps });
+    expect(r.yielded).toBe(true);
+    expect(r.outcomes.map((o) => o.title)).toEqual(['First Work']);
+    expect(s.calls()).toBe(4);   // 3 for the first work + the one in flight when the drain came
+    expect(s.created.map((x) => x.title)).toEqual(['First Work']);
+  });
+  it('the resumed run skips the works already handled and does the rest', async () => {
+    const s = setup();
+    await scoutList(three, { limit: 10, deps: s.deps });
+    const seen = [];
+    const channels = { a: vi.fn(async (w) => { seen.push(w.title); return []; }) };
+    const r = await scoutList(three, { limit: 10, deps: { ...s.deps, channels, draining: () => false } });
+    expect(r.yielded).toBeUndefined();
+    expect(r.outcomes.map((o) => o.title)).toEqual(['Second Work', 'Third Work']);
+    expect(seen).toEqual(['Second Work', 'Third Work']);
+  });
+  it('the job returns a resume point: the rest of its limit, and the counts so far', async () => {
+    const { deweyScoutJob } = await import('../../api/lib/ops/dewey-scout-job.js');
+    const s = setup();
+    const r = await deweyScoutJob({ list: 'core-books', religion: 'Hindu', limit: 3 }, { ...s.deps, cachedList: async () => three.map((w) => ({ ...w })) });
+    expect(r).toMatchObject({ yielded: true, resume: { limit: 2, prior: { 'to-buy': 1 } } });
+    const again = await deweyScoutJob({ list: 'core-books', religion: 'Hindu', limit: 3, ...r.resume }, { ...s.deps, draining: () => false, cachedList: async () => three.map((w) => ({ ...w })) });
+    expect(again.yielded).toBeUndefined();
+    expect(again.outcomes.map((o) => o.title)).toEqual(['Second Work', 'Third Work']);
+    expect(again.counts).toEqual({ 'to-buy': 3 });
+  });
+});

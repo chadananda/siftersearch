@@ -3,6 +3,8 @@
 // appraised, and OFFERED to Chad with where it came from; a copy readable only elsewhere (borrow/view) is a LEAD; nothing
 // anywhere and important → TO BUY, with every channel searched, used prices and who to ask. A work handled once is never
 // handled again (its title key or page is on an item). Deps injectable; one site request at a time.
+// DRAIN (10-22: #2819 held siftersearch-reports in 'draining' 30+ min): between every unit — work, channel, copy — a drain
+// abandons the work in hand (nothing written for it yet, so it is redone whole) and the list stops with { yielded }.
 import { mkdir, writeFile, unlink, stat } from 'fs/promises';
 import { join } from 'path';
 import { createItem, updateItem, listItems } from '../../repos/dewey-repo.js';
@@ -16,6 +18,8 @@ export const scoutDir = () => process.env.DEWEY_SCOUT_DIR || '/tank/dewey-ingest
 const BY = 'dewey-scout';
 const DOWNLOADABLE = ['pdf', 'text', 'epub', 'html', 'docx', 'doc', 'rtf'];
 const pause = (ms) => new Promise((z) => setTimeout(z, ms));
+const YIELD = 'scout: yielded to a drain';
+export const isYield = (e) => e?.yielded === true;
 // the file's type: its URL's extension, the channel's kind, then the server's content type
 const extOf = (c, type = '') => {
   const fromUrl = String(c.url || '').split('?')[0].match(/\.(pdf|docx?|rtf|epub|txt|html?)$/i)?.[1]?.toLowerCase();
@@ -65,7 +69,7 @@ export async function pageCopies(work, fetchImpl = fetch) {
 /** One work → its outcome. deps: check (holdings by title), checkFile (identifyAndCheck), appraise, archive, channels, … */
 export async function scoutWork(work, deps = {}) {
   const { check, checkFile, appraise, archive, channels = CHANNELS, purchase = purchaseLeads, get = download, politeMs = 1500,
-    create = createItem, update = updateItem, read = async (p) => (await toMarkdownText(null, p.split('/').pop(), { path: p, full: false })).markdown } = deps;
+    draining = () => false, create = createItem, update = updateItem, read = async (p) => (await toMarkdownText(null, p.split('/').pop(), { path: p, full: false })).markdown } = deps;
   // the title it was SOUGHT under is kept (a copy's appraised title can differ — a re-scout must look for the work, not the copy)
   const scout = { list: work.list, sought: work.sought || work.title, author: work.author || null, why: work.why, importance: work.importance, page: work.page || null, channels: [] };
   // 1. HELD? by title first (cheap); a copy's text decides later
@@ -80,9 +84,12 @@ export async function scoutWork(work, deps = {}) {
     return { state: 'held', held: top?.id };
   }
   // 2. EXHAUST THE CHANNELS — a known page first (bahai-library: the page is the work, or links its PDF), then every channel
+  // a drain between units: throw before the next one — no item has been written for this work, so a resumed run redoes it
+  const yieldPoint = () => { if (draining()) throw Object.assign(new Error(YIELD), { yielded: true }); };
   const found = [];
   if (work.page) found.push(...await pageCopies(work, deps.fetchImpl || fetch).catch(() => []));
   for (const [name, fn] of Object.entries(channels)) {
+    yieldPoint();
     const hits = await fn({ ...work, isbns: found.flatMap((f) => f.isbns || []) }).catch((e) => { scout.channels.push({ channel: name, searched: false, error: String(e.message).slice(0, 120) }); return null; });
     if (hits) { scout.channels.push({ channel: name, searched: true, found: hits.length }); found.push(...hits.filter((x) => !isShadow(x.url))); }
     await pause(politeMs);
@@ -95,6 +102,7 @@ export async function scoutWork(work, deps = {}) {
   if (alt && !found.some((f) => DOWNLOADABLE.includes(f.kind))) {
     for (const [name, fn] of Object.entries(channels)) {
       if (name === 'web') continue;
+      yieldPoint();
       const hits = await fn({ ...work, title: alt }).catch(() => null);
       if (hits) { scout.channels.push({ channel: `${name} (as “${alt}”)`, searched: true, found: hits.length }); found.push(...hits.filter((x) => !isShadow(x.url))); }
       await pause(politeMs);
@@ -103,6 +111,7 @@ export async function scoutWork(work, deps = {}) {
   scout.found = found.map(({ context, ...f }) => f).slice(0, 20);
   // 3. A COPY: download → text checked against the library → appraised → offered
   for (const c of found.filter((f) => DOWNLOADABLE.includes(f.kind))) {
+    yieldPoint();
     const path = await get(c).catch(() => null);
     if (!path) continue;
     const doc = await checkFile({ path }).catch(() => null);
@@ -162,18 +171,27 @@ export async function scoutWork(work, deps = {}) {
   return { state: acquire ? 'to-buy' : 'skipped' };
 }
 
-/** A list → each work not handled before, up to `limit`. → { counts, outcomes } */
+/** A list → each work not handled before, up to `limit`. → { counts, outcomes, remaining, yielded? }. A drain (deps.draining)
+ *  stops it between works or inside one (the work in hand is dropped, redone on resume: handled works are skipped by their
+ *  items). deps.onOutcome(work, outcome) runs after each handled work. */
 export async function scoutList(works, { limit = 20, deps = {} } = {}) {
+  const draining = deps.draining || (() => false);
   const seen = new Set();
   for (const i of await (deps.items || (() => listItems({ limit: 20000 })))()) { seen.add(workKey(i.title)); if (i.identified?.scout?.page) seen.add(i.identified.scout.page); if (i.identified?.title) seen.add(workKey(i.identified.title)); }
   const outcomes = [], counts = {};
   for (const w of works) {
     if (outcomes.length >= limit) break;
     if (seen.has(workKey(w.title)) || (w.page && seen.has(w.page))) continue;
+    if (draining()) return { counts, outcomes, remaining: works.filter((x) => !seen.has(workKey(x.title))).length, yielded: true };
+    let o;
+    try { o = await scoutWork(w, { ...deps, draining }); } catch (e) {
+      if (isYield(e)) return { counts, outcomes, remaining: works.filter((x) => !seen.has(workKey(x.title))).length, yielded: true };
+      o = { state: 'error', error: String(e.message).slice(0, 200) };
+    }
     seen.add(workKey(w.title));
-    const o = await scoutWork(w, deps).catch((e) => ({ state: 'error', error: String(e.message).slice(0, 200) }));
     outcomes.push({ title: w.title, ...o });
     counts[o.state] = (counts[o.state] || 0) + 1;
+    await deps.onOutcome?.(w, o);
   }
   return { counts, outcomes, remaining: works.filter((w) => !seen.has(workKey(w.title))).length };
 }
