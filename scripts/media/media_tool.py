@@ -474,20 +474,18 @@ def main():
     try:
         fn(a)
     except RuntimeError as err:
-        # the GPU is shared (two transcriptions + probes + DeepFilterNet on an 8 GB card; 10-22 a third job ran out of
-        # memory): out of GPU memory → the same work on the CPU, never a failed item
+        # the GPU is shared (transcriptions, probes, DeepFilterNet on an 8 GB card). Out of GPU memory → START AGAIN as a fresh
+        # process (an in-process CPU retry kept the dead CUDA model's 2.2 GB and ran for 30+ min, 10-22): first back on the GPU
+        # (waiting for free memory under the lock), and only a second time out of memory on the CPU
         if 'out of memory' not in str(err).lower() or device()[0] != 'cuda':
             raise
-        print(f'CUDA out of memory — retrying {a.cmd} on the CPU', file=sys.stderr)
-        try:
-            import torch
-            torch.cuda.empty_cache()
-        except Exception:
-            pass
-        global _device
-        os.environ['MEDIA_DEVICE'] = 'cpu'
-        _device = None
-        fn(a)
+        tries = int(os.environ.get('MEDIA_OOM_TRIES', '0')) + 1
+        print(f'CUDA out of memory — {a.cmd} starts again ({"GPU, after waiting for memory" if tries < 2 else "on the CPU"})', file=sys.stderr)
+        env = dict(os.environ, MEDIA_OOM_TRIES=str(tries))
+        if tries >= 2:
+            env['MEDIA_DEVICE'] = 'cpu'
+        sys.stdout.flush(); sys.stderr.flush()
+        os.execve(sys.executable, [sys.executable] + sys.argv, env)
 
 
 if __name__ == '__main__':
