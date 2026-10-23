@@ -77,7 +77,8 @@ if [[ "$verb" == "start" ]]; then
     # a fixed encode recipe (media_tool.py encode: light chain / ogg / m4a) → out.file, then the out.json marker
     nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "diarize" ]]; then
-    nohup setsid nice -n 10 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+    # nice 19: a diarization (CPU) yields to the transcriptions feeding the GPU (10-23: ten on aorus starved its GPU)
+    nohup setsid nice -n 19 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
   else
     nohup setsid nice -n 10 venv/bin/python media_tool.py transcribe "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" --prompt "$prompt" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
   fi

@@ -361,7 +361,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.asr_lang !== 'multi' && !(raw.turns || []).length) {
         if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickDiarHost ? tools.pickDiarHost() : (tools.diarHost ? tools.diarHost() : null) }; await save(); }
         console.info(`[media] diarize ${meta.slug} → ${meta.diar_job.host || 'boss'} (job ${meta.diar_job.id})`);
-        if (tools.diarize) await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 6 });
+        // a failed (or cancelled) diarization is dispatched afresh next time — never re-attached to the dead job on its host
+        if (tools.diarize) {
+          try { await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 6 }); }
+          catch (err) { if (err?.code !== 'DRAIN') { delete meta.diar_job; await save(); } throw err; }
+        }
         else await tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: 4, timeoutMs: 6 * 3600_000, stop });
         delete meta.diar_job;
         raw.turns = smoothTurns((await readJson(turnsFile, { turns: [] })).turns || []);
