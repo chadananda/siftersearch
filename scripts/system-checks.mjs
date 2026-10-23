@@ -181,9 +181,15 @@ if (db) {
     const gpu = process.env.MEDIA_GPU_HOST ?? 'aorus';
     if (gpu && h.compute_backlog > 0) {
       let g = null;
-      try { g = execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${gpu} 'echo $(pgrep -fc "[m]edia_tool.py") $(find ~/media-gpu/jobs -mindepth 1 -maxdepth 1 -newermt "-10 min" | wc -l)'`, { encoding: 'utf8', timeout: 20000 }).trim().split(/\s+/).map(Number); } catch { /* unreachable */ }
+      // TRANSCRIPTIONS running on the GPU host (grades/probes/dfn are not GPU transcription work) and the newest one's age
+      try { g = execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${gpu} 'echo $(pgrep -fc "[m]edia_tool.py transcribe") $(find ~/media-gpu/jobs -mindepth 1 -maxdepth 1 -newermt "-10 min" ! -name "*-gr-*" ! -name "*-df-*" ! -name "*-ogg-*" ! -name "*-m4a-*" ! -name "*-lc-*" ! -name "*-dz-*" | wc -l)'`, { encoding: 'utf8', timeout: 20000 }).trim().split(/\s+/).map(Number); } catch { /* unreachable */ }
+      const waiting = (h.asr_backlog || 0) + (h.compute_backlog || 0);
       if (!g) add(`Media GPU ${gpu}`, true, 'info', 'unreachable from here');
-      else add(`Media GPU ${gpu}`, !(g[0] === 0 && g[1] === 0), 'warn', `${g[0]} running, ${g[1]} jobs started in 10 min, ${h.compute_backlog} compute items waiting${g[0] === 0 && g[1] === 0 ? ' — IDLE > 10 min with a backlog' : ''}`);
+      else {
+        const idle = g[0] === 0 && g[1] === 0 && (h.asr_backlog || 0) > 0;
+        add(`Media GPU ${gpu}`, !idle, 'warn', `${g[0]} transcribing, ${g[1]} transcriptions started in 10 min, ${h.asr_backlog || 0} prepped talks waiting for ASR${idle ? ' — GPU IDLE > 10 min while prepped talks wait' : ''}`);
+        void waiting;
+      }
     }
     add('Media lanes busy', !(idleCompute || idleLlm), 'warn', `compute ${h.compute_running} running / ${h.compute_backlog} waiting · llm ${h.llm_running} running / ${h.llm_backlog} waiting${idleCompute ? ' — COMPUTE IDLE with a backlog' : ''}${idleLlm ? ' — LLM IDLE with a backlog' : ''}`);
   }

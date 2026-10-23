@@ -201,10 +201,26 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 /** A transcription on the ASR host as a detached job: start (unless `job` is already known there), poll every pollMs,
  *  fetch. A drain (stop()) leaves the remote job RUNNING and throws DrainAbort — the resumed stage picks it up.
  *  → { output, host, job, reattached } */
-export async function asrJob(input, opts = {}, { host = asrHost(), ...rest } = {}) {
-  asrBusy.set(host, (asrBusy.get(host) || 0) + 1);
-  try { return await asrJobOn(input, opts, { host, ...rest }); } finally { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 1) - 1)); }
+// count: a TRANSCRIPTION holds one of its host's ASR slots; a diarization does not (10-23: boss's four diarizations filled
+// the ASR pool and nothing went to aorus). reserved: the slot was taken by acquireAsrHost already.
+export async function asrJob(input, opts = {}, { host = asrHost(), count = true, reserved = false, ...rest } = {}) {
+  if (count && !reserved) asrBusy.set(host, (asrBusy.get(host) || 0) + 1);
+  try { return await asrJobOn(input, opts, { host, ...rest }); } finally { if (count && !reserved) releaseAsr(host); }   // a reserved slot: the caller releases it
 }
+const asrWaiters = [];
+function releaseAsr(host) { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 1) - 1)); asrWaiters.shift()?.(); }
+/** A host with a FREE transcription slot (fastest first), the slot taken at once — waits while every host is full, so new
+ *  transcriptions queue here instead of piling onto a busy host. release() if the job is never started. */
+export async function acquireAsrHost(hosts = asrHosts()) {
+  if (!hosts.length) return { host: null, release: () => {} };
+  for (;;) {
+    const h = hosts.find((x) => (asrBusy.get(x.host) || 0) < x.slots);
+    if (h) { asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; releaseAsr(h.host); } } }; }
+    await new Promise((r) => asrWaiters.push(r));
+  }
+}
+/** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
+export const diarHost = () => process.env.MEDIA_DIAR_HOST ?? gpuHost() ?? asrHost();
 async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, stop = null, pollMs = 15000, onStart = async () => {}, exec = run } = {}) {
   const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs: 600_000, ...o });
   const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
@@ -361,7 +377,7 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
   // DETACHED on boss (10-22: the attached call died with every service restart, so a diarization never finished)
   if (host && job) {
     try {
-      const r = await (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop });
+      const r = await (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
     } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }
@@ -390,15 +406,16 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
 // ── the GPU compute host (aorus: RTX 3070, CUDA): grade (DNSMOS/NISQA) and DeepFilterNet as DETACHED jobs through the same
 // gate as boss (start … --verb grade|dfn, re-attached by job id after a restart; the original audio staged over the tailnet)
 export const gpuHost = () => (process.env.MEDIA_GPU_HOST ?? 'aorus') || null;   // MEDIA_GPU_HOST='' → the tower does grade + dfn
-let installedGpu = null;
+const installedGpu = new Set();   // hosts this process has sent media_tool.py to
 /** A detached job on a compute host: the input file is sent as-is; → the JSON result, or (file) writes opts.output. */
-export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, stop = null, pollMs = 5000, file = false, exec = run } = {}) {
+export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, stop = null, pollMs = 5000, file = false, exec = run, probeOnly = false } = {}) {
   const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs: 600_000, ...o });
   const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
   let st = await state().catch(() => ({ state: 'missing' }));
+  if (probeOnly) return st.state;
   if (st.state !== 'running' && st.state !== 'done') {
     const { readFile } = await import('fs/promises');
-    if (installedGpu !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedGpu = host; }
+    if (!installedGpu.has(host)) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedGpu.add(host); }
     const ext = (input.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
     const { output, ...rest } = opts;
     await ssh(`start ${ext} ${job} ${gateCommand('x', ext, { ...rest, verb: sub }).split(' ').slice(2).join(' ')}`, { input: await readFile(input) });
@@ -431,7 +448,7 @@ export async function encodeRemote(recipe, input, output, { af = '', job, stop, 
     // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
     if (encBusy >= slots) await new Promise((r) => encWait.push(r));
     encBusy++;
-    try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output }, { host, job, stop, file: true }); }
+    try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output, threads: 2 }, { host, job, stop, file: true }); }   // 2 threads each (was 8)
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] encode ${recipe} on ${host} failed — tower: ${String(err.message).slice(0, 300)}`); }
     finally { encBusy--; encWait.shift()?.(); }
   }
@@ -439,12 +456,36 @@ export async function encodeRemote(recipe, input, output, { af = '', job, stop, 
 }
 
 /** grade / dfn on the GPU host when it answers, else the tower's detached process (re-attached by pid file). */
-export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn() } = {}) {
-  const host = gpuHost();
-  if (host && job) {
-    try { return await remoteJob(sub, input, opts, { host, job, stop, file }); }
+const offBusy = new Map();
+const offWait = [];
+/** The hosts a GPU-host tool may run on, in order, with their slots: DeepFilterNet goes to aorus (1 at a time beside its
+ *  transcriptions) and OVERFLOWS to boss's CPU venv (2 at a time; Chad 10-23: "free to use boss"); the grade to aorus only. */
+// boss's CPU DeepFilterNet (venv-dfn, installed 10-23) is OFF by default: on a loaded boss it took 20+ min for a 66-min talk
+// that aorus's GPU does in under a minute — MEDIA_DFN_OVERFLOW=boss uses it (1 at a time)
+export const offloadHosts = (sub) => (sub === 'dfn' ? [[gpuHost(), 1], [process.env.MEDIA_DFN_OVERFLOW || null, 1]] : [[gpuHost(), 3]]).filter(([h]) => h)
+  .filter(([h], i, a) => a.findIndex(([x]) => x === h) === i);
+export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn(), hosts = offloadHosts(sub), exec, pollMs } = {}) {
+  if (hosts.length && job) {
+    // a job already started on one of the hosts (before a restart) is re-attached THERE (the job id carries the host)
+    const idOf = (h) => `${job}-${h.replace(/[^a-z0-9]/gi, '').toLowerCase()}`.slice(0, 120);
+    let host = null;
+    for (const [h] of hosts) {
+      const st = await remoteJob('poll-only', input, {}, { host: h, job: idOf(h), probeOnly: true, exec }).catch(() => null);
+      if (st === 'running' || st === 'done') { host = h; break; }
+    }
+    let took = false;
+    if (!host) {
+      for (;;) {
+        host = hosts.find(([h, n]) => (offBusy.get(h) || 0) < n)?.[0] || null;
+        if (host) break;
+        await new Promise((r) => offWait.push(r));
+      }
+      offBusy.set(host, (offBusy.get(host) || 0) + 1); took = true;
+    }
+    try { return await remoteJob(sub, input, { ...opts, ...(sub === 'dfn' && host !== gpuHost() ? { threads: 6 } : {}) }, { host, job: idOf(host), stop, file, exec, ...(pollMs != null ? { pollMs } : {}) }); }
     // a drain leaves the remote job running (re-attached next time); anything else → the tower does it
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] ${sub} on ${host} failed — tower fallback: ${String(err.message).slice(0, 300)}`); }
+    finally { if (took) { offBusy.set(host, offBusy.get(host) - 1); offWait.shift()?.(); } }
   }
   return slot(() => detachedTool(sub, input, opts, { pidFile, threads: 4, stop, python }));   // the tower's 8-thread budget (towerSlot)
 }

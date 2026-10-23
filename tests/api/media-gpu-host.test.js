@@ -134,3 +134,49 @@ describe('live health counts running RUNS', () => {
     expect(h).toMatchObject({ llm_running: 2, asr_running: 1, compute_running: 0, llm_backlog: 1 });
   });
 });
+
+describe('DeepFilterNet overflow (aorus 1 → boss 2)', () => {
+  it('a second dfn goes to boss; a job already on a host is re-attached there', async () => {
+    const { gpuOrTower } = await import('../../api/lib/media/tools.js');
+    const started = [];
+    const states = new Map();
+    const exec = async (cmd, args, o = {}) => {
+      const host = args.at(-2), c = args.at(-1);
+      if (c.startsWith('poll')) { const id = c.split(' ')[1]; const s = states.get(id) || 'missing'; if (s === 'running') states.set(id, 'done'); return { stdout: JSON.stringify({ state: s }) }; }
+      if (c.startsWith('install-tool')) return { stdout: '{}' };
+      if (c.startsWith('start')) { const id = c.split(' ')[2]; started.push([host, id]); states.set(id, 'running'); await new Promise((r) => setTimeout(r, 20)); return { stdout: '{}' }; }
+      if (c.startsWith('fetch-file')) { o.onStdout?.(Buffer.from('A')); return { stdout: '' }; }
+      return { stdout: '{}' };
+    };
+    const { mkdtempSync, writeFileSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const { join } = await import('path');
+    const d = mkdtempSync(join(tmpdir(), 'ov-')); writeFileSync(join(d, 'a.flac'), 'x');
+    const hosts = [['gpu1', 1], ['cpu1', 2]];   // (not 'aorus': its gate is wrapped)
+    await Promise.all([1, 2].map((i) => gpuOrTower('dfn', join(d, 'a.flac'), { output: join(d, `o${i}.flac`) }, { job: `t-df-${i}`, file: true, hosts, exec, pollMs: 0 })));
+    expect(started.map(([h]) => h).sort()).toEqual(['cpu1', 'gpu1']);
+    expect(started.find(([h]) => h === 'cpu1')[1]).toMatch(/-cpu1$/);
+    // a restart: the job is found on boss and NOT started again
+    started.length = 0;
+    states.set('t-df-9-cpu1', 'running');
+    await gpuOrTower('dfn', join(d, 'a.flac'), { output: join(d, 'o9.flac') }, { job: 't-df-9', file: true, hosts, exec, pollMs: 0 });
+    expect(started).toEqual([]);
+  });
+});
+
+describe('transcription slots are separate from diarization (10-23)', () => {
+  it('acquireAsrHost waits while every host is full; diarizations never take a slot', async () => {
+    const { acquireAsrHost } = await import('../../api/lib/media/tools.js');
+    const hosts = [{ host: 'ga', slots: 1 }, { host: 'gb', slots: 1 }];
+    const a = await acquireAsrHost(hosts), b = await acquireAsrHost(hosts);
+    expect([a.host, b.host]).toEqual(['ga', 'gb']);
+    let got = null;
+    const c = acquireAsrHost(hosts).then((x) => { got = x; });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(got).toBeNull();
+    a.release(); a.release();   // idempotent
+    await c;
+    expect(got.host).toBe('ga');
+    got.release(); b.release();
+  });
+});

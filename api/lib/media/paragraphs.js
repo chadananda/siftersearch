@@ -129,3 +129,49 @@ export function smoothTurns(turns = [], { minSeconds = 20, minShare = 0.015 } = 
     return { ...t, speaker: near ? near.speaker : t.speaker };
   });
 }
+
+const LANG_NAMES = { ro: 'Romanian', fa: 'Persian', ar: 'Arabic', es: 'Spanish', fr: 'French', de: 'German', ru: 'Russian', pt: 'Portuguese', it: 'Italian', en: 'English' };
+/** An INTERPRETED talk: paragraphs in a language other than the talk's main one are the interpreter's (QA 10-22: Romanian
+ *  turns were credited to Chad Jones and the Chair). Uses the speaker already named "Interpreter" when there is one, else adds
+ *  'SI' ("Interpreter (Romanian)"). → { paragraphs, speakers, relabelled } — unchanged when the talk has one language. Pure. */
+export function labelInterpreter(paragraphs = [], speakers = {}, mainLang = null) {
+  const langs = paragraphs.map((p) => p.lang).filter(Boolean);
+  if (!langs.length) return { paragraphs, speakers, relabelled: 0 };
+  const counts = langs.reduce((a, l) => ({ ...a, [l]: (a[l] || 0) + 1 }), {});
+  const main = mainLang && counts[mainLang] ? mainLang : Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  const other = Object.keys(counts).filter((l) => l !== main && counts[l] >= 2);
+  if (!other.length) return { paragraphs, speakers, relabelled: 0 };
+  const key = Object.entries(speakers).find(([, n]) => /interpret/i.test(String(n)))?.[0] || 'SI';
+  const sp = { ...speakers };
+  if (!sp[key]) sp[key] = `Interpreter (${other.map((l) => LANG_NAMES[l] || l).join(', ')})`;
+  let relabelled = 0;
+  const out = paragraphs.map((p) => {
+    if (!p.lang || !other.includes(p.lang) || p.spk === key) return p;
+    relabelled++;
+    return { ...p, spk: key, spk_diarized: p.spk ?? null, words: p.words.map((w) => ({ ...w, spk: key })) };
+  });
+  return { paragraphs: out, speakers: sp, relabelled };
+}
+
+// ── RE-TRANSCRIBE A WINDOW (10-23: Whisper sometimes emits invalid bytes, U+FFFD, in a non-English stretch) ────────────────
+/** The segments whose text or words hold U+FFFD → [{ i, s, e, lang }] (merged when adjacent). Pure. */
+export function lossyWindows(segments = []) {
+  const out = [];
+  segments.forEach((sg, i) => {
+    const bad = String(sg.text || '').includes('�') || (sg.words || []).some((w) => String(w.w ?? w.word ?? '').includes('�'));
+    if (!bad) return;
+    const last = out[out.length - 1];
+    if (last && last.i1 === i) { last.i1 = i + 1; last.e = sg.e; } else out.push({ i0: i, i1: i + 1, s: sg.s, e: sg.e, lang: sg.lang || null });
+  });
+  return out;
+}
+/** Replace segments [i0, i1) with a re-transcription of the window that started at `offset` seconds (its times shifted).
+ *  Only words whose middle falls inside [s, e] are kept, so the padding never duplicates the neighbours. Pure. */
+export function spliceWindow(segments, { i0, i1, s, e, lang }, fresh = [], offset = 0) {
+  const shifted = fresh.map((sg) => ({ ...sg, s: sg.s + offset, e: sg.e + offset, ...(lang && !sg.lang ? { lang } : {}),
+    words: (sg.words || []).map((w) => ({ ...w, s: w.s != null ? w.s + offset : w.s, e: w.e != null ? w.e + offset : w.e })) }))
+    .map((sg) => ({ ...sg, words: sg.words.filter((w) => { if (w.s == null) return true; const m = w.e != null ? (w.s + w.e) / 2 : w.s; return m >= s && m <= e; }) }))   // a word belongs where its middle falls
+    .filter((sg) => sg.words.length || (sg.s >= s - 0.05 && sg.e <= e + 0.05));
+  for (const sg of shifted) if (sg.words.length) sg.text = sg.words.map((w) => w.w ?? w.word).join(' ');
+  return [...segments.slice(0, i0), ...shifted, ...segments.slice(i1)];
+}

@@ -9,7 +9,7 @@ import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
-import { toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
+import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
 import { fixMojibake } from './text-repair.js';
@@ -305,20 +305,25 @@ export async function runItem(item, opts = {}, deps = {}) {
       // tower diarization keep running through a drain, and the resumed stage re-attaches to them (meta.asr_job, the pid
       // file). allSettled: neither is left behind when the other fails.
       const asrOpts = { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 };
-      if (!meta.asr_job?.id) { meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickAsrHost ? tools.pickAsrHost() : (tools.asrHost ? tools.asrHost() : null) }; await save();
+      let slot = null;
+      if (!meta.asr_job?.id) {
+        // a NEW transcription waits for a free slot on a host (aorus first) and holds it until its ASR job ends
+        slot = tools.acquireAsrHost ? await tools.acquireAsrHost() : null;
+        meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: slot ? slot.host : (tools.pickAsrHost ? tools.pickAsrHost() : (tools.asrHost ? tools.asrHost() : null)) }; await save();
         // the DISPATCH log: which host took the transcription and the load it saw (10-22: 'why is aorus idle?')
         console.info(`[media] dispatch transcribe ${meta.slug} → ${meta.asr_job.host} (${tools.asrPickReason ? tools.asrPickReason(meta.asr_job.host) : 'single host'})`);
       } else console.info(`[media] re-attach transcribe ${meta.slug} → ${meta.asr_job.host} (job ${meta.asr_job.id})`);
-      if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110) }; await save(); }
+      if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.diarHost ? tools.diarHost() : null }; await save(); }
       const viaJob = async () => {
-        if (!tools.asrJob || !meta.asr_job.host) return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop });
-        try { return await tools.asrJob(join(dir, v.file), asrOpts, { host: meta.asr_job.host, job: meta.asr_job.id, stop }); }
+        if (!tools.asrJob || !meta.asr_job.host) { slot?.release(); return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop }); }
+        try { return await tools.asrJob(join(dir, v.file), asrOpts, { host: meta.asr_job.host, job: meta.asr_job.id, stop, reserved: !!slot }); }
         catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop }); }
+        finally { slot?.release(); slot = null; }   // the transcription slot is held only while the ASR job runs
       };
       const settled = await Promise.allSettled([
         viaJob(),
-        // diarization on BOSS beside the ASR job (tower only as a guarded, 4-thread fallback: tools.diarize)
-        multi ? null : (tools.diarize ? tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop })
+        // diarization on aorus's CPU (boss for older jobs) beside the ASR job (tower only as a guarded, 4-thread fallback: tools.diarize)
+        multi ? null : (tools.diarize ? tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 8 })   // (a job from before 10-23 has no host: boss)
           : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: Math.min(4, th), timeoutMs: 6 * 3600_000, stop })),
       ]);
       const bad = settled.find((x) => x.status === 'rejected');
@@ -326,6 +331,25 @@ export async function runItem(item, opts = {}, deps = {}) {
       const r = settled[0].value;
       delete meta.asr_job; delete meta.diar_job;
       const raw = await readJson(out);
+      // stretches Whisper decoded to invalid bytes (U+FFFD) are RE-TRANSCRIBED on their own (a window with 1.5 s either side,
+      // in that stretch's language); still lossy after that, the bytes are dropped later (flattenWords)
+      const lossy = lossyWindows(raw.segments || []);
+      if (lossy.length && tools.asr) {
+        const { tmpdir } = await import('os');
+        const { unlink } = await import('fs/promises');
+        rec.lossy_windows = lossy.length; rec.lossy_fixed = 0;
+        for (const wdw of lossy.slice(0, 12).reverse()) {   // from the end, so earlier indexes stay valid
+          const start = Math.max(0, wdw.s - 1.5), wav = join(tmpdir(), `media-win-${process.pid}-${Date.now()}-${wdw.i0}.wav`), wout = `${wav}.json`;
+          try {
+            await tools.ffmpeg(['-ss', String(start), '-t', String(wdw.e - start + 1.5), '-i', join(dir, v.file), '-ac', '1', '-ar', '16000', wav], { stop });
+            await tools.asr('transcribe', wav, { model: asrOpts.model, lang: wdw.lang || (lang === 'multi' ? '' : lang), output: wout, batch: 8 }, { stop });
+            const fresh = (await readJson(wout, { segments: [] })).segments || [];
+            if (fresh.length && !lossyWindows(fresh).length) { raw.segments = spliceWindow(raw.segments, wdw, fresh, start); rec.lossy_fixed++; }
+          } catch (err) { rec.lossy_error = String(err.message).slice(0, 200); }
+          finally { await unlink(wav).catch(() => {}); await unlink(wout).catch(() => {}); }
+        }
+        await writeJson(out, raw);
+      }
       if (!multi) {
         raw.turns = smoothTurns((await readJson(turnsFile, { turns: [] })).turns || []);
         raw.segments = assignSpeakers(raw.segments, raw.turns);
@@ -380,6 +404,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         meta.file_title = meta.title; meta.title = String(desc.title).slice(0, 160);
       }
       meta.speakers = desc.speakers || {};
+      // an interpreted talk: the other language's paragraphs are the interpreter's, whatever the diarization said
+      const li = labelInterpreter(work.paragraphs, meta.speakers, /^[a-z]{2}$/.test(meta.language || '') ? meta.language : null);
+      if (li.relabelled) { meta.speakers = li.speakers; work.paragraphs = li.paragraphs; await writeJson(join(dir, 'transcript.work.json'), work); rec.interpreter_paragraphs = li.relabelled; }
       meta.chapters = (desc.chapters || []).filter((c) => byN.has(Number(c.p)) && c.title).map((c) => ({ p: Number(c.p), t: byN.get(Number(c.p)).t0, title: String(c.title).slice(0, 120) }));
       for (const k of ['place', 'event', 'date', 'year']) if (!meta[k] && desc[k]) meta[k] = desc[k];
       // the transcript can name the speaker in full where the file name had a surname ("Nakhjavání" → "‘Alí Nakhjavání")
@@ -466,7 +493,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       // re-links of published talks on their old loops)
       // …and mojibake from before its repair ('ìWhy … î') is mended the same way
       let moji = 0;
-      for (const p of work.paragraphs || []) for (const w of p.words || []) { const f = fixMojibake(w.w); if (f !== w.w) { w.w = f; moji++; } }
+      for (const p of work.paragraphs || []) {
+        for (const w of p.words || []) { const f = fixMojibake(w.w); if (f !== w.w) { w.w = f; moji++; } }
+        // and unrecoverable invalid bytes (U+FFFD) in a transcript made before that repair: removed, a word of nothing hidden
+        for (const w of p.words || []) if (String(w.w).includes('\uFFFD')) { w.w = String(w.w).replace(/\uFFFD+/g, ''); if (!w.w.trim()) { w.w = '…'; w.hide = true; } moji++; }
+      }
       const lp0 = repairParagraphLoops(work.paragraphs || []);
       if (moji && !lp0.repaired.length) await writeJson(join(dir, 'transcript.work.json'), work);
       if (lp0.repaired.length) {

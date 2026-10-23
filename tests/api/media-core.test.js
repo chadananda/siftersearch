@@ -238,3 +238,37 @@ describe('interpreted talks (QA 10-22: Romanian inside English paragraphs)', () 
     expect(ps[1].words.map((w) => w.w).join(' ')).toBe('Inima omului este îndreptată către lumea materială');
   });
 });
+
+describe('the interpreter label', async () => {
+  const { labelInterpreter } = await import('../../api/lib/media/paragraphs.js');
+  const P = (n, lang, spk) => ({ n, lang, spk, words: [{ w: 'x', spk }] });
+  it('other-language paragraphs go to the speaker named Interpreter', () => {
+    const r = labelInterpreter([P(1, 'en', 'S1'), P(2, 'ro', 'S1'), P(3, 'en', 'S1'), P(4, 'ro', 'S3'), P(5, 'en', 'S3')], { S1: 'Chad Jones', S3: 'Chair', S5: 'Interpreter' }, 'en');
+    expect(r.paragraphs.map((p) => p.spk)).toEqual(['S1', 'S5', 'S1', 'S5', 'S3']);
+    expect(r.paragraphs[1].spk_diarized).toBe('S1');
+    expect(r.relabelled).toBe(2);
+  });
+  it('adds one when none is named; a one-language talk is unchanged', () => {
+    const r = labelInterpreter([P(1, 'en', 'S1'), P(2, 'fa', 'S1'), P(3, 'fa', 'S2')], { S1: 'Speaker' }, 'en');
+    expect(r.speakers.SI).toBe('Interpreter (Persian)');
+    const one = [P(1, 'en', 'S1')];
+    expect(labelInterpreter(one, {}, 'en').paragraphs).toBe(one);
+  });
+});
+
+describe('re-transcribe a lossy window', async () => {
+  const { lossyWindows, spliceWindow } = await import('../../api/lib/media/paragraphs.js');
+  const seg = (s, e, text, lang) => ({ s, e, text, lang, words: text.split(' ').map((w, i, a) => ({ w, s: s + ((e - s) * i) / a.length, e: s + ((e - s) * (i + 1)) / a.length })) });
+  it('finds the U+FFFD stretches, merged, with their language', () => {
+    const segs = [seg(0, 2, 'hello there', 'en'), seg(2, 4, 'از قب��', 'fa'), seg(4, 6, 'عبد�', 'fa'), seg(6, 8, 'thank you', 'en')];
+    expect(lossyWindows(segs)).toEqual([{ i0: 1, i1: 3, s: 2, e: 6, lang: 'fa' }]);
+  });
+  it('splices the fresh words in, shifted, keeping only the window', () => {
+    const segs = [seg(0, 2, 'hello there', 'en'), seg(2, 4, 'از قب��', 'fa'), seg(4, 6, 'thank you', 'en')];
+    const fresh = [seg(0, 1.5, 'there', 'fa'), seg(1.5, 3.5, 'از قبل', 'fa'), seg(3.5, 5, 'thank', 'fa')];   // the window began at 0.5 s
+    const out = spliceWindow(segs, { i0: 1, i1: 2, s: 2, e: 4, lang: 'fa' }, fresh, 0.5);
+    expect(out.map((x) => x.text)).toEqual(['hello there', 'از قبل', 'thank you']);
+    expect(out[1].s).toBe(2);
+    expect(lossyWindows(out)).toEqual([]);
+  });
+});
