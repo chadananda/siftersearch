@@ -3,7 +3,9 @@
 One-line index for AI navigation. Open the file for full documentation.
 
 ## Core infrastructure
-- `db.js` — SQLite (better-sqlite3) wrapper. `query`, `queryOne`, `queryAll`, `transaction`. Reads + writes use one shared connection with WAL + 512MB cache.
+- `db.js` — SQLite (better-sqlite3) wrapper. `query`, `queryOne`, `queryAll`, `transaction`. Writes route to the single writer (:7849). `telemetryAll/One` read **telemetry.db** (query_stats, slow_query_log, db_write_stats — their own file since 10-23). PRAGMAs at open: `applyRamPragmas` (writer: 8 GB cache, synchronous OFF on ZFS). Plan: planning/db-write-path-20261023.md.
+- `write-server.js` — the writer core: `createGroupCommitter` (group commit, savepoint per request), `cachedPrepare`. `write-stats.js` — per-minute stats + exact latency ring (`GET :7849/latency`). `repos/wal-checkpoint-thread.js` — PASSIVE checkpoints off the write path.
+- `power-mode.js` — the UPS read-only flag (/dev/shm/sifter-power.json: normal | draining | readonly); services drain/park, the writer refuses writes. Driven by scripts/ops/ups-power.sh (NUT).
 - `logger.js` — Pino logger; every module imports `logger` from here.
 - `config.js` — env-driven config object. `config.library.basePath`, `config.ai.embeddings.{model,dimensions}`, etc.
 - `services.js` — start/health-check Meilisearch. `ensureServicesRunning`, `getServicesStatus`.
