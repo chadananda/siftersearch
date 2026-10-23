@@ -712,11 +712,11 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
     if (r.key) {
       if (!clusters.has(r.key)) clusters.set(r.key, { key: r.key, display: r.display, role: r.person?.role || null, forms: new Map() });
       const c = clusters.get(r.key); const f = c.forms.get(said) || { n: 0, bases: new Set() }; f.n++; f.bases.add(r.basis); c.forms.set(said, f);
-      if (meta.speaker !== r.display) fix.speaker = r.display;
+      if (meta.speaker !== r.display || it.speaker !== r.display) fix.speaker = r.display;   // the meta file or the catalogue row
       if (meta.speaker_key !== r.key || it.speaker_key !== r.key) fix.speaker_key = r.key;
       const y = recordingYear({ year: meta.year || it.year, source_kind: it.source_kind, title: `${meta.title || ''} ${meta.source?.title || ''}`, description: meta.source?.description || '', file: it.source_ref || '' }, r.person);
       if (y.flag) flags.push({ slug: it.slug, speaker: r.display, flag: y.flag });
-      if (it.source_kind === 'youtube' && y.uploaded_year && y.recorded_year !== (meta.year ?? null) && (y.flag || y.recorded_year)) { fix.year = y.recorded_year; fix.uploaded_year = y.uploaded_year; }
+      if (it.source_kind === 'youtube' && y.uploaded_year && (y.flag || y.recorded_year) && (y.recorded_year !== (meta.year ?? null) || y.recorded_year !== (it.year ?? null))) { fix.year = y.recorded_year; fix.uploaded_year = y.uploaded_year; }
       if (y.flag && meta.date_flag !== y.flag) fix.date_flag = y.flag;
     } else if (r.review) review.push({ slug: it.slug, said, why: r.review, candidates: r.candidates || [] });
     if (!Object.keys(fix).length) continue;
@@ -724,6 +724,12 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
     if (!write) continue;
     if (busy.has(it.id)) { skipped_busy.push(it.slug); continue; }
     await writeMeta(it.dir, { ...meta, ...fix });
+    // the catalogue row at once (the /media index groups by it), the re-render follows in the update run
+    const row = {};
+    if (fix.speaker) row.speaker = fix.speaker;
+    if (fix.speaker_key) row.speaker_key = fix.speaker_key;
+    if ('year' in fix) row.year = fix.year;
+    if (Object.keys(row).length && repo.updateMediaItem) await repo.updateMediaItem(it.id, row);
     if (fix.speaker_key && repo.upsertSpeaker) await repo.upsertSpeaker({ key: fix.speaker_key, name: fix.speaker || meta.speaker });
     await queue('media-item', { id: it.id, redo: ['update'] }, 'media-identity');
   }
