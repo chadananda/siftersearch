@@ -11,6 +11,7 @@ import { lightChain, probeStarts, chooseAsrInput, chooseListening } from './enha
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
+import { repairParagraphLoops, publishProblems } from './loops.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
@@ -309,11 +310,14 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'correct') {
       const raw = await readJson(join(dir, 'transcript.raw.json'));
-      const paras = toParagraphs(raw.segments);
+      // ASR LOOPS repaired before anything reads the words (QA 10-22: "Karend" ×49, "Bahá'áááá…"): repeats hidden, runs collapsed
+      const lp = repairParagraphLoops(toParagraphs(raw.segments));
+      const paras = lp.paragraphs;
+      rec.asr_loops_repaired = lp.repaired.length; meta.asr_loops_repaired = lp.repaired.length;
       const res = await llm.correctParagraphs(paras, vocab, { spend });
       // faithfulness: anything the pass added to what was heard is reverted to the heard words (10-22 "(Vol II)")
       const fx = revertInsertions(flattenWords(raw.segments), res.paragraphs);
-      await writeJson(join(dir, 'transcript.work.json'), { paragraphs: fx.paragraphs, corrections: res.diff, refused: res.refused, reverted: fx.reverted });
+      await writeJson(join(dir, 'transcript.work.json'), { paragraphs: fx.paragraphs, corrections: res.diff, refused: res.refused, reverted: fx.reverted, loops: lp.repaired });
       rec.corrections = res.diff.length; rec.refused = res.refused.length; rec.insertions_reverted = fx.reverted.length;
       meta.faithfulness = { ...(meta.faithfulness || {}), correct: fx.reverted.length };
     }
@@ -326,7 +330,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       const ctx = { speaker: meta.speaker, title: meta.title, date: meta.date, year: meta.year, event: meta.event, place: meta.place, language: meta.language };
       const res = await (llm.cleanTranscript ? llm.cleanTranscript(verbatim, { spend, ctx }) : { paragraphs: verbatim, log: [], stats: {}, mentions: [] });
       const rawc = await readJson(join(dir, 'transcript.raw.json'));
-      const fx = revertInsertions(flattenWords(rawc.segments), res.paragraphs);
+      const fx0 = revertInsertions(flattenWords(rawc.segments), res.paragraphs);
+      // the final text pass: any loop the copy-edit left (or a revert restored) is repaired here too
+      const lp2 = repairParagraphLoops(fx0.paragraphs);
+      const fx = { ...fx0, paragraphs: lp2.paragraphs };
+      if (lp2.repaired.length) meta.asr_loops_repaired = (meta.asr_loops_repaired || 0) + lp2.repaired.length;
       await writeJson(join(dir, 'transcript.work.json'), { ...work, verbatim, paragraphs: fx.paragraphs, cleanup: res.log, cleanup_stats: res.stats, mentions: res.mentions || [], cleanup_reverted: fx.reverted });
       rec.insertions_reverted = fx.reverted.length;
       meta.faithfulness = { ...(meta.faithfulness || {}), clean: fx.reverted.length };
@@ -422,6 +430,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the playback level is the catalogue's (a person can change it there): the page is rendered for it
       if (item.playback && LEVELS.includes(item.playback) && meta.rights) meta.rights.playback = item.playback;
       const work = await readJson(join(dir, 'transcript.work.json'));
+      // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published
+      const problems = publishProblems(work.paragraphs || []);
+      if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }
+      delete meta.publish_blocked;
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       const quotes = qj.quotes || [], crs = [...(qj.teachings || [])];
       const { breakoutsOf } = d.quotes || await import('./quotes.js');
