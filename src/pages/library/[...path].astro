@@ -13,6 +13,7 @@ import ReligionPage from '../../components/library/ReligionPage.svelte';
 import CollectionPage from '../../components/library/CollectionPage.svelte';
 import DocumentPresentation from '../../components/library/DocumentPresentation.svelte';
 import { coverImg } from '../../lib/library-stacks.js';
+import { slugifyPath } from '../../../api/lib/slug.js';
 
 // Disable prerendering - these pages fetch data client-side
 export const prerender = false;
@@ -148,8 +149,12 @@ function getPageMeta() {
 
 const meta = getPageMeta();
 
-// Build canonical URL
-const canonicalUrl = `https://siftersearch.com/library/${path}`;
+// The ONE canonical (Layout emits it + og:url — never a second <link> here). A document's is its own stored path
+// (/library/<religion>/<collection>/<slug>, as sitemap-library lists it), whichever alias URL reached it; the rest
+// are the URL's segments, lower-cased, without a trailing slash.
+const canonicalUrl = pageType === 'document' && doc?.slug && doc?.religion && doc?.collection
+  ? `https://siftersearch.com/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${doc.slug}`
+  : `https://siftersearch.com/library/${segments.map((s, i) => (i < 2 ? s.toLowerCase() : s)).join('/')}`;
 ---
 
 <Layout
@@ -157,11 +162,12 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
   description={meta.description}
   image={doc?.cover_url ? coverImg(doc.cover_url, [600])?.src : undefined}
   noindex={pageType === 'invalid'}
+  canonical={canonicalUrl}
+  type={pageType === 'document' ? 'article' : 'website'}
 >
   <!-- Additional SEO meta tags -->
   <Fragment slot="head">
     <meta name="keywords" content={meta.keywords} />
-    <link rel="canonical" href={canonicalUrl} />
     {pageType === 'document' && (
       <>
         <!-- the reader's faces (font-display: optional): preloaded so the first view is set in them, no swap -->
@@ -171,17 +177,7 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
       </>
     )}
 
-    <!-- Open Graph -->
-    <meta property="og:title" content={meta.title} />
-    <meta property="og:description" content={meta.description} />
-    <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:type" content={pageType === 'document' ? 'article' : 'website'} />
-    <meta property="og:site_name" content="SifterSearch" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content={meta.title} />
-    <meta name="twitter:description" content={meta.description} />
+    <!-- Open Graph + Twitter come from Layout (title, description, canonical url, type) — not repeated here -->
 
     <!-- Structured Data for breadcrumbs -->
     <script type="application/ld+json" set:html={JSON.stringify({

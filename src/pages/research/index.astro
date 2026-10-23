@@ -76,10 +76,10 @@ const websiteSchema = {
   title="Interfaith Deep Research — SifterSearch"
   description={description}
   image="/og-research.png"
+  canonical="https://siftersearch.com/research"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
-    <link rel="canonical" href="https://siftersearch.com/research" />
   </Fragment>
 
   <LiquidBackground client:only="svelte" />

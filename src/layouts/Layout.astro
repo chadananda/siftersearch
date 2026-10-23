@@ -11,6 +11,7 @@ interface Props {
   footer?: boolean;   // the global footer (off for full-height app views)
   anis?: boolean;     // Anís's chat button — on every public page (Chad 10-10)
   app?: { manifest: string; icon: string; name: string; color: string };   // an installable app on its own (Dewey: /dewey/manifest.webmanifest)
+  canonical?: string; // the page's ONE canonical URL (absolute or site path). Pages never emit their own <link rel="canonical">.
 }
 
 const siteUrl = 'https://siftersearch.com';
@@ -27,11 +28,18 @@ const {
   noindex = false,
   footer = true,
   anis = true,
-  app = null
+  app = null,
+  canonical = null
 } = Astro.props;
 
-// Build canonical URL from current path
-const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+// The ONE canonical (+ og:url): the page's explicit canonical, else the current path. Trailing slash dropped (except
+// the root) so /a/b/ and /a/b name one URL — the sitemap lists them without it. tests/frontend/canonical-single.test.js
+const canonicalUrl = (() => {
+  const u = new URL(canonical || Astro.url.pathname, siteUrl);
+  u.search = ''; u.hash = '';
+  if (u.pathname.length > 1) u.pathname = u.pathname.replace(/\/+$/, '');
+  return u.href;
+})();
 const imageUrl = new URL(image, siteUrl).href;
 
 // Structured data for the website (SearchAction for sitelinks searchbox)

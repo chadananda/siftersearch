@@ -296,15 +296,13 @@ function buildOLSourceUrl(q: any): string | null {
   description={description}
   image="/og-research.png"
   type="article"
+  canonical={pageUrl}
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
     {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
     <script type="application/ld+json" set:html={JSON.stringify(datasetSchema)} />
-    <link rel="canonical" href={pageUrl} />
     <link rel="alternate" href="/research" title="All Deep Research Topics" />
-    <meta property="og:url" content={pageUrl} />
-    <meta property="og:type" content="article" />
     <meta property="article:published_time" content={record.completed_at || record.created_at} />
     {topicTags.map((t: string) => <meta property="article:tag" content={t} />)}
   </Fragment>
