@@ -180,7 +180,7 @@ async function pruneCompleted(meili, inFlight) {
 }
 
 async function countUnsyncedParagraphs() {
-  // Direct COUNT query — partial index (idx_content_unsynced) keeps this fast
+  // Direct COUNT query — partial index (idx_content_unsynced_partial) keeps this fast
   const row = await queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`);
   return row?.count || 0;
 }

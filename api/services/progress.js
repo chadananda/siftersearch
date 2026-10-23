@@ -34,7 +34,7 @@ const countCache = { data: null, timestamp: 0, ttl: 5 * 60 * 1000 };
 // Pipeline health counts — refreshed every 5min in background, NEVER on request thread.
 // better-sqlite3 blocks the event loop; avoid any query that forces a full table scan.
 // IMPORTANT: never include MIN(created_at) in the synced=0 query — it bypasses the
-// partial index (idx_content_unsynced) and scans all 4M+ rows, blocking for 60-70s.
+// partial index (idx_content_unsynced_partial) and scans all 4M+ rows, blocking for 60-70s.
 // COUNT(*) alone uses the index and runs in milliseconds.
 const PIPELINE_REFRESH_MS = 5 * 60 * 1000;
 const PIPELINE_SENTINEL = { unsynced: -1, graphEnriched: -1, graphPending: -1, extractionsPending: 0, aliasCount: 0 };
@@ -45,12 +45,12 @@ async function refreshPipelineCounts() {
   _pipelineCache.refreshing = true;
   try {
     // Only run queries that have covering indexes. Full-table scans block the event loop.
-    // idx_content_unsynced: partial index on synced=0 AND deleted_at IS NULL → fast COUNT
+    // idx_content_unsynced_partial: partial index on synced=0 AND deleted_at IS NULL → fast COUNT
     // idx_content_graph_unsync: partial index on graph_enriched=0 → fast COUNT
     // No index for graph_enriched=1 — derive from total minus pending instead
     // paragraph_extractions and entity_aliases are small tables → fast
     // IMPORTANT: never include MIN(created_at) in the synced=0 query — it bypasses the
-    // partial index (idx_content_unsynced) and scans all 4M+ rows, blocking for 60-70s.
+    // partial index (idx_content_unsynced_partial) and scans all 4M+ rows, blocking for 60-70s.
     // COUNT(*) alone uses the index and runs in milliseconds.
     const [unsyncedRow, graphPending, extractionsPending, aliasCount] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
@@ -102,7 +102,7 @@ async function getCachedCounts() {
   try {
     // Docs totals and the 4-hour "recently updated" count come from the reports-built snapshot (data/library-stats.json):
     // the docs-table SUM/COUNT ran here per request and froze the API event loop 1-6 s (better-sqlite3 is synchronous, 10-23).
-    // Only the unsynced count stays live — idx_content_unsynced makes it an index-only count.
+    // Only the unsynced count stays live — idx_content_unsynced_partial makes it an index-only count.
     const snap = readLibraryStats();
     const unsyncedParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL');
 

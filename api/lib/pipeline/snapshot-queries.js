@@ -114,7 +114,7 @@ export function mergeByLanguage(totals = [], pendingEmb = [], pendingSync = []) 
 //
 // Three partial indexes already existed and were not being used: idx_content_has_embedding (embedding IS NOT
 // NULL AND deleted_at IS NULL), idx_content_needs_embedding_v2 (embedding IS NULL AND deleted_at IS NULL) and
-// idx_content_unsynced (synced = 0 AND deleted_at IS NULL). Each COUNT below matches a partial predicate
+// idx_content_unsynced_partial (synced = 0 AND deleted_at IS NULL). Each COUNT below matches a partial predicate
 // exactly, so it can be answered from the index without touching a row — no blob is ever read.
 //
 // `total` is derived as with + missing, which is the SAME population the old COUNT(*) measured: the two

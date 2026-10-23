@@ -1,7 +1,7 @@
 // Content DB migrations 72+ — entity layer schema (ALTER TABLE only on content/docs/graph_entities/graph_relations)
 // New graph pipeline tables live in graph.db via graphMigrations[1].
 
-import { query, graphQuery, transaction } from '../db.js';
+import { query, queryAll, graphQuery, transaction } from '../db.js';
 import { logger } from '../logger.js';
 import { ensureIndex, onTable } from './ensure.js';
 
@@ -1954,6 +1954,29 @@ export const migrations = {
     const { docCountTriggerStatements } = await import('./content-count-triggers.js');
     await transaction(docCountTriggerStatements(), 'migration-179');
     logger.info('Migration 179 complete: docs_with_content triggers use NOT EXISTS, not COUNT(*)');
+  },
+
+  180: async () => {
+    // CONTENT WRITE COST, part 2 (10-23): six content indexes no query needs (exact duplicates / prefixes under the same
+    // WHERE, or keyed on content_hash, which nothing filters on) — every INSERT wrote all of them — and indexes on the
+    // child-table FOREIGN KEY columns, without which each DELETE FROM content row full-scanned paragraph_extractions.
+    // One DROP per statement: each frees one b-tree (~0.1 s per 100 MB measured), the writer is never held long.
+    // The child tables hold ≤ 18k rows on tower: the CREATEs are instant. content-index-prune.js has the evidence.
+    // Before each DROP, walk the index once as a READ (dbstat, this process's own connection; WAL readers block no one):
+    // DROP INDEX reads every page of the b-tree it frees, and on the IO-starved host that read would otherwise happen
+    // INSIDE the single writer (~700 MB for the two content_hash indexes). Warm, the DROP is a freelist update.
+    const { CONTENT_INDEX_DROPS, CONTENT_CHILD_FK_INDEXES, childIndexSql } = await import('./content-index-prune.js');
+    for (const name of Object.keys(CONTENT_INDEX_DROPS)) {
+      const size = await queryAll('SELECT SUM(pgsize) AS bytes, COUNT(*) AS pages FROM dbstat WHERE name = ?', [name], 'migration-180:warm')
+        .then((r) => r[0] || {}).catch(() => ({}));
+      const t0 = Date.now();
+      await query(`DROP INDEX IF EXISTS ${name}`);
+      logger.info({ index: name, mb: size.bytes ? +(size.bytes / 1e6).toFixed(1) : null, pages: size.pages || null, drop_ms: Date.now() - t0 }, 'Migration 180: dropped');
+    }
+    for (const ix of CONTENT_CHILD_FK_INDEXES) {
+      await ensureIndex(query, { label: `migration 180 ${ix.name}`, table: ix.table, columns: [ix.column], sql: childIndexSql(ix) });
+    }
+    logger.info('Migration 180 complete: 6 redundant content indexes dropped; content FK child keys indexed');
   },
 };
 
