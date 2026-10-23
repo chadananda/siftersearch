@@ -27,6 +27,7 @@ import { previewWindow, PREVIEW_PARAGRAPHS, PREVIEW_MESSAGE, canReadFull } from 
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { findDocuments, docsForPathSlugs, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
 import { lettersOf } from '../lib/repos/letters-repo.js';
+import { browseDocuments } from '../lib/repos/library-browse-repo.js';
 import { paragraphsAt } from '../lib/paragraphs-repo.js';
 import { matchLetters } from '../lib/letters/letters.js';
 import { linkFor, readerUrl } from '../lib/source-links.js';
@@ -968,11 +969,6 @@ export default async function libraryRoutes(fastify) {
       throw ApiError.notFound('Religion not found');
     }
 
-    // Get document count from docs table (exclude soft-deleted)
-    const countResult = await queryOne(
-      'SELECT COUNT(*) as count FROM docs WHERE religion = ? AND deleted_at IS NULL',
-      [node.name]
-    );
 
     // Get children (collections) with document counts (exclude soft-deleted)
     const children = await queryAll(`
@@ -983,18 +979,9 @@ export default async function libraryRoutes(fastify) {
       ORDER BY COALESCE(ln.authority_default, 5) DESC, ln.display_order, ln.name
     `, [node.name, node.id]);
 
-    // Get all documents for this religion (for listing) with preview paragraphs (exclude soft-deleted)
-    // Sort by collection authority (highest first), then collection name, then title
-    const rawDocuments = await queryAll(`
-      SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug, d.cover_url,
-        (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
-         FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
-      FROM docs d
-      LEFT JOIN library_nodes ln ON ln.name = d.collection AND ln.parent_id = ?
-      WHERE d.religion = ? AND d.deleted_at IS NULL
-      ORDER BY COALESCE(ln.authority_default, 5) DESC, d.collection, d.title
-      LIMIT 500
-    `, [node.id, node.name]);
+    // The religion's first 500 documents in authority order (this religion's collection nodes), with preview paragraphs:
+    // the collection walk + snapshot count (browseDocuments) — a religion-wide sort here froze the API like /documents (10-23).
+    const { docs: rawDocuments, total: documentCount } = await browseDocuments({ religion: node.name }, { limit: 500, authorityParent: node.id });
 
     // Parse preview JSON and fix title if it equals author (data quality issue)
     const documents = rawDocuments.map(doc => {
@@ -1010,7 +997,7 @@ export default async function libraryRoutes(fastify) {
       node: {
         ...node,
         metadata: node.metadata ? JSON.parse(node.metadata) : null,
-        document_count: countResult?.count || 0,
+        document_count: documentCount || 0,
         children
       },
       documents
@@ -1427,77 +1414,10 @@ Return ONLY the description text, no quotes or formatting.`;
       return { documents, total: r.total, limit, offset };
     }
 
-    // Browsing (no search term)
-    // Build SQL WHERE clauses (always exclude soft-deleted)
-    const conditions = ['deleted_at IS NULL'];
-    const params = [];
-
-    if (religion) {
-      conditions.push('religion = ?');
-      params.push(religion);
-    }
-    if (collection) {
-      conditions.push('collection = ?');
-      params.push(collection);
-    }
-    if (language) {
-      conditions.push('language = ?');
-      params.push(language);
-    }
-    if (author) {
-      conditions.push('author = ?');
-      params.push(author);
-    }
-    if (yearFrom) {
-      conditions.push('year >= ?');
-      params.push(yearFrom);
-    }
-    if (yearTo) {
-      conditions.push('year <= ?');
-      params.push(yearTo);
-    }
-
-    const whereClause = `WHERE ${conditions.map(c => `d.${c}`).join(' AND ')}`;
-
-    // Build ORDER BY clause
-    // Default sort: collection authority (highest first), then collection name, then title
-    // This matches the religion page sort so users see the most important documents first
-    let orderBy;
-    let useAuthorityJoin = false;
-    if (sort === 'authority') {
-      orderBy = `COALESCE(ln.authority_default, 5) ${sortDir === 'desc' ? 'DESC' : 'ASC'}, d.collection, d.title ASC`;
-      useAuthorityJoin = true;
-    } else if (sort === 'year') {
-      orderBy = `d.year ${sortDir === 'desc' ? 'DESC' : 'ASC'}, d.title ASC`;
-    } else if (sort === 'author') {
-      orderBy = `d.author ${sortDir === 'desc' ? 'DESC' : 'ASC'}, d.title ASC`;
-    } else {
-      // Default: authority DESC, then collection, then title
-      orderBy = `COALESCE(ln.authority_default, 5) DESC, d.collection, d.title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
-      useAuthorityJoin = true;
-    }
-
-    // JOIN library_nodes for authority-based sorting
-    const authorityJoin = useAuthorityJoin
-      ? `LEFT JOIN library_nodes ln ON ln.name = d.collection AND ln.node_type = 'collection'
-         LEFT JOIN library_nodes rn ON rn.id = ln.parent_id AND rn.name = d.religion`
-      : '';
-
-    // Get documents and total count (include preview paragraphs for instant accordion, exclude soft-deleted)
-    const [documents, countResult] = await Promise.all([
-      queryAll(`
-        SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description,
-               d.paragraph_count, d.created_at, d.updated_at, d.cover_url, d.encumbered, d.filename, d.file_path,
-               (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
-                FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
-        FROM docs d
-        ${authorityJoin}
-        ${whereClause}
-        ORDER BY ${orderBy}
-        LIMIT ? OFFSET ?
-      `, [...params, limit, offset]),
-      queryOne(`SELECT COUNT(*) as count FROM docs d ${whereClause}`, params)
-    ]);
+    // Browsing (no search term): index ranges only — the default authority order is walked collection by collection
+    // from the reports snapshot's counts; never a whole-docs sort on the request path (5.6 s freeze, 10-23).
+    const { docs: documents, total } = await browseDocuments({ religion, collection, language, author, yearFrom, yearTo },
+      { sort, sortDir, limit, offset });
 
     // Get processing status for documents if requested
     const processingDocs = new Set();
@@ -1527,7 +1447,7 @@ Return ONLY the description text, no quotes or formatting.`;
           previewParagraphs = JSON.parse(doc.preview_json);
         } catch { /* ignore parse errors */ }
       }
-      const { preview_json, ...rest } = doc;
+      const { preview_json, slug: _slug, ...rest } = doc;   // response shape unchanged (the repo row also carries slug)
       return {
         ...rest,
         previewParagraphs,
@@ -1537,7 +1457,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     return {
       documents: documentsWithStatus,
-      total: countResult?.count || 0,
+      total,
       limit,
       offset
     };

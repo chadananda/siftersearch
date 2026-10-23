@@ -1916,6 +1916,15 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_docs_isbn ON docs(isbn) WHERE isbn IS NOT NULL');
     logger.info('Migration 175 complete: docs.isbn, rights_reason, rights_checked_at');
   },
+
+  176: async () => {
+    // LIBRARY BROWSE WITHOUT A SORT (10-23): GET /api/library/documents sorted every live doc by collection authority in
+    // a temp B-tree (5.6 s, API frozen). The browse now walks these partial indexes (api/lib/repos/library-browse-repo.js).
+    // docs is ~160k rows: each build is sub-second.
+    const { BROWSE_INDEXES } = await import('../repos/library-browse-repo.js');
+    for (const sql of Object.values(BROWSE_INDEXES)) await query(sql);
+    logger.info('Migration 176 complete: idx_docs_live_coll_title, idx_docs_live_author_title, idx_docs_live_year_title');
+  },
 };
 
 export const graphMigrations = {
