@@ -88,3 +88,12 @@ describe('probe slots (10-23: 24 probes at once filled aorus RAM)', () => {
     expect(used.slice(0, 2)).toEqual(['gpu', 'gpu']);
   });
 });
+
+describe('long recordings are probed on boss only', () => {
+  it('long: true skips the GPU host', async () => {
+    const { withProbeHost } = await import('../../api/lib/media/tools.js');
+    process.env.MEDIA_ASR_HOST = 'boss';
+    expect(await withProbeHost(async (h) => h, { long: true })).toBe('boss');
+    delete process.env.MEDIA_ASR_HOST;
+  });
+});

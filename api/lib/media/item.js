@@ -239,7 +239,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the variants' probes at once (the GPU host's memory lock paces them)
       await Promise.all(variants.map(async (v) => {
         const probe = (host) => tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(host ? { host } : {}) });
-        const p = tools.withProbeHost ? await tools.withProbeHost(probe) : await probe(tools.probeHost ? tools.probeHost() : null);
+        const p = tools.withProbeHost ? await tools.withProbeHost(probe, { long: (meta.duration_s || 0) > 5400 }) : await probe(tools.probeHost ? tools.probeHost() : null);
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
       }));
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);

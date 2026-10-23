@@ -109,7 +109,9 @@ export const probeHost = () => gpuHost() || asrHost();
  *  fn(host) → its result. */
 const probeBusy = new Map();
 const probeWaiters = [];
-export async function withProbeHost(fn, { hosts = [[gpuHost(), 2], [asrHost(), 3]].filter(([h]) => h) } = {}) {
+export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 2], [asrHost(), 3]]).filter(([h]) => h) } = {}) {
+  // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
+  // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
   if (!uniq.length) return fn(null);
   let host = null;

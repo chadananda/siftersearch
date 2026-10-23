@@ -160,6 +160,9 @@ def cmd_langid(a):
 
 def cmd_dfn(a):
     """DeepFilterNet3 (48 kHz) on the light-cleaned file; written as FLAC at 48 kHz mono."""
+    # on a shared GPU wait for its memory (the lock in device()); on the CPU hide the GPU from DeepFilterNet's own pick
+    if device()[0] == 'cpu':
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
     import torch
     torch.set_num_threads(a.threads)
     from df.enhance import enhance, init_df
