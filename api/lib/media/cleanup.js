@@ -31,6 +31,7 @@ export function soundKey(w) {
  * Judge one proposed edit against the paragraph's words. → { ok: { i0, i1, to, kind, hide? } } or { refused: why } or
  * { flagged: why } (plausible but not certain: left for a person).
  */
+const FUNCTION = new Set('a an the in on at to of or and but nor for so as by is are was were be been am him his her he she it its they them their we us our you your i me my this that these those there here who whom whose which what do does did not no if than then from with into onto upon up out off over'.split(' '));
 export function judgeEdit(words, e, { minConfidence = 0.7 } = {}) {
   const kind = String(e?.kind || '').toLowerCase().replace('capitalization', 'capitalisation');
   let from = String(e?.from || '').trim(), to = String(e?.to ?? '').trim();
@@ -83,6 +84,10 @@ export function judgeEdit(words, e, { minConfidence = 0.7 } = {}) {
   }
   if (kind === 'spelling' || kind === 'homophone') {
     if (fw.length !== tw.length || fw.length > 4) return { refused: 'a spelling fix keeps the word count' };
+    // a FUNCTION word swapped for another ("is in" → "is him", "or" → "are": QA 10-22, the copy-edit worse than the ASR) —
+    // ASR hears these reliably; a change between two of them is a guess
+    // (a true homophone — their/there, to/too — sounds the same and still passes)
+    if (fk.some((k, i) => k !== tk[i] && FUNCTION.has(k) && FUNCTION.has(tk[i]) && soundKey(k) !== soundKey(tk[i]))) return { refused: 'a function word swapped for another' };
     for (let i = 0; i < fk.length; i++) {
       const a = fk[i], b = tk[i];
       const close = levenshtein(a, b, 9) <= Math.max(2, Math.ceil(Math.max(a.length, b.length) * 0.34));
@@ -100,7 +105,14 @@ export function applyClean(words, oks) {
   let ws = words.map((w) => ({ ...w }));
   const replace = [];
   for (const e of oks) {
-    if (e.hide) { for (let k = e.i0; k < e.i1; k++) ws[k] = { ...ws[k], hide: true }; continue; }
+    if (e.hide) {
+      for (let k = e.i0; k < e.i1; k++) ws[k] = { ...ws[k], hide: true };
+      // a stutter keeps the LAST saying: it takes the case of the first ("wrapped in In a paper" → "wrapped in a paper")
+      const first = words[e.i0]?.w || '', kept = ws[e.i1];
+      if (e.kind === 'stutter' && kept && /^\p{Ll}/u.test(first) && /^\p{Lu}\p{Ll}*$/u.test(kept.w) && first.toLowerCase().startsWith(kept.w.toLowerCase().slice(0, 1)) && e.i0 > 0 && !/[.!?]["”’)]*$/.test(words[e.i0 - 1]?.w || ''))
+        ws[e.i1] = { ...kept, w: kept.w[0].toLowerCase() + kept.w.slice(1), v: kept.v ?? kept.w };
+      continue;
+    }
     const tw = tokens(e.to);
     // a respelling or a capital keeps the word's own edge punctuation unless the edit is about punctuation
     const keepPunct = !['punctuation', 'broken'].includes(e.kind);
@@ -154,6 +166,7 @@ export function chunksOf(paragraphs, { chunkSeconds = 720 } = {}) {
 /** The framing prompt for one chunk. ctx: { speaker, title, date, year, event, place, language, summary }. */
 export function cleanPrompt(ctx, lines) {
   const about = [ctx.speaker && `Speaker: ${ctx.speaker}`, ctx.title && `Title: ${ctx.title}`, (ctx.date || ctx.year) && `Date: ${ctx.date || ctx.year}`,
+    ctx.series && `Series: ${ctx.series}${ctx.part ? ` (part ${ctx.part})` : ''} — its title and the work it studies are named often; spell them exactly`,
     ctx.event && `Event: ${ctx.event}`, ctx.place && `Place: ${ctx.place}`, ctx.summary && `About: ${ctx.summary}`].filter(Boolean).join('\n');
   return `You copy-edit a speech-recognition transcript of a recorded Bahá'í talk.
 ${about}

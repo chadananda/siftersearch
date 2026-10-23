@@ -327,7 +327,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const work = await readJson(join(dir, 'transcript.work.json'));
       const verbatim = work.verbatim || work.paragraphs;
       // framed with what is known before describe: who, what, when (the model brings its own knowledge of the Faith)
-      const ctx = { speaker: meta.speaker, title: meta.title, date: meta.date, year: meta.year, event: meta.event, place: meta.place, language: meta.language };
+      const ctx = { speaker: meta.speaker, title: meta.title, date: meta.date, year: meta.year, event: meta.event, place: meta.place, language: meta.language, series: meta.series || null, part: meta.part || null };
       const res = await (llm.cleanTranscript ? llm.cleanTranscript(verbatim, { spend, ctx }) : { paragraphs: verbatim, log: [], stats: {}, mentions: [] });
       const rawc = await readJson(join(dir, 'transcript.raw.json'));
       const fx0 = revertInsertions(flattenWords(rawc.segments), res.paragraphs);

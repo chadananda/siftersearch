@@ -105,3 +105,24 @@ describe('the copy-edit chunks run at once (10-22 LLM latency)', () => {
     expect(r.log.map((l) => l.p)).toEqual([0, 1, 2, 3]);
   });
 });
+
+describe('QA 10-22: the copy-edit is never worse than the ASR', () => {
+  it('a function word is never swapped for another ("is in" → "is him", "or" → "are")', () => {
+    expect(judgeEdit(W('What drama there is in the story'), { from: 'is in', to: 'is him', kind: 'homophone', confidence: 0.9 }).refused).toMatch(/function word/);
+    expect(judgeEdit(W('not a monthly or daily thing'), { from: 'or', to: 'are', kind: 'homophone', confidence: 0.9 }).refused).toMatch(/function word/);
+    expect(judgeEdit(W('their is a way'), { from: 'their', to: 'there', kind: 'homophone', confidence: 0.9 }).ok).toBeTruthy();
+  });
+  it('a stutter keeps the sentence case ("wrapped in In a paper" → "wrapped in a paper")', () => {
+    const ws = W('But it is wrapped in In a paper');
+    const j = judgeEdit(ws, { from: 'in In', to: 'In', kind: 'stutter', confidence: 0.9 });
+    const out = applyClean(ws, [j.ok]);
+    expect(out.filter((w) => !w.hide).map((w) => w.w).join(' ')).toBe('But it is wrapped in a paper');
+  });
+});
+
+describe('the series frames the copy-edit (QA: "Gems of Vyad Mysteries")', async () => {
+  const { cleanPrompt } = await import('../../api/lib/media/cleanup.js');
+  it('names the series and part', () => {
+    expect(cleanPrompt({ speaker: 'Steven Phelps', series: 'Gems of Divine Mysteries', part: 3 }, '[1] x')).toMatch(/Series: Gems of Divine Mysteries \(part 3\)/);
+  });
+});
