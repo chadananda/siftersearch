@@ -439,7 +439,22 @@ def main():
         s.add_argument('--emb', default='')
         s.add_argument('--emit-turns', action='store_true')
     a = p.parse_args()
-    {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd](a)
+    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd]
+    try:
+        fn(a)
+    except RuntimeError as err:
+        # the GPU is shared (two transcriptions + probes + DeepFilterNet on an 8 GB card; 10-22 a third job ran out of
+        # memory): out of GPU memory → the same work on the CPU, never a failed item
+        if 'out of memory' not in str(err).lower() or device()[0] != 'cuda':
+            raise
+        print(f'CUDA out of memory — retrying {a.cmd} on the CPU', file=sys.stderr)
+        try:
+            import torch
+            torch.cuda.empty_cache()
+        except Exception:
+            pass
+        os.environ['MEDIA_DEVICE'] = 'cpu'
+        fn(a)
 
 
 if __name__ == '__main__':
