@@ -85,7 +85,7 @@ function selectList(fields) {
  */
 export async function listDocs({
   scope = 'live', author, religion, collection, language, sourceSite, sourceUrls, title, ids, role, filePath, afterId,
-  fields, orderBy = 'id', limit = 100, offset = 0, count = true,
+  excludeCollections, fields, orderBy = 'id', limit = 100, offset = 0, count = true,
 } = {}) {
   const where = scopeSql(scope);
   const params = [];
@@ -103,15 +103,16 @@ export async function listDocs({
   if (role) { where.push('d.doc_role = ?'); params.push(role); }
   if (filePath) { where.push('d.file_path = ?'); params.push(filePath); }   // exact: the doc a library file was ingested as
   if (ids?.length) { where.push(`d.id IN (${ids.map(() => '?').join(',')})`); params.push(...ids); }
+  if (excludeCollections?.length) { where.push(`COALESCE(d.collection, '') NOT IN (${excludeCollections.map(() => '?').join(',')})`); params.push(...excludeCollections); }
 
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const rows = await queryAll(
-    `SELECT ${selectList(fields)} FROM docs d ${clause} ORDER BY ${orderBy === 'title' ? 'd.title COLLATE NOCASE, d.id' : 'd.id'} LIMIT ? OFFSET ?`,
+    `SELECT ${selectList(fields)} FROM docs d ${clause} ORDER BY ${orderBy === 'title' ? 'd.title COLLATE NOCASE, d.id' : orderBy === 'newest' ? 'd.id DESC' : 'd.id'} LIMIT ? OFFSET ?`,
     [...params, Math.min(1000, limit), offset], 'docs-repo:list');
   // count:false skips the COUNT — a second full read when only the rows are wanted
   const total = count ? await queryOne(`SELECT COUNT(*) n FROM docs d ${clause}`, params, 'docs-repo:list-count') : null;
   // the cursor for the next keyset page (id order only): null when this page is the last
-  const next_after_id = orderBy !== 'title' && rows.length >= Math.min(1000, limit) && rows.length && rows[rows.length - 1].id != null ? rows[rows.length - 1].id : null;
+  const next_after_id = orderBy === 'id' && rows.length >= Math.min(1000, limit) && rows.length && rows[rows.length - 1].id != null ? rows[rows.length - 1].id : null;
   return { docs: rows, total: total?.n ?? (count ? 0 : null), scope, limit, offset, next_after_id };
 }
 

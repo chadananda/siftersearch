@@ -1655,6 +1655,29 @@ Return ONLY the description text, no quotes or formatting.`;
     return shelvesCache.body;
   });
 
+  // The landing's live numbers (/library, 10-22): visible-tradition totals, the process counts (from the Observatory's
+  // telemetry snapshot), Dewey's week, and the newest books (talks excluded: they live in the Fireside Room). One small
+  // payload, memoised 30 s and edge-cached; every read is a repo call (shapeLanding is pure).
+  let landingMemo = { at: 0, body: null };
+  fastify.get('/landing', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=30, s-maxage=30');
+    if (landingMemo.body && Date.now() - landingMemo.at < 30_000) return landingMemo.body;
+    const { latestSnapshot } = await import('../lib/repos/telemetry-repo.js');
+    const { buildImportBoard } = await import('../lib/import-board.js');
+    const { listDocs } = await import('../lib/docs-repo.js');
+    const { shapeLanding } = await import('../lib/library/landing.js');
+    const soft = (p) => p.catch((err) => { request.log.warn({ err: err?.message }, 'library landing: part unavailable'); return null; });
+    const [snap, imports, newest] = await Promise.all([
+      soft(latestSnapshot()), soft(buildImportBoard()),
+      soft(listDocs({ orderBy: 'newest', limit: 120, count: false, excludeCollections: ['Media'],
+        fields: ['id', 'title', 'author', 'religion', 'collection', 'year', 'cover_url', 'paragraph_count', 'slug', 'created_at'] })),
+    ]);
+    let snapshot = null;
+    try { snapshot = snap?.data ? { at: snap.at, ...JSON.parse(snap.data) } : null; } catch { snapshot = null; }
+    landingMemo = { at: Date.now(), body: shapeLanding({ snapshot, imports, arrivals: newest?.docs || [], hidden: HIDDEN() }) };
+    return landingMemo.body;
+  });
+
   // One shelf's further items: an author's other works (?authors=a|b — the raw spellings the index recorded), or a
   // library collection (?collection=) / site (?site=) of a tradition. Paged, edge-cached.
   fastify.get('/shelves/items', {
