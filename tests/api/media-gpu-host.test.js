@@ -118,3 +118,11 @@ describe('encodeRemote', () => {
     void DrainAbort;
   });
 });
+
+describe('temp files', () => {
+  it('never collide within one millisecond (the three variant probes)', async () => {
+    const { tempFlac } = await import('../../api/lib/media/tools.js');
+    const names = new Set(Array.from({ length: 50 }, () => tempFlac('/tmp')));
+    expect(names.size).toBe(50);
+  });
+});

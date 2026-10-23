@@ -229,3 +229,12 @@ describe('vocabulary hygiene and the no-added-words rule (10-22: "Nabips Narrati
     expect(g.refused[0].why).toMatch(/adds words|sound/);
   });
 });
+
+describe('interpreted talks (QA 10-22: Romanian inside English paragraphs)', () => {
+  it('a change of language starts a new paragraph, and the paragraph keeps its language', () => {
+    const sg = (s, lang, text) => ({ s, e: s + 3, lang, spk: 'S1', text, words: text.split(' ').map((w, i) => ({ w, s: s + i * 0.3, e: s + i * 0.3 + 0.25 })) });
+    const ps = toParagraphs([sg(0, 'en', 'But a greater level of materialism is when'), sg(3.1, 'ro', 'Inima omului este îndreptată către lumea materială'), sg(6.2, 'en', 'Now we already read the quote.')]);
+    expect(ps.map((p) => p.lang)).toEqual(['en', 'ro', 'en']);
+    expect(ps[1].words.map((w) => w.w).join(' ')).toBe('Inima omului este îndreptată către lumea materială');
+  });
+});

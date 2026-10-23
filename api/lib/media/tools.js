@@ -42,6 +42,11 @@ export async function convSlot(fn) {
 // nice 19 + ionice idle class on Linux
 const LOW = process.platform === 'linux' ? ['ionice', '-c3', 'nice', '-n', '19'] : ['nice', '-n', '19'];
 
+/** A temp file name no other call can share: pid + time alone collided when the three variant probes started in the same
+ *  millisecond (10-23: three conversions wrote ONE file, the probe got a cut file and ffmpeg failed to seek in it). */
+let tempSeq = 0;
+export const tempFlac = (dir) => join(dir, `media-asr-${process.pid}-${Date.now()}-${++tempSeq}-${Math.random().toString(36).slice(2, 8)}.flac`);
+
 /** A child's stderr for a reason line: the lines that NAME the failure (the failing command, the error, a kill) first, then
  *  the tail — a Python traceback's tail alone hid the command (10-23 watchdog). */
 export function errSummary(err = '') {
@@ -166,7 +171,7 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
   if (!host) return local(sub, input, opts, { timeoutMs, stop });
   const { tmpdir } = await import('os');
   const { readFile, writeFile, unlink } = await import('fs/promises');
-  const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
+  const flac = tempFlac(tmpdir());
   try {
     // the ASR host runs THIS checkout's media_tool.py: installed through the gate once per process (and after a deploy)
     if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'install-tool')], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
@@ -209,7 +214,7 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
     const { tmpdir } = await import('os');
     const { readFile, unlink } = await import('fs/promises');
     if (installedOn !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
-    const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
+    const flac = tempFlac(tmpdir());
     try {
       await convSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
       await ssh(`start flac ${job} ${gateCommand('x', 'flac', { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });

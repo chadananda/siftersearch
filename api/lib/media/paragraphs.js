@@ -26,7 +26,7 @@ export function flattenWords(segments = []) {
     }
     const base = out.length;
     // Whisper's own mojibake ("ìWhy … book?î") is repaired here, where ASR words enter the pipeline (text-repair.js)
-    for (const w of ws) out.push({ w: fixMojibake(String(w.w ?? w.word).trim()), s: w.s ?? null, e: w.e ?? null, p: w.p ?? null, spk: w.spk ?? sg.spk ?? null });
+    for (const w of ws) out.push({ w: fixMojibake(String(w.w ?? w.word).trim()), s: w.s ?? null, e: w.e ?? null, p: w.p ?? null, spk: w.spk ?? sg.spk ?? null, ...(sg.lang ? { lang: sg.lang } : {}) });
     // fill gaps inside this segment: between the known neighbours, else the segment's own bounds
     for (let i = base; i < out.length; i++) {
       if (out[i].s != null && out[i].e != null) continue;
@@ -50,7 +50,9 @@ export function sentencesOf(words, { maxRun = 60 } = {}) {
   for (let i = 0; i < words.length; i++) {
     const n = i - i0 + 1;
     const pause = i + 1 < words.length ? words[i + 1].s - words[i].e : 0;
-    if (endsSentence(words[i].w) || i === words.length - 1 || (n >= maxRun && pause >= 0.4) || n >= maxRun * 2) {
+    // a change of language (an interpreter's turn) ends the sentence too
+    const langNext = i + 1 < words.length && words[i].lang && words[i + 1].lang && words[i].lang !== words[i + 1].lang;
+    if (endsSentence(words[i].w) || i === words.length - 1 || langNext || (n >= maxRun && pause >= 0.4) || n >= maxRun * 2) {
       out.push({ i0, i1: i + 1, spk: majority(words.slice(i0, i + 1).map((w) => w.spk)) });
       i0 = i + 1;
     }
@@ -76,16 +78,19 @@ export function toParagraphs(segments, { gap = 1.8, minWords = 40, maxWords = 17
       const n = cur.sents.reduce((a, x) => a + x.i1 - x.i0, 0);
       const prevEnd = words[cur.sents[cur.sents.length - 1].i1 - 1].e;
       const crossesChapter = cuts.some((c) => c > cur.t0 + 0.5 && c <= t0 + 0.5);
-      if ((st.spk && cur.spk && st.spk !== cur.spk) || crossesChapter || (t0 - prevEnd >= gap && n >= minWords) || n >= maxWords) close();
+      // an INTERPRETED talk: a change of language is a new paragraph (QA 10-22: Romanian inside English paragraphs)
+      const lang = words[st.i0].lang || null;
+      const langChange = lang && cur.lang && lang !== cur.lang;
+      if ((st.spk && cur.spk && st.spk !== cur.spk) || langChange || crossesChapter || (t0 - prevEnd >= gap && n >= minWords) || n >= maxWords) close();
     }
-    if (!cur) cur = { t0, spk: st.spk, sents: [] };
+    if (!cur) cur = { t0, spk: st.spk, lang: words[st.i0].lang || null, sents: [] };
     cur.sents.push(st);
   }
   close();
   return paras.map((p, n) => {
     const i0 = p.sents[0].i0, i1 = p.sents[p.sents.length - 1].i1;
     const ws = words.slice(i0, i1).map(({ w, s, e }) => ({ w, s, e }));
-    return { n: n + 1, t0: ws[0].s, t1: ws[ws.length - 1].e, spk: p.spk, words: ws, sentences: p.sents.map((x) => [x.i0 - i0, x.i1 - i0]) };
+    return { n: n + 1, t0: ws[0].s, t1: ws[ws.length - 1].e, spk: p.spk, ...(p.lang ? { lang: p.lang } : {}), words: ws, sentences: p.sents.map((x) => [x.i0 - i0, x.i1 - i0]) };
   });
 }
 
