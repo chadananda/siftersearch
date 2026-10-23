@@ -24,6 +24,8 @@ describe('authorsAgree', () => {
     expect(authorsAgree('', 'Anyone')).toBe(true);
     expect(authorsAgree('Max Arthur Macauliffe', 'M. A. Macauliffe')).toBe(true);
     expect(authorsAgree('Dorothy Field', 'Max Arthur Macauliffe')).toBe(false);
+    expect(authorsAgree('writings-shoghieffendi-cf-cfall', 'Shoghi Effendi')).toBe(true);
+    expect(authorsAgree('Research Department of the Universal House of Justice (compiler)', 'Bahá’u’lláh,‘Abdu’l-Bahá,Shoghi Effendi')).toBe(true);
   });
 });
 
@@ -64,6 +66,16 @@ describe('matchCovers', () => {
     expect(matchCovers(iqan, () => [])[0].status).toBe('unmatched');
     // dropping a subtitle needs a named, agreeing author
     expect(matchCovers(iqan, () => [doc(8, 'Kitáb-i-Íqán: Introduction to the 1950 Edition', '')])[0].status).toBe('unmatched');
+  });
+  it('Bindery titles are whole: "Torah - Bereshit" and "Torah - Shemot" are two books, not one title', () => {
+    const torah = [{ id: 'b', title: 'Torah - Bereshit (Genesis)', author: '' }, { id: 's', title: 'Torah - Shemot (Exodus)', author: '' }];
+    const r2 = matchCovers(torah, () => [doc(1, 'Torah - Bereshit (Genesis)', 'Moses'), doc(2, 'Torah - Shemot (Exodus)', 'Moses')]);
+    expect(r2.map((x) => [x.status, x.docs.map((d) => d.id)])).toEqual([['matched', [1]], ['matched', [2]]]);
+  });
+  it('a title shared by many docs is a book cut into sections — listed, not covered', () => {
+    const ldg = [{ id: 'ldg', title: 'The Light of Divine Guidance (vol 1)', author: 'Shoghi Effendi' }];
+    const secs = [1, 2, 3, 4, 5].map((i) => doc(i, 'The Light of Divine Guidance (vol 1)', `writings-shoghieffendi-ldg-vol1-sec-${i}`));
+    expect(matchCovers(ldg, () => secs)[0].status).toBe('ambiguous');
   });
   it('coverVersion reads the content hash from an image-service URL', () => {
     expect(coverVersion('/img/covers/20810?v=9aa93b118f18')).toBe('9aa93b118f18');

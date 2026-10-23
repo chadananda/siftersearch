@@ -26,12 +26,20 @@ export function titleKeys(t) {
 const AUTH_STOP = new Set(['the', 'of', 'and', 'by', 'tr', 'ed', 'compiled', 'compilation', 'unknown', 'none', 'various', 'sir', 'dr']);
 const authorTokens = (a) => new Set(strip(a).replace(/[^a-z0-9]+/g, ' ').split(' ').filter((w) => w.length > 2 && !AUTH_STOP.has(w)));
 /** Two authors agree when either is unknown or they share a name word ("Bahá’u’lláh" = "Baha'u'llah"). */
+const COMPILED = /compil|research department/i;
 export function authorsAgree(a, b) {
+  // a compilation is credited to its compiler on one side and to the Writings it gathers on the other (10-08 re-credit)
+  if (COMPILED.test(a || '') || COMPILED.test(b || '')) return true;
   const x = authorTokens(a), y = authorTokens(b);
   if (!x.size || !y.size) return true;
   for (const w of x) if (y.has(w)) return true;
+  // slug authors run names together: "writings-shoghieffendi-cf" ~ "Shoghi Effendi"
+  const jx = [...x].join(''), jy = [...y].join('');
+  for (const w of x) if (w.length >= 5 && jy.includes(w)) return true;
+  for (const w of y) if (w.length >= 5 && jx.includes(w)) return true;
   return false;
 }
+export const MAX_COPIES = 4;
 const wantsEnglish = (id) => /_en$/.test(id);
 const isEnglish = (lang) => !lang || /^en/i.test(lang);
 /** The cover's version as the image service names it: /img/covers/<id>?v=<sha256[:12]>. */
@@ -44,11 +52,13 @@ export const coverVersion = (url) => (String(url || '').match(/[?&]v=([0-9a-f]+)
  */
 export function matchCovers(books, candidatesFor) {
   // two Bindery books (two covers) under one title can't be told apart by title → ambiguous, both
+  // a Bindery title is whole (never subtitle-split: "Torah - Bereshit" and "Torah - Shemot" are different books)
+  const bookKeys = (t) => new Set([foldTitle(t), foldTitle(t).replace(/^the /, '')]);
   const byKey = new Map();
-  for (const b of books) for (const k of titleKeys(b.title)) byKey.set(k, [...(byKey.get(k) || []), b.id]);
+  for (const b of books) for (const k of bookKeys(b.title)) byKey.set(k, [...(byKey.get(k) || []), b.id]);
   return books.map((book) => {
     if (book.id.startsWith('col-')) return { book, status: 'collection', reason: 'collection/work cover (OL_WORK_COVER, not a doc)' };
-    const keys = titleKeys(book.title);
+    const keys = bookKeys(book.title);
     const twins = new Set([...keys].flatMap((k) => byKey.get(k) || []).filter((id) => id !== book.id && !id.startsWith('col-')));
     const full = new Set([foldTitle(book.title), foldTitle(book.title).replace(/^the /, '')]);
     // a whole-title match may have an unknown author; a match only once the doc's subtitle is dropped needs a named,
@@ -67,6 +77,8 @@ export function matchCovers(books, candidatesFor) {
       const list = agree.map((d) => d.author);
       if (!list.every((a) => list.every((b) => authorsAgree(a, b)))) return { book, status: 'ambiguous', docs: agree, reason: `different authors: ${[...new Set(list)].join(' / ')}` };
     }
+    // many docs under one title are a book cut into sections (bahai.org per-section docs), not copies of it
+    if (agree.length > MAX_COPIES) return { book, status: 'ambiguous', docs: agree, reason: `${agree.length} docs share this title — sections, not copies?` };
     return { book, status: 'matched', docs: agree };
   });
 }

@@ -4,7 +4,7 @@
 // server copies the image into our own storage). "Already right" = the doc's cover hash equals the image's sha256[:12].
 // Dry run by default; writes a Markdown report.
 //   node scripts/library/apply-covers.mjs --map <covers.json> [--bindery <export.json>] [--report tmp/covers-apply-report.md]
-//        [--only id,id] [--skip id,id] [--cache tmp/covers-search-cache.json] [--apply]
+//        [--only id,id] [--skip id,id] [--skip-docs 1,2 (judged wrong by eye)] [--cache tmp/covers-search-cache.json] [--apply]
 // Env: SIFTER_API (default https://api.siftersearch.com), DEPLOY_SECRET (X-Internal-Key, from .env-secrets).
 import dotenv from 'dotenv';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -17,7 +17,7 @@ const opt = (k, d) => (process.argv.includes(k) ? process.argv[process.argv.inde
 const list = (k) => new Set((opt(k) || '').split(',').filter(Boolean));
 const MAP = opt('--map'), BINDERY = opt('--bindery'), REPORT = opt('--report', 'tmp/covers-apply-report.md');
 const CACHE = opt('--cache');
-const ONLY = list('--only'), SKIP = list('--skip'), APPLY = process.argv.includes('--apply');
+const ONLY = list('--only'), SKIP = list('--skip'), SKIP_DOCS = list('--skip-docs'), APPLY = process.argv.includes('--apply');
 const API = process.env.SIFTER_API || 'https://api.siftersearch.com';
 const headers = { 'Content-Type': 'application/json', 'User-Agent': 'sifter-apply-covers', 'X-Internal-Key': process.env.DEPLOY_SECRET || '' };
 if (!MAP) throw new Error('--map is required');
@@ -45,17 +45,22 @@ if (CACHE) writeFileSync(CACHE, JSON.stringify(Object.fromEntries(searches)));
 const results = matchCovers(books.filter((b) => b.title), (b) => searches.get(queryOf(b)) || []);
 
 // already right? compare the doc's cover hash with the image's (fetched once per matched book that has a covered doc)
-const sha = async (url) => createHash('sha256').update(Buffer.from(await (await fetch(url, { signal: AbortSignal.timeout(60000) })).arrayBuffer())).digest('hex').slice(0, 12);
-const rows = { applied: [], already: [], failed: [], ambiguous: [], unmatched: [], collection: [] };
+const shaOf = async (url) => createHash('sha256').update(Buffer.from(await (await fetch(url, { signal: AbortSignal.timeout(60000) })).arrayBuffer())).digest('hex').slice(0, 12);
+const sha = async (url) => { const k = `sha:${url}`; if (!searches.has(k)) searches.set(k, await shaOf(url)); return searches.get(k); };
+const rows = { skipped: [], applied: [], already: [], failed: [], ambiguous: [], unmatched: [], collection: [] };
 for (const r of results) {
   if (r.status !== 'matched') { rows[r.status].push(r); continue; }
   const v = r.docs.some((d) => d.cover_url) ? await sha(covers[r.book.id]).catch(() => null) : null;
   for (const d of r.docs) {
+    if (SKIP_DOCS.has(String(d.id))) { rows.skipped.push({ book: r.book, doc: d }); continue; }
     if (v && coverVersion(d.cover_url) === v) { rows.already.push({ book: r.book, doc: d }); continue; }
     if (!APPLY) { rows.applied.push({ book: r.book, doc: d, dry: true }); continue; }
-    const res = await fetch(`${API}/api/covers/${d.id}`, { method: 'POST', headers, body: JSON.stringify({ url: covers[r.book.id], source: 'bindery-oceanlibrary-covers', rights: "Chad's generated OceanLibrary covers" }) });
-    const j = await res.json().catch(() => ({}));
-    if (res.ok) rows.applied.push({ book: r.book, doc: d, url: j.url }); else rows.failed.push({ book: r.book, doc: d, error: `${res.status} ${j.error || ''}` });
+    try {
+      const res = await fetch(`${API}/api/covers/${d.id}`, { method: 'POST', headers, signal: AbortSignal.timeout(120000),
+        body: JSON.stringify({ url: covers[r.book.id], source: 'bindery-oceanlibrary-covers', rights: "Chad's generated OceanLibrary covers" }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) rows.applied.push({ book: r.book, doc: d, url: j.url }); else rows.failed.push({ book: r.book, doc: d, error: `${res.status} ${j.error || ''}` });
+    } catch (e) { rows.failed.push({ book: r.book, doc: d, error: String(e.cause?.message || e.message) }); }
     await new Promise((res2) => setTimeout(res2, 150));
   }
 }
@@ -67,16 +72,18 @@ const md = [
   `| result | count |`, `|---|---|`,
   `| matched books | ${results.filter((r) => r.status === 'matched').length} |`,
   `| ${APPLY ? 'applied' : 'would apply'} (docs) | ${rows.applied.length} |`, `| already right (docs) | ${rows.already.length} |`,
-  `| failed (docs) | ${rows.failed.length} |`, `| ambiguous (books) | ${rows.ambiguous.length} |`, `| unmatched (books) | ${rows.unmatched.length} |`,
+  `| failed (docs) | ${rows.failed.length} |`, `| skipped by eye (docs) | ${rows.skipped.length} |`, `| ambiguous (books) | ${rows.ambiguous.length} |`, `| unmatched (books) | ${rows.unmatched.length} |`,
   `| collection covers (not docs) | ${rows.collection.length} |`, `| no Bindery metadata | ${noMeta.length} |`, '',
   `## ${APPLY ? 'Applied' : 'Would apply'}`, ...rows.applied.map((x) => `- \`${x.book.id}\` → ${docCell(x.doc)}${x.url ? ` → ${x.url}` : ''}`), '',
   '## Failed', ...rows.failed.map((x) => `- \`${x.book.id}\` → ${docCell(x.doc)}: ${x.error}`), '',
   '## Ambiguous (not applied — decide by hand)', ...rows.ambiguous.map((x) => `- \`${x.book.id}\` “${x.book.title}” — ${x.reason}\n${x.docs.map((d) => `  - ${docCell(d)}`).join('\n')}`), '',
   '## Unmatched (no doc with this title)', ...rows.unmatched.map((x) => `- \`${x.book.id}\` “${x.book.title}” — ${x.book.author || '?'}`), '',
   '## Collection / work covers', ...rows.collection.map((x) => `- \`${x.book.id}\` “${x.book.title}”`), '',
+  '## Matched but skipped by eye (--skip-docs)', ...rows.skipped.map((x) => `- \`${x.book.id}\` → ${docCell(x.doc)}`), '',
   '## Already right', ...rows.already.map((x) => `- \`${x.book.id}\` → ${x.doc.id} “${x.doc.title}”`), '',
   ...(noMeta.length ? ['## No Bindery metadata', ...noMeta.map((id) => `- \`${id}\``), ''] : []),
 ].join('\n');
+if (CACHE) writeFileSync(CACHE, JSON.stringify(Object.fromEntries(searches)));
 mkdirSync(dirname(REPORT), { recursive: true });
 writeFileSync(REPORT, md);
 console.log(JSON.stringify({ report: REPORT, applied: rows.applied.length, already: rows.already.length, failed: rows.failed.length, ambiguous: rows.ambiguous.length, unmatched: rows.unmatched.length, collection: rows.collection.length }));
