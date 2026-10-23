@@ -425,6 +425,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
+    ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
   }));
   // An original-language question answered by the ordinary search: each hit that has an aligned original carries it too
   if (wantsOriginal && !researched && !sourced && !original && !study && res?.passages?.length) {

@@ -66,7 +66,7 @@ export function anisDirection({ channelFrame = null, stance = null, conversation
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
   const lines = passages.map((p, i) => {
     const who = [p.source_author, p.religion].filter(Boolean).join(', ');
-    return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, 700)}`;
+    return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, p.translation ? 4000 : 700)}`;
   });
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
   const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${e.url ? ` URL: ${e.url}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;

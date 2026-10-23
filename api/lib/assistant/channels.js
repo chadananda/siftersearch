@@ -15,7 +15,10 @@ export const CHANNELS = {
   },
   email: {
     description: 'a considered letter by email',
-    frame: 'Write a letter of up to about 600 words; quote passages fully; greet and close as a friend would.',
+    frame: 'Write a letter of up to about 600 words; quote passages fully; greet and close as a friend would.'
+      // Chad 10-23: a "line by line" written as `- هو الله: *He is God.*` bullets arrived scrambled; the renderer
+      // (api/lib/mail-render.js) draws this block as a two-column table, original right, English left
+      + ' To set an Arabic/Persian original beside its English line by line, write a fenced block: a line "```bilingual", then for each line the original on one line and its English on the next, a blank line between pairs, then "```" — never put the two scripts in one line or bullet. End each English line with a source marker, <sup>1</sup>, <sup>2</sup>…, and after the block one short line naming each: e.g. "<sup>1</sup> Authorized translation by Shoghi Effendi, *Work* · <sup>2</sup> Provisional translation by Stephen Phelps (public domain) · <sup>3</sup> Provisional translation by Anís".',
     capabilities: ['links', 'lists', 'quotes', 'tables', 'headings', 'charts', 'rtl'], linkCap: 3, newsCap: 1, renderer: 'email-html', privileged: true,
   },
 };

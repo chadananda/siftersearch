@@ -15,6 +15,8 @@ const TOOLS = [
     parameters: { type: 'object', properties: { ref: { type: 'string' }, before: { type: 'integer' }, after: { type: 'integer' } }, required: ['ref'] } },
   { name: 'find_original', description: 'The original-language (Arabic/Persian) text of an English passage, and the authorised translations linked to that original. Give the English words (a sentence or two).',
     parameters: { type: 'object', properties: { english: { type: 'string' } }, required: ['english'] } },
+  { name: 'find_translation', description: "An EXISTING English translation of an Arabic/Persian text (a prayer, tablet or passage the reader gives in the original): the library's original paragraph and the translations linked to it — authorized (Shoghi Effendi, the Bahá'í World Centre), published, or Stephen Phelps' provisional renderings. Give the original text (a line or more, in Arabic script). Call it BEFORE translating anything yourself.",
+    parameters: { type: 'object', properties: { original: { type: 'string' } }, required: ['original'] } },
   { name: 'word_study', description: "How Shoghi Effendi rendered an Arabic/Persian word or root across the Writings (the CTAI concordance): his English renderings with counts, and passages pairing the original with his English. Give the word in Arabic script or transliteration, or the English word.",
     parameters: { type: 'object', properties: { word: { type: 'string' } }, required: ['word'] } },
   { name: 'trace_source', description: "A House of Justice letter, a scholar or a compilation stating a teaching is a SIGNPOST (Chad 10-19: when they refer to the teachings there is a presumption they mean something specific — we hold it): give its ref (e.g. P4) and get the primary passages it quotes or rests on — from the library's quote links, else the closest passages of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá and Shoghi Effendi. Cite THOSE.",
@@ -34,6 +36,7 @@ export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study 
 - Well-known background is yours to give too: e.g. Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán and Prayers and Meditations — never doubt such a fact for want of a passage.
 - A passage from the House, a scholar, a memoir or a compilation that states a teaching is a SIGNPOST, never the support: trace_source it and cite the primary passage it points to.
 - Your own knowledge of LANGUAGE (what an Arabic/Persian/Hebrew word means, other words for the idea, roots, grammar) and well-known general background may go in the brief, marked [own]. Facts about people, events, dates and teachings need a passage (P#) — or a web result (W#), named as such.
+- TRANSLATING (Chad 10-23: "when doing a translation, please use CTAI or use existing translation text to inform the translation"): when the reader gives an Arabic/Persian text to translate or read line by line, FIRST look for an existing translation — find_translation with the original; if that finds none, write your own rough English of one distinctive sentence and call source_of with it (it finds published and Phelps' provisional translations in other wordings). Use what exists VERBATIM, in this order: an authorized translation (Shoghi Effendi, the Bahá'í World Centre / Universal House of Justice), then a published one, then Stephen Phelps' provisional rendering (public domain — label it so). Only for lines no translation covers, translate yourself, after word_study on the key terms so you use Shoghi Effendi's renderings of them; mark those lines "provisional translation by Anís". In the brief, give the existing translation's FULL text with its P#, and say which lines each source covers.
 - When you name candidate words (other Arabic/Persian words for an idea), check each in word_study, in Arabic script, so the brief can say how Shoghi Effendi rendered them.
 - Earlier replies in the conversation are context, not something to audit: never review or correct them unless the reader questions them (you cannot see how an earlier chart or count was built — 10-19 three "corrections" of Lal's chart were all false). If the reader does question one, say precisely what was wrong, with the passage.
 - An empty tool result means only that this lookup found nothing — never treat it as evidence, and never disown or "correct" an earlier reply unless a passage shows it was wrong.
@@ -72,7 +75,8 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     found.set(ref, { ...p, ref });
     return ref;
   };
-  const show = (refs) => refs.filter(Boolean).map((r) => { const p = found.get(r); return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}\n${clipText(p.text, 900)}`; }).join('\n\n') || '(nothing)';
+  // an existing translation is shown whole (the writer quotes it line by line) and says what kind it is
+  const show = (refs, n = 900) => refs.filter(Boolean).map((r) => { const p = found.get(r); return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}\n${clipText(p.text, p.translation ? Math.max(n, 4000) : n)}`; }).join('\n\n') || '(nothing)';
   const run = {
     search_library: async ({ query, tradition }) => show((await impl.search(query, tradition)).slice(0, 8).map((p) => add(p))),
     read_around: async ({ ref, before = 2, after = 2 }) => {
@@ -84,6 +88,11 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       return show((await impl.around(p, Math.min(5, before), Math.min(5, after))).map((x) => add(x)));
     },
     find_original: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
+    find_translation: async ({ original }) => {
+      const found = impl.translation ? await impl.translation(original) : [];
+      if (!found.some((x) => x.translation)) return `no linked translation found from the original wording${found.length ? ` (the original: ${show(found.map((x) => add(x)))})` : ''} — draft an English rendering of one distinctive sentence and call source_of with it`;
+      return show(found.map((x) => add(x)), 4000);
+    },
     word_study: async ({ word }) => {
       const r = await impl.wordStudy(word);
       // an empty result is about the SPELLING, never evidence (10-19: "bayt" found nothing and the reply disowned a real chart)
@@ -138,13 +147,26 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   return { passages: kept, brief, steps, ms: Date.now() - t0 };
 }
 
-export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief. A study question gets a full, organised answer — a short bold lead for each part, several quoted passages, the distinctions that matter, and specifics (names, dates, references); a quick question gets a direct answer first. When the reader asks for a table, a list or a programme, give exactly that; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never comment on, review or correct your earlier replies unless the reader questioned them — and then only precisely, with the passage. Never write the brief's markers (P#, W#, [own]) — they are notes to you. Never volunteer what could not be found or confirmed; give what is known. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
+export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief. A study question gets a full, organised answer — a short bold lead for each part, several quoted passages, the distinctions that matter, and specifics (names, dates, references); a quick question gets a direct answer first. When the reader asks for a table, a list or a programme, give exactly that; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never comment on, review or correct your earlier replies unless the reader questioned them — and then only precisely, with the passage. Never write the brief's markers (P#, W#, [own]) — they are notes to you. TRANSLATIONS: a passage marked EXISTING TRANSLATION is quoted verbatim, never re-translated; only lines it does not cover are your own (the brief says which). Never volunteer what could not be found or confirmed; give what is known. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
+
+/** What kind of translation a text is, for the brief and the reply's row markers. Pure. */
+export function translationLabel(by, authority) {
+  const s = `${by || ''} ${authority || ''}`;
+  if (/shoghi/i.test(s)) return 'authorized — Shoghi Effendi';
+  if (/universal house|world cent(re|er)|research department/i.test(s)) return 'authorized — Bahá’í World Centre';
+  if (/phelps/i.test(s)) return 'provisional — Stephen Phelps (public domain)';
+  if (/published|committee/i.test(s)) return by ? `published — ${by}` : 'published translation';
+  return by ? `translation by ${by}` : 'translation';
+}
+/** Persian and Arabic spell ی/ي and ک/ك differently; a reader's typing may not match the library's. Pure. */
+export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'), String(s).replace(/ی/g, 'ي').replace(/ک/g, 'ك')])];
 
 /** The live tools over the library (lazy imports; the API process). */
 export function libraryTools({ search }) {
   const shape = (p) => ({ id: p.id, text: p.text || '', title: p.title || p.document?.title || '', author: p.author || p.document?.author || '',
     source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
-    religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en' });
+    religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
+    translation: p.translation || (/\(provisional translation\)/i.test(p.title || p.document?.title || '') ? translationLabel('Stephen Phelps', 'provisional-phelps') : null) });
   return {
     search: async (query, tradition) => ((await search({ query, mode: 'passages', limit: 8,
       plan: { messages: [{ role: 'user', content: query }], defaults: tradition ? { religion: tradition } : {} } }))?.passages || [])
@@ -164,6 +186,25 @@ export function libraryTools({ search }) {
       if (!o) return (r?.matches || []).slice(0, 2).map((x) => shape(x.passage)).filter((x) => x.text);
       const tr = ((await pl.resolveLinks([o.id], { quotedBy: false })).get(o.id)?.translations || []).slice(0, 2);
       return [shape(o), ...tr.map(shape)];
+    },
+    // an original → the library's copy of it (verbatim, either spelling of ی/ک) → the English linked to it: aligned
+    // translation paragraphs and the English stored beside the original (CTAI side-by-side, Phelps)
+    translation: async (original) => {
+      const pl = await import('../passage-links.js');
+      const { hybridSearch } = await import('../search.js');
+      const out = [], seen = new Set();
+      const push = (p) => { if (p?.text && !seen.has(p.id ?? p.text)) { seen.add(p.id ?? p.text); out.push(p); } };
+      for (const v of letterVariants(original)) {
+        const r = await pl.findOriginals(v, { limit: 5, semantic: false, search: hybridSearch }).catch(() => null);
+        for (const m of (r?.matches || []).filter((x) => x.overlap >= 0.5 && /[\u0600-\u06FF]/.test(x.passage?.text || ''))) {
+          push(shape(m.passage));
+          for (const t of m.links?.translations || []) push({ ...shape(t), translation: translationLabel(t.translated_by, null) });
+          if (m.passage.english?.text) push({ ...shape(m.passage), id: `${m.passage.id}-en`, text: m.passage.english.text, language: 'en',
+            title: `${m.passage.document?.title || ''} (English beside the original)`, translation: translationLabel(null, m.passage.english.authority) });
+        }
+        if (out.some((x) => x.translation)) break;
+      }
+      return out.slice(0, 6);
     },
     wordStudy: async (word) => {
       const { resolveTerm, ctaiTerm } = await import('./ctai-term.js');
