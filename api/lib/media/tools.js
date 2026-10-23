@@ -231,6 +231,7 @@ export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3) {
   diarBusy.set(host, (diarBusy.get(host) || 0) + 1);
   try { return await fn(); } finally { diarBusy.set(host, diarBusy.get(host) - 1); diarWait.get(host).shift()?.(); }
 }
+async function countDiar(host, fn) { diarBusy.set(host, (diarBusy.get(host) || 0) + 1); try { return await fn(); } finally { diarBusy.set(host, diarBusy.get(host) - 1); diarWait.get(host)?.shift()?.(); } }
 /** A diarization's host when it is DISPATCHED: aorus while it has a free diarization slot, else boss (its CPU) — the rest
  *  stay on boss (10-23 watch). */
 export function pickDiarHost(busy = diarBusy) {
@@ -398,9 +399,11 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
       // at most MEDIA_DIAR_SLOTS (3) diarizations per host at once (10-23: five at 8 threads on aorus's 24 cores)
       // a job ALREADY running (or done) on its host is re-attached outside the slots — the slots limit what we START
       // (10-23: re-attached aorus jobs held the diar lane in aorus's single slot while boss sat idle)
-      const live = deps.asrJob ? null : await remoteJob('poll-only', input, {}, { host, job, probeOnly: true }).catch(() => null);
+      const live = deps.live ? await deps.live() : deps.asrJob ? null : await remoteJob('poll-only', input, {}, { host, job, probeOnly: true }).catch(() => null);
       const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
-      const r = live === 'running' || live === 'done' ? await go() : await diarSlot(host, go);
+      // a re-attached job does not wait for a slot, but it COUNTS (12:29: after a restart two re-attached jobs plus a new one
+      // ran on aorus, whose cap is 1) — pickDiarHost sees it
+      const r = live === 'running' || live === 'done' ? await countDiar(host, go) : await diarSlot(host, go);
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
     } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }

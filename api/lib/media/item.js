@@ -308,7 +308,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       // dominant language (10-22: Chad's English + Romanian talk read as English in six 30 s windows)
       if (!meta.languages?.length || meta.languages.length < 12) {
         const starts = probeStarts(meta.duration_s, 12, 12).join(',');
-        const li = await tools.asr('langid', join(dir, meta.original), { model: 'large-v3-turbo', starts, len: 12 }, { stop }).catch(() => null);
+        // on aorus first (a 12-window language ID is seconds on its GPU; on a loaded boss it held ASR lane workers before
+        // they could dispatch — 12:29)
+        const lid = (host) => tools.asr('langid', join(dir, meta.original), { model: 'large-v3-turbo', starts, len: 12 }, { stop, ...(host ? { host } : {}) });
+        const li = await (tools.withProbeHost ? tools.withProbeHost(lid) : lid(null)).catch(() => null);
         meta.languages = (li?.excerpts || []).map((e) => ({ at: e.start, language: e.language, prob: e.prob }));
       }
       const heard = meta.languages.filter((x) => x.prob >= 0.6).map((x) => x.language);

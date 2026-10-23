@@ -189,3 +189,20 @@ describe('diarization slots per host', () => {
     expect(peak).toBe(3);
   });
 });
+
+describe('re-attached diarizations count toward the host cap', () => {
+  it('a re-attached job on aorus (cap 1) makes the next diarization go elsewhere', async () => {
+    const { diarize, pickDiarHost } = await import('../../api/lib/media/tools.js');
+    process.env.MEDIA_ASR_HOST = 'aorus'; process.env.MEDIA_GPU_HOST = 'zgpu';
+    const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
+    const out = join(mkdtempSync(join(tmpdir(), 'rd-')), 'd.json');
+    let release; const hold = new Promise((r) => { release = r; });
+    expect(pickDiarHost()).toBe('aorus');
+    const p = diarize('/a.flac', out, { host: 'aorus', job: 'x-dz-1', deps: { live: async () => 'running', asrJob: async (i, o) => { await hold; writeFileSync(o.output, '{"turns":[]}'); return {}; } } });
+    await new Promise((r) => setTimeout(r, 10));
+    expect(pickDiarHost()).toBe('zgpu');
+    release(); await p;
+    expect(pickDiarHost()).toBe('aorus');
+    delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
+  });
+});
