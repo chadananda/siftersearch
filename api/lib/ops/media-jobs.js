@@ -411,22 +411,25 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
 // media-fetch { limit }: DOWNLOADS, apart from processing — the next YouTube items by rank go into the archive (audio via
 // yt-dlp + PO token → Titan → Seemuapps, the original kept, meta written), politely paced; the item goes back to 'queued'
 // for processing. A bot check stops the round and holds the item for the cool-down.
-export async function mediaFetchJob({ limit = 6, pauseMs = 25000 } = {}, deps = {}) {
+export async function mediaFetchJob({ limit = 6, ids = null, pauseMs = Number(process.env.MEDIA_FETCH_PAUSE_MS) || 15000 } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');
   const draining = deps.draining || (await import('../drain.js')).isDraining;
   const nap = deps.nap || ((ms) => new Promise((r) => setTimeout(r, ms)));
   const out = { downloaded: [], held: [], failed: [] };
-  if ((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0) return { ...out, cooling: true };
-  for (const it of await repo.nextToDownload(limit)) {
-    if (draining()) break;
+  // claimed ids (the feed): what this run does not get to goes back to the queue (a drain, a cool-down)
+  const release = async (list) => { for (const it of list) await repo.updateMediaItem(it.id, { state: 'queued', stage: null }); };
+  const list = ids ? (await Promise.all([].concat(ids).map((id) => (repo.getMediaItem ? repo.getMediaItem(id) : { id })))).filter(Boolean) : await repo.nextToDownload(limit);
+  if ((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0) { if (ids) await release(list); return { ...out, cooling: true }; }
+  for (const [k, it] of list.entries()) {
+    if (draining()) { if (ids) await release(list.slice(k)); break; }
     await repo.updateMediaItem(it.id, { state: 'running', stage: 'archive' });
     try {
       await runItem(it, { only: ['archive'] });
       await repo.updateMediaItem(it.id, { state: 'queued', stage: 'archive' });
       out.downloaded.push(it.id);
     } catch (err) {
-      if (err.code === 'BOT_CHECK') { await repo.updateMediaItem(it.id, { state: 'held', why: String(err.message).slice(0, 500) }); out.held.push(it.id); break; }
+      if (err.code === 'BOT_CHECK') { await repo.updateMediaItem(it.id, { state: 'held', why: String(err.message).slice(0, 500) }); out.held.push(it.id); if (ids) await release(list.slice(k + 1)); break; }
       await repo.updateMediaItem(it.id, { state: 'failed', why: `download: ${String(err.message).slice(0, 480)}` });
       out.failed.push({ id: it.id, why: String(err.message).slice(0, 160) });
     }
@@ -532,7 +535,10 @@ export async function mediaLanesFeedPass(deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const queue = deps.queue || ops.enqueue;
-  const computeDepth = deps.computeDepth ?? (Number(process.env.MEDIA_COMPUTE_DEPTH) || 8);
+  // compute runs in hand (queued + running) = 3 × the compute workers: always ≥ 2 × the workers WAITING (10-22: aorus at
+  // 27× real time starves on a shallow queue)
+  const computeWorkers = deps.computeWorkers ?? (await import('../media/tools.js')).asrHosts().reduce((n, h) => n + h.slots, 0);
+  const computeDepth = deps.computeDepth ?? (Number(process.env.MEDIA_COMPUTE_DEPTH) || 3 * (computeWorkers || 4));
   const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || 8);
   const out = { compute: [], llm: [] };
   if (repo.retryTransientFailures) { const back = await repo.retryTransientFailures(); if (back.length) out.retried = back; }
@@ -550,7 +556,16 @@ export async function mediaLanesFeedPass(deps = {}) {
     await queue('media-llm', { id: it.id, priority: true }, 'media-feed');
     out.llm.push(it.id);
   }
+  // DOWNLOADS: up to MEDIA_FETCH_RUNS (2) runs at once, each with its OWN ids (claimed here as 'scheduled' / stage
+  // 'download', so two runs never take the same video); none while a bot check is cooling down
+  const fetchRuns = deps.fetchRuns ?? (Number(process.env.MEDIA_FETCH_RUNS) || 2);
   const fetchPending = (await ops.pendingRuns('media-fetch')).length;
-  if (!fetchPending && (await repo.nextToDownload(1)).length && !((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0)) { await queue('media-fetch', { limit: 6 }, 'media-feed'); out.fetch = true; }
+  if (fetchPending < fetchRuns && !((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0)) {
+    const ids = (await repo.nextToDownload(6)).map((x) => x.id);
+    if (ids.length) {
+      for (const id of ids) await repo.updateMediaItem(id, { state: 'scheduled', stage: 'download' });
+      await queue('media-fetch', { ids }, 'media-feed'); out.fetch = ids;
+    }
+  }
   return out;
 }

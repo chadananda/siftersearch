@@ -162,6 +162,14 @@ if (db) {
     add('Media failures 1h', h.failed <= MEDIA_FAIL_WARN, 'warn', `${h.failed} failed in the last hour${stages ? ` (${stages})` : ''} · ${h.failed_total} failed in all · ${h.published} published`);
     const idleCompute = h.compute_backlog > 0 && h.compute_running === 0;
     const idleLlm = h.llm_backlog > 0 && h.llm_running === 0;
+    // the GPU host (aorus): no media_tool running and no job started in 10 min while compute work waits = IDLE (10-22)
+    const gpu = process.env.MEDIA_GPU_HOST ?? 'aorus';
+    if (gpu && h.compute_backlog > 0) {
+      let g = null;
+      try { g = execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${gpu} 'echo $(pgrep -fc "[m]edia_tool.py") $(find ~/media-gpu/jobs -mindepth 1 -maxdepth 1 -newermt "-10 min" | wc -l)'`, { encoding: 'utf8', timeout: 20000 }).trim().split(/\s+/).map(Number); } catch { /* unreachable */ }
+      if (!g) add(`Media GPU ${gpu}`, true, 'info', 'unreachable from here');
+      else add(`Media GPU ${gpu}`, !(g[0] === 0 && g[1] === 0), 'warn', `${g[0]} running, ${g[1]} jobs started in 10 min, ${h.compute_backlog} compute items waiting${g[0] === 0 && g[1] === 0 ? ' — IDLE > 10 min with a backlog' : ''}`);
+    }
     add('Media lanes busy', !(idleCompute || idleLlm), 'warn', `compute ${h.compute_running} running / ${h.compute_backlog} waiting · llm ${h.llm_running} running / ${h.llm_backlog} waiting${idleCompute ? ' — COMPUTE IDLE with a backlog' : ''}${idleLlm ? ' — LLM IDLE with a backlog' : ''}`);
   }
 }

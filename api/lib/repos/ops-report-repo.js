@@ -17,6 +17,9 @@ export async function enqueue(name, params = null, requestedBy = 'internal') {
 /** Queued or running runs of one job — to tell "already on its way" when params differ (a priority flag). */
 export const pendingRuns = async (name) => (await queryAll(`SELECT id, params, status FROM ops_report_runs WHERE status IN ('queued', 'running') AND name = ?`, [name])).map(parse);
 
+/** RUNNING runs of these jobs (the live views: what is being worked on now). */
+export const runningRuns = async (names = []) => (names.length ? (await queryAll(`SELECT id, name, params FROM ops_report_runs WHERE status = 'running' AND name IN (${names.map(() => '?').join(',')})`, names)).map(parse) : []);
+
 export const getRun = async (id) => parse(await queryOne('SELECT * FROM ops_report_runs WHERE id = ?', [id]));
 export const latest = async (name) => parse(await queryOne(`SELECT * FROM ops_report_runs WHERE name = ? AND status = 'done' ORDER BY id DESC LIMIT 1`, [name]));
 export const recent = async (limit = 20) => (await queryAll('SELECT id, name, params, status, requested_at, finished_at, ms, error FROM ops_report_runs ORDER BY id DESC LIMIT ?', [limit])).map(parse);

@@ -170,12 +170,13 @@ describe('failures never just sit (10-22 watchdog)', () => {
     db.queryAll.mockImplementationOnce(async (sql) => {
       expect(sql).toMatch(/Private video/);
       expect(sql).not.toMatch(/why LIKE '%timed out%'/);   // not only "transient" errors any more
-      return [{ id: 1, why: 'grade exit 1: unbound variable' }, { id: 2, why: 'retry:2 IndexError' }, { id: 3, why: 'retry:1 x' }];
+      return [{ id: 1, why: 'grade exit 1: unbound variable', stage: 'grade' }, { id: 2, why: 'retry:2 IndexError' }, { id: 3, why: 'retry:1 x', stage: 'clean' }];
     });
     db.transaction.mockClear();
     const { retryTransientFailures } = await import('../../api/lib/repos/media-repo.js');
     expect(await retryTransientFailures()).toEqual([1, 3]);
-    expect(db.transaction.mock.calls[1][0][0].args[0]).toBe('retry:2 x');
+    expect(db.transaction.mock.calls[0][0][0].args.slice(0, 2)).toEqual(['queued', 'retry:1 grade exit 1: unbound variable']);
+    expect(db.transaction.mock.calls[1][0][0].args.slice(0, 2)).toEqual(['transcribed', 'retry:2 x']);   // an LLM-stage failure → the LLM lane
   });
   it('pipelineHealth: failures in the window by stage, running and backlog per lane', async () => {
     const db = await import('../../api/lib/db.js');
@@ -183,5 +184,42 @@ describe('failures never just sit (10-22 watchdog)', () => {
     db.queryAll.mockImplementationOnce(async () => [{ stage: 'enhance', n: 2 }, { stage: 'grade', n: 1 }]);
     const { pipelineHealth } = await import('../../api/lib/repos/media-repo.js');
     expect(await pipelineHealth()).toMatchObject({ failed: 3, failed_total: 9, failed_by_stage: { enhance: 2, grade: 1 }, compute_running: 0, compute_backlog: 40 });
+  });
+});
+
+describe('feed the GPUs (10-22)', () => {
+  it('keeps 3 × the compute workers in hand and claims each download run its own ids (two runs at once)', async () => {
+    const { mediaLanesFeedPass } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn();
+    const upd = vi.fn();
+    const repo = { nextToProcess: vi.fn(async (n) => Array.from({ length: n }, (_, i) => ({ id: 100 + i }))), nextTranscribed: async () => [], updateMediaItem: upd,
+      nextToDownload: async () => [{ id: 7 }, { id: 8 }], youtubeHeldSince: async () => ({ n: 0 }) };
+    const ops = { pendingRuns: async (name) => (name === 'media-fetch' ? [{ id: 1 }] : name === 'media-compute' ? [{}, {}] : []) };
+    const r = await mediaLanesFeedPass({ repo, ops, queue, computeWorkers: 6, fetchRuns: 2 });
+    expect(repo.nextToProcess).toHaveBeenCalledWith(16);   // 18 in hand − 2 pending
+    expect(r.fetch).toEqual([7, 8]);
+    expect(upd).toHaveBeenCalledWith(7, { state: 'scheduled', stage: 'download' });
+    expect(queue.mock.calls.at(-1)).toEqual(['media-fetch', { ids: [7, 8] }, 'media-feed']);
+  });
+  it('a download run gives back the ids it did not reach (drain)', async () => {
+    const upd = vi.fn(async () => ({}));
+    let n = 0;
+    const repo = { youtubeHeldSince: async () => ({ n: 0 }), getMediaItem: async (id) => ({ id }), updateMediaItem: upd };
+    const r = await mediaFetchJob({ ids: [1, 2, 3], pauseMs: 0 }, { repo, runItem: async () => ({}), draining: () => n++ >= 1, nap: async () => {} });
+    expect(r.downloaded).toEqual([1]);
+    expect(upd).toHaveBeenCalledWith(2, { state: 'queued', stage: null });
+    expect(upd).toHaveBeenCalledWith(3, { state: 'queued', stage: null });
+  });
+});
+
+describe('the live view is what is running now', () => {
+  it('items come from running runs, by id; none running → none shown', async () => {
+    const db = await import('../../api/lib/db.js');
+    const { liveItemsByIds } = await import('../../api/lib/repos/media-repo.js');
+    db.queryAll.mockClear();
+    expect(await liveItemsByIds([])).toEqual([]);
+    expect(db.queryAll).not.toHaveBeenCalled();
+    db.queryAll.mockImplementationOnce(async (sql, args) => { expect(sql).toMatch(/WHERE id IN \(\?,\?\)/); expect(args).toEqual([3, 4]); return [{ id: 3 }]; });
+    expect((await liveItemsByIds([3, '4'])).map((x) => x.id)).toEqual([3]);
   });
 });

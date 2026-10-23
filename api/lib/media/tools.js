@@ -88,6 +88,13 @@ export function pickAsrHost(hosts = asrHosts(), busy = asrBusy) {
   if (free) return free.host;
   return hosts.slice().sort((a, b) => (busy.get(a.host) || 0) / a.slots - (busy.get(b.host) || 0) / b.slots)[0].host;
 }
+/** Where the ENHANCE probes go (three 1-minute excerpts × each variant): the GPU host when there is one — on a loaded boss they
+ *  took most of enhance's 270–720 s (10-22) — else the ASR host. */
+export const probeHost = () => gpuHost() || asrHost();
+/** Why pickAsrHost chose a host (the dispatch log line). */
+export function asrPickReason(host, hosts = asrHosts(), busy = asrBusy) {
+  return hosts.map((h) => `${h.host} ${busy.get(h.host) || 0}/${h.slots}`).join(', ') + ` → ${host}`;
+}
 export const asrLoad = () => Object.fromEntries(asrHosts().map((h) => [h.host, { busy: asrBusy.get(h.host) || 0, slots: h.slots }]));
 
 /** A host whose sshd is bypassed by Tailscale SSH (aorus: tower's key lands in a shell, not the forced command) runs the gate

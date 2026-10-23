@@ -50,8 +50,10 @@ export async function releaseHeldYoutube(hours) {
 /** Items still to process (queued, or interrupted while running), oldest first. */
 export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:pending')).map(parse);
 /** The next items to PROCESS, by rank: queued, and (a YouTube item) already downloaded — downloads have their own lane. */
+const COMPUTE = ['archive', 'grade', 'enhance', 'web', 'transcribe'];
+// an item already part-way through (a retry, a resumed run) goes first: it holds files and finished stages
 export const nextToProcess = async (limit = 3) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND (source_kind != 'youtube' OR dir IS NOT NULL)
-  ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
+  ORDER BY CASE WHEN stage IS NOT NULL AND stage != 'archive' THEN 0 ELSE 1 END, COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
 /** Items whose compute stages are done, waiting for the LLM lane, by rank. */
 export const nextTranscribed = async (limit = 8) => (await queryAll(`SELECT * FROM media_items WHERE state = 'transcribed' ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next-llm')).map(parse);
 /** The next YouTube items to DOWNLOAD, by rank (queued, not yet in the archive). */
@@ -76,13 +78,15 @@ export const progressCounts = async () => queryAll(`SELECT source_kind source, C
  *  compute run for hours, silently). → [ids] */
 export async function retryTransientFailures({ olderThanMin = 30, max = 2 } = {}) {
   const cutoff = new Date(Date.now() - olderThanMin * 60_000).toISOString();
-  const rows = await queryAll(`SELECT id, why FROM media_items WHERE state = 'failed' AND updated_at < ?
+  const rows = await queryAll(`SELECT id, why, stage FROM media_items WHERE state = 'failed' AND updated_at < ?
     AND NOT (COALESCE(why, '') LIKE '%Private video%' OR why LIKE '%Video unavailable%' OR why LIKE '%removed by the uploader%' OR why LIKE '%not found on disk%' OR why LIKE '%no audio stream%')`, [cutoff], 'media:retryable-failed');
   const ids = [];
   for (const r of rows) {
     const n = Number(/^retry:(\d+)/.exec(r.why || '')?.[1] || 0);
     if (n >= max) continue;
-    await transaction([{ sql: `UPDATE media_items SET state = 'queued', why = ?, updated_at = ? WHERE id = ?`, args: [`retry:${n + 1} ${String(r.why || '').replace(/^retry:\d+\s*/, '')}`.slice(0, 500), now(), r.id] }], 'media:retry');
+    // a failure in an LLM stage goes straight back to the LLM lane ('transcribed'); a compute one to the compute queue
+    const back = r.stage && !COMPUTE.includes(r.stage) ? 'transcribed' : 'queued';
+    await transaction([{ sql: `UPDATE media_items SET state = ?, why = ?, updated_at = ? WHERE id = ?`, args: [back, `retry:${n + 1} ${String(r.why || '').replace(/^retry:\d+\s*/, '')}`.slice(0, 500), now(), r.id] }], 'media:retry');
     ids.push(r.id);
   }
   return ids;
@@ -108,6 +112,10 @@ export async function importProgress() {
 }
 /** The items being worked on now (downloading / processing / being enriched after publication): a handful of rows. */
 export const queuedCount = async () => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state IN ('queued', 'scheduled')`, [], 'media:queued-count'))?.n || 0;
+/** The items whose run is RUNNING NOW (ids from the ops queue), for the live view — never the last stage written (10-22: a
+ *  published item showed 'grade' for hours after its re-run stopped). */
+export const liveItemsByIds = async (ids = []) => (ids.length ? (await queryAll(`SELECT id, slug, title, speaker, speaker_key, source_kind, youtube_id, duration_s, dir, state, stage, queue_rank, updated_at
+  FROM media_items WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY updated_at DESC`, ids.map(Number), 'media:live-ids')).map(parse) : []);
 export const liveItems = async (limit = 12) => (await queryAll(`SELECT id, slug, title, speaker, speaker_key, source_kind, youtube_id, duration_s, dir, state, stage, queue_rank, updated_at
   FROM media_items WHERE state = 'running' OR (state = 'done' AND stage IS NOT NULL AND stage NOT IN ('catalog')) ORDER BY updated_at DESC LIMIT ?`, [limit], 'media:live')).map(parse);
 export const recentlyPublished = async (limit = 6) => queryAll(`SELECT slug, title, speaker, speaker_key, duration_s, published_at FROM media_items
@@ -120,7 +128,7 @@ export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000
       SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed_total,
       SUM(CASE WHEN state = 'running' AND stage IN ('archive','grade','enhance','web','transcribe') THEN 1 ELSE 0 END) compute_running,
       SUM(CASE WHEN state = 'running' AND (stage IS NULL OR stage NOT IN ('archive','grade','enhance','web','transcribe')) THEN 1 ELSE 0 END) llm_running,
-      SUM(CASE WHEN state IN ('queued','scheduled') AND dir IS NOT NULL THEN 1 ELSE 0 END) compute_backlog,
+      SUM(CASE WHEN state IN ('queued','scheduled') AND COALESCE(stage, '') != 'download' AND (source_kind != 'youtube' OR dir IS NOT NULL) THEN 1 ELSE 0 END) compute_backlog,
       SUM(CASE WHEN state IN ('transcribed','llm_queued') THEN 1 ELSE 0 END) llm_backlog,
       SUM(CASE WHEN published_at >= ? THEN 1 ELSE 0 END) published_window
     FROM media_items`, [sinceIso, sinceIso], 'media:health');

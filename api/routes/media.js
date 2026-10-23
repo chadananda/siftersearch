@@ -431,8 +431,12 @@ export default async function mediaRoutes(fastify) {
   // a handful of rows and their meta.json files, memoised 10 s, edge-cached 10 s
   fastify.get('/progress/live', async (req, reply) => {
     if (!liveMemo || Date.now() - liveMemo.at > 10_000) {
-      const { liveItems, recentlyPublished, queuedCount, pipelineHealth, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
-      const rows = await liveItems(40);
+      const { recentlyPublished, queuedCount, pipelineHealth, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
+      // what is RUNNING NOW: the media runs in progress → their items (a stopped re-run leaves no 'in progress' ghost)
+      const { runningRuns } = await import('../lib/repos/ops-report-repo.js');
+      const { liveItemsByIds } = await import('../lib/repos/media-repo.js');
+      const ids = [...new Set((await runningRuns(['media-compute', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
+      const rows = (await liveItemsByIds(ids.slice(0, 60))).slice(0, 40);
       const recent = await recentlyPublished(6);
       const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));
       const in_progress = await Promise.all(rows.map(async (r) => {

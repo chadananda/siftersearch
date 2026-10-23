@@ -222,7 +222,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const starts = probeStarts(meta.duration_s).join(',');
       const lang = /^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '';
       for (const v of variants) {
-        const p = await tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop });
+        const p = await tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(tools.probeHost ? { host: tools.probeHost() } : {}) });
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
       }
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);
@@ -275,7 +275,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       // tower diarization keep running through a drain, and the resumed stage re-attaches to them (meta.asr_job, the pid
       // file). allSettled: neither is left behind when the other fails.
       const asrOpts = { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 };
-      if (!meta.asr_job?.id) { meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickAsrHost ? tools.pickAsrHost() : (tools.asrHost ? tools.asrHost() : null) }; await save(); }
+      if (!meta.asr_job?.id) { meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickAsrHost ? tools.pickAsrHost() : (tools.asrHost ? tools.asrHost() : null) }; await save();
+        // the DISPATCH log: which host took the transcription and the load it saw (10-22: 'why is aorus idle?')
+        console.info(`[media] dispatch transcribe ${meta.slug} → ${meta.asr_job.host} (${tools.asrPickReason ? tools.asrPickReason(meta.asr_job.host) : 'single host'})`);
+      } else console.info(`[media] re-attach transcribe ${meta.slug} → ${meta.asr_job.host} (job ${meta.asr_job.id})`);
       if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110) }; await save(); }
       const viaJob = async () => {
         if (!tools.asrJob || !meta.asr_job.host) return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop });
