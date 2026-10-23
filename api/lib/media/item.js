@@ -30,6 +30,17 @@ export async function towerSlot(fn) {
   try { return await fn(); } finally { towerBusy--; towerWait.shift()?.(); }
 }
 
+// tower's LIGHT work (ffmpeg chains and encodes, signal metrics: ≤ 2 threads each) in FOUR slots = the same 8 threads. Prep
+// waits on the GPU host most of the time (grade, DeepFilterNet, probes run there): more prep workers, CPU still bounded
+const LIGHT_SLOTS = Math.max(1, Number(process.env.MEDIA_LIGHT_SLOTS) || 4);
+let lightBusy = 0;
+const lightWait = [];
+export async function towerLight(fn) {
+  if (lightBusy >= LIGHT_SLOTS) await new Promise((r) => lightWait.push(r));
+  lightBusy++;
+  try { return await fn(); } finally { lightBusy--; lightWait.shift()?.(); }
+}
+
 // PUBLISH EARLY (Chad 10-22: "talks should be published as they are completed … start ingesting for search"): the core —
 // transcript, name corrections, the copy-edit with its faithfulness check, a short description — is rendered, ingested for
 // search and catalogued (published) at once; the enrichment (subheaders, quotes, links, audience + moments) follows and
@@ -130,7 +141,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         hints = { speaker: null, title: info.title, date: info.upload_date, year: info.upload_date ? Number(info.upload_date.slice(0, 4)) : null, collection: info.channel };
       } else {
         probe = await tools.ffprobe(src);
-        hints = parseMediaPath(relative(join(mediaRoot(), traditionOf(src)), src).replace(/^talks\//, ''));
+        // known speakers find a name written without a separator ("Khadem Forerunner 1985", QA 10-22)
+        const known = d.repo?.listSpeakers ? (await d.repo.listSpeakers().catch(() => [])).map((x) => x.name).filter(Boolean) : [];
+        hints = parseMediaPath(relative(join(mediaRoot(), traditionOf(src)), src).replace(/^talks\//, ''), { known });
       }
       const named = await llm.nameItem({ rel: isYt ? `${info.channel} / ${info.title}` : relative(mediaRoot(), src), tags: isYt ? { description: info.description.slice(0, 600), tags: info.tags } : probe.tags,
         hints, duration: isYt ? info.duration_s : probe.duration_s }, { spend })
@@ -205,12 +218,12 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'enhance') {
       const orig = join(dir, meta.original);
       const th = await threads();
-      const m0 = await tools.tool('metrics', orig, {}, { threads: 2, stop });
+      const m0 = await towerLight(() => tools.tool('metrics', orig, {}, { threads: 2, stop }));
       await mkdir(join(dir, 'enhanced'), { recursive: true });
       const light = join(dir, 'enhanced', 'light.flac');
       const chain = lightChain({ ...m0, sample_rate: meta.source?.probe?.sample_rate });
-      await tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light], { stop });
-      const m1 = await tools.tool('metrics', light, {}, { threads: 2, stop });
+      await towerLight(() => tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light], { stop }));
+      const m1 = await towerLight(() => tools.tool('metrics', light, {}, { threads: 2, stop }));
       const variants = [{ name: 'original', file: orig, ...m0 }, { name: 'light', file: light, ...m1 }];
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
         const dfn = join(dir, 'enhanced', 'dfn.flac');
@@ -218,14 +231,15 @@ export async function runItem(item, opts = {}, deps = {}) {
         if (tools.gpuOrTower) await tools.gpuOrTower('dfn', light, { output: dfn }, { job: meta.dfn_job, pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), stop, file: true, slot: towerSlot });
         else await towerSlot(() => tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop }));
         delete meta.dfn_job;
-        variants.push({ name: 'dfn', file: dfn, ...(await tools.tool('metrics', dfn, {}, { threads: 2, stop })) });
+        variants.push({ name: 'dfn', file: dfn, ...(await towerLight(() => tools.tool('metrics', dfn, {}, { threads: 2, stop }))) });
       }
       const starts = probeStarts(meta.duration_s).join(',');
       const lang = /^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '';
-      for (const v of variants) {
+      // the variants' probes at once (the GPU host's memory lock paces them)
+      await Promise.all(variants.map(async (v) => {
         const p = await tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(tools.probeHost ? { host: tools.probeHost() } : {}) });
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
-      }
+      }));
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);
       meta.enhancement = { chain, variants: variants.map(({ file, ...v }) => ({ ...v, file: relative(dir, file) })), asr_input: asr.name, asr_why: asr.why, listening: listen.name, listening_why: listen.why };
       rec.threads = th;
@@ -236,8 +250,12 @@ export async function runItem(item, opts = {}, deps = {}) {
       const src = join(dir, v.file);
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
-      await tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg], { stop });
-      await tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop });
+      await Promise.all([
+        towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg], { stop })),
+        towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }))]);
+      // the DURATION from the web encode (QA 10-22: the original's header under-reported by ~6 s on 31 talks)
+      const enc = tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;
+      if (enc?.duration_s && enc.duration_s > (meta.duration_s || 0)) meta.duration_s = Math.round(enc.duration_s * 100) / 100;
       const parts = [];
       await tools.pcmStream(ogg, 8000, (f) => parts.push(f));
       const all = new Float32Array(parts.reduce((a, p) => a + p.length, 0));

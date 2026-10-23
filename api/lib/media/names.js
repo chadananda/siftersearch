@@ -47,7 +47,7 @@ const NOT_SPEAKER = /^(?:class|part|day|talk|session|track|disc|\d+)\b/i;
  * Hints from a path relative to the media root ("Nakhjavani Various/Nakhjavani - The Prayerful Attitude - 1996 11 22.mp3").
  * → { speaker, title, date, year, part, collection, series }. Anything not written in the path is null.
  */
-export function parseMediaPath(rel) {
+export function parseMediaPath(rel, { known = [] } = {}) {
   const segs = String(rel || '').split('/').filter(Boolean);
   const file = segs.pop() || '';
   const base = file.replace(/\.[a-z0-9]{2,5}$/i, '');
@@ -56,9 +56,9 @@ export function parseMediaPath(rel) {
   const { date, year } = dateIn(base);
   let speaker = null, title = null, part = null, speakerFrom = null;
   // "William_Sears__Prophecies.03" → speaker "William Sears", title "Prophecies", part 3
-  const dunder = base.match(/^(.+?)__(.+?)(?:\.(\d{1,3}))?$/);
+  const dunder = dunderParts(base);
   if (dunder) {
-    speaker = tidy(dunder[1]); title = tidy(dunder[2]); part = dunder[3] ? Number(dunder[3]) : null; speakerFrom = 'file';
+    speaker = tidy(dunder.speaker); title = tidy(dunder.title); part = dunder.part; speakerFrom = 'file';
   } else {
     const parts = base.split(/\s+-\s+/).map(tidy).filter(Boolean);
     while (parts.length > 1 && DATE_PART.test(parts[parts.length - 1])) parts.pop();
@@ -75,6 +75,60 @@ export function parseMediaPath(rel) {
     const named = segs.map(tidy).find((s) => /^[A-Z][a-z]+(?: [A-Z][a-z.]+)?(?: Various)?$/.test(s) && !/talks|recordings|audio/i.test(s));
     if (named) { speaker = named.replace(/ Various$/, ''); speakerFrom = 'folder'; }
   }
+  // a known speaker named anywhere in the file name ("Khadem Forerunner 1985", "PKhan on Shrines being closed")
+  if (!speaker || speakerFrom === 'folder') {
+    const named = speakerInName(base, known);
+    if (named) {
+      speaker = named; speakerFrom = 'file';
+      const drop = new RegExp(`\\b(?:${[...Object.keys(SPEAKER_ALIASES), ...fold(named).replace(/[’'‘.]/g, '').split(/\s+/).filter((x) => x.length > 2)].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'gi');
+      const rest = tidy(fold(title || '').replace(/[-_]/g, ' ').replace(drop, ' ').replace(/\b(?:various|includes|on|mrs?|nov|dec|jan|feb|mar|apr|jun|jul|aug|sep|oct)\b\.?/gi, ' ').replace(/\b(?:19|20)\d{2}\b/g, ' '));
+      if (rest && rest.length >= 3) title = (title || '').length && fold(title) !== title ? title : rest.replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+  }
   if (speaker) speaker = speaker.replace(/,\s*$/, '');
-  return { speaker, title, date, year, part, collection, series, speakerFrom };
+  const st = seriesTitle(title);
+  if (st.part) { title = st.title; part = part ?? st.part; }
+  return { speaker, title, date, year, part, of: st.of, collection, series: dunder?.series ? tidy(dunder.series) : series, speakerFrom };
+}
+
+// ── QA 10-22 METADATA: speakers in file names without separators, series titles, part numbers ──────────────────────────────
+/** Short forms used in file names for well-known speakers ("PKhan on Shrines being closed"). */
+export const SPEAKER_ALIASES = { pkhan: 'Peter Khan', khanum: 'Amatu’l-Bahá Rúḥíyyih Khánum', 'mrs banani': 'Mrs. Banání' };
+
+/** The speaker NAMED anywhere in a file name, from known speakers ([{ name }]) and the aliases: a full name, else a surname
+ *  (≥ 5 letters) as a whole word. → name or null. "Khadem Forerunner 1985" → "Zikrullah Khadem" (when known). */
+export function speakerInName(base, known = []) {
+  const f = ` ${fold(String(base || '')).toLowerCase().replace(/[_.\-]+/g, ' ').replace(/\s+/g, ' ')} `;
+  for (const [k, v] of Object.entries(SPEAKER_ALIASES)) if (f.includes(` ${k} `)) return v;
+  const names = known.map((x) => (typeof x === 'string' ? x : x?.name)).filter(Boolean);
+  for (const n of names) if (f.includes(` ${fold(n).toLowerCase().replace(/[’'‘]/g, '')} `) || f.includes(` ${fold(n).toLowerCase()} `)) return n;
+  for (const n of names) {
+    const sur = fold(n).toLowerCase().replace(/[’'‘]/g, '').split(/\s+/).pop();
+    if (sur && sur.length >= 5 && f.includes(` ${sur} `)) return n;
+  }
+  return null;
+}
+
+/** One title pattern per series: "10/14 Gems of Divine Mysteries", "Gems of Divine Mysteries (part 3 of 14)", "(7/14)",
+ *  "Reminiscences of Shoghi Effendi, Part 2" → { title, part, of }. Titles without a part come back unchanged. */
+export function seriesTitle(raw) {
+  let t = String(raw || '').trim(), part = null, of = null, m;
+  if ((m = t.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s+(.+)$/))) { part = +m[1]; of = +m[2]; t = m[3]; }
+  else if ((m = t.match(/^(.+?)\s*[(\[]\s*(?:part\s*)?(\d{1,2})\s*(?:\/|of)\s*(\d{1,2})\s*[)\]]\s*$/i))) { t = m[1]; part = +m[2]; of = +m[3]; }
+  else if ((m = t.match(/^(.+?)\s*[(\[]\s*part\s*(\d{1,2})\s*[)\]]\s*$/i))) { t = m[1]; part = +m[2]; }
+  else if ((m = t.match(/^(.+?),?\s+part\s+(\d{1,2})(?:\s+of\s+(\d{1,2}))?$/i))) { t = m[1]; part = +m[2]; of = m[3] ? +m[3] : null; }
+  t = t.replace(/[\s,–—-]+$/, '').trim();
+  return { title: t, part, of };
+}
+/** The display title of a part: "Gems of Divine Mysteries — Part 3 of 14". */
+export const partTitle = ({ title, part, of }) => (part ? `${title} — Part ${part}${of ? ` of ${of}` : ''}` : title);
+
+/** A double-underscore file name names SERIES__SPEAKER when the left side is a title (3+ words) and the right a name
+ *  ("Echoes_From_The_Lotus__Collis_Featherstone.03"); SPEAKER__TITLE otherwise ("William_Sears__Prophecies.03"). */
+export function dunderParts(base) {
+  const m = String(base || '').match(/^(.+?)__(.+?)(?:\.(\d{1,3}))?$/);
+  if (!m) return null;
+  const left = m[1].replace(/_/g, ' ').trim(), right = m[2].replace(/_/g, ' ').trim(), part = m[3] ? Number(m[3]) : null;
+  const titleLike = left.split(/\s+/).length >= 3 && right.split(/\s+/).length <= 3;
+  return titleLike ? { speaker: right, title: left, series: left, part } : { speaker: left, title: right, series: null, part };
 }

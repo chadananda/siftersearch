@@ -10,7 +10,7 @@ import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
-import { parseMediaPath } from '../media/names.js';
+import { parseMediaPath, seriesTitle, partTitle } from '../media/names.js';
 import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube, getMediaItem, updateMediaItem, pendingMedia, vocabularyNames, youtubeHeldSince, releaseHeldYoutube } from '../repos/media-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
@@ -593,6 +593,67 @@ export async function mediaLanesFeedPass(deps = {}) {
       for (const id of ids) await repo.updateMediaItem(id, { state: 'scheduled', stage: 'download' });
       await queue('media-fetch', { ids }, 'media-feed'); out.fetch = ids;
     }
+  }
+  return out;
+}
+
+// ── METADATA FIX (QA 10-22 item 7: 17 talks without a speaker, series titles in four patterns, "Afshin" titled by the
+// series) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/** Pure: the corrected { speaker, title, series, part, part_of } for one item, from its file name (known speakers) and title.
+ *  item: { speaker, title, source_kind, source_ref }; → only the fields that change. */
+export function metaFixFor(item, { known = [], rel = null } = {}) {
+  const out = {};
+  const h = item.source_kind !== 'youtube' && rel ? parseMediaPath(rel, { known }) : null;
+  let speaker = item.speaker || null, title = item.title || '';
+  const sameAsSpeaker = speaker && title && fold(title).toLowerCase().replace(/\s*\(part \d+\)$/, '') === fold(speaker).toLowerCase();
+  if (h?.speaker && h.speakerFrom === 'file' && (!speaker || (h.series && fold(speaker).toLowerCase() === fold(h.series).toLowerCase()) || sameAsSpeaker)) {
+    if (h.speaker !== speaker) out.speaker = speaker = h.speaker;
+    if (h.series && (sameAsSpeaker || !title || fold(title).toLowerCase().startsWith(fold(h.speaker).toLowerCase()))) title = partTitle({ title: h.series, part: h.part });
+  }
+  const st = seriesTitle(title);
+  if (st.part) { out.series = st.title; out.part = st.part; if (st.of) out.part_of = st.of; title = partTitle(st); }
+  else if (h?.series && h.part) { out.series = h.series; out.part = h.part; }
+  if (title && title !== item.title) out.title = title;
+  return out;
+}
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'`]/g, '');
+
+/** Apply metaFixFor to published talks, then give a speaker to the series siblings that lack one (when every sibling with a
+ *  speaker agrees). write=false: the plan only. write=true: meta.json updated and an 'update' run queued (re-render, search,
+ *  catalogue) for each changed talk not already busy. → { changed: [{ slug, ...fields }], skipped_busy } */
+export async function mediaMetaFixJob({ write = false, ids = null } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
+  const writeMeta = deps.writeMeta || (async (dir, m) => (await import('fs/promises')).writeFile(join(dir, 'meta.json'), JSON.stringify(m, null, 2)));
+  const known = (await repo.listSpeakers()).map((s) => s.name).filter(Boolean);
+  const { mediaRoot } = deps.roots || await import('../media/item.js');
+  const rows = [];
+  for (const id of ids || await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const meta = await read(it.dir).catch(() => null);
+    if (!meta) continue;
+    const rel = it.source_kind !== 'youtube' && it.source_ref ? String(it.source_ref).replace(`${mediaRoot()}/`, '').replace(/^[^/]+\/talks\//, '') : null;
+    rows.push({ it, meta, fix: metaFixFor({ ...it, title: meta.title || it.title, speaker: meta.speaker || it.speaker }, { known, rel }) });
+  }
+  // series siblings: the speaker every titled sibling agrees on
+  const bySeries = new Map();
+  for (const r of rows) { const s = r.fix.series || r.meta.series; if (s) { const k = fold(s).toLowerCase(); if (!bySeries.has(k)) bySeries.set(k, []); bySeries.get(k).push(r); } }
+  for (const group of bySeries.values()) {
+    const names = [...new Set(group.map((r) => r.fix.speaker || r.meta.speaker).filter(Boolean))];
+    if (names.length === 1) for (const r of group) if (!(r.fix.speaker || r.meta.speaker)) r.fix.speaker = names[0];
+  }
+  const busy = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { checked: rows.length, changed: [], skipped_busy: [] };
+  for (const r of rows) {
+    if (!Object.keys(r.fix).length) continue;
+    out.changed.push({ slug: r.it.slug, ...r.fix });
+    if (!write) continue;
+    if (busy.has(r.it.id)) { out.skipped_busy.push(r.it.slug); continue; }
+    await writeMeta(r.it.dir, { ...r.meta, ...r.fix });
+    await queue('media-item', { id: r.it.id, redo: ['update'] }, 'media-meta-fix');
   }
   return out;
 }
