@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-23T01:07:44.664Z",
+  "generated": "2026-10-23T01:21:34.202Z",
   "entries": [
+    {
+      "hash": "25c992b0",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "GET /api/media/progress — the import in public (Chad 10-22: 'the total number being imported and their progress'): total targets, downloaded, transcribed, published, failed, by source (curated · hooper-dunbar · hands-uhj · local · other, from the queue rank), items per hour (first publications over 6 h: migration 172 published_at) and an ETA; one indexed group-by, memoised 60 s, edge-cached 60 s; /admin/media shows the same numbers",
+      "scope": "media"
+    },
+    {
+      "hash": "40dd7482",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The Google button matches the site theme and never shows a white box",
+      "scope": "auth"
+    },
     {
       "hash": "e5547c63",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Chore",
       "description": "Hype regen + backup check",
       "scope": "worklist"
-    },
-    {
-      "hash": "87939911",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Verify the daily snapshot on NVMe (fold + quick_check in a stage dir), then byte-compare the /tank copy — quick_check on the spinning disk passed its 2h cap three days running",
-      "scope": "backup"
-    },
-    {
-      "hash": "803ca0b1",
-      "date": "2026-10-13",
-      "type": "Chore",
-      "description": "Concept runs status",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "25c992b0",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "GET /api/media/progress — the import in public (Chad 10-22: 'the total number being imported and their progress'): total targets, downloaded, transcribed, published, failed, by source (curated · hooper-dunbar · hands-uhj · local · other, from the queue rank), items per hour (first publications over 6 h: migration 172 published_at) and an ETA; one indexed group-by, memoised 60 s, edge-cached 60 s; /admin/media shows the same numbers",
+        "scope": "media"
+      },
+      {
+        "hash": "40dd7482",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The Google button matches the site theme and never shows a white box",
+        "scope": "auth"
+      },
       {
         "hash": "e5547c63",
         "date": "2026-10-22",
@@ -7006,20 +7020,6 @@
         "date": "2026-10-13",
         "type": "Chore",
         "description": "Hype regen + backup check",
-        "scope": "worklist"
-      },
-      {
-        "hash": "87939911",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Verify the daily snapshot on NVMe (fold + quick_check in a stage dir), then byte-compare the /tank copy — quick_check on the spinning disk passed its 2h cap three days running",
-        "scope": "backup"
-      },
-      {
-        "hash": "803ca0b1",
-        "date": "2026-10-13",
-        "type": "Chore",
-        "description": "Concept runs status",
         "scope": "worklist"
       }
     ]
