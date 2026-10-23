@@ -272,3 +272,17 @@ Rule: a non-canonical book whose own copyright page (or a high-confidence catalo
 
 ## To apply the rights rule (after Chad’s review)
 `node scripts/ops/ops.mjs report rights-publisher --params '{"write":true}' --wait` — encumbers the would-encumber list only.
+
+## Follow-ups done (10-23, standing rules — no Chad decision needed)
+- **Author-photo audit** (`scripts/books/author_photo_audit.py`, the speaker-gallery checks): YuNet one dominant face; identity by
+  OpenCV SFace against a reference (another verified gallery photo of the speaker, or the person's Wikipedia image when it
+  differs from the Wikidata P18; cos ≥ 0.363 same person), else by eye on the contact sheet (tmp/author-photos/sheet*.jpg).
+  36 distinct photos on 72 books: 23 passed by reference, 12 by eye, **2 books lost their photo**: Charles Mason Remey (a group
+  photo, 10 faces) and Peter Smith (a common name; the speaker photo could not be confirmed as the author's).
+- **No hotlinks**: the 7 Commons portraits are stored in R2 cdn-assets (`book-authors/<slug>/<sha16>.jpg`, served by the
+  image worker) with credit + licence in book_meta (`scripts/books/author_photo_publish.mjs` → `book-author-photo-set`).
+  All 70 remaining photos are on siftersearch.com; covers were always stored (/img/covers). New Wikidata portraits are no
+  longer auto-applied by `book-hunt-apply`: they go through this audit.
+- **Google Books retry**: scheduled. `siftersearch-reports` queues `book-hunt {retryGoogle:true}` once a day after 09:00 UTC
+  (bookGooglePulse); it re-asks only books Google never answered that still lack a high ISBN, resumes after a drain, and
+  then `book-hunt-apply {"write":true}` fills what it found (run by hand, high confidence only).

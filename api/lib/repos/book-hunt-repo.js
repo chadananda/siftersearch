@@ -50,7 +50,9 @@ export async function bookFacts(docId) {
   let m = {};
   try { m = r.book_meta ? JSON.parse(r.book_meta) : {}; } catch { /* unreadable evidence: facts only */ }
   const out = { isbn: r.isbn || null, publisher: r.publisher || null, year: r.pub_year || null, edition: r.edition || null,
-    author_image: r.author_image || null, author_image_credit: m.author_image?.evidence || null,
+    author_image: r.author_image || null,
+    author_image_credit: m.author_image?.credit || m.author_image?.licence ? [m.author_image.credit, m.author_image.licence].filter(Boolean).join(' · ')
+      : typeof m.author_image?.evidence === 'string' ? m.author_image.evidence : null,
     author_born: m.author_born?.value || null, author_died: m.author_died?.value || null };
   return Object.values(out).some((v) => v != null) ? out : null;
 }
