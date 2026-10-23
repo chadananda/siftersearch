@@ -42,6 +42,10 @@ describe('import gate', () => {
     expect(exportsOf(src).has('createHttpServer')).toBe(true);
     expect(stripComments(src)).not.toMatch(/gone\.js/);
   });
+  it('tests and other unreloaded files are out of scope (vitest is a dev dependency, absent on tower — 10-23 16:52)', () => {
+    const root = repo({ 'tests/api/x.test.js': "import { it } from 'vitest';\nimport y from './nope.js';\n", 'api/z.test.js': "import { it } from 'vitest';\n" });
+    expect(importProblems(['tests/api/x.test.js', 'api/z.test.js'], { root })).toEqual([]);
+  });
   it('late() paths are repo-relative and must exist', () => {
     const root = repo({ 'api/lib/media/x.js': "const m = await late('api/lib/missing.js');\n" });
     expect(importProblems(['api/lib/media/x.js'], { root })[0].error).toMatch(/late\('api\/lib\/missing\.js'\)/);

@@ -9,7 +9,10 @@ import { builtinModules } from 'module';
 
 const CODE = /\.(?:m?js|cjs)$/;
 const SCAN_DIRS = ['api', 'scripts', 'worker'];   // what the updater reloads (src/ is built by Vite; scripts/wip is scratch)
-const SKIP = /^(?:src\/|scripts\/wip\/)/;
+// only code the updater RELOADS is checked: tests/ (vitest is a dev dependency, not installed on tower — 10-23 16:52 the
+// first version refused every deploy over 'package vitest is not installed'), src/ (Vite), scripts/wip (scratch)
+const IN_SCOPE = /^(?:api|scripts|worker)\//;
+const SKIP = { test: (f) => !IN_SCOPE.test(f) || /^scripts\/wip\//.test(f) || /\.test\.m?js$/.test(f) };
 const BUILTIN = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
 
 /** Code without the comment LINES (a line starting with //, /*, or * — JSDoc). Only whole lines: a '/*' or '//' inside a
