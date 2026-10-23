@@ -54,7 +54,7 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
   const q = queue || (await import('../repos/ops-report-repo.js')).enqueue;
   await q('keyword-fill', { ids: [docId] }, 'media-ingest');
   await q('section-index', { ids: [docId] }, 'media-ingest');
-  await q('phrase-index', { docs: [docId], maxUsd: 0.25, budgetKey: 'media-phrase-index' }, 'media-ingest');
+  await q('phrase-index', { docs: [docId], maxUsd: 0.25, budgetKey: `media-phrase-index:${docId}` }, 'media-ingest');   // per-talk cap (10-23: one shared key stopped every talk after the first $0.25; a talk costs ~$0.001, max ~$0.009)
   return ['keyword-fill', 'section-index', 'phrase-index'];
 }
 

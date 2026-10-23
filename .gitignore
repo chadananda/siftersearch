@@ -47,6 +47,7 @@ tmp/
 
 # Data (local dev databases)
 data/*.db
+data/ops-alerts/
 data/*.db-*
 !data/.gitkeep
 

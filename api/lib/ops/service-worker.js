@@ -10,6 +10,7 @@ import { sendEmail } from '../../services/email.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { drainOnSignals, isDraining, nap } from '../drain.js';
 import { startHeartbeat } from '../service-heartbeat.js';
+import { throttleStoppedShort } from './alert-throttle.js';
 
 const IDLE_MS = 15_000;
 
@@ -21,6 +22,15 @@ async function alert(run, what, detail) {
   await sendEmail({ to, subject: `SifterSearch ops: ${run.name} #${run.id} ${what}`,
     text: `${run.name} #${run.id} ${what}.\n\n${detail}\n\nParams: ${JSON.stringify(run.params || {}).slice(0, 400)}` })
     .catch((err) => logger.warn({ err: err.message, id: run.id }, 'ops: alert mail failed'));
+}
+// Stopped-short mails are THROTTLED (10-23: ~100 mails from one shared media budget key): the first per job × budget-key
+// family × day is mailed; the rest are counted (activity log + the next day's first mail carries yesterday's count).
+async function alertStoppedShort(service, run, short) {
+  const t = throttleStoppedShort(process.env.OPS_ALERT_STATE || `data/ops-alerts/${service}.json`, run);
+  if (!t.send) { logger.warn({ id: run.id, name: run.name, count: t.count, short }, 'ops: stopped short (mail throttled — one per job/budget per day)'); return; }
+  await alert(run, 'stopped short', `Reason: ${short}\nIt is not finished: raise the cap and re-queue it to continue (finished work is kept).`
+    + `\nFurther stopped-short runs of ${run.name}${run.params?.budgetKey ? ` (${String(run.params.budgetKey).split(':')[0]})` : ''} today are counted, not mailed.`
+    + (t.suppressedBefore ? `\nOn ${t.previousDay}, ${t.suppressedBefore} more stopped short without a mail.` : ''));
 }
 export const stoppedShort = (result) => { const s = JSON.stringify(result || {}); return /"phase":"stopped"/.test(s) ? (s.match(/"reason":"([^"]+)"/)?.[1] || 'stopped early') : null; };
 
@@ -65,7 +75,7 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
         logger.info({ id: run.id, name: run.name, lane: laneName, ms: Date.now() - t0 }, 'report done');
         const short = stoppedShort(result);
         logActivity('job', `${short ? '■' : '✓'} ${run.name}${what ? ` · ${what}` : ''} · #${run.id} ${short ? `stopped: ${short}` : 'done'} · ${Math.round((Date.now() - t0) / 1000)} s`);
-        if (short) await alert(run, 'stopped short', `Reason: ${short}\nIt is not finished: raise the cap and re-queue it to continue (finished work is kept).`);
+        if (short) await alertStoppedShort(name, run, short);
       } catch (err) {
         // A hard stop kills the job's child process (indexer) before this process exits: that is NOT a failure. Leave the
         // run 'running' so requeueStale() puts it back on the next start (10-15: five phrase runs were marked failed by

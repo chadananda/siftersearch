@@ -218,11 +218,19 @@ describe('media item stage machine', () => {
     const { searchFollowUp } = await import('../../api/lib/media/item.js');
     const queue = vi.fn();
     expect(await searchFollowUp(42, { queue })).toEqual(['keyword-fill', 'section-index', 'phrase-index']);
-    expect(queue.mock.calls.map((c) => [c[0], c[1]])).toEqual([['keyword-fill', { ids: [42] }], ['section-index', { ids: [42] }], ['phrase-index', { docs: [42], maxUsd: 0.25, budgetKey: 'media-phrase-index' }]]);
+    expect(queue.mock.calls.map((c) => [c[0], c[1]])).toEqual([['keyword-fill', { ids: [42] }], ['section-index', { ids: [42] }], ['phrase-index', { docs: [42], maxUsd: 0.25, budgetKey: 'media-phrase-index:42' }]]);
     const f = fakes();
     const r = await runItem({ id: 8, source_kind: 'file', source_ref: src }, {}, f);
     expect(f.searchFollowUp).toHaveBeenCalledWith(777);
     expect(r.meta.stages.ingest.search_followups).toEqual(['keyword-fill', 'section-index', 'phrase-index']);
+  });
+  it('the phrase-index cap is PER TALK: talk N gets its own budget key, so a shared cap can never trip after N talks', async () => {
+    const { searchFollowUp } = await import('../../api/lib/media/item.js');
+    const queue = vi.fn();
+    for (let id = 1; id <= 300; id++) await searchFollowUp(id, { queue });
+    const phrase = queue.mock.calls.filter((c) => c[0] === 'phrase-index').map((c) => c[1]);
+    expect(new Set(phrase.map((p) => p.budgetKey)).size).toBe(300);
+    expect(phrase.every((p) => p.budgetKey === `media-phrase-index:${p.docs[0]}` && p.maxUsd >= 0.05)).toBe(true);
   });
   it('publishes before the enrichment: catalog comes before headings/quotes/links/assess, then one in-place update', async () => {
     const r = await runItem({ id: 6, source_kind: 'file', source_ref: src }, {}, fakes());
