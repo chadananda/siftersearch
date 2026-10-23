@@ -139,9 +139,9 @@ export function shapeProgress({ rows = [], published_6h = 0 }, sources, now = Da
  *  so counting items by state said "LLM idle" while the LLM lane was busy). */
 export async function liveHealth(pipelineHealth, runningRuns) {
   const h = await pipelineHealth();
-  const runs = await runningRuns(['media-compute', 'media-asr', 'media-llm', 'media-item']);
+  const runs = await runningRuns(['media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-item']);
   const n = (name) => runs.filter((r) => r.name === name).length;
-  return { ...h, compute_running: n('media-compute'), asr_running: n('media-asr'), llm_running: n('media-llm') + n('media-item') };
+  return { ...h, compute_running: n('media-compute'), asr_running: n('media-asr'), diar_running: n('media-diar'), llm_running: n('media-llm') + n('media-item') };
 }
 
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
@@ -444,7 +444,7 @@ export default async function mediaRoutes(fastify) {
       // what is RUNNING NOW: the media runs in progress → their items (a stopped re-run leaves no 'in progress' ghost)
       const { runningRuns } = await import('../lib/repos/ops-report-repo.js');
       const { liveItemsByIds } = await import('../lib/repos/media-repo.js');
-      const ids = [...new Set((await runningRuns(['media-compute', 'media-asr', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
+      const ids = [...new Set((await runningRuns(['media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
       const rows = (await liveItemsByIds(ids.slice(0, 60))).slice(0, 40);
       const recent = await recentlyPublished(6);
       const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));

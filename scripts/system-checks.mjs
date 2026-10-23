@@ -177,6 +177,7 @@ if (db) {
   } catch (e) { add('AI spend 24h', true, 'warn', `query failed: ${e.message}`); }
 }
 
+let newGpuIdleAt = state.gpuIdleAt || 0;
 // ── 4b. Media pipeline (10-22: every compute run failed for hours and nothing said so) ──────────────────────
 // through the API (/api/media/progress/live → health), never the DB. WARN: failures in the last hour above the limit, or a lane
 // with a backlog and nothing running (idle compute while work waits).
@@ -195,12 +196,19 @@ if (db) {
     if (gpu && h.compute_backlog > 0) {
       let g = null;
       // TRANSCRIPTIONS running on the GPU host (grades/probes/dfn are not GPU transcription work) and the newest one's age
-      try { g = execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${gpu} 'echo $(pgrep -fc "[m]edia_tool.py transcribe") $(find ~/media-gpu/jobs -mindepth 1 -maxdepth 1 -newermt "-10 min" ! -name "*-gr-*" ! -name "*-df-*" ! -name "*-ogg-*" ! -name "*-m4a-*" ! -name "*-lc-*" ! -name "*-dz-*" | wc -l)'`, { encoding: 'utf8', timeout: 20000 }).trim().split(/\s+/).map(Number); } catch { /* unreachable */ }
+      // the GPU itself: utilisation % and memory in use (a transcription holds ~2 GB of model; 10-23: aorus sat at 0 % with one
+      // 'transcribe' process on its CPU and the old process-count check never fired) — two samples 5 s apart
+      try { g = execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${gpu} 'nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader,nounits; sleep 5; nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader,nounits'`, { encoding: 'utf8', timeout: 30000 }).trim().split('\n').map((l) => l.split(',').map(Number)); } catch { /* unreachable */ }
       const waiting = (h.asr_backlog || 0) + (h.compute_backlog || 0);
       if (!g) add(`Media GPU ${gpu}`, true, 'info', 'unreachable from here');
       else {
-        const idle = g[0] === 0 && g[1] === 0 && (h.asr_backlog || 0) > 0;
-        add(`Media GPU ${gpu}`, !idle, 'warn', `${g[0]} transcribing, ${g[1]} transcriptions started in 10 min, ${h.asr_backlog || 0} prepped talks waiting for ASR${idle ? ' — GPU IDLE > 10 min while prepped talks wait' : ''}`);
+        const util = Math.max(...g.map((x) => x[0])), mem = Math.max(...g.map((x) => x[1]));
+        const idle = util < 5 && mem < 1500 && (h.asr_backlog || 0) > 0;
+        // idle twice in a row (the check runs every 30 min) is CRITICAL; once is a WARN
+        const was = state.gpuIdleAt || 0;
+        newGpuIdleAt = idle ? (was || Date.now()) : 0;
+        const long = idle && was && Date.now() - was >= 10 * 60_000;
+        add(`Media GPU ${gpu}`, !idle, long ? 'critical' : 'warn', `GPU ${util}% · ${mem} MiB in use · ${h.asr_backlog || 0} prepped talks waiting for ASR${idle ? ` — GPU IDLE${long ? ` for ${Math.round((Date.now() - was) / 60000)} min` : ''} while prepped talks wait` : ''}`);
         void waiting;
       }
     }
@@ -392,7 +400,7 @@ console.log(text);
 
 // Persist state for delta checks.
 fs.mkdirSync('logs', { recursive: true });
-const newState = { ...state, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
+const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
 
 // Decide whether to email. --daily always sends; --check only on criticals, and not the same
 // alert-set more than once per 6h (a down service at 2am = one email, not twelve).

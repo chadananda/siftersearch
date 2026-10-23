@@ -526,7 +526,7 @@ export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
 // LLM (names · copy-edit · description · publish · subheaders · quotes · links · assess · update; API-bound) are separate
 // jobs with their own lanes: an item leaves the compute lane 'transcribed' and the LLM feed picks it up — an API storm never
 // holds a compute slot, and the compute machines never wait for the internet.
-export const COMPUTE_STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe'];
+export const COMPUTE_STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize'];
 // the compute lane is TWO lanes (10-22: ASR slots sat empty while their workers were busy with tower-side prep):
 //   PREP (media-compute: archive · grade · enhance · web — tower files, plus grade/dfn/probes on the GPU host) → 'prepped'
 //   ASR  (media-asr: transcribe — one worker per ASR slot, fed from a buffer of prepped items) → 'transcribed'
@@ -538,7 +538,9 @@ async function laneJob(id, rest, deps, only, next) {
   return failedRun(r);
 }
 export const mediaComputeJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, PREP_STAGES, 'prepped');
-export const mediaAsrJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['transcribe'], 'transcribed');
+export const mediaAsrJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['transcribe'], 'asr_done');
+// DIARIZE (its own lane, 10-23 04:29): the ASR worker never waits on a diarization
+export const mediaDiarJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['diarize'], 'transcribed');
 // a failed ITEM is NOT a failed run (a thrown run mails Chad once per item — a night of failures = a mailbox of alerts):
 // the run's result carries failed:true, the item its 'failed' state + reason, /api/media/progress/live → health counts them,
 // system-checks WARNs past MEDIA_FAIL_WARN an hour, and the feed's capped retry brings the item back
@@ -569,6 +571,15 @@ export async function mediaLanesFeedPass(deps = {}) {
     await repo.updateMediaItem(it.id, { state: 'asr_queued' });
     await queue('media-asr', { id: it.id, priority: true }, 'media-feed');
     out.asr.push(it.id);
+  }
+  // DIARIZE: its own lane, fed from the transcribed-not-yet-diarized items
+  const diar = await ops.pendingRuns('media-diar');
+  out.diar = []; out.diar_pending = diar.length;
+  const diarDepth = deps.diarDepth ?? (Number(process.env.MEDIA_DIAR_DEPTH) || 10);
+  for (const it of await (repo.nextAsrDone ? repo.nextAsrDone(Math.max(0, diarDepth - diar.length)) : [])) {
+    await repo.updateMediaItem(it.id, { state: 'diar_queued' });
+    await queue('media-diar', { id: it.id, priority: true }, 'media-feed');
+    out.diar.push(it.id);
   }
   // PREP: keep the prepped buffer ≥ 2 × the ASR slots (prep runs in hand ≤ computeDepth), so no ASR slot waits on prep
   const compute = await ops.pendingRuns('media-compute');

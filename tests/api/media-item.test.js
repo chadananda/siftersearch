@@ -30,7 +30,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     asr: vi.fn(async (sub, input, opts) => {
       if (sub === 'probe') return { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en', text: 'x' }] };
       if (sub === 'langid') return { excerpts: (store.langs || Array(12).fill('en')).map((language, i) => ({ start: i * 60, language, prob: 0.9 })) };
-      writeFileSync(opts.output, JSON.stringify({ language: 'en', model: 'large-v3-turbo', aligned: true, duration_s: 600, timings: { asr: 30 }, turns: [{ start: 0, end: 600, speaker: 'S1' }],
+      writeFileSync(opts.output, JSON.stringify({ language: 'en', model: 'large-v3-turbo', aligned: true, duration_s: 600, timings: { asr: 30 }, turns: (opts.diarize ? [{ start: 0, end: 600, speaker: 'S1' }] : []),   // as media_tool: turns only when it diarized
         segments: [seg(0, 'The Revelation of Baha\'u\'llah is sovereign.'), seg(5, 'Abdul Baha explained this.'), seg(40, 'A new part begins here.')] }));
       return { seconds: 36, host: 'boss' };
     }),
@@ -119,7 +119,7 @@ describe('media item stage machine', () => {
     expect(rest.done[0]).toBe('transcribe');
   });
 
-  it('when a drain kills the diarization, the ASR beside it is stopped too before the stage gives up (no orphan)', async () => {
+  it('a drain stops the diarization stage (no orphan); the finished transcription is kept', async () => {
     const { run, liveChildren } = await import('../../api/lib/media/tools.js');
     const d = fakes();
     let draining = false;
@@ -134,12 +134,19 @@ describe('media item stage machine', () => {
       if (sub === 'diarize') { draining = true; await run('sleep', ['30'], { stop: o.stop, pollMs: 20 }); }
       return { snr_db: 20 };
     });
+    d.tools.asr = vi.fn(async (sub, input, opts) => {
+      if (sub === 'probe' || sub === 'langid') return sub === 'probe' ? { avg_logprob: -0.3, words: 280, excerpts: [{ language: 'en' }] } : { excerpts: [] };
+      writeFileSync(opts.output, JSON.stringify({ language: 'en', segments: [], turns: [] }));
+      return {};
+    });
     const r = await runItem({ id: 11, source_kind: 'file', source_ref: src }, {}, d);
-    expect(r).toMatchObject({ yielded: true, resume: { stage: 'transcribe' } });
+    // diarization is its own stage (10-23): the drain stops IT; the finished ASR is kept
+    expect(r).toMatchObject({ yielded: true, resume: { stage: 'diarize' } });
+    expect(r.done).toContain('transcribe');
     expect(liveChildren()).toBe(0);
   });
 
-  it('diarization runs beside the ASR (on tower) and its voices land on the words', async () => {
+  it('diarization is its own stage after the ASR (on tower here) and its voices land on the words', async () => {
     const d = fakes();
     d.tools.tool = vi.fn(async (sub, input, opts) => {
       if (sub === 'dfn') writeFileSync(opts.output, 'x');

@@ -147,7 +147,7 @@ describe('stage lanes (Chad 10-22: no internet dependencies on GPU processing)',
   });
   it('the compute job runs only the LAN stages and hands the item to the LLM lane', async () => {
     const { mediaComputeJob, COMPUTE_STAGES } = await import('../../api/lib/ops/media-jobs.js');
-    expect(COMPUTE_STAGES).toEqual(['archive', 'grade', 'enhance', 'web', 'transcribe']);
+    expect(COMPUTE_STAGES).toEqual(['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize']);
     expect(COMPUTE_STAGES.some((s) => ['correct', 'clean', 'describe', 'quotes', 'links', 'assess'].includes(s))).toBe(false);
   });
   it('a diarization with a job id is a detached boss job (re-attached after a restart)', async () => {
@@ -242,10 +242,11 @@ describe('prep and ASR are separate lanes (10-22: ASR slots waited on tower prep
     await mediaLanesFeedPass({ repo: repo2, ops, queue, computeWorkers: 6 });
     expect(repo2.nextToProcess).toHaveBeenCalledWith(18);
   });
-  it('prep ends prepped; ASR ends transcribed', async () => {
+  it('prep ends prepped; ASR ends asr_done; diarize ends transcribed', async () => {
     const src = (await import('fs')).readFileSync(new URL('../../api/lib/ops/media-jobs.js', import.meta.url), 'utf8');
     expect(src).toMatch(/mediaComputeJob = .*PREP_STAGES, 'prepped'\)/);
-    expect(src).toMatch(/mediaAsrJob = .*\['transcribe'\], 'transcribed'\)/);
+    expect(src).toMatch(/mediaAsrJob = .*\['transcribe'\], 'asr_done'\)/);
+    expect(src).toMatch(/mediaDiarJob = .*\['diarize'\], 'transcribed'\)/);
   });
 });
 
@@ -281,5 +282,24 @@ describe('restore published talks a failed re-run took off (watchdog 23:49)', ()
     const { mediaItemJob } = await import('../../api/lib/ops/media-jobs.js');
     const queue = vi.fn();
     expect(await mediaItemJob({ ids: 'problems', redo: ['update'] }, { queue, repo: { publishedProblemIds: async () => [5, 6] } })).toEqual({ queued: 2 });
+  });
+});
+
+describe('diarization has its own lane (10-23 04:29)', () => {
+  it('asr_done items are fed to media-diar; diarize goes to boss first, aorus only when boss is full (1)', async () => {
+    const { mediaLanesFeedPass } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn(); const upd = vi.fn();
+    const repo = { nextAsrDone: vi.fn(async (n) => [{ id: 71 }, { id: 72 }].slice(0, n)), nextPrepped: async () => [], preppedCount: async () => 30, nextToProcess: async () => [],
+      nextTranscribed: async () => [], updateMediaItem: upd, nextToDownload: async () => [], youtubeHeldSince: async () => ({ n: 0 }) };
+    const r = await mediaLanesFeedPass({ repo, ops: { pendingRuns: async () => [] }, queue, computeWorkers: 6 });
+    expect(r.diar).toEqual([71, 72]);
+    expect(queue).toHaveBeenCalledWith('media-diar', { id: 71, priority: true }, 'media-feed');
+    expect(upd).toHaveBeenCalledWith(71, { state: 'diar_queued' });
+    const { pickDiarHost } = await import('../../api/lib/media/tools.js');
+    process.env.MEDIA_ASR_HOST = 'boss'; process.env.MEDIA_GPU_HOST = 'aorus';
+    expect(pickDiarHost(new Map())).toBe('boss');
+    expect(pickDiarHost(new Map([['boss', 4]]))).toBe('aorus');
+    expect(pickDiarHost(new Map([['boss', 4], ['aorus', 1]]))).toBe('boss');
+    delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
   });
 });

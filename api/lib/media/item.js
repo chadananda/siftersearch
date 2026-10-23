@@ -58,7 +58,7 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
   return ['keyword-fill', 'section-index', 'phrase-index'];
 }
 
-export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
@@ -313,23 +313,17 @@ export async function runItem(item, opts = {}, deps = {}) {
         // the DISPATCH log: which host took the transcription and the load it saw (10-22: 'why is aorus idle?')
         console.info(`[media] dispatch transcribe ${meta.slug} → ${meta.asr_job.host} (${tools.asrPickReason ? tools.asrPickReason(meta.asr_job.host) : 'single host'})`);
       } else console.info(`[media] re-attach transcribe ${meta.slug} → ${meta.asr_job.host} (job ${meta.asr_job.id})`);
-      if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickDiarHost ? tools.pickDiarHost() : (tools.diarHost ? tools.diarHost() : null) }; await save(); }
       const viaJob = async () => {
         if (!tools.asrJob || !meta.asr_job.host) { slot?.release(); return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop }); }
         try { return await tools.asrJob(join(dir, v.file), asrOpts, { host: meta.asr_job.host, job: meta.asr_job.id, stop, reserved: !!slot }); }
         catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop }); }
         finally { slot?.release(); slot = null; }   // the transcription slot is held only while the ASR job runs
       };
-      const settled = await Promise.allSettled([
-        viaJob(),
-        // diarization on aorus's CPU (boss for older jobs) beside the ASR job (tower only as a guarded, 4-thread fallback: tools.diarize)
-        multi ? null : (tools.diarize ? tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 8 })   // (a job from before 10-23 has no host: boss)
-          : tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: Math.min(4, th), timeoutMs: 6 * 3600_000, stop })),
-      ]);
-      const bad = settled.find((x) => x.status === 'rejected');
-      if (bad) throw bad.reason;
-      const r = settled[0].value;
-      delete meta.asr_job; delete meta.diar_job;
+      // the ASR ONLY (10-23 04:29: a run that also waited on its diarization held an ASR lane worker for 20 min while the GPU
+      // sat idle); diarization is its own stage and lane ('diarize', media-diar)
+      const r = await viaJob();
+      delete meta.asr_job;
+      meta.asr_lang = lang;
       const raw = await readJson(out);
       // stretches Whisper decoded to invalid bytes (U+FFFD) are RE-TRANSCRIBED on their own (a window with 1.5 s either side,
       // in that stretch's language); still lossy after that, the bytes are dropped later (flattenWords)
@@ -350,15 +344,32 @@ export async function runItem(item, opts = {}, deps = {}) {
         }
         await writeJson(out, raw);
       }
-      if (!multi) {
+      void turnsFile;
+      meta.language = raw.language; meta.asr = { model: raw.model, language: raw.language, languages: raw.languages, mode: lang === 'multi' ? 'interpreted' : 'single', prompt: raw.prompt,
+        aligned: raw.aligned, align_score: raw.align_score, timings: raw.timings, host: r.host || 'tower', threads: r.host ? null : th, rtf: Math.round((r.seconds / Math.max(1, raw.duration_s)) * 1000) / 1000, input: meta.enhancement.asr_input,
+        speakers: new Set((raw.turns || []).map((t) => t.speaker)).size };
+      rec.rtf = meta.asr.rtf;
+    }
+
+    if (stage === 'diarize') {
+      // WHO SPEAKS WHEN, on its own lane: boss's CPU first (32 threads), aorus's CPU only when boss is full (1 at a time, so
+      // its CPU keeps feeding its GPU). An interpreted talk was diarized inside its transcription; a transcript that already
+      // has turns (made before this stage existed) is left as it is.
+      const out = join(dir, 'transcript.raw.json'), turnsFile = join(dir, 'diarization.json');
+      const raw = await readJson(out);
+      const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.asr_input);
+      if (meta.asr_lang !== 'multi' && !(raw.turns || []).length) {
+        if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickDiarHost ? tools.pickDiarHost() : (tools.diarHost ? tools.diarHost() : null) }; await save(); }
+        console.info(`[media] diarize ${meta.slug} → ${meta.diar_job.host || 'boss'} (job ${meta.diar_job.id})`);
+        if (tools.diarize) await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 6 });
+        else await tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: 4, timeoutMs: 6 * 3600_000, stop });
+        delete meta.diar_job;
         raw.turns = smoothTurns((await readJson(turnsFile, { turns: [] })).turns || []);
         raw.segments = assignSpeakers(raw.segments, raw.turns);
         await writeJson(out, raw);
       }
-      meta.language = raw.language; meta.asr = { model: raw.model, language: raw.language, languages: raw.languages, mode: lang === 'multi' ? 'interpreted' : 'single', prompt: raw.prompt,
-        aligned: raw.aligned, align_score: raw.align_score, timings: raw.timings, host: r.host || 'tower', threads: r.host ? null : th, rtf: Math.round((r.seconds / Math.max(1, raw.duration_s)) * 1000) / 1000, input: meta.enhancement.asr_input,
-        speakers: new Set(raw.turns.map((t) => t.speaker)).size };
-      rec.rtf = meta.asr.rtf;
+      rec.speakers = new Set((raw.turns || []).map((t) => t.speaker)).size;
+      if (meta.asr) meta.asr.speakers = rec.speakers;
     }
 
     if (stage === 'correct') {
