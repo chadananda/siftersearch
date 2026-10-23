@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-23T04:09:54.168Z",
+  "generated": "2026-10-23T04:30:27.435Z",
   "entries": [
+    {
+      "hash": "c6dc8a1d",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Ẓuhúru'l-Ḥaqq is one nine-volume work; /library lighter and more accessible (Chad 10-22)",
+      "scope": "library"
+    },
+    {
+      "hash": "fc070d99",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "POST /api/covers/:docId (internal key) — store a cover original (upload or copy from Bindery) and point the doc at its content-hash URL",
+      "scope": "covers"
+    },
+    {
+      "hash": "ac61a661",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "Tower's model work in two slots (4 threads each = the 8-thread budget) — one slot made enhance the compute lane's bottleneck (7 items waiting while boss idled)",
+      "scope": "media"
+    },
     {
       "hash": "0472e63e",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Hype-many — one process HyPEs many small documents so their paragraphs share full batches (Core Tablets: 22k docs); POST /api/admin/grounding/hype-many, budget-stopped",
       "scope": "hype"
-    },
-    {
-      "hash": "15bdf2ca",
-      "date": "2026-10-14",
-      "type": "New",
-      "description": "HyPE without disambiguation for scripture/tablets (noDisambig); identical-text twins reuse current questions (no model call); a translation partner given current questions is stamped current",
-      "scope": "cost"
-    },
-    {
-      "hash": "eec8395e",
-      "date": "2026-10-14",
-      "type": "New",
-      "description": "GET /api/admin/spend/by-stage — spend per pipeline stage for library-wide estimates",
-      "scope": "ops"
-    },
-    {
-      "hash": "af6f0b2b",
-      "date": "2026-10-14",
-      "type": "New",
-      "description": "No time-of-day gate — heavy jobs run paced in their own lane; hype/concept indexing in a lane beside phrases; ops runs cancellable; retire-duplicates reads file_path (no file had ever moved) and files already-retired docs on re-run",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "c6dc8a1d",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Ẓuhúru'l-Ḥaqq is one nine-volume work; /library lighter and more accessible (Chad 10-22)",
+        "scope": "library"
+      },
+      {
+        "hash": "fc070d99",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "POST /api/covers/:docId (internal key) — store a cover original (upload or copy from Bindery) and point the doc at its content-hash URL",
+        "scope": "covers"
+      },
+      {
+        "hash": "ac61a661",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "Tower's model work in two slots (4 threads each = the 8-thread budget) — one slot made enhance the compute lane's bottleneck (7 items waiting while boss idled)",
+        "scope": "media"
+      },
       {
         "hash": "0472e63e",
         "date": "2026-10-22",
@@ -6998,27 +7019,6 @@
         "type": "New",
         "description": "Hype-many — one process HyPEs many small documents so their paragraphs share full batches (Core Tablets: 22k docs); POST /api/admin/grounding/hype-many, budget-stopped",
         "scope": "hype"
-      },
-      {
-        "hash": "15bdf2ca",
-        "date": "2026-10-14",
-        "type": "New",
-        "description": "HyPE without disambiguation for scripture/tablets (noDisambig); identical-text twins reuse current questions (no model call); a translation partner given current questions is stamped current",
-        "scope": "cost"
-      },
-      {
-        "hash": "eec8395e",
-        "date": "2026-10-14",
-        "type": "New",
-        "description": "GET /api/admin/spend/by-stage — spend per pipeline stage for library-wide estimates",
-        "scope": "ops"
-      },
-      {
-        "hash": "af6f0b2b",
-        "date": "2026-10-14",
-        "type": "New",
-        "description": "No time-of-day gate — heavy jobs run paced in their own lane; hype/concept indexing in a lane beside phrases; ops runs cancellable; retire-duplicates reads file_path (no file had ever moved) and files already-retired docs on re-run",
-        "scope": "ops"
       }
     ]
   }
