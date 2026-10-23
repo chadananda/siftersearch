@@ -14,6 +14,7 @@
 #   short · install-renderer                                an audiogram short (tar in, MP4 out) · replace render_short.py
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
+export PATH="$HOME/.local/bin:$PATH"   # user-space tools (aorus: a static ffmpeg/ffprobe)
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 read -r -a A <<< "${SSH_ORIGINAL_COMMAND:-}"
 verb="${A[0]:-}"
@@ -71,7 +72,7 @@ if [[ "$verb" == "start" ]]; then
     nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py grade "$1" --models "$2" "${@:4}" > "$3.tmp" && tail -1 "$3.tmp" > "$3" && rm -f "$3.tmp"' _ "$d/in.$ext" "$PWD/models" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "dfn" ]]; then
     [[ -x venv-dfn/bin/python ]] || { echo '{"error":"no DeepFilterNet venv on this host"}'; exit 2; }
-    nohup setsid bash -c 'nice -n 10 venv-dfn/bin/python media_tool.py dfn "$1" --output "$2" "${@:4}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
+    nohup setsid bash -c 'nice -n 10 venv-dfn/bin/python media_tool.py dfn "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "diarize" ]]; then
     nohup setsid nice -n 10 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
   else

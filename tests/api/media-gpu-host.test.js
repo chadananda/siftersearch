@@ -48,3 +48,28 @@ describe('remoteJob', () => {
     await expect(remoteJob('grade', input, {}, { host: 'g4', job: 'talk-gr-3', exec, pollMs: 2000, stop: () => true })).rejects.toBeInstanceOf(DrainAbort);
   });
 });
+
+describe('gateWrap', () => {
+  it('runs the gate explicitly on a host whose sshd Tailscale SSH bypasses; leaves forced-command hosts alone', async () => {
+    const { gateWrap } = await import('../../api/lib/media/tools.js');
+    process.env.MEDIA_GATE_AORUS = '~/media-gpu/asr-gate.sh';
+    expect(gateWrap('aorus', 'poll job-1')).toBe("SSH_ORIGINAL_COMMAND='poll job-1' ~/media-gpu/asr-gate.sh");
+    expect(gateWrap('aorus', "poll x'; rm -rf ~")).not.toContain("x'");
+    expect(gateWrap('boss', 'poll job-1')).toBe('poll job-1');
+    delete process.env.MEDIA_GATE_AORUS;
+  });
+});
+
+describe('pickAsrHost', () => {
+  it('fastest host with a free slot first, then the least loaded; slots from MEDIA_ASR_HOSTS', async () => {
+    const { pickAsrHost, asrHosts } = await import('../../api/lib/media/tools.js');
+    const hosts = [{ host: 'aorus', slots: 2 }, { host: 'boss', slots: 4 }];
+    expect(pickAsrHost(hosts, new Map())).toBe('aorus');
+    expect(pickAsrHost(hosts, new Map([['aorus', 2]]))).toBe('boss');
+    expect(pickAsrHost(hosts, new Map([['aorus', 2], ['boss', 4]]))).toBe('aorus');
+    expect(pickAsrHost(hosts, new Map([['aorus', 4], ['boss', 4]]))).toBe('boss');
+    process.env.MEDIA_ASR_HOSTS = 'aorus:2, boss:4';
+    expect(asrHosts()).toEqual(hosts);
+    delete process.env.MEDIA_ASR_HOSTS;
+  });
+});

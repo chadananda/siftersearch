@@ -7,7 +7,7 @@ import { logger } from '../lib/logger.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
 import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaLanesFeedPass, mediaComputeJob, mediaLlmJob, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
-import { mediaParallel } from '../lib/media/tools.js';
+import { mediaParallel, asrHosts } from '../lib/media/tools.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 
@@ -31,7 +31,7 @@ export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) =>
   compute: ['media-compute'], llm: ['media-llm'],
   shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit'], downloads: ['media-fetch'] };
 // compute: one per ASR slot on boss (4 × 6 threads measured best); llm: API-bound, wide; pipeline: re-runs of published talks
-export const MEDIA_LANE_WORKERS = { compute: mediaParallel(), llm: Number(process.env.MEDIA_LLM_WORKERS) || 6, pipeline: 2 };
+export const MEDIA_LANE_WORKERS = { compute: asrHosts().reduce((n, h) => n + h.slots, 0) || mediaParallel(), llm: Number(process.env.MEDIA_LLM_WORKERS) || 6, pipeline: 3 };
 
 // the FEED: N new items in processing by rank, one download run queued (30 s)
 async function mediaFeedLoop() {

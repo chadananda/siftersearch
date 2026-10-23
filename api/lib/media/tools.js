@@ -71,6 +71,32 @@ export async function tool(sub, input, opts = {}, { python = PY(), threads = def
 // ── ASR on boss (measured 10-21: Zen 5 runs Whisper turbo at RTF 0.06 vs 0.36 on tower's Xeons; tower's search stays
 // untouched). Through a forced-command key (scripts/media/boss-asr-gate.sh): audio on stdin, JSON on stdout. ──
 export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
+/** The ASR HOSTS and their slots, fastest first: MEDIA_ASR_HOSTS="aorus:2,boss:4" (default: MEDIA_ASR_HOST with mediaParallel()
+ *  slots). Measured 10-22 on a 46-min talk: aorus (RTX 3070, fp16) 26.6 audio-min per wall-min for ONE job; boss 14.4 for
+ *  four jobs together. */
+export function asrHosts() {
+  const spec = process.env.MEDIA_ASR_HOSTS ?? 'aorus:2,boss:4';   // '' → MEDIA_ASR_HOST alone
+  if (!spec) return asrHost() ? [{ host: asrHost(), slots: mediaParallel() }] : [];
+  return spec.split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [host, n] = x.split(':'); return { host, slots: Math.max(1, Number(n) || 1) }; });
+}
+const asrBusy = new Map();   // host → jobs this process has in hand there
+/** The host for a NEW transcription: the first (fastest) with a free slot, else the least loaded. Re-attached jobs keep
+ *  their own host (meta.asr_job.host). */
+export function pickAsrHost(hosts = asrHosts(), busy = asrBusy) {
+  if (!hosts.length) return null;
+  const free = hosts.find((h) => (busy.get(h.host) || 0) < h.slots);
+  if (free) return free.host;
+  return hosts.slice().sort((a, b) => (busy.get(a.host) || 0) / a.slots - (busy.get(b.host) || 0) / b.slots)[0].host;
+}
+export const asrLoad = () => Object.fromEntries(asrHosts().map((h) => [h.host, { busy: asrBusy.get(h.host) || 0, slots: h.slots }]));
+
+/** A host whose sshd is bypassed by Tailscale SSH (aorus: tower's key lands in a shell, not the forced command) runs the gate
+ *  explicitly: MEDIA_GATE_<HOST>=<path to asr-gate.sh>. The gate still checks every verb and argument (its charset has no quote). */
+const GATES = { aorus: '~/media-gpu/asr-gate.sh' };   // (10-22) aorus: Tailscale SSH → a shell, so the gate by path
+export function gateWrap(host, cmd) {
+  const gate = process.env[`MEDIA_GATE_${String(host || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`] ?? GATES[host];
+  return gate ? `SSH_ORIGINAL_COMMAND='${String(cmd).replace(/'/g, '')}' ${gate}` : cmd;
+}
 export const asrThreads = () => Number(process.env.MEDIA_ASR_THREADS) || Math.max(4, Math.floor(BOSS_THREADS / mediaParallel()) - 2);
 let installedOn = null;
 
@@ -95,10 +121,10 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
   const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
   try {
     // the ASR host runs THIS checkout's media_tool.py: installed through the gate once per process (and after a deploy)
-    if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, 'install-tool'], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
+    if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'install-tool')], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
     await run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop });
     const cmd = gateCommand(sub, 'flac', { ...opts, threads });
-    const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs, stop, input: await readFile(flac) });
+    const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs, stop, input: await readFile(flac) });
     if (sub === 'transcribe') {
       const j = JSON.parse(stdout);
       await writeFile(opts.output, stdout);
@@ -122,8 +148,12 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 /** A transcription on the ASR host as a detached job: start (unless `job` is already known there), poll every pollMs,
  *  fetch. A drain (stop()) leaves the remote job RUNNING and throws DrainAbort — the resumed stage picks it up.
  *  → { output, host, job, reattached } */
-export async function asrJob(input, opts = {}, { host = asrHost(), threads = asrThreads(), job, stop = null, pollMs = 15000, onStart = async () => {}, exec = run } = {}) {
-  const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs: 600_000, ...o });
+export async function asrJob(input, opts = {}, { host = asrHost(), ...rest } = {}) {
+  asrBusy.set(host, (asrBusy.get(host) || 0) + 1);
+  try { return await asrJobOn(input, opts, { host, ...rest }); } finally { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 1) - 1)); }
+}
+async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, stop = null, pollMs = 15000, onStart = async () => {}, exec = run } = {}) {
+  const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs: 600_000, ...o });
   const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
   let st = await state().catch(() => ({ state: 'missing' }));
   const reattached = st.state === 'running' || st.state === 'done';
@@ -166,14 +196,19 @@ export async function detachedTool(sub, input, opts = {}, { pidFile, threads = d
     for (const [k, v] of Object.entries(opts)) { if (v === true) args.push(`--${k}`); else if (v != null && v !== false && v !== '') args.push(`--${k}`, String(v)); }
     const out = openSync(outFile, 'w'), err = openSync(`${pidFile}.err`, 'w');
     const tenv = { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads), CUDA_VISIBLE_DEVICES: '' };
-    const p = spawn('nice', ['-n', '19', python || PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
+    // through sh so the err file always ends with the EXIT STATUS (10-22: run 2584 'grade ended without a result: ' — no
+    // stdout, no stderr; a kill leaves nothing else behind: 137 = SIGKILL / out of memory)
+    const p = spawn('sh', ['-c', 'nice -n 19 "$@"; echo "[exit $?]" >&2', 'sh', python || PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
     p.unref(); closeSync(out); closeSync(err);
     pid = p.pid;
     await writeFile(pidFile, String(pid));
   }
   while (alive(pid)) { if (stop?.()) throw new DrainAbort(`${sub} (left running, pid ${pid})`); await pause(pollMs); }
   const text = (await readFile(outFile, 'utf8').catch(() => '')).trim();
-  if (!text) throw new Error(`${sub} ended without a result: ${(await readFile(`${pidFile}.err`, 'utf8').catch(() => '')).trim().split('\n').slice(-3).join(' | ').slice(0, 400)}`);
+  if (!text) {
+    const err = (await readFile(`${pidFile}.err`, 'utf8').catch(() => '')).trim();
+    throw new Error(`${sub} ended without a result: ${err ? err.split('\n').slice(-3).join(' | ').slice(0, 400) : `no stderr, no exit line (pid ${pid}; another run on this item truncated the files?)`}`);
+  }
   return JSON.parse(text.split('\n').pop());
 }
 
@@ -243,11 +278,11 @@ export const SHORT_TOOL = join(ROOT, 'scripts', 'media', 'render_short.py');
 export async function renderShort(dir, { host = asrHost(), timeoutMs = 900_000, stop = null } = {}) {
   if (!host) throw new Error('no render host (MEDIA_ASR_HOST)');
   const { readFile } = await import('fs/promises');
-  if (rendererOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, 'install-renderer'], { timeoutMs: 60_000, input: await readFile(SHORT_TOOL) }); rendererOn = host; }
+  if (rendererOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'install-renderer')], { timeoutMs: 60_000, input: await readFile(SHORT_TOOL) }); rendererOn = host; }
   const tar = [];
   await run('tar', ['-C', dir, '-cf', '-', '.'], { timeoutMs: 60_000, onStdout: (d) => tar.push(d), env: { COPYFILE_DISABLE: '1' } });
   const out = [];
-  await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=30', host, 'short'], { timeoutMs, stop, input: Buffer.concat(tar), onStdout: (d) => out.push(d) });
+  await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=30', host, gateWrap(host, 'short')], { timeoutMs, stop, input: Buffer.concat(tar), onStdout: (d) => out.push(d) });
   const mp4 = Buffer.concat(out);
   if (mp4.length < 1000 || mp4.slice(4, 8).toString() !== 'ftyp') throw new Error(`render failed (${mp4.length} bytes)`);
   return mp4;
@@ -300,11 +335,11 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
 
 // ── the GPU compute host (aorus: RTX 3070, CUDA): grade (DNSMOS/NISQA) and DeepFilterNet as DETACHED jobs through the same
 // gate as boss (start … --verb grade|dfn, re-attached by job id after a restart; the original audio staged over the tailnet)
-export const gpuHost = () => process.env.MEDIA_GPU_HOST || null;   // set to 'aorus' on tower once its gate answers
+export const gpuHost = () => (process.env.MEDIA_GPU_HOST ?? 'aorus') || null;   // MEDIA_GPU_HOST='' → the tower does grade + dfn
 let installedGpu = null;
 /** A detached job on a compute host: the input file is sent as-is; → the JSON result, or (file) writes opts.output. */
 export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, stop = null, pollMs = 5000, file = false, exec = run } = {}) {
-  const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs: 600_000, ...o });
+  const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs: 600_000, ...o });
   const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
   let st = await state().catch(() => ({ state: 'missing' }));
   if (st.state !== 'running' && st.state !== 'done') {
@@ -323,7 +358,7 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
   }
   if (file) {
     const chunks = [];
-    await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, `fetch-file ${job}`], { timeoutMs: 600_000, onStdout: (d) => chunks.push(d) });
+    await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `fetch-file ${job}`)], { timeoutMs: 600_000, onStdout: (d) => chunks.push(d) });
     const { writeFile } = await import('fs/promises');
     await writeFile(opts.output, Buffer.concat(chunks));
     return { output: opts.output, host, job };
@@ -332,12 +367,12 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
   return { ...JSON.parse(stdout.trim().split('\n').pop()), host, job };
 }
 /** grade / dfn on the GPU host when it answers, else the tower's detached process (re-attached by pid file). */
-export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false } = {}) {
+export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn() } = {}) {
   const host = gpuHost();
   if (host && job) {
     try { return await remoteJob(sub, input, opts, { host, job, stop, file }); }
     // a drain leaves the remote job running (re-attached next time); anything else → the tower does it
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] ${sub} on ${host} failed — tower fallback: ${String(err.message).slice(0, 300)}`); }
   }
-  return detachedTool(sub, input, opts, { pidFile, threads: 4, stop, python });
+  return slot(() => detachedTool(sub, input, opts, { pidFile, threads: 4, stop, python }));   // the tower's 8-thread budget (towerSlot)
 }

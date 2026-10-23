@@ -78,9 +78,23 @@ def cmd_metrics(a):
     }))
 
 
+def device():
+    """('cuda', 'float16') on a CUDA host (aorus), else ('cpu', 'int8'). MEDIA_DEVICE=cpu forces the CPU; tower hides its GPU
+    (CUDA_VISIBLE_DEVICES='') so its runs stay on the CPU budget."""
+    if os.environ.get('MEDIA_DEVICE', '') != 'cpu':
+        try:
+            import torch
+            if torch.cuda.is_available():
+                return 'cuda', 'float16'
+        except Exception:
+            pass
+    return 'cpu', 'int8'
+
+
 def whisper_model(name, threads):
     from faster_whisper import WhisperModel
-    return WhisperModel(name, device='cpu', compute_type='int8', cpu_threads=threads)
+    dev, ct = device()
+    return WhisperModel(name, device=dev, compute_type=ct, cpu_threads=threads)
 
 
 def cmd_probe(a):
@@ -179,8 +193,8 @@ def align_groups(whisperx, segs_by_lang, audio):
     out, ok = [], True
     for lang, segs in segs_by_lang.items():
         try:
-            am, meta = whisperx.load_align_model(language_code=lang, device='cpu')
-            al = whisperx.align(segs, am, meta, audio, 'cpu', return_char_alignments=False)['segments']
+            am, meta = whisperx.load_align_model(language_code=lang, device=device()[0])
+            al = whisperx.align(segs, am, meta, audio, device()[0], return_char_alignments=False)['segments']
             for sg in al:
                 sg['lang'] = lang
             out += al
@@ -202,7 +216,8 @@ def cmd_transcribe(a):
     timings = {}
     multi = a.lang == 'multi'
     asr_opts = {'initial_prompt': a.prompt or None, 'condition_on_previous_text': False, 'beam_size': 5}
-    model = whisperx.load_model(a.model, 'cpu', compute_type='int8', language=None if multi else (a.lang or None), asr_options=asr_opts,
+    dev, ct = device()
+    model = whisperx.load_model(a.model, dev, compute_type=ct, language=None if multi else (a.lang or None), asr_options=asr_opts,
                                 vad_method='silero', threads=a.threads)
     turns = []
     if a.diarize or multi:

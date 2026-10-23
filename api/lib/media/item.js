@@ -193,7 +193,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // detached (pid file): a service restart re-attaches instead of starting over
       // on the GPU host (aorus) when it answers, else a detached tower process; both re-attach after a restart
       if (!meta.grade_job) { meta.grade_job = `${meta.slug}-gr-${Date.now().toString(36)}`.slice(0, 110); await save(); }
-      const m = tools.gpuOrTower ? await tools.gpuOrTower('grade', join(dir, meta.original), {}, { job: meta.grade_job, pidFile: join(dir, 'grade.pid'), stop })
+      const m = tools.gpuOrTower ? await tools.gpuOrTower('grade', join(dir, meta.original), {}, { job: meta.grade_job, pidFile: join(dir, 'grade.pid'), stop, slot: towerSlot })
         : await towerSlot(() => tools.tool('grade', join(dir, meta.original), {}, { threads: 4, stop, timeoutMs: 3600_000 }));
       delete meta.grade_job;
       meta.quality = { measured_at: d.now(), raw: m, ...gradeReport(m) };
@@ -214,7 +214,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
         const dfn = join(dir, 'enhanced', 'dfn.flac');
         if (!meta.dfn_job) { meta.dfn_job = `${meta.slug}-df-${Date.now().toString(36)}`.slice(0, 110); await save(); }
-        if (tools.gpuOrTower) await tools.gpuOrTower('dfn', light, { output: dfn }, { job: meta.dfn_job, pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), stop, file: true });
+        if (tools.gpuOrTower) await tools.gpuOrTower('dfn', light, { output: dfn }, { job: meta.dfn_job, pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), stop, file: true, slot: towerSlot });
         else await towerSlot(() => tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop }));
         delete meta.dfn_job;
         variants.push({ name: 'dfn', file: dfn, ...(await tools.tool('metrics', dfn, {}, { threads: 2, stop })) });
@@ -275,7 +275,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // tower diarization keep running through a drain, and the resumed stage re-attaches to them (meta.asr_job, the pid
       // file). allSettled: neither is left behind when the other fails.
       const asrOpts = { model: opts.model || process.env.MEDIA_ASR_MODEL || 'large-v3-turbo', lang, prompt: lang === 'en' || lang === '' ? prompt : '', diarize: multi, output: out, batch: 8 };
-      if (!meta.asr_job?.id) { meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: tools.asrHost ? tools.asrHost() : null }; await save(); }
+      if (!meta.asr_job?.id) { meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickAsrHost ? tools.pickAsrHost() : (tools.asrHost ? tools.asrHost() : null) }; await save(); }
       if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110) }; await save(); }
       const viaJob = async () => {
         if (!tools.asrJob || !meta.asr_job.host) return tools.asr('transcribe', join(dir, v.file), asrOpts, { timeoutMs: 12 * 3600_000, stop });
