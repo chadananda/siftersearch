@@ -5,6 +5,7 @@
 //   wanted list) · "what happened to …" → status of their items. Anything else in the letter is ignored.
 // REPLY RULES (replyRule) decide whether anything is worth saying; RECEIPTS are templates (one work → a summary, several → a
 // table), never model-written. The screen in front of all this is screen.js. Deps injectable for tests.
+import { MEDIA_URL } from './media-holdings.js';
 const SITE = 'https://siftersearch.com';
 export const LIMITS = { titles: 10, urls: 5, files: 5, photos: 6, fileBytes: 25 * 1024 * 1024 };
 
@@ -18,6 +19,8 @@ const COMMAND = /^\s*(?:please\s+)?(?:(?:ignore|disregard|forget|override|delete
 const STATUS = /\b(status|progress|update on|what (?:has )?(?:happened|became) (?:to|of)|did you (?:get|receive|add|process)|(?:has|have|was|were) (?:it|they|my|the)\b.{0,60}\b(?:added|processed|ingested|received|uploaded)|where (?:is|are) (?:my|the)|my (?:contributions?|uploads?|submissions?))\b/i;
 // a closing line ends the letter: what follows is the signature ("Thanks,\nAnn" — Ann is not a title)
 const CLOSING = /^\s*(?:thanks?|thank you|many thanks|best|all the best|regards|kind regards|warm(?:ly| regards)|cheers|sincerely|love|blessings|yours|with (?:love|thanks|gratitude)|sent from my|--\s*$|—\s*$)\b/i;
+// a line that DESCRIBES something rather than naming it
+const DESCRIBES = /^\s*(?:it'?s|it is|this|that'?s|that is|these|those|he|she|they|we|i|i'm|my|our|there|which|who)\b/i;
 const SMALLTALK = /^\s*(?:fyi|ok|okay|noted|got it|hi|hello|hey|dear|greetings|thanks?|thank you|many thanks|best|regards|kind regards|warm(?:ly| regards)|cheers|sincerely|love|blessings|yours|sent from my|--|—|on .* wrote:?)\b/i;
 const ASK_PREFIX = /^\s*(?:(?:hi|hello|dear)\s+dewey[,!.]?\s*)?(?:(?:could|can|would) you (?:please )?(?:check|see|look up|find out)(?: (?:if|whether))?|please check(?: (?:if|whether))?|check(?: (?:if|whether))?|do (?:we|you) (?:have|hold)|have you got|is there|are there|does the library (?:have|hold)|i (?:found|have|came across|own)|we (?:found|have)|here is|here's|this is|looking for|search for)\s*:?\s*/i;
 
@@ -34,17 +37,21 @@ export function titleLike(s) {
 /** A letter → the verbs to run. Pure: { photos:[att], files:[att], urls:[], titles:[], status, refused:[lines], unread:[{name, why}] }.
  *  attachments: [{ name, type, size }] (data travels alongside, untouched here). */
 export function planVerbs({ subject = '', text = '', attachments = [] } = {}) {
-  const plan = { photos: [], files: [], urls: [], titles: [], passages: [], status: false, refused: [], unread: [] };
+  const plan = { photos: [], files: [], urls: [], media: [], titles: [], passages: [], status: false, refused: [], unread: [] };
   for (const a of attachments) {
     const name = a.name || 'attachment', type = a.type || '';
     if (a.size > LIMITS.fileBytes) plan.unread.push({ name, why: 'too large to take by email (25 MB at most) — a link to it works' });
     else if (HEIC.test(type) || /\.hei[cf]$/i.test(name)) plan.unread.push({ name, why: 'an HEIC photo, which I cannot open — please send it as a JPEG (most phones offer “Most Compatible”)' });
     else if (IMAGE.test(type) || IMAGE_EXT.test(name)) (plan.photos.length < LIMITS.photos ? plan.photos : plan.unread).push(plan.photos.length < LIMITS.photos ? a : { name, why: `more than ${LIMITS.photos} photos in one letter` });
     else if (DOC_TYPE.test(type) || DOC_EXT.test(name)) (plan.files.length < LIMITS.files ? plan.files : plan.unread).push(plan.files.length < LIMITS.files ? a : { name, why: `more than ${LIMITS.files} files in one letter` });
-    else plan.unread.push({ name, why: 'not a kind of file I can read (PDF, EPUB, Word, text, or a photo)' });
+    else plan.unread.push({ name, why: 'not a kind of file I can read — send a PDF, EPUB, Word or text file, or a photo' });
   }
   const body = String(text || '').replace(/\r\n/g, '\n');
-  for (const u of body.match(/https?:\/\/[^\s<>"')\]]+/g) || []) if (!plan.urls.includes(u) && plan.urls.length < LIMITS.urls) plan.urls.push(u.replace(/[.,;:]+$/, ''));
+  for (const raw of body.match(/https?:\/\/[^\s<>"')\]]+/g) || []) {
+    const u = raw.replace(/[.,;:]+$/, '');
+    const list = MEDIA_URL.test(u) ? plan.media : plan.urls;          // a video link is a MEDIA holdings check (the talks library)
+    if (!list.includes(u) && plan.urls.length + plan.media.length < LIMITS.urls) list.push(u);
+  }
   plan.status = STATUS.test(body) || STATUS.test(subject);
   const add = (t) => { const c = t.trim().replace(/^[-*•\d.)\s]+/, '').replace(/[?.!,;:]+$/, '').trim(); if (c.length >= 3 && !plan.titles.includes(c) && plan.titles.length < LIMITS.titles) plan.titles.push(c); };
   // a pure thank-you / FYI names nothing ("FYI" is not a title)
@@ -61,11 +68,12 @@ export function planVerbs({ subject = '', text = '', attachments = [] } = {}) {
     if (CLOSING.test(line)) break;
     if (SMALLTALK.test(line) || (plan.status && STATUS.test(line))) continue;
     const rest = line.replace(/^[-*•]\s+|^\d+[.)]\s+/, '').replace(ASK_PREFIX, '');
+    if (DESCRIBES.test(rest)) continue;                               // "It's a Dunbar talk on …" describes; it is not a title
     if (titleLike(rest)) add(rest);
   }
   // the subject is the title when the letter names nothing else ("Fwd: The Chosen Highway")
   const subj = String(subject || '').replace(/^\s*((re|fwd?|fw)\s*:\s*)+/i, '').trim();
-  if (!plan.titles.length && !plan.urls.length && !plan.photos.length && !plan.files.length && !plan.passages.length && !plan.status
+  if (!plan.titles.length && !plan.urls.length && !plan.media.length && !plan.photos.length && !plan.files.length && !plan.passages.length && !plan.status
     && subj && !COMMAND.test(subj) && !/^(hello|hi|question|books?|a book|status|test|contribution|dewey)$/i.test(subj) && titleLike(subj.replace(ASK_PREFIX, ''))) add(subj.replace(ASK_PREFIX, ''));
   return plan;
 }
@@ -131,6 +139,15 @@ export async function runVerbs(plan, attachments, deps, by) {
     }, unread);
   }
   for (const u of plan.urls) await safe(u, async () => holdings('link', u, await deps.identifyUrl(u)), unread);
+  for (const u of plan.media) {
+    await safe(u, async () => {
+      const id = await deps.identifyUrl(u).catch(() => ({}));            // oEmbed: title + channel, no model
+      const r = await deps.mediaHoldings(u, { title: id.title || null, author: id.author || null });
+      // a whitelisted contributor's new talk joins the media import queue (ranked like every target; the pipeline decides)
+      if (r.status === 'not-held' && r.youtube_id && deps.addMediaTarget) r.added = await deps.addMediaTarget({ url: u, youtube_id: r.youtube_id, by });
+      results.push({ verb: 'media', label: u, ...r });
+    }, unread);
+  }
   for (const t of plan.titles) await safe(t, async () => holdings('title', t, deps.identifyText(t)), unread);
   for (const p of plan.passages) await safe(`the passage “${p.slice(0, 40)}…”`, async () => holdings('passage', p, deps.identifyText(p)), unread);
   if (plan.status) {
@@ -172,6 +189,15 @@ export function workRows(results = [], unread = []) {
   const rows = [];
   for (const r of results) {
     if (r.verb === 'status') continue;
+    if (r.verb === 'media') {
+      const w = { title: r.title || r.label, author: r.author || null, media: true };
+      if (r.status === 'held') rows.push({ ...w, status: 'held', link: r.link, note: r.how === 'title' ? 'matched by title — a different upload of a talk we hold' : null });
+      else if (r.status === 'queued') rows.push({ ...w, status: 'queued', link: null, note: `number ${r.position} in our media queue${r.eta ? `; at the current pace, ready in ${r.eta}` : ''}` });
+      else if (r.status === 'processing') rows.push({ ...w, status: 'being processed', link: null, note: 'being transcribed and prepared now' });
+      else if (r.status === 'failed') rows.push({ ...w, status: "couldn't import", link: null, note: `we tried to import it and could not${r.why ? ` (${r.why})` : ''}` });
+      else rows.push({ ...w, status: r.added ? 'added to queue' : 'not held', link: null, note: r.added ? 'not in our media library yet — I have added it to the import queue; it will be transcribed and published if it fits the collection' : 'not in our media library' });
+      continue;
+    }
     const c = r.candidates?.[0] || {};
     const w = r.identified?.title ? r.identified : { title: r.source === 'title' ? r.label : c.title || r.label, author: c.author || null };
     if (r.verb === 'intake') {
@@ -205,7 +231,10 @@ function single(r) {
   switch (r.status) {
     case 'new': case 'needs OCR': return `**Received: ${what}**\n\nNew to the library — I have archived your copy and queued it for processing; it is ${r.status === 'needs OCR' ? ETA.ocr : ETA.text}.${link('Follow its progress here.')}`;
     case 'better copy': return `**Received: a fuller copy of ${what}**\n\nWe hold only part of this work (${named(r.held || {})}), so I have archived your copy and queued it to complete ours; it is ${r.needs_ocr ? ETA.ocr : ETA.text}.${link('Follow its progress here.')}`;
-    case 'held': return `**Already in the library: ${named(r)}**\n\n${r.file ? `Your file *${r.file}* is ${r.part ? 'part of this work, which' : 'a copy of a work'} we already hold, so nothing new was added.` : 'We hold this already.'}${link('Read it here.')}`;
+    case 'queued': case 'being processed': case 'added to queue': case "couldn't import": case 'not held':
+      return `**${{ queued: 'In our media queue', 'being processed': 'Being processed now', 'added to queue': 'Not in the library yet — added to the queue', "couldn't import": 'Could not be imported', 'not held': 'Not in the library yet' }[r.status]}: ${named(r)}**\n\n${cap(r.note)}.`;
+    case 'held': if (r.media) return `**Already in the library: ${named(r)}**\n\nWe have this talk${r.note ? ` (${r.note})` : ''}.${link('Listen to it here.')}`;
+      return `**Already in the library: ${named(r)}**\n\n${r.file ? `Your file *${r.file}* is ${r.part ? 'part of this work, which' : 'a copy of a work'} we already hold, so nothing new was added.` : 'We hold this already.'}${link('Read it here.')}`;
     case 'already received': return `**Already received: ${named(r)}**\n\n${cap(r.note)}.${link('See where it stands.')}`;
     case 'not held — wanted': return `**Not in the library yet: ${named(r)}**\n\nIt is ${r.note === 'already on our wanted list' ? 'already' : 'now'} on our wanted list, and I will look for a copy we can add. If you have a PDF or a link to one, send it and processing starts at once.${link('Its page.')}`;
     case 'possibly held': case 'held in part': return `**${r.status === 'held in part' ? 'Held in part' : 'Possibly held'}: ${named(r)}**\n\n${cap(r.note)}.${link('Take a look.')}`;
@@ -220,12 +249,13 @@ export function composeReply({ name = null, results = [], unread = [], refused =
   const parts = [];
   if (rows.length === 1) parts.push(single(rows[0]));
   if (rows.length > 1) {
-    const linkWord = (r) => (['held', 'possibly held', 'held in part'].includes(r.status) ? 'read it' : 'progress');
+    const linkWord = (r) => (r.media ? 'listen' : ['held', 'possibly held', 'held in part'].includes(r.status) ? 'read it' : 'progress');
     parts.push(totalLine(rows), ['| Title | Author | Status | Link |', '| --- | --- | --- | --- |',
       ...rows.map((r) => `| ${cell(r.title)} | ${cell(r.author || '—')} | ${cell(r.status)} | ${r.link ? `[${linkWord(r)}](${r.link})` : '—'} |`)].join('\n'));
     const notes = [];
     if (rows.some((r) => ['new', 'better copy'].includes(r.status))) notes.push(`New works are archived and queued for processing — ${ETA.text}.`);
     if (rows.some((r) => r.status === 'needs OCR')) notes.push('Scans need their text recognised first — usually searchable within 1–2 days.');
+    for (const r of rows.filter((x) => x.media && x.status !== 'held')) notes.push(`*${r.title}*: ${r.note}.`);
     const fix = rows.filter((r) => r.status === "couldn't read");
     if (fix.length) notes.push(`Could not read: ${fix.map((r) => `*${r.title}* (${r.note})`).join('; ')}. Please send ${fix.length > 1 ? 'them' : 'it'} again in another form.`);
     if (notes.length) parts.push(notes.join(' '));
@@ -271,5 +301,5 @@ export async function deweyMailTurn({ from, name = null, subject = '', text = ''
   const plan = planVerbs({ subject, text, attachments });
   const r = await runVerbs(plan, attachments, deps, by);
   return { ...replyRule({ name, text, threadAnswered, ...r }), ...r,
-    plan: { photos: plan.photos.length, files: plan.files.length, urls: plan.urls.length, titles: plan.titles.length, passages: plan.passages.length, status: plan.status } };
+    plan: { photos: plan.photos.length, files: plan.files.length, urls: plan.urls.length, media: plan.media.length, titles: plan.titles.length, passages: plan.passages.length, status: plan.status } };
 }

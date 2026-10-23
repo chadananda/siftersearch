@@ -348,3 +348,20 @@ export async function setGalleryExtension(key, sha, f = {}) {
 /** Every speaker string of the catalogue by state (published, queued, …) — the portrait inventory's work list. */
 export const speakerStateCounts = async () => queryAll(`SELECT speaker, speaker_key, state, COUNT(*) n FROM media_items WHERE speaker IS NOT NULL AND speaker != ''
   GROUP BY speaker, speaker_key, state`, [], 'media:speaker-states');
+
+// ── Dewey's media holdings check (lib/dewey/media-holdings.js, Chad 10-23: "do we have this talk?") ──
+/** Talks whose title contains every one of these words (and, when given, whose speaker contains `speaker`): a few rows. */
+export const findMediaByWords = async (words = [], { speaker = null, limit = 5 } = {}) => {
+  const ws = words.filter(Boolean).slice(0, 5);
+  if (!ws.length) return [];
+  const where = ws.map(() => 'LOWER(title) LIKE ?');
+  const args = ws.map((w) => `%${String(w).toLowerCase()}%`);
+  if (speaker) { where.push('LOWER(COALESCE(speaker, \'\')) LIKE ?'); args.push(`%${String(speaker).toLowerCase()}%`); }
+  return (await queryAll(`SELECT * FROM media_items WHERE state != 'duplicate' AND ${where.join(' AND ')} ORDER BY CASE WHEN state = 'done' THEN 0 ELSE 1 END, id LIMIT ?`,
+    [...args, limit], 'media:by-words')).map(parse);
+};
+/** How many queued / scheduled items come before this rank (the import queue's order). */
+export const mediaQueueAhead = async (rank) => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state IN ('queued', 'scheduled')
+  AND COALESCE(queue_rank, 900000000) < ?`, [rank ?? 900000000], 'media:queue-ahead'))?.n || 0;
+/** Talks published since `since` (the queue's recent pace, for an ETA). */
+export const mediaPublishedSince = async (since) => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE published_at >= ?`, [since], 'media:published-since'))?.n || 0;

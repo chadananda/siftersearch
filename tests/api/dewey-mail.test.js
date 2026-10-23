@@ -296,3 +296,42 @@ describe('book-request quality', () => {
     expect(picks.map((p) => p.title)).toEqual(['Later Book by Momen', 'Haifa Diary']);
   });
 });
+
+describe('MEDIA — "do we have this talk?" with a YouTube link', async () => {
+  const { mediaHoldings, titleOverlap } = await import('../../api/lib/dewey/media-holdings.js');
+  const YT = 'https://www.youtube.com/watch?v=bXiHHjjbliY';
+  const repo = (over = {}) => ({
+    youtubeId: (u) => /v=([\w-]{11})/.exec(u)?.[1] || null,
+    findMediaByYoutube: vi.fn(async () => null), findMediaBySource: vi.fn(async () => null), findMediaByWords: vi.fn(async () => []),
+    mediaQueueAhead: vi.fn(async () => 41), mediaPublishedSince: vi.fn(async () => 96), ...over,
+  });
+  it('subject question + YouTube link body → a media holdings answer; the descriptive line is not a title', async () => {
+    const d = deps({ identifyUrl: vi.fn(async () => ({ title: 'Hands of the Cause — Hooper Dunbar', author: 'Fireside channel', kind: 'video' })),
+      mediaHoldings: vi.fn(async () => ({ status: 'held', how: 'video id', title: 'The Hands of the Cause of God', author: 'Hooper Dunbar', link: 'https://siftersearch.com/media/dunbar-hands-of-the-cause' })) });
+    const out = await deweyMailTurn({ from: 'chad@example.org', name: 'Chad', subject: 'Do we have this talk already', text: `${YT}\n\nIt's a Dunbar talk on the Hands of the Cause.` }, d);
+    expect(d.mediaHoldings).toHaveBeenCalledWith(YT, { title: 'Hands of the Cause — Hooper Dunbar', author: 'Fireside channel' });
+    expect(d.checkHoldings).not.toHaveBeenCalled();            // not a DOCUMENT check
+    expect(d.createItem).not.toHaveBeenCalled();               // "It's a Dunbar talk …" put nothing on the wanted list
+    expect(out.reply).toContain('**Already in the library: *The Hands of the Cause of God* by Hooper Dunbar**\n\nWe have this talk. [Listen to it here.](https://siftersearch.com/media/dunbar-hands-of-the-cause)');
+  });
+  it('queued → its place in the queue and an ETA; not held → added to the import queue', async () => {
+    const q = deps({ mediaHoldings: vi.fn(async () => ({ status: 'queued', title: 'A Talk', author: 'S', position: 42, eta: 'about 21 hours' })) });
+    expect((await deweyMailTurn({ from: 'a@b.c', subject: 'do we have it?', text: YT }, q)).reply).toContain('**In our media queue: *A Talk* by S**\n\nNumber 42 in our media queue; at the current pace, ready in about 21 hours.');
+    const add = vi.fn(async () => ({ id: 9 }));
+    const n = deps({ mediaHoldings: vi.fn(async () => ({ status: 'not-held', youtube_id: 'bXiHHjjbliY', title: 'New Talk' })), addMediaTarget: add });
+    const out = await deweyMailTurn({ from: 'a@b.c', subject: 'do we have it?', text: YT }, n);
+    expect(add).toHaveBeenCalledWith({ url: YT, youtube_id: 'bXiHHjjbliY', by: 'a@b.c (email)' });
+    expect(out.reply).toMatch(/Not in the library yet — added to the queue: \*New Talk\*[\s\S]*added it to the import queue/);
+  });
+  it('lookup: by video id first; else a close title match; queue position + ETA from the recent pace', async () => {
+    const held = await mediaHoldings(YT, {}, repo({ findMediaByYoutube: vi.fn(async () => ({ id: 1, youtube_id: 'bXiHHjjbliY', state: 'done', slug: 'x', title: 'T' })) }));
+    expect(held).toMatchObject({ status: 'held', how: 'video id', link: 'https://siftersearch.com/media/x' });
+    const byTitle = await mediaHoldings(YT, { title: 'Hooper Dunbar: The Hands of the Cause of God (2019)' },
+      repo({ findMediaByWords: vi.fn(async () => [{ id: 2, state: 'done', slug: 'y', title: 'The Hands of the Cause of God — Hooper Dunbar' }]) }));
+    expect(byTitle).toMatchObject({ status: 'held', how: 'title' });
+    const queued = await mediaHoldings(YT, {}, repo({ findMediaByYoutube: vi.fn(async () => ({ id: 3, youtube_id: 'bXiHHjjbliY', state: 'queued', queue_rank: 5e7, title: 'Q' })) }));
+    expect(queued).toMatchObject({ status: 'queued', position: 42, eta: 'about 21 hours' });       // 96 published in 48 h = 2/h
+    expect((await mediaHoldings(YT, { title: 'Something else entirely here' }, repo())).status).toBe('not-held');
+    expect(titleOverlap('Hands of the Cause', 'Recipes for summer')).toBe(0);
+  });
+});

@@ -30,11 +30,18 @@ const metered = async (fn) => {
 };
 
 async function deps() {
-  const [{ identifyPhotos, identifyUrl, identifyText }, { checkHoldingsOffThread, identifyAndCheckOffThread }, repo, { archiveOriginal }, { enqueue }] = await Promise.all([
-    import('../lib/dewey/identify.js'), import('../lib/dewey/holdings.js'), import('../lib/repos/dewey-repo.js'), import('../lib/dewey/intake.js'), import('../lib/repos/ops-report-repo.js')]);
+  const [{ identifyPhotos, identifyUrl, identifyText }, { checkHoldingsOffThread, identifyAndCheckOffThread }, repo, { archiveOriginal }, { enqueue }, media, { mediaHoldings }, { youtubeId }] = await Promise.all([
+    import('../lib/dewey/identify.js'), import('../lib/dewey/holdings.js'), import('../lib/repos/dewey-repo.js'), import('../lib/dewey/intake.js'), import('../lib/repos/ops-report-repo.js'),
+    import('../lib/repos/media-repo.js'), import('../lib/dewey/media-holdings.js'), import('../lib/media/youtube.js')]);
   return { identifyPhotos, identifyUrl, identifyText, checkHoldings: checkHoldingsOffThread, identifyAndCheck: identifyAndCheckOffThread,
     createItem: repo.createItem, findOpenByTitle: repo.findOpenByTitle, findBySha: repo.findBySha, updateItem: repo.updateItem, itemsCreatedBy: repo.itemsCreatedBy,
-    archiveOriginal, enqueue, itemUrl: (id) => itemUrl(id) };
+    archiveOriginal, enqueue, itemUrl: (id) => itemUrl(id),
+    mediaHoldings: (url, hint) => mediaHoldings(url, hint, { youtubeId, ...media }),
+    addMediaTarget: async ({ url, youtube_id, by }) => {
+      if (await media.findMediaByYoutube(youtube_id)) return false;
+      const it = await media.createMediaItem({ source_kind: 'youtube', source_ref: url, youtube_id, why: `sent by ${by}` });
+      return { id: it.id };
+    } };
 }
 
 const STAGE = { wanted: 'On our wanted list', researched: 'Researched — still looking for a copy', source: 'Received — waiting its turn', processing: 'Being processed',
