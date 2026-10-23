@@ -30,6 +30,27 @@ const extOf = (b) => (b[0] === 0x89 ? 'png' : b.slice(8, 12).toString() === 'WEB
 const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 const yearOf = (c, r) => r?.year || (/\b(18[5-9]\d|19\d\d|20[0-2]\d)\b/.exec(`${c.date || ''} ${c.title || ''} ${c.desc || ''}`)?.[1] ? Number(/\b(18[5-9]\d|19\d\d|20[0-2]\d)\b/.exec(`${c.date || ''} ${c.title || ''} ${c.desc || ''}`)[1]) : null);
 
+// A MediaWiki file page's own credit (bahai.media writes it as templates: {{cs | caption | source = {{ab|…}} }} and a licence
+// template such as {{Abn-copyright}}) → { caption, credit, licence }, the templates expanded to their plain text.
+const API = { 'bahai.media': 'https://bahai.media/api.php', 'wikimedia-commons': 'https://commons.wikimedia.org/w/api.php', wikipedia: 'https://en.wikipedia.org/w/api.php' };
+const HOST = { 'bahai.media': 'Bahaipedia (bahai.media)', 'wikimedia-commons': 'Wikimedia Commons', wikipedia: 'Wikipedia' };
+const wikiPlain = (t) => String(t || '').replace(/\[\[Category:[^\]]*\]\]/gi, '').replace(/\[\[(?:File|Image):[^\]]*\]\]/gi, '')
+  .replace(/\[\[[^\]|]*\|([^\]]*)\]\]/g, '$1').replace(/\[\[([^\]]*)\]\]/g, '$1').replace(/\[https?:\S+ ([^\]]*)\]/g, '$1').replace(/\[https?:\S+\]/g, '')
+  .replace(/\{\|[^\n]*|\|\}|^\s*\|[^|\n]*\|/gm, ' ').replace(/style="[^"]*"/g, '').replace(/<[^>]+>/g, ' ').replace(/'''?/g, '').replace(/\s*\|\s*/g, ' ')
+  .replace(/View as PDF\.?/g, '').replace(/\s+/g, ' ').trim();
+async function wikiCredit(origin, title) {
+  const api = API[origin];
+  if (!api || !/^File:/.test(title || '')) return {};
+  const get = async (q) => (await fetch(`${api}?${new URLSearchParams({ format: 'json', ...q })}`, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(20000) })).json();
+  const j = await get({ action: 'query', prop: 'revisions', rvprop: 'content', rvslots: 'main', titles: title });
+  const wt = Object.values(j?.query?.pages || {})[0]?.revisions?.[0]?.slots?.main?.['*'] || '';
+  const field = (k) => { const m = new RegExp(`^\\s*\\|\\s*${k}\\s*=([^\\n]*)`, 'im').exec(wt); return m ? m[1].trim() : null; };
+  const lic = (/==\s*(?:File )?licen[cs]e\s*==([\s\S]*)$/i.exec(wt)?.[1] || '').trim();
+  const expand = async (t) => (t ? wikiPlain((await get({ action: 'expandtemplates', prop: 'wikitext', title, text: t }))?.expandtemplates?.wikitext) : null);
+  const [src, licence] = await Promise.all([expand(field('source') || field('author')), expand(lic)]);
+  return { caption: wikiPlain(field('caption') || field('description')) || null, credit: src || null, licence: licence ? licence.slice(0, 300) : null };
+}
+
 async function bytesFor(key, c) {
   // a video still IS our crop (saved by the harvest); anything else: the downloaded rendition, re-fetched and checked
   if (c.origin === 'youtube-still') return readFileSync(join(ROOT, key, c.file));
@@ -65,8 +86,11 @@ for (const key of readdirSync(ROOT).filter((d) => existsSync(join(ROOT, d, 'revi
       const file = `media-speakers/${key}/${sha.slice(0, 16)}.${ext}`;
       if (!ledger[file] && !dry) { await putCdnPortrait(file, bytes, MIME[ext]); ledger[file] = new Date().toISOString(); report.uploaded++; writeFileSync(LEDGER, JSON.stringify(ledger, null, 1)); }
       const v = c.alt_of ? vids.get(c.alt_of) : null;
+      if ((!c.credit || !c.licence) && API[c.origin]) Object.assign(c, Object.fromEntries(Object.entries(await wikiCredit(c.origin, c.title).catch(() => ({}))).filter(([k, x]) => x && !c[k])));
+      if (c.caption && !base.note) base.note = c.caption.slice(0, 300);
       list.push({ file, sha, origin: c.origin, source_url: c.url || null, page_url: c.page || c.article || null,
-        credit: c.credit || (c.origin === 'youtube-still' ? `Video still${v?.channel ? `: ${v.channel}` : ''} (YouTube)` : null),
+        // as the source states it; else the host it came from (never invented)
+        credit: c.credit || (c.origin === 'youtube-still' ? `Video still${v?.channel ? `: ${v.channel}` : ''} (YouTube)` : HOST[c.origin] || null),
         licence: c.licence || null, ...base, ...(v?.title ? { note: `${a.note ? `${a.note} · ` : ''}from “${v.title}”` } : {}) });
     } catch (err) { report.failed.push(`${key} #${a.n}: ${err.message}`); }
   }
