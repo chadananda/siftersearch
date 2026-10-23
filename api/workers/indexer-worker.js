@@ -17,11 +17,19 @@ dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.en
 async function rollingCoverage() {
   const { coverageRefreshJob } = await import('../lib/ops/coverage-job.js');
   const totals = await import('../lib/repos/coverage-repo.js');
-  let rebuilt = 0;
+  // when the totals were last rebuilt survives restarts (db-write-path-20261023: kept in memory, it rebuilt at EVERY indexer
+  // start — every deploy, ~hourly — a 2–3.5 s blocking write on the single writer each time)
+  const { readFileSync, writeFileSync, mkdirSync } = await import('node:fs');
+  const STAMP = 'data/run/coverage-totals-rebuilt';
+  let rebuilt = (() => { try { return Number(readFileSync(STAMP, 'utf8')) || 0; } catch { return 0; } })();
   while (!isDraining()) {
     // the totals move by deltas; a full rebuild when empty and once a day corrects drift (retired docs, tradition changes)
     if (Date.now() - rebuilt > 86400000 || await totals.coverageTotalsEmpty().catch(() => false)) {
-      await totals.rebuildCoverageTotals().then(() => { rebuilt = Date.now(); logActivity('ledger', 'coverage totals rebuilt from the full ledger (daily)'); })
+      await totals.rebuildCoverageTotals().then(() => {
+        rebuilt = Date.now();
+        try { mkdirSync('data/run', { recursive: true }); writeFileSync(STAMP, String(rebuilt)); } catch { /* next start rebuilds again */ }
+        logActivity('ledger', 'coverage totals rebuilt from the full ledger (daily)');
+      })
         .catch((err) => logger.warn({ err: err.message }, 'coverage: totals rebuild failed'));
     }
     const r = await coverageRefreshJob({ limit: 300 }).catch((err) => { logger.warn({ err: err.message }, 'coverage: rolling refresh failed'); return null; });
