@@ -140,7 +140,7 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
   const hunted = new Map((await rows()).map((r) => [r.doc_id, parse(r.found)]));
   const out = { write, books: 0, noncanonical: 0, already_encumbered: 0, would_encumber: 0, review: 0, no_evidence: 0, institutional: 0,
     by_reason: {}, by_publisher: {}, encumbered_now: 0 };
-  const flagged = [], review = [], gr = [];
+  const flagged = [], review = [], gr = [], inst = [];
   for await (const d of books(page)) {
     out.books++;
     if (canonicalOf(d).canonical) continue;
@@ -153,7 +153,7 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
       isbn: isbn?.value || null, evidence: pub?.evidence || isbn?.evidence || null, source: pub?.source || isbn?.source || null };
     if (pub?.value === 'George Ronald') gr.push({ ...row, encumbered: !!d.encumbered });
     if (cls === 'review') { out.review++; review.push(row); continue; }
-    if (cls === 'institutional') { out.institutional++; continue; }
+    if (cls === 'institutional') { out.institutional++; inst.push(row); continue; }
     const reason = cls === 'commercial' ? 'publisher-commercial' : isbn ? 'isbn-noncanonical' : null;
     if (!reason) { out.no_evidence++; continue; }
     if (d.encumbered) { out.already_encumbered++; continue; }
@@ -164,5 +164,5 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
     if (write) { const r = await encumber(d.id, reason); if (r.changed) out.encumbered_now++; }
   }
   const pick = (arr, n) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); };
-  return { ...out, sample: pick(flagged, samples), george_ronald: gr, review_list: review, flagged_ids: flagged.map((x) => x.id), flagged_all: flagged };
+  return { ...out, sample: pick(flagged, samples), george_ronald: gr, review_list: review, institutional_list: inst, flagged_ids: flagged.map((x) => x.id), flagged_all: flagged };
 }

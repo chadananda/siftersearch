@@ -2,7 +2,7 @@
 // the publisher rights rule (dry run), resume.
 import { describe, it, expect, vi } from 'vitest';
 import { imprintFromText, publisherClass } from '../../api/lib/books/publishers.js';
-import { huntBook, mainTitle, authorAgrees, isbn10Of, portraitProblem } from '../../api/lib/books/hunt.js';
+import { huntBook, mainTitle, authorAgrees, isbn10Of, portraitProblem, HUNT_VERSION } from '../../api/lib/books/hunt.js';
 import { bookHuntJob, applicable, bookHuntApplyJob, rightsPublisherJob, bookMetaCoverageReport } from '../../api/lib/ops/book-hunt-job.js';
 
 const p = (texts) => texts.map((text, i) => ({ paragraph_index: i, text }));
@@ -28,6 +28,21 @@ describe('publishers', () => {
     expect(r.year.value).toBe(2000);
     expect(r.edition.value).toBe('second edition');
     expect(r.printing_year.value).toBe(2004);
+  });
+});
+
+describe('a publisher named elsewhere is not the imprint (10-23 dry run)', () => {
+  it.each([
+    'Giachery, Ugo. _Shoghi Effendi, Recollections_. Oxford: George Ronald, 1973. -- Ugo Giachery was a Hand of the Cause',
+    'Taherzadeh, Adib. The Covenant of Bahá’u’lláh (Bahá’í Publishing Trust, London, 1972)',
+    'Note: All page references to the Íqán correspond to the edition of the Bahá’í Publishing Trust of 1989.',
+    'BY THE SAME AUTHOR Iran’s Secret Pogrom (Neville Spearman) The Phoenix and the Ashes (George Ronald, Publisher)',
+    'Approved by the National Spiritual Assembly of the Bahá’ís of Jamaica',
+  ])('%s', (line) => { expect(imprintFromText(p([line])).publisher).toBeUndefined(); });
+  it('still reads a real imprint line', () => {
+    expect(imprintFromText(p(['Approved by the National Spiritual Assembly', 'GEORGE RONALD OXFORD'])).publisher.value).toBe('George Ronald');
+    expect(imprintFromText(p(['Bahá’í Publishing Trust, 27 Rutland Gate, London SW7 1PD Copyright Rúḥíyyih Rabbání 1988 All rights reserved'])).publisher)
+      .toMatchObject({ value: 'Bahá’í Publishing Trust', class: 'review' });
   });
 });
 
@@ -122,7 +137,7 @@ describe('jobs', () => {
   it('book-hunt hunts books only, checkpoints each, skips done ones, yields to a drain with a resume', async () => {
     const saved = new Map();
     const deps = { page, front: async () => [], speakers: async () => [], photoUrl: () => '', jev: null, sleep: async () => {},
-      rows: async ([id]) => (saved.has(id) ? [{ state: 'done', version: 'book-hunt-v1' }] : []),
+      rows: async ([id]) => (saved.has(id) ? [{ state: 'done', version: HUNT_VERSION }] : []),
       save: async (id, r) => saved.set(id, r), hunt: async () => ({ fields: {}, review: false }) };
     const r = await bookHuntJob({}, deps);
     expect([...saved.keys()]).toEqual([1, 2, 4, 5]);
