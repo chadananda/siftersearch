@@ -47,12 +47,12 @@ describe('the feed', () => {
 });
 
 describe('tower stays light with four items in flight', () => {
-  it('tower model work runs one at a time', async () => {
+  it('tower model work runs in two slots', async () => {
     const { towerSlot } = await import('../../api/lib/media/item.js');
     let live = 0, peak = 0;
     const job = () => towerSlot(async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 15)); live--; });
     await Promise.all([job(), job(), job(), job()]);
-    expect(peak).toBe(1);
+    expect(peak).toBe(2);
   });
   it('a failing item keeps its retry count (so transient retries stop after two)', async () => {
     const { readFileSync } = await import('fs');

@@ -17,10 +17,17 @@ import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights
 import { tileSvg } from './thumbs.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
-// tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs ONE at a time at 4 threads even when four items are
+// tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs in TWO slots at 4 threads even when more items are
 // in flight (10-22: four in parallel took on-tower search p90 to 5.3 s)
-let towerChain = Promise.resolve();
-export function towerSlot(fn) { const run = towerChain.then(fn, fn); towerChain = run.catch(() => {}); return run; }
+// two slots at 4 threads each = tower's 8-thread media budget (plan §12); one slot made enhance the compute lane's bottleneck
+const TOWER_SLOTS = Math.max(1, Number(process.env.MEDIA_TOWER_SLOTS) || 2);
+let towerBusy = 0;
+const towerWait = [];
+export async function towerSlot(fn) {
+  if (towerBusy >= TOWER_SLOTS) await new Promise((r) => towerWait.push(r));
+  towerBusy++;
+  try { return await fn(); } finally { towerBusy--; towerWait.shift()?.(); }
+}
 
 // PUBLISH EARLY (Chad 10-22: "talks should be published as they are completed … start ingesting for search"): the core —
 // transcript, name corrections, the copy-edit with its faithfulness check, a short description — is rendered, ingested for
