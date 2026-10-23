@@ -37,6 +37,15 @@ export async function convSlot(fn) {
   convBusy++;
   try { return await fn(); } finally { convBusy--; convWait.shift()?.(); }
 }
+// a TRANSCRIPTION's conversion has its own two slots: it holds an ASR host's slot while it converts, and behind 16 prep
+// runs' probe conversions it waited half an hour (13:13 → 13:43: aorus's two slots 'taken', nothing running there)
+let asrConvBusy = 0;
+const asrConvWait = [];
+export async function asrConvSlot(fn) {
+  if (asrConvBusy >= 2) await new Promise((r) => asrConvWait.push(r));
+  asrConvBusy++;
+  try { return await fn(); } finally { asrConvBusy--; asrConvWait.shift()?.(); }
+}
 
 // every tower-side media process runs at the LOWEST priority, CPU and disk (10-23: prep took API reads from ms to 1.5 s):
 // nice 19 + ionice idle class on Linux
@@ -253,7 +262,7 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
     if (installedOn !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
     const flac = tempFlac(tmpdir());
     try {
-      await convSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
+      await asrConvSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
       await ssh(`start flac ${job} ${gateCommand('x', 'flac', { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });
     } finally { await unlink(flac).catch(() => {}); }
     await onStart();
