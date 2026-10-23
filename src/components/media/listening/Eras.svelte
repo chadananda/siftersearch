@@ -44,7 +44,7 @@
         {#each eras as e (e.decade)}
           <div data-decade={e.decade} style={`--tint:${eraVar(e.decade)}`}>
             <h3 class="decade-h">
-              <a href={`/media?era=${e.decade}`} onclick={(ev) => { ev.preventDefault(); ondecade(e.decade); }}>The {e.decade}s</a>
+              <a href={`/media?era=${e.decade}`} onclick={(ev) => { if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return; ev.preventDefault(); ondecade(e.decade); }}>The {e.decade}s</a>
               <span class="font-dial text-base font-semibold uppercase tracking-wider text-radio-ink-soft">{e.n} talk{e.n === 1 ? '' : 's'}</span>
             </h3>
             <ul class="mt-3 grid gap-3 sm:grid-cols-2">

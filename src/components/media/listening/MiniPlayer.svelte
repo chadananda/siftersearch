@@ -15,11 +15,14 @@
         <RecordLabel name={preview.speaker?.n || it.sp || it.t} photo={preview.speaker?.p} year={it.y} size={44} />
       </div>
       <div class="min-w-0 flex-1">
-        <a href={`/media/${it.s}?t=${it.hl?.[0] || 0}`} class="block truncate font-semibold text-radio-on-dark hover:text-radio-amber">{it.t}</a>
+        <a href={`/media/${it.s}?t=${it.hl?.[0] || 0}`} class="block truncate font-semibold text-radio-on-dark underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">{it.t}</a>
         <p class="truncate text-sm text-radio-on-dark opacity-80" aria-live="polite">
           {preview.error || (preview.loading ? 'Tuning in…' : `${it.sp || 'Excerpt'}${it.y ? ` · ${it.y}` : ''} · 20-second excerpt`)}
         </p>
       </div>
+      <a href={`/media/${it.s}?t=${Math.floor(it.hl?.[0] || 0)}`} class="ctl ghost open" aria-label={`Open the talk: ${it.t}`} title="Open the talk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </a>
       <button type="button" class="ctl" onclick={() => playExcerpt(it, preview.speaker)} aria-label={preview.playing ? 'Pause' : 'Play'}>
         {#if preview.playing}
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
@@ -41,6 +44,7 @@
   .bar { position: absolute; left: 0; top: 0; height: 3px; width: 100%; background: var(--radio-amber); transform-origin: left; transition: transform 0.25s linear; }
   .ctl { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 9999px; background: var(--radio-amber); color: var(--radio-walnut-deep); }
   .ctl svg { width: 1.2rem; height: 1.2rem; }
+  .ctl.open:hover { color: var(--radio-amber); box-shadow: inset 0 0 0 2px var(--radio-amber); }
   .ctl.ghost { background: transparent; color: var(--radio-on-dark); box-shadow: inset 0 0 0 1px var(--radio-brass); }
   .ctl:focus-visible, a:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .spin { animation: spin 1.8s linear infinite; }

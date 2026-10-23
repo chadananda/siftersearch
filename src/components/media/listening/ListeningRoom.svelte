@@ -220,15 +220,21 @@
             <li class="heard">
               <div class="heard-who">
                 <span class="h-8 w-8 flex-none overflow-hidden rounded-full"><RecordLabel name={t.s?.n || t.sp || t.title} photo={t.s?.p} year={t.y} size={32} /></span>
-                <span class="min-w-0 leading-tight">
-                  <span class="block truncate text-sm font-semibold text-radio-ink">{t.sp || 'Unknown voice'}</span>
+                <span class="min-w-0 flex-1 leading-tight">
+                  {#if t.k && t.s}
+                    <a href={`/media?speaker=${encodeURIComponent(t.k)}`} class="heard-voice"
+                      onclick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); setSpeaker(t.k); }}>{t.sp || t.s.n}</a>
+                  {:else}
+                    <span class="block truncate text-sm font-semibold text-radio-ink">{t.sp || 'Unknown voice'}</span>
+                  {/if}
                   <a href={`/media/${g.slug}?t=${Math.floor(g.hits[0].t0)}`} class="heard-title">{t.title}{t.y ? ` (${t.y})` : ''}</a>
                 </span>
+                <a href={`/media/${g.slug}`} class="heard-open" aria-label={`Open the talk: ${t.title}`}>Open talk <span aria-hidden="true">→</span></a>
               </div>
               {#each shown as h, i (`${h.t0}-${i}`)}
                 {@const sn = snippetAround(h.text, [hitQuery, ...(h.terms || [])].join(' '), 230)}
                 <div class="heard-line">
-                  <button type="button" class="heard-t" onclick={() => hearHit(h)} aria-label={`Hear ${t.title} from ${formatTime(h.t0)}`}
+                  <button type="button" class="heard-t" onclick={() => hearHit(h)} aria-label={`Play ${t.title} from ${formatTime(h.t0)} here`} title="Play this passage here"
                     class:on={preview.playing && preview.item?.s === g.slug && Math.abs((preview.start ?? -9) - Math.max(0, h.t0 - 0.3)) < 0.5}>
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>{formatTime(h.t0)}
                   </button>
@@ -293,7 +299,13 @@
   .heard-who { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
   .heard-title { display: block; font-size: 0.85rem; color: var(--radio-ink-soft); text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .heard-title:hover { color: var(--radio-amber); }
+  .heard-title:hover { color: var(--radio-amber); text-decoration-color: var(--radio-amber); }
+  .heard-voice { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; font-weight: 600; color: var(--radio-ink); }
+  .heard-voice:hover { color: var(--radio-amber); text-decoration: underline; }
+  .heard-open { flex: none; align-self: flex-start; display: inline-flex; align-items: center; gap: 0.25rem; min-height: 2rem; padding: 0 0.7rem; border-radius: 9999px;
+    font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--radio-ink);
+    box-shadow: inset 0 0 0 1.5px var(--radio-brass); transition: color 0.2s, box-shadow 0.2s; }
+  .heard-open:hover { color: var(--radio-amber); box-shadow: inset 0 0 0 2px var(--radio-amber); }
   .heard-line { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 0.45rem; }
   .heard-t { flex: none; display: inline-flex; align-items: center; gap: 0.2rem; min-height: 2rem; padding: 0 0.55rem 0 0.4rem; border-radius: 9999px; margin-top: 0.05rem;
     font: 700 0.85rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-amber); box-shadow: inset 0 0 0 1px var(--radio-line); }
@@ -308,7 +320,7 @@
   .heard-share:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .heard-more { margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--radio-ink-soft); text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px; }
   .heard-more:hover { color: var(--radio-amber); }
-  .heard-t:focus-visible, .heard-title:focus-visible, .heard-more:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  .heard-t:focus-visible, .heard-title:focus-visible, .heard-more:focus-visible, .heard-open:focus-visible, .heard-voice:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .topic { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.95rem; border-radius: 9999px; font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; font-size: 1rem; color: var(--radio-ink);
     background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); transition: background 0.2s, box-shadow 0.2s; }
   .topic.big { font-size: 1.2rem; box-shadow: inset 0 0 0 1.5px var(--radio-brass); }

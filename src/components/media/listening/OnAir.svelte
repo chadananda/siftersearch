@@ -95,7 +95,7 @@
                 <p class="mt-2 line-clamp-3 font-marquee text-2xl leading-tight text-radio-on-dark sm:line-clamp-2 sm:text-4xl">{line.text}</p>
               {/if}
               <p class="mt-3 text-sm text-radio-on-dark opacity-90 sm:text-base">
-                <a href={`/media/${cur.s}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber focus-visible:outline-2 focus-visible:outline-radio-amber">{cur.t}</a>
+                <a href={`/media/${cur.s}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber hover:decoration-radio-amber focus-visible:outline-2 focus-visible:outline-radio-amber">{cur.t}</a>
                 {#if cur.sp}<span class="opacity-80"> · {cur.sp}</span>{/if}
                 <span class="opacity-70"> · {duration(cur.d)}</span>
               </p>
@@ -110,6 +110,8 @@
                 <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg> Hear 20 s
               {/if}
             </button>
+            <a href={`/media/${cur.s}`} class="open-talk inline-flex min-h-11 flex-none items-center gap-1.5 rounded-full px-4 py-2 font-dial text-base font-bold uppercase tracking-wider text-radio-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-radio-amber"
+              aria-label={`Open the talk: ${cur.t}`}>Open talk <span aria-hidden="true">→</span></a>
             <div class="h-10 min-w-0 flex-1"><Wave w={cur.w} year={cur.y} breathing={!reduced} {progress} tint="var(--radio-amber)" class="h-full" /></div>
           </div>
         </div>
@@ -154,6 +156,8 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes wobble { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
   .play-btn { box-shadow: 0 0 0 0 var(--radio-glow); transition: transform 0.2s, box-shadow 0.3s; }
+  .open-talk { box-shadow: inset 0 0 0 2px var(--radio-brass); transition: box-shadow 0.2s, color 0.2s; }
+  .open-talk:hover { color: var(--radio-amber); box-shadow: inset 0 0 0 2px var(--radio-amber); }
   .play-btn:hover { transform: translateY(-1px) scale(1.03); box-shadow: 0 0 0 6px var(--radio-glow); }
   .vu { position: relative; width: 4.5rem; height: 2.4rem; border-radius: 0.4rem 0.4rem 0.2rem 0.2rem; background: var(--radio-dial); overflow: hidden;
     box-shadow: inset 0 0 0 1.5px var(--radio-brass); }

@@ -205,7 +205,7 @@ export function planLayout(rows, speakersByKey = new Map(), { seed = 'x', boxMin
       seenBox.add(it.k);
       const talks = byK.get(it.k), s = speakersByKey.get(it.k) || { k: it.k, n: it.sp, c: talks.length };
       cards.push({ id: `box:${it.k}`, kind: 'box', size: talks.length >= 8 ? 'lg' : 'tall', speaker: s, total: talks.length,
-        talks: talks.slice(0, spines).map((x) => ({ s: x.s, t: x.t, y: x.y, d: x.d })) });
+        talks: talks.slice(0, spines).map((x) => ({ s: x.s, t: x.t, y: x.y, d: x.d, sp: x.sp, k: x.k, v: x.v, hl: x.hl })) });   // sp k v hl: a spine plays its excerpt in place
       pushFace(it.k);
       const feat = talks.find((x) => x.q?.x?.length >= QUOTE_MIN) || talks.find((x) => x.h?.some((h) => h.f === 'q'));
       if (feat) {

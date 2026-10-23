@@ -12,7 +12,9 @@
 
   let { paragraphs = [], headings = [], quotes = [], links = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
     playingPara = -1, playing = false, onword, onpara, root = $bindable(),
-    moments = [], slug = '', speaker = '', onmoment = null, momentNow = null } = $props();
+    moments = [], slug = '', speaker = '', onmoment = null, momentNow = null, skips = [] } = $props();
+  // a dead gap (a tape flip, ≥ 20 s with no speech) before a paragraph: a quiet divider (the player skips the gap)
+  const gapBefore = $derived(new Map(paragraphs.map((p, i) => [p.n, i ? (skips || []).find((g) => g.from >= paragraphs[i - 1].t1 - 2 && g.to <= p.t0 + 2) : null]).filter(([, g]) => g)));
 
   const offsets = $derived(paragraphs.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + (paragraphs[i - 1].words?.length || 0) : 0); return acc; }, []));
   const labels = $derived(speakerLabels(paragraphs, speakers));
@@ -48,6 +50,10 @@
 <div bind:this={root} class="transcript" class:cursor-text={!canPlay} onclick={click}>
   {#each paragraphs as p, pi (p.n)}
     {@const segs = paragraphSegments(p.words.length, spansBy.get(p.n) || [])}
+    {#if gapBefore.has(p.n)}
+      {@const g = gapBefore.get(p.n)}
+      <p class="tape-gap" role="separator" aria-label={`Silence on the recording, ${Math.round(g.to - g.from)} seconds, skipped`}>— {Math.round((g.to - g.from) / 60) >= 1 ? `${Math.round((g.to - g.from) / 60)} min` : `${Math.round(g.to - g.from)} s`} of silence on the tape · skipped —</p>
+    {/if}
     {#if headingBy.has(p.n)}
       {@const h = headingBy.get(p.n)}
       <h2 id={h.slug} class="section-h" class:question={h.form === 'question'}>
@@ -151,8 +157,10 @@
   @media (min-width: 1024px) { .pbtn { width: 2.5rem; height: 2.5rem; } }
   .ptime { display: none; font: 600 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; color: var(--radio-ink-soft); }
   @media (min-width: 1024px) { .ptime { display: block; } }
-  .para.now::before { content: ''; position: absolute; left: -1rem; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 2px; background: var(--radio-amber); }
-  @media (max-width: 1023px) { .para.now::before { left: -0.7rem; } }
+  /* the playing marker spans the speaker's words only (.ptext), never the studio inserts that follow inside .para */
+  .ptext { position: relative; }
+  .para.now > .ptext::before { content: ''; position: absolute; left: -1rem; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 2px; background: var(--radio-amber); }
+  @media (max-width: 1023px) { .para.now > .ptext::before { left: -0.7rem; } }
 
   /* the subheaders: section breaks with the log time; questions carry an amber query mark */
   .section-h { scroll-margin-top: 7rem; margin: 3rem 0 0.4rem; padding-top: 1.1rem; border-top: 1px solid var(--radio-line); font: 400 1.6rem/1.2 'Gloock', 'Gloock Fallback', Georgia, serif; color: var(--radio-ink); text-wrap: balance; }
@@ -168,55 +176,48 @@
   .transcript :global(.wlink) { font-style: italic; }
   .transcript :global(.qlink:hover), .transcript :global(.nlink:hover), .transcript :global(.wlink:hover) { color: var(--radio-amber); }
 
-  /* moments: the SPEAKER's words, on the amber dial glass in Gloock (inserts of the Writings are paper/walnut and italic) */
-  .moment { hyphens: manual; -webkit-hyphens: manual; position: relative; clear: both; margin: 1.8rem 0 1.6rem; padding: 1.2rem 1.3rem 1rem 1.6rem; border-radius: 1rem; scroll-margin-top: 8rem;
-    background: var(--radio-dial); color: var(--radio-dial-ink); font-family: system-ui, sans-serif;
-    background-image: radial-gradient(70% 120% at 0% 100%, var(--radio-glow), transparent 70%),
-      repeating-linear-gradient(90deg, transparent 0 11px, color-mix(in srgb, var(--radio-dial-ink) 14%, transparent) 11px 12px);
-    background-size: auto, 100% 0.6rem; background-repeat: no-repeat, repeat-x; background-position: 0 0, 0 100%;
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--radio-brass) 70%, transparent), 0 10px 26px var(--radio-brass-soft); }
-  @media (min-width: 1024px) { .moment { margin-left: -2.5rem; margin-right: -1.5rem; } }
-  .moment::before { content: ''; position: absolute; left: 0.7rem; top: 1rem; bottom: 1rem; width: 3px; border-radius: 2px; background: var(--radio-needle); box-shadow: 0 0 8px var(--radio-needle); }
-  .m-tag { display: flex; align-items: center; gap: 0.5rem; font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; }
-  .m-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--radio-needle); }
-  .m-context { margin-top: 0.45rem; font-size: 0.9rem; opacity: 0.8; }
-  .m-quote { margin-top: 0.5rem; font: 400 1.45rem/1.3 'Gloock', 'Gloock Fallback', Georgia, serif; text-wrap: pretty; }
-  .m-quote p::before { content: '“'; } .m-quote p::after { content: '”'; }
-  @media (min-width: 640px) { .m-quote { font-size: 1.7rem; } }
-  .m-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-top: 0.9rem; }
-  .m-play { display: inline-flex; align-items: center; gap: 0.4rem; height: 2.5rem; padding: 0 0.95rem 0 0.75rem; border-radius: 9999px; background: var(--radio-walnut-deep); color: var(--radio-amber);
-    font: 700 0.95rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.08em; }
-  .m-play svg { width: 1.05rem; height: 1.05rem; }
-  .m-play.on { box-shadow: 0 0 0 5px var(--radio-glow); }
-  .m-page { font-weight: 600; font-size: 0.9rem; text-decoration: underline; text-decoration-color: var(--radio-needle); text-decoration-thickness: 2px; text-underline-offset: 3px; }
-  .m-page:hover { color: var(--radio-needle); }
-  .m-play:focus-visible, .m-page:focus-visible { outline: 3px solid var(--radio-needle); outline-offset: 2px; }
-
-  /* studio inserts: cut-in breakouts that step out of the column */
-  .insert { position: relative; clear: both; margin: 1.6rem 0 1.4rem; padding: 1.1rem 1.3rem 1rem; border-radius: 0.9rem; font-size: 1rem; }
-  @media (min-width: 1024px) { .insert { margin-left: -1.5rem; margin-right: -2.5rem; } }
-  .insert-tag { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; }
-  .dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--radio-needle); box-shadow: 0 0 6px var(--radio-needle); }
-  .insert blockquote { font-size: 1.15rem; line-height: 1.6; }
-  .insert-cite { margin-top: 0.6rem; font-family: system-ui, sans-serif; font-size: 0.9rem; }
+  /* WHAT THE STUDIO INSERTS (moments, quoted passages, cross-references) DECORATES the talk, it does not crowd it out (Chad
+     10-23): indented under a thin muted rule, ~0.9em, muted ink, no card box or shadow, tight spacing; the hues stay but
+     desaturated (--radio-*-muted, global.css) and come back to full colour on hover/focus. Controls are small and quiet. */
+  .moment, .insert { position: relative; clear: both; margin: 0.55rem 0 0.9rem 1.1rem; padding: 0.2rem 0 0.25rem 0.95rem; font-size: 0.9em; line-height: 1.6;
+    color: var(--radio-insert-ink); border-left: 2px solid var(--rule, var(--radio-brass-muted)); hyphens: manual; -webkit-hyphens: manual; transition: border-color 0.2s; }
+  @media (min-width: 640px) { .moment, .insert { margin-left: 1.75rem; } }
+  .moment:hover, .moment:focus-within, .insert:hover, .insert:focus-within { border-left-color: var(--rule-on, var(--radio-brass)); }
+  .insert-tag, .m-tag { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; font: 700 0.7rem/1.2 'Big Shoulders Display', 'Shoulders Fallback', sans-serif;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--radio-insert-ink); }
+  .dot, .m-dot { flex: none; width: 0.4rem; height: 0.4rem; border-radius: 9999px; background: var(--dot, var(--radio-needle-muted)); }
+  .insert blockquote { font-size: 1em; line-height: 1.6; }
+  .insert-cite { margin-top: 0.25rem; font-family: system-ui, sans-serif; font-size: 0.8rem; }
   .insert-cite cite { font-style: normal; }
-  .insert-cite a { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
-  .insert-cite a:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
-  .quote-insert { background: var(--radio-paper); box-shadow: inset 4px 0 0 var(--tint, var(--radio-amber)), 0 8px 24px var(--radio-brass-soft), inset 0 0 0 1px var(--radio-line); }
-  .quote-insert .insert-tag { color: var(--radio-ink-soft); }
-  .quote-insert blockquote { font-style: italic; color: var(--radio-ink); }
-  .quote-insert .insert-cite { color: var(--radio-ink-soft); }
-  .quote-insert .insert-cite a { color: var(--radio-ink); text-decoration-color: var(--radio-amber); }
-  .quote-insert .insert-cite a:hover { color: var(--radio-amber); }
-  .xref-insert { background: var(--radio-walnut-deep); color: var(--radio-on-dark); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-brass) 40%, transparent);
-    background-image: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--tint, var(--radio-brass)) 30%, transparent), transparent 70%); }
-  .xref-insert .insert-tag { color: var(--radio-brass-bright); }
-  .xref-insert .claim { font-family: system-ui, sans-serif; font-size: 0.95rem; line-height: 1.5; opacity: 0.88; margin-bottom: 0.4rem; }
-  .xref-insert .insert-cite a { color: var(--radio-on-dark); text-decoration-color: var(--radio-brass); }
-  .xref-insert .insert-cite a:hover { color: var(--radio-amber); }
+  .insert-cite a, .m-page { color: var(--radio-insert-ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--radio-amber-muted); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .insert-cite a:hover, .m-page:hover { color: var(--radio-amber); text-decoration-color: var(--radio-amber); }
+  .insert-cite a:focus-visible, .m-page:focus-visible, .m-play:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+
+  /* quoted passage: the Writings, italic; the rule takes the era tint, muted */
+  .quote-insert { --rule: color-mix(in oklab, var(--tint, var(--radio-amber)) 55%, var(--radio-room)); --rule-on: var(--tint, var(--radio-amber)); }
+  .quote-insert blockquote { font-style: italic; }
+  /* cross-reference: brass rule, the claim as a small lead-in */
+  .xref-insert { --rule: var(--radio-brass-muted); --rule-on: var(--radio-brass); --dot: var(--radio-brass-muted); }
+  .xref-insert .claim { font-family: system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; margin-bottom: 0.15rem; }
+  /* moment: the speaker's own line, set in Gloock but at reading size; needle rule */
+  .moment { scroll-margin-top: 8rem; --rule: var(--radio-needle-muted); --rule-on: var(--radio-needle); }
+  .m-context { margin-top: 0.1rem; font-family: system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; }
+  .m-quote { margin-top: 0.2rem; font: 400 1.05rem/1.4 'Gloock', 'Gloock Fallback', Georgia, serif; text-wrap: pretty; }
+  .m-quote p::before { content: '“'; } .m-quote p::after { content: '”'; }
+  .m-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; margin-top: 0.35rem; }
+  .m-play { display: inline-flex; align-items: center; gap: 0.25rem; height: 1.9rem; padding: 0 0.55rem 0 0.4rem; border-radius: 9999px; color: var(--radio-insert-ink);
+    box-shadow: inset 0 0 0 1px var(--radio-line); font: 700 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.08em; transition: color 0.2s, box-shadow 0.2s; }
+  .m-play svg { width: 0.85rem; height: 0.85rem; }
+  .m-play:hover, .m-play.on { color: var(--radio-amber); box-shadow: inset 0 0 0 1.5px var(--radio-amber); }
+  .m-page { font-size: 0.8rem; font-family: system-ui, sans-serif; }
+  /* the share row inside a moment: icon-sized and muted until hovered */
+  .moment :global(.s-btn) { height: 1.9rem; min-width: 1.9rem; padding: 0 0.45rem; font-size: 0.75rem; color: var(--radio-insert-ink); background: transparent; box-shadow: none; }
+  .moment :global(.s-btn svg) { width: 0.85rem; height: 0.85rem; }
+  .moment :global(.s-btn:hover) { color: var(--radio-amber); box-shadow: inset 0 0 0 1px var(--radio-amber); background: transparent; }
   @supports (animation-timeline: view()) {
     .insert { animation: cutIn linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
-    @keyframes cutIn { from { opacity: 0.3; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+    @keyframes cutIn { from { opacity: 0.4; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
   }
   @media (prefers-reduced-motion: reduce) { .insert { animation: none; transform: none; } .pbtn { transition: none; } }
+  .tape-gap { margin: 1.5rem 0; text-align: center; font-size: 0.8rem; letter-spacing: 0.08em; color: var(--radio-ink-soft); }
 </style>

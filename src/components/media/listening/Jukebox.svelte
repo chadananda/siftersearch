@@ -16,6 +16,9 @@
   const playing = (it) => preview.item?.s === it.s && preview.playing;
   const by = (it) => [it.sp, it.y].filter(Boolean).join(' · ');
   const GRADE = { A: 'Studio clear', B: 'Clear', C: 'Good', D: 'Vintage tape', E: 'Archival' };
+  // a plain left click on a speaker link filters in place; cmd/ctrl/shift-click and middle-click open the link as usual
+  const plain = (e) => !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0);
+  const toSpeaker = (e, k) => { if (!plain(e)) return; e.preventDefault(); onspeaker(k); };
 
   // the radial waveform disc: 48 peaks as spokes around a ring
   function spokes(w) {
@@ -29,14 +32,21 @@
 </script>
 
 {#snippet playBtn(it, cls = '')}
-  <button type="button" class={`pbtn ${cls}`} class:on={playing(it)} onclick={() => playExcerpt(it, speakersByKey.get(it.k))}
-    aria-label={playing(it) ? `Pause the excerpt of ${it.t}` : `Hear 20 seconds of ${it.t}`}>
+  <!-- play HERE (a 20 s excerpt in the docked player); the card's title and its "Open talk" link open the talk -->
+  <button type="button" class={`pbtn ${cls}`} class:on={playing(it)} onclick={(e) => { e.stopPropagation(); playExcerpt(it, speakersByKey.get(it.k)); }}
+    aria-label={playing(it) ? `Pause the excerpt of ${it.t}` : `Play 20 seconds of ${it.t} here`} title={playing(it) ? 'Pause' : 'Play 20 s here'}>
     {#if playing(it)}
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
     {:else}
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
     {/if}
   </button>
+{/snippet}
+
+<!-- every card's one obvious way in: "Open talk →" (a real link; its ::after stretches over the card, so a click anywhere
+     that is not another control opens the talk too) -->
+{#snippet openLink(it, cls = '')}
+  <a href={`/media/${it.s}`} class={`open ${cls}`} aria-label={`Open the talk: ${it.t}`}>Open talk <span aria-hidden="true">→</span></a>
 {/snippet}
 
 <ul class="jukebox" class:reduced>
@@ -48,7 +58,7 @@
         <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
         {@const pic = s.p ? portraitTall(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
         <article class="box h-full">
-          <header class="flex gap-4">
+          <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-head flex gap-4" onclick={(e) => toSpeaker(e, s.k)} aria-label={`All ${s.c || c.total} talks by ${s.n}`}>
             <div class="box-pic">
               {#if pic}
                 <img src={pic.src} srcset={pic.srcset} alt={s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * 1.25)} loading="lazy" decoding="async" class="h-full w-full object-cover" />
@@ -58,29 +68,35 @@
             </div>
             <div class="min-w-0 self-end">
               <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">Box set{ROLE[s.role] ? ` · ${ROLE[s.role]}` : ''}</p>
-              <h3 class="font-marquee text-2xl leading-tight text-radio-on-dark sm:text-3xl">{s.n}</h3>
+              <h3 class="box-name font-marquee text-2xl leading-tight text-radio-on-dark sm:text-3xl">{s.n}</h3>
               <p class="mt-1 font-dial text-base font-semibold uppercase tracking-wider text-radio-on-dark opacity-80">{s.c || c.total} talks{s.y0 ? ` · ${s.y0}${s.y1 && s.y1 !== s.y0 ? `–${s.y1}` : ''}` : ''}</p>
             </div>
-          </header>
+          </a>
           <div class="spines" style={`--n:${c.talks.length}`}>
             <ol class="spine-list" class:riffle={c.talks.length > 4 && !reduced}>
               {#each c.talks as t, j (t.s)}
-                <li><a href={`/media/${t.s}`} class="spine" style={`--st:${eraVar(t.y)};--j:${j}`}>
+                <!-- the row is the link to the talk; the round button beside it plays an excerpt here -->
+                <li class="spine-row"><a href={`/media/${t.s}`} class="spine" style={`--st:${eraVar(t.y)};--j:${j}`} title={`Open “${t.t}”`}>
                   <span class="truncate">{t.t}</span><span class="spine-meta">{t.y || ''}{t.y ? ' · ' : ''}{duration(t.d)}</span>
-                </a></li>
+                  <svg class="spine-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                </a><button type="button" class="spine-play" class:on={playing(t)} onclick={(e) => { e.stopPropagation(); playExcerpt(t, s); }}
+                  aria-label={playing(t) ? `Pause the excerpt of ${t.t}` : `Play 20 seconds of ${t.t} here`} title={playing(t) ? 'Pause' : 'Play 20 s here'}>
+                  {#if playing(t)}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                  {:else}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>{/if}
+                </button></li>
               {/each}
             </ol>
           </div>
-          <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-all" onclick={(e) => { e.preventDefault(); onspeaker(s.k); }}>All {s.c || c.total} talks by {s.n}</a>
+          <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-all" onclick={(e) => toSpeaker(e, s.k)}>All {s.c || c.total} talks by {s.n} <span aria-hidden="true">→</span></a>
         </article>
       {:else if c.kind === 'quote'}
         {@const it = c.it}
         <article class="quote h-full">
-          <span class="qmark" aria-hidden="true">“</span>
+          <div class="card-top"><span class="qmark" aria-hidden="true">“</span>{@render openLink(it)}</div>
           <blockquote class="quote-text">{it.q.x}</blockquote>
           {#if it.q.c}<p class="quote-cite">— {it.q.c}</p>{/if}
           <footer class="mt-auto flex items-end gap-3 pt-3">
-            <p class="min-w-0 flex-1 text-sm text-radio-ink-soft">Quoted{it.sp ? ` by ${it.sp}` : ''} in <a href={`/media/${it.s}`} class="font-semibold text-radio-ink underline decoration-radio-brass decoration-2 underline-offset-2 hover:text-radio-amber">{it.t}</a>{it.y ? `, ${it.y}` : ''}</p>
+            <p class="min-w-0 flex-1 text-sm text-radio-ink-soft">Quoted{it.sp ? ` by ${it.sp}` : ''} in <a href={`/media/${it.s}`} class="above font-semibold text-radio-ink underline decoration-radio-brass decoration-2 underline-offset-2 hover:text-radio-amber">{it.t}</a>{it.y ? `, ${it.y}` : ''}</p>
             {@render playBtn(it)}
           </footer>
         </article>
@@ -88,10 +104,10 @@
         {@const it = c.it}
         {@const qn = it.h.find((h) => h.f === 'q') || it.h[0]}
         <article class="question h-full">
-          <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">{qn.f === 'q' ? 'The question' : 'The theme'}</p>
-          <h3 class="question-text"><a href={`/media/${it.s}${qn.t != null ? `?t=${qn.t}` : ''}`}>{qn.x}</a></h3>
+          <div class="card-top"><p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">{qn.f === 'q' ? 'The question' : 'The theme'}</p>{@render openLink(it, 'light')}</div>
+          <h3 class="question-text"><a class="above" href={`/media/${it.s}${qn.t != null ? `?t=${qn.t}` : ''}`}>{qn.x}</a></h3>
           <footer class="mt-auto flex items-end gap-3 pt-3">
-            <p class="min-w-0 flex-1 text-sm text-radio-on-dark opacity-85"><a href={`/media/${it.s}`} class="font-semibold underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">{it.t}</a>{by(it) ? ` · ${by(it)}` : ''}</p>
+            <p class="min-w-0 flex-1 text-sm text-radio-on-dark opacity-85"><a href={`/media/${it.s}`} class="above font-semibold underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">{it.t}</a>{by(it) ? ` · ${by(it)}` : ''}</p>
             {@render playBtn(it, 'light')}
           </footer>
         </article>
@@ -102,8 +118,9 @@
         <article class="portrait h-full">
           {#if pic}<img src={pic.src} srcset={pic.srcset} alt={s.n} width="320" height="512" loading="lazy" decoding="async" class="portrait-img" />{/if}
           <div class="portrait-cap">
-            <a href={`/media/${it.s}`} class="block font-marquee text-xl leading-tight text-radio-on-dark hover:text-radio-amber">{it.t}</a>
+            <a href={`/media/${it.s}`} class="above block font-marquee text-xl leading-tight text-radio-on-dark hover:text-radio-amber hover:underline">{it.t}</a>
             <p class="mt-1 text-sm text-radio-on-dark opacity-85">{by(it)} · {duration(it.d)}</p>
+            <p class="mt-2">{@render openLink(it, 'light')}</p>
           </div>
           {@render playBtn(it, 'corner')}
         </article>
@@ -114,9 +131,9 @@
             <circle cx="50" cy="50" r="29" fill="none" stroke="var(--tint)" stroke-width="0.6" opacity="0.5" />
             {#each spokes(it.w) as p, j (j)}<line {...p} stroke="var(--tint)" stroke-width="1.6" stroke-linecap="round" />{/each}
           </svg>
-          <div class="relative z-10 flex h-full flex-col">
-            <p class="font-dial text-xs font-bold uppercase tracking-[0.2em] text-radio-ink-soft">{it.y || 'Undated'}{it.g ? ` · ${GRADE[it.g] || ''}` : ''}</p>
-            <h3 class="mt-1 font-marquee text-xl leading-tight text-radio-ink"><a href={`/media/${it.s}`} class="hover:text-radio-amber">{it.t}</a></h3>
+          <div class="flex h-full flex-col">
+            <div class="card-top"><p class="font-dial text-xs font-bold uppercase tracking-[0.2em] text-radio-ink-soft">{it.y || 'Undated'}{it.g ? ` · ${GRADE[it.g] || ''}` : ''}</p>{@render openLink(it)}</div>
+            <h3 class="mt-1 font-marquee text-xl leading-tight text-radio-ink"><a href={`/media/${it.s}`} class="above hover:text-radio-amber hover:underline">{it.t}</a></h3>
             {#if it.sp}<p class="mt-1 text-sm text-radio-ink-soft">{it.sp}</p>{/if}
             {#if c.size === 'wide' && (it.sum || it.tp?.length)}<p class="wave-sum mt-2 text-sm text-radio-ink-soft">{it.sum || it.tp.join(' · ')}</p>{/if}
             <div class="mt-auto flex items-center gap-3">
@@ -148,13 +165,30 @@
     .jukebox:not(.reduced) .card > article { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
     @keyframes rise { from { opacity: 0.2; transform: translateY(36px) scale(0.97); } to { opacity: 1; transform: none; } }
   }
-  article { display: flex; flex-direction: column; padding: 1.1rem 1.2rem; }
-  article :global(a:focus-visible), .pbtn:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; border-radius: 0.25rem; }
+  article { position: relative; isolation: isolate; display: flex; flex-direction: column; padding: 1.1rem 1.2rem; }
+  article :global(a:focus-visible), .pbtn:focus-visible, .spine-play:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; border-radius: 0.25rem; }
+
+  /* "Open talk →": the card's one obvious way in. Its ::after covers the card (stretched link), so a click anywhere opens
+     the talk; the other links and the play button sit above it (.above / .pbtn) and keep their own action */
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+  .open { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; min-height: 1.75rem; font: 700 0.85rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--radio-ink); text-decoration: underline; text-decoration-color: var(--radio-brass);
+    text-decoration-thickness: 2px; text-underline-offset: 4px; white-space: nowrap; }
+  .open.light { color: var(--radio-on-dark); }
+  .open::after { content: ''; position: absolute; inset: 0; z-index: 0; }
+  .open span { transition: transform 0.2s; }
+  .card:hover .open, .open:hover, .open:focus-visible { color: var(--radio-amber); text-decoration-color: var(--radio-amber); }
+  .card:hover .open span, .open:focus-visible span { transform: translateX(3px); }
+  .above, .pbtn { position: relative; z-index: 1; }
+  .above:hover { text-decoration: underline; }
 
   /* box set: walnut case, portrait, a riffling stack of record spines */
   .box { background: var(--radio-walnut); color: var(--radio-on-dark);
     background-image: repeating-linear-gradient(95deg, transparent 0 9px, color-mix(in srgb, var(--radio-walnut-deep) 20%, transparent) 9px 10px, transparent 10px 23px); }
-  .box-pic { flex: none; width: 5.5rem; height: 6.9rem; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass), 0 6px 16px rgba(0, 0, 0, 0.4); background: var(--radio-walnut-deep); }
+  .box-head { border-radius: 0.6rem; }
+  .box-head:hover .box-name, .box-head:focus-visible .box-name { color: var(--radio-amber); text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+  .box-head:hover .box-pic { box-shadow: 0 0 0 3px var(--radio-amber), 0 6px 16px rgba(0, 0, 0, 0.4); }
+  .box-pic { flex: none; transition: box-shadow 0.2s; width: 5.5rem; height: 6.9rem; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass), 0 6px 16px rgba(0, 0, 0, 0.4); background: var(--radio-walnut-deep); }
   .s-lg .box-pic { width: 7.5rem; height: 9.4rem; }
   .spines { position: relative; flex: 1; min-height: 0; margin-top: 0.9rem; overflow: hidden; mask-image: linear-gradient(transparent, #000 10%, #000 88%, transparent); }
   .spines:hover, .spines:focus-within { overflow-y: auto; }
@@ -164,13 +198,21 @@
   @keyframes riffle { from { transform: translateY(0); } to { transform: translateY(calc(-100% + 9rem)); } }
   .s-tall .spine-list.riffle { animation-name: riffle-s; }
   @keyframes riffle-s { from { transform: translateY(0); } to { transform: translateY(calc(-100% + 7rem)); } }
-  .spine { display: flex; align-items: center; gap: 0.6rem; padding: 0.42rem 0.7rem; border-radius: 0.3rem; font-size: 0.9rem; color: var(--radio-on-dark);
+  .spine-row { display: flex; gap: 3px; }
+  .spine { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.6rem; padding: 0.42rem 0.5rem 0.42rem 0.7rem; border-radius: 0.3rem; font-size: 0.9rem; color: var(--radio-on-dark);
     background: linear-gradient(90deg, var(--st) 0 6px, color-mix(in srgb, var(--radio-walnut-deep) 70%, transparent) 6px);
-    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: transform 0.2s, background 0.2s; }
-  .spine:hover { transform: translateX(6px); background: linear-gradient(90deg, var(--st) 0 6px, var(--radio-walnut-deep) 6px); color: var(--radio-amber); }
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: background 0.2s, color 0.2s; }
+  .spine:hover, .spine:focus-visible { background: linear-gradient(90deg, var(--st) 0 6px, var(--radio-walnut-deep) 6px); color: var(--radio-amber); }
+  .spine:hover .truncate, .spine:focus-visible .truncate { text-decoration: underline; text-decoration-color: var(--radio-brass); text-underline-offset: 3px; }
   .spine-meta { margin-left: auto; flex: none; font: 600 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; opacity: 0.75; }
+  .spine-go { flex: none; width: 0.95rem; height: 0.95rem; margin-left: -0.25rem; opacity: 0.45; transition: opacity 0.2s, transform 0.2s; }
+  .spine:hover .spine-go, .spine:focus-visible .spine-go { opacity: 1; transform: translateX(2px); }
+  .spine-play { flex: none; display: grid; place-items: center; width: 2.1rem; border-radius: 0.3rem; color: var(--radio-amber);
+    background: color-mix(in srgb, var(--radio-walnut-deep) 70%, transparent); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: background 0.2s, color 0.2s; }
+  .spine-play svg { width: 0.95rem; height: 0.95rem; }
+  .spine-play:hover, .spine-play.on { background: var(--radio-amber); color: var(--radio-walnut-deep); }
   .box-all { margin-top: 0.75rem; align-self: flex-start; font-weight: 600; font-size: 0.95rem; color: var(--radio-on-dark); text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 4px; }
-  .box-all:hover { color: var(--radio-amber); }
+  .box-all:hover { color: var(--radio-amber); text-decoration-color: var(--radio-amber); }
 
   /* pull-quote: cream paper, a huge brass quotation mark */
   .quote { background: var(--radio-paper); box-shadow: inset 0 0 0 1px var(--radio-line); }
@@ -194,16 +236,16 @@
 
   /* portrait: 4:5 face-centred, caption over a soft fade */
   .portrait { padding: 0; background: var(--radio-walnut-deep); }
-  .portrait-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; transition: transform 0.8s; }
+  .portrait-img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; transition: transform 0.8s; }
   .card:hover .portrait-img { transform: scale(1.04); }
-  .portrait-cap { position: relative; margin-top: auto; padding: 3rem 1.1rem 1rem; background: linear-gradient(transparent, color-mix(in srgb, var(--radio-walnut-deep) 92%, transparent) 45%); }
+  .portrait-cap { margin-top: auto; padding: 3rem 1.1rem 1rem; background: linear-gradient(transparent, color-mix(in srgb, var(--radio-walnut-deep) 92%, transparent) 45%); }
 
   /* waveform disc: generative art from the talk's own peaks, era-tinted */
   .wavecard { background: var(--radio-panel); box-shadow: inset 0 0 0 1px var(--radio-line);
     background-image: radial-gradient(70% 70% at 85% 80%, color-mix(in srgb, var(--tint) 22%, transparent), transparent 70%); }
   /* the disc is centred on the play button (right 1.2rem + 1.375rem, bottom 1.1rem + 1.375rem): the talk's sound ring
      around its own play control */
-  .disc-wave { position: absolute; width: 10rem; height: 10rem; right: calc(2.575rem - 5rem); bottom: calc(2.475rem - 5rem); opacity: 0.95;
+  .disc-wave { position: absolute; z-index: -1; width: 10rem; height: 10rem; right: calc(2.575rem - 5rem); bottom: calc(2.475rem - 5rem); opacity: 0.95;
     transition: transform 1.2s cubic-bezier(0.3, 0.7, 0.4, 1); }
   .s-wide .disc-wave { width: 12rem; height: 12rem; right: calc(2.575rem - 6rem); bottom: calc(2.475rem - 6rem); }
   .card:hover .disc-wave { transform: rotate(40deg) scale(1.05); }
@@ -218,7 +260,7 @@
   .pbtn:hover { transform: scale(1.08); box-shadow: 0 0 0 6px var(--radio-glow); }
   .pbtn.on { animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--radio-glow); } 50% { box-shadow: 0 0 0 8px var(--radio-glow); } }
-  .pbtn.corner { position: absolute; top: 0.8rem; right: 0.8rem; }
+  .pbtn.corner { position: absolute; z-index: 2; top: 0.8rem; right: 0.8rem; }
 
   @media (prefers-reduced-motion: reduce) {
     .card, .card:hover { transition: none; transform: none; }

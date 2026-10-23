@@ -19,7 +19,8 @@
     return () => io.disconnect();
   });
 
-  const pick = (e, s) => { e.preventDefault(); onpick(s.k); };
+  // a plain click tunes the listing in place; cmd/ctrl/shift-click and middle-click open /media?speaker= in a new tab
+  const pick = (e, s) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); onpick(s.k); };
 </script>
 
 <section bind:this={root} class="voices relative -mx-4 sm:-mx-6 lg:-mx-8" class:lr-paused={offscreen} aria-labelledby="voices-h">

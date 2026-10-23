@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Tailwind v4's preflight resets buttons to cursor: default — everything clickable shows the hand (Chad 10-23) */
+@layer base {
+  a[href], button:not(:disabled), [role='button']:not([aria-disabled='true']), [data-play], .clickable, summary, select { cursor: pointer; }
+}
+
 /* ============================================
    Theme Color Scheme using light-dark()
    ============================================ */
@@ -71,6 +76,13 @@
   --radio-on-dark: #f8ecd4;
   --radio-on-needle: light-dark(#fbf3e4, #1b0f08);
   --radio-line: light-dark(rgba(59, 36, 20, 0.16), rgba(244, 230, 207, 0.12));
+  /* muted accents for what the studio INSERTS into a talk (quotes, cross-references, moments): the same hues, desaturated
+     toward the room so they decorate the speaker's words without pulling the eye. Rules, dots and underlines only — insert
+     TEXT uses --radio-insert-ink (AA on the room in both themes); hover/focus returns to the full accent */
+  --radio-amber-muted: color-mix(in oklab, var(--radio-amber) 60%, var(--radio-room));
+  --radio-brass-muted: color-mix(in oklab, var(--radio-brass) 60%, var(--radio-room));
+  --radio-needle-muted: color-mix(in oklab, var(--radio-needle) 60%, var(--radio-room));
+  --radio-insert-ink: color-mix(in oklab, var(--radio-ink-soft) 88%, var(--radio-room));
 
   /* The Library landing (/library, planning/library-landing-design.md): editorial and cover-first — warm paper and
      ink by day, a gallery-dark room at night where the cover art glows. Section tints are taken from the covers' own

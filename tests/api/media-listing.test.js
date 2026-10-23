@@ -132,6 +132,16 @@ describe('the jukebox layout', () => {
       expect(cards.filter((c) => c.kind === 'portrait').every((c) => c.size === 'tall')).toBe(true);
     }
   });
+  it('gives each box-set spine what its in-place play button needs (Chad 10-23: open vs play here)', () => {
+    const box = planLayout(items, portraits, { seed: 'a' }).find((c) => c.kind === 'box');
+    const src = new Map(items.map((i) => [i.s, i]));
+    for (const t of box.talks) {
+      const it = src.get(t.s);
+      expect(t).toMatchObject({ s: it.s, t: it.t, k: it.k });
+      expect(t.hl).toEqual(it.hl);
+      expect(t.v).toEqual(it.v);
+    }
+  });
   it('picks highlights with a line to show, varied speakers first', () => {
     const h = pickHighlights(items, byKey, { n: 3, seed: 'x' });
     expect(h).toHaveLength(3);
