@@ -73,3 +73,18 @@ describe('pickAsrHost', () => {
     delete process.env.MEDIA_ASR_HOSTS;
   });
 });
+
+describe('probe slots (10-23: 24 probes at once filled aorus RAM)', () => {
+  it('the GPU host takes 2 at a time, then the ASR host 3; the rest wait', async () => {
+    const { withProbeHost } = await import('../../api/lib/media/tools.js');
+    const live = new Map(); const peak = new Map(); const used = [];
+    const job = () => withProbeHost(async (h) => {
+      used.push(h); live.set(h, (live.get(h) || 0) + 1); peak.set(h, Math.max(peak.get(h) || 0, live.get(h)));
+      await new Promise((r) => setTimeout(r, 10)); live.set(h, live.get(h) - 1);
+    }, { hosts: [['gpu', 2], ['cpu', 3]] });
+    await Promise.all(Array.from({ length: 9 }, job));
+    expect(peak.get('gpu')).toBe(2);
+    expect(peak.get('cpu')).toBe(3);
+    expect(used.slice(0, 2)).toEqual(['gpu', 'gpu']);
+  });
+});

@@ -12,6 +12,7 @@ import { computePeaks, normalizePeaks } from './peaks.js';
 import { toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
+import { fixMojibake } from './text-repair.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
@@ -237,7 +238,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       const lang = /^[a-z]{2}$/.test(meta.language_hint || '') ? meta.language_hint : '';
       // the variants' probes at once (the GPU host's memory lock paces them)
       await Promise.all(variants.map(async (v) => {
-        const p = await tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(tools.probeHost ? { host: tools.probeHost() } : {}) });
+        const probe = (host) => tools.asr('probe', v.file, { model: 'large-v3-turbo', starts, len: 60, lang }, { stop, ...(host ? { host } : {}) });
+        const p = tools.withProbeHost ? await tools.withProbeHost(probe) : await probe(tools.probeHost ? tools.probeHost() : null);
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
       }));
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);
@@ -450,7 +452,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       const work = await readJson(join(dir, 'transcript.work.json'));
       // a talk transcribed before the loop repair is repaired here, on any render or update (10-22: the gate blocked the
       // re-links of published talks on their old loops)
+      // …and mojibake from before its repair ('ìWhy … î') is mended the same way
+      let moji = 0;
+      for (const p of work.paragraphs || []) for (const w of p.words || []) { const f = fixMojibake(w.w); if (f !== w.w) { w.w = f; moji++; } }
       const lp0 = repairParagraphLoops(work.paragraphs || []);
+      if (moji && !lp0.repaired.length) await writeJson(join(dir, 'transcript.work.json'), work);
       if (lp0.repaired.length) {
         work.paragraphs = lp0.paragraphs;
         await writeJson(join(dir, 'transcript.work.json'), { ...work, loops: [...(work.loops || []), ...lp0.repaired] });

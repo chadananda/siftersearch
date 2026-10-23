@@ -91,6 +91,23 @@ export function pickAsrHost(hosts = asrHosts(), busy = asrBusy) {
 /** Where the ENHANCE probes go (three 1-minute excerpts × each variant): the GPU host when there is one — on a loaded boss they
  *  took most of enhance's 270–720 s (10-22) — else the ASR host. */
 export const probeHost = () => gpuHost() || asrHost();
+/** PROBE SLOTS per host (10-23: up to 24 probes at once filled aorus's 15 GB of RAM — its /tmp is RAM — and ffmpeg died with
+ *  CalledProcessError): the GPU host takes 2 at a time, the ASR host 3; a probe goes where a slot is free, the GPU host first.
+ *  fn(host) → its result. */
+const probeBusy = new Map();
+const probeWaiters = [];
+export async function withProbeHost(fn, { hosts = [[gpuHost(), 2], [asrHost(), 3]].filter(([h]) => h) } = {}) {
+  const uniq = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
+  if (!uniq.length) return fn(null);
+  let host = null;
+  for (;;) {
+    host = uniq.find(([h, n]) => (probeBusy.get(h) || 0) < n)?.[0] || null;
+    if (host) break;
+    await new Promise((r) => probeWaiters.push(r));
+  }
+  probeBusy.set(host, (probeBusy.get(host) || 0) + 1);
+  try { return await fn(host); } finally { probeBusy.set(host, probeBusy.get(host) - 1); probeWaiters.shift()?.(); }
+}
 /** Why pickAsrHost chose a host (the dispatch log line). */
 export function asrPickReason(host, hosts = asrHosts(), busy = asrBusy) {
   return hosts.map((h) => `${h.host} ${busy.get(h.host) || 0}/${h.slots}`).join(', ') + ` → ${host}`;

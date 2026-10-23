@@ -84,7 +84,7 @@ if [[ "$verb" == "start" ]]; then
 fi
 
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # every model is local: no internet in the compute lane
-job=$(mktemp -d /tmp/media-asr.XXXXXX); trap 'rm -rf "$job"' EXIT
+mkdir -p tmp; job=$(mktemp -d "$PWD/tmp/media-asr.XXXXXX"); trap 'rm -rf "$job"' EXIT   # on disk: aorus's /tmp is RAM (10-23)
 cat > "$job/in.$ext"
 # attached work runs in the background and is killed when the caller's ssh session goes away (tower stopped it for a
 # drain) — it must never keep burning boss's CPU for a result nobody will read
