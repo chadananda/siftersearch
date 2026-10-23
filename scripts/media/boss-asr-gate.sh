@@ -6,7 +6,7 @@
 #                                                          the caller's ssh session goes)
 #   start <ext> <job> [--opt value …]                       a DETACHED transcription (survives the caller's restarts):
 #   poll <job> · fetch <job> · cancel <job>                 its state · its transcript JSON · stop it
-#   start <ext> <job> --verb diarize|grade|dfn             the same, for a diarization, a quality grade or a DeepFilterNet copy
+#   start <ext> <job> --verb diarize|grade|dfn|encode             the same, for a diarization, a quality grade or a DeepFilterNet copy
 #   fetch-file <job>                                        a detached job's output FILE (the DeepFilterNet audio)
 # The same script serves every compute host (boss: CPU; aorus: CUDA): it runs from its own directory, with that host's venv
 # (venv/, venv-dfn/ for DeepFilterNet) and models (models/). Every model is local; nothing here reaches the internet.
@@ -65,7 +65,7 @@ if [[ "$verb" == "start" ]]; then
   # a detached job is a transcription, or (--verb diarize) a diarization; both survive the caller's restarts
   tool=transcribe; rest2=()
   for ((k=0; k<${#args[@]}; k++)); do if [[ "${args[$k]:-}" == "--verb" ]]; then tool="${args[$((k+1))]:-}"; k=$((k+1)); else rest2+=("${args[$k]:-}"); fi; done
-  [[ "$tool" =~ ^(transcribe|diarize|grade|dfn)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
+  [[ "$tool" =~ ^(transcribe|diarize|grade|dfn|encode)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # every model is local: no internet in the compute lane
   if [[ "$tool" == "grade" ]]; then
     # the grade's JSON is its last stdout line: out.json is written when it ends
@@ -73,6 +73,9 @@ if [[ "$verb" == "start" ]]; then
   elif [[ "$tool" == "dfn" ]]; then
     [[ -x venv-dfn/bin/python ]] || { echo '{"error":"no DeepFilterNet venv on this host"}'; exit 2; }
     nohup setsid bash -c 'nice -n 10 venv-dfn/bin/python media_tool.py dfn "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
+  elif [[ "$tool" == "encode" ]]; then
+    # a fixed encode recipe (media_tool.py encode: light chain / ogg / m4a) → out.file, then the out.json marker
+    nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "diarize" ]]; then
     nohup setsid nice -n 10 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
   else

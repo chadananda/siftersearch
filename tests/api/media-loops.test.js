@@ -105,3 +105,16 @@ describe('letter runs are completed to the term they begin (watchdog 23:49)', as
     expect(findLoops(W('No, no. I said no, no, no, no and then'))).toEqual([]);
   });
 });
+
+describe('quote hunts run two at a time, results in order (10-23 quotes latency)', async () => {
+  const { linkQuotes } = await import('../../api/lib/media/quotes.js');
+  it('peak concurrency 2; rejected order kept', async () => {
+    let live = 0, peak = 0;
+    const sourceHunt = async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 15)); live--; return { error: 'none' }; };
+    const ps = [{ n: 1, words: W('one two three four five six seven eight nine ten eleven twelve') }];
+    const cands = [1, 2, 3, 4].map((i) => ({ p: 1, text: 'one two three four five six seven', i }));
+    const r = await linkQuotes(ps, cands, { sourceHunt }, { pauseMs: 0 });
+    expect(peak).toBe(2);
+    expect(r.rejected.map((x) => x.i)).toEqual([1, 2, 3, 4]);
+  });
+});

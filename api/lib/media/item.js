@@ -223,7 +223,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       await mkdir(join(dir, 'enhanced'), { recursive: true });
       const light = join(dir, 'enhanced', 'light.flac');
       const chain = lightChain({ ...m0, sample_rate: meta.source?.probe?.sample_rate });
-      await towerLight(() => tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light], { stop }));
+      const jobOf = (k) => { meta.enc_jobs = meta.enc_jobs || {}; meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110); return meta.enc_jobs[k]; };
+      const lightLocal = () => towerLight(() => tools.ffmpeg(['-i', orig, '-vn', '-ac', '1', '-ar', '48000', '-af', chain, '-c:a', 'flac', light], { stop }));
+      if (tools.encodeRemote) { jobOf('lc'); await save(); await tools.encodeRemote('light', orig, light, { af: chain, job: meta.enc_jobs.lc, stop, local: lightLocal }); delete meta.enc_jobs.lc; }
+      else await lightLocal();
       const m1 = await towerLight(() => tools.tool('metrics', light, {}, { threads: 2, stop }));
       const variants = [{ name: 'original', file: orig, ...m0 }, { name: 'light', file: light, ...m1 }];
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
@@ -252,9 +255,15 @@ export async function runItem(item, opts = {}, deps = {}) {
       const src = join(dir, v.file);
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
-      await Promise.all([
-        towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg], { stop })),
-        towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }))]);
+      const oggLocal = () => towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg], { stop }));
+      const m4aLocal = () => towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
+      if (tools.encodeRemote) {
+        meta.enc_jobs = meta.enc_jobs || {};
+        for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
+        await save();
+        await Promise.all([tools.encodeRemote('ogg', src, ogg, { job: meta.enc_jobs.ogg, stop, local: oggLocal }), tools.encodeRemote('m4a', src, m4a, { job: meta.enc_jobs.m4a, stop, local: m4aLocal })]);
+      } else await Promise.all([oggLocal(), m4aLocal()]);
+      delete meta.enc_jobs;
       // the DURATION from the web encode (QA 10-22: the original's header under-reported by ~6 s on 31 talks)
       const enc = tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;
       if (enc?.duration_s && enc.duration_s > (meta.duration_s || 0)) meta.duration_s = Math.round(enc.duration_s * 100) / 100;
@@ -395,11 +404,14 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'quotes') {
       const work = await readJson(join(dir, 'transcript.work.json'));
+      const tq = Date.now();
       const found = await llm.findQuotations(work.paragraphs, { spend });
+      rec.find_ms = Date.now() - tq;
       const q = d.quotes || await import('./quotes.js');
       // quotations (source hunt) and teachings (concept search + a verify call) use different services: both at once
-      const [lq, lt] = await Promise.all([q.linkQuotes(work.paragraphs, found.quotes),
-        q.linkTeachings(work.paragraphs, found.teachings, (t, ps) => llm.verifyTeaching(t, ps, { spend }))]);
+      const t1 = Date.now();
+      const [lq, lt] = await Promise.all([q.linkQuotes(work.paragraphs, found.quotes).finally(() => { rec.hunt_ms = Date.now() - t1; }),
+        q.linkTeachings(work.paragraphs, found.teachings, (t, ps) => llm.verifyTeaching(t, ps, { spend })).finally(() => { rec.teach_ms = Date.now() - t1; })]);
       await writeJson(join(dir, 'quotes.json'), { candidates: found, quotes: lq.linked, quotes_rejected: lq.rejected, teachings: lt.linked, teachings_rejected: lt.rejected });
       rec.quotes = lq.linked.length; rec.crs = lt.linked.length; rec.candidates = found.quotes.length + found.teachings.length;
     }

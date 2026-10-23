@@ -105,19 +105,32 @@ async function englishLink(d, id, quote) {
  * Link the model's quotation candidates. paragraphs: corrected [{ n, words }]. → [{ kind: 'quote', para, i0, i1, t0, t1,
  * said, writer, source: { id, doc_id, title, author, url }, overlap, basis, gate, cite, url }] and the rejected ones.
  */
-export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 1500, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = [] } = {}) {
+// fn over items, n at a time, results in order (pure helper)
+async function pool(items, n, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => { for (let i = next++; i < items.length; i = next++) out[i] = await fn(items[i], i); };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(n, items.length)) }, worker));
+  return out;
+}
+
+// TWO hunts at a time per talk with a shorter breath (10-23: quotes was the slowest LLM-lane step, 57–172 s, almost all of it
+// one-at-a-time hunts and 1.5 s pauses); results kept in the candidates' order
+export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 750, concurrency = Number(process.env.MEDIA_QUOTE_CONCURRENCY) || 2, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = [] } = {}) {
   const d = { ...(deps.sourceHunt ? {} : await liveDeps()), ...deps };
   const byN = new Map(paragraphs.map((p) => [p.n, p]));
   const linked = [], rejected = [];
-  for (const [k, c] of candidates.entries()) {
+  const results = await pool([...candidates.entries()], concurrency, async ([k, c]) => {
+    const L = [], R = [];
+    await (async () => {
     const p = byN.get(Number(c.p));
     const span = p && locateSpan(p.words, c.text);
-    if (!span) { rejected.push({ ...c, why: 'not found in the transcript' }); continue; }
+    if (!span) { R.push({ ...c, why: 'not found in the transcript' }); return; }
     const said = p.words.slice(span.i0, span.i1).map((w) => w.w).join(' ');
-    if (span.i1 - span.i0 < 6) { rejected.push({ ...c, said, why: 'too short' }); continue; }
-    if (k && pauseMs) await sleep(pauseMs);   // one hunt at a time with a breath between — search must not slow for readers
+    if (span.i1 - span.i0 < 6) { R.push({ ...c, said, why: 'too short' }); return; }
+    if (k >= concurrency && pauseMs) await sleep(pauseMs);   // a breath between hunts — search must not slow for readers
     const r = await d.sourceHunt(said, {}, {}).catch((e) => ({ error: e.message }));
-    if (r?.error || !r?.origin) { rejected.push({ ...c, said, why: r?.error ? `hunt failed: ${r.error}` : 'no source found' }); continue; }
+    if (r?.error || !r?.origin) { R.push({ ...c, said, why: r?.error ? `hunt failed: ${r.error}` : 'no source found' }); return; }
     const cands = [r.origin, ...(r.considered || []).filter((x) => x.id !== r.origin.id).map((x) => ({ id: x.id, documentId: x.documentId, title: x.title, author: x.writer, bookAuthor: x.bookAuthor, site: x.site === 'library' ? null : x.site, overlap: x.overlap, collection: x.collection }))];
     let pick = null, why = null, src = null;
     for (const o of cands) {
@@ -132,13 +145,16 @@ export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 
       if (bad) { why = why || bad; continue; }
       pick = { o, ...g }; src = s; break;
     }
-    if (!pick) { rejected.push({ ...c, said, why: why || 'not accepted', top: { title: r.origin.title, author: r.origin.author, overlap: r.origin.overlap } }); continue; }
+    if (!pick) { R.push({ ...c, said, why: why || 'not accepted', top: { title: r.origin.title, author: r.origin.author, overlap: r.origin.overlap } }); return; }
     const w0 = p.words[span.i0], w1 = p.words[span.i1 - 1];
-    linked.push({ kind: 'quote', para: p.n, i0: span.i0, i1: span.i1, t0: w0.s, t1: w1.e, said, writer: writerName(c.writer) || pick.o.author || null,
+    L.push({ kind: 'quote', para: p.n, i0: span.i0, i1: span.i1, t0: w0.s, t1: w1.e, said, writer: writerName(c.writer) || pick.o.author || null,
       overlap: Number(pick.o.overlap) || 0, basis: pick.basis, gate: pick.gate, source: src && { id: src.id, doc_id: src.doc_id, title: src.title, author: src.author, via: src.via },
       found_id: pick.o.id, url: src?.url || r.origin.url || null, cite: citeOf(src || pick.o), excerpt: cleanExcerpt(src?.text || r.origin.text || '').slice(0, 400) });
     log.push({ said: said.slice(0, 80), source: pick.o.title, overlap: pick.o.overlap, gate: pick.gate });
-  }
+    })();
+    return { L, R };
+  });
+  for (const x of results) { linked.push(...x.L); rejected.push(...x.R); }
   return { linked, rejected };
 }
 
@@ -147,36 +163,41 @@ export async function linkQuotes(paragraphs, candidates, deps = {}, { pauseMs = 
  * the phrase layer, restricted to the writer's own words; the model verifies yes/no; best confident yes wins (≥ minConf).
  * → [{ kind: 'concept', para, t0, writer, claim, said, source, url, cite, excerpt, confidence }] + rejected
  */
-export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { minConf = 0.7, minAuthority = 7, perQuery = 6, pauseMs = 800, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+export async function linkTeachings(paragraphs, teachings, verify, deps = {}, { minConf = 0.7, minAuthority = 7, perQuery = 6, pauseMs = 500, concurrency = Number(process.env.MEDIA_QUOTE_CONCURRENCY) || 2, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const d = { ...(deps.searchHype ? {} : await liveDeps()), ...deps };
   const byN = new Map(paragraphs.map((p) => [p.n, p]));
   const linked = [], rejected = [];
-  for (const [k, t] of teachings.entries()) {
+  const results = await pool([...teachings.entries()], concurrency, async ([k, t]) => {
+    const L = [], R = [];
+    await (async () => {
     const p = byN.get(Number(t.p));
     const writer = writerName(t.writer);
-    if (!p || !writer || writer === 'Universal House of Justice') { rejected.push({ ...t, why: !p ? 'no such paragraph' : 'writer not one of the four' }); continue; }
-    if (k && pauseMs) await sleep(pauseMs);
+    if (!p || !writer || writer === 'Universal House of Justice') { R.push({ ...t, why: !p ? 'no such paragraph' : 'writer not one of the four' }); return; }
+    if (k >= concurrency && pauseMs) await sleep(pauseMs);
     const filters = { author: writer, religion: "Baha'i", writerOnly: true };
     const opts = { limit: perQuery, filters, timeoutMs: 10000 };
     const hits = (await Promise.all([d.searchHype(t.claim, opts), d.searchConcepts(t.claim, opts), d.searchPhrases(t.claim, opts)].map((x) => x.catch(() => ({ hits: [] })))))
       .flatMap((r) => r.hits || []);
     const ids = [...new Set(hits.map((h) => h.paragraph_id))].slice(0, 12);
     const rows = (await d.paragraphsByIds(ids)).filter((r) => (r.text || '').length > 60 && /^en/i.test(r.language || 'en') && !passageGate(r));
-    if (!rows.length) { rejected.push({ ...t, why: 'no candidate passages' }); continue; }
+    if (!rows.length) { R.push({ ...t, why: 'no candidate passages' }); return; }
     const answers = await verify({ writer, claim: t.claim, words: t.words }, rows.map((r) => ({ title: r.title, author: r.author, text: r.text })));
     // a CANONICAL passage (the writer's own authoritative works and letters: book authority ≥ minAuthority) — the pilot
     // linked "‘Abdu’l-Bahá's Visit to California" (a visitor's account) for a teaching; the most authoritative yes wins
     const auth = (a) => Number(rows[Number(a.i)]?.book_authority ?? rows[Number(a.i)]?.authority ?? 0);
     const yes = answers.filter((a) => a.states && Number(a.confidence) >= minConf && auth(a) >= minAuthority)
       .sort((a, b) => auth(b) - auth(a) || b.confidence - a.confidence)[0];
-    if (!yes) { rejected.push({ ...t, why: answers.some((a) => a.states && Number(a.confidence) >= minConf) ? 'stated only outside the canonical works' : 'no passage states it', best: answers.sort((a, b) => b.confidence - a.confidence)[0] || null }); continue; }
+    if (!yes) { R.push({ ...t, why: answers.some((a) => a.states && Number(a.confidence) >= minConf) ? 'stated only outside the canonical works' : 'no passage states it', best: answers.sort((a, b) => b.confidence - a.confidence)[0] || null }); return; }
     const r = rows[Number(yes.i)];
     const link = d.linkFor(r, r.paragraph_index, { quote: yes.excerpt || null });
     const span = t.words ? locateSpan(p.words, t.words) : null;
-    linked.push({ kind: 'concept', para: p.n, t0: span ? p.words[span.i0].s : p.t0, i0: span?.i0 ?? null, i1: span?.i1 ?? null, writer, claim: t.claim, said: t.words || null,
+    L.push({ kind: 'concept', para: p.n, t0: span ? p.words[span.i0].s : p.t0, i0: span?.i0 ?? null, i1: span?.i1 ?? null, writer, claim: t.claim, said: t.words || null,
       source: { id: r.id, doc_id: r.doc_id, title: r.title, author: r.author }, url: link?.url || link?.reader_url || null, cite: citeOf(r),
       excerpt: cleanExcerpt(yes.excerpt || r.text).slice(0, 500), confidence: Number(yes.confidence) });
-  }
+    })();
+    return { L, R };
+  });
+  for (const x of results) { linked.push(...x.L); rejected.push(...x.R); }
   return { linked, rejected };
 }
 

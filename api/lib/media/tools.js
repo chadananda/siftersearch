@@ -42,6 +42,15 @@ export async function convSlot(fn) {
 // nice 19 + ionice idle class on Linux
 const LOW = process.platform === 'linux' ? ['ionice', '-c3', 'nice', '-n', '19'] : ['nice', '-n', '19'];
 
+/** A child's stderr for a reason line: the lines that NAME the failure (the failing command, the error, a kill) first, then
+ *  the tail — a Python traceback's tail alone hid the command (10-23 watchdog). */
+export function errSummary(err = '') {
+  const lines = String(err).split('\n').map((l) => l.trim()).filter((l) => l && !/^\^+$/.test(l));
+  const named = lines.filter((l) => /Command '|returned non-zero|Error:|error:|Killed|out of memory|No such file|Invalid data|signal/i.test(l)).slice(0, 3);
+  const tail = lines.slice(-2).filter((l) => !named.includes(l));
+  return [...named, ...tail].join(' | ').slice(0, 600);
+}
+
 /** Run a command at nice 19 → { code, stdout, stderr }; rejects on a non-zero exit with the stderr tail.
  *  stop: () => boolean, polled every pollMs — true (the service is draining) kills the child and rejects with DrainAbort, so a
  *  long transcription never holds a drain (10-21: a 37-minute stage parked every reports lane). */
@@ -62,7 +71,7 @@ export function run(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = n
       clearTimeout(timer); if (poll) clearInterval(poll);
       if (stopped) reject(new DrainAbort(cmd.split('/').pop()));
       else if (code === 0) resolve({ code, stdout: out, stderr: err });
-      else reject(new Error(`${cmd.split('/').pop()} exit ${code ?? sig}: ${err.trim().split('\n').slice(-4).join(' | ').slice(0, 600)}`));
+      else reject(new Error(`${cmd.split('/').pop()} exit ${code ?? sig}: ${errSummary(err)}`));
     });
     p.stdin.on('error', () => {});   // a killed child closes its stdin under us
     if (input != null) p.stdin.end(input); else p.stdin.end();
@@ -406,6 +415,18 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
   const { stdout } = await ssh(`fetch ${job}`, { timeoutMs: 120_000 });
   return { ...JSON.parse(stdout.trim().split('\n').pop()), host, job };
 }
+/** A fixed ENCODE recipe (light chain · ogg · m4a: media_tool.py encode) on the ASR host's spare CPU — measured 10-23 on a
+ *  66-min talk: boss 49 / 28 / 19 s (+ ~3 s transfer) vs tower 129 / 91 / 68 s at tower's lowest priority — else on tower.
+ *  local() runs it on tower (the caller's ffmpeg in its slot). Re-attaches by job id after a restart. */
+export async function encodeRemote(recipe, input, output, { af = '', job, stop, local } = {}) {
+  const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
+  if (host && job) {
+    try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output }, { host, job, stop, file: true }); }
+    catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] encode ${recipe} on ${host} failed — tower: ${String(err.message).slice(0, 300)}`); }
+  }
+  return local();
+}
+
 /** grade / dfn on the GPU host when it answers, else the tower's detached process (re-attached by pid file). */
 export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn() } = {}) {
   const host = gpuHost();

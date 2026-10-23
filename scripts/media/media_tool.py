@@ -432,6 +432,29 @@ def cmd_grade(a):
     print(json.dumps(out))
 
 
+ENCODE_FILTERS = {'highpass', 'lowpass', 'bandreject', 'adeclick', 'afftdn', 'loudnorm', 'dynaudnorm', 'acompressor', 'volume', 'equalizer'}
+RECIPES = {
+    'light': lambda af: ['-vn', '-ac', '1', '-af', f'{af},aresample=48000,asetnsamples=n=4096:p=0', '-ar', '48000', '-c:a', 'flac', '-f', 'flac'],   # loudnorm works at 192 kHz in big frames: back to 48 kHz in FLAC-sized frames (ffmpeg 9 refuses 95,984-sample blocks)
+    'ogg': lambda af: ['-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', '-f', 'ogg'],
+    'm4a': lambda af: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4'],
+}
+
+
+def cmd_encode(a):
+    """A FIXED encode recipe (light chain · ogg · m4a) — prep work a compute host can take off tower (10-23: boss ran these
+    3.3–5x faster). The filter chain may only name known audio filters."""
+    if a.recipe not in RECIPES:
+        raise SystemExit(f'unknown recipe {a.recipe}')
+    af = a.af or 'anull'
+    for part in af.split(','):
+        if part.split('=')[0] not in ENCODE_FILTERS | {'anull'}:
+            raise SystemExit(f'filter not allowed: {part}')
+    t0 = time.time()
+    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-threads', str(a.threads), '-i', a.input, '-threads', str(a.threads)]
+                   + RECIPES[a.recipe](af) + [a.output], check=True)
+    print(json.dumps({'output': a.output, 'recipe': a.recipe, 'seconds': round(time.time() - t0, 1)}))
+
+
 def cmd_levels(a):
     """Per-speaker loudness (dBFS RMS of each voice's diarized turns): --turns <json file with turns>."""
     x = load(a.input, sr=SR)
@@ -453,7 +476,7 @@ def cmd_levels(a):
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ('metrics', 'probe', 'langid', 'dfn', 'transcribe', 'diarize', 'grade', 'levels'):
+    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels'):
         s = sub.add_parser(name)
         s.add_argument('input')
         s.add_argument('--threads', type=int, default=8)
@@ -471,9 +494,11 @@ def main():
         s.add_argument('--cluster', type=float, default=0.7)   # wespeaker: 0.6 → 12 voices on a 92-min Q&A (3dspeaker zh at 0.5: 131)
         s.add_argument('--emb', default='')
         s.add_argument('--emit-turns', action='store_true')
+        s.add_argument('--recipe', default='')
+        s.add_argument('--af', default='')
     a = p.parse_args()
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))
-    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd]
+    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd]
     try:
         fn(a)
     except RuntimeError as err:

@@ -32,3 +32,19 @@ describe.skipIf(!ok)('rolloff_hz', () => {
     expect(o.top).toBe(o.nyq);
   });
 });
+
+describe.skipIf(!ok || spawnSync('ffmpeg', ['-version']).status !== 0)('media_tool encode', () => {
+  it('a fixed recipe encodes; an unknown filter is refused', async () => {
+    const { mkdtempSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const d = mkdtempSync(join(tmpdir(), 'enc-'));
+    spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'sine=f=440:d=2', join(d, 'a.wav')]);
+    const tool = join(process.cwd(), 'scripts/media/media_tool.py');
+    const good = spawnSync('python3', [tool, 'encode', join(d, 'a.wav'), '--recipe', 'light', '--af', 'highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11', '--output', join(d, 'l.flac'), '--threads', '1'], { encoding: 'utf8' });
+    expect(good.status, good.stderr).toBe(0);
+    expect(JSON.parse(good.stdout.trim()).recipe).toBe('light');
+    const bad = spawnSync('python3', [tool, 'encode', join(d, 'a.wav'), '--recipe', 'light', '--af', 'volume=1,amovie=/etc/passwd', '--output', join(d, 'x.flac')], { encoding: 'utf8' });
+    expect(bad.status).not.toBe(0);
+    expect(bad.stderr).toMatch(/filter not allowed/);
+  });
+});

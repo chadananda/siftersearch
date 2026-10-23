@@ -1,5 +1,5 @@
 // The GPU compute host (remoteJob): start once, re-attach by job id after a restart, fetch the result; a drain leaves it running.
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { writeFileSync, mkdtempSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -95,5 +95,26 @@ describe('long recordings are probed on boss only', () => {
     process.env.MEDIA_ASR_HOST = 'boss';
     expect(await withProbeHost(async (h) => h, { long: true })).toBe('boss');
     delete process.env.MEDIA_ASR_HOST;
+  });
+});
+
+describe('errSummary', () => {
+  it('keeps the command and the error ahead of a traceback tail', async () => {
+    const { errSummary } = await import('../../api/lib/media/tools.js');
+    const e = errSummary(`Traceback (most recent call last):\n  File "x.py", line 3, in <module>\n    run()\n           ^^^^^\nsubprocess.CalledProcessError: Command '['ffmpeg', '-i', 'in.flac']' died with <Signals.SIGKILL: 9>.\n[exit 1]`);
+    expect(e.startsWith("subprocess.CalledProcessError: Command '['ffmpeg'")).toBe(true);
+    expect(e).toContain('[exit 1]');
+  });
+});
+
+describe('encodeRemote', () => {
+  it('falls back to the tower encode when the host fails; a drain is not a failure', async () => {
+    const { encodeRemote, DrainAbort } = await import('../../api/lib/media/tools.js');
+    process.env.MEDIA_ENCODE_HOST = 'no-such-host-xyz';
+    const local = vi.fn(async () => 'tower');
+    expect(await encodeRemote('ogg', '/nonexistent.flac', '/tmp/x.ogg', { job: 'j-1', local })).toBe('tower');
+    expect(local).toHaveBeenCalledTimes(1);
+    delete process.env.MEDIA_ENCODE_HOST;
+    void DrainAbort;
   });
 });
