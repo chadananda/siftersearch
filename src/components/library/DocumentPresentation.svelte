@@ -2989,6 +2989,15 @@
       right: 0.5rem;
     }
 
+    /* The floating hamburger lives in a right GUTTER, never on the paper: with the paper running to 0.5rem from the edge
+       the fixed button sat on the right-floated book cover (and on the text as you scrolled) — Chad 10-23. Gutter =
+       button (2rem) + its 0.5rem inset + 0.5rem air. */
+    .document-content {
+      margin-left: 0.75rem;
+      margin-right: 3rem;
+      max-width: none;
+    }
+
     /* Show mobile hamburger menu, hide desktop buttons */
     .mobile-menu {
       display: block;
@@ -3016,10 +3025,9 @@
   /* Narrower screens - adjust content margins */
   @media (max-width: 768px) {
     .document-content {
-      /* Minimal right margin - only back + hamburger buttons on mobile */
-      /* Keep tiny left margin visible for visual separation from edge */
-      margin: 1rem 0.5rem 1rem 0.75rem;
-      padding: 1.5rem 1rem 3rem 1rem;
+      /* Tiny left margin for separation from the edge; the right margin is the hamburger's column */
+      margin: 1rem 3rem 1rem 0.75rem;   /* right = the hamburger's gutter (see the 900px rule) */
+      padding: 1.5rem 0.875rem 3rem 0.875rem;
     }
 
     /* URL breadcrumb adjustments for mobile - 3 stacked lines */

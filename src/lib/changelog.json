@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-23T17:52:46.021Z",
+  "generated": "2026-10-23T18:06:32.945Z",
   "entries": [
+    {
+      "hash": "6da6047d",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "One plain instruction for a file Dewey cannot read",
+      "scope": "dewey"
+    },
+    {
+      "hash": "aa0c1f26",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Doc-page slug fallback matches the _<slug> tail in memory over indexed candidates (no SCAN docs); search_log + user-table writes go through the single writer",
+      "scope": "api"
+    },
+    {
+      "hash": "41dcf49a",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "One reply per conversation; a contributor's mail is held, never dropped, on the screen's word",
+      "scope": "dewey"
+    },
+    {
+      "hash": "df6bc366",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Server-render the document's first view — no spinner, no unstyled flash (Chad 10-23)",
+      "scope": "reader"
+    },
     {
       "hash": "4f440442",
       "date": "2026-10-23",
@@ -3472,38 +3500,38 @@
       "type": "Docs",
       "description": "Structure inference + traditional references (Chad 10-17)",
       "scope": "worklist"
-    },
-    {
-      "hash": "1d24d94b",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "References stage (traditional number or print page per paragraph); Structure counts documents whose structure was FOUND",
-      "scope": "index"
-    },
-    {
-      "hash": "2f3c824d",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Structure-summary report (found vs must be inferred); episode-extract resumable",
-      "scope": "structure"
-    },
-    {
-      "hash": "c60b015e",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Episode-extract gives the model room (4000 tokens) and one retry; a failure keeps the reply's start",
-      "scope": "history"
-    },
-    {
-      "hash": "df1d7ddf",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Episodes of God Passes By and The Dawn-Breakers from their own headings — episode-extract job + /documents/:id/episodes",
-      "scope": "history"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "6da6047d",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "One plain instruction for a file Dewey cannot read",
+        "scope": "dewey"
+      },
+      {
+        "hash": "aa0c1f26",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Doc-page slug fallback matches the _<slug> tail in memory over indexed candidates (no SCAN docs); search_log + user-table writes go through the single writer",
+        "scope": "api"
+      },
+      {
+        "hash": "41dcf49a",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "One reply per conversation; a contributor's mail is held, never dropped, on the screen's word",
+        "scope": "dewey"
+      },
+      {
+        "hash": "df6bc366",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Server-render the document's first view — no spinner, no unstyled flash (Chad 10-23)",
+        "scope": "reader"
+      },
       {
         "hash": "4f440442",
         "date": "2026-10-23",
@@ -6987,34 +7015,6 @@
         "type": "Docs",
         "description": "Structure inference + traditional references (Chad 10-17)",
         "scope": "worklist"
-      },
-      {
-        "hash": "1d24d94b",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "References stage (traditional number or print page per paragraph); Structure counts documents whose structure was FOUND",
-        "scope": "index"
-      },
-      {
-        "hash": "2f3c824d",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Structure-summary report (found vs must be inferred); episode-extract resumable",
-        "scope": "structure"
-      },
-      {
-        "hash": "c60b015e",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Episode-extract gives the model room (4000 tokens) and one retry; a failure keeps the reply's start",
-        "scope": "history"
-      },
-      {
-        "hash": "df1d7ddf",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Episodes of God Passes By and The Dawn-Breakers from their own headings — episode-extract job + /documents/:id/episodes",
-        "scope": "history"
       }
     ]
   }
