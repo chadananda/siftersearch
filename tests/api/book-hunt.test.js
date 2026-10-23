@@ -20,6 +20,8 @@ describe('publishers', () => {
     expect(publisherClass('Bahá’í World Centre')).toMatchObject({ class: 'institutional' });
     expect(publisherClass('Oxford University Press')).toMatchObject({ class: 'commercial' });
     expect(publisherClass('John Smith')).toBe(null);
+    expect(publisherClass('G. Ronald')).toMatchObject({ name: 'George Ronald' });
+    expect(publisherClass("Bahá'í  Pub. Trust")).toMatchObject({ class: 'review' });
   });
   it('reads the imprint from the copyright page, not from "also by" lists', () => {
     const r = imprintFromText(p(['The Book', 'BY THE SAME AUTHOR Iran’s Secret Pogrom (Neville Spearman)', 'GEORGE RONALD, Publisher 46 High Street, Kidlington, Oxford',
@@ -179,9 +181,12 @@ describe('jobs', () => {
       { doc_id: 4, found: found({ publisher: { value: 'Bahá’í Publishing Trust', conf: 'high', source: 'copyright-page' } }) },
       { doc_id: 5, found: found({ isbn13: { value: '9780853983439', conf: 'high', source: 'openlibrary' }, publisher: { value: 'X', conf: 'medium', source: 'openlibrary' } }) },
     ];
+    docs.push({ id: 6, title: 'BPT ISBN Book', author: 'D', religion: "Baha'i", collection: 'Books', paragraph_count: 500, encumbered: 0 });
+    const rows6 = async () => [...await rows(), { doc_id: 6, found: found({ isbn13: { value: '9780853983439', conf: 'high' }, publisher: { value: "Bahá'í Pub. Trust", conf: 'medium', source: 'openlibrary' } }) }];
     const encumber = vi.fn();
-    const r = await rightsPublisherJob({}, { page, rows, encumber });
-    expect(r).toMatchObject({ would_encumber: 2, review: 1, by_reason: { 'publisher-commercial': 1, 'isbn-noncanonical': 1 } });
+    const r = await rightsPublisherJob({}, { page, rows: rows6, encumber });
+    docs.pop();
+    expect(r).toMatchObject({ would_encumber: 2, review: 2, by_reason: { 'publisher-commercial': 1, 'isbn-noncanonical': 1 } });
     expect(r.flagged_ids).toEqual([1, 5]);
     expect(r.george_ronald.map((x) => x.id)).toEqual([1]);
     expect(encumber).not.toHaveBeenCalled();

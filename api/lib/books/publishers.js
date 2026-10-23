@@ -8,7 +8,7 @@ import { norm } from '../rights/canonical.js';
 
 // [display name, pattern on the normalised text, class]
 export const KNOWN_PUBLISHERS = Object.freeze([
-  ['George Ronald', /\bgeorge ronald\b/, 'commercial'],
+  ['George Ronald', /\b(george|g) ronald\b/, 'commercial'],
   ['Kalimát Press', /\bkalimat press\b/, 'commercial'],
   ['Oneworld Publications', /\bone ?world (publications|oxford)\b|\boneworld\b/, 'commercial'],
   ['Palabra Publications', /\bpalabra\b/, 'commercial'],
@@ -19,7 +19,7 @@ export const KNOWN_PUBLISHERS = Object.freeze([
   ['Baha’i Studies Review / Intellect', /\bintellect (books|ltd)\b/, 'commercial'],
   ['Association for Bahá’í Studies', /\bassociation for bahai studies\b/, 'review'],   // an agency of a National Assembly?
   ['Wilmette Institute', /\bwilmette institute\b/, 'review'],
-  ['Bahá’í Publishing Trust', /\bbahai publishing trust\b|\bb p t\b/, 'review'],
+  ['Bahá’í Publishing Trust', /\bbahai (publishing|pub|publ) trust\b|\bb p t\b/, 'review'],
   ['Bahá’í Publishing (US)', /\bbahai publishing\b(?! trust)/, 'review'],
   ['Bahá’í Publications Australia', /\bbahai publications australia\b/, 'review'],
   ['Bahá’í Distribution Service', /\bbahai distribution service\b/, 'review'],

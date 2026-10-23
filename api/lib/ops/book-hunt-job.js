@@ -80,7 +80,7 @@ export function applicable(found) {
   if (found?.held_edition) meta.held_edition = found.held_edition;
   meta.hunt = { version: found?.version, matched: found?.matched || null };
   return {
-    values: { isbn: hi('isbn13')?.value, publisher: hi('publisher')?.value, pub_year: hi('year')?.value, edition: hi('edition')?.value,
+    values: { isbn: hi('isbn13')?.value, publisher: hi('publisher') ? publisherClass(hi('publisher').value)?.name ?? hi('publisher').value : undefined, pub_year: hi('year')?.value, edition: hi('edition')?.value,
       purchase_url: hi('purchase_url')?.value, author_image: hi('author_image')?.value },
     meta, cover: hi('cover')?.value || null,
   };
@@ -147,11 +147,13 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
     out.noncanonical++;
     const f = hunted.get(d.id)?.fields || {};
     const pub = f.publisher && (f.publisher.conf === 'high' || f.publisher.source === 'copyright-page') ? f.publisher : null;
-    const cls = pub ? publisherClass(pub.value)?.class || null : null;
+    // a Publishing Trust / institution named at ANY confidence holds the book back from an ISBN-only encumbrance (review, not guess)
+    const anyCls = f.publisher ? publisherClass(f.publisher.value)?.class || null : null;
+    const cls = pub ? publisherClass(pub.value)?.class || null : ['review', 'institutional'].includes(anyCls) ? anyCls : null;
     const isbn = f.isbn13?.conf === 'high' ? f.isbn13 : null;
-    const row = { id: d.id, title: d.title, author: d.author, collection: d.collection, publisher: pub?.value || null, publisher_class: cls,
-      isbn: isbn?.value || null, evidence: pub?.evidence || isbn?.evidence || null, source: pub?.source || isbn?.source || null };
-    if (pub?.value === 'George Ronald') gr.push({ ...row, encumbered: !!d.encumbered });
+    const row = { id: d.id, title: d.title, author: d.author, collection: d.collection, publisher: (pub || f.publisher)?.value || null, publisher_class: cls,
+      isbn: isbn?.value || null, evidence: (pub || f.publisher)?.evidence || isbn?.evidence || null, source: (pub || f.publisher)?.source || isbn?.source || null };
+    if (publisherClass(pub?.value)?.name === 'George Ronald') gr.push({ ...row, encumbered: !!d.encumbered });
     if (cls === 'review') { out.review++; review.push(row); continue; }
     if (cls === 'institutional') { out.institutional++; inst.push(row); continue; }
     const reason = cls === 'commercial' ? 'publisher-commercial' : isbn ? 'isbn-noncanonical' : null;
@@ -159,7 +161,7 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
     if (d.encumbered) { out.already_encumbered++; continue; }
     out.would_encumber++;
     out.by_reason[reason] = (out.by_reason[reason] || 0) + 1;
-    if (pub) out.by_publisher[pub.value] = (out.by_publisher[pub.value] || 0) + 1;
+    if (pub) { const nm = publisherClass(pub.value)?.name || pub.value; out.by_publisher[nm] = (out.by_publisher[nm] || 0) + 1; }
     flagged.push({ ...row, reason });
     if (write) { const r = await encumber(d.id, reason); if (r.changed) out.encumbered_now++; }
   }
