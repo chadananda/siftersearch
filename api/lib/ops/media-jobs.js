@@ -722,7 +722,13 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
     if (!Object.keys(fix).length) continue;
     changed.push({ slug: it.slug, from: said, ...fix });
     if (!write) continue;
-    if (busy.has(it.id)) { skipped_busy.push(it.slug); continue; }
+    // the catalogue row at once (the /media index groups by it) — also for a talk with a run queued: the row is not the
+    // run's to write until its catalog stage, and the meta file below is left to that run
+    const row0 = {};
+    if (fix.speaker) row0.speaker = fix.speaker;
+    if (fix.speaker_key) row0.speaker_key = fix.speaker_key;
+    if ('year' in fix) row0.year = fix.year;
+    if (busy.has(it.id)) { if (Object.keys(row0).length && repo.updateMediaItem) await repo.updateMediaItem(it.id, row0); skipped_busy.push(it.slug); continue; }
     await writeMeta(it.dir, { ...meta, ...fix });
     // the catalogue row at once (the /media index groups by it), the re-render follows in the update run
     const row = {};
