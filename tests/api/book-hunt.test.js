@@ -197,3 +197,35 @@ describe('jobs', () => {
     expect(r.canonical.books).toBe(1);
   });
 });
+
+describe('author photo audit jobs', () => {
+  it('only our own CDN URLs are written; null removes; dry run writes nothing', async () => {
+    const { bookAuthorPhotoSetJob } = await import('../../api/lib/ops/book-hunt-job.js');
+    const set = vi.fn(async () => ({ changed: 1 }));
+    const fixes = [{ id: 1, url: 'https://siftersearch.com/img/cdn/siftersearch.com/book-authors/x/abc.jpg?v=abc' }, { id: 2, url: null },
+      { id: 3, url: 'https://upload.wikimedia.org/x.jpg' }];
+    expect(await bookAuthorPhotoSetJob({ fixes }, { set })).toMatchObject({ replaced: 1, removed: 1, invalid: [3] });
+    expect(set).not.toHaveBeenCalled();
+    await bookAuthorPhotoSetJob({ fixes, write: true }, { set });
+    expect(set.mock.calls.map((c) => c[1])).toEqual(['https://siftersearch.com/img/cdn/siftersearch.com/book-authors/x/abc.jpg?v=abc', null]);
+  });
+});
+
+describe('the Google retry pass', () => {
+  it('re-hunts only books Google never answered that lack a high ISBN', async () => {
+    const { bookHuntJob } = await import('../../api/lib/ops/book-hunt-job.js');
+    const docs = [1, 2, 3, 4].map((id) => ({ id, title: `B${id}`, author: 'A', religion: "Baha'i", collection: 'Books', paragraph_count: 500 }));
+    const found = { 1: { google: 'quota', fields: {} }, 2: { google: 'ok', fields: {} }, 3: { fields: {} }, 4: { google: 'quota', fields: { isbn13: { conf: 'high' } } } };
+    const hunted = [];
+    const r = await bookHuntJob({ retryGoogle: true }, { page: async ({ afterId }) => docs.filter((d) => d.id > afterId), front: async () => [], speakers: async () => [],
+      photoUrl: () => '', jev: null, sleep: async () => {}, rows: async ([id]) => [{ state: 'done', found: JSON.stringify(found[id]) }],
+      save: async () => {}, hunt: async ({ doc }) => { hunted.push(doc.id); return { fields: {}, google: 'ok' }; } });
+    expect(hunted).toEqual([1, 3]);
+    expect(r.google_ok).toBe(2);
+  });
+  it('a hunt records whether Google answered', async () => {
+    const fetchImpl = vi.fn(async (url) => (/googleapis/.test(url) ? { ok: false, status: 429, json: async () => ({}) } : { ok: false, status: 404, json: async () => null }));
+    const r = await huntBook({ doc: { id: 1, title: 'X Book', author: 'A B' }, paragraphs: [] }, { fetchImpl });
+    expect(r.google).toBe('quota');
+  });
+});

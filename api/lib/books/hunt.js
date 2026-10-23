@@ -149,10 +149,15 @@ export async function huntBook({ doc, paragraphs = [], speakers = [] }, deps = {
     if (!fields.edition && edition.edition_name) fields.edition = F(edition.edition_name, conf, 'openlibrary', edition.key);
   }
 
-  // 3. Google Books: corroboration, or the record Open Library lacks
+  // 3. Google Books: corroboration, or the record Open Library lacks. Its free daily quota runs out: `google` records whether
+  // it answered ('ok' | 'quota' | 'error' | 'not-needed'), so a later pass re-asks only those it never answered.
+  let google = 'not-needed';
   if (!fields.isbn13 || !fields.publisher || !fields.year) {
     const q = fields.isbn13 ? `isbn:${fields.isbn13.value}` : [`intitle:${title}`, doc.author && `inauthor:${doc.author.split(/[;,(]/)[0]}`].filter(Boolean).join('+');
-    const g = await getJson(fetchImpl, `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5`);
+    const gr = await fetchImpl(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5${process.env.GOOGLE_BOOKS_KEY ? `&key=${process.env.GOOGLE_BOOKS_KEY}` : ''}`,
+      { signal: AbortSignal.timeout(20000), headers: { 'User-Agent': UA } }).catch(() => null);
+    google = gr?.ok ? 'ok' : gr?.status === 429 || gr?.status === 403 ? 'quota' : 'error';
+    const g = gr?.ok ? await gr.json().catch(() => null) : null;
     const vol = (g?.items || []).map((i) => i.volumeInfo).find((v) => v && titleMatches(title, [v.title, v.subtitle].filter(Boolean).join(' ')) && (fields.isbn13 || authorAgrees(doc.author, v.authors)));
     if (vol) {
       const conf = fields.isbn13 ? fields.isbn13.conf : 'medium';
@@ -201,7 +206,7 @@ export async function huntBook({ doc, paragraphs = [], speakers = [] }, deps = {
   }
   const all = Object.values(fields).filter(Boolean);
   const review = all.some((f) => f.conf !== 'high');
-  return { version: HUNT_VERSION, fields, held_edition: fields.edition?.value || (fields.year?.source === 'copyright-page' ? `${fields.publisher?.value || '?'} ${fields.year.value}` : null),
+  return { version: HUNT_VERSION, google, fields, held_edition: fields.edition?.value || (fields.year?.source === 'copyright-page' ? `${fields.publisher?.value || '?'} ${fields.year.value}` : null),
     matched: { via, work: work?.key || null, edition: edition?.key || null, conf: matchConf }, review, notes };
 }
 

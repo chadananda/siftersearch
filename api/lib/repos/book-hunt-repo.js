@@ -54,3 +54,16 @@ export async function bookFacts(docId) {
     author_born: m.author_born?.value || null, author_died: m.author_died?.value || null };
   return Object.values(out).some((v) => v != null) ? out : null;
 }
+
+/** Books showing an author photo, with the photo's evidence (book_meta.author_image) — for the photo audit. */
+export async function authorPhotoRows() {
+  return queryAll(`SELECT id, title, author, author_image, CASE WHEN json_valid(book_meta) THEN json_extract(book_meta, '$.author_image') END AS meta
+    FROM docs WHERE author_image IS NOT NULL AND deleted_at IS NULL`, [], 'book-hunt:author-photos');
+}
+/** Replace (or, with url null, remove) a book's author photo and record why. Live docs only. */
+export async function setAuthorImage(docId, url, evidence) {
+  const r = await query(`UPDATE docs SET author_image = ?, book_meta = json_patch(COALESCE(CASE WHEN json_valid(book_meta) THEN book_meta END, '{}'), ?),
+      updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`,
+  [url ?? null, JSON.stringify({ author_image: url ? evidence : null, author_image_removed: url ? null : evidence }), Number(docId)], 'book-hunt:set-author-image');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}

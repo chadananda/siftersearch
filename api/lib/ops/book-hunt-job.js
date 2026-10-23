@@ -38,7 +38,9 @@ async function jevClient() {
   };
 }
 
-export async function bookHuntJob({ limit = 1000, redo = false, ids = null, pauseMs = 400, prior = null } = {}, deps = {}) {
+// retryGoogle: re-hunt only books Google Books never answered (its free quota ran out) and that still lack a high ISBN —
+// the daily book-google pulse (reports-worker) queues this after the quota resets; resumable like any hunt.
+export async function bookHuntJob({ limit = 1000, redo = false, ids = null, pauseMs = 400, prior = null, retryGoogle = false } = {}, deps = {}) {
   const { page = huntScanPage, rows = huntRowsByIds, front = frontParagraphs, save = saveHunt, hunt = huntBook, draining = isDraining,
     speakers = async () => (await import('../repos/media-repo.js')).listSpeakers(), photoUrl = (await import('../media/gallery.js')).photoUrl,
     jev = await jevClient(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = deps;
@@ -49,7 +51,12 @@ export async function bookHuntJob({ limit = 1000, redo = false, ids = null, paus
   for await (const d of books(page)) {
     if (idSet && !idSet.has(d.id)) continue;
     if (n >= limit) break;
-    if (!redo) {
+    if (retryGoogle) {
+      const [have] = await rows([d.id]);
+      const f = parse(have?.found);
+      // hunts before 10-23 evening did not record Google's answer: unknown counts as unanswered
+      if (!f || ['ok', 'not-needed'].includes(f.google) || f.fields?.isbn13?.conf === 'high') { out.skipped_done++; continue; }
+    } else if (!redo) {
       const [have] = await rows([d.id]);
       if (have && have.state === 'done' && have.version === HUNT_VERSION) { out.skipped_done++; continue; }
     }
@@ -59,6 +66,7 @@ export async function bookHuntJob({ limit = 1000, redo = false, ids = null, paus
       const found = await hunt({ doc: d, paragraphs: await front(d.id, 40), speakers: sp }, { photoUrl, jev });
       await save(d.id, { state: 'done', version: HUNT_VERSION, found, review: found.review });
       out.hunted++; if (found.review) out.review++;
+      if (found.google) out[`google_${found.google}`] = (out[`google_${found.google}`] || 0) + 1;
       for (const [k, f] of Object.entries(found.fields)) if (f) out.with[`${k}:${f.conf}`] = (out.with[`${k}:${f.conf}`] || 0) + 1;
     } catch (err) {
       out.errors++;
@@ -81,7 +89,9 @@ export function applicable(found) {
   meta.hunt = { version: found?.version, matched: found?.matched || null };
   return {
     values: { isbn: hi('isbn13')?.value, publisher: hi('publisher') ? publisherClass(hi('publisher').value)?.name ?? hi('publisher').value : undefined, pub_year: hi('year')?.value, edition: hi('edition')?.value,
-      purchase_url: hi('purchase_url')?.value, author_image: hi('author_image')?.value },
+      // a portrait is applied only from our verified speaker gallery; any other goes through the photo audit (face + identity
+      // check, copied to our CDN — scripts/books/author_photo_audit.py), never hotlinked (Chad: never the wrong person)
+      purchase_url: hi('purchase_url')?.value, author_image: hi('author_image')?.source === 'speaker-gallery' ? hi('author_image').value : undefined },
     meta, cover: hi('cover')?.value || null,
   };
 }
@@ -167,4 +177,24 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
   }
   const pick = (arr, n) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); };
   return { ...out, sample: pick(flagged, samples), george_ronald: gr, review_list: review, institutional_list: inst, flagged_ids: flagged.map((x) => x.id), flagged_all: flagged };
+}
+
+/** The applied author photos with their evidence (the photo audit's input). */
+export async function bookAuthorPhotosReport(_p = {}, deps = {}) {
+  const { rows = (await import('../repos/book-hunt-repo.js')).authorPhotoRows } = deps;
+  const list = (await rows()).map((r) => ({ id: r.id, title: r.title, author: r.author, url: r.author_image, meta: parse(r.meta) }));
+  return { count: list.length, photos: list };
+}
+
+/** The photo audit's verdicts → docs (Chad's rule: never an image of the wrong person; no hotlinks).
+ *  params { fixes: [{ id, url | null, evidence: { source, credit, licence, check } }], write } — dry run unless write. */
+export async function bookAuthorPhotoSetJob({ fixes = [], write = false } = {}, deps = {}) {
+  const { set = (await import('../repos/book-hunt-repo.js')).setAuthorImage } = deps;
+  const out = { write, replaced: 0, removed: 0, invalid: [] };
+  for (const f of fixes) {
+    if (!Number.isInteger(f?.id) || (f.url != null && !/^https:\/\/siftersearch\.com\/img\/cdn\/siftersearch\.com\//.test(f.url))) { out.invalid.push(f?.id ?? null); continue; }
+    if (write) await set(f.id, f.url ?? null, f.evidence || null);
+    if (f.url) out.replaced++; else out.removed++;
+  }
+  return out;
 }

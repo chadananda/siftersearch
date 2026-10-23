@@ -143,10 +143,29 @@ async function ocrLoop() {
   }
 }
 
+// BOOK-GOOGLE PULSE (10-23): Google Books' free daily quota ran out during the book hunt. Once a day, after the quota
+// resets (midnight Pacific ≈ 08:00 UTC), queue a `book-hunt {retryGoogle:true}` — it re-asks only the books Google never
+// answered that still lack a high-confidence ISBN, and does nothing when there are none. Once per UTC day.
+async function bookGooglePulse() {
+  const { enqueue, pendingRuns, latest } = await import('../lib/repos/ops-report-repo.js');
+  await nap(120_000);
+  while (!isDraining()) {
+    try {
+      const now = new Date(), today = now.toISOString().slice(0, 10);
+      if (now.getUTCHours() >= 9) {
+        const last = await latest('book-hunt').catch(() => null);
+        const ranToday = last?.requested_by === 'book-google-pulse' && String(last.requested_at || '').slice(0, 10) === today;
+        if (!ranToday && !(await pendingRuns('book-hunt').catch(() => [])).length) await enqueue('book-hunt', { retryGoogle: true }, 'book-google-pulse');
+      }
+    } catch (err) { logger.warn({ err: err.message }, 'book-google pulse failed'); }
+    await nap(3600_000);
+  }
+}
+
 // OPS_ONLY="a,b": a second worker process that runs ONLY these jobs (10-12: carry runs waited hours behind a slow batch;
 // a separate process starts them without restarting — and killing mid-book — the main worker). Claims are atomic.
 const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs (and MEDIA_JOBS, siftersearch-media's) — the main worker never claims (or requeues) them
 if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY });
 else await runService({ name: process.env.name || 'siftersearch-reports', registry: REPORTS, lanes: LANES, laneWorkers: LANE_WORKERS,
-  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop] });
+  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop, bookGooglePulse] });

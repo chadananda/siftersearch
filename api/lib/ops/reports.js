@@ -35,7 +35,7 @@ import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js'
 import { paragraphAuthorsJob } from './paragraph-authors-job.js';
 import { compilationAuthorsJob } from './compilation-authors-job.js';
 import { rightsIsbnJob } from './rights-isbn-job.js';
-import { bookHuntJob, bookHuntApplyJob, bookMetaCoverageReport, rightsPublisherJob } from './book-hunt-job.js';
+import { bookHuntJob, bookHuntApplyJob, bookMetaCoverageReport, rightsPublisherJob, bookAuthorPhotosReport, bookAuthorPhotoSetJob } from './book-hunt-job.js';
 import { docCorrectionsJob } from './doc-corrections-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
 import { sourceLinksBuildJob } from './source-links-build-job.js';
@@ -207,6 +207,8 @@ REPORTS['book-hunt'] = bookHuntJob;   // params { limit, redo, ids } — ISBN/pu
 REPORTS['book-hunt-apply'] = bookHuntApplyJob;   // params { write } — fill empty doc fields from high-confidence finds only
 REPORTS['book-meta-coverage'] = bookMetaCoverageReport;   // books with ISBN / publisher / year / purchase link / author image / cover
 REPORTS['rights-publisher'] = rightsPublisherJob;   // params { write } — commercial/private press or found ISBN → encumbered; BPTs → review (dry run by default)
+REPORTS['book-author-photos'] = bookAuthorPhotosReport;   // the applied author photos + evidence (for the face/identity audit)
+REPORTS['book-author-photo-set'] = bookAuthorPhotoSetJob;   // params { fixes:[{id,url|null,evidence}], write } — only our own CDN URLs; null removes
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)
 REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)
