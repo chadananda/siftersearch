@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-22T22:02:10.201Z",
+  "generated": "2026-10-23T00:39:33.063Z",
   "entries": [
+    {
+      "hash": "d9aa15cc",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "THROUGHPUT (Chad 10-22: one item at a time ≈ a month) — DOWNLOADS apart from processing: a downloads lane (media-fetch: the next YouTube items by rank into the archive, yt-dlp+PO → Titan → Seemuapps, paced 25–50 s, held on a bot check) fills the archive continuously; PROCESSING runs four items at once (pipeline lane × MEDIA_PARALLEL=4) fed every 30 s by rank, as priority runs ahead of re-runs of published items; boss sized from a measurement (10 min of audio, large-v3-turbo: 1 job × 24 threads 5.3 audio-min per minute, 2 × 12 8.3, 3 × 8 9.4, 4 × 6 14.4) → 6 ASR threads per item + diarization beside it; tower's share stays ≤ 8 threads in total; the QUEUE ORDER (migration 171 queue_rank, media-rank): the curated sheet → Hooper Dunbar → other Hands/UHJ → local Hands/UHJ → local others; /admin/media shows downloaded / in progress / published / failed / held / waiting by source and the last 24 h",
+      "scope": "media"
+    },
+    {
+      "hash": "49a926e9",
+      "date": "2026-10-22",
+      "type": "Test",
+      "description": "The index cache-file check waits (bounded) for the background write instead of a fixed 50 ms",
+      "scope": "media"
+    },
+    {
+      "hash": "3406f9e5",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "/media outage — SSR threw mid-stream on the new extended-portrait shape; payload made safe; HTML cache shortened",
+      "scope": "media"
+    },
     {
       "hash": "e365b712",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Select paragraphs by paragraph_index",
       "scope": "hype-sample"
-    },
-    {
-      "hash": "e0518f16",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "V14 deep questions (assumption · objection · underpinning · implication · tension); concept runs batch on Haiku; /concepts/hype-sample dry-run review",
-      "scope": "hype"
-    },
-    {
-      "hash": "6e88bb62",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "HyPE + concept extraction through Anthropic Message Batches (half price) in background grounding",
-      "scope": "cost"
-    },
-    {
-      "hash": "2fbecf12",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Any language — the reader's language is detected per message and kept per book",
-      "scope": "reading"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "d9aa15cc",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "THROUGHPUT (Chad 10-22: one item at a time ≈ a month) — DOWNLOADS apart from processing: a downloads lane (media-fetch: the next YouTube items by rank into the archive, yt-dlp+PO → Titan → Seemuapps, paced 25–50 s, held on a bot check) fills the archive continuously; PROCESSING runs four items at once (pipeline lane × MEDIA_PARALLEL=4) fed every 30 s by rank, as priority runs ahead of re-runs of published items; boss sized from a measurement (10 min of audio, large-v3-turbo: 1 job × 24 threads 5.3 audio-min per minute, 2 × 12 8.3, 3 × 8 9.4, 4 × 6 14.4) → 6 ASR threads per item + diarization beside it; tower's share stays ≤ 8 threads in total; the QUEUE ORDER (migration 171 queue_rank, media-rank): the curated sheet → Hooper Dunbar → other Hands/UHJ → local Hands/UHJ → local others; /admin/media shows downloaded / in progress / published / failed / held / waiting by source and the last 24 h",
+        "scope": "media"
+      },
+      {
+        "hash": "49a926e9",
+        "date": "2026-10-22",
+        "type": "Test",
+        "description": "The index cache-file check waits (bounded) for the background write instead of a fixed 50 ms",
+        "scope": "media"
+      },
+      {
+        "hash": "3406f9e5",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "/media outage — SSR threw mid-stream on the new extended-portrait shape; payload made safe; HTML cache shortened",
+        "scope": "media"
+      },
       {
         "hash": "e365b712",
         "date": "2026-10-22",
@@ -7000,27 +7021,6 @@
         "type": "Fixed",
         "description": "Select paragraphs by paragraph_index",
         "scope": "hype-sample"
-      },
-      {
-        "hash": "e0518f16",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "V14 deep questions (assumption · objection · underpinning · implication · tension); concept runs batch on Haiku; /concepts/hype-sample dry-run review",
-        "scope": "hype"
-      },
-      {
-        "hash": "6e88bb62",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "HyPE + concept extraction through Anthropic Message Batches (half price) in background grounding",
-        "scope": "cost"
-      },
-      {
-        "hash": "2fbecf12",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Any language — the reader's language is detected per message and kept per book",
-        "scope": "reading"
       }
     ]
   }
