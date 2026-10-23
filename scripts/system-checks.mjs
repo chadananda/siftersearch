@@ -189,8 +189,9 @@ let newGpuIdleAt = state.gpuIdleAt || 0;
   else {
     const stages = Object.entries(h.failed_by_stage || {}).map(([k, v]) => `${k} ${v}`).join(', ');
     add('Media failures 1h', h.failed <= MEDIA_FAIL_WARN, 'warn', `${h.failed} failed in the last hour${stages ? ` (${stages})` : ''} · ${h.failed_total} failed in all · ${h.published} published`);
-    const idleCompute = h.compute_backlog > 0 && h.compute_running === 0;
-    const idleLlm = h.llm_backlog > 0 && h.llm_running === 0;
+    // backpressure is not idleness: prep pauses once enough talks wait for ASR (scripts/lib/lane-idle.mjs)
+    const { idleLanes } = await import('./lib/lane-idle.mjs');
+    const { compute: idleCompute, llm: idleLlm } = idleLanes(h);
     // the GPU host (aorus): no media_tool running and no job started in 10 min while compute work waits = IDLE (10-22)
     const gpu = process.env.MEDIA_GPU_HOST ?? 'aorus';
     if (gpu && h.compute_backlog > 0) {
