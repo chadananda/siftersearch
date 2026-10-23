@@ -345,26 +345,50 @@ export async function mediaPortraitsExtendJob({ keys = null, force = false, limi
 // ── THROUGHPUT (Chad 10-22: "about a month" at one item at a time) ──────────────────────────────────────────────────────
 // media-rank: the queue order — the curated sheet → Hooper Dunbar → other Hands/UHJ (the YouTube queue file's own order) →
 // local talks (Hands/UHJ speakers first) → anything else. Lower rank = sooner.
-export async function rankFor(row, ytOrder, role) {
+export async function rankFor(row, ytOrder, role, sections = new Map()) {
   if (row.source_kind === 'youtube') {
     const q = ytOrder.get(row.youtube_id);
     if (q) return (q.tier.startsWith('1-') ? 1000 : /Hooper C Dunbar/.test(q.tier) ? 2000 : 3000) + q.i;
+    // a target from the talks file that the queue skipped (a clip under ~4 min): after its own section's queue
+    const sec = sections.get(row.youtube_id);
+    if (sec) return ({ curated_sacred_traditions: 1900, hooper_dunbar: 2900, hands_uhj: 3900 }[sec.section] ?? 6000) + Math.min(99, sec.i);
     return 6000 + row.id;
   }
   return (['hand', 'uhj'].includes(role) ? 4000 : 5000) + (row.id % 1000);
 }
-export async function mediaRankJob({ file = join(process.cwd(), 'planning', 'media-targets', 'youtube-queue.json') } = {}, deps = {}) {
+export async function mediaRankJob({ file = join(process.cwd(), 'planning', 'media-targets', 'youtube-queue.json'),
+  talks = join(process.cwd(), 'planning', 'media-targets', 'youtube-talks.json'), register = true } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const { speakerRole } = deps.listing || await import('../media/listing-index.js');
   const { readFile: rf } = await import('fs/promises');
   const list = JSON.parse(await rf(file, 'utf8').catch(() => '[]'));
   const ytOrder = new Map(list.map((x, i) => [youtubeId(x.url), { tier: String(x.tier || ''), i }]).filter(([k]) => k));
+  // EVERY target is a catalogue row (Chad 10-22: "we should have close to 1400"): the talks file's videos that are not
+  // Shorts, not "about" the speaker, one per duplicate group — the queue had skipped clips under ~4 min; they are registered
+  const t = JSON.parse(await rf(talks, 'utf8').catch(() => '{}'));
+  const sections = new Map();
+  const registered = [];
+  const seenGroup = new Set();
+  for (const sec of ['curated_sacred_traditions', 'hooper_dunbar', 'hands_uhj']) {
+    let i = 0;
+    for (const x of t[sec] || []) {
+      if (!x.video_id || x.is_short || x.relation === 'about') continue;
+      const g = x.duplicate_group || x.video_id;
+      if (seenGroup.has(g)) continue;
+      seenGroup.add(g);
+      if (!sections.has(x.video_id)) sections.set(x.video_id, { section: sec, i: i++ });
+      if (register && !ytOrder.has(x.video_id) && !(await repo.findMediaByYoutube(x.video_id))) {
+        const it = await repo.createMediaItem({ source_kind: 'youtube', source_ref: x.url || `https://www.youtube.com/watch?v=${x.video_id}`, youtube_id: x.video_id, channel: x.channel || null });
+        registered.push(it.id);
+      }
+    }
+  }
   const rows = await repo.rankRows();
   const ranks = [];
-  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor(r, ytOrder, speakerRole(r.speaker || '', { year: r.year })) });
+  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor(r, ytOrder, speakerRole(r.speaker || '', { year: r.year }), sections) });
   await repo.setQueueRanks(ranks);
   const by = (lo, hi) => ranks.filter((x) => x.rank >= lo && x.rank < hi).length;
-  return { ranked: ranks.length, curated: by(1000, 2000), dunbar: by(2000, 3000), hands_uhj_youtube: by(3000, 4000), local_hands_uhj: by(4000, 5000), local_other: by(5000, 6000), other: by(6000, 1e9) };
+  return { registered: registered.length, ranked: ranks.length, curated: by(1000, 2000), dunbar: by(2000, 3000), hands_uhj_youtube: by(3000, 4000), local_hands_uhj: by(4000, 5000), local_other: by(5000, 6000), other: by(6000, 1e9) };
 }
 
 // media-fetch { limit }: DOWNLOADS, apart from processing — the next YouTube items by rank go into the archive (audio via
@@ -414,4 +438,20 @@ export async function mediaFeedPass(deps = {}) {
   const fetchPending = (await ops.pendingRuns('media-fetch')).length;
   if (!fetchPending && (await repo.nextToDownload(1)).length && !((await repo.youtubeHeldSince(COOL_HOURS))?.n > 0)) { await queue('media-fetch', { limit: 6 }, 'media-feed'); out.fetch = true; }
   return out;
+}
+
+// media-stages-sync: the catalogue's stages_done from each item's meta.json (once, for items processed before migration 173)
+export async function mediaStagesSyncJob(params = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const { stagesDone } = await import('../media/item.js');
+  const { readFile: rf } = await import('fs/promises');
+  const rows = (await repo.rankRows()).map((r) => r.id);
+  let n = 0;
+  for (const id of rows) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const meta = JSON.parse(await rf(join(it.dir, 'meta.json'), 'utf8').catch(() => '{}'));
+    await repo.updateMediaItem(id, { stages_done: stagesDone(meta.stages || {}) }); n++;
+  }
+  return { synced: n };
 }

@@ -76,7 +76,7 @@ describe('media item stage machine', () => {
     expect(meta).toMatchObject({ speaker: 'Hartmut Grossmann', rights: { playback: 'full' }, doc_id: 777, asr: { host: 'boss' } });
     expect(meta.enhancement.asr_input).toBe('original');
     expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain('{id="para_1" t0=');
-    const cat = d.repo.updateMediaItem.mock.calls.at(-1)[1];
+    const cat = d.repo.updateMediaItem.mock.calls.map((c) => c[1]).filter((f) => f.state === 'done' && f.doc_id).at(-1);
     expect(cat).toMatchObject({ state: 'done', doc_id: 777, speaker: 'Hartmut Grossmann', speaker_key: 'hartmut-grossmann' });
     expect(d.portraits.ensurePortrait).toHaveBeenCalledWith('Hartmut Grossmann', {}, {});
     // a second run finds every stage done

@@ -26,6 +26,9 @@ export function towerSlot(fn) { const run = towerChain.then(fn, fn); towerChain 
 // transcript, name corrections, the copy-edit with its faithfulness check, a short description — is rendered, ingested for
 // search and catalogued (published) at once; the enrichment (subheaders, quotes, links, audience + moments) follows and
 // 'update' re-renders, re-ingests (only changed paragraphs: the ingester diffs) and re-catalogues the published talk in place
+/** The completed stages as the catalogue keeps them (",archive,grade,…,"; LIKE '%,quotes,%' counts them). */
+export const stagesDone = (stages = {}) => `,${STAGES.filter((s) => stages[s]?.at).join(',')},`;
+
 export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
@@ -438,6 +441,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     meta.stages[stage] = { at: d.now(), ms: Date.now() - t0, ...rec };
     done.push(stage);
     await save();
+    await repo.updateMediaItem(item.id, { stages_done: stagesDone(meta.stages) }).catch(() => {});
   }
   return { slug: meta.slug, done, meta };
 }

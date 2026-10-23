@@ -1887,6 +1887,12 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_published ON media_items(published_at)');
     logger.info('Migration 172 complete: media_items.published_at');
   },
+
+  173: async () => {
+    // which pipeline stages each item has COMPLETED (",archive,grade,…,"): the import's per-stage counts in one group-by
+    try { await query('ALTER TABLE media_items ADD COLUMN stages_done TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 173 complete: media_items.stages_done');
+  },
 };
 
 export const graphMigrations = {
