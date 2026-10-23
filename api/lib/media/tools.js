@@ -29,6 +29,19 @@ process.once('exit', () => { for (const c of live) { try { c.kill('SIGTERM'); } 
 /** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
 export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
 
+// the 16 kHz conversions sent to the ASR hosts: 3 at once × 2 threads (with item.js towerLight's 4 × 2, prep stays ≤ 14 cores)
+let convBusy = 0;
+const convWait = [];
+export async function convSlot(fn) {
+  if (convBusy >= 3) await new Promise((r) => convWait.push(r));
+  convBusy++;
+  try { return await fn(); } finally { convBusy--; convWait.shift()?.(); }
+}
+
+// every tower-side media process runs at the LOWEST priority, CPU and disk (10-23: prep took API reads from ms to 1.5 s):
+// nice 19 + ionice idle class on Linux
+const LOW = process.platform === 'linux' ? ['ionice', '-c3', 'nice', '-n', '19'] : ['nice', '-n', '19'];
+
 /** Run a command at nice 19 → { code, stdout, stderr }; rejects on a non-zero exit with the stderr tail.
  *  stop: () => boolean, polled every pollMs — true (the service is draining) kills the child and rejects with DrainAbort, so a
  *  long transcription never holds a drain (10-21: a 37-minute stage parked every reports lane). */
@@ -36,7 +49,7 @@ export const liveChildren = () => live.size;
 export function run(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
   return new Promise((resolve, reject) => {
     const tenv = threads ? { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads) } : {};
-    const p = spawn('nice', ['-n', '19', cmd, ...args], { env: { ...process.env, ...tenv, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const p = spawn(LOW[0], [...LOW.slice(1), cmd, ...args], { env: { ...process.env, ...tenv, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
     live.add(p);
     p.on('exit', () => live.delete(p));
     let out = '', err = '', stopped = false;
@@ -146,7 +159,7 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
   try {
     // the ASR host runs THIS checkout's media_tool.py: installed through the gate once per process (and after a deploy)
     if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'install-tool')], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
-    await run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop });
+    await convSlot(() => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
     const cmd = gateCommand(sub, 'flac', { ...opts, threads });
     const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs, stop, input: await readFile(flac) });
     if (sub === 'transcribe') {
@@ -187,7 +200,7 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
     if (installedOn !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
     const flac = join(tmpdir(), `media-asr-${process.pid}-${Date.now()}.flac`);
     try {
-      await exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop });
+      await convSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
       await ssh(`start flac ${job} ${gateCommand('x', 'flac', { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });
     } finally { await unlink(flac).catch(() => {}); }
     await onStart();
@@ -222,7 +235,7 @@ export async function detachedTool(sub, input, opts = {}, { pidFile, threads = d
     const tenv = { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads), CUDA_VISIBLE_DEVICES: '' };
     // through sh so the err file always ends with the EXIT STATUS (10-22: run 2584 'grade ended without a result: ' — no
     // stdout, no stderr; a kill leaves nothing else behind: 137 = SIGKILL / out of memory)
-    const p = spawn('sh', ['-c', 'nice -n 19 "$@"; echo "[exit $?]" >&2', 'sh', python || PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
+    const p = spawn('sh', ['-c', `${LOW.join(' ')} "$@"; echo "[exit $?]" >&2`, 'sh', python || PY(), ...args], { detached: true, stdio: ['ignore', out, err], env: { ...process.env, ...tenv } });
     p.unref(); closeSync(out); closeSync(err);
     pid = p.pid;
     await writeFile(pidFile, String(pid));
@@ -253,7 +266,8 @@ export async function imageSize(path) {
   return { w: Number(st.width) || 0, h: Number(st.height) || 0 };
 }
 
-export const ffmpeg = (args, opts = {}) => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', ...args], { timeoutMs: 3 * 3600_000, ...opts });   // opts.stop: drain-aware
+// two threads per ffmpeg (10-23: unbounded ffmpeg took ~7 cores); towerLight runs 4 at once → ≤ 8 cores for prep
+export const ffmpeg = (args, opts = {}) => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', ...args.slice(0, -1), '-threads', '2', args.at(-1)], { timeoutMs: 3 * 3600_000, ...opts });   // opts.stop: drain-aware
 
 /** Mono PCM (Float32 from s16le) at `sr`, streamed to onChunk — memory stays flat on long talks. */
 export function pcmStream(path, sr, onChunk) {
