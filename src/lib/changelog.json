@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-23T00:53:06.623Z",
+  "generated": "2026-10-23T00:56:54.645Z",
   "entries": [
+    {
+      "hash": "179aaddb",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The guest account button presents sign-in, not just a menu row",
+      "scope": "auth"
+    },
     {
       "hash": "6bc94b79",
       "date": "2026-10-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "API-launched concept runs write through the single writer (one backgroundEnv for both launchers)",
       "scope": "concepts"
-    },
-    {
-      "hash": "36596f36",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Concept claims in Qdrant — indexer --field concepts, qconcept layer beside the lexicon layer; stale hype/concept points removed on re-index",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "179aaddb",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The guest account button presents sign-in, not just a menu row",
+        "scope": "auth"
+      },
       {
         "hash": "6bc94b79",
         "date": "2026-10-22",
@@ -7014,13 +7021,6 @@
         "type": "Fixed",
         "description": "API-launched concept runs write through the single writer (one backgroundEnv for both launchers)",
         "scope": "concepts"
-      },
-      {
-        "hash": "36596f36",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Concept claims in Qdrant — indexer --field concepts, qconcept layer beside the lexicon layer; stale hype/concept points removed on re-index",
-        "scope": "search"
       }
     ]
   }

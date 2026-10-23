@@ -34,7 +34,17 @@
     showNavMenu = !showNavMenu;
     if (showNavMenu && !auth.isAuthenticated && !auth.loading) promptOneTap({ force: true });
   }
-  $effect(() => { if (showNavMenu && guestGoogleEl && !auth.isAuthenticated) renderGoogleButton(guestGoogleEl, { width: 240 }); });
+  // The Google button is sized to the panel's inner width (GSI accepts 200–400 px) and re-rendered on resize.
+  $effect(() => {
+    if (!showNavMenu || !guestGoogleEl || auth.isAuthenticated) return;
+    const el = guestGoogleEl;
+    const fit = () => renderGoogleButton(el, { width: Math.max(200, Math.min(400, Math.floor(el.clientWidth || 240))) });
+    fit();
+    let t;
+    const onResize = () => { clearTimeout(t); t = setTimeout(fit, 150); };
+    window.addEventListener('resize', onResize);
+    return () => { clearTimeout(t); window.removeEventListener('resize', onResize); };
+  });
 
   // Local state — showNavMenu drives the ONE combined pill menu (nav + account)
   let showAuthModal = $state(false);
@@ -553,8 +563,9 @@
   }
 
   .guest-signin { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 0.25rem 0.25rem; }
-  .guest-signin-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary, inherit); padding: 0 0.5rem; }
-  .guest-google-slot { min-height: 40px; display: flex; justify-content: center; }
+  .guest-signin { width: 260px; max-width: 100%; }
+  .guest-signin-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary, inherit); padding: 0 0.5rem; white-space: normal; overflow-wrap: anywhere; }
+  .guest-google-slot { min-height: 40px; width: 100%; display: flex; justify-content: center; overflow: hidden; }
   .pill-guest {
     background: var(--surface-3);
     color: var(--text-muted);
@@ -570,12 +581,15 @@
   }
 
   /* Nav dropdown for collapsed items */
+  /* Right-aligned to the account pill so it can only grow leftward, never off the right edge;
+     capped to the viewport (16 px gutters) at every width. */
   .nav-dropdown {
     position: absolute;
     top: calc(100% + 0.5rem);
-    left: 50%;
-    transform: translateX(-50%);
+    right: 0;
     min-width: 160px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
     background: var(--surface-solid);
     border: 1px solid var(--border-default);
     border-radius: 0.75rem;
