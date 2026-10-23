@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-23T18:44:39.271Z",
+  "generated": "2026-10-23T19:12:50.500Z",
   "entries": [
+    {
+      "hash": "dd952f55",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "From the reviews of Liliane's letters — attached photos are read, a pasted original is never small talk or a reading reply, outreach by the researcher, markers 1·2·3, reflections (Chad 10-23)",
+      "scope": "anis"
+    },
+    {
+      "hash": "8403d9d8",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A publisher named in a citation, an 'also by' list or an approval line is not the book's imprint (hunt v2)",
+      "scope": "books"
+    },
+    {
+      "hash": "cebab15c",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Book-hunt-apply dry run lists a sample of what it would write, with evidence",
+      "scope": "books"
+    },
+    {
+      "hash": "fce42918",
+      "date": "2026-10-23",
+      "type": "Test",
+      "description": "A migration number defined twice in a bucket file fails (the 10-23 177 collision)",
+      "scope": "migrations"
+    },
+    {
+      "hash": "320630d0",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Browse indexes are migration 178 — 8c335818 collided with the book-hunt 177 (duplicate object key)",
+      "scope": "migrations"
+    },
+    {
+      "hash": "8c335818",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Author / language browse filters get their own index key inside a collection (migration 177)",
+      "scope": "library"
+    },
+    {
+      "hash": "26c3ba85",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Book metadata hunt — ISBN, publisher, year, edition, buy link, cover, author photo + dates; publisher rights rule (dry run) (Chad 10-23)",
+      "scope": "books"
+    },
     {
       "hash": "1820c4a3",
       "date": "2026-10-23",
@@ -3451,59 +3500,59 @@
       "type": "New",
       "description": "'do we have it?' from anything on /dewey — title/author, printed lines, a URL (page, PDF, video), a file, or phone photos",
       "scope": "dewey"
-    },
-    {
-      "hash": "3461c4e5",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Phrase vectors follow new books automatically under a standing daily cap (AUTO_INDEX_USD_DAY; off until set)",
-      "scope": "ingest"
-    },
-    {
-      "hash": "ccf436d8",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "A new long book with no headings gets structure inferred automatically; a refusal is marked, not retried",
-      "scope": "ingest"
-    },
-    {
-      "hash": "f4aa3c43",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "References counts only works with a reference system (or that should have one) — not needed counts as done (Chad 10-17)",
-      "scope": "index"
-    },
-    {
-      "hash": "72521d4d",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "A short single work (tablet, letter, talk: < 60 paragraphs) counts as structure not needed once read",
-      "scope": "structure"
-    },
-    {
-      "hash": "7d606283",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "The Contents check compares with all sections found (the Summa's Questions were not counted)",
-      "scope": "structure"
-    },
-    {
-      "hash": "6b88f847",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "A length-cut reply is split and re-asked; a book whose Contents lists far more chapters than were found is not written",
-      "scope": "structure"
-    },
-    {
-      "hash": "792b1a09",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Structure-infer titles join a numbering line with the name line after it",
-      "scope": "structure"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "dd952f55",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "From the reviews of Liliane's letters — attached photos are read, a pasted original is never small talk or a reading reply, outreach by the researcher, markers 1·2·3, reflections (Chad 10-23)",
+        "scope": "anis"
+      },
+      {
+        "hash": "8403d9d8",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A publisher named in a citation, an 'also by' list or an approval line is not the book's imprint (hunt v2)",
+        "scope": "books"
+      },
+      {
+        "hash": "cebab15c",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Book-hunt-apply dry run lists a sample of what it would write, with evidence",
+        "scope": "books"
+      },
+      {
+        "hash": "fce42918",
+        "date": "2026-10-23",
+        "type": "Test",
+        "description": "A migration number defined twice in a bucket file fails (the 10-23 177 collision)",
+        "scope": "migrations"
+      },
+      {
+        "hash": "320630d0",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Browse indexes are migration 178 — 8c335818 collided with the book-hunt 177 (duplicate object key)",
+        "scope": "migrations"
+      },
+      {
+        "hash": "8c335818",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Author / language browse filters get their own index key inside a collection (migration 177)",
+        "scope": "library"
+      },
+      {
+        "hash": "26c3ba85",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Book metadata hunt — ISBN, publisher, year, edition, buy link, cover, author photo + dates; publisher rights rule (dry run) (Chad 10-23)",
+        "scope": "books"
+      },
       {
         "hash": "1820c4a3",
         "date": "2026-10-23",
@@ -6966,55 +7015,6 @@
         "type": "New",
         "description": "'do we have it?' from anything on /dewey — title/author, printed lines, a URL (page, PDF, video), a file, or phone photos",
         "scope": "dewey"
-      },
-      {
-        "hash": "3461c4e5",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Phrase vectors follow new books automatically under a standing daily cap (AUTO_INDEX_USD_DAY; off until set)",
-        "scope": "ingest"
-      },
-      {
-        "hash": "ccf436d8",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "A new long book with no headings gets structure inferred automatically; a refusal is marked, not retried",
-        "scope": "ingest"
-      },
-      {
-        "hash": "f4aa3c43",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "References counts only works with a reference system (or that should have one) — not needed counts as done (Chad 10-17)",
-        "scope": "index"
-      },
-      {
-        "hash": "72521d4d",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "A short single work (tablet, letter, talk: < 60 paragraphs) counts as structure not needed once read",
-        "scope": "structure"
-      },
-      {
-        "hash": "7d606283",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "The Contents check compares with all sections found (the Summa's Questions were not counted)",
-        "scope": "structure"
-      },
-      {
-        "hash": "6b88f847",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "A length-cut reply is split and re-asked; a book whose Contents lists far more chapters than were found is not written",
-        "scope": "structure"
-      },
-      {
-        "hash": "792b1a09",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Structure-infer titles join a numbering line with the name line after it",
-        "scope": "structure"
       }
     ]
   }
