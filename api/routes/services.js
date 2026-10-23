@@ -26,6 +26,13 @@
 import { ApiError } from '../lib/errors.js';
 import { requireTier, authenticate } from '../lib/auth.js';
 import { queryOne } from '../lib/db.js';
+import { canReadFull } from '../lib/rights/preview.js';
+
+/** A copyrighted (encumbered) book is never translated or voiced whole for a reader (Chad 10-23); staff may. */
+async function refuseEncumbered(documentId, user) {
+  const d = await queryOne('SELECT encumbered FROM docs WHERE id = ?', [documentId]);
+  if (d?.encumbered === 1 && !canReadFull(user)) throw ApiError.forbidden('This book is under copyright — it can be previewed, not translated or converted whole.');
+}
 import {
   requestTranslation,
   getTranslatedDocument,
@@ -87,6 +94,7 @@ export default async function servicesRoutes(fastify) {
       notifyEmail
     } = request.body;
     const userId = request.user.sub;
+    await refuseEncumbered(documentId, request.user);
 
     // Validate target language
     if (!SUPPORTED_LANGUAGES[targetLanguage]) {
@@ -206,6 +214,7 @@ export default async function servicesRoutes(fastify) {
   }, async (request) => {
     const { documentId, voice = 'nova', format = 'mp3', quality, notifyEmail } = request.body;
     const userId = request.user.sub;
+    await refuseEncumbered(documentId, request.user);
 
     // Check if audio already exists
     const existing = await audioExists(documentId, voice);

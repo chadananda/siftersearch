@@ -18,6 +18,9 @@ import { participantId, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { linkFor } from '../lib/source-links.js';
 import { logger } from '../lib/logger.js';
 import { queryOne, queryAll } from '../lib/db.js';
+import { previewWindow, PREVIEW_PARAGRAPHS } from '../lib/rights/preview.js';
+
+const ENCUMBERED_RANGE = 3;   // the most consecutive paragraphs of a copyrighted book a chat tool reads at once
 import { slugifyPath } from '../lib/slug.js';
 import { rankByTitle } from '../lib/title-rank.js';
 
@@ -480,17 +483,20 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
   // MODE: read — fetch paragraphs from a specific document
   if (mode === 'read' && document_id) {
     const doc = await queryOne(
-      'SELECT id, title, author, religion, collection, year, description FROM docs WHERE id = ? AND deleted_at IS NULL',
+      'SELECT id, title, author, religion, collection, year, description, encumbered FROM docs WHERE id = ? AND deleted_at IS NULL',
       [document_id]
     );
     if (!doc) return { error: 'Document not found' };
+    // a copyrighted (encumbered) book is read only in its first 40 paragraphs — by any tool, for anyone (Chad 10-23)
+    const win = previewWindow({ encumbered: doc.encumbered === 1, offset: start, limit: safeLimit });
 
-    const paragraphs = await queryAll(
+    const paragraphs = win.limit <= 0 ? [] : await queryAll(
       `SELECT paragraph_index, text, heading FROM content
        WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT ? OFFSET ?`,
-      [document_id, safeLimit, start]
+      [document_id, win.limit, win.offset]
     );
     return {
+      ...(win.previewLimit ? { copyright: `Under copyright: only the first ${win.previewLimit} paragraphs can be read; quote it only in short excerpts.` } : {}),
       document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year },
       paragraphs: paragraphs.map(p => ({ index: p.paragraph_index, heading: p.heading || null, text: p.text.substring(0, 1000) }))
     };
@@ -1140,10 +1146,17 @@ export async function executeLibraryOverview() {
 // crafter sees them as retrieved_quotes and picks the right ones to use.
 async function executeReadDocumentForQuestion({ document_id, question, max_paragraphs = 250, start_paragraph, end_paragraph }) {
   const doc = await queryOne(
-    'SELECT id, title, author, religion, collection, year, description, slug, filename, source_site, source_url FROM docs WHERE id = ? AND deleted_at IS NULL',
+    'SELECT id, title, author, religion, collection, year, description, slug, filename, source_site, source_url, encumbered FROM docs WHERE id = ? AND deleted_at IS NULL',
     [document_id]
   );
   if (!doc) return { error: 'Document not found' };
+  // A copyrighted (encumbered) book (Chad 10-23): the model reads at most its first 40 paragraphs, or a named range of at most
+  // ENCUMBERED_RANGE paragraphs, each clipped — so an answer can only ever quote it in short excerpts.
+  const encumbered = doc.encumbered === 1;
+  if (encumbered && typeof start_paragraph === 'number' && typeof end_paragraph === 'number') {
+    end_paragraph = Math.min(end_paragraph, start_paragraph + ENCUMBERED_RANGE - 1);
+  }
+  if (encumbered) max_paragraphs = Math.min(max_paragraphs || PREVIEW_PARAGRAPHS, PREVIEW_PARAGRAPHS);
 
   // Two modes: paragraph range (start..end inclusive) for reading a named
   // section of a compilation (e.g. Tablet of Wisdom inside doc 8270), or
@@ -1193,11 +1206,12 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
     : (doc.source_url || null);
 
   return {
+    ...(encumbered ? { copyright: 'Under copyright: quote it only in short excerpts (a sentence or two), never consecutive paragraphs.' } : {}),
     document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year, base_url: docBase },
     paragraphs_read: paragraphs.length,
     excerpts: paragraphs.map(p => ({
       paragraph_index: p.paragraph_index,
-      text: (p.text || '').slice(0, 1000),
+      text: (p.text || '').slice(0, encumbered ? 600 : 1000),
       heading: p.heading || null,
       source_url: buildParaUrl(p)
     }))

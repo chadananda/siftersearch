@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-23T18:06:32.945Z",
+  "generated": "2026-10-23T18:12:24.955Z",
   "entries": [
+    {
+      "hash": "2c238562",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "On phones the menu button sat on the book cover — it now has its own right gutter",
+      "scope": "reader"
+    },
+    {
+      "hash": "969059ef",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "One <link rel=\"canonical\"> per page — Layout owns it; a document's is its stored path",
+      "scope": "seo"
+    },
+    {
+      "hash": "535c2bfa",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Library sitemap listed 0 URLs — now an index of per-tradition parts from a reports snapshot, edge-cached",
+      "scope": "seo"
+    },
     {
       "hash": "6da6047d",
       "date": "2026-10-23",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Gleanings (I–CLXVI, CXXV.2…), Aqdas (1–190, Q&A 1–107) and Íqán (1–290) numbering, each verified against its totals",
       "scope": "refs"
-    },
-    {
-      "hash": "b2b022c6",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Participant check folds possessives and the ʻ apostrophe and counts the heading; reverify mode re-checks stored episodes without a model call",
-      "scope": "history"
-    },
-    {
-      "hash": "42350885",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Traditional numbering — refs-assign job + Hidden Words scheme (Arabic 1–71, Persian 1–82, verified against the totals)",
-      "scope": "refs"
-    },
-    {
-      "hash": "3d45688e",
-      "date": "2026-10-17",
-      "type": "Docs",
-      "description": "Structure inference + traditional references (Chad 10-17)",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "2c238562",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "On phones the menu button sat on the book cover — it now has its own right gutter",
+        "scope": "reader"
+      },
+      {
+        "hash": "969059ef",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "One <link rel=\"canonical\"> per page — Layout owns it; a document's is its stored path",
+        "scope": "seo"
+      },
+      {
+        "hash": "535c2bfa",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Library sitemap listed 0 URLs — now an index of per-tradition parts from a reports snapshot, edge-cached",
+        "scope": "seo"
+      },
       {
         "hash": "6da6047d",
         "date": "2026-10-23",
@@ -6994,27 +7015,6 @@
         "type": "New",
         "description": "Gleanings (I–CLXVI, CXXV.2…), Aqdas (1–190, Q&A 1–107) and Íqán (1–290) numbering, each verified against its totals",
         "scope": "refs"
-      },
-      {
-        "hash": "b2b022c6",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Participant check folds possessives and the ʻ apostrophe and counts the heading; reverify mode re-checks stored episodes without a model call",
-        "scope": "history"
-      },
-      {
-        "hash": "42350885",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Traditional numbering — refs-assign job + Hidden Words scheme (Arabic 1–71, Persian 1–82, verified against the totals)",
-        "scope": "refs"
-      },
-      {
-        "hash": "3d45688e",
-        "date": "2026-10-17",
-        "type": "Docs",
-        "description": "Structure inference + traditional references (Chad 10-17)",
-        "scope": "worklist"
       }
     ]
   }

@@ -1453,6 +1453,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   if (extractedMeta.translator) extraMeta.translator = extractedMeta.translator;
   if (extractedMeta.subtitle) extraMeta.subtitle = extractedMeta.subtitle;
   if (extractedMeta.publisher) extraMeta.publisher = extractedMeta.publisher;
+  // the book's own ISBN (Dewey writes it): the rights-isbn report reads it (Chad 10-23, api/lib/rights/isbn.js)
+  for (const k of ['isbn', 'isbn13', 'isbn10']) if (extractedMeta[k]) extraMeta[k] = String(extractedMeta[k]);
   if (extractedMeta.sourceUrl) extraMeta.sourceUrl = extractedMeta.sourceUrl;
   // Source identities, so a document links back to oceanoflights (bookid) and the Partial Inventory (pin).
   for (const k of ['bookid', 'pin', 'catalog_ref']) if (extractedMeta[k]) extraMeta[k] = extractedMeta[k];

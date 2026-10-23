@@ -14,6 +14,7 @@
 import { optionalAuthenticate } from '../lib/auth.js';
 import { queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { previewWindow } from '../lib/rights/preview.js';
 import { findDocuments, listDocs } from '../lib/docs-repo.js';
 import { findSections, sectionsOfDoc } from '../lib/repos/sections-repo.js';
 import { logger } from '../lib/logger.js';
@@ -67,6 +68,7 @@ async function handleBulkDownload(documentIds, format, options, reply) {
     try {
       const document = await queryOne('SELECT * FROM docs WHERE id = ? AND deleted_at IS NULL', [docId]);
       if (!document) { logger.warn({ docId }, 'Document not found for bulk export'); continue; }
+      if (document.encumbered === 1) { logger.info({ docId }, 'bulk export skips a copyrighted (encumbered) document'); continue; }
       const segments = await queryAll(
         'SELECT id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index',
         [docId]
@@ -191,6 +193,7 @@ export default async function documentsRoutes(fastify) {
 
   // Get document segments/chunks
   fastify.get('/:id/segments', {
+    preHandler: optionalAuthenticate,
     schema: {
       querystring: {
         type: 'object',
@@ -206,17 +209,19 @@ export default async function documentsRoutes(fastify) {
     const { limit = 100, offset = 0 } = request.query;
 
     // Read directly from SQLite — Meilisearch is for search, not document viewing
-    const doc = await queryOne('SELECT id FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
+    const doc = await queryOne('SELECT id, encumbered FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
     if (!doc) throw ApiError.notFound('Document not found');
+    // a copyrighted (encumbered) book: its first 40 paragraphs only, staff in full (Chad 10-23, api/lib/rights/preview.js)
+    const win = previewWindow({ encumbered: doc.encumbered === 1, user: request.user, offset, limit });
 
-    const segments = await queryAll(`
+    const segments = win.limit <= 0 ? [] : await queryAll(`
       SELECT id, doc_id, paragraph_index, text, heading, blocktype,
              translation, translation_segments, context, language
       FROM content
       WHERE doc_id = ? AND deleted_at IS NULL
       ORDER BY paragraph_index
       LIMIT ? OFFSET ?
-    `, [id, limit, offset]);
+    `, [id, win.limit, win.offset]);
 
     const countRow = await queryOne(
       'SELECT COUNT(*) as total FROM content WHERE doc_id = ? AND deleted_at IS NULL', [id]
@@ -226,8 +231,9 @@ export default async function documentsRoutes(fastify) {
       documentId: id,
       segments,
       total: countRow?.total || 0,
-      limit,
-      offset
+      limit: win.limit,
+      offset,
+      previewLimit: win.previewLimit
     };
   });
 
@@ -252,8 +258,9 @@ export default async function documentsRoutes(fastify) {
     const { format = 'json', includeEmbeddings = false, includeMetadata = true } = request.query;
 
     // Verify document exists in SQLite
-    const docExists = await queryOne('SELECT id FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
+    const docExists = await queryOne('SELECT id, encumbered FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
     if (!docExists) throw ApiError.notFound('Document not found');
+    if (docExists.encumbered === 1) throw ApiError.forbidden('This book is under copyright — it can be searched and previewed, not downloaded.');
 
     // Generate download token
     const token = generateDownloadToken(id, format, { includeEmbeddings, includeMetadata });
@@ -290,6 +297,8 @@ export default async function documentsRoutes(fastify) {
     // Get document and all segments from SQLite
     const document = await queryOne('SELECT * FROM docs WHERE id = ? AND deleted_at IS NULL', [documentId]);
     if (!document) throw ApiError.notFound('Document not found');
+    // a copyrighted book is never handed out whole (export links are tokens, so this is checked at download too)
+    if (document.encumbered === 1) throw ApiError.forbidden('This book is under copyright — it can be searched and previewed, not downloaded.');
     const segmentCols = options.includeEmbeddings
       ? 'id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language, embedding'
       : 'id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language';

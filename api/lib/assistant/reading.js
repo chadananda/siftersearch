@@ -357,7 +357,9 @@ export const ownWords = (t) => String(t || '').split(/\n(?:On .{0,200}wrote:|-{2
 
 /** A book title → its OceanLibrary copy (the reading outline comes from its file). */
 async function findBook(d, name) {
-  const { docs } = await d.listDocs({ title: name, fields: ['id', 'title', 'author', 'religion', 'file_path', 'source_site'], limit: 50, count: false });
+  const found = (await d.listDocs({ title: name, fields: ['id', 'title', 'author', 'religion', 'file_path', 'source_site', 'encumbered'], limit: 50, count: false })).docs;
+  // a copyrighted (encumbered) book is never walked page by page (Chad 10-23: its first 40 paragraphs are all we show)
+  const docs = found.filter((x) => x.encumbered !== 1);
   const f = (s) => String(s || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
   const want = f(name);
   const score = (x) => (x.source_site === 'oceanlibrary.com' ? 4 : 0) + (/\.md$/.test(x.file_path || '') ? 1 : 0) + (f(x.title) === want ? 3 : f(x.title).startsWith(want) ? 1 : 0);

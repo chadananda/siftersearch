@@ -70,7 +70,7 @@ if (segments.length === 3) {
         } catch { about = undefined; }
         initialData = {
           document: doc, paragraphs: (data.paragraphs || []).map(slim), total: data.total || 0, offset: data.offset || 0,
-          hasMore: !!data.hasMore, requiresAuth: !!data.requiresAuth, canEdit: !!data.canEdit, previewLimit: data.previewLimit ?? null,
+          hasMore: !!data.hasMore, requiresAuth: !!data.requiresAuth, canEdit: !!data.canEdit, previewLimit: data.previewLimit ?? null, previewEnded: !!data.previewEnded,
           about,
         };
       }

@@ -23,6 +23,7 @@ import { readLibraryStats, religionCollectionCounts } from '../lib/library/libra
 import { readLibrarySitemap } from '../lib/library/library-sitemap.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { previewWindow, PREVIEW_PARAGRAPHS, PREVIEW_MESSAGE, canReadFull } from '../lib/rights/preview.js';
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { findDocuments, docsForPathSlugs, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
 import { lettersOf } from '../lib/repos/letters-repo.js';
@@ -1546,6 +1547,7 @@ Return ONLY the description text, no quotes or formatting.`;
    * Get document detail with paragraphs
    */
   fastify.get('/documents/:id', {
+    preHandler: [optionalAuthenticate],
     schema: {
       params: {
         type: 'object',
@@ -1563,13 +1565,14 @@ Return ONLY the description text, no quotes or formatting.`;
         }
       }
     }
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params;
     const { includeParagraphs = true, paragraphLimit = 100, paragraphOffset = 0 } = request.query;
 
     // Get document metadata from libsql (source of truth for library management)
     const docRow = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, metadata, cover_url, created_at, updated_at
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, metadata, cover_url, created_at, updated_at,
+             encumbered, purchase_url
       FROM docs WHERE id = ?
     `, [id]);
 
@@ -1586,16 +1589,19 @@ Return ONLY the description text, no quotes or formatting.`;
     // Get paragraphs from content table if requested
     let paragraphs = [];
     let paragraphTotal = 0;
+    // encumbered → the first PREVIEW_PARAGRAPHS only (staff in full); never a shared-cached full text (Chad 10-23)
+    const win = previewWindow({ encumbered: document.encumbered === 1, user: request.user, offset: paragraphOffset, limit: Math.min(1000, paragraphLimit) });
+    if (document.encumbered === 1 && canReadFull(request.user)) reply.header('Cache-Control', 'private, no-store');
     if (includeParagraphs) {
       const [paras, countResult] = await Promise.all([
-        queryAll(`
+        win.limit > 0 ? queryAll(`
           SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments,
                  json_extract(block_attrs, '$.pn') AS pn
           FROM content
           WHERE doc_id = ? AND deleted_at IS NULL
           ORDER BY paragraph_index
           LIMIT ? OFFSET ?
-        `, [id, paragraphLimit, paragraphOffset]),
+        `, [id, win.limit, win.offset]) : [],
         queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [id])
       ]);
       // Parse translation field - can be plain string (legacy) or JSON object (new)
@@ -1620,9 +1626,11 @@ Return ONLY the description text, no quotes or formatting.`;
       document,
       paragraphs,
       paragraphTotal,
-      paragraphLimit,
+      paragraphLimit: win.limit,
       paragraphOffset,
-      assets
+      previewLimit: win.previewLimit,
+      ...(win.previewLimit ? { message: PREVIEW_MESSAGE } : {}),
+      assets: win.previewLimit ? [] : assets   // no file downloads of a copyrighted book
     };
   });
 
@@ -1904,47 +1912,13 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     const isEncumbered = document.encumbered === 1;
-
-    // For encumbered docs, only editors and admins see full content
+    // An encumbered (copyrighted) book is read only in its first PREVIEW_PARAGRAPHS paragraphs (Chad 10-23); admins and
+    // editors keep the full text (api/lib/rights/preview.js). The server enforces it — a request past 40 gets nothing.
     const canAccessFull = !isEncumbered || canEdit;
-
-    // Preview limit for encumbered docs — enough for fair-use preview
-    const PREVIEW_LIMIT = 5;
-    if (isEncumbered && !canEdit && offset >= PREVIEW_LIMIT) {
-      return {
-        document: {
-          id: document.id,
-          title: document.title,
-          author: document.author,
-          religion: document.religion,
-          collection: document.collection,
-          language: document.language,
-          year: document.year,
-          description: document.description,
-          paragraphCount: document.paragraph_count,
-          encumbered: true,
-          purchase_url: document.purchase_url || null,
-          cover_url: document.cover_url || null,
-          slug: document.slug || generateDocSlug(document)
-        },
-        paragraphs: [],
-        total: document.paragraph_count || 0,
-        limit,
-        offset,
-        requiresAuth: true,
-        canEdit: false,
-        message: 'This document is under copyright and is available for search and preview only.'
-      };
-    }
-
-    // Determine effective limit for encumbered preview
-    let effectiveLimit = limit;
-    let effectiveOffset = offset;
-    if (isEncumbered && !canEdit) {
-      // Only return up to PREVIEW_LIMIT paragraphs for non-editor users
-      effectiveLimit = Math.min(limit, PREVIEW_LIMIT - offset);
-      if (effectiveLimit <= 0) effectiveLimit = 0;
-    }
+    const win = previewWindow({ encumbered: isEncumbered, user: request.user, offset, limit });
+    const PREVIEW_LIMIT = PREVIEW_PARAGRAPHS;
+    if (isEncumbered && canEdit) reply.header('Cache-Control', 'private, no-store');   // a full copyrighted text is never shared-cached
+    const effectiveLimit = win.limit, effectiveOffset = win.offset;
 
     // Fetch paragraphs
     const [paragraphs, countResult] = await Promise.all([
@@ -1988,11 +1962,13 @@ Return ONLY the description text, no quotes or formatting.`;
       total,
       limit: effectiveLimit,
       offset: effectiveOffset,
-      hasMore: offset + paragraphs.length < total,
-      requiresAuth: isEncumbered && !canEdit && (offset + paragraphs.length >= PREVIEW_LIMIT || offset + limit > PREVIEW_LIMIT),
+      hasMore: canAccessFull ? offset + paragraphs.length < total : false,   // a preview has no "more"
+      requiresAuth: false,
+      previewEnded: isEncumbered && !canEdit && offset + paragraphs.length >= Math.min(PREVIEW_LIMIT, total),
       canAccessFull,
       canEdit,
-      previewLimit: isEncumbered ? PREVIEW_LIMIT : null
+      previewLimit: isEncumbered && !canEdit ? PREVIEW_LIMIT : null,
+      ...(isEncumbered && !canEdit ? { message: PREVIEW_MESSAGE } : {})
     };
   });
 
@@ -2225,6 +2201,7 @@ Return ONLY the description text, no quotes or formatting.`;
    * Returns original text + English translation for non-English documents
    */
   fastify.get('/documents/:id/bilingual', {
+    preHandler: [optionalAuthenticate],
     schema: {
       params: {
         type: 'object',
@@ -2245,9 +2222,11 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Get document metadata from libsql (source of truth)
     const document = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year, description
+      SELECT id, title, author, religion, collection, language, year, description, encumbered
       FROM docs WHERE id = ?
     `, [id]);
+    // encumbered → the first PREVIEW_PARAGRAPHS only, staff in full (Chad 10-23; the print views read this)
+    const win = previewWindow({ encumbered: document?.encumbered === 1, user: request.user, offset, limit });
 
     if (!document) {
       throw ApiError.notFound('Document not found');
@@ -2258,13 +2237,13 @@ Return ONLY the description text, no quotes or formatting.`;
     let total = 0;
 
     try {
-      paragraphs = await queryAll(`
+      paragraphs = win.limit > 0 ? await queryAll(`
         SELECT id, paragraph_index, text, translation, translation_segments, blocktype, heading
         FROM content
         WHERE doc_id = ? AND deleted_at IS NULL
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
-      `, [id, limit, offset]);
+      `, [id, win.limit, win.offset]) : [];
 
       // Get total count from libsql
       const countResult = await queryOne(
@@ -2314,6 +2293,7 @@ Return ONLY the description text, no quotes or formatting.`;
       total,
       limit,
       offset,
+      previewLimit: win.previewLimit,
       hasTranslations: parsedParagraphs.some(p => p.translation),
       hasStudyTranslations: parsedParagraphs.some(p => p.study_translation)
     };

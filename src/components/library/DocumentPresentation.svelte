@@ -83,6 +83,8 @@
   let requiresAuth = $state(ssr?.requiresAuth ?? false);
   let canEdit = $state(ssr?.canEdit ?? false);
   let previewLimit = $state(ssr?.previewLimit ?? null);
+  // A copyrighted book's preview is over (Chad 10-23: the first 40 paragraphs, then a polite end-of-preview panel)
+  let previewEnded = $state(ssr?.previewEnded ?? false);
   // window-only text is set after mount so the hydrated markup matches the server's
   let pageUrl = $state('');
 
@@ -308,6 +310,7 @@
       requiresAuth = data.requiresAuth;
       canEdit = data.canEdit;
       previewLimit = data.previewLimit;
+      previewEnded = !!data.previewEnded;
 
       // Update page metadata dynamically for SEO
       if (document) {
@@ -366,6 +369,7 @@
       offset = offset + (data.paragraphs?.length || 0);
       hasMore = data.hasMore;
       requiresAuth = data.requiresAuth;
+      previewEnded = !!data.previewEnded;
     } catch (err) {
       console.error('Failed to load more:', err);
     } finally {
@@ -1416,21 +1420,24 @@
           </div>
         {/if}
 
-        <!-- Copyright notice for encumbered content -->
-        {#if requiresAuth}
-          <div class="auth-gate">
+        <!-- End of a copyrighted book's preview (Chad 10-23): the first 40 paragraphs, then this — no "load more" -->
+        {#if previewEnded || requiresAuth}
+          <div class="auth-gate preview-end" role="note" aria-label="Preview ends here">
             <div class="auth-gate-content">
-              <h3>Copyrighted Material</h3>
-              <p>This document is under copyright. The preview above is provided under fair use for research purposes.</p>
-              <p class="progress-text">Showing {paragraphs.length} of {total} paragraphs</p>
+              <h3>Preview ends here — this book is under copyright</h3>
+              <p>Thank you for reading. Out of respect for the author and publisher, only the opening pages are shown here.
+                The whole book remains searchable, and short passages appear in search results with links back to their place.</p>
+              <p class="progress-text">Showing the first {paragraphs.length} of {total} paragraphs</p>
               {#if document.purchase_url}
                 <a href={document.purchase_url} target="_blank" rel="noopener noreferrer" class="purchase-btn">
-                  Purchase This Book
+                  Get the book
                 </a>
               {/if}
-              <button class="sign-in-btn editor-login" onclick={() => showLoginModal = true}>
-                Editor Sign In
-              </button>
+              {#if !auth.isAuthenticated}
+                <button class="sign-in-btn editor-login" onclick={() => showLoginModal = true}>
+                  Staff sign in
+                </button>
+              {/if}
             </div>
           </div>
         {/if}

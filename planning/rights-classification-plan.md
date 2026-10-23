@@ -53,3 +53,19 @@ and public-domain texts fall under `online`/public domain → not restricted.
    → write). Includes the 2,029 "extra Ocean books" being ingested now.
 4. [ ] Serving: every path asks servingPolicy(doc.rights) — encumbered reads replaced (ratchet), then the column retired. Verify every path (search hits, Anís quotes, reading guide, /documents full text, public API) respects
    encumbered — whole-text endpoints refuse; quotes capped.
+
+## The ISBN rule (Chad 10-23) — built
+"with non-canonical books with ISBN codes, we should consider them copyright encumbered and the first 40 paragraphs is all
+we do" — narrowed: "This applies to published books." A **non-canonical BOOK with its OWN ISBN** → `encumbered = 1`,
+`rights_reason = 'isbn-noncanonical'` (migration 175: docs.isbn, rights_reason, rights_checked_at). Never un-encumbers.
+- canonical: `api/lib/rights/canonical.js` (`canonicalOf`) — Writings of the Báb/Bahá'u'lláh/'Abdu'l-Bahá, Shoghi Effendi,
+  institutions (UHJ, Research Dept, BIC, ITC, NSAs/LSAs, BWC, OSED, Counsellors, BPT), the Writings/institutional shelves,
+  other traditions except their modern-scholarship shelves, OceanLibrary.
+- book: `docType()` — only 'book' is eligible (papers, letters, talks, pilgrim notes, compilations, institutional, web
+  pages, theses, newsletters, news, short items < 100 paragraphs are never touched).
+- own ISBN: `api/lib/rights/isbn.js` — metadata/frontmatter, or the copyright page in the first 40 paragraphs (labelled,
+  valid checksum, beside a ©/publisher line, not a reference). A cited ISBN never counts.
+- report `rights-isbn` (dry run; `{ write: true }` applies). Dry run: planning/rights-isbn-dryrun-20261023.md.
+- serving: `api/lib/rights/preview.js` — first 40 paragraphs (admin/editor in full, `private, no-store`) on by-path,
+  library/documents/:id, bilingual, documents/:id/segments, chat read tools (≤3-paragraph ranges, clipped); downloads,
+  bulk export, translate/audio services refuse; the Anís reading guide never walks one.

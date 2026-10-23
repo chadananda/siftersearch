@@ -34,6 +34,7 @@ import { ctaiOriginalsJob, ingestFilesJob, ctaiLinkJob } from './ctai-jobs.js';
 import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js';
 import { paragraphAuthorsJob } from './paragraph-authors-job.js';
 import { compilationAuthorsJob } from './compilation-authors-job.js';
+import { rightsIsbnJob } from './rights-isbn-job.js';
 import { docCorrectionsJob } from './doc-corrections-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
 import { sourceLinksBuildJob } from './source-links-build-job.js';
@@ -200,6 +201,7 @@ REPORTS['source-links-build'] = sourceLinksBuildJob;   // params { docIds?, limi
 REPORTS['letters-index'] = lettersIndexJob;   // params { author, collection } — an author's letters (books, chapters, dated messages) for the letter lookup
 REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, author?, translators? }], write } — a person's record corrections
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
+REPORTS['rights-isbn'] = rightsIsbnJob;   // params { write, ids?, limit? } — a non-canonical BOOK with its own ISBN → encumbered (Chad 10-23); dry run by default
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)
 REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)

@@ -1905,6 +1905,17 @@ export const migrations = {
       updated_at TEXT NOT NULL, PRIMARY KEY (speaker_key, sha))`);
     logger.info('Migration 174 complete: media_speaker_photos');
   },
+
+  175: async () => {
+    // RIGHTS: A BOOK'S OWN ISBN (Chad 10-23: "with non-canonical books with ISBN codes, we should consider them copyright
+    // encumbered and the first 40 paragraphs is all we do"). isbn = the document's own ISBN-13 (metadata or its copyright
+    // page; api/lib/rights/isbn.js), rights_reason = why it is encumbered ('isbn-noncanonical'), rights_checked_at = when.
+    for (const col of ['isbn TEXT', 'rights_reason TEXT', 'rights_checked_at TEXT']) {
+      try { await query(`ALTER TABLE docs ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_isbn ON docs(isbn) WHERE isbn IS NOT NULL');
+    logger.info('Migration 175 complete: docs.isbn, rights_reason, rights_checked_at');
+  },
 };
 
 export const graphMigrations = {
