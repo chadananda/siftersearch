@@ -79,7 +79,8 @@ an average of 382 ms, and `DELETE FROM content WHERE id` appeared 70× at an ave
 | migration | what | lock |
 |---|---|---|
 | **179** (98a87e07, live 10-23 22:31 UTC) | Both doc-count triggers now use `NOT EXISTS (…)` instead of `COUNT(*) = 0`. The predicate is identical, so the semantics are exact, quirks included; a random 3,000-op insert/soft-delete/undelete workload against the old triggers matches step for step (`tests/api/content-count-triggers.test.js`). DROP+CREATE run in one atomic batch. | schema-only, 3 ms |
-| **180** | Drops 6 indexes (`doc_upd_unsynced`, `unsynced`, `unsynced_enhanced`, `doc_id_cover`, `hash`, `hash_embedding`), all exact duplicates or prefixes under the same WHERE, or keyed on `content_hash`, which nothing queries. Adds FK-child indexes on the six child tables. Each index is read once through dbstat **before** its DROP, on the migrating process's own connection, so the page reads happen outside the single writer. Each DROP then logs its size and `drop_ms`. Proof: `tests/api/content-index-prune.test.js` runs EXPLAIN over each query shape the dropped indexes could serve and checks they still use an index, and that the FK delete uses the new index. | ~0.1 s per 100 MB freed when warm (bench); about 50 MB, 50 MB, 40 MB, 3 MB, 2 MB, plus ~300 MB (hash) and ~400 MB (hash_embedding) estimated from bench bytes/row × tower rows |
+| **180** (4d4ee49c, live 10-23 22:49–22:53 UTC) | Drops 6 indexes: `doc_upd_unsynced`, `unsynced`, `unsynced_enhanced`, `doc_id_cover`, `hash`, `hash_embedding`. Each is an exact duplicate or prefix under the same WHERE, or is keyed on `content_hash`, which nothing queries. Proof: `tests/api/content-index-prune.test.js` runs EXPLAIN over every query shape these indexes could serve and checks each still uses an index. Verified on tower afterwards: 42 → 36 indexes. | **Not quick on tower.** The slow-write log measured each DROP: unsynced_enhanced 1.9 s, doc_id_cover 2.6 s, `idx_content_hash` **17 s** (BLOCKING), `idx_content_hash_embedding` **68 s** (BLOCKING, worker event loop frozen). That is ~6 MB/s of freed b-tree inside the single writer. The pre-DROP dbstat "warm" reads (16–76 s in the updater, flagged by the system watch) did not help and held the deploy ~4 min; they were removed from the migration. Writes queued and none failed, and every service reloaded on 4d4ee49c by 22:56. |
+| **181** | Indexes the FK child keys: `paragraph_extractions(content_id)` plus the five empty sibling tables. 180 meant to do this, but `ensureIndex`'s column check sent `PRAGMA table_info` through the single writer, got a write result back with no rows, and skipped every index. Fixed in `ensure.js`, which now does `SELECT … FROM pragma_table_info(?)`; there is a test for it. | ≤ 18k rows, instant |
 
 ## 3. Measured per-row cost (bench copy, local)
 
@@ -117,6 +118,10 @@ per-statement figures. Also count `Slow write` lines for `INSERT INTO content` /
 `DELETE FROM extraction_validations` in the worker log.
 
 ## 4. Awaiting Chad: further drops, ordered by write cost saved
+
+⚠ **A DROP of a large content index freezes the writer.** Measured 10-23: roughly 6 MB/s, so 17 s for ~300 MB and 68 s for
+~400 MB. Every index below holds millions of entries. Treat each drop as maintenance: pause the ingest/media/embedding
+writers first, drop one index per window, and do not put large drops in a migration that ships with a normal deploy.
 
 Each of these is written on every insert, or on every sync/embedding update, and nothing in the current code needs it.
 I did not drop them, because each either belongs to a code path that still exists or needs a decision.

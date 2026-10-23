@@ -1,4 +1,4 @@
-// Migration 180 (10-23 content write cost): content indexes no query needs — each one a b-tree every INSERT into content
+// Migrations 180 (drops) + 181 (child FK indexes) (10-23 content write cost): content indexes no query needs — each one a b-tree every INSERT into content
 // also writes — and the missing indexes that made every DELETE FROM content scan a child table (foreign_keys is ON in
 // better-sqlite3: deleting a parent row looks up each child by its key column, a FULL SCAN when no index leads with it).
 // Evidence per index: planning/content-write-cost-20261023.md (tower inventory via the table-schema ops report).

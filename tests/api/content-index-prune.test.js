@@ -63,3 +63,18 @@ describe('migration 180 — content index prune', () => {
     expect(db.prepare('DELETE FROM content WHERE id = 11').run().changes).toBe(1);
   });
 });
+
+describe('ensureIndex column check under routed writes (migration 181)', () => {
+  it('sees a table\'s columns when PRAGMA statements go to the writer and come back without rows', async () => {
+    const { ensureIndex } = await import('../../api/lib/migrations/ensure.js');
+    const db = new Database(':memory:');
+    db.exec(`CREATE TABLE paragraph_extractions (id INTEGER PRIMARY KEY, content_id TEXT NOT NULL)`);
+    // db.js query(): a write-shaped statement (PRAGMA, CREATE …) is posted to the single writer → { rows: [{ changes }] }
+    const routed = async (sql, params = []) => (/^\s*(PRAGMA|CREATE|DROP)/i.test(sql)
+      ? (db.exec(sql), { rows: [{ lastInsertRowid: 0, changes: 0 }] })
+      : db.prepare(sql).all(...params));
+    const ix = CONTENT_CHILD_FK_INDEXES[0];
+    expect(await ensureIndex(routed, { label: 't', table: ix.table, columns: [ix.column], sql: childIndexSql(ix) })).toBe(true);
+    expect(db.prepare(`SELECT name FROM sqlite_master WHERE name = ?`).get(ix.name)).toBeTruthy();
+  });
+});

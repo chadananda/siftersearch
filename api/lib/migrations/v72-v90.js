@@ -1,7 +1,7 @@
 // Content DB migrations 72+ — entity layer schema (ALTER TABLE only on content/docs/graph_entities/graph_relations)
 // New graph pipeline tables live in graph.db via graphMigrations[1].
 
-import { query, queryAll, graphQuery, transaction } from '../db.js';
+import { query, graphQuery, transaction } from '../db.js';
 import { logger } from '../logger.js';
 import { ensureIndex, onTable } from './ensure.js';
 
@@ -1958,25 +1958,28 @@ export const migrations = {
 
   180: async () => {
     // CONTENT WRITE COST, part 2 (10-23): six content indexes no query needs (exact duplicates / prefixes under the same
-    // WHERE, or keyed on content_hash, which nothing filters on) — every INSERT wrote all of them — and indexes on the
-    // child-table FOREIGN KEY columns, without which each DELETE FROM content row full-scanned paragraph_extractions.
-    // One DROP per statement: each frees one b-tree (~0.1 s per 100 MB measured), the writer is never held long.
-    // The child tables hold ≤ 18k rows on tower: the CREATEs are instant. content-index-prune.js has the evidence.
-    // Before each DROP, walk the index once as a READ (dbstat, this process's own connection; WAL readers block no one):
-    // DROP INDEX reads every page of the b-tree it frees, and on the IO-starved host that read would otherwise happen
-    // INSIDE the single writer (~700 MB for the two content_hash indexes). Warm, the DROP is a freelist update.
-    const { CONTENT_INDEX_DROPS, CONTENT_CHILD_FK_INDEXES, childIndexSql } = await import('./content-index-prune.js');
+    // WHERE, or keyed on content_hash, which nothing filters on) — every INSERT wrote all of them. content-index-prune.js
+    // has the evidence. ⚠ DROP INDEX is NOT quick on tower: it frees every page of the b-tree inside the single writer —
+    // measured 10-23: idx_content_hash 17 s, idx_content_hash_embedding 68 s (writer frozen). Large drops are maintenance.
+    const { CONTENT_INDEX_DROPS } = await import('./content-index-prune.js');
     for (const name of Object.keys(CONTENT_INDEX_DROPS)) {
-      const size = await queryAll('SELECT SUM(pgsize) AS bytes, COUNT(*) AS pages FROM dbstat WHERE name = ?', [name], 'migration-180:warm')
-        .then((r) => r[0] || {}).catch(() => ({}));
       const t0 = Date.now();
       await query(`DROP INDEX IF EXISTS ${name}`);
-      logger.info({ index: name, mb: size.bytes ? +(size.bytes / 1e6).toFixed(1) : null, pages: size.pages || null, drop_ms: Date.now() - t0 }, 'Migration 180: dropped');
+      logger.info({ index: name, drop_ms: Date.now() - t0 }, 'Migration 180: dropped');
     }
+    logger.info('Migration 180 complete: 6 redundant content indexes dropped');
+  },
+
+  181: async () => {
+    // foreign_keys is ON: each DELETE FROM content looks up every child table by its key column — a FULL SCAN of the child
+    // per deleted row without an index (paragraph_extractions: 18k rows; bench 8.4 → 1.6 ms per deleted row). 180 meant
+    // to add these but ensureIndex's column check read `PRAGMA table_info` through the writer and skipped them all.
+    // The child tables hold ≤ 18k rows on tower: each CREATE is instant.
+    const { CONTENT_CHILD_FK_INDEXES, childIndexSql } = await import('./content-index-prune.js');
     for (const ix of CONTENT_CHILD_FK_INDEXES) {
-      await ensureIndex(query, { label: `migration 180 ${ix.name}`, table: ix.table, columns: [ix.column], sql: childIndexSql(ix) });
+      await ensureIndex(query, { label: `migration 181 ${ix.name}`, table: ix.table, columns: [ix.column], sql: childIndexSql(ix) });
     }
-    logger.info('Migration 180 complete: 6 redundant content indexes dropped; content FK child keys indexed');
+    logger.info('Migration 181 complete: content FK child keys indexed');
   },
 };
 

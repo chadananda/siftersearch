@@ -20,7 +20,10 @@ export async function tableExists(runner, table) {
 }
 
 export async function columnsExist(runner, table, columns) {
-  const cols = new Set(rowsOf(await runner(`PRAGMA table_info(${table})`)).map((c) => c.name));
+  // a SELECT, not `PRAGMA table_info`: with writes routed to the single writer every PRAGMA statement goes there and comes
+  // back as a write result with no rows — every column then looked missing and each index was silently skipped (10-23:
+  // migration 180's foreign-key indexes)
+  const cols = new Set(rowsOf(await runner('SELECT name FROM pragma_table_info(?)', [table])).map((c) => c.name));
   return columns.every((c) => cols.has(c));
 }
 
