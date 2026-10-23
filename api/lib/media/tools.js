@@ -123,7 +123,7 @@ export const probeHost = () => gpuHost() || asrHost();
  *  fn(host) → its result. */
 const probeBusy = new Map();
 const probeWaiters = [];
-export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 1], [asrHost(), 3]]).filter(([h]) => h) } = {}) {
+export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 4]] : [[gpuHost(), 2], [asrHost(), 4]]).filter(([h]) => h) } = {}) {
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
@@ -463,7 +463,7 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
  *  local() runs it on tower (the caller's ffmpeg in its slot). Re-attaches by job id after a restart. */
 let encBusy = 0;
 const encWait = [];
-export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 2 } = {}) {
+export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 4 } = {}) {   // boss prep 4 at a time (10-23 06:09: boss at load 9, prep the limit)
   const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
   if (host && job) {
     // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)

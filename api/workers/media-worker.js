@@ -32,9 +32,9 @@ export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) =>
   shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-meta-fix'], downloads: ['media-fetch'] };
 // compute: one per ASR slot on boss (4 × 6 threads measured best); llm: API-bound, wide; pipeline: re-runs of published talks
 // asr: + 4 because a run also waits on its diarization; the SLOTS (acquireAsrHost) cap transcriptions
-// compute (prep): 12 — prep mostly waits on the GPU host and boss (its tower CPU work stays capped by towerLight, 4 × 2 threads)
+// compute (prep): 16 — prep mostly waits on the GPU host and boss (its tower CPU work stays capped by towerLight, 4 × 2 threads)
 // llm: API-bound — 12 workers; the per-provider adaptive gates in media/llm.js pace the actual calls
-export const MEDIA_LANE_WORKERS = { compute: Number(process.env.MEDIA_PREP_WORKERS) || 12, asr: asrHosts().reduce((n, h) => n + h.slots, 0) || mediaParallel(),
+export const MEDIA_LANE_WORKERS = { compute: Number(process.env.MEDIA_PREP_WORKERS) || 16, asr: asrHosts().reduce((n, h) => n + h.slots, 0) || mediaParallel(),
   diar: Number(process.env.MEDIA_DIAR_WORKERS) || 14,   // boss 6 + aorus 1 started; the rest re-attach (old aorus jobs) or wait
   llm: Number(process.env.MEDIA_LLM_WORKERS) || 12, pipeline: 3, downloads: Number(process.env.MEDIA_FETCH_RUNS) || 2 };
 

@@ -585,7 +585,8 @@ export async function mediaLanesFeedPass(deps = {}) {
   const compute = await ops.pendingRuns('media-compute');
   out.compute_pending = compute.length;
   const buffered = (repo.preppedCount ? await repo.preppedCount() : 0) + asr.length;
-  const wantPrep = buffered >= 3 * (computeWorkers || 4) ? 0 : Math.max(0, computeDepth - compute.length);
+  // in hand: at least the prep workers (16) so none idles; stop once 3 × the ASR slots are prepped or queued for ASR
+  const wantPrep = buffered >= 3 * (computeWorkers || 4) ? 0 : Math.max(0, Math.max(computeDepth, deps.computeDepth != null ? 0 : (Number(process.env.MEDIA_PREP_WORKERS) || 16)) - compute.length);
   for (const it of await repo.nextToProcess(wantPrep)) {
     await repo.updateMediaItem(it.id, { state: 'scheduled' });
     await queue('media-compute', { id: it.id, priority: true }, 'media-feed');
