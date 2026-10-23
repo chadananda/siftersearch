@@ -788,6 +788,9 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
   const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
   const hits = [];
   const unsure = [];   // surname only (Chad 10-23: "spelling is not trustworthy") — listed for Chad, NOT excluded
+  // Chad's per-talk decisions (data/media-exclusions.json `talks`): exclude, or needs_listen (stays as it is, listed)
+  const decided = new Map((deps.talks || JSON.parse(await (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-exclusions.json'), 'utf8').catch(() => '{}')).talks || []).map((t) => [Number(t.id), t]));
+  const needs_listen = [];
   for (const it of await repo.exclusionCandidates()) {
     const meta = it.dir ? await read(it.dir).catch(() => null) : null;
     const t = it.youtube_id ? targets.get(it.youtube_id) : null;
@@ -797,12 +800,15 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
     const m = dec?.excluded;
     const row = { id: it.id, slug: it.slug, title: it.title || meta?.title || t?.title || null, speaker: it.speaker || meta?.speaker || t?.speaker || null, state: it.state,
       published: it.state === 'done', doc_id: it.doc_id || meta?.doc_id || null, year: meta?.year || null };
+    const td = decided.get(Number(it.id));
+    if (td?.decision === 'needs_listen') { needs_listen.push({ ...row, why: td.reason }); continue; }
+    if (td?.decision === 'exclude') { hits.push({ ...row, person: row.speaker, reason: td.reason, evidence: `Chad decided this talk: ${td.decided}`, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) }); continue; }
     if (m) { hits.push({ ...row, person: m.person, reason: m.reason, evidence: m.evidence, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) }); continue; }
     if (dec?.unsure) unsure.push({ ...row, might_be: dec.unsure.person, evidence: dec.unsure.evidence });
   }
   const by = (k) => Object.fromEntries([...new Set(hits.map((h) => h[k]))].map((v) => [v, hits.filter((h) => h[k] === v).length]));
   const out = { matched: hits.length, published: hits.filter((h) => h.published).length, queued: hits.filter((h) => !h.published).length, by_person: by('person'), by_state: by('state'),
-    talks: hits.map(({ jobs, ...h }) => h), unsure };
+    talks: hits.map(({ jobs, ...h }) => h), unsure, needs_listen };
   if (!write) return out;
   const ids = new Set(hits.map((h) => h.id));
   // 1. no lane picks them up again; a run in hand stops at its next stage (runItem checks the row)

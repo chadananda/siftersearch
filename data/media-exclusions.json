@@ -6,5 +6,35 @@
       "reason": "newer-generation: UHJ member, not historical (Chad 10-23)",
       "decided": "Chad 2026-10-23: 'remove talks by Firaydoun Javaheri and Gustavo Correa. Too modern.' then 'I don't want Lample, Mohajer, Arbab, Martin. These are newer generation, not historical.' Cutoff: Hartmut Grossmann stays; Kiser Barnes excluded; every member first elected after 2000 excluded. 'I'm trying to bring in people with a historical perspective.'"
     }
+  ],
+  "talks": [
+    {
+      "id": 1262,
+      "title": "2013 09 21 Mr Birkland at SON",
+      "decision": "exclude",
+      "reason": "newer-generation: UHJ member, not historical (Chad 10-23, per talk)",
+      "decided": "Chad 10-23: 'all but #1 are dubious'"
+    },
+    {
+      "id": 1100,
+      "title": "Dr Javaheri - 9 May letter of the House of Justice",
+      "decision": "exclude",
+      "reason": "newer-generation: UHJ member, not historical (Chad 10-23, per talk)",
+      "decided": "Chad 10-23: 'all but #1 are dubious'"
+    },
+    {
+      "id": 1401,
+      "title": "vancouver conference /Dr Birkland",
+      "decision": "exclude",
+      "reason": "newer-generation: UHJ member, not historical (Chad 10-23, per talk)",
+      "decided": "Chad 10-23: 'all but #1 are dubious'"
+    },
+    {
+      "id": 1251,
+      "title": "Lawḥ-i-Iḥtiráq (Fire Tablet)",
+      "decision": "needs_listen",
+      "reason": "'Dr. Mohajer': the Hand Raḥmatu'lláh Muhájir or Payman Mohajer — 'Dr.' is no evidence either way (Chad 10-23: the Hand was a medical doctor, the other a homeopath with a mail-order degree); stays published until someone listens",
+      "decided": "Chad 10-23: keep #1, listen"
+    }
   ]
 }

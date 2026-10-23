@@ -102,3 +102,18 @@ describe('the soft delete writes a document\'s paragraphs in short chunks', () =
     expect(Math.max(...sizes)).toBeLessThanOrEqual(400);
   });
 });
+
+describe("Chad's per-talk decisions (data/media-exclusions.json talks)", () => {
+  it('exclude by id even when the name alone is only unsure; needs_listen stays published and is listed', async () => {
+    const rows = [{ id: 1262, slug: 'mr-birkland', title: '2013 09 21 Mr Birkland at SON', speaker: 'Stephen Birkland', state: 'done', doc_id: 9, dir: null },
+      { id: 1251, slug: 'fire-tablet', title: 'Fire Tablet', speaker: 'Dr. Mohajer', state: 'done', doc_id: 8, dir: null }];
+    const d = { repo: { exclusionCandidates: async () => rows, excludeItems: vi.fn(async (ids) => ids.length) }, ops: { pendingRuns: async () => [], cancel: vi.fn() }, targets: new Map(),
+      tools: { cancelRemote: vi.fn() }, docs: { softDeleteDocs: vi.fn(async (ids) => ({ deleted: ids.length, refused: [] })) },
+      talks: [{ id: 1262, decision: 'exclude', reason: 'newer-generation (per talk)', decided: 'x' }, { id: 1251, decision: 'needs_listen', reason: 'listen' }] };
+    const r = await mediaExcludeJob({ write: true }, d);
+    expect(r.talks.map((t) => t.id)).toEqual([1262]);
+    expect(r.needs_listen.map((t) => t.id)).toEqual([1251]);
+    expect(d.repo.excludeItems).toHaveBeenCalledWith([1262], 'newer-generation (per talk)');
+    expect(d.docs.softDeleteDocs).toHaveBeenCalledWith([9], expect.anything());
+  });
+});
