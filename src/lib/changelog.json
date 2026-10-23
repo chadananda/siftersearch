@@ -1,6 +1,48 @@
 {
-  "generated": "2026-10-23T04:30:27.435Z",
+  "generated": "2026-10-23T05:34:51.825Z",
   "entries": [
+    {
+      "hash": "fda665bd",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Matcher — compilations credited to their compiler agree with the Writings they gather; slug authors (writings-shoghieffendi-…) agree; Bindery titles never subtitle-split (Torah books); a title on >4 docs is sections, listed not covered; runner caches image hashes, survives network errors, --skip-docs for matches rejected by eye",
+      "scope": "covers"
+    },
+    {
+      "hash": "e637771c",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "LLM lane fan-out — name-correction and copy-edit chunks run at once; quotations and teachings linked together",
+      "scope": "media"
+    },
+    {
+      "hash": "232b4104",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Aorus (RTX 3070) takes ASR first, plus DeepFilterNet and the grade; boss for diarization and overflow",
+      "scope": "media"
+    },
+    {
+      "hash": "1f725bbe",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Match Chad's Bindery cover map to docs BY TITLE (apply-covers.mjs, an API client) — the Sikh covers never attached because import-covers matched md5(OceanLibrary bookid) only, and those books live in the main library under subtitled titles ('The Sikh Religion Vol. 1 - Life of Guru Nanak' = 'The Sikh Religion, Volume I'); ambiguous titles are listed, never guessed",
+      "scope": "covers"
+    },
+    {
+      "hash": "e0b85104",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "2.187.776 — /library redesign live",
+      "scope": "release"
+    },
+    {
+      "hash": "9c803b19",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Gate unbound-variable on optional args + metrics rolloff IndexError killed every compute run; failures retried (capped) and watched",
+      "scope": "media"
+    },
     {
       "hash": "c6dc8a1d",
       "date": "2026-10-22",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "The 'authority layers' lecture paragraph is removed deterministically (it survived the prompt; Lal objected three times)",
       "scope": "anis"
-    },
-    {
-      "hash": "ee118457",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "Original-wording answers link the paragraph and carry no authority lecture",
-      "scope": "anis"
-    },
-    {
-      "hash": "45dd0ae5",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "Original-language questions answered from the original — numbered Hidden Words resolve to the canonical paragraph with its aligned Persian/Arabic; quotations go to SourceHunt; other hits carry their originals (Lal asked 4× for the Persian of PHW #19)",
-      "scope": "anis"
-    },
-    {
-      "hash": "5f2a66d2",
-      "date": "2026-10-14",
-      "type": "Performance",
-      "description": "Spend totals are incremental rollups by rowid — the per-poll full GROUP BYs on ai_usage (~5 s each, now that rows are no longer dropped) stalled the Anís admin pages 37 s",
-      "scope": "api"
-    },
-    {
-      "hash": "f33635cd",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "Refuse 'this prayer/teaching…' and 'according to the …' self-references; keep 'the prayer for…'",
-      "scope": "hype"
-    },
-    {
-      "hash": "6d49a3f4",
-      "date": "2026-10-14",
-      "type": "Performance",
-      "description": "NoDisambig runs skip the per-document cast query (4s each; 22k tablets)",
-      "scope": "hype"
-    },
-    {
-      "hash": "c4f6311b",
-      "date": "2026-10-14",
-      "type": "New",
-      "description": "Hype-many — one process HyPEs many small documents so their paragraphs share full batches (Core Tablets: 22k docs); POST /api/admin/grounding/hype-many, budget-stopped",
-      "scope": "hype"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "fda665bd",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Matcher — compilations credited to their compiler agree with the Writings they gather; slug authors (writings-shoghieffendi-…) agree; Bindery titles never subtitle-split (Torah books); a title on >4 docs is sections, listed not covered; runner caches image hashes, survives network errors, --skip-docs for matches rejected by eye",
+        "scope": "covers"
+      },
+      {
+        "hash": "e637771c",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "LLM lane fan-out — name-correction and copy-edit chunks run at once; quotations and teachings linked together",
+        "scope": "media"
+      },
+      {
+        "hash": "232b4104",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Aorus (RTX 3070) takes ASR first, plus DeepFilterNet and the grade; boss for diarization and overflow",
+        "scope": "media"
+      },
+      {
+        "hash": "1f725bbe",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Match Chad's Bindery cover map to docs BY TITLE (apply-covers.mjs, an API client) — the Sikh covers never attached because import-covers matched md5(OceanLibrary bookid) only, and those books live in the main library under subtitled titles ('The Sikh Religion Vol. 1 - Life of Guru Nanak' = 'The Sikh Religion, Volume I'); ambiguous titles are listed, never guessed",
+        "scope": "covers"
+      },
+      {
+        "hash": "e0b85104",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "2.187.776 — /library redesign live",
+        "scope": "release"
+      },
+      {
+        "hash": "9c803b19",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Gate unbound-variable on optional args + metrics rolloff IndexError killed every compute run; failures retried (capped) and watched",
+        "scope": "media"
+      },
       {
         "hash": "c6dc8a1d",
         "date": "2026-10-22",
@@ -6977,48 +7019,6 @@
         "type": "Fixed",
         "description": "The 'authority layers' lecture paragraph is removed deterministically (it survived the prompt; Lal objected three times)",
         "scope": "anis"
-      },
-      {
-        "hash": "ee118457",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "Original-wording answers link the paragraph and carry no authority lecture",
-        "scope": "anis"
-      },
-      {
-        "hash": "45dd0ae5",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "Original-language questions answered from the original — numbered Hidden Words resolve to the canonical paragraph with its aligned Persian/Arabic; quotations go to SourceHunt; other hits carry their originals (Lal asked 4× for the Persian of PHW #19)",
-        "scope": "anis"
-      },
-      {
-        "hash": "5f2a66d2",
-        "date": "2026-10-14",
-        "type": "Performance",
-        "description": "Spend totals are incremental rollups by rowid — the per-poll full GROUP BYs on ai_usage (~5 s each, now that rows are no longer dropped) stalled the Anís admin pages 37 s",
-        "scope": "api"
-      },
-      {
-        "hash": "f33635cd",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "Refuse 'this prayer/teaching…' and 'according to the …' self-references; keep 'the prayer for…'",
-        "scope": "hype"
-      },
-      {
-        "hash": "6d49a3f4",
-        "date": "2026-10-14",
-        "type": "Performance",
-        "description": "NoDisambig runs skip the per-document cast query (4s each; 22k tablets)",
-        "scope": "hype"
-      },
-      {
-        "hash": "c4f6311b",
-        "date": "2026-10-14",
-        "type": "New",
-        "description": "Hype-many — one process HyPEs many small documents so their paragraphs share full batches (Core Tablets: 22k docs); POST /api/admin/grounding/hype-many, budget-stopped",
-        "scope": "hype"
       }
     ]
   }

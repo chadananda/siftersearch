@@ -47,7 +47,7 @@
     error = null;
 
     try {
-      const url = new URL(`${API_BASE}/api/library/by-slug/${religionSlug}/${collectionSlug}`);
+      const url = new URL(`${API_BASE}/api/library/by-slug/${religionSlug}/${collectionSlug}`, window.location.origin);
       url.searchParams.set('limit', LIMIT.toString());
       url.searchParams.set('offset', '0');
       if (searchQuery) {
@@ -91,7 +91,7 @@
     loadingMore = true;
 
     try {
-      const url = new URL(`${API_BASE}/api/library/by-slug/${religionSlug}/${collectionSlug}`);
+      const url = new URL(`${API_BASE}/api/library/by-slug/${religionSlug}/${collectionSlug}`, window.location.origin);
       url.searchParams.set('limit', LIMIT.toString());
       url.searchParams.set('offset', offset.toString());
       if (searchQuery) {
