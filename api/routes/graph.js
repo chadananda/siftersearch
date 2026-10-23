@@ -8,6 +8,7 @@
  */
 
 import { queryAll, queryOne } from '../lib/db.js';
+import { guardRows, SNIPPET_WORDS } from '../lib/rights/guard.js';
 import { graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs';
@@ -286,7 +287,8 @@ export default async function graphRoutes(server) {
   // GET /entity/:id/mentions?doc_id=&limit=&offset= — paragraphs mentioning this entity
   server.get('/entity/:id/mentions', async (request) => {
     const { id } = request.params;
-    const { doc_id, limit = 50, offset = 0 } = request.query;
+    const { doc_id, offset = 0 } = request.query;
+    const limit = Math.min(200, Math.max(1, Number(request.query.limit) || 50));
 
     const entity = await queryOne(
       'SELECT id, name, canonical_name, entity_type, religion FROM graph_entities WHERE id = ?', [id]
@@ -330,10 +332,11 @@ export default async function graphRoutes(server) {
 
     return {
       entity: { id: Number(entity.id), name: entity.name, canonicalName: entity.canonical_name, type: entity.entity_type, religion: entity.religion },
-      paragraphs: contentRows.map(r => ({
+      // a copyrighted (encumbered) book's paragraphs are only a short snippet of their context (Chad 10-23)
+      paragraphs: await guardRows(contentRows.map(r => ({
         contentId: r.id, docId: r.doc_id, title: r.title, author: r.author,
         position: r.paragraph_index, text: r.text, role: roleMap.get(r.id) || null
-      })),
+      })), { user: request.user, alwaysClip: true, words: SNIPPET_WORDS }),
       total: totalRow?.n ?? 0,
       limit: Number(limit),
       offset: Number(offset)
@@ -384,6 +387,7 @@ export default async function graphRoutes(server) {
         citation: r.source_url ? `${r.source_url}?paraId=${r.external_para_id}` : null,
         text: r.text
       }));
+      mentions = await guardRows(mentions, { user: request.user, alwaysClip: true, words: SNIPPET_WORDS });   // encumbered → snippet
     }
     return {
       entity: {

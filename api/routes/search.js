@@ -32,6 +32,7 @@ const DB_PATH = (() => {
 import { ResearcherAgent } from '../agents/agent-researcher.js';
 import { checkQueryLimit, incrementSearchCount, incrementUserSearchCount, getAnonymousUserId } from '../lib/anonymous.js';
 import { ApiError } from '../lib/errors.js';
+import { guardRows } from '../lib/rights/guard.js';
 import { MemoryAgent } from '../agents/agent-memory.js';
 import { getCachedSearch, setCachedSearch } from '../lib/search-cache.js';
 import { analyzePassagesParallel, getOptimalPassageCount } from '../lib/parallel-analyzer.js';
@@ -294,6 +295,9 @@ export default async function searchRoutes(fastify) {
       filters,
       semanticRatio
     });
+    // a copyrighted (encumbered) book: past its first 40 paragraphs a hit is an excerpt, and a search scoped to that one
+    // book returns nothing past the preview — it cannot be paged out through search (Chad 10-23, api/lib/rights/guard.js)
+    if (results?.hits?.length) results.hits = await guardRows(results.hits, { user: request.user, dropPastPreview: !!filters.documentId });
     const totalMs = Date.now() - startTime;
 
     const userId = request.user?.id;
@@ -360,6 +364,8 @@ export default async function searchRoutes(fastify) {
     } else {
       results = await keywordSearch(q, { limit, offset });
     }
+
+    if (results?.hits?.length) results.hits = await guardRows(results.hits);   // copyrighted books: excerpts past the preview (Chad 10-23)
 
     // Log search (only first page to avoid spamming on pagination)
     if (offset === 0) {

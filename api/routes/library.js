@@ -2764,7 +2764,7 @@ Provide only the translation, no explanations.`;
 
     // Get document info from libsql (source of truth)
     const document = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year
+      SELECT id, title, author, religion, collection, language, year, encumbered
       FROM docs WHERE id = ?
     `, [documentId]);
 
@@ -2785,6 +2785,10 @@ Provide only the translation, no explanations.`;
       WHERE doc_id = ? AND id IN (${placeholders})
       ORDER BY paragraph_index
     `, [documentId, ...paragraphIds]);
+    // a copyrighted (encumbered) book is translated only within its first 40 paragraphs (staff in full; Chad 10-23)
+    if (document.encumbered === 1 && !canReadFull(request.user) && paragraphs.some((p) => p.paragraph_index >= PREVIEW_PARAGRAPHS)) {
+      throw ApiError.forbidden('This book is under copyright: only its first 40 paragraphs can be read or translated.');
+    }
 
     // If no paragraphs found, log and return empty (content sync should be done via script)
     if (paragraphs.length === 0) {

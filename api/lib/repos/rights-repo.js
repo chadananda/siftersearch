@@ -1,6 +1,6 @@
 // rights-repo — the rights-isbn report's reads and its one write (Chad 10-23 ISBN rule). Scans run ONLY in siftersearch-reports
 // (keyset pages + per-doc indexed reads, never a whole-table join); the write NEVER un-encumbers. Deps: db.js.
-import { query, queryAll } from '../db.js';
+import { query, queryAll, queryOne } from '../db.js';
 
 /** One keyset page of live docs (not deleted, not duplicates) with what the classifier needs. */
 export async function rightsScanPage({ afterId = 0, limit = 500 } = {}) {
@@ -28,4 +28,22 @@ export async function recordIsbnRights(docId, { isbn, encumber = false, reason =
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND deleted_at IS NULL`, [isbn || null, encumber ? 1 : 0, encumber ? 1 : 0, reason, id], 'rights-repo:record-isbn');
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}
+
+/** Which of these documents are encumbered (copyrighted)? → Set of ids. One primary-key probe per ≤500 ids. */
+export async function encumberedAmong(docIds) {
+  const ids = [...new Set((docIds || []).map(Number).filter(Number.isFinite))];
+  const out = new Set();
+  for (let i = 0; i < ids.length; i += 500) {
+    const chunk = ids.slice(i, i + 500);
+    const rows = await queryAll(`SELECT id FROM docs WHERE id IN (${chunk.map(() => '?').join(',')}) AND encumbered = 1`, chunk, 'rights-repo:encumbered-among');
+    for (const r of rows) out.add(Number(r.id));
+  }
+  return out;
+}
+
+/** A paragraph's document + position + encumbered flag (by content id) — for single-paragraph endpoints. */
+export async function paragraphRights(paragraphId) {
+  return queryOne(`SELECT c.doc_id, c.paragraph_index, COALESCE(d.encumbered, 0) AS encumbered FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE c.id = ?`, [Number(paragraphId)], 'rights-repo:paragraph-rights');
 }

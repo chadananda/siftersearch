@@ -6,6 +6,7 @@
 
 import { modelFor } from '../model-roles.js';
 import { dropUnverified, createSentenceGate } from './quotes.js';
+import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
@@ -434,6 +435,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (o) retrieved.splice(retrieved.length, 0, { ...retrieved[i], text: o.original, source_title: `${retrieved[i].source_title} (original)`, source_lang: o.lang, via: 'original' });
     });
   }
+  // A copyrighted (encumbered) book is evidence only as an EXCERPT of ≤ 80 words (Chad 10-23). The quote gate verifies every
+  // quoted span against these texts, so no reply can quote more of it than the excerpt — the citation link carries the rest.
+  retrieved.splice(0, retrieved.length, ...await guardRows(retrieved, { alwaysClip: true, encumbered: d.encumberedAmong }).catch(() => retrieved));
   // OceanLibrary range links BEFORE the answer is written: the model copies citation_url verbatim, so the streamed answer
   // carries links that highlight the passage (the whole paragraph; lib/ocean-links.js). Never blocks the answer on failure.
   if (d.upgradeLinks) await Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); }));

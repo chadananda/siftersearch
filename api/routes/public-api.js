@@ -42,6 +42,9 @@ import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-anal
 import { keywordTradition } from '../lib/search-plan.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
+import { guardRows } from '../lib/rights/guard.js';
+import { PREVIEW_PARAGRAPHS } from '../lib/rights/preview.js';
+const COPYRIGHT_REFUSAL = 'This book is under copyright: only its first 40 paragraphs are served.';
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
@@ -511,6 +514,8 @@ export default async function publicApiRoutes(fastify) {
       if (bestByKey.size < searchResults.hits.length) searchResults.hits = [...bestByKey.values()];
     }
 
+    // a copyrighted (encumbered) book: excerpts past its first 40 paragraphs (Chad 10-23)
+    searchResults.hits = await guardRows(searchResults.hits);
     // Prepare passages for analysis — include all fields needed for URL building and authority scoring.
     // Meilisearch stores "doc_id" (not "document_id") so we map both names for compat.
     const passages = searchResults.hits.map(hit => ({
@@ -730,7 +735,7 @@ export default async function publicApiRoutes(fastify) {
     const paragraph = await queryOne(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
              c.translation, c.context, c.external_para_id,
-             d.title, d.author, d.religion, d.collection, d.language, d.year, d.source_url, d.slug
+             d.title, d.author, d.religion, d.collection, d.language, d.year, d.source_url, d.slug, d.encumbered
       FROM content c
       JOIN docs d ON c.doc_id = d.id
       WHERE c.id = ? AND c.deleted_at IS NULL AND d.deleted_at IS NULL
@@ -739,6 +744,8 @@ export default async function publicApiRoutes(fastify) {
     if (!paragraph) {
       throw new ApiError('Paragraph not found', 404);
     }
+    // a copyrighted (encumbered) book is served only in its first 40 paragraphs, by id as by page (Chad 10-23)
+    if (paragraph.encumbered === 1 && paragraph.paragraph_index >= PREVIEW_PARAGRAPHS) throw ApiError.forbidden(COPYRIGHT_REFUSAL);
 
     const docInfo = {
       title: paragraph.title, author: paragraph.author, slug: paragraph.slug,
@@ -778,6 +785,7 @@ export default async function publicApiRoutes(fastify) {
     const id = Number(request.params.id);
     const [passages, links] = await Promise.all([getPassages([id]), resolveLinks([id])]);
     if (!passages.has(id)) throw new ApiError('Paragraph not found', 404);
+    if (!(await guardRows([passages.get(id)], { dropPastPreview: true })).length) throw ApiError.forbidden(COPYRIGHT_REFUSAL);
     return { passage: passages.get(id), ...links.get(id) };
   });
 
@@ -1588,7 +1596,9 @@ export default async function publicApiRoutes(fastify) {
     ]);
     const ids = rows.map((r) => r.id);
     const [passages, links] = await Promise.all([getPassages(ids), resolveLinks(ids, { quotedBy: false })]);
-    const quotes = ids.filter((id) => passages.has(id) && (!onlyWithOriginal || links.get(id)?.original))
+    // a copyrighted (encumbered) book's quotes past its first 40 paragraphs are not served (Chad 10-23)
+    const allowed = new Set((await guardRows(ids.map((id) => passages.get(id)).filter(Boolean), { dropPastPreview: true })).map((p) => p.id));
+    const quotes = ids.filter((id) => allowed.has(id) && (!onlyWithOriginal || links.get(id)?.original))
       .map((id) => {
         const { original, originals, sources } = links.get(id) || {};
         return { quote: passages.get(id), original: original || null, originals: originals || [], sources: sources || [] };

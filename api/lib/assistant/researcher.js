@@ -78,6 +78,9 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     read_around: async ({ ref, before = 2, after = 2 }) => {
       const p = found.get(String(ref).toUpperCase());
       if (!p?.document_id) return 'unknown ref';
+      // a copyrighted (encumbered) book is never read around — consecutive paragraphs are not a short excerpt (Chad 10-23)
+      const enc = await (impl.encumberedAmong || (await import('../repos/rights-repo.js')).encumberedAmong)([p.document_id]).catch(() => new Set());
+      if (enc.has(Number(p.document_id))) return 'this book is under copyright: quote only the excerpt you already have (with its link); its neighbouring paragraphs are not available';
       return show((await impl.around(p, Math.min(5, before), Math.min(5, after))).map((x) => add(x)));
     },
     find_original: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
