@@ -164,6 +164,13 @@ describe('DEBOUNCE — letters in pieces get ONE reply', () => {
     const busy = [0, 2, 4, 6, 8, 10].map((m, i) => ({ id: i + 1, from_addr: 'a', created_at: at(m) }));
     expect(readyGroups(busy, { now: t0 + 10.5 * 60e3 })).toHaveLength(1);          // never more than 10 minutes
   });
+  it('ONE CONVERSATION per group: a separate question (another subject) gets its own reply in its own thread', () => {
+    const t0 = Date.parse('2026-10-23T17:40:00Z');
+    const at = (min) => new Date(t0 + min * 60e3).toISOString().slice(0, 19).replace('T', ' ');
+    const rows = [{ id: 899, from_addr: 'c', subject: '[TEST] multi-work receipt', created_at: at(0.7) }, { id: 900, from_addr: 'c', subject: 'Do we have this talk already', created_at: at(2) },
+      { id: 901, from_addr: 'c', subject: 'Re: Do we have this talk already', created_at: at(2.5) }];
+    expect(readyGroups(rows, { now: t0 + 10 * 60e3 }).map((g) => g.map((r) => r.id))).toEqual([[899], [900, 901]]);
+  });
   it('three letters with files → one job carrying all texts and files → one threaded receipt; all three answered', async () => {
     const pdf = (n) => ({ name: `part${n}.pdf`, type: 'application/pdf', bytes: new Uint8Array(20000 + n) });
     const ids = [];

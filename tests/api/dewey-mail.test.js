@@ -207,9 +207,13 @@ describe('the SCREEN — cheap, validated, can only suppress or hold', () => {
     expect(parseScreen({ needs_response: { noul: 0.9 }, kind: { choice: 'delete_everything' }, legitimacy: { choice: 'legit' } })).toBeNull();
     expect(parseScreen({})).toBeNull();
   });
-  it('a phishing-style mail is quarantined (no processing, no reply)', () => {
-    expect(screenDecision({ screen: parseScreen(ans({ legit: 'phishing' })), contributor: true, hasWorks: true })).toMatchObject({ action: 'quarantine' });
+  it('a phishing-style mail from a non-contributor is quarantined (no processing, no reply)', () => {
+    expect(screenDecision({ screen: parseScreen(ans({ legit: 'phishing' })), contributor: false, hasWorks: true })).toMatchObject({ action: 'quarantine' });
     expect(screenDecision({ screen: parseScreen(ans({ legit: 'spam' })), contributor: false })).toMatchObject({ action: 'quarantine' });
+  });
+  it('a CONTRIBUTOR\'s mail is never dropped on the screen alone: spam / phishing → held for Chad', () => {
+    expect(screenDecision({ screen: parseScreen(ans({ legit: 'spam' })), contributor: true })).toMatchObject({ action: 'hold', reason: /never dropped/ });
+    expect(screenDecision({ screen: parseScreen(ans({ legit: 'phishing' })), contributor: true, hasWorks: true })).toMatchObject({ action: 'hold' });
   });
   it('unsure → held for Chad', () => {
     expect(screenDecision({ screen: parseScreen(ans({ legit: 'unsure' })), contributor: true })).toMatchObject({ action: 'hold' });
@@ -240,6 +244,7 @@ describe('the SCREEN — cheap, validated, can only suppress or hold', () => {
     expect(s.match(/<<<|>>>/g)).toHaveLength(2);
     expect(s).toContain('f.pdf (application/pdf, 2 KB)');
     expect(s).toContain('already replied in this thread: yes');
+    expect(screenState({ from: 'a@b.c', subject: 'Do we have this talk already', text: 'https://youtu.be/x', contributor: true })).toMatch(/Subject: Do we have this talk already[\s\S]*registered contributor to the library: yes/);
   });
 });
 
@@ -304,6 +309,14 @@ describe('MEDIA — "do we have this talk?" with a YouTube link', async () => {
     youtubeId: (u) => /v=([\w-]{11})/.exec(u)?.[1] || null,
     findMediaByYoutube: vi.fn(async () => null), findMediaBySource: vi.fn(async () => null), findMediaByWords: vi.fn(async () => []),
     mediaQueueAhead: vi.fn(async () => 41), mediaPublishedSince: vi.fn(async () => 96), ...over,
+  });
+  it('Chad\'s exact email (10-23): subject question + a bare YouTube link + one line → a media answer, never silence', async () => {
+    const d = deps({ identifyUrl: vi.fn(async () => ({ title: 'Hooper Dunbar - Hands of the Cause', author: 'A channel' })),
+      mediaHoldings: vi.fn(async () => ({ status: 'queued', title: 'Hands of the Cause', author: 'Hooper Dunbar', position: 212, eta: 'about 4 days' })) });
+    const out = await deweyMailTurn({ from: 'chadananda@gmail.com', name: 'Chad Jones', subject: 'Do we have this talk already', text: "https://www.youtube.com/watch?v=bXiHHjjbliY It's a Dunbar talk on the Hands of the Cause." }, d);
+    expect(out.silent).toBeNull();
+    expect(out.reply).toContain('**In our media queue: *Hands of the Cause* by Hooper Dunbar**\n\nNumber 212 in our media queue; at the current pace, ready in about 4 days.');
+    expect(d.createItem).not.toHaveBeenCalled();
   });
   it('subject question + YouTube link body → a media holdings answer; the descriptive line is not a title', async () => {
     const d = deps({ identifyUrl: vi.fn(async () => ({ title: 'Hands of the Cause — Hooper Dunbar', author: 'Fireside channel', kind: 'video' })),

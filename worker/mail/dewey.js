@@ -240,9 +240,12 @@ export async function screenStep(env, settings, m, { call = tower } = {}) {
 }
 
 // ── 3. DEBOUNCE: a sender's queued letters → one job, once they have gone quiet. Pure decision. ──
+export const conversationKey = (r) => `${r.from_addr}|${String(r.subject || '').replace(/^\s*((re|fwd?|fw|aw|sv)\s*:\s*)+/i, '').trim().toLowerCase()}`;
 export function readyGroups(rows, { quietMin = 3, maxMin = 10, now = Date.now() } = {}) {
+  // ONE CONVERSATION per group (10-23: Chad's "do we have this talk?" was merged into another letter of his and answered
+  // under that letter's subject — invisible in his thread): same sender AND same subject (Re:/Fwd: aside)
   const by = new Map();
-  for (const r of rows) by.set(r.from_addr, [...(by.get(r.from_addr) || []), r]);
+  for (const r of rows) by.set(conversationKey(r), [...(by.get(conversationKey(r)) || []), r]);
   const ready = [];
   for (const g of by.values()) {
     g.sort((a, b) => a.id - b.id);

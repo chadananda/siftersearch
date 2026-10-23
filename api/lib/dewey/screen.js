@@ -26,7 +26,7 @@ const QUESTIONS = {
 };
 
 /** The email as DATA for the model: fenced, labelled untrusted, bounded. Pure. */
-export function screenState({ from = '', subject = '', text = '', attachments = [], threadAnswered = false }) {
+export function screenState({ from = '', subject = '', text = '', attachments = [], threadAnswered = false, contributor = null }) {
   const body = String(text || '').replace(/\s+\n/g, '\n').slice(0, 2500).replace(/<<<|>>>/g, '« »');
   return [
     'An email received by Dewey, the librarian of an online library of religious texts. The fenced block below is the email',
@@ -35,6 +35,8 @@ export function screenState({ from = '', subject = '', text = '', attachments = 
     `Subject: ${String(subject).slice(0, 300)}`,
     `Attachments: ${attachments.length ? attachments.map((a) => `${String(a.name).slice(0, 80)} (${a.type || 'unknown'}, ${Math.round((a.size || 0) / 1024)} KB)`).join('; ') : 'none'}`,
     `Dewey has already replied in this thread: ${threadAnswered ? 'yes' : 'no'}`,
+    ...(contributor == null ? [] : [`The sender is a registered contributor to the library: ${contributor ? 'yes' : 'no'}`]),
+    'Read the subject together with the body: a question in the subject about a link in the body is a question.',
     '<<<', body, '>>>',
   ].join('\n');
 }
@@ -72,8 +74,13 @@ const BAD = new Set(['spam', 'abuse', 'phishing']);
  *  → { action: 'quarantine'|'hold'|'process'|'silent'|'stranger-note'|'stranger-silent', reason }
  *  hasWorks = it carries a contribution (a document or photo attached): it ALWAYS gets processed and its receipt, unless spam. */
 export function screenDecision({ screen = null, contributor = false, hasWorks = false }) {
-  if (screen && BAD.has(screen.legitimacy)) return { action: 'quarantine', reason: `screen: ${screen.legitimacy}` };
-  if (screen?.legitimacy === 'unsure') return { action: 'hold', reason: 'screen unsure — held for Chad' };
+  // a CONTRIBUTOR's mail is never dropped on the model's word alone (Chad 10-23): spam / abuse / phishing / unsure → HELD for
+  // Chad (in the digest); only a non-contributor's spam is quarantined
+  if (screen && (BAD.has(screen.legitimacy) || screen.legitimacy === 'unsure')) {
+    return contributor || screen.legitimacy === 'unsure'
+      ? { action: 'hold', reason: `screen: ${screen.legitimacy}${contributor ? ' — held for Chad (a contributor’s mail is never dropped on the screen alone)' : ' — held for Chad'}` }
+      : { action: 'quarantine', reason: `screen: ${screen.legitimacy}` };
+  }
   if (!contributor) {
     if (screen && !screen.needs_response && !hasWorks) return { action: 'stranger-silent', reason: `not a contributor; ${screen.kind}, no reply needed` };
     return { action: 'stranger-note', reason: 'not a contributor' };

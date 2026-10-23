@@ -78,7 +78,7 @@ export default async function deweyMailRoutes(fastify) {
     const hasWorks = plan.files.length + plan.photos.length > 0;
     return metered(async () => {
       const who = await contributor(b.from);
-      const s = await screenMail({ from: b.from, subject: b.subject, text: b.text, attachments: atts, threadAnswered: !!b.threadAnswered, ref: b.ref ?? null });
+      const s = await screenMail({ from: b.from, subject: b.subject, text: b.text, attachments: atts, threadAnswered: !!b.threadAnswered, contributor: who.contributor, ref: b.ref ?? null });
       return { ...who, screen: s.screen, screen_error: s.error || null, screen_ms: s.ms, hasWorks, decision: screenDecision({ screen: s.screen, contributor: who.contributor, hasWorks }) };
     });
   });
