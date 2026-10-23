@@ -2,7 +2,8 @@
 // right-to-left), and the signature every letter carries — the name in large italic Palatino (after Jafar's letters at
 // ctai.info) over "Ocean Study Companion AI". Whatever sign-off the writer produced is replaced by it.
 // Tables are styled; ```chart blocks become bar charts (HTML) and block-character bars (plain text). Pure.
-import { marked } from 'marked';
+// Markdown → HTML / plain text is the ONE shared renderer (api/lib/mail-render.js); this file adds the letter's parts.
+import { markdownHtml, markdownText } from '../../api/lib/mail-render.js';
 
 const INK = '#2b2621', SEA = '#1f6f8b', MIST = '#8fa3ab', RULE = '#a9cbd6';
 export const SIGN_NAME = 'Anís';
@@ -45,8 +46,8 @@ export function chartText(c) {
   return [c.title, ...c.bars.map((b) => `${b.label.padEnd(w)}  ${'█'.repeat(Math.max(1, Math.round((20 * b.value) / max)))} ${b.value}${c.unit ? ` ${c.unit}` : ''}`)]
     .filter(Boolean).join('\n');
 }
-/** The plain-text letter: charts drawn with block characters. */
-export const plainText = (md) => String(md || '').replace(/<\/?mark>/g, '').replace(CHART_RE, (m, src) => { const c = parseChart(src); return c ? chartText(c) : m; });
+/** The plain-text letter: Markdown syntax removed (links → "label (url)"), charts drawn with block characters. */
+export const plainText = (md) => markdownText(md, { code: (lang, src) => { if (lang !== 'chart') return null; const c = parseChart(src); return c ? chartText(c) : null; } });
 
 /** Markdown → the letter body, styled inline (mail clients ignore stylesheets). Tables get rules and padding. */
 /** A QUOTATION written as a link — ["the whole passage"](url) — reads as a quotation, the link moved to the work it is
@@ -61,22 +62,7 @@ export function quotesNotLinks(md) {
 export function bodyHtml(md) {
   const charts = [];
   const withSlots = quotesNotLinks(md).replace(CHART_RE, (m, src) => { const c = parseChart(src); if (!c) return m; charts.push(chartHtml(c)); return `\n\n@@CHART${charts.length - 1}@@\n\n`; });
-  return marked.parse(withSlots, { async: false })
-    // headings, bold, lists and rules styled like Jafar's letters (a mail client's default h3 is a shout)
-    .replace(/<h[1-3](\s[^>]*)?>/g, `<h3 dir="auto" style="margin:22px 0 8px;font-size:18px;line-height:1.35;color:${SEA}">`).replace(/<\/h[1-3]>/g, '</h3>')
-    .replace(/<h[4-6](\s[^>]*)?>/g, `<h4 dir="auto" style="margin:16px 0 6px;font-size:16.5px;color:${SEA}">`).replace(/<\/h[4-6]>/g, '</h4>')
-    .replace(/<strong>/g, `<strong style="color:${INK}">`)
-    .replace(/<ul>/g, '<ul style="margin:6px 0 14px;padding-left:22px">').replace(/<ol>/g, '<ol style="margin:6px 0 14px;padding-left:24px">')
-    .replace(/<hr\s*\/?>/g, `<hr style="border:0;border-top:1px solid ${RULE};margin:18px 0">`)
-    .replace(/<p>/g, '<p dir="auto" style="margin:0 0 14px">')
-    // the reading guide's noted words: a soft highlight tied to the note by its number (Chad 10-13)
-    .replace(/<mark>/g, '<mark style="background:#f7e9b9;color:inherit;padding:0 2px;border-radius:2px">')
-    .replace(/<blockquote>/g, `<blockquote style="margin:16px 0;padding:2px 0 2px 18px;border-left:2px solid ${RULE};color:#3f3a34">`)
-    .replace(/<a href=/g, `<a style="color:${SEA};text-decoration:none;border-bottom:1px solid ${SEA}66" href=`)
-    .replace(/<li>/g, '<li dir="auto" style="margin:0 0 6px">')
-    .replace(/<table>/g, '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:16px 0;font-size:15px">')
-    .replace(/<th(\s[^>]*)?>/g, (m, a = '') => `<th${a} dir="auto" style="text-align:left;padding:6px 14px 6px 0;border-bottom:1px solid ${RULE};color:${SEA};vertical-align:bottom">`)
-    .replace(/<td(\s[^>]*)?>/g, (m, a = '') => `<td${a} dir="auto" style="padding:6px 14px 6px 0;border-bottom:1px solid #e3ebee;vertical-align:top">`)
+  return markdownHtml(withSlots, { palette: { ink: INK, sea: SEA, mist: MIST, rule: RULE } })
     .replace(/<p dir="auto" style="[^"]*">@@CHART(\d+)@@<\/p>/g, (m, i) => charts[Number(i)]);   // charts last: they carry their own styles
 }
 

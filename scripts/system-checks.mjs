@@ -346,9 +346,8 @@ if (shouldSend && TO) {
   const subject = criticals.length
     ? `🔴 SifterSearch ALERT: ${criticals[0].name}${criticals.length > 1 ? ` (+${criticals.length - 1} more)` : ''}`
     : `🟢 SifterSearch daily ops — all nominal · ${done24} books done 24h · $${spendRows.reduce((s, r) => s + r.usd, 0).toFixed(2)} spend`;
-  const html = `<pre style="font:13px/1.5 ui-monospace,Menlo,monospace;color:#1a2233">${text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</pre>`;
   try {
-    await sendEmail({ to: TO, subject, text, html });
+    await sendEmail({ to: TO, subject, text, pre: true });   // an aligned report: monospaced, links live (lib/mail-render.js)
     console.log(`\n[system-checks] emailed ${TO} (${MODE})`);
     if (criticals.length) { newState.alertKey = alertKey; newState.alertAt = Date.now(); }
   } catch (e) { console.error(`[system-checks] email failed: ${e.message}`); process.exitCode = 1; }

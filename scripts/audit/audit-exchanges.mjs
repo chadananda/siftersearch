@@ -81,10 +81,9 @@ export const quiet = (sessionId) => QUIET.has(participantOf.get(sessionId)?.part
 async function alertPoorAnswer({ row, question, verdict: v }) {
   if (quiet(row.session_id)) return;
   const { actionRequired } = await import('../../api/lib/ops/alert.js');
-  const probs = (Array.isArray(v.problems) ? v.problems : []).slice(0, 8).map((p) => `  • ${p.kind}: ${p.detail}`).join('\n');
-  const text = `Anís's answer needs a look (${row.channel || 'chat'}, ${row.answered_at || ''} UTC)\n\nQUESTION:\n${String(question).slice(0, 1500)}\n\nANÍS REPLIED:\n${String(row.content || '').slice(0, 2500)}\n\n`
-    + `AUDIT: answered ${v.evidence?.answered || '?'} · strategy ${v.strategy_used || '?'} → best ${v.best_strategy || '?'}${v.summary ? `\n${v.summary}` : ''}\n${probs}${v.vs_competitor?.verdict && v.vs_competitor.verdict !== 'no-comparison' ? `\n\nVS PERPLEXITY: ${v.vs_competitor.verdict.toUpperCase()} — they gave: ${v.vs_competitor.they_gave || '?'} · we gave: ${v.vs_competitor.we_gave || '?'}` : ''}\n\nThread: https://siftersearch.com/admin/anis#threads/${row.session_id}`;
-  await actionRequired({ key: `anis-poor-answer-${row.id}`, subject: `Anís answer needs a look: ${String(question).replace(/\s+/g, ' ').slice(0, 70)}`, text });
+  const { poorAnswerMarkdown } = await import('./poor-answer-mail.mjs');
+  const md = poorAnswerMarkdown({ row, question, verdict: v });
+  await actionRequired({ key: `anis-poor-answer-${row.id}`, subject: `Anís answer needs a look: ${String(question).replace(/\s+/g, ' ').slice(0, 70)}`, markdown: md });
 }
 
 async function audit(row) {

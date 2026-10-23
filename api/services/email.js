@@ -7,6 +7,7 @@
 
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
+import { renderEmail } from '../lib/mail-render.js';
 import { getJob, markJobNotified, JOB_STATUS } from './jobs.js';
 
 // Email provider - using Resend by default (simple, modern API)
@@ -141,10 +142,13 @@ export async function queueEmail({
 }
 
 /**
- * Send a single email directly (bypasses queue)
+ * Send a single email directly (bypasses queue). Every message goes out multipart through the ONE renderer
+ * (lib/mail-render.js): pass `markdown` (rendered HTML + syntax-free text), or `text` (read as Markdown), or `html`;
+ * `pre: true` keeps an aligned plain-text report monospaced.
  */
-export async function sendEmail({ to, subject, text, html = null }) {
+export async function sendEmail({ to, subject, text = null, html = null, markdown = null, pre = false }) {
   const client = getEmailClient();
+  ({ text, html } = renderEmail({ markdown, text, html, pre, title: subject }));
 
   try {
     const result = await client.send({ to, subject, text, html });

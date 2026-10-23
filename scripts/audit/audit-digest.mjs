@@ -2,7 +2,7 @@
 // Daily strategy-audit digest (PM2 siftersearch-audit-digest, cron 07:00; runs ON tower). The last 24 h of verdicts from
 // /tank/sifter/audit/audits.db → one email to Chad: how many exchanges, spend, strategy right/wrong (wanted → chosen),
 // evidence answered, format fit, every mistake grouped by WHERE it lies (reply · library data · source text · reader's
-// premise — the library ones are a work list), suggested new strategies, data gaps. Plain text + simple HTML.
+// premise — the library ones are a work list), suggested new strategies, data gaps. Plain text + rendered Markdown HTML.
 //   node scripts/audit/audit-digest.mjs [--hours=24] [--dry]   (--dry prints instead of sending)
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
@@ -58,11 +58,14 @@ const lines = [
   ...(gaps.length ? ['', `Library gaps (${gaps.length}):`, ...gaps.slice(0, 15).map((g) => `  • ${g}`)] : []),
 ];
 const text = lines.join('\n');
-const html = `<pre style="font:14px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap">${text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</pre>`;
+// the HTML part: the same lines as Markdown (section lines bold, "  •" items a list) → services/email.js renders it
+const markdown = lines.map((l) => (/^\s+•\s/.test(l) ? l.replace(/^\s+•\s+(?:\[([^\]]+)\]\s*)?/, (m, k) => `- ${k ? `**${k}** ` : ''}`)
+  : /^\s{4,}\S/.test(l) ? `  ${l.trim()}` : /^\s{2}\S/.test(l) ? `- ${l.trim()}` : /:$/.test(l) || /^Anís strategy audit/.test(l) ? `**${l}**` : l))
+  .join('\n').replace(/([^\n])\n(?!- |  |\n)/g, '$1  \n');
 
 if (DRY || !TO) { console.log(text); if (!TO) console.log('\n(no recipient configured)'); process.exit(0); }
 if (!done.length && !errors) { console.log('nothing audited in the window — no email'); process.exit(0); }
 const { sendEmail } = await import('../../api/services/email.js');
-await sendEmail({ to: TO, subject: `Anís audit: ${done.length} exchanges · ${feedback.length ? `${feedback.length} feedback · ` : ''}${strat.wrong || 0} misroutes · ${problems.length} mistakes`, text, html });
+await sendEmail({ to: TO, subject: `Anís audit: ${done.length} exchanges · ${feedback.length ? `${feedback.length} feedback · ` : ''}${strat.wrong || 0} misroutes · ${problems.length} mistakes`, text, markdown });
 console.log(`sent to ${TO}`);
 process.exit(0);

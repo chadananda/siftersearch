@@ -12,6 +12,7 @@ import { AwsClient } from 'aws4fetch';
 import PostalMime from 'postal-mime';
 import { verifySns, isAmazonUrl } from './sns.js';
 import { composeLetter } from './letter.js';
+import { renderEmail } from '../../api/lib/mail-render.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
 import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter } from './drafting.js';
 
@@ -171,6 +172,7 @@ export async function sendMail(env, { to, subject, text, html, inReplyTo, refere
 }
 
 async function sesSend(env, { addr, subject, text, html, headers }) {
+  ({ text, html } = renderEmail({ text, html }));   // always both parts: a document for the HTML, plain text without Markdown
   const res = await aws(env, 'ses').fetch(`https://email.${REGION}.amazonaws.com/v2/email/outbound-emails`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({

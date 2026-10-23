@@ -7,7 +7,7 @@
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
 //   dailyDigest    once a day: everything that happened, to the reviewer
 //   reviewPage     GET shows the draft (editable) · POST send | discard. GET never changes anything.
-import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody } from './letter.js';
+import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody, composeLetter } from './letter.js';
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
 import { digestHtml } from './digest-html.js';
@@ -96,11 +96,13 @@ async function sendOrReview(env, settings, draft, source) {
 async function notifyReviewer(env, settings, draft, source) {
   const link = await reviewUrl(draft.id, env.MAIL_LINK_SECRET);
   const kind = { outreach: 'Letter Anís wants to start', welcome: 'Welcome letter' }[draft.kind] || 'Reply';
+  // the draft exactly as the reader will get it (composeLetter = what sendMail sends; letters Anís starts add the pause footer)
+  const letter = composeLetter(draft.text, null);
   const text = `${kind} to ${draft.to_addr} — review and send:\n${link}\n\n` +
-    (source ? `THEY WROTE (${source.subject}):\n${ownText(source.text).slice(0, 1500)}\n\n` : '') + `DRAFT:\n${draft.text}`;
+    (source ? `THEY WROTE (${source.subject}):\n${ownText(source.text).slice(0, 1500)}\n\n` : '') + `DRAFT:\n${letter.text}`;
   const html = `<p><b>${esc(kind)}</b> to ${esc(draft.to_addr)} — <a href="${link}">review and send</a></p>` +
     (source ? `<p style="color:#555">They wrote (<i>${esc(source.subject)}</i>):</p><blockquote style="color:#555;border-left:3px solid #ccc;padding-left:1em">${esc(ownText(source.text).slice(0, 1500)).replace(/\n/g, '<br>')}</blockquote>` : '') +
-    `<p style="color:#555">Draft:</p>${draft.html || esc(draft.text)}<p><a href="${link}">Review and send</a></p>`;
+    `<p style="color:#555">Draft:</p>${letter.html}<p><a href="${link}">Review and send</a></p>`;
   await sendMail(env, { to: settings.reviewer_email, subject: `[Anís draft] ${draft.subject}`, text, html, system: true });
 }
 
@@ -274,6 +276,8 @@ export async function reviewPage(request, env) {
 <p class="meta">${esc(d.error || '')}</p>
 ${verdict.ok ? '' : `<p class="warn">The rules would block this right now: ${esc(verdict.reason)}</p>`}
 ${source ? `<h3>${esc(source.from_name || d.to_addr)} wrote (${esc(source.created_at)} UTC)</h3><div class="them">${esc(ownText(source.text))}</div>` : ''}
+<h3>As it will be sent</h3><div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 16px">${composeLetter(d.text, null).html}</div>
+${d.kind === 'reply' ? '' : '<p class="meta">(plus the pause footer)</p>'}
 <form method="post"><input type="hidden" name="t" value="${esc(t)}">
 <h3>Subject</h3><input name="subject" value="${esc(d.subject)}">
 <h3>Letter <span class="meta">(Markdown; the footer with the pause link is added when sent)</span></h3><textarea name="text">${esc(d.text)}</textarea>
