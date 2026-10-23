@@ -51,7 +51,7 @@ export function deweyLetter(md) {
 
 /** The note a stranger gets (once in a while): what Dewey is and how to become a contributor. Pure. */
 export function strangerNote(name) {
-  return `Dear ${name ? String(name).trim().split(/\s+/)[0] : 'friend'},
+  return `Dear ${name ? String(name).trim().split(/\s+/)[0].replace(/^./, (c) => c.toUpperCase()) : 'friend'},
 
 Thank you for writing to me. I am Dewey, the librarian for SifterSearch, and I work by email with the library’s contributors — people who help find and add books, documents and recordings.
 
@@ -185,6 +185,7 @@ export async function deweyStep(env, settings, m, { call = tower } = {}) {
   }
   const r = j.result || {};
   if (!r.contributor) return stranger(env, settings, m);
+  if (!r.reply) return set(db, m.id, 'handled', 'an acknowledgement — nothing to answer');
   const sent = await sendDewey(env, { to: m.from_addr, toName: m.from_name, subject: reSubject(m.subject), md: r.reply, inReplyTo: m.message_id, threadKey: m.thread_key, kind: 'reply',
     meta: { type: 'dewey', plan: r.plan, results: (r.results || []).map((x) => ({ verb: x.verb, source: x.source, verdict: x.verdict, item: x.item?.id ?? x.wanted?.id ?? null })), unread: (r.unread || []).length, refused: (r.refused || []).length } });
   await set(db, m.id, 'answered');

@@ -140,6 +140,10 @@ const STATE = { wanted: 'on our wanted list — I am looking for a copy', resear
   processing: 'being processed now', 'needs-ocr': 'waiting for text recognition (it is a scan)', 'needs-human': 'waiting for a librarian to look at it', ingested: 'in the library',
   failed: 'could not be processed — a person will look at it', offered: 'received, waiting for a decision', declined: 'set aside', 'to-buy': 'on our list to buy', lead: 'a lead we are following' };
 const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const first = (name) => { const w = String(name || '').trim().split(/\s+/)[0] || ''; return w ? w[0].toUpperCase() + w.slice(1) : 'friend'; };
+// "got it, thanks!" with nothing to act on needs no letter back
+const ACK = /^\s*(?:(?:ok(?:ay)?|great|perfect|wonderful|lovely|excellent|got it|it worked!*|works|received|noted|many thanks|thanks?(?: you)?(?: so much)?|cheers)[\s,.!:)-]*)+(?:dewey)?[\s,.!]*$/i;
+export const isAck = (text = '') => { const t = String(text).replace(/\n+\s*(?:thanks?|best|regards|cheers|love|warmly|blessings)[^\n]*\n[^\n]{0,40}$/i, '').trim(); return !!t && t.split(/\s+/).length <= 12 && t.split('\n').filter(Boolean).every((l) => ACK.test(l) || /^[\p{Lu}][\p{L}'-]*$/u.test(l.trim())); };
 const named = (x) => `*${x.title || 'Untitled'}*${x.author ? ` by ${x.author}` : ''}`;
 const held = (c) => `${named(c)}${c.language && c.language !== 'en' ? ` (${c.language})` : ''} — [read it here](${docLink(c.id)})${c.relation && c.relation !== 'same' ? ` · ${RELATION[c.relation] || c.relation}${c.of != null ? ` (${Math.round(c.of * 100)}%)` : ''}` : ''}`;
 const asked = (r) => (r.source === 'title' ? `“${r.label}”` : r.source === 'link' ? r.label : r.source === 'passage' ? `the passage you quoted` : r.source === 'photo' ? 'your photo' : r.label);
@@ -172,7 +176,7 @@ export function composeReply({ name = null, results = [], unread = [], refused =
     section('What I could not read', unread.map((u) => `- ${u.name} — ${u.why}.`)),
   ].filter(Boolean);
   const nothing = !parts.length || (parts.length === 1 && unread.length && !results.length);
-  const lines = [`Dear ${name ? String(name).trim().split(/\s+/)[0] : 'friend'},`, ''];
+  const lines = [`Dear ${first(name)},`, ''];
   if (!results.length && !unread.length) {
     lines.push('Thank you for writing. I could not find a title, a link, a photo or a file in your letter to work with.', '',
       'Send me any of these and I will check our holdings at once: a book’s title (one per line, “by” the author if you know it), a link, a photo of its cover, spine or title page, or the file itself (PDF, EPUB or Word). Ask me “what happened to my contributions?” and I will tell you where each one stands.');
@@ -189,6 +193,8 @@ export async function deweyMailTurn({ from, name = null, subject = '', text = ''
   const by = `${String(from).toLowerCase()} (email)`;
   const plan = planVerbs({ subject, text, attachments });
   const r = await runVerbs(plan, attachments, deps, by);
-  return { reply: composeReply({ name, ...r }), ...r,
+  const nothing = !r.results.length && !r.unread.length && !r.refused.length;
+  // a thank-you with nothing to act on gets no letter back (reply null → the Worker marks it handled)
+  return { reply: nothing && isAck(text) ? null : composeReply({ name, ...r }), ...r,
     plan: { photos: plan.photos.length, files: plan.files.length, urls: plan.urls.length, titles: plan.titles.length, passages: plan.passages.length, status: plan.status } };
 }

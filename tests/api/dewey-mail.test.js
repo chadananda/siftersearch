@@ -156,3 +156,16 @@ describe('reply wording', () => {
     expect(t).not.toMatch(/which I read as/);
   });
 });
+
+describe('acknowledgements and names', () => {
+  it('"got it, thanks!" gets no letter back; a real question still does', async () => {
+    const d = deps();
+    expect((await deweyMailTurn({ from: 'a@b.c', subject: 'Re: books', text: 'got it, thanks!' }, d)).reply).toBeNull();
+    expect((await deweyMailTurn({ from: 'a@b.c', subject: 'Re: x', text: 'It worked!!\n\nThanks,\nChad' }, d)).reply).toBeNull();
+    expect((await deweyMailTurn({ from: 'a@b.c', subject: 'Re: x', text: 'thanks — and do you have Portals to Freedom?' }, d)).reply).not.toBeNull();
+    expect((await deweyMailTurn({ from: 'a@b.c', subject: 'hello', text: 'hello there, how does this work?' }, d)).reply).toMatch(/could not find a title/);
+  });
+  it('a lowercase display name is capitalised', () => {
+    expect(composeReply({ name: 'chad' })).toMatch(/^Dear Chad,/);
+  });
+});

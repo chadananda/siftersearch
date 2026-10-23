@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-23T16:05:50.261Z",
+  "generated": "2026-10-23T16:21:00.986Z",
   "entries": [
+    {
+      "hash": "fda8557c",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A photo read as the very work we hold names it once in the reply",
+      "scope": "dewey"
+    },
+    {
+      "hash": "ef0c7ab7",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Dewey@siftersearch.com — Dewey writes to contributors directly (behind dewey_mail=off)",
+      "scope": "dewey"
+    },
     {
       "hash": "aa4b6d8a",
       "date": "2026-10-23",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Document structure is stage 3 — read every book for sub-documents and TOC right after ingestion",
       "scope": "index"
-    },
-    {
-      "hash": "d96f5ed4",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Stop the keyword-fill write loop — the ledger counts only paragraphs with text for BM25, and the loop queues only when the gap changed",
-      "scope": "index"
-    },
-    {
-      "hash": "71bcce69",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Tradition sub-progress always four decimals, so lines compare",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "fda8557c",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A photo read as the very work we hold names it once in the reply",
+        "scope": "dewey"
+      },
+      {
+        "hash": "ef0c7ab7",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Dewey@siftersearch.com — Dewey writes to contributors directly (behind dewey_mail=off)",
+        "scope": "dewey"
+      },
       {
         "hash": "aa4b6d8a",
         "date": "2026-10-23",
@@ -7001,20 +7015,6 @@
         "type": "New",
         "description": "Document structure is stage 3 — read every book for sub-documents and TOC right after ingestion",
         "scope": "index"
-      },
-      {
-        "hash": "d96f5ed4",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Stop the keyword-fill write loop — the ledger counts only paragraphs with text for BM25, and the loop queues only when the gap changed",
-        "scope": "index"
-      },
-      {
-        "hash": "71bcce69",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Tradition sub-progress always four decimals, so lines compare",
-        "scope": "home"
       }
     ]
   }
