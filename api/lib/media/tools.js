@@ -123,7 +123,7 @@ export const probeHost = () => gpuHost() || asrHost();
  *  fn(host) → its result. */
 const probeBusy = new Map();
 const probeWaiters = [];
-export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 2], [asrHost(), 3]]).filter(([h]) => h) } = {}) {
+export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 1], [asrHost(), 3]]).filter(([h]) => h) } = {}) {
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
@@ -175,7 +175,7 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
   try {
     // the ASR host runs THIS checkout's media_tool.py: installed through the gate once per process (and after a deploy)
     if (installedOn !== host) { await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'install-tool')], { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
-    await convSlot(() => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
+    await convSlot(() => run('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
     const cmd = gateCommand(sub, 'flac', { ...opts, threads });
     const { stdout } = await run('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs, stop, input: await readFile(flac) });
     if (sub === 'transcribe') {
@@ -216,7 +216,7 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
     if (installedOn !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedOn = host; }
     const flac = tempFlac(tmpdir());
     try {
-      await convSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
+      await convSlot(() => exec('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-threads', '2', '-i', input, '-threads', '2', '-vn', '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', flac], { timeoutMs: 1800_000, stop }));
       await ssh(`start flac ${job} ${gateCommand('x', 'flac', { ...opts, threads }).split(' ').slice(2).join(' ')}`, { input: await readFile(flac).catch(() => Buffer.alloc(0)) });
     } finally { await unlink(flac).catch(() => {}); }
     await onStart();
@@ -423,11 +423,17 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
 /** A fixed ENCODE recipe (light chain · ogg · m4a: media_tool.py encode) on the ASR host's spare CPU — measured 10-23 on a
  *  66-min talk: boss 49 / 28 / 19 s (+ ~3 s transfer) vs tower 129 / 91 / 68 s at tower's lowest priority — else on tower.
  *  local() runs it on tower (the caller's ffmpeg in its slot). Re-attaches by job id after a restart. */
-export async function encodeRemote(recipe, input, output, { af = '', job, stop, local } = {}) {
+let encBusy = 0;
+const encWait = [];
+export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 2 } = {}) {
   const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
   if (host && job) {
+    // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
+    if (encBusy >= slots) await new Promise((r) => encWait.push(r));
+    encBusy++;
     try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output }, { host, job, stop, file: true }); }
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] encode ${recipe} on ${host} failed — tower: ${String(err.message).slice(0, 300)}`); }
+    finally { encBusy--; encWait.shift()?.(); }
   }
   return local();
 }

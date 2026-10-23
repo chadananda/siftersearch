@@ -135,6 +135,15 @@ export function shapeProgress({ rows = [], published_6h = 0 }, sources, now = Da
     by_source: by, items_per_hour: perHour, eta_iso: perHour > 0 && remaining > 0 ? new Date(now + (remaining / perHour) * 3600_000).toISOString() : null, updated_at: new Date(now).toISOString() };
 }
 
+/** Health with the RUNNING counts taken from the ops runs (10-23: an 'update' re-run of a published talk keeps state 'done',
+ *  so counting items by state said "LLM idle" while the LLM lane was busy). */
+export async function liveHealth(pipelineHealth, runningRuns) {
+  const h = await pipelineHealth();
+  const runs = await runningRuns(['media-compute', 'media-asr', 'media-llm', 'media-item']);
+  const n = (name) => runs.filter((r) => r.name === name).length;
+  return { ...h, compute_running: n('media-compute'), asr_running: n('media-asr'), llm_running: n('media-llm') + n('media-item') };
+}
+
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
 
 export default async function mediaRoutes(fastify) {
@@ -448,7 +457,7 @@ export default async function mediaRoutes(fastify) {
       }));
       const by_stage = byStage(in_progress.map((x) => ({ ...x, started_at: x.stage_started_at })));
       liveMemo = { at: Date.now(), value: { in_progress, by_stage, queued: await queuedCount(), recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
-        duration_s: x.duration_s, published_at: x.published_at })), health: await pipelineHealth(), updated_at: new Date().toISOString() } };
+        duration_s: x.duration_s, published_at: x.published_at })), health: await liveHealth(pipelineHealth, runningRuns), updated_at: new Date().toISOString() } };
     }
     pub(reply, 10);
     return liveMemo.value;

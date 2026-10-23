@@ -504,7 +504,7 @@ def main():
         s.add_argument('--recipe', default='')
         s.add_argument('--af', default='')
     a = p.parse_args()
-    os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))
+    os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
     fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd]
     try:
         fn(a)
@@ -514,10 +514,15 @@ def main():
         # (waiting for free memory under the lock), and only a second time out of memory on the CPU
         if 'out of memory' not in str(err).lower() or device()[0] != 'cuda':
             raise
+        # each retry waits for MORE free memory (a transcription's alignment + VAD peak above its load; 10-23: two OOMs sent a
+        # 76-min talk to aorus's CPU for 45+ min); the CPU only after three
         tries = int(os.environ.get('MEDIA_OOM_TRIES', '0')) + 1
-        print(f'CUDA out of memory — {a.cmd} starts again ({"GPU, after waiting for memory" if tries < 2 else "on the CPU"})', file=sys.stderr)
+        need = {1: 5.5, 2: 7.2}.get(tries)
+        print(f'CUDA out of memory — {a.cmd} starts again ({f"GPU, after {need} GB is free" if need else "on the CPU"})', file=sys.stderr)
         env = dict(os.environ, MEDIA_OOM_TRIES=str(tries))
-        if tries >= 2:
+        if need:
+            env['MEDIA_GPU_NEED_GB'] = str(need)
+        else:
             env['MEDIA_DEVICE'] = 'cpu'
         sys.stdout.flush(); sys.stderr.flush()
         os.execve(sys.executable, [sys.executable] + sys.argv, env)

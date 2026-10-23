@@ -126,3 +126,11 @@ describe('temp files', () => {
     expect(names.size).toBe(50);
   });
 });
+
+describe('live health counts running RUNS', () => {
+  it('an update re-run of a published talk (state done) is LLM work in progress', async () => {
+    const { liveHealth } = await import('../../api/routes/media.js');
+    const h = await liveHealth(async () => ({ llm_backlog: 1, llm_running: 0 }), async () => [{ name: 'media-item' }, { name: 'media-llm' }, { name: 'media-asr' }]);
+    expect(h).toMatchObject({ llm_running: 2, asr_running: 1, compute_running: 0, llm_backlog: 1 });
+  });
+});

@@ -63,3 +63,20 @@ except RuntimeError as e:
     expect(r.stdout).toMatch(/ffmpeg exit \d+ on x\.flac \(start 10, dur 5\): .*No such file/);
   });
 });
+
+describe.skipIf(spawnSync('ffmpeg', ['-version']).status !== 0)('16 kHz conversion', () => {
+  it('-sample_fmt s16 gives one bit depth from a mixed 16/32-bit source (10-23: "switching bps mid-stream")', async () => {
+    const { mkdtempSync, writeFileSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const d = mkdtempSync(join(tmpdir(), 'bps-'));
+    spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'sine=d=1', '-c:a', 'pcm_s16le', join(d, 'a.wav')]);
+    spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'sine=d=1', '-c:a', 'pcm_s32le', join(d, 'b.wav')]);
+    writeFileSync(join(d, 'l.txt'), `file '${join(d, 'a.wav')}'\nfile '${join(d, 'b.wav')}'\n`);
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', join(d, 'l.txt'), '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', '-c:a', 'flac', join(d, 'o.flac')], { encoding: 'utf8' });
+    expect(r.status, r.stderr).toBe(0);
+    const p = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=sample_fmt,bits_per_raw_sample', '-of', 'csv=p=0', join(d, 'o.flac')], { encoding: 'utf8' });
+    expect(p.stdout.trim()).toMatch(/^s16,16$/);
+    const dec = spawnSync('ffmpeg', ['-v', 'error', '-ss', '1.2', '-t', '0.5', '-i', join(d, 'o.flac'), '-f', 'f32le', '-'], { encoding: 'buffer' });
+    expect(dec.status).toBe(0);
+  });
+});
