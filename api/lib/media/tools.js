@@ -224,7 +224,7 @@ export async function acquireAsrHost(hosts = asrHosts()) {
 const diarBusy = new Map();
 const diarWait = new Map();
 // per host: aorus 2 (≈1.5 GB RAM each on a 15 GB box beside two transcriptions; 10-23 watch: 6 at once, load 55, 3 GB free)
-const DIAR_SLOTS = { aorus: 1, boss: 6 };   // boss 6 × 4 threads (05:09: diarization became the bottleneck at 4 × 6)   // boss's CPU first; aorus 1 (its CPU feeds its GPU) — 10-23 04:29 watch
+const DIAR_SLOTS = { aorus: 1, boss: 3 };   // boss 3 × 4 threads: at 6 (10:29, load 85) its transcriptions slowed to RTF 0.5–1.2 from ~0.3   // boss's CPU first; aorus 1 (its CPU feeds its GPU) — 10-23 04:29 watch
 export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3) {
   if (!diarWait.has(host)) diarWait.set(host, []);
   if ((diarBusy.get(host) || 0) >= slots) await new Promise((r) => diarWait.get(host).push(r));
