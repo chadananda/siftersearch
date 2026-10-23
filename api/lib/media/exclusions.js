@@ -1,17 +1,25 @@
-// Speakers never imported, processed or published (data/media-exclusions.json; Chad 10-23: "No House members elected
-// after '88"). A talk matches on its speaker (any spelling the rule's pattern takes) or, for a bare name in a title, the
-// stricter title pattern. Pure match + a cached loader.
+// Speakers never imported, processed or published (Chad 10-23: "I'm trying to bring in people with a historical
+// perspective" — UHJ members of the newer generation are out). WHO: data/media-speaker-people.json, each excluded person
+// `exclude: <rule id>` with `exclude_match` (their speaker label) and `exclude_title` (a title naming them); WHY:
+// data/media-exclusions.json (the rule's reason). Pure match + a cached loader.
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'media-exclusions.json');
+const DATA = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data');
 let cached = null;
-export function loadExclusions(file = FILE) {
-  if (file === FILE && cached) return cached;
-  const j = JSON.parse(readFileSync(file, 'utf8'));
-  const rules = (j.rules || []).map((r) => ({ ...r, people: (r.people || []).map((p) => ({ ...p, sre: p.speaker ? new RegExp(p.speaker, 'i') : null, tre: p.title ? new RegExp(p.title, 'i') : null })) }));
-  if (file === FILE) cached = rules;
+/** → [{ id, reason, people: [{ name, key, uhj_elected, sre, tre }] }] */
+export function loadExclusions({ rulesFile = join(DATA, 'media-exclusions.json'), peopleFile = join(DATA, 'media-speaker-people.json') } = {}) {
+  const isDefault = rulesFile === join(DATA, 'media-exclusions.json') && peopleFile === join(DATA, 'media-speaker-people.json');
+  if (isDefault && cached) return cached;
+  const rules = (JSON.parse(readFileSync(rulesFile, 'utf8')).rules || []).map((r) => ({ ...r, people: [] }));
+  for (const p of JSON.parse(readFileSync(peopleFile, 'utf8')).people || []) {
+    if (!p.exclude) continue;
+    const r = rules.find((x) => x.id === p.exclude);
+    if (!r) throw new Error(`media exclusions: ${p.key} names an unknown rule '${p.exclude}'`);
+    r.people.push({ name: p.name, key: p.key, uhj_elected: p.uhj_elected ?? null, sre: p.exclude_match ? new RegExp(p.exclude_match, 'i') : null, tre: p.exclude_title ? new RegExp(p.exclude_title, 'i') : null });
+  }
+  if (isDefault) cached = rules;
   return rules;
 }
 

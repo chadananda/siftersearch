@@ -224,7 +224,8 @@
     "The Greatness of This Day",
     "The Secret of Divine Civilization",
     "The Four Year Plan"
-   ]
+   ],
+   "uhj_elected": 2000
   },
   {
    "key": "adib-taherzadeh",
@@ -247,7 +248,8 @@
     "The Covenant of the Báb",
     "Purpose of Life",
     "Trustees of the Merciful"
-   ]
+   ],
+   "uhj_elected": 1988
   },
   {
    "key": "ali-nakhjavani",
@@ -259,7 +261,8 @@
    ],
    "born": 1919,
    "died": 2019,
-   "role": "uhj"
+   "role": "uhj",
+   "uhj_elected": 1963
   },
   {
    "key": "violette-nakhjavani",
@@ -280,7 +283,8 @@
     "Hooper C. Dunbar",
     "H. Dunbar"
    ],
-   "role": "uhj"
+   "role": "uhj",
+   "uhj_elected": 1988
   },
   {
    "key": "dorothy-baker",
@@ -322,7 +326,8 @@
    ],
    "born": 1936,
    "died": 2011,
-   "role": "uhj"
+   "role": "uhj",
+   "uhj_elected": 1987
   },
   {
    "key": "ed-price",
@@ -390,7 +395,162 @@
     "Steve Birkland",
     "Stephen J. Birkland"
    ],
-   "role": "uhj"
+   "role": "uhj",
+   "uhj_elected": 2010,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bste(?:ph|v)en\\s+(?:j\\.?\\s+)?birkland\\b|\\bbirkland\\b",
+   "exclude_title": "\\bbirkland\\b"
+  },
+  {
+   "key": "douglas-martin",
+   "name": "J. Douglas Martin",
+   "aliases": [
+    "Douglas Martin",
+    "Doug Martin"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1993,
+   "exclude": "newer-generation",
+   "exclude_match": "\\b(?:j\\.?\\s*)?doug(?:las)?\\s+martin\\b",
+   "exclude_title": "\\b(?:j\\.?\\s*)?douglas\\s+martin\\b"
+  },
+  {
+   "key": "farzam-arbab",
+   "name": "Farzam Arbab",
+   "aliases": [
+    "Dr. Farzam Arbab"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1993,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bfarzam\\s+arbab\\b|^\\s*(?:dr\\.?\\s*)?arbab\\s*$",
+   "exclude_title": "\\bfarzam\\s+arbab\\b"
+  },
+  {
+   "key": "kiser-barnes",
+   "name": "Kiser Barnes",
+   "aliases": [
+    "Dr. Kiser Barnes"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2000,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bkiser\\s+barnes\\b|^\\s*(?:dr\\.?\\s*)?barnes\\s*$",
+   "exclude_title": "\\bkiser\\s+barnes\\b"
+  },
+  {
+   "key": "firaydoun-javaheri",
+   "name": "Firaydoun Javaheri",
+   "aliases": [
+    "Fereydoun Javaheri",
+    "Dr. Firaydoun Javaheri"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2003,
+   "exclude": "newer-generation",
+   "exclude_match": "\\b(?:f[ae]r[ae]?[iy]?d[o]?[ou]n\\s+)?jav[aā]h[eé]r[iī]\\b",
+   "exclude_title": "\\bjav[aā]h[eé]r[iī]\\b"
+  },
+  {
+   "key": "payman-mohajer",
+   "name": "Payman Mohajer",
+   "aliases": [
+    "Peyman Mohajer",
+    "Dr. Payman Mohajer"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2003,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bp[ae]yman\\s+mohajer\\b",
+   "exclude_title": "\\bp[ae]yman\\s+mohajer\\b"
+  },
+  {
+   "key": "paul-lample",
+   "name": "Paul Lample",
+   "aliases": [
+    "Mr. Lample"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2005,
+   "exclude": "newer-generation",
+   "exclude_match": "\\blample\\b",
+   "exclude_title": "\\blample\\b"
+  },
+  {
+   "key": "gustavo-correa",
+   "name": "Gustavo Correa",
+   "aliases": [
+    "Gustavo Corea"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2008,
+   "exclude": "newer-generation",
+   "exclude_match": "\\b(?:gustavo\\s+)?corr?[eê]a\\b",
+   "exclude_title": "\\bgustavo\\s+corr?[eê]a\\b"
+  },
+  {
+   "key": "shahriar-razavi",
+   "name": "Shahriar Razavi",
+   "aliases": [
+    "Dr. Shahriar Razavi"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2008,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bshahri?ar\\s+razavi\\b",
+   "exclude_title": "\\bshahri?ar\\s+razavi\\b"
+  },
+  {
+   "key": "stephen-hall",
+   "name": "Stephen Hall",
+   "aliases": [],
+   "role": "uhj",
+   "uhj_elected": 2010,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bstephen\\s+hall\\b",
+   "exclude_title": "\\bstephen\\s+hall\\b"
+  },
+  {
+   "key": "chuungu-malitonga",
+   "name": "Chuungu Malitonga",
+   "aliases": [],
+   "role": "uhj",
+   "uhj_elected": 2013,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bmalitonga\\b",
+   "exclude_title": "\\bmalitonga\\b"
+  },
+  {
+   "key": "ayman-rouhani",
+   "name": "Ayman Rouhani",
+   "aliases": [],
+   "role": "uhj",
+   "uhj_elected": 2013,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bayman\\s+rouhani\\b",
+   "exclude_title": "\\bayman\\s+rouhani\\b"
+  },
+  {
+   "key": "juan-francisco-mora",
+   "name": "Juan Francisco Mora",
+   "aliases": [
+    "Juan Mora"
+   ],
+   "role": "uhj",
+   "uhj_elected": 2018,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bjuan\\s+(?:francisco\\s+)?mora\\b",
+   "exclude_title": "\\bjuan\\s+francisco\\s+mora\\b"
+  },
+  {
+   "key": "praveen-mallik",
+   "name": "Praveen Mallik",
+   "aliases": [],
+   "role": "uhj",
+   "uhj_elected": 2023,
+   "exclude": "newer-generation",
+   "exclude_match": "\\bpraveen\\s+mallik\\b",
+   "exclude_title": "\\bpraveen\\s+mallik\\b"
   }
  ],
  "not_speakers": [

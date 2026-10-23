@@ -7,9 +7,12 @@ import { excludedBy } from '../../api/lib/media/exclusions.js';
 import { mediaExcludeJob } from '../../api/lib/ops/media-jobs.js';
 
 describe('exclusion matcher', () => {
-  it('every spelling of the two speakers; nobody else', () => {
-    for (const s of ['Firaydoun Javaheri', 'Dr. Fereydoun Javaheri', 'Javaheri', 'Gustavo Correa', 'Gustavo Corea', 'Correa']) expect(excludedBy({ speaker: s }), s).toMatchObject({ reason: 'too-modern: UHJ elected after 1988' });
-    for (const s of ['Hooper Dunbar', 'Hartmut Grossmann', 'Ali Nakhjavání', 'Korea Bahá’í Community']) expect(excludedBy({ speaker: s }), s).toBeNull();
+  it('the newer-generation list (Chad 10-23), every spelling; the historical speakers stay', () => {
+    for (const s of ['Firaydoun Javaheri', 'Dr. Fereydoun Javaheri', 'Javaheri', 'Gustavo Correa', 'Gustavo Corea', 'Correa', 'Paul Lample', 'Lample', 'Farzam Arbab',
+      'J. Douglas Martin', 'Douglas Martin', 'Payman Mohajer', 'Kiser Barnes', 'Stephen Birkland', 'Steve Birkland', 'Shahriar Razavi', 'Stephen Hall', 'Chuungu Malitonga',
+      'Ayman Rouhani', 'Juan Francisco Mora', 'Praveen Mallik']) expect(excludedBy({ speaker: s }), s).toMatchObject({ rule: 'newer-generation' });
+    for (const s of ['Hooper Dunbar', 'Hartmut Grossmann', 'Grossmann', 'Hermann Grossmann', 'Ali Nakhjavání', 'Adib Taherzadeh', 'Peter Khan', 'Glenford Mitchell', 'Ian Semple',
+      'Dr. Mohajer', 'Raḥmatu’lláh Muhájir', 'Baharieh Rouhani Ma’ani', 'Martin Luther King', 'Korea Bahá’í Community', 'Dorothy Baker']) expect(excludedBy({ speaker: s }), s).toBeNull();
     expect(excludedBy({ title: 'Talk on Race Unity with Dr. Firaydoun Javaheri' })).not.toBeNull();
     expect(excludedBy({ title: 'Pioneering in Korea' })).toBeNull();
   });
@@ -40,7 +43,7 @@ describe('media-exclude job', () => {
   it('write: excluded with the reason, their runs cancelled (not others), the remote job stopped, the document soft-deleted', async () => {
     const d = deps();
     const r = await mediaExcludeJob({ write: true }, d);
-    expect(d.repo.excludeItems).toHaveBeenCalledWith([1, 2, 4], 'too-modern: UHJ elected after 1988');
+    expect(d.repo.excludeItems).toHaveBeenCalledWith([1, 2, 4], expect.stringMatching(/^newer-generation/));
     expect(d.ops.cancel.mock.calls.map((c) => c[0])).toEqual([90]);
     expect(d.tools.cancelRemote).toHaveBeenCalledWith('aorus', 'correa-b-dz-1');
     expect(d.docs.softDeleteDocs).toHaveBeenCalledWith([501], expect.objectContaining({ allowLastCopy: true }));
