@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-23T00:49:10.177Z",
+  "generated": "2026-10-23T00:53:06.623Z",
   "entries": [
+    {
+      "hash": "6bc94b79",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A flaky tunnel no longer signs people out",
+      "scope": "auth"
+    },
     {
       "hash": "4020ff77",
       "date": "2026-10-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Concept claims in Qdrant — indexer --field concepts, qconcept layer beside the lexicon layer; stale hype/concept points removed on re-index",
       "scope": "search"
-    },
-    {
-      "hash": "ec62a0ec",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "Deep questions in their own field; yes/no and book-named questions dropped in code (Haiku broke both in the v14 sample)",
-      "scope": "hype"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "6bc94b79",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A flaky tunnel no longer signs people out",
+        "scope": "auth"
+      },
       {
         "hash": "4020ff77",
         "date": "2026-10-22",
@@ -7014,13 +7021,6 @@
         "type": "New",
         "description": "Concept claims in Qdrant — indexer --field concepts, qconcept layer beside the lexicon layer; stale hype/concept points removed on re-index",
         "scope": "search"
-      },
-      {
-        "hash": "ec62a0ec",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "Deep questions in their own field; yes/no and book-named questions dropped in code (Haiku broke both in the v14 sample)",
-        "scope": "hype"
       }
     ]
   }

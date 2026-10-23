@@ -47,7 +47,7 @@ export async function promptOneTap({ force = false } = {}) {
 }
 
 // Render the "Continue with Google" button into a container (AuthModal).
-export async function renderGoogleButton(el) {
+export async function renderGoogleButton(el, { width = 280 } = {}) {
   const gsi = await ensureInit();
-  if (gsi && el) gsi.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: 280 });
+  if (gsi && el && !el.childElementCount) gsi.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width });
 }

@@ -22,7 +22,19 @@
   let connectionStatus = $state(getConnectionStatus());
   $effect(() => onConnectionStatusChange(s => { connectionStatus = s; }));
 
-  import { promptOneTap } from '../../lib/google-signin.js';
+  import { promptOneTap, renderGoogleButton } from '../../lib/google-signin.js';
+
+  // Guest clicking the account pill = asking to sign in (Chad 10-22). Ask Google for One Tap
+  // (forced past our once-per-session guard), AND render a real "Continue with Google" button plus
+  // email in the menu — One Tap is often silently skipped (FedCM, no Google session in the browser,
+  // Google's cooldown after a dismissal: measured 'skipped / unknown_reason' on production), so it
+  // must never be the only way in.
+  let guestGoogleEl = $state(null);
+  function toggleNavMenu() {
+    showNavMenu = !showNavMenu;
+    if (showNavMenu && !auth.isAuthenticated && !auth.loading) promptOneTap({ force: true });
+  }
+  $effect(() => { if (showNavMenu && guestGoogleEl && !auth.isAuthenticated) renderGoogleButton(guestGoogleEl, { width: 240 }); });
 
   // Local state — showNavMenu drives the ONE combined pill menu (nav + account)
   let showAuthModal = $state(false);
@@ -187,7 +199,7 @@
       <div class="menu-pill-container">
         <button
           class="menu-pill"
-          onclick={() => showNavMenu = !showNavMenu}
+          onclick={toggleNavMenu}
           aria-label="Menu and account"
           aria-expanded={showNavMenu}
           aria-haspopup="true"
@@ -311,12 +323,16 @@
                 Sign Out
               </button>
             {:else}
-              <button class="dropdown-item connect-item" role="menuitem" onclick={() => { showNavMenu = false; showAuthModal = true; }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-                Connect Free — save your research
-              </button>
+              <div class="guest-signin" role="group" aria-label="Sign in">
+                <div class="guest-signin-title">Connect free — save your research</div>
+                <div bind:this={guestGoogleEl} class="guest-google-slot"></div>
+                <button class="dropdown-item connect-item" role="menuitem" onclick={() => { showNavMenu = false; showAuthModal = true; }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
+                  </svg>
+                  Sign in with email
+                </button>
+              </div>
             {/if}
           </div>
         {/if}
@@ -536,6 +552,9 @@
     font-weight: 600;
   }
 
+  .guest-signin { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 0.25rem 0.25rem; }
+  .guest-signin-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary, inherit); padding: 0 0.5rem; }
+  .guest-google-slot { min-height: 40px; display: flex; justify-content: center; }
   .pill-guest {
     background: var(--surface-3);
     color: var(--text-muted);
