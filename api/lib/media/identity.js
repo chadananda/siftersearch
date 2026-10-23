@@ -64,7 +64,14 @@ export function resolveSpeaker(name, people = [], ctx = {}) {
   const sur = toks[toks.length - 1];
   const same = people.filter((p) => formsOf(p).some((f) => surnameOf(f) === sur));
   if (toks.length >= 2) {
-    const fits = same.filter((p) => formsOf(p).some((f) => compatible(name, f)));
+    let fits = same.filter((p) => formsOf(p).some((f) => compatible(name, f)));
+    // a FULL given name that matches one person's full given name outranks an initials-only alias of another
+    // ("Hartmut Grossmann" fits "H. Grossmann" = Hermann too; Hartmut's own name decides)
+    const givenFull = toks.slice(0, -1).some((t) => !isInitial(t));
+    if (givenFull && fits.length > 1) {
+      const full = fits.filter((p) => formsOf(p).some((f) => { const ft = nameTokens(f); return ft.length >= 2 && ft.slice(0, -1).every((t) => !isInitial(t)) && compatible(name, f); }));
+      if (full.length) fits = full;
+    }
     const safe = fits.filter((p) => !p.cb);
     if (fits.length && !safe.length) return { review: 'the name fits a Covenant-breaker — never linked', candidates: fits.map((p) => p.key) };
     if (safe.length === 1) {
@@ -80,6 +87,9 @@ export function resolveSpeaker(name, people = [], ctx = {}) {
     }
     return { unknown: true };
   }
+  // a surname-only form a person CONFIRMED as theirs (data: "confirmed": [...], after review) resolves directly
+  const confirmed = people.filter((p) => !p.cb && (p.confirmed || []).some((f) => nameTokens(f).join(' ') === toks.join(' ')));
+  if (confirmed.length === 1) return { key: confirmed[0].key, display: confirmed[0].name, person: confirmed[0], basis: 'confirmed form (reviewed)' };
   // a SURNAME alone: only with evidence, and only when exactly one person of that surname has it
   const cands = same.filter((p) => !p.cb).map((p) => ({ p, ...evidenceFor(p, ctx) })).sort((a, b) => b.score - a.score);
   if (cands.length && cands[0].score >= 2 && (cands.length === 1 || cands[1].score < 2)) {

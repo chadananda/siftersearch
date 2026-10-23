@@ -47,8 +47,12 @@ export function trimPlan({ words = [], peaks = [], pps = 20, duration = null } =
     if (b - a < GAP_MIN_S) continue;
     // speech energy inside the gap (an untranscribed stretch) → not a dead gap
     const lo = Math.floor((a + 1) * pps), hi = Math.ceil((b - 1) * pps);
-    const loudInside = en && v.slice(lo, hi).filter((x) => x >= en.level).length > pps * 0.5;
-    if (!loudInside) gaps.push({ from: Math.round((a + 1) * 100) / 100, to: Math.round((b - 1) * 100) / 100 });
+    // DEAD: the whole gap near-silent (95th percentile under 40 % of the speech level) — quiet music, a hum of voices or an
+    // untranscribed reading is not dead and is never skipped (the first audit marked 258 'gaps', many of them music)
+    const inside = v.slice(lo, hi).sort((x, y) => x - y);
+    const p95 = inside.length ? inside[Math.floor(inside.length * 0.95)] : 0;
+    const dead = !en || p95 < en.level * 0.4;
+    if (dead) gaps.push({ from: Math.round((a + 1) * 100) / 100, to: Math.round((b - 1) * 100) / 100 });
   }
   return { start_s, end_s, gaps, lead_s: Math.round(ws[0].s * 10) / 10, tail_s: Math.round((dur - ws[ws.length - 1].e) * 10) / 10 };
 }

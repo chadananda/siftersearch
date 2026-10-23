@@ -35,6 +35,14 @@ describe('the Khadem family stays distinct', () => {
     expect(resolveSpeaker('Khadem', people, { title: 'Carmel the Mountain of God, part 2' }).key).toBe('zikrullah-khadem');
     expect(resolveSpeaker('Taherzadeh', people, { collection: 'Taherzadeh Covenant of Baha\'u\'llah' }).key).toBe('adib-taherzadeh');
   });
+  it('Hartmut Grossmann is Hartmut, though "H. Grossmann" (Hermann) also fits by initial', () => {
+    expect(resolveSpeaker('Hartmut Grossmann', people).key).toBe('hartmut-grossmann');
+  });
+  it('a reviewed surname-only form resolves once confirmed', () => {
+    const ps = people.map((p) => (p.key === 'ali-akbar-furutan' ? { ...p, confirmed: ['Furútan'] } : p));
+    expect(resolveSpeaker('Furútan', people).review).toBeTruthy();
+    expect(resolveSpeaker('Furutan', ps).key).toBe('ali-akbar-furutan');
+  });
   it('Grossmann: the recording year decides between Hermann (d. 1968) and Hartmut, else review', () => {
     expect(resolveSpeaker('Grossmann', people).review).toBeTruthy();
     expect(resolveSpeaker('Grossmann', people, { title: 'World Order 2' }).key).toBe('hartmut-grossmann');

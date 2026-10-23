@@ -30,6 +30,11 @@ describe('the plan', () => {
     expect(skipTo(250, p.gaps)).toBe(290);
     expect(skipTo(150, p.gaps)).toBeNull();
   });
+  it('quiet music between words (no transcript, sound present) is NOT a dead gap', () => {
+    const words = [W(3, 4), W(200, 201), W(291, 292), W(400, 401)];
+    const pk = peaks(410, [[3, 201], [291, 401]]).map((x, i) => (i / 20 >= 202 && i / 20 < 290 ? 0.12 : x));   // music at ~20 % of speech
+    expect(trimPlan({ words, peaks: pk, duration: 410 }).gaps).toEqual([]);
+  });
   it('hiss alone is not speech', () => {
     expect(energySpan(Array(400).fill(0.02))).toBeNull();
   });
