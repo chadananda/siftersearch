@@ -1,7 +1,7 @@
 // Content DB migrations 72+ — entity layer schema (ALTER TABLE only on content/docs/graph_entities/graph_relations)
 // New graph pipeline tables live in graph.db via graphMigrations[1].
 
-import { query, graphQuery } from '../db.js';
+import { query, graphQuery, transaction } from '../db.js';
 import { logger } from '../logger.js';
 import { ensureIndex, onTable } from './ensure.js';
 
@@ -1944,6 +1944,16 @@ export const migrations = {
     const { BROWSE_INDEXES } = await import('../repos/library-browse-repo.js');
     for (const sql of Object.values(BROWSE_INDEXES)) await query(sql);
     logger.info('Migration 178 complete: idx_docs_live_author_coll_title, idx_docs_live_coll_lang_title');
+  },
+
+  179: async () => {
+    // CONTENT WRITE COST (10-23: an INSERT INTO content cost 100–160 ms per row; a 100-row batch held the single writer
+    // ~10 s). The docs_with_content triggers ran COUNT(*) over the doc's live rows on every insert and soft-delete — O(rows
+    // in the doc) each, O(n²) per book. Same predicate as NOT EXISTS (content-count-triggers.js); DROP+CREATE is one atomic
+    // batch, schema-only (no table scan). planning/content-write-cost-20261023.md
+    const { docCountTriggerStatements } = await import('./content-count-triggers.js');
+    await transaction(docCountTriggerStatements(), 'migration-179');
+    logger.info('Migration 179 complete: docs_with_content triggers use NOT EXISTS, not COUNT(*)');
   },
 };
 

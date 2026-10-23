@@ -252,6 +252,27 @@ REPORTS['section-findability'] = async ({ n = 300, k = 10 } = {}) => {
   }
   return { sections: sample.length, at1, atK, pct_at1: +(100 * at1 / Math.max(1, sample.length)).toFixed(1), pct_atK: +(100 * atK / Math.max(1, sample.length)).toFixed(1), k, misses };
 };
+/** Every index + trigger on a table, and which recorded query plans (slow_query_log) use each index — the write-cost
+ *  inventory (10-23: a content INSERT paid 100–160 ms per row). params: { table, days } */
+REPORTS['table-schema'] = async ({ table = 'content', days = 14 } = {}) => {
+  const { tableSchema, recordedPlans } = await import('../repos/schema-repo.js');
+  const schema = await tableSchema(table);
+  const plans = await recordedPlans({ like: `%${table}%`, days });
+  for (const ix of schema.indexes) {
+    const hits = plans.filter((p) => new RegExp(`\\b${ix.name}\\b`).test(p.query_plan));
+    ix.plan_hits = hits.length;
+    ix.plan_samples = [...new Set(hits.map((h) => `${h.proc}/${h.name || ''}: ${String(h.sql_sample).slice(0, 160)}`))].slice(0, 5);
+  }
+  return { ...schema, plans_scanned: plans.length, days };
+};
+/** On-disk size of a table and each of its indexes (dbstat walks every page: heavy lane). params: { table } */
+REPORTS['index-sizes'] = async ({ table = 'content' } = {}) => {
+  const { tableSchema, btreeSize } = await import('../repos/schema-repo.js');
+  const { indexes } = await tableSchema(table);
+  const out = [];
+  for (const name of [table, ...indexes.map((i) => i.name)]) { out.push(await btreeSize(name)); await new Promise((r) => setTimeout(r, 200)); }
+  return { table, total_index_bytes: out.slice(1).reduce((n, r) => n + r.bytes, 0), sizes: out };
+};
 REPORTS['toc-candidates'] = async (p = {}) => (await import('../repos/sections-repo.js')).tocCandidates(p);   // books whose own Contents page is not yet structure
 REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo.js')).structureSummary();   // where structure was found vs must be inferred (Chad 10-17)     // params: { ids?, limit? } — sub-documents from stored headings (Chad 10-15)
 
@@ -262,14 +283,14 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
 export const LANES = { extract: ['episode-extract', 'structure-infer'],
-  heavy: ['hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
+  heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-exclude', 'media-trim-audit'];
