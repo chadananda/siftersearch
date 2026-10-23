@@ -38,6 +38,9 @@ describe('a publisher named elsewhere is not the imprint (10-23 dry run)', () =>
     'Note: All page references to the Íqán correspond to the edition of the Bahá’í Publishing Trust of 1989.',
     'BY THE SAME AUTHOR Iran’s Secret Pogrom (Neville Spearman) The Phoenix and the Ashes (George Ronald, Publisher)',
     'Approved by the National Spiritual Assembly of the Bahá’ís of Jamaica',
+    'George Ronald, 1989).',
+    'My deep appreciation to the National Spiritual Assembly of the Bahá’ís of Canada for permission to quote',
+    '[17]: From a letter from the Universal House of Justice dated August 11, 1970',
   ])('%s', (line) => { expect(imprintFromText(p([line])).publisher).toBeUndefined(); });
   it('still reads a real imprint line', () => {
     expect(imprintFromText(p(['Approved by the National Spiritual Assembly', 'GEORGE RONALD OXFORD'])).publisher.value).toBe('George Ronald');

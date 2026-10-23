@@ -9,7 +9,7 @@ import { imprintFromText, publisherClass } from './publishers.js';
 import { titleMatches } from '../dewey/research.js';
 import { norm } from '../rights/canonical.js';
 
-export const HUNT_VERSION = 'book-hunt-v2';   // v2: citations / also-by / approval lines no longer name the publisher
+export const HUNT_VERSION = 'book-hunt-v3';   // v2: citations / also-by / approval lines no longer name the publisher; v3: citation tails, acknowledgements
 const UA = 'SifterSearch book metadata (https://siftersearch.com; chadananda@gmail.com)';
 const MIN_SHORT = 400;   // the speaker-gallery size gate: a portrait's short side
 const GROUP = /\b(and|with|family|group|children|couple|wedding|conference|members|delegates|convention|gathering|meeting|friends|participants|assembly|council|staff|tomb|grave|house|book|cover|letter|signature|map)\b/i;

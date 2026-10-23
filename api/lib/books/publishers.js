@@ -46,12 +46,13 @@ const YEAR = '((?:1[6-9]|20)\\d{2})';
 const PAREN = /\([^()]*\)/g;
 const CITE = /[_*]|\bpp?\.\s*\d|\bedition of\b|\breferences?\b|\bcited\b|\bsee\b|\bibid\b|\bbibliograph|\bvol\.\s*\d|\bin:/i;
 const ALSO = /\b(by the same author|also by|other books|other titles|works by|books by|du meme auteur)\b/;
-const APPROVAL = /\b(approved|authori[sz]ed|reviewed|review(ing)? (committee|panel))\b/;
+const APPROVAL = /\b(approved|authori[sz]ed|reviewed|review(ing)? (committee|panel)|appreciation|thanks|grateful|permission|supervision|letter|dated|message)\b/;
 const CUE = /©|\(c\)\s*\d|\bcopyright\b|\ball rights reserved\b|\bpublished by\b|\bpublishers?\b|\bprinted in\b|\bfirst published\b/i;
 /** May this front-page line name the book's own publisher? Short imprint lines, or lines with a copyright/publisher cue. */
 export function publisherLineOk(line) {
   const n = norm(line);
   if (ALSO.test(n) || CITE.test(line)) return false;
+  if (/^[^(]*\)/.test(line)) return false;   // "George Ronald, 1989)." — the tail of a citation
   return line.length <= 160 || CUE.test(line);
 }
 /**
