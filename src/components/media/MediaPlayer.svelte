@@ -53,7 +53,11 @@
   let sharing = $state(false);   // the selection's share panel is open
   const selUrl = $derived(sel ? `${SITE}${clipPath(item.slug, Math.floor(sel.start * 1000), Math.ceil(sel.end * 1000))}` : '');
 
-  const now = () => (clip ? clip.start : 0) + (audio?.currentTime || 0);
+  // the web copy may start later than the recording (silence trimmed, item.audio.offset_s): every time on this page is the
+  // recording's own; the ONE conversion is here (now) and at the seek below. A clip carries its own start.
+  const offset = item.audio?.offset_s || 0;
+  const skips = item.skips || [];
+  const now = () => (clip ? clip.start : offset) + (audio?.currentTime || 0);
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
   const photo = item.thumb?.kind === 'photo';
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
@@ -106,7 +110,9 @@
   }
 
   function frame() {
-    const t = now();
+    let t = now();
+    // a dead gap (a tape flip) is skipped, never cut: jump to its end
+    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, to - offset); t = to; } }
     if (Math.abs(t - current) > 0.05) current = t;
     if (limit != null && t >= limit) { audio.pause(); note = 'End of the selected range.'; }
     mark(wordAt(flat.starts, t + 0.02));
@@ -149,7 +155,7 @@
           audio.src = media.href(ogg && item.audio.ogg ? item.audio.ogg : item.audio.m4a || item.audio.ogg);
         }
         await waitMeta();
-        audio.currentTime = t;
+        audio.currentTime = Math.max(0, t - offset);   // recording time → the trimmed web copy's time
       } else {
         const want = end ?? t + (item.rights.clip_cap || 180);
         if (fresh || !clip || t < clip.start || t >= clip.end - 0.5 || (end != null && end > clip.end + 0.1)) {
@@ -426,7 +432,7 @@
       {/if}
       <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara}
-        {moments} slug={item.slug} speaker={item.speaker || ''} {onmoment} {momentNow} />
+        {moments} slug={item.slug} speaker={item.speaker || ''} {onmoment} {momentNow} {skips} />
     </div>
   </div>
 

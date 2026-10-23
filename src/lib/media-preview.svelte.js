@@ -5,6 +5,7 @@ import { media } from './api.js';
 import { portraitSquare } from './media-listing.js';
 import { audioUrls } from '../../api/lib/media/listing-index.js';
 
+let off = 0;   // the playing web copy's offset into the recording (silence trimmed)
 export const preview = $state({ item: null, speaker: null, playing: false, loading: false, t: 0, start: 0, end: 0, error: null });
 
 let audio = null, stopAt = Infinity;
@@ -15,8 +16,8 @@ function ensure() {
   audio = new Audio();
   audio.preload = 'none';
   audio.addEventListener('timeupdate', () => {
-    preview.t = audio.currentTime;
-    if (audio.currentTime >= stopAt) { audio.pause(); preview.playing = false; preview.t = stopAt; }
+    preview.t = audio.currentTime + off;
+    if (audio.currentTime + off >= stopAt) { audio.pause(); preview.playing = false; preview.t = stopAt; }
   });
   const blip = () => audio.src.startsWith('blob:');   // the unlock blip, not the excerpt
   audio.addEventListener('playing', () => { if (blip()) return; preview.playing = true; preview.loading = false; });
@@ -56,7 +57,7 @@ export async function playExcerpt(it, speaker = null) {
   const a = ensure();
   if (preview.item?.s === it.s && a.src) {
     if (preview.playing) { a.pause(); return; }
-    if (a.currentTime < stopAt - 0.5) { a.play().catch(() => {}); return; }
+    if (a.currentTime + off < stopAt - 0.5) { a.play().catch(() => {}); return; }
   }
   a.pause();
   unlock(a);
@@ -70,11 +71,13 @@ export async function playExcerpt(it, speaker = null) {
       stopAt = end;
       a.currentTime = 0;
       await new Promise((res, rej) => { a.addEventListener('loadedmetadata', res, { once: true }); a.addEventListener('error', rej, { once: true }); a.load(); });
-      a.currentTime = start;
+      // a trimmed web copy starts `o` seconds into the recording (listing row `o`, talk page audio.offset_s)
+      off = it.o ?? it.audio?.offset_s ?? 0;
+      a.currentTime = Math.max(0, start - off);
     } else {
       const c = await media.clip(`/api/media/${encodeURIComponent(it.s)}/clip-url`, start, end, canOgg() ? null : 'm4a');
       a.src = media.href(c.url);
-      stopAt = Infinity;
+      stopAt = Infinity; off = 0;
       preview.start = 0; preview.end = c.end - c.start; preview.t = 0;
     }
     session(it, speaker);

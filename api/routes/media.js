@@ -323,7 +323,10 @@ export default async function mediaRoutes(fastify) {
       source: meta.source?.kind === 'youtube' ? { kind: 'youtube', url: meta.source.url, youtube_id: meta.source.youtube_id, channel: meta.source.channel, upload_date: meta.source.upload_date } : { kind: 'archive' },
       youtube: youtubeAt(meta),
       rights: { playback: level, download: level === 'full' && !!meta.rights?.download, clip_cap: CLIP_CAP, basis: meta.rights?.basis || null },
-      audio: level === 'full' ? { ogg: `${base}/file/web/${it.slug}.ogg?v=${v}`, m4a: `${base}/file/web/${it.slug}.m4a?v=${v}` } : null,
+      // offset_s: the web copy starts this many seconds into the recording (silence trimmed; every other time here is the
+      // recording's own): the player seeks to t − offset_s. skips: dead gaps (a tape flip) the player jumps over
+      audio: level === 'full' ? { ogg: `${base}/file/web/${it.slug}.ogg?v=${v}`, m4a: `${base}/file/web/${it.slug}.m4a?v=${v}`, offset_s: meta.trim?.start_s || 0, end_s: meta.trim?.end_s ?? null } : null,
+      skips: meta.trim?.gaps || [],
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${v}`, page: `${base}/file/page.html?v=${v}`,
       thumb: portrait || (meta.thumb?.file ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),
@@ -418,7 +421,10 @@ export default async function mediaRoutes(fastify) {
     const m4a = q.fmt === 'm4a';
     const src = join(it.dir, 'web', `${it.slug}.${m4a ? 'm4a' : 'ogg'}`);
     const chunks = [];
-    await run('ffmpeg', ['-nostdin', '-v', 'error', '-ss', String(r.start), '-to', String(r.end), '-i', src, '-c', 'copy',
+    // the web copy may start later than the recording (silence trimmed): cut at web time (trim.js), the clip keeps its range
+    const meta = await readJson(join(it.dir, 'meta.json')).catch(() => null);
+    const { webTime } = await import('../lib/media/trim.js');
+    await run('ffmpeg', ['-nostdin', '-v', 'error', '-ss', String(webTime(r.start, meta?.trim)), '-to', String(webTime(r.end, meta?.trim)), '-i', src, '-c', 'copy',
       ...(m4a ? ['-f', 'mp4', '-movflags', 'frag_keyframe+empty_moov'] : ['-f', 'ogg']), '-'], { timeoutMs: 30_000, onStdout: (d) => chunks.push(d) });
     reply.header('Content-Type', m4a ? 'audio/mp4' : 'audio/ogg').header('Cache-Control', 'private, max-age=3600');
     return reply.send(Buffer.concat(chunks));

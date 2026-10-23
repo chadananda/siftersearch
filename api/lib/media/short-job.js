@@ -46,7 +46,8 @@ export async function renderShortFor(item, params, deps = {}) {
   const tools = deps.tools || await import('./tools.js');
   try {
     // the best version we serve (the web rendition of the listening copy; a remastered copy once Chad picks one)
-    await tools.ffmpeg(['-y', '-ss', String(range.start), '-to', String(range.end), '-i', join(item.dir, 'web', `${item.slug}.m4a`), '-vn', '-c:a', 'aac', '-b:a', '160k', join(work, 'audio.m4a')], { timeoutMs: 120_000 });
+    const { webTime } = await import('./trim.js');   // the web copy may start later (silence trimmed): cut at web time
+    await tools.ffmpeg(['-y', '-ss', String(webTime(range.start, meta?.trim)), '-to', String(webTime(range.end, meta?.trim)), '-i', join(item.dir, 'web', `${item.slug}.m4a`), '-vn', '-c:a', 'aac', '-b:a', '160k', join(work, 'audio.m4a')], { timeoutMs: 120_000 });
     let portrait = false;
     const purl = deps.portraitUrl ? await deps.portraitUrl(item) : null;
     // the portrait: three tries (10-22: the first short after a restart got none and cached a portrait-less render)

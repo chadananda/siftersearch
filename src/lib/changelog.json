@@ -1,6 +1,286 @@
 {
-  "generated": "2026-10-23T05:38:11.218Z",
+  "generated": "2026-10-23T13:36:14.482Z",
   "entries": [
+    {
+      "hash": "ff4a9658",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Speaker identity — one person, many name forms (Chad 10-23: 'A.Q. Faizi' and 'Abul-Qasim Faizi' were two box sets)",
+      "scope": "media"
+    },
+    {
+      "hash": "0064da27",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Prep widened — 16 prep workers, ≥ 16 prep runs in hand, probes aorus 2 / boss 4 (were 1 / 3), boss encodes 4 at a time (were 2)",
+      "scope": "media"
+    },
+    {
+      "hash": "8dbc43eb",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "12 prep workers (was 8) — asr_backlog was 1 and aorus idled; prep waits on the GPU host and boss, its tower CPU work stays capped by towerLight",
+      "scope": "media"
+    },
+    {
+      "hash": "ce8509c4",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "LLM lane 12 workers, paced by one adaptive gate per provider+model",
+      "scope": "media"
+    },
+    {
+      "hash": "e8d5dc4e",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Media phrase-index cap is per talk + stopped-short mails throttled to one per job/budget/day",
+      "scope": "ops"
+    },
+    {
+      "hash": "56b62c56",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Diarization capacity on boss — 6 at a time at 4 threads (was 4 × 6); diar lane 14 workers (the old aorus CPU jobs re-attach on some of them)",
+      "scope": "media"
+    },
+    {
+      "hash": "5e60616e",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A diarization already running on its host is re-attached outside the slots (the slots limit what we start) — the five diar workers sat in aorus's single slot re-attaching its old jobs while boss had none; diar lane 10 workers",
+      "scope": "media"
+    },
+    {
+      "hash": "92ccf61e",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Diarizations run at nice 19 (they yield to the transcriptions feeding the GPU — ten on aorus had it at load 90, GPU 0 %); a failed diarization is dispatched afresh, never re-attached to its dead job. Gate installed on both hosts; the running aorus diarizations reniced by hand",
+      "scope": "media"
+    },
+    {
+      "hash": "aef293e4",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Library stats bootstrap from the pipeline snapshot's corpus until library-stats.json exists",
+      "scope": "api"
+    },
+    {
+      "hash": "51ccb129",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Diarization is its own stage and lane — the ASR lane never waits on it; boss diarizes first",
+      "scope": "media"
+    },
+    {
+      "hash": "a8db9cbe",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Library-wide docs aggregates come from a reports-built snapshot, never a request handler",
+      "scope": "api"
+    },
+    {
+      "hash": "cdbfdb87",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Aorus takes 2 diarizations at a time, the rest go to boss; BOOT FAILURE clears after a clean restart",
+      "scope": "media,ops"
+    },
+    {
+      "hash": "0510f1fa",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "At most 3 diarizations per host at once (five at 8 threads were running on aorus's 24 cores beside its GPU transcriptions)",
+      "scope": "media"
+    },
+    {
+      "hash": "74756b57",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The updater refuses a commit whose JS does not parse; system-checks names a boot failure CRITICAL",
+      "scope": "deploy"
+    },
+    {
+      "hash": "7f2fc25a",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Media-worker.js syntax error from 9b09230b — a trailing // comment swallowed the llm/pipeline/downloads keys and the closing brace; the media service could not start (03:41)",
+      "scope": "media"
+    },
+    {
+      "hash": "9b09230b",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Transcription slots apart from diarization; diarize on aorus's CPU; lossy windows re-transcribed; interpreter label",
+      "scope": "media"
+    },
+    {
+      "hash": "5bd850cf",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "FindQuotations reads its transcript chunks at once (find was 23–96 s of the quotes stage, sequential). Quotes after the two-at-a-time hunts: 69–237 s on 60–90-min talks with 15–64 candidates (hunt 19–142 s, teach 26–103 s, overlapping)",
+      "scope": "media"
+    },
+    {
+      "hash": "8f328231",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Unrecoverable U+FFFD in ASR words is removed (a lone one dropped) instead of blocking publication — Whisper emits them in hallucinated non-English bits (taherzadeh-child-of-the-covenant-3, revelation-part-1)",
+      "scope": "media"
+    },
+    {
+      "hash": "71153ba1",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Aorus kept on the GPU, boss not swamped by encodes, health counts running runs",
+      "scope": "media"
+    },
+    {
+      "hash": "de3421b2",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The enhance probe failures — the three variant probes (now started together) wrote their 16 kHz copies to ONE temp file (pid + millisecond), so boss got a cut file and ffmpeg failed to seek in it; temp names are unique. Interpreted talks: a change of language ends the sentence and starts a new paragraph, which keeps its language (jones-01-thursday: 19 paragraphs mixed English and Romanian)",
+      "scope": "media"
+    },
+    {
+      "hash": "d0e59e3e",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The intermittent enhance failures are an ffmpeg decode inside a probe on a busy host — the decode is retried once and a failure now names ffmpeg, the file, the window and ffmpeg's own error (not the Python traceback); section-index treats an empty id list as nothing to do (an empty lookup re-read 500 unrelated documents)",
+      "scope": "media"
+    },
+    {
+      "hash": "e0881797",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Prep's heavy encodes on boss's spare CPU; quote hunts two at a time; failing commands named in why",
+      "scope": "media"
+    },
+    {
+      "hash": "dcf0d38f",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Long recordings (> 90 min) are probed on boss only, and DeepFilterNet waits for GPU memory — Taherzadeh's 2½-hour talks failed enhance three times (aorus RAM, then CUDA OOM in dfn)",
+      "scope": "media"
+    },
+    {
+      "hash": "ceacc96a",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Tower-side media work at the lowest CPU and disk priority, ffmpeg capped (10-23: prep took API reads from ms to 1.5 s, load 53)",
+      "scope": "media"
+    },
+    {
+      "hash": "fbdaf5a1",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The 4 enhance failures — up to 24 probes at once filled aorus's RAM (its /tmp is RAM) and ffmpeg died (CalledProcessError over ssh)",
+      "scope": "media"
+    },
+    {
+      "hash": "fa777af3",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Restore the talks the publish gate took off; letter-run loops repaired to the term they begin",
+      "scope": "media"
+    },
+    {
+      "hash": "979cad43",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Dewey-scout yields to a drain — between works, channels and copies; resumes with the rest of its limit, handled works skipped (10-22: #2819 held siftersearch-reports 'draining' 30+ min, nothing claimed)",
+      "scope": "ops"
+    },
+    {
+      "hash": "598e6fd4",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A published talk whose re-run fails stays published — the reason kept in why ('update failed: …') and counted in health.published_problems (blocked re-links had taken 15 talks off the catalogue; they come back through the capped retry)",
+      "scope": "media"
+    },
+    {
+      "hash": "b5098206",
+      "date": "2026-10-22",
+      "type": "Docs",
+      "description": "Data shapes for the design agent (progress, live view, health, extended thumbs, series titles)",
+      "scope": "media"
+    },
+    {
+      "hash": "a43bad78",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Loops repaired on every render/update (the gate had blocked re-links of talks transcribed before the repair); loop thresholds above ordinary repetition; media subheaders reach the section index",
+      "scope": "media"
+    },
+    {
+      "hash": "48d39234",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The copy-edit is never worse than the ASR (QA items 5–6) — no function-word swaps that change the sound ('is in' → 'is him', 'or' → 'are'); a stutter keeps sentence case; the series and part frame the copy-edit ('Gems of Vyad Mysteries')",
+      "scope": "media"
+    },
+    {
+      "hash": "55342364",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Work links go to the work itself (QA item 4) — never a work about it, a talk/paper/newspaper, one unnamed volume, a chapter page, an original-language compilation entry or another language; re-run fan-outs skip busy items",
+      "scope": "media"
+    },
+    {
+      "hash": "d8a7d645",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "A lossy ASR word (U+FFFD, a Persian letter split between tokens) takes its text from the whole-decoded segment text — the publish gate had blocked item 8 on 'قب��'",
+      "scope": "media"
+    },
+    {
+      "hash": "ab76d89f",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "CUDA out of memory → the job starts again as a fresh process (back on the GPU after waiting for memory; the CPU only on a second OOM). The in-process CPU retry kept the dead model's 2.2 GB of VRAM and ran 30+ min — three such jobs held 6.8 GB of aorus's 8",
+      "scope": "media"
+    },
+    {
+      "hash": "78e724db",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "Citation gate refuses file-/pdf- authors and language-suffixed file titles (QA item 3); the quote audit never queues a second run on a busy item",
+      "scope": "media"
+    },
+    {
+      "hash": "35fd7060",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Media-item re-runs take slugs as well as ids",
+      "scope": "media"
+    },
+    {
+      "hash": "cd2725e6",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "ASR loops repaired and a publish gate (QA item 2)",
+      "scope": "media"
+    },
+    {
+      "hash": "fd22bc8e",
+      "date": "2026-10-22",
+      "type": "Fixed",
+      "description": "The shared GPU — a job waits under a lock until the card has the memory its kind needs (transcribe 3.5 GB, probe 2 GB, grade/dfn 1 GB), so jobs no longer run aorus out of memory and fall to the CPU (a 57-min talk took 9+ min on the CPU fallback)",
+      "scope": "media"
+    },
+    {
+      "hash": "d2459f5a",
+      "date": "2026-10-22",
+      "type": "Performance",
+      "description": "Prep and ASR are separate lanes — every ASR slot fed from a buffer of prepped items",
+      "scope": "media"
+    },
+    {
+      "hash": "711d0bf9",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "Collection pages show each book's cover beside its card (width-only transform, no distortion). Deploy 2.187.778",
+      "scope": "library"
+    },
     {
       "hash": "55725abb",
       "date": "2026-10-22",
@@ -3220,290 +3500,292 @@
       "type": "New",
       "description": "The ring being built lights up and a bright comet sweeps it; growing cells get beams and a marching outline",
       "scope": "home"
-    },
-    {
-      "hash": "5b199243",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "The part of the dial being built right now throbs",
-      "scope": "home"
-    },
-    {
-      "hash": "4e5c1c4a",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "A run is claimed by exactly one lane — the writer returns the change count in rows[0]",
-      "scope": "ops"
-    },
-    {
-      "hash": "1a1f223c",
-      "date": "2026-10-16",
-      "type": "Performance",
-      "description": "Phrase indexing runs 3 jobs at once now its store is on an SSD",
-      "scope": "ops"
-    },
-    {
-      "hash": "494c25f6",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Index state rows are one-line title + one-line explanation, percentage beside its bar",
-      "scope": "home"
-    },
-    {
-      "hash": "da20f1e9",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Hovering a ring explains why that index matters for search",
-      "scope": "home"
-    },
-    {
-      "hash": "0ea9e462",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Ocean Library dial centre, each index explained, drive health; Meilisearch off the dashboard",
-      "scope": "home"
-    },
-    {
-      "hash": "4dfed426",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "A failed vector count is unknown, not zero — keep the last good figure",
-      "scope": "coverage"
-    },
-    {
-      "hash": "6b707fc8",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Constant motion — the terminal always types, live pulse everywhere, jobs never 'idle'",
-      "scope": "home"
-    },
-    {
-      "hash": "49caa0a8",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "A 15-second pulse — live I/O load, CPU, vector counts, writer rows/min",
-      "scope": "observatory"
-    },
-    {
-      "hash": "dec8a89a",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "/search/multi returns what spell-correction changed (corrected: {from, to, corrections})",
-      "scope": "search"
-    },
-    {
-      "hash": "b8297dd2",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Dial above the fold on every screen, liquid glass, a living terminal",
-      "scope": "home"
-    },
-    {
-      "hash": "0fcad4ac",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Dial above the fold on every screen; liquid glass; background centred on the dial; GPU-less guard",
-      "scope": "home"
-    },
-    {
-      "hash": "bf3e2f23",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Misspellings corrected against the library's own vocabulary before search",
-      "scope": "search"
-    },
-    {
-      "hash": "1e236657",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "The Observatory — a live dashboard of the library being indexed and studied, in public",
-      "scope": "home"
-    },
-    {
-      "hash": "5418783a",
-      "date": "2026-10-16",
-      "type": "Performance",
-      "description": "Coverage totals kept by deltas — snapshots never re-sum the ledger",
-      "scope": "observatory"
-    },
-    {
-      "hash": "6a363958",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Library telemetry + activity log for a live public home page",
-      "scope": "observatory"
-    },
-    {
-      "hash": "fac36fe2",
-      "date": "2026-10-16",
-      "type": "Performance",
-      "description": "Two blocking reads from the 10-16 system check",
-      "scope": null
-    },
-    {
-      "hash": "31fed0db",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Known-item tests what readers actually bring — 3 words, misspelled, half-remembered",
-      "scope": "eval"
-    },
-    {
-      "hash": "57948cb1",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "Planned search finds a quotation's own passage — verbatim pass beside the plan",
-      "scope": "search"
-    },
-    {
-      "hash": "8a02d09b",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "A passage containing the query verbatim leads, ahead of diversity",
-      "scope": "search"
-    },
-    {
-      "hash": "c91a26ae",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "Known-item measures what users get — planned search and the engine as /search/multi calls it",
-      "scope": "eval"
-    },
-    {
-      "hash": "dafa8721",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Known-item test — can each retrieval layer find a real paragraph from its own words?",
-      "scope": "eval"
-    },
-    {
-      "hash": "a4b6cb05",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "Production docs has no authority column — authority.js derives it",
-      "scope": "coverage"
-    },
-    {
-      "hash": "046522e9",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Coverage ledger flags the doctrinal core (authority ≥ 8)",
-      "scope": "ops"
-    },
-    {
-      "hash": "f6e40217",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Index coverage ledger — every layer visible per document, no long queries",
-      "scope": "ops"
-    },
-    {
-      "hash": "eda3b61c",
-      "date": "2026-10-16",
-      "type": "New",
-      "description": "Hype-coverage report — a tradition's paragraphs with no / older / current HyPE",
-      "scope": "ops"
-    },
-    {
-      "hash": "266a44b9",
-      "date": "2026-10-16",
-      "type": "Fixed",
-      "description": "A restart re-queues the running job instead of failing it; failures and budget stops are mailed",
-      "scope": "ops"
-    },
-    {
-      "hash": "a9d9f36f",
-      "date": "2026-10-15",
-      "type": "Fixed",
-      "description": "Clean titles (page markup, item numbers) and drop day-first dates",
-      "scope": "sections"
-    },
-    {
-      "hash": "93139f53",
-      "date": "2026-10-15",
-      "type": "Fixed",
-      "description": "Rank by how well the section title answers, then by size",
-      "scope": "sections"
-    },
-    {
-      "hash": "225e458c",
-      "date": "2026-10-15",
-      "type": "Fixed",
-      "description": "OceanLibrary site documents keep the para id in external_para_id",
-      "scope": "sections"
-    },
-    {
-      "hash": "4ecdf5f0",
-      "date": "2026-10-15",
-      "type": "Docs",
-      "description": "Sub-documents — phases done, rollout + Anís work-scoping next",
-      "scope": "worklist"
-    },
-    {
-      "hash": "6bc325a9",
-      "date": "2026-10-15",
-      "type": "New",
-      "description": "Sub-documents phase 2 — nested parts from the source file's outline",
-      "scope": "library"
-    },
-    {
-      "hash": "91684326",
-      "date": "2026-10-15",
-      "type": "New",
-      "description": "Sub-documents — sections of books are indexed and found (phase 1)",
-      "scope": "library"
-    },
-    {
-      "hash": "9e09efd0",
-      "date": "2026-10-15",
-      "type": "Fixed",
-      "description": "'1 John' is the First Epistle of John; partial names match; a seen defect is kept",
-      "scope": "anis-audit"
-    },
-    {
-      "hash": "b4e429b4",
-      "date": "2026-10-15",
-      "type": "Fixed",
-      "description": "The open thread never moves while its header is in view (refresh included)",
-      "scope": "anis-admin"
-    },
-    {
-      "hash": "41a3ef83",
-      "date": "2026-10-15",
-      "type": "Fixed",
-      "description": "A portion of a book is held when the book is; no false 'truncated'; titles matched over glosses",
-      "scope": "anis-audit"
-    },
-    {
-      "hash": "4dd3017a",
-      "date": "2026-10-14",
-      "type": "Docs",
-      "description": "4 TB NVMe arrives ~10-24 — move the phrase indexer cache and Qdrant then",
-      "scope": "worklist"
-    },
-    {
-      "hash": "94b3b6ce",
-      "date": "2026-10-14",
-      "type": "Performance",
-      "description": "No vector lookup for an unchanged, already-upserted unit",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "b44c09a9",
-      "date": "2026-10-14",
-      "type": "Performance",
-      "description": "An explicit --docs list is read one document at a time",
-      "scope": "phrase-index"
-    },
-    {
-      "hash": "08f48aa0",
-      "date": "2026-10-14",
-      "type": "Fixed",
-      "description": "The audit model refuses forced tool_choice — ask for the tool call instead",
-      "scope": "anis-audit"
     }
   ],
   "grouped": {
+    "2026-10-23": [
+      {
+        "hash": "ff4a9658",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Speaker identity — one person, many name forms (Chad 10-23: 'A.Q. Faizi' and 'Abul-Qasim Faizi' were two box sets)",
+        "scope": "media"
+      },
+      {
+        "hash": "0064da27",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Prep widened — 16 prep workers, ≥ 16 prep runs in hand, probes aorus 2 / boss 4 (were 1 / 3), boss encodes 4 at a time (were 2)",
+        "scope": "media"
+      },
+      {
+        "hash": "8dbc43eb",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "12 prep workers (was 8) — asr_backlog was 1 and aorus idled; prep waits on the GPU host and boss, its tower CPU work stays capped by towerLight",
+        "scope": "media"
+      },
+      {
+        "hash": "ce8509c4",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "LLM lane 12 workers, paced by one adaptive gate per provider+model",
+        "scope": "media"
+      },
+      {
+        "hash": "e8d5dc4e",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Media phrase-index cap is per talk + stopped-short mails throttled to one per job/budget/day",
+        "scope": "ops"
+      },
+      {
+        "hash": "56b62c56",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Diarization capacity on boss — 6 at a time at 4 threads (was 4 × 6); diar lane 14 workers (the old aorus CPU jobs re-attach on some of them)",
+        "scope": "media"
+      },
+      {
+        "hash": "5e60616e",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A diarization already running on its host is re-attached outside the slots (the slots limit what we start) — the five diar workers sat in aorus's single slot re-attaching its old jobs while boss had none; diar lane 10 workers",
+        "scope": "media"
+      },
+      {
+        "hash": "92ccf61e",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Diarizations run at nice 19 (they yield to the transcriptions feeding the GPU — ten on aorus had it at load 90, GPU 0 %); a failed diarization is dispatched afresh, never re-attached to its dead job. Gate installed on both hosts; the running aorus diarizations reniced by hand",
+        "scope": "media"
+      },
+      {
+        "hash": "aef293e4",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Library stats bootstrap from the pipeline snapshot's corpus until library-stats.json exists",
+        "scope": "api"
+      },
+      {
+        "hash": "51ccb129",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Diarization is its own stage and lane — the ASR lane never waits on it; boss diarizes first",
+        "scope": "media"
+      },
+      {
+        "hash": "a8db9cbe",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Library-wide docs aggregates come from a reports-built snapshot, never a request handler",
+        "scope": "api"
+      },
+      {
+        "hash": "cdbfdb87",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Aorus takes 2 diarizations at a time, the rest go to boss; BOOT FAILURE clears after a clean restart",
+        "scope": "media,ops"
+      },
+      {
+        "hash": "0510f1fa",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "At most 3 diarizations per host at once (five at 8 threads were running on aorus's 24 cores beside its GPU transcriptions)",
+        "scope": "media"
+      },
+      {
+        "hash": "74756b57",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The updater refuses a commit whose JS does not parse; system-checks names a boot failure CRITICAL",
+        "scope": "deploy"
+      },
+      {
+        "hash": "7f2fc25a",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Media-worker.js syntax error from 9b09230b — a trailing // comment swallowed the llm/pipeline/downloads keys and the closing brace; the media service could not start (03:41)",
+        "scope": "media"
+      },
+      {
+        "hash": "9b09230b",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Transcription slots apart from diarization; diarize on aorus's CPU; lossy windows re-transcribed; interpreter label",
+        "scope": "media"
+      },
+      {
+        "hash": "5bd850cf",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "FindQuotations reads its transcript chunks at once (find was 23–96 s of the quotes stage, sequential). Quotes after the two-at-a-time hunts: 69–237 s on 60–90-min talks with 15–64 candidates (hunt 19–142 s, teach 26–103 s, overlapping)",
+        "scope": "media"
+      },
+      {
+        "hash": "8f328231",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Unrecoverable U+FFFD in ASR words is removed (a lone one dropped) instead of blocking publication — Whisper emits them in hallucinated non-English bits (taherzadeh-child-of-the-covenant-3, revelation-part-1)",
+        "scope": "media"
+      },
+      {
+        "hash": "71153ba1",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Aorus kept on the GPU, boss not swamped by encodes, health counts running runs",
+        "scope": "media"
+      },
+      {
+        "hash": "de3421b2",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The enhance probe failures — the three variant probes (now started together) wrote their 16 kHz copies to ONE temp file (pid + millisecond), so boss got a cut file and ffmpeg failed to seek in it; temp names are unique. Interpreted talks: a change of language ends the sentence and starts a new paragraph, which keeps its language (jones-01-thursday: 19 paragraphs mixed English and Romanian)",
+        "scope": "media"
+      },
+      {
+        "hash": "d0e59e3e",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The intermittent enhance failures are an ffmpeg decode inside a probe on a busy host — the decode is retried once and a failure now names ffmpeg, the file, the window and ffmpeg's own error (not the Python traceback); section-index treats an empty id list as nothing to do (an empty lookup re-read 500 unrelated documents)",
+        "scope": "media"
+      },
+      {
+        "hash": "e0881797",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Prep's heavy encodes on boss's spare CPU; quote hunts two at a time; failing commands named in why",
+        "scope": "media"
+      },
+      {
+        "hash": "dcf0d38f",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Long recordings (> 90 min) are probed on boss only, and DeepFilterNet waits for GPU memory — Taherzadeh's 2½-hour talks failed enhance three times (aorus RAM, then CUDA OOM in dfn)",
+        "scope": "media"
+      },
+      {
+        "hash": "ceacc96a",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Tower-side media work at the lowest CPU and disk priority, ffmpeg capped (10-23: prep took API reads from ms to 1.5 s, load 53)",
+        "scope": "media"
+      },
+      {
+        "hash": "fbdaf5a1",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The 4 enhance failures — up to 24 probes at once filled aorus's RAM (its /tmp is RAM) and ffmpeg died (CalledProcessError over ssh)",
+        "scope": "media"
+      }
+    ],
     "2026-10-22": [
+      {
+        "hash": "fa777af3",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Restore the talks the publish gate took off; letter-run loops repaired to the term they begin",
+        "scope": "media"
+      },
+      {
+        "hash": "979cad43",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Dewey-scout yields to a drain — between works, channels and copies; resumes with the rest of its limit, handled works skipped (10-22: #2819 held siftersearch-reports 'draining' 30+ min, nothing claimed)",
+        "scope": "ops"
+      },
+      {
+        "hash": "598e6fd4",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A published talk whose re-run fails stays published — the reason kept in why ('update failed: …') and counted in health.published_problems (blocked re-links had taken 15 talks off the catalogue; they come back through the capped retry)",
+        "scope": "media"
+      },
+      {
+        "hash": "b5098206",
+        "date": "2026-10-22",
+        "type": "Docs",
+        "description": "Data shapes for the design agent (progress, live view, health, extended thumbs, series titles)",
+        "scope": "media"
+      },
+      {
+        "hash": "a43bad78",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Loops repaired on every render/update (the gate had blocked re-links of talks transcribed before the repair); loop thresholds above ordinary repetition; media subheaders reach the section index",
+        "scope": "media"
+      },
+      {
+        "hash": "48d39234",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The copy-edit is never worse than the ASR (QA items 5–6) — no function-word swaps that change the sound ('is in' → 'is him', 'or' → 'are'); a stutter keeps sentence case; the series and part frame the copy-edit ('Gems of Vyad Mysteries')",
+        "scope": "media"
+      },
+      {
+        "hash": "55342364",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Work links go to the work itself (QA item 4) — never a work about it, a talk/paper/newspaper, one unnamed volume, a chapter page, an original-language compilation entry or another language; re-run fan-outs skip busy items",
+        "scope": "media"
+      },
+      {
+        "hash": "d8a7d645",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "A lossy ASR word (U+FFFD, a Persian letter split between tokens) takes its text from the whole-decoded segment text — the publish gate had blocked item 8 on 'قب��'",
+        "scope": "media"
+      },
+      {
+        "hash": "ab76d89f",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "CUDA out of memory → the job starts again as a fresh process (back on the GPU after waiting for memory; the CPU only on a second OOM). The in-process CPU retry kept the dead model's 2.2 GB of VRAM and ran 30+ min — three such jobs held 6.8 GB of aorus's 8",
+        "scope": "media"
+      },
+      {
+        "hash": "78e724db",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "Citation gate refuses file-/pdf- authors and language-suffixed file titles (QA item 3); the quote audit never queues a second run on a busy item",
+        "scope": "media"
+      },
+      {
+        "hash": "35fd7060",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Media-item re-runs take slugs as well as ids",
+        "scope": "media"
+      },
+      {
+        "hash": "cd2725e6",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "ASR loops repaired and a publish gate (QA item 2)",
+        "scope": "media"
+      },
+      {
+        "hash": "fd22bc8e",
+        "date": "2026-10-22",
+        "type": "Fixed",
+        "description": "The shared GPU — a job waits under a lock until the card has the memory its kind needs (transcribe 3.5 GB, probe 2 GB, grade/dfn 1 GB), so jobs no longer run aorus out of memory and fall to the CPU (a 57-min talk took 9+ min on the CPU fallback)",
+        "scope": "media"
+      },
+      {
+        "hash": "d2459f5a",
+        "date": "2026-10-22",
+        "type": "Performance",
+        "description": "Prep and ASR are separate lanes — every ASR slot fed from a buffer of prepped items",
+        "scope": "media"
+      },
+      {
+        "hash": "711d0bf9",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "Collection pages show each book's cover beside its card (width-only transform, no distortion). Deploy 2.187.778",
+        "scope": "library"
+      },
       {
         "hash": "55725abb",
         "date": "2026-10-22",
@@ -6735,290 +7017,6 @@
         "type": "New",
         "description": "The ring being built lights up and a bright comet sweeps it; growing cells get beams and a marching outline",
         "scope": "home"
-      },
-      {
-        "hash": "5b199243",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "The part of the dial being built right now throbs",
-        "scope": "home"
-      },
-      {
-        "hash": "4e5c1c4a",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "A run is claimed by exactly one lane — the writer returns the change count in rows[0]",
-        "scope": "ops"
-      },
-      {
-        "hash": "1a1f223c",
-        "date": "2026-10-16",
-        "type": "Performance",
-        "description": "Phrase indexing runs 3 jobs at once now its store is on an SSD",
-        "scope": "ops"
-      },
-      {
-        "hash": "494c25f6",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Index state rows are one-line title + one-line explanation, percentage beside its bar",
-        "scope": "home"
-      },
-      {
-        "hash": "da20f1e9",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Hovering a ring explains why that index matters for search",
-        "scope": "home"
-      },
-      {
-        "hash": "0ea9e462",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Ocean Library dial centre, each index explained, drive health; Meilisearch off the dashboard",
-        "scope": "home"
-      },
-      {
-        "hash": "4dfed426",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "A failed vector count is unknown, not zero — keep the last good figure",
-        "scope": "coverage"
-      },
-      {
-        "hash": "6b707fc8",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Constant motion — the terminal always types, live pulse everywhere, jobs never 'idle'",
-        "scope": "home"
-      },
-      {
-        "hash": "49caa0a8",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "A 15-second pulse — live I/O load, CPU, vector counts, writer rows/min",
-        "scope": "observatory"
-      },
-      {
-        "hash": "dec8a89a",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "/search/multi returns what spell-correction changed (corrected: {from, to, corrections})",
-        "scope": "search"
-      },
-      {
-        "hash": "b8297dd2",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Dial above the fold on every screen, liquid glass, a living terminal",
-        "scope": "home"
-      },
-      {
-        "hash": "0fcad4ac",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Dial above the fold on every screen; liquid glass; background centred on the dial; GPU-less guard",
-        "scope": "home"
-      },
-      {
-        "hash": "bf3e2f23",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Misspellings corrected against the library's own vocabulary before search",
-        "scope": "search"
-      },
-      {
-        "hash": "1e236657",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "The Observatory — a live dashboard of the library being indexed and studied, in public",
-        "scope": "home"
-      },
-      {
-        "hash": "5418783a",
-        "date": "2026-10-16",
-        "type": "Performance",
-        "description": "Coverage totals kept by deltas — snapshots never re-sum the ledger",
-        "scope": "observatory"
-      },
-      {
-        "hash": "6a363958",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Library telemetry + activity log for a live public home page",
-        "scope": "observatory"
-      },
-      {
-        "hash": "fac36fe2",
-        "date": "2026-10-16",
-        "type": "Performance",
-        "description": "Two blocking reads from the 10-16 system check",
-        "scope": null
-      },
-      {
-        "hash": "31fed0db",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Known-item tests what readers actually bring — 3 words, misspelled, half-remembered",
-        "scope": "eval"
-      },
-      {
-        "hash": "57948cb1",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "Planned search finds a quotation's own passage — verbatim pass beside the plan",
-        "scope": "search"
-      },
-      {
-        "hash": "8a02d09b",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "A passage containing the query verbatim leads, ahead of diversity",
-        "scope": "search"
-      },
-      {
-        "hash": "c91a26ae",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "Known-item measures what users get — planned search and the engine as /search/multi calls it",
-        "scope": "eval"
-      },
-      {
-        "hash": "dafa8721",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Known-item test — can each retrieval layer find a real paragraph from its own words?",
-        "scope": "eval"
-      },
-      {
-        "hash": "a4b6cb05",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "Production docs has no authority column — authority.js derives it",
-        "scope": "coverage"
-      },
-      {
-        "hash": "046522e9",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Coverage ledger flags the doctrinal core (authority ≥ 8)",
-        "scope": "ops"
-      },
-      {
-        "hash": "f6e40217",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Index coverage ledger — every layer visible per document, no long queries",
-        "scope": "ops"
-      },
-      {
-        "hash": "eda3b61c",
-        "date": "2026-10-16",
-        "type": "New",
-        "description": "Hype-coverage report — a tradition's paragraphs with no / older / current HyPE",
-        "scope": "ops"
-      },
-      {
-        "hash": "266a44b9",
-        "date": "2026-10-16",
-        "type": "Fixed",
-        "description": "A restart re-queues the running job instead of failing it; failures and budget stops are mailed",
-        "scope": "ops"
-      }
-    ],
-    "2026-10-15": [
-      {
-        "hash": "a9d9f36f",
-        "date": "2026-10-15",
-        "type": "Fixed",
-        "description": "Clean titles (page markup, item numbers) and drop day-first dates",
-        "scope": "sections"
-      },
-      {
-        "hash": "93139f53",
-        "date": "2026-10-15",
-        "type": "Fixed",
-        "description": "Rank by how well the section title answers, then by size",
-        "scope": "sections"
-      },
-      {
-        "hash": "225e458c",
-        "date": "2026-10-15",
-        "type": "Fixed",
-        "description": "OceanLibrary site documents keep the para id in external_para_id",
-        "scope": "sections"
-      },
-      {
-        "hash": "4ecdf5f0",
-        "date": "2026-10-15",
-        "type": "Docs",
-        "description": "Sub-documents — phases done, rollout + Anís work-scoping next",
-        "scope": "worklist"
-      },
-      {
-        "hash": "6bc325a9",
-        "date": "2026-10-15",
-        "type": "New",
-        "description": "Sub-documents phase 2 — nested parts from the source file's outline",
-        "scope": "library"
-      },
-      {
-        "hash": "91684326",
-        "date": "2026-10-15",
-        "type": "New",
-        "description": "Sub-documents — sections of books are indexed and found (phase 1)",
-        "scope": "library"
-      },
-      {
-        "hash": "9e09efd0",
-        "date": "2026-10-15",
-        "type": "Fixed",
-        "description": "'1 John' is the First Epistle of John; partial names match; a seen defect is kept",
-        "scope": "anis-audit"
-      },
-      {
-        "hash": "b4e429b4",
-        "date": "2026-10-15",
-        "type": "Fixed",
-        "description": "The open thread never moves while its header is in view (refresh included)",
-        "scope": "anis-admin"
-      },
-      {
-        "hash": "41a3ef83",
-        "date": "2026-10-15",
-        "type": "Fixed",
-        "description": "A portion of a book is held when the book is; no false 'truncated'; titles matched over glosses",
-        "scope": "anis-audit"
-      }
-    ],
-    "2026-10-14": [
-      {
-        "hash": "4dd3017a",
-        "date": "2026-10-14",
-        "type": "Docs",
-        "description": "4 TB NVMe arrives ~10-24 — move the phrase indexer cache and Qdrant then",
-        "scope": "worklist"
-      },
-      {
-        "hash": "94b3b6ce",
-        "date": "2026-10-14",
-        "type": "Performance",
-        "description": "No vector lookup for an unchanged, already-upserted unit",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "b44c09a9",
-        "date": "2026-10-14",
-        "type": "Performance",
-        "description": "An explicit --docs list is read one document at a time",
-        "scope": "phrase-index"
-      },
-      {
-        "hash": "08f48aa0",
-        "date": "2026-10-14",
-        "type": "Fixed",
-        "description": "The audit model refuses forced tool_choice — ask for the tool call instead",
-        "scope": "anis-audit"
       }
     ]
   }

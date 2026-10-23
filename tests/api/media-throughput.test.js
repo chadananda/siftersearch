@@ -147,7 +147,7 @@ describe('stage lanes (Chad 10-22: no internet dependencies on GPU processing)',
   });
   it('the compute job runs only the LAN stages and hands the item to the LLM lane', async () => {
     const { mediaComputeJob, COMPUTE_STAGES } = await import('../../api/lib/ops/media-jobs.js');
-    expect(COMPUTE_STAGES).toEqual(['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize']);
+    expect(COMPUTE_STAGES).toEqual(['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim']);
     expect(COMPUTE_STAGES.some((s) => ['correct', 'clean', 'describe', 'quotes', 'links', 'assess'].includes(s))).toBe(false);
   });
   it('a diarization with a job id is a detached boss job (re-attached after a restart)', async () => {
@@ -246,7 +246,7 @@ describe('prep and ASR are separate lanes (10-22: ASR slots waited on tower prep
     const src = (await import('fs')).readFileSync(new URL('../../api/lib/ops/media-jobs.js', import.meta.url), 'utf8');
     expect(src).toMatch(/mediaComputeJob = .*PREP_STAGES, 'prepped'\)/);
     expect(src).toMatch(/mediaAsrJob = .*\['transcribe'\], 'asr_done'\)/);
-    expect(src).toMatch(/mediaDiarJob = .*\['diarize'\], 'transcribed'\)/);
+    expect(src).toMatch(/mediaDiarJob = .*\['diarize', 'trim'\], 'transcribed'\)/);
   });
 });
 

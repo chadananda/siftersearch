@@ -61,7 +61,7 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
 // the speaker identities (data/media-speaker-people.json), loaded once per process
 let speakerPeople = null;
 
-export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
@@ -254,6 +254,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'web') {
+      delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
       const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.listening) || meta.enhancement.variants[1];
       const src = join(dir, v.file);
       await mkdir(join(dir, 'web'), { recursive: true });
@@ -377,6 +378,30 @@ export async function runItem(item, opts = {}, deps = {}) {
       }
       rec.speakers = new Set((raw.turns || []).map((t) => t.speaker)).size;
       if (meta.asr) meta.asr.speakers = rec.speakers;
+    }
+
+    if (stage === 'trim') {
+      // LEADING / TRAILING SILENCE off the WEB copies only (the master is never touched); inner dead gaps marked to skip.
+      // All times stay original; the player, the clip cut and the short cut convert with trim.js webTime()
+      const T = await import('./trim.js');
+      const raw = await readJson(join(dir, 'transcript.raw.json'), { segments: [] });
+      const { peaks, pps } = T.peaksOf(await readJson(join(dir, 'waveform.json'), null));
+      const plan = T.trimPlan({ words: flattenWords(raw.segments || []), peaks, pps, duration: meta.duration_s });
+      rec.lead_s = plan.lead_s; rec.gaps = plan.gaps.length;
+      const cutting = plan.start_s > 0 || plan.end_s != null;
+      if (cutting) {
+        const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.listening) || meta.enhancement.variants[1];
+        const src = join(dir, v.file), { pre, af } = T.trimArgs(plan, meta.duration_s);
+        const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
+        await Promise.all([
+          towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', `${ogg}.trim.ogg`], { stop })),
+          towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
+        await rename(`${ogg}.trim.ogg`, ogg); await rename(`${m4a}.trim.m4a`, m4a);
+        meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
+        rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;
+      }
+      meta.trim = cutting || plan.gaps.length ? { start_s: plan.start_s, end_s: plan.end_s, gaps: plan.gaps, lead_s: plan.lead_s, tail_s: plan.tail_s, at: new Date().toISOString() } : null;
+      if (!meta.trim) delete meta.trim;
     }
 
     if (stage === 'correct') {

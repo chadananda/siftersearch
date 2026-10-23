@@ -113,7 +113,8 @@ export function shapeRow(row, { meta = null, quotes = [], wave = null } = {}) {
     // audience 1–5 (assess stage) and up to three verified moments (key, words, start ms, kind) for the dial / ticker
     au: meta?.audience?.score ?? null,
     mo: (meta?.moments || []).slice(0, 3).map((m) => ({ k: m.key, x: pullQuote(m.text, 200), t: m.t0_ms, kd: m.kind })),
-    v: playback === 'full' ? v : 0,   // full playback: the web rendition is /api/media/<s>/file/web/<s>.{ogg,m4a}?v=<v> (audioUrls)
+    v: playback === 'full' ? v : 0,
+    o: meta?.trim?.start_s || 0,   // the web copy's offset into the recording (silence trimmed): previews seek to t − o   // full playback: the web rendition is /api/media/<s>/file/web/<s>.{ogg,m4a}?v=<v> (audioUrls)
   };
 }
 

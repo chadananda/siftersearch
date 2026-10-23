@@ -526,7 +526,7 @@ export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
 // LLM (names · copy-edit · description · publish · subheaders · quotes · links · assess · update; API-bound) are separate
 // jobs with their own lanes: an item leaves the compute lane 'transcribed' and the LLM feed picks it up — an API storm never
 // holds a compute slot, and the compute machines never wait for the internet.
-export const COMPUTE_STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize'];
+export const COMPUTE_STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim'];
 // the compute lane is TWO lanes (10-22: ASR slots sat empty while their workers were busy with tower-side prep):
 //   PREP (media-compute: archive · grade · enhance · web — tower files, plus grade/dfn/probes on the GPU host) → 'prepped'
 //   ASR  (media-asr: transcribe — one worker per ASR slot, fed from a buffer of prepped items) → 'transcribed'
@@ -540,7 +540,7 @@ async function laneJob(id, rest, deps, only, next) {
 export const mediaComputeJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, PREP_STAGES, 'prepped');
 export const mediaAsrJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['transcribe'], 'asr_done');
 // DIARIZE (its own lane, 10-23 04:29): the ASR worker never waits on a diarization
-export const mediaDiarJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['diarize'], 'transcribed');
+export const mediaDiarJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['diarize', 'trim'], 'transcribed');   // + the silence trim (words known)
 // a failed ITEM is NOT a failed run (a thrown run mails Chad once per item — a night of failures = a mailbox of alerts):
 // the run's result carries failed:true, the item its 'failed' state + reason, /api/media/progress/live → health counts them,
 // system-checks WARNs past MEDIA_FAIL_WARN an hour, and the feed's capped retry brings the item back
@@ -732,4 +732,42 @@ export async function mediaIdentityJob({ write = false, ids = null } = {}, deps 
       .sort((a, b) => b.forms.length - a.forms.length || a.display.localeCompare(b.display)),
     review, date_flags: flags, changed, skipped_busy,
   };
+}
+
+/** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from
+ *  its words + waveform). write: an ['trim', 'update'] re-run where the lead or tail is ≥ 5 s or a gap is marked (busy
+ *  talks skipped). → the distribution (talks, minutes trimmed, the longest leads) */
+export async function mediaTrimAuditJob({ write = false, ids = null } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const T = await import('../media/trim.js');
+  const { flattenWords } = await import('../media/paragraphs.js');
+  const rd = deps.readJson || (async (f) => JSON.parse(await (await import('fs/promises')).readFile(f, 'utf8')));
+  const busy = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { talks: 0, to_trim: 0, lead_min: 0, tail_min: 0, gaps: 0, buckets: { '<5s': 0, '5-30s': 0, '30-120s': 0, '2-10min': 0, '>10min': 0 }, longest: [], queued: 0, skipped_busy: [] };
+  const rows = [];
+  for (const id of ids || await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const meta = await rd(join(it.dir, 'meta.json')).catch(() => null);
+    const raw = await rd(join(it.dir, 'transcript.raw.json')).catch(() => null);
+    if (!meta || !raw) continue;
+    const { peaks, pps } = T.peaksOf(await rd(join(it.dir, 'waveform.json')).catch(() => null));
+    const plan = T.trimPlan({ words: flattenWords(raw.segments || []), peaks, pps, duration: meta.duration_s });
+    out.talks++;
+    const lead = plan.start_s || 0, tail = plan.end_s != null ? meta.duration_s - plan.end_s : 0;
+    const b = lead < 5 ? '<5s' : lead < 30 ? '5-30s' : lead < 120 ? '30-120s' : lead < 600 ? '2-10min' : '>10min';
+    out.buckets[b]++;
+    out.lead_min += lead / 60; out.tail_min += tail / 60; out.gaps += plan.gaps.length;
+    rows.push({ slug: it.slug, lead_s: Math.round(lead * 10) / 10, tail_s: Math.round(tail * 10) / 10, gaps: plan.gaps.length, first_word_s: plan.lead_s });
+    if (!(lead > 0 || tail > 0 || plan.gaps.length)) continue;
+    out.to_trim++;
+    if (!write) continue;
+    if (busy.has(it.id)) { out.skipped_busy.push(it.slug); continue; }
+    await queue('media-item', { id: it.id, redo: ['trim', 'update'] }, 'media-trim-audit'); out.queued++;
+  }
+  out.lead_min = Math.round(out.lead_min * 10) / 10; out.tail_min = Math.round(out.tail_min * 10) / 10;
+  out.longest = rows.sort((a, b) => b.lead_s - a.lead_s).slice(0, 15);
+  return out;
 }

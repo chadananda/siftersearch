@@ -50,7 +50,7 @@ export async function releaseHeldYoutube(hours) {
 /** Items still to process (queued, or interrupted while running), oldest first. */
 export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:pending')).map(parse);
 /** The next items to PROCESS, by rank: queued, and (a YouTube item) already downloaded — downloads have their own lane. */
-const COMPUTE = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize'];
+const COMPUTE = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim'];
 // an item already part-way through (a retry, a resumed run) goes first: it holds files and finished stages
 export const nextToProcess = async (limit = 3) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND (source_kind != 'youtube' OR dir IS NOT NULL)
   ORDER BY CASE WHEN stage IS NOT NULL AND stage != 'archive' THEN 0 ELSE 1 END, COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
