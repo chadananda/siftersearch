@@ -489,6 +489,8 @@ export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
   const { readFile: rf } = await import('fs/promises');
   const queue = deps.queue || enqueue;
   const out = { talks: 0, quotes: 0, crs: 0, rejected_quotes: 0, rejected_crs: 0, reasons: {}, affected: [], sample: [] };
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const busy = new Set((await Promise.all(['media-item', 'media-llm'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
   for (const id of await repo.doneItemIds()) {
     const it = await repo.getMediaItem(id);
     if (!it?.dir) continue;
@@ -506,7 +508,8 @@ export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
       out.reasons[why] = (out.reasons[why] || 0) + 1;
       if (out.sample.length < 12) out.sample.push({ slug: it.slug, kind: l.kind, cite: l.cite, why });
     }
-    if (bad) { out.affected.push(it.slug); if (write) await queue('media-item', { id, redo: ['quotes', 'update'] }, 'media-quote-audit'); }
+    // never a second run on an item that already has one queued or running (two runs on one item overwrite each other's files)
+    if (bad) { out.affected.push(it.slug); if (write && !busy.has(id)) { await queue('media-item', { id, redo: ['quotes', 'update'] }, 'media-quote-audit'); out.requeued = (out.requeued || 0) + 1; } }
   }
   return out;
 }

@@ -292,9 +292,15 @@ describe('the quote audit', () => {
     const rows = [{ id: 1, title: 'bahaullah_abdul-baha_sacred_writings_book', author: 'pdf-b-bahaullah', text: 'Preface I. Selections 1 God' },
       { id: 2, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', text: 'To every discerning and illuminated heart it is evident that God is exalted beyond every human attribute.' }];
     const r = await mediaQuoteAuditJob({ write: true }, { repo: { doneItemIds: async () => [9], getMediaItem: async () => ({ id: 9, slug: 'freedom-1981', dir }) },
-      paragraphs: { paragraphsByIds: async (ids) => rows.filter((x) => ids.includes(x.id)) }, queue });
+      paragraphs: { paragraphsByIds: async (ids) => rows.filter((x) => ids.includes(x.id)) }, queue, ops: { pendingRuns: async () => [] } });
     expect(r).toMatchObject({ talks: 1, quotes: 2, rejected_quotes: 1, affected: ['freedom-1981'] });
     expect(queue).toHaveBeenCalledWith('media-item', { id: 9, redo: ['quotes', 'update'] }, 'media-quote-audit');
+    // an item with a run already queued is not given a second one
+    const queue2 = vi.fn();
+    const r2 = await mediaQuoteAuditJob({ write: true }, { repo: { doneItemIds: async () => [9], getMediaItem: async () => ({ id: 9, slug: 'freedom-1981', dir }) },
+      paragraphs: { paragraphsByIds: async (ids) => rows.filter((x) => ids.includes(x.id)) }, queue: queue2, ops: { pendingRuns: async (n) => (n === 'media-item' ? [{ params: { id: 9 } }] : []) } });
+    expect(r2.affected).toEqual(['freedom-1981']);
+    expect(queue2).not.toHaveBeenCalled();
   });
 });
 

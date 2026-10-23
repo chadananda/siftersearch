@@ -51,3 +51,16 @@ describe('mojibake (fixtures)', () => {
     expect(publishProblems([{ n: 3, words: W("Bahá'u'lláh and ‘Abdu'l-Bahá in Shíráz") }])).toEqual([]);
   });
 });
+
+describe('citation gate (QA fixtures: slug titles, contents)', async () => {
+  const { passageGate } = await import('../../api/lib/media/quotes.js');
+  const cases = fx('citation-slug-and-toc').cases;
+  it.each(cases.map((c, i) => [i, c.slug, c]))('#%s %s is refused', (_i, _s, c) => {
+    const title = /'title': '([^']*)'/.exec(c.source)?.[1], author = /'author': '([^']*)'/.exec(c.source)?.[1];
+    expect(passageGate({ text: c.excerpt, title, author, blocktype: 'paragraph' })).not.toBeNull();
+  });
+  it('a properly catalogued passage passes', () => {
+    expect(passageGate({ title: 'The World Order of Bahá’u’lláh', author: 'Shoghi Effendi', blocktype: 'paragraph',
+      text: '“Centuries, nay ages, must pass away,” He affirms in one of His earliest Tablets, “ere the Day-Star of Truth shineth again in its mid-summer splendour.”' })).toBeNull();
+  });
+});
