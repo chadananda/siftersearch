@@ -1245,7 +1245,7 @@
             {/if}
             <div class="book-facts-text">
               {#if document.author && (b.author_born || b.author_died)}
-                <p class="book-author-years">{document.author} ({b.author_born ?? '?'}–{b.author_died ?? ''})</p>
+                <p class="book-author-years">{document.author} ({b.author_born && b.author_died ? `${b.author_born}–${b.author_died}` : b.author_born ? `b. ${b.author_born}` : `d. ${b.author_died}`})</p>
               {/if}
               {#if b.publisher || b.year || b.edition}
                 <p class="book-imprint">{[b.publisher, b.year, b.edition].filter(Boolean).join(' · ')}</p>

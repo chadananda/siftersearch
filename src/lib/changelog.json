@@ -1,6 +1,48 @@
 {
-  "generated": "2026-10-23T19:12:50.500Z",
+  "generated": "2026-10-23T20:11:05.661Z",
   "entries": [
+    {
+      "hash": "5a9b5b7b",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "'G. Ronald' is George Ronald, 'Bahá'í Pub. Trust' a Publishing Trust; a Trust named at any confidence sends an ISBN-only book to review",
+      "scope": "books"
+    },
+    {
+      "hash": "aeb8848b",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A citation's tail or an acknowledgement is not the imprint (hunt v3)",
+      "scope": "books"
+    },
+    {
+      "hash": "412367ed",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Re-attached diarizations count toward the host cap (12:29: after a restart aorus ran 2 CPU diarizations, cap 1); the 12-window language ID runs on aorus first (on a loaded boss it held ASR lane workers before they dispatched)",
+      "scope": "media"
+    },
+    {
+      "hash": "e365b595",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Liliane letter reviews — 8 letters, verdicts, re-runs, two reflections sent (#909, #910), runbook",
+      "scope": "anis"
+    },
+    {
+      "hash": "34a58373",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Find_translation tries each line and then meaning — a scanned or photographed prayer found nothing as one block (Liliane 10-23)",
+      "scope": "anis researcher"
+    },
+    {
+      "hash": "1ba34720",
+      "date": "2026-10-23",
+      "type": "Chore",
+      "description": "Deploy 2.187.793 (Anís mail: attachments kept for drafts, reviews + reflections, source markers renumbered)",
+      "scope": null
+    },
     {
       "hash": "dd952f55",
       "date": "2026-10-23",
@@ -3458,52 +3500,52 @@
       "type": "New",
       "description": "The title sits just above the chat",
       "scope": "dewey"
-    },
-    {
-      "hash": "f7aca2ed",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Titled 'Dewey the Librarian Agent' — page, heading and installed app",
-      "scope": "dewey"
-    },
-    {
-      "hash": "c6ef256a",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "The page crashed on load — a helper named 'state' made Svelte read $state as a store; renamed",
-      "scope": "dewey"
-    },
-    {
-      "hash": "7d3c2795",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Wanted list → research → source → intake; streamed agent chat; installable app; secure API for agents; instant load",
-      "scope": "dewey"
-    },
-    {
-      "hash": "b2ec120d",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Dewey mode — library + known missing on the left, Dewey's chat full height in the middle, added books with per-stage status on the right; the chat alone on a phone",
-      "scope": "dewey"
-    },
-    {
-      "hash": "668d7f20",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Only lines of running text (6+ words) are text evidence — a title page's own lines are not",
-      "scope": "dewey"
-    },
-    {
-      "hash": "0a015c3a",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "'do we have it?' from anything on /dewey — title/author, printed lines, a URL (page, PDF, video), a file, or phone photos",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "5a9b5b7b",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "'G. Ronald' is George Ronald, 'Bahá'í Pub. Trust' a Publishing Trust; a Trust named at any confidence sends an ISBN-only book to review",
+        "scope": "books"
+      },
+      {
+        "hash": "aeb8848b",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A citation's tail or an acknowledgement is not the imprint (hunt v3)",
+        "scope": "books"
+      },
+      {
+        "hash": "412367ed",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Re-attached diarizations count toward the host cap (12:29: after a restart aorus ran 2 CPU diarizations, cap 1); the 12-window language ID runs on aorus first (on a loaded boss it held ASR lane workers before they dispatched)",
+        "scope": "media"
+      },
+      {
+        "hash": "e365b595",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Liliane letter reviews — 8 letters, verdicts, re-runs, two reflections sent (#909, #910), runbook",
+        "scope": "anis"
+      },
+      {
+        "hash": "34a58373",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Find_translation tries each line and then meaning — a scanned or photographed prayer found nothing as one block (Liliane 10-23)",
+        "scope": "anis researcher"
+      },
+      {
+        "hash": "1ba34720",
+        "date": "2026-10-23",
+        "type": "Chore",
+        "description": "Deploy 2.187.793 (Anís mail: attachments kept for drafts, reviews + reflections, source markers renumbered)",
+        "scope": null
+      },
       {
         "hash": "dd952f55",
         "date": "2026-10-23",
@@ -6972,48 +7014,6 @@
         "date": "2026-10-17",
         "type": "New",
         "description": "The title sits just above the chat",
-        "scope": "dewey"
-      },
-      {
-        "hash": "f7aca2ed",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Titled 'Dewey the Librarian Agent' — page, heading and installed app",
-        "scope": "dewey"
-      },
-      {
-        "hash": "c6ef256a",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "The page crashed on load — a helper named 'state' made Svelte read $state as a store; renamed",
-        "scope": "dewey"
-      },
-      {
-        "hash": "7d3c2795",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Wanted list → research → source → intake; streamed agent chat; installable app; secure API for agents; instant load",
-        "scope": "dewey"
-      },
-      {
-        "hash": "b2ec120d",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Dewey mode — library + known missing on the left, Dewey's chat full height in the middle, added books with per-stage status on the right; the chat alone on a phone",
-        "scope": "dewey"
-      },
-      {
-        "hash": "668d7f20",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Only lines of running text (6+ words) are text evidence — a title page's own lines are not",
-        "scope": "dewey"
-      },
-      {
-        "hash": "0a015c3a",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "'do we have it?' from anything on /dewey — title/author, printed lines, a URL (page, PDF, video), a file, or phone photos",
         "scope": "dewey"
       }
     ]

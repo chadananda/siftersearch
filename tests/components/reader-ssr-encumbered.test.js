@@ -42,4 +42,8 @@ describe('book facts on the reader (book hunt, Chad 10-23)', () => {
     expect(body).toContain('ISBN 9780853983439');
     expect(body).toMatch(/href="https:\/\/example.org\/buy"[^>]*>\s*Buy this book/);
   });
+  it('an unknown death year reads "b. 1921", never "1921–"', () => {
+    const d = { ...initialData, document: { ...initialData.document, book: { author_born: 1921 } } };
+    expect(render(DocumentPresentation, { props: { ...props, initialData: d } }).body).toContain('An Author (b. 1921)');
+  });
 });
