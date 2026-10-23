@@ -37,3 +37,20 @@ describe('the feed', () => {
     expect(queue.mock.calls.at(-1)[0]).toBe('media-fetch');
   });
 });
+
+describe('tower stays light with four items in flight', () => {
+  it('tower model work runs one at a time', async () => {
+    const { towerSlot } = await import('../../api/lib/media/item.js');
+    let live = 0, peak = 0;
+    const job = () => towerSlot(async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 15)); live--; });
+    await Promise.all([job(), job(), job(), job()]);
+    expect(peak).toBe(1);
+  });
+  it('a failing item keeps its retry count (so transient retries stop after two)', async () => {
+    const { readFileSync } = await import('fs');
+    const src = readFileSync(new URL('../../api/lib/ops/media-jobs.js', import.meta.url), 'utf8');
+    expect(src).toMatch(/const prior = \/\^retry:\\d\+\/\.exec\(item\.why/);
+    const repo = readFileSync(new URL('../../api/lib/repos/media-repo.js', import.meta.url), 'utf8');
+    expect(repo).toMatch(/if \(n >= max\) continue;/);
+  });
+});

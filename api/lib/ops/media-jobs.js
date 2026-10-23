@@ -121,7 +121,8 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     }
     // a failed ITEM is recorded on the item (the admin status and the morning summary list them) and the run ends normally:
     // a night of 450 recordings must not mail Chad once per odd file (each failure used to raise an ops alert)
-    await updateMediaItem(id, { state: 'failed', why: String(err.message).slice(0, 500) }).catch(() => {});
+    const prior = /^retry:\d+/.exec(item.why || '')?.[0];   // a retried item keeps its retry count (retryTransientFailures caps it)
+    await updateMediaItem(id, { state: 'failed', why: `${prior ? `${prior} ` : ''}${String(err.message)}`.slice(0, 500) }).catch(() => {});
     await logActivity('media', `✗ media item ${id} failed: ${String(err.message).slice(0, 160)}`).catch(() => {});
     if (deps.throwOnFail) throw err;
     return { id, failed: true, why: String(err.message).slice(0, 300) };
@@ -404,6 +405,7 @@ export async function mediaFeedPass(deps = {}) {
   const pending = await ops.pendingRuns('media-item');
   const inflight = pending.filter((r) => r.params?.feed).length;
   const out = { scheduled: [], inflight };
+  if (repo.retryTransientFailures) { const back = await repo.retryTransientFailures(); if (back.length) out.retried = back; }
   for (const it of await repo.nextToProcess(Math.max(0, parallel - inflight))) {
     await repo.updateMediaItem(it.id, { state: 'scheduled' });
     await queue('media-item', { id: it.id, feed: true, priority: true }, 'media-feed');

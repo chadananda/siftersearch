@@ -17,6 +17,11 @@ import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights
 import { tileSvg } from './thumbs.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
+// tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs ONE at a time at 4 threads even when four items are
+// in flight (10-22: four in parallel took on-tower search p90 to 5.3 s)
+let towerChain = Promise.resolve();
+export function towerSlot(fn) { const run = towerChain.then(fn, fn); towerChain = run.catch(() => {}); return run; }
+
 export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess', 'thumb', 'render', 'ingest', 'catalog'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
@@ -158,7 +163,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // fix chain; intelligibility and per-speaker levels join after transcription (finishQuality, at catalog — or here
       // at once for an item that is already transcribed)
       // DNSMOS/NISQA on tower at ≤ 4 threads (models on short excerpts; tower's search must keep its normal latency)
-      const m = await tools.tool('grade', join(dir, meta.original), {}, { threads: Math.min(4, await threads()), stop, timeoutMs: 3600_000 });
+      const m = await towerSlot(() => tools.tool('grade', join(dir, meta.original), {}, { threads: 4, stop, timeoutMs: 3600_000 }));
       meta.quality = { measured_at: d.now(), raw: m, ...gradeReport(m) };
       if (existsSync(join(dir, 'transcript.raw.json'))) await finishQuality(meta, dir, d, item);
       rec.grade = meta.quality.overall; rec.primary_issue = meta.quality.primary_issue;
@@ -176,7 +181,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const variants = [{ name: 'original', file: orig, ...m0 }, { name: 'light', file: light, ...m1 }];
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
         const dfn = join(dir, 'enhanced', 'dfn.flac');
-        await tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: th, stop });
+        await towerSlot(() => tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop }));
         variants.push({ name: 'dfn', file: dfn, ...(await tools.tool('metrics', dfn, {}, { threads: 2, stop })) });
       }
       const starts = probeStarts(meta.duration_s).join(',');

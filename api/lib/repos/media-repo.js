@@ -69,6 +69,21 @@ export const progressCounts = async () => queryAll(`SELECT source_kind source, C
   SUM(CASE WHEN state IN ('scheduled', 'running') THEN 1 ELSE 0 END) in_progress, SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) waiting,
   SUM(CASE WHEN state = 'done' THEN COALESCE(duration_s, 0) ELSE 0 END) published_s
   FROM media_items WHERE state != 'duplicate' GROUP BY source_kind`, [], 'media:progress');
+/** Items that failed on a TRANSIENT error (a timeout, a dropped connection) at least 30 min ago go back to the queue, at most
+ *  twice ("retry:N" leads their reason). → [ids] */
+export async function retryTransientFailures({ olderThanMin = 30, max = 2 } = {}) {
+  const cutoff = new Date(Date.now() - olderThanMin * 60_000).toISOString();
+  const rows = await queryAll(`SELECT id, why FROM media_items WHERE state = 'failed' AND updated_at < ?
+    AND (why LIKE '%timed out%' OR why LIKE '%Connection error%' OR why LIKE '%ECONNRESET%' OR why LIKE '%ETIMEDOUT%' OR why LIKE '%fetch failed%' OR why LIKE '%overloaded%')`, [cutoff], 'media:transient-failed');
+  const ids = [];
+  for (const r of rows) {
+    const n = Number(/^retry:(\d+)/.exec(r.why || '')?.[1] || 0);
+    if (n >= max) continue;
+    await transaction([{ sql: `UPDATE media_items SET state = 'queued', why = ?, updated_at = ? WHERE id = ?`, args: [`retry:${n + 1} ${String(r.why || '').replace(/^retry:\d+\s*/, '')}`.slice(0, 500), now(), r.id] }], 'media:retry');
+    ids.push(r.id);
+  }
+  return ids;
+}
 /** Items published since a time (throughput). */
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };
 
