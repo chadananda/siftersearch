@@ -71,9 +71,9 @@ describe('lossy words (U+FFFD) take the segment text', async () => {
     const sg = { s: 0, e: 3, text: 'از قبل عبدالبها', words: [{ w: 'از', s: 0, e: 1 }, { w: 'قب��', s: 1, e: 2 }, { w: 'عبدالبها', s: 2, e: 3 }] };
     expect(flattenWords([sg]).map((w) => w.w)).toEqual(['از', 'قبل', 'عبدالبها']);
   });
-  it('left alone when the counts differ (the gate then refuses it)', () => {
-    const sg = { s: 0, e: 2, text: 'از قبل عبدالبها', words: [{ w: 'از', s: 0, e: 1 }, { w: 'قب�', s: 1, e: 2 }] };
-    expect(flattenWords([sg])[1].w).toContain('�');
+  it('otherwise the lossy bytes are removed and a lone one dropped (nothing recoverable)', () => {
+    const sg = { s: 0, e: 3, text: 'Újá, \uFFFD I v', words: [{ w: 'Újá,', s: 0, e: 1 }, { w: '\uFFFD', s: 1, e: 2 }, { w: 'قب\uFFFD', s: 2, e: 3 }] };
+    expect(flattenWords([sg]).map((w) => w.w)).toEqual(['Újá,', 'قب']);
   });
 });
 

@@ -24,6 +24,10 @@ export function flattenWords(segments = []) {
       const toks = String(sg.text).trim().split(/\s+/).filter(Boolean);
       if (toks.length === ws.length) ws = ws.map((w, i) => ({ ...w, w: toks[i], word: toks[i] }));
     }
+    // what is still lossy has no recoverable letters: a lone U+FFFD is dropped, one inside a word removed (10-23: '�' tokens
+    // in hallucinated non-English bits blocked publication)
+    ws = ws.map((w) => { const t = String(w.w ?? w.word ?? ''); return t.includes('\uFFFD') ? { ...w, w: t.replace(/\uFFFD+/g, ''), word: undefined } : w; })
+      .filter((w) => String(w.w ?? w.word ?? '').trim());
     const base = out.length;
     // Whisper's own mojibake ("ìWhy … book?î") is repaired here, where ASR words enter the pipeline (text-repair.js)
     for (const w of ws) out.push({ w: fixMojibake(String(w.w ?? w.word).trim()), s: w.s ?? null, e: w.e ?? null, p: w.p ?? null, spk: w.spk ?? sg.spk ?? null, ...(sg.lang ? { lang: sg.lang } : {}) });
