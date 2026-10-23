@@ -1,6 +1,146 @@
 {
-  "generated": "2026-10-23T22:52:00.081Z",
+  "generated": "2026-10-23T23:43:25.347Z",
   "entries": [
+    {
+      "hash": "3b8f5439",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The reading guide answers only a reply in a reading thread or an explicit command — a NEW question never gets the next page (Chad 10-23 \"WTH??\")",
+      "scope": "anis"
+    },
+    {
+      "hash": "a4eeb672",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Chad's per-talk exclusion decisions (10-23: 'all but #1 are dubious') — exclude 1262 (Mr Birkland at SON), 1100 (Dr Javaheri 9 May letter), 1401 (vancouver conference / Dr Birkland); 1251 'Dr. Mohajer' Fire Tablet stays published, needs_listen ('Dr.' is no evidence either way)",
+      "scope": "media"
+    },
+    {
+      "hash": "06fedf30",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Person links accurate for everyone, Covenant-breakers included (Chad 10-23); Covenant-breakers included BY DATE",
+      "scope": "media"
+    },
+    {
+      "hash": "ee94cf8a",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Media-uhj-exclusion — final per-person rule, run 9558 counts (11 unpublished, 105 dequeued), unsure list for Chad",
+      "scope": "planning"
+    },
+    {
+      "hash": "54d21f82",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "IMPORT gate before every reload — a changed file (or an importer of one) whose import does not resolve or names an export the module lacks blocks the deploy; the old processes keep running (10-23 16:08: media-jobs.js was pushed importing an uncommitted module; node --check passed it)",
+      "scope": "deploy"
+    },
+    {
+      "hash": "75ae43bd",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Remote job folders no longer fill the compute hosts (10-23 16:09: aorus 100 % full, 1,484 job folders / 169 GB, 28 failures, GPU idle)",
+      "scope": "media"
+    },
+    {
+      "hash": "8460d812",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Db.js / writer / telemetry store / power-mode one-liners (db-write-path-20261023)",
+      "scope": "api/lib"
+    },
+    {
+      "hash": "f9cba1e3",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "The coverage totals rebuild remembers when it last ran across restarts (data/run/coverage-totals-rebuilt) — in memory it rebuilt at every indexer start, i.e. every deploy (~hourly; 2–3.5 s blocking on the single writer each)",
+      "scope": "indexer"
+    },
+    {
+      "hash": "f05c4d0e",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Write-stats report takes { from, to } (ISO minutes) for before/after windows (db-write-path-20261023)",
+      "scope": "ops"
+    },
+    {
+      "hash": "64ff79cc",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Add api/lib/media/historical.js — b3a5ad47 swept in media-jobs.js importing it before it was committed (tower could not load media-jobs)",
+      "scope": "media"
+    },
+    {
+      "hash": "b3a5ad47",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "One exclusion decision (exclusions.decide) for the job, /media index, rank and runItem — a title naming only the surname ('Mr Birkland at SON') makes even a full-name attribution UNSURE, never excluded",
+      "scope": "media"
+    },
+    {
+      "hash": "585ca9db",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Exclusions need a GIVEN NAME; a surname alone goes to an 'unsure' list for Chad, never excluded (Chad 10-23: \"spelling is not trustworthy\")",
+      "scope": "media"
+    },
+    {
+      "hash": "efbff17c",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Migration 181 indexes content's FK child keys (180 silently skipped them); no dbstat warm-up on the deploy path",
+      "scope": "db"
+    },
+    {
+      "hash": "8b0c8204",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Courtroom-sketch speaker portraits, samples stage (scripts/media/speaker_sketch.py): image-to-image from a verified gallery photo only, one fixed prompt + face-free style sheet per variant, Gemini draws the 9:16 sheet (no stretching) + square crop around the drawn face; SFace likeness gate (>=0.45 vs source, >=0.15 over the closest other speaker) with redraws. Batch awaits Chad's style choice.",
+      "scope": "media"
+    },
+    {
+      "hash": "0678a03a",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Speaker prescreen validated on 508 talks — fails the 2 % bar (13 % held-out false single), skips only 7 % of audio; flag stays off",
+      "scope": "media"
+    },
+    {
+      "hash": "20158001",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Group-commit window 0 = setImmediate (no added wait; a group is what arrived in the same loop turn, growing by itself behind a long flush) + the group timer is not unref'd (a pending group keeps a process alive). Lab (4,000 two-statement requests, 32 concurrent, WAL): ungrouped→grouped OFF 16.1k→31.6k req/s, NORMAL 9.9k→30.7k, FULL 5.3k→25.4k; a 2 ms window was slower than none under OFF.",
+      "scope": "writer"
+    },
+    {
+      "hash": "211c1f95",
+      "date": "2026-10-23",
+      "type": "Other",
+      "description": "Retention from SHIP_KEEP_RECENT / SHIP_KEEP_DAYS (default 24/14 = unchanged) so the cron can ship every 15 min and keep 24 h at 15-min steps (db-write-path-20261023: bounds a drive-loss window at 15 min)",
+      "scope": "db-ship"
+    },
+    {
+      "hash": "9982b90f",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Group commit + telemetry store + off-thread checkpoints + RAM-leaning PRAGMAs; UPS read-only power mode (inert until NUT)",
+      "scope": "writer"
+    },
+    {
+      "hash": "3726d123",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Transcript links win over play position + moments as share cards (Chad 10-23)",
+      "scope": "media"
+    },
+    {
+      "hash": "9d95a0e6",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "The rolling coverage refresh writes only what CHANGED (55 % of single-writer time over 48 h: 15.5k batches/h, 300 docs a minute each re-saved as 14 statements + a totals subtract-then-add) — unchanged docs get one batched updated_at touch; whole-document soft-delete/restore UPDATEs run in ≤ 400-id chunks (updateDocRowsChunked)",
+      "scope": "writer"
+    },
     {
       "hash": "4d4ee49c",
       "date": "2026-10-23",
@@ -3360,150 +3500,150 @@
       "type": "New",
       "description": "The INGEST FOLDER (dewey-ingest-folder job: a few at a time, easiest first, re-checked before adding) + SearchLayerPDF for scans (dewey-ocr job, ocr lane ×3: open/economy jobs, output CHECKED — real words, text per page, our own sampled pages must be in it — else needs-human; ≤400 pages automatic); SLP page markers → <pb n/> for pdf_page; intake reads PDFs in place; GET /items?limit",
       "scope": "dewey"
-    },
-    {
-      "hash": "fecd1781",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "SPOT-CHECK big PDFs — ~10 sampled pages via pdftotext, length from the page count (Chad 10-18: 'wasteful to read the whole thing'); a PDF on the server is never loaded into memory (poppler reads it in place, checksum streamed); intake still reads every page",
-      "scope": "dewey"
-    },
-    {
-      "hash": "7de8bfcc",
-      "date": "2026-10-18",
-      "type": "Docs",
-      "description": "Overnight sweep report — 1,006 files, 0 errors; results jsonl",
-      "scope": "dewey"
-    },
-    {
-      "hash": "88a04b8d",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "A server path spelled NFD (macOS) finds the NFC file on tower (Julio Savi 'Bahá’u’lláh' did not reach the server); sweep sends NFC",
-      "scope": "dewey"
-    },
-    {
-      "hash": "33943017",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "A 270 MB book pushed the API past pm2's 3 GB (restart, 10-18) — documents are checked in a CHILD PROCESS (own memory and crash domain, ≤2 at once, 10 min limit, queries tagged dewey-holdings) and PDF text comes from poppler's pdftotext (273 MB book: 2.7 s, API-side RSS 101 MB, loop lag 2 ms)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "10a59540",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Read a document IN PLACE on the server (attach.path / holdings path, under DEWEY_PATH_ROOTS = the synced Dropbox) — no upload, no size limit, the original stays put; reading/conversion/OCR now off the event loop with the check (52 MB book: 620 ms, main-loop lag 2 ms); sweep --server-root",
-      "scope": "dewey"
-    },
-    {
-      "hash": "34401877",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "OCR bar 30% with ≥0.85 in order (Marion Yazdi 34%); the agent describes the comparison exactly (passages searched library-wide, closest compared in full — not 'every document')",
-      "scope": "dewey"
-    },
-    {
-      "hash": "08ef13ed",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "OCR'd text — a long in-order run (≥35%, ≥0.8 in order) is the same text (Roy Wilhelm read 'possible' at 40–42%)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "24406ffc",
-      "date": "2026-10-17",
-      "type": "Other",
-      "description": "Stop_exit_codes on the API left pm2 'waiting restart' (pid 0) with an untracked worker serving — reverted",
-      "scope": "pm2"
-    },
-    {
-      "hash": "ddcb978c",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "A garbled old-OCR text layer is re-read by tesseract when that reads better (Kelsey 0.80 → 0.95), and never imported as the text (needs-ocr); fix(pm2): stop_exit_codes [0] on the API — pm2 restarted a reload's drained old worker as an untracked '_old_' copy (the 'strays')",
-      "scope": "dewey"
-    },
-    {
-      "hash": "99df9c0e",
-      "date": "2026-10-17",
-      "type": "Other",
-      "description": "The watchdog's every-tick stray sweep killed the LIVE API worker every 5 min (restart storm 10-17 22:41→23:03) — back to deploy-time sweeping only",
-      "scope": "updater"
-    },
-    {
-      "hash": "16ae7e12",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "The 573 s API freeze — docs-repo:find re-ran the FTS MATCH per row (ORDER BY subquery) on a stopword-heavy title from Dewey; MATCH once in a ranked bounded join, stopwords/short prefixes dropped; test fails on old code (>10 min) passes on new (87 ms); Dewey's holdings check runs in a worker thread with a 120 s limit; worker-thread slow reads tagged /thread and not counted as blocking; standing policy docs/architecture/blocking-queries.md",
-      "scope": "db"
-    },
-    {
-      "hash": "de25bcff",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Checks ride in the member's turn (a hoisted 2nd system message went unseen — 'I don't have the holding results'); Haiku reasons before answering, so 700/200-token caps returned NOTHING (appraisal empty, replies blank, intake shelf choice) → 4000; handwriting/non-Latin scans read by vision (tesseract+OSD read handwriting as 'Japanese'); NDJSON keep-alive (cloudflared buffers JSON); fix(ai): Anthropic joins every system message (find() dropped all but the first)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "5564286e",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "No readable text → 'undetermined' (say so, never decide from a file name); fix(updater): sweep the reload's own orphan worker 200 s after a deploy",
-      "scope": "dewey"
-    },
-    {
-      "hash": "459c0107",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "The file name is a hint, never a determination — titles come from the contents; with text in hand only text decides which library documents are shown; name-only (unreadable scan) is never 'held'",
-      "scope": "dewey"
-    },
-    {
-      "hash": "24da1e01",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Preliminary OCR for scans — 8 sampled pages (pdftoppm + tesseract, script detected) so 'do we have it?' is answered by text before SearchLayerPDF; compared as a sample against the estimated whole length; intake never imports the sample",
-      "scope": "dewey"
-    },
-    {
-      "hash": "7478cc57",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "An upload we lack is appraised from ITS OWN TEXT, kept as an OFFERED item with a recommended shelf, and Dewey asks — Add it / Not this one (accept/decline endpoints, add_offered tool); no unasked imports; fix(updater): watchdog sweeps stray API workers every tick (a reload's orphan served stale code and failed health until the next deploy)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "b50ddeb2",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Chat answers at once and keeps the line alive (JSON leading spaces / SSE ping) — long turns hit Cloudflare's 100 s edge timeout (524); agent told the full text was compared, never asks for lines; folder sweep --chat",
-      "scope": "dewey"
-    },
-    {
-      "hash": "15b5d7be",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Holdings by FULL-TEXT comparison — normalized word 4-grams both directions + order → same · inside a compilation · partly held · quotes · unrelated; probes find candidates (common quotations discounted); calibrated on real pairs",
-      "scope": "dewey"
-    },
-    {
-      "hash": "620533a8",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Any format → Markdown (DOC/RTF/ODT via LibreOffice, webarchive, EPUB, HTML, cp1252 TXT); DOCX read directly — mammoth had failed on every .docx since the 09-09 xmldom override; a printed line counts only if the hit paragraph contains it (false 'held'); folder-sweep API client",
-      "scope": "dewey"
-    },
-    {
-      "hash": "12c4e360",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "'Title by Author' typed as one string is held on the title alone — agents send it that way",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "3b8f5439",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The reading guide answers only a reply in a reading thread or an explicit command — a NEW question never gets the next page (Chad 10-23 \"WTH??\")",
+        "scope": "anis"
+      },
+      {
+        "hash": "a4eeb672",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Chad's per-talk exclusion decisions (10-23: 'all but #1 are dubious') — exclude 1262 (Mr Birkland at SON), 1100 (Dr Javaheri 9 May letter), 1401 (vancouver conference / Dr Birkland); 1251 'Dr. Mohajer' Fire Tablet stays published, needs_listen ('Dr.' is no evidence either way)",
+        "scope": "media"
+      },
+      {
+        "hash": "06fedf30",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Person links accurate for everyone, Covenant-breakers included (Chad 10-23); Covenant-breakers included BY DATE",
+        "scope": "media"
+      },
+      {
+        "hash": "ee94cf8a",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Media-uhj-exclusion — final per-person rule, run 9558 counts (11 unpublished, 105 dequeued), unsure list for Chad",
+        "scope": "planning"
+      },
+      {
+        "hash": "54d21f82",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "IMPORT gate before every reload — a changed file (or an importer of one) whose import does not resolve or names an export the module lacks blocks the deploy; the old processes keep running (10-23 16:08: media-jobs.js was pushed importing an uncommitted module; node --check passed it)",
+        "scope": "deploy"
+      },
+      {
+        "hash": "75ae43bd",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Remote job folders no longer fill the compute hosts (10-23 16:09: aorus 100 % full, 1,484 job folders / 169 GB, 28 failures, GPU idle)",
+        "scope": "media"
+      },
+      {
+        "hash": "8460d812",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Db.js / writer / telemetry store / power-mode one-liners (db-write-path-20261023)",
+        "scope": "api/lib"
+      },
+      {
+        "hash": "f9cba1e3",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "The coverage totals rebuild remembers when it last ran across restarts (data/run/coverage-totals-rebuilt) — in memory it rebuilt at every indexer start, i.e. every deploy (~hourly; 2–3.5 s blocking on the single writer each)",
+        "scope": "indexer"
+      },
+      {
+        "hash": "f05c4d0e",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Write-stats report takes { from, to } (ISO minutes) for before/after windows (db-write-path-20261023)",
+        "scope": "ops"
+      },
+      {
+        "hash": "64ff79cc",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Add api/lib/media/historical.js — b3a5ad47 swept in media-jobs.js importing it before it was committed (tower could not load media-jobs)",
+        "scope": "media"
+      },
+      {
+        "hash": "b3a5ad47",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "One exclusion decision (exclusions.decide) for the job, /media index, rank and runItem — a title naming only the surname ('Mr Birkland at SON') makes even a full-name attribution UNSURE, never excluded",
+        "scope": "media"
+      },
+      {
+        "hash": "585ca9db",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Exclusions need a GIVEN NAME; a surname alone goes to an 'unsure' list for Chad, never excluded (Chad 10-23: \"spelling is not trustworthy\")",
+        "scope": "media"
+      },
+      {
+        "hash": "efbff17c",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Migration 181 indexes content's FK child keys (180 silently skipped them); no dbstat warm-up on the deploy path",
+        "scope": "db"
+      },
+      {
+        "hash": "8b0c8204",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Courtroom-sketch speaker portraits, samples stage (scripts/media/speaker_sketch.py): image-to-image from a verified gallery photo only, one fixed prompt + face-free style sheet per variant, Gemini draws the 9:16 sheet (no stretching) + square crop around the drawn face; SFace likeness gate (>=0.45 vs source, >=0.15 over the closest other speaker) with redraws. Batch awaits Chad's style choice.",
+        "scope": "media"
+      },
+      {
+        "hash": "0678a03a",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Speaker prescreen validated on 508 talks — fails the 2 % bar (13 % held-out false single), skips only 7 % of audio; flag stays off",
+        "scope": "media"
+      },
+      {
+        "hash": "20158001",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Group-commit window 0 = setImmediate (no added wait; a group is what arrived in the same loop turn, growing by itself behind a long flush) + the group timer is not unref'd (a pending group keeps a process alive). Lab (4,000 two-statement requests, 32 concurrent, WAL): ungrouped→grouped OFF 16.1k→31.6k req/s, NORMAL 9.9k→30.7k, FULL 5.3k→25.4k; a 2 ms window was slower than none under OFF.",
+        "scope": "writer"
+      },
+      {
+        "hash": "211c1f95",
+        "date": "2026-10-23",
+        "type": "Other",
+        "description": "Retention from SHIP_KEEP_RECENT / SHIP_KEEP_DAYS (default 24/14 = unchanged) so the cron can ship every 15 min and keep 24 h at 15-min steps (db-write-path-20261023: bounds a drive-loss window at 15 min)",
+        "scope": "db-ship"
+      },
+      {
+        "hash": "9982b90f",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Group commit + telemetry store + off-thread checkpoints + RAM-leaning PRAGMAs; UPS read-only power mode (inert until NUT)",
+        "scope": "writer"
+      },
+      {
+        "hash": "3726d123",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Transcript links win over play position + moments as share cards (Chad 10-23)",
+        "scope": "media"
+      },
+      {
+        "hash": "9d95a0e6",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "The rolling coverage refresh writes only what CHANGED (55 % of single-writer time over 48 h: 15.5k batches/h, 300 docs a minute each re-saved as 14 statements + a totals subtract-then-add) — unchanged docs get one batched updated_at touch; whole-document soft-delete/restore UPDATEs run in ≤ 400-id chunks (updateDocRowsChunked)",
+        "scope": "writer"
+      },
       {
         "hash": "4d4ee49c",
         "date": "2026-10-23",
@@ -6872,148 +7012,6 @@
         "date": "2026-10-18",
         "type": "New",
         "description": "The INGEST FOLDER (dewey-ingest-folder job: a few at a time, easiest first, re-checked before adding) + SearchLayerPDF for scans (dewey-ocr job, ocr lane ×3: open/economy jobs, output CHECKED — real words, text per page, our own sampled pages must be in it — else needs-human; ≤400 pages automatic); SLP page markers → <pb n/> for pdf_page; intake reads PDFs in place; GET /items?limit",
-        "scope": "dewey"
-      },
-      {
-        "hash": "fecd1781",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "SPOT-CHECK big PDFs — ~10 sampled pages via pdftotext, length from the page count (Chad 10-18: 'wasteful to read the whole thing'); a PDF on the server is never loaded into memory (poppler reads it in place, checksum streamed); intake still reads every page",
-        "scope": "dewey"
-      },
-      {
-        "hash": "7de8bfcc",
-        "date": "2026-10-18",
-        "type": "Docs",
-        "description": "Overnight sweep report — 1,006 files, 0 errors; results jsonl",
-        "scope": "dewey"
-      },
-      {
-        "hash": "88a04b8d",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "A server path spelled NFD (macOS) finds the NFC file on tower (Julio Savi 'Bahá’u’lláh' did not reach the server); sweep sends NFC",
-        "scope": "dewey"
-      },
-      {
-        "hash": "33943017",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "A 270 MB book pushed the API past pm2's 3 GB (restart, 10-18) — documents are checked in a CHILD PROCESS (own memory and crash domain, ≤2 at once, 10 min limit, queries tagged dewey-holdings) and PDF text comes from poppler's pdftotext (273 MB book: 2.7 s, API-side RSS 101 MB, loop lag 2 ms)",
-        "scope": "dewey"
-      }
-    ],
-    "2026-10-17": [
-      {
-        "hash": "10a59540",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Read a document IN PLACE on the server (attach.path / holdings path, under DEWEY_PATH_ROOTS = the synced Dropbox) — no upload, no size limit, the original stays put; reading/conversion/OCR now off the event loop with the check (52 MB book: 620 ms, main-loop lag 2 ms); sweep --server-root",
-        "scope": "dewey"
-      },
-      {
-        "hash": "34401877",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "OCR bar 30% with ≥0.85 in order (Marion Yazdi 34%); the agent describes the comparison exactly (passages searched library-wide, closest compared in full — not 'every document')",
-        "scope": "dewey"
-      },
-      {
-        "hash": "08ef13ed",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "OCR'd text — a long in-order run (≥35%, ≥0.8 in order) is the same text (Roy Wilhelm read 'possible' at 40–42%)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "24406ffc",
-        "date": "2026-10-17",
-        "type": "Other",
-        "description": "Stop_exit_codes on the API left pm2 'waiting restart' (pid 0) with an untracked worker serving — reverted",
-        "scope": "pm2"
-      },
-      {
-        "hash": "ddcb978c",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "A garbled old-OCR text layer is re-read by tesseract when that reads better (Kelsey 0.80 → 0.95), and never imported as the text (needs-ocr); fix(pm2): stop_exit_codes [0] on the API — pm2 restarted a reload's drained old worker as an untracked '_old_' copy (the 'strays')",
-        "scope": "dewey"
-      },
-      {
-        "hash": "99df9c0e",
-        "date": "2026-10-17",
-        "type": "Other",
-        "description": "The watchdog's every-tick stray sweep killed the LIVE API worker every 5 min (restart storm 10-17 22:41→23:03) — back to deploy-time sweeping only",
-        "scope": "updater"
-      },
-      {
-        "hash": "16ae7e12",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "The 573 s API freeze — docs-repo:find re-ran the FTS MATCH per row (ORDER BY subquery) on a stopword-heavy title from Dewey; MATCH once in a ranked bounded join, stopwords/short prefixes dropped; test fails on old code (>10 min) passes on new (87 ms); Dewey's holdings check runs in a worker thread with a 120 s limit; worker-thread slow reads tagged /thread and not counted as blocking; standing policy docs/architecture/blocking-queries.md",
-        "scope": "db"
-      },
-      {
-        "hash": "de25bcff",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Checks ride in the member's turn (a hoisted 2nd system message went unseen — 'I don't have the holding results'); Haiku reasons before answering, so 700/200-token caps returned NOTHING (appraisal empty, replies blank, intake shelf choice) → 4000; handwriting/non-Latin scans read by vision (tesseract+OSD read handwriting as 'Japanese'); NDJSON keep-alive (cloudflared buffers JSON); fix(ai): Anthropic joins every system message (find() dropped all but the first)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "5564286e",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "No readable text → 'undetermined' (say so, never decide from a file name); fix(updater): sweep the reload's own orphan worker 200 s after a deploy",
-        "scope": "dewey"
-      },
-      {
-        "hash": "459c0107",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "The file name is a hint, never a determination — titles come from the contents; with text in hand only text decides which library documents are shown; name-only (unreadable scan) is never 'held'",
-        "scope": "dewey"
-      },
-      {
-        "hash": "24da1e01",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Preliminary OCR for scans — 8 sampled pages (pdftoppm + tesseract, script detected) so 'do we have it?' is answered by text before SearchLayerPDF; compared as a sample against the estimated whole length; intake never imports the sample",
-        "scope": "dewey"
-      },
-      {
-        "hash": "7478cc57",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "An upload we lack is appraised from ITS OWN TEXT, kept as an OFFERED item with a recommended shelf, and Dewey asks — Add it / Not this one (accept/decline endpoints, add_offered tool); no unasked imports; fix(updater): watchdog sweeps stray API workers every tick (a reload's orphan served stale code and failed health until the next deploy)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "b50ddeb2",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Chat answers at once and keeps the line alive (JSON leading spaces / SSE ping) — long turns hit Cloudflare's 100 s edge timeout (524); agent told the full text was compared, never asks for lines; folder sweep --chat",
-        "scope": "dewey"
-      },
-      {
-        "hash": "15b5d7be",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Holdings by FULL-TEXT comparison — normalized word 4-grams both directions + order → same · inside a compilation · partly held · quotes · unrelated; probes find candidates (common quotations discounted); calibrated on real pairs",
-        "scope": "dewey"
-      },
-      {
-        "hash": "620533a8",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Any format → Markdown (DOC/RTF/ODT via LibreOffice, webarchive, EPUB, HTML, cp1252 TXT); DOCX read directly — mammoth had failed on every .docx since the 09-09 xmldom override; a printed line counts only if the hit paragraph contains it (false 'held'); folder-sweep API client",
-        "scope": "dewey"
-      },
-      {
-        "hash": "12c4e360",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "'Title by Author' typed as one string is held on the title alone — agents send it that way",
         "scope": "dewey"
       }
     ]
