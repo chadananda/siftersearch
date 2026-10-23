@@ -297,3 +297,47 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
   }
   return { ...(await detached('diarize', input, { output }, { pidFile, threads: Math.min(4, towerThreads), stop })), host: 'tower' };
 }
+
+// ── the GPU compute host (aorus: RTX 3070, CUDA): grade (DNSMOS/NISQA) and DeepFilterNet as DETACHED jobs through the same
+// gate as boss (start … --verb grade|dfn, re-attached by job id after a restart; the original audio staged over the tailnet)
+export const gpuHost = () => process.env.MEDIA_GPU_HOST || null;   // set to 'aorus' on tower once its gate answers
+let installedGpu = null;
+/** A detached job on a compute host: the input file is sent as-is; → the JSON result, or (file) writes opts.output. */
+export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, stop = null, pollMs = 5000, file = false, exec = run } = {}) {
+  const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, cmd], { timeoutMs: 600_000, ...o });
+  const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
+  let st = await state().catch(() => ({ state: 'missing' }));
+  if (st.state !== 'running' && st.state !== 'done') {
+    const { readFile } = await import('fs/promises');
+    if (installedGpu !== host) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedGpu = host; }
+    const ext = (input.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
+    const { output, ...rest } = opts;
+    await ssh(`start ${ext} ${job} ${gateCommand('x', ext, { ...rest, verb: sub }).split(' ').slice(2).join(' ')}`, { input: await readFile(input) });
+    st = { state: 'running' };
+  }
+  for (;;) {
+    if (st.state === 'done') break;
+    if (st.state === 'failed' || st.state === 'missing') throw new Error(`${sub} job ${job} on ${host} ${st.state}: ${String(st.error || '').slice(-300)}`);
+    for (let waited = 0; waited < pollMs; waited += 1000) { if (stop?.()) throw new DrainAbort(`${sub} job ${job} (left running on ${host})`); await pause(1000); }
+    st = await state().catch(() => ({ state: 'running' }));
+  }
+  if (file) {
+    const chunks = [];
+    await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, `fetch-file ${job}`], { timeoutMs: 600_000, onStdout: (d) => chunks.push(d) });
+    const { writeFile } = await import('fs/promises');
+    await writeFile(opts.output, Buffer.concat(chunks));
+    return { output: opts.output, host, job };
+  }
+  const { stdout } = await ssh(`fetch ${job}`, { timeoutMs: 120_000 });
+  return { ...JSON.parse(stdout.trim().split('\n').pop()), host, job };
+}
+/** grade / dfn on the GPU host when it answers, else the tower's detached process (re-attached by pid file). */
+export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false } = {}) {
+  const host = gpuHost();
+  if (host && job) {
+    try { return await remoteJob(sub, input, opts, { host, job, stop, file }); }
+    // a drain leaves the remote job running (re-attached next time); anything else → the tower does it
+    catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] ${sub} on ${host} failed — tower fallback: ${String(err.message).slice(0, 300)}`); }
+  }
+  return detachedTool(sub, input, opts, { pidFile, threads: 4, stop, python });
+}

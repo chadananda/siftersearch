@@ -515,11 +515,15 @@ export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
   const before = await (deps.repo?.getMediaItem || getMediaItem)(id);
   const r = await mediaItemJob({ id, ...rest, only: COMPUTE_STAGES }, deps);
   if (!r?.failed && !r?.held && !r?.yielded) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : 'transcribed' });
-  return r;
+  return failedRun(r);
 }
+// a failed ITEM is NOT a failed run (a thrown run mails Chad once per item — a night of failures = a mailbox of alerts):
+// the run's result carries failed:true, the item its 'failed' state + reason, /api/media/progress/live → health counts them,
+// system-checks WARNs past MEDIA_FAIL_WARN an hour, and the feed's capped retry brings the item back
+function failedRun(r) { return r?.failed ? { ...r, outcome: 'item-failed' } : r; }
 export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
   // everything after the compute stages (they are recorded done, so runItem skips them)
-  return mediaItemJob({ id, ...rest }, deps);
+  return failedRun(await mediaItemJob({ id, ...rest }, deps));
 }
 
 /** The FEED for both lanes (30 s): keep the compute queue `computeDepth` deep (by rank; YouTube items once downloaded) and the

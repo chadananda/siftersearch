@@ -71,12 +71,13 @@ export const progressCounts = async () => queryAll(`SELECT source_kind source, C
   SUM(CASE WHEN state IN ('scheduled', 'running') THEN 1 ELSE 0 END) in_progress, SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) waiting,
   SUM(CASE WHEN state = 'done' THEN COALESCE(duration_s, 0) ELSE 0 END) published_s
   FROM media_items WHERE state != 'duplicate' GROUP BY source_kind`, [], 'media:progress');
-/** Items that failed on a TRANSIENT error (a timeout, a dropped connection) at least 30 min ago go back to the queue, at most
- *  twice ("retry:N" leads their reason). → [ids] */
+/** FAILED items go back to the queue after 30 min, at most twice ("retry:N" leads their reason) — every failure except the
+ *  ones a retry cannot fix (a removed video, a missing file). A failure must never just sit (10-22: a gate bug failed every
+ *  compute run for hours, silently). → [ids] */
 export async function retryTransientFailures({ olderThanMin = 30, max = 2 } = {}) {
   const cutoff = new Date(Date.now() - olderThanMin * 60_000).toISOString();
   const rows = await queryAll(`SELECT id, why FROM media_items WHERE state = 'failed' AND updated_at < ?
-    AND (why LIKE '%timed out%' OR why LIKE '%Connection error%' OR why LIKE '%ECONNRESET%' OR why LIKE '%ETIMEDOUT%' OR why LIKE '%fetch failed%' OR why LIKE '%overloaded%')`, [cutoff], 'media:transient-failed');
+    AND NOT (COALESCE(why, '') LIKE '%Private video%' OR why LIKE '%Video unavailable%' OR why LIKE '%removed by the uploader%' OR why LIKE '%not found on disk%' OR why LIKE '%no audio stream%')`, [cutoff], 'media:retryable-failed');
   const ids = [];
   for (const r of rows) {
     const n = Number(/^retry:(\d+)/.exec(r.why || '')?.[1] || 0);
@@ -111,6 +112,23 @@ export const liveItems = async (limit = 12) => (await queryAll(`SELECT id, slug,
   FROM media_items WHERE state = 'running' OR (state = 'done' AND stage IS NOT NULL AND stage NOT IN ('catalog')) ORDER BY updated_at DESC LIMIT ?`, [limit], 'media:live')).map(parse);
 export const recentlyPublished = async (limit = 6) => queryAll(`SELECT slug, title, speaker, speaker_key, duration_s, published_at FROM media_items
   WHERE state = 'done' AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT ?`, [limit], 'media:recent-published');
+/** PIPELINE HEALTH for the watchdog (system-checks) and /progress/live: failures in the window (by stage), items running,
+ *  and the backlog each lane could be working on — a backlog with nothing running is an IDLE lane. One group-by. */
+export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000).toISOString() } = {}) {
+  const r = await queryOne(`SELECT
+      SUM(CASE WHEN state = 'failed' AND updated_at >= ? THEN 1 ELSE 0 END) failed_window,
+      SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed_total,
+      SUM(CASE WHEN state = 'running' AND stage IN ('archive','grade','enhance','web','transcribe') THEN 1 ELSE 0 END) compute_running,
+      SUM(CASE WHEN state = 'running' AND (stage IS NULL OR stage NOT IN ('archive','grade','enhance','web','transcribe')) THEN 1 ELSE 0 END) llm_running,
+      SUM(CASE WHEN state IN ('queued','scheduled') AND dir IS NOT NULL THEN 1 ELSE 0 END) compute_backlog,
+      SUM(CASE WHEN state IN ('transcribed','llm_queued') THEN 1 ELSE 0 END) llm_backlog,
+      SUM(CASE WHEN published_at >= ? THEN 1 ELSE 0 END) published_window
+    FROM media_items`, [sinceIso, sinceIso], 'media:health');
+  const by = await queryAll(`SELECT COALESCE(stage, '?') stage, COUNT(*) n FROM media_items WHERE state = 'failed' AND updated_at >= ? GROUP BY stage`, [sinceIso], 'media:health-failed');
+  const n = (k) => Number(r?.[k] || 0);
+  return { since: sinceIso, failed: n('failed_window'), failed_total: n('failed_total'), failed_by_stage: Object.fromEntries(by.map((x) => [x.stage, x.n])),
+    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window') };
+}
 /** Items published since a time (throughput). */
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };
 

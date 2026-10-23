@@ -191,8 +191,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       // at once for an item that is already transcribed)
       // DNSMOS/NISQA on tower at ≤ 4 threads (models on short excerpts; tower's search must keep its normal latency)
       // detached (pid file): a service restart re-attaches instead of starting over
-      const m = await towerSlot(() => (tools.detachedTool ? tools.detachedTool('grade', join(dir, meta.original), {}, { pidFile: join(dir, 'grade.pid'), threads: 4, stop })
-        : tools.tool('grade', join(dir, meta.original), {}, { threads: 4, stop, timeoutMs: 3600_000 })));
+      // on the GPU host (aorus) when it answers, else a detached tower process; both re-attach after a restart
+      if (!meta.grade_job) { meta.grade_job = `${meta.slug}-gr-${Date.now().toString(36)}`.slice(0, 110); await save(); }
+      const m = tools.gpuOrTower ? await tools.gpuOrTower('grade', join(dir, meta.original), {}, { job: meta.grade_job, pidFile: join(dir, 'grade.pid'), stop })
+        : await towerSlot(() => tools.tool('grade', join(dir, meta.original), {}, { threads: 4, stop, timeoutMs: 3600_000 }));
+      delete meta.grade_job;
       meta.quality = { measured_at: d.now(), raw: m, ...gradeReport(m) };
       if (existsSync(join(dir, 'transcript.raw.json'))) await finishQuality(meta, dir, d, item);
       rec.grade = meta.quality.overall; rec.primary_issue = meta.quality.primary_issue;
@@ -210,8 +213,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       const variants = [{ name: 'original', file: orig, ...m0 }, { name: 'light', file: light, ...m1 }];
       if (!opts.noDfn && existsSync(tools.PY_DFN())) {
         const dfn = join(dir, 'enhanced', 'dfn.flac');
-        await towerSlot(() => (tools.detachedTool ? tools.detachedTool('dfn', light, { output: dfn }, { pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), threads: 4, stop })
-          : tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop })));
+        if (!meta.dfn_job) { meta.dfn_job = `${meta.slug}-df-${Date.now().toString(36)}`.slice(0, 110); await save(); }
+        if (tools.gpuOrTower) await tools.gpuOrTower('dfn', light, { output: dfn }, { job: meta.dfn_job, pidFile: join(dir, 'enhanced', 'dfn.pid'), python: tools.PY_DFN(), stop, file: true });
+        else await towerSlot(() => tools.tool('dfn', light, { output: dfn }, { python: tools.PY_DFN(), threads: 4, stop }));
+        delete meta.dfn_job;
         variants.push({ name: 'dfn', file: dfn, ...(await tools.tool('metrics', dfn, {}, { threads: 2, stop })) });
       }
       const starts = probeStarts(meta.duration_s).join(',');

@@ -149,6 +149,23 @@ if (db) {
   } catch (e) { add('AI spend 24h', true, 'warn', `query failed: ${e.message}`); }
 }
 
+// ── 4b. Media pipeline (10-22: every compute run failed for hours and nothing said so) ──────────────────────
+// through the API (/api/media/progress/live → health), never the DB. WARN: failures in the last hour above the limit, or a lane
+// with a backlog and nothing running (idle compute while work waits).
+{
+  const MEDIA_FAIL_WARN = Number(process.env.MEDIA_FAIL_WARN || 3);
+  const r = await http('http://127.0.0.1:7839/api/media/progress/live', { timeout: 15000 });
+  let h = null; try { h = r.status === 200 ? JSON.parse(r.body).health : null; } catch { /* not JSON */ }
+  if (!h) add('Media pipeline', true, 'info', `health unavailable (${why(r)})`);
+  else {
+    const stages = Object.entries(h.failed_by_stage || {}).map(([k, v]) => `${k} ${v}`).join(', ');
+    add('Media failures 1h', h.failed <= MEDIA_FAIL_WARN, 'warn', `${h.failed} failed in the last hour${stages ? ` (${stages})` : ''} · ${h.failed_total} failed in all · ${h.published} published`);
+    const idleCompute = h.compute_backlog > 0 && h.compute_running === 0;
+    const idleLlm = h.llm_backlog > 0 && h.llm_running === 0;
+    add('Media lanes busy', !(idleCompute || idleLlm), 'warn', `compute ${h.compute_running} running / ${h.compute_backlog} waiting · llm ${h.llm_running} running / ${h.llm_backlog} waiting${idleCompute ? ' — COMPUTE IDLE with a backlog' : ''}${idleLlm ? ' — LLM IDLE with a backlog' : ''}`);
+  }
+}
+
 // ── 5. Corpus + cache + widget metrics (report-only) ─────────────────────────
 const metrics = {};
 if (db) {

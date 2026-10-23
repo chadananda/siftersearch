@@ -163,3 +163,25 @@ describe('stage lanes (Chad 10-22: no internet dependencies on GPU processing)',
     expect(r).toMatchObject({ speakers: 2, turns: 2, reattached: true });
   });
 });
+
+describe('failures never just sit (10-22 watchdog)', () => {
+  it('every failure older than 30 min goes back to the queue, at most twice; a removed video does not', async () => {
+    const db = await import('../../api/lib/db.js');
+    db.queryAll.mockImplementationOnce(async (sql) => {
+      expect(sql).toMatch(/Private video/);
+      expect(sql).not.toMatch(/why LIKE '%timed out%'/);   // not only "transient" errors any more
+      return [{ id: 1, why: 'grade exit 1: unbound variable' }, { id: 2, why: 'retry:2 IndexError' }, { id: 3, why: 'retry:1 x' }];
+    });
+    db.transaction.mockClear();
+    const { retryTransientFailures } = await import('../../api/lib/repos/media-repo.js');
+    expect(await retryTransientFailures()).toEqual([1, 3]);
+    expect(db.transaction.mock.calls[1][0][0].args[0]).toBe('retry:2 x');
+  });
+  it('pipelineHealth: failures in the window by stage, running and backlog per lane', async () => {
+    const db = await import('../../api/lib/db.js');
+    db.queryOne.mockImplementationOnce(async () => ({ failed_window: 3, failed_total: 9, compute_running: 0, llm_running: 1, compute_backlog: 40, llm_backlog: 0, published_window: 0 }));
+    db.queryAll.mockImplementationOnce(async () => [{ stage: 'enhance', n: 2 }, { stage: 'grade', n: 1 }]);
+    const { pipelineHealth } = await import('../../api/lib/repos/media-repo.js');
+    expect(await pipelineHealth()).toMatchObject({ failed: 3, failed_total: 9, failed_by_stage: { enhance: 2, grade: 1 }, compute_running: 0, compute_backlog: 40 });
+  });
+});

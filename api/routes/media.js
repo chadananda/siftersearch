@@ -431,7 +431,7 @@ export default async function mediaRoutes(fastify) {
   // a handful of rows and their meta.json files, memoised 10 s, edge-cached 10 s
   fastify.get('/progress/live', async (req, reply) => {
     if (!liveMemo || Date.now() - liveMemo.at > 10_000) {
-      const { liveItems, recentlyPublished, queuedCount, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
+      const { liveItems, recentlyPublished, queuedCount, pipelineHealth, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
       const rows = await liveItems(40);
       const recent = await recentlyPublished(6);
       const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));
@@ -444,7 +444,7 @@ export default async function mediaRoutes(fastify) {
       }));
       const by_stage = byStage(in_progress.map((x) => ({ ...x, started_at: x.stage_started_at })));
       liveMemo = { at: Date.now(), value: { in_progress, by_stage, queued: await queuedCount(), recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
-        duration_s: x.duration_s, published_at: x.published_at })), updated_at: new Date().toISOString() } };
+        duration_s: x.duration_s, published_at: x.published_at })), health: await pipelineHealth(), updated_at: new Date().toISOString() } };
     }
     pub(reply, 10);
     return liveMemo.value;

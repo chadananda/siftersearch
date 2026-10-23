@@ -47,13 +47,24 @@ def hum_db(x, sr, f):
     return float(np.mean(vals))
 
 
+def rolloff_hz(spec, freqs, share=0.99):
+    """The frequency below which `share` of the energy lies. Silence / NaN → 0.0; the index is clamped (searchsorted can
+    return len(freqs) when the cumulative sum never reaches the share, e.g. float error at the top)."""
+    spec = np.nan_to_num(np.asarray(spec, dtype=np.float64), nan=0.0, posinf=0.0, neginf=0.0)
+    if not len(freqs) or len(spec) != len(freqs):
+        return 0.0
+    cum = np.cumsum(spec)
+    if not cum[-1] > 0:
+        return 0.0
+    idx = int(np.searchsorted(cum / cum[-1], share))
+    return float(freqs[min(idx, len(freqs) - 1)])
+
 def cmd_metrics(a):
     x = load(a.input, sr=SR)
     hi = load(a.input, sr=44100, start=60, dur=30)
     spec = np.abs(np.fft.rfft(hi * np.hanning(len(hi)))) ** 2 if len(hi) else np.zeros(2)
     freqs = np.fft.rfftfreq(len(hi), 1 / 44100) if len(hi) else np.zeros(2)
-    cum = np.cumsum(spec) / (spec.sum() + 1e-12)
-    rolloff = float(freqs[np.searchsorted(cum, 0.99)]) if len(hi) else 0.0
+    rolloff = rolloff_hz(spec, freqs) if len(hi) else 0.0
     win = SR * 60
     snrs = [v for v in (frame_snr(x[i:i + win]) for i in range(0, max(1, len(x) - win + 1), win)) if v is not None]
     rms = float(20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-12))
