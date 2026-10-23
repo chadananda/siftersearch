@@ -18,6 +18,22 @@ const LIMIT_CARDS = 60;
 export const SPLIT_BY_AUTHOR = Object.freeze(['Core Tablets']);
 const SPLIT_MIN = 50;
 
+// Multi-part works held as separate LIBRARY books (not an OceanLibrary folder): one card holding every volume in order
+// (Chad 10-22: "why only vol. 3?" — the nine volumes of Ẓuhúru'l-Ḥaqq sat unshelved in "Baha'i Books" while a chip of 48
+// single tablets printed in vol. 3 looked like the book). Explicit ids: a work is never guessed from titles.
+export const LIBRARY_WORKS = Object.freeze([
+  { religion: "Baha'i", title: 'Ẓuhúru’l-Ḥaqq', author: 'Mírzá Asadu’lláh Fáḍil Mázandarání',
+    ids: [15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259] },
+]);
+/** "Ẓuhúru'l-Ḥaqq Vol 1 (Pre-Babi Era)" → "Ẓuhúru'l-Ḥaqq, vol. 1 (Pre-Babi Era)" — display only. */
+export const volumeTitle = (t) => String(t || '').replace(/,?\s+vol(?:ume)?\.?\s*(\d+)/i, ', vol. $1');
+/** A collection named after the book its pieces were printed in reads as what it holds, with the book as provenance:
+ *  "Ẓuhúru’l-Ḥaqq, vol. 3 (writings of the Báb)" → "Writings of the Báb · from Ẓuhúru’l-Ḥaqq, vol. 3". Display only. */
+export function collectionLabel(name) {
+  const m = String(name || '').match(/^(.+?,\s*vol\.\s*\d+)\s*\((writings of [^)]+)\)\s*$/i);
+  return m ? `${m[2].charAt(0).toUpperCase()}${m[2].slice(1)} · from ${m[1]}` : name;
+}
+
 export function docUrl(d) {
   const slug = d.slug || generateDocSlug(d);
   return slug && d.religion && d.collection ? `/library/${slugifyPath(d.religion)}/${slugifyPath(d.collection)}/${slug}` : `/library/view?doc=${d.id}`;
@@ -65,7 +81,7 @@ function inlineCollections(shelves, lead = []) {
   return out;
 }
 
-export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], splitCounts = [], now = new Date(), hidden = new Set() }) {
+export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts = [], splitCounts = [], workDocs = [], now = new Date(), hidden = new Set() }) {
   // a HIDDEN tradition (meta.yaml hidden: true — "Other") is searchable but never shelved
   if (hidden.size) {
     const keep = (x) => !hidden.has(x.religion);
@@ -95,6 +111,15 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
       w.list.push(d); w.paras += d.paragraph_count || 0;
     } else s.books.push(card(d));
   }
+  // 1b. multi-part works held as library books (LIBRARY_WORKS): a lone-work shelf, so it stands inline in the tradition's row
+  const byId = new Map(workDocs.map((d) => [Number(d.id), d]));
+  for (const w of LIBRARY_WORKS) {
+    if (hidden.has(w.religion)) continue;
+    const list = w.ids.map((id) => byId.get(id)).filter(Boolean).map((d) => card({ ...d, title: volumeTitle(d.title) }));
+    if (!list.length) continue;
+    const t = trad(w.religion);
+    t.shelves.set(`work:${w.title}`, { name: w.title, key: `work:${w.title}`, books: [], works: new Map([[w.title, { title: w.title, author: w.author, list: [], paras: 0, ready: list }]]) });
+  }
   // 2. per-tradition author totals (folded), to count what the library holds beyond the OceanLibrary shelf
   const byAuthor = new Map();
   for (const r of authorCounts) {
@@ -109,6 +134,8 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
     const shelves = inlineCollections([...t.shelves.values()].map((s) => {
       // a work = one card with its own cover; its parts in OceanLibrary's order (weight), all listed so the card opens instantly
       const works = [...s.works.values()].map((w) => {
+        if (w.ready) return { kind: 'work', title: w.title, author: w.author, parts: w.ready.length, paras: w.ready.reduce((n, b) => n + (b.paras || 0), 0),
+          id: w.ready[0].id, url: w.ready[0].url, cover: null, list: w.ready };
         const list = w.list.sort((a, b) => (a.weight ?? 1e9) - (b.weight ?? 1e9) || a.title.localeCompare(b.title, undefined, { numeric: true }));
         const lead = list[0];
         return { kind: 'work', title: w.title, author: w.author, parts: list.length, paras: w.paras, id: lead.id, url: docUrl(lead),
@@ -146,7 +173,7 @@ export function buildShelves({ olDocs = [], authorCounts = [], collectionCounts 
     let t = tmap.get(r.religion);
     if (!t) { t = { name: r.religion, slug: slugifyPath(r.religion), shelves: [], library: [], ol: 0 }; tmap.set(r.religion, t); traditions.push(t); }
     if (!r.source_site && SPLIT_BY_AUTHOR.includes(r.collection)) { t.library.push(...splitRows(r, splitCounts)); continue; }
-    t.library.push({ name: r.source_site ? (SITE_LABEL[r.source_site] || r.source_site) : (r.collection || 'Uncategorized'),
+    t.library.push({ name: r.source_site ? (SITE_LABEL[r.source_site] || r.source_site) : collectionLabel(r.collection || 'Uncategorized'),
       collection: r.source_site ? null : (r.collection || null), site: r.source_site || null, count: r.n,
       // a plain collection opens its own page (the tile is a link); site and author-split rows open inline
       url: !r.source_site && r.collection ? `/library/${slugifyPath(r.religion)}/${slugifyPath(r.collection)}` : null });

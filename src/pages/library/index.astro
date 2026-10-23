@@ -50,7 +50,7 @@ const totals = landing?.totals || fallback;
 const WALL_SSR = 42;
 const wallFirst = shuffle(coveredBooks(shelves), seed).slice(0, WALL_SSR);
 const collParams = (l) => (l.site ? { site: l.site } : l.authors ? { collection: l.collection, authors: l.authors.join('|') } : { collection: l.collection || '' });
-const heroImg = featItems[0]?.cover ? coverImg(featItems[0].cover, [240, 360, 520, 720]) : null;
+const heroImg = featItems[0]?.cover ? coverImg(featItems[0].cover, [240, 360, 480, 640]) : null;
 
 const title = `The Library: ${thousands(totals.documents)} books from ${totals.traditions || 'many'} traditions — SifterSearch`;
 const description = `${thousands(totals.documents)} books in ${totals.traditions} traditions: the Bahá’í Writings with their Persian and Arabic originals, the scriptures and classics of the world’s faiths, and the scholarship around them. Every book restored, structured and linked, passage by passage.`;
@@ -138,8 +138,8 @@ const ld = {
                           <div class="rowwrap">
                             <button class="arrow l" type="button" aria-label={`Scroll ${r.name || 'more works'} back`}>←</button>
                             <button class="arrow r" type="button" aria-label={`Scroll ${r.name || 'more works'} on`}>→</button>
-                            <div class="row" role="list" aria-label={`${r.name || 'More works'}, ${s.display}`}>
-                              <Fragment set:html={r.items.map((b) => `<div role="listitem">${renderBook(b, s.name, { cls: 'lift', sizes: '(max-width: 640px) 120px, 150px', widths: [150, 300] })}</div>`).join('')} />
+                            <div class="row" role="group" aria-label={`${r.name || 'More works'}, ${s.display}`}>
+                              <Fragment set:html={r.items.map((b) => `<div>${renderBook(b, s.name, { cls: 'lift', sizes: '(max-width: 640px) 120px, 150px', widths: [150, 300] })}</div>`).join('')} />
                               {r.more && (
                                 <button class="more-card" type="button" data-more={JSON.stringify({ religion: s.name, authors: r.more.authors.join('|'), total: r.more.count })}>
                                   <b>+{thousands(r.more.count)}</b><span>more by {r.name} across the library. Bring them out</span>

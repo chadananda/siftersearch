@@ -24,15 +24,11 @@
 .bk.has-art .tc { visibility: hidden; }
 .bk.no-art .tc { visibility: visible; }
 .bk.no-art img { display: none; }
-/* with JS: the art fades in once decoded; until then a quiet placeholder holds its place (no gap, no shift) */
-.lib-js .bk.has-art:not(.ld):not(.no-art) .bk-c { background: linear-gradient(100deg, var(--lib-sunk) 30%, color-mix(in oklab, var(--lib-sunk) 70%, var(--lib-raised)) 50%, var(--lib-sunk) 70%) 0 0 / 300% 100%; border-radius: 4px; }
-.lib-js.lib-live .bk.has-art:not(.ld):not(.no-art) .bk-c { animation: lib-shimmer 1.6s linear infinite; }
-@keyframes lib-shimmer { to { background-position: -150% 0; } }
-.lib-js .bk.has-art img { opacity: 0; transition: opacity 0.5s ease; }
-.lib-js .bk.has-art.ld img { opacity: 1; }
+/* until the art arrives a quiet block holds its place (no gap, no shift); the art paints over it progressively */
+.bk.has-art:not(.ld):not(.no-art) .bk-c { background: var(--lib-sunk); border-radius: 4px; }
 .tc[style*='parchment'] { color: var(--cover-ink); }
 .tc[style*='parchment'] .tc-t::after, .tc[style*='parchment'].tc-star::after { background: var(--cover-ink); }
-.lift .bk-c img { filter: drop-shadow(0 12px 14px var(--lib-shadow)); }
+.lift .bk-c::before { content: ''; position: absolute; left: 8%; right: 8%; bottom: -5%; height: 9%; border-radius: 50%; background: radial-gradient(closest-side, var(--lib-shadow), transparent); }
 .bk-cap { display: flex; flex-direction: column; gap: 0.15rem; }
 .bk-t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--font-quote); font-size: 0.92rem; line-height: 1.3; color: var(--lib-ink); }
 .bk-a { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-quote); font-style: italic; font-size: 0.82rem; color: var(--lib-ink-soft); }
@@ -57,7 +53,7 @@
 .tc-band .tc-a { color: var(--cover-ink); }
 
 /* ── rows that scroll sideways (real books only), with arrows on hover ───────────────────────────────────────── */
-.rowwrap { position: relative; }
+.rowwrap { position: relative; content-visibility: auto; contain-intrinsic-size: auto calc(var(--bw, 9.25rem) * 25 / 18 + 5.5rem); }
 .row { display: grid; grid-auto-flow: column; grid-auto-columns: var(--bw, 9.25rem); gap: 1.4rem; align-items: start; overflow-x: auto; overscroll-behavior-x: contain;
   scroll-snap-type: x proximity; scrollbar-width: none; padding: 0.5rem 0 0.4rem; margin: -0.5rem 0 0; }
 .row::-webkit-scrollbar { display: none; }

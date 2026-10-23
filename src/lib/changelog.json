@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-23T03:48:16.249Z",
+  "generated": "2026-10-23T04:09:54.168Z",
   "entries": [
+    {
+      "hash": "0472e63e",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "/library redesigned — editorial and cover-first, live from the edge cache (Chad 10-22)",
+      "scope": "library"
+    },
+    {
+      "hash": "e362ef5f",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "2.187.773 — mail renderer + conversation digest in the Worker",
+      "scope": "deploy"
+    },
+    {
+      "hash": "7f568ba0",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "STAGE LANES + restart-proof compute (Chad 10-22: 'no internet dependencies on GPU processing. Queue up work and keep them busy') — the compute stages (archive · grade · enhance · web · transcribe with alignment and diarization) are media-compute jobs in their own lane (4 workers, one per boss ASR slot), the API stages (names · copy-edit · description · publish · enrichment) media-llm jobs in theirs (6 workers): an item leaves compute 'transcribed' and the LLM feed takes it, so an API storm never holds a compute slot; the feed keeps 8 compute and 8 LLM runs queued; naming falls back to the file path when the API is unreachable. Restarts lose nothing: diarization is now a DETACHED boss job (gate: start … --verb diarize) re-attached by its id like the ASR job, grade and DeepFilterNet run as detached tower processes re-attached by pid file; boss's model calls run with HF_HUB_OFFLINE (every model local)",
+      "scope": "media"
+    },
     {
       "hash": "96f64465",
       "date": "2026-10-22",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "No time-of-day gate — heavy jobs run paced in their own lane; hype/concept indexing in a lane beside phrases; ops runs cancellable; retire-duplicates reads file_path (no file had ever moved) and files already-retired docs on re-run",
       "scope": "ops"
-    },
-    {
-      "hash": "ba90c9c1",
-      "date": "2026-10-14",
-      "type": "Chore",
-      "description": "Overnight results",
-      "scope": "worklist"
-    },
-    {
-      "hash": "abbf6267",
-      "date": "2026-10-13",
-      "type": "Chore",
-      "description": "Overnight 10-13 status",
-      "scope": "worklist"
-    },
-    {
-      "hash": "e8833011",
-      "date": "2026-10-13",
-      "type": "Fixed",
-      "description": "Real-time Anthropic replies join every text block (content[0].text was empty when the first block is not text); diagnostics carry finishReason + block types",
-      "scope": "ai"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "0472e63e",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "/library redesigned — editorial and cover-first, live from the edge cache (Chad 10-22)",
+        "scope": "library"
+      },
+      {
+        "hash": "e362ef5f",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "2.187.773 — mail renderer + conversation digest in the Worker",
+        "scope": "deploy"
+      },
+      {
+        "hash": "7f568ba0",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "STAGE LANES + restart-proof compute (Chad 10-22: 'no internet dependencies on GPU processing. Queue up work and keep them busy') — the compute stages (archive · grade · enhance · web · transcribe with alignment and diarization) are media-compute jobs in their own lane (4 workers, one per boss ASR slot), the API stages (names · copy-edit · description · publish · enrichment) media-llm jobs in theirs (6 workers): an item leaves compute 'transcribed' and the LLM feed takes it, so an API storm never holds a compute slot; the feed keeps 8 compute and 8 LLM runs queued; naming falls back to the file path when the API is unreachable. Restarts lose nothing: diarization is now a DETACHED boss job (gate: start … --verb diarize) re-attached by its id like the ASR job, grade and DeepFilterNet run as detached tower processes re-attached by pid file; boss's model calls run with HF_HUB_OFFLINE (every model local)",
+        "scope": "media"
+      },
       {
         "hash": "96f64465",
         "date": "2026-10-22",
@@ -6998,29 +7019,6 @@
         "type": "New",
         "description": "No time-of-day gate — heavy jobs run paced in their own lane; hype/concept indexing in a lane beside phrases; ops runs cancellable; retire-duplicates reads file_path (no file had ever moved) and files already-retired docs on re-run",
         "scope": "ops"
-      },
-      {
-        "hash": "ba90c9c1",
-        "date": "2026-10-14",
-        "type": "Chore",
-        "description": "Overnight results",
-        "scope": "worklist"
-      }
-    ],
-    "2026-10-13": [
-      {
-        "hash": "abbf6267",
-        "date": "2026-10-13",
-        "type": "Chore",
-        "description": "Overnight 10-13 status",
-        "scope": "worklist"
-      },
-      {
-        "hash": "e8833011",
-        "date": "2026-10-13",
-        "type": "Fixed",
-        "description": "Real-time Anthropic replies join every text block (content[0].text was empty when the first block is not text); diagnostics carry finishReason + block types",
-        "scope": "ai"
       }
     ]
   }

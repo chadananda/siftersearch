@@ -120,3 +120,34 @@ describe('buildShelves', () => {
     expect(bahai.library.map((l) => [l.name, l.count])).toEqual([['Bahá’í Library Online', 15013], ['Books', 2348]]);
   });
 });
+
+// Ẓuhúru'l-Ḥaqq (Chad 10-22: "why only vol. 3?"): the nine volumes are library books, shown as ONE work card in order;
+// the collection of tablets printed in vol. 3 reads as the Báb's writings, with the volume as provenance.
+import { LIBRARY_WORKS, volumeTitle, collectionLabel } from '../../api/lib/library/shelves.js';
+describe('library works and labels', () => {
+  const ids = LIBRARY_WORKS[0].ids;
+  const vols = ids.map((id, i) => ({ id, religion: "Baha'i", collection: "Baha'i Books", author: 'Mírzá Asadu’lláh Fáḍil Mázandarání', slug: `z${i + 1}`,
+    title: `Ẓuhúru'l-Ḥaqq Vol ${i + 1} (Part ${i + 1})`, paragraph_count: 100 }));
+  const s = buildShelves({ olDocs, authorCounts, collectionCounts: [...collectionCounts,
+    { religion: "Baha'i", collection: 'Ẓuhúru’l-Ḥaqq, vol. 3 (writings of the Báb)', source_site: null, n: 48 }], workDocs: [...vols].reverse() });
+  const bahai = s.traditions[0];
+  it('the volumes stand as one work card, in the listed order, with display titles', () => {
+    const z = bahai.shelves.flatMap((x) => x.items).find((i) => i.title === 'Ẓuhúru’l-Ḥaqq');
+    expect(z).toMatchObject({ kind: 'work', parts: 9, paras: 900, id: 15228 });
+    expect(z.list.map((p) => p.title)).toEqual(ids.map((_, i) => `Ẓuhúru'l-Ḥaqq, vol. ${i + 1} (Part ${i + 1})`));
+    expect(bahai.shelves.find((x) => x.name === 'Ẓuhúru’l-Ḥaqq')).toBeUndefined();   // a lone work stands inline, not as its own row
+  });
+  it('a hidden tradition never gets the work; missing volumes are skipped, none → no card', () => {
+    expect(buildShelves({ olDocs, workDocs: vols, hidden: new Set(["Baha'i"]) }).traditions.find((t) => t.name === "Baha'i")).toBeUndefined();
+    const none = buildShelves({ olDocs, workDocs: [] }).traditions[0].shelves.flatMap((x) => x.items);
+    expect(none.some((i) => i.title === 'Ẓuhúru’l-Ḥaqq')).toBe(false);
+  });
+  it('volume titles and printed-in collections read for people', () => {
+    expect(volumeTitle("Ẓuhúru'l-Ḥaqq Vol 9 (Shoghi Effendi)")).toBe("Ẓuhúru'l-Ḥaqq, vol. 9 (Shoghi Effendi)");
+    expect(volumeTitle('Amr va Khalq, vol. 2')).toBe('Amr va Khalq, vol. 2');
+    expect(collectionLabel('Ẓuhúru’l-Ḥaqq, vol. 3 (writings of the Báb)')).toBe('Writings of the Báb · from Ẓuhúru’l-Ḥaqq, vol. 3');
+    expect(collectionLabel('Tablet Translations')).toBe('Tablet Translations');
+    const row = bahai.library.find((l) => l.collection === 'Ẓuhúru’l-Ḥaqq, vol. 3 (writings of the Báb)');
+    expect(row.name).toBe('Writings of the Báb · from Ẓuhúru’l-Ḥaqq, vol. 3');
+  });
+});

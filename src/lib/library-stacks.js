@@ -100,7 +100,8 @@ export function renderBook(book, tradition, { caption = true, eager = false, siz
   const tc = `<span class="tc tc-${s.variant} tc-s${s.size}" style="${style}" aria-hidden="true"><span class="tc-t">${esc(s.title)}</span>${s.author ? `<span class="tc-a">${esc(s.author)}</span>` : ''}</span>`;
   const art = img ? `<img src="${esc(img.src)}"${img.srcset ? ` srcset="${esc(img.srcset)}" sizes="${esc(sizes)}"` : ''} alt="" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">` : '';
   const cap = caption ? `<span class="bk-cap"><span class="bk-t">${esc(book.title)}</span>${known(book.author) ? `<span class="bk-a">${esc(book.author)}</span>` : ''}${note ? `<span class="bk-n">${esc(note)}</span>` : ''}</span>` : '';
-  return `<a class="bk${img ? ' has-art' : ''}${cls ? ` ${cls}` : ''}" href="${esc(book.url)}" aria-label="${esc(label)}" ${data}><span class="bk-c">${tc}${art}</span>${cap}</a>`;
+  // captioned: the visible caption names the link; caption-less (the wall): the label does
+  return `<a class="bk${img ? ' has-art' : ''}${cls ? ` ${cls}` : ''}" href="${esc(book.url)}"${caption ? '' : ` aria-label="${esc(label)}"`} ${data}><span class="bk-c">${tc}${art}</span>${cap}</a>`;
 }
 
 /**

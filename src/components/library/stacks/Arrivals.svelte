@@ -29,8 +29,8 @@
     <div class="rowwrap">
       <button class="arrow l" type="button" aria-label="Scroll new arrivals back">←</button>
       <button class="arrow r" type="button" aria-label="Scroll new arrivals on">→</button>
-      <div class="row" role="list" aria-label="New arrivals, newest first">
-        {#each items as b (b.id)}<div role="listitem" class="li">{@html renderBook(b, b.religion, { cls: `lift${fresh.has(b.id) ? ' arrive' : ''}`, note: day(b.added) })}</div>{/each}
+      <div class="row" role="group" aria-label="New arrivals, newest first">
+        {#each items as b (b.id)}<div class="li">{@html renderBook(b, b.religion, { cls: `lift${fresh.has(b.id) ? ' arrive' : ''}`, note: day(b.added) })}</div>{/each}
       </div>
     </div>
   </section>

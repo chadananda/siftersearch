@@ -82,7 +82,7 @@
     <label for="lib-q" class="sr-only">Search the library by title or author</label>
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 15.5l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
     <input id="lib-q" name="q" type="search" autocomplete="off" spellcheck="false" bind:value={q} oninput={onInput} onfocus={() => { open = true; warm(); }} onkeydown={onKey}
-      placeholder={total ? `Search ${thousands(total)} books` : "Search by title or author"} aria-controls="lib-results" aria-expanded={shown} />
+      placeholder={total ? `Search ${thousands(total)} books` : "Search by title or author"} aria-controls={shown ? "lib-results" : undefined} />
     <kbd aria-hidden="true">↵</kbd>
   </form>
   {#if shown}

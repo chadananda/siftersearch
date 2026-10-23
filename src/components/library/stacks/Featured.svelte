@@ -7,7 +7,8 @@
   import { coverImg, displayName, tradKey, thousands } from '../../../lib/library-stacks.js';
 
   let { items = [] } = $props();
-  let i = $state(0), tints = $state({}), root, paused = false, visible = true, reduced = false;
+  // engaged: the carousel turns by itself only once the visitor has interacted with the page (a still first view)
+  let i = $state(0), tints = $state({}), root, paused = false, visible = true, reduced = false, engaged = false;
   const cur = $derived(items[i]);
   const go = (n) => { i = (n + items.length) % items.length; };
   const tintOf = (b) => (b && tints[b.id]) || `var(--trad-${tradKey(b?.religion)})`;
@@ -37,8 +38,10 @@
     reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
     io.observe(root);
-    const t = setInterval(() => { if (!reduced && visible && !paused && !document.hidden && items.length > 1) go(i + 1); }, 7000);
-    return () => { clearInterval(t); io.disconnect(); };
+    const engage = () => { engaged = true; };
+    for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, engage, { once: true, passive: true });
+    const t = setInterval(() => { if (engaged && !reduced && visible && !paused && !document.hidden && items.length > 1) go(i + 1); }, 7000);
+    return () => { clearInterval(t); io.disconnect(); for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) removeEventListener(ev, engage); };
   });
 </script>
 
@@ -47,7 +50,7 @@
     onmouseenter={() => (paused = true)} onmouseleave={() => (paused = false)} onfocusin={() => (paused = true)} onfocusout={() => (paused = false)}>
     <div class="slides">
       {#each items as b, k (b.id)}
-        {@const img = coverImg(b.cover, [240, 360, 520, 720])}
+        {@const img = coverImg(b.cover, [240, 360, 480, 640])}
         <article class="slide" class:on={k === i} aria-hidden={k !== i} inert={k !== i} aria-roledescription="slide" aria-label={`${k + 1} of ${items.length}: ${b.title}`}>
           <a class="art" href={b.url} tabindex="-1" aria-hidden="true">
             {#if img}<img src={img.src} srcset={img.srcset} sizes="(max-width: 640px) 52vw, 340px" alt=""

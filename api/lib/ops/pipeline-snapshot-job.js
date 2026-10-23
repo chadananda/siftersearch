@@ -135,14 +135,16 @@ async function defaultDeps() {
 
 async function buildShelvesIndex() {
   const { listDocs, groupCounts } = await import('../docs-repo.js');
-  const { buildShelves, SPLIT_BY_AUTHOR, smallMoreShelves, inlineAuthorWorks } = await import('../library/shelves.js');
+  const { buildShelves, SPLIT_BY_AUTHOR, smallMoreShelves, inlineAuthorWorks, LIBRARY_WORKS } = await import('../library/shelves.js');
   const { olWeight } = await import('../library/ol-works.js');
   const { docs } = await listDocs({ sourceSite: 'oceanlibrary.com', limit: 5000,
     fields: ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug', 'file_path', 'language', 'frontmatter'] });
   const olDocs = docs.map(({ frontmatter, ...d }) => ({ ...d, weight: olWeight(frontmatter) }));
   const shelves = buildShelves({ hidden: (await import('../authority.js')).hiddenReligions(), olDocs, authorCounts: await groupCounts(['religion', 'author']),
     collectionCounts: await groupCounts(['religion', 'collection', 'source_site']),
-    splitCounts: await groupCounts(['religion', 'collection', 'author'], { collections: SPLIT_BY_AUTHOR }) });
+    splitCounts: await groupCounts(['religion', 'collection', 'author'], { collections: SPLIT_BY_AUTHOR }),
+    workDocs: (await listDocs({ ids: LIBRARY_WORKS.flatMap((w) => w.ids), count: false, limit: 500,
+      fields: ['id', 'title', 'author', 'religion', 'collection', 'cover_url', 'year', 'paragraph_count', 'slug'] })).docs });
   const docsByShelf = new Map();
   for (const sh of smallMoreShelves(shelves)) {
     const list = [];

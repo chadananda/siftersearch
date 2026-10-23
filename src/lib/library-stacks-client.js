@@ -123,7 +123,7 @@ export function initLibrary(root) {
     const box = document.createElement('div');
     box.id = id;
     box.innerHTML = `<div class="row-head"><h3></h3><span class="n"></span></div><div class="rowwrap"><button class="arrow l" type="button">←</button><button class="arrow r" type="button">→</button>`
-      + `<div class="row" role="list"><button class="more-card" type="button"><b></b><span>Bringing them out of the stacks…</span></button></div></div>`;
+      + `<div class="row" role="group"><button class="more-card" type="button"><b></b><span>Bringing them out of the stacks…</span></button></div></div>`;
     box.querySelector('h3').textContent = p.name;
     box.querySelector('.n').textContent = `${thousands(p.count)} books`;
     box.querySelector('.arrow.l').setAttribute('aria-label', `Scroll ${p.name} back`);
