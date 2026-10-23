@@ -210,6 +210,36 @@ describe('re-attached diarizations count toward the host cap', () => {
   });
 });
 
+describe('the diarization cap holds after a restart (10-23: aorus ran 3 against a cap of 2)', () => {
+  it('re-attached jobs over the cap finishing one by one never let a new start exceed it', async () => {
+    const { diarize, diarSlot } = await import('../../api/lib/media/tools.js');
+    const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
+    const d = mkdtempSync(join(tmpdir(), 'cap-'));
+    let live = 0, peak = 0; const frees = [];
+    const job = () => new Promise((r) => { live++; peak = Math.max(peak, live); frees.push(() => { live--; r(); }); });
+    // four jobs already on the host (re-attached after a restart), cap 2
+    const reattached = [1, 2, 3, 4].map((i) => diarize('/a.flac', join(d, `r${i}.json`), { host: 'hcap', job: `r-${i}`,
+      deps: { live: async () => 'running', asrJob: async (inp, o) => { await job(); writeFileSync(o.output, '{"turns":[]}'); return {}; } } }));
+    await new Promise((r) => setTimeout(r, 5));
+    let worstFresh = 0;
+    const fresh = [1, 2, 3].map(() => diarSlot('hcap', () => { worstFresh = Math.max(worstFresh, live + 1); return job(); }, 2));
+    for (let k = 0; k < 7; k++) { await new Promise((r) => setTimeout(r, 5)); frees.shift()?.(); }
+    await Promise.all([...reattached, ...fresh]);
+    expect(peak).toBe(4);          // the four that were already running
+    expect(worstFresh).toBe(2);    // a NEW start never takes the host past its cap of 2 (the old 'if' let it reach 4)
+  });
+  it('a start waits while the HOST reports the cap filled by jobs this process does not hold', async () => {
+    const { diarSlot } = await import('../../api/lib/media/tools.js');
+    let onHost = ['old-1', 'old-2'], started = false;
+    const p = diarSlot('hcap2', async () => { started = true; }, 2, { job: 'new-1', running: async () => onHost, recheckMs: 5 });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(started).toBe(false);
+    onHost = ['old-1'];
+    await p;
+    expect(started).toBe(true);
+  });
+});
+
 describe('a transcription sends its audio as is', () => {
   it('no tower ffmpeg conversion for a normal-size audio file; the gate gets its own extension', async () => {
     const { asrJob } = await import('../../api/lib/media/tools.js');

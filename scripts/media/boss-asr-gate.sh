@@ -8,6 +8,7 @@
 #   poll <job> · fetch <job> · cancel <job>                 its state · its transcript JSON · stop it
 #   start <ext> <job> --verb diarize|grade|dfn|encode             the same, for a diarization, a quality grade or a DeepFilterNet copy
 #   fetch-file <job>                                        a detached job's output FILE (the DeepFilterNet audio)
+#   running <tool>                                          the ids of the live detached jobs of that kind
 # The same script serves every compute host (boss: CPU; aorus: CUDA): it runs from its own directory, with that host's venv
 # (venv/, venv-dfn/ for DeepFilterNet) and models (models/). Every model is local; nothing here reaches the internet.
 #   install-tool                                            replace media_tool.py with stdin (kept in sync from the repo)
@@ -31,7 +32,21 @@ if [[ "$verb" == "short" ]]; then
   py=$!; watch_parent "$py" & wait "$py"
   cat "$job/out.mp4"; exit 0
 fi
-[[ "$verb" =~ ^(probe|langid|transcribe|diarize|start|poll|fetch|fetch-file|cancel)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
+[[ "$verb" =~ ^(probe|langid|transcribe|diarize|start|poll|fetch|fetch-file|cancel|running)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
+
+# ── running <tool>: the ids of this host's LIVE detached jobs of one kind (tower's slot count is checked against it: jobs
+# started before a tower restart and not yet re-attached are otherwise invisible to it — 10-23: 3 diarizations on aorus, cap 2)
+if [[ "$verb" == "running" ]]; then
+  want="${A[1]:-}"; [[ "$want" =~ ^(transcribe|diarize|grade|dfn|encode)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
+  ids=""
+  for p in jobs/*/pid; do
+    [[ -e "$p" ]] || continue; pid=$(cat "$p" 2>/dev/null || echo 0); [[ "$pid" =~ ^[0-9]+$ && "$pid" != 0 ]] || continue
+    kill -0 "$pid" 2>/dev/null || continue
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -q "media_tool.py $want " || continue
+    j=$(basename "$(dirname "$p")"); ids="${ids:+$ids,}\"$j\""
+  done
+  printf '{"running":[%s]}\n' "$ids"; exit 0
+fi
 
 # ── detached jobs: ~/media-asr/jobs/<job>/ (in.<ext>, out.json, pid, err.txt); kept two days ──
 if [[ "$verb" =~ ^(poll|fetch|fetch-file|cancel)$ ]]; then

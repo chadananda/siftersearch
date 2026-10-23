@@ -146,6 +146,50 @@ describe('media item stage machine', () => {
     expect(liveChildren()).toBe(0);
   });
 
+  it('speaker prescreen: one voice in every window → no full diarization, one turn; MEDIA_SPK_PRESCREEN=0 → diarized as before', async () => {
+    for (const off of [false, true]) {
+      process.env.MEDIA_SPK_PRESCREEN = off ? '0' : '1';
+      const d = fakes();
+      d.tools.tool = vi.fn(async (sub, input, opts) => {
+        if (sub === 'dfn') writeFileSync(opts.output, 'x');
+        if (sub === 'spkscreen') return { sims: Array(40).fill(0.9), seconds: 3 };
+        if (sub === 'diarize') writeFileSync(opts.output, JSON.stringify({ turns: [{ start: 0, end: 300, speaker: 'S1' }, { start: 300, end: 600, speaker: 'S2' }] }));
+        return { snr_db: 20 };
+      });
+      const r = await runItem({ id: off ? 31 : 30, source_kind: 'file', source_ref: src }, {}, d);
+      const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+      const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+      const raw = JSON.parse(readFileSync(join(dir, 'transcript.raw.json'), 'utf8'));
+      const subs = d.tools.tool.mock.calls.map((c) => c[0]);
+      if (!off) {
+        expect(subs).toContain('spkscreen'); expect(subs).not.toContain('diarize');
+        expect(meta.spkscreen).toMatchObject({ verdict: 'single', far: 0, windows: 40 });
+        expect(raw.turns).toEqual([{ start: 0, end: 600, speaker: 'S1' }]);
+        expect(new Set(raw.segments.map((g) => g.spk))).toEqual(new Set(['S1']));
+      } else {
+        expect(subs).not.toContain('spkscreen'); expect(subs).toContain('diarize');
+        expect(meta.spkscreen).toBeUndefined();
+      }
+    }
+    delete process.env.MEDIA_SPK_PRESCREEN;
+  });
+
+  it('speaker prescreen: a recurring second voice → full diarization', async () => {
+    process.env.MEDIA_SPK_PRESCREEN = '1';
+    const d = fakes();
+    d.tools.tool = vi.fn(async (sub, input, opts) => {
+      if (sub === 'dfn') writeFileSync(opts.output, 'x');
+      if (sub === 'spkscreen') return { sims: [...Array(30).fill(0.9), ...Array(10).fill(0.3)], seconds: 3 };
+      if (sub === 'diarize') writeFileSync(opts.output, JSON.stringify({ turns: [{ start: 0, end: 300, speaker: 'S1' }, { start: 300, end: 600, speaker: 'S2' }] }));
+      return { snr_db: 20 };
+    });
+    const r = await runItem({ id: 32, source_kind: 'file', source_ref: src }, {}, d);
+    const meta = JSON.parse(readFileSync(join(root, 'library', 'bahai', 'grossman-various', r.slug, 'meta.json'), 'utf8'));
+    expect(meta.spkscreen.verdict).toBe('multi');
+    expect(d.tools.tool.mock.calls.map((c) => c[0])).toContain('diarize');
+    delete process.env.MEDIA_SPK_PRESCREEN;
+  });
+
   it('diarization is its own stage after the ASR (on tower here) and its voices land on the words', async () => {
     const d = fakes();
     d.tools.tool = vi.fn(async (sub, input, opts) => {

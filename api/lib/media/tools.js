@@ -236,13 +236,39 @@ const diarWait = new Map();
 // aorus diarizes on its GPU (venv-diar: sherpa-onnx built for CUDA; 600 s of audio in ~100 s at ONE CPU thread, vs boss's
 // CPU 112 s at 4 threads under load) — 2 at a time, ≥ 1.5 GB free or its CPU; boss is the overflow at 3 (10-23)
 const DIAR_SLOTS = { aorus: 2, boss: 3 };
-export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3) {
-  if (!diarWait.has(host)) diarWait.set(host, []);
-  if ((diarBusy.get(host) || 0) >= slots) await new Promise((r) => diarWait.get(host).push(r));
-  diarBusy.set(host, (diarBusy.get(host) || 0) + 1);
-  try { return await fn(); } finally { diarBusy.set(host, diarBusy.get(host) - 1); diarWait.get(host).shift()?.(); }
+// a slot is a JOB ID held on its host; a new diarization starts only while BOTH this process's ids and the ids the host
+// reports running (gate verb 'running diarize') stay under the cap. 10-23 14:30: after a restart four re-attached jobs sat
+// on aorus (cap 2); each one that finished woke a waiter that never re-checked the cap, so aorus ran 3 all afternoon.
+const diarIds = new Map();
+const idsOn = (h) => diarIds.get(h) || diarIds.set(h, new Set()).get(h);
+const syncBusy = (h) => diarBusy.set(h, idsOn(h).size);
+const wakeDiar = (h) => diarWait.get(h)?.shift()?.();
+const waitDiar = (h, ms) => new Promise((r) => {
+  if (!diarWait.has(h)) diarWait.set(h, []);
+  const q = diarWait.get(h); let t = null;
+  const go = () => { clearTimeout(t); const i = q.indexOf(go); if (i >= 0) q.splice(i, 1); r(); };
+  q.push(go); if (ms) t = setTimeout(go, ms);
+});
+let diarSeq = 0;
+export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = `local-${++diarSeq}`, running = null, recheckMs = 30_000 } = {}) {
+  for (;;) {
+    while (idsOn(host).size >= slots) await waitDiar(host);   // a WHILE: whoever woke us, the cap is checked again
+    const remote = running ? await running().catch(() => null) : null;
+    const all = new Set([...idsOn(host), ...(remote || [])]);
+    all.delete(job);
+    if (all.size < slots && idsOn(host).size < slots) break;
+    await waitDiar(host, recheckMs);   // the host is full with jobs this process does not hold: look again shortly
+  }
+  idsOn(host).add(job); syncBusy(host);
+  try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); }
 }
-async function countDiar(host, fn) { diarBusy.set(host, (diarBusy.get(host) || 0) + 1); try { return await fn(); } finally { diarBusy.set(host, diarBusy.get(host) - 1); diarWait.get(host)?.shift()?.(); } }
+async function countDiar(host, fn, job = `local-${++diarSeq}`) { idsOn(host).add(job); syncBusy(host); try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); } }
+/** The ids of the diarizations a host is running (gate 'running diarize'); null when it cannot say. */
+export async function runningOn(host, verb = 'diarize', { exec = run } = {}) {
+  const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `running ${verb}`)], { timeoutMs: 30_000 });
+  const j = JSON.parse(stdout.trim().split('\n').pop());
+  return Array.isArray(j.running) ? j.running : null;
+}
 /** A diarization's host when it is DISPATCHED: aorus while it has a free diarization slot, else boss (its CPU) — the rest
  *  stay on boss (10-23 watch). */
 export function pickDiarHost(busy = diarBusy) {
@@ -422,7 +448,7 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
       const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
       // a re-attached job does not wait for a slot, but it COUNTS (12:29: after a restart two re-attached jobs plus a new one
       // ran on aorus, whose cap is 1) — pickDiarHost sees it
-      const r = live === 'running' || live === 'done' ? await countDiar(host, go) : await diarSlot(host, go);
+      const r = live === 'running' || live === 'done' ? await countDiar(host, go, job) : await diarSlot(host, go, undefined, { job, running: deps.running || (deps.asrJob ? null : () => runningOn(host)) });
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
     } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }

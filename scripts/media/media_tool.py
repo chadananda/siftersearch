@@ -343,6 +343,72 @@ def cmd_diarize(a):
     print(json.dumps(res))
 
 
+def screen_windows(segments, duration, every=10.0, win=2.0, cap=720):
+    """Speech windows for the speaker prescreen: one `win`-second window per `every` seconds of the timeline, inside a
+    Whisper segment (speech by construction), each centred in its slice of the segment."""
+    out, nxt = [], 0.0
+    seg_s = lambda g: float(g.get('s', g.get('start')) or 0)   # the raw transcript's segments carry s / e
+    for sg in sorted(segments, key=seg_s):
+        s, e = seg_s(sg), float(sg.get('e', sg.get('end')) or 0)
+        if e - s < win:
+            continue
+        t = max(s, nxt)
+        while t + win <= e and t + win <= duration + 0.5:
+            out.append((round(t, 2), round(t + win, 2)))
+            t += every
+            nxt = t
+    if len(out) > cap:   # very long recordings: thin evenly
+        out = [out[int(i * len(out) / cap)] for i in range(cap)]
+    return out
+
+
+def screen_embeddings(audio, windows, models_dir, threads=2, emb_name=''):
+    """L2-normalised speaker embeddings (the diarization's own WeSpeaker model) of each window."""
+    import sherpa_onnx
+    name = emb_name or next(n for n in EMB_MODELS if os.path.exists(os.path.join(models_dir, n)))
+    ex = sherpa_onnx.SpeakerEmbeddingExtractor(sherpa_onnx.SpeakerEmbeddingExtractorConfig(
+        model=os.path.join(models_dir, name), num_threads=threads, provider='cpu'))
+    vs = []
+    for s, e in windows:
+        st = ex.create_stream()
+        st.accept_waveform(SR, audio[int(s * SR):int(e * SR)])
+        st.input_finished()
+        v = np.array(ex.compute(st), dtype=np.float32)
+        vs.append(v / (np.linalg.norm(v) + 1e-9))
+    return np.stack(vs) if vs else np.zeros((0, 256), dtype=np.float32)
+
+
+def screen_stats(E):
+    """How far each window's voice is from the talk's MAIN voice: a robust centroid (mean of the windows nearest it,
+    three passes) and each window's cosine to it; the far windows' own grouping (a second voice repeats, noise does not)."""
+    if not len(E):
+        return {'sims': [], 'pairs': 0}
+    c = E.mean(0)
+    for _ in range(3):
+        c = c / (np.linalg.norm(c) + 1e-9)
+        sim = E @ c
+        keep = sim >= np.quantile(sim, 0.3)
+        c = E[keep].mean(0)
+    c = c / (np.linalg.norm(c) + 1e-9)
+    return {'sims': (E @ c).round(3).tolist()}
+
+
+def cmd_spkscreen(a):
+    """SPEAKER-COUNT PRESCREEN (10-23): one 2 s window per 10 s of speech (the transcript's segments, --segments <json>),
+    each embedded with the diarization's WeSpeaker model, each scored by its cosine to the talk's main voice. The
+    single / multi / unsure call is made on the JS side (api/lib/media/spkscreen.js) from these numbers."""
+    t0 = time.time()
+    segs = json.load(open(a.segments)).get('segments', [])
+    audio = load(a.input)
+    dur = len(audio) / SR
+    wins = screen_windows(segs, dur, every=a.every)
+    E = screen_embeddings(audio, wins, a.models, threads=a.threads, emb_name=a.emb)
+    if a.emb_out:
+        np.save(a.emb_out, E)
+    st = screen_stats(E)
+    print(json.dumps({'windows': [[s, e] for s, e in wins], 'sims': st['sims'], 'duration_s': round(dur, 1), 'seconds': round(time.time() - t0, 1)}))
+
+
 def cmd_grade(a):
     """Signal measurements for the quality grade (the JS side grades them: api/lib/media/grade.js). Native-rate decode
     for clipping and bandwidth; 16 kHz for the rest; DNSMOS + NISQA (torchmetrics) on up to three 20 s speech excerpts."""
@@ -493,7 +559,7 @@ def cmd_levels(a):
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels'):
+    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels', 'spkscreen'):
         s = sub.add_parser(name)
         s.add_argument('input')
         s.add_argument('--threads', type=int, default=8)
@@ -513,9 +579,12 @@ def main():
         s.add_argument('--emit-turns', action='store_true')
         s.add_argument('--recipe', default='')
         s.add_argument('--af', default='')
+        s.add_argument('--segments', default='')   # spkscreen: the transcript JSON whose segments are the speech
+        s.add_argument('--every', type=float, default=10.0)
+        s.add_argument('--emb-out', default='')
     a = p.parse_args()
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
-    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd]
+    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen}[a.cmd]
     try:
         fn(a)
     except RuntimeError as err:

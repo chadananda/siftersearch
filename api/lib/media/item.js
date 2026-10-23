@@ -18,6 +18,7 @@ import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
+import { classifyScreen, screenEnabled, singleTurns } from './spkscreen.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
 // tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs in TWO slots at 4 threads even when more items are
@@ -41,6 +42,15 @@ export async function towerLight(fn) {
   if (lightBusy >= LIGHT_SLOTS) await new Promise((r) => lightWait.push(r));
   lightBusy++;
   try { return await fn(); } finally { lightBusy--; lightWait.shift()?.(); }
+}
+
+// the speaker PRESCREEN on tower: ~35 s wall / 70 s CPU at 2 threads for an hour of audio, two at a time
+let screenBusy = 0;
+const screenWait = [];
+async function screenSlot(fn) {
+  while (screenBusy >= 2) await new Promise((r) => screenWait.push(r));
+  screenBusy++;
+  try { return await fn(); } finally { screenBusy--; screenWait.shift()?.(); }
 }
 
 // PUBLISH EARLY (Chad 10-22: "talks should be published as they are completed … start ingesting for search"): the core —
@@ -387,7 +397,26 @@ export async function runItem(item, opts = {}, deps = {}) {
       const out = join(dir, 'transcript.raw.json'), turnsFile = join(dir, 'diarization.json');
       const raw = await readJson(out);
       const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.asr_input);
-      if (meta.asr_lang !== 'multi' && !(raw.turns || []).length) {
+      // SPEAKER PRESCREEN (10-23): a monologue (one voice in every 10-s window) skips full diarization — one turn, the named
+      // speaker. 'multi' / 'unsure' diarize as before; MEDIA_SPK_PRESCREEN=0 turns it off. Not for a job already dispatched.
+      if (meta.asr_lang !== 'multi' && !(raw.turns || []).length && !meta.diar_job?.id && !meta.spkscreen && screenEnabled() && tools.tool) {
+        try {
+          const r = await screenSlot(() => tools.tool('spkscreen', join(dir, v.file), { segments: out }, { threads: 2, timeoutMs: 30 * 60_000, stop }));
+          meta.spkscreen = { ...classifyScreen({ sims: r.sims || [], title: meta.title, series: meta.series, asrLang: meta.asr_lang }), seconds: r.seconds, at: new Date().toISOString() };
+        } catch (err) {
+          if (err?.code === 'DRAIN') throw err;
+          meta.spkscreen = { verdict: 'unsure', reason: `prescreen failed: ${String(err.message).slice(0, 160)}`, at: new Date().toISOString() };
+        }
+        await save();
+        console.info(`[media] prescreen ${meta.slug}: ${meta.spkscreen.verdict} (${meta.spkscreen.reason})`);
+      }
+      if (meta.asr_lang !== 'multi' && !(raw.turns || []).length && meta.spkscreen?.verdict === 'single' && screenEnabled() && !meta.diar_job?.id) {
+        raw.turns = singleTurns(meta.duration_s || raw.duration_s);
+        await writeJson(turnsFile, { turns: raw.turns, prescreen: meta.spkscreen });
+        raw.segments = assignSpeakers(raw.segments, raw.turns);
+        await writeJson(out, raw);
+        rec.prescreen = 'single';
+      } else if (meta.asr_lang !== 'multi' && !(raw.turns || []).length) {
         if (!meta.diar_job?.id) { meta.diar_job = { id: `${meta.slug}-dz-${Date.now().toString(36)}`.slice(0, 110), host: tools.pickDiarHost ? tools.pickDiarHost() : (tools.diarHost ? tools.diarHost() : null) }; await save(); }
         console.info(`[media] diarize ${meta.slug} → ${meta.diar_job.host || 'boss'} (job ${meta.diar_job.id})`);
         // a failed (or cancelled) diarization is dispatched afresh next time — never re-attached to the dead job on its host
