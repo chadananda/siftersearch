@@ -91,6 +91,19 @@ async function mediaIndex(budget) {
 /** A moment's canonical page (the design agent's /media/<slug>/m/<key>; /m/<key> and ?m=<key> redirect there). */
 export const momentUrl = (slug, key) => `/media/${encodeURIComponent(slug)}/m/${encodeURIComponent(key)}`;
 
+let progressMemo = null;
+/** The public progress shape. Pure (exported for tests). */
+export function shapeProgress({ rows = [], published_6h = 0 }, sources, now = Date.now()) {
+  const by = sources.map(([source, label]) => { const r = rows.find((x) => x.source === source) || {};
+    return { source, label, total: r.total || 0, downloaded: r.downloaded || 0, transcribed: r.transcribed || 0, published: r.published || 0, failed: r.failed || 0 }; })
+    .filter((x) => x.total > 0);
+  const sum = (k) => by.reduce((a, x) => a + x[k], 0);
+  const perHour = Math.round((published_6h / 6) * 10) / 10;
+  const remaining = sum('total') - sum('published') - sum('failed');
+  return { total_targets: sum('total'), downloaded: sum('downloaded'), transcribed: sum('transcribed'), published: sum('published'), failed: sum('failed'),
+    by_source: by, items_per_hour: perHour, eta_iso: perHour > 0 && remaining > 0 ? new Date(now + (remaining / perHour) * 3600_000).toISOString() : null, updated_at: new Date(now).toISOString() };
+}
+
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
 
 export default async function mediaRoutes(fastify) {
@@ -359,6 +372,17 @@ export default async function mediaRoutes(fastify) {
 
   // ── admin ──
   // the REPAIR LIST: graded items at C or worse, grouped by their recommended fix chain (a batch gets one treatment)
+  // THE IMPORT, public (Chad 10-22: "the total number being imported and their progress"): totals and per source, the
+  // publishing rate over the last 6 h and an ETA. One group-by, memoised 60 s, edge-cached 60 s.
+  fastify.get('/progress', async (req, reply) => {
+    if (!progressMemo || Date.now() - progressMemo.at > 60_000) {
+      const { importProgress, SOURCES } = await import('../lib/repos/media-repo.js');
+      progressMemo = { at: Date.now(), value: shapeProgress(await importProgress(), SOURCES) };
+    }
+    pub(reply, 60);
+    return progressMemo.value;
+  });
+
   // PROGRESS by source (downloaded / in progress / published / failed / held / waiting) + throughput over the last 24 h
   fastify.get('/admin/progress', { preHandler: requireInternal }, async () => {
     const { progressCounts, publishedSince } = await import('../lib/repos/media-repo.js');

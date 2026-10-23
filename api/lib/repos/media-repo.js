@@ -6,7 +6,7 @@ import { LIVE_SQL } from '../entity-live.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
-const COLS = new Set(['queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
+const COLS = new Set(['published_at', 'queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
   'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
@@ -83,6 +83,21 @@ export async function retryTransientFailures({ olderThanMin = 30, max = 2 } = {}
     ids.push(r.id);
   }
   return ids;
+}
+// the import's SOURCES, from the queue rank (media-rank): the curated sheet · Hooper Dunbar · other Hands/UHJ on YouTube · local
+// recordings (Hands/UHJ first) · other YouTube
+export const SOURCES = [['curated', 'Curated talks', 1000, 2000], ['hooper-dunbar', 'Hooper Dunbar', 2000, 3000], ['hands-uhj', 'Hands of the Cause & House of Justice', 3000, 4000],
+  ['local', 'Local recordings', 4000, 6000], ['other', 'Other talks', 6000, 9000001]];
+const LATER = "'correct','clean','describe','headings','quotes','links','assess','thumb','render','ingest','catalog'";
+/** The import, by source: one group-by over the catalogue (≈1,300 rows, indexed). */
+export async function importProgress() {
+  const bucket = `CASE ${SOURCES.map(([k, , lo, hi]) => `WHEN COALESCE(queue_rank, 9000000) >= ${lo} AND COALESCE(queue_rank, 9000000) < ${hi} THEN '${k}'`).join(' ')} ELSE 'other' END`;
+  const rows = await queryAll(`SELECT ${bucket} source, COUNT(*) total, SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded,
+    SUM(CASE WHEN state = 'done' OR stage IN (${LATER}) THEN 1 ELSE 0 END) transcribed, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
+    SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed FROM media_items WHERE state != 'duplicate' GROUP BY 1`, [], 'media:import-progress');
+  const since = new Date(Date.now() - 6 * 3600_000).toISOString();
+  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE published_at >= ?`, [since], 'media:published-6h'))?.n || 0;
+  return { rows, published_6h: recent };
 }
 /** Items published since a time (throughput). */
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };

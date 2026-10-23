@@ -1879,6 +1879,14 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_queue ON media_items(state, queue_rank, id)');
     logger.info('Migration 171 complete: media_items.queue_rank');
   },
+
+  172: async () => {
+    // FIRST publication time (the import rate counts talks published, not re-runs of published ones)
+    try { await query('ALTER TABLE media_items ADD COLUMN published_at TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query(`UPDATE media_items SET published_at = updated_at WHERE state = 'done' AND published_at IS NULL`);
+    await query('CREATE INDEX IF NOT EXISTS idx_media_published ON media_items(published_at)');
+    logger.info('Migration 172 complete: media_items.published_at');
+  },
 };
 
 export const graphMigrations = {

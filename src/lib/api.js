@@ -968,7 +968,7 @@ export const admin = {
   },
 
   // Media library quality (/admin/media): the repair list grouped by fix chain, a full per-item report, the graded listing
-  async getMediaProgress() { return request('/api/media/admin/progress'); },
+  async getMediaProgress() { return request('/api/media/progress'); },
   async getMediaRepairs(min = 'C') { return request(`/api/media/admin/repairs?min=${encodeURIComponent(min)}`); },
   async getMediaQuality(slug) { return request(`/api/media/admin/quality/${encodeURIComponent(slug)}`); },
   async getMediaGraded(query = '') { return request(`/api/media?facets=0&limit=200&sort=priority${query ? `&${query}` : ''}`); },
@@ -1596,7 +1596,7 @@ export const media = {
     const res = await fetch(`${API_URL}/api/media/heard?q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' }, signal });
     if (!res.ok) throw new Error(`heard ${res.status}`);
     return res.json();
-  },   // the Listening Room's whole listing index (compact rows + speakers)
+  },   // the Fireside Room's whole listing index (compact rows + speakers)
   get: (slug) => mediaGet(`/api/media/${encodeURIComponent(slug)}`),
   // 'clips' items: a signed clip for start..end (end ≤ start + clip_cap) → { url, start, end }
   // fmt 'm4a' where the browser cannot play Ogg Opus (older Safari)

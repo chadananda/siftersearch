@@ -54,3 +54,16 @@ describe('tower stays light with four items in flight', () => {
     expect(repo).toMatch(/if \(n >= max\) continue;/);
   });
 });
+
+describe('public import progress', () => {
+  it('totals, per source in import order, rate over 6 h and an ETA', async () => {
+    const { shapeProgress } = await import('../../api/routes/media.js');
+    const sources = [['curated', 'Curated talks'], ['hooper-dunbar', 'Hooper Dunbar'], ['local', 'Local recordings'], ['other', 'Other talks']];
+    const rows = [{ source: 'local', total: 408, downloaded: 70, transcribed: 66, published: 60, failed: 4 }, { source: 'curated', total: 137, downloaded: 5, transcribed: 2, published: 2, failed: 0 }];
+    const p = shapeProgress({ rows, published_6h: 30 }, sources, Date.parse('2026-10-23T00:00:00Z'));
+    expect(p).toMatchObject({ total_targets: 545, downloaded: 75, transcribed: 68, published: 62, failed: 4, items_per_hour: 5 });
+    expect(p.by_source.map((x) => x.source)).toEqual(['curated', 'local']);
+    expect(p.eta_iso).toBe(new Date(Date.parse('2026-10-23T00:00:00Z') + (479 / 5) * 3600_000).toISOString());
+    expect(shapeProgress({ rows, published_6h: 0 }, sources).eta_iso).toBeNull();
+  });
+});

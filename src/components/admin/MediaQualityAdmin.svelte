@@ -22,13 +22,14 @@
   <p class="text-muted mb-4">Each recording graded A–E per dimension on its original (before any processing). The repair list groups recordings by the fix chain they need, most urgent first (priority = (5 − grade) × speaker importance).</p>
   {#if error}<p class="text-error mb-4">{error}</p>{/if}
   {#if progress}
-    <!-- the import, by source: downloaded / in progress / published / failed (Chad 10-22: "how is the import going") -->
+    <!-- the import (the same numbers as GET /api/media/progress, shown on /media): targets → downloaded → transcribed → published -->
     <div class="mb-4 space-y-1 text-sm text-secondary">
+      <p><b class="text-primary">{progress.total_targets} talks being imported</b> · {progress.downloaded} downloaded · {progress.transcribed} transcribed ·
+        {progress.published} published{progress.failed ? ` · ${progress.failed} failed` : ''} · {progress.items_per_hour}/h
+        {#if progress.eta_iso} · done ≈ {new Date(progress.eta_iso).toLocaleDateString()}{/if}</p>
       {#each progress.by_source as p (p.source)}
-        <p><b class="text-primary">{p.source === 'youtube' ? 'YouTube' : 'Local recordings'}</b> · {p.total} targets · {p.downloaded} downloaded · {p.in_progress} in progress ·
-          {p.published} published ({Math.round(p.published_s / 360) / 10} h) · {p.waiting} waiting{p.failed ? ` · ${p.failed} failed` : ''}{p.held ? ` · ${p.held} held` : ''}</p>
+        <p class="text-muted">{p.label}: {p.published}/{p.total} published · {p.transcribed} transcribed · {p.downloaded} downloaded{p.failed ? ` · ${p.failed} failed` : ''}</p>
       {/each}
-      <p class="text-muted">Last 24 h: {progress.last_24h.published} published ({progress.last_24h.audio_hours} h of audio)</p>
     </div>
   {/if}
   {#if repairs?.counts}

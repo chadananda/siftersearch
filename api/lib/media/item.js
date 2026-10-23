@@ -421,7 +421,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, audience_intro: meta.audience?.intro || [], rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
-        state: 'done', stage: 'catalog', why: null, audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
+        state: 'done', stage: 'catalog', why: null, ...(item.published_at ? {} : { published_at: d.now() }), audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
     }
 
     } catch (err) {
