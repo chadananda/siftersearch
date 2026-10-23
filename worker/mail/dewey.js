@@ -28,7 +28,7 @@ const SIGN_TITLE = 'Librarian · SifterSearch';
 const SITE = 'https://siftersearch.com';
 const TOWER = 'https://api.siftersearch.com/api/v1/dewey-mail';
 const MAX_RAW = 25 * 1024 * 1024;
-const LOGO_BYTES = 15 * 1024;            // inline images smaller than this are signature logos, not photos of books
+export const LOGO_BYTES = 15 * 1024;            // inline images smaller than this are signature logos, not photos of books
 const lower = (s) => String(s || '').trim().toLowerCase();
 const reSubject = (s) => (/^re:/i.test(s || '') ? s : `Re: ${s || 'your letter'}`);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -205,7 +205,7 @@ async function stranger(env, settings, m) {
   return sendDewey(env, { to: m.from_addr, toName: m.from_name, subject: reSubject(m.subject), md: strangerNote(m.from_name), inReplyTo: m.message_id, threadKey: m.thread_key, kind: 'stranger' });
 }
 
-async function attachmentsOf(env, ids, withData = true) {
+export async function attachmentsOf(env, ids, withData = true) {
   const { results } = await env.ANIS_DB.prepare(`SELECT * FROM mail_attachments WHERE message_id IN (${ids.map(() => '?').join(',')}) AND status = 'stored' ORDER BY id`).bind(...ids).all();
   const out = [];
   for (const a of results) {

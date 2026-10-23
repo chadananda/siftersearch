@@ -4,6 +4,7 @@
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
+import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
 import { dropUnverified, createSentenceGate } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
@@ -356,7 +357,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
 
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
   const plan = d.plan ? await d.plan(messages).catch(() => null) : null;
-  let conversational = plan?.shape === 'converse';
+  // a pasted original or a translate / find-the-original request is never small talk (10-23 Liliane's Persian prayer)
+  let conversational = plan?.shape === 'converse' && !textRequest([...messages].reverse().find((m) => m.role === 'user')?.content).request;
 
   onEvent({ type: 'stage', stage: 'search' });
   // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the

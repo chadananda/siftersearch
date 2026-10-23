@@ -10,6 +10,7 @@
 //                   one page built, notes written (Sonnet 5.5), rendered as the email and as a structured page (audio).
 // Deps: role-client (provider clients), model-roles + registry, ai-services (usage), repos/reading-repo, docs-repo, planned-search, hit-links,
 // entity-api, perplexity, parallel-ai, config (library path). Every dependency is injectable for tests.
+import { textRequest } from './text-request.js';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { modelFor } from '../model-roles.js';
@@ -205,6 +206,10 @@ const scriptLang = (t) => (/[پچژگی]/.test(t) ? 'fa' : /[\u0600-\u06FF]/.tes
  *  rules are the fallback. Never throws. */
 export async function understandReply(text, { active = false, page = '', llm } = {}) {
   const rules = { ...readingIntent(text, { active }), language: scriptLang(String(text)) };
+  // a pasted original or a translate / find-the-original request is never a reading command or a question about the page
+  // (10-23 Liliane: her Persian prayer + "can you translate this one" went to the reading guide) — unless it names a book
+  // to start reading
+  if (rules.kind !== 'start' && textRequest(text).request) return { kind: 'none', language: rules.language, by: 'text-request' };
   if (!llm || (!active && rules.kind === 'start')) return rules;
   try {
     const r = await llm({ system: UNDERSTAND_SYSTEM, user: `READING: ${active ? page || 'a book' : 'none'}\nTHEIR MESSAGE: ${String(text).slice(0, 1500)}` });

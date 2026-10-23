@@ -2,6 +2,7 @@
 // research answer (respond.js) → output check → voice lint → complete the log with the path. Transport-neutral: the
 // widget streams onEvent, email uses the returned text. Every non-research reply costs zero LLM tokens.
 // Deps (injectable): exchange-log, triage, canned, strikes, lint, channels, respond.
+import { textRequest } from './text-request.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
 import { triageMessage, routeTriage, outputBreaksPersona } from './triage.js';
 import { cannedReply } from './canned.js';
@@ -77,6 +78,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // passage ("Find this. excerpt from a pilgrim note: …") goes to research (10-19 battery: both got a canned "say more" /
   // "part of your message went missing" instead of an answer — scored 1 against Immerse's 8)
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && hasSubstance(text)) Object.assign(route, { action: 'research', overridden: route.kind });
+  // a pasted original or a translate / find-the-original request is research whatever triage called it (10-23 Liliane: her
+  // Persian prayer + "can you translate this" was templated as small talk from a fresh address)
+  if (route.action === 'canned' && textRequest(text).request) Object.assign(route, { action: 'research', overridden: route.kind });
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms };
   const finish = async (reply, status, extra = {}) => {

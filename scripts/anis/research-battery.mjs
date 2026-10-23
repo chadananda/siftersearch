@@ -19,6 +19,7 @@ const API = process.env.SIFTER_API || 'https://api.siftersearch.com';
 const arg = (k) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : null; };
 
 const CHAMBER = 'What is the original word used for "chamber"?\n\nWhoso reciteth, in the privacy of his *chamber*, the verses revealed by God, ......\n\nKitab\'i-Aqdas\n\nP.S.\n\nI am NOT asking for translation of the word.  Only for the original word used.';
+const LILIANE_PRAYER = 'this is a translation of a prayer can you find the original for me\n\n“He is God. O Divine Providence! Render thou the friends successful, and make them confidants and intimates of Thy servitude. Make Thou their hearts luminous, and their faces merciful: so that the edifice of love and kindness may be founded in the human world, and all mankind become enthralled and enamoured with each other; that the East may embrace the West, and the Western peoples choose without hesitation the pathway of love; that the Turks may regard the Persians as confidants, and esteem them as their fellows and well-wishers; that all may in the utmost amity consort and mingle with one another; that no estrangement may remain, and there may be no mention of ‘others’; and that all may comport themselves as friends, companions, and comforters. O Divine Providence! Turn Thou this darksome night into a brilliant day, and convert this rancour and enmity among the nations into fellowship and love: so that the world of creation may find repose, and the prideful earth may obtain an ample portion of the Divine realm. Thou art the Powerful and the Mighty; and Thou art the Giver, the Refulgent, and the Seer. ‘Ayn, ‘Ayn”';
 const CASES = [
   { id: 1, kind: 'original word', messages: [{ role: 'user', content: CHAMBER }] },
   { id: 2, kind: 'language follow-up', messages: [{ role: 'user', content: CHAMBER },
@@ -34,6 +35,11 @@ const CASES = [
   { id: 8, kind: 'source of a quotation', messages: [{ role: 'user', content: 'Where does "The earth is but one country, and mankind its citizens" come from, and what is the original?' }] },
   { id: 9, kind: 'history / people', messages: [{ role: 'user', content: 'Did Ṭáhirih ever meet the Báb in person?' }] },
   { id: 10, kind: 'comparison', messages: [{ role: 'user', content: "How does the Bahá'í idea of progressive revelation compare with the Islamic idea of the seal of the prophets?" }] },
+  // Liliane's letters (10-23 reviews, planning/anis-liliane-reviews.md). `must`: what a right answer contains (checked, printed)
+  { id: 11, kind: 'examples of a word (ʿilm)', must: /علم|ʿilm/, messages: [{ role: 'user', content: "What is Irfan in the Baha'i faith?" },
+    { role: 'assistant', content: 'ʿIrfán (عرفان) is knowing by recognition; Shoghi Effendi rendered it knowledge, recognition, understanding. The writings also use ʿilm (علم), often rendered knowledge too.' },
+    { role: 'user', content: 'please give me some example of ILM in the writings' }] },
+  { id: 12, kind: 'original of an unpublished English prayer', must: /AB05355|ترک تاجیک|ترک و تاجیک/, messages: [{ role: 'user', content: LILIANE_PRAYER }] },
 ];
 
 const VARIANTS = {
@@ -126,8 +132,10 @@ async function runCase(c) {
   if (c.immerse) answers.immerse = { text: clipA(c.immerse) };
   variants.forEach((v, i) => { answers[v] = an[i]; });
   const verdict = await judge(c, answers).catch((e) => ({ error: e.message, scores: {} }));
-  console.log(`#${c.id} ${c.kind.padEnd(34)} ${Object.keys(answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}`);
-  return { ...c, answers, verdict };
+  // a case with `must` also says whether each Anís answer holds what a right answer must (e.g. the tablet's PI number)
+  const musts = c.must ? Object.fromEntries(variants.map((v) => [v, c.must.test(answers[v]?.text || '')])) : null;
+  console.log(`#${c.id} ${c.kind.padEnd(34)} ${Object.keys(answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}${musts ? `  must: ${JSON.stringify(musts)}` : ''}`);
+  return { ...c, must: c.must ? String(c.must) : undefined, musts, answers, verdict };
 }
 const out = [];
 mkdirSync(join(ROOT, 'tmp'), { recursive: true });

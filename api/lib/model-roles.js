@@ -83,6 +83,8 @@ export const MODEL_ROLES = {
     why: 'plans the research loop over the library tools (Chad 10-19: "Even Haiku 5.5 might be sufficient for planning research")' },
   'anis-writer': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'],
     why: 'battery 10-19 (10 real questions, Opus blind judge): Sonnet 5.5 writer mean 7.45, beat Perplexity 10/10; Haiku 5.5 writer 3.1 (blank/cut-off replies); old pipeline 5.0' },
+  'anis-read-attachment': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-23', needs: ['vision', 'multilingual', 'persian-arabic-script'],
+    why: 'reads a photo a reader attaches to a letter (10-23 Liliane: a Persian prayer-book page in nastaliq was dropped unread) — verbatim transcription in its own script; one call per image, rare' },
   'anis-research-brief': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['json', 'fast'],
     why: 'Anís plans a POSITION question: its themes, search phrasings and the authoritative works to search — where to look, never the answer; one call per such question' },
   'chat-light': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast'], why: 'legacy Jafar pipeline' },

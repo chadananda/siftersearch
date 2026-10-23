@@ -218,6 +218,32 @@ const inlineHtml = (s) => marked.parseInline(String(s ?? ''));
 /** Pairs → a two-column table, one row per line: the original on the right (dir=rtl, its own font, larger), the
  *  translation on the left (dir=ltr, italic, muted). Readable at 360 px as is; phones that honour the media query in
  *  emailDocument stack each pair (original over translation). Inline styles only. Pure. */
+/** Source markers (<sup>N</sup>) numbered in order of first use — 1, 2, 3 — and the key line(s) after a bilingual block
+ *  renumbered to match; a key entry no line uses is dropped (10-23 Liliane's prayer: the writer used ¹ and ³ only, copying
+ *  the instruction's example numbering). Text without markers is returned unchanged. Pure. */
+export function renumberSources(md) {
+  const src = String(md ?? '');
+  const isKey = (line) => /^\s*<sup>\d+<\/sup>/.test(line);
+  const lines = src.split('\n');
+  const order = [];
+  for (const line of lines) {
+    if (isKey(line)) continue;
+    for (const m of line.matchAll(/<sup>(\d+)<\/sup>/g)) if (!order.includes(m[1])) order.push(m[1]);
+  }
+  if (!order.length) return src;
+  const map = Object.fromEntries(order.map((n, i) => [n, String(i + 1)]));
+  if (order.every((n, i) => n === String(i + 1)) && !lines.some((l) => isKey(l) && [...l.matchAll(/<sup>(\d+)<\/sup>/g)].some((m) => !map[m[1]]))) return src;
+  return lines.map((line) => {
+    if (!isKey(line)) return line.replace(/<sup>(\d+)<\/sup>/g, (m, n) => (map[n] ? `<sup>${map[n]}</sup>` : m));
+    // a key line: "<sup>1</sup> Authorized … · <sup>3</sup> Provisional …" → entries kept for used numbers, in the new order
+    const entries = line.split(/\s+·\s+(?=<sup>)/).map((e) => ({ n: e.match(/<sup>(\d+)<\/sup>/)?.[1], e: e.trim() })).filter((x) => x.n && map[x.n]);
+    const seen = new Set();
+    return entries.sort((a, b) => Number(map[a.n]) - Number(map[b.n]))
+      .filter((x) => !seen.has(map[x.n]) && seen.add(map[x.n]))
+      .map((x) => x.e.replace(/<sup>\d+<\/sup>/, `<sup>${map[x.n]}</sup>`)).join(' · ');
+  }).filter((line, i) => !(isKey(lines[i]) && !line.trim())).join('\n');
+}
+
 export function bilingualHtml(pairs, palette = PALETTE) {
   if (!pairs.length) return '';
   const lang = rtlLang(pairs.map((p) => p.orig).join(' '));

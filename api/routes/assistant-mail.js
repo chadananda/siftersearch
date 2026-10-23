@@ -68,7 +68,9 @@ export default async function anisRoutes(fastify) {
     const { result, meter, ms } = await meterTurn(() => draftBody(b));
     return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
   }
-  async function draftBody({ messages, email = '', research = undefined, writer = null }) {
+  async function draftBody({ messages, email = '', research = undefined, writer = null, attachments = null }) {
+    // what the reader attached (photos of a page) is read and becomes part of their message (10-23 Liliane's prayer photo)
+    if (attachments?.length) messages = await (await import('../lib/assistant/attachments.js')).withAttachments(messages, attachments, { log: logger });
     const { parseLlm } = await import('../lib/assistant/respond.js');
     const llm = writer ? parseLlm(writer) : undefined;
     const { readingTurn } = await import('../lib/assistant/reading.js');
@@ -86,7 +88,7 @@ export default async function anisRoutes(fastify) {
   // A reply to an inbound email. async + job (docs/architecture/continuous-deploy.md): a research answer takes 40–120 s —
   // synchronously it died at Cloudflare's ~125 s limit (524) and at API reloads, and the mail cron recomputed it every
   // minute. As a job it returns at once; GET /draft/job/:key polls; the same key never runs twice.
-  fastify.post('/draft', async (request, reply) => {
+  fastify.post('/draft', { bodyLimit: 40 * 1024 * 1024 }, async (request, reply) => {   // attached photos ride along (base64)
     if (!internalOnly(request, reply)) return;
     const b = request.body || {};
     if (!b.messages?.length) return reply.code(400).send({ error: 'messages required' });
@@ -109,15 +111,17 @@ export default async function anisRoutes(fastify) {
   fastify.post('/outreach', async (request, reply) => {
     if (!internalOnly(request, reply)) return;
     const { messages = [], step = 0 } = request.body || {};
-    const lastQ = [...messages].reverse().find((m) => m.role === 'user')?.content?.slice(0, 600);
+    const { outreachPrompt, threadQuestion, weakLetter } = await import('../lib/assistant/outreach.js');
+    const lastQ = threadQuestion(messages)?.slice(0, 600);
     if (!lastQ) return { silent: true, reason: 'no question to follow' };
-    const { outreachPrompt } = await import('../lib/assistant/outreach.js');
     const ask = outreachPrompt(step, lastQ);
     const { anisRespond } = await import('../lib/assistant/respond.js');
     const { channelFor } = await import('../lib/assistant/channels.js');
+    // the researcher writes these too (10-23 review: the old one-search path sent "I cannot find…" letters to Liliane)
     const r = await anisRespond({ messages: [...messages.slice(-6), { role: 'user', content: ask.question }], profile: { persona_name: 'Anís' },
-      direction: { channel: channelFor('email', { trusted: true }), kind: 'research' } });
+      direction: { channel: channelFor('email', { trusted: true }), kind: 'research', research: true } });
     if (!r?.reply || !(r.retrieved?.length)) return { silent: true, reason: 'nothing found worth sending' };
+    if (weakLetter(r.reply)) return { silent: true, reason: 'the letter declined or reported a gap — silence beats a weak letter' };
     return { subject: ask.subject, opening: ask.opening, reply: r.reply, capability: ask.capability, retrieved: r.retrieved.length };
   });
 }

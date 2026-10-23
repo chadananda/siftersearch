@@ -10,7 +10,9 @@
 //   POST /_mail/zepto/events ZeptoMail webhook (Dewey's letters): bounces / complaints → mail_events + mail_suppression (zepto.js)
 //   POST /_mail/dewey/inject internal key: a raw letter to dewey@siftersearch.com stored as if delivered (dewey.js)
 //   GET|POST /_mail/dewey/pause · /_mail/dewey/approve  book requests: one-click pause; Chad's template approval (dewey.js)
-//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js), Dewey's letters (dewey.js); POST /_mail/run?job=draft|outreach|welcome|digest|dewey runs one now
+//   GET|POST /_mail/reviews · POST /_mail/reflect  reviews of letters to watched readers + one reflection per letter (reviews.js)
+//   cron → mailCron          drafting, outreach planning, daily digest (drafting.js), Dewey's letters (dewey.js), review queue
+//                            (reviews.js, hourly); POST /_mail/run?job=draft|outreach|welcome|digest|dewey|reviews runs one now
 // Nothing is sent without an explicit /_mail/send call (Chad approves Anís's replies). Deps: aws4fetch, postal-mime.
 import { AwsClient } from 'aws4fetch';
 import PostalMime from 'postal-mime';
@@ -19,8 +21,9 @@ import { composeLetter } from './letter.js';
 import { renderEmail } from '../../api/lib/mail-render.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
 import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage } from './drafting.js';
-import { deweyCron, deweyDaily, deweyLive, deweyRequests, injectInbound, pauseRequestsPage, approveRequestsPage } from './dewey.js';
+import { deweyCron, deweyDaily, deweyLive, deweyRequests, injectInbound, pauseRequestsPage, approveRequestsPage, LOGO_BYTES } from './dewey.js';
 import { zeptoEvents } from './zepto.js';
+import { reviewsRoute, queueReviews } from './reviews.js';
 
 const REGION = 'us-west-2';
 const ACCOUNT = '409305238362';
@@ -138,16 +141,36 @@ async function inbound(request, env) {
   const spam = body.receipt?.spamVerdict?.status, virus = body.receipt?.virusVerdict?.status;
   const status = inboundStatus({ spam, virus, headers: mail.headers, from: mail.from?.address, subject: mail.subject, text: mail.text });
   const mailbox = act.objectKey.startsWith('newsletter/') ? 'newsletter' : 'anis';
-  await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_messages (mailbox, direction, status, ses_message_id, message_id, in_reply_to, thread_key,
+  const row = await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_messages (mailbox, direction, status, ses_message_id, message_id, in_reply_to, thread_key,
       from_addr, from_name, to_addr, subject, text, html, s3_key, spam_verdict, virus_verdict)
-    VALUES (?, 'in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(mailbox, status, body.mail?.messageId ?? null, mail.messageId ?? null,
+    VALUES (?, 'in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`).bind(mailbox, status, body.mail?.messageId ?? null, mail.messageId ?? null,
     mail.inReplyTo ?? null, await adoptThread(env.ANIS_DB, mail), lower(mail.from?.address), mail.from?.name ?? null,
     (mail.to || []).map((t) => lower(t.address)).join(', '), mail.subject ?? '', mail.text ?? '', mail.html ?? null,
-    act.objectKey, spam ?? null, virus ?? null).run();
+    act.objectKey, spam ?? null, virus ?? null).first();
+  if (row?.id && mailbox === 'anis' && status === 'new') await keepAttachments(env, row.id, mail.attachments);
   if (mailbox === 'anis' && status === 'unsubscribe' && mail.from?.address) {     // "stop writing to me" ends outreach
     await env.ANIS_DB.prepare(`INSERT OR IGNORE INTO mail_stop (email_hash, reason) VALUES (?, 'asked by email')`).bind(await emailHash(mail.from.address)).run();
   }
   return json({ stored: true, status });
+}
+
+/** A reader's attachments (Anís mail): images and PDFs go to R2 (anis-mail/<id>/…) + mail_attachments, so the draft reads
+ *  them (10-23 Liliane's photo of a Persian prayer was dropped here and Anís answered "the picture hasn't reached me").
+ *  Inline logos / signature images (< LOGO_BYTES) are skipped; other files are recorded, not stored. */
+export async function keepAttachments(env, messageId, attachments = []) {
+  let n = 0;
+  for (const a of attachments || []) {
+    const bytes = a.content instanceof ArrayBuffer ? new Uint8Array(a.content) : typeof a.content === 'string' ? new TextEncoder().encode(a.content) : a.content;
+    const size = bytes?.byteLength ?? 0, type = a.mimeType || 'application/octet-stream';
+    const name = String(a.filename || `attachment-${n + 1}`).replace(/[/\\]/g, '_').slice(0, 200);
+    const wanted = (/^image\//i.test(type) && size >= LOGO_BYTES) || /pdf/i.test(type);
+    const key = wanted && env.MEDIA_BUCKET && size <= 20 * 1024 * 1024 ? `anis-mail/${messageId}/${n}-${name.replace(/[^\w.() -]/g, '_')}` : null;
+    if (key) await env.MEDIA_BUCKET.put(key, bytes, { httpMetadata: { contentType: type } });
+    await env.ANIS_DB.prepare(`INSERT INTO mail_attachments (message_id, name, content_type, size, r2_key, status) VALUES (?, ?, ?, ?, ?, ?)`)
+      .bind(messageId, name, type, size, key, key ? 'stored' : 'skipped').run();
+    n += 1;
+  }
+  return n;
 }
 
 async function events(request, env) {
@@ -308,6 +331,7 @@ export function mailRoute(request, env) {
   if (request.method === 'POST' && p === '/_mail/dewey/inject') return injectInbound(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/dewey/pause') return pauseRequestsPage(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/dewey/approve') return approveRequestsPage(request, env);
+  if (p === '/_mail/reviews' || p === '/_mail/reflect') return reviewsRoute(request, env);   // reviews + reflections (reviews.js)
   return null;
 }
 
@@ -336,8 +360,8 @@ async function adoptThread(db, mail) {
 async function runJob(request, env) {
   if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
   const job = new URL(request.url).searchParams.get('job');
-  const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest, dewey: deweyCron, 'dewey-live': deweyLive, 'dewey-requests': deweyRequests }[job];
-  if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest | dewey | dewey-live | dewey-requests' }, 400);
+  const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest, dewey: deweyCron, 'dewey-live': deweyLive, 'dewey-requests': deweyRequests, reviews: queueReviews }[job];
+  if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest | dewey | dewey-live | dewey-requests | reviews' }, 400);
   const r = await fn(env);
   return json({ ran: job, ...(r && typeof r === 'object' ? r : {}) });
 }
@@ -345,7 +369,7 @@ async function runJob(request, env) {
 /** Cron (wrangler.jsonc triggers): drafts every MINUTE (Chad 10-13: read, reply, get the next page right away), outreach hourly, the conversation digest daily at 14:00 UTC (07:00 MST, Chad). */
 export async function mailCron(cron, env) {
   if (cron === '0 14 * * *') return dailyDigest(env);
-  if (cron === '0 * * * *') return Promise.all([planOutreach(env), deweyDaily(env).catch(() => null)]);   // Dewey's daily work at its hour
+  if (cron === '0 * * * *') return Promise.all([planOutreach(env), deweyDaily(env).catch(() => null), queueReviews(env).catch(() => null)]);   // Dewey's daily work at its hour
   // * * * * * (also fires at :00 — each cron has one job, so nothing runs twice); Dewey's letters every minute beside Anís's
   return Promise.all([draftReplies(env), deweyCron(env).catch(() => null)]);
 }

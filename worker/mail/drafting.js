@@ -11,8 +11,9 @@ import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody, composeLet
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
 import { conversationDigest, chatReplyHtml, embeddable } from './conversation-digest.js';
-import { approveUrl } from './dewey.js';
-import { emailDocument } from '../../api/lib/mail-render.js';
+import { approveUrl, attachmentsOf } from './dewey.js';
+import { reflectionDigest } from './reviews.js';
+import { emailDocument, renumberSources } from '../../api/lib/mail-render.js';
 import { pauseToken } from './rules.js';
 
 const TOWER = 'https://api.siftersearch.com/api/v1/anis';
@@ -23,7 +24,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 /** The draft as the reader will see it (signature included; the pause footer is added at send). */
 export const toHtml = (md) => wrapHtml(`${bodyHtml(stripSignOff(md))}${signatureHtml()}`);
 /** Tidy a letter from the research pipeline: footnote markers copied from passages ("[^14]") never reach a reader. */
-export const tidy = (t) => String(t || '').replace(/\[\^\d+\]/g, '').replace(/[ \t]+\n/g, '\n');
+export const tidy = (t) => renumberSources(String(t || '').replace(/\[\^\d+\]/g, '').replace(/[ \t]+\n/g, '\n'));
 const reSubject = (s) => (/^re:/i.test(s || '') ? s : `Re: ${s || 'your message'}`);
 // A reply stays in the reader's thread: Gmail starts a NEW thread when the subject changes, so a reading page sent under its
 // own "[📖 Reading] …" subject looked like no answer at all (10-13 — it sat unread in a separate thread). Only a reply that
@@ -80,7 +81,10 @@ export async function draftJob(env, db, m, { call = tower } = {}) {
     }
     await db.prepare('UPDATE mail_messages SET error = ? WHERE id = ?').bind(`attempt ${attempts + 1}${j.error ? `: ${j.error}` : ''}`.slice(0, 300), m.id).run();
   }
-  await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr });
+  // what the reader attached to THIS letter (photos of a page) goes along, read on tower (10-23: Liliane's photo was dropped)
+  const attachments = env.MEDIA_BUCKET ? await attachmentsOf(env, [m.id]).catch(() => []) : [];
+  await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr,
+    ...(attachments.length ? { attachments } : {}) });
   return null;
 }
 
@@ -323,6 +327,7 @@ export async function dailyDigest(env) {
     `Sent / blocked: ${fmt(count(out, 'status'))}`, ...out.filter((o) => o.status === 'blocked' || o.status === 'failed').map((o) => `  • ${o.status} ${o.kind} to ${o.to_addr}: ${o.error}`),
     `Delivery events: ${fmt(Object.fromEntries(events.map((e) => [e.event_type, e.n])))}`, ...bad.map((b) => `  • ${b.event_type}: ${b.recipient}`),
     `New pauses/stops: ${fmt(Object.fromEntries(stops.map((s) => [s.reason, s.n])))}`,
+    ...(await reflectionDigest(db).catch(() => [])),
     ...(ignored.length ? [`Ignored senders: ${ignored.map((i) => `${i.pattern} (${i.hits} total)`).join(', ')}`] : []),
   ].join('\n');
   const mailHtml = `<pre style="font:13px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;color:#444">${esc(text).replace(/(https:\/\/siftersearch\.com\/_mail\/review\?t=[\w.]+)/g, '<a href="$1">review</a>')}</pre>`;
