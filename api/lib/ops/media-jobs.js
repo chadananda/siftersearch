@@ -777,7 +777,8 @@ export async function mediaTrimAuditJob({ write = false, ids = null } = {}, deps
     out.buckets[b]++;
     out.lead_min += lead / 60; out.tail_min += tail / 60; out.gaps += plan.gaps.length;
     rows.push({ slug: it.slug, lead_s: Math.round(lead * 10) / 10, tail_s: Math.round(tail * 10) / 10, gaps: plan.gaps.length, first_word_s: plan.lead_s });
-    if (!(lead > 0 || tail > 0 || plan.gaps.length)) continue;
+    // the backfill re-encodes only where the LEADING silence is ≥ 5 s (Chad 10-23); new talks get the full trim in the pipeline
+    if (!(lead > 0)) continue;
     out.to_trim++;
     if (!write) continue;
     if (busy.has(it.id)) { out.skipped_busy.push(it.slug); continue; }
