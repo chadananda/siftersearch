@@ -195,9 +195,17 @@ export function libraryTools({ search }) {
       const { hybridSearch } = await import('../search.js');
       const out = [], seen = new Set();
       const push = (p) => { if (p?.text && !seen.has(p.id ?? p.text)) { seen.add(p.id ?? p.text); out.push(p); } };
-      for (const v of letterVariants(original)) {
-        const r = await pl.findOriginals(v, { limit: 5, semantic: false, search: hybridSearch }).catch(() => null);
-        for (const m of (r?.matches || []).filter((x) => x.overlap >= 0.5 && /[\u0600-\u06FF]/.test(x.passage?.text || ''))) {
+      // 10-23 Liliane: a whole prayer typed from a scan (lines shuffled) or transcribed from a photo (page lines, a […] gap)
+      // matched nothing as one block, though Phelps' AB05355 was in the library — so: the whole text verbatim, then each
+      // line on its own, then by meaning; a candidate must still share half its word-grams with what the reader gave
+      const lines = [...new Set(String(original).split(/\n+|[.!؟?:]\s+/).map((l) => l.replace(/\[…\]|\[\.\.\.\]/g, ' ').trim())
+        .filter((l) => (l.match(/[\u0600-\u06FF]{2,}/g) || []).length >= 5))].slice(0, 6);
+      const tries = [...letterVariants(original).map((v) => ({ v, semantic: false })), ...lines.flatMap((l) => letterVariants(l).slice(0, 2).map((v) => ({ v, semantic: false, line: true }))),
+        { v: original, semantic: true }];
+      for (const { v, semantic, line } of tries) {
+        const r = await pl.findOriginals(v, { limit: 5, semantic, search: hybridSearch }).catch(() => null);
+        const fit = (x) => (line ? Math.max(x.overlap, (pl.overlap?.(original, x.passage?.text || '') ?? 0)) : x.overlap);
+        for (const m of (r?.matches || []).filter((x) => fit(x) >= 0.5 && /[\u0600-\u06FF]/.test(x.passage?.text || ''))) {
           push(shape(m.passage));
           for (const t of m.links?.translations || []) push({ ...shape(t), translation: translationLabel(t.translated_by, null) });
           if (m.passage.english?.text) push({ ...shape(m.passage), id: `${m.passage.id}-en`, text: m.passage.english.text, language: 'en',
