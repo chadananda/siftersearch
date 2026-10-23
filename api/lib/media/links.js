@@ -2,7 +2,7 @@
 // /biography/<id> page"; "when books are mentioned, link the text to the book in OceanLibrary"). The copy-edit pass already
 // returns MENTIONS (the words as spoken, kind person|work, the model's canonical name/title, a section if one is named, a
 // confidence). Here each is resolved through our own layers — people against the biography set (names + aliases, then the
-// words decide — no lookup fallback, no Covenant-breakers), works through the document finder by title variants (Dewey's rules) and the section index —
+// words decide — no lookup fallback; ambiguous words link to no one), works through the document finder by title variants (Dewey's rules) and the section index —
 // and linked only on a confident, unambiguous resolution, the FIRST mention per section (subheader) only. The mention
 // text itself is the anchor. Pure; lookups injected.
 import { keyOf } from './vocab.js';
@@ -23,26 +23,25 @@ export function firstPerSection(mentions, headings = []) {
   });
 }
 
-// PERSON LINKS (QA audit 10-22: 16 of 17 links made by the identity-lookup fallback were wrong — "Dr. Ḥakím" → Khayru'lláh, a
-// Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's guess "Muḥammad-‘Alí" = Quddús): the SPOKEN WORDS decide. A person
-// is linked only when the mention text is one person's name or alias, or a contiguous part of exactly one person's name or
-// alias; the model's canonical name only chooses among those; no lookup fallback; a Covenant-breaker is never linked.
+// PERSON LINKS (QA audit 10-22: 16 of 17 links made by the identity-lookup fallback were wrong — "Dr. Ḥakím" → Khayru'lláh;
+// Leroy Ioas → Laura Barney ×5; the model's guess "Muḥammad-‘Alí" = Quddús): the SPOKEN WORDS decide. A person is linked only
+// when the mention text is one person's name or alias, or a contiguous part of exactly one person's name or alias; words
+// that more than one person carries link to no one; the model's canonical name only chooses among those; no lookup
+// fallback. Covenant-breakers are linked like anyone else when the words are unambiguously them (Chad 10-23: "we should
+// link to them accurately").
 const TITLE_WORDS = /^(?:the|dr|doctor|mr|mrs|miss|ms|prof|jinab|jinabi|hand|of|cause|god|counsellor|amatul|baha)$/;
 const toks = (s) => String(s || '').replace(/\([^)]*\)/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[‘’'ʻ`]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-const covenantBreaker = (p) => /covenant.?breaker|arch.?breaker/i.test(`${p.side || ''} ${p.summary || ''} ${(Array.isArray(p.aliases) ? p.aliases : [p.aliases]).join(' ')}`);
 const namesOf = (p) => { let al = p.aliases; if (typeof al === 'string') { try { al = JSON.parse(al); } catch { al = []; } } return [p.name, ...(Array.isArray(al) ? al : [])].filter((n) => typeof n === 'string' && n.trim()); };
 
-/** The biography set as a name index (Covenant-breakers left out): exact name/alias keys → ids, and token lists for parts. */
+/** The biography set as a name index: exact name/alias keys → ids, and token lists for parts. */
 export function bioIndex(bio = []) {
-  const idx = new Map(), entries = [], cbEntries = [];
-  const people = bio.filter((p) => !covenantBreaker(p));
-  for (const p of bio.filter(covenantBreaker)) for (const n of namesOf(p)) cbEntries.push({ id: p.id, toks: toks(n), key: keyOf(n) });
-  for (const p of people) for (const n of namesOf(p)) {
+  const idx = new Map(), entries = [];
+  for (const p of bio) for (const n of namesOf(p)) {
     const k = keyOf(n); if (k.length >= 3) { if (!idx.has(k)) idx.set(k, new Set()); idx.get(k).add(p.id); }
     entries.push({ id: p.id, toks: toks(n) });
   }
-  return { idx, entries, cbEntries, byId: new Map(people.map((p) => [p.id, p])), excluded: bio.length - people.length };
+  return { idx, entries, byId: new Map(bio.map((p) => [p.id, p])) };
 }
 /** The people whose name or alias is, or contains as a contiguous run, the mention's words (titles dropped). */
 export function candidatesFor(index, text) {
@@ -59,10 +58,6 @@ export function candidatesFor(index, text) {
 
 /** A person mention → { entity_id, name, basis } or { why }. */
 export async function resolvePerson(m, { index }) {
-  // words that also name a Covenant-breaker are never linked to anyone ("Muḥammad-‘Alí" in a talk about the Covenant)
-  const want = toks(m.text).filter((t) => !TITLE_WORDS.test(t));
-  const fitsCb = (index.cbEntries || []).some((e) => e.key === keyOf(m.text) || (want.length && e.toks.some((_, i) => want.every((w, k) => e.toks[i + k] === w))));
-  if (fitsCb || /covenant.?breaker/i.test(m.canonical || '')) return { why: 'the words also name a Covenant-breaker' };
   const cands = candidatesFor(index, m.text);
   if (!cands.length) return { why: 'no biography page for these words' };
   if (cands.length === 1) return { entity_id: cands[0], name: index.byId.get(cands[0])?.name, basis: 'name' };

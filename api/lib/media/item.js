@@ -19,6 +19,7 @@ import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
 import { classifyScreen, screenEnabled, singleTurns } from './spkscreen.js';
+import { cbPerson, cbVerdict } from './cb-date.js';
 import { decide } from './exclusions.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
 
@@ -43,6 +44,13 @@ export async function towerLight(fn) {
   if (lightBusy >= LIGHT_SLOTS) await new Promise((r) => lightWait.push(r));
   lightBusy++;
   try { return await fn(); } finally { lightBusy--; lightWait.shift()?.(); }
+}
+
+// the speaker people (data/media-speaker-people.json), read once per process (the cb-date check)
+let peopleMemo = null;
+async function cbPeople() {
+  if (!peopleMemo) peopleMemo = (await import('../ops/media-jobs.js')).loadSpeakerPeople().catch(() => []);
+  return peopleMemo;
 }
 
 // the speaker PRESCREEN on tower: ~35 s wall / 70 s CPU at 2 threads for an hour of audio, two at a time
@@ -151,6 +159,16 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (ex) {
       await repo.updateMediaItem(item.id, { state: 'excluded', why: ex.reason });
       return { excluded: true, reason: ex.reason, slug: meta.slug, done };
+    }
+    // a Covenant-breaker BY DATE (cb-date.js; Chad 10-23): before the break → as normal; on or after → excluded; undated → held
+    const cbp = cbPerson(meta.speaker || item.speaker, await cbPeople());
+    if (cbp) {
+      const v = cbVerdict(cbp.cb_from, meta.date || meta.year || item.year || null);
+      if (v !== 'include') {
+        const why = v === 'exclude' ? `covenant-breaker: recorded on or after ${cbp.cb_from} (${cbp.name})` : `review: ${cbp.name} talk with no recording date before/after ${cbp.cb_from} — Chad decides`;
+        await repo.updateMediaItem(item.id, { state: v === 'exclude' ? 'excluded' : 'review', why });
+        return { [v === 'exclude' ? 'excluded' : 'held']: true, reason: why, slug: meta.slug, done };
+      }
     }
     const t0 = Date.now();
     // a published talk stays published while later stages (or a re-run) work on it

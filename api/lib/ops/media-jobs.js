@@ -831,6 +831,32 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
   return out;
 }
 
+/** media-relink { write, ids?, why? }: published talks whose links.json refused person mentions for a reason that no longer
+ *  holds (default: the retired Covenant-breaker guard — Chad 10-23 "we should link to them accurately"; it also refused
+ *  'the Guardian' and '‘Abdu’l-Bahá') → a ['links', 'update'] re-run (stored mentions re-resolved, no model call; busy talks
+ *  skipped). → counts */
+export async function mediaRelinkJob({ write = false, ids = null, why = 'Covenant-breaker' } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const read = deps.readLinks || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'links.json'), 'utf8')));
+  const busy = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { talks: 0, affected: 0, mentions: 0, queued: 0, skipped_busy: 0 };
+  for (const id of ids || await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    out.talks++;
+    const l = await read(it.dir).catch(() => null);
+    const n = (l?.unresolved || []).filter((u) => u.kind === 'person' && String(u.why || '').includes(why)).length;
+    if (!n) continue;
+    out.affected++; out.mentions += n;
+    if (!write) continue;
+    if (busy.has(it.id)) { out.skipped_busy++; continue; }
+    await queue('media-item', { id: it.id, redo: ['links', 'update'] }, 'media-relink'); out.queued++;
+  }
+  return out;
+}
+
 /** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from
  *  its words + waveform). write: an ['trim', 'update'] re-run where the lead or tail is ≥ 5 s or a gap is marked (busy
  *  talks skipped). → the distribution (talks, minutes trimmed, the longest leads) */
