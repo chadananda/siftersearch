@@ -78,17 +78,47 @@ def cmd_metrics(a):
     }))
 
 
+GPU_NEED_GB = {'transcribe': 3.5, 'probe': 2.0, 'langid': 2.0, 'grade': 1.0, 'dfn': 1.0}
+_device = None
+
+
 def device():
     """('cuda', 'float16') on a CUDA host (aorus), else ('cpu', 'int8'). MEDIA_DEVICE=cpu forces the CPU; tower hides its GPU
-    (CUDA_VISIBLE_DEVICES='') so its runs stay on the CPU budget."""
-    if os.environ.get('MEDIA_DEVICE', '') != 'cpu':
-        try:
-            import torch
-            if torch.cuda.is_available():
-                return 'cuda', 'float16'
-        except Exception:
-            pass
-    return 'cpu', 'int8'
+    (CUDA_VISIBLE_DEVICES='') so its runs stay on the CPU budget. The card is SHARED (two transcriptions, probes, grades,
+    DeepFilterNet on 8 GB; 10-22 they ran it out of memory): a job WAITS (up to 20 min) under a lock until the card has
+    the memory its kind needs free, then holds the lock 30 s while its model loads, so two jobs never both see the same
+    free memory. Decided once per process."""
+    global _device
+    if _device:
+        return _device
+    _device = ('cpu', 'int8')
+    if os.environ.get('MEDIA_DEVICE', '') == 'cpu':
+        return _device
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return _device
+    except Exception:
+        return _device
+    import fcntl, threading
+    need = float(os.environ.get('MEDIA_GPU_NEED_GB') or 1.0) * 2 ** 30
+    lock = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.gpu.lock'), 'w')
+    t0 = time.time()
+    while True:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        free = torch.cuda.mem_get_info()[0]
+        if free >= need:
+            _device = ('cuda', 'float16')
+            t = threading.Timer(30, lambda: (fcntl.flock(lock, fcntl.LOCK_UN), lock.close()))
+            t.daemon = True   # never holds the process open
+            t.start()
+            return _device
+        fcntl.flock(lock, fcntl.LOCK_UN)
+        if time.time() - t0 > 1200:
+            print(f'GPU busy for 20 min ({free / 2 ** 30:.1f} GB free) — on the CPU', file=sys.stderr)
+            lock.close()
+            return _device
+        time.sleep(5)
 
 
 def whisper_model(name, threads):
@@ -439,6 +469,7 @@ def main():
         s.add_argument('--emb', default='')
         s.add_argument('--emit-turns', action='store_true')
     a = p.parse_args()
+    os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))
     fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels}[a.cmd]
     try:
         fn(a)
@@ -453,7 +484,9 @@ def main():
             torch.cuda.empty_cache()
         except Exception:
             pass
+        global _device
         os.environ['MEDIA_DEVICE'] = 'cpu'
+        _device = None
         fn(a)
 
 
