@@ -136,3 +136,29 @@ describe('findQuotations reads its chunks at once', async () => {
     expect(peak).toBe(4);
   });
 });
+
+describe('the adaptive per-provider gate (10-23: 12 workers × 4 chunks)', async () => {
+  const { AdaptiveGate, askModel } = await import('../../api/lib/media/llm.js');
+  it('never more calls in flight than the limit; a 429 halves it and the call is retried', async () => {
+    const gate = new AdaptiveGate({ start: 4, min: 2, max: 4 });
+    let live = 0, peak = 0, n = 0;
+    const create = async () => {
+      live++; peak = Math.max(peak, live); const me = ++n;
+      await new Promise((r) => setTimeout(r, 5));
+      live--;
+      if (me === 3) { const e = new Error('429 Too Many Requests: rate_limit_error'); e.status = 429; throw e; }
+      return { choices: [{ message: { content: '{"ok":true}' } }], usage: {} };
+    };
+    const outs = await Promise.all(Array.from({ length: 12 }, () => askModel('media-quotes', 'x', { create, gate, sleep: async () => {} })));
+    expect(outs.every((o) => o?.ok)).toBe(true);
+    expect(peak).toBeLessThanOrEqual(4);
+    expect(gate.limited).toBe(1);
+    expect(gate.limit).toBeGreaterThanOrEqual(2);
+    expect(gate.live).toBe(0);
+  });
+  it('successes raise the limit again, up to max', () => {
+    const g = new AdaptiveGate({ start: 2, max: 3 });
+    for (let i = 0; i < 20; i++) g.success();
+    expect(g.limit).toBe(3);
+  });
+});

@@ -29,18 +29,51 @@ export async function mapPool(items, n, fn) {
   return out;
 }
 
-async function ask(role, prompt, { create = roleCreate, max = 6000, spend, retryMs = [5000, 20000] } = {}) {
+// ── ONE ADAPTIVE GATE PER PROVIDER + MODEL (10-23: 12 LLM workers × 4 chunks each must not become a rate-limit storm) ──
+// AIMD: a 429 / rate-limit halves the gate's limit (≥ 2) and the call waits (retry-after, else 5 s × 2^n, ≤ 60 s) and tries
+// again; every `limit` successes in a row raise it by one (≤ max). All media workers in this process share the gates.
+const RATE = /\b429\b|rate.?limit|too many requests/i;
+export class AdaptiveGate {
+  constructor({ start = 16, min = 2, max = 48 } = {}) { Object.assign(this, { limit: start, min, max, live: 0, ok: 0, waiters: [], limited: 0 }); }
+  async acquire() { while (this.live >= this.limit) await new Promise((r) => this.waiters.push(r)); this.live++; }
+  release() { this.live--; while (this.waiters.length && this.live < this.limit) this.waiters.shift()(); }
+  success() { if (++this.ok >= this.limit) { this.ok = 0; if (this.limit < this.max) { this.limit++; this.waiters.shift()?.(); } } }
+  rateLimited() { this.ok = 0; this.limited++; this.limit = Math.max(this.min, Math.floor(this.limit / 2)); }
+}
+const gates = new Map();
+export const gateFor = (role) => {
+  let key = role;
+  try { const m = modelFor(role); key = `${m.provider}:${m.model}`; } catch { /* unknown role: its own gate */ }
+  if (!gates.has(key)) gates.set(key, new AdaptiveGate({ start: Number(process.env.MEDIA_LLM_GATE_START) || 16, max: Number(process.env.MEDIA_LLM_GATE_MAX) || 48 }));
+  return gates.get(key);
+};
+export const gateStats = () => Object.fromEntries([...gates].map(([k, g]) => [k, { limit: g.limit, live: g.live, waiting: g.waiters.length, rate_limited: g.limited }]));
+
+async function ask(role, prompt, { create = roleCreate, max = 6000, spend, retryMs = [5000, 20000], gate = gateFor(role), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   let res;
-  for (let k = 0; ; k++) {
-    try { res = await create(role, { max_tokens: max, messages: [{ role: 'user', content: prompt }] }); break; } catch (err) {
-      if (k >= retryMs.length || !TRANSIENT.test(`${err?.message} ${err?.status ?? ''}`)) throw err;
-      await new Promise((r) => setTimeout(r, retryMs[k]));
+  for (let k = 0, rl = 0; ; k++) {
+    await gate.acquire();
+    try { res = await create(role, { max_tokens: max, messages: [{ role: 'user', content: prompt }] }); gate.success(); break; } catch (err) {
+      const msg = `${err?.message} ${err?.status ?? ''}`;
+      if (RATE.test(msg) && rl < 6) {
+        gate.rateLimited();
+        const after = Number(err?.headers?.['retry-after'] ?? err?.response?.headers?.get?.('retry-after')) || 0;
+        gate.release();
+        await sleep(Math.min(60_000, after ? after * 1000 : 5000 * 2 ** rl));
+        rl++; k--; continue;
+      }
+      if (k >= retryMs.length || !TRANSIENT.test(msg)) { gate.release(); throw err; }
+      gate.release();
+      await sleep(retryMs[k]);
     }
   }
+  gate.release();   // the successful call's slot
   const usd = costOf(role, res?.usage);
   if (spend) { spend.usd = (spend.usd || 0) + usd; spend.calls = (spend.calls || 0) + 1; spend.in = (spend.in || 0) + (res?.usage?.prompt_tokens || 0); spend.out = (spend.out || 0) + (res?.usage?.completion_tokens || 0); }
   return jsonOf(res?.choices?.[0]?.message?.content);
 }
+
+export { ask as askModel };   // (tests)
 
 /** Before transcription: clean name hints from the path + file tags (the slug comes from these). */
 export async function nameItem({ rel, tags = {}, hints = {}, duration }, opts = {}) {

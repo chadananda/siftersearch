@@ -141,6 +141,7 @@ export async function liveHealth(pipelineHealth, runningRuns) {
   const h = await pipelineHealth();
   const runs = await runningRuns(['media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-item']);
   const n = (name) => runs.filter((r) => r.name === name).length;
+  // (the LLM gates live in the media service, not here: their state is in its log — 'llm gates' every feed pass)
   return { ...h, compute_running: n('media-compute'), asr_running: n('media-asr'), diar_running: n('media-diar'), llm_running: n('media-llm') + n('media-item') };
 }
 
