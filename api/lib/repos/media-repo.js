@@ -48,20 +48,20 @@ export async function releaseHeldYoutube(hours) {
 }
 
 /** Items still to process (queued, or interrupted while running), oldest first. */
-export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY COALESCE(queue_rank, 9000000), id LIMIT ?`, [limit], 'media:pending')).map(parse);
+export const pendingMedia = async (limit = 10) => (await queryAll(`SELECT * FROM media_items WHERE state IN ('queued', 'running') ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:pending')).map(parse);
 /** The next items to PROCESS, by rank: queued, and (a YouTube item) already downloaded — downloads have their own lane. */
 export const nextToProcess = async (limit = 3) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND (source_kind != 'youtube' OR dir IS NOT NULL)
-  ORDER BY COALESCE(queue_rank, 9000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
+  ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
 /** The next YouTube items to DOWNLOAD, by rank (queued, not yet in the archive). */
 export const nextToDownload = async (limit = 5) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND source_kind = 'youtube' AND dir IS NULL
-  ORDER BY COALESCE(queue_rank, 9000000), id LIMIT ?`, [limit], 'media:next-download')).map(parse);
+  ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next-download')).map(parse);
 /** Set queue ranks: rows [{ id, rank }] (one transaction). */
 export async function setQueueRanks(rows = []) {
   for (let i = 0; i < rows.length; i += 500) await transaction(rows.slice(i, i + 500).map((r) => ({ sql: 'UPDATE media_items SET queue_rank = ? WHERE id = ?', args: [r.rank, r.id] })), 'media:ranks');
   return rows.length;
 }
 /** Every item's id, source and identity (for ranking). */
-export const rankRows = async () => queryAll(`SELECT id, source_kind, youtube_id, speaker, year, state FROM media_items WHERE state NOT IN ('duplicate')`, [], 'media:rank-rows');
+export const rankRows = async () => queryAll(`SELECT id, source_kind, source_ref, youtube_id, speaker, year, collection, title, state FROM media_items WHERE state NOT IN ('duplicate')`, [], 'media:rank-rows');
 /** Progress by source: downloaded (in the archive) / published / failed / held / waiting. */
 export const progressCounts = async () => queryAll(`SELECT source_kind source, COUNT(*) total,
   SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
@@ -86,12 +86,12 @@ export async function retryTransientFailures({ olderThanMin = 30, max = 2 } = {}
 }
 // the import's SOURCES, from the queue rank (media-rank): the curated sheet · Hooper Dunbar · other Hands/UHJ on YouTube · local
 // recordings (Hands/UHJ first) · other YouTube
-export const SOURCES = [['curated', 'Curated talks', 1000, 2000], ['hooper-dunbar', 'Hooper Dunbar', 2000, 3000], ['hands-uhj', 'Hands of the Cause & House of Justice', 3000, 4000],
-  ['local', 'Local recordings', 4000, 6000], ['other', 'Other talks', 6000, 9000001]];
+export const SOURCES = [['historic', 'Historic recordings', 1e7, 2e7], ['hands', 'Hands of the Cause', 2e7, 3e7], ['uhj', 'Universal House of Justice', 3e7, 4e7],
+  ['historic-speakers', 'Other historic speakers', 4e7, 5e7], ['scholars', 'Modern scholars', 5e7, 1e9]];
 const LATER = "'correct','clean','describe','headings','quotes','links','assess','thumb','render','ingest','catalog'";
 /** The import, by source: one group-by over the catalogue (≈1,300 rows, indexed). */
 export async function importProgress() {
-  const bucket = `CASE ${SOURCES.map(([k, , lo, hi]) => `WHEN COALESCE(queue_rank, 9000000) >= ${lo} AND COALESCE(queue_rank, 9000000) < ${hi} THEN '${k}'`).join(' ')} ELSE 'other' END`;
+  const bucket = `CASE ${SOURCES.map(([k, , lo, hi]) => `WHEN COALESCE(queue_rank, 900000000) >= ${lo} AND COALESCE(queue_rank, 900000000) < ${hi} THEN '${k}'`).join(' ')} ELSE 'scholars' END`;
   const rows = await queryAll(`SELECT ${bucket} source, COUNT(*) total, SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded,
     SUM(CASE WHEN state = 'done' OR stage IN (${LATER}) THEN 1 ELSE 0 END) transcribed, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
     SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed,

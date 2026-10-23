@@ -4,13 +4,21 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(async () => null), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
 import { rankFor, mediaFetchJob, mediaFeedPass } from '../../api/lib/ops/media-jobs.js';
 
-describe('queue order', () => {
-  it('curated sheet → Hooper Dunbar → other Hands/UHJ (YouTube) → local Hands/UHJ → local others', async () => {
-    const yt = new Map([['a', { tier: '1-curated', i: 3 }], ['b', { tier: '2-single:Hooper C Dunbar - Talks', i: 140 }], ['c', { tier: '3-other', i: 500 }]]);
-    const r = async (row, role = null) => rankFor(row, yt, role);
-    const ranks = [await r({ source_kind: 'youtube', youtube_id: 'a' }), await r({ source_kind: 'youtube', youtube_id: 'b' }), await r({ source_kind: 'youtube', youtube_id: 'c' }),
-      await r({ source_kind: 'file', id: 7 }, 'hand'), await r({ source_kind: 'file', id: 7 }), await r({ source_kind: 'youtube', youtube_id: 'zz', id: 9 })];
-    expect([...ranks].sort((x, y) => x - y)).toEqual(ranks);
+describe('queue order (Chad 10-22: "first please focus on the historical materials")', () => {
+  it('historic recordings → Hands of the Cause → House of Justice → other historic speakers → modern scholars', async () => {
+    const { tierOf } = await import('../../api/lib/ops/media-jobs.js');
+    expect(tierOf({ source_kind: 'file', collection: 'Historic Recordings', path: "Baha'i/talks/historic-recordings/x.mp3" })).toBe(1);
+    expect(tierOf({ source_kind: 'youtube', speaker: 'Martha Root', ytRole: 'Hand of the Cause' })).toBe(1);
+    expect(tierOf({ source_kind: 'youtube', speaker: 'William Sears', ytRole: 'Hand of the Cause' })).toBe(2);
+    expect(tierOf({ source_kind: 'file', speaker: 'Furútan', role: 'hand' })).toBe(2);
+    expect(tierOf({ source_kind: 'youtube', speaker: 'Hooper Dunbar', ytRole: 'UHJ member' })).toBe(3);
+    expect(tierOf({ source_kind: 'file', speaker: 'Earl', role: null })).toBe(4);
+    expect(tierOf({ source_kind: 'youtube', speaker: 'Steven Phelps', ytRole: 'scholar' })).toBe(5);
+  });
+  it('oldest first within a tier', async () => {
+    const { rankOf } = await import('../../api/lib/ops/media-jobs.js');
+    expect(rankOf(2, 1957, 9)).toBeLessThan(rankOf(2, 1985, 1));
+    expect(rankOf(2, 9999, 1)).toBeLessThan(rankOf(3, 1950, 1));
   });
 });
 
@@ -76,25 +84,26 @@ describe('live steps and sources', () => {
       ['cleanup', 'pending'], ['faithfulness', 'pending'], ['publish', 'pending'], ['subheaders', 'pending'], ['crossref', 'pending'], ['links', 'pending'], ['assess', 'pending'], ['moments', 'pending']]);
     expect(st[2].ms).toBe(1500);
     expect(stepsOf({}, 'archive', 'failed')[0].state).toBe('failed');
-    expect([1005, 2100, 3950, 4100, 5200, 6001, null].map(sourceOfRank)).toEqual(['curated', 'hooper-dunbar', 'hands-uhj', 'local', 'local', 'other', 'other']);
+    expect([1.5e7, 2.1e7, 3.2e7, 4.1e7, 5.3e7, null].map(sourceOfRank)).toEqual(['historic', 'hands', 'uhj', 'historic-speakers', 'scholars', 'scholars']);
   });
-  it('registers the targets the queue skipped and ranks them within their own section', async () => {
+  it('registers every target (no Shorts, no "about" videos, one per duplicate group) and ranks by tier', async () => {
     const { mediaRankJob } = await import('../../api/lib/ops/media-jobs.js');
     const { mkdtempSync, writeFileSync } = await import('fs');
     const { join } = await import('path');
     const { tmpdir } = await import('os');
     const d = mkdtempSync(join(tmpdir(), 'rank-'));
-    writeFileSync(join(d, 'q.json'), JSON.stringify([{ tier: '1-curated', url: 'https://www.youtube.com/watch?v=AAAAAAAAAAA' }]));
-    writeFileSync(join(d, 't.json'), JSON.stringify({ curated_sacred_traditions: [{ video_id: 'AAAAAAAAAAA' }, { video_id: 'BBBBBBBBBBB', url: 'u' }, { video_id: 'CCCCCCCCCCC', is_short: true }, { video_id: 'DDDDDDDDDDD', relation: 'about' }],
-      hands_uhj: [{ video_id: 'EEEEEEEEEEE', duplicate_group: 'g' }, { video_id: 'FFFFFFFFFFF', duplicate_group: 'g' }] }));
+    writeFileSync(join(d, 't.json'), JSON.stringify({ curated_sacred_traditions: [{ video_id: 'AAAAAAAAAAA', speaker: 'Steven Phelps' }, { video_id: 'CCCCCCCCCCC', is_short: true }, { video_id: 'DDDDDDDDDDD', relation: 'about' }],
+      hands_uhj: [{ video_id: 'EEEEEEEEEEE', duplicate_group: 'g', speaker: 'William Sears', role: 'Hand of the Cause', title: 'Talk 1972' }, { video_id: 'FFFFFFFFFFF', duplicate_group: 'g' }] }));
     const created = [];
     const set = vi.fn();
     const repo = { findMediaByYoutube: async () => null, createMediaItem: async (x) => { created.push(x.youtube_id); return { id: created.length + 100 }; },
-      rankRows: async () => [{ id: 101, source_kind: 'youtube', youtube_id: 'BBBBBBBBBBB' }, { id: 1, source_kind: 'youtube', youtube_id: 'AAAAAAAAAAA' }], setQueueRanks: set };
-    const r = await mediaRankJob({ file: join(d, 'q.json'), talks: join(d, 't.json') }, { repo, listing: { speakerRole: () => null } });
-    expect(created).toEqual(['BBBBBBBBBBB', 'EEEEEEEEEEE']);
-    expect(r.registered).toBe(2);
-    expect(set.mock.calls[0][0]).toEqual([{ id: 101, rank: 1901 }, { id: 1, rank: 1000 }]);
+      rankRows: async () => [{ id: 101, source_kind: 'youtube', youtube_id: 'EEEEEEEEEEE' }, { id: 1, source_kind: 'youtube', youtube_id: 'AAAAAAAAAAA' }], setQueueRanks: set };
+    const r = await mediaRankJob({ talks: join(d, 't.json') }, { repo, listing: { speakerRole: () => null } });
+    expect(created).toEqual(['EEEEEEEEEEE', 'AAAAAAAAAAA']);
+    const [sears, phelps] = set.mock.calls[0][0];
+    expect(Math.floor(sears.rank / 1e7)).toBe(2);
+    expect(Math.floor(phelps.rank / 1e7)).toBe(5);
+    expect(r.tiers).toMatchObject({ hands: 1, scholars: 1 });
   });
 });
 

@@ -27,7 +27,7 @@ async function mediaDropLoop() {
 // …and PORTRAITS (an image call per speaker; minutes, never behind hours of transcription)
 // …and DOWNLOADS (YouTube into the archive, paced, independent of processing). The pipeline lane runs N items at once.
 export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => !['media-short', 'media-portraits-extend', 'media-speakers', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit'].includes(j)),
-  shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers'], downloads: ['media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit'] };
+  shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit'], downloads: ['media-fetch'] };
 export const MEDIA_LANE_WORKERS = { pipeline: mediaParallel() };
 
 // the FEED: N new items in processing by rank, one download run queued (30 s)

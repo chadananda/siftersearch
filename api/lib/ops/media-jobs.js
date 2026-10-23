@@ -10,6 +10,7 @@ import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
+import { parseMediaPath } from '../media/names.js';
 import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube, getMediaItem, updateMediaItem, pendingMedia, vocabularyNames, youtubeHeldSince, releaseHeldYoutube } from '../repos/media-repo.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
@@ -343,41 +344,57 @@ export async function mediaPortraitsExtendJob({ keys = null, force = false, limi
 }
 
 // ── THROUGHPUT (Chad 10-22: "about a month" at one item at a time) ──────────────────────────────────────────────────────
-// media-rank: the queue order — the curated sheet → Hooper Dunbar → other Hands/UHJ (the YouTube queue file's own order) →
-// local talks (Hands/UHJ speakers first) → anything else. Lower rank = sooner.
-export async function rankFor(row, ytOrder, role, sections = new Map()) {
-  if (row.source_kind === 'youtube') {
-    const q = ytOrder.get(row.youtube_id);
-    if (q) return (q.tier.startsWith('1-') ? 1000 : /Hooper C Dunbar/.test(q.tier) ? 2000 : 3000) + q.i;
-    // a target from the talks file that the queue skipped (a clip under ~4 min): after its own section's queue
-    const sec = sections.get(row.youtube_id);
-    if (sec) return ({ curated_sacred_traditions: 1900, hooper_dunbar: 2900, hands_uhj: 3900 }[sec.section] ?? 6000) + Math.min(99, sec.i);
-    return 6000 + row.id;
-  }
-  return (['hand', 'uhj'].includes(role) ? 4000 : 5000) + (row.id % 1000);
+// THE QUEUE ORDER (Chad 10-22: "first please focus on the historical materials"): 1 historic recordings (the earliest
+// material: historic-recordings, pilgrim recollections, the first generation — Martha Root, Louis Gregory, …) · 2 Hands of the
+// Cause · 3 members of the Universal House of Justice · 4 other historic speakers from the local collections · 5 modern
+// scholars (the curated webinars) last. Oldest first within a tier. rank = tier × 10⁷ + year × 10³ + order (lower = sooner).
+export const TIERS = [[1, 'historic', 'Historic recordings'], [2, 'hands', 'Hands of the Cause'], [3, 'uhj', 'Universal House of Justice'],
+  [4, 'historic-speakers', 'Other historic speakers'], [5, 'scholars', 'Modern scholars']];
+const FIRST_GENERATION = /\b(martha root|louis g(?:\.|regory)|louis gregory|dorothy (?:beecher )?baker|keith ransom|may (?:bolles )?maxwell|lua getsinger|thornton chase|hippolyte dreyfus|corinne true|clara dunn|abdu.?l.?bah|abdul.?baha)\b/i;
+const HISTORIC_COLLECTION = /historic|pilgrim|recollection|early|martha|guardian/i;
+const yearOf = (...ss) => { for (const s of ss) { const m = /\b(19[0-9]{2}|20[0-2][0-9])\b/.exec(String(s || '')); if (m) return Number(m[1]); } return 9999; };
+/** A target's tier: 1 historic · 2 Hands · 3 UHJ · 4 other historic speakers (local) · 5 modern scholars. Pure. */
+export function tierOf({ source_kind, collection = '', path = '', speaker = '', role = null, ytRole = null }) {
+  const who = `${speaker} ${path}`;
+  if (FIRST_GENERATION.test(who) || (source_kind !== 'youtube' && HISTORIC_COLLECTION.test(`${collection} ${path}`))) return 1;
+  if (ytRole === 'Hand of the Cause' || role === 'hand') return 2;
+  if (ytRole === 'UHJ member' || role === 'uhj') return 3;
+  if (source_kind !== 'youtube') return 4;
+  return 5;
 }
-export async function mediaRankJob({ file = join(process.cwd(), 'planning', 'media-targets', 'youtube-queue.json'),
-  talks = join(process.cwd(), 'planning', 'media-targets', 'youtube-talks.json'), register = true } = {}, deps = {}) {
+export const rankOf = (tier, year, order) => tier * 1e7 + Math.min(9999, year || 9999) * 1e3 + Math.min(999, order % 1000);
+export async function rankFor(row, info, speakerRole) {
+  if (row.source_kind === 'youtube') {
+    const x = info.get(row.youtube_id) || {};
+    const tier = tierOf({ source_kind: 'youtube', speaker: x.speaker || row.speaker || '', ytRole: x.role || null });
+    return rankOf(tier, yearOf(x.title, row.year), x.i ?? row.id);
+  }
+  const p = parseMediaPath(row.rel || '');
+  const speaker = row.speaker || p.speaker || '';
+  const tier = tierOf({ source_kind: 'file', collection: row.collection || p.collection || '', path: row.rel || '', speaker, role: speakerRole(speaker, { year: row.year || p.year }) });
+  return rankOf(tier, row.year || p.year || yearOf(row.rel), row.id);
+}
+export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'media-targets', 'youtube-talks.json'), register = true } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const { speakerRole } = deps.listing || await import('../media/listing-index.js');
   const { readFile: rf } = await import('fs/promises');
-  const list = JSON.parse(await rf(file, 'utf8').catch(() => '[]'));
-  const ytOrder = new Map(list.map((x, i) => [youtubeId(x.url), { tier: String(x.tier || ''), i }]).filter(([k]) => k));
+  const { relative } = await import('path');
+  const { mediaRoot } = await import('../media/item.js');
   // EVERY target is a catalogue row (Chad 10-22: "we should have close to 1400"): the talks file's videos that are not
-  // Shorts, not "about" the speaker, one per duplicate group — the queue had skipped clips under ~4 min; they are registered
+  // Shorts, not "about" the speaker, one per duplicate group
   const t = JSON.parse(await rf(talks, 'utf8').catch(() => '{}'));
-  const sections = new Map();
+  const info = new Map();
   const registered = [];
   const seenGroup = new Set();
-  for (const sec of ['curated_sacred_traditions', 'hooper_dunbar', 'hands_uhj']) {
-    let i = 0;
+  let order = 0;
+  for (const sec of ['hands_uhj', 'hooper_dunbar', 'curated_sacred_traditions']) {
     for (const x of t[sec] || []) {
       if (!x.video_id || x.is_short || x.relation === 'about') continue;
       const g = x.duplicate_group || x.video_id;
       if (seenGroup.has(g)) continue;
       seenGroup.add(g);
-      if (!sections.has(x.video_id)) sections.set(x.video_id, { section: sec, i: i++ });
-      if (register && !ytOrder.has(x.video_id) && !(await repo.findMediaByYoutube(x.video_id))) {
+      info.set(x.video_id, { speaker: x.speaker, role: sec === 'curated_sacred_traditions' ? 'scholar' : x.role, title: x.title, i: order++ });
+      if (register && !(await repo.findMediaByYoutube(x.video_id))) {
         const it = await repo.createMediaItem({ source_kind: 'youtube', source_ref: x.url || `https://www.youtube.com/watch?v=${x.video_id}`, youtube_id: x.video_id, channel: x.channel || null });
         registered.push(it.id);
       }
@@ -385,10 +402,10 @@ export async function mediaRankJob({ file = join(process.cwd(), 'planning', 'med
   }
   const rows = await repo.rankRows();
   const ranks = [];
-  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor(r, ytOrder, speakerRole(r.speaker || '', { year: r.year }), sections) });
+  for (const r of rows) ranks.push({ id: r.id, rank: await rankFor({ ...r, rel: r.source_kind === 'youtube' ? '' : relative(mediaRoot(), r.source_ref || '') }, info, speakerRole) });
   await repo.setQueueRanks(ranks);
-  const by = (lo, hi) => ranks.filter((x) => x.rank >= lo && x.rank < hi).length;
-  return { registered: registered.length, ranked: ranks.length, curated: by(1000, 2000), dunbar: by(2000, 3000), hands_uhj_youtube: by(3000, 4000), local_hands_uhj: by(4000, 5000), local_other: by(5000, 6000), other: by(6000, 1e9) };
+  const tiers = Object.fromEntries(TIERS.map(([n, key]) => [key, ranks.filter((x) => Math.floor(x.rank / 1e7) === n).length]));
+  return { registered: registered.length, ranked: ranks.length, tiers };
 }
 
 // media-fetch { limit }: DOWNLOADS, apart from processing — the next YouTube items by rank go into the archive (audio via

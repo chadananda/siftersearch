@@ -120,7 +120,7 @@ export function byStage(items = [], cap = 12) {
   return out;
 }
 /** A source key from a queue rank (the progress buckets). */
-export const sourceOfRank = (rank) => (rank == null ? 'other' : rank < 2000 ? 'curated' : rank < 3000 ? 'hooper-dunbar' : rank < 4000 ? 'hands-uhj' : rank < 6000 ? 'local' : 'other');
+export const sourceOfRank = (rank) => ([null, 'historic', 'hands', 'uhj', 'historic-speakers', 'scholars'][Math.floor((rank ?? 5e7) / 1e7)] || 'scholars');
 /** The public progress shape. Pure (exported for tests). */
 export function shapeProgress({ rows = [], published_6h = 0 }, sources, now = Date.now()) {
   const by = sources.map(([source, label]) => { const r = rows.find((x) => x.source === source) || {};
