@@ -31,6 +31,10 @@ describe('the Khadem family stays distinct', () => {
     expect(resolveSpeaker('Zikru’lláh Khádem', people).key).toBe('zikrullah-khadem');
     expect(resolveSpeaker('Khadem', people).review).toBeTruthy();
   });
+  it('the station beside a bare surname is evidence: "Hand of the Cause of God - Mr Faizi" is Abu’l-Qásim, not Gloria', () => {
+    expect(resolveSpeaker('Faizi', people, { title: 'The Garden of Ridván · Hand of the Cause of God-Mr Faizi' }).key).toBe('abul-qasim-faizi');
+    expect(resolveSpeaker('Faizi', people, { title: 'The Garden of Ridván' }).review).toBeTruthy();
+  });
   it('a bare surname resolves only with evidence — a work of exactly one of them', () => {
     expect(resolveSpeaker('Khadem', people, { title: 'Carmel the Mountain of God, part 2' }).key).toBe('zikrullah-khadem');
     expect(resolveSpeaker('Taherzadeh', people, { collection: 'Taherzadeh Covenant of Baha\'u\'llah' }).key).toBe('adib-taherzadeh');

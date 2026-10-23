@@ -682,7 +682,7 @@ export async function loadSpeakerPeople(read = async () => (await import('fs/pro
 export function identityContext(item, meta = {}) {
   const yt = item.source_kind === 'youtube';
   const titleYears = [...String(`${meta.title || item.title || ''} ${meta.source?.title || ''}`).matchAll(/\b(19\d{2}|20\d{2})\b/g)].map((m) => Number(m[1]));
-  return { title: meta.title || item.title || '', collection: item.collection || meta.collection || '', series: meta.series || '', channel: meta.source?.channel || item.channel || '',
+  return { title: [meta.title || item.title || '', meta.source?.title || ''].filter(Boolean).join(' · '), collection: item.collection || meta.collection || '', series: meta.series || '', channel: meta.source?.channel || item.channel || '',
     source_kind: item.source_kind, recorded_year: yt ? (titleYears.length ? Math.min(...titleYears) : null) : (meta.year || item.year || null) };
 }
 

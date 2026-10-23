@@ -47,6 +47,10 @@ export function evidenceFor(p, ctx = {}) {
   const blob = [ctx.title, ctx.collection, ctx.series, ctx.channel].filter(Boolean).join(' · ');
   for (const w of p.works || []) if (textHas(blob, w)) { score += 2; why.push(`work "${w}"`); break; }
   if (formsOf(p).some((f) => nameTokens(f).length >= 2 && textHas(blob, f))) { score += 2; why.push('full name in the series/collection/channel'); }
+  // the station named beside the surname ("Hand of the Cause of God - Mr Faizi"): only that person's station counts
+  const raw = String(blob).toLowerCase();
+  if (p.role === 'hand' && /hand of the cause/.test(raw)) { score += 2; why.push('"Hand of the Cause" in the title/channel'); }
+  if (p.role === 'uhj' && /universal house of justice|house of justice member/.test(raw)) { score += 2; why.push('"Universal House of Justice" in the title/channel'); }
   const y = ctx.recorded_year ?? null;
   if (y && p.died && y > p.died) { score -= 3; why.push(`recorded ${y}, after death ${p.died}`); }
   else if (y && p.born && y < p.born + 15) { score -= 3; why.push(`recorded ${y}, too early`); }
