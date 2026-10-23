@@ -14,6 +14,7 @@ import { workRoute } from './ops/workplan.js';
 import { App } from 'astro/app';
 import { handle } from '@astrojs/cloudflare/handler';
 import { mailRoute, mailCron } from './mail/index.js';
+import { deweyEmail } from './mail/dewey.js';
 import { mediaFile, MEDIA_FILE } from './media.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
@@ -171,6 +172,10 @@ export function createExports(manifest) {
         }
         const res = await als.run(st, () => handle(manifest, app, request, env, ctx));
         return request.method === 'GET' && (res.headers.get('content-type') || '').includes('text/html') ? withState(res, 'BYPASS') : res;
+      },
+      // Cloudflare Email Routing (siftersearch.com → this Worker): dewey@ is Dewey's mailbox; any other address is refused.
+      async email(message, env, ctx) {
+        await deweyEmail(message, env, ctx);
       },
       // Cron triggers (wrangler.jsonc): Anís's mail — drafting, outreach, daily digest; the edge-cache warmer every minute.
       async scheduled(event, env, ctx) {

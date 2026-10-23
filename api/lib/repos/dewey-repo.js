@@ -29,6 +29,10 @@ export const findBySha = async (sha256) => parse(await queryOne('SELECT * FROM d
 /** The Dewey item that became this document (its archived original lives on the item). */
 export const findByDoc = async (docId) => parse(await queryOne('SELECT * FROM dewey_items WHERE doc_id = ? ORDER BY id DESC LIMIT 1', [Number(docId)], 'dewey:by-doc'));
 
+/** A contributor's items, newest first: created_by is their address, alone or with a suffix ("a@b.c (email)", "(key 3)"). */
+export const itemsCreatedBy = async (email, limit = 12) => (await queryAll(`SELECT * FROM dewey_items WHERE LOWER(created_by) = LOWER(?) OR LOWER(created_by) LIKE LOWER(?)
+  ORDER BY updated_at DESC LIMIT ?`, [String(email), `${String(email)} (%`, limit], 'dewey:by-creator')).map(parse);
+
 /** Change fields and, when `state` changes, append { at, state, why } to the log. */
 export async function updateItem(id, fields = {}, why = null) {
   const cur = await getItem(id);

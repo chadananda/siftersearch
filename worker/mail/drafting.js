@@ -10,7 +10,7 @@
 import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody, composeLetter } from './letter.js';
 import { sendMail, deliver, sendFacts, loadSettings, ownText } from './index.js';
 import { sendDecision, emailHash } from './rules.js';
-import { conversationDigest, chatReplyHtml } from './conversation-digest.js';
+import { conversationDigest, chatReplyHtml, embeddable } from './conversation-digest.js';
 import { emailDocument } from '../../api/lib/mail-render.js';
 import { pauseToken } from './rules.js';
 
@@ -314,6 +314,7 @@ export async function dailyDigest(env) {
     `Drafts waiting for you: ${pending.length}`, ...links,
     '',
     `Received at anis@: ${fmt(count(inbound.filter((m) => m.mailbox === 'anis'), 'status'))}`, ...real('anis').map((m) => `  • ${line(m)}`),
+    `Received at dewey@: ${fmt(count(inbound.filter((m) => m.mailbox === 'dewey'), 'status'))}`,
     ...(support.length ? [`Support letters answered by Anís (${support.length}):`, ...support.map((x) => `  • ${x.status}: ${x.to_addr} — ${x.subject}`)] : []),
     `Newsletter replies: ${fmt(count(inbound.filter((m) => m.mailbox === 'newsletter'), 'status'))}`, ...real('newsletter').map((m) => `  • ${line(m)}`),
     ...(unsubs.length ? [`Newsletter unsubscribe requests — pass to the team (${unsubs.length}):`, ...unsubs.map((m) => `  • ${m.from_addr}`)] : []),
@@ -358,7 +359,8 @@ export async function gatherConversations(env, { until = new Date(), hours = 24,
   const db = env.ANIS_DB;
   settings ||= await loadSettings(db);
   const end = until.getTime(), start = end - hours * 3600e3;
-  const rows = (await db.prepare(`SELECT * FROM mail_messages WHERE mailbox IN ('anis', 'support') AND created_at >= ? AND created_at < ?
+  // Dewey's letters too (mailbox 'dewey', channel 'dewey' → the digest's own "Dewey" section, Chad 10-23)
+  const rows = (await db.prepare(`SELECT * FROM mail_messages WHERE mailbox IN ('anis', 'support', 'dewey') AND created_at >= ? AND created_at < ?
       AND NOT (direction = 'in' AND status IN ('spam', 'auto')) AND NOT (direction = 'out' AND status IN ('discarded', 'silent')) ORDER BY id`)
     .bind(sqlTime(start), sqlTime(end)).all()).results;
   const get = fetchTower || ((path) => fetch(`${TOWER}${path}`, { headers: { 'x-internal-key': env.S1_KEY } }).then((r) => (r.ok ? r.json() : null)).catch(() => null));
@@ -380,11 +382,21 @@ export async function gatherConversations(env, { until = new Date(), hours = 24,
   const threads = new Map();
   for (const m of rows) {
     const key = m.thread_key || `id:${m.id}`;
-    if (!threads.has(key)) threads.set(key, { key, channel: 'email', thread: null, person: null, types: [], items: [] });
+    const dewey = m.mailbox === 'dewey';
+    if (!threads.has(key)) threads.set(key, { key, channel: dewey ? 'dewey' : 'email', thread: null, person: null, types: [], items: [] });
     const c = threads.get(key);
     if (m.direction === 'in') {
       c.person ||= { email: m.from_addr, name: m.from_name };
-      c.items.push({ kind: 'in', at: m.created_at, from: m.from_addr, fromName: m.from_name, subject: m.subject, text: ownText(m.text || ''), status: m.status, channel: 'email' });
+      c.items.push({ kind: 'in', at: m.created_at, from: m.from_addr, fromName: m.from_name, subject: m.subject, text: ownText(m.text || ''), status: m.status, channel: c.channel });
+      continue;
+    }
+    if (dewey) {                                   // Dewey's letter exactly as sent (its stored HTML); no tower round to match
+      let meta = null; try { meta = m.meta_json ? JSON.parse(m.meta_json) : null; } catch { /* none */ }
+      const type = m.kind === 'stranger' ? 'how to contribute' : 'dewey reply';
+      c.person ||= { email: m.to_addr, name: null };
+      c.items.push({ kind: 'out', at: m.sent_at || m.created_at, to: m.to_addr, subject: m.subject, html: embeddable(m.html || ''), text: m.text, status: m.status, channel: 'dewey',
+        meta: { type, models: [], usd: null, latency_ms: null, ...(meta || {}), ...(meta?.type === 'dewey' ? { type } : {}) }, audit: null, review: null, error: m.error });
+      if (!c.types.includes(type)) c.types.push(type);
       continue;
     }
     c.person ||= { email: m.to_addr, name: null };

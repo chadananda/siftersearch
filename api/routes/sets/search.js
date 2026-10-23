@@ -20,6 +20,7 @@ import servicesRoutes from '../services.js';
 import anonymousRoutes from '../anonymous.js';
 import librarianRoutes from '../librarian.js';
 import deweyRoutes from '../dewey.js';
+import deweyMailRoutes from '../dewey-mail.js';
 import publicApiRoutes from '../public-api.js';
 import contentRoutes from '../content.js';
 import deployRoutes from '../deploy.js';
@@ -55,6 +56,7 @@ export const SEARCH_ROUTES = [
   [anonymousRoutes, { prefix: '/api/anonymous' }],
   [librarianRoutes, { prefix: '/api/librarian' }],
   [deweyRoutes, { prefix: '/api/dewey' }],
+  [deweyMailRoutes, { prefix: '/api/v1/dewey-mail' }],   // Dewey's email (internal key; worker/mail/dewey.js)
   [publicApiRoutes, { prefix: '/api/v1' }],
   [contentRoutes, { prefix: '/api/v1' }],
   [deployRoutes, { prefix: '/api/deploy' }],

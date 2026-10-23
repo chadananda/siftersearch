@@ -11,7 +11,7 @@ export const MAX_BYTES = 950_000;
 const REPO = 'https://github.com/chadananda/siftersearch/blob/main/';
 const ADMIN_THREAD = 'https://siftersearch.com/admin/anis#threads/';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const CHANNEL = { email: 'email', 'widget-chat': 'widget', 'site-chat': 'web chat' };
+const CHANNEL = { email: 'email', 'widget-chat': 'widget', 'site-chat': 'web chat', dewey: 'Dewey email' };
 
 /** "lalf1919@gmail.com" → "l@gmail.com"; the reviewer (Chad) stays whole. Pure. */
 export function redactEmail(addr, reviewer = '') {
@@ -33,6 +33,7 @@ export function mst(utc) {
 
 /** The files to edit for a turn type: persona, prompt, the type's own module, the model table, the letter look. Pure. */
 export function configFiles(type = '', channel = 'email') {
+  if (channel === 'dewey') return ['api/lib/dewey/mail.js', 'worker/mail/dewey.js', 'api/routes/dewey-mail.js'];
   const own = /reading/.test(type) ? ['api/lib/assistant/reading.js'] : /term study/.test(type) ? ['api/lib/assistant/ctai-term.js', 'api/lib/assistant/respond.js']
     : /canned|triage/.test(type) ? ['api/lib/assistant/canned.js', 'api/lib/assistant/triage.js'] : /research/.test(type) ? ['api/lib/assistant/respond.js', 'api/lib/assistant/researcher.js']
       : ['api/lib/assistant/respond.js'];
@@ -71,13 +72,13 @@ function inboundHtml(m, reviewer) {
 function replyHtml(r, reviewer) {
   const st = replyState(r);
   const meta = r.meta || {};
-  const head = `${esc(mst(r.at))} · ${esc(CHANNEL[r.channel] || r.channel)} · Anís → &lt;${esc(redactEmail(r.to, reviewer) || 'web visitor')}&gt;${r.subject ? ` · <b>${esc(r.subject)}</b>` : ''}`;
+  const head = `${esc(mst(r.at))} · ${esc(CHANNEL[r.channel] || r.channel)} · ${r.channel === 'dewey' ? 'Dewey' : 'Anís'} → &lt;${esc(redactEmail(r.to, reviewer) || 'web visitor')}&gt;${r.subject ? ` · <b>${esc(r.subject)}</b>` : ''}`;
   const chips = [chip(meta.type || 'reply', '#1f6f8b'), meta.models?.length ? chip(meta.models.join(' + ')) : '', chip(money(meta.usd)), chip(secs(meta.latency_ms)),
     r.status && r.status !== 'answered' && r.status !== 'sent' ? chip(r.status, st.held || st.failed ? '#b33' : '#55606a') : '',
     st.flagged ? chip(`audit: ${r.audit.answered === 'no' ? 'not answered' : r.audit.answered === 'partly' ? 'partly answered' : 'problems'}`, '#b33') : r.audit?.state === 'done' ? chip('audit: fine', '#3a7') : ''].join('');
   const problems = st.flagged ? `<div style="font-size:13px;color:#7a2e2e;margin:6px 0 0">${r.audit.summary && r.audit.summary !== 'fine' ? `${esc(r.audit.summary)}` : ''}${(r.audit.problems || []).length
     ? `<ul style="margin:4px 0 0;padding-left:18px">${r.audit.problems.slice(0, 6).map((p) => `<li><b>${esc(p.kind)}</b> — ${esc(p.detail)}</li>`).join('')}</ul>` : ''}</div>` : '';
-  const how = r.channel === 'email' ? 'the letter exactly as sent' : 'as the chat showed it';
+  const how = r.channel === 'email' || r.channel === 'dewey' ? (r.status === 'sent' ? 'the letter exactly as sent' : `the letter — ${r.status}${r.error ? `: ${r.error}` : ''}`) : 'as the chat showed it';
   return `<div style="margin:0 0 18px">
   <div style="font:12px/1.5 ui-monospace,Menlo,monospace;color:#7a8389">${head}</div>
   <div style="margin:3px 0 6px">${chips}</div>
@@ -121,6 +122,9 @@ export function summarize(conversations) {
  * → { html, text, conversations, replies, truncated }
  */
 export function conversationDigest(conversations, { date = '', reviewer = '', fullUrl = '', mailHtml = '', skipped = 0, maxBytes = MAX_BYTES } = {}) {
+  // Dewey's contributor mail is its own section, after Anís's conversations (Chad 10-23)
+  conversations = [...conversations.filter((c) => c.channel !== 'dewey'), ...conversations.filter((c) => c.channel === 'dewey')];
+  const firstDewey = conversations.findIndex((c) => c.channel === 'dewey');
   const s = summarize(conversations);
   const fmt = (m) => Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(k)} <b>${n}</b>`).join(' · ') || '—';
   const look = [...s.flagged.map((r) => ['flagged', r]), ...s.held.map((r) => ['held', r]), ...s.failed.map((r) => ['failed', r])];
@@ -145,8 +149,9 @@ export function conversationDigest(conversations, { date = '', reviewer = '', fu
   const tail = `${mailHtml ? `<div style="margin-top:28px"><div style="font:11px monospace;color:#999;text-transform:uppercase;letter-spacing:.14em;margin:0 0 8px">Mail</div>${mailHtml}</div>` : ''}</div>`;
   let size = head.length + tail.length;
   let truncated = 0;
+  const DEWEY_HEAD = `<div style="font-family:'Palatino Linotype',Palatino,Georgia,serif;font-style:italic;font-size:24px;color:#6b4f2a;border-top:2px solid #e8dfd0;padding-top:14px;margin:34px 0 14px">Dewey — contributor mail</div>`;
   const sections = conversations.map((c, i) => {
-    const full = conversationHtml(c, i, reviewer);
+    const full = (i === firstDewey ? DEWEY_HEAD : '') + conversationHtml(c, i, reviewer);
     if (!truncated && size + full.length <= maxBytes) { size += full.length; return full; }
     truncated += 1;
     return `<div style="margin:0 0 10px"><a name="c${i + 1}" id="c${i + 1}"></a>${i + 1}. ${esc(c.person?.email ? redactEmail(c.person.email, reviewer) : 'web visitor')} — too long for one email: <a href="${esc(fullUrl)}#c${i + 1}" style="color:#1f6f8b">read it on the digest page</a></div>`;
@@ -154,9 +159,9 @@ export function conversationDigest(conversations, { date = '', reviewer = '', fu
   const html = `${head}${truncated ? `<p style="color:#b33;font-size:14px">This digest passed ~1 MB: the last ${truncated} conversation${truncated === 1 ? ' is' : 's are'} on <a href="${esc(fullUrl)}">the digest page</a>.</p>` : ''}${sections.join('\n')}${tail}`;
   const text = [`Anís — every conversation · ${date} · last 24 h`, `${s.conversations} conversations · ${s.inbound} in · ${s.replies} replies · ${money(s.usd)}`,
     `Flagged ${s.flagged.length} · held ${s.held.length} · failed ${s.failed.length + s.failedInbound.length}`, fullUrl ? `Full digest: ${fullUrl}` : '', '',
-    ...conversations.map((c, i) => [`${i + 1}. ${c.person?.email ? redactEmail(c.person.email, reviewer) : 'web visitor'} · ${CHANNEL[c.channel] || c.channel}`,
+    ...conversations.map((c, i) => [...(i === firstDewey ? ['', '── DEWEY — contributor mail ──'] : []), `${i + 1}. ${c.person?.email ? redactEmail(c.person.email, reviewer) : 'web visitor'} · ${CHANNEL[c.channel] || c.channel}`,
       ...c.items.map((x) => (x.kind === 'in' ? `  ${mst(x.at)} THEY WROTE: ${String(x.text || '').replace(/\s+/g, ' ').slice(0, 300)}`
-        : `  ${mst(x.at)} ANÍS (${x.meta?.type || 'reply'}, ${money(x.meta?.usd)}, ${secs(x.meta?.latency_ms)}${x.status && x.status !== 'sent' && x.status !== 'answered' ? `, ${x.status}` : ''}): ${plainText(x.text || '').replace(/\s+/g, ' ').slice(0, 400)}`)),
+        : `  ${mst(x.at)} ${x.channel === 'dewey' ? 'DEWEY' : 'ANÍS'} (${x.meta?.type || 'reply'}, ${money(x.meta?.usd)}, ${secs(x.meta?.latency_ms)}${x.status && x.status !== 'sent' && x.status !== 'answered' ? `, ${x.status}` : ''}): ${plainText(x.text || '').replace(/\s+/g, ' ').slice(0, 400)}`)),
     ].join('\n'))].join('\n');
   return { html, text, conversations: s.conversations, replies: s.replies, flagged: s.flagged.length, held: s.held.length, truncated };
 }

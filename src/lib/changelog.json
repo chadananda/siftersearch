@@ -1,6 +1,41 @@
 {
-  "generated": "2026-10-23T14:30:14.699Z",
+  "generated": "2026-10-23T16:05:50.261Z",
   "entries": [
+    {
+      "hash": "aa4b6d8a",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The trim backfill re-encodes only talks whose LEADING silence is ≥ 5 s (70 of 324; Chad's rule) — new talks get the full trim (tail + gaps) in the pipeline",
+      "scope": "media"
+    },
+    {
+      "hash": "e363641d",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Restart-proof prep and a smaller deploy graph; identity merges from the portrait agent",
+      "scope": "media"
+    },
+    {
+      "hash": "652ba02f",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Planning/media-speaker-portraits.md — speaker photo inventory, coverage before/after, gaps with where searched, wrong-person catches, every photo's credit",
+      "scope": "media"
+    },
+    {
+      "hash": "dd4b45b6",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Downloads yield to a drain; prep's probes go to aorus first",
+      "scope": "media"
+    },
+    {
+      "hash": "65263770",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Pages rotate each speaker's gallery + 88 more photos (web finds, Wilmette Institute library) — deploy v2.187.781",
+      "scope": "media"
+    },
     {
       "hash": "0f299f15",
       "date": "2026-10-23",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "Tradition sub-progress always four decimals, so lines compare",
       "scope": "home"
-    },
-    {
-      "hash": "46774726",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Browsers never keep public API responses — the zone's 4 h Browser Cache TTL froze the Observatory on a 2.6 h-old snapshot",
-      "scope": "edge"
-    },
-    {
-      "hash": "2fddd229",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Tradition sub-progress ticks — decimals sized to each tradition's rate, truncated (never 100% with work left); remainders under 100 paragraphs hidden",
-      "scope": "home"
-    },
-    {
-      "hash": "e54ee68d",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "BM25 follows ingestion automatically — the reports worker queues keyword-fill every 10 min while the ledger shows a real gap; cell rates from the oldest snapshot within a day",
-      "scope": "index"
-    },
-    {
-      "hash": "c3552b6c",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Tradition sub-progress moves between snapshots at each cell's own day rate; tighter rows so nothing is cut off",
-      "scope": "home"
-    },
-    {
-      "hash": "65bff217",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "The stage being built lists its unfinished traditions — progress, paragraphs left, a dot on those that grew",
-      "scope": "home"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "aa4b6d8a",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The trim backfill re-encodes only talks whose LEADING silence is ≥ 5 s (70 of 324; Chad's rule) — new talks get the full trim (tail + gaps) in the pipeline",
+        "scope": "media"
+      },
+      {
+        "hash": "e363641d",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Restart-proof prep and a smaller deploy graph; identity merges from the portrait agent",
+        "scope": "media"
+      },
+      {
+        "hash": "652ba02f",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Planning/media-speaker-portraits.md — speaker photo inventory, coverage before/after, gaps with where searched, wrong-person catches, every photo's credit",
+        "scope": "media"
+      },
+      {
+        "hash": "dd4b45b6",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Downloads yield to a drain; prep's probes go to aorus first",
+        "scope": "media"
+      },
+      {
+        "hash": "65263770",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Pages rotate each speaker's gallery + 88 more photos (web finds, Wilmette Institute library) — deploy v2.187.781",
+        "scope": "media"
+      },
       {
         "hash": "0f299f15",
         "date": "2026-10-23",
@@ -6979,41 +7014,6 @@
         "date": "2026-10-17",
         "type": "Fixed",
         "description": "Tradition sub-progress always four decimals, so lines compare",
-        "scope": "home"
-      },
-      {
-        "hash": "46774726",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Browsers never keep public API responses — the zone's 4 h Browser Cache TTL froze the Observatory on a 2.6 h-old snapshot",
-        "scope": "edge"
-      },
-      {
-        "hash": "2fddd229",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Tradition sub-progress ticks — decimals sized to each tradition's rate, truncated (never 100% with work left); remainders under 100 paragraphs hidden",
-        "scope": "home"
-      },
-      {
-        "hash": "e54ee68d",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "BM25 follows ingestion automatically — the reports worker queues keyword-fill every 10 min while the ledger shows a real gap; cell rates from the oldest snapshot within a day",
-        "scope": "index"
-      },
-      {
-        "hash": "c3552b6c",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Tradition sub-progress moves between snapshots at each cell's own day rate; tighter rows so nothing is cut off",
-        "scope": "home"
-      },
-      {
-        "hash": "65bff217",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "The stage being built lists its unfinished traditions — progress, paragraphs left, a dot on those that grew",
         "scope": "home"
       }
     ]
