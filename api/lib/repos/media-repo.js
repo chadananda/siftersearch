@@ -54,6 +54,9 @@ const COMPUTE = ['archive', 'grade', 'enhance', 'web', 'transcribe'];
 // an item already part-way through (a retry, a resumed run) goes first: it holds files and finished stages
 export const nextToProcess = async (limit = 3) => (await queryAll(`SELECT * FROM media_items WHERE state = 'queued' AND (source_kind != 'youtube' OR dir IS NOT NULL)
   ORDER BY CASE WHEN stage IS NOT NULL AND stage != 'archive' THEN 0 ELSE 1 END, COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next')).map(parse);
+/** Items PREPPED (archive … web done), waiting for an ASR slot; part-way first, then by rank. */
+export const nextPrepped = async (limit = 6) => (limit > 0 ? (await queryAll(`SELECT * FROM media_items WHERE state = 'prepped' ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next-asr')).map(parse) : []);
+export const preppedCount = async () => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'prepped'`, [], 'media:prepped-count'))?.n || 0;
 /** Items whose compute stages are done, waiting for the LLM lane, by rank. */
 export const nextTranscribed = async (limit = 8) => (await queryAll(`SELECT * FROM media_items WHERE state = 'transcribed' ORDER BY COALESCE(queue_rank, 900000000), id LIMIT ?`, [limit], 'media:next-llm')).map(parse);
 /** The next YouTube items to DOWNLOAD, by rank (queued, not yet in the archive). */
@@ -70,7 +73,7 @@ export const rankRows = async () => queryAll(`SELECT id, source_kind, source_ref
 export const progressCounts = async () => queryAll(`SELECT source_kind source, COUNT(*) total,
   SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
   SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed, SUM(CASE WHEN state = 'held' THEN 1 ELSE 0 END) held,
-  SUM(CASE WHEN state IN ('scheduled', 'running') THEN 1 ELSE 0 END) in_progress, SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) waiting,
+  SUM(CASE WHEN state IN ('scheduled', 'running', 'prepped', 'asr_queued', 'transcribed', 'llm_queued') THEN 1 ELSE 0 END) in_progress, SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) waiting,
   SUM(CASE WHEN state = 'done' THEN COALESCE(duration_s, 0) ELSE 0 END) published_s
   FROM media_items WHERE state != 'duplicate' GROUP BY source_kind`, [], 'media:progress');
 /** FAILED items go back to the queue after 30 min, at most twice ("retry:N" leads their reason) — every failure except the
@@ -130,12 +133,13 @@ export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000
       SUM(CASE WHEN state = 'running' AND (stage IS NULL OR stage NOT IN ('archive','grade','enhance','web','transcribe')) THEN 1 ELSE 0 END) llm_running,
       SUM(CASE WHEN state IN ('queued','scheduled') AND COALESCE(stage, '') != 'download' AND (source_kind != 'youtube' OR dir IS NOT NULL) THEN 1 ELSE 0 END) compute_backlog,
       SUM(CASE WHEN state IN ('transcribed','llm_queued') THEN 1 ELSE 0 END) llm_backlog,
+      SUM(CASE WHEN state IN ('prepped','asr_queued') THEN 1 ELSE 0 END) asr_backlog,
       SUM(CASE WHEN published_at >= ? THEN 1 ELSE 0 END) published_window
     FROM media_items`, [sinceIso, sinceIso], 'media:health');
   const by = await queryAll(`SELECT COALESCE(stage, '?') stage, COUNT(*) n FROM media_items WHERE state = 'failed' AND updated_at >= ? GROUP BY stage`, [sinceIso], 'media:health-failed');
   const n = (k) => Number(r?.[k] || 0);
   return { since: sinceIso, failed: n('failed_window'), failed_total: n('failed_total'), failed_by_stage: Object.fromEntries(by.map((x) => [x.stage, x.n])),
-    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window') };
+    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), asr_backlog: n('asr_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window') };
 }
 /** Items published since a time (throughput). */
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };

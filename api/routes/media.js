@@ -435,7 +435,7 @@ export default async function mediaRoutes(fastify) {
       // what is RUNNING NOW: the media runs in progress → their items (a stopped re-run leaves no 'in progress' ghost)
       const { runningRuns } = await import('../lib/repos/ops-report-repo.js');
       const { liveItemsByIds } = await import('../lib/repos/media-repo.js');
-      const ids = [...new Set((await runningRuns(['media-compute', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
+      const ids = [...new Set((await runningRuns(['media-compute', 'media-asr', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
       const rows = (await liveItemsByIds(ids.slice(0, 60))).slice(0, 40);
       const recent = await recentlyPublished(6);
       const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));

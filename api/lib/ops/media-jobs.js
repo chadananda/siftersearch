@@ -514,12 +514,18 @@ export async function mediaQuoteAuditJob({ write = false } = {}, deps = {}) {
 // jobs with their own lanes: an item leaves the compute lane 'transcribed' and the LLM feed picks it up — an API storm never
 // holds a compute slot, and the compute machines never wait for the internet.
 export const COMPUTE_STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe'];
-export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
+// the compute lane is TWO lanes (10-22: ASR slots sat empty while their workers were busy with tower-side prep):
+//   PREP (media-compute: archive · grade · enhance · web — tower files, plus grade/dfn/probes on the GPU host) → 'prepped'
+//   ASR  (media-asr: transcribe — one worker per ASR slot, fed from a buffer of prepped items) → 'transcribed'
+export const PREP_STAGES = ['archive', 'grade', 'enhance', 'web'];
+async function laneJob(id, rest, deps, only, next) {
   const before = await (deps.repo?.getMediaItem || getMediaItem)(id);
-  const r = await mediaItemJob({ id, ...rest, only: COMPUTE_STAGES }, deps);
-  if (!r?.failed && !r?.held && !r?.yielded) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : 'transcribed' });
+  const r = await mediaItemJob({ id, ...rest, only }, deps);
+  if (!r?.failed && !r?.held && !r?.yielded) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : next });
   return failedRun(r);
 }
+export const mediaComputeJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, PREP_STAGES, 'prepped');
+export const mediaAsrJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['transcribe'], 'transcribed');
 // a failed ITEM is NOT a failed run (a thrown run mails Chad once per item — a night of failures = a mailbox of alerts):
 // the run's result carries failed:true, the item its 'failed' state + reason, /api/media/progress/live → health counts them,
 // system-checks WARNs past MEDIA_FAIL_WARN an hour, and the feed's capped retry brings the item back
@@ -542,9 +548,20 @@ export async function mediaLanesFeedPass(deps = {}) {
   const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || 8);
   const out = { compute: [], llm: [] };
   if (repo.retryTransientFailures) { const back = await repo.retryTransientFailures(); if (back.length) out.retried = back; }
+  // ASR: every slot busy, as many again waiting — from the PREPPED buffer
+  const asr = await ops.pendingRuns('media-asr');
+  out.asr = []; out.asr_pending = asr.length;
+  for (const it of await (repo.nextPrepped ? repo.nextPrepped(Math.max(0, 2 * (computeWorkers || 4) - asr.length)) : [])) {
+    await repo.updateMediaItem(it.id, { state: 'asr_queued' });
+    await queue('media-asr', { id: it.id, priority: true }, 'media-feed');
+    out.asr.push(it.id);
+  }
+  // PREP: keep the prepped buffer ≥ 2 × the ASR slots (prep runs in hand ≤ computeDepth), so no ASR slot waits on prep
   const compute = await ops.pendingRuns('media-compute');
   out.compute_pending = compute.length;
-  for (const it of await repo.nextToProcess(Math.max(0, computeDepth - compute.length))) {
+  const buffered = (repo.preppedCount ? await repo.preppedCount() : 0) + asr.length;
+  const wantPrep = buffered >= 3 * (computeWorkers || 4) ? 0 : Math.max(0, computeDepth - compute.length);
+  for (const it of await repo.nextToProcess(wantPrep)) {
     await repo.updateMediaItem(it.id, { state: 'scheduled' });
     await queue('media-compute', { id: it.id, priority: true }, 'media-feed');
     out.compute.push(it.id);

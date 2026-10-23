@@ -223,3 +223,28 @@ describe('the live view is what is running now', () => {
     expect((await liveItemsByIds([3, '4'])).map((x) => x.id)).toEqual([3]);
   });
 });
+
+describe('prep and ASR are separate lanes (10-22: ASR slots waited on tower prep)', () => {
+  it('ASR runs are fed from the prepped buffer (2 × slots in hand); prep stops once the buffer is full', async () => {
+    const { mediaLanesFeedPass } = await import('../../api/lib/ops/media-jobs.js');
+    const queue = vi.fn(); const upd = vi.fn();
+    const base = { nextTranscribed: async () => [], updateMediaItem: upd, nextToDownload: async () => [], youtubeHeldSince: async () => ({ n: 0 }) };
+    const ops = { pendingRuns: async (name) => (name === 'media-asr' ? [{}, {}] : []) };
+    // 6 slots: 12 ASR in hand wanted → 10 more; buffer 20 prepped (≥ 18) → no new prep
+    const repo = { ...base, nextPrepped: vi.fn(async (n) => Array.from({ length: n }, (_, i) => ({ id: 200 + i }))), preppedCount: async () => 20, nextToProcess: vi.fn(async () => []) };
+    const r = await mediaLanesFeedPass({ repo, ops, queue, computeWorkers: 6 });
+    expect(repo.nextPrepped).toHaveBeenCalledWith(10);
+    expect(r.asr).toHaveLength(10);
+    expect(upd).toHaveBeenCalledWith(200, { state: 'asr_queued' });
+    expect(repo.nextToProcess).toHaveBeenCalledWith(0);
+    // an empty buffer → prep fills up to the depth
+    const repo2 = { ...base, nextPrepped: async () => [], preppedCount: async () => 0, nextToProcess: vi.fn(async () => []) };
+    await mediaLanesFeedPass({ repo: repo2, ops, queue, computeWorkers: 6 });
+    expect(repo2.nextToProcess).toHaveBeenCalledWith(18);
+  });
+  it('prep ends prepped; ASR ends transcribed', async () => {
+    const src = (await import('fs')).readFileSync(new URL('../../api/lib/ops/media-jobs.js', import.meta.url), 'utf8');
+    expect(src).toMatch(/mediaComputeJob = .*PREP_STAGES, 'prepped'\)/);
+    expect(src).toMatch(/mediaAsrJob = .*\['transcribe'\], 'transcribed'\)/);
+  });
+});

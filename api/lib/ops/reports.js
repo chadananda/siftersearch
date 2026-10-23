@@ -19,7 +19,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaComputeJob, mediaLlmJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
+import { mediaComputeJob, mediaAsrJob, mediaLlmJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
@@ -206,7 +206,8 @@ REPORTS['media-fetch'] = mediaFetchJob;   // params { limit? } — YouTube downl
 REPORTS['media-rank'] = mediaRankJob;
 REPORTS['media-stages-sync'] = mediaStagesSyncJob;
 REPORTS['media-quote-audit'] = mediaQuoteAuditJob;
-REPORTS['media-compute'] = mediaComputeJob;   // { id } — the LAN-only stages (archive … transcribe)
+REPORTS['media-compute'] = mediaComputeJob;   // { id } — PREP: archive … web (LAN only) → 'prepped'
+REPORTS['media-asr'] = mediaAsrJob;   // { id } — transcribe (+ align + diarize) on the ASR hosts → 'transcribed'
 REPORTS['media-llm'] = mediaLlmJob;   // { id } — the API stages (names … update)   // { write? } — existing quote/CR links against the passage gate   // stages_done from meta.json (back-fill)   // the media queue order
 REPORTS['media-portraits-extend'] = mediaPortraitsExtendJob;   // params { keys?, force? } — one AI-extended 9:16 master per speaker portrait
 REPORTS['media-shorts-moments'] = mediaShortsMomentsJob;   // params { per?, roles? } — shorts for the top moments of Hands/UHJ talks
@@ -251,7 +252,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
-export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-llm'];
+export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-llm'];
 export { LANE_WORKERS } from './lane-workers.js';
 
 export const reportNames = () => Object.keys(REPORTS);
