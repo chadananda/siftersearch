@@ -14,6 +14,7 @@ import { searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdr
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
+import { readLibraryStats } from './library/library-stats.js';
 
 let client = null;
 
@@ -1848,35 +1849,12 @@ export async function getStats() {
     // Use cached counts for the heavy content table queries
     const cachedCounts = await getCachedContentCounts();
 
-    // Docs table is small — GROUP BY queries are fast
-    const [religionRows, collectionRows] = await Promise.all([
-      queryAll(`
-        SELECT religion, COUNT(*) as count
-        FROM docs
-        WHERE deleted_at IS NULL AND religion IS NOT NULL
-        GROUP BY religion
-      `),
-      queryAll(`
-        SELECT collection, COUNT(*) as count
-        FROM docs
-        WHERE deleted_at IS NULL AND collection IS NOT NULL
-        GROUP BY collection
-      `)
-    ]);
+    // Religion/collection counts come from the reports-built snapshot (data/library-stats.json). The docs GROUP BY that
+    // ran here per request froze the API event loop 5.6-6.2 s under load (better-sqlite3 is synchronous, 10-23).
+    const { religionCounts, collectionCounts } = readLibraryStats();
 
     const totalDocuments = cachedCounts.totalDocs;
     const totalPassages = cachedCounts.totalParagraphs;
-
-    // Build religion and collection count maps
-    const religionCounts = {};
-    for (const row of religionRows) {
-      religionCounts[row.religion] = row.count;
-    }
-
-    const collectionCounts = {};
-    for (const row of collectionRows) {
-      collectionCounts[row.collection] = row.count;
-    }
 
     // Estimate total words (~100 words per paragraph average)
     const totalWords = totalPassages * 100;

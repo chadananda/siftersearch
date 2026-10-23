@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
+import { shapeLibraryStats, LIBRARY_STATS_FILE } from '../library/library-stats.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MIN = 60_000, HOUR = 60 * MIN;
@@ -19,6 +20,7 @@ export const TTL = {
   corpus: HOUR,             // docs-table pass
   activity: 30 * MIN,       // search_log windows
   shelves: 30 * MIN,        // /library index (data/library-shelves.json)
+  libraryStats: 5 * MIN,    // docs-table aggregates the API serves (data/library-stats.json) — i.e. every run
   entityReview: HOUR,       // data/entity-review-model.json
   cloudflare: 20 * MIN,     // external API
   answerCache: 30 * MIN,
@@ -336,6 +338,15 @@ export async function buildPipelineSnapshot({ rebaseIntegrity = false, force = f
   const shelvesPath = join(dataDir, 'library-shelves.json');
   if (force || !fresh({ generated_at: state.shelves_at }, TTL.shelves, now)) {
     await probe('library-shelves', async () => { writeJson(shelvesPath, await d.shelves()); state.shelves_at = new Date(now).toISOString(); }, null);
+  }
+
+  // The API's library counts (search/library stats, /v1/collections, progress) — never computed in a request handler.
+  const statsPath = join(dataDir, LIBRARY_STATS_FILE);
+  if (force || !fresh({ generated_at: state.library_stats_at }, TTL.libraryStats, now)) {
+    await probe('library-stats', async () => {
+      writeJson(statsPath, shapeLibraryStats(await repo.libraryStatsRows({ recentSince: fmtTs(now - 4 * HOUR) }), now));
+      state.library_stats_at = new Date(now).toISOString();
+    }, null);
   }
 
   const snapshot = {

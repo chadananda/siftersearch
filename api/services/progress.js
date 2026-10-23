@@ -10,6 +10,7 @@
 import { queryOne } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { logger } from '../lib/logger.js';
+import { readLibraryStats } from '../lib/library/library-stats.js';
 
 // Lazy import to avoid circular dependency with search.js
 let _meili = null;
@@ -51,16 +52,16 @@ async function refreshPipelineCounts() {
     // IMPORTANT: never include MIN(created_at) in the synced=0 query — it bypasses the
     // partial index (idx_content_unsynced) and scans all 4M+ rows, blocking for 60-70s.
     // COUNT(*) alone uses the index and runs in milliseconds.
-    const [unsyncedRow, graphPending, extractionsPending, aliasCount, docAgg] = await Promise.all([
+    const [unsyncedRow, graphPending, extractionsPending, aliasCount] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
       // graph_enriched: the graph extractor was retired 2026-07-10, so the 0-count only grows with every new row (7–10 s
       // a count by 10-12, 1,600 slow reads/day). Not counted any more; reported as -1 ("not populated").
       Promise.resolve({ n: -1 }),
       queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
-      queryOne(`SELECT SUM(paragraph_count) AS total FROM docs WHERE deleted_at IS NULL`).catch(() => ({ total: 0 })),
     ]);
-    const totalParas = docAgg?.total ?? 0;
+    // docs-table SUM froze the API 5.6 s (10-23) — read from the reports-built snapshot instead
+    const totalParas = readLibraryStats().totals.paragraphs ?? 0;
     const graphPendingN = graphPending?.n ?? -1;
     // graphEnriched = total - pending (avoids full-table scan on graph_enriched=1)
     const graphEnrichedN = (totalParas > 0 && graphPendingN >= 0) ? totalParas - graphPendingN : -1;
@@ -99,25 +100,18 @@ async function getCachedCounts() {
   }
 
   try {
-    // Use docs table for totals (tiny table, instant) — never scan the 3.5M-row content table
-    // paragraph_count on docs is maintained by the ingester, so SUM is authoritative
-    // Only hit content table for unsynced count (partial index makes it fast)
-    const [docAgg, unsyncedParagraphs, cooldownDocs] = await Promise.all([
-      queryOne(`SELECT COUNT(*) as total_docs,
-                       SUM(CASE WHEN paragraph_count > 0 THEN 1 ELSE 0 END) as docs_with_content,
-                       SUM(paragraph_count) as total_paragraphs
-                FROM docs WHERE deleted_at IS NULL`),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
-      queryOne(`SELECT COUNT(*) as count FROM docs
-                WHERE deleted_at IS NULL AND updated_at > datetime('now', '-14400 seconds')`)
-    ]);
+    // Docs totals and the 4-hour "recently updated" count come from the reports-built snapshot (data/library-stats.json):
+    // the docs-table SUM/COUNT ran here per request and froze the API event loop 1-6 s (better-sqlite3 is synchronous, 10-23).
+    // Only the unsynced count stays live — idx_content_unsynced makes it an index-only count.
+    const snap = readLibraryStats();
+    const unsyncedParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL');
 
     const result = {
-      totalDocs: docAgg?.total_docs || 0,
-      docsWithContent: docAgg?.docs_with_content || 0,
-      totalParagraphs: docAgg?.total_paragraphs || 0,
+      totalDocs: snap.totals.documents || 0,
+      docsWithContent: snap.totals.docs_with_content || 0,
+      totalParagraphs: snap.totals.paragraphs || 0,
       unsyncedParagraphs: unsyncedParagraphs?.count || 0,
-      cooldownDocCount: cooldownDocs?.count || 0
+      cooldownDocCount: snap.totals.recently_updated || 0
     };
 
     countCache.data = result;

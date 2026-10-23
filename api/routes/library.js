@@ -19,6 +19,7 @@
 
 import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence to a genuinely absent table
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
+import { readLibraryStats, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
@@ -199,13 +200,9 @@ export default async function libraryRoutes(fastify) {
     }
 
     // Get religion and collection counts from docs table (exclude soft-deleted)
-    const stats = await queryAll(`
-      SELECT religion, collection, COUNT(*) as count
-      FROM docs
-      WHERE religion IS NOT NULL AND deleted_at IS NULL
-      GROUP BY religion, collection
-      ORDER BY religion, collection
-    `);
+    // from the reports-built snapshot — a whole-docs GROUP BY here froze the API event loop (10-23)
+    const stats = religionCollectionCounts().filter((r) => r.religion != null)
+      .sort((a, b) => a.religion.localeCompare(b.religion) || String(a.collection ?? '').localeCompare(String(b.collection ?? '')));
 
     // Build religion -> collections structure
     const religionMap = new Map();
@@ -292,20 +289,13 @@ export default async function libraryRoutes(fastify) {
 
     // Use cached counts for the heavy content table queries (2.5M+ rows)
     // Docs GROUP BY is fast (small table), indexing progress uses its own cache
-    const [cachedCounts, facetStats, meiliProgress] = await Promise.all([
+    // Facets come from the reports-built snapshot (data/library-stats.json): the docs GROUP BY that ran here per request
+    // froze the API event loop for seconds (better-sqlite3 is synchronous, 10-23).
+    const [cachedCounts, meiliProgress] = await Promise.all([
       getCachedContentCounts(),
-      queryAll(`
-        SELECT
-          religion,
-          collection,
-          language,
-          COUNT(*) as count
-        FROM docs
-        WHERE deleted_at IS NULL
-        GROUP BY religion, collection, language
-      `),
       getIndexingProgress()
     ]);
+    const facetStats = readLibraryStats().facets.map((r) => ({ ...r, count: r.n }));
     const docCount = { count: cachedCounts.totalDocs };
     const paraCount = { count: cachedCounts.totalParagraphs };
     const docsWithContent = { count: cachedCounts.docsWithContent };
@@ -808,12 +798,8 @@ export default async function libraryRoutes(fastify) {
     }
 
     // Get document counts from docs table (exclude soft-deleted)
-    const docCounts = await queryAll(`
-      SELECT religion, collection, COUNT(*) as count
-      FROM docs
-      WHERE deleted_at IS NULL
-      GROUP BY religion, collection
-    `);
+    // from the reports-built snapshot — a whole-docs GROUP BY here froze the API event loop (10-23)
+    const docCounts = religionCollectionCounts();
 
     // Build counts map
     const religionCounts = {};

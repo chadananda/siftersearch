@@ -10,6 +10,7 @@
  * - read_document: fetch paragraphs from a specific document
  */
 
+import { readLibraryStats, countList, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js';
 import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 import { optionalAuthenticate } from '../lib/auth.js';
@@ -1095,19 +1096,19 @@ export async function executeLibraryOverview() {
   if (_overviewCache && now - _overviewCacheTime < OVERVIEW_CACHE_TTL_MS) {
     return _overviewCache;
   }
-  const [docCount, paraCount, religions, collections, collectionReligions, languages] = await Promise.all([
-    queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
-    queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
-    queryAll('SELECT religion, COUNT(*) as count FROM docs WHERE deleted_at IS NULL GROUP BY religion ORDER BY count DESC'),
-    queryAll(`SELECT ln.name, ln.description, ln.authority_default,
+  // Totals, religions, languages and collection→religion come from the reports-built snapshot (data/library-stats.json):
+  // whole-table counts here (incl. COUNT(*) over every content row) froze the API event loop (better-sqlite3 is sync, 10-23).
+  const snap = readLibraryStats();
+  const docCount = { count: snap.totals.documents }, paraCount = { count: snap.totals.paragraphs };
+  const religions = countList(snap.religionCounts).map(({ name, documents }) => ({ religion: name, count: documents }));
+  const languages = countList(snap.languageCounts, 15).map(({ name, documents }) => ({ language: name, count: documents }));
+  const collectionReligions = religionCollectionCounts(snap).filter((r) => r.collection != null)
+    .map((r) => ({ collection: r.collection, religion: r.religion, cnt: r.count }))
+    .sort((a, b) => a.collection.localeCompare(b.collection) || b.cnt - a.cnt);
+  const collections = await queryAll(`SELECT ln.name, ln.description, ln.authority_default,
               (SELECT COUNT(*) FROM docs d WHERE d.collection = ln.name AND d.deleted_at IS NULL) as doc_count
               FROM library_nodes ln WHERE ln.node_type = 'collection' AND ln.parent_id IS NOT NULL
-              ORDER BY ln.authority_default DESC, ln.name`),
-    queryAll(`SELECT d.collection, d.religion, COUNT(*) as cnt
-              FROM docs d WHERE d.deleted_at IS NULL AND d.collection IS NOT NULL
-              GROUP BY d.collection, d.religion ORDER BY d.collection, cnt DESC`),
-    queryAll("SELECT language, COUNT(*) as count FROM docs WHERE deleted_at IS NULL AND language IS NOT NULL GROUP BY language ORDER BY count DESC LIMIT 15")
-  ]);
+              ORDER BY ln.authority_default DESC, ln.name`);
 
   // Build dominant-religion map per collection
   const dominantReligion = {};

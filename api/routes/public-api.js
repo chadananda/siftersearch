@@ -35,6 +35,7 @@
 
 import { isTestRequest } from '../lib/test-traffic.js';
 import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
+import { readLibraryStats, countList, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { findDocuments } from '../lib/docs-repo.js';
 import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-analyzer.js';
@@ -1250,11 +1251,9 @@ export default async function publicApiRoutes(fastify) {
       }
     }
   }, async () => {
-    const stats = await queryAll(`
-      SELECT religion, collection, COUNT(*) as count
-      FROM docs WHERE religion IS NOT NULL AND deleted_at IS NULL
-      GROUP BY religion, collection ORDER BY religion, collection
-    `);
+    // from the reports-built snapshot — a whole-docs GROUP BY here froze the API event loop (10-23)
+    const stats = religionCollectionCounts().filter((r) => r.religion != null)
+      .sort((a, b) => a.religion.localeCompare(b.religion) || String(a.collection ?? '').localeCompare(String(b.collection ?? '')));
 
     const religionMap = new Map();
     for (const row of stats) {
@@ -1765,56 +1764,18 @@ export default async function publicApiRoutes(fastify) {
       }
     }
   }, async (_request, _reply) => {
-    const totals = await queryOne(`
-      SELECT
-        COUNT(*) AS document_count,
-        SUM(paragraph_count) AS paragraph_count,
-        COUNT(DISTINCT author) AS author_count,
-        COUNT(DISTINCT language) AS language_count
-      FROM docs WHERE deleted_at IS NULL
-    `);
-    const byReligion = await queryAll(`
-      SELECT religion AS name, COUNT(*) AS documents, SUM(paragraph_count) AS paragraphs
-      FROM docs WHERE deleted_at IS NULL AND religion IS NOT NULL
-      GROUP BY religion ORDER BY documents DESC
-    `);
-    const byCollection = await queryAll(`
-      SELECT collection AS name, COUNT(*) AS documents
-      FROM docs WHERE deleted_at IS NULL AND collection IS NOT NULL
-      GROUP BY collection ORDER BY documents DESC LIMIT 30
-    `);
-    const byLanguage = await queryAll(`
-      SELECT COALESCE(language, 'unknown') AS code, COUNT(*) AS documents
-      FROM docs WHERE deleted_at IS NULL
-      GROUP BY language ORDER BY documents DESC
-    `);
-    const byEra = await queryAll(`
-      SELECT
-        CASE
-          WHEN year IS NULL THEN 'unknown'
-          WHEN year < 1800 THEN 'pre-1800'
-          WHEN year < 1850 THEN '1800-1849'
-          WHEN year < 1900 THEN '1850-1899'
-          WHEN year < 1950 THEN '1900-1949'
-          WHEN year < 2000 THEN '1950-1999'
-          ELSE '2000+'
-        END AS era,
-        COUNT(*) AS documents
-      FROM docs WHERE deleted_at IS NULL
-      GROUP BY era ORDER BY MIN(year)
-    `);
-    const topAuthors = await queryAll(`
-      SELECT author AS name, COUNT(*) AS documents
-      FROM docs WHERE deleted_at IS NULL AND author IS NOT NULL AND TRIM(author) != ''
-      GROUP BY author ORDER BY documents DESC LIMIT 25
-    `);
+    // Served from the reports-built snapshot (data/library-stats.json, refreshed ~10 min): these were five whole-docs
+    // aggregates run per request, each freezing the API event loop for seconds (better-sqlite3 is synchronous, 10-23).
+    const s = readLibraryStats();
     return {
-      totals,
-      by_religion: byReligion,
-      by_collection: byCollection,
-      by_language: byLanguage,
-      by_era: byEra,
-      top_authors: topAuthors
+      totals: { document_count: s.totals.documents, paragraph_count: s.totals.paragraphs,
+        author_count: s.totals.authors, language_count: s.totals.languages },
+      by_religion: countList(s.religionCounts).map((r) => ({ ...r, paragraphs: s.religionParagraphs?.[r.name] ?? 0 })),
+      by_collection: countList(s.collectionCounts, 30),
+      by_language: countList(s.languageCounts).map(({ name, documents }) => ({ code: name, documents })),
+      by_era: s.byEra,
+      top_authors: s.topAuthors,
+      generated_at: s.generated_at
     };
   });
 

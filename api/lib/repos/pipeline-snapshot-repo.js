@@ -133,6 +133,26 @@ export async function corpusSummary() {
   return { docs: tot?.docs ?? null, paras: tot?.paras ?? null, byReligion };
 }
 
+/** The docs-table aggregates behind data/library-stats.json (search/library stats, /v1/collections, progress): one
+ *  religion×collection×language pass plus authors/eras/recent — a few docs-table passes, ~1-6 s under load. These ran
+ *  per request inside the API and froze its event loop (10-23); now only here, out of process. */
+export async function libraryStatsRows({ recentSince }) {
+  const facets = await queryAll(`SELECT religion, collection, language, COUNT(*) AS n,
+      COALESCE(SUM(paragraph_count),0) AS paras, SUM(CASE WHEN paragraph_count > 0 THEN 1 ELSE 0 END) AS with_content
+    FROM docs WHERE deleted_at IS NULL GROUP BY religion, collection, language`, [], 'snapshot:library-facets');
+  const authors = (await queryOne(`SELECT COUNT(DISTINCT author) AS n FROM docs WHERE deleted_at IS NULL`, [], 'snapshot:library-authors'))?.n ?? 0;
+  const byEra = await queryAll(`SELECT CASE WHEN year IS NULL THEN 'unknown' WHEN year < 1800 THEN 'pre-1800'
+        WHEN year < 1850 THEN '1800-1849' WHEN year < 1900 THEN '1850-1899' WHEN year < 1950 THEN '1900-1949'
+        WHEN year < 2000 THEN '1950-1999' ELSE '2000+' END AS era, COUNT(*) AS documents
+    FROM docs WHERE deleted_at IS NULL GROUP BY era ORDER BY MIN(year)`, [], 'snapshot:library-eras');
+  const topAuthors = await queryAll(`SELECT author AS name, COUNT(*) AS documents
+    FROM docs WHERE deleted_at IS NULL AND author IS NOT NULL AND TRIM(author) != ''
+    GROUP BY author ORDER BY documents DESC LIMIT 25`, [], 'snapshot:library-top-authors');
+  const recentlyUpdated = (await queryOne(`SELECT COUNT(*) AS n FROM docs WHERE deleted_at IS NULL AND updated_at > ?`,
+    [recentSince], 'snapshot:library-recent'))?.n ?? 0;
+  return { facets, authors, byEra, topAuthors, recentlyUpdated };
+}
+
 // ── missing books (6 h): stubs LIKE-scan low-¶ docs' content (~6 s) ─────────────────────────────────────────────────
 // Catalogue rows (Phelps inventory / bibliography) are not missing books.
 const NOT_CATALOGUE = `

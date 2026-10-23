@@ -83,6 +83,7 @@ describe('snapshot sections run on their own clocks', () => {
       usageByServiceSince: f('usageByServiceSince', []), searchActivity: f('searchActivity', { totals: {}, series: [], topQueries: [], strategies: [] }),
       corpusSummary: f('corpusSummary', { docs: 1, paras: 2, byReligion: [] }), stubDocs: f('stubDocs', []), huskDocs: f('huskDocs', []),
       heldDocs: f('heldDocs', []), stubLinkText: f('stubLinkText', ''),
+      libraryStatsRows: f('libraryStatsRows', { facets: [], authors: 0, byEra: [], topAuthors: [], recentlyUpdated: 0 }),
     } };
   }
   it('a steady-state run touches only the cheap probes and the new ai_usage rows', async () => {
