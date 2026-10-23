@@ -1,6 +1,6 @@
 #!/bin/bash
 # DB SHIP — snapshot on the SSD, history on /tank (Chad 10-21: "super fast backup followed by migration off SSD"; the same
-# procedure for the 4 TB /faster drive: `db-ship.sh faster/<ds> tank/backups/<ds>`). Hourly, cron.
+# procedure for the 4 TB /faster drive: `db-ship.sh faster/<ds> tank/backups/<ds>`). Every 15 min, cron (SHIP_KEEP_RECENT=96).
 #   1. zfs snapshot <src>@ship-YYYYMMDD-HHMM — instant, copy-on-write: no pause, no I/O burst for the live DB
 #   2. zfs send -i <previous ship> | zfs recv <dest> — only the hour's changed blocks leave the SSD, at nice 19
 #   3. the SSD keeps ONE snapshot (the base for the next increment); every older one — ours and zfs-auto-snap's — is destroyed
@@ -48,4 +48,5 @@ else
 fi
 # the SSD keeps only the new base
 $Z list -t snapshot -H -o name -s creation "$SRC" | ssd_drop "$NOW" | while read -r s; do $Z destroy "$s" && log "ssd: destroyed $s"; done
-$Z list -t snapshot -H -o name -s creation "$DEST" | keep 24 14 | while read -r s; do $Z destroy "$s" && log "tank: pruned $s"; done
+# every 15 min since db-write-path-20261023 (cron: SHIP_KEEP_RECENT=96 → the newest 24 h at 15-min steps, then daily)
+$Z list -t snapshot -H -o name -s creation "$DEST" | keep "${SHIP_KEEP_RECENT:-24}" "${SHIP_KEEP_DAYS:-14}" | while read -r s; do $Z destroy "$s" && log "tank: pruned $s"; done
