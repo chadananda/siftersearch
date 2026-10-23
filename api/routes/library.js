@@ -24,6 +24,7 @@ import { readLibrarySitemap } from '../lib/library/library-sitemap.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { previewWindow, PREVIEW_PARAGRAPHS, PREVIEW_MESSAGE, canReadFull } from '../lib/rights/preview.js';
+import { bookFacts } from '../lib/repos/book-hunt-repo.js';
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
 import { findDocuments, docsForPathSlugs, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
 import { lettersOf } from '../lib/repos/letters-repo.js';
@@ -1840,8 +1841,8 @@ Return ONLY the description text, no quotes or formatting.`;
     if (isEncumbered && canEdit) reply.header('Cache-Control', 'private, no-store');   // a full copyrighted text is never shared-cached
     const effectiveLimit = win.limit, effectiveOffset = win.offset;
 
-    // Fetch paragraphs
-    const [paragraphs, countResult] = await Promise.all([
+    // Fetch paragraphs (+ the book's publication facts from the book hunt: publisher, year, ISBN, author photo — Chad 10-23)
+    const [paragraphs, countResult, book] = await Promise.all([
       effectiveLimit > 0 ? queryAll(`
         SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments,
                json_extract(block_attrs, '$.pn') AS pn
@@ -1850,7 +1851,8 @@ Return ONLY the description text, no quotes or formatting.`;
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
       `, [document.id, effectiveLimit, effectiveOffset]) : [],
-      queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [document.id])
+      queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [document.id]),
+      bookFacts(document.id).catch(() => null)
     ]);
 
     // Parse translation field (handles both legacy string and new JSON format)
@@ -1876,7 +1878,8 @@ Return ONLY the description text, no quotes or formatting.`;
         purchase_url: document.purchase_url || null,
         cover_url: document.cover_url || null,
         slug: document.slug || generateDocSlug(document),
-        isRTL
+        isRTL,
+        ...(book ? { book } : {})
       },
       paragraphs: formattedParagraphs,
       total,

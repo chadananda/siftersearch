@@ -30,3 +30,16 @@ describe('encumbered reader SSR', () => {
     expect(body).toContain('load-more-section');
   });
 });
+
+describe('book facts on the reader (book hunt, Chad 10-23)', () => {
+  it('renders the author photo, imprint, ISBN and a Buy link', () => {
+    const withBook = { ...initialData, document: { ...initialData.document, book: { author_image: 'https://img/a.jpg', author_born: 1921, author_died: 2000,
+      publisher: 'George Ronald', year: 1992, isbn: '9780853983439' } } };
+    const { body } = render(DocumentPresentation, { props: { ...props, initialData: withBook } });
+    expect(body).toContain('src="https://img/a.jpg"');
+    expect(body).toContain('An Author (1921–2000)');
+    expect(body).toContain('George Ronald · 1992');
+    expect(body).toContain('ISBN 9780853983439');
+    expect(body).toMatch(/href="https:\/\/example.org\/buy"[^>]*>\s*Buy this book/);
+  });
+});

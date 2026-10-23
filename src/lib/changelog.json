@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-23T18:39:12.227Z",
+  "generated": "2026-10-23T18:44:39.271Z",
   "entries": [
+    {
+      "hash": "1820c4a3",
+      "date": "2026-10-23",
+      "type": "Chore",
+      "description": "Deploy 2.187.791 (bilingual mail rendering in the Worker)",
+      "scope": null
+    },
     {
       "hash": "558199a5",
       "date": "2026-10-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Structure-infer titles join a numbering line with the name line after it",
       "scope": "structure"
-    },
-    {
-      "hash": "a14895e6",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Structure-infer accounts for every model call (parsed, kept, invented, finish) and uses 120-line calls; an unusable reply blocks the write",
-      "scope": "structure"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "1820c4a3",
+        "date": "2026-10-23",
+        "type": "Chore",
+        "description": "Deploy 2.187.791 (bilingual mail rendering in the Worker)",
+        "scope": null
+      },
       {
         "hash": "558199a5",
         "date": "2026-10-23",
@@ -7007,13 +7014,6 @@
         "date": "2026-10-17",
         "type": "Fixed",
         "description": "Structure-infer titles join a numbering line with the name line after it",
-        "scope": "structure"
-      },
-      {
-        "hash": "a14895e6",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Structure-infer accounts for every model call (parsed, kept, invented, finish) and uses 120-line calls; an unusable reply blocks the write",
         "scope": "structure"
       }
     ]

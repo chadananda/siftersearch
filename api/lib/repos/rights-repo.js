@@ -2,10 +2,11 @@
 // (keyset pages + per-doc indexed reads, never a whole-table join); the write NEVER un-encumbers. Deps: db.js.
 import { query, queryAll, queryOne } from '../db.js';
 
-/** One keyset page of live docs (not deleted, not duplicates) with what the classifier needs. */
+/** One keyset page of live docs (not deleted, not duplicates) with what the classifier and the book hunt need (primary-key order). */
 export async function rightsScanPage({ afterId = 0, limit = 500 } = {}) {
   return queryAll(`SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_site, d.source_url, d.file_path, d.doc_role,
-      d.paragraph_count, d.encumbered, d.metadata, d.frontmatter, d.isbn, d.rights_reason
+      d.paragraph_count, d.encumbered, d.metadata, d.frontmatter, d.isbn, d.rights_reason,
+      d.cover_url, d.purchase_url, d.publisher, d.pub_year, d.edition, d.author_image
     FROM docs d WHERE d.id > ? AND d.deleted_at IS NULL AND d.duplicate_of IS NULL ORDER BY d.id LIMIT ?`,
   [Number(afterId), Math.min(1000, Number(limit))], 'rights-repo:scan-page');
 }

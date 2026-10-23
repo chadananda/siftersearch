@@ -1235,6 +1235,29 @@
           {/if}
         </div>
 
+        <!-- Publication facts from the book hunt (Chad 10-23): author photo + dates, publisher · year · edition, ISBN, where to buy -->
+        {#if document.book || document.purchase_url}
+          {@const b = document.book || {}}
+          <div class="book-facts" aria-label="About this book">
+            {#if b.author_image}
+              <img class="book-author-photo" src={b.author_image} alt={document.author ? `Portrait of ${document.author}` : 'Author portrait'}
+                width="56" height="56" loading="lazy" decoding="async" title={b.author_image_credit || ''} />
+            {/if}
+            <div class="book-facts-text">
+              {#if document.author && (b.author_born || b.author_died)}
+                <p class="book-author-years">{document.author} ({b.author_born ?? '?'}–{b.author_died ?? ''})</p>
+              {/if}
+              {#if b.publisher || b.year || b.edition}
+                <p class="book-imprint">{[b.publisher, b.year, b.edition].filter(Boolean).join(' · ')}</p>
+              {/if}
+              {#if b.isbn}<p class="book-isbn">ISBN {b.isbn}</p>{/if}
+              {#if document.purchase_url}
+                <a class="book-buy" href={document.purchase_url} target="_blank" rel="noopener noreferrer sponsored">Buy this book</a>
+              {/if}
+            </div>
+          </div>
+        {/if}
+
         <!-- Abstract section - show description -->
         {#if document.description}
           <div class="doc-abstract" role="complementary" aria-label="Document description">
@@ -2834,7 +2857,36 @@
   }
 
   /* Auth gate - inside document content, uses light colors */
-  .auth-gate {
+.book-facts {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin: 0.75rem 0 0.25rem;
+    font-size: 0.875rem;
+  }
+  .book-author-photo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 25%;
+    flex: none;
+    background: var(--surface-2);
+  }
+  .book-facts-text p { margin: 0.1rem 0; }
+  .book-author-years { font-weight: 600; }
+  .book-imprint, .book-isbn { color: var(--text-secondary); }
+  .book-buy {
+    display: inline-block;
+    margin-top: 0.25rem;
+    color: var(--accent-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .book-buy:hover { color: var(--accent-primary-hover); }
+
+    .auth-gate {
     margin-top: 2rem;
     padding: 2rem;
     background: linear-gradient(to bottom, transparent, #f0ede6 20%);

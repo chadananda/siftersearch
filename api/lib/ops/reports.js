@@ -35,6 +35,7 @@ import { INDEX_REPORTS, INDEX_LANES, INDEX_JOB_NAMES } from './index-reports.js'
 import { paragraphAuthorsJob } from './paragraph-authors-job.js';
 import { compilationAuthorsJob } from './compilation-authors-job.js';
 import { rightsIsbnJob } from './rights-isbn-job.js';
+import { bookHuntJob, bookHuntApplyJob, bookMetaCoverageReport, rightsPublisherJob } from './book-hunt-job.js';
 import { docCorrectionsJob } from './doc-corrections-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
 import { sourceLinksBuildJob } from './source-links-build-job.js';
@@ -202,6 +203,10 @@ REPORTS['letters-index'] = lettersIndexJob;   // params { author, collection } �
 REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, author?, translators? }], write } — a person's record corrections
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
 REPORTS['rights-isbn'] = rightsIsbnJob;   // params { write, ids?, limit? } — a non-canonical BOOK with its own ISBN → encumbered (Chad 10-23); dry run by default
+REPORTS['book-hunt'] = bookHuntJob;   // params { limit, redo, ids } — ISBN/publisher/year/edition/purchase link/cover/author photo+dates per book (Chad 10-23); resumes
+REPORTS['book-hunt-apply'] = bookHuntApplyJob;   // params { write } — fill empty doc fields from high-confidence finds only
+REPORTS['book-meta-coverage'] = bookMetaCoverageReport;   // books with ISBN / publisher / year / purchase link / author image / cover
+REPORTS['rights-publisher'] = rightsPublisherJob;   // params { write } — commercial/private press or found ISBN → encumbered; BPTs → review (dry run by default)
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)
 REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)
@@ -258,6 +263,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   intake: ['dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
+  books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
   quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };

@@ -1925,6 +1925,19 @@ export const migrations = {
     for (const sql of Object.values(BROWSE_INDEXES)) await query(sql);
     logger.info('Migration 176 complete: idx_docs_live_coll_title, idx_docs_live_author_title, idx_docs_live_year_title');
   },
+
+  177: async () => {
+    // BOOK METADATA HUNT (Chad 10-23: "go on an ISBN hunt … look for author image, publishing date, Amazon link etc. anyway"):
+    // per book what was found, with confidence + evidence per field (book_hunt, one row per book = the resume checkpoint);
+    // the applied values on docs (publisher, pub_year, edition, author_image; isbn + purchase_url + cover_url already exist)
+    // and their evidence in docs.book_meta. api/lib/books/hunt.js, api/lib/ops/book-hunt-job.js.
+    await query(`CREATE TABLE IF NOT EXISTS book_hunt (doc_id INTEGER PRIMARY KEY, state TEXT NOT NULL, version TEXT, found TEXT,
+      review INTEGER NOT NULL DEFAULT 0, error TEXT, usd REAL, updated_at TEXT NOT NULL, applied_at TEXT)`);
+    for (const col of ['publisher TEXT', 'pub_year INTEGER', 'edition TEXT', 'author_image TEXT', 'book_meta TEXT']) {
+      try { await query(`ALTER TABLE docs ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    logger.info('Migration 177 complete: book_hunt, docs.publisher/pub_year/edition/author_image/book_meta');
+  },
 };
 
 export const graphMigrations = {

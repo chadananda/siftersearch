@@ -9,6 +9,8 @@ export const MODEL_ROLES = {
   // ── search strategies (latency-critical) ──
   'search-planner': { provider: 'systemone', model: 'jev-latest', reviewed: '2026-09-24', needs: ['fast', 'json'],
     why: 'type battery 61/76 @0.18 s, zero paid LLM (project_search_type_battery_20260924)' },
+  'book-match': { provider: 'systemone', model: 'jev-latest', reviewed: '2026-10-23', needs: ['classification'],
+    why: 'book hunt: which of several catalogue records is the book we hold (only when deterministic matching ties)' },
   'assistant-triage': { provider: 'systemone', model: 'jev-latest', reviewed: '2026-10-07', needs: ['fast', 'classification'],
     why: 'gate before any paid call; ms latency' },
   'assistant-answer': { provider: 'gemini', model: 'gemini-3.5-flash-lite', reviewed: '2026-10-05', needs: ['fast', 'multilingual', 'grounded-writing'],
