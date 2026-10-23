@@ -1,4 +1,4 @@
-// GET /api/media/index — the Listening Room's index: rows from the repo + each item's files, speakers once each, cached
+// GET /api/media/index — the Fireside Room's index: rows from the repo + each item's files, speakers once each, cached
 // per item by updated_at and persisted to a file.
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { mkdtempSync, writeFileSync, existsSync } from 'fs';
@@ -24,6 +24,8 @@ vi.mock('../../api/lib/repos/media-repo.js', async (orig) => ({
 
 vi.mock('../../api/lib/search.js', () => ({ multiIndexSearch: vi.fn(async (q, o) => ({ hits: o.filters?.collection === 'Media'
   ? [{ paragraph_id: 501, _formatted: { text: 'The <em>soul</em> is a sign' } }, { paragraph_id: 502 }] : [] })) }));
+
+vi.mock('../../api/lib/search/qdrant-layers.js', () => ({ searchKeywordQdrant: vi.fn(async () => ({ hits: [{ paragraph_id: 501 }] })), searchPhrases: vi.fn(async () => ({ hits: [] })) }));
 
 let app;
 beforeAll(async () => {

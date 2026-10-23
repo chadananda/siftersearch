@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-23T01:21:34.202Z",
+  "generated": "2026-10-23T01:37:15.770Z",
   "entries": [
+    {
+      "hash": "4dbbb4fe",
+      "date": "2026-10-22",
+      "type": "New",
+      "description": "PUBLISH EARLY (Chad 10-22: 'talks should be published as they are completed … start ingesting for search') — the core (transcript, name corrections, the copy-edit with its faithfulness check, a short description) is rendered, ingested for search and catalogued at once; subheaders, quotes, links, audience and moments follow and an 'update' stage re-renders, re-ingests (changed paragraphs only) and re-catalogues in place; a published talk stays published while later stages or re-runs work on it; the playback job re-publishes with redo ['update'] (not 'from render', which would now redo the enrichment)",
+      "scope": "media"
+    },
+    {
+      "hash": "0f11dbdb",
+      "date": "2026-10-22",
+      "type": "Chore",
+      "description": "Deploy (import progress on /admin/media)",
+      "scope": null
+    },
     {
       "hash": "25c992b0",
       "date": "2026-10-22",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Seeker questions keep the yes/no form people type; tiers survive the sliced path",
       "scope": "hype"
-    },
-    {
-      "hash": "b2fe9443",
-      "date": "2026-10-13",
-      "type": "New",
-      "description": "V15 seeker questions in everyday words, spiritual root of social teachings, no echo of the passage; code gates for self-reference, Arabic-script and short-title book naming",
-      "scope": "hype"
-    },
-    {
-      "hash": "d6fb6559",
-      "date": "2026-10-13",
-      "type": "Chore",
-      "description": "Hype regen + backup check",
-      "scope": "worklist"
     }
   ],
   "grouped": {
     "2026-10-22": [
+      {
+        "hash": "4dbbb4fe",
+        "date": "2026-10-22",
+        "type": "New",
+        "description": "PUBLISH EARLY (Chad 10-22: 'talks should be published as they are completed … start ingesting for search') — the core (transcript, name corrections, the copy-edit with its faithfulness check, a short description) is rendered, ingested for search and catalogued at once; subheaders, quotes, links, audience and moments follow and an 'update' stage re-renders, re-ingests (changed paragraphs only) and re-catalogues in place; a published talk stays published while later stages or re-runs work on it; the playback job re-publishes with redo ['update'] (not 'from render', which would now redo the enrichment)",
+        "scope": "media"
+      },
+      {
+        "hash": "0f11dbdb",
+        "date": "2026-10-22",
+        "type": "Chore",
+        "description": "Deploy (import progress on /admin/media)",
+        "scope": null
+      },
       {
         "hash": "25c992b0",
         "date": "2026-10-22",
@@ -7007,20 +7021,6 @@
         "type": "Fixed",
         "description": "Seeker questions keep the yes/no form people type; tiers survive the sliced path",
         "scope": "hype"
-      },
-      {
-        "hash": "b2fe9443",
-        "date": "2026-10-13",
-        "type": "New",
-        "description": "V15 seeker questions in everyday words, spiritual root of social teachings, no echo of the passage; code gates for self-reference, Arabic-script and short-title book naming",
-        "scope": "hype"
-      },
-      {
-        "hash": "d6fb6559",
-        "date": "2026-10-13",
-        "type": "Chore",
-        "description": "Hype regen + backup check",
-        "scope": "worklist"
       }
     ]
   }

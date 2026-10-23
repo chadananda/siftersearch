@@ -1,4 +1,4 @@
-// /media "Listening Room" pure helpers: as-you-type search over the listing index, station presets, the seeded jukebox
+// /media "Fireside Room" pure helpers: as-you-type search over the listing index, station presets, the seeded jukebox
 // layout (box sets / quote / question / waveform / portrait cards), hero highlights, eras, topics, ticker lines and the
 // generative record-label pattern. No DOM. Rows are GET /api/media/index rows (api/lib/media/listing-index.js).
 // Tested in tests/api/media-listing.test.js.
@@ -72,10 +72,25 @@ export const DECADES = [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const LANG = { en: 'english', fa: 'persian farsi', ar: 'arabic', fr: 'french', de: 'german', es: 'spanish' };
 const tokens = (s) => fold(s).split(' ').filter(Boolean);
 
+/** Other names a speaker is known by (folded), keyed by a folded fragment of the speaker's own name: titles, maiden and
+ *  married names, short forms. A query for any of them finds the speaker's talks. */
+export const SPEAKER_ALIASES = {
+  'ruhiyyih': "amatul baha amatu'l-baha ruhiyyih rabbani mary maxwell ruhiyyih khanum ruhiyyih khanum khanom",
+  'khanum': "amatul baha amatu'l-baha ruhiyyih rabbani mary maxwell",
+  'furutan': 'ali akbar furutan aliakbar',
+  'khadem': 'dhikrullah zikrullah zekrollah dhikru llah khadem',
+  'nakhjavani': 'ali nakhjavani',
+  'dunbar': 'hooper dunbar',
+  'sears': 'william bill sears',
+  'grossmann': 'hartmut hermann grossman',
+  'featherstone': 'collis featherstone',
+};
+const aliasesFor = (sp) => { const f = fold(sp); return Object.entries(SPEAKER_ALIASES).filter(([k]) => f.includes(k)).map(([, v]) => v).join(' '); };
+
 /** Field tokens for one row with weights (speaker and title count most). */
 function docFields(it) {
   return [
-    [tokens(it.sp), 5], [tokens(it.t), 4], [tokens([...(it.h || []).map((h) => h.x), ...(it.tp || [])].join(' ')), 2],
+    [tokens(`${it.sp || ''} ${it.sp ? aliasesFor(it.sp) : ''}`), 5], [tokens(it.t), 4], [tokens([...(it.h || []).map((h) => h.x), ...(it.tp || [])].join(' ')), 2],
     [tokens(`${it.col || ''} ${it.q?.c || ''}`), 1.5], [tokens(`${it.sum || ''} ${it.q?.x || ''}`), 0.6],
     [[...(it.y ? [String(it.y), `${decadeOf(it.y)}s`] : []), ...tokens(LANG[it.l] || it.l), it.vid || it.yt ? 'video' : 'audio', it.yt ? 'youtube' : 'archive'], 1],
   ];

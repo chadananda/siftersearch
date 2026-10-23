@@ -1,4 +1,4 @@
-// The /media Listening Room: index shaping (api/lib/media/listing-index.js) and the client's search, presets and seeded
+// The /media Fireside Room: index shaping (api/lib/media/listing-index.js) and the client's search, presets and seeded
 // jukebox layout (src/lib/media-listing.js).
 import { describe, it, expect } from 'vitest';
 import { fold, speakerRole, waveString, pullQuote, bestQuote, topHeadings, highlightWindow, shapeRow, shapeSpeakers, buildIndex, audioUrls } from '../../api/lib/media/listing-index.js';
@@ -196,5 +196,19 @@ describe('transcript hits ("Heard in the transcripts")', () => {
     expect(snippetAround('Soul and spirit.', 'soul').lead).toBe('');
     const g = groupHits([{ slug: 'a' }, { slug: 'b' }, { slug: 'a' }, { slug: 'c' }], 2);
     expect(g.map((x) => [x.slug, x.hits.length])).toEqual([['a', 2], ['b', 1]]);
+  });
+});
+
+describe('the tuner eval (30+ real queries over the 64 published talks, 10-22)', () => {
+  it('finds the expected talk in the top 5 for names, misspellings, aliases, titles and topics', async () => {
+    const { readFileSync } = await import('fs');
+    const { safeIndex } = await import('../../src/lib/media-listing.js');
+    const data = safeIndex(JSON.parse(readFileSync(new URL('../fixtures/media-index-64.json', import.meta.url), 'utf8')));
+    const evalSet = JSON.parse(readFileSync(new URL('../fixtures/tuner-eval.json', import.meta.url), 'utf8'));
+    const byKey = new Map(data.speakers.map((s) => [s.k, s]));
+    const ix = buildSearch(data.items);
+    const misses = evalSet.filter(([q, want]) => !searchItems(ix, { q }, byKey).slice(0, 5).some((i) => new RegExp(want).test(i.s))).map(([q]) => q);
+    // concept-only queries ("life after death") are the transcript search's job, not the instant filter's
+    expect(misses).toEqual(['life after death']);
   });
 });

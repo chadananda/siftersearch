@@ -91,16 +91,33 @@ async function mediaIndex(budget) {
 /** A moment's canonical page (the design agent's /media/<slug>/m/<key>; /m/<key> and ?m=<key> redirect there). */
 export const momentUrl = (slug, key) => `/media/${encodeURIComponent(slug)}/m/${encodeURIComponent(key)}`;
 
-let progressMemo = null;
+let progressMemo = null, liveMemo = null;
+// the pipeline's stages as people read them (the public live view): internal stages → named steps
+export const STEPS = [['download', ['archive']], ['grade', ['grade']], ['enhance', ['enhance', 'web']], ['transcribe', ['transcribe']], ['align', ['transcribe']],
+  ['diarize', ['transcribe']], ['cleanup', ['correct', 'clean']], ['faithfulness', ['correct', 'clean']], ['publish', ['describe', 'thumb', 'render', 'ingest', 'catalog']],
+  ['subheaders', ['headings']], ['crossref', ['quotes']], ['links', ['links']], ['assess', ['assess']], ['moments', ['assess']]];
+/** One item's steps from its meta.stages, current stage and state. Pure. */
+export function stepsOf(stages = {}, current = null, state = 'running') {
+  return STEPS.map(([name, inner]) => {
+    const done = inner.every((s) => stages[s]?.at);
+    const ms = inner.reduce((a, s) => a + (stages[s]?.ms || 0), 0);
+    const st = done ? 'done' : inner.includes(current) ? (state === 'failed' ? 'failed' : 'running') : 'pending';
+    return { name, state: st, ...(done && ms ? { ms } : {}) };
+  });
+}
+/** A source key from a queue rank (the progress buckets). */
+export const sourceOfRank = (rank) => (rank == null ? 'other' : rank < 2000 ? 'curated' : rank < 3000 ? 'hooper-dunbar' : rank < 4000 ? 'hands-uhj' : rank < 6000 ? 'local' : 'other');
 /** The public progress shape. Pure (exported for tests). */
 export function shapeProgress({ rows = [], published_6h = 0 }, sources, now = Date.now()) {
   const by = sources.map(([source, label]) => { const r = rows.find((x) => x.source === source) || {};
-    return { source, label, total: r.total || 0, downloaded: r.downloaded || 0, transcribed: r.transcribed || 0, published: r.published || 0, failed: r.failed || 0 }; })
+    return { source, label, total: r.total || 0, downloaded: r.downloaded || 0, enhanced: r.enhanced || 0, remastered: r.remastered || 0, transcribed: r.transcribed || 0,
+      aligned: r.aligned || 0, cross_referenced: r.cross_referenced || 0, published: r.published || 0, failed: r.failed || 0, quote_links: r.quote_links || 0, concept_crs: r.concept_crs || 0 }; })
     .filter((x) => x.total > 0);
   const sum = (k) => by.reduce((a, x) => a + x[k], 0);
   const perHour = Math.round((published_6h / 6) * 10) / 10;
   const remaining = sum('total') - sum('published') - sum('failed');
-  return { total_targets: sum('total'), downloaded: sum('downloaded'), transcribed: sum('transcribed'), published: sum('published'), failed: sum('failed'),
+  return { total_targets: sum('total'), downloaded: sum('downloaded'), enhanced: sum('enhanced'), remastered: sum('remastered'), transcribed: sum('transcribed'),
+    aligned: sum('aligned'), cross_referenced: sum('cross_referenced'), published: sum('published'), failed: sum('failed'), quote_links: sum('quote_links'), concept_crs: sum('concept_crs'),
     by_source: by, items_per_hour: perHour, eta_iso: perHour > 0 && remaining > 0 ? new Date(now + (remaining / perHour) * 3600_000).toISOString() : null, updated_at: new Date(now).toISOString() };
 }
 
@@ -224,9 +241,19 @@ export default async function mediaRoutes(fastify) {
     const c = heardCache.get(key);
     if (c && Date.now() - c.at < 120_000) { pub(reply, 60); return c.value; }
     const t0 = Date.now();
+    // three layers, fused by reciprocal rank (the eval of 10-22: the engine alone found the right talk for 12 of 34 tuner
+    // queries, BM25 + phrases alone 26 — together they cover names, words and concepts)
     const { multiIndexSearch } = await import('../lib/search.js');
-    const res = await multiIndexSearch(q, { limit: 40, filters: { collection: 'Media' }, diversify: false, phraseLayer: true, qdrantKeyword: true }).catch(() => ({ hits: [] }));
-    const order = [...new Set((res.hits || []).map((h) => h.paragraph_id ?? h.id).filter(Boolean))];
+    const { searchKeywordQdrant, searchPhrases } = await import('../lib/search/qdrant-layers.js');
+    const opts = { limit: 60, filters: { collection: 'Media' }, timeoutMs: 8000 };
+    const [res, kw, ph] = await Promise.all([
+      multiIndexSearch(q, { limit: 40, filters: { collection: 'Media' }, diversify: false, phraseLayer: true, qdrantKeyword: true }).catch(() => ({ hits: [] })),
+      searchKeywordQdrant(q, opts).catch(() => ({ hits: [] })), searchPhrases(q, opts).catch(() => ({ hits: [] }))]);
+    const fused = new Map();
+    for (const [list, w] of [[res.hits || [], 1], [kw.hits || [], 1.2], [ph.hits || [], 1]]) {
+      list.forEach((h, i) => { const id = h.paragraph_id ?? h.id; if (id) fused.set(id, (fused.get(id) || 0) + w / (60 + i)); });
+    }
+    const order = [...fused].sort((x, y) => y[1] - x[1]).map(([id]) => id).slice(0, 80);
     const terms = new Map((res.hits || []).map((h) => [h.paragraph_id ?? h.id,
       [...new Set([...String(h._formatted?.text || '').matchAll(/<em>(.*?)<\/em>/g)].map((m) => m[1]))].slice(0, 12)]));
     const rows = await mediaParagraphs(order);
@@ -242,6 +269,9 @@ export default async function mediaRoutes(fastify) {
       hits.push({ slug: it.slug, title: it.title, speaker: it.speaker, speaker_key: it.speaker_key, year: it.year, t0: Number(a.t0) || 0, t1: Number(a.t1) || null,
         text: String(r.text).slice(0, 900), terms: terms.get(id) || [] });
     }
+    // per talk: talks in the order of their best passage, each talk's passages together (the page groups them)
+    const firstAt = new Map(); hits.forEach((h, i) => { if (!firstAt.has(h.slug)) firstAt.set(h.slug, i); });
+    hits.sort((x, y) => firstAt.get(x.slug) - firstAt.get(y.slug));
     const value = { hits, ms: Date.now() - t0 };
     if (heardCache.size > 500) heardCache.clear();
     heardCache.set(key, { at: Date.now(), value });
@@ -381,6 +411,28 @@ export default async function mediaRoutes(fastify) {
     }
     pub(reply, 60);
     return progressMemo.value;
+  });
+
+  // WHAT IS BEING WORKED ON NOW (Chad 10-22: "the talks being processed right now and their steps") + the latest published;
+  // a handful of rows and their meta.json files, memoised 10 s, edge-cached 10 s
+  fastify.get('/progress/live', async (req, reply) => {
+    if (!liveMemo || Date.now() - liveMemo.at > 10_000) {
+      const { liveItems, recentlyPublished, speakersByKeys: spk } = await import('../lib/repos/media-repo.js');
+      const rows = await liveItems(12);
+      const recent = await recentlyPublished(6);
+      const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));
+      const in_progress = await Promise.all(rows.map(async (r) => {
+        const meta = r.dir ? await readJson(join(r.dir, 'meta.json')) : null;
+        const stages = meta?.stages || {};
+        const startedAt = Object.values(stages).map((x) => x?.at).filter(Boolean).sort()[0] || r.updated_at;
+        return { slug: r.slug, title: r.title || meta?.title || null, speaker: r.speaker || meta?.speaker || null, source: sourceOfRank(r.queue_rank), thumb: people.get(r.speaker_key) || null,
+          duration_s: r.duration_s || meta?.duration_s || null, started_at: startedAt, stage: r.stage, stages: stepsOf(stages, r.stage, r.state) };
+      }));
+      liveMemo = { at: Date.now(), value: { in_progress, recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
+        duration_s: x.duration_s, published_at: x.published_at })), updated_at: new Date().toISOString() } };
+    }
+    pub(reply, 10);
+    return liveMemo.value;
   });
 
   // PROGRESS by source (downloaded / in progress / published / failed / held / waiting) + throughput over the last 24 h

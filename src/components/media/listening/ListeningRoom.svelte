@@ -1,5 +1,5 @@
 <script>
-  // /media — THE LISTENING ROOM (planning/media-listing-design.md). Owns the tuner (as-you-type search + station presets +
+  // /media — THE FIRESIDE ROOM (planning/media-listing-design.md). Owns the tuner (as-you-type search + station presets +
   // decades + one voice), loads the full listing index (GET /api/media/index) after first paint, and lays the page out:
   // On Air hero → ticker → tuner → voices → jukebox → topics → eras, plus the docked preview player. SSR renders the first
   // view from the same pure plan (src/lib/media-listing.js), so hydration keeps every card in place.
@@ -184,8 +184,29 @@
       </p>
     </div>
 
-    {#if heard.length}
-      <div class="mt-6">
+  </section>
+
+  {#if !active}
+    <div class="mt-12"><Voices {speakers} active={speaker} onpick={setSpeaker} /></div>
+  {/if}
+
+  <section class="mt-12" aria-labelledby="jb-h" use:pauseOffscreen>
+    <h2 id="jb-h" class="mb-4 font-marquee text-3xl text-radio-ink sm:text-4xl">{active ? 'On this frequency' : 'The jukebox'}</h2>
+    {#if shown.length}
+      <Jukebox cards={shown} {speakersByKey} onspeaker={setSpeaker} {reduced} />
+    {:else}
+      <p class="rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">Nothing on this frequency yet. <button type="button" class="font-semibold text-radio-ink underline" onclick={clearAll}>Clear the tuner</button></p>
+    {/if}
+    <div bind:this={sentinel} class="h-px"></div>
+    {#if limit < cards.length}
+      <div class="mt-6 flex justify-center"><button type="button" class="key" onclick={() => (limit += 30)}>More from the jukebox ({cards.length - limit} left)</button></div>
+    {/if}
+  </section>
+
+  <!-- transcript passages come AFTER the talks matched by name, title and topic (instant): the server's results arrive
+       later and never reshuffle what is already on screen -->
+  {#if heard.length}
+    <section class="mt-10" aria-label="Heard in the transcripts">
         <h2 class="font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">Heard in the transcripts</h2>
         <ol class="mt-2 grid items-start gap-3 md:grid-cols-2">
           {#each heard as g (g.slug)}
@@ -222,26 +243,8 @@
             </li>
           {/each}
         </ol>
-      </div>
-    {/if}
-  </section>
-
-  {#if !active}
-    <div class="mt-12"><Voices {speakers} active={speaker} onpick={setSpeaker} /></div>
+    </section>
   {/if}
-
-  <section class="mt-12" aria-labelledby="jb-h" use:pauseOffscreen>
-    <h2 id="jb-h" class="mb-4 font-marquee text-3xl text-radio-ink sm:text-4xl">{active ? 'On this frequency' : 'The jukebox'}</h2>
-    {#if shown.length}
-      <Jukebox cards={shown} {speakersByKey} onspeaker={setSpeaker} {reduced} />
-    {:else}
-      <p class="rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">Nothing on this frequency yet. <button type="button" class="font-semibold text-radio-ink underline" onclick={clearAll}>Clear the tuner</button></p>
-    {/if}
-    <div bind:this={sentinel} class="h-px"></div>
-    {#if limit < cards.length}
-      <div class="mt-6 flex justify-center"><button type="button" class="key" onclick={() => (limit += 30)}>More from the jukebox ({cards.length - limit} left)</button></div>
-    {/if}
-  </section>
 
   {#if topics.length}
     <section class="mt-16" aria-labelledby="topics-h" use:pauseOffscreen>
