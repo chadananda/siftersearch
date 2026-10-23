@@ -49,6 +49,7 @@ import { createRequire } from 'module';
 const execAsync = promisify(exec);
 
 import { touchesRuntime } from './lib/runtime-files.js';
+import { syntaxProblems } from './lib/syntax-gate.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 
@@ -753,6 +754,23 @@ async function applyUpdates() {
     await alertNow('deploy-blocked', 'SifterSearch deploy refused — invalid PM2 config',
       `Commit ${bad} was NOT deployed; tower stays on ${prevSha}.\n\nProblems:\n- ${ecoProblems.join('\n- ')}\n\nFix and push a new commit.`);
     return false;
+  }
+
+  // Every changed JS file must PARSE before any process is touched (10-23: a SyntaxError in media-worker.js passed the API
+  // smoke test and kept the media service down): node --check; a failure → back to the running commit, blocked, alerted
+  if (prevSha) {
+    const changed = (await run(`git diff --name-only ${prevSha} HEAD`)).stdout.split('\n').map((x) => x.trim()).filter(Boolean);
+    const bad = await syntaxProblems(changed, { root: PROJECT_ROOT });
+    if (bad.length) {
+      const head = (await run('git rev-parse HEAD')).stdout.trim();
+      log('error', `Refusing deploy of ${head}: ${bad.length} file(s) do not parse — ${bad.map((b) => `${b.file}: ${b.error}`).join('; ')}`);
+      await run(`git reset --hard ${prevSha}`);
+      blockedRemote = head;
+      await alertNow('deploy-blocked', 'SifterSearch deploy refused — a file does not parse',
+        `Commit ${head} was NOT deployed; tower stays on ${prevSha} (every process keeps running).\n\n${bad.map((b) => `- ${b.file}: ${b.error}`).join('\n')}\n\nFix and push a new commit.`);
+      return false;
+    }
+    log('info', `Syntax gate: ${changed.filter((f) => /\.(?:m?js|cjs)$/.test(f)).length} changed JS file(s) parse`);
   }
 
   // Skip npm ci if package-lock.json didn't change

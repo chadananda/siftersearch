@@ -73,6 +73,15 @@ for (const name of REQUIRED) {
   const st = statusOf(procs, name);
   add(`pm2 ${name}`, st === 'online', 'critical', st);
 }
+// BOOT FAILURES: a process whose error log since its last start holds a module-load error (a SyntaxError, a missing
+// module or export) cannot run — CRITICAL with the error line, whatever pm2 reports (10-23: 'draining 13 min' WARN)
+{
+  const { bootFailures } = await import('./lib/boot-failures.mjs');
+  const tail = (f) => { try { const st = fs.statSync(f); const fd = fs.openSync(f, 'r'); const n = Math.min(st.size, 16384); const b = Buffer.alloc(n); fs.readSync(fd, b, 0, n, st.size - n); fs.closeSync(fd); return { text: b.toString('utf8'), mtime: st.mtimeMs }; } catch { return null; } };
+  const seen = new Set();
+  const rows = procs.filter((p) => !seen.has(p.name) && seen.add(p.name)).map((p) => { const t = tail(p.pm2_env?.pm_err_log_path || ''); return { name: p.name, startedAt: p.pm2_env?.pm_uptime || 0, errTail: t?.text || '', errMtime: t?.mtime || 0 }; });
+  for (const f of bootFailures(rows)) add(`${f.name} BOOT FAILURE`, false, 'critical', f.line);
+}
 // Restart storms: +10 restarts since last run = something is crash-looping.
 const restarts = Object.fromEntries(procs.map((p) => [p.name, p.pm2_env?.restart_time || 0]));
 for (const [name, n] of Object.entries(restarts)) {
@@ -89,6 +98,10 @@ let drainSeen = state.drainSeen || {};
   let services = null; try { services = r.status === 200 ? JSON.parse(r.body).services : null; } catch { /* not JSON */ }
   if (!services) add('Service drains', true, 'info', `services unavailable (${why(r)})`);
   else {
+    // a SILENT service (no heartbeat for 5 min) is not draining — it is not running (10-23: a module that would not load
+    // showed as 'draining 13 min'): CRITICAL, with its commit and last beat
+    const silent = services.filter((x) => x.health === 'silent' || Number(x.age_s) > 300);
+    add('Services alive', !silent.length, 'critical', silent.length ? silent.map((x) => `${x.name} silent ${Math.round(Number(x.age_s) / 60)} min (last beat ${x.beat_at}, commit ${String(x.commit || '').slice(0, 8)})`).join(' · ') : 'ok');
     const d = stuckDrains(services, { seen: drainSeen, limitMs: Number(process.env.DRAIN_WARN_MIN || 10) * 60_000 });
     drainSeen = d.seen;
     add('Service drains', !d.stuck.length, 'warn', d.stuck.length
