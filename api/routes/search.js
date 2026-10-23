@@ -13,7 +13,7 @@ import { join } from 'path';
 import { getMeili } from '../lib/search.js';   // /health/pipeline probes Meili's OWN queue (see meili_queue below)
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence, multiIndexSearch, getSearchSourceStats } from '../lib/search.js';
 import { requireInternal } from '../lib/auth.js';
-import { queryOne, userQuery } from '../lib/db.js';
+import { queryOne, telemetryQuery } from '../lib/db.js';
 import { getCachedContentCounts, getCachedPipelineCounts } from '../services/progress.js';
 import { CURRENT_VERSION } from '../lib/migrations/runner.js';
 import { optionalAuthenticate } from '../lib/auth.js';
@@ -198,13 +198,16 @@ function findSentenceByAnchors(text, startAnchor, endAnchor) {
 }
 
 
-/** Log search to search_log table (fire-and-forget) */
+/** Log search to search_log — telemetry: batched to the single writer, never a direct write on the API thread (a direct
+ *  INSERT froze siftersearch-api 5.5 s waiting on the file lock, 10-23). Fire-and-forget; a dropped row is logged. */
 function logSearch({ query, userId, anonymousUserId, apiKeyId, resultCount, durationMs, searchType, filters, isTest }) {
-  userQuery(
+  try {
+    telemetryQuery(
     `INSERT INTO search_log (query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, filters, is_test, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
     [query, userId || null, anonymousUserId || null, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'web', filters ? JSON.stringify(filters) : null, isTest ? 1 : 0]
-  ).catch(err => logger.warn({ err }, 'Failed to log search'));
+    );
+  } catch (err) { logger.warn({ err: err.message }, 'Failed to log search'); }
 }
 
 // First-party gate. The website's search UI (anonymous visitors included) calls these

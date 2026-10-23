@@ -211,6 +211,19 @@ export function resolveByTitlePart(slug, candidates = []) {
 }
 
 /**
+ * A URL slug missing its AUTHOR prefix → the candidate whose STORED slug ends with "_<slug>" (what a leading-wildcard
+ * `slug LIKE '%\_<slug>'` over the whole docs table did — a 7.3 s SCAN on the API thread, 10-23). Matched in memory over
+ * the URL's religion/collection candidates (docsForPathSlugs, index-served). Case-insensitive like SQLite's LIKE; live,
+ * non-duplicate copies first; null when nothing ends with it.
+ */
+export function resolveBySlugTail(slug, candidates = []) {
+  const tail = `_${String(slug || '').toLowerCase()}`;
+  if (tail === '_') return null;
+  const hits = candidates.filter((d) => d.slug && d.slug.toLowerCase() !== tail.slice(1) && d.slug.toLowerCase().endsWith(tail));
+  return hits.find((d) => !d.deleted_at && !d.duplicate_of) || hits[0] || null;
+}
+
+/**
  * A by-path redirect's Location: the canonical API path, never the HTML page — a fetch() follows it, so a page URL fed
  * HTML to JSON callers (10-22). The SSR reader maps /api/library/by-path → /library for browsers. Keeps the query string.
  * pagePath: '/library/<religion>/<collection>/<slug>'; rawUrl: the request's url (for ?limit=&offset=).

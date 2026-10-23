@@ -518,15 +518,14 @@ export function _resetCollectionNames() { _collections = { at: 0, names: [] }; }
  * to read EVERY doc row (~158k with descriptions) on the API main thread whenever a stale URL missed — 31.9 s cold
  * (10-20 15:22, three gateway timeouts). Now: collection names from the index → only the matching collections' rows.
  */
+export const PATH_SLUG_CANDIDATES_SQL = (n) => `SELECT id, title, author, religion, collection, language, year, description,
+            paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at,
+            deleted_at, duplicate_of
+       FROM docs WHERE religion IS NOT NULL AND collection IN (${Array(n).fill('?').join(',')})`;
 export async function docsForPathSlugs(religionSlug, collectionSlug, slugify) {
   const names = (await collectionNames()).filter((c) => slugify(c) === collectionSlug);
   if (!names.length) return [];
-  const rows = await queryAll(
-    `SELECT id, title, author, religion, collection, language, year, description,
-            paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at,
-            deleted_at, duplicate_of
-       FROM docs WHERE religion IS NOT NULL AND collection IN (${names.map(() => '?').join(',')})`,
-    names, 'docs-repo:path-slug-candidates');
+  const rows = await queryAll(PATH_SLUG_CANDIDATES_SQL(names.length), names, 'docs-repo:path-slug-candidates');
   return rows.filter((d) => slugify(d.religion || '') === religionSlug);
 }
 

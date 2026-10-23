@@ -31,7 +31,7 @@ import { linkFor, readerUrl } from '../lib/source-links.js';
 import { getAuthority } from '../lib/authority.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
-import { slugifyPath, generateDocSlug, parseDocSlug, resolveByTitlePart, byPathApiLocation } from '../lib/slug.js';
+import { slugifyPath, generateDocSlug, parseDocSlug, resolveByTitlePart, resolveBySlugTail, byPathApiLocation } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument, hashContent } from '../services/ingester.js';
@@ -1804,9 +1804,10 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Fall back: regenerate slug from doc metadata and compare
     // Handles old URLs without author prefix, dedup suffixes, etc.
+    let candidates = [];
     if (!document) {
       const { baseSlug, language: slugLang } = parseDocSlug(slug);
-      const candidates = await docsForPathSlugs(religionSlug, collectionSlug, slugifyPath);
+      candidates = await docsForPathSlugs(religionSlug, collectionSlug, slugifyPath);
 
       document = candidates.find(doc => {
         const docReligionSlug = slugifyPath(doc.religion || '');
@@ -1859,22 +1860,14 @@ Return ONLY the description text, no quotes or formatting.`;
         return reply.redirect(byPathApiLocation(redirect.new_path, request.url), 301);
       }
 
-      // Try partial slug match: find docs where slug ends with requested slug
-      // This handles cases where author prefix is missing from the URL
-      // Escape underscores in the slug for LIKE pattern (underscore = single-char wildcard)
-      const escapedSlug = slug.replace(/_/g, '\\_');
-      const partialMatch = await queryOne(`
-        SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at
-        FROM docs
-        WHERE slug LIKE ? ESCAPE '\\' AND slug != ?
-      `, [`%\\_${escapedSlug}`, slug]);
-
+      // Partial slug match: a stored slug ending "_<slug>" (author prefix missing from the URL). Matched in memory over
+      // this religion/collection's candidates — the old `slug LIKE '%\_<slug>'` scanned all of docs (7.3 s, 10-23).
+      const partialMatch = resolveBySlugTail(slug, candidates);
       if (partialMatch) {
         const matchReligionSlug = slugifyPath(partialMatch.religion || '');
         const matchCollectionSlug = slugifyPath(partialMatch.collection || '');
         // Only redirect if religion/collection also match
-        if (matchReligionSlug === religion && matchCollectionSlug === collection) {
+        if (matchReligionSlug === religionSlug && matchCollectionSlug === collectionSlug) {
           const correctPath = `/library/${matchReligionSlug}/${matchCollectionSlug}/${partialMatch.slug}`;
           // Create redirect for future requests (fire and forget)
           query(`

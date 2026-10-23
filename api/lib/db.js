@@ -502,8 +502,14 @@ export async function transaction(statements, name = '') {
   return result;
 }
 
+// With no USER_DATABASE_URL the "user DB" IS the content DB, so a user-table write must take the same road as any content
+// write — through the single writer. It wrote directly instead: `INSERT INTO search_log` from siftersearch-api waited
+// 5.5 s on the file lock with the event loop frozen (10-23).
+const userIsContent = (db) => ROUTE_WRITES && db === contentDb;
+
 export async function userQuery(sql, params = [], name = '') {
   const db = await getUserDb();
+  if (userIsContent(db)) return query(sql, params, name);
   const start = Date.now();
   const result = withName(name, () => runQuery(db, sql, params));
   return result;
@@ -521,6 +527,7 @@ export async function userQueryAll(sql, params = [], name = '') {
 
 export async function userTransaction(statements, name = '') {
   const db = await getUserDb();
+  if (userIsContent(db)) return transaction(statements, name);
   const start = Date.now();
   const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
   const result = txn(statements);
