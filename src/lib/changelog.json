@@ -1,6 +1,69 @@
 {
-  "generated": "2026-10-23T20:11:05.661Z",
+  "generated": "2026-10-23T22:20:15.551Z",
   "entries": [
+    {
+      "hash": "e82860b8",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Speaker exclusions (Chad 10-23: Javaheri + Correa, no House members elected after 1988) + short single-writer transactions",
+      "scope": "media"
+    },
+    {
+      "hash": "80a6c07d",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The aorus diarization cap holds after a restart — a slot is a job id, a new start re-checks the cap (a WHILE, not an if) and counts the jobs the HOST reports running (gate verb 'running diarize'); 14:04 re-attached 4 on aorus (cap 2) and each one that finished woke a waiter, so aorus ran 3 all afternoon",
+      "scope": "media"
+    },
+    {
+      "hash": "019dafa6",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "A transcription or diarization sends its audio file to the ASR host AS IS (it decodes with ffmpeg) — no tower 16 kHz conversion at the lowest IO priority between taking an ASR slot and starting (13:48 dispatch → not started by 13:57); files over 800 MB are still converted first",
+      "scope": "media"
+    },
+    {
+      "hash": "055d3b13",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A transcription's 16 kHz conversion gets its own two slots — it holds an ASR host slot while converting, and behind 16 prep runs' probe conversions it waited ~30 min (13:13 dispatch → 13:43 start), so aorus's slots read 'taken' with nothing running there",
+      "scope": "media"
+    },
+    {
+      "hash": "4dd1e10b",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The transcription stage's language ID goes straight to aorus, not through the probe pool — 16 prep runs' probes filled it and ASR workers waited there while aorus's transcription slots sat empty (13:29: aorus idle, 6 talks waiting; my 12:35 change)",
+      "scope": "media"
+    },
+    {
+      "hash": "f084ffe3",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Author-photo audit (one face + identity vs reference, else by eye) and publish to R2 with credit/licence — no hotlinks",
+      "scope": "books"
+    },
+    {
+      "hash": "115c685e",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Diarization on aorus's GPU first — sherpa-onnx built for CUDA in venv-diar (install-time download into user space; runtime offline)",
+      "scope": "media"
+    },
+    {
+      "hash": "d6f499de",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Author-photo audit jobs, no auto-applied unverified portraits, daily Google Books retry pass",
+      "scope": "books"
+    },
+    {
+      "hash": "7c734853",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Hunt + publisher-rule dry run (34 would be encumbered; 63 Publishing-Trust books to review; not applied) · reader shows 'b. 1921' for an unknown death year",
+      "scope": "books"
+    },
     {
       "hash": "5a9b5b7b",
       "date": "2026-10-23",
@@ -3437,73 +3500,73 @@
       "type": "Chore",
       "description": "Log the shape of a refused model request",
       "scope": "dewey"
-    },
-    {
-      "hash": "377250a3",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "One thread per member shared by phone and desktop (dewey_messages, migr 160); no loading button or column when nothing is loading",
-      "scope": "dewey"
-    },
-    {
-      "hash": "80e28dc9",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Arcimboldo's 'The Librarian' (public domain) as Dewey's avatar and app icon; mic on the left, send on the right",
-      "scope": "dewey"
-    },
-    {
-      "hash": "6a41ebae",
-      "date": "2026-10-17",
-      "type": "Fixed",
-      "description": "Responsive — nothing scrolls sideways, edge buttons flush, solid slide-over panels with a dark scrim, full stage labels; mic in the input; processing count on the loading button",
-      "scope": "dewey"
-    },
-    {
-      "hash": "e770e716",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Appraisal — Perplexity + Parallel.ai research, then in scope?, which shelf, value, price, free text online, advice; a live status line at every step",
-      "scope": "dewey"
-    },
-    {
-      "hash": "9a4eb7f6",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "On a phone, the library and loading panels are edge icon buttons that slide over the chat; photos appear in the conversation as real thumbnails",
-      "scope": "dewey"
-    },
-    {
-      "hash": "e1933498",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "The chat opens with Dewey's one-line introduction; no heading above it",
-      "scope": "dewey"
-    },
-    {
-      "hash": "9b91b1c3",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "Send inside a full-width input; photo + attach as large round floating buttons; the intro is Dewey's first bubble",
-      "scope": "dewey"
-    },
-    {
-      "hash": "b439540c",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "The right column is Dewey's intake activity (loading now / just loaded, with stages); thumb-sized chat buttons, 16 px inputs",
-      "scope": "dewey"
-    },
-    {
-      "hash": "8e28e4aa",
-      "date": "2026-10-17",
-      "type": "New",
-      "description": "The title sits just above the chat",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "e82860b8",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Speaker exclusions (Chad 10-23: Javaheri + Correa, no House members elected after 1988) + short single-writer transactions",
+        "scope": "media"
+      },
+      {
+        "hash": "80a6c07d",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The aorus diarization cap holds after a restart — a slot is a job id, a new start re-checks the cap (a WHILE, not an if) and counts the jobs the HOST reports running (gate verb 'running diarize'); 14:04 re-attached 4 on aorus (cap 2) and each one that finished woke a waiter, so aorus ran 3 all afternoon",
+        "scope": "media"
+      },
+      {
+        "hash": "019dafa6",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "A transcription or diarization sends its audio file to the ASR host AS IS (it decodes with ffmpeg) — no tower 16 kHz conversion at the lowest IO priority between taking an ASR slot and starting (13:48 dispatch → not started by 13:57); files over 800 MB are still converted first",
+        "scope": "media"
+      },
+      {
+        "hash": "055d3b13",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A transcription's 16 kHz conversion gets its own two slots — it holds an ASR host slot while converting, and behind 16 prep runs' probe conversions it waited ~30 min (13:13 dispatch → 13:43 start), so aorus's slots read 'taken' with nothing running there",
+        "scope": "media"
+      },
+      {
+        "hash": "4dd1e10b",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The transcription stage's language ID goes straight to aorus, not through the probe pool — 16 prep runs' probes filled it and ASR workers waited there while aorus's transcription slots sat empty (13:29: aorus idle, 6 talks waiting; my 12:35 change)",
+        "scope": "media"
+      },
+      {
+        "hash": "f084ffe3",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Author-photo audit (one face + identity vs reference, else by eye) and publish to R2 with credit/licence — no hotlinks",
+        "scope": "books"
+      },
+      {
+        "hash": "115c685e",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Diarization on aorus's GPU first — sherpa-onnx built for CUDA in venv-diar (install-time download into user space; runtime offline)",
+        "scope": "media"
+      },
+      {
+        "hash": "d6f499de",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Author-photo audit jobs, no auto-applied unverified portraits, daily Google Books retry pass",
+        "scope": "books"
+      },
+      {
+        "hash": "7c734853",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Hunt + publisher-rule dry run (34 would be encumbered; 63 Publishing-Trust books to review; not applied) · reader shows 'b. 1921' for an unknown death year",
+        "scope": "books"
+      },
       {
         "hash": "5a9b5b7b",
         "date": "2026-10-23",
@@ -6951,69 +7014,6 @@
         "date": "2026-10-17",
         "type": "Chore",
         "description": "Log the shape of a refused model request",
-        "scope": "dewey"
-      },
-      {
-        "hash": "377250a3",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "One thread per member shared by phone and desktop (dewey_messages, migr 160); no loading button or column when nothing is loading",
-        "scope": "dewey"
-      },
-      {
-        "hash": "80e28dc9",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Arcimboldo's 'The Librarian' (public domain) as Dewey's avatar and app icon; mic on the left, send on the right",
-        "scope": "dewey"
-      },
-      {
-        "hash": "6a41ebae",
-        "date": "2026-10-17",
-        "type": "Fixed",
-        "description": "Responsive — nothing scrolls sideways, edge buttons flush, solid slide-over panels with a dark scrim, full stage labels; mic in the input; processing count on the loading button",
-        "scope": "dewey"
-      },
-      {
-        "hash": "e770e716",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Appraisal — Perplexity + Parallel.ai research, then in scope?, which shelf, value, price, free text online, advice; a live status line at every step",
-        "scope": "dewey"
-      },
-      {
-        "hash": "9a4eb7f6",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "On a phone, the library and loading panels are edge icon buttons that slide over the chat; photos appear in the conversation as real thumbnails",
-        "scope": "dewey"
-      },
-      {
-        "hash": "e1933498",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "The chat opens with Dewey's one-line introduction; no heading above it",
-        "scope": "dewey"
-      },
-      {
-        "hash": "9b91b1c3",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "Send inside a full-width input; photo + attach as large round floating buttons; the intro is Dewey's first bubble",
-        "scope": "dewey"
-      },
-      {
-        "hash": "b439540c",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "The right column is Dewey's intake activity (loading now / just loaded, with stages); thumb-sized chat buttons, 16 px inputs",
-        "scope": "dewey"
-      },
-      {
-        "hash": "8e28e4aa",
-        "date": "2026-10-17",
-        "type": "New",
-        "description": "The title sits just above the chat",
         "scope": "dewey"
       }
     ]
