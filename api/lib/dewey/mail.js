@@ -139,6 +139,7 @@ const RELATION = { same: 'the same text', inside: 'inside', partial: 'only part 
 const STATE = { wanted: 'on our wanted list — I am looking for a copy', researched: 'researched; still looking for a copy we can add', source: 'received, waiting its turn to be processed',
   processing: 'being processed now', 'needs-ocr': 'waiting for text recognition (it is a scan)', 'needs-human': 'waiting for a librarian to look at it', ingested: 'in the library',
   failed: 'could not be processed — a person will look at it', offered: 'received, waiting for a decision', declined: 'set aside', 'to-buy': 'on our list to buy', lead: 'a lead we are following' };
+const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const named = (x) => `*${x.title || 'Untitled'}*${x.author ? ` by ${x.author}` : ''}`;
 const held = (c) => `${named(c)}${c.language && c.language !== 'en' ? ` (${c.language})` : ''} — [read it here](${docLink(c.id)})${c.relation && c.relation !== 'same' ? ` · ${RELATION[c.relation] || c.relation}${c.of != null ? ` (${Math.round(c.of * 100)}%)` : ''}` : ''}`;
 const asked = (r) => (r.source === 'title' ? `“${r.label}”` : r.source === 'link' ? r.label : r.source === 'passage' ? `the passage you quoted` : r.source === 'photo' ? 'your photo' : r.label);
@@ -149,7 +150,12 @@ export function composeReply({ name = null, results = [], unread = [], refused =
   for (const r of results) {
     if (r.verb === 'status') { status.push(...(r.items.length ? r.items.map((i) => `- ${named(i)} — ${STATE[i.state] || i.state}${i.state === 'ingested' && i.doc_id ? ` · [read it here](${docLink(i.doc_id)})` : ''}`) : ['- I have nothing from you on file yet.'])); continue; }
     const read = r.identified?.title ? `${named(r.identified)}` : asked(r);
-    if (r.verdict === 'held') { have.push(`- ${r.verb === 'intake' ? `Your file *${r.label}* (${read}) — we already hold it: ` : r.source === 'title' ? `${asked(r)} — ` : `${asked(r)}, which I read as ${read} — `}${held(r.candidates[0] || {})}`); continue; }
+    if (r.verdict === 'held') {
+      const c = r.candidates[0] || {};
+      const same = fold(c.title).startsWith(fold(r.identified?.title).slice(0, 40)) && !!r.identified?.title;   // read as what we hold: say it once
+      have.push(`- ${r.verb === 'intake' ? `Your file *${r.label}*${same ? '' : ` (${read})`} — we already hold it: ` : r.source === 'title' || same ? `${asked(r)} — ` : `${asked(r)}, which I read as ${read} — `}${held(c)}`);
+      continue;
+    }
     if (r.verb === 'intake' && r.item?.existing) { queued.push(`- *${r.label}* (${read}) — you sent this file before; it is ${STATE[r.item.state] || r.item.state} (no. ${r.item.id}).`); continue; }
     if (r.verb === 'intake' && r.item) { queued.push(`- *${r.label}*, which I read as ${read} — not in the library, so I have archived your copy and queued it for processing${r.needs_ocr ? ' (it is a scan, so its text will be recognised first)' : ''}. Its number is ${r.item.id}; ask me about it any time.`); continue; }
     if (['possible', 'partly-held'].includes(r.verdict) && r.candidates.length) {

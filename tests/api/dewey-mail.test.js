@@ -147,3 +147,12 @@ describe('composeReply — the letter', () => {
     expect(t).toMatch(/\*A Scan\* — waiting for text recognition/);
   });
 });
+
+describe('reply wording', () => {
+  it('a photo read as the very work we hold names it once', () => {
+    const t = composeReply({ results: [{ verb: 'holdings', source: 'photo', label: 'cover.jpg', verdict: 'held', identified: { title: 'The Chosen Highway', author: 'Lady Blomfield' },
+      candidates: [{ id: 12361, title: 'The Chosen Highway', author: 'Lady Sarah Louisa Blomfield' }] }] });
+    expect(t).toMatch(/- your photo — \*The Chosen Highway\* by Lady Sarah Louisa Blomfield — \[read it here\]/);
+    expect(t).not.toMatch(/which I read as/);
+  });
+});
