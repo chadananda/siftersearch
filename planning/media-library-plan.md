@@ -198,3 +198,38 @@ pipeline tools at the measured cap (`threadsFor`, default 8), remastering at **�
 parallel A/B runs at ~700 % CPU each (≈42 cores) took search to 7.9–9.1 s. Heavy model work (remastering, ASR, alignment,
 diarization, DNSMOS/NISQA) moves to **boss's GPU** (Strix Halo, ROCm), with a GPU-memory budget that leaves vLLM its share
 and a CPU fallback; tower keeps downloads, ffmpeg and indexing.
+
+## 13. Restoration and the remaster QA gate (Chad 10-23 — EVERY talk, never sampled)
+
+> "Fixing old recordings is one of the biggest value-adds that we are bringing to the table, so please check the output of
+> every single one (either manually or automatically) and ensure the fix was optimal." — Chad 10-23
+
+**Why (the Ioas case, 10-23):** the grade said "muffled — bandwidth 2.98 kHz, needs bandwidth restoration", but enhance
+only ever made `light` (ffmpeg chain) and `dfn` (DeepFilterNet), and the listening pick took `dfn` on SNR alone (+43.9 dB)
+although it scored a voice-match of 0.60 and sounded more muffled. Proof of fix: gentle DFN (atten_lim 15 dB) → Resemble
+Enhance → −18 LUFS took NISQA 1.22 → 4.55, DNSMOS 1.20 → 3.09, bandwidth 2.99 → 19.5 kHz. **Chad listens first**
+(artifact TvBeMUekt5b1mpjEL4rjMi); no other talk changes before his OK.
+
+**The pipeline (to build after the OK):**
+1. **Grade → chain.** The grade's per-dimension fixes choose the candidates: hiss → gentle DFN (atten_lim 12–18 dB, never
+   full strength on a band-limited source); bandwidth < ~5 kHz or "muffled" → bandwidth restoration (Resemble Enhance on
+   aorus's GPU in chunks when the card has ≥ 3 GB free; AudioSR as the alternative); then loudness −18 LUFS.
+2. **Candidates → pick by PERCEIVED quality** (NISQA / DNSMOS overall), not SNR, with vetoes:
+   - bandwidth or 99 % roll-off down > 20 % from the original (unless what was removed was noise above the speech);
+   - new clipping, dropouts or artefacts (spectral-flatness spikes = musical noise / metallic tone);
+   - loudness outside target; ASR confidence worse than the original's;
+   - voice timbre changed: speaker-embedding similarity to the original below a threshold (to be set from Chad's ear on
+     the Ioas clip — both DFN and Resemble scored ~0.6 there).
+   **Never worse than the original:** if no candidate beats the original on perceived quality without a veto, the
+   original (light chain only) is published.
+3. **The QA gate, per talk, after enhance:** records the metrics of the original and the published audio and a verdict:
+   `pass-auto` · `needs-work` (a veto, or a small gain on a poor source while a stronger chain was possible → the next
+   chain is tried automatically, the best kept) · `review` (borderline or failed → the admin review queue with A/B players
+   and the numbers) · `pass-reviewed` (a human listened).
+4. **Backfill** over every published talk: the distribution (passed / re-processed / queued for review) is reported.
+5. **system-checks:** WARN when a published talk has no QA verdict, or the review queue passes N.
+6. **The weekly digest:** 3 random before/after pairs for Chad to spot-check by ear.
+
+**Known gaps (10-23):** the web Ogg is 32 kbps Opus "voip", which caps bandwidth (~4 kHz measured on the restored Ioas
+copy, 5.85 kHz for the m4a) — restored talks need a wider Ogg setting (e.g. 48 kbps, `audio` application). Resemble on a
+CPU is ~8 min per minute of audio (too slow); on the GPU it needs chunking to fit beside the transcriptions.
