@@ -32,5 +32,15 @@ export function startHoverPrefetch({ dwell = 65, max = 2 } = {}) {
   document.addEventListener('pointerout', out, { passive: true });
   document.addEventListener('focusin', now);
   document.addEventListener('touchstart', now, { passive: true });
-  return () => { document.removeEventListener('pointerover', over); document.removeEventListener('pointerout', out); document.removeEventListener('focusin', now); document.removeEventListener('touchstart', now); };
+  // talk cards scrolling into view (dwell ~700 ms, at most one at a time): the audio fill starts before anyone points at them
+  let seen = 0; const dwellers = new Map();
+  const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((es) => es.forEach((e) => {
+    const slug = talkSlug(e.target.getAttribute('href'));
+    if (!slug) return;
+    if (e.isIntersecting) dwellers.set(e.target, setTimeout(() => { if (active < 1) run(slug); }, 700)); else clearTimeout(dwellers.get(e.target));
+  })) : null;
+  const scan = () => { if (!io || slowLink()) return; document.querySelectorAll('a[href^="/media/"]').forEach((a) => { if (seen < 60 && !a.dataset.pf && talkSlug(a.getAttribute('href'))) { a.dataset.pf = '1'; seen++; io.observe(a); } }); };
+  const idle = globalThis.requestIdleCallback || ((f) => setTimeout(f, 1500));
+  idle(scan); const rescan = setInterval(scan, 5000);
+  return () => { clearInterval(rescan); io?.disconnect(); document.removeEventListener('pointerover', over); document.removeEventListener('pointerout', out); document.removeEventListener('focusin', now); document.removeEventListener('touchstart', now); };
 }

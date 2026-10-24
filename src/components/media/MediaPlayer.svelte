@@ -170,7 +170,7 @@
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
         const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
           : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { busy = true; try { if (!(await ready(want))) throw new Error('the audio is not ready yet — try again'); note = ''; } finally { busy = false; } audio.src = media.href(want); loaded = want; }
+        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { busy = true; try { if (!(await ready(want))) throw new Error('the audio is still being prepared; it will start shortly'); note = ''; } finally { busy = false; } audio.src = media.href(want); loaded = want; }
         await waitMeta();
         audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
       } else {
@@ -207,14 +207,14 @@
   let switching = false;
   const ogg = () => (typeof Audio !== 'undefined' && new Audio().canPlayType('audio/ogg; codecs="opus"') ? 'ogg' : 'm4a');
   /** Both copies are warmed into the edge store on load (one-time, idempotent: worker /_media/warm). */
-  const warmAudio = () => { const v = /[?&]v=(\d+)/.exec(audioInfo?.m4a || '')?.[1]; if (v) fetch(media.href(`/_media/warm?slug=${encodeURIComponent(item.slug)}&v=${v}&fmt=${ogg()}&copy=${hasOriginal ? 'both' : 'main'}`), { method: 'POST' }).catch(() => {}); };
+  const warmAudio = (only = null) => { const v = /[?&]v=(\d+)/.exec(audioInfo?.m4a || '')?.[1]; if (v) fetch(media.href(`/_media/warm?slug=${encodeURIComponent(item.slug)}&v=${v}&fmt=${ogg()}&copy=${only || (hasOriginal ? 'both' : 'main')}`), { method: 'POST' }).catch(() => {}); };
   /** Wait until the audio object is in the edge store (202 + Retry-After while it is being prepared): "preparing audio". */
   async function ready(path) {
     const t0 = Date.now();
     for (;;) {
       const r = await fetch(media.href(path), { headers: { range: 'bytes=0-0' } });
       if (r.status !== 202) return r.ok;
-      note = 'Preparing the audio…';
+      if (Date.now() - t0 > 3000) note = 'Getting the audio ready…';   // under 3 s: just the spinner
       if (Date.now() - t0 > 180000) return false;
       await new Promise((res) => setTimeout(res, (Number(r.headers.get('retry-after')) || 4) * 1000));
     }
@@ -227,6 +227,7 @@
     if (!u || warmed.has(u) || which === copy) return;
     warmed.add(u);
     fetch(media.href(u), { headers: { range: 'bytes=0-65535' } }).catch(() => {});
+    if (which === 'original') warmAudio('original');   // start the original's fill now (restored copy first was already warmed on load)
   }
   async function switchCopy(which) {
     if (!canPlay || !hasOriginal || which === copy || switching) return;
@@ -238,7 +239,7 @@
       const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
       const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
         : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-      if (!(await ready(want))) throw new Error('the other copy is not ready yet — try again');
+      if (!(await ready(want))) throw new Error('the other copy is still being prepared');
       note = ''; audio.src = media.href(want); loaded = want;
       await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load — try again')), 25000))]);
       audio.currentTime = Math.max(0, copyTime(t) - offset);
