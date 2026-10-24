@@ -1166,9 +1166,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       if (st.cloud_stopped && !homeHosts.length) { stop = st.cloud_stopped; break; }
       // home hosts: re-attach a task from before a restart, start one when a host is free and eligible
+      // ASR KEEPS PRIORITY (Chad 10-23): a home host starts a UniPASE copy only while no transcription waits in the queue
+      if (homeHosts.length && now() - (st.asr_checked || 0) > 120_000) {
+        const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
+        st.asr_waiting = (await opsRepo.pendingRuns('media-asr').catch(() => [])).filter((r) => r.status === 'queued').length; st.asr_checked = now();
+      }
       for (const h of homeHosts) {
         if (homeTasks.has(h)) continue;
-        const cur = st.home[h] || (st.queue.length && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
+        const cur = st.home[h] || (st.queue.length && !st.asr_waiting && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
         if (!cur) continue;
         st.home[h] = cur;
         homeTasks.set(h, (async () => {
@@ -1184,7 +1189,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           delete st.home[h];
           st.attempts[cur.itemId] = (st.attempts[cur.itemId] || 0) + 1;
           if (st.attempts[cur.itemId] < 2) st.queue.push(cur.itemId); else st.failed.push({ id: cur.itemId, error: `${h}: ${String(err?.message || err).slice(-300)}` });
-          st.home_errors = (st.home_errors || 0) + 1;
+          st.home_errors = (st.home_errors || 0) + 1; st.home_last_error = `${h} #${cur.itemId}: ${String(err?.message || err).slice(-300)}`;
         }).finally(() => homeTasks.delete(h)));
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
@@ -1246,6 +1251,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 const err = await C.podSsh(run, p, `tail -c 600 /workspace/spool/${job}/error.txt; rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
                 delete st.jobs[job];
                 st.attempts[x.itemId] = (st.attempts[x.itemId] || 0) + 1;
+                st.last_job_error = `${x.slug}: ${err.slice(-300)}`;
                 if (st.attempts[x.itemId] < 2) st.queue.push(x.itemId); else st.failed.push({ id: x.itemId, slug: x.slug, error: err.slice(-300) });
               }
             }

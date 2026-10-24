@@ -86,12 +86,23 @@ describe('the RunPod backfill', () => {
     const t = setup();
     t.cloud.accountBalance = vi.fn(async () => ({ balance: 80 }));   // below the floor from the start → no pod at all
     const homeRemaster = vi.fn(async (h, it) => ({ audio_s: it.duration_s, seconds: 30 }));
-    const r = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 3 }, { ...t.deps, homeHosts: ['aorus'], homeRemaster,
+    const r = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 3 }, { ...t.deps, homeHosts: ['aorus'], homeRemaster, ops: { pendingRuns: async () => [] },
       tools: { diskOk: () => true, coolEnough: () => true, asrLoad: () => ({}) } });
     expect(r).toMatchObject({ done: 2, home_done: 2, queue: 0 });
     expect(r.cloud_stopped).toMatch(/balance/);
     expect(t.cloud.createPod).not.toHaveBeenCalled();
     expect(t.queued.map((q) => q[1].id).sort()).toEqual([1, 2]);
+  });
+  it('no home work while a transcription waits in the queue (ASR keeps priority)', async () => {
+    const t = setup();
+    t.cloud.accountBalance = vi.fn(async () => ({ balance: 80 }));
+    const homeRemaster = vi.fn(async (h, it) => ({ audio_s: it.duration_s, seconds: 30 }));
+    let n = 0;
+    t.deps.draining = () => ++n > 5;   // stop after a few ticks
+    const r = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 3 }, { ...t.deps, homeHosts: ['aorus'], homeRemaster, ops: { pendingRuns: async () => [{ status: 'queued' }] },
+      tools: { diskOk: () => true, coolEnough: () => true, asrLoad: () => ({}) } });
+    expect(homeRemaster).not.toHaveBeenCalled();
+    expect(r.yielded).toBe(true);
   });
   it('a home host that is hot or has no free ASR slot is not given work', async () => {
     const { homeEligible } = await import('../../api/lib/ops/media-jobs.js');
