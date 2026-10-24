@@ -1,6 +1,48 @@
 {
-  "generated": "2026-10-24T17:10:14.083Z",
+  "generated": "2026-10-24T17:25:25.263Z",
   "entries": [
+    {
+      "hash": "e28f1d6b",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Cards in view start the audio fill; original warms on toggle hover; spinner-only for short waits; backfill defaults to the restored (main) copy",
+      "scope": "media"
+    },
+    {
+      "hash": "249cb51b",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Work orders and light jobs get their own lane (they sat behind 209 queued remaster runs); a worker result always queues tower's take",
+      "scope": "media"
+    },
+    {
+      "hash": "8e566512",
+      "date": "2026-10-24",
+      "type": "Docs",
+      "description": "LICENSES for the public worker image",
+      "scope": "media"
+    },
+    {
+      "hash": "58155b5a",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Backfill-r2 reads the index from tower's gateway and retries connects",
+      "scope": "media"
+    },
+    {
+      "hash": "aac4b933",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Backfill-r2 — resumable, throttled, newest-first copy of every talk's web audio into R2 via the idempotent warm endpoint",
+      "scope": "media"
+    },
+    {
+      "hash": "2d0228a4",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Version pill sits at the exact midpoint between the timestamp and Speed (equal gaps, measured 304.8/304.8 px desktop, 12/12 px at 400 px)",
+      "scope": "media"
+    },
     {
       "hash": "d29b815a",
       "date": "2026-10-24",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "A network failure is one answer's error, never the end of the run; results saved after every batch",
       "scope": "anis battery"
-    },
-    {
-      "hash": "37ed611b",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "--immerse runs the questions people asked bahaiwritings.app against Immerse's own answers (detailed · doctrinal · nuanced · interesting; the gap Anís left is recorded); our test addresses are audited but never alert Chad",
-      "scope": "anis battery"
-    },
-    {
-      "hash": "0588bb21",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Earlier replies are context, never audited unless the reader questions them (three 'corrections' of Lal's chart were all false)",
-      "scope": "anis researcher"
-    },
-    {
-      "hash": "90624f1a",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A word study shows both measures, labelled — aligned-passage counts and CTAI's root-level counts — so an earlier root-level chart is not mistaken for an error",
-      "scope": "anis"
-    },
-    {
-      "hash": "f0e93704",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "An earlier reply is corrected only with a passage, precisely — never called unsupported or invented (a root-wide count is a different measure, not an error)",
-      "scope": "anis researcher"
-    },
-    {
-      "hash": "1fb6f212",
-      "date": "2026-10-19",
-      "type": "Test",
-      "description": "The researcher switch never leaks into test harnesses (injected deps keep it off unless they inject a researcher)",
-      "scope": "anis"
-    },
-    {
-      "hash": "c44b9ab4",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "An empty word study is about the spelling, never evidence — no disowning an earlier reply on it; candidate words are checked in the concordance in Arabic script",
-      "scope": "anis researcher"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "e28f1d6b",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Cards in view start the audio fill; original warms on toggle hover; spinner-only for short waits; backfill defaults to the restored (main) copy",
+        "scope": "media"
+      },
+      {
+        "hash": "249cb51b",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Work orders and light jobs get their own lane (they sat behind 209 queued remaster runs); a worker result always queues tower's take",
+        "scope": "media"
+      },
+      {
+        "hash": "8e566512",
+        "date": "2026-10-24",
+        "type": "Docs",
+        "description": "LICENSES for the public worker image",
+        "scope": "media"
+      },
+      {
+        "hash": "58155b5a",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Backfill-r2 reads the index from tower's gateway and retries connects",
+        "scope": "media"
+      },
+      {
+        "hash": "aac4b933",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Backfill-r2 — resumable, throttled, newest-first copy of every talk's web audio into R2 via the idempotent warm endpoint",
+        "scope": "media"
+      },
+      {
+        "hash": "2d0228a4",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Version pill sits at the exact midpoint between the timestamp and Speed (equal gaps, measured 304.8/304.8 px desktop, 12/12 px at 400 px)",
+        "scope": "media"
+      },
       {
         "hash": "d29b815a",
         "date": "2026-10-24",
@@ -6971,48 +7013,6 @@
         "type": "Fixed",
         "description": "A network failure is one answer's error, never the end of the run; results saved after every batch",
         "scope": "anis battery"
-      },
-      {
-        "hash": "37ed611b",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "--immerse runs the questions people asked bahaiwritings.app against Immerse's own answers (detailed · doctrinal · nuanced · interesting; the gap Anís left is recorded); our test addresses are audited but never alert Chad",
-        "scope": "anis battery"
-      },
-      {
-        "hash": "0588bb21",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Earlier replies are context, never audited unless the reader questions them (three 'corrections' of Lal's chart were all false)",
-        "scope": "anis researcher"
-      },
-      {
-        "hash": "90624f1a",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A word study shows both measures, labelled — aligned-passage counts and CTAI's root-level counts — so an earlier root-level chart is not mistaken for an error",
-        "scope": "anis"
-      },
-      {
-        "hash": "f0e93704",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "An earlier reply is corrected only with a passage, precisely — never called unsupported or invented (a root-wide count is a different measure, not an error)",
-        "scope": "anis researcher"
-      },
-      {
-        "hash": "1fb6f212",
-        "date": "2026-10-19",
-        "type": "Test",
-        "description": "The researcher switch never leaks into test harnesses (injected deps keep it off unless they inject a researcher)",
-        "scope": "anis"
-      },
-      {
-        "hash": "c44b9ab4",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "An empty word study is about the spelling, never evidence — no disowning an earlier reply on it; candidate words are checked in the concordance in Arabic script",
-        "scope": "anis researcher"
       }
     ]
   }
