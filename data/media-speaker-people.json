@@ -1711,6 +1711,11 @@
    "speaker": "B. Afshin",
    "reason": "The same series ('Afshin 3')",
    "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "jones-01-thursday",
+   "title": "Early Days Teaching in Bucharest",
+   "reason": "Retitled (Chad 10-24): the Romania/Bucharest pioneering talk, filed as \"01 (thursday)\"; the slug stays"
   }
  ],
  "talk_identities_open": [

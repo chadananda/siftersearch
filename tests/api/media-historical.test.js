@@ -123,4 +123,18 @@ describe('per-talk identities from the evidence (Chad 10-23)', async () => {
     expect(idCalls).toEqual([[1, 2]]);
     expect(queued).toEqual([{ id: 1, redo: ['update'] }, { id: 2, redo: ['update'] }]);
   });
+  it('a title decision retitles the talk (meta + catalogue row, old title kept), leaves the slug, and is idempotent', async () => {
+    const meta = { title: '01 (thursday)', speaker: 'Chad Jones' }; const written = {}, rows = [], queued = [];
+    const deps = { data: { talk_identities: [{ slug: 'jones-01-thursday', title: 'Early Days Teaching in Bucharest', reason: 'r' }] },
+      repo: { getMediaBySlug: async () => ({ id: 9, dir: '/t' }), updateMediaItem: async (id, f) => rows.push([id, f]) },
+      ops: { pendingRuns: async () => [] }, readMeta: async () => structuredClone(meta), writeMeta: async (d, m) => { written[d] = m; }, queue: async (n, p) => queued.push(p), identity: async () => ({}) };
+    const r = await mediaTalkIdentitiesJob({ write: true }, deps);
+    expect(r.applied).toEqual(['jones-01-thursday']);
+    expect(written['/t']).toMatchObject({ title: 'Early Days Teaching in Bucharest', title_was: '01 (thursday)' });
+    expect(rows).toEqual([[9, { title: 'Early Days Teaching in Bucharest' }]]);
+    expect(queued).toEqual([{ id: 9, redo: ['update'] }]);
+    Object.assign(meta, { title: 'Early Days Teaching in Bucharest' });
+    expect((await mediaTalkIdentitiesJob({ write: true }, deps)).unchanged).toBe(1);
+    expect(data.talk_identities.find((t) => t.slug === 'jones-01-thursday').title).toBe('Early Days Teaching in Bucharest');
+  });
 });

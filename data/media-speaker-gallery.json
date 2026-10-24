@@ -7898,6 +7898,25 @@
     "primary": false,
     "needs_ext": true
    }
+  ],
+  "chad-jones": [
+   {
+    "file": "media-speakers/chad-jones/340ca91a1ade70fc.jpg",
+    "sha": "340ca91a1ade70fcb21685373408d96fedb84cf741d7c4601ee3162b3b01a6e3",
+    "origin": "supplied",
+    "source_url": null,
+    "page_url": null,
+    "credit": "photo supplied by Chad",
+    "licence": null,
+    "phash": null,
+    "width": 400,
+    "height": 369,
+    "face": null,
+    "year": null,
+    "note": "his own portrait (head and shoulders, red shirt), supplied 10-24; source for his drawing only: photos are not shown on media pages",
+    "primary": true,
+    "needs_ext": true
+   }
   ]
  }
 }

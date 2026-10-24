@@ -970,15 +970,16 @@ export async function mediaTalkIdentitiesJob({ write = false } = {}, deps = {}) 
     if (!it?.dir) { out.missing.push(t.slug); continue; }
     const meta = await read(it.dir).catch(() => null);
     if (!meta) { out.missing.push(t.slug); continue; }
-    const same = (!t.speaker || meta.speaker === t.speaker) && Object.entries(t.speaker_labels || {}).every(([k, v]) => meta.speakers?.[k] === v);
+    const same = (!t.speaker || meta.speaker === t.speaker) && (!t.title || meta.title === t.title) && Object.entries(t.speaker_labels || {}).every(([k, v]) => meta.speakers?.[k] === v);
     if (same) { out.unchanged++; continue; }
     if (!write) { out.applied.push(t.slug); continue; }
     if (running.has(it.id)) { out.skipped_running.push(t.slug); continue; }
     if (t.speaker) meta.speaker = t.speaker;
+    if (t.title) { meta.title_was = meta.title_was || meta.title; meta.title = t.title; }   // a retitle (Chad 10-24); the slug stays, the old URL keeps working
     if (t.speaker_labels) meta.speakers = { ...(meta.speakers || {}), ...t.speaker_labels };
     meta.identity_decision = { reason: t.reason, at: new Date().toISOString() };
     await writeMeta(it.dir, meta);
-    if (t.speaker && repo.updateMediaItem) await repo.updateMediaItem(it.id, { speaker: t.speaker });
+    if ((t.speaker || t.title) && repo.updateMediaItem) await repo.updateMediaItem(it.id, { ...(t.speaker ? { speaker: t.speaker } : {}), ...(t.title ? { title: t.title } : {}) });
     out.applied.push(t.slug); ids.push(it.id);
   }
   if (write && ids.length) {

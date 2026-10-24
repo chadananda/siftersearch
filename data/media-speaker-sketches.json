@@ -1,7 +1,7 @@
 {
  "note": "Speaker SKETCHES (Chad 10-23): one pen-and-ink courtroom-style portrait per speaker, drawn image-to-image (gemini-3.1-flash-image) from the verified gallery photo named by source_sha — never an invented face. ai_rendered: true. Masters in cdn-assets R2 (media-speakers/<key>/sketch-*.jpg). Built by scripts/media/speaker_sketch.py (+ SFace likeness gate) and speaker_sketch_publish.mjs; read by api/lib/media/sketch.js.",
- "generated": "2026-10-24T05:30:17.533Z",
- "spend_usd_total": 3.4761,
+ "generated": "2026-10-24T18:36:50.391Z",
+ "spend_usd_total": 3.5163,
  "speakers": {
   "abul-qasim-faizi": {
    "file": "media-speakers/abul-qasim-faizi/sketch-e23e978ed386436d.jpg",
@@ -1084,6 +1084,33 @@
    "style": "A (Chad 10-23)",
    "take": "darius-shahrokh-A",
    "drawn_at": "2026-10-23T22:20:26"
+  },
+  "chad-jones": {
+   "file": "media-speakers/chad-jones/sketch-4b3d0cac58d4745c.jpg",
+   "sha": "4b3d0cac58d4745c5f43c9c31f03f123f7a3a658ff4b79fbc809a6c080485dea",
+   "sq_file": "media-speakers/chad-jones/sketch-sq-88b86908c3505d05.jpg",
+   "sq_sha": "88b86908c3505d05a15c5087cf52b59208b89ddf282a2129f8f292800a9fc57a",
+   "width": 768,
+   "height": 1376,
+   "ai_rendered": true,
+   "model": "gemini-3.1-flash-image",
+   "usd": 0.0402,
+   "source_sha": "340ca91a1ade70fcb21685373408d96fedb84cf741d7c4601ee3162b3b01a6e3",
+   "source_file": "media-speakers/chad-jones/340ca91a1ade70fc.jpg",
+   "source_credit": "photo supplied by Chad",
+   "source_licence": null,
+   "source_url": null,
+   "likeness": {
+    "face": true,
+    "source": 0.541,
+    "others_mean": null,
+    "impostor_max": 0.296,
+    "impostor_who": "tarazullah-samandari",
+    "pass": true
+   },
+   "style": "A (Chad 10-23)",
+   "take": "chad-jones-A",
+   "drawn_at": "2026-10-24T11:36:31"
   }
  }
 }
