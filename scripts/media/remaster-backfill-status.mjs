@@ -1,7 +1,8 @@
 // Overnight remaster backfill status → tmp/remaster-backfill-state.md (read by the main thread's watchdog). Reads tower's two
 // state files over ssh (data/run/cloud-remaster.json + remaster-results.jsonl) — no DB. --every <s> keeps refreshing for --hours.
 import { execFileSync } from 'child_process';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'fs';
+import { ledgerSummary } from '../../api/lib/media/pod-ledger.js';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,6 +14,12 @@ function pull() {
   const out = execFileSync('ssh', ['chad@tower-nas', 'cd ~/sifter/siftersearch/data/run; cat cloud-remaster.json 2>/dev/null || echo {}; echo "@@@"; cat remaster-results.jsonl 2>/dev/null; echo "@@@"; cat ~/sifter/siftersearch/data/run/home-remaster.json 2>/dev/null || echo {}'], { encoding: 'utf8', timeout: 60_000, stdio: ['ignore', 'pipe', 'ignore'] });
   const [st, res, home] = out.split('@@@\n');
   return { st: JSON.parse(st || '{}'), results: res.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean), home: JSON.parse(home || '{}') };
+}
+
+/** The same three files, read locally — how the media service on tower writes the state file itself (data/run/remaster-backfill-state.md). */
+export function pullLocal(dir = join(ROOT, 'data', 'run')) {
+  const rd = (f) => { try { return readFileSync(join(dir, f), 'utf8'); } catch { return ''; } };
+  return { st: JSON.parse(rd('cloud-remaster.json') || '{}'), results: rd('remaster-results.jsonl').split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean), home: JSON.parse(rd('home-remaster.json') || '{}') };
 }
 
 export function render({ st, results, home }, now = Date.now()) {
@@ -39,6 +46,7 @@ export function render({ st, results, home }, now = Date.now()) {
     `published_remastered: ${pub.length} / ${total}   review (kept original): ${review.length}   remaining: ${remaining}`,
     `cloud: done ${st.done?.length || 0}, failed ${st.failed?.length || 0}, queue ${st.queue?.length || 0}, in flight ${Object.keys(st.jobs || {}).length}`,
     `spent_usd: ${st.spent_usd ?? 0} of cap 60 (balance floor 90)`,
+    (() => { const g = ledgerSummary(st, now); return `gpu ledger: rented $${g.rented_usd} · productive $${g.productive_usd} · efficiency 30 min ${g.efficiency_30m == null ? 'n/a' : `${Math.round(g.efficiency_30m * 100)} %`} · lane beat ${g.lane_updated_s ?? '?'} s ago`; })(),
     `rate: ${rate} talks finished in the last hour   eta: ${rate ? `${Math.round((remaining / rate) * 10) / 10} h` : 'n/a'}`,
     `fallback (% of sentences kept from the original, published talks): median ${med ?? 'n/a'} %, max ${sw.at(-1) ?? 'n/a'} %`,
     `unguardable (chant / prayer, UniPASE kept): ${Math.round([...last.values()].reduce((a, r) => a + (r.unguardable_s || 0), 0) / 60)} min over ${[...last.values()].filter((r) => r.unguardable_s > 0).length} talks`,

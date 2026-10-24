@@ -21,6 +21,15 @@ def espnet_shim():
     sys.modules['espnet2.torch_utils.get_layer_from_string'].get_layer = lambda name: acts[name.lower()]
 
 
+def deadman(now, born, beat, hb_min, max_hours):
+    """Why this pod must end now (None = carry on): tower's heartbeat stopped, or the maximum lifetime passed."""
+    if now - max(born, beat) > hb_min * 60:
+        return f'no heartbeat from tower for {hb_min:g} min'
+    if now - born > max_hours * 3600:
+        return f'maximum lifetime {max_hours:g} h'
+    return None
+
+
 def terminate_self(reason):
     pod, key = os.environ.get('RUNPOD_POD_ID'), os.environ.get('RP_TERMINATE_KEY')
     print(f'{time.strftime("%H:%M:%S")} terminating pod {pod}: {reason}', flush=True)
@@ -124,19 +133,28 @@ def main():
     p.add_argument('--repo', default='/workspace/unipase')
     p.add_argument('--spool', default='/workspace/spool')
     p.add_argument('--weights', default='/workspace/weights')
-    p.add_argument('--idle-min', type=float, default=15)
+    p.add_argument('--idle-min', type=float, default=10)
+    p.add_argument('--hb-min', type=float, default=10)      # tower touches <spool>/.tower-hb every poll; none for this long = tower is gone
+    p.add_argument('--max-hours', type=float, default=8)    # hard maximum lifetime
     a = p.parse_args()
     os.makedirs(a.spool, exist_ok=True)
     up, IL, asr = load_models(a.repo, a.weights)
     open(os.path.join(a.spool, '.worker-ready'), 'w').write(str(os.getpid()))
     print(f'{time.strftime("%H:%M:%S")} models loaded', flush=True)
     last = time.time()
+    born = time.time()
+    hbf = os.path.join(a.spool, '.tower-hb')
     while True:
+        # DEAD-MAN SWITCH (Chad 10-24): the pod ends itself when tower's heartbeat stops, or at its maximum lifetime — whatever the lane is doing
+        why = deadman(time.time(), born, os.path.getmtime(hbf) if os.path.exists(hbf) else 0, a.hb_min, a.max_hours)
+        if why:
+            terminate_self(why)
+            sys.exit(0)
         ready = sorted(glob.glob(os.path.join(a.spool, '*', 'ready')), key=os.path.getmtime)
         if not ready:
             if time.time() - last > a.idle_min * 60:
-                terminate_self(f'idle {a.idle_min} min')
-                time.sleep(300)
+                terminate_self(f'idle {a.idle_min:g} min')
+                sys.exit(0)
             time.sleep(2)
             continue
         d = os.path.dirname(ready[0])

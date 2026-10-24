@@ -368,7 +368,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // (media-remaster / the cloud backfill) — a normal run records the stage and moves on. The copy itself comes from the
       // cloud worker (enhanced/unipase.cloud.flac + its transcript); here the WORD GUARD splices the original back in for
       // every sentence the copy lost, and the verdict decides whether it becomes the listening copy (§13: never worse).
-      if (opts.remaster && meta.enhancement) {
+      if (opts.remaster && meta.enhancement && !['kept', 'deferred'].includes(meta.remaster?.status)) {   // Chad's keep / deferral stands: a late cloud result changes nothing
         const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
         const el = remasterEligible(meta, work.paragraphs || []);
         const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');

@@ -55,7 +55,7 @@ describe('the RunPod backfill', () => {
       return { stdout: 'ok' };
     });
     const queued = [];
-    const deps = { cloud, run, homeHosts: [], stateFile: join(root, 'state.json'), publicKey: 'ssh-ed25519 AAA test', nap: async () => {}, draining: () => false,
+    const deps = { cloud, run, minHours: 0, homeHosts: [], stateFile: join(root, 'state.json'), publicKey: 'ssh-ed25519 AAA test', nap: async () => {}, draining: () => false,
       repo: { getMediaItem: async (id) => items[id], getMediaBySlug: async (s) => Object.values(items).find((x) => x.slug === s), remasterCandidates: async () => Object.values(items) },
       queue: async (n, p) => queued.push([n, p]) };
     return { root, items, deps, calls, queued, cloud };

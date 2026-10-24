@@ -59,4 +59,24 @@ async function mediaFeedLoop() {
     await nap(30_000);
   }
 }
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop] });
+// GPU spend ∝ work done (Chad 10-24): the reaper is its OWN loop (not the cloud lane's), and the backfill's state file is written HERE
+async function podReaperLoop() {
+  const { reapPass } = await import('../lib/media/pod-reaper.js');
+  while (!isDraining()) {
+    try { const r = await reapPass(); if (r.reaped.length || r.errors.length) logger.warn(r, 'pod reaper'); }
+    catch (err) { logger.warn({ err: err.message }, 'pod reaper pass failed'); }
+    await nap(180_000);
+  }
+}
+async function backfillStatusLoop() {
+  const { pullLocal, render } = await import('../../scripts/media/remaster-backfill-status.mjs');
+  const { writeFile, mkdir } = await import('fs/promises');
+  const { STATE_FILE } = await import('../lib/media/cloud.js');
+  const { dirname, join } = await import('path');
+  while (!isDraining()) {
+    try { await mkdir(dirname(STATE_FILE), { recursive: true }); await writeFile(join(dirname(STATE_FILE), 'remaster-backfill-state.md'), render(pullLocal(dirname(STATE_FILE)))); }
+    catch (err) { logger.warn({ err: err.message }, 'backfill status write failed'); }
+    await nap(300_000);
+  }
+}
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop] });

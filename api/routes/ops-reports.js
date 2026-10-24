@@ -25,7 +25,16 @@ export default async function opsReportRoutes(fastify) {
     const runs = (await recent(40)).filter((r) => r.status === 'running' || r.status === 'queued')
       .map((r) => ({ id: r.id, name: r.name, status: r.status, started_at: r.started_at, requested_at: r.requested_at }));
     const { powerState, powerLine } = await import('../lib/power-mode.js');
-    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers };
+    // the paid-GPU ledger (Chad 10-24): rented vs busy minutes per pod, $ rented vs $ productive, the lane's last beat, the reaper's last pass
+    let cloud_gpu = null;
+    try {
+      const C = await import('../lib/media/cloud.js'), { ledgerSummary } = await import('../lib/media/pod-ledger.js'), fs = await import('fs/promises');
+      const st = JSON.parse(await fs.readFile(C.STATE_FILE, 'utf8')), beat = Number(await fs.readFile(`${C.STATE_FILE}.beat`, 'utf8').catch(() => 0));
+      if (beat > (st.updated || 0)) st.updated = beat;
+      const reaper = await fs.readFile((await import('../lib/media/pod-reaper.js')).REAPER_FILE, 'utf8').then(JSON.parse).catch(() => null);
+      cloud_gpu = { ...ledgerSummary(st, Date.now(), C.spendOf, C.CLOUD.capUsd()), reaper: reaper ? { at: reaper.at, seen: reaper.seen, reaped: reaper.history?.slice(0, 5) || [] } : null };
+    } catch { /* no cloud run yet */ }
+    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu };
   });
   // NIGHT SCHEMA MAINTENANCE (10-24): named steps only — scripts/ops/db-maintenance.sh calls them one at a time with the
   // writers drained around each (a DROP frees a whole b-tree inside the single writer). No arbitrary SQL. maintenance-repo.js

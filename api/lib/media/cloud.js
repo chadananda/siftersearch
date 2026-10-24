@@ -20,7 +20,8 @@ export const CLOUD = {
   gpuTypes: ['NVIDIA GeForce RTX 4090', 'NVIDIA RTX A5000', 'NVIDIA GeForce RTX 3090', 'NVIDIA RTX A4500', 'NVIDIA A40', 'NVIDIA RTX A6000'],
   image: 'runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04',
   perPod: 2,            // jobs in flight per pod (one running, one uploaded and waiting)
-  bootTimeoutMs: 25 * 60_000,
+  bootTimeoutMs: 8 * 60_000,      // no SSH after this → terminate and replace (10-24: pods 8 and 10 never came up and billed)
+  warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this
   deadAfterMs: 4 * 60_000,
   maxPodFailures: 3,
 };
@@ -55,6 +56,7 @@ export async function createPod(name, publicKey, deps = {}) {
   }
   throw lastErr;
 }
+export const listPods = (deps) => rest('GET', '/pods', null, deps);
 export const getPod = (id, deps) => rest('GET', `/pods/${id}`, null, deps);
 export const terminatePod = (id, deps) => rest('DELETE', `/pods/${id}`, null, deps).catch((err) => (/404/.test(err.message) ? {} : Promise.reject(err)));
 
@@ -136,7 +138,8 @@ CUDNN=$(python -c 'import os, nvidia.cudnn; print(os.path.dirname(nvidia.cudnn._
 CUBLAS=$(python -c 'import os, nvidia.cublas; print(os.path.dirname(nvidia.cublas.__file__) + "/lib")' 2>/dev/null || true)
 export LD_LIBRARY_PATH="$CUDNN:$CUBLAS:\${LD_LIBRARY_PATH:-}" HF_HUB_OFFLINE=1
 pkill -f runpod_worker.py || true
-nohup python /workspace/runpod_worker.py --repo /workspace/unipase --weights $W --spool /workspace/spool --idle-min 15 > /workspace/worker.log 2>&1 < /dev/null &
+touch /workspace/spool/.tower-hb
+nohup python /workspace/runpod_worker.py --repo /workspace/unipase --weights $W --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 > /workspace/worker.log 2>&1 < /dev/null &
 echo started`;
 
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');

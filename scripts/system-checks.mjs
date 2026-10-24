@@ -109,6 +109,11 @@ let drainSeen = state.drainSeen || {};
     // showed as 'draining 13 min'): CRITICAL, with its commit and last beat
     const silent = services.filter((x) => (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name));
     add('Services alive', !silent.length, 'critical', silent.length ? silent.map((x) => `${x.name} silent ${Math.round(Number(x.age_s) / 60)} min (last beat ${x.beat_at}, commit ${String(x.commit || '').slice(0, 8)})`).join(' · ') : 'ok');
+    // paid GPU pods: rented-but-idle, billing with no lane, low efficiency, spend near the cap are CRITICAL (Chad 10-24)
+    try {
+      const { podChecks } = await import('./lib/pod-checks.mjs');
+      for (const c of podChecks(JSON.parse(r.body).cloud_gpu)) add(c.name, c.ok, 'critical', c.detail);
+    } catch { /* no cloud_gpu in the response */ }
     const d = power ? { stuck: [], seen: {} } : stuckDrains(services, { seen: drainSeen, limitMs: Number(process.env.DRAIN_WARN_MIN || 10) * 60_000 });   // a power drain is not stuck
     drainSeen = d.seen;
     add('Service drains', !d.stuck.length, 'warn', d.stuck.length

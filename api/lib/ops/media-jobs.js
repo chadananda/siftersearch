@@ -1202,6 +1202,8 @@ export function worstFirst(talks) {
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
 export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false } = {}, deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
+  const L = deps.ledger || await import('../media/pod-ledger.js');
+  const minHours = deps.minHours ?? L.LEDGER.minHoursPerPod();   // WORK FIRST, RENT SECOND: a pod only where ≥ this many audio hours wait for it
   const repo = deps.repo || await import('../repos/media-repo.js');
   const T = deps.tools || await import('../media/tools.js');
   const run = deps.run || T.run;
@@ -1226,7 +1228,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (const it of list) {
       if (!it?.dir || busy.has(it.id)) continue;
       const m = await readMeta(it.dir).catch(() => null);
-      if (!m || (!force && ['done', 'review'].includes(m.remaster?.status))) continue;   // force (explicit ids): redo
+      if (!m || (!force && ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status))) continue;   // force (explicit ids): redo
       const raw = m.quality?.raw || {};
       want.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
     }
@@ -1248,6 +1250,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
   const homeHosts = (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
   const homeTasks = new Map();   // host → promise (in this process)
+  // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
+  const decided = (m) => !force && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
+  const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
+  const beat = () => fs.writeFile(beatFile, String(now())).catch(() => {});
+  beat();
+  const hb = setInterval(beat, 60_000); hb.unref?.();
   const pub = deps.publicKey || (await fs.readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8')).trim();
   const closePod = async (p, why) => {
     try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
@@ -1268,6 +1276,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, why);
       }
       if (st.cloud_stopped && !homeHosts.length) { stop = st.cloud_stopped; break; }
+      // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
+      // encode — GPUs would be paid for output nobody can consume. Pods that go without work idle out (10 min) and are terminated.
+      if (now() - (st.backlog_checked || 0) > 30_000) {
+        const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
+        st.backlog = (await opsRepo.pendingRuns('media-remaster').catch(() => [])).length; st.backlog_checked = now();
+      }
+      const held = (st.backlog || 0) > (deps.maxBacklog ?? Number(process.env.MEDIA_CLOUD_MAX_BACKLOG ?? 12));
+      st.held = held;
       // home hosts: re-attach a task from before a restart, start one when a host is free and eligible
       // ASR KEEPS PRIORITY (Chad 10-23): a home host starts a UniPASE copy only while no transcription waits in the queue
       if (homeHosts.length && now() - (st.asr_checked || 0) > 120_000) {
@@ -1276,14 +1292,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       for (const h of homeHosts) {
         if (homeTasks.has(h)) continue;
-        const cur = st.home[h] || (st.queue.length && !st.asr_waiting && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
+        const cur = st.home[h] || (st.queue.length && !held && !st.asr_waiting && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
         if (!cur) continue;
         st.home[h] = cur;
         homeTasks.set(h, (async () => {
           const it = await repo.getMediaItem(cur.itemId);
           const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
           if (!m?.original) throw new Error('no original');
+          if (decided(m)) return;
           const dj = await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
+          if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h });
           st.home_done++;
           await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
@@ -1298,13 +1316,18 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const inflight = Object.keys(st.jobs).length;
       if (!st.queue.length && !inflight && !homeTasks.size) break;
-      const want = st.cloud_stopped ? 0 : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
-      if (live.length < want && st.pod_failures < C.CLOUD.maxPodFailures) {
+      const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
+      const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
+      const want = st.cloud_stopped ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
+      if (!want && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
+      if (live.length < want && !held && st.pod_failures < C.CLOUD.maxPodFailures) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, deps).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; }
         else st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
       }
+      const utilBy = {};
       // every pod at once: a pod's downloads / uploads (~7 MB/s each over the tunnel) never hold the other pods' GPUs idle
       await Promise.all(live.map(async (p) => {
         try {
@@ -1323,14 +1346,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               p.status = 'warming'; p.lastOk = now();
             } else if (now() - p.created > C.CLOUD.bootTimeoutMs) { await closePod(p, 'boot timeout'); st.pod_failures++; }
           } else if (p.status === 'warming') {
-            const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; [ -f /workspace/boot.rc ] && [ "$(cat /workspace/boot.rc)" != 0 ] && { echo BOOTFAIL; tail -c 400 /workspace/boot.log; }; tail -2 /workspace/worker.log 2>/dev/null; true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; [ -f /workspace/boot.rc ] && [ "$(cat /workspace/boot.rc)" != 0 ] && { echo BOOTFAIL; tail -c 400 /workspace/boot.log; }; tail -2 /workspace/worker.log 2>/dev/null; touch /workspace/spool/.tower-hb; true', { timeoutMs: 60_000 });
             p.lastOk = now();
             if (/READY/.test(stdout)) p.status = 'ready';
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
-            else if (now() - p.created > C.CLOUD.bootTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
+            else if (now() - p.created > C.CLOUD.warmTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
-            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); true', { timeoutMs: 60_000 });
             p.lastOk = now();
+            const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
             for (const line of stdout.split('\n')) {
               const [kind, job] = line.trim().split(' ');
               const x = st.jobs[job];
@@ -1349,6 +1373,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(dj));
                 await C.podSsh(run, p, `rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).catch(() => {});
                 delete st.jobs[job];
+                if (st.done.some((d) => d.id === it.id)) continue;   // idempotent: a second result for a talk never queues a second run
                 st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name });
                 await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
               } else if (kind === 'FAIL') {
@@ -1360,10 +1385,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               }
             }
             // keep the pod fed (one running, one waiting)
-            while (Object.values(st.jobs).filter((j) => j.pod === p.id).length < C.CLOUD.perPod && st.queue.length) {
+            while (!held && Object.values(st.jobs).filter((j) => j.pod === p.id).length < C.CLOUD.perPod && st.queue.length) {
               const itemId = st.queue.shift();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
+              if (decided(m)) continue;
               if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
               const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
@@ -1378,6 +1404,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { await closePod(p, `unreachable: ${p.last_error}`); if (p.status !== 'ready') st.pod_failures++; }
         }
       }));
+      // the LEDGER (rented vs busy minutes, $ rented vs $ productive) and the lane's own idle rule; pod-reaper.js is the independent second path
+      L.ledgerTick(st, Object.values(st.pods).filter((q) => !q.terminated), utilBy, now());
+      for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.idle_since && now() - q.idle_since > L.LEDGER.idleMs)) await closePod(p, `idle ${Math.round((now() - p.idle_since) / 60_000)} min`);
       // an idle pod (nothing left to give it) is terminated at once
       if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'queue empty');
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
@@ -1385,6 +1414,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       await nap(tickMs);
     }
   } finally {
+    clearInterval(hb);
     // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
     if (!yielded) for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, stop || 'finished');
     st.spent_usd = C.spendOf(st, now()); st.updated = now();
