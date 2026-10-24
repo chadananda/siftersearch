@@ -200,6 +200,18 @@ print(json.dumps([[d['swap'],d['unguardable']] for d in r]), G.norm('ي')==G.nor
     expect(JSON.parse(line.slice(0, line.lastIndexOf(' ')))).toEqual([[false, false], [true, false], [false, true]]);
     expect(out).toContain('True');
   });
+  it('a word the original heard with LOW confidence and the copy hears differently is not a loss; a confident one is', () => {
+    const out = execFileSync('python3', ['-c', `
+import sys, json; sys.path.insert(0, 'scripts/media')
+import remaster_guard as G
+W=lambda ws,t0,p=0.95: [{'w':w,'s':t0+i*0.4,'e':t0+i*0.4+0.35,'p':p} for i,w in enumerate(ws)]
+s=[(1,0,W('we sent the letter to the guardian today'.split(),0))]
+copy=W('we sent the better to a guardian today'.split(),0)
+low=W('we sent the'.split(),0)+[{'w':'letter','s':1.2,'e':1.55,'p':0.4},{'w':'to','s':1.6,'e':1.95},{'w':'the','s':2.0,'e':2.35,'p':0.5}]+W('guardian today'.split(),2.4)
+high=W('we sent the letter to the guardian today'.split(),0)
+print(json.dumps([G.decide(s,copy,ref_words=low)[0]['swap'], G.decide(s,copy,ref_words=high)[0]['swap']]))`], { encoding: 'utf8' });
+    expect(JSON.parse(out.trim())).toEqual([false, true]);
+  });
 });
 
 describe('backfill order and pod setup', () => {

@@ -32,21 +32,26 @@ def is_key(word, first):
     return bool(re.search(r'\d', raw)) or (not first and raw[:1].isupper() and len(raw) > 1)
 
 
-def lcs_kept(a, b):
+def lcs_pairs(a, b):
+    """LCS alignment of a to b → {index in a: index in b}."""
     n, m = len(a), len(b)
     dp = np.zeros((n + 1, m + 1), dtype=np.int32)
     for i in range(n - 1, -1, -1):
         for j in range(m - 1, -1, -1):
             dp[i, j] = dp[i + 1, j + 1] + 1 if a[i] == b[j] else max(dp[i + 1, j], dp[i, j + 1])
-    kept, i, j = set(), 0, 0
+    pairs, i, j = {}, 0, 0
     while i < n and j < m:
         if a[i] == b[j]:
-            kept.add(i); i += 1; j += 1
+            pairs[i] = j; i += 1; j += 1
         elif dp[i + 1, j] >= dp[i, j + 1]:
             i += 1
         else:
             j += 1
-    return kept
+    return pairs
+
+
+def lcs_kept(a, b):
+    return set(lcs_pairs(a, b))
 
 
 def env_lag(dry, wet, max_lag_ms=100, span_s=600):
@@ -75,13 +80,15 @@ def sentences_of(work):
     return out
 
 
-def decide(sentences, asr_words, lag_s=0.0, pad=0.3, ref_words=None, min_wps=1.0):
-    """The yardstick is the talk's FINAL (corrected) text. Per sentence: the words of it the ORIGINAL's ASR recovers vs the
-    words the COPY's ASR recovers (both the same model + settings). A sentence falls back to the original when the copy
-    recovers fewer — net of words it recovers that the original's did not — beyond max(1, 6 %) of the sentence, or loses a
-    number / name the original's ASR had. No ref (old jobs): the final text itself is the reference.
-    UNGUARDABLE (chant, prayer, music: R&D 10-23): both copies' ASR under min_wps words/s → no signal; the UniPASE audio stays.
-    → [{n, k, s, e, lost, gained, swap, unguardable}]"""
+def decide(sentences, asr_words, lag_s=0.0, pad=0.3, ref_words=None, min_wps=1.0, conf=0.8, conf_drop=0.2):
+    """The yardstick is the talk's PUBLISHED (LLM-corrected) text. Per sentence, a word counts as LOST only when the
+    ORIGINAL's ASR heard it CONFIDENTLY (p ≥ conf) and the copy's ASR does not have it — on muffled audio the original's
+    own transcript is unreliable, and the copy hearing a low-confidence word differently is usually the improvement
+    (10-23 pilot: Gibson / Faizí / Cardell, 'dramatic' by ear, were scored 62-91 % swapped). A sentence falls back to the
+    original when its confident losses exceed max(1, 6 %) of it (net of words only the copy recovers), when it loses a
+    confidently heard number / name, or when the copy's mean word confidence is more than conf_drop below the original's.
+    No ref (old jobs): the published text is the reference, every word confident. UNGUARDABLE (chant, prayer, music):
+    both copies' ASR under min_wps words/s → the UniPASE audio stays. → [{n, k, s, e, lost, gained, swap, unguardable}]"""
     def prep(ws):
         ws = sorted([w for w in (ws or []) if w.get('s') is not None], key=lambda w: w['s'])
         return ws, (np.array([w['s'] - lag_s for w in ws]) if ws else np.zeros(0))
@@ -92,26 +99,35 @@ def decide(sentences, asr_words, lag_s=0.0, pad=0.3, ref_words=None, min_wps=1.0
         s, e = sw[0]['s'], sw[-1]['e']
         dur = max(0.0, e - s)
         win = lambda arr, st: arr[np.searchsorted(st, s - pad):np.searchsorted(st, e + pad)]
-        cu = [t for t in (norm(w.get('w', '')) for w in win(U, us)) if t]
+        uw = [w for w in win(U, us) if norm(w.get('w', ''))]
+        cu = [norm(w.get('w', '')) for w in uw]
         want_raw = [w.get('w', '') for w in sw]
         want = [norm(w) for w in want_raw]
         idx = [i for i, t in enumerate(want) if t]
         W = [want[i] for i in idx]
-        ku = {idx[j] for j in lcs_kept(W, cu)}
+        ku = {idx[j] for j in lcs_pairs(W, cu)}
+        mean = lambda ws: (sum(float(w.get('p', 1.0)) for w in ws) / len(ws)) if ws else None
         if R:
-            co = [t for t in (norm(w.get('w', '')) for w in win(R, rs)) if t]
-            ko = {idx[j] for j in lcs_kept(W, co)}
+            ow = [w for w in win(R, rs) if norm(w.get('w', ''))]
+            co = [norm(w.get('w', '')) for w in ow]
+            po = lcs_pairs(W, co)
+            ko = {idx[j] for j in po}
+            confident = {idx[j] for j, b in po.items() if float(ow[b].get('p', 1.0)) >= conf}
         else:
-            co, ko = W, set(idx)
+            ow, co = [], W
+            ko = confident = set(idx)
         if R and dur >= 1.0 and len(cu) / dur < min_wps and len(co) / dur < min_wps:
-            res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [], 'gained': [], 'swap': False, 'unguardable': True})
+            res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [], 'gained': 0, 'swap': False, 'unguardable': True})
             continue
-        lost = sorted(ko - ku)
+        lost = sorted(confident - ku)
         gained = ku - ko
         allowed = max(1, math.floor(0.06 * len(idx)))
         key_lost = [i for i in lost if is_key(want_raw[i], i == 0)]
-        swap = (len(lost) - len(gained)) > allowed or bool(key_lost)
-        res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [want_raw[i] for i in lost], 'gained': len(gained), 'swap': swap, 'unguardable': False})
+        mu, mo = mean(uw), mean(ow)
+        conf_fell = bool(R) and mu is not None and mo is not None and len(uw) >= 3 and len(ow) >= 3 and mu < mo - conf_drop
+        swap = (len(lost) - len(gained)) > allowed or bool(key_lost) or conf_fell
+        res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [want_raw[i] for i in lost], 'gained': len(gained),
+                    'conf': [round(mu, 2) if mu is not None else None, round(mo, 2) if mo is not None else None], 'swap': swap, 'unguardable': False})
     return res
 
 

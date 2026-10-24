@@ -380,9 +380,9 @@ export async function runItem(item, opts = {}, deps = {}) {
           const g = await heavySlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
             // the reference: the ORIGINAL through the same model + settings as the copy (pods), else the production transcript
             ref: existsSync(join(dir, 'enhanced', 'unipase.asr_orig.json')) ? join(dir, 'enhanced', 'unipase.asr_orig.json') : join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));
-          // the splice already keeps every word: publish unless MOST of the talk fell back (> 40 % of sentences — R&D 10-23: those are
-          // listed for Chad to hear; the transparent copy stays). Chant / prayer the ASR cannot read is 'unguardable' and kept.
-          const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 40;
+          // publish unless > 15 % of sentences fell back (the coordinator's review bar, 10-23); > 40 % is listed as 'high fallback'
+          // for Chad to hear; the transparent copy stays. Chant / prayer the ASR cannot read is 'unguardable' and kept.
+          const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15;
           const pass = (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
           vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
@@ -392,7 +392,7 @@ export async function runItem(item, opts = {}, deps = {}) {
             meta.enhancement.listening = 'unipase';
             meta.enhancement.listening_why = `UniPASE remaster (Chad 10-23): ${g.swapped} of ${g.sentences} sentences (${g.swapped_pct} %) kept from the original by the word guard`;
           }
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): high fallback — Chad listens` }),
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): kept the original — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
         }
