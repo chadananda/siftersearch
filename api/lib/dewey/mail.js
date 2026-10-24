@@ -40,10 +40,11 @@ export function planVerbs({ subject = '', text = '', attachments = [] } = {}) {
   const plan = { photos: [], files: [], urls: [], media: [], titles: [], passages: [], status: false, refused: [], unread: [] };
   for (const a of attachments) {
     const name = a.name || 'attachment', type = a.type || '';
-    if (a.size > LIMITS.fileBytes) plan.unread.push({ name, why: 'too large to take by email (25 MB at most) — a link to it works' });
+    if (a.size > LIMITS.fileBytes) plan.unread.push({ name, why: 'too large to take by email (25 MB at most) — please upload it at https://siftersearch.com/dewey (the "Upload files" box takes big files and whole folders, and carries on if the connection drops), or send a link' });
     else if (HEIC.test(type) || /\.hei[cf]$/i.test(name)) plan.unread.push({ name, why: 'an HEIC photo, which I cannot open' });
     else if (IMAGE.test(type) || IMAGE_EXT.test(name)) (plan.photos.length < LIMITS.photos ? plan.photos : plan.unread).push(plan.photos.length < LIMITS.photos ? a : { name, why: `more than ${LIMITS.photos} photos in one letter` });
     else if (DOC_TYPE.test(type) || DOC_EXT.test(name)) (plan.files.length < LIMITS.files ? plan.files : plan.unread).push(plan.files.length < LIMITS.files ? a : { name, why: `more than ${LIMITS.files} files in one letter` });
+    else if (/\.(mp3|m4a|wav|flac|ogg|opus|mp4|m4v|mov|mkv|webm|avi)$/i.test(name)) plan.unread.push({ name, why: 'audio and video are too big for email — please upload it at https://siftersearch.com/dewey ("Upload files")' });
     else plan.unread.push({ name, why: 'not a kind of file I can read' });
   }
   const body = String(text || '').replace(/\r\n/g, '\n');

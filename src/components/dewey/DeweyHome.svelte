@@ -8,6 +8,7 @@
   import DeweyChat from './DeweyChat.svelte';
   import DeweyLibrary from './DeweyLibrary.svelte';
   import DeweyAdded from './DeweyAdded.svelte';
+  import DeweyUploads from './DeweyUploads.svelte';
 
   const auth = getAuthState();
   let ready = $state(false);
@@ -33,7 +34,7 @@
   <div class="dewey">
     <div class="cols" data-panel={view} class:quiet={!activity}>
       <div class="left panel"><DeweyLibrary authed={ready} /></div>
-      <div class="mid"><div class="chatbox"><DeweyChat authed={ready} /></div></div>
+      <div class="mid"><DeweyUploads /><div class="chatbox"><DeweyChat authed={ready} /></div></div>
       <div class="right panel"><DeweyAdded authed={ready} oncount={(n, all) => { processing = n; activity = all; }} /></div>
     </div>
     <!-- narrow screens (Chad 10-17): the library and what is loading are icon buttons on the edges that slide their

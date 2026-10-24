@@ -94,3 +94,9 @@ export async function threadOf(userId, { after = 0, limit = 60 } = {}) {
     : (await queryAll('SELECT * FROM dewey_messages WHERE user_id = ? ORDER BY id DESC LIMIT ?', [Number(userId), limit], 'dewey:thread')).reverse();
   return rows.map((r) => ({ ...r, parts: r.parts ? JSON.parse(r.parts) : null }));
 }
+
+/** Bytes a member has uploaded that are still held (state 'received'): the per-user quota's measure. */
+export const receivedBytesBy = async (email) => Number((await queryOne(`SELECT COALESCE(SUM(json_extract(identified, '$.upload.size')), 0) AS n FROM dewey_items WHERE created_by = ? AND state = 'received'`, [String(email)], 'dewey:received-bytes'))?.n || 0);
+
+/** An item already recorded for this R2 key (finish is idempotent: a retried "complete" must not make a second item). */
+export const findByUploadKey = async (key) => parse(await queryOne(`SELECT * FROM dewey_items WHERE json_extract(identified, '$.upload.key') = ? LIMIT 1`, [String(key)], 'dewey:by-upload-key'));

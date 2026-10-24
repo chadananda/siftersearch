@@ -176,7 +176,7 @@
     'not-held': { label: 'Not in the library', tone: 'text-error' },
     undetermined: { label: 'Can’t tell — the contents could not be read', tone: 'text-warning' },
   };
-  const STATE = { offered: 'Not in the library — add it?', declined: 'Not added', wanted: 'Wanted — researching', researched: 'Wanted — researched', source: 'Source attached', processing: 'Processing',
+  const STATE = { received: 'Received — awaiting processing', archived: 'Received — Dewey is checking it', offered: 'Not in the library — add it?', declined: 'Not added', wanted: 'Wanted — researching', researched: 'Wanted — researched', source: 'Source attached', processing: 'Processing',
     ingested: 'In the library', 'needs-ocr': 'Scan — waits for OCR', 'needs-human': 'Needs a person', failed: 'Failed' };
   // Dewey's light markdown: *italic* and **bold**, everything else as text (escaped first)
   const md = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

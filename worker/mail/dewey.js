@@ -140,7 +140,7 @@ export async function storeInbound(env, raw, { envelopeFrom = '', to = DEWEY_ADD
 /** Cloudflare Email Routing → here (worker/index.js email()). Unknown recipients and oversize mail are refused at SMTP time. */
 export async function deweyEmail(message, env, ctx) {
   if (!mailboxFor(message.to)) { message.setReject('No such mailbox here'); return { rejected: 'recipient' }; }
-  if (message.rawSize > MAX_RAW) { message.setReject('Message too large (25 MB at most)'); return { rejected: 'size' }; }
+  if (message.rawSize > MAX_RAW) { message.setReject('Message too large (25 MB at most). Large files: upload at https://siftersearch.com/dewey'); return { rejected: 'size' }; }
   const r = await storeInbound(env, await new Response(message.raw).arrayBuffer(), { envelopeFrom: message.from, to: message.to });
   if (r.id && ctx) ctx.waitUntil(deweyCron(env).catch(() => {}));
   return r;
