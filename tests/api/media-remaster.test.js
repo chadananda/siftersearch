@@ -1,0 +1,174 @@
+// The UniPASE remaster (Chad 10-23): RunPod backfill (budget, pods always terminated, resume), the tower stages (word guard
+// verdict, realign with the original times kept, eligibility), the guard's sentence decisions.
+import { describe, it, expect, vi } from 'vitest';
+vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { execFileSync } from 'child_process';
+import * as C from '../../api/lib/media/cloud.js';
+import { remasterEligible, isRemastered } from '../../api/lib/media/enhance.js';
+import { mediaCloudRemasterJob } from '../../api/lib/ops/media-jobs.js';
+import { runItem } from '../../api/lib/media/item.js';
+
+describe('cloud budget', () => {
+  it('spend = closed + live pods × age; stops at the cap, below the kept balance, or when the next 10 min would pass the cap', () => {
+    const now = 10 * 3600_000;
+    const st = { spent_closed: 10, pods: { a: { created: now - 3600_000, costPerHr: 0.34 }, b: { created: now - 1800_000, costPerHr: 0.34, terminated: now - 60_000 } } };
+    expect(C.spendOf(st, now)).toBe(10.34);
+    expect(C.budgetStop(st, 150, now)).toBeNull();
+    expect(C.budgetStop(st, 85, now)).toMatch(/balance \$85 < \$90/);
+    expect(C.budgetStop({ spent_closed: 60, pods: {} }, 150, now)).toMatch(/cap \$60/);
+    expect(C.budgetStop({ spent_closed: 59.9, pods: { a: { created: now, costPerHr: 3 } } }, 150, now)).toMatch(/next 10 min/);
+  });
+});
+
+describe('the RunPod backfill', () => {
+  const setup = () => {
+    const root = mkdtempSync(join(tmpdir(), 'cr-'));
+    const items = {};
+    for (const id of [1, 2]) {
+      const dir = join(root, `t${id}`); mkdirSync(join(dir, 'original'), { recursive: true });
+      writeFileSync(join(dir, 'original', 'a.mp3'), 'x'); writeFileSync(join(dir, 'meta.json'), JSON.stringify({ original: 'original/a.mp3', duration_s: 600 }));
+      items[id] = { id, slug: `talk-${id}`, dir, duration_s: 600 };
+    }
+    const calls = [], spool = {};
+    let pods = 0;
+    const cloud = { ...C,
+      createPod: vi.fn(async () => ({ id: `p${++pods}`, costPerHr: 0.34 })),
+      getPod: vi.fn(async () => ({ publicIp: '1.2.3.4', portMappings: { 22: 2222 }, machine: { gpuDisplayName: 'RTX 4090' } })),
+      terminatePod: vi.fn(async (id) => { calls.push(`terminate ${id}`); return {}; }),
+      accountBalance: vi.fn(async () => ({ balance: 157 })) };
+    // a fake pod: ssh commands and scp transfers
+    const run = vi.fn(async (cmd, args) => {
+      const last = args.at(-1);
+      if (cmd === 'scp') {
+        const [src, dst] = args.slice(-2);
+        if (dst.includes('/spool/') && dst.includes('/in.')) { const job = dst.split('/spool/')[1].split('/')[0]; spool[job] = 'uploaded'; }
+        if (src.includes('root@')) { const f = src.split('/').pop(); writeFileSync(dst, f === 'done.json' ? '{"audio_s":600,"seconds":40,"gpu":"RTX 4090"}' : f === 'asr.json' ? '{"segments":[]}' : 'FLAC'); }
+        return { stdout: '' };
+      }
+      if (last.includes('.worker-ready')) return { stdout: 'READY' };
+      if (last.startsWith('cd /workspace/spool')) return { stdout: Object.keys(spool).filter((j) => spool[j] === 'ready').map((j) => `DONE ${j}`).join('\n') };
+      const m = /touch \/workspace\/spool\/([^/]+)\/ready/.exec(last); if (m) spool[m[1]] = 'ready';
+      const r = /rm -rf \/workspace\/spool\/(\S+)/.exec(last); if (r) delete spool[r[1]];
+      return { stdout: 'ok' };
+    });
+    const queued = [];
+    const deps = { cloud, run, stateFile: join(root, 'state.json'), publicKey: 'ssh-ed25519 AAA test', nap: async () => {}, draining: () => false,
+      repo: { getMediaItem: async (id) => items[id], getMediaBySlug: async (s) => Object.values(items).find((x) => x.slug === s), remasterCandidates: async () => Object.values(items) },
+      queue: async (n, p) => queued.push([n, p]) };
+    return { root, items, deps, calls, queued, cloud };
+  };
+  it('pilot: pods boot, talks go up and come back into the talk folder, each talk queued for its tower run, every pod terminated', async () => {
+    const t = setup();
+    const r = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 1 }, t.deps);
+    expect(r).toMatchObject({ done: 2, failed: 0, queue: 0, in_flight: 0 });
+    expect(t.queued).toEqual([['media-remaster', { id: 1 }], ['media-remaster', { id: 2 }]]);
+    for (const id of [1, 2]) for (const f of ['unipase.cloud.flac', 'unipase.asr.json', 'unipase.done.json']) expect(existsSync(join(t.items[id].dir, 'enhanced', f)), `${id} ${f}`).toBe(true);
+    expect(t.calls).toEqual(['terminate p1']);
+    const st = JSON.parse(readFileSync(join(t.root, 'state.json'), 'utf8'));
+    expect(st.finished).toBeTruthy();
+  });
+  it('the budget stops the run and terminates the pods; a drain yields WITHOUT terminating (re-attached later)', async () => {
+    const t = setup();
+    t.cloud.accountBalance = vi.fn(async () => ({ balance: 80 }));
+    const r = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 1 }, t.deps);
+    expect(r.stop).toMatch(/balance/);
+    const t2 = setup();
+    let n = 0;
+    t2.deps.draining = () => ++n > 3;
+    const r2 = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 1 }, t2.deps);
+    expect(r2.yielded).toBe(true);
+    expect(t2.calls).toEqual([]);
+  });
+  it('dry run lists the B–E candidates and the hours', async () => {
+    const t = setup();
+    expect(await mediaCloudRemasterJob({}, t.deps)).toMatchObject({ talks: 2, hours: 0.3 });
+  });
+});
+
+describe('remaster eligibility', () => {
+  it('B–E by default, A transparent; the non-English skip is a flag, off by default', () => {
+    expect(remasterEligible({ quality: { overall: 'B' } }).ok).toBe(true);
+    expect(remasterEligible({ quality: { overall: 'A' } }).ok).toBe(false);
+    const ps = [{ t0: 0, t1: 100, lang: 'fa' }, { t0: 100, t1: 600, lang: 'en' }];
+    expect(remasterEligible({ quality: { overall: 'D' } }, ps).ok).toBe(true);
+    expect(remasterEligible({ quality: { overall: 'D' } }, ps, { MEDIA_REMASTER_SKIP_NONEN: '1' }).ok).toBe(false);
+  });
+});
+
+describe('tower stages: guard verdict, realign keeps the original times, revert', () => {
+  const talk = (guardPct) => {
+    const dir = mkdtempSync(join(tmpdir(), 'rm-'));
+    mkdirSync(join(dir, 'enhanced'), { recursive: true }); mkdirSync(join(dir, 'original'), { recursive: true });
+    for (const f of ['unipase.cloud.flac', 'unipase.asr.json']) writeFileSync(join(dir, 'enhanced', f), '{}');
+    writeFileSync(join(dir, 'transcript.raw.json'), '{"segments":[]}');
+    const words = [{ w: 'Today,', s: 1.0, e: 1.5 }, { w: 'the', s: 1.5, e: 1.7 }, { w: 'world', s: 1.7, e: 2.0 }];
+    writeFileSync(join(dir, 'transcript.work.json'), JSON.stringify({ paragraphs: [{ n: 1, t0: 1.0, t1: 2.0, words, sentences: [[0, 3]] }] }));
+    const meta = { slug: 'x', original: 'original/a.mp3', quality: { overall: 'D' }, moments: [{ para: 1, i0: 0, i1: 3, t0_ms: 1000, t1_ms: 2000 }],
+      enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
+      stages: Object.fromEntries(['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) };
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
+    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 1, swapped_pct: guardPct, lag_ms: 25 })),
+      tool: vi.fn(async (sub, input, opts) => { writeFileSync(opts.output, JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } })); return { placed: 2, total: 2 }; }) };
+    const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };
+    return { dir, deps, tools, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
+  };
+  it('a guard that kept 5 % → the UniPASE copy is the listening copy; words re-aligned with s0/e0 kept; moments follow', async () => {
+    const t = talk(5);
+    await runItem(t.item, { redo: ['remaster', 'realign'], only: ['remaster', 'realign'], remaster: true }, t.deps);
+    const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(meta.enhancement.listening).toBe('unipase');
+    expect(isRemastered(meta)).toBe(true);
+    expect(meta.remaster).toMatchObject({ status: 'done', verdict: 'pass-auto', swapped_pct: 5 });
+    expect(meta.aligned_to).toBe('unipase');
+    const w = JSON.parse(readFileSync(join(t.dir, 'transcript.work.json'), 'utf8')).paragraphs[0].words;
+    expect(w[0]).toMatchObject({ s: 1.03, e: 1.52, s0: 1.0, e0: 1.5 });
+    expect(w[2]).toMatchObject({ s: 1.7, s0: 1.7 });                 // unplaced: keeps its time
+    expect(meta.moments[0]).toMatchObject({ t0_ms: 1030, t1_ms: 2000 });
+  });
+  it('a guard that had to keep 30 % → review, the transparent copy stays', async () => {
+    const t = talk(30);
+    await runItem(t.item, { redo: ['remaster', 'realign'], only: ['remaster', 'realign'], remaster: true }, t.deps);
+    const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(meta.enhancement.listening).toBe('safe');
+    expect(meta.remaster).toMatchObject({ status: 'review', verdict: 'review' });
+    expect(t.tools.tool).not.toHaveBeenCalled();
+  });
+  it('without a remaster run the stages do nothing', async () => {
+    const t = talk(5);
+    await runItem(t.item, { redo: ['remaster', 'realign'], only: ['remaster', 'realign'] }, t.deps);
+    expect(t.tools.remasterGuard).not.toHaveBeenCalled();
+  });
+});
+
+describe('the word guard (python)', () => {
+  it('a lost name or number swaps the sentence; one lost common word within the churn floor does not', () => {
+    const out = execFileSync('python3', ['-c', `
+import sys, json; sys.path.insert(0, 'scripts/media')
+import remaster_guard as G
+s=[(1,0,[{'w':'Today,','s':0,'e':.5},{'w':'the','s':.5,'e':.7},{'w':'world','s':.7,'e':1},{'w':'is','s':1,'e':1.2},{'w':'confronted','s':1.2,'e':1.8}]),
+   (1,1,[{'w':'Bahá’u’lláh','s':2,'e':2.6},{'w':'came','s':2.6,'e':2.9},{'w':'in','s':2.9,'e':3},{'w':'1863','s':3,'e':3.6}])]
+a=[{'w':'today','s':0,'e':.5},{'w':'the','s':.5,'e':.7},{'w':'world','s':.7,'e':1},{'w':'confronted','s':1.2,'e':1.8},{'w':'Bahaullah','s':2,'e':2.6},{'w':'came','s':2.6,'e':2.9},{'w':'in','s':2.9,'e':3},{'w':'1864','s':3,'e':3.6}]
+print(json.dumps([d['swap'] for d in G.decide(s,a)]))`], { encoding: 'utf8' });
+    expect(JSON.parse(out.trim())).toEqual([false, true]);
+  });
+});
+
+describe('backfill order and pod setup', () => {
+  it('worst first: E → B, then narrowest bandwidth, then lowest SNR, unknowns last', async () => {
+    const { worstFirst } = await import('../../api/lib/ops/media-jobs.js');
+    const o = worstFirst([{ id: 1, grade: 'B', bw: 3, snr: 5 }, { id: 2, grade: 'E', bw: 8, snr: 20 }, { id: 3, grade: 'E', bw: 4, snr: 30 },
+      { id: 4, grade: 'E', bw: 4, snr: 10 }, { id: 5, grade: 'D', bw: null, snr: 1 }, { id: 6, grade: 'D', bw: 2, snr: 40 }]);
+    expect(o.map((x) => x.id)).toEqual([4, 3, 2, 6, 5, 1]);
+  });
+  it('the pod fetches the pinned weights, verifies every sha256, installs no espnet / Hub tooling, and runs the worker offline', () => {
+    expect(C.WEIGHTS.filter((w) => w[0] === 'unipase').map((w) => w[2])).toEqual(['DeWavLM-Omni.pt', 'Adapter.pt', 'Vocoder_DWO-L1.pt', 'PostNet.pt', 'config.json']);
+    expect(C.BOOTSTRAP).toContain(`unipase/resolve/${C.UNIPASE_REV}`);
+    expect(C.BOOTSTRAP).toMatch(/SHA MISMATCH/);
+    expect(C.BOOTSTRAP).not.toMatch(/espnet|huggingface_hub|Vocoder_WavLM/);
+    expect(C.BOOTSTRAP).toMatch(/HF_HUB_OFFLINE=1/);
+    expect(C.REPO_TGZ()).toContain(C.UNIPASE_COMMIT.slice(0, 8));
+  });
+});

@@ -11,6 +11,7 @@ import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { parseMediaPath, seriesTitle, partTitle } from '../media/names.js';
 import { historicalIndex, historicalTier } from '../media/historical.js';
 import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube, getMediaItem, updateMediaItem, pendingMedia, vocabularyNames, youtubeHeldSince, releaseHeldYoutube } from '../repos/media-repo.js';
@@ -81,7 +82,7 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null, merge_speakers = false } = {}, deps = {}) {
+export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null, merge_speakers = false, remaster = false } = {}, deps = {}) {
   // ids: [..] or 'done' (every published item) → one media-item run each, same options (a back-fill: { ids: 'done', redo: [...] })
   if (id == null && ids) {
     const R = deps.repo || await import('../repos/media-repo.js');
@@ -118,7 +119,7 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
   }
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');
   try {
-    const r = await runItem(item, { from, only, redo, threads, lang, model, mergeSpeakers: !!merge_speakers });
+    const r = await runItem(item, { from, only, redo, threads, lang, model, mergeSpeakers: !!merge_speakers, remaster: !!remaster });
     if (r.yielded) return r;
     await logActivity('media', `▶ media ${r.slug}: ${r.done.join(' → ') || 'nothing to do'}`).catch(() => {});
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };
@@ -987,6 +988,219 @@ export async function mediaTalkIdentitiesJob({ write = false } = {}, deps = {}) 
     for (const id of ids) await queue('media-item', { id, redo: ['update'] }, 'media-talk-identities');
   }
   return out;
+}
+
+/** media-remaster { id }: one talk's TOWER part of the remaster (Chad 10-23): the word guard on the UniPASE copy the cloud
+ *  worker left in its folder, realign, the Opus 96k + original encodes, trim, update. Its own lane ('remaster'). */
+export async function mediaRemasterJob({ id, ...rest } = {}, deps = {}) {
+  const r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['remaster', 'realign', 'web', 'trim', 'update'] }, deps);
+  // one line per finished talk → the backfill's progress file (data/run/remaster-results.jsonl; read by the overnight status)
+  try {
+    const fs = await import('fs/promises');
+    const repo = deps.repo || await import('../repos/media-repo.js');
+    const it = await repo.getMediaItem(Number(id));
+    const m = it?.dir ? JSON.parse(await fs.readFile(join(it.dir, 'meta.json'), 'utf8')) : null;
+    if (m) {
+      const file = deps.resultsFile || join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run', 'remaster-results.jsonl');
+      await fs.mkdir(dirname(file), { recursive: true });
+      await fs.appendFile(file, JSON.stringify({ at: new Date().toISOString(), id: it.id, slug: it.slug, grade: m.quality?.overall ?? null,
+        status: m.remaster?.status ?? null, listening: m.enhancement?.listening ?? null, swapped_pct: m.remaster?.swapped_pct ?? null,
+        unplaced_pct: m.remaster?.realign_unplaced_pct ?? null, aligned_to: m.aligned_to ?? null, web_original: m.web_original ?? null,
+        web: m.web?.ogg ?? m.web ?? null, why: m.remaster?.why ?? null }) + '\n');
+    }
+  } catch { /* the log is a convenience; the talk's own meta is the record */ }
+  return r;
+}
+
+/** media-remaster-revert { ids }: back to the transparent original (one flag per talk: listening = 'safe'); the word
+ *  times return to the original's (s0/e0) in realign. The remaster files are kept. */
+export async function mediaRemasterRevertJob({ ids = [] } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const queue = deps.queue || enqueue;
+  const { readFile, writeFile: wf } = await import('fs/promises');
+  const out = { reverted: [] };
+  for (const x of [].concat(ids)) {
+    const it = /^\d+$/.test(String(x)) ? await repo.getMediaItem(Number(x)) : await repo.getMediaBySlug(String(x));
+    if (!it?.dir) continue;
+    const m = JSON.parse(await readFile(join(it.dir, 'meta.json'), 'utf8'));
+    if (!m.enhancement) continue;
+    m.enhancement.listening = 'safe';
+    m.enhancement.listening_why = 'reverted to the transparent original (media-remaster-revert)';
+    m.remaster = { ...(m.remaster || {}), status: 'reverted', at: new Date().toISOString() };
+    m.version = (m.version || 1) + 1;
+    await wf(join(it.dir, 'meta.json'), JSON.stringify(m, null, 2));
+    await queue('media-item', { id: it.id, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-revert');
+    out.reverted.push(it.slug);
+  }
+  return out;
+}
+
+/** Worst first: grade E → B, then the narrowest bandwidth, then the lowest SNR (unknowns last within their grade). */
+export function worstFirst(talks) {
+  const rank = { E: 0, D: 1, C: 2, B: 3, A: 4 };
+  const num = (v) => (v == null ? Infinity : Number(v));
+  return [...talks].sort((a, b) => (rank[a.grade] ?? 5) - (rank[b.grade] ?? 5) || num(a.bw) - num(b.bw) || num(a.snr) - num(b.snr) || a.id - b.id);
+}
+
+/** media-cloud-remaster { write, ids?, limit?, maxPods? } — THE RUNPOD BACKFILL (Chad 10-23). Dry: the candidates and the
+ *  estimate. Write: up to maxPods (3) pods run UniPASE + Whisper on the originals; each finished copy lands in its talk's
+ *  folder and the talk's media-remaster run is queued. Budget-capped (cloud.js), every pod terminated at the end, on a
+ *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
+ *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
+export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000 } = {}, deps = {}) {
+  const C = deps.cloud || await import('../media/cloud.js');
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const T = deps.tools || await import('../media/tools.js');
+  const run = deps.run || T.run;
+  const queue = deps.queue || enqueue;
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
+  const nap = deps.nap || ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const now = deps.now || Date.now;
+  const fs = await import('fs/promises');
+  const readMeta = deps.readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
+  const save = (st) => C.saveState(st, deps.stateFile);
+  const st = await C.loadState(deps.stateFile);
+  // the queue: explicit ids, else every published B–E talk not yet remastered, WORST FIRST (Chad 10-23: E, D, C, B; within a
+  // grade the narrowest bandwidth, then the lowest SNR). Persisted in the state file, so a restart resumes in order; a new run
+  // after a finished one rebuilds it (spend stays cumulative — the cap covers every run).
+  if (ids || !st.started || st.finished) {
+    const list = ids ? (await Promise.all([].concat(ids).map(async (x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter(Boolean)
+      : await repo.remasterCandidates(String(process.env.MEDIA_REMASTER_GRADES || 'B,C,D,E').split(',').map((g) => g.trim().toUpperCase()));
+    const busy = new Set([...Object.values(st.jobs || {}).map((j) => j.itemId), ...(st.done || []).map((d) => d.id), ...(st.queue || [])]);
+    let want = [];
+    for (const it of list) {
+      if (!it?.dir || busy.has(it.id)) continue;
+      const m = await readMeta(it.dir).catch(() => null);
+      if (!m || ['done', 'review'].includes(m.remaster?.status)) continue;
+      const raw = m.quality?.raw || {};
+      want.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
+    }
+    if (!ids) want = worstFirst(want);
+    if (limit) want = want.slice(0, limit);
+    if (!write) {
+      const hours = want.reduce((a, x) => a + x.duration_s, 0) / 3600;
+      const byGrade = {};
+      for (const x of want) { const g = (byGrade[x.grade || '?'] ||= { talks: 0, hours: 0 }); g.talks++; g.hours = Math.round((g.hours + x.duration_s / 3600) * 10) / 10; }
+      return { talks: want.length, hours: Math.round(hours * 10) / 10, by_grade: byGrade, sample: want.slice(0, 10).map((x) => `${x.grade} ${x.bw ?? '?'}kHz ${x.snr ?? '?'}dB ${x.slug}`) };
+    }
+    if (st.finished) { st.finished = null; st.started = null; st.pod_failures = 0; }
+    st.items = st.items || {};
+    for (const x of want) st.items[x.id] = { slug: x.slug, grade: x.grade, duration_s: x.duration_s };
+    st.queue = [...(st.queue || []), ...want.map((x) => x.id)];
+  }
+  if (!write) return { queue: st.queue.length, jobs: Object.keys(st.jobs || {}).length, spent_usd: C.spendOf(st, now()) };
+  st.started = st.started || now(); st.pods = st.pods || {}; st.jobs = st.jobs || {}; st.attempts = st.attempts || {}; st.done = st.done || []; st.failed = st.failed || [];
+  st.pod_failures = st.pod_failures || 0;
+  const pub = deps.publicKey || (await fs.readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8')).trim();
+  const closePod = async (p, why) => {
+    try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
+    p.terminated = now(); p.why = why;
+    st.spent_closed = Math.round(((st.spent_closed || 0) + (p.costPerHr || 0) * Math.max(0, p.terminated - p.created) / 3600_000) * 100) / 100;
+    for (const [j, x] of Object.entries(st.jobs)) if (x.pod === p.id) { st.queue.unshift(x.itemId); delete st.jobs[j]; }
+    return true;
+  };
+  let balance = null, balAt = 0, stop = null, yielded = false;
+  try {
+    for (;;) {
+      if (draining()) { yielded = true; break; }
+      if (now() - balAt > 120_000) { balance = (await C.accountBalance(deps).catch(() => ({ balance }))).balance; balAt = now(); }
+      stop = C.budgetStop(st, balance, now());
+      if (stop) break;
+      const live = Object.values(st.pods).filter((p) => !p.terminated);
+      const inflight = Object.keys(st.jobs).length;
+      if (!st.queue.length && !inflight) break;
+      const want = Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      if (live.length < want && st.pod_failures < C.CLOUD.maxPodFailures) {
+        const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
+        const pod = await C.createPod(name, pub, deps).catch((err) => ({ error: err.message }));
+        if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; }
+        else st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
+      }
+      for (const p of live) {
+        try {
+          if (p.status === 'booting') {
+            const g = await C.getPod(p.id, deps);
+            if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
+            p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
+            const port = g.portMappings?.['22'];
+            if (g.publicIp && port) {
+              p.ip = g.publicIp; p.port = port;
+              await C.podSsh(run, p, 'mkdir -p /workspace/spool && echo ok', { timeoutMs: 60_000 });
+              await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
+              await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
+              await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && bash /workspace/bootstrap.sh', { input: C.BOOTSTRAP, timeoutMs: 900_000 });
+              p.status = 'warming'; p.lastOk = now();
+            } else if (now() - p.created > C.CLOUD.bootTimeoutMs) { await closePod(p, 'boot timeout'); st.pod_failures++; }
+          } else if (p.status === 'warming') {
+            const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; tail -2 /workspace/worker.log 2>/dev/null; true', { timeoutMs: 60_000 });
+            p.lastOk = now();
+            if (/READY/.test(stdout)) p.status = 'ready';
+            else if (now() - p.created > C.CLOUD.bootTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
+          } else if (p.status === 'ready') {
+            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; true', { timeoutMs: 60_000 });
+            p.lastOk = now();
+            for (const line of stdout.split('\n')) {
+              const [kind, job] = line.trim().split(' ');
+              const x = st.jobs[job];
+              if (!x || x.pod !== p.id) continue;
+              const it = await repo.getMediaItem(x.itemId);
+              if (kind === 'DONE' && it?.dir) {
+                const enh = join(it.dir, 'enhanced');
+                await fs.mkdir(enh, { recursive: true });
+                for (const [rf, lf] of [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['done.json', 'unipase.done.json']]) {
+                  await C.podGet(run, p, `/workspace/spool/${job}/${rf}`, join(enh, `${lf}.part`));
+                  await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
+                }
+                const dj = JSON.parse(await fs.readFile(join(enh, 'unipase.done.json'), 'utf8'));
+                dj.pod = p.name; dj.cost_per_hr = p.costPerHr;
+                await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(dj));
+                await C.podSsh(run, p, `rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).catch(() => {});
+                delete st.jobs[job];
+                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name });
+                await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
+              } else if (kind === 'FAIL') {
+                const err = await C.podSsh(run, p, `tail -c 600 /workspace/spool/${job}/error.txt; rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
+                delete st.jobs[job];
+                st.attempts[x.itemId] = (st.attempts[x.itemId] || 0) + 1;
+                if (st.attempts[x.itemId] < 2) st.queue.push(x.itemId); else st.failed.push({ id: x.itemId, slug: x.slug, error: err.slice(-300) });
+              }
+            }
+            // keep the pod fed (one running, one waiting)
+            while (Object.values(st.jobs).filter((j) => j.pod === p.id).length < C.CLOUD.perPod && st.queue.length) {
+              const itemId = st.queue.shift();
+              const it = await repo.getMediaItem(itemId);
+              const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
+              if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
+              const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+              await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
+              await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}`);
+              await C.podSsh(run, p, `echo '{}' > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000 });
+              st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: now() };
+            }
+          }
+        } catch (err) {
+          p.last_error = String(err.message).slice(0, 300);
+          if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { await closePod(p, `unreachable: ${p.last_error}`); if (p.status !== 'ready') st.pod_failures++; }
+        }
+      }
+      // an idle pod (nothing left to give it) is terminated at once
+      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'queue empty');
+      if (st.pod_failures >= C.CLOUD.maxPodFailures && !Object.values(st.pods).some((q) => !q.terminated)) { stop = `${st.pod_failures} pods failed to start`; break; }
+      st.spent_usd = C.spendOf(st, now()); st.updated = now();
+      await save(st);
+      await nap(tickMs);
+    }
+  } finally {
+    // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
+    if (!yielded) for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, stop || 'finished');
+    st.spent_usd = C.spendOf(st, now()); st.updated = now();
+    if (!yielded && !st.queue.length && !Object.keys(st.jobs).length) st.finished = now();
+    await save(st);
+  }
+  const audioH = st.done.reduce((a, d) => a + (d.audio_s || 0), 0) / 3600;
+  const summary = { done: st.done.length, failed: st.failed.length, queue: st.queue.length, in_flight: Object.keys(st.jobs).length, spent_usd: st.spent_usd,
+    usd_per_audio_hour: audioH ? Math.round((st.spent_usd / audioH) * 100) / 100 : null, audio_hours: Math.round(audioH * 10) / 10, stop, pods: Object.values(st.pods).map((p) => ({ name: p.name, gpu: p.gpu, cost_per_hr: p.costPerHr, status: p.terminated ? `terminated (${p.why})` : p.status })) };
+  return yielded ? { ...summary, yielded: true, resume: { write: true, maxPods } } : summary;
 }
 
 /** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from

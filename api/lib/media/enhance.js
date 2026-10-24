@@ -58,6 +58,25 @@ export function safeChain(metrics = {}) {
 export const OGG_ARGS = ['-c:a', 'libopus', '-b:a', '56k', '-application', 'audio'];
 /** The web copies' settings, recorded per talk (meta.web_codec): the transparent listening source + the encoders above. */
 export const WEB_CODEC = 'safe+opus56audio';
+/** A REMASTERED listening copy (UniPASE, 48 kHz): Opus 96k 'audio' so the restored band survives; m4a AAC 128k. */
+export const OGG_ARGS_REMASTER = ['-c:a', 'libopus', '-b:a', '96k', '-application', 'audio'];
+export const M4A_BITRATE_REMASTER = '128k';
+export const WEB_CODEC_REMASTER = 'unipase+opus96audio';
+/** Is the talk's listening copy a remaster (a variant that shifts time)? */
+export const isRemastered = (meta = {}) => !!(meta.enhancement?.variants || []).find((v) => v.name === meta.enhancement?.listening)?.shifts_time;
+/** Remaster eligibility (Chad 10-23: every talk graded B or worse; A stays transparent — MEDIA_REMASTER_GRADES; the
+ *  non-English skip is a flag, default OFF — Chad: "this is working fine with non-English"). → { ok, why } */
+export function remasterEligible(meta = {}, paragraphs = [], env = process.env) {
+  const grades = String(env.MEDIA_REMASTER_GRADES || 'B,C,D,E').split(',').map((x) => x.trim().toUpperCase());
+  const g = String(meta.quality?.overall || '').toUpperCase();
+  if (!grades.includes(g)) return { ok: false, why: `grade ${g || '?'} (remaster grades ${grades.join('')})` };
+  if (env.MEDIA_REMASTER_SKIP_NONEN === '1') {
+    let other = 0, total = 0;
+    for (const p of paragraphs) { const d = Math.max(0, (p.t1 || 0) - (p.t0 || 0)); total += d; if (p.lang && !/^en/.test(p.lang)) other += d; }
+    if (other > 30 || (total && other / total > 0.03)) return { ok: false, why: `non-English ${Math.round(other)} s (skip on)` };
+  }
+  return { ok: true, why: `grade ${g}` };
+}
 
 /** Where the listening copy is encoded from: the 'safe' variant is the original + its chain at encode time; any other
  *  variant is its own file. → { src, af } */

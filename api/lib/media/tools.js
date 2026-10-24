@@ -193,6 +193,15 @@ export const coolEnough = (host) => { const d = diskInfo.get(host); return !d ||
 /** A GRADE's RAM: it decodes the whole recording at its native rate (several float32 copies) besides DNSMOS/NISQA —
  *  10-23 19:15 the OOM killer took one on aorus at 7.7 GB. → GB */
 export const gradeNeedGb = (durationS = 3600, sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * (sampleRate || 48000) * 4 * 4 / 1e9) * 10) / 10;
+/** The REMASTER word guard on tower (scripts/media/remaster_guard.py; CPU, numpy): the UniPASE copy with every sentence
+ *  whose words it lost replaced by the original. opts: { original, unipase, work, asr, ref, af, output, report } → its JSON */
+export const GUARD = join(ROOT, 'scripts', 'media', 'remaster_guard.py');
+export async function remasterGuard(opts, { stop = null, python = PY() } = {}) {
+  const args = [GUARD];
+  for (const [k, v] of Object.entries(opts)) if (v != null && v !== '') args.push(`--${k}`, String(v));
+  const { stdout } = await run(python, args, { timeoutMs: 3 * 3600_000, stop, threads: 2 });
+  return JSON.parse(stdout.trim().split('\n').filter(Boolean).pop());
+}
 /** Remove a finished job's folder on its host (best effort; the gate refuses a running one and its janitor sweeps the rest). */
 export async function cleanRemote(host, job, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `clean ${job}`)], { timeoutMs: 60_000 });

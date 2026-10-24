@@ -21,6 +21,8 @@
 # The same script serves every compute host (boss: CPU; aorus: CUDA): it runs from its own directory, with that host's venv
 # (venv/, venv-dfn/ for DeepFilterNet) and models (models/). Every model is local; nothing here reaches the internet.
 #   install-tool                                            replace media_tool.py with stdin (kept in sync from the repo)
+#   install-unipase                                         replace unipase_job.py with stdin
+#   start <ext> <job> --verb unipase                        a UniPASE listening copy (unipase.conf: UNIPASE_PY/_REPO/_HF; offline)
 #   short · install-renderer                                an audiogram short (tar in, MP4 out) · replace render_short.py
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
@@ -31,6 +33,7 @@ verb="${A[0]:-}"
 watch_parent() { local sshd=$PPID; while kill -0 "$1" 2>/dev/null; do kill -0 "$sshd" 2>/dev/null || { kill "$1" 2>/dev/null; return; }; sleep 2; done; }
 if [[ "$verb" == "install-tool" ]]; then cat > media_tool.py.new && mv media_tool.py.new media_tool.py && echo '{"installed":true}'; exit 0; fi
 if [[ "$verb" == "install-renderer" ]]; then cat > render_short.py.new && mv render_short.py.new render_short.py && echo '{"installed":true}'; exit 0; fi
+if [[ "$verb" == "install-unipase" ]]; then cat > unipase_job.py.new && mv unipase_job.py.new unipase_job.py && echo '{"installed":true}'; exit 0; fi
 # an audiogram SHORT: a tar (spec.json, audio.m4a, captions.ass, portrait.jpg?, qr.png) in, the MP4 out; fixed recipes only;
 # killed when the caller's ssh session goes (same watcher as the ASR verbs)
 if [[ "$verb" == "short" ]]; then
@@ -85,12 +88,12 @@ fi
 # ── running <tool>: the ids of this host's LIVE detached jobs of one kind (tower's slot count is checked against it: jobs
 # started before a tower restart and not yet re-attached are otherwise invisible to it — 10-23: 3 diarizations on aorus, cap 2)
 if [[ "$verb" == "running" ]]; then
-  want="${A[1]:-}"; [[ "$want" =~ ^(transcribe|diarize|grade|dfn|encode)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
+  want="${A[1]:-}"; [[ "$want" =~ ^(transcribe|diarize|grade|dfn|encode|unipase)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
   ids=""
   for p in jobs/*/pid; do
     [[ -e "$p" ]] || continue; pid=$(cat "$p" 2>/dev/null || echo 0); [[ "$pid" =~ ^[0-9]+$ && "$pid" != 0 ]] || continue
     kill -0 "$pid" 2>/dev/null || continue
-    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -q "media_tool.py $want " || continue
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -qE "media_tool.py $want |${want}_job.py " || continue
     j=$(basename "$(dirname "$p")"); ids="${ids:+$ids,}\"$j\""
   done
   printf '{"running":[%s]}\n' "$ids"; exit 0
@@ -128,7 +131,7 @@ if [[ "$verb" == "start" ]]; then
   # a detached job is a transcription, or (--verb diarize) a diarization; both survive the caller's restarts
   tool=transcribe; rest2=()
   for ((k=0; k<${#args[@]}; k++)); do if [[ "${args[$k]:-}" == "--verb" ]]; then tool="${args[$((k+1))]:-}"; k=$((k+1)); else rest2+=("${args[$k]:-}"); fi; done
-  [[ "$tool" =~ ^(transcribe|diarize|grade|dfn|encode)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
+  [[ "$tool" =~ ^(transcribe|diarize|grade|dfn|encode|unipase)$ ]] || { echo '{"error":"bad verb"}'; exit 2; }
   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # every model is local: no internet in the compute lane
   if [[ "$tool" == "grade" ]]; then
     # the grade's JSON is its last stdout line: out.json is written when it ends
@@ -136,6 +139,13 @@ if [[ "$verb" == "start" ]]; then
   elif [[ "$tool" == "dfn" ]]; then
     [[ -x venv-dfn/bin/python ]] || { echo '{"error":"no DeepFilterNet venv on this host"}'; exit 2; }
     nohup setsid bash -c 'nice -n 10 venv-dfn/bin/python media_tool.py dfn "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
+  elif [[ "$tool" == "unipase" ]]; then
+    # UniPASE (GPU only, offline, local weights) → out.file (48 kHz FLAC), then the out.json marker
+    [[ -f unipase.conf && -f unipase_job.py ]] || { echo '{"error":"UniPASE not installed on this host"}'; exit 2; }
+    # shellcheck disable=SC1091
+    source ./unipase.conf
+    [[ -x "${UNIPASE_PY:-}" ]] || { echo '{"error":"no UniPASE venv"}'; exit 2; }
+    nohup setsid env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "encode" ]]; then
     # a fixed encode recipe (media_tool.py encode: light chain / ogg / m4a) → out.file, then the out.json marker
     nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &

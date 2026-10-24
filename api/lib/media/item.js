@@ -9,7 +9,7 @@ import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
-import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC } from './enhance.js';
+import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC, OGG_ARGS_REMASTER, M4A_BITRATE_REMASTER, WEB_CODEC_REMASTER, isRemastered, remasterEligible } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
@@ -108,7 +108,7 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
 // the speaker identities (data/media-speaker-people.json), loaded once per process
 let speakerPeople = null;
 
-export const STAGES = ['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'realign', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
@@ -350,24 +350,109 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.threads = th;
     }
 
+    if (stage === 'remaster') {
+      // UNIPASE listening copy (Chad 10-23 approved by ear; planning/remaster-rnd-20261023.md): only on a remaster run
+      // (media-remaster / the cloud backfill) — a normal run records the stage and moves on. The copy itself comes from the
+      // cloud worker (enhanced/unipase.cloud.flac + its transcript); here the WORD GUARD splices the original back in for
+      // every sentence the copy lost, and the verdict decides whether it becomes the listening copy (§13: never worse).
+      if (opts.remaster && meta.enhancement) {
+        const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
+        const el = remasterEligible(meta, work.paragraphs || []);
+        const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');
+        if (!el.ok) meta.remaster = { ...(meta.remaster || {}), status: 'skipped', why: el.why, at: d.now() };
+        else if (!existsSync(cloud) || !existsSync(casr)) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no UniPASE copy yet', at: d.now() };
+        else {
+          const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
+          const out = join(dir, 'enhanced', 'unipase.flac'), report = join(dir, 'enhanced', 'unipase.guard.json');
+          const g = await towerSlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
+            ref: join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));
+          const maxPct = Number(process.env.MEDIA_REMASTER_MAX_SWAP_PCT) || 15;
+          const pass = g.swapped_pct <= maxPct;
+          const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
+          vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
+          meta.enhancement.variants = vs;
+          if (pass) {
+            if (meta.enhancement.listening !== 'unipase') meta.enhancement.listening_before = { name: meta.enhancement.listening, why: meta.enhancement.listening_why || null };
+            meta.enhancement.listening = 'unipase';
+            meta.enhancement.listening_why = `UniPASE remaster (Chad 10-23): ${g.swapped} of ${g.sentences} sentences (${g.swapped_pct} %) kept from the original by the word guard`;
+          }
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.swapped_pct} % of the talk swapped (> ${maxPct} %): a human listens` }),
+            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
+          rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
+        }
+      }
+    }
+
+    if (stage === 'realign') {
+      // WORD TIMES follow the listening copy (§15): a remaster shifts timing 5–60 ms, so the final text is force-aligned on it
+      // (no transcription); the original times stay on every word as s0 / e0 (the "Original" button). A copy the aligner
+      // cannot place (> 2 % of words) goes back to the transparent copy. Back on the original → the s0 / e0 times return.
+      const work = await readJson(join(dir, 'transcript.work.json'), null);
+      if (work?.paragraphs?.length && meta.enhancement) {
+        const target = meta.enhancement.listening;
+        if (isRemastered(meta) && meta.aligned_to !== target) {
+          const v = meta.enhancement.variants.find((x) => x.name === target);
+          const out = join(dir, 'enhanced', 'realign.json');
+          const r = await towerSlot(() => tools.tool('realign', join(dir, v.file), { segments: join(dir, 'transcript.work.json'), output: out }, { threads: 4, stop, timeoutMs: 3 * 3600_000 }));
+          const times = (await readJson(out, { times: {} })).times || {};
+          const unplaced = r.total ? 1 - r.placed / r.total : 1;
+          if (unplaced > 0.02) {
+            meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
+            meta.remaster = { ...(meta.remaster || {}), status: 'review', verdict: 'review', why: `realign placed ${r.placed} of ${r.total} words — kept the original copy`, realign_unplaced_pct: Math.round(unplaced * 10000) / 100, at: d.now() };
+          } else {
+            for (const p of work.paragraphs) {
+              const tm = times[String(p.n)] || [];
+              p.words.forEach((w, i) => { if (w.s0 === undefined) { w.s0 = w.s; w.e0 = w.e; } if (tm[i]) { w.s = tm[i][0]; w.e = tm[i][1]; } });
+              const ts = p.words.filter((w) => w.s != null);
+              if (ts.length) { p.t0 = ts[0].s; p.t1 = ts[ts.length - 1].e; }
+            }
+            meta.aligned_to = target;
+            rec.realigned = r.placed;
+            meta.remaster = { ...(meta.remaster || {}), realign_unplaced_pct: Math.round(unplaced * 10000) / 100 };
+          }
+        } else if (!isRemastered(meta) && meta.aligned_to && meta.aligned_to !== 'safe') {
+          for (const p of work.paragraphs) {
+            p.words.forEach((w) => { if (w.s0 !== undefined) { w.s = w.s0; w.e = w.e0; delete w.s0; delete w.e0; } });
+            const ts = p.words.filter((w) => w.s != null);
+            if (ts.length) { p.t0 = ts[0].s; p.t1 = ts[ts.length - 1].e; }
+          }
+          meta.aligned_to = 'safe';
+        }
+        // moments follow their words (i1 exclusive)
+        const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
+        for (const m of meta.moments || []) { const p = byN.get(m.para); if (p?.words?.[m.i0]?.s != null && p.words[m.i1 - 1]?.e != null) { m.t0_ms = Math.round(p.words[m.i0].s * 1000); m.t1_ms = Math.round(p.words[m.i1 - 1].e * 1000); } }
+        await writeJson(join(dir, 'transcript.work.json'), work);
+      }
+    }
+
     if (stage === 'web') {
       delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
-      const { src, af } = listeningSource(meta, dir);   // the original + the transparent chain (Chad 10-23)
+      const { src, af } = listeningSource(meta, dir);   // the original + the transparent chain (Chad 10-23), or the remaster
+      const remastered = isRemastered(meta);
       const afArgs = af ? ['-af', af] : [];
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
-      const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...OGG_ARGS, ogg], { stop }));
-      const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
+      const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...(remastered ? OGG_ARGS_REMASTER : OGG_ARGS), ogg], { stop }));
+      const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', remastered ? '48000' : '44100', '-c:a', 'aac', '-b:a', remastered ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', m4a], { stop }));
+      // the ORIGINAL (transparent) copy beside a remaster — the talk page's "Original" button (audio.original_url)
+      if (remastered) {
+        const safeSrc = listeningSource({ ...meta, enhancement: { ...meta.enhancement, listening: 'safe' } }, dir);
+        const oo = join(dir, 'web', `${meta.slug}.original.ogg`), om = join(dir, 'web', `${meta.slug}.original.m4a`);
+        const sa = safeSrc.af ? ['-af', safeSrc.af] : [];
+        await Promise.all([slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '48000', ...OGG_ARGS, oo], { stop })),
+          slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', om], { stop }))]);
+        meta.web_original = { ogg: `web/${meta.slug}.original.ogg`, m4a: `web/${meta.slug}.original.m4a` };
+      } else delete meta.web_original;
       // a RE-RUN of a published talk encodes on tower in its own slot — never in boss's encode slots, which new talks' prep
       // needs (21:30: ~600 backfill re-runs held all 4 boss encode slots and 16 prep runs waited behind them)
-      if (tools.encodeRemote && slotLight !== rerunLight) {
+      if (tools.encodeRemote && slotLight !== rerunLight && !remastered) {
         meta.enc_jobs = meta.enc_jobs || {};
         for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
         await save();
         await Promise.all([tools.encodeRemote('ogg', src, ogg, { af: af || '', job: meta.enc_jobs.ogg, stop, local: oggLocal }), tools.encodeRemote('m4a', src, m4a, { af: af || '', job: meta.enc_jobs.m4a, stop, local: m4aLocal })]);
       } else await Promise.all([oggLocal(), m4aLocal()]);
       delete meta.enc_jobs;
-      meta.web_codec = WEB_CODEC;   // the encode settings these copies were made with (media-safe-listening re-renders older ones)
+      meta.web_codec = remastered ? WEB_CODEC_REMASTER : WEB_CODEC;   // the encode settings these copies were made with
       // the DURATION from the web encode (QA 10-22: the original's header under-reported by ~6 s on 31 talks)
       const enc = tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;
       if (enc?.duration_s && enc.duration_s > (meta.duration_s || 0)) meta.duration_s = Math.round(enc.duration_s * 100) / 100;
@@ -519,9 +604,19 @@ export async function runItem(item, opts = {}, deps = {}) {
         const af = [ls.af, trimAf].filter(Boolean).join(',');
         const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
         await Promise.all([
-          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${ogg}.trim.ogg`], { stop })),
-          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
+          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...(isRemastered(meta) ? OGG_ARGS_REMASTER : OGG_ARGS), `${ogg}.trim.ogg`], { stop })),
+          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', isRemastered(meta) ? '48000' : '44100', '-c:a', 'aac', '-b:a', isRemastered(meta) ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
         await rename(`${ogg}.trim.ogg`, ogg); await rename(`${m4a}.trim.m4a`, m4a);
+        // the ORIGINAL copy beside a remaster gets the same cut (one audio.offset_s serves both)
+        if (meta.web_original) {
+          const so = listeningSource({ ...meta, enhancement: { ...meta.enhancement, listening: 'safe' } }, dir);
+          const af2 = [so.af, trimAf].filter(Boolean).join(',');
+          const oo = join(dir, meta.web_original.ogg), om = join(dir, meta.web_original.m4a);
+          await Promise.all([
+            slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${oo}.trim.ogg`], { stop })),
+            slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${om}.trim.m4a`], { stop }))]);
+          await rename(`${oo}.trim.ogg`, oo); await rename(`${om}.trim.m4a`, om);
+        }
         meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
         rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;
       }

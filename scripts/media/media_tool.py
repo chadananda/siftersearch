@@ -459,6 +459,79 @@ def cmd_spkmerge(a):
     print(json.dumps({'others': res, 'seconds': round(time.time() - t0, 1)}))
 
 
+def realign_words(paragraphs, aligned_by_par):
+    """Map the aligner's words back onto each paragraph's OWN words, in order (same count → by index; else an LCS of the
+    normalised tokens). → ({n: [[s, e] | None, ...]}, placed, total). Pure."""
+    import re, unicodedata
+    def nz(x):
+        x = unicodedata.normalize('NFD', str(x)).encode('ascii', 'ignore').decode().lower()
+        return re.sub(r"[^a-z0-9']+", '', x)
+    out, placed, total = {}, 0, 0
+    for p in paragraphs:
+        ws = p.get('words') or []
+        total += len(ws)
+        al = aligned_by_par.get(p.get('n')) or []
+        res = [None] * len(ws)
+        if len(al) == len(ws):
+            pairs = list(range(len(ws)))
+            for i in pairs:
+                if al[i].get('start') is not None:
+                    res[i] = [round(al[i]['start'], 3), round(al[i]['end'], 3)]
+        else:
+            a = [nz(w.get('w', '')) for w in ws]
+            b = [nz(w.get('word', '')) for w in al]
+            n, m = len(a), len(b)
+            dp = [[0] * (m + 1) for _ in range(n + 1)]
+            for i in range(n - 1, -1, -1):
+                for j in range(m - 1, -1, -1):
+                    dp[i][j] = dp[i + 1][j + 1] + 1 if a[i] and a[i] == b[j] else max(dp[i + 1][j], dp[i][j + 1])
+            i = j = 0
+            while i < n and j < m:
+                if a[i] and a[i] == b[j]:
+                    if al[j].get('start') is not None:
+                        res[i] = [round(al[j]['start'], 3), round(al[j]['end'], 3)]
+                    i += 1; j += 1
+                elif dp[i + 1][j] >= dp[i][j + 1]:
+                    i += 1
+                else:
+                    j += 1
+        placed += sum(1 for r in res if r)
+        out[p.get('n')] = res
+    return out, placed, total
+
+
+def cmd_realign(a):
+    """RE-ALIGN the final transcript to a new listening copy (§15 — a remaster shifts timing 5–60 ms): forced alignment of
+    each paragraph's final text inside its window (t0 − 1 s … t1 + 1 s) on the new audio, one alignment model per language,
+    no transcription. --segments <transcript.work.json>; → --output JSON {times: {n: [[s, e] | null]}, placed, total}."""
+    import whisperx
+    t0 = time.time()
+    work = json.load(open(a.segments))
+    audio = whisperx.load_audio(a.input)
+    dev = device()[0]
+    by_lang = {}
+    for p in work.get('paragraphs', []):
+        if p.get('words') and p.get('t0') is not None:
+            by_lang.setdefault((p.get('lang') or a.lang or 'en')[:2], []).append(p)
+    aligned = {}
+    for lang, ps in by_lang.items():
+        try:
+            am, meta = whisperx.load_align_model(language_code=lang, device=dev)
+        except Exception as err:
+            print(f'realign: no alignment model for {lang} ({err}) — those paragraphs keep their times', file=sys.stderr)
+            continue
+        for p in ps:
+            seg = [{'start': max(0.0, p['t0'] - 1.0), 'end': p['t1'] + 1.0, 'text': ' '.join(w.get('w', '') for w in p['words'])}]
+            try:
+                r = whisperx.align(seg, am, meta, audio, dev, return_char_alignments=False)
+                aligned[p.get('n')] = [w for sg in r.get('segments', []) for w in sg.get('words', [])]
+            except Exception as err:
+                print(f'realign: paragraph {p.get("n")} failed ({err})', file=sys.stderr)
+    times, placed, total = realign_words(work.get('paragraphs', []), aligned)
+    json.dump({'times': {str(k): v for k, v in times.items()}, 'placed': placed, 'total': total}, open(a.output, 'w'))
+    print(json.dumps({'placed': placed, 'total': total, 'seconds': round(time.time() - t0, 1)}))
+
+
 def cmd_grade(a):
     """Signal measurements for the quality grade (the JS side grades them: api/lib/media/grade.js). Native-rate decode
     for clipping and bandwidth; 16 kHz for the rest; DNSMOS + NISQA (torchmetrics) on up to three 20 s speech excerpts."""
@@ -611,7 +684,7 @@ def cmd_levels(a):
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels', 'spkscreen', 'spkmerge'):
+    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels', 'spkscreen', 'spkmerge', 'realign'):
         s = sub.add_parser(name)
         s.add_argument('input')
         s.add_argument('--threads', type=int, default=8)
@@ -637,7 +710,7 @@ def main():
         s.add_argument('--spans', default='')   # spkmerge: the speakers' spans JSON
     a = p.parse_args()
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
-    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen, 'spkmerge': cmd_spkmerge}[a.cmd]
+    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen, 'spkmerge': cmd_spkmerge, 'realign': cmd_realign}[a.cmd]
     try:
         fn(a)
     except RuntimeError as err:

@@ -37,6 +37,9 @@ export async function updateMediaItem(id, fields = {}) {
   return getMediaItem(id);
 }
 
+/** Published talks the remaster backfill may take (Chad 10-23: graded B or worse), best first. */
+export const remasterCandidates = async (grades = ['B', 'C', 'D', 'E']) => queryAll(`SELECT id, slug, dir, duration_s, grade FROM media_items
+  WHERE state = 'done' AND grade IN (${grades.map(() => '?').join(',')}) ORDER BY COALESCE(priority, -1) DESC, id`, grades, 'media:remaster-candidates');
 /** Every catalogue row not yet excluded, with what the exclusion rules match on. */
 export const exclusionCandidates = async () => queryAll(`SELECT id, slug, title, speaker, speaker_key, state, doc_id, dir, source_kind, source_ref, youtube_id
   FROM media_items WHERE state != 'excluded' ORDER BY id`, [], 'media:exclusion-candidates');
