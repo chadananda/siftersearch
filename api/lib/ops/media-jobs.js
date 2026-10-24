@@ -993,7 +993,15 @@ export async function mediaTalkIdentitiesJob({ write = false } = {}, deps = {}) 
 /** media-remaster { id }: one talk's TOWER part of the remaster (Chad 10-23): the word guard on the UniPASE copy the cloud
  *  worker left in its folder, realign, the Opus 96k + original encodes, trim, update. Its own lane ('remaster'). */
 export async function mediaRemasterJob({ id, ...rest } = {}, deps = {}) {
-  const r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['remaster', 'realign', 'web', 'trim', 'update'] }, deps);
+  // phase 1: the word guard only; phase 2 (realign → encode → publish) only when the UniPASE copy became the listening copy —
+  // a 'review' / 'skipped' talk keeps its published audio untouched (no re-encode, no re-ingest)
+  let r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['remaster'] }, deps);
+  if (!r?.yielded) {
+    const repo0 = deps.repo || await import('../repos/media-repo.js');
+    const it0 = await repo0.getMediaItem(Number(id));
+    const m0 = it0?.dir ? JSON.parse(await (await import('fs/promises')).readFile(join(it0.dir, 'meta.json'), 'utf8').catch(() => '{}')) : {};
+    if (m0.remaster?.status === 'done' && m0.enhancement?.listening === 'unipase') r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, deps);
+  }
   // one line per finished talk → the backfill's progress file (data/run/remaster-results.jsonl; read by the overnight status)
   try {
     const fs = await import('fs/promises');
@@ -1004,7 +1012,7 @@ export async function mediaRemasterJob({ id, ...rest } = {}, deps = {}) {
       const file = deps.resultsFile || join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run', 'remaster-results.jsonl');
       await fs.mkdir(dirname(file), { recursive: true });
       await fs.appendFile(file, JSON.stringify({ at: new Date().toISOString(), id: it.id, slug: it.slug, grade: m.quality?.overall ?? null,
-        status: m.remaster?.status ?? null, listening: m.enhancement?.listening ?? null, swapped_pct: m.remaster?.swapped_pct ?? null,
+        status: m.remaster?.status ?? null, listening: m.enhancement?.listening ?? null, swapped_pct: m.remaster?.swapped_pct ?? null, fallback_sent_pct: m.remaster?.fallback_sent_pct ?? null, unguardable_s: m.remaster?.unguardable_s ?? null,
         unplaced_pct: m.remaster?.realign_unplaced_pct ?? null, aligned_to: m.aligned_to ?? null, web_original: m.web_original ?? null,
         web: m.web?.ogg ?? m.web ?? null, why: m.remaster?.why ?? null }) + '\n');
     }
@@ -1063,6 +1071,22 @@ export async function homeRemaster(host, it, m, { T, C, fs, stop }) {
   return done;
 }
 
+/** The talk's language RUNS from its paragraphs: consecutive paragraphs of one language joined, the boundaries halfway
+ *  between paragraphs, the first from 0, the last to the end (+1 s). Codes folded ('En', 'Eng' → 'en'). → [{s, e, lang}] */
+export function languageRuns(paragraphs = [], duration = null) {
+  const code = (l) => { const x = String(l || '').toLowerCase(); return x.startsWith('eng') ? 'en' : x.startsWith('per') || x.startsWith('far') ? 'fa' : x.startsWith('ara') ? 'ar' : x.slice(0, 2) || null; };
+  const ps = paragraphs.filter((p) => p.t0 != null && p.t1 != null).sort((a, b) => a.t0 - b.t0);
+  const runs = [];
+  for (const p of ps) {
+    const lang = code(p.lang);
+    const last = runs.at(-1);
+    if (last && last.lang === lang) last.e = p.t1;
+    else { if (last) { const mid = (last.e + p.t0) / 2; last.e = mid; runs.push({ s: mid, e: p.t1, lang }); } else runs.push({ s: 0, e: p.t1, lang }); }
+  }
+  if (runs.length) runs.at(-1).e = Math.max(runs.at(-1).e, Number(duration) || 0) + 1;
+  return runs.map((r) => ({ s: Math.round(r.s * 1000) / 1000, e: Math.round(r.e * 1000) / 1000, lang: r.lang }));
+}
+
 /** Worst first: grade E → B, then the narrowest bandwidth, then the lowest SNR (unknowns last within their grade). */
 export function worstFirst(talks) {
   const rank = { E: 0, D: 1, C: 2, B: 3, A: 4 };
@@ -1075,7 +1099,7 @@ export function worstFirst(talks) {
  *  folder and the talk's media-remaster run is queued. Budget-capped (cloud.js), every pod terminated at the end, on a
  *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
-export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000 } = {}, deps = {}) {
+export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false } = {}, deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
   const repo = deps.repo || await import('../repos/media-repo.js');
   const T = deps.tools || await import('../media/tools.js');
@@ -1094,12 +1118,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   if (ids || !st.started || st.finished) {
     const list = ids ? (await Promise.all([].concat(ids).map(async (x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter(Boolean)
       : await repo.remasterCandidates(String(process.env.MEDIA_REMASTER_GRADES || 'B,C,D,E').split(',').map((g) => g.trim().toUpperCase()));
-    const busy = new Set([...Object.values(st.jobs || {}).map((j) => j.itemId), ...(st.done || []).map((d) => d.id), ...(st.queue || [])]);
+    const busy = new Set([...Object.values(st.jobs || {}).map((j) => j.itemId), ...(force ? [] : (st.done || []).map((d) => d.id)), ...(st.queue || [])]);
     let want = [];
     for (const it of list) {
       if (!it?.dir || busy.has(it.id)) continue;
       const m = await readMeta(it.dir).catch(() => null);
-      if (!m || ['done', 'review'].includes(m.remaster?.status)) continue;
+      if (!m || (!force && ['done', 'review'].includes(m.remaster?.status))) continue;   // force (explicit ids): redo
       const raw = m.quality?.raw || {};
       want.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
     }
@@ -1206,8 +1230,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if (kind === 'DONE' && it?.dir) {
                 const enh = join(it.dir, 'enhanced');
                 await fs.mkdir(enh, { recursive: true });
-                for (const [rf, lf] of [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['done.json', 'unipase.done.json']]) {
-                  await C.podGet(run, p, `/workspace/spool/${job}/${rf}`, join(enh, `${lf}.part`));
+                for (const [rf, lf, optional] of [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']]) {
+                  try { await C.podGet(run, p, `/workspace/spool/${job}/${rf}`, join(enh, `${lf}.part`)); }
+                  catch (err) { if (optional) { await fs.rm(join(enh, lf), { force: true }); continue; } throw err; }   // an older worker: no like-for-like reference
                   await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
                 }
                 const dj = JSON.parse(await fs.readFile(join(enh, 'unipase.done.json'), 'utf8'));
@@ -1233,7 +1258,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
               await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}`);
-              await C.podSsh(run, p, `echo '{}' > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000 });
+              const work = await fs.readFile(join(it.dir, 'transcript.work.json'), 'utf8').then(JSON.parse).catch(() => null);
+              await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s) }) });
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: now() };
             }
           }

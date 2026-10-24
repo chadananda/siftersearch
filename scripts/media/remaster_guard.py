@@ -1,6 +1,6 @@
 # REMASTER WORD GUARD (Chad 10-23: "never worse than the original"; planning/remaster-rnd-20261023.md §UniPASE production
 # plan 2): the UniPASE copy is transcribed, and every SENTENCE of the talk's final transcript whose words the copy does not
-# carry (beyond the ASR churn floor: max(1, 6 %) of its words, or ANY changed number / name) is replaced in the listening
+# carry as well as the original's own ASR does (the final text is the yardstick; churn floor max(1, 6 %), or ANY lost number / name) is replaced in the listening
 # copy by the ORIGINAL (transparent chain) for that sentence, with 150 ms equal-power crossfades. Runs on tower (CPU,
 # numpy + soundfile + ffmpeg). Prints ONE JSON line (the report also goes to --report).
 #   python remaster_guard.py --original O --unipase U --work transcript.work.json --asr unipase.asr.json --af CHAIN --output G.flac --report R.json
@@ -16,9 +16,14 @@ def decode(path, af=None):
     return np.frombuffer(subprocess.run(cmd, capture_output=True, check=True).stdout, dtype=np.float32).copy()
 
 
+_FOLD = str.maketrans({'ي': 'ی', 'ى': 'ی', 'ك': 'ک', 'ة': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ـ': None})
+
+
 def norm(w):
-    w = unicodedata.normalize('NFD', str(w)).encode('ascii', 'ignore').decode().lower()
-    return re.sub(r"[^a-z0-9']+", '', w)
+    """Any script (Persian / Arabic sentences were normalised to '' and so never guarded): diacritics off, casefold, Arabic
+    letter variants folded, letters / digits / apostrophes kept."""
+    w = ''.join(c for c in unicodedata.normalize('NFD', str(w)) if unicodedata.category(c) != 'Mn').casefold().translate(_FOLD)
+    return re.sub(r"[^\w']+", '', w).replace('_', '')
 
 
 def is_key(word, first):
@@ -70,29 +75,43 @@ def sentences_of(work):
     return out
 
 
-def decide(sentences, asr_words, lag_s=0.0, pad=0.3, ref_words=None):
-    """sentences: [(n, k, words)] (the final transcript: the windows); asr_words: [{w, s, e}] of the copy; ref_words: the
-    ORIGINAL's own ASR words (same Whisper model — corrections in the final text are not losses). → [{n, k, s, e, lost, swap}]"""
-    asr_words = sorted([w for w in asr_words if w.get('s') is not None], key=lambda w: w['s'])
-    starts = np.array([w['s'] - lag_s for w in asr_words]) if asr_words else np.zeros(0)
-    ref = sorted([w for w in (ref_words or []) if w.get('s') is not None], key=lambda w: w['s'])
-    rstarts = np.array([w['s'] for w in ref]) if ref else np.zeros(0)
+def decide(sentences, asr_words, lag_s=0.0, pad=0.3, ref_words=None, min_wps=1.0):
+    """The yardstick is the talk's FINAL (corrected) text. Per sentence: the words of it the ORIGINAL's ASR recovers vs the
+    words the COPY's ASR recovers (both the same model + settings). A sentence falls back to the original when the copy
+    recovers fewer — net of words it recovers that the original's did not — beyond max(1, 6 %) of the sentence, or loses a
+    number / name the original's ASR had. No ref (old jobs): the final text itself is the reference.
+    UNGUARDABLE (chant, prayer, music: R&D 10-23): both copies' ASR under min_wps words/s → no signal; the UniPASE audio stays.
+    → [{n, k, s, e, lost, gained, swap, unguardable}]"""
+    def prep(ws):
+        ws = sorted([w for w in (ws or []) if w.get('s') is not None], key=lambda w: w['s'])
+        return ws, (np.array([w['s'] - lag_s for w in ws]) if ws else np.zeros(0))
+    U, us = prep(asr_words)
+    R, rs = prep(ref_words)
     res = []
     for n, k, sw in sentences:
         s, e = sw[0]['s'], sw[-1]['e']
-        lo, hi = np.searchsorted(starts, s - pad), np.searchsorted(starts, e + pad)
-        cand = [norm(w.get('w', '')) for w in asr_words[lo:hi]]
-        if ref:   # the original's ASR words inside this sentence's window
-            rlo, rhi = np.searchsorted(rstarts, s - 0.05), np.searchsorted(rstarts, e + 0.05)
-            sw = ref[rlo:rhi] or sw
-        want = [norm(w.get('w', '')) for w in sw]
-        keep_idx = [i for i, t in enumerate(want) if t]
-        kept = lcs_kept([want[i] for i in keep_idx], [c for c in cand if c])
-        lost_i = [keep_idx[j] for j in range(len(keep_idx)) if j not in kept]
-        allowed = max(1, math.floor(0.06 * len(keep_idx)))
-        key_lost = [i for i in lost_i if is_key(sw[i].get('w', ''), i == 0)]
-        swap = len(lost_i) > allowed or bool(key_lost)
-        res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [sw[i].get('w', '') for i in lost_i], 'swap': swap})
+        dur = max(0.0, e - s)
+        win = lambda arr, st: arr[np.searchsorted(st, s - pad):np.searchsorted(st, e + pad)]
+        cu = [t for t in (norm(w.get('w', '')) for w in win(U, us)) if t]
+        want_raw = [w.get('w', '') for w in sw]
+        want = [norm(w) for w in want_raw]
+        idx = [i for i, t in enumerate(want) if t]
+        W = [want[i] for i in idx]
+        ku = {idx[j] for j in lcs_kept(W, cu)}
+        if R:
+            co = [t for t in (norm(w.get('w', '')) for w in win(R, rs)) if t]
+            ko = {idx[j] for j in lcs_kept(W, co)}
+        else:
+            co, ko = W, set(idx)
+        if R and dur >= 1.0 and len(cu) / dur < min_wps and len(co) / dur < min_wps:
+            res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [], 'gained': [], 'swap': False, 'unguardable': True})
+            continue
+        lost = sorted(ko - ku)
+        gained = ku - ko
+        allowed = max(1, math.floor(0.06 * len(idx)))
+        key_lost = [i for i in lost if is_key(want_raw[i], i == 0)]
+        swap = (len(lost) - len(gained)) > allowed or bool(key_lost)
+        res.append({'n': n, 'k': k, 's': round(s, 3), 'e': round(e, 3), 'lost': [want_raw[i] for i in lost], 'gained': len(gained), 'swap': swap, 'unguardable': False})
     return res
 
 
@@ -143,7 +162,9 @@ def main():
     sf.write(a.output, np.clip(out, -1, 1), SR, format='FLAC', subtype='PCM_24')
     total = sum(d['e'] - d['s'] for d in dec) or 1
     swapped_s = sum(e - s for s, e in merged)
+    ung = [d for d in dec if d.get('unguardable')]
     rep = {'sentences': len(dec), 'swapped': sum(d['swap'] for d in dec), 'swapped_s': round(swapped_s, 1), 'swapped_pct': round(100 * swapped_s / total, 1),
+           'fallback_sent_pct': round(100 * sum(d['swap'] for d in dec) / max(1, len(dec)), 1), 'unguardable': len(ung), 'unguardable_s': round(sum(d['e'] - d['s'] for d in ung), 1),
            'lag_ms': round(1000 * lag / SR, 1), 'windows': len(merged), 'detail': [d for d in dec if d['swap']][:400]}
     json.dump(rep, open(a.report, 'w'))
     print(json.dumps({k: v for k, v in rep.items() if k != 'detail'}))

@@ -55,14 +55,37 @@ def load_models(repo, weights):
     return model, inference_file, asr
 
 
-def transcribe(asr, path, prompt=None):
-    segs, info = asr.transcribe(path, word_timestamps=True, multilingual=True, vad_filter=True, beam_size=5,
-                                condition_on_previous_text=False, initial_prompt=prompt or None)
+def _segments(segs, info, offset=0.0, lang=None):
     out = []
     for s in segs:
-        out.append({'s': round(s.start, 3), 'e': round(s.end, 3), 'text': s.text.strip(), 'lang': getattr(s, 'language', None) or info.language,
-                    'words': [{'w': w.word.strip(), 's': round(w.start, 3), 'e': round(w.end, 3), 'p': round(w.probability, 3)} for w in (s.words or [])]})
-    return {'language': info.language, 'segments': out, 'model': 'large-v3-turbo (faster-whisper ct2 @0a363e91, multilingual)'}
+        out.append({'s': round(s.start + offset, 3), 'e': round(s.end + offset, 3), 'text': s.text.strip(), 'lang': lang or getattr(s, 'language', None) or info.language,
+                    'words': [{'w': w.word.strip(), 's': round(w.start + offset, 3), 'e': round(w.end + offset, 3), 'p': round(w.probability, 3)} for w in (s.words or [])]})
+    return out
+
+
+def transcribe(asr, path, prompt=None, runs=None):
+    """runs [{s, e, lang}] (from the talk's own per-paragraph language, sent by tower): each stretch is transcribed IN its
+    language — auto-detect over 30 s windows dropped whole Persian sentences in interpreted talks (R&D 10-23). No runs:
+    the whole file, language detected."""
+    kw = dict(word_timestamps=True, vad_filter=False, beam_size=5, condition_on_previous_text=False, initial_prompt=prompt or None)
+    if not runs:
+        segs, info = asr.transcribe(path, multilingual=True, **kw)
+        return {'language': info.language, 'segments': _segments(segs, info), 'model': MODEL_TAG}
+    from faster_whisper import decode_audio
+    audio = decode_audio(path, sampling_rate=16000)
+    out, langs = [], {}
+    for r in runs:
+        a, b = max(0, int(r['s'] * 16000)), min(len(audio), int(r['e'] * 16000))
+        if b - a < 16000 * 0.5:
+            continue
+        lang = (r.get('lang') or '').lower()[:2] or None
+        segs, info = asr.transcribe(audio[a:b], language=lang, **kw)
+        out += _segments(segs, info, a / 16000, lang)
+        langs[lang or info.language] = langs.get(lang or info.language, 0) + (b - a) / 16000
+    return {'language': max(langs, key=langs.get) if langs else None, 'segments': out, 'model': MODEL_TAG, 'runs': len(runs)}
+
+
+MODEL_TAG = 'large-v3-turbo (faster-whisper ct2 @0a363e91; no VAD; per-language runs)'
 
 
 def run_job(d, up, inference_file, asr):
@@ -79,9 +102,12 @@ def run_job(d, up, inference_file, asr):
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', wav_out, '-ac', '1', '-ar', str(SR), '-c:a', 'flac', '-sample_fmt', 's16', '-f', 'flac', os.path.join(d, 'out.flac.tmp')], check=True)
     os.replace(os.path.join(d, 'out.flac.tmp'), os.path.join(d, 'out.flac'))
     t1 = time.time()
-    tr = transcribe(asr, wav_out, meta.get('prompt'))
-    json.dump(tr, open(os.path.join(d, 'asr.json.tmp'), 'w'), ensure_ascii=False)
-    os.replace(os.path.join(d, 'asr.json.tmp'), os.path.join(d, 'asr.json'))
+    # BOTH copies through the SAME model and settings (no VAD: it dropped 20 s of speech on a UniPASE copy, 10-23 pilot),
+    # so the word guard compares like with like — the production transcript came from another model with a prompt
+    for src_wav, name in ((wav_out, 'asr.json'), (wav_in, 'asr_orig.json')):
+        tr = transcribe(asr, src_wav, meta.get('prompt'), meta.get('runs'))
+        json.dump(tr, open(os.path.join(d, name + '.tmp'), 'w'), ensure_ascii=False)
+        os.replace(os.path.join(d, name + '.tmp'), os.path.join(d, name))
     import soundfile as sf
     info = sf.info(wav_in)
     for f in (wav_in, wav_out):

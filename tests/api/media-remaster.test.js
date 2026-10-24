@@ -129,7 +129,7 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
       enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
       stages: Object.fromEntries(['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) };
     writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
-    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 1, swapped_pct: guardPct, lag_ms: 25 })),
+    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 1, swapped_pct: guardPct, fallback_sent_pct: guardPct, lag_ms: 25 })),
       tool: vi.fn(async (sub, input, opts) => { writeFileSync(opts.output, JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } })); return { placed: 2, total: 2 }; }) };
     const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };
     return { dir, deps, tools, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
@@ -147,8 +147,8 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
     expect(w[2]).toMatchObject({ s: 1.7, s0: 1.7 });                 // unplaced: keeps its time
     expect(meta.moments[0]).toMatchObject({ t0_ms: 1030, t1_ms: 2000 });
   });
-  it('a guard that had to keep 30 % → review, the transparent copy stays', async () => {
-    const t = talk(30);
+  it('a guard that had to keep 50 % of sentences → review (high fallback), the transparent copy stays', async () => {
+    const t = talk(50);
     await runItem(t.item, { redo: ['remaster', 'realign'], only: ['remaster', 'realign'], remaster: true }, t.deps);
     const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
     expect(meta.enhancement.listening).toBe('safe');
@@ -173,9 +173,30 @@ a=[{'w':'today','s':0,'e':.5},{'w':'the','s':.5,'e':.7},{'w':'world','s':.7,'e':
 print(json.dumps([d['swap'] for d in G.decide(s,a)]))`], { encoding: 'utf8' });
     expect(JSON.parse(out.trim())).toEqual([false, true]);
   });
+  it('the final text is the yardstick: words the original\'s ASR also missed are not losses; Persian is guarded; chant is unguardable', () => {
+    const out = execFileSync('python3', ['-c', `
+import sys, json; sys.path.insert(0, 'scripts/media')
+import remaster_guard as G
+W=lambda ws,t0: [{'w':w,'s':t0+i*0.4,'e':t0+i*0.4+0.35} for i,w in enumerate(ws)]
+s=[(1,0,W('the world is confronted by a crisis'.split(),0)),
+   (2,0,W('امروز جهان در بحران است'.split(),10)),
+   (3,0,W('alla hu abha alla hu abha alla hu abha'.split(),20))]
+orig=W('the world is by a'.split(),0)+W('امروز جهان در بحران است'.split(),10)+[{'w':'ah','s':21,'e':21.3}]
+copy=W('the world is by a'.split(),0)+W('امروز در است'.split(),10)
+r=G.decide(s,copy,ref_words=orig)
+print(json.dumps([[d['swap'],d['unguardable']] for d in r]), G.norm('ي')==G.norm('ی'))`], { encoding: 'utf8' });
+    const [line] = out.trim().split('\n');
+    expect(JSON.parse(line.slice(0, line.lastIndexOf(' ')))).toEqual([[false, false], [true, false], [false, true]]);
+    expect(out).toContain('True');
+  });
 });
 
 describe('backfill order and pod setup', () => {
+  it('language runs: consecutive paragraphs of one language joined, boundaries halfway, the first from 0, codes folded', async () => {
+    const { languageRuns } = await import('../../api/lib/ops/media-jobs.js');
+    expect(languageRuns([{ t0: 2, t1: 10, lang: 'En' }, { t0: 12, t1: 20, lang: 'Eng' }, { t0: 22, t1: 30, lang: 'fa' }, { t0: 31, t1: 40, lang: 'en' }], 45))
+      .toEqual([{ s: 0, e: 21, lang: 'en' }, { s: 21, e: 30.5, lang: 'fa' }, { s: 30.5, e: 46, lang: 'en' }]);
+  });
   it('worst first: E → B, then narrowest bandwidth, then lowest SNR, unknowns last', async () => {
     const { worstFirst } = await import('../../api/lib/ops/media-jobs.js');
     const o = worstFirst([{ id: 1, grade: 'B', bw: 3, snr: 5 }, { id: 2, grade: 'E', bw: 8, snr: 20 }, { id: 3, grade: 'E', bw: 4, snr: 30 },

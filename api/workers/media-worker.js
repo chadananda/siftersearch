@@ -42,7 +42,7 @@ MEDIA_LANES.portraits.push('media-gallery', 'media-portrait-inventory');
 // llm: API-bound — 12 workers; the per-provider adaptive gates in media/llm.js pace the actual calls
 export const MEDIA_LANE_WORKERS = { compute: Number(process.env.MEDIA_PREP_WORKERS) || 16, asr: (asrHosts().reduce((n, h) => n + h.slots, 0) || mediaParallel()) + 4,
   diar: Number(process.env.MEDIA_DIAR_WORKERS) || 14,   // boss 6 + aorus 1 started; the rest re-attach (old aorus jobs) or wait
-  llm: Number(process.env.MEDIA_LLM_WORKERS) || 12, pipeline: 3, downloads: Number(process.env.MEDIA_FETCH_RUNS) || 2, remaster: Number(process.env.MEDIA_REMASTER_WORKERS) || 2, cloud: 1 };
+  llm: Number(process.env.MEDIA_LLM_WORKERS) || 12, pipeline: 3, downloads: Number(process.env.MEDIA_FETCH_RUNS) || 2, remaster: Number(process.env.MEDIA_REMASTER_WORKERS) || 6, cloud: 1 };
 
 // the FEED: N new items in processing by rank, one download run queued (30 s)
 async function mediaFeedLoop() {

@@ -404,6 +404,6 @@ describe('prep never queues behind full encode slots (21:30: 16 prep runs waited
     const { readFileSync } = await import('fs');
     // encodeRemote's remote path needs ssh (no exec injection), so the two rules are checked in the source
     expect(readFileSync(new URL('../../api/lib/media/tools.js', import.meta.url), 'utf8')).toMatch(/if \(encBusy >= slots && local && !overflowOff\(\)\) return local\(\);/);
-    expect(readFileSync(new URL('../../api/lib/media/item.js', import.meta.url), 'utf8')).toMatch(/if \(tools\.encodeRemote && slotLight !== rerunLight && !remastered\)/);
+    expect(readFileSync(new URL('../../api/lib/media/item.js', import.meta.url), 'utf8')).toMatch(/if \(tools\.encodeRemote && slotLight === towerLight && !remastered\)/);
   });
 });

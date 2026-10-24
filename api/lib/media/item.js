@@ -57,6 +57,18 @@ export async function rerunLight(fn) {
   try { return await fn(); } finally { rerunBusy--; rerunWait.shift()?.(); }
 }
 
+// REMASTER runs (the overnight UniPASE backfill, Chad 10-23) get their OWN tower pool for the word guard, realign and the
+// re-encodes: in the one re-run slot they queued behind ~600 listening re-runs (a 54-min talk took 25 min). Night-time
+// search load is low; MEDIA_REMASTER_SLOTS (4) bounds them.
+const REMASTER_SLOTS = Math.max(1, Number(process.env.MEDIA_REMASTER_SLOTS) || 4);
+let remasterBusy = 0;
+const remasterWait = [];
+export async function remasterSlot(fn) {
+  while (remasterBusy >= REMASTER_SLOTS) await slotWait(remasterWait, 'a remaster slot');
+  remasterBusy++;
+  try { return await fn(); } finally { remasterBusy--; remasterWait.shift()?.(); }
+}
+
 /** The invented-second-speaker merge for one talk (spkmerge.js): titanet scores on tower (≤ 2 threads, a light slot).
  *  → { paragraphs, speakers, merged, summary } | null (one speaker, or nothing to score) */
 async function mergeSpeakers(paragraphs, speakers, { dir, meta, tools, light = towerLight }) {
@@ -177,7 +189,8 @@ export async function runItem(item, opts = {}, deps = {}) {
   const stop = d.drainingNow || (() => false);
 
   // a re-run of a published talk uses the re-run slot, never the light slots new talks' prep needs
-  const slotLight = (item.state === 'done' || meta.stages?.catalog?.at) && opts.redo ? rerunLight : towerLight;
+  const slotLight = opts.remaster ? remasterSlot : (item.state === 'done' || meta.stages?.catalog?.at) && opts.redo ? rerunLight : towerLight;
+  const heavySlot = opts.remaster ? remasterSlot : towerSlot;
   // INVENTED SECOND SPEAKERS on a published talk (media-speaker-merge): inside this run, so no other run races on its files
   if (opts.mergeSpeakers && dir && existsSync(join(dir, 'transcript.work.json'))) {
     const work = await readJson(join(dir, 'transcript.work.json'));
@@ -364,10 +377,13 @@ export async function runItem(item, opts = {}, deps = {}) {
         else {
           const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
           const out = join(dir, 'enhanced', 'unipase.flac'), report = join(dir, 'enhanced', 'unipase.guard.json');
-          const g = await towerSlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
-            ref: join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));
-          const maxPct = Number(process.env.MEDIA_REMASTER_MAX_SWAP_PCT) || 15;
-          const pass = g.swapped_pct <= maxPct;
+          const g = await heavySlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
+            // the reference: the ORIGINAL through the same model + settings as the copy (pods), else the production transcript
+            ref: existsSync(join(dir, 'enhanced', 'unipase.asr_orig.json')) ? join(dir, 'enhanced', 'unipase.asr_orig.json') : join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));
+          // the splice already keeps every word: publish unless MOST of the talk fell back (> 40 % of sentences — R&D 10-23: those are
+          // listed for Chad to hear; the transparent copy stays). Chant / prayer the ASR cannot read is 'unguardable' and kept.
+          const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 40;
+          const pass = (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
           vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
           meta.enhancement.variants = vs;
@@ -376,8 +392,8 @@ export async function runItem(item, opts = {}, deps = {}) {
             meta.enhancement.listening = 'unipase';
             meta.enhancement.listening_why = `UniPASE remaster (Chad 10-23): ${g.swapped} of ${g.sentences} sentences (${g.swapped_pct} %) kept from the original by the word guard`;
           }
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.swapped_pct} % of the talk swapped (> ${maxPct} %): a human listens` }),
-            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): high fallback — Chad listens` }),
+            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
         }
       }
@@ -393,7 +409,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         if (isRemastered(meta) && meta.aligned_to !== target) {
           const v = meta.enhancement.variants.find((x) => x.name === target);
           const out = join(dir, 'enhanced', 'realign.json');
-          const r = await towerSlot(() => tools.tool('realign', join(dir, v.file), { segments: join(dir, 'transcript.work.json'), output: out }, { threads: 4, stop, timeoutMs: 3 * 3600_000 }));
+          const r = await heavySlot(() => tools.tool('realign', join(dir, v.file), { segments: join(dir, 'transcript.work.json'), output: out }, { threads: 4, stop, timeoutMs: 3 * 3600_000 }));
           const times = (await readJson(out, { times: {} })).times || {};
           const unplaced = r.total ? 1 - r.placed / r.total : 1;
           if (unplaced > 0.02) {
@@ -446,7 +462,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       } else delete meta.web_original;
       // a RE-RUN of a published talk encodes on tower in its own slot — never in boss's encode slots, which new talks' prep
       // needs (21:30: ~600 backfill re-runs held all 4 boss encode slots and 16 prep runs waited behind them)
-      if (tools.encodeRemote && slotLight !== rerunLight && !remastered) {
+      if (tools.encodeRemote && slotLight === towerLight && !remastered) {
         meta.enc_jobs = meta.enc_jobs || {};
         for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
         await save();
