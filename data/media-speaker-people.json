@@ -21,7 +21,11 @@
     "Explanation of the Symbol of the Greatest Name"
    ],
    "historical": "first-hand",
-   "historical_basis": "Hand of the Cause"
+   "historical_basis": "Hand of the Cause",
+   "confirmed": [
+    "Faizi",
+    "Faizí"
+   ]
   },
   {
    "key": "gloria-faizi",
@@ -34,7 +38,7 @@
     "The Bahá'í Faith: An Introduction"
    ],
    "historical": "first-hand",
-   "historical_basis": "widow of the Hand Abu’l-Qásim Faizí; pioneer — CONFIRM (planning/media-speaker-review.md)"
+   "historical_basis": "widow of the Hand Abu’l-Qásim Faizí; pioneer; kept (Chad 10-23)"
   },
   {
    "key": "ali-akbar-furutan",
@@ -54,7 +58,10 @@
     "Mothers, Fathers and Children"
    ],
    "historical": "first-hand",
-   "historical_basis": "Hand of the Cause"
+   "historical_basis": "Hand of the Cause",
+   "confirmed": [
+    "Furútan"
+   ]
   },
   {
    "key": "ruhiyyih-khanum",
@@ -111,7 +118,7 @@
     "Zikrullah Khadem, The Itinerant Hand of the Cause of God"
    ],
    "historical": "first-hand",
-   "historical_basis": "widow of the Hand Dhikru’lláh Khádem; recollections of the Guardian — CONFIRM (planning/media-speaker-review.md)"
+   "historical_basis": "widow of the Hand Dhikru’lláh Khádem; recollections of the Guardian; kept (Chad 10-23)"
   },
   {
    "key": "riaz-khadem",
@@ -125,7 +132,7 @@
     "Prelude to the Guardianship"
    ],
    "historical": "modern",
-   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
+   "historical_basis": "contemporary speaker; kept (Chad 10-23)"
   },
   {
    "key": "jena-khadem-khodadad",
@@ -135,7 +142,7 @@
     "Jena Khodadad"
    ],
    "historical": "modern",
-   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
+   "historical_basis": "contemporary speaker; kept (Chad 10-23)"
   },
   {
    "key": "william-sears",
@@ -257,7 +264,11 @@
    ],
    "uhj_elected": 2000,
    "historical": "historian",
-   "historical_basis": "UHJ 2000 — kept: Chad 10-23 named him the cutoff"
+   "historical_basis": "UHJ 2000 — kept: Chad 10-23 named him the cutoff",
+   "confirmed": [
+    "Grossman",
+    "Grossmann"
+   ]
   },
   {
    "key": "adib-taherzadeh",
@@ -283,7 +294,10 @@
    ],
    "uhj_elected": 1988,
    "historical": "historian",
-   "historical_basis": "historian of the Revelation (The Revelation of Bahá’u’lláh); UHJ 1988"
+   "historical_basis": "historian of the Revelation (The Revelation of Bahá’u’lláh); UHJ 1988",
+   "confirmed": [
+    "Taherzadeh"
+   ]
   },
   {
    "key": "ali-nakhjavani",
@@ -298,7 +312,10 @@
    "role": "uhj",
    "uhj_elected": 1963,
    "historical": "first-hand",
-   "historical_basis": "UHJ 1963; served under the Guardian; International Bahá’í Council 1961–63 (president)"
+   "historical_basis": "UHJ 1963; served under the Guardian; International Bahá’í Council 1961–63 (president)",
+   "confirmed": [
+    "Nakhjavání"
+   ]
   },
   {
    "key": "violette-nakhjavani",
@@ -390,7 +407,8 @@
     "Ed Prine"
    ],
    "historical": "modern",
-   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
+   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)",
+   "rank": "last"
   },
   {
    "key": "elsie-austin",
@@ -425,7 +443,7 @@
     "Steve Phelps"
    ],
    "historical": "modern",
-   "historical_basis": "contemporary speaker — listed for Chad (planning/media-speaker-review.md)"
+   "historical_basis": "contemporary speaker; kept (Chad 10-23)"
   },
   {
    "key": "hasan-balyuzi",
@@ -545,7 +563,11 @@
    "exclude_surname": "^\\s*(?:dr\\.?|mr\\.?)?\\s*m[ou]h[aā]jj?[eéi]r\\s*$",
    "exclude_keep": "ra[hḥ]mat|\\br\\.\\s*m[ou]h",
    "historical": "modern",
-   "historical_basis": "excluded (newer-generation)"
+   "historical_basis": "excluded (newer-generation)",
+   "confirmed": [
+    "Dr. Mohajer",
+    "Mohajer"
+   ]
   },
   {
    "key": "paul-lample",
@@ -721,7 +743,12 @@
    "role": "itc",
    "itc_appointed": 1983,
    "historical": "first-hand",
-   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1993)"
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1993)",
+   "confirmed": [
+    "Khamsi",
+    "Khamsi-Dunbar, M.",
+    "Khamsi-Dunbar,M."
+   ]
   },
   {
    "key": "isobel-sabri",
@@ -733,7 +760,10 @@
    "role": "itc",
    "itc_appointed": 1983,
    "historical": "first-hand",
-   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1992); pilgrim of the Guardian’s time"
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1992); pilgrim of the Guardian’s time",
+   "confirmed": [
+    "Sabri"
+   ]
   },
   {
    "key": "hushmand-fatheazam",
@@ -1019,6 +1049,498 @@
    "role": "hand",
    "historical": "first-hand",
    "historical_basis": "Hand of the Cause"
+  },
+  {
+   "key": "arthur-lyon-dahl",
+   "name": "Arthur Lyon Dahl",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\barthur\\s+(?:lyon\\s+)?dahl\\b",
+   "exclude_title": "\\barthur\\s+(?:lyon\\s+)?dahl\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "augusto-lopez-claros",
+   "name": "Augusto Lopez-Claros",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\baugusto\\s+l[oó]pez[-\\s]?claros\\b",
+   "exclude_title": "\\baugusto\\s+l[oó]pez[-\\s]?claros\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "bob-harris",
+   "name": "Bob Harris",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\b(?:bob|robert)\\s+harris\\b",
+   "exclude_title": "\\b(?:bob|robert)\\s+harris\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "brian-aull",
+   "name": "Brian Aull",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bbrian\\s+aull\\b",
+   "exclude_title": "\\bbrian\\s+aull\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "ed-harris",
+   "name": "Ed Harris",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bed(?:ward)?\\s+harris\\b",
+   "exclude_title": "\\bed(?:ward)?\\s+harris\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "elena-mustakova-possardt",
+   "name": "Elena Mustakova-Possardt",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\belena\\s+mustakova",
+   "exclude_title": "\\belena\\s+mustakova",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "gregory-dahl",
+   "name": "Gregory Dahl",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bgregory\\s+(?:c\\.?\\s+)?dahl\\b",
+   "exclude_title": "\\bgregory\\s+(?:c\\.?\\s+)?dahl\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "ismael-velasco",
+   "name": "Ismael Velasco",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bismael\\s+velasco\\b",
+   "exclude_title": "\\bismael\\s+velasco\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "louise-profeit-leblanc",
+   "name": "Louise Profeit-LeBlanc",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\blouise\\s+profeit",
+   "exclude_title": "\\blouise\\s+profeit",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "michael-penn",
+   "name": "Michael Penn",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bmichael\\s+(?:l\\.?\\s+)?penn\\b",
+   "exclude_title": "\\bmichael\\s+(?:l\\.?\\s+)?penn\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "mikhail-sergeev",
+   "name": "Mikhail Sergeev",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bmikhail\\s+sergeev\\b",
+   "exclude_title": "\\bmikhail\\s+sergeev\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "paul-hanley",
+   "name": "Paul Hanley",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bpaul\\s+hanley\\b",
+   "exclude_title": "\\bpaul\\s+hanley\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "rainn-wilson",
+   "name": "Rainn Wilson",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\brainn\\s+wilson\\b",
+   "exclude_title": "\\brainn\\s+wilson\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "robert-weinberg",
+   "name": "Robert Weinberg",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\brobert\\s+weinberg\\b",
+   "exclude_title": "\\brobert\\s+weinberg\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "robin-chandler",
+   "name": "Robin Chandler",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\brobin\\s+chandler\\b",
+   "exclude_title": "\\brobin\\s+chandler\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "steve-friberg",
+   "name": "Steve Friberg",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bstev(?:e|en)\\s+friberg\\b",
+   "exclude_title": "\\bstev(?:e|en)\\s+friberg\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "trip-barthel",
+   "name": "Trip Barthel",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\btrip\\s+barthel\\b",
+   "exclude_title": "\\btrip\\s+barthel\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "vasu-mohan",
+   "name": "Vasu Mohan",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bvasu\\s+mohan\\b",
+   "exclude_title": "\\bvasu\\s+mohan\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "xin-zhihong",
+   "name": "Xin Zhihong",
+   "aliases": [],
+   "exclude": "curation-not-historical",
+   "exclude_match": "\\bxin\\s+zhihong\\b",
+   "exclude_title": "\\bxin\\s+zhihong\\b",
+   "historical": "modern",
+   "historical_basis": "dropped: curation, not historical (Chad 10-23)"
+  },
+  {
+   "key": "armin-eschraghi",
+   "name": "Armin Eschraghi",
+   "aliases": [],
+   "historical": "historian",
+   "historical_basis": "historian (Chad 10-23)"
+  },
+  {
+   "key": "michael-day",
+   "name": "Michael Day",
+   "aliases": [],
+   "historical": "historian",
+   "historical_basis": "historian (Chad 10-23)"
+  },
+  {
+   "key": "siyamak-zabihi-moghaddam",
+   "name": "Siyamak Zabihi-Moghaddam",
+   "aliases": [],
+   "historical": "historian",
+   "historical_basis": "historian (Chad 10-23)"
+  },
+  {
+   "key": "christopher-buck",
+   "name": "Christopher Buck",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "modern (Chad 10-23)",
+   "rank": "last"
+  },
+  {
+   "key": "louis-venters",
+   "name": "Louis Venters",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "modern (Chad 10-23)",
+   "rank": "last"
+  },
+  {
+   "key": "peter-smith",
+   "name": "Peter Smith",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "modern (Chad 10-23)",
+   "rank": "last"
+  },
+  {
+   "key": "robert-stockman",
+   "name": "Robert Stockman",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "modern (Chad 10-23)",
+   "rank": "last"
+  },
+  {
+   "key": "moojan-momen",
+   "name": "Moojan Momen",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "modern (Chad 10-23); kept"
+  },
+  {
+   "key": "reba-carruth",
+   "name": "Reba Carruth",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "robert-atkinson",
+   "name": "Robert Atkinson",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "sovaida-maani-ewing",
+   "name": "Sovaida Ma’ani Ewing",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "john-hatcher",
+   "name": "John Hatcher",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "roya-akhavan",
+   "name": "Roya Akhavan",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "kathryn-hogenson",
+   "name": "Kathryn Hogenson",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "joann-borovicka",
+   "name": "JoAnn Borovicka",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "ben-schewel",
+   "name": "Ben Schewel",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "glen-cotten",
+   "name": "Glen Cotten",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "sohrab-kourosh",
+   "name": "Sohrab Kourosh",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "valerie-phillips",
+   "name": "Valerie Phillips",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "susanne-alexander",
+   "name": "Susanne Alexander",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "sandra-lynn-hutchison",
+   "name": "Sandra Lynn Hutchison",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "hooshmand-badee",
+   "name": "Hooshmand Badee",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "anthony-vance",
+   "name": "Anthony Vance",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "annette-reynolds",
+   "name": "Annette Reynolds",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "roshan-danesh",
+   "name": "Roshan Danesh",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "leonard-swidler",
+   "name": "Leonard Swidler",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "judy-hannen-moe",
+   "name": "Judy Hannen Moe",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "abdul-missagh-ghadirian",
+   "name": "‘Abdu’l-Missagh Ghadirian",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "darius-shahrokh",
+   "name": "Darius Shahrokh",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "j-carey",
+   "name": "J. Carey",
+   "aliases": [
+    "Dr. J. Carey"
+   ],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "guy-sinclair",
+   "name": "Guy Sinclair",
+   "aliases": [],
+   "rank": "last",
+   "historical": "modern",
+   "historical_basis": "unsure (Chad 10-23): kept published, ranked last"
+  },
+  {
+   "key": "anne-pearson",
+   "name": "Anne Pearson",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "anne-perry",
+   "name": "Anne Perry",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "chad-jones",
+   "name": "Chad Jones",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "ian-kluge",
+   "name": "Ian Kluge",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "julio-savi",
+   "name": "Julio Savi",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "mariette-leong",
+   "name": "Mariette Leong",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "shahrokh-monjazeb",
+   "name": "Shahrokh Monjazeb",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "todd-lawson",
+   "name": "Todd Lawson",
+   "aliases": [],
+   "historical": "modern",
+   "historical_basis": "kept (Chad 10-23)"
   }
  ],
  "not_speakers": [

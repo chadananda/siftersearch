@@ -45,10 +45,20 @@ export async function towerLight(fn) {
   lightBusy++;
   try { return await fn(); } finally { lightBusy--; lightWait.shift()?.(); }
 }
+// RE-RUNS of published talks (backfills: safe listening, speaker merge, relink — ~590 queued 10-23) get ONE tower slot of
+// their own, so they never take the light slots from new talks' prep (18:40: the publish rate fell 30 → 20/h while they ran)
+const RERUN_SLOTS = Math.max(1, Number(process.env.MEDIA_RERUN_SLOTS) || 1);
+let rerunBusy = 0;
+const rerunWait = [];
+export async function rerunLight(fn) {
+  while (rerunBusy >= RERUN_SLOTS) await new Promise((r) => rerunWait.push(r));
+  rerunBusy++;
+  try { return await fn(); } finally { rerunBusy--; rerunWait.shift()?.(); }
+}
 
 /** The invented-second-speaker merge for one talk (spkmerge.js): titanet scores on tower (≤ 2 threads, a light slot).
  *  → { paragraphs, speakers, merged, summary } | null (one speaker, or nothing to score) */
-async function mergeSpeakers(paragraphs, speakers, { dir, meta, tools }) {
+async function mergeSpeakers(paragraphs, speakers, { dir, meta, tools, light = towerLight }) {
   const M = await import('./spkmerge.js');
   const spans = M.spansOf(paragraphs);
   if (!spans.mainKey || !Object.keys(spans.others).length || !tools.tool) return null;
@@ -56,7 +66,7 @@ async function mergeSpeakers(paragraphs, speakers, { dir, meta, tools }) {
   const f = join(tmpdir(), `spkmerge-${process.pid}-${Date.now()}.json`);
   await writeFile(f, JSON.stringify({ main: spans.main, others: spans.others }));
   try {
-    const r = await towerLight(() => tools.tool('spkmerge', join(dir, meta.original), { spans: f }, { threads: 2, timeoutMs: 30 * 60_000 }));
+    const r = await light(() => tools.tool('spkmerge', join(dir, meta.original), { spans: f }, { threads: 2, timeoutMs: 30 * 60_000 }));
     const dec = M.decideMerge(r, spans);
     return { ...M.applyMerge(paragraphs, speakers, spans.mainKey, dec.merge), summary: dec.summary };
   } finally { await (await import('fs/promises')).unlink(f).catch(() => {}); }
@@ -165,10 +175,12 @@ export async function runItem(item, opts = {}, deps = {}) {
   // polled by every long child process: a drain stops the stage at once (it is redone after the restart, finished stages are kept)
   const stop = d.drainingNow || (() => false);
 
+  // a re-run of a published talk uses the re-run slot, never the light slots new talks' prep needs
+  const slotLight = (item.state === 'done' || meta.stages?.catalog?.at) && opts.redo ? rerunLight : towerLight;
   // INVENTED SECOND SPEAKERS on a published talk (media-speaker-merge): inside this run, so no other run races on its files
   if (opts.mergeSpeakers && dir && existsSync(join(dir, 'transcript.work.json'))) {
     const work = await readJson(join(dir, 'transcript.work.json'));
-    const r = await mergeSpeakers(work.paragraphs || [], meta.speakers || {}, { dir, meta, tools });
+    const r = await mergeSpeakers(work.paragraphs || [], meta.speakers || {}, { dir, meta, tools, light: slotLight });
     if (r?.merged) { work.paragraphs = r.paragraphs; meta.speakers = r.speakers; await writeJson(join(dir, 'transcript.work.json'), work); }
     meta.speaker_merge = { ...(r?.summary ? { speakers: r.summary } : {}), merged: r?.merged || 0, at: d.now() };
     await save();
@@ -342,8 +354,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       const afArgs = af ? ['-af', af] : [];
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
-      const oggLocal = () => towerLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...OGG_ARGS, ogg], { stop }));
-      const m4aLocal = () => towerLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
+      const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...OGG_ARGS, ogg], { stop }));
+      const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
       if (tools.encodeRemote) {
         meta.enc_jobs = meta.enc_jobs || {};
         for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
@@ -503,8 +515,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         const af = [ls.af, trimAf].filter(Boolean).join(',');
         const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
         await Promise.all([
-          towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${ogg}.trim.ogg`], { stop })),
-          towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
+          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${ogg}.trim.ogg`], { stop })),
+          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
         await rename(`${ogg}.trim.ogg`, ogg); await rename(`${m4a}.trim.m4a`, m4a);
         meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
         rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;

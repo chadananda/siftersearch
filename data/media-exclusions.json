@@ -5,6 +5,11 @@
       "id": "newer-generation",
       "reason": "newer-generation: UHJ member, not historical (Chad 10-23)",
       "decided": "Chad 2026-10-23: 'remove talks by Firaydoun Javaheri and Gustavo Correa. Too modern.' then 'I don't want Lample, Mohajer, Arbab, Martin. These are newer generation, not historical.' Cutoff: Hartmut Grossmann stays; Kiser Barnes excluded; every member first elected after 2000 excluded. 'I'm trying to bring in people with a historical perspective.'"
+    },
+    {
+      "id": "curation-not-historical",
+      "reason": "curation: not historical (Chad 10-23)",
+      "decided": "Chad's Decisions artifact 10-23 (answers): drop these speakers from the collection"
     }
   ],
   "talks": [
@@ -32,9 +37,16 @@
     {
       "id": 1251,
       "title": "Lawḥ-i-Iḥtiráq (Fire Tablet)",
-      "decision": "needs_listen",
-      "reason": "'Dr. Mohajer': the Hand Raḥmatu'lláh Muhájir or Payman Mohajer — 'Dr.' is no evidence either way (Chad 10-23: the Hand was a medical doctor, the other a homeopath with a mail-order degree); stays published until someone listens",
-      "decided": "Chad 10-23: keep #1, listen"
+      "decision": "exclude",
+      "reason": "newer-generation: UHJ member, not historical (Chad 10-23, per talk)",
+      "decided": "Chad 10-23: 'Dr. Mohajer' = Payman Mohajer — exclude"
+    }
+  ],
+  "dropped_targets": [
+    {
+      "video_id": "8rA5gDAuL5U",
+      "title": "Mason Remey from Those Who Were There",
+      "decided": "Chad 10-23: drop"
     }
   ]
 }

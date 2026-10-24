@@ -3,7 +3,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { nameTokens, compatible, resolveSpeaker, recordingYear } from '../../api/lib/media/identity.js';
 
-const people = JSON.parse(readFileSync(new URL('../../data/media-speaker-people.json', import.meta.url), 'utf8')).people;
+// the GENERIC rules are tested on the data WITHOUT Chad's confirmed forms (10-23 he confirmed 'Furútan', 'Grossmann', 'Faizi' …);
+// the confirmed decisions themselves: tests/api/media-historical.test.js
+const people = JSON.parse(readFileSync(new URL('../../data/media-speaker-people.json', import.meta.url), 'utf8')).people.map(({ confirmed, ...p }) => p);
 const faizi = people.find((p) => p.key === 'abul-qasim-faizi');
 
 describe('name forms', () => {

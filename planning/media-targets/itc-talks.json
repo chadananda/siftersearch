@@ -254,12 +254,12 @@
    "duplicate_group": "banani-1"
   }
  ],
- "held_for_chad": [
+ "held_for_chad": [],
+ "dropped": [
   {
    "video_id": "8rA5gDAuL5U",
    "title": "Mason Remey from Those Who Were There",
-   "channel": "orthodoxbahai",
-   "why": "Remey talks count only BEFORE Ridván 1960 (cb_from); this clip is undated and on a Covenant-breaker group's channel — not queued"
+   "decided": "Chad 10-23: drop"
   }
  ]
 }

@@ -71,3 +71,29 @@ describe('media-rank reads the ITC and first-hand target sections and ranks them
     for (const r of ranks) expect(Math.floor(r.rank / 1e7)).toBe(2);
   });
 });
+
+describe("Chad's decisions 10-23 (the answers collection)", async () => {
+  const { excludedBy, loadExclusions } = await import('../../api/lib/media/exclusions.js');
+  const { resolveSpeaker } = await import('../../api/lib/media/identity.js');
+  it('the 19 curation drops are excluded by given name + surname; a surname alone is not', () => {
+    for (const n of ['Arthur Lyon Dahl', 'Gregory Dahl', 'Michael Penn', 'Rainn Wilson', 'Bob Harris', 'Ed Harris', 'Robert Weinberg', 'Xin Zhihong']) {
+      expect(excludedBy({ speaker: n }), n).toMatchObject({ reason: 'curation: not historical (Chad 10-23)' });
+    }
+    for (const n of ['Penn', 'Harris', 'Dahl', 'Moojan Momen', 'Todd Lawson', 'Steven Phelps', 'Peter Smith']) expect(excludedBy({ speaker: n }), n).toBeNull();
+    expect(loadExclusions().find((r) => r.id === 'curation-not-historical').people).toHaveLength(19);
+  });
+  it('historian / modern tags; the unsure are ranked last', () => {
+    for (const n of ['Armin Eschraghi', 'Michael Day', 'Siyamak Zabihi-Moghaddam']) expect(of(n)?.historical, n).toBe('historian');
+    for (const n of ['Christopher Buck', 'Louis Venters', 'Moojan Momen', 'Peter Smith', 'Robert Stockman']) expect(of(n)?.historical, n).toBe('modern');
+    expect(of('Reba Carruth')?.rank).toBe('last');
+    expect(historicalTier(5, 'modern', 'last')).toBe(6);
+    expect(of('Todd Lawson')?.rank).toBeNull();   // kept: ranked as usual
+  });
+  it('the confirmed identities: surname-only labels resolve to the person Chad named', () => {
+    const notSpeakers = [];
+    for (const [form, key] of [['Furútan', 'ali-akbar-furutan'], ['Nakhjavání', 'ali-nakhjavani'], ['Grossmann', 'hartmut-grossmann'], ['Taherzadeh', 'adib-taherzadeh'],
+      ['Sabri', 'isobel-sabri'], ['Khamsi-Dunbar,M.', 'masud-khamsi'], ['Faizi', 'abul-qasim-faizi'], ['Dr. Mohajer', 'payman-mohajer']]) {
+      expect(resolveSpeaker(form, people, {}, { notSpeakers }).key, form).toBe(key);
+    }
+  });
+});

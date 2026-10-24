@@ -15,13 +15,14 @@ export function historicalIndex(people = []) {
     const forms = m ? [name, `${m[2]} ${m[1]}`] : [name];
     const hit = ps.filter((p) => [p.name, ...(p.aliases || [])].some((f) => forms.some((n) => compatible(n, f))));
     if (hit.length !== 1) return null;   // none, or more than one person fits the form
-    return { key: hit[0].key, historical: hit[0].historical, basis: hit[0].historical_basis || null };
+    return { key: hit[0].key, historical: hit[0].historical, basis: hit[0].historical_basis || null, rank: hit[0].rank || null };
   };
 }
 
 /** A queue tier adjusted for the speaker's historical perspective: first-hand rises to the Hands' tier, historian to the
  *  historic-speakers tier, modern drops to the last tier. */
-export function historicalTier(tier, historical) {
+export function historicalTier(tier, historical, rank = null) {
+  if (rank === 'last') return Math.max(tier, 6);   // Chad 10-23: "unsure" — kept published, imported last
   if (historical === 'first-hand') return Math.min(tier, 2);
   if (historical === 'historian') return Math.min(tier, 4);
   if (historical === 'modern') return Math.max(tier, 5);

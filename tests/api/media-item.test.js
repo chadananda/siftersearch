@@ -323,3 +323,15 @@ describe('prep survives a drain (10-23: 88 restarts a night)', () => {
     expect(JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8')).enh_ck).toBeUndefined();
   });
 });
+
+describe('re-runs of published talks never take the light slots new talks need (10-23 18:40)', () => {
+  it('rerunLight runs one at a time, independently of towerLight', async () => {
+    const { rerunLight, towerLight } = await import('../../api/lib/media/item.js');
+    let live = 0, peak = 0;
+    const job = () => rerunLight(async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 10)); live--; });
+    let lightRan = false;
+    await Promise.all([job(), job(), job(), towerLight(async () => { lightRan = true; })]);
+    expect(peak).toBe(1);
+    expect(lightRan).toBe(true);
+  });
+});

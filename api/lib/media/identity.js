@@ -67,6 +67,10 @@ export function resolveSpeaker(name, people = [], ctx = {}, { notSpeakers = [] }
   // a series or programme name taken for a speaker ("Echoes from the Lotus")
   if (notSpeakers.some((n) => nameTokens(n).join(' ') === toks.join(' '))) return { not_speaker: true };
   if (!toks.length || /^(?:audience|questioner|interpreter|narrator|chair|various|unknown|misc|speaker)$/.test(toks.join(' '))) return { unknown: true };
+  // a form a person CONFIRMED as theirs after review (data: "confirmed": [...] — Chad 10-23: "Furútan", "Khamsi-Dunbar,M.")
+  // resolves directly, whatever its shape
+  const conf = people.filter((p) => !p.cb && (p.confirmed || []).some((f) => nameTokens(f).join(' ') === toks.join(' ')));
+  if (conf.length === 1) return { key: conf[0].key, display: conf[0].name, person: conf[0], basis: 'confirmed form (reviewed)' };
   // an exact known form of one person wins outright (aliases that change the surname: "Edward Prine" = Ed Price)
   const exact = people.filter((p) => !p.cb && formsOf(p).some((f) => nameTokens(f).length >= 2 && nameTokens(f).join(' ') === toks.join(' ')));
   if (exact.length === 1) return { key: exact[0].key, display: exact[0].name, person: exact[0], basis: 'known name form' };

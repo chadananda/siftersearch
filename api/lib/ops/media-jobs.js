@@ -380,12 +380,14 @@ export async function rankFor(row, info, speakerRole, historicalOf = () => null)
   if (row.source_kind === 'youtube') {
     const x = info.get(row.youtube_id) || {};
     const speaker = x.speaker || row.speaker || '';
-    const tier = historicalTier(tierOf({ source_kind: 'youtube', speaker, ytRole: x.role || null }), historicalOf(speaker)?.historical);
+    const h = historicalOf(speaker);
+    const tier = historicalTier(tierOf({ source_kind: 'youtube', speaker, ytRole: x.role || null }), h?.historical, h?.rank);
     return rankOf(tier, yearOf(x.title, row.year), x.i ?? row.id);
   }
   const p = parseMediaPath(row.rel || '');
   const speaker = row.speaker || p.speaker || '';
-  const tier = historicalTier(tierOf({ source_kind: 'file', collection: row.collection || p.collection || '', path: row.rel || '', speaker, role: speakerRole(speaker, { year: row.year || p.year }) }), historicalOf(speaker)?.historical);
+  const h = historicalOf(speaker);
+  const tier = historicalTier(tierOf({ source_kind: 'file', collection: row.collection || p.collection || '', path: row.rel || '', speaker, role: speakerRole(speaker, { year: row.year || p.year }) }), h?.historical, h?.rank);
   return rankOf(tier, row.year || p.year || yearOf(row.rel), row.id);
 }
 export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'media-targets', 'youtube-talks.json'), register = true } = {}, deps = {}) {
