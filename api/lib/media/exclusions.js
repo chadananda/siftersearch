@@ -4,16 +4,18 @@
 // GIVEN NAME (Chad 10-23: "spelling is not trustworthy"); a surname alone (`exclude_surname` label, `exclude_surname_title`)
 // only lands on the UNSURE list for Chad, never excluded; `exclude_keep` (e.g. Raḥmatu'lláh) never matches. WHY:
 // data/media-exclusions.json (the rule's reason). Pure match + a cached loader.
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const DATA = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data');
-let cached = null;
+let cached = null, cachedStamp = '';
 /** → [{ id, reason, people: [{ name, key, uhj_elected, sre, tre }] }] */
 export function loadExclusions({ rulesFile = join(DATA, 'media-exclusions.json'), peopleFile = join(DATA, 'media-speaker-people.json') } = {}) {
   const isDefault = rulesFile === join(DATA, 'media-exclusions.json') && peopleFile === join(DATA, 'media-speaker-people.json');
-  if (isDefault && cached) return cached;
+  // the data changes without a code push (Chad's decisions): the cache follows the files' modification times
+  const stamp = isDefault ? (() => { try { return `${statSync(rulesFile).mtimeMs}:${statSync(peopleFile).mtimeMs}`; } catch { return ''; } })() : '';
+  if (isDefault && cached && cachedStamp === stamp) return cached;
   const rules = (JSON.parse(readFileSync(rulesFile, 'utf8')).rules || []).map((r) => ({ ...r, people: [] }));
   for (const p of JSON.parse(readFileSync(peopleFile, 'utf8')).people || []) {
     if (!p.exclude) continue;
@@ -23,7 +25,7 @@ export function loadExclusions({ rulesFile = join(DATA, 'media-exclusions.json')
     r.people.push({ name: p.name, key: p.key, uhj_elected: p.uhj_elected ?? null, sre: re('exclude_match'), tre: re('exclude_title'),
       ure: re('exclude_surname'), utre: re('exclude_surname_title'), kre: re('exclude_keep') });
   }
-  if (isDefault) cached = rules;
+  if (isDefault) { cached = rules; cachedStamp = stamp; }
   return rules;
 }
 
