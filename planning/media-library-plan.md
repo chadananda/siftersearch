@@ -233,3 +233,40 @@ Enhance → −18 LUFS took NISQA 1.22 → 4.55, DNSMOS 1.20 → 3.09, bandwidth
 **Known gaps (10-23):** the web Ogg is 32 kbps Opus "voip", which caps bandwidth (~4 kHz measured on the restored Ioas
 copy, 5.85 kHz for the m4a) — restored talks need a wider Ogg setting (e.g. 48 kbps, `audio` application). Resemble on a
 CPU is ~8 min per minute of audio (too slow); on the GPU it needs chunking to fit beside the transcriptions.
+
+## 14. Deferred: the persistent transcription worker (Chad 10-23: remastering first)
+
+Measured 21:05 on aorus with 2–5-minute talks: GPU busy ~50 %, gaps 2–29 s — each job is a fresh process that uploads,
+runs language ID and loads Whisper + the alignment model (10–20 s, GPU idle) for a transcription that takes as long.
+**Design (drafted, NOT shipped — `planning/media-asr-worker-draft.patch`, media_tool.py only):** `asrworker` processes
+(N per host = its ASR slots) keep Whisper and the per-language alignment models resident (`MEDIA_ASR_RESIDENT=1`; the
+prompt applied per job with `dataclasses.replace(model.options, initial_prompt=…)`, the language passed per call) and claim
+`jobs/<id>/queued` by atomic rename; idle → unload after N minutes; OOM → unload + the job goes to the per-process path.
+**Still to build:** the gate (flag file `asr-worker.enabled`; `start` writes `args.json` + `queued`; `poll` requeues a job
+whose worker died, falls back to the per-process command after 2 attempts / a 40-min hang / an OOM; `running transcribe`
+counts queued + claimed; `df` reports resident workers), tower's VRAM accounting (a transcription needs ~0.8 GB while the
+models are resident), tests, and the before/after measurement (GPU busy %, per-job wall time) on aorus behind the flag,
+then boss.
+
+## 15. Re-align to the listening copy (prepare for remastered audio — Chad 10-23)
+
+A generative restoration shifts timing by 5–60 ms, so a remastered listening copy must not reuse the original's word times.
+**Where times live:** every word's `s`/`e` in `transcript.work.json` and `transcript.json` (paragraph `t0`/`t1` derive from
+them); `meta.moments` / `assess.json` (`t0_ms`/`t1_ms`, but also `para` + word indexes `i0`/`i1`); headings (paragraph
+start); `meta.trim` (from words + waveform); search block attrs (t0/t1 at ingest); shorts (rendered from moment times).
+Word INDEXES do not change — only times — so everything downstream can be recomputed from the words.
+
+**The step (`realign`, alignment only, no new transcription, no LLM):** media_tool `realign <listening file> --words
+<transcript.json>`: whisperx forced alignment of the FINAL paragraph text, one paragraph window at a time (its t0−1 s …
+t1+1 s on the new audio), with the resident or freshly loaded alignment model for each language → new `s`/`e` per word,
+same words in the same order (a word the aligner cannot place keeps its old time; > 2 % unplaced → the copy is refused
+for the QA review). Then item.js rewrites the word times in transcript.work.json / transcript.json, recomputes paragraph
+t0/t1 and moments' t0_ms/t1_ms from their word indexes, and runs `trim` + `update` (re-render, re-ingest changed block
+attrs, re-catalogue). Cost: ~1–3 s of GPU per 10 min of audio on aorus; no transcription, no model calls.
+
+**Hook (checked):** `runItem` re-runs any listed stage with `redo` (media-item `{ id, redo: [...] }`), so `realign` becomes
+a STAGE after `web` (it needs the listening copy and the final text: in STAGES after `clean`, before `trim` on a new talk;
+a back-fill is `redo: ['web', 'realign', 'trim', 'update']`). It runs only when the listening variant is marked
+`shifts_time: true` (a generative chain); the current transparent copy (high-pass + loudness) does not shift time, so
+today no talk needs it. media-safe-listening's successor (the remaster rollout) will queue it with each new copy, and the
+remaster QA gate compares the word-level ASR on the new copy against these re-aligned times.
