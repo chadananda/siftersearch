@@ -16,13 +16,11 @@ export default async function opsReportRoutes(fastify) {
   // jobs running now, and the Anís answers being researched (api/lib/service-heartbeat.js, jobs/async-jobs.js)
   fastify.get('/ops/services', { preHandler: requireInternal }, async () => {
     const { readServices, headCommit } = await import('../lib/service-heartbeat.js');
-    const { readdirSync, readFileSync } = await import('node:fs');
-    const { join } = await import('node:path');
+    // the job store's own view: a record whose process died or that outran MAX_RUNNING_MS is reaped as 'lost', not listed
     let answers = [];
     try {
-      const dir = join(process.cwd(), 'data', 'jobs');
-      answers = readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => { try { return JSON.parse(readFileSync(join(dir, f), 'utf8')); } catch { return null; } })
-        .filter((j) => j?.status === 'running').map((j) => ({ key: j.key, kind: j.kind, running_s: Math.round((Date.now() - j.started_at) / 1000) }));
+      answers = (await import('../lib/jobs/async-jobs.js')).jobStore().active()
+        .map((j) => ({ key: j.key, kind: j.kind, running_s: Math.round((Date.now() - j.started_at) / 1000) }));
     } catch { /* no jobs yet */ }
     const runs = (await recent(40)).filter((r) => r.status === 'running' || r.status === 'queued')
       .map((r) => ({ id: r.id, name: r.name, status: r.status, started_at: r.started_at, requested_at: r.requested_at }));

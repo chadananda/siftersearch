@@ -279,6 +279,8 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
     const [{ startHeartbeat }, jobs] = await Promise.all([import('./service-heartbeat.js'), import('./jobs/async-jobs.js')]);
     // only the pm2 API — the updater's pre-deploy test instance (port 7899) inherits the updater's name and must not report
     if (process.env.name === name) startHeartbeat({ name, state: () => ({ inflight: jobs.inFlight(), draining_requests: shuttingDown }) });
+    // boot = restart: jobs whose process died (killed mid-drain, OOM) are reaped as 'lost' now, not left "running"
+    try { jobs.jobStore().active(); } catch (err) { logger.warn({ err: err.message }, 'job reap at boot failed'); }
   }
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
