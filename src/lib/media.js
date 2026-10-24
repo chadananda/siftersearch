@@ -69,6 +69,24 @@ export function flattenWords(paragraphs = []) {
   return { starts, ends, para, idx, length: n };
 }
 
+/** The words' starts on a remastered talk's ORIGINAL copy (paragraph s0 arrays, a missing entry falls back to the main
+ *  start), flat like flattenWords().starts; null when no paragraph carries s0 (not remastered, or not yet re-aligned). */
+export function flattenOriginalStarts(paragraphs = []) {
+  if (!paragraphs.some((p) => Array.isArray(p.s0))) return null;
+  const n = paragraphs.reduce((a, p) => a + (p.words?.length || 0), 0), out = new Float64Array(n);
+  let k = 0;
+  paragraphs.forEach((p) => (p.words || []).forEach((w, wi) => { out[k++] = Number(p.s0?.[wi] ?? w[1]) || 0; }));
+  return out;
+}
+
+/** A time on one copy → the same moment on the other, by the word playing: the word's start there + the time into it.
+ *  Before the first word the gap to it is kept. Both arrays are word starts in the same word order. */
+export function mapTime(t, from, to) {
+  if (!from || !to || !from.length) return t;
+  const k = Math.max(0, wordAt(from, t));
+  return Math.max(0, to[k] + (t - from[k]));
+}
+
 /** Index of the word playing at time t: the last word whose start ≤ t (−1 before the first). Binary search; starts ascending. */
 export function wordAt(starts, t) {
   let lo = 0, hi = starts.length - 1, ans = -1;

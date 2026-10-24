@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-24T04:56:52.386Z",
+  "generated": "2026-10-24T04:59:45.771Z",
   "entries": [
+    {
+      "hash": "10d1bc80",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "/media/remaster — unlisted before/after demo of 13 recovered talks (noindex, out of the sitemap, edge-cached; audio from R2 via the media-file route), linked from /media",
+      "scope": "media"
+    },
     {
       "hash": "e5a69dee",
       "date": "2026-10-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "A title must look like one (capital start, ≤ 20 words, no trailing comma, mostly capitalised) — a body sentence was taken as the title after the author line",
       "scope": "dewey"
-    },
-    {
-      "hash": "616d89eb",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A title page's first line that is a known author is the author, not the title ('MOOJAN MOMEN'); metadata lines skipped; bahai-library pilgrim notes shelve as Bahá'í › Pilgrim Notes (one went to Christian › Mysticism by its text)",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "10d1bc80",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "/media/remaster — unlisted before/after demo of 13 recovered talks (noindex, out of the sitemap, edge-cached; audio from R2 via the media-file route), linked from /media",
+        "scope": "media"
+      },
       {
         "hash": "e5a69dee",
         "date": "2026-10-23",
@@ -7003,13 +7010,6 @@
         "date": "2026-10-19",
         "type": "Fixed",
         "description": "A title must look like one (capital start, ≤ 20 words, no trailing comma, mostly capitalised) — a body sentence was taken as the title after the author line",
-        "scope": "dewey"
-      },
-      {
-        "hash": "616d89eb",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A title page's first line that is a known author is the author, not the title ('MOOJAN MOMEN'); metadata lines skipped; bahai-library pilgrim notes shelve as Bahá'í › Pilgrim Notes (one went to Christian › Mysticism by its text)",
         "scope": "dewey"
       }
     ]

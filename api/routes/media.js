@@ -9,6 +9,7 @@ import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, grade
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
+import { talkAudio, isRemastered, originalField } from '../lib/media/talk-audio.js';
 import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
@@ -158,7 +159,15 @@ export async function liveHealth(pipelineHealth, runningRuns) {
   const runs = await runningRuns(['media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-item']);
   const n = (name) => runs.filter((r) => r.name === name).length;
   // (the LLM gates live in the media service, not here: their state is in its log — 'llm gates' every feed pass)
-  return { ...h, compute_running: n('media-compute'), asr_running: n('media-asr'), diar_running: n('media-diar'), llm_running: n('media-llm') + n('media-item') };
+  // the RunPod remaster backfill (cloud.js state file): our spend so far, pods up, talks done / waiting
+  let cloud = null;
+  try {
+    const C = await import('../lib/media/cloud.js');
+    const st = await C.loadState();
+    if (st.started) cloud = { spent_usd: C.spendOf(st), cap_usd: C.CLOUD.capUsd(), pods: Object.values(st.pods || {}).filter((p) => !p.terminated).length,
+      done: (st.done || []).length, failed: (st.failed || []).length, queue: (st.queue || []).length, in_flight: Object.keys(st.jobs || {}).length, finished: !!st.finished };
+  } catch { /* no backfill yet */ }
+  return { ...h, compute_running: n('media-compute'), asr_running: n('media-asr'), diar_running: n('media-diar'), llm_running: n('media-llm') + n('media-item'), cloud };
 }
 
 const pub = (reply, s = 60) => reply.header('Cache-Control', `public, max-age=${s}, s-maxage=${s}`);
@@ -355,6 +364,7 @@ export default async function mediaRoutes(fastify) {
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
     const tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
+    const remastered = level === 'full' && isRemastered(meta);
     pub(reply, 300);
     return {
       slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, uploaded_year: meta.uploaded_year ?? null, date_flag: meta.date_flag ?? null, place: meta.place, event: meta.event,
@@ -367,13 +377,16 @@ export default async function mediaRoutes(fastify) {
       rights: { playback: level, download: level === 'full' && !!meta.rights?.download, clip_cap: CLIP_CAP, basis: meta.rights?.basis || null },
       // offset_s: the web copy starts this many seconds into the recording (silence trimmed; every other time here is the
       // recording's own): the player seeks to t − offset_s. skips: dead gaps (a tape flip) the player jumps over
-      audio: level === 'full' ? { ogg: `${base}/file/web/${it.slug}.ogg?v=${v}`, m4a: `${base}/file/web/${it.slug}.m4a?v=${v}`, offset_s: meta.trim?.start_s || 0, end_s: meta.trim?.end_s ?? null } : null,
+      // remastered: the main copy is a remaster; original_url/original_ogg = the kept original (the page's "Original" A/B button)
+      audio: talkAudio({ slug: it.slug, level, meta }),
       skips: meta.trim?.gaps || [],
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${v}`, page: `${base}/file/page.html?v=${v}`,
       thumb: portrait || (meta.thumb?.file ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),
       // compact transcript: words as [text, start, end]
-      paragraphs: tr.paragraphs.map((p) => ({ n: p.n, pi: meta.pi?.[p.n] ?? null, t0: p.t0, t1: p.t1, spk: p.spk, sentences: p.sentences, words: p.words.map((w) => (w.hide ? [w.w, w.s, w.e, 1] : [w.w, w.s, w.e])) })),
+      // s0: the words' starts on the ORIGINAL copy (remastered talks only) — highlight + position while Original plays
+      paragraphs: tr.paragraphs.map((p) => ({ n: p.n, pi: meta.pi?.[p.n] ?? null, t0: p.t0, t1: p.t1, spk: p.spk, sentences: p.sentences, words: p.words.map((w) => (w.hide ? [w.w, w.s, w.e, 1] : [w.w, w.s, w.e])),
+        ...originalField(p.words, remastered) })),
       quotes: (tr.quotes || []).map((q) => ({ para: q.para, i0: q.i0, i1: q.i1, t0: q.t0, t1: q.t1, url: q.url, cite: q.cite, writer: q.writer, excerpt: q.excerpt, basis: q.basis, gate: q.gate })),
       cross_references: (tr.cross_references || []).map((c) => ({ para: c.para, i0: c.i0, i1: c.i1, t0: c.t0, url: c.url, cite: c.cite, writer: c.writer, claim: c.claim, excerpt: c.excerpt, confidence: c.confidence })),
       // named people → /biography/<id>; named works → their canonical copy (the spoken words are the anchor)

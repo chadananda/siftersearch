@@ -6,7 +6,7 @@
   // position; wheel/touch/scroll keys drop Follow. ?t=a / ?t=a-b / #t=a,b set the start / a played-and-shaded range.
   import { onMount, tick } from 'svelte';
   import { media } from '../../lib/api.js';
-  import { flattenWords, wordAt, youtubeAtTime, picture } from '../../lib/media.js';
+  import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -30,6 +30,15 @@
   const qualityTitle = q ? [`Recording quality ${q.overall}`, q.primary_issue && q.primary_issue !== 'ok' ? ISSUE_LABEL[q.primary_issue] || q.primary_issue : 'clear',
     ...Object.entries(q.dimensions || {}).filter(([, x]) => x?.grade).map(([k, x]) => `${k} ${x.grade}`)].join(' · ') : '';
   const flat = flattenWords(item.paragraphs);
+  // ORIGINAL A/B (Chad 10-23): a remastered talk keeps its original copy; the small button under Play switches to it at the
+  // same moment (and back). Page times stay the MAIN copy's; the one conversion is now()/copyTime() via the words' starts
+  // on the original (s0). No s0 → positions map 1:1 and the highlight pauses while Original plays.
+  const hasOriginal = level === 'full' && !!item.audio?.remastered && !!(item.audio.original_url || item.audio.original_ogg);
+  const starts0 = hasOriginal ? flattenOriginalStarts(item.paragraphs) : null;
+  let copy = $state('main');                   // 'main' | 'original': which copy the <audio> holds
+  let loaded = '';                             // the URL in the <audio> (audio.src is absolute; compare by ours)
+  const onOriginal = () => copy === 'original';
+  const copyTime = (t) => (onOriginal() && starts0 ? mapTime(t, flat.starts, starts0) : t);   // page (main) time → copy time
   const ytBase = item.youtube || (item.source?.kind === 'youtube' ? item.source.url : null);
 
   let audio;                                   // <audio>
@@ -57,7 +66,10 @@
   // recording's own; the ONE conversion is here (now) and at the seek below. A clip carries its own start.
   const offset = item.audio?.offset_s || 0;
   const skips = item.skips || [];
-  const now = () => (clip ? clip.start : offset) + (audio?.currentTime || 0);
+  const now = () => {
+    const t = (clip ? clip.start : offset) + (audio?.currentTime || 0);
+    return onOriginal() && starts0 ? mapTime(t, starts0, flat.starts) : t;   // the original's time → the page's (main) time
+  };
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
   const photo = item.thumb?.kind === 'photo';
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
@@ -112,10 +124,10 @@
   function frame() {
     let t = now();
     // a dead gap (a tape flip) is skipped, never cut: jump to its end
-    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, to - offset); t = to; } }
+    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, copyTime(to) - offset); t = to; } }
     if (Math.abs(t - current) > 0.05) current = t;
     if (limit != null && t >= limit) { audio.pause(); note = 'End of the selected range.'; }
-    mark(wordAt(flat.starts, t + 0.02));
+    mark(onOriginal() && !starts0 ? -1 : wordAt(flat.starts, t + 0.02));
     if (playing) raf = requestAnimationFrame(frame);
   }
 
@@ -150,12 +162,12 @@
     follow = true; anchorY = anchorFor(el || wordEls[wordAt(flat.starts, t + 0.02)]); lastLineTop = null;
     try {
       if (level === 'full') {
-        if (fresh || !audio.src || audio.src.startsWith('blob:')) {
-          const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
-          audio.src = media.href(ogg && item.audio.ogg ? item.audio.ogg : item.audio.m4a || item.audio.ogg);
-        }
+        const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
+        const want = onOriginal() ? (ogg && item.audio.original_ogg ? item.audio.original_ogg : item.audio.original_url || item.audio.original_ogg)
+          : (ogg && item.audio.ogg ? item.audio.ogg : item.audio.m4a || item.audio.ogg);
+        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { audio.src = media.href(want); loaded = want; }
         await waitMeta();
-        audio.currentTime = Math.max(0, t - offset);   // recording time → the trimmed web copy's time
+        audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
       } else {
         const want = end ?? t + (item.rights.clip_cap || 180);
         if (fresh || !clip || t < clip.start || t >= clip.end - 0.5 || (end != null && end > clip.end + 0.1)) {
@@ -184,6 +196,16 @@
     if (level === 'clips' && (!clip || t >= clip.end - 0.3)) return playFrom(t, { end: limit });        // next clip
     follow = true; anchorY = anchorFor(wordEls[curK]); lastLineTop = null;
     audio.play().catch((e) => (note = `Could not play: ${e.message}`));
+  }
+  /** The big Play button plays the main copy, the small Original button the original: pressing the other one while a copy
+   *  plays (or is paused mid-talk) switches at the same moment; pressing the one already loaded plays/pauses it. */
+  function playCopy(which) {
+    if (!canPlay) return;
+    if (which === 'original' && !hasOriginal) return;
+    if (copy === which) return toggle();
+    const t = started ? now() : startAt;
+    copy = which;
+    playFrom(t, { end: limit });
   }
   const seek = (t) => (playing || started ? playFrom(t, { end: null }) : (startAt = t, current = t, mark(wordAt(flat.starts, t + 0.02))));
   const onword = (k, el) => playFrom(flat.starts[k], { el });
@@ -324,15 +346,34 @@
       <section bind:this={heroPlayer} aria-label="Player" class="dial mt-6 rounded-2xl bg-radio-dial p-3 sm:p-4">
         {#if canPlay}
           <div class="flex items-center gap-3 sm:gap-4">
-            <button type="button" onclick={toggle} disabled={busy} aria-label={playing ? 'Pause' : 'Play'} class="bigplay">
-              {#if busy}
-                <svg class="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
-              {:else if playing}
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-              {:else}
-                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+            <div class="flex flex-none flex-col items-center gap-1">
+              <button type="button" onclick={() => playCopy('main')} disabled={busy} aria-label={playing && copy === 'main' ? 'Pause' : 'Play'} class="bigplay">
+                {#if busy}
+                  <svg class="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+                {:else if playing && copy === 'main'}
+                  <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                {:else}
+                  <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+                {/if}
+              </button>
+              {#if level === 'full'}
+                <!-- the Original slot is always reserved (SSR), so the button never shifts the layout -->
+                <div class="orig-slot" data-original-slot>
+                  {#if hasOriginal}
+                    <button type="button" onclick={() => playCopy('original')} disabled={busy} class="orig" class:on={copy === 'original'}
+                      aria-pressed={copy === 'original' && playing} title="Hear the original recording, before restoration, from this moment"
+                      aria-label={copy === 'original' && playing ? 'Pause the original recording' : 'Play the original recording'}>
+                      {#if copy === 'original' && playing}
+                        <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>
+                      {:else}
+                        <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3.5v17l15-8.5z"/></svg>
+                      {/if}
+                      Original
+                    </button>
+                  {/if}
+                </div>
               {/if}
-            </button>
+            </div>
             <div class="min-w-0 flex-1">
               <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} {pins} />
             </div>
@@ -538,6 +579,14 @@
     box-shadow: 0 0 0 0 var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); transition: transform 0.2s, box-shadow 0.3s; }
   .bigplay:hover { transform: scale(1.05); box-shadow: 0 0 0 7px var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); }
   .bigplay:disabled { opacity: 0.6; }
+  .orig-slot { height: 1.25rem; display: flex; align-items: center; }
+  .orig { display: inline-flex; align-items: center; gap: 0.25rem; height: 1.25rem; padding: 0 0.45rem; border-radius: 9999px; cursor: pointer;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--radio-dial-ink); opacity: 0.75;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); transition: opacity 0.2s, color 0.2s; }
+  .orig:hover { opacity: 1; }
+  .orig.on { opacity: 1; color: var(--radio-needle); box-shadow: inset 0 0 0 1px var(--radio-needle); }
+  .orig:disabled { opacity: 0.4; cursor: default; }
+  .orig:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .bigplay:focus-visible, .chip:focus-visible, .log-row:focus-visible, .log-head:focus-visible, .rel:focus-visible, .topic:focus-visible, .fab:focus-visible, .follow:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .chip { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.4rem 0.9rem; border-radius: 0.7rem; color: var(--radio-on-dark);
     box-shadow: inset 0 0 0 1px var(--radio-brass); transition: background 0.2s; }
