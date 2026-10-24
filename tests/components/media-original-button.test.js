@@ -58,15 +58,14 @@ describe('MediaPlayer SSR: Original | Remastered switch', () => {
   const rem = { ...plain, remastered: true, original_url: '/o.m4a', original_ogg: '/o.ogg' };
   it('a remastered talk shows the radiogroup, Remastered checked by default, no old Original button', () => {
     const { body } = render(MediaPlayer, { props: { item: full(rem) } });
-    expect(body).toMatch(/role="radiogroup"[^>]*aria-label="Audio version"/);
+    expect(body).toMatch(/Listen to/);
+    expect(body).toMatch(/role="radiogroup"[^>]*aria-labelledby="ab-label"/);
     expect(body).toMatch(/role="radio" aria-checked="true"[^>]*class="ab-opt[^"]* on"[^>]*>Remastered</);
     expect(body).toMatch(/role="radio" aria-checked="false"[^>]*>Original</);
-    expect(body).not.toMatch(/the original recording/);
   });
-  it('a talk still on the transparent copy reserves the slot but shows no switch', () => {
+  it('a talk not remastered shows no switch group (nothing reserved)', () => {
     const { body } = render(MediaPlayer, { props: { item: full(plain) } });
-    expect(body).toMatch(/data-original-slot/);
-    expect(body).not.toMatch(/radiogroup/);
+    expect(body).not.toMatch(/radiogroup|Listen to/);
   });
   it('a clips-level talk has neither', () => {
     const { body } = render(MediaPlayer, { props: { item: { ...base, clip_url: '/clip' } } });
@@ -161,5 +160,16 @@ describe('R2-first web audio (worker/media.js)', () => {
       expect(globalThis.fetch).not.toHaveBeenCalled();
       expect((await warmMedia(new URL('https://x/_media/warm?slug=../x&v=3'), env, 'https://api.example')).status).toBe(400);
     } finally { globalThis.fetch = orig; }
+  });
+});
+
+describe('hover prefetch', () => {
+  it('only talk-page links count; slow / save-data connections never prefetch', async () => {
+    const { talkSlug, slowLink } = await import('../../src/lib/hover-prefetch.js');
+    expect(talkSlug('/media/grossmann-convergence-ends-beginnings-9-2000?t=12')).toBe('grossmann-convergence-ends-beginnings-9-2000');
+    for (const h of ['/media', '/media/remaster', '/media/a/m/key', '/library/x', 'https://x.org/media/a']) expect(talkSlug(h)).toBeNull();
+    expect(slowLink({ saveData: true })).toBe(true);
+    expect(slowLink({ effectiveType: '3g' })).toBe(true);
+    expect(slowLink({ effectiveType: '4g' })).toBe(false);
   });
 });

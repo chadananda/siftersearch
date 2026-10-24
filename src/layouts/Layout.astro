@@ -144,7 +144,11 @@ const organizationSchema = {
     <slot />
     {footer && <SiteFooter />}
     {anis && <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" async></script>}
-  </body>
+    <script>
+    import { startHoverPrefetch } from '../lib/hover-prefetch.js';
+    startHoverPrefetch();
+  </script>
+</body>
 </html>
 
 <style is:global>

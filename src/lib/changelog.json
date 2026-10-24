@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-24T16:53:54.381Z",
+  "generated": "2026-10-24T16:56:15.408Z",
   "entries": [
+    {
+      "hash": "1048b693",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Web audio is R2-first — a miss answers 202 + Retry-After and never streams from the tower; page load warms both copies (POST /_media/warm: idempotent, KV-locked, one-time tower→R2 copy); publish warms too; player shows \"Preparing the audio…\"",
+      "scope": "media"
+    },
     {
       "hash": "64877f0f",
       "date": "2026-10-24",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "The researcher — Haiku 5.5 plans the research with the library's tools (search, read around, original of a passage, Shoghi Effendi's renderings, source of a quotation, web) and briefs the writer; replaces regex routing when ANIS_RESEARCH names the channel (off by default); /draft takes research + writer for the battery (Chad 10-19: 'too determinative')",
       "scope": "anis"
-    },
-    {
-      "hash": "abaa866c",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A language answer never says it 'couldn't find anything'",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "1048b693",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Web audio is R2-first — a miss answers 202 + Retry-After and never streams from the tower; page load warms both copies (POST /_media/warm: idempotent, KV-locked, one-time tower→R2 copy); publish warms too; player shows \"Preparing the audio…\"",
+        "scope": "media"
+      },
       {
         "hash": "64877f0f",
         "date": "2026-10-24",
@@ -7005,13 +7012,6 @@
         "date": "2026-10-19",
         "type": "New",
         "description": "The researcher — Haiku 5.5 plans the research with the library's tools (search, read around, original of a passage, Shoghi Effendi's renderings, source of a quotation, web) and briefs the writer; replaces regex routing when ANIS_RESEARCH names the channel (off by default); /draft takes research + writer for the battery (Chad 10-19: 'too determinative')",
-        "scope": "anis"
-      },
-      {
-        "hash": "abaa866c",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A language answer never says it 'couldn't find anything'",
         "scope": "anis"
       }
     ]

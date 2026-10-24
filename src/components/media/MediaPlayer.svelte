@@ -389,19 +389,32 @@
 
 {#snippet abToggle(slim = false)}
   {#if level === 'full'}
-    <!-- Original | Remastered: one switch, two places (hero + sticky bar), the same state; the hero slot is reserved in SSR -->
-    <div class={slim ? 'ab-slim' : 'ab-slot ml-auto'} data-original-slot={slim ? undefined : ''}>
+    <!-- Version switch (Original | Remastered): one state, two places (hero + sticky bar). Its own labelled group, apart from Speed.
+         The hero slot is reserved in SSR when the page already knows the talk is remastered. -->
+    {#if slim}
       {#if hasOriginal}
-        <div class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">{#if !slim}Audio{/if}
-          <div class="ab" role="radiogroup" aria-label="Audio version">
-            {#each [['original', 'Original'], ['main', 'Remastered']] as [k, label] (k)}
-              <button type="button" role="radio" aria-checked={copy === k} aria-pressed={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
-            {/each}
-          </div>
-          {#if loadingCopy}<span class="text-xs font-normal normal-case tracking-normal opacity-80" role="status">loading the other copy…</span>{/if}
+        <div class="ab" role="radiogroup" aria-label="Audio version">
+          {#each [['original', 'Orig.'], ['main', 'Remastered']] as [k, label] (k)}
+            <button type="button" role="radio" aria-checked={copy === k} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
+          {/each}
         </div>
       {/if}
-    </div>
+    {:else if hasOriginal || item.audio?.remastered}
+      <div class="ab-group" data-original-slot>
+        {#if hasOriginal}
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span id="ab-label" class="font-dial text-base font-bold uppercase tracking-wider">Listen to</span>
+            <div class="ab" role="radiogroup" aria-labelledby="ab-label">
+              {#each [['original', 'Original'], ['main', 'Remastered']] as [k, label] (k)}
+                <button type="button" role="radio" aria-checked={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
+              {/each}
+            </div>
+            {#if loadingCopy}<span class="text-sm opacity-80" role="status">loading the other copy…</span>{/if}
+          </div>
+          <p class="mt-1 text-xs opacity-75">{copy === 'main' ? 'Restored for clarity. Switch to hear the original recording, from the same moment.' : 'The original recording, as it was made. Switch back for the restored sound.'}</p>
+        {/if}
+      </div>
+    {/if}
   {/if}
 {/snippet}
 
@@ -429,13 +442,13 @@
           <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-radio-dial-ink">
             <span class="font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
             {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
-            {@render abToggle()}
-            <label class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Speed
+            <label class="ml-auto flex items-center gap-1.5 text-xs opacity-80">Speed
               <select bind:value={rate} class="speed rounded-md bg-radio-paper px-1.5 py-0.5 font-sans text-sm text-radio-ink">
                 {#each [0.75, 1, 1.25, 1.5, 2] as r (r)}<option value={r}>{r}×</option>{/each}
               </select>
             </label>
           </div>
+          <div class="mt-3">{@render abToggle()}</div>
           <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-radio-dial-ink opacity-80">
             {#if range}
               <span>Range {formatTime(range.start)}–{formatTime(range.end)}
@@ -558,7 +571,7 @@
       </div>
       <div class="min-w-0 flex-1"><MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} variant="slim" label="Seek (condensed player)" /></div>
       <span class="font-dial text-base font-bold tabular-nums text-radio-on-dark">{formatTime(current)}</span>
-      {#if hasOriginal}<div class="ab-bar flex-none text-radio-on-dark">{@render abToggle(true)}</div>{/if}
+      {@render abToggle(true)}
     </div>
   </div>
 {/if}
@@ -629,13 +642,14 @@
     box-shadow: 0 0 0 0 var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); transition: transform 0.2s, box-shadow 0.3s; }
   .bigplay:hover { transform: scale(1.05); box-shadow: 0 0 0 7px var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); }
   .bigplay:disabled { opacity: 0.6; }
-  .ab-bar .ab-opt { color: var(--radio-ink); }
-  .ab-slot { min-height: 1.75rem; min-width: 14rem; display: flex; justify-content: flex-end; align-items: center; }
-  .ab { display: inline-flex; border-radius: 0.375rem; overflow: hidden; background: var(--radio-paper); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); }
-  .ab-opt { cursor: pointer; padding: 0.125rem 0.6rem; font-family: var(--font-sans, sans-serif); font-size: 0.875rem; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--radio-ink); opacity: 0.75; transition: background 0.2s, opacity 0.2s; }
+  .ab-group { padding: 0.6rem 0.75rem; border-radius: 0.75rem; background: color-mix(in srgb, var(--radio-dial-ink) 8%, transparent); }
+  .ab { display: inline-flex; border-radius: 9999px; padding: 3px; background: var(--radio-paper); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); }
+  .ab-opt { cursor: pointer; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 9999px; font-size: 0.95rem; font-weight: 600; color: var(--radio-ink); opacity: 0.8; transition: background 0.2s, opacity 0.2s; }
+  .ab-opt-slim { min-height: 2.25rem; padding: 0 0.7rem; font-size: 0.8rem; }
   .ab-opt:hover { opacity: 1; }
   .ab-opt.on { background: var(--radio-amber); color: var(--radio-walnut-deep); opacity: 1; }
   .ab-opt:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  @media (min-width: 640px) { .ab-opt:not(.ab-opt-slim) { min-height: 2.25rem; } }
   .bigplay:focus-visible, .chip:focus-visible, .log-row:focus-visible, .log-head:focus-visible, .rel:focus-visible, .topic:focus-visible, .fab:focus-visible, .follow:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .chip { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.4rem 0.9rem; border-radius: 0.7rem; color: var(--radio-on-dark);
     box-shadow: inset 0 0 0 1px var(--radio-brass); transition: background 0.2s; }
