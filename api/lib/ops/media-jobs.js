@@ -1295,7 +1295,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; }
         else st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
       }
-      for (const p of live) {
+      // every pod at once: a pod's downloads / uploads (~7 MB/s each over the tunnel) never hold the other pods' GPUs idle
+      await Promise.all(live.map(async (p) => {
         try {
           if (p.status === 'booting') {
             const g = await C.getPod(p.id, deps);
@@ -1366,7 +1367,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           p.last_error = String(err.message).slice(0, 300);
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { await closePod(p, `unreachable: ${p.last_error}`); if (p.status !== 'ready') st.pod_failures++; }
         }
-      }
+      }));
       // an idle pod (nothing left to give it) is terminated at once
       if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'queue empty');
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
