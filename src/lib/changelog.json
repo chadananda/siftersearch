@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-24T20:26:12.015Z",
+  "generated": "2026-10-24T20:38:40.773Z",
   "entries": [
+    {
+      "hash": "dd5fdc9b",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Uploads scale for multi-GB files: 64 MB parts from 2 GB, adaptive 1-6 parallel parts, speed and ETA",
+      "scope": "dewey"
+    },
+    {
+      "hash": "15499402",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Heartbeat pump independent of tick length; pod env for self-termination; skip the raw generative copy when the worker finished the whole job",
+      "scope": "media"
+    },
+    {
+      "hash": "e5739d82",
+      "date": "2026-10-24",
+      "type": "Chore",
+      "description": "Deploy 2.187.820 (Dewey uploads)",
+      "scope": null
+    },
     {
       "hash": "abdd9d1a",
       "date": "2026-10-24",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "System-checks --report — the same checks as JSON, no email, no state (the agent's own periodic watch reads it)",
       "scope": "ops"
-    },
-    {
-      "hash": "f9a9dc37",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The updater restart storm (289 restarts, every 30 s) — pm2 killed it at its 100M memory limit once it computed every service's import graph per lagging service; graphs now cached per run, limit 512M. An ecosystem.config.cjs edit touches only the apps whose own pm2 block changed (old config read from git), not every service",
-      "scope": "coordinator"
-    },
-    {
-      "hash": "71e9b176",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Authority decides — doctrinal questions answered ONLY from the Revelation and its authorised interpretation; the House only for applying the law and the administration; scholars only labelled history. The judge and the auditor score a doctrinal point rested on the House or a scholar as an authority error, not a better answer (Chad 10-19: 'an antipattern, not better'); battery --rejudge",
-      "scope": "anis"
-    },
-    {
-      "hash": "70376a32",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A failed job records and logs its stack (a bare 'Request timed out' did not say which call); battery judge accepts 'Answer B' labels",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "dd5fdc9b",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Uploads scale for multi-GB files: 64 MB parts from 2 GB, adaptive 1-6 parallel parts, speed and ETA",
+        "scope": "dewey"
+      },
+      {
+        "hash": "15499402",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Heartbeat pump independent of tick length; pod env for self-termination; skip the raw generative copy when the worker finished the whole job",
+        "scope": "media"
+      },
+      {
+        "hash": "e5739d82",
+        "date": "2026-10-24",
+        "type": "Chore",
+        "description": "Deploy 2.187.820 (Dewey uploads)",
+        "scope": null
+      },
       {
         "hash": "abdd9d1a",
         "date": "2026-10-24",
@@ -6992,27 +7013,6 @@
         "type": "New",
         "description": "System-checks --report — the same checks as JSON, no email, no state (the agent's own periodic watch reads it)",
         "scope": "ops"
-      },
-      {
-        "hash": "f9a9dc37",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The updater restart storm (289 restarts, every 30 s) — pm2 killed it at its 100M memory limit once it computed every service's import graph per lagging service; graphs now cached per run, limit 512M. An ecosystem.config.cjs edit touches only the apps whose own pm2 block changed (old config read from git), not every service",
-        "scope": "coordinator"
-      },
-      {
-        "hash": "71e9b176",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Authority decides — doctrinal questions answered ONLY from the Revelation and its authorised interpretation; the House only for applying the law and the administration; scholars only labelled history. The judge and the auditor score a doctrinal point rested on the House or a scholar as an authority error, not a better answer (Chad 10-19: 'an antipattern, not better'); battery --rejudge",
-        "scope": "anis"
-      },
-      {
-        "hash": "70376a32",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A failed job records and logs its stack (a bare 'Request timed out' did not say which call); battery judge accepts 'Answer B' labels",
-        "scope": null
       }
     ]
   }
