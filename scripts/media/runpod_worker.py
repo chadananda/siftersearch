@@ -5,7 +5,7 @@
 # Models stay resident; jobs arrive in a SPOOL (tower uploads <spool>/<job>/in.<ext> then touches 'ready').
 # SELF-TERMINATES (RunPod API) after IDLE minutes with nothing to do — an orphaned pod never runs up cost.
 #   python runpod_worker.py --repo /workspace/unipase --spool /workspace/spool [--idle-min 15]
-import argparse, glob, json, os, subprocess, sys, time, traceback, types, urllib.request
+import argparse, glob, json, os, subprocess, sys, threading, time, traceback, types, urllib.request
 
 SR = 48000
 
@@ -99,6 +99,9 @@ MODEL_TAG = 'large-v3-turbo (faster-whisper ct2 @0a363e91; no VAD; per-language 
 
 def run_job(d, up, inference_file, asr):
     import torch
+    meta0 = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}
+    if (meta0.get('post') or {}).get('mode') == 'cleanup':     # a talk the guard held earlier: only the deterministic cleanup runs (no UniPASE, no ASR here)
+        return {'audio_s': meta0.get('audio_s'), 'mode': 'cleanup', 'seconds': 0, 'gpu': torch.cuda.get_device_name(0)}
     src = next(iter(sorted(glob.glob(os.path.join(d, 'in.*')))), None)
     meta = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}
     t0 = time.time()
@@ -126,6 +129,15 @@ def run_job(d, up, inference_file, asr):
     return done
 
 
+ASR_LOCK = threading.Lock()
+ASR_MODEL = {}
+
+
+def _transcribe_locked(path, meta):
+    with ASR_LOCK:      # the GPU thread and the CPU threads share one Whisper model
+        return transcribe(ASR_MODEL['asr'], path, meta.get('prompt'), meta.get('runs'))
+
+
 def finalize(d, done):
     """CPU half (word guard, realign, web encodes — worker/post.py), then done.json: the GPU is already on the next talk meanwhile."""
     meta = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}
@@ -133,7 +145,8 @@ def finalize(d, done):
         try:
             sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
             import post as postmod
-            post = postmod.process(d)
+            tr = lambda path: _transcribe_locked(path, meta)       # the cleaned copy's transcript, on this worker's model
+            post = postmod.process(d, transcribe=tr)
             json.dump(post, open(os.path.join(d, 'post.json'), 'w'))
             done['post_s'] = post.get('seconds')
         except Exception:
@@ -153,6 +166,7 @@ def main():
     a = p.parse_args()
     os.makedirs(a.spool, exist_ok=True)
     up, IL, asr = load_models(a.repo, a.weights)
+    ASR_MODEL['asr'] = asr
     open(os.path.join(a.spool, '.worker-ready'), 'w').write(str(os.getpid()))
     print(f'{time.strftime("%H:%M:%S")} models loaded', flush=True)
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))

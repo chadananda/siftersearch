@@ -112,6 +112,13 @@ export const WEIGHTS = [
   ['whisper', 'dropbox-dash/faster-whisper-large-v3-turbo/resolve/0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf', 'vocabulary.json', 'c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1'],
 ];
 
+// The deterministic cleanup's one model (Chad 10-24; scripts/media/worker/cleanup.py): MossFormer2-SE 48 kHz via ClearVoice, revision + checksums pinned.
+// Baked into the image under /opt/models/clearvoice/checkpoints/MossFormer2_SE_48K/ (the dir is relative to ClearVoice's cwd).
+export const CLEANUP_WEIGHTS = [
+  ['clearvoice/checkpoints/MossFormer2_SE_48K', 'alibabasglab/MossFormer2_SE_48K/resolve/eff8c97925c8bec812af707814b3e5d777fd4503', 'last_best_checkpoint.pt', '03692b9f773bbd6bb43b9c5a41f96b1e28affd66e13796b7bec66ad3d8b227c6'],
+  ['clearvoice/checkpoints/MossFormer2_SE_48K', 'alibabasglab/MossFormer2_SE_48K/resolve/eff8c97925c8bec812af707814b3e5d777fd4503', 'last_best_checkpoint', '315744c841441f8831cb2f896e06102b4d864776bf272febaa30c639c903e1c0'],
+];
+
 /** The pod's one-time setup. Weights go to /workspace/weights — the network volume when MEDIA_CLOUD_VOLUME_ID is set
  *  (fetched once, shared by every pod, flock-guarded), else the pod's own disk (~2 GB fetch, about a minute). Every file is
  *  sha256-checked; a mismatch deletes it and fails the boot. pip: the spec's three (einops omegaconf soundfile) + faster-whisper

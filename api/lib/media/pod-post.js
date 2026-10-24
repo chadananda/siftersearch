@@ -33,3 +33,9 @@ export async function resign(dir) {
     await writeFile(f, JSON.stringify(post));
   } catch { /* no worker result */ }
 }
+
+/** A worker result tower can publish without touching audio: a held verdict, or guard + alignment + all four encodes. */
+export async function podComplete(dir) {
+  const post = await podPost(dir);
+  return !!post && (!!post.held || !!(post.realign && post.web));
+}

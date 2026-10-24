@@ -1,6 +1,6 @@
 // Per-talk remaster quality verdict (Chad 10-24: which talks are usable, which must be archived). Pure: meta.json → meta.qa.remaster.
-// usable (published, <= 5 % of sentences from the original) · partial (published, 5-15 %) · review (fallback > 15 %, original kept, Chad listens)
-// · unrepairable (original kept: ~2 kHz source or decided by Chad; archive candidate) · skipped (grade A, duplicate, ineligible) · unknown.
+// usable (generative copy published, <= 5 % of sentences from the original) · cleaned (deterministic cleanup published) · partial (published, 5-15 %) · review (fallback > 15 %, original kept, Chad listens)
+// · unrepairable (still playing the original audio: ~2 kHz source or decided by Chad; archive candidate) · skipped (grade A, duplicate, ineligible) · unknown.
 const num = (v) => (v == null || Number.isNaN(Number(v)) ? null : Math.round(Number(v) * 100) / 100);
 export const UNREPAIRABLE_BW_KHZ = 2.5;
 
@@ -22,13 +22,14 @@ export function qualityOf(meta = {}) {
   if (s === 'skipped') return out('skipped', r.why || 'not eligible');
   if (s === 'waiting' || s == null) return out('unknown', r.why || 'not processed yet');
   const lowBw = bw != null && bw <= UNREPAIRABLE_BW_KHZ;
-  if (s === 'kept' || s === 'deferred') return out('unrepairable', `original kept${lowBw ? ` (source bandwidth ${bw} kHz)` : ''}${fb != null ? `, ${fb} % of sentences fell back` : ''}${r.verdict === 'keep-human' ? ' — decided by Chad' : ''}`);
+  if (s === 'kept' || s === 'deferred') return out('unrepairable', `still playing the original audio${lowBw ? ` (source bandwidth ${bw} kHz)` : ''}${fb != null ? `, ${fb} % of sentences fell back` : ''}${r.verdict === 'keep-human' ? ' — decided by Chad' : ''}`);
   if (s === 'review') {
     if (lowBw && fb != null && fb > 15) return out('unrepairable', `source bandwidth ${bw} kHz and ${fb} % of sentences fell back: real word damage`);
     return out('review', r.why || `${fb} % of sentences fell back (> 15 %)`);
   }
   if (s === 'done') {
     if (meta.enhancement?.listening !== 'unipase') return out('unknown', 'marked done but the listening copy is not the remaster');
+    if (r.method === 'cleaned') return out('cleaned', 'deterministic cleanup published (the generative copy was held by the word guard)');
     if (r.verdict === 'pass-human-full') return out('usable', 'published in full by Chad (no sentence splicing)');
     return fb != null && fb > 5 ? out('partial', `${fb} % of sentences are the original`) : out('usable', fb != null ? `${fb} % of sentences from the original` : 'passed the word guard');
   }

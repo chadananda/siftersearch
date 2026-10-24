@@ -1200,7 +1200,8 @@ export function worstFirst(talks) {
  *  folder and the talk's media-remaster run is queued. Budget-capped (cloud.js), every pod terminated at the end, on a
  *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
-export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false } = {}, deps = {}) {
+export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false, mode = 'restore' } = {}, deps = {}) {
+  const cleanupMode = mode === 'cleanup';   // talks the word guard held (review / kept / deferred): the deterministic cleanup only, no generative copy
   const C = deps.cloud || await import('../media/cloud.js');
   const L = deps.ledger || await import('../media/pod-ledger.js');
   const minHours = deps.minHours ?? L.LEDGER.minHoursPerPod();   // WORK FIRST, RENT SECOND: a pod only where ≥ this many audio hours wait for it
@@ -1228,7 +1229,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (const it of list) {
       if (!it?.dir || busy.has(it.id)) continue;
       const m = await readMeta(it.dir).catch(() => null);
-      if (!m || (!force && ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status))) continue;   // force (explicit ids): redo
+      if (!m) continue;
+      const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
+      if (cleanupMode ? (!held && !force) || m.remaster?.method === 'cleaned' : (!force && (held || m.remaster?.status === 'done'))) continue;   // force (explicit ids): redo
       const raw = m.quality?.raw || {};
       want.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
     }
@@ -1242,13 +1245,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     }
     if (st.finished) { st.finished = null; st.started = null; st.pod_failures = 0; }
     st.items = st.items || {};
-    for (const x of want) st.items[x.id] = { slug: x.slug, grade: x.grade, duration_s: x.duration_s };
+    for (const x of want) st.items[x.id] = { slug: x.slug, grade: x.grade, duration_s: x.duration_s, ...(cleanupMode ? { mode: 'cleanup' } : {}) };
     st.queue = [...(st.queue || []), ...want.map((x) => x.id)];
   }
   if (!write) return { queue: st.queue.length, jobs: Object.keys(st.jobs || {}).length, spent_usd: C.spendOf(st, now()) };
   st.started = st.started || now(); st.pods = st.pods || {}; st.jobs = st.jobs || {}; st.attempts = st.attempts || {}; st.done = st.done || []; st.failed = st.failed || [];
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
-  const homeHosts = (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
+  const homeHosts = (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
   const homeTasks = new Map();   // host → promise (in this process)
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m) => !force && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
@@ -1375,7 +1379,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if (kind === 'DONE' && it?.dir) {
                 const enh = join(it.dir, 'enhanced');
                 await fs.mkdir(enh, { recursive: true });
-                for (const [rf, lf, optional] of [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']]) {
+                for (const [rf, lf, optional] of (st.items?.[it.id]?.mode === 'cleanup' ? [['done.json', 'unipase.done.json']] : [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']])) {
                   try { await C.podGet(run, p, `/workspace/spool/${job}/${rf}`, join(enh, `${lf}.part`)); }
                   catch (err) { if (optional) { await fs.rm(join(enh, lf), { force: true }); continue; } throw err; }   // an older worker: no like-for-like reference
                   await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
@@ -1422,10 +1426,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if (work?.paragraphs?.length && m.enhancement && deps.podPost !== false) {
                 const E = await import('../media/enhance.js'), PP = await import('../media/pod-post.js');
                 const orig = (m.enhancement.variants || []).find((v) => v.name === 'original') || {};
-                post = { af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
+                const raw = m.quality?.raw || {}, hum = Math.max(raw.hum50_db ?? 0, raw.hum60_db ?? 0) >= 10 ? ((raw.hum50_db ?? 0) >= (raw.hum60_db ?? 0) ? 50 : 60) : null;
+                post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: true, bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
                   ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
                   orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
                 await C.podPut(run, p, join(it.dir, 'transcript.work.json'), `/workspace/spool/${job}/work.json`);
+                if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
               }
               await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: now() };

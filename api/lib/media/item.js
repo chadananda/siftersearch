@@ -3,7 +3,8 @@
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf } from './remaster-quality.js';
-import { podPost, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
+const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
+import { podPost, podComplete, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
@@ -370,12 +371,14 @@ export async function runItem(item, opts = {}, deps = {}) {
       // (media-remaster / the cloud backfill) — a normal run records the stage and moves on. The copy itself comes from the
       // cloud worker (enhanced/unipase.cloud.flac + its transcript); here the WORD GUARD splices the original back in for
       // every sentence the copy lost, and the verdict decides whether it becomes the listening copy (§13: never worse).
-      if (opts.remaster && meta.enhancement && !['kept', 'deferred'].includes(meta.remaster?.status)) {   // Chad's keep / deferral stands: a late cloud result changes nothing
+      // a keep / deferral stands against the generative copy; the deterministic cleanup (method 'cleaned') is a different thing and is allowed through
+      if (opts.remaster && meta.enhancement && (!['kept', 'deferred'].includes(meta.remaster?.status) || (await podPost(dir, { needFlac: false }))?.method === 'cleaned')) {   // Chad's keep / deferral stands: a late cloud result changes nothing
         const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
         const el = remasterEligible(meta, work.paragraphs || []);
         const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');
         if (!el.ok) meta.remaster = { ...(meta.remaster || {}), status: 'skipped', why: el.why, at: d.now() };
-        else if (!existsSync(cloud) || !existsSync(casr)) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no UniPASE copy yet', at: d.now() };
+        else if ((!existsSync(cloud) || !existsSync(casr)) && (await podPost(dir, { needFlac: false }))?.method !== 'cleaned') meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no UniPASE copy yet', at: d.now() };
+        else if (towerStrict() && !(await podComplete(dir))) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no valid worker result (transcript changed or missing): back to a worker', at: d.now() };   // tower never reprocesses audio
         else {
           const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
           const out = join(dir, 'enhanced', 'unipase.flac'), report = join(dir, 'enhanced', 'unipase.guard.json');
@@ -390,7 +393,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15;
           const pass = (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
-          vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
+          vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) + word guard at −18 LUFS' : 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
           meta.enhancement.variants = vs;
           if (pass) {
             if (meta.enhancement.listening !== 'unipase') meta.enhancement.listening_before = { name: meta.enhancement.listening, why: meta.enhancement.listening_why || null };
@@ -401,10 +404,10 @@ export async function runItem(item, opts = {}, deps = {}) {
             meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
             meta.enhancement.listening_why = 'remaster held for review (word guard) — the previous copy restored';
           }
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): kept the original — a human listens` }),
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
-          meta.qa = { ...(meta.qa || {}), remaster: qualityOf(meta) };
+          meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
         }
       }
     }
@@ -430,7 +433,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           const unplaced = r.total ? 1 - r.placed / r.total : 1;
           if (unplaced > 0.02) {
             meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
-            meta.remaster = { ...(meta.remaster || {}), status: 'review', verdict: 'review', why: `realign placed ${r.placed} of ${r.total} words — kept the original copy`, realign_unplaced_pct: Math.round(unplaced * 10000) / 100, at: d.now() };
+            meta.remaster = { ...(meta.remaster || {}), status: 'review', verdict: 'review', why: `realign placed ${r.placed} of ${r.total} words — still playing the original audio`, realign_unplaced_pct: Math.round(unplaced * 10000) / 100, at: d.now() };
             meta.qa = { ...(meta.qa || {}), remaster: qualityOf(meta) };
           } else {
             for (const p of work.paragraphs) {

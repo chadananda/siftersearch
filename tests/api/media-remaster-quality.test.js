@@ -14,6 +14,7 @@ describe('verdicts', () => {
     const lo = m({ status: 'review', fallback_sent_pct: 21.9 }); lo.quality.raw.bandwidth_khz = 1.95;
     expect(qualityOf(lo).verdict).toBe('unrepairable');
     expect(qualityOf(m({ status: 'kept', verdict: 'keep-human', fallback_sent_pct: 16.1 })).verdict).toBe('unrepairable');
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 1 })).verdict).toBe('cleaned');
     expect(qualityOf(m({ status: 'skipped', why: 'grade A' })).verdict).toBe('skipped');
     expect(qualityOf(m(null)).verdict).toBe('unknown');
     expect(qualityOf(m({ status: 'done', fallback_sent_pct: 1 }, { enhancement: { listening: 'safe', variants: [] } })).verdict).toBe('unknown');

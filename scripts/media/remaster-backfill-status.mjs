@@ -41,9 +41,9 @@ export function render({ st, results, home }, now = Date.now()) {
   const med = sw.length ? sw[Math.floor(sw.length / 2)] : null;
   const pods = Object.values(st.pods || {});
   const L = [];
-  L.push('# Remaster Backfill State', `last_update: ${new Date(now).toISOString()}`,
+  L.push('# Remaster Backfill State', 'Original recordings are never deleted or replaced for any talk.', `last_update: ${new Date(now).toISOString()}`,
     `status: ${st.finished ? 'FINISHED' : st.started ? 'IN_PROGRESS' : 'NOT_STARTED'}${st.stop ? ` (stopped: ${st.stop})` : ''}`,
-    `published_remastered: ${pub.length} / ${total}   review (kept original): ${review.length}   remaining: ${remaining}`,
+    `published_remastered: ${pub.length} / ${total}   held (still playing the original audio; restored copy awaiting review): ${review.length}   remaining: ${remaining}`,
     `cloud: done ${st.done?.length || 0}, failed ${st.failed?.length || 0}, queue ${st.queue?.length || 0}, in flight ${Object.keys(st.jobs || {}).length}`,
     `spent_usd: ${st.spent_usd ?? 0} of cap 60 (balance floor 90)`,
     (() => { const g = ledgerSummary(st, now); return `gpu ledger: rented $${g.rented_usd} · productive $${g.productive_usd} · efficiency 30 min ${g.efficiency_30m == null ? 'n/a' : `${Math.round(g.efficiency_30m * 100)} %`} · lane beat ${g.lane_updated_s ?? '?'} s ago`; })(),
@@ -53,7 +53,7 @@ export function render({ st, results, home }, now = Date.now()) {
     `home hosts: ${home.done ? `${home.done} done` : 'idle'}`, '', '## By grade', '| grade | published | review | total | hours |', '|---|---|---|---|---|');
   for (const g of ['E', 'D', 'C', 'B', '?']) if (byGrade[g]) L.push(`| ${g} | ${byGrade[g].published} | ${byGrade[g].review} | ${byGrade[g].total} | ${Math.round(byGrade[g].hours * 10) / 10} |`);
   const high = [...last.values()].filter((r) => (r.fallback_sent_pct ?? 0) > 40);
-  L.push('', `## High fallback (> 40 % of sentences; original kept — Chad listens) — ${high.length}`);
+  L.push('', `## High fallback (> 40 % of sentences; still playing the original audio — Chad listens) — ${high.length}`);
   for (const r of high) L.push(`- ${r.grade} ${r.slug}: ${r.fallback_sent_pct} % of sentences — https://siftersearch.com/media/${r.slug}`);
   L.push('', '## Pods');
   for (const p of pods) L.push(`- ${p.name} ${p.gpu || ''} $${p.costPerHr ?? '?'}/h ${p.terminated ? `terminated (${p.why})` : p.status}${p.last_error ? ` — ${p.last_error}` : ''}`);

@@ -37,7 +37,8 @@ jobs:
           cp scripts/media/worker/*.py ctx/media/worker/
           # one source of truth for the pins: cloud.js WEIGHTS -> weights.tsv
           node -e "import('./api/lib/media/cloud.js').then(c => console.log(c.WEIGHTS.map(w => w.join('\t')).join('\n')))" > ctx/weights.tsv
-          wc -l ctx/weights.tsv
+          node -e "import('./api/lib/media/cloud.js').then(c => console.log(c.CLEANUP_WEIGHTS.map(w => w.join('\t')).join('\n')))" > ctx/weights-cleanup.tsv
+          wc -l ctx/weights.tsv ctx/weights-cleanup.tsv
 
       - uses: docker/login-action@v3
         with:

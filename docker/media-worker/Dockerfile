@@ -23,6 +23,13 @@ RUN git clone -q https://github.com/Xiaobin-Rong/unipase /opt/unipase && git -C 
 COPY weights.tsv fetch-weights.sh /tmp/
 RUN bash /tmp/fetch-weights.sh /tmp/weights.tsv $SIFTER_WEIGHTS && du -sh $SIFTER_WEIGHTS
 
+# Deterministic cleanup (the fallback for talks the word guard holds): MossFormer2-SE via ClearVoice in its own venv (it may pin other
+# versions than whisperx), the SE checkpoint sha-pinned. Deterministic: fixed seeds, no sampling (scripts/media/worker/cleanup.py).
+COPY weights-cleanup.tsv /tmp/
+RUN python -m venv --system-site-packages /opt/cv && /opt/cv/bin/pip install clearvoice scipy nara_wpe soundfile 2>&1 | tail -5 \
+    && /opt/cv/bin/python -c "import clearvoice, nara_wpe, scipy, torch; print('cleanup deps ok')" \
+    && bash /tmp/fetch-weights.sh /tmp/weights-cleanup.tsv /opt/models && ls -la /opt/models/clearvoice/checkpoints/MossFormer2_SE_48K
+
 # Alignment models (whisperx forced alignment): the languages the library is mostly in; any other is fetched on demand
 COPY preload-aligners.py /tmp/
 RUN python /tmp/preload-aligners.py en fa ar && du -sh $HF_HOME

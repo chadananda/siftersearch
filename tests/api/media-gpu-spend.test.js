@@ -291,3 +291,67 @@ print(json.dumps({'r': {k: v for k, v in r.items() if k != 'guard'}, 'calls': ca
     expect(o.r.why).toMatch(/realign unavailable/); expect(o.r.web).toBeUndefined(); expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py']);
   });
 });
+
+describe('the worker decides: cleanup for held talks, the verdict, and strict mode (tower never reprocesses audio)', () => {
+  const run = (guardSeq, { cleanup = true, bw = 5, haveCv = true, cleanupFails = false } = {}) => {
+    const dir = mkdtempSync(join(tmpdir(), 'cl-'));
+    writeFileSync(join(dir, 'in.mp3'), 'x'); writeFileSync(join(dir, 'out.flac'), 'y'); writeFileSync(join(dir, 'asr.json'), '{}');
+    writeFileSync(join(dir, 'work.json'), '{"paragraphs":[]}');
+    const sha = createHash('sha256').update('{"paragraphs":[]}').digest('hex');
+    writeFileSync(join(dir, 'job.json'), JSON.stringify({ post: { af: 'loudnorm', max_fallback_pct: 15, slug: 's', work_sha: sha, bw_khz: bw, cleanup, ogg: [], m4a: [], orig_ogg: [], orig_m4a: [] } }));
+    const out = execFileSync('python3', ['-c', `
+import sys, json, types
+sys.path.insert(0, 'scripts/media/worker')
+import post
+seq = iter(${JSON.stringify(guardSeq)}); calls = []
+def runner(cmd, **kw):
+    name = cmd[1].split('/')[-1] if cmd[0] != 'ffmpeg' else 'ffmpeg'; calls.append(name)
+    if name == 'remaster_guard.py': return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': next(seq), 'swapped_pct': 0}) + '\\n')
+    if name == 'cleanup.py':
+        if ${cleanupFails ? 'True' : 'False'}: raise RuntimeError('no GPU')
+        return types.SimpleNamespace(stdout=json.dumps({'chain': 'F', 'seconds': 1}) + '\\n')
+    if name == 'media_tool.py': return types.SimpleNamespace(stdout=json.dumps({'placed': 100, 'total': 100}) + '\\n')
+    return types.SimpleNamespace(stdout='')
+r = post.process(${JSON.stringify(dir)}, runner=runner, transcribe=lambda p: {'segments': []}, cv_python=${haveCv ? 'sys.executable' : "'/nonexistent'"})
+print(json.dumps({'method': r.get('method'), 'qa': r['qa'], 'held': r.get('held'), 'calls': calls, 'web': bool(r.get('web'))}))`], { encoding: 'utf8' });
+    return JSON.parse(out);
+  };
+  it('a passing generative copy: usable / partial by fallback', () => {
+    expect(run([3])).toMatchObject({ method: 'restored', qa: { verdict: 'usable' } });
+    expect(run([11])).toMatchObject({ method: 'restored', qa: { verdict: 'partial' } });
+  });
+  it('a held copy gets the deterministic cleanup, the SAME guard, and is published as cleaned', () => {
+    const o = run([40, 2]);
+    expect(o).toMatchObject({ method: 'cleaned', qa: { verdict: 'cleaned' }, web: true });
+    expect(o.calls.slice(0, 4)).toEqual(['remaster_guard.py', 'cleanup.py', 'remaster_guard.py', 'media_tool.py']);
+    expect(o.qa.metrics).toMatchObject({ restored_fallback_pct: 40, fallback_pct: 2 });
+  });
+  it('a cleanup the guard also rejects, or that cannot run, leaves the talk held: review, or unrepairable at ~2 kHz', () => {
+    expect(run([40, 30])).toMatchObject({ held: true, method: null, qa: { verdict: 'review' } });
+    expect(run([40], { haveCv: false, bw: 1.95 })).toMatchObject({ held: true, qa: { verdict: 'unrepairable' } });
+    expect(run([40], { cleanupFails: true })).toMatchObject({ held: true, qa: { verdict: 'review' } });
+  });
+});
+
+describe('strict mode: with no complete worker result tower waits, it never touches the audio', () => {
+  it('the remaster stage records "waiting" and runs no guard / aligner / ffmpeg', async () => {
+    const prev = process.env.MEDIA_REMASTER_STRICT; process.env.MEDIA_REMASTER_STRICT = '1';
+    try {
+      const t = await (async () => {
+        const dir = mkdtempSync(join(tmpdir(), 'st-'));
+        mkdirSync(join(dir, 'enhanced'), { recursive: true }); mkdirSync(join(dir, 'original'), { recursive: true });
+        for (const f of ['unipase.cloud.flac', 'unipase.asr.json']) writeFileSync(join(dir, 'enhanced', f), '{}');
+        writeFileSync(join(dir, 'transcript.raw.json'), '{"segments":[]}');
+        writeFileSync(join(dir, 'transcript.work.json'), JSON.stringify({ paragraphs: [{ n: 1, t0: 1, t1: 2, words: [{ w: 'a', s: 1, e: 2 }], sentences: [[0, 1]] }] }));
+        writeFileSync(join(dir, 'meta.json'), JSON.stringify({ slug: 'x', original: 'original/a.mp3', quality: { overall: 'D' }, enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
+          stages: Object.fromEntries(['archive', 'grade', 'enhance', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) }));
+        const tools = { remasterGuard: vi.fn(), tool: vi.fn(), ffmpeg: vi.fn() };
+        return { dir, tools, deps: { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' }, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
+      })();
+      await runItem(t.item, { redo: ['remaster'], only: ['remaster'], remaster: true }, t.deps);
+      const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+      expect(meta.remaster.status).toBe('waiting'); expect(meta.enhancement.listening).toBe('safe');
+      expect(t.tools.remasterGuard).not.toHaveBeenCalled(); expect(t.tools.tool).not.toHaveBeenCalled(); expect(t.tools.ffmpeg).not.toHaveBeenCalled();
+    } finally { if (prev === undefined) delete process.env.MEDIA_REMASTER_STRICT; else process.env.MEDIA_REMASTER_STRICT = prev; }
+  });
+});
