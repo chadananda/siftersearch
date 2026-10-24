@@ -1,0 +1,3 @@
+{"round": "ioas-r4", "title": "Ioas round 4: softer s",
+ "intro": "Round 4 keeps your round-3 pick (F: less mud, gentle dereverb) and works only on the s sounds. On this recording the s energy sits at about 1.8 to 5 kHz, and the denoiser made it stand out 2 to 3 dB more than in the original. The new versions use a de-esser that detects s sounds by their spectral balance and turns them down by up to 12 or 16 dB; two also stop the presence lift at 1.4 kHz, and one uses less denoise. Six versions in random order, matched in loudness.",
+ "clips": {"ioas": ["t3-mud7-wpe-deess", "t4-ratio12", "t4-ratio16-lift14", "t4-ratio16-lift14-mf45", "t4-level16"]}}

@@ -1,0 +1,71 @@
+{
+ "round": "ioas-lab",
+ "title": "Ioas remaster lab",
+ "intro": "One page for every remaster of the Ioas clip: the original, your best gentle version (round-3 pick F), and full-strength AI regenerations with nothing of the original blended back, plus blends of the two you found clearest, ElevenLabs (realistic) and Sidon (clearest). Regenerators rebuild the voice, so they can sound much fuller and also change words; the lost-word count and the transcript difference under Reveal are information only, your ear decides. Paid service still to try: Auphonic Studio Voice (beta, about $1 per audio hour, 2 free hours a month) needs your signup. Not candidates: ai-coustics now sells real-time denoise only, Resemble's hosted API is discontinued, dolby.io is gone. Resemble Enhance and VoiceRestore were dropped from this round (they lost the most words and you did not favour them). New versions join this page as they finish.",
+ "clips": {
+  "ioas": [
+   "t3-mud7-wpe-deess",
+   "api-eleven-isolation",
+   "gen-sidon",
+   "gen-unipase",
+   "lab-eleven>unipase",
+   "lab-eleven+sidon-70-30",
+   "lab-eleven+sidon-50-50",
+   "lab-eleven-lo+sidon-hi",
+   "lab-eleven>sidon",
+   "lab-eleven>lavasr",
+   "gen-voicefixer"
+  ]
+ },
+ "desc": {
+  "t3-mud7-wpe-deess": "Best gentle chain (your round-3 pick F): MossFormer2 60 % + mud cut + gentle dereverb + de-esser",
+  "api-eleven-isolation": "ElevenLabs Voice Isolator (API, strongest and only setting)",
+  "gen-voicefixer": "VoiceFixer, full strength (generative restoration: noise, reverb, bandwidth)",
+  "gen-resemble-l09": "Resemble Enhance, full strength, denoise-before 0.9 (lambda), temperature 0.5",
+  "gen-resemble-l05": "Resemble Enhance, full strength, denoise-before 0.5, temperature 0.5",
+  "gen-sidon": "Sidon (2025, w2v-BERT 2.0 features + 48 kHz vocoder), full strength",
+  "gen-voicerestore": "VoiceRestore (flow-matching transformer + BigVGAN 24 kHz), full strength",
+  "lab-eleven+sidon-70-30": "ElevenLabs 70 % + Sidon 30 %, time-aligned (envelope)",
+  "lab-eleven+sidon-50-50": "ElevenLabs 50 % + Sidon 50 %, time-aligned (envelope)",
+  "lab-eleven-lo+sidon-hi": "ElevenLabs below 3.5 kHz (realism) + Sidon's regenerated band above 3.5 kHz (clarity)",
+  "lab-eleven>sidon": "Sidon run on ElevenLabs' cleaned output",
+  "lab-eleven>lavasr": "LavaSR v2 bandwidth extension (2026, Vocos) run on ElevenLabs' output",
+  "gen-unipase": "UniPASE (2026, built to avoid invented words; WavLM-based, 48 kHz with bandwidth extension), full strength",
+  "lab-eleven>unipase": "UniPASE run on ElevenLabs' output"
+ },
+ "tags": {
+  "original": "",
+  "t3-mud7-wpe-deess": "Local · aorus GPU + boss CPU · ~2 min GPU per audio hour",
+  "api-eleven-isolation": "API · ElevenLabs · ~1,000 credits per audio minute (~60k per hour)",
+  "gen-voicefixer": "Local · aorus RTX 3070 · ~2.5 min GPU per audio hour",
+  "gen-resemble-l09": "Local · aorus RTX 3070 · ~65 min GPU per audio hour",
+  "gen-resemble-l05": "Local · aorus RTX 3070 · ~42 min GPU per audio hour",
+  "gen-sidon": "Local · aorus RTX 3070 · ~3 min GPU per audio hour",
+  "gen-voicerestore": "Local · aorus RTX 3070 · ~47 min GPU per audio hour",
+  "lab-eleven+sidon-70-30": "API + local · ElevenLabs credits + Sidon (~3 min GPU/h on aorus)",
+  "lab-eleven+sidon-50-50": "API + local · ElevenLabs credits + Sidon",
+  "lab-eleven-lo+sidon-hi": "API + local · ElevenLabs credits + Sidon",
+  "lab-eleven>sidon": "API + local · ElevenLabs credits + Sidon on boss GPU (333 min/h on first ROCm run)",
+  "lab-eleven>lavasr": "API + local · ElevenLabs credits + LavaSR on boss GPU (38 min/h on first ROCm run, 0.4 GB)",
+  "gen-unipase": "Local · boss GPU (ROCm) · 17 min GPU per audio hour (warm), 3.2 GB",
+  "lab-eleven>unipase": "API + local · ElevenLabs credits + UniPASE on boss GPU (17 min/h)"
+ },
+ "links": [
+  {
+   "label": "Round 1: gentle denoise",
+   "url": "https://claude.ai/artifact/LPG3XoqqoFumgUefe8MtnA"
+  },
+  {
+   "label": "Round 2: anti-tube",
+   "url": "https://claude.ai/artifact/VAjobGRobTuoWMdY9W8oXT"
+  },
+  {
+   "label": "Round 3: mud and sibilants",
+   "url": "https://claude.ai/artifact/DyCXbZMrDj8nMUq2o5ALV9"
+  },
+  {
+   "label": "Round 4: de-essing",
+   "url": "https://claude.ai/artifact/XsW7WpWAPnAC14BJPi2FMn"
+  }
+ ]
+}

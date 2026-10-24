@@ -1,0 +1,82 @@
+{
+ "round": "unipase-confirm",
+ "title": "UniPASE confirmation",
+ "intro": "Last check before UniPASE becomes the remaster chain. Each clip has two versions in random order, the original and UniPASE, matched in loudness; pick the one you would rather hear for a whole talk. Clips 1-5 are the defect test clips (muffled, heavy hiss, room, quiet, hum); 6-15 are muffled talks it was never tuned on; 16-17 are clean grade A/B recordings, to hear whether UniPASE helps, hurts or does nothing on good audio; 18-21 are the multilingual section: consecutive Persian/English translation, Persian alone, Arabic/Persian chanting, and Spanish. Their word check in Reveal uses Whisper in that language (auto-detect for the mixed clips). Of the clips you already heard, Muhajir 1963 (clip 3) opens with about 10 s of Persian before the English. Reveal shows the word difference and bandwidth.",
+ "clips": {
+  "ioas": [
+   "unipase"
+  ],
+  "panahi": [
+   "unipase"
+  ],
+  "muhajir": [
+   "unipase"
+  ],
+  "sears": [
+   "unipase"
+  ],
+  "banani": [
+   "unipase"
+  ],
+  "sears-convention": [
+   "unipase"
+  ],
+  "faizi-iqan": [
+   "unipase"
+  ],
+  "gibson-1980": [
+   "unipase"
+  ],
+  "cardell-1988": [
+   "unipase"
+  ],
+  "taherzadeh-14": [
+   "unipase"
+  ],
+  "birkland-1988": [
+   "unipase"
+  ],
+  "arbab-1992": [
+   "unipase"
+  ],
+  "featherstone-lotus": [
+   "unipase"
+  ],
+  "furutan-ussr": [
+   "unipase"
+  ],
+  "khadem-1985": [
+   "unipase"
+  ],
+  "clean-dunbar-2003": [
+   "unipase"
+  ],
+  "clean-razavi-2015": [
+   "unipase"
+  ],
+  "ml-furutan-1963": [
+   "unipase"
+  ],
+  "ml-fatheazam-fa": [
+   "unipase"
+  ],
+  "ml-prayer-chant": [
+   "unipase"
+  ],
+  "ml-dunbar-es": [
+   "unipase"
+  ]
+ },
+ "desc": {
+  "unipase": "UniPASE (2026, low-hallucination generative restoration, 48 kHz), full strength, run on boss's GPU"
+ },
+ "tags": {
+  "unipase": "Local \u00b7 boss GPU 11\u201317 min per audio hour \u00b7 aorus 7\u20139"
+ },
+ "links": [
+  {
+   "label": "Ioas remaster lab",
+   "url": "https://claude.ai/artifact/1Kb1nDdGwNtAGuZ1p6iVTr"
+  }
+ ]
+}

@@ -1,4 +1,4 @@
-# Remaster pilot step 2: the MUFFLED-source chains Chad has picked between (Ioas rounds 2–3), applied to any clip whose
+# Remaster pilot step 2: the MUFFLED-source chains Chad has picked between (Ioas rounds 2–4), applied to any clip whose
 # MossFormer2-SE wet output exists. Every recipe = gentle denoise (MF2SE wet/dry) → corrective EQ from the clip's own voice
 # spectrum (crossover at the grade bandwidth) → WPE dereverb (wet/dry) → optional split-band de-esser → -18 LUFS.
 # The FALLBACK rungs (same chain at MF2SE 35 %, then the original) are built too, so the veto can step down and the
@@ -6,7 +6,7 @@
 #   <root>/clips/<key>.wav + <root>/wet/mf2se/<key>.wav + <root>/clips/clips.json (bw_khz) → <root>/cands/<key>/<recipe>.wav
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tube, tube3
+import tube, tube3, tube4
 from rnd_common import read, write, align, mix
 from build_cands import finish
 
@@ -20,6 +20,14 @@ RECIPES = {   # name: (mf2se wet share, EQ, mud dB, WPE wet share, de-ess)
 
 
 def apply(dry, wet, bw_khz, recipe, mf_share=None):
+    if recipe in tube4.RECIPES:                 # round 4: F + sibilant-targeted de-essing
+        r = tube4.RECIPES[recipe]
+        if mf_share is not None:
+            tube4.RECIPES[recipe] = (mf_share,) + r[1:]
+        try:
+            return tube4.build(dry, wet, bw_khz, recipe)[0]
+        finally:
+            tube4.RECIPES[recipe] = r
     w, eq, mud, wpe_w, de = RECIPES[recipe]
     tube.set_fc(bw_khz)
     base = mix(dry, wet, w if mf_share is None else mf_share)
@@ -30,7 +38,7 @@ def apply(dry, wet, bw_khz, recipe, mf_share=None):
 
 def main():
     root = sys.argv[1]
-    recipes = sys.argv[2:] or list(RECIPES)
+    recipes = sys.argv[2:] or list(RECIPES) + list(tube4.RECIPES)
     meta = json.load(open(f'{root}/clips/clips.json'))
     os.makedirs(f'{root}/work', exist_ok=True)
     for key, m in meta.items():

@@ -9,9 +9,8 @@ import numpy as np
 import pyloudnorm as pyln
 from rnd_common import SR, read, write, align, mix, hf_blend
 
-ROOT = sys.argv[1]
+ROOT = sys.argv[1] if len(sys.argv) > 1 else '.'   # importable: finish()/ffmpeg() need only ROOT/work
 SPEC = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cands.json')))
-CLIPS = json.load(open(f'{ROOT}/clips/clips.json'))
 BW = {'ioas': 2.98, 'panahi': 9.25, 'muhajir': 7.29, 'sears': 5.6, 'banani': 5.46}   # grade bandwidth (kHz) of each talk
 HUM = {'banani': 50}                                                                # mains hum notch (grade ≥ 10 dB)
 
@@ -45,6 +44,7 @@ def finish(x):
 
 def main():
     os.makedirs(f'{ROOT}/work', exist_ok=True)
+    CLIPS = json.load(open(f'{ROOT}/clips/clips.json'))
     build = {}
     for clip in CLIPS:
         dry = read(f'{ROOT}/clips/{clip}.wav')

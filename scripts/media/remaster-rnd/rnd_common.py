@@ -22,7 +22,21 @@ def write(path, x, sr=SR):
     sf.write(path, np.asarray(x, dtype=np.float32), sr, subtype='FLOAT')
 
 
+def _amd_vram():
+    """(total, used) bytes of the AMD iGPU's VRAM carve-out (boss, gfx1151), or None."""
+    import glob
+    for d in glob.glob('/sys/class/drm/card*/device'):
+        try:
+            return int(open(f'{d}/mem_info_vram_total').read()), int(open(f'{d}/mem_info_vram_used').read())
+        except OSError:
+            continue
+    return None
+
+
 def free_vram_gb():
+    a = _amd_vram()
+    if a:
+        return (a[0] - a[1]) / 2 ** 30
     try:
         r = subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'], capture_output=True, text=True)
         return int(r.stdout.split()[0]) / 1024
@@ -31,6 +45,12 @@ def free_vram_gb():
 
 
 def gpu_temp():
+    if _amd_vram():   # boss: the APU's die temperature is the CPU's Tctl (the GPU shares the package)
+        try:
+            out = subprocess.run(['sensors'], capture_output=True, text=True).stdout
+            return int(float(next(l.split('+')[1].split('°')[0] for l in out.splitlines() if l.strip().startswith('Tctl'))))
+        except Exception:
+            return None
     try:
         r = subprocess.run(['nvidia-smi', '--query-gpu=temperature.gpu', '--format=csv,noheader,nounits'], capture_output=True, text=True)
         return int(r.stdout.split()[0])
@@ -38,8 +58,12 @@ def gpu_temp():
         return None
 
 
-def cool(hot=83, ok=78):
-    """aorus runs hot (10-23: 88 °C, throttling): never start GPU work at >= `hot` °C; wait until it is back to `ok`."""
+def cool(hot=None, ok=None):
+    """aorus runs hot (10-23: 88 °C, throttling): never start GPU work at >= 83 °C, resume at 78. boss's package idles at
+    ~94 °C under production ASR: pause at >= 95, resume at 93 (Chad 10-23)."""
+    amd = bool(_amd_vram())
+    hot = hot or (95 if amd else 83)
+    ok = ok or (93 if amd else 78)
     t = gpu_temp()
     if t is None or t < hot:
         return
@@ -57,7 +81,10 @@ def free_ram_gb():
 
 
 def wait_resources(vram=3.0, ram=4.0, max_wait=1800):
-    """Production shares this card: start a model only with >= `vram` GB VRAM and >= `ram` GB RAM free; else wait."""
+    """Production shares this card: start a model only with >= `vram` GB VRAM and >= `ram` GB RAM free; else wait.
+    On boss the VRAM floor is raised by 50 GB: the local LLM (llama.cpp, 49 GB) must always be able to come back."""
+    if _amd_vram():
+        vram += 50.0
     t0 = time.time()
     while True:
         v, r = free_vram_gb(), free_ram_gb()
@@ -144,3 +171,25 @@ def hf_blend(base, gen, fc, sr=SR, gain_db=0.0):
     lo, _ = band_split(base, fc, sr)
     _, hi = band_split(gen, fc, sr)
     return (lo + hi * 10 ** (gain_db / 20)).astype(np.float32)
+
+
+def env_align(dry, wet, sr=SR, max_lag_ms=100):
+    """Lag by 5 ms log-energy ENVELOPE correlation — for generative outputs, whose waveforms do not correlate with the input
+    (speech-band corr ~0.05) but whose syllable timing does (env corr ~0.8). → wet shifted + level-matched, lag, env corr."""
+    n = int(sr * 0.005)
+    def env(x):
+        x = x[: len(x) // n * n].reshape(-1, n)
+        e = np.log(np.mean(x ** 2, axis=1) + 1e-9)
+        return e - e.mean()
+    ed, ew = env(dry), env(wet)
+    m = min(len(ed), len(ew))
+    ed, ew = ed[:m], ew[:m]
+    L = int(max_lag_ms / 5)
+    c = np.array([np.dot(ed[max(0, k):m + min(0, k)], ew[max(0, -k):m - max(0, k)]) for k in range(-L, L + 1)])
+    k = int(np.argmax(c) - L)
+    corr = float(c.max() / np.sqrt((ed ** 2).sum() * (ew ** 2).sum()))
+    w2 = np.roll(wet, k * n)[: len(dry)]
+    if len(w2) < len(dry):
+        w2 = np.pad(w2, (0, len(dry) - len(w2)))
+    g = speech_rms(dry, sr) / max(speech_rms(w2, sr), 1e-9)
+    return (w2 * g).astype(np.float32), k * n, corr

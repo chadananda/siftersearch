@@ -1,6 +1,6 @@
 # Remaster R&D step 3: INTELLIGIBILITY screening of every candidate against its clip's original (the 10-23 lesson: NISQA
 # said 1.2 → 4.55 while words were clipped). Per file: word-level ASR aligned to the original (lost / added / low-confidence
-# words), onset + whole-word energy against the original's word timings (gated syllables), SQUIM non-intrusive STOI/PESQ,
+# words; ASR language per clip from <root>/clips/clips.json 'asr_lang', default en, null = auto), onset + whole-word energy against the original's word timings (gated syllables), SQUIM non-intrusive STOI/PESQ,
 # WeSpeaker similarity, NISQA/DNSMOS (info only), bandwidth, roll-off, clipping, LUFS.
 # Runs on TOWER's CPU in ~/sifter/venvs/media (faster-whisper, torchmetrics, torchaudio, sherpa-onnx, pyloudnorm), at most
 # 4 threads, under `nice -n 15 ionice -c3`; never the GPU. Usage: python screen.py <root> [clip ...]
@@ -38,8 +38,8 @@ def norm_word(w):
     return re.sub(r"[^\w']", '', w.lower())
 
 
-def asr(x16):
-    segs, _ = models()['asr'].transcribe(x16, language='en', beam_size=5, vad_filter=False, condition_on_previous_text=False,
+def asr(x16, lang='en'):
+    segs, _ = models()['asr'].transcribe(x16, language=lang, beam_size=5, vad_filter=False, condition_on_previous_text=False,
                                          word_timestamps=True, temperature=0.0)
     words = []
     for s in segs:
@@ -132,7 +132,7 @@ def align_words(ow, cw):
     return lost, added, lost_list, added_list, (round(float(np.mean(dp)), 3) if dp else None)
 
 
-def measure(path, orig=None):
+def measure(path, orig=None, lang='en'):
     x, sr = sf.read(path, dtype='float32', always_2d=True)
     x = x.mean(axis=1)
     x16 = resample_poly(x, 16000 // np.gcd(16000, sr), sr // np.gcd(16000, sr)).astype(np.float32)
@@ -142,7 +142,8 @@ def measure(path, orig=None):
     out['clip_pct'] = round(float(np.mean(np.abs(x) >= 0.999)) * 100, 4)
     out['bandwidth_khz'], out['rolloff99_hz'] = bandwidth(x, sr)
     t = time.time()
-    words = asr(x16)
+    words = asr(x16, lang)
+    out['asr_lang'] = lang or 'auto'
     out['asr_s'] = round(time.time() - t, 1)
     out['words'] = words
     out['n_words'] = len(words)
@@ -188,13 +189,24 @@ def ram_watchdog(floor_gb=float(os.environ.get('SCREEN_ABORT_GB', '3'))):
     threading.Thread(target=run, daemon=True).start()
 
 
+def _tctl():
+    """boss's APU package temperature (the heat guard there drops media slots at 96–99 °C); None elsewhere."""
+    import subprocess
+    try:
+        out = subprocess.run(['sensors'], capture_output=True, text=True, timeout=5).stdout
+        return float(next(l.split('+')[1].split('°')[0] for l in out.splitlines() if l.strip().startswith('Tctl')))
+    except Exception:
+        return None
+
+
 def ram_guard(min_gb=float(os.environ.get('SCREEN_MIN_FREE_GB', '5'))):
     """Shared hosts (boss runs production ASR): wait between files while MemAvailable is under min_gb."""
     while True:
         avail = next(int(l.split()[1]) for l in open('/proc/meminfo') if l.startswith('MemAvailable:')) / 2 ** 20
-        if avail >= min_gb:
+        temp = _tctl()
+        if avail >= min_gb and (temp is None or temp < float(os.environ.get('SCREEN_MAX_TEMP', '90'))):
             return
-        print(f'RAM {avail:.1f} GB free: waiting', flush=True)
+        print(f'RAM {avail:.1f} GB free, package {temp} °C: waiting', flush=True)
         time.sleep(30)
 
 
@@ -206,7 +218,12 @@ def dump(obj, path):
 
 def main():
     ram_watchdog()
+    try:
+        LANG = {k: v.get('asr_lang', 'en') for k, v in json.load(open(f'{ROOT}/clips/clips.json')).items()}
+    except (OSError, ValueError):
+        LANG = {}
     for clip in CLIPS:
+        lang = LANG.get(clip, 'en')   # null = Whisper's own detection (mixed-language clips)
         d = f'{ROOT}/cands/{clip}'
         od = f'{ROOT}/screen/{clip}'
         os.makedirs(od, exist_ok=True)
@@ -227,7 +244,7 @@ def main():
         if hit:
             orig = r
         else:
-            orig = measure(f'{d}/original.wav')
+            orig = measure(f'{d}/original.wav', lang=lang)
             orig['_key'] = r
             dump(orig, f'{od}/original.json')
         orig['_path'] = f'{d}/original.wav'
@@ -237,7 +254,7 @@ def main():
                 continue
             ram_guard()
             t = time.time()
-            m = measure(f'{d}/{n}.wav', orig)
+            m = measure(f'{d}/{n}.wav', orig, lang=lang)
             m['_key'] = r
             m['screen_s'] = round(time.time() - t, 1)
             dump(m, f'{od}/{n}.json')

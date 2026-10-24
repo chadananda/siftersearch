@@ -8,6 +8,7 @@ import numpy as np
 from rnd_common import SR, read, write, wait_resources, chunked
 
 ROOT, NAME = sys.argv[1], sys.argv[2]
+OUT = os.environ.get('RES_OUT', NAME)   # wet/<OUT>: lets one enhancer setting be kept beside another
 CLIPS = sys.argv[3:] or [f[:-4] for f in sorted(os.listdir(f'{ROOT}/clips')) if f.endswith('.wav')]
 RUN_DIR = os.path.expanduser(os.environ.get('RESEMBLE_DIR', '~/media-gpu/models/resemble/enhancer_stage2'))
 LAMBD, TAU, NFE = float(os.environ.get('RES_LAMBD', '0.5')), float(os.environ.get('RES_TAU', '0.1')), int(os.environ.get('RES_NFE', '64'))
@@ -28,7 +29,7 @@ from resemble_enhance.enhancer.inference import denoise, enhance
 
 def fn(seg):
     x = torch.from_numpy(seg.copy())
-    if NAME == 'resden':
+    if NAME == 'resden':  # denoiser only
         y, sr2 = denoise(x, SR, 'cuda', run_dir=Path(RUN_DIR))
     else:
         y, sr2 = enhance(x, SR, 'cuda', nfe=NFE, solver='midpoint', lambd=LAMBD, tau=TAU, run_dir=Path(RUN_DIR))
@@ -43,8 +44,8 @@ log = {'lambd': LAMBD, 'tau': TAU, 'nfe': NFE}
 for c in CLIPS:
     t = time.time()
     y = chunked(read(f'{ROOT}/clips/{c}.wav'), SR, fn, chunk_s=5.0 if NAME == 'resenh' else 10.0, overlap_s=1.0)
-    write(f'{ROOT}/wet/{NAME}/{c}.wav', y)
+    write(f'{ROOT}/wet/{OUT}/{c}.wav', y)
     log[c] = round(time.time() - t, 1)
 log['_peak_vram_gb'] = round(torch.cuda.max_memory_allocated() / 2 ** 30, 2)
-json.dump(log, open(f'{ROOT}/wet/{NAME}/_run.json', 'w'))
+json.dump(log, open(f'{ROOT}/wet/{OUT}/_run.json', 'w'))
 print(NAME, log)

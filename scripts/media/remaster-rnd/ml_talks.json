@@ -1,0 +1,6 @@
+{
+ "ml-furutan-1963": {"slug": "bahai/bahai-perspective/furutan-day-of-victories-1963", "speaker": "Furutan (Persian with consecutive English)", "start_s": 670, "asr_lang": null, "defect": "consecutive Persian/English translation (1963)", "bw_khz": 9.21},
+ "ml-fatheazam-fa": {"slug": "bahai/hushmand-fatheazam-talks/fatheazam-religion-should-lead-to-progress-2018", "speaker": "Hushmand Fatheazam (Persian)", "start_s": 600, "asr_lang": "fa", "defect": "Persian speech", "bw_khz": 6.16},
+ "ml-prayer-chant": {"slug": "bahai/bahai-perspective/prayer-2020", "speaker": "Prayer (Persian/Arabic chanting)", "start_s": 40, "asr_lang": null, "defect": "Arabic/Persian chanting, muffled", "bw_khz": 3.35},
+ "ml-dunbar-es": {"slug": "bahai/hooper-c-dunbar-talks/dunbar-la-posicion-de-bahaullah-2018", "speaker": "Hooper Dunbar (Spanish)", "start_s": 1500, "asr_lang": "es", "defect": "Spanish speech, grade E", "bw_khz": 13.22}
+}
