@@ -93,3 +93,15 @@ describe('switchCopy contract', () => {
     expect(fn).toMatch(/if \(!started \|\| !audio\.src[^\n]*return;/);
   });
 });
+
+// Chad 10-24: no drawing/photos toggle. Drawing → no caption; photo → attribution caption kept; no rotation layers.
+describe('TalkHero portrait', () => {
+  it('has no Photos toggle or rotation, sketch shows no caption, photo keeps its attribution', async () => {
+    const { default: TalkHero } = await import('../../src/components/media/TalkHero.svelte');
+    const photo = render(TalkHero, { props: { item: { ...base, speaker: 'Peter Khan', thumb: { kind: 'photo', url: '/p.jpg', credit: 'Bahaipedia (bahai.media)', source_url: 'https://bahai.media/x' } } } }).body;
+    expect(photo).not.toMatch(/data-photos-toggle|Photos \(|class="rot|data-rotate/);
+    expect(photo).toMatch(/Photo of Peter Khan/);
+    const src = rf(new URL('../../src/components/media/TalkHero.svelte', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/photos-toggle|data-rotate|rotatePortraits/);
+  });
+});

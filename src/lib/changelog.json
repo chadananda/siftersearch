@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-24T15:59:05.417Z",
+  "generated": "2026-10-24T16:01:24.817Z",
   "entries": [
+    {
+      "hash": "863cdb30",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Original",
+      "scope": "media"
+    },
     {
       "hash": "d8fd9922",
       "date": "2026-10-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The Universal House of Justice is APPLICATION, not doctrine (Chad 10-19, per the Will and Testament: authoritative on applying Bahá'í law, not decisive on doctrine) — doctrine is the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi); House passages are labelled [application] and cited after the doctrine",
       "scope": "anis"
-    },
-    {
-      "hash": "7c7ecbd2",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Within doctrine, a work the planner named for the theme leads, then relevance; the authority number only breaks ties (a loosely related Aqdas line outranked the exact Promised Day passage); the named works are searched first",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "863cdb30",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Original",
+        "scope": "media"
+      },
       {
         "hash": "d8fd9922",
         "date": "2026-10-24",
@@ -7005,13 +7012,6 @@
         "date": "2026-10-19",
         "type": "Fixed",
         "description": "The Universal House of Justice is APPLICATION, not doctrine (Chad 10-19, per the Will and Testament: authoritative on applying Bahá'í law, not decisive on doctrine) — doctrine is the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi); House passages are labelled [application] and cited after the doctrine",
-        "scope": "anis"
-      },
-      {
-        "hash": "7c7ecbd2",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Within doctrine, a work the planner named for the theme leads, then relevance; the authority number only breaks ties (a loosely related Aqdas line outranked the exact Promised Day passage); the named works are searched first",
         "scope": "anis"
       }
     ]

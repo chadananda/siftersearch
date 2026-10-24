@@ -17,7 +17,6 @@
   const start = dayIndex(speakerKey || item.speaker || '', gallery.length);
   const order = [...gallery.slice(start), ...gallery.slice(0, start)];
   const lead = sketch ? { url: sketch.square, credit: null, year: null, licence: null, source_url: null, page_url: null } : order[0] || null;
-  const layers = sketch ? order : order.slice(1);   // stacked .rot layers: every photo behind a drawing, else all but today's
   const creditOf = (p) => (p ? [p.credit, p.year].filter(Boolean).join(' · ') : '');
   const when = [item.date || item.year, item.place, item.event].filter(Boolean);
   const q = item.quality;
@@ -41,30 +40,16 @@
         <figure class="mx-auto sm:mx-0">
           <div class="record relative h-40 w-40 sm:h-48 sm:w-48">
             <div class="vinyl absolute inset-0 rounded-full bg-radio-groove"></div>
-            <div class="absolute inset-[21%] label-ring overflow-hidden rounded-full" data-rotate={layers.length ? '' : undefined} data-sketch={sketch ? '' : undefined}
+            <div class="absolute inset-[21%] label-ring overflow-hidden rounded-full"
               title={sketch ? `${item.speaker || ''} — pen-and-ink drawing after a photograph` : lead ? `${item.speaker || ''}${creditOf(lead) ? ` — photo: ${creditOf(lead)}` : ''}` : undefined}>
               <RecordLabel name={item.speaker || item.title} photo={photo ? (lead?.url || item.thumb.url) : null} year={item.year} size={112} eager alt={photo ? (item.speaker || '') : ''} />
-              {#each layers as p}
-                {@const pic = portraitSquare(p.url, 112)}
-                <img class="rot" data-src={pic.src} data-srcset={pic.srcset} width="112" height="112" alt="" decoding="async"
-                  data-credit={p.credit || ''} data-licence={p.licence || ''} data-year={p.year || ''} data-href={p.source_url || p.page_url || ''} />
-              {/each}
             </div>
           </div>
-          {#if sketch}
-            <!-- the drawing's caption: what it is and what it was drawn from; the toggle swaps in the real photos (credits follow) -->
-            <figcaption class="mx-auto mt-2 max-w-48 text-center text-xs text-radio-on-dark opacity-80" data-rot-caption data-who={item.speaker || 'the speaker'}>
-              <a title={sketch.source_credit || undefined} class="cursor-default">Drawing after a photograph{sketch.source_credit ? ` (${sketch.source_credit})` : ''}</a><span></span>
-              {#if order.length}
-                <button type="button" data-photos-toggle aria-pressed="false" class="mt-1 block w-full font-dial text-[0.7rem] font-bold uppercase tracking-[0.2em] text-radio-brass-bright underline decoration-radio-brass underline-offset-2 hover:text-radio-amber focus-visible:outline focus-visible:outline-2 focus-visible:outline-radio-amber">Photos ({order.length})</button>
-              {/if}
-            </figcaption>
-          {:else if photo && lead && (lead.credit || lead.licence || lead.source_url || lead.page_url || order.length > 1)}
+          {#if !sketch && photo && lead && (lead.credit || lead.licence || lead.source_url || lead.page_url)}
             {@const credit = lead.credit}
             {@const src = lead.source_url || lead.page_url}
-            <figcaption class="mx-auto mt-2 max-w-48 text-center text-xs text-radio-on-dark opacity-70" data-rot-caption data-who={item.speaker || 'the speaker'}>
-              <!-- the credit itself links to where the photo came from (descriptive anchor text, no bare "source"); the
-                   rotation rewrites it for the photo on show -->
+            <figcaption class="mx-auto mt-2 max-w-48 text-center text-xs text-radio-on-dark opacity-70">
+              <!-- the credit itself links to where the photo came from (descriptive anchor text, no bare "source") -->
               <!-- the licence line can be long (a publisher's permission statement): it rides on the link's title -->
               <a href={src || undefined} title={lead.licence || undefined} target="_blank" rel="noopener" class="underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">Photo of {item.speaker || 'the speaker'}{credit ? `: ${credit}` : ''}</a><span>{lead.year ? ` · ${lead.year}` : ''}</span>
             </figcaption>
@@ -96,10 +81,6 @@
 </div>
 
 <style>
-  /* the gallery's other photos, stacked over the label; the client turns one .on at a time (a slow crossfade) */
-  .rot { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 9999px; object-fit: cover; opacity: 0; transition: opacity 1.4s ease; }
-  .rot:global(.on) { opacity: 1; }
-  @media (prefers-reduced-motion: reduce) { .rot { transition: none; } }
   .cabinet-inner {
     background-image:
       repeating-linear-gradient(97deg, transparent 0 7px, color-mix(in srgb, var(--radio-walnut-deep) 18%, transparent) 7px 8px, transparent 8px 19px),
