@@ -168,11 +168,43 @@ describe("pilgrims' notes are never dismissed", () => {
     expect(dropPilgrimDismissal('The Guardian wrote that the Faith is non-political.')).toBe('The Guardian wrote that the Faith is non-political.');
   });
   it('the researcher and writer prompts rank them relatively and forbid reflex truisms', () => {
-    expect(RESEARCH_SYSTEM).toMatch(/PILGRIMS' NOTES are different/);
-    expect(RESEARCH_SYSTEM).toMatch(/above any later scholarship or institutional commentary/);
+    expect(RESEARCH_SYSTEM).toMatch(/then pilgrims' notes of the Central Figures and the Guardian/);
+    expect(RESEARCH_SYSTEM).toMatch(/never brief it as "no authority"/);
     expect(RESEARCH_SYSTEM).toMatch(/NO REFLEX TRUISMS/);
     expect(RESEARCH_SYSTEM).not.toMatch(/never rest a doctrinal point on the Universal House of Justice, a scholar, a pilgrim's note/);
-    expect(HOUSE_STYLE).toMatch(/Never call a pilgrim's note "no authority"/);
+    expect(HOUSE_STYLE).toMatch(/never call a note "no authority"/);
     expect(HOUSE_STYLE).toMatch(/NO REFLEX TRUISMS/);
+  });
+});
+
+// Chad 10-23, a decision: doctrine = the Writings > Shoghi Effendi > pilgrims' notes; NOTHING after the Guardian interprets;
+// the House has legal authority (primary on law and administration)
+import { doctrinalFactor, keyFactor, queryDomain } from '../../api/lib/search/doctrinal-rank.js';
+describe('authority: doctrine vs administration', () => {
+  const f = (author, extra = {}, domain) => doctrinalFactor({ author, ...extra }, 7, domain);
+  it('doctrine: the Writings > Shoghi Effendi > pilgrims\' notes > the House = scholars', () => {
+    expect(f('Bahá’u’lláh')).toBeGreaterThan(f('Shoghi Effendi'));
+    expect(f('‘Abdu’l-Bahá')).toBeGreaterThan(f('Shoghi Effendi'));
+    expect(f('Shoghi Effendi')).toBeGreaterThan(f('x', { collection: 'Pilgrim Notes' }));
+    expect(f('x', { collection: 'Pilgrim Notes' })).toBeGreaterThan(f('Universal House of Justice'));
+    expect(f('Universal House of Justice')).toBe(1);
+    expect(f('Research Department of the Universal House of Justice')).toBe(1);
+    expect(keyFactor('universalhouseofjustice', null, null)).toBe(1);
+  });
+  it('administration: the House is primary', () => {
+    expect(f('Universal House of Justice', {}, 'administration')).toBeGreaterThan(f('x', { collection: 'Pilgrim Notes' }, 'administration'));
+    expect(f('Universal House of Justice', {}, 'administration')).toBeGreaterThan(f('Shoghi Effendi', {}, 'administration'));
+    expect(keyFactor('universalhouseofjustice', null, null, 'administration')).toBeGreaterThan(2.5);
+  });
+  it('the domain from the question', () => {
+    expect(queryDomain('Can a Bahá\'í be elected to a Local Spiritual Assembly if they are under 21?')).toBe('administration');
+    expect(queryDomain('Is parental consent needed for marriage?')).toBe('administration');
+    expect(queryDomain('What happens to the soul after death?')).toBe('doctrine');
+    expect(queryDomain('What does the Guardian say about the Arabs in the Holy Land?')).toBe('doctrine');
+  });
+  it('prompts never give the House interpretive authority', () => {
+    expect(RESEARCH_SYSTEM).toMatch(/NOTHING after the Guardian has doctrinal or interpretive authority/);
+    expect(HOUSE_STYLE).toMatch(/never as interpreting the texts or establishing doctrine/);
+    expect(HOUSE_STYLE).toMatch(/never place post-Guardian sources on a "spectrum"/);
   });
 });

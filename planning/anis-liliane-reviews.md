@@ -220,3 +220,36 @@ changes from now on:
 - **Auditor and battery judge:** a "no authority" dismissal or a reflex truism is now scored as an error. Battery cases:
   13 (his Arabs question, `mustNot` dismissal), 14 (pilgrim-notes truism), 15 ("all religions are the same"), and
   16 (one quotation over-read).
+
+## DECISION 10-23 (Chad) · the authority model
+
+> "This is a bogus question. The House of Justice has zero doctrinal or interpretive authority. Zero. As with everything
+> below the status of Pilgrim Note. The House only has legal authority but their decisions are not doctrinal at all. Nor
+> are those of any scholar or institution after the Guardian. So the question presupposed that they exist on some spectrum
+> of authority. They do not."
+
+**Doctrine and interpretation**, in order:
+1. the Writings of the Báb, Bahá'u'lláh and 'Abdu'l-Bahá;
+2. Shoghi Effendi's writings, including letters written on his behalf;
+3. pilgrims' notes of the Central Figures and the Guardian.
+
+Nothing after the Guardian has doctrinal or interpretive authority: not the Universal House of Justice, no institution,
+no scholar. These are not a lower rung on a continuum. They are not on it.
+
+**Law and administration:** the Universal House of Justice has legal authority, and is the primary source for laws,
+administration and current guidance. It is never cited as interpreting or establishing doctrine. Scholars and institutions
+are commentary.
+
+Implemented in the commit after 41712f24:
+- **Ranking** (search/doctrinal-rank.js), by domain.
+  - Doctrine: Bahá'u'lláh and the Báb 3.0, 'Abdu'l-Bahá 2.8, Shoghi Effendi 2.6, pilgrims' notes 1.6; the House,
+    institutions and scholars 1.0 (the same weight).
+  - Administration: the House 2.9, primary.
+  - `queryDomain()` tells law/administration questions from doctrine by rules, and multiIndexSearch passes the domain to
+    both factors.
+- **Prompts:** HOUSE_STYLE, the researcher, POSITION_HOW and the soul. Position answers order doctrine, then recollection,
+  then the House's guidance, then a view.
+- **Labels:** the findings label for the House's guidance changed from "institutional guidance" to "legislative guidance".
+- **Grading:** the auditor and the battery judge.
+- **Battery cases:** 17 is a doctrinal question where the evidence is mostly House letters and pilgrims' notes (must not
+  call the House interpretive). 18 is an administrative question (the House is primary).

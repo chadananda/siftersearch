@@ -1508,11 +1508,13 @@ export async function multiIndexSearch(query, options = {}) {
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  const { keyFactor, doctrinalFactor } = await import('./search/doctrinal-rank.js');
+  const { keyFactor, doctrinalFactor, queryDomain } = await import('./search/doctrinal-rank.js');
+  // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23)
+  const authorityDomain = options.domain || queryDomain(query);
   for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       // authority FROM THE OUTSET: each layer's contribution is weighed by the passage's writer (Qdrant payload)
-      const af = keyFactor(bahaiScope ? hit.author_fold : null, hit.scope, hit.collection);
+      const af = keyFactor(bahaiScope ? hit.author_fold : null, hit.scope, hit.collection, authorityDomain);
       const pid = hit.paragraph_id;
       const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
       // CANON on a quote (planner shape=quote → keywordLayer): a SHARP curve, so the authority-ordered first canonical hit —
@@ -1586,7 +1588,7 @@ export async function multiIndexSearch(query, options = {}) {
     let auth = 5;
     try { auth = getAuthority({ author: e.paragraph.author || null, religion: e.paragraph.religion || null, collection: e.paragraph.collection || null, source_site: e.paragraph.source_site || null, title: e.paragraph.title || null, authority: null }); } catch { /* neutral */ }
     // the Bahá'í doctrinal tiers inside a Bahá'í search; across traditions every passage by its own authority number
-    e._factor = doctrinalFactor(bahaiScope ? e.paragraph : { ...e.paragraph, author: null }, auth);
+    e._factor = doctrinalFactor(bahaiScope ? e.paragraph : { ...e.paragraph, author: null }, auth, authorityDomain);
     e._rankKey = e.score >= topScore * 0.5 ? e.score * e._factor : e.score * Math.min(1, e._factor);
     return e._rankKey;
   };

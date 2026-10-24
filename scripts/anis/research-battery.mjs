@@ -49,6 +49,12 @@ const CASES = [
     messages: [{ role: 'user', content: "Bahá'ís believe all religions are the same, right? So the laws of Moses and Muḥammad are still valid?" }] },
   { id: 16, kind: 'truism: one quotation over-read', must: /cause of (?:love|unity|fellowship)|remedy|if religion (?:becomes|be) a cause|context/i,
     messages: [{ role: 'user', content: "'Abdu'l-Bahá said it is better to have no religion if religion causes disunity. Doesn't that mean a Bahá'í can drop religion whenever it divides people?" }] },
+  // Chad 10-23 authority decision: doctrine with only House letters + pilgrims' notes → the notes lead, the House is not doctrine;
+  // administration → the House is primary
+  { id: 17, kind: 'doctrine: only House letters + pilgrim notes', mustNot: /House[^.]{0,80}\b(interpret|authoritative interpretation|doctrinal authority)/i, must: /pilgrim|recalled|notes/i,
+    messages: [{ role: 'user', content: 'What happens to the soul of a suicide in the next world, according to the Bahá\'í teachings?' }] },
+  { id: 18, kind: 'administration: the House is primary', must: /Universal House of Justice|House of Justice/i,
+    messages: [{ role: 'user', content: 'Can a Bahá\'í be elected to a Local Spiritual Assembly if they are under 21, and who decides the age?' }] },
   { id: 12, kind: 'original of an unpublished English prayer', must: /AB05355|ترک تاجیک|ترک و تاجیک/, messages: [{ role: 'user', content: LILIANE_PRAYER }] },
 ];
 
@@ -95,10 +101,12 @@ async function perplexity(messages) {
 }
 
 const JUDGE = `You judge answers from study assistants to a reader of the Bahá'í Writings (and other sacred texts). FIRST classify the question: DOCTRINAL (what the Faith teaches — God, the soul, the Manifestations, ethics, the meaning of a text), APPLICATION (how a law or the administrative order is applied — consent to marriage, elections, the Fund, the Plans), HISTORICAL (events and people), or PRACTICAL (programmes, compilations, devotional material).
-AUTHORITY DECIDES (Chad 10-19 — "quoting a third party scholar or the house of justice on a doctrinal issue is an antipattern, not better"):
-- DOCTRINAL: only the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi) count as support. An answer that rests a doctrinal point on the Universal House of Justice, a scholar or a secondary book is making an AUTHORITY ERROR — score it down hard, however polished; quoting them beside the texts adds nothing.
+AUTHORITY DECIDES (Chad 10-23, a decision — "The House of Justice has zero doctrinal or interpretive authority. Zero. … The House only has legal authority"):
+- DOCTRINAL / INTERPRETIVE: the Writings of the Báb, Bahá'u'lláh and 'Abdu'l-Bahá, then Shoghi Effendi (letters on his behalf included), then pilgrims' notes of them. Nothing after the Guardian interprets. An answer that rests a doctrinal point on the Universal House of Justice, an institution, a scholar or a secondary book, or describes the House as interpreting, makes an AUTHORITY ERROR — score it down hard.
+- APPLICATION (law, administration, current guidance): the Universal House of Justice is the primary authority (after the law it applies); scholars are not.
+- HISTORICAL: primary accounts (the Central Figures, Shoghi Effendi's histories, Nabíl) first; scholars only as labelled context.
 - TRUISMS (Chad 10-23): an answer that repeats a popular Bahá'í saying by reflex instead of stating what the texts support, with scope, is lazy — score it down; the answer giving the sources' nuance wins.
-- PILGRIMS' NOTES of 'Abdu'l-Bahá and Shoghi Effendi (Chad 10-23): below their written text, above every scholar and institution. Quoted after the written text, or alone where none exists, they are good evidence; dismissing them as of "no authority" or lecturing about their standing is an error — score it down.
+- PILGRIMS' NOTES of the Central Figures and the Guardian (Chad 10-23): below their written text, above the House and every scholar and institution on doctrine. Quoted after the written text, or alone where none exists, they are good evidence; dismissing them as of "no authority" or lecturing about their standing is an error — score it down.
 - APPLICATION: the Universal House of Justice is the right authority (after the texts it applies); scholars are not.
 - HISTORICAL: primary accounts (the Central Figures, Shoghi Effendi's histories, Nabíl) first; scholars only as labelled context.
 Then: the most HELPFUL and INFORMATIVE answer for this reader — takes up what they are reaching for, gives real substance from the right sources (their own words, originals where relevant, sound language knowledge), invites exploration, never declines or quibbles. Penalise errors, invented quotations or sources, misattribution, padding and evasion. Length is not substance. Judge each answer on its own merits — the labels are random.`;

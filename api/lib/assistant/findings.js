@@ -8,7 +8,7 @@ import { classifyAuthority } from '../companion/authority.js';
 
 // Short reader-facing names for the authority classes (house style: keep kinds of authority distinct).
 export const AUTHORITY_SHORT = {
-  B1_REVEALED: 'scripture', B2_AUTH_INTERPRETATION: 'authorized interpretation', B3_UHJ_GUIDANCE: 'institutional guidance',
+  B1_REVEALED: 'scripture', B2_AUTH_INTERPRETATION: 'authorized interpretation', B3_UHJ_GUIDANCE: 'legislative guidance',
   B4_OFFICIAL_EXPOSITORY: 'exposition', H1_PRIMARY_HISTORY: 'history (primary account)', H2_SCHOLARSHIP: 'scholarship',
   I1_TRADITION_PRIMARY: 'scripture of its tradition', I2_TRADITION_SCHOLARSHIP: 'commentary', G_GENERAL: 'reference',
 };

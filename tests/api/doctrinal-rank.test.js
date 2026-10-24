@@ -5,7 +5,7 @@ import { keyFactor, doctrinalFactor, numberFactor, foldKey } from '../../api/lib
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 describe('doctrinal factors', () => {
-  it("Revelation > interpretation > the House > pilgrims' notes > others", () => {
+  it("doctrine: the Writings > Shoghi Effendi > pilgrims' notes > the House = others (Chad 10-23)", () => {
     const f = (a, extra = {}) => doctrinalFactor({ author: a, ...extra }, 7);
     expect(f("Bahá’u’lláh")).toBeGreaterThan(f("‘Abdu’l-Bahá"));
     expect(f('Shoghi Effendi')).toBeGreaterThan(f('Universal House of Justice'));

@@ -34,9 +34,9 @@ export function parseBrief(text) {
   }).filter((t) => t.theme);
 }
 
-// DOCTRINE = the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi). The
-// Universal House of Justice is authoritative in APPLYING Bahá'í law and legislating on what the texts do not cover, but
-// not decisive on doctrine (Chad 10-19, per the Will and Testament of 'Abdu'l-Bahá) — its guidance is 'application'.
+// DOCTRINE = the Writings of the Báb, Bahá'u'lláh and 'Abdu'l-Bahá, then Shoghi Effendi (letters on his behalf included),
+// then pilgrims' notes of them. The Universal House of Justice has LEGAL authority only — laws, administration, current
+// guidance — and "zero doctrinal or interpretive authority" (Chad 10-23, a decision): its guidance is 'application'.
 // (no \b at the end: "Bahá" ends in an accented letter, which \b does not count as a word character)
 const DOCTRINAL = /(bah[aá]['’]?u['’]?ll[aá]h|\bthe b[aá]b|abdu['’]?l-bah[aá]|shoghi effendi)/i;
 const HOUSE = /universal house of justice/i;
@@ -90,11 +90,12 @@ export async function positionResearch({ question, create, search, authorityOf, 
     // the theme's DOCTRINE; then one further voice set against it (labelled): a pilgrim's recollection before any scholar
     const doctrine = ranked.filter(isDoctrine).slice(0, perTheme).map((p) => ({ ...p, standing: 'doctrine' }));
     const application = ranked.filter(isApplication).slice(0, 1).map((p) => ({ ...p, standing: 'application' }));
-    // a pilgrim's recollection of 'Abdu'l-Bahá or Shoghi Effendi outranks any scholar's view (Chad 10-23) — it comes first
+    // pilgrims' notes of the Central Figures / the Guardian come right after the written texts, before the House (legal, not
+    // doctrinal) and any view (Chad 10-23, a decision) — kept even when no written text was found on the theme
     const isPilgrim = (p) => /pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`);
-    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !isApplication(p)).sort((a, b) => Number(isPilgrim(b)) - Number(isPilgrim(a)))
-      .slice(0, 1).map((p) => ({ ...p, standing: isPilgrim(p) ? 'recollection' : 'opinion' })) : [];
-    return { theme: t.theme, ranked: [...doctrine, ...application, ...opinion] };
+    const recollection = ranked.filter((p) => isPilgrim(p) && !isDoctrine(p)).slice(0, doctrine.length ? 1 : 2).map((p) => ({ ...p, standing: 'recollection' }));
+    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !isApplication(p) && !isPilgrim(p)).slice(0, 1).map((p) => ({ ...p, standing: 'opinion' })) : [];
+    return { theme: t.theme, ranked: [...doctrine, ...recollection, ...application, ...opinion] };
   }));
   const out = [], ids = new Set();
   for (const t of perThemeHits) for (const p of t.ranked) {
@@ -107,4 +108,4 @@ export async function positionResearch({ question, create, search, authorityOf, 
   return { passages: out, themes: perThemeHits.map((t) => ({ theme: t.theme, found: t.ranked.length })) };
 }
 
-export const POSITION_HOW = 'The seeker asks for the Bahá\'í position on a subject. Separate DOCTRINE from everything else. Answer THEME BY THEME (a bold lead for each), and under each say plainly what the doctrine affirms and what it warns against, QUOTING it and naming who and where. DOCTRINE is only the Revelation (Bahá\'u\'lláh, the Báb) and its authorised interpretation (\'Abdu\'l-Bahá, Shoghi Effendi): passages marked [doctrine] carry the answer. A passage marked [application] is the Universal House of Justice applying the law — authoritative for practice, not decisive on doctrine: cite it as such, after the doctrine. A passage marked [opinion] is a writer\'s view, never doctrine: mention it only to set it against what the texts say, and call it a view. Give substance, not hedging: no "it does not fit neatly", no generic neutrality, no talk about kinds of authority, no remarks about your own synthesis or opinion, no closing filler. Never say the library has nothing on a theme when passages on it are given.';
+export const POSITION_HOW = 'The seeker asks for the Bahá\'í position on a subject. Separate DOCTRINE from everything else. Answer THEME BY THEME (a bold lead for each), and under each say plainly what the doctrine affirms and what it warns against, QUOTING it and naming who and where. DOCTRINE is the Writings of the Báb, Bahá\'u\'lláh and \'Abdu\'l-Bahá and the writings of Shoghi Effendi: passages marked [doctrine] carry the answer. A passage marked [recollection] is a pilgrim\'s note of a Central Figure or the Guardian: give it after the written texts, "as recalled by …". A passage marked [application] is the Universal House of Justice: authoritative for law, administration and current practice — cite it as such, after the doctrine, never as interpreting it. A passage marked [opinion] is a writer\'s view, never doctrine: mention it only to set it against what the texts say, and call it a view. Give substance, not hedging: no "it does not fit neatly", no generic neutrality, no talk about kinds of authority, no remarks about your own synthesis or opinion, no closing filler. Never say the library has nothing on a theme when passages on it are given.';
