@@ -355,3 +355,19 @@ describe('strict mode: with no complete worker result tower waits, it never touc
     } finally { if (prev === undefined) delete process.env.MEDIA_REMASTER_STRICT; else process.env.MEDIA_REMASTER_STRICT = prev; }
   });
 });
+
+describe('light tier backfill: raw original beside the playing copy, encoded on boss, never on tower', () => {
+  it('encodes both raw copies through the remote host, stamps tier + fields; a busy/failed host just waits; touched talks are skipped', async () => {
+    const { mediaLightBackfillJob } = await import('../../api/lib/ops/media-jobs.js');
+    const mk = (id, extra = {}) => { const dir = mkdtempSync(join(tmpdir(), 'lt-')); writeFileSync(join(dir, 'meta.json'), JSON.stringify({ slug: `t${id}`, original: 'o.mp3', version: 2, enhancement: { listening: 'safe', variants: [] }, ...extra })); return { id, dir, slug: `t${id}` }; };
+    const items = [mk(1), mk(2), mk(3, { web_original: { m4a: 'x' } }), mk(4)];
+    const enc = vi.fn(async (recipe, input, output, o) => { if (o.job.startsWith('t2')) { o.local(); } writeFileSync(output, 'enc'); });
+    const deps = { repo: { remasterCandidates: async () => items }, tools: { encodeRemote: enc }, ops: { pendingRuns: async (n) => (n === 'media-item' ? [{ params: { id: 4 } }] : []) } };
+    const r = await mediaLightBackfillJob({ limit: 5 }, deps);
+    expect(r.done).toEqual(['t1']); expect(r.waiting[0]).toMatch(/^t2: no free encode host/); expect(r.skipped).toBe(2);   // t3 has one already, t4 has a run on it
+    const m = JSON.parse(readFileSync(join(items[0].dir, 'meta.json'), 'utf8'));
+    expect(m).toMatchObject({ remaster_tier: 'light', version: 3, web_original: { ogg: 'web/t1.original.ogg', m4a: 'web/t1.original.m4a' } });
+    expect(m.qa.remaster).toMatchObject({ verdict: 'light', tier: 'light' });
+    expect(enc.mock.calls.every(([, , out]) => out.endsWith('.original.ogg') || out.endsWith('.original.m4a'))).toBe(true);
+  });
+});

@@ -398,11 +398,13 @@ export async function runItem(item, opts = {}, deps = {}) {
           if (pass) {
             if (meta.enhancement.listening !== 'unipase') meta.enhancement.listening_before = { name: meta.enhancement.listening, why: meta.enhancement.listening_why || null };
             meta.enhancement.listening = 'unipase';
+            meta.remaster_tier = pod?.method === 'cleaned' ? 'cleaned' : 'heavy';
             meta.enhancement.listening_why = `UniPASE remaster (Chad 10-23): ${g.swapped} of ${g.sentences} sentences (${g.swapped_pct} %) kept from the original by the word guard`;
           } else if (meta.enhancement.listening === 'unipase') {
             // held on a re-score: a remaster published under an older rule goes back to the copy before it
             meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
             meta.enhancement.listening_why = 'remaster held for review (word guard) — the previous copy restored';
+            delete meta.remaster_tier;
           }
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
@@ -486,7 +488,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         await Promise.all([slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '48000', ...OGG_ARGS, oo], { stop })),
           slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', om], { stop }))]);
         meta.web_original = { ogg: `web/${meta.slug}.original.ogg`, m4a: `web/${meta.slug}.original.m4a` };
-      } else delete meta.web_original;
+      } else if (meta.remaster_tier !== 'light') delete meta.web_original;   // the light tier keeps its raw-original encodes across re-runs
       // a RE-RUN of a published talk encodes on tower in its own slot — never in boss's encode slots, which new talks' prep
       // needs (21:30: ~600 backfill re-runs held all 4 boss encode slots and 16 prep runs waited behind them)
       if (tools.encodeRemote && slotLight === towerLight && !remastered) {

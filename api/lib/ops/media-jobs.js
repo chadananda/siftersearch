@@ -1468,6 +1468,44 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
 /** media-preview { fingerprint?, text, duration_s }: Dewey's stage 0 answer (api/lib/media/preview.js) — "duplicate of <slug>" or "new". Text only. */
 export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.preview || await import('../media/preview.js')).previewVerdict(params, deps); }
 
+/** media-light-backfill { limit?, write? }: the LIGHT tier for every published talk that has no kept original yet (Chad 10-24: every talk has a
+ *  restored version and an untouched original). The restored copy is the one already playing (the deterministic safe chain: high-pass, hum
+ *  notch, loudness — linear, cannot change a word); this adds the RAW source encoded to Opus + m4a with no processing (the "Original" button),
+ *  stamps meta.remaster_tier = 'light' and bumps meta.version. Encodes run on boss (encodeRemote), never on tower: when boss has no free slot the
+ *  talk simply waits for the next pass. A few talks per pass, low priority. → { done, waiting, skipped } */
+export async function mediaLightBackfillJob({ limit = 3, write = true } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const T = deps.tools || await import('../media/tools.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const fs = await import('fs/promises');
+  const busy = new Set((await Promise.all(['media-item', 'media-remaster', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n).catch(() => [])))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { done: [], waiting: [], skipped: 0, remaining: 0 };
+  for (const it of await repo.remasterCandidates(['A', 'B', 'C', 'D', 'E'])) {
+    if (!it.dir || busy.has(it.id)) { out.skipped++; continue; }
+    const mf = join(it.dir, 'meta.json');
+    const m = JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null'));
+    if (!m?.original || m.web_original || m.remaster_tier || m.enhancement?.listening === 'unipase' || !m.slug) { out.skipped++; continue; }
+    out.remaining++;
+    if (!write || out.done.length >= limit) continue;
+    const src = join(it.dir, m.original), web = join(it.dir, 'web');
+    await fs.mkdir(web, { recursive: true });
+    const ogg = join(web, `${m.slug}.original.ogg`), m4a = join(web, `${m.slug}.original.m4a`);
+    const refuse = () => { throw new Error('no free encode host: not on tower'); };
+    try {
+      await Promise.all([T.encodeRemote('ogg', src, ogg, { af: '', job: `${m.slug}-lo-ogg`.slice(0, 110), local: refuse }), T.encodeRemote('m4a', src, m4a, { af: '', job: `${m.slug}-lo-m4a`.slice(0, 110), local: refuse })]);
+    } catch (err) { out.waiting.push(`${m.slug}: ${String(err.message).slice(0, 80)}`); continue; }
+    const fresh = JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null'));
+    if (!fresh || fresh.web_original || fresh.original !== m.original) continue;   // a run changed the talk meanwhile
+    fresh.web_original = { ogg: `web/${m.slug}.original.ogg`, m4a: `web/${m.slug}.original.m4a` };
+    fresh.remaster_tier = 'light'; fresh.version = (fresh.version || 1) + 1;
+    const Q = deps.quality || await import('../media/remaster-quality.js');
+    fresh.qa = { ...(fresh.qa || {}), remaster: Q.qualityOf(fresh) };
+    await fs.writeFile(mf, JSON.stringify(fresh, null, 2));
+    out.done.push(m.slug);
+  }
+  return out;
+}
+
 /** media-remaster-quality { write? }: the per-talk remaster verdict (api/lib/media/remaster-quality.js) over every B–E talk — counts by verdict
  *  and grade, the review + unrepairable lists. write: stamps meta.qa.remaster, saves data/run/remaster-quality.json (/ops/services) and
  *  data/run/remaster-deferred.md (the archive candidates). */

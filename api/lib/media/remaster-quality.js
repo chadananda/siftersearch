@@ -16,7 +16,9 @@ export function qualityOf(meta = {}) {
     unguardable_s: num(r?.unguardable_s), languages: meta.languages || (meta.language ? [meta.language] : null),
     realign_unplaced_pct: num(r?.realign_unplaced_pct), listening: meta.enhancement?.listening ?? null,
   };
-  const out = (verdict, reason) => ({ verdict, reason, metrics, at: new Date().toISOString() });
+  const tierOf = (v) => ({ usable: 'heavy', partial: 'heavy', cleaned: 'cleaned', light: 'light' }[v] || null);
+  const out = (verdict, reason) => ({ verdict, tier: tierOf(verdict), reason, metrics, at: new Date().toISOString() });
+  if (meta.remaster_tier === 'light' && !(meta.enhancement?.listening === 'unipase')) return out('light', 'deterministic light restoration (high-pass, hum notch, loudness); the raw original is kept beside it');
   if (!r) return out('unknown', 'no remaster record');
   const s = r.status;
   if (s === 'skipped') return out('skipped', r.why || 'not eligible');
@@ -38,17 +40,18 @@ export function qualityOf(meta = {}) {
 
 /** Summary over [{ slug, hours, grade, qa }]: counts by verdict and grade, the review + unrepairable lists, published remasters with no verdict. */
 export function summarize(rows) {
-  const by = {}, byGrade = {}, review = [], unrepairable = [];
+  const by = {}, byGrade = {}, byTier = {}, review = [], unrepairable = [];
   let noVerdict = 0;
   for (const x of rows) {
     const v = x.qa?.verdict || 'unknown';
     by[v] = (by[v] || 0) + 1;
+    const t = x.qa?.tier || 'none'; byTier[t] = (byTier[t] || 0) + 1;
     const g = (byGrade[x.grade || '?'] ||= {}); g[v] = (g[v] || 0) + 1;
     const row = { slug: x.slug, hours: Math.round((x.hours || 0) * 100) / 100, grade: x.grade, reason: x.qa?.reason, fallback_pct: x.qa?.metrics?.fallback_pct ?? null, bandwidth_khz: x.qa?.metrics?.source_bandwidth_khz ?? null };
     if (v === 'review') review.push(row); else if (v === 'unrepairable') unrepairable.push(row);
     if (x.published_remaster && !(x.stored ?? !!x.qa?.verdict)) noVerdict++;
   }
-  return { by_verdict: by, by_grade: byGrade, review, unrepairable, published_without_verdict: noVerdict, at: new Date().toISOString() };
+  return { by_verdict: by, by_tier: byTier, by_grade: byGrade, review, unrepairable, published_without_verdict: noVerdict, at: new Date().toISOString() };
 }
 
 export function deferredMarkdown(sum) {

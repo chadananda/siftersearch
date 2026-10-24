@@ -6,13 +6,13 @@ import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
-import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaLanesFeedPass, mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaRemasterQualityJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
+import { mediaScanJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaLanesFeedPass, mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
 import { mediaParallel, asrHosts } from '../lib/media/tools.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from '../lib/ops/media-gallery-jobs.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 
-export const MEDIA_REGISTRY = { 'media-short': mediaShortJob, 'media-shorts-moments': mediaShortsMomentsJob, 'media-portraits-extend': mediaPortraitsExtendJob, 'media-fetch': mediaFetchJob, 'media-compute': mediaComputeJob, 'media-asr': mediaAsrJob, 'media-diar': mediaDiarJob, 'media-meta-fix': mediaMetaFixJob, 'media-identity': mediaIdentityJob, 'media-relink': mediaRelinkJob, 'media-safe-listening': mediaSafeListeningJob, 'media-speaker-merge': mediaSpeakerMergeJob, 'media-talk-identities': mediaTalkIdentitiesJob, 'media-remaster': mediaRemasterJob, 'media-remaster-revert': mediaRemasterRevertJob, 'media-cloud-remaster': mediaCloudRemasterJob, 'media-preview': mediaPreviewJob, 'media-remaster-quality': mediaRemasterQualityJob, 'media-remaster-review-pack': mediaRemasterReviewPackJob, 'media-remaster-decide': mediaRemasterDecideJob, 'media-trim-audit': mediaTrimAuditJob, 'media-llm': mediaLlmJob, 'media-rank': mediaRankJob, 'media-stages-sync': mediaStagesSyncJob, 'media-quote-audit': mediaQuoteAuditJob, 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
+export const MEDIA_REGISTRY = { 'media-short': mediaShortJob, 'media-shorts-moments': mediaShortsMomentsJob, 'media-portraits-extend': mediaPortraitsExtendJob, 'media-fetch': mediaFetchJob, 'media-compute': mediaComputeJob, 'media-asr': mediaAsrJob, 'media-diar': mediaDiarJob, 'media-meta-fix': mediaMetaFixJob, 'media-identity': mediaIdentityJob, 'media-relink': mediaRelinkJob, 'media-safe-listening': mediaSafeListeningJob, 'media-speaker-merge': mediaSpeakerMergeJob, 'media-talk-identities': mediaTalkIdentitiesJob, 'media-remaster': mediaRemasterJob, 'media-remaster-revert': mediaRemasterRevertJob, 'media-cloud-remaster': mediaCloudRemasterJob, 'media-light-backfill': mediaLightBackfillJob, 'media-preview': mediaPreviewJob, 'media-remaster-quality': mediaRemasterQualityJob, 'media-remaster-review-pack': mediaRemasterReviewPackJob, 'media-remaster-decide': mediaRemasterDecideJob, 'media-trim-audit': mediaTrimAuditJob, 'media-llm': mediaLlmJob, 'media-rank': mediaRankJob, 'media-stages-sync': mediaStagesSyncJob, 'media-quote-audit': mediaQuoteAuditJob, 'media-scan': mediaScanJob, 'media-item': mediaItemJob, 'media-vocab': mediaVocabJob, 'media-speakers': mediaSpeakersJob, 'media-playback': mediaPlaybackJob, 'media-grade': mediaGradeJob };
 
 // a file dropped in DEWEY_MEDIA_DIR starts the pipeline with no other step
 async function mediaDropLoop() {
@@ -29,7 +29,7 @@ async function mediaDropLoop() {
 // …and DOWNLOADS (YouTube into the archive, paced, independent of processing). The pipeline lane runs N items at once.
 export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => !['media-short', 'media-portraits-extend', 'media-speakers', 'media-fetch', 'media-rank',
   'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-trim-audit', 'media-remaster', 'media-cloud-remaster', 'media-remaster-review-pack', 'media-remaster-decide'].includes(j)),
-  compute: ['media-compute'], asr: ['media-asr'], diar: ['media-diar'], llm: ['media-llm'], remaster: ['media-remaster', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide'], cloud: ['media-cloud-remaster'],
+  compute: ['media-compute'], asr: ['media-asr'], diar: ['media-diar'], llm: ['media-llm'], remaster: ['media-remaster', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide'], cloud: ['media-cloud-remaster'],
   shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-trim-audit'], downloads: ['media-fetch'] };
 // speaker galleries (Chad 10-23): the portraits lane (an image call each at most; never behind transcription)
 Object.assign(MEDIA_REGISTRY, { 'media-gallery': mediaGalleryJob, 'media-portrait-inventory': mediaPortraitInventoryJob });
@@ -76,6 +76,16 @@ async function qualityLoop() {
     await nap(300_000);
   }
 }
+// the LIGHT tier (raw original beside the playing copy), LOW priority: a talk or two every 3 min, on boss, and only while tower is not loaded
+async function lightBackfillLoop() {
+  const { mediaLightBackfillJob } = await import('../lib/ops/media-jobs.js');
+  const { loadavg } = await import('os');
+  while (!isDraining()) {
+    try { if (loadavg()[0] < Number(process.env.MEDIA_LIGHT_MAX_LOAD || 45)) { const r = await mediaLightBackfillJob({ limit: 2 }); if (r.done.length) logger.info(r, 'light tier backfill'); } }
+    catch (err) { logger.warn({ err: err.message }, 'light backfill pass failed'); }
+    await nap(180_000);
+  }
+}
 async function backfillStatusLoop() {
   const { pullLocal, render } = await import('../../scripts/media/remaster-backfill-status.mjs');
   const { writeFile, mkdir } = await import('fs/promises');
@@ -87,4 +97,4 @@ async function backfillStatusLoop() {
     await nap(300_000);
   }
 }
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop] });
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop] });

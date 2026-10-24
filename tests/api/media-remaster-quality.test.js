@@ -47,3 +47,23 @@ describe('the public /media restoration readout', () => {
     expect(restoredShape({}, {})).toMatchObject({ planned: null, restored: 0, held: 0, recent: [] });
   });
 });
+
+describe('restoration tiers (every talk has a restored copy; light, cleaned or heavy)', () => {
+  it('the audio block names the tier; the original is always there', async () => {
+    const { talkAudio, remasterTier } = await import('../../api/lib/media/talk-audio.js');
+    const wo = { ogg: 'web/x.original.ogg', m4a: 'web/x.original.m4a' };
+    expect(remasterTier({ web_original: wo, aligned_to: 'unipase' })).toBe('heavy');
+    expect(remasterTier({ web_original: wo, aligned_to: 'unipase', remaster: { method: 'cleaned' } })).toBe('cleaned');
+    expect(remasterTier({ web_original: wo, aligned_to: 'safe', remaster_tier: 'light' })).toBe('light');
+    expect(remasterTier({ aligned_to: 'safe' })).toBeNull();
+    const a = talkAudio({ slug: 'x', level: 'full', meta: { web_original: wo, aligned_to: 'safe', remaster_tier: 'light', version: 3 } });
+    expect(a).toMatchObject({ remastered: true, remaster_tier: 'light' }); expect(a.original_url).toContain('/file/web/x.original.m4a?v=3');
+    expect(talkAudio({ slug: 'y', level: 'full', meta: {} })).toMatchObject({ remastered: false, remaster_tier: null });
+  });
+  it('light verdict + tier in the quality summary', () => {
+    const q = qualityOf({ remaster_tier: 'light', web_original: { m4a: 'a' }, enhancement: { listening: 'safe', variants: [] }, quality: { overall: 'A' } });
+    expect(q).toMatchObject({ verdict: 'light', tier: 'light' });
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 1 }))).toMatchObject({ verdict: 'cleaned', tier: 'cleaned' });
+    expect(summarize([{ slug: 'a', hours: 1, grade: 'A', qa: q }]).by_tier).toEqual({ light: 1 });
+  });
+});
