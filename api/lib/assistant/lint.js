@@ -26,7 +26,7 @@ export function lintReply(text) {
 // what slips through. Rewrites only the fixed phrase, never meaning.
 const MACHINERY_PHRASE = /\b(the|these) (provided|retrieved|given) (texts|passages|sources|writings)\b/gi;
 export function unmachine(text) {
-  return dropBriefMarkers(dropAuthorityLecture(mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search')))));
+  return dropBriefMarkers(dropPilgrimDismissal(dropAuthorityLecture(mixedScript(String(text || '').replace(MACHINERY_PHRASE, (m) => (/^T/.test(m) ? 'The texts I can search' : 'the texts I can search'))))));
 }
 
 // The AUTHORITY LECTURE — a paragraph explaining "authority layers" nobody asked about. Lal objected to it in three letters
@@ -52,6 +52,15 @@ export function dropQuibbles(text, { question = '', format = null } = {}) {
 
 /** The researcher's brief markers never reach the reader ("[own]", "(P3)", "[P2, W1]"). Pure. */
 export const dropBriefMarkers = (t) => String(t || '').replace(/\s*\[own\]/gi, '').replace(/\s*\((?:[PW]\d+(?:,\s*)?)+\)/g, '').replace(/\s*\[(?:[PW]\d+(?:,\s*)?)+\]/g, '');
+
+// PILGRIMS' NOTES are never dismissed (Chad 10-23: "stop lecturing about pilgrim notes carrying no authority. It is relative …
+// the pilgrim notes carry more authority than anything else that will ever be written by any scholar or institution in this
+// Dispensation"). A sentence calling them of "no authority" / "not authoritative" / not to be quoted is dropped. Pure.
+const PILGRIM_DISMISSAL = /(?:pilgrim|notes?\b|recollections?|table talk)[^.!?\n]{0,160}\b(?:carr(?:y|ies)|ha(?:ve|s)|hold|holds|with)\s+no\s+(?:real\s+|binding\s+|doctrinal\s+|official\s+)?authority|(?:pilgrim|notes?\b|recollections?)[^.!?\n]{0,120}\b(?:are|is)\s+not\s+(?:authoritative|authentic(?:ated)? text|binding)|(?:should|must)\s+not\s+be\s+quoted\s+as\s+["“]?the\s+guardian\s+said|\bno\s+authority\b[^.!?\n]{0,80}pilgrim/i;
+export function dropPilgrimDismissal(text) {
+  return String(text || '').split('\n').map((line) => (/^\s*>/.test(line) || !PILGRIM_DISMISSAL.test(line) ? line
+    : line.split(/(?<=[.!?])\s+/).filter((sent) => !PILGRIM_DISMISSAL.test(sent)).join(' '))).join('\n');
+}
 
 export function dropAuthorityLecture(text) {
   const paras = String(text || '').split(/\n{2,}/);

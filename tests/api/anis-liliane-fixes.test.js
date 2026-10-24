@@ -153,3 +153,26 @@ describe('a reply in a reading: question / next / both (Chad 10-23)', () => {
     expect(replyKind('lovely')).toBeNull();
   });
 });
+
+// Chad 10-23: pilgrims' notes are relative, never "no authority"; no reflex truisms
+import { dropPilgrimDismissal, unmachine } from '../../api/lib/assistant/lint.js';
+import { HOUSE_STYLE } from '../../api/lib/assistant/prompt.js';
+describe("pilgrims' notes are never dismissed", () => {
+  it('a dismissal sentence is dropped, the quotation and the rest kept', () => {
+    const t = 'Ramona Brown recalled: "The Jews will get all of Palestine." These notes are recollections, though, not his words. They carry no authority, and they should not be quoted as "the Guardian said".\n\n> Pilgrim notes carry no authority (a quoted text stays)';
+    const out = dropPilgrimDismissal(t);
+    expect(out).not.toMatch(/They carry no authority/);
+    expect(out).toMatch(/Ramona Brown recalled/);
+    expect(out).toMatch(/> Pilgrim notes carry no authority/);
+    expect(unmachine('Pilgrims’ notes have no authority. The text says more.')).toBe('The text says more.');
+    expect(dropPilgrimDismissal('The Guardian wrote that the Faith is non-political.')).toBe('The Guardian wrote that the Faith is non-political.');
+  });
+  it('the researcher and writer prompts rank them relatively and forbid reflex truisms', () => {
+    expect(RESEARCH_SYSTEM).toMatch(/PILGRIMS' NOTES are different/);
+    expect(RESEARCH_SYSTEM).toMatch(/above any later scholarship or institutional commentary/);
+    expect(RESEARCH_SYSTEM).toMatch(/NO REFLEX TRUISMS/);
+    expect(RESEARCH_SYSTEM).not.toMatch(/never rest a doctrinal point on the Universal House of Justice, a scholar, a pilgrim's note/);
+    expect(HOUSE_STYLE).toMatch(/Never call a pilgrim's note "no authority"/);
+    expect(HOUSE_STYLE).toMatch(/NO REFLEX TRUISMS/);
+  });
+});

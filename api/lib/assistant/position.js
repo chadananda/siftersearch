@@ -87,10 +87,13 @@ export async function positionResearch({ question, create, search, authorityOf, 
     const hits = (await Promise.all(qs.map(searchOne))).flat();
     // the named works' own searches first, so their passages lead the theme's search order
     const ranked = await rankByAuthority(hits, authorityOf, t.works || []);
-    // the theme's DOCTRINE; a non-authoritative view only where it can be set against doctrine (labelled), never a pilgrim note
+    // the theme's DOCTRINE; then one further voice set against it (labelled): a pilgrim's recollection before any scholar
     const doctrine = ranked.filter(isDoctrine).slice(0, perTheme).map((p) => ({ ...p, standing: 'doctrine' }));
     const application = ranked.filter(isApplication).slice(0, 1).map((p) => ({ ...p, standing: 'application' }));
-    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !isApplication(p) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`)).slice(0, 1).map((p) => ({ ...p, standing: 'opinion' })) : [];
+    // a pilgrim's recollection of 'Abdu'l-Bahá or Shoghi Effendi outranks any scholar's view (Chad 10-23) — it comes first
+    const isPilgrim = (p) => /pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`);
+    const opinion = doctrine.length ? ranked.filter((p) => !isDoctrine(p) && !isApplication(p)).sort((a, b) => Number(isPilgrim(b)) - Number(isPilgrim(a)))
+      .slice(0, 1).map((p) => ({ ...p, standing: isPilgrim(p) ? 'recollection' : 'opinion' })) : [];
     return { theme: t.theme, ranked: [...doctrine, ...application, ...opinion] };
   }));
   const out = [], ids = new Set();

@@ -3,12 +3,14 @@
 // words), steep enough to decide between passages of similar relevance — the old blend was ×1.2 at most and lost the
 // Tablets to a bahai-library paper quoting them (10-20 battery). Doctrine (feedback 10-19): Revelation (Bahá'u'lláh, the
 // Báb) > authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi — letters on his behalf included) > the Universal House of
-// Justice (authoritative on APPLICATION, not decisive on doctrine) > everything else; pilgrim notes are never authority.
+// Justice (authoritative on APPLICATION, not decisive on doctrine) > everything else. Pilgrims' notes (Chad 10-23: relative, not "no authority") rank below the written text of the Central
+// Figures and the Guardian and above scholarship (PILGRIM = 1.3) — never level with the written text they recall.
 // Other traditions keep their own authority numbers (their scripture ranks as scripture). Pure.
 
 // the SAME folding as the Qdrant payload's author_fold (search/qdrant-layers.js authorKey): letters and digits only
 export const foldKey = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').replace(/[^a-zA-Z0-9]+/g, '').toLowerCase();
+export const PILGRIM = 1.3;   // below the written text (2.6–3.0) and the House (1.6), above scholars and papers (≤ 1.0)
 const TIER = new Map([
   ['bahaullah', 3.0], ['thebab', 3.0], ['bab', 3.0],
   ['abdulbaha', 2.6], ['shoghieffendi', 2.6],
@@ -19,7 +21,7 @@ export const DOCTRINAL_KEYS = ['bahaullah', 'thebab', 'abdulbaha', 'shoghieffend
 
 /** FUSION-time factor (authority from the outset): known from the Qdrant payload alone — writer key + scope. */
 export function keyFactor(authorFold, scope, collection = null) {
-  if (/pilgrim notes/i.test(collection || '')) return 0.4;   // never authority, whoever they quote
+  if (/pilgrim notes/i.test(collection || '')) return PILGRIM;   // a recollection: below the text, above scholarship
   const t = TIER.get(String(authorFold || ''));
   const f = t ?? 1;
   return scope === 'supplemental' ? f * 0.7 : f;
@@ -40,8 +42,8 @@ export function numberFactor(auth) {
 
 /** hit { author (the paragraph's writer), collection, source_site, source_url }, auth (live authority number) → factor. */
 export function doctrinalFactor(hit, auth) {
-  // pilgrim notes and other authority-1 collections: never authority, whoever they quote
-  if (/pilgrim notes/i.test(hit.collection || '') || Number(auth) <= 1) return 0.4;
+  if (/pilgrim notes/i.test(hit.collection || '')) return PILGRIM;   // a recollection: below the text, above scholarship
+  if (Number(auth) <= 1) return 0.4;                                  // other authority-1 collections
   let t = TIER.get(foldKey(hit.author));
   // AUTHENTICATED TEXT FIRST: a central figure's words count in full only in an authoritative book (their own works, the
   // compilations of the Writings, the House's) — quoted or recalled in a secondary book (a pilgrim's account, a paper) they

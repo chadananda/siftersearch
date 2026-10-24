@@ -5,13 +5,16 @@ import { keyFactor, doctrinalFactor, numberFactor, foldKey } from '../../api/lib
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 
 describe('doctrinal factors', () => {
-  it('Revelation > interpretation > the House > others; pilgrim notes never authority', () => {
+  it("Revelation > interpretation > the House > pilgrims' notes > others", () => {
     const f = (a, extra = {}) => doctrinalFactor({ author: a, ...extra }, 7);
     expect(f("Bahá’u’lláh")).toBeGreaterThan(f("‘Abdu’l-Bahá"));
     expect(f('Shoghi Effendi')).toBeGreaterThan(f('Universal House of Justice'));
-    expect(f('Universal House of Justice')).toBeGreaterThan(f('Moojan Momen'));
-    expect(f("‘Abdu’l-Bahá", { collection: 'Pilgrim Notes' })).toBeLessThan(1);
-    expect(keyFactor('abdulbaha', null, 'Pilgrim Notes')).toBeLessThan(1);
+    expect(f('Universal House of Justice')).toBeGreaterThan(doctrinalFactor({ author: 'Moojan Momen' }, 5));
+    // Chad 10-23: relative — below the written text, above any scholar
+    expect(f("‘Abdu’l-Bahá", { collection: 'Pilgrim Notes' })).toBeLessThan(f("‘Abdu’l-Bahá"));
+    expect(f("‘Abdu’l-Bahá", { collection: 'Pilgrim Notes' })).toBeGreaterThan(doctrinalFactor({ author: 'Moojan Momen' }, 5));
+    expect(keyFactor('abdulbaha', null, 'Pilgrim Notes')).toBeLessThan(keyFactor('abdulbaha', null));
+    expect(keyFactor('abdulbaha', null, 'Pilgrim Notes')).toBeGreaterThan(keyFactor('moojanmomen', null));
   });
   it('a scraped-site copy yields to the library text, at fusion and at re-rank', () => {
     expect(keyFactor('bahaullah', 'supplemental')).toBeLessThan(keyFactor('bahaullah', null));

@@ -198,3 +198,25 @@ Texts as sent: `SELECT text FROM mail_messages WHERE id IN (909, 910)` (D1 anis)
   published.
 - Outreach to her is now researcher-written, and silent when weak. The next one is due ~10-26 (cadence 3 days after her
   last letter).
+
+## 10-23 (late) · Chad: pilgrims' notes are RELATIVE, and no reflex truisms
+
+Chad: "Please tell Anís to stop lecturing about pilgrim notes carrying no authority. It is relative. Because Shoghi Effendi
+was the last Guardian, the pilgrim notes carry more authority than anything else that will ever be written by any scholar
+or institution in this Dispensation …" and, more generally, "a poorly thought out truism repeated out of context by many
+Bahá'ís to the point of exaggeration."
+
+My answer to his "Question about Arabs in Palestine" (#913, 10-23 ~23:55Z) used the old framing ("They carry no
+authority, and they should not be quoted as 'the Guardian said'"). By his instruction there is no follow-up; the framing
+changes from now on:
+- **Prompts** (researcher.js, prompt.js HOUSE_STYLE): pilgrims' notes of 'Abdu'l-Bahá and Shoghi Effendi are first-hand
+  recollections, below the authenticated written text and above any later scholarship or institutional commentary. The
+  written text is quoted first, then a note "as recalled by <pilgrim> in <source>". The difference is mentioned once and
+  briefly, only when a note seems to conflict with the text. NO REFLEX TRUISMS: what the sources support, with its scope,
+  never the folk version.
+- **Post-processing** (lint.js `dropPilgrimDismissal`): a sentence calling them "no authority" / "not authoritative" is dropped.
+- **Ranking** (search/doctrinal-rank.js): pilgrims' notes 0.4 → 1.3 (`PILGRIM`). That is below the written text (2.6–3.0)
+  and the House (1.6), and above scholars and papers. position.js prefers a pilgrim's recollection to a scholar's view.
+- **Auditor and battery judge:** a "no authority" dismissal or a reflex truism is now scored as an error. Battery cases:
+  13 (his Arabs question, `mustNot` dismissal), 14 (pilgrim-notes truism), 15 ("all religions are the same"), and
+  16 (one quotation over-read).
