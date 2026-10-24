@@ -81,7 +81,7 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   return { ...out, remaining };
 }
 
-export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null } = {}, deps = {}) {
+export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null, merge_speakers = false } = {}, deps = {}) {
   // ids: [..] or 'done' (every published item) → one media-item run each, same options (a back-fill: { ids: 'done', redo: [...] })
   if (id == null && ids) {
     const R = deps.repo || await import('../repos/media-repo.js');
@@ -118,7 +118,7 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
   }
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');
   try {
-    const r = await runItem(item, { from, only, redo, threads, lang, model });
+    const r = await runItem(item, { from, only, redo, threads, lang, model, mergeSpeakers: !!merge_speakers });
     if (r.yielded) return r;
     await logActivity('media', `▶ media ${r.slug}: ${r.done.join(' → ') || 'nothing to do'}`).catch(() => {});
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };
@@ -905,6 +905,40 @@ export async function mediaSafeListeningJob({ write = false, ids = null, limit =
     const redo = ['web', 'trim', 'update'];
     if (relinkOf.has(it.id)) { await ops.cancel(relinkOf.get(it.id)); redo.splice(2, 0, 'links'); out.relinks_folded++; }
     await queue('media-item', { id: it.id, redo }, 'media-safe-listening'); out.queued++;
+  }
+  return out;
+}
+
+/** media-speaker-merge { write, ids?, limit? }: published talks with more than one paragraph speaker and no merge yet → a
+ *  run with merge_speakers (spkmerge.js: a labelled 'other speaker' whose voice — speaker AND paragraph — is the main
+ *  speaker's goes back to the main speaker; a real questioner stays) + 'update'. A QUEUED run for the same talk is
+ *  cancelled and folded in (one run per talk: two would race on its files); a running one → skipped. → counts */
+export async function mediaSpeakerMergeJob({ write = false, ids = null, limit = Infinity } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const { readFile } = await import('fs/promises');
+  const read = deps.readFiles || (async (dir) => ({ meta: JSON.parse(await readFile(join(dir, 'meta.json'), 'utf8')), work: JSON.parse(await readFile(join(dir, 'transcript.work.json'), 'utf8')) }));
+  const pending = (await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n).then((rs) => rs.map((r) => ({ ...r, job: n })))))).flat();
+  const queuedItem = new Map(pending.filter((r) => r.job === 'media-item' && r.status === 'queued').map((r) => [Number(r.params?.id), r]));
+  const running = new Set(pending.filter((r) => !(r.job === 'media-item' && r.status === 'queued')).map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { talks: 0, multi: 0, done_before: 0, queued: 0, folded: 0, skipped_busy: 0 };
+  for (const id of ids || await repo.doneItemIds()) {
+    if (out.queued >= limit) break;
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const f = await read(it.dir).catch(() => null);
+    if (!f) continue;
+    out.talks++;
+    if (new Set((f.work.paragraphs || []).map((p) => p.spk).filter(Boolean)).size < 2) continue;
+    out.multi++;
+    if (f.meta.speaker_merge) { out.done_before++; continue; }
+    if (!write) continue;
+    if (running.has(it.id)) { out.skipped_busy++; continue; }
+    const q = queuedItem.get(it.id);
+    const redo = [...new Set([...(q?.params?.redo || []).filter((x) => x !== 'update'), 'update'])];
+    if (q) { await ops.cancel(q.id); out.folded++; }
+    await queue('media-item', { id: it.id, redo, merge_speakers: true }, 'media-speaker-merge'); out.queued++;
   }
   return out;
 }

@@ -409,6 +409,42 @@ def cmd_spkscreen(a):
     print(json.dumps({'windows': [[s, e] for s, e in wins], 'sims': st['sims'], 'duration_s': round(dur, 1), 'seconds': round(time.time() - t0, 1)}))
 
 
+def cmd_spkmerge(a):
+    """INVENTED SECOND SPEAKERS (10-23: ~16 % of talks had an 'other speaker' who is the main speaker): --spans <json>
+    {"main": [[s, e], ...], "others": {"S2": [[s, e], ...]}} — titanet embeddings: the main voice from up to 90 s of its
+    longest spans; each other speaker's 60 s excerpt and each of its spans (>= 2 s) scored against it. The merge decision is
+    made on the JS side (api/lib/media/spkmerge.js)."""
+    import sherpa_onnx
+    t0 = time.time()
+    sp = json.load(open(a.spans))
+    model = os.path.join(a.models, 'nemo_en_titanet_small.onnx')
+    ex = sherpa_onnx.SpeakerEmbeddingExtractor(sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=model, num_threads=a.threads, provider='cpu'))
+    x = load(a.input)
+    def emb(seg):
+        st = ex.create_stream(); st.accept_waveform(SR, seg); st.input_finished()
+        v = np.array(ex.compute(st), dtype=np.float32); return v / (np.linalg.norm(v) + 1e-9)
+    def excerpt(spans, cap):
+        out, got = [], 0.0
+        for s, e in sorted(spans, key=lambda z: -(z[1] - z[0])):
+            d = min(e - s, cap - got, 20.0)
+            if d < 1.5: continue
+            out.append(x[int((s + 0.1) * SR):int((s + 0.1 + d) * SR)]); got += d
+            if got >= cap: break
+        return np.concatenate(out) if out else None
+    em = excerpt(sp.get('main', []), 90.0)
+    if em is None:
+        print(json.dumps({'error': 'no main speech'})); return
+    cm = emb(em)
+    res = {}
+    for k, spans in (sp.get('others') or {}).items():
+        eo = excerpt(spans, 60.0)
+        r = {'cos': round(float(cm @ emb(eo)), 3) if eo is not None else None, 'spans': []}
+        for s, e in spans:
+            r['spans'].append(round(float(cm @ emb(x[int(s * SR):int(e * SR)])), 3) if e - s >= 2.0 else None)
+        res[k] = r
+    print(json.dumps({'others': res, 'seconds': round(time.time() - t0, 1)}))
+
+
 def cmd_grade(a):
     """Signal measurements for the quality grade (the JS side grades them: api/lib/media/grade.js). Native-rate decode
     for clipping and bandwidth; 16 kHz for the rest; DNSMOS + NISQA (torchmetrics) on up to three 20 s speech excerpts."""
@@ -561,7 +597,7 @@ def cmd_levels(a):
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels', 'spkscreen'):
+    for name in ('metrics', 'probe', 'langid', 'dfn', 'encode', 'transcribe', 'diarize', 'grade', 'levels', 'spkscreen', 'spkmerge'):
         s = sub.add_parser(name)
         s.add_argument('input')
         s.add_argument('--threads', type=int, default=8)
@@ -584,9 +620,10 @@ def main():
         s.add_argument('--segments', default='')   # spkscreen: the transcript JSON whose segments are the speech
         s.add_argument('--every', type=float, default=10.0)
         s.add_argument('--emb-out', default='')
+        s.add_argument('--spans', default='')   # spkmerge: the speakers' spans JSON
     a = p.parse_args()
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
-    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen}[a.cmd]
+    fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen, 'spkmerge': cmd_spkmerge}[a.cmd]
     try:
         fn(a)
     except RuntimeError as err:

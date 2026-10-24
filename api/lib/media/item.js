@@ -46,6 +46,22 @@ export async function towerLight(fn) {
   try { return await fn(); } finally { lightBusy--; lightWait.shift()?.(); }
 }
 
+/** The invented-second-speaker merge for one talk (spkmerge.js): titanet scores on tower (≤ 2 threads, a light slot).
+ *  → { paragraphs, speakers, merged, summary } | null (one speaker, or nothing to score) */
+async function mergeSpeakers(paragraphs, speakers, { dir, meta, tools }) {
+  const M = await import('./spkmerge.js');
+  const spans = M.spansOf(paragraphs);
+  if (!spans.mainKey || !Object.keys(spans.others).length || !tools.tool) return null;
+  const { tmpdir } = await import('os');
+  const f = join(tmpdir(), `spkmerge-${process.pid}-${Date.now()}.json`);
+  await writeFile(f, JSON.stringify({ main: spans.main, others: spans.others }));
+  try {
+    const r = await towerLight(() => tools.tool('spkmerge', join(dir, meta.original), { spans: f }, { threads: 2, timeoutMs: 30 * 60_000 }));
+    const dec = M.decideMerge(r, spans);
+    return { ...M.applyMerge(paragraphs, speakers, spans.mainKey, dec.merge), summary: dec.summary };
+  } finally { await (await import('fs/promises')).unlink(f).catch(() => {}); }
+}
+
 // the speaker people (data/media-speaker-people.json), read once per process (the cb-date check)
 let peopleMemo = null;
 async function cbPeople() {
@@ -148,6 +164,15 @@ export async function runItem(item, opts = {}, deps = {}) {
   const vocab = await (d.loadVocab || loadVocab)();
   // polled by every long child process: a drain stops the stage at once (it is redone after the restart, finished stages are kept)
   const stop = d.drainingNow || (() => false);
+
+  // INVENTED SECOND SPEAKERS on a published talk (media-speaker-merge): inside this run, so no other run races on its files
+  if (opts.mergeSpeakers && dir && existsSync(join(dir, 'transcript.work.json'))) {
+    const work = await readJson(join(dir, 'transcript.work.json'));
+    const r = await mergeSpeakers(work.paragraphs || [], meta.speakers || {}, { dir, meta, tools });
+    if (r?.merged) { work.paragraphs = r.paragraphs; meta.speakers = r.speakers; await writeJson(join(dir, 'transcript.work.json'), work); }
+    meta.speaker_merge = { ...(r?.summary ? { speakers: r.summary } : {}), merged: r?.merged || 0, at: d.now() };
+    await save();
+  }
 
   for (const stage of STAGES) {
     if (meta.stages[stage]?.at) continue;
@@ -523,6 +548,13 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'describe') {
       const work = await readJson(join(dir, 'transcript.work.json'));
+      // an invented second speaker (the main voice split by the diarization) goes back to the main speaker before naming
+      if (!meta.speaker_merge && new Set((work.paragraphs || []).map((p) => p.spk).filter(Boolean)).size > 1) {
+        const r = await mergeSpeakers(work.paragraphs, {}, { dir, meta, tools }).catch(() => null);
+        if (r?.merged) { work.paragraphs = r.paragraphs; await writeJson(join(dir, 'transcript.work.json'), work); }
+        meta.speaker_merge = { merged: r?.merged || 0, ...(r?.summary ? { speakers: r.summary } : {}), at: d.now() };
+        rec.speakers_merged = r?.merged || 0;
+      }
       const desc = await llm.describeTalk(work.paragraphs, { title: meta.title, speaker: meta.speaker, date: meta.date, year: meta.year, event: meta.event, place: meta.place, series: meta.series, source: meta.source?.kind === 'youtube' ? { channel: meta.source.channel, title: meta.source.title } : null }, { spend });
       const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
       meta.summary = desc.summary || null; meta.topics = desc.topics || [];
