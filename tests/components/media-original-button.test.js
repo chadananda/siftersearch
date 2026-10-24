@@ -173,3 +173,29 @@ describe('hover prefetch', () => {
     expect(slowLink({ effectiveType: '4g' })).toBe(false);
   });
 });
+
+describe('parallel multipart fill + ensure', () => {
+  it('fillParallel copies in 8 MB parts, several at once, and completes in order', async () => {
+    const { fillParallel } = await import('../../worker/media.js');
+    const total = 40 * 1024 * 1024, got = [], parts = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (_u, { headers }) => {
+      const [, a, b] = /bytes=(\d+)-(\d+)/.exec(headers.range).map(Number);
+      return new Response(new Uint8Array(b - a + 1), { status: 206, headers: { 'content-range': `bytes ${a}-${b}/${total}`, 'content-type': 'audio/ogg' } });
+    });
+    const env = { MEDIA_BUCKET: { createMultipartUpload: async () => ({ uploadPart: async (n, buf) => (parts.push(n), got.push(buf.byteLength), { partNumber: n }), complete: async (p) => got.push(p.map((x) => x.partNumber).join()), abort: async () => {} }) } };
+    try {
+      const r = await fillParallel(env, 'k', 'https://o/x');
+      expect(r.bytes).toBe(total);
+      expect(got.slice(-1)[0]).toBe('1,2,3,4,5');
+      expect(got.slice(0, 5).every((n) => n === 8 * 1024 * 1024)).toBe(true);
+    } finally { globalThis.fetch = orig; }
+  });
+  it('ensure answers present for an existing object and rejects bad kinds', async () => {
+    const { ensureMedia } = await import('../../worker/media.js');
+    const env = { MEDIA_BUCKET: { head: async () => ({}) } };
+    const ok = await (await ensureMedia(new URL('https://x/_media/ensure?slug=a-talk&v=3&kind=src&ext=wav'), env, 'https://o')).json();
+    expect(ok).toMatchObject({ present: true, key: 'a-talk/src/original.wav@3' });
+    expect((await ensureMedia(new URL('https://x/_media/ensure?slug=a-talk&v=3&kind=zip'), env, 'https://o')).status).toBe(400);
+  });
+});

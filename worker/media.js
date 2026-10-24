@@ -68,6 +68,64 @@ export async function mediaFile(request, env, ctx, origin) {
 
 const WEB_NAME = (slug) => new RegExp(`^web/${slug}\\.(original\\.)?(ogg|m4a)$`);
 
+const PART = 8 * 1024 * 1024, PARALLEL = 4;
+
+/** Copy one origin object into R2 as a parallel multipart upload (PARALLEL ranged 8 MB parts (4 × 8 MB stays inside the isolate's 128 MB) at once): the uplink
+ *  is the limit, one connection never fills it. → { bytes, ms } or throws. */
+export async function fillParallel(env, key, url, headers = {}) {
+  const t0 = Date.now();
+  const head = await fetch(url, { headers: { ...headers, range: 'bytes=0-0' } });
+  const total = Number(/\/(\d+)$/.exec(head.headers.get('content-range') || '')?.[1] || 0);
+  const ct = head.headers.get('content-type') || 'application/octet-stream';
+  await head.arrayBuffer();
+  if (!total || (head.status !== 206 && head.status !== 200)) throw new Error(`origin ${head.status}`);
+  const nParts = Math.ceil(total / PART), mp = await env.MEDIA_BUCKET.createMultipartUpload(key, { httpMetadata: { contentType: ct } });
+  const parts = new Array(nParts); let next = 0;
+  try {
+    await Promise.all(Array.from({ length: Math.min(PARALLEL, nParts) }, async () => {
+      while (next < nParts) {
+        const i = next++, start = i * PART, end = Math.min(total, start + PART) - 1;
+        const r = await fetch(url, { headers: { ...headers, range: `bytes=${start}-${end}` } });
+        if (r.status !== 206 && !(r.status === 200 && nParts === 1)) throw new Error(`part ${i}: origin ${r.status}`);
+        parts[i] = await mp.uploadPart(i + 1, await r.arrayBuffer());
+      }
+    }));
+    await mp.complete(parts);
+  } catch (e) { await mp.abort().catch(() => {}); throw e; }
+  return { bytes: total, ms: Date.now() - t0 };
+}
+
+/** The file a request names → { key, url path at the origin, internal } or null. kind: main | original (web copies) | src. */
+function target(slug, v, fmt, kind, ext = 'm4a') {
+  if (kind === 'src') return { name: `src/original.${ext}`, key: `${slug}/src/original.${ext}@${v}`, path: `/api/media/${slug}/src`, internal: true };
+  const name = `web/${slug}.${kind === 'original' ? 'original.' : ''}${fmt}`;
+  const key = mediaKey(new URL(`https://x/api/media/${slug}/file/${name}?v=${v}`));
+  return key ? { name, key, path: `/api/media/${slug}/file/${name}?v=${v}`, internal: false } : null;
+}
+
+/** Fill one target unless present (KV lock per object: concurrent callers cause ONE fill). → 'present' | 'filled' | 'busy' | 'failed' */
+async function fillOne(env, origin, t) {
+  if (await env.MEDIA_BUCKET.head(t.key)) return 'present';
+  const lock = `fill:${t.key}`;
+  if (env.EDGE_CACHE && await env.EDGE_CACHE.get(lock)) return 'busy';
+  if (env.EDGE_CACHE) await env.EDGE_CACHE.put(lock, String(Date.now()), { expirationTtl: 600 });
+  try { await fillParallel(env, t.key, `${origin}${t.path}`, t.internal && env.S1_KEY ? { 'x-internal-key': env.S1_KEY } : {}); return 'filled'; }
+  catch { return 'failed'; } finally { if (env.EDGE_CACHE) await env.EDGE_CACHE.delete(lock).catch(() => {}); }
+}
+
+/** POST /_media/ensure?slug=&v=&kind=main|original|src&fmt=ogg|m4a  (x-internal-key): put this file FIRST — fill it now (the
+ *  fill is immediate, parallel) and say whether it is present. The pod work orders call this before reading the object. */
+export async function ensureMedia(url, env, origin) {
+  const slug = url.searchParams.get('slug') || '', v = url.searchParams.get('v') || '', kind = url.searchParams.get('kind') || 'main';
+  const fmt = url.searchParams.get('fmt') === 'm4a' ? 'm4a' : 'ogg';
+  if (!env.MEDIA_BUCKET || !/^[a-z0-9][a-z0-9-]{0,99}$/.test(slug) || !/^\d{1,6}$/.test(v) || !['main', 'original', 'src'].includes(kind)) return Response.json({ error: 'bad request' }, { status: 400 });
+  let ext = url.searchParams.get('ext') || 'm4a'; if (!/^[a-z0-9]{2,5}$/.test(ext)) ext = 'm4a';
+  const t = target(slug, v, fmt, kind, ext);
+  if (!t) return Response.json({ error: 'bad file' }, { status: 400 });
+  const state = await fillOne(env, origin, t);
+  return Response.json({ slug, kind, key: t.key, present: state === 'present' || state === 'filled', state }, { headers: { 'cache-control': 'no-store' } });
+}
+
 /**
  * POST /_media/warm?slug=&v=&fmt=ogg|m4a&copy=main|original|both — idempotent one-time copy of a talk's web audio from the
  * tower into R2 (the only time the tower serves these bytes). Missing objects only; a KV lock per object (10 min) keeps
@@ -76,25 +134,11 @@ const WEB_NAME = (slug) => new RegExp(`^web/${slug}\\.(original\\.)?(ogg|m4a)$`)
 export async function warmMedia(url, env, origin) {
   const slug = url.searchParams.get('slug') || '', v = url.searchParams.get('v') || '', fmt = url.searchParams.get('fmt') === 'm4a' ? 'm4a' : 'ogg', copy = url.searchParams.get('copy') || 'both';
   if (!env.MEDIA_BUCKET || !/^[a-z0-9][a-z0-9-]{0,99}$/.test(slug) || !/^\d{1,6}$/.test(v)) return Response.json({ error: 'bad request' }, { status: 400 });
-  const names = [copy !== 'original' && `web/${slug}.${fmt}`, copy !== 'main' && `web/${slug}.original.${fmt}`].filter(Boolean);
   const files = {};
-  for (const name of names) {
-    const key = mediaKey(new URL(`https://x/api/media/${slug}/file/${name}?v=${v}`));
-    if (!key || !WEB_NAME(slug).test(name)) { files[name] = 'failed'; continue; }
-    if (await env.MEDIA_BUCKET.head(key)) { files[name] = 'present'; continue; }
-    const lock = `fill:${key}`;
-    if (env.EDGE_CACHE && await env.EDGE_CACHE.get(lock)) { files[name] = 'busy'; continue; }
-    if (env.EDGE_CACHE) await env.EDGE_CACHE.put(lock, String(Date.now()), { expirationTtl: 600 });
-    try {
-      const res = await fetch(`${origin}/api/media/${slug}/file/${name}?v=${v}`, { headers: env.S1_KEY ? { 'x-internal-key': env.S1_KEY } : {} });
-      const len = Number(res.headers.get('content-length'));
-      if (!res.ok || !len) { files[name] = 'failed'; continue; }
-      const fl = new FixedLengthStream(len);
-      const piping = res.body.pipeTo(fl.writable);
-      await env.MEDIA_BUCKET.put(key, fl.readable, { httpMetadata: { contentType: res.headers.get('content-type') || 'application/octet-stream' } });
-      await piping;
-      files[name] = 'filled';
-    } catch { files[name] = 'failed'; } finally { if (env.EDGE_CACHE) await env.EDGE_CACHE.delete(lock).catch(() => {}); }
+  for (const kind of ['main', 'original']) {   // the restored (main) copy first, then the original
+    if (copy !== 'both' && copy !== kind) continue;
+    const t = target(slug, v, fmt, kind);
+    files[t.name] = t.key ? await fillOne(env, origin, t) : 'failed';
   }
   return Response.json({ files }, { headers: { 'cache-control': 'no-store' } });
 }

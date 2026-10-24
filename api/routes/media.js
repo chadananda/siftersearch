@@ -399,6 +399,23 @@ export default async function mediaRoutes(fastify) {
   });
 
   // a published file (Range; immutable per ?v=). Full audio only for 'full' items; page/transcript/waveform/thumb for all.
+  // the untouched SOURCE audio (internal key only: it feeds R2's <slug>/src/original.<ext>, the pod work orders' input), Range supported
+  fastify.get('/:slug/src', { preHandler: requireInternal }, async (req, reply) => {
+    const it = await getMediaBySlug(req.params.slug);
+    const meta = it?.dir ? await readJson(join(it.dir, 'meta.json')) : null;
+    const path = meta?.original ? join(it.dir, meta.original) : null;
+    if (!path || !existsSync(path)) return reply.code(404).send({ error: 'NotFound' });
+    const size = statSync(path).size, m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    reply.header('Content-Type', TYPES[extname(path)] || 'application/octet-stream').header('Accept-Ranges', 'bytes').header('X-Src-Ext', extname(path).slice(1)).header('Cache-Control', 'no-store');
+    if (m && (m[1] || m[2])) {
+      const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2])), end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+      reply.code(206).header('Content-Range', `bytes ${start}-${end}/${size}`).header('Content-Length', end - start + 1);
+      return reply.send(createReadStream(path, { start, end }));
+    }
+    reply.header('Content-Length', size);
+    return reply.send(createReadStream(path));
+  });
+
   fastify.get('/:slug/file/*', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
     const name = normalize(String(req.params['*'] || '')).replace(/^(\.\.(\/|$))+/, '');

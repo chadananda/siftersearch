@@ -12,7 +12,9 @@ const log = (m) => { const l = `${new Date().toISOString()} ${m}`; console.log(l
 const GATEWAY = process.env.GATEWAY || 'http://127.0.0.1:7839';   // the index from tower's own gateway (no tunnel round trip)
 const retry = async (f, n = 4) => { for (let i = 1; ; i++) { try { return await f(); } catch (e) { if (i >= n || e.name === 'TimeoutError') throw e; await new Promise((res) => setTimeout(res, 3000 * i)); } } };
 const idx = await retry(async () => (await fetch(`${GATEWAY}/api/media/index`, { signal: AbortSignal.timeout(60_000) })).json());
-const talks = idx.items.filter((t) => t.pb === 'full' && t.v).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+// order: the remaster queue first (grade E, D, C, B, worst first), then everything else; newest first within each
+const rank = (t) => { const i = ['E', 'D', 'C', 'B'].indexOf(String(t.g || '')[0]); return i < 0 ? 4 : i; };
+const talks = idx.items.filter((t) => t.pb === 'full' && t.v).sort((a, b) => rank(a) - rank(b) || String(b.at || '').localeCompare(String(a.at || '')));
 log(`backfill: ${talks.length} full-playback talks (${Math.round(idx.hours)} h), formats ${fmts.join('+')}`);
 let filled = 0, present = 0, failed = 0, bytes = 0;
 for (const fmt of fmts) {

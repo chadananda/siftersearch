@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-24T20:38:40.773Z",
+  "generated": "2026-10-24T21:16:51.356Z",
   "entries": [
+    {
+      "hash": "a0e7eeb8",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "The reaper no longer kills pods for a quiet GPU (transfers dominate: the GPU works ~1 min in 7) - last resort at 60 min",
+      "scope": "media"
+    },
+    {
+      "hash": "a8fb0b59",
+      "date": "2026-10-24",
+      "type": "Docs",
+      "description": "Large-upload API",
+      "scope": "dewey"
+    },
+    {
+      "hash": "a5935544",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Dewey-discard ops job (delete the stored copy of a received upload, decline the item)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "9f74319a",
+      "date": "2026-10-24",
+      "type": "Chore",
+      "description": "Deploy 2.187.821 (Dewey uploads, multi-GB)",
+      "scope": null
+    },
     {
       "hash": "dd5fdc9b",
       "date": "2026-10-24",
@@ -3472,38 +3500,38 @@
       "type": "Fixed",
       "description": "A Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler in the MAIN library ingester too — one shared rule (library/compilation-author.js); its copy of Lights of Guidance was 'by Bahá'u'lláh'. compilation-authors ops job finds and (with write) corrects existing library records (Chad 10-19)",
       "scope": "ingest"
-    },
-    {
-      "hash": "505e0781",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Every paragraph its author, library-wide — the window classifier (v18b rules) as the 'paragraph-authors' ops job (reports service, own lane): reads via paragraphs-repo, writes through the writer with rollback, resumable per book, secondary rules for scholars/compilations; escalations on Haiku 5.5 (DeepSeek retired). Doctrine is then selected by PARAGRAPH author, not book (Chad 10-19)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "e3afd7dc",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Trace_source — a House letter, scholar or compilation stating a teaching is a signpost; the researcher traces it (quote links, else the closest passages of the four authoritative authors) and cites the primary passage (Chad 10-19)",
-      "scope": "anis researcher"
-    },
-    {
-      "hash": "8eed9f53",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Warm-ups (the ~24 s encounter query) run BEFORE listening — behind the gateway the old instance serves until 'ready', while warming after listen froze live Anís conversations (74 blocking reads in 'anis' in 3 h)",
-      "scope": "api services"
-    },
-    {
-      "hash": "d4e319e1",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "System-checks --report — the same checks as JSON, no email, no state (the agent's own periodic watch reads it)",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "a0e7eeb8",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "The reaper no longer kills pods for a quiet GPU (transfers dominate: the GPU works ~1 min in 7) - last resort at 60 min",
+        "scope": "media"
+      },
+      {
+        "hash": "a8fb0b59",
+        "date": "2026-10-24",
+        "type": "Docs",
+        "description": "Large-upload API",
+        "scope": "dewey"
+      },
+      {
+        "hash": "a5935544",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Dewey-discard ops job (delete the stored copy of a received upload, decline the item)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "9f74319a",
+        "date": "2026-10-24",
+        "type": "Chore",
+        "description": "Deploy 2.187.821 (Dewey uploads, multi-GB)",
+        "scope": null
+      },
       {
         "hash": "dd5fdc9b",
         "date": "2026-10-24",
@@ -6985,34 +7013,6 @@
         "type": "Fixed",
         "description": "A Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler in the MAIN library ingester too — one shared rule (library/compilation-author.js); its copy of Lights of Guidance was 'by Bahá'u'lláh'. compilation-authors ops job finds and (with write) corrects existing library records (Chad 10-19)",
         "scope": "ingest"
-      },
-      {
-        "hash": "505e0781",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Every paragraph its author, library-wide — the window classifier (v18b rules) as the 'paragraph-authors' ops job (reports service, own lane): reads via paragraphs-repo, writes through the writer with rollback, resumable per book, secondary rules for scholars/compilations; escalations on Haiku 5.5 (DeepSeek retired). Doctrine is then selected by PARAGRAPH author, not book (Chad 10-19)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "e3afd7dc",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Trace_source — a House letter, scholar or compilation stating a teaching is a signpost; the researcher traces it (quote links, else the closest passages of the four authoritative authors) and cites the primary passage (Chad 10-19)",
-        "scope": "anis researcher"
-      },
-      {
-        "hash": "8eed9f53",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Warm-ups (the ~24 s encounter query) run BEFORE listening — behind the gateway the old instance serves until 'ready', while warming after listen froze live Anís conversations (74 blocking reads in 'anis' in 3 h)",
-        "scope": "api services"
-      },
-      {
-        "hash": "d4e319e1",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "System-checks --report — the same checks as JSON, no email, no state (the agent's own periodic watch reads it)",
-        "scope": "ops"
       }
     ]
   }
