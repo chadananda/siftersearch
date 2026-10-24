@@ -1292,6 +1292,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
         }
       }
+      // fresh talks before 'post' work (stable), whatever order an earlier version queued them in
+      if (st.queue.some((id) => st.items?.[id]?.mode === 'post')) st.queue = [...st.queue.filter((id) => st.items?.[id]?.mode !== 'post'), ...st.queue.filter((id) => st.items?.[id]?.mode === 'post')];
       // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
       // encode — GPUs would be paid for output nobody can consume. Pods that go without work idle out (10 min) and are terminated.
       if (now() - (st.backlog_checked || 0) > 30_000) {
