@@ -31,11 +31,11 @@ export async function deweyReceivedJob({ id }, deps = {}) {
 }
 
 /** dewey-discard { ids } — drop received uploads that are not wanted (test files, mistakes): delete the R2 object, mark the item declined. */
-export async function deweyDiscardJob({ ids = [] } = {}, deps = {}) {
+export async function deweyDiscardJob({ ids = [], by = null } = {}, deps = {}) {   // by: only items created by this member (a guard when ids are guessed)
   const { fetchImpl = fetch } = deps, out = { discarded: [], skipped: [] };
   for (const id of ids.slice(0, 200)) {
     const item = await getItem(id), up = item?.identified?.upload;
-    if (!item || item.state !== 'received' || !up?.key) { out.skipped.push(id); continue; }
+    if (!item || item.state !== 'received' || !up?.key || (by && item.created_by !== by)) { out.skipped.push(id); continue; }
     const r = await fetchImpl(`${EDGE}/_dewey/blob?key=${encodeURIComponent(up.key)}`, { method: 'DELETE', headers: { 'x-internal-key': process.env.INTERNAL_API_KEY } });
     if (!r.ok) { out.skipped.push(id); continue; }
     await updateItem(item.id, { state: 'declined' }, 'upload discarded; the stored copy was deleted');
