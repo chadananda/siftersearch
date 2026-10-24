@@ -19,7 +19,8 @@ const readJson = (p, d = null) => (existsSync(p) ? JSON.parse(readFileSync(p, 'u
 
 const L = readJson(join(ROOT, 'ledger.json'));
 const gallery = readJson(join(process.cwd(), 'data', 'media-speaker-gallery.json')).speakers;
-// speakers with no gallery yet: the portrait in use (tmp/speaker-sketch/extra-sources.json, written from /api/media/index)
+// speakers with no gallery yet: the portrait in use (tmp/speaker-sketch/extra-sources.json, by hand or from the internal-key
+// GET /api/speakers/<key>/gallery; /api/media/index carries no photos since 10-24)
 for (const [k, l] of Object.entries(readJson(join(ROOT, 'extra-sources.json'), {}))) if (!gallery[k]) gallery[k] = l;
 const prev = readJson(OUT, { speakers: {} });
 const sha = (b) => createHash('sha256').update(b).digest('hex');
