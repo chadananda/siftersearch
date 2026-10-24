@@ -86,7 +86,7 @@ def exciter(x, amount):
 def main():
     dry = read(f'{ROOT}/clips/{CLIP}.wav')
     wet = {}
-    for m in ('mf2se', 'dfn6', 'sidon', 'audiosr', 'resenh', 'vf0', 'mf2sr'):
+    for m in ('mf2se', 'dfn6', 'sidon', 'audiosr', 'resenh', 'vf0', 'mf2sr', 'vr'):
         p = f'{ROOT}/wet/{m}/{CLIP}.wav'
         if os.path.exists(p):
             wet[m] = align(dry, read(p))[0]
@@ -99,7 +99,7 @@ def main():
         't2-deres-wpe-exc2': exciter(dw, 2),
         't2-deres-wpe-exc4': exciter(dw, 4),
     }
-    for m in ('sidon', 'audiosr', 'resenh', 'vf0', 'mf2sr'):
+    for m in ('sidon', 'audiosr', 'resenh', 'vf0', 'mf2sr', 'vr'):
         if m in wet:
             for g in (-4, -10):
                 out[f't2-deres-wpe+{m}-hf{g}'] = hf_blend(dw, wet[m], FC, gain_db=g)

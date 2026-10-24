@@ -1,0 +1,3 @@
+{"round": "ioas-r3", "title": "Ioas round 3: less mud, softer s",
+ "intro": "Round 3 starts from your round-2 pick, the de-resonance and dereverb chain, which you said was still muddy and had loud sibilants. The new versions cut the low-mid mud harder, move the presence lift lower so it stops feeding the s sounds, and add a de-esser that only turns down sibilant peaks. Six versions in random order: the original, your round-2 pick, and four new chains. All are matched in loudness.",
+ "clips": {"ioas": ["t2-deres-wpe", "t3-mud4-wpe", "t3-mud4-wpe-deess", "t3-mud7-wpe-deess", "t3-mud7-wpe80-deess"]}}
