@@ -286,3 +286,15 @@ Rule: a non-canonical book whose own copyright page (or a high-confidence catalo
 - **Google Books retry**: scheduled. `siftersearch-reports` queues `book-hunt {retryGoogle:true}` once a day after 09:00 UTC
   (bookGooglePulse); it re-asks only books Google never answered that still lack a high ISBN, resumes after a drain, and
   then `book-hunt-apply {"write":true}` fills what it found (run by hand, high confidence only).
+
+## Applied — Chad's rulings (10-23, decisions page; no per-book "open" exceptions were set)
+- **Ruhi: 0 books found** in the live library (author / publisher / title / file path, non-canonical); `exclude-ruhi`
+  ({write:true}) soft-deletes any that arrive. The House of Justice's letters about the institute stay.
+- **Opened (Publishing Trusts / ABS / Wilmette = institutional): 52 books** (60 matched; 7 were already open; Emergence
+  956168 kept limited — it is on the approved ISBN list). rights_reason `open: institutional publisher … (Chad 10-23)`.
+- **Limited by the ISBN rule: 20** (the approved list, incl. Minimalism 967518 and the NSA/BIC-authorised 956271, 956333,
+  967487, 919261, 919262). A first run also re-limited 9 just-opened Publishing-Trust books; they were re-opened and the
+  ISBN rule now skips institutional publishers unless forced.
+- **Limited by the publisher rule: 19 more** (the other 15 of its 34 were already limited by the ISBN rule) → 39 newly limited.
+- Re-check dry runs after the writes: rights-isbn 0, rights-publisher 0 pending.
+- A per-document ruling (rights_reason) now survives re-ingest and collection meta.yaml changes.
