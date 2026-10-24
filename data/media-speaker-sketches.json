@@ -1110,7 +1110,23 @@
    },
    "style": "A (Chad 10-23)",
    "take": "chad-jones-A",
-   "drawn_at": "2026-10-24T11:36:31"
+   "drawn_at": "2026-10-24T11:36:31",
+   "fallback": {
+    "file": "media-speakers/chad-jones/sketch-4b3d0cac58d4745c.jpg",
+    "sha": "4b3d0cac58d4745c5f43c9c31f03f123f7a3a658ff4b79fbc809a6c080485dea",
+    "sq_file": "media-speakers/chad-jones/sketch-sq-88b86908c3505d05.jpg",
+    "sq_sha": "88b86908c3505d05a15c5087cf52b59208b89ddf282a2129f8f292800a9fc57a",
+    "take": "chad-jones-A",
+    "likeness": {
+     "face": true,
+     "source": 0.541,
+     "others_mean": null,
+     "impostor_max": 0.296,
+     "impostor_who": "tarazullah-samandari",
+     "pass": true
+    },
+    "note": "the darker first drawing (mean luminance 202.0); its R2 files are kept"
+   }
   }
  }
 }

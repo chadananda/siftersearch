@@ -56,7 +56,11 @@ REFS_NOTE = (' Any FURTHER images are other verified photographs of the same per
     'exactly right, but follow the FIRST image for pose, age, expression and clothing.')
 
 # per-photo notes (named, so the ledger says which a take used)
-NOTES = {'vintage': (' The FIRST image is a faded, very old vintage photograph: interpret the face as a living person drawn from life, '
+NOTES = {'light': (' LIGHTER TOUCH for this one: thin, light, delicate ink lines; sparse hatching; very pale, transparent washes that let the white '
+    'paper show through; a high-key, airy overall tonal value with much bare paper. Keep the hair the light brown of the photograph, never darker; '
+    'keep the skin tone natural and light, never darkened; the shirt and tie are soft transparent colour washes in their photographed colours '
+    '(red shirt, patterned tie), not heavy fills or dark shading.'),
+    'vintage': (' The FIRST image is a faded, very old vintage photograph: interpret the face as a living person drawn from life, '
     'with clean confident lines; do not copy the photograph\'s damage, grain, blur, halftone dots, fading or flat contrast.')}
 
 def gemini(parts, aspect):
