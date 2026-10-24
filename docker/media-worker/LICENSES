@@ -1,0 +1,6 @@
+# Weights baked into ghcr.io/chadananda/sifter-media-worker (public image; no secrets, no keys, no private data in any layer)
+UniPASE (Xiaobin-Rong/unipase DeWavLM-Omni, Adapter, Vocoder_DWO-L1, PostNet) — github/HF Xiaobin-Rong — open research release (MIT-style)
+faster-whisper large-v3-turbo (dropbox-dash/faster-whisper-large-v3-turbo, CTranslate2 of OpenAI Whisper) — MIT
+whisperx forced-alignment models en/fa/ar (torchaudio wav2vec2 / jonatasgrosman XLSR-53 fa, ar) — Apache-2.0
+MossFormer2_SE_48K (alibabasglab, via ClearVoice) — Apache-2.0
+Code: whisperx (BSD-2), faster-whisper (MIT), nara_wpe (MIT), scipy/numpy (BSD), the job code in /opt/sifter/media (ours)
