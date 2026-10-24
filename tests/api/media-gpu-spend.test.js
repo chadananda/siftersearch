@@ -452,3 +452,10 @@ describe('a pod whose worker stopped is replaced and its talks go back to the qu
     expect(x.cloud.createPod.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('the baked image is found by the worker', () => {
+  it('the bootstrap exports HF_HOME for the pre-loaded aligners (an ssh session has no image ENV)', () => {
+    expect(C.BOOTSTRAP_BAKED).toMatch(/export HF_HOME=\/opt\/models\/hf/);
+    expect(C.BOOTSTRAP_BAKED.indexOf('export HF_HOME')).toBeLessThan(C.BOOTSTRAP_BAKED.indexOf('runpod_worker.py'));
+  });
+});

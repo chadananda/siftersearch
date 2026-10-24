@@ -185,6 +185,8 @@ export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_to
 /** Start of a pod from the BAKED image (ghcr.io/chadananda/sifter-media-worker): code, UniPASE, whisper and aligners are already inside — seconds, no downloads. */
 export const BOOTSTRAP_BAKED = `set -e
 mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb
+# the image's ENV is not in an ssh session: without HF_HOME the BAKED aligners are not found and whisperx downloads (and fails) at run time (10-24: every Persian talk 'placed 0 words')
+export HF_HOME=/opt/models/hf TORCH_HOME=/opt/models/torch SIFTER_WEIGHTS=/opt/models/weights
 # the container's own env (RUNPOD_POD_ID, the terminate key) is not in an ssh session: the dead-man switch needs it to end the pod
 for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
 # the image carries a pinned copy of the job code; the lane ships the current one (small) on top, so a code fix needs no image rebuild

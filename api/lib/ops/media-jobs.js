@@ -1530,6 +1530,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     if (!m) continue;
     const has = existsSync(join(it.dir, 'enhanced', 'unipase.cloud.flac')) && existsSync(join(it.dir, 'enhanced', 'unipase.asr.json'));
     const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
+    if (mode === 'restore' && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
     if (mode === 'post' && (!has || ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))) continue;
     if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
     orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode });
