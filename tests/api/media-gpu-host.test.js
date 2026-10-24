@@ -269,3 +269,19 @@ describe('a transcription sends its audio as is', () => {
     expect(cmds.find((c) => c.startsWith('start'))).toMatch(/^start flac j-1 /);
   });
 });
+
+describe('a drain never waits on a slot (10-23 18:00: one diarization waiting for a slot held the media drain 12+ min)', () => {
+  it('diarSlot and acquireAsrHost give up with DrainAbort when draining', async () => {
+    const { diarSlot, acquireAsrHost } = await import('../../api/lib/media/tools.js');
+    let free; const hold = diarSlot('hdrain', () => new Promise((r) => { free = r; }), 1);
+    let draining = false;
+    const waiting = diarSlot('hdrain', async () => 'ran', 1, { stop: () => draining, recheckMs: 10 });
+    await new Promise((r) => setTimeout(r, 20));
+    draining = true;
+    await expect(waiting).rejects.toMatchObject({ code: 'DRAIN' });
+    free(); await hold;
+    const a = await acquireAsrHost([{ host: 'hd2', slots: 1 }], { running: async () => [] });
+    await expect(acquireAsrHost([{ host: 'hd2', slots: 1 }], { running: async () => [], stop: () => true })).rejects.toMatchObject({ code: 'DRAIN' });
+    a.release();
+  });
+});

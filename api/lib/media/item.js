@@ -376,7 +376,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       let slot = null;
       if (!meta.asr_job?.id) {
         // a NEW transcription waits for a free slot on a host (aorus first) and holds it until its ASR job ends
-        slot = tools.acquireAsrHost ? await tools.acquireAsrHost() : null;
+        slot = tools.acquireAsrHost ? await tools.acquireAsrHost(undefined, { stop }) : null;
         meta.asr_job = { id: `${meta.slug}-${Date.now().toString(36)}`.slice(0, 110), host: slot ? slot.host : (tools.pickAsrHost ? tools.pickAsrHost() : (tools.asrHost ? tools.asrHost() : null)) }; await save();
         // the DISPATCH log: which host took the transcription and the load it saw (10-22: 'why is aorus idle?')
         console.info(`[media] dispatch transcribe ${meta.slug} → ${meta.asr_job.host} (${tools.asrPickReason ? tools.asrPickReason(meta.asr_job.host) : 'single host'})`);

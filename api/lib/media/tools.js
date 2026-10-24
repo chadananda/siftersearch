@@ -274,9 +274,10 @@ async function remoteAsrCount(host, { now = Date.now(), running = runningOn } = 
   asrRemote.set(host, { n, at: now });
   return n;
 }
-export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn } = {}) {
+export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn, stop = null } = {}) {
   if (!hosts.length) return { host: null, release: () => {} };
   for (;;) {
+    if (stop?.()) throw new DrainAbort('transcription waiting for a host slot');   // a drain never waits on a slot
     let h = null;
     for (const x of hosts) {
       if ((asrBusy.get(x.host) || 0) >= x.slots || !diskOk(x.host, { kind: 'transcribe' })) continue;
@@ -286,7 +287,7 @@ export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn }
     }
     if (h) { asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; releaseAsr(h.host); } } }; }
     // a slot frees here, or 20 s pass (a job of a previous process finished on its host; a host low on disk was cleaned)
-    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, 20_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
+    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, stop ? 5_000 : 20_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
   }
 }
 const diarBusy = new Map();
@@ -309,9 +310,11 @@ const waitDiar = (h, ms) => new Promise((r) => {
   q.push(go); if (ms) t = setTimeout(go, ms);
 });
 let diarSeq = 0;
-export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = `local-${++diarSeq}`, running = null, recheckMs = 30_000 } = {}) {
+export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = `local-${++diarSeq}`, running = null, recheckMs = 30_000, stop = null } = {}) {
   for (;;) {
-    while (idsOn(host).size >= slots) await waitDiar(host);   // a WHILE: whoever woke us, the cap is checked again
+    // a drain must never wait on a slot (10-23 18:00: one diarization waiting here held the media drain 12+ min)
+    while (idsOn(host).size >= slots) { if (stop?.()) throw new DrainAbort(`diarize waiting for a slot on ${host}`); await waitDiar(host, Math.min(5_000, recheckMs)); }   // a WHILE: whoever woke us, the cap is checked again
+    if (stop?.()) throw new DrainAbort(`diarize waiting for a slot on ${host}`);
     const remote = running ? await running().catch(() => null) : null;
     const all = new Set([...idsOn(host), ...(remote || [])]);
     all.delete(job);
@@ -515,7 +518,7 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
       const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
       // a re-attached job does not wait for a slot, but it COUNTS (12:29: after a restart two re-attached jobs plus a new one
       // ran on aorus, whose cap is 1) — pickDiarHost sees it
-      const r = live === 'running' || live === 'done' ? await countDiar(host, go, job) : await diarSlot(host, go, undefined, { job, running: deps.running || (deps.asrJob ? null : () => runningOn(host)) });
+      const r = live === 'running' || live === 'done' ? await countDiar(host, go, job) : await diarSlot(host, go, undefined, { job, stop, running: deps.running || (deps.asrJob ? null : () => runningOn(host)) });
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
     } catch (err) { if (err.code === 'DRAIN' || !/ssh exit 255|Connection|timed out|No route/i.test(err.message)) throw err; }
