@@ -358,7 +358,9 @@ export async function runItem(item, opts = {}, deps = {}) {
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
       const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...OGG_ARGS, ogg], { stop }));
       const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
-      if (tools.encodeRemote) {
+      // a RE-RUN of a published talk encodes on tower in its own slot — never in boss's encode slots, which new talks' prep
+      // needs (21:30: ~600 backfill re-runs held all 4 boss encode slots and 16 prep runs waited behind them)
+      if (tools.encodeRemote && slotLight !== rerunLight) {
         meta.enc_jobs = meta.enc_jobs || {};
         for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
         await save();

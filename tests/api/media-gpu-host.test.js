@@ -398,3 +398,12 @@ describe('a finished transcription is noticed within seconds (21:05: a 15 s poll
     expect(src).toMatch(/every = Math\.min\(8000, Math\.round\(every \* 1\.5\)\)/);
   });
 });
+
+describe('prep never queues behind full encode slots (21:30: 16 prep runs waited on boss’s 4 encode slots)', () => {
+  it('a full set of boss encode slots overflows to the tower; re-runs of published talks never take a boss slot', async () => {
+    const { readFileSync } = await import('fs');
+    // encodeRemote's remote path needs ssh (no exec injection), so the two rules are checked in the source
+    expect(readFileSync(new URL('../../api/lib/media/tools.js', import.meta.url), 'utf8')).toMatch(/if \(encBusy >= slots && local && !overflowOff\(\)\) return local\(\);/);
+    expect(readFileSync(new URL('../../api/lib/media/item.js', import.meta.url), 'utf8')).toMatch(/if \(tools\.encodeRemote && slotLight !== rerunLight\)/);
+  });
+});

@@ -647,10 +647,13 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
  *  local() runs it on tower (the caller's ffmpeg in its slot). Re-attaches by job id after a restart. */
 let encBusy = 0;
 const encWait = [];
+const overflowOff = () => process.env.MEDIA_ENCODE_OVERFLOW === '0';
 export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 4 } = {}) {   // boss prep 4 at a time (10-23 06:09: boss at load 9, prep the limit)
   const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
   if (host && job && diskOk(host, { kind: 'encode' })) {
     // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
+    // boss's encode slots full → the tower encodes it now (its own light slots pace it) instead of queueing behind them
+    if (encBusy >= slots && local && !overflowOff()) return local();
     while (encBusy >= slots) await slotWait(encWait, 'an encode slot');
     encBusy++;
     try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output, threads: 2 }, { host, job, stop, file: true }); }   // 2 threads each (was 8)
