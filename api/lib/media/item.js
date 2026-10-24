@@ -427,6 +427,7 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'web') {
       delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
+      if (meta.stages?.catalog?.at || item.published_at) meta.version = (meta.version || 1) + 1;   // a re-encode of a published talk (remaster / revert / chain change): new ?v= URLs, no stale edge copy
       const { src, af } = listeningSource(meta, dir);   // the original + the transparent chain (Chad 10-23), or the remaster
       const remastered = isRemastered(meta);
       const afArgs = af ? ['-af', af] : [];
