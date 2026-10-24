@@ -112,6 +112,17 @@ describe('the RunPod backfill', () => {
     expect(homeEligible('aorus', { ...T, asrLoad: () => ({ aorus: { busy: 1, slots: 2 } }) })).toBe(true);
     expect(homeEligible('aorus', { ...T, diskOk: () => false, asrLoad: () => ({}) })).toBe(false);
   });
+  it('a resume after a drain keeps its queue (its explicit ids are not queued again)', async () => {
+    const t = setup();
+    let n = 0;
+    t.deps.draining = () => ++n > 3;
+    await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 1 }, t.deps);
+    const before = JSON.parse(readFileSync(join(t.root, 'state.json'), 'utf8'));
+    t.deps.draining = () => true;   // the resumed run yields at once
+    await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 1, force: true }, t.deps);
+    const after = JSON.parse(readFileSync(join(t.root, 'state.json'), 'utf8'));
+    expect(after.queue).toEqual(before.queue);
+  });
   it('dry run lists the B–E candidates and the hours', async () => {
     const t = setup();
     expect(await mediaCloudRemasterJob({}, t.deps)).toMatchObject({ talks: 2, hours: 0.3 });

@@ -1206,7 +1206,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   // the queue: explicit ids, else every published B–E talk not yet remastered, WORST FIRST (Chad 10-23: E, D, C, B; within a
   // grade the narrowest bandwidth, then the lowest SNR). Persisted in the state file, so a restart resumes in order; a new run
   // after a finished one rebuilds it (spend stays cumulative — the cap covers every run).
-  if (ids || !st.started || st.finished) {
+  // a run in progress (a resume after a drain) keeps its queue: its own ids must not be queued again (10-23: the pilot's
+  // resume re-added all ten on every deploy)
+  if (!st.started || st.finished) {
     const list = ids ? (await Promise.all([].concat(ids).map(async (x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter(Boolean)
       : await repo.remasterCandidates(String(process.env.MEDIA_REMASTER_GRADES || 'B,C,D,E').split(',').map((g) => g.trim().toUpperCase()));
     const busy = new Set([...Object.values(st.jobs || {}).map((j) => j.itemId), ...(force ? [] : (st.done || []).map((d) => d.id)), ...(st.queue || [])]);
