@@ -1,6 +1,6 @@
-# pinned at build; the torch family comes from the base image (the constraint file in the Dockerfile keeps it)
+# pinned at build; the torch family comes from the base image (the constraint in the Dockerfile keeps it)
+# sherpa-onnx (diarization) joins when the diarize stage is packaged — it has no manylinux wheel for this base
 whisperx==3.8.6
 einops
 omegaconf
 soundfile
-sherpa-onnx
