@@ -113,7 +113,11 @@ def device():
     t0 = time.time()
     while True:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        free = torch.cuda.mem_get_info()[0]
+        try:
+            free = torch.cuda.mem_get_info()[0]
+        except Exception as err:   # a FULL card cannot even create a context (10-23 20:13: 'CUDA error: out of memory' here
+            free = 0               # failed a probe outright, past the OOM retry) — count it as no memory and keep waiting
+            print(f'GPU context failed ({str(err)[:80]}) — waiting for memory', file=sys.stderr)
         if free >= need:
             _device = ('cuda', 'float16')
             t = threading.Timer(30, lambda: (fcntl.flock(lock, fcntl.LOCK_UN), lock.close()))
@@ -640,7 +644,7 @@ def main():
         # the GPU is shared (transcriptions, probes, DeepFilterNet on an 8 GB card). Out of GPU memory → START AGAIN as a fresh
         # process (an in-process CPU retry kept the dead CUDA model's 2.2 GB and ran for 30+ min, 10-22): first back on the GPU
         # (waiting for free memory under the lock), and only a second time out of memory on the CPU
-        if 'out of memory' not in str(err).lower() or device()[0] != 'cuda':
+        if 'out of memory' not in str(err).lower() or os.environ.get('MEDIA_DEVICE') == 'cpu':
             raise
         # each retry waits for MORE free memory (a transcription's alignment + VAD peak above its load; 10-23: two OOMs sent a
         # 76-min talk to aorus's CPU for 45+ min); the CPU only after three

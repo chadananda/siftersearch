@@ -70,8 +70,9 @@ if [[ "$verb" == "df" ]]; then
   mem=$(awk '/^MemAvailable:/ {print int($2/1048576*10)/10}' /proc/meminfo 2>/dev/null || echo null)
   # heat (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss Tctl 99.9 °C): GPU temperature and CPU Tctl
   gpu=$( (nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null || true) | head -1 | tr -dc '0-9' || true); gpu=${gpu:-null}   # a host without a GPU / sensors: null, never an exit (set -e)
+  vfree=$( (nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null || true) | head -1 | tr -dc '0-9' || true); vfree=${vfree:-null}
   tctl=$( (sensors 2>/dev/null || true) | awk '/^Tctl:/ {gsub(/[^0-9.]/,"",$2); print int($2); exit}' || true); tctl=${tctl:-null}
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl"
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then

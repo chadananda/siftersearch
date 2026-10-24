@@ -341,3 +341,27 @@ describe('a diarization not yet started moves off a full host (10-23 19:41: five
     delete process.env.MEDIA_GPU_HOST; delete process.env.MEDIA_ASR_HOST;
   });
 });
+
+describe('GPU memory is budgeted at dispatch (10-23 20:12: a DFN job OOM-ed on aorus beside two transcriptions)', () => {
+  it('a kind goes to the GPU host only when free VRAM − recent dispatches covers its need', async () => {
+    process.env.MEDIA_GPU_HOST = 'aorus';
+    const t = await import('../../api/lib/media/tools.js');
+    const noop = async () => ({});
+    t.noteDisk('aorus', { free_gb: 3000, mem_avail_gb: 11, gpu_free_mb: 1700, gpu_temp: 60, cpu_tctl: 70 });
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'dfn' })).toBe(false);          // 1500 + 300 > 1700
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'diarize' })).toBe(false);
+    t.noteDisk('aorus', { gpu_free_mb: 4500 });
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'dfn' })).toBe(true);
+    t.reserveGpu('aorus', 'transcribe');                                          // 3500 dispatched, not yet resident
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'dfn' })).toBe(false);
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'dfn', now: Date.now() + 120_000 })).toBe(true);   // reservation expired
+    delete process.env.MEDIA_GPU_HOST;
+  });
+  it('a full card that cannot create a context waits, and the OOM retry re-checks the env, not the cached device', async () => {
+    const { readFileSync } = await import('fs');
+    const py = readFileSync(new URL('../../scripts/media/media_tool.py', import.meta.url), 'utf8');
+    expect(py).toMatch(/GPU context failed/);
+    expect(py).toMatch(/'out of memory' not in str\(err\)\.lower\(\) or os\.environ\.get\('MEDIA_DEVICE'\) == 'cpu'/);
+    expect(readFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), 'utf8')).toMatch(/gpu_free_mb/);
+  });
+});
