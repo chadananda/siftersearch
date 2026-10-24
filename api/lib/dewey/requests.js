@@ -3,6 +3,7 @@
 // author, collection, tradition). Pools: the missing-books triage's no-source queue (catalogue rows we cannot fetch
 // ourselves), Dewey's wanted / researched / to-buy / lead items. Pure; the route (routes/dewey-mail.js) gathers the data.
 import { createHmac } from 'node:crypto';
+import { excludedWork } from './prepare.js';
 
 /** Prolific: ≥ recentMin accepted items in the last window, or ≥ totalMin ever — and active within idleDays. Pure. */
 export function isProlific({ total = 0, recent = 0, last_at = null }, { recentMin = 5, totalMin = 15, idleDays = 90, now = Date.now() } = {}) {
@@ -42,6 +43,7 @@ export function pickRequests(pool = [], own = [], { min = 5, max = 10 } = {}) {
   for (const p of pool) {
     const t = fold(p.title);
     if (!t || t.length < 4 || mine.has(t) || seen.has(t) || !presentable(p)) continue;
+    if (excludedWork({ title: p.title, author: p.author, publisher: p.identified?.research?.publisher || p.identified?.publisher })) continue;   // never ask for a Ruhi book (Chad 10-23)
     seen.add(t);
     const s = shelfOf(p);
     const a = like.authors.get(fold(p.author)) || 0, c = s?.collection ? like.collections.get(`${fold(s.religion)}|${fold(s.collection)}`) || 0 : 0, r = like.religions.get(fold(s?.religion)) || 0;

@@ -1123,6 +1123,16 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Parse frontmatter FIRST to separate body from metadata
   // This allows us to detect metadata-only changes vs content changes
   const { content: bodyContent, metadata: frontmatterMeta } = parseMarkdownFrontmatter(text);
+  // EXCLUDED WORKS (Chad 10-23: Ruhi books never enter the library — no unique quotes, no scholarship): refused + logged
+  {
+    const { excludedWork } = await import('../lib/dewey/prepare.js');
+    const ex = excludedWork({ title: frontmatterMeta.title || metadata.title, author: frontmatterMeta.author || metadata.author,
+      publisher: frontmatterMeta.publisher, file_path: relativePath, front: bodyContent.split(/\n{2,}/).slice(0, 40) });
+    if (ex) {
+      logger.warn({ relativePath, reason: ex.reason, why: ex.why }, 'Ingester: REFUSED — excluded work');
+      return { documentId: null, paragraphCount: 0, status: 'excluded', error: `${ex.reason} — ${ex.why}` };
+    }
+  }
 
   const fileHash = hashContent(text.trim());           // Hash of entire file (detects ANY change)
   const bodyHash = hashContent(bodyContent.trim());    // Hash of body only (detects CONTENT change)

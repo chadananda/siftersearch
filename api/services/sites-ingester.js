@@ -32,7 +32,7 @@ import { aiService } from '../lib/ai-services.js';
 import { content } from '../lib/content.js';
 import { adjudicateSameWork } from '../lib/dedup-adjudicator.js';
 import { carriedEnrichment } from './carried-enrichment.js';   // ONE pairing rule for carried note/stamp + HyPE
-import { repairParagraphs, judge } from '../lib/dewey/prepare.js';   // Dewey's quality gate: repair, then the verdict
+import { repairParagraphs, judge, excludedWork } from '../lib/dewey/prepare.js';   // Dewey's quality gate: repair, then the verdict
 import {
   hashNormalized as normalizedHash,
   hashContent as fileHashOf,
@@ -574,6 +574,13 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   const { docFields } = parsed;
   let { paragraphs } = parsed;
   docFields.file_path = relPath;
+  // EXCLUDED WORKS (Chad 10-23: Ruhi books never enter the library) — refused and logged, nothing written
+  const excluded = excludedWork({ title: docFields.title, author: docFields.author, publisher: docFields.publisher, file_path: relPath,
+    front: (paragraphs || []).slice(0, 40).map((p) => p.text) });
+  if (excluded) {
+    logger.warn({ file: relPath, reason: excluded.reason, why: excluded.why, scope }, 'Sites-ingester: REFUSED — excluded work');
+    return { status: 'excluded', file: relPath, doc_id: existing?.id ?? null, scope, reason: excluded.reason, why: excluded.why };
+  }
   // DEWEY'S QUALITY GATE (Chad 10-19: "We don't want to ingest books unless the quality is very good"): markup out,
   // paragraphs broken at a page joined again, page-foot notes moved into block_attrs, easy OCR fixed — then judged.
   // A file below the bar is HELD (logged, nothing written; an existing document stays as it is) until its source is fixed.

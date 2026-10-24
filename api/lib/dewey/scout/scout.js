@@ -8,6 +8,7 @@
 import { mkdir, writeFile, unlink, stat } from 'fs/promises';
 import { join } from 'path';
 import { createItem, updateItem, listItems } from '../../repos/dewey-repo.js';
+import { excludedWork } from '../prepare.js';
 import { workKey } from '../../ops/dewey-ingest-folder-job.js';
 import { CHANNELS, purchaseLeads, isShadow, sameWork } from './channels.js';
 import { UA } from './ris.js';
@@ -182,6 +183,9 @@ export async function scoutList(works, { limit = 20, deps = {} } = {}) {
   for (const w of works) {
     if (outcomes.length >= limit) break;
     if (seen.has(workKey(w.title)) || (w.page && seen.has(w.page))) continue;
+    // EXCLUDED WORKS (Chad 10-23): a Ruhi book is never scouted, offered or wanted — logged as an outcome, no item made
+    const ex = excludedWork({ title: w.title, author: w.author, publisher: w.publisher });
+    if (ex) { seen.add(workKey(w.title)); outcomes.push({ title: w.title, state: 'excluded', why: ex.reason }); counts.excluded = (counts.excluded || 0) + 1; continue; }
     if (draining()) return { counts, outcomes, remaining: works.filter((x) => !seen.has(workKey(x.title))).length, yielded: true };
     let o;
     try { o = await scoutWork(w, { ...deps, draining }); } catch (e) {

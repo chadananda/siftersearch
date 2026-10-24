@@ -294,3 +294,36 @@ export function prepareForIngest(text, { language = null, item = {}, dict } = {}
     before: { score: before.score, findings: before.findings }, after,
   };
 }
+
+// ── 6. EXCLUDED WORKS (Chad 10-23: Ruhi books "Exclude entirely" — they hold no unique quotes and no scholarship) ─────────
+// Every ingest path asks this before a file enters the library (main ingester, sites ingester, Dewey intake) and Dewey
+// never offers or wants one (scouts, pulse). Ruhi = published by the Ruhi Institute / Foundation or Palabra Publications,
+// or a Ruhi course book by its title. "Rúhíyyih" never matches; letters ABOUT the institute (UHJ, ITC) are not excluded.
+export const RUHI_REASON = 'excluded: Ruhi (Chad 10-23)';
+const fold6 = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’ʼ`]/g, '').toLowerCase();
+const RUHI_PUBLISHER = /\bruhi (institute|foundation)\b|\binstituto ruhi\b|\bfundacion ruhi\b|\bpalabra publications?\b/;
+// course titles distinctive on their own; the generic ones (The Twin Manifestations, Teaching the Cause, The Covenant of
+// Bahá'u'lláh, Material Means, Family and the Community) count only as a numbered Ruhi book
+const RUHI_TITLE = /\b(reflections on the life of the spirit|arising to serve|teaching childrens classes|releasing the powers of junior youth|walking together on a path of service|gaining an historical perspective|building vibrant communities|engaging in social action|participating in public discourse)\b/;
+const RUHI_SEQUENCE = /\bruhi\b(?!yy)[^|]{0,40}\bbook\s*(1[0-4]|[1-9])\b|\bbook\s*(1[0-4]|[1-9])\b[^|]{0,60}\bruhi\b(?!yy)|\bruhi (book|sequence|course)\b/;
+const IMPRINT_CUE = /©|\(c\)|\bcopyright\b|\bpublished by\b|\ball rights\b|\bisbn\b/;
+const ABOUT_AUTHOR = /\b(universal house of justice|international teaching cent(re|er)|department of the secretariat)\b/;
+/**
+ * Is this a work the library refuses? → { reason, why } or null.
+ * w: { title, author, publisher, file_path, front: [first paragraphs' text] }
+ */
+export function excludedWork(w = {}) {
+  const author = fold6(w.author);
+  if (ABOUT_AUTHOR.test(author)) return null;   // the House of Justice / ITC writing about the institute stays
+  const title = fold6(w.title).replace(/[^a-z0-9|]+/g, ' ');
+  const meta = [author, fold6(w.publisher), title, fold6(w.file_path).replace(/[_/.-]+/g, ' ')].join(' | ');
+  let why = null;
+  if (RUHI_PUBLISHER.test(meta)) why = 'publisher/credit names the Ruhi Institute or Palabra';
+  else if (RUHI_TITLE.test(title)) why = `a Ruhi course title: ${w.title}`;
+  else if (RUHI_SEQUENCE.test(meta)) why = 'a numbered book of the Ruhi sequence';
+  else {
+    const line = (w.front || []).slice(0, 40).map((t) => fold6(t)).find((t) => t.length <= 400 && IMPRINT_CUE.test(t) && RUHI_PUBLISHER.test(t));
+    if (line) why = `its imprint: ${line.slice(0, 120)}`;
+  }
+  return why ? { reason: RUHI_REASON, why } : null;
+}

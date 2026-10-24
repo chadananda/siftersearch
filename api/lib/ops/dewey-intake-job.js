@@ -6,7 +6,7 @@
 import { readFile, unlink, writeFile } from 'fs/promises';
 import { getItem, updateItem } from '../repos/dewey-repo.js';
 import { garbledLayer, readPdf } from '../dewey/convert.js';
-import { prepareForIngest } from '../dewey/prepare.js';
+import { prepareForIngest, excludedWork } from '../dewey/prepare.js';
 import { slpToText, slpEnabled, completeness } from '../dewey/searchlayer.js';
 import { enqueue } from '../repos/ops-report-repo.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
@@ -58,6 +58,13 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   // across page breaks, easy OCR misreadings corrected against the dictionary, walls of text split — and a verdict
   const prep = prepareForIngest(text, { item });
   text = prep.text;
+  // EXCLUDED WORKS (Chad 10-23: Ruhi books never enter the library) — declined, with the reason on the item
+  const excluded = excludedWork({ title: item.title, author: item.author, publisher: item.identified?.research?.publisher || item.identified?.publisher,
+    file_path: item.original_path, front: text.split(/\n{2,}/).slice(0, 40) });
+  if (excluded) {
+    await updateItem(item.id, { state: 'declined' }, `${excluded.reason} — ${excluded.why}`);
+    return { id: item.id, state: 'declined', why: excluded.reason };
+  }
   const gate = proseGate(text.replace(/<pb[^>]*\/>/g, ' '), { pages });
   // a scan or a GARBLED text layer (old OCR) is not the book's text: it waits for full OCR — SearchLayerPDF, queued here
   // when configured (its output is checked before it comes back to this job)
