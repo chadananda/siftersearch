@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { render } from 'svelte/server';
 import { talkAudio, isRemastered, originalStarts, originalField } from '../../api/lib/media/talk-audio.js';
 import { flattenOriginalStarts, mapTime, flattenWords } from '../../src/lib/media.js';
+import { readFileSync as rf } from 'fs';
 import MediaPlayer from '../../src/components/media/MediaPlayer.svelte';
 
 const base = JSON.parse(readFileSync(new URL('../fixtures/media-item.json', import.meta.url), 'utf8'));
@@ -51,22 +52,44 @@ describe('copy time mapping', () => {
   });
 });
 
-describe('MediaPlayer SSR', () => {
+describe('MediaPlayer SSR: Original | Remastered switch', () => {
   const full = (audio) => ({ ...base, rights: { ...base.rights, playback: 'full' }, audio });
   const plain = { ogg: '/a.ogg', m4a: '/a.m4a', offset_s: 0, remastered: false };
-  it('a remastered talk renders the small Original button in the reserved slot', () => {
-    const { body } = render(MediaPlayer, { props: { item: full({ ...plain, remastered: true, original_url: '/o.m4a', original_ogg: '/o.ogg' }) } });
-    expect(body).toMatch(/data-original-slot/);
-    expect(body).toMatch(/<button[^>]*class="orig[^"]*"[^>]*>[\s\S]*?Original\s*<\/button>/);
-    expect(body).toMatch(/aria-label="Play the original recording"/);
+  const rem = { ...plain, remastered: true, original_url: '/o.m4a', original_ogg: '/o.ogg' };
+  it('a remastered talk shows the radiogroup, Remastered checked by default, no old Original button', () => {
+    const { body } = render(MediaPlayer, { props: { item: full(rem) } });
+    expect(body).toMatch(/role="radiogroup"[^>]*aria-label="Audio version"/);
+    expect(body).toMatch(/role="radio" aria-checked="true"[^>]*class="ab-opt[^"]* on"[^>]*>Remastered</);
+    expect(body).toMatch(/role="radio" aria-checked="false"[^>]*>Original</);
+    expect(body).not.toMatch(/the original recording/);
   });
-  it('a talk still on the transparent copy reserves the slot but shows no button', () => {
+  it('a talk still on the transparent copy reserves the slot but shows no switch', () => {
     const { body } = render(MediaPlayer, { props: { item: full(plain) } });
     expect(body).toMatch(/data-original-slot/);
-    expect(body).not.toMatch(/the original recording/);
+    expect(body).not.toMatch(/radiogroup/);
   });
   it('a clips-level talk has neither', () => {
     const { body } = render(MediaPlayer, { props: { item: { ...base, clip_url: '/clip' } } });
     expect(body).not.toMatch(/data-original-slot/);
+  });
+});
+
+// the switch keeps the position and play state: asserted on the component source (no browser here) + the time mapping above
+describe('switchCopy contract', () => {
+  const src = rf(new URL('../../src/components/media/MediaPlayer.svelte', import.meta.url), 'utf8');
+  const fn = src.slice(src.indexOf('async function switchCopy'), src.indexOf('const seek = (t)'));
+  it('defaults to the remastered (main) copy and does not persist the choice', () => {
+    expect(src).toMatch(/let copy = \$state\('main'\)/);
+    expect(src).not.toMatch(/localStorage|sessionStorage/);
+  });
+  it('reads position + play state first, seeks the other copy to the same moment, restores rate and play state', () => {
+    expect(fn).toMatch(/const t = started \? now\(\) : startAt, wasPlaying = playing/);
+    expect(fn).toMatch(/audio\.currentTime = Math\.max\(0, copyTime\(t\) - offset\)/);
+    expect(fn).toMatch(/audio\.playbackRate = rate/);
+    expect(fn).toMatch(/if \(wasPlaying\) await audio\.play\(\)/);
+    expect(fn).toMatch(/10000/);   // stall guard
+  });
+  it('a paused/unstarted player only flips the choice (the other copy is not fetched until needed)', () => {
+    expect(fn).toMatch(/if \(!started \|\| !audio\.src[^\n]*return;/);
   });
 });

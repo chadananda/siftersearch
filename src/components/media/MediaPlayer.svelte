@@ -122,6 +122,7 @@
   }
 
   function frame() {
+    if (switching) { raf = requestAnimationFrame(frame); return; }   // the source is changing: hold the position
     let t = now();
     // a dead gap (a tape flip) is skipped, never cut: jump to its end
     if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, copyTime(to) - offset); t = to; } }
@@ -197,15 +198,27 @@
     follow = true; anchorY = anchorFor(wordEls[curK]); lastLineTop = null;
     audio.play().catch((e) => (note = `Could not play: ${e.message}`));
   }
-  /** The big Play button plays the main copy, the small Original button the original: pressing the other one while a copy
-   *  plays (or is paused mid-talk) switches at the same moment; pressing the one already loaded plays/pauses it. */
-  function playCopy(which) {
-    if (!canPlay) return;
-    if (which === 'original' && !hasOriginal) return;
-    if (copy === which) return toggle();
-    const t = started ? now() : startAt;
+  /** Original | Remastered: same second, same play state, only the source changes (the other copy is not fetched until
+   *  the first switch). Rate and volume are kept; a stalled load gives up after 10 s and says so. */
+  let switching = false;
+  async function switchCopy(which) {
+    if (!canPlay || !hasOriginal || which === copy || switching) return;
+    const t = started ? now() : startAt, wasPlaying = playing;
     copy = which;
-    playFrom(t, { end: limit });
+    if (!started || !audio.src || audio.src.startsWith('blob:')) return;   // nothing loaded yet: the first play loads this copy
+    switching = true; note = '';
+    try {
+      const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
+      const want = onOriginal() ? (ogg && item.audio.original_ogg ? item.audio.original_ogg : item.audio.original_url || item.audio.original_ogg)
+        : (ogg && item.audio.ogg ? item.audio.ogg : item.audio.m4a || item.audio.ogg);
+      audio.src = media.href(want); loaded = want;
+      await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load')), 10000))]);
+      audio.currentTime = Math.max(0, copyTime(t) - offset);
+      audio.playbackRate = rate;
+      if (wasPlaying) await audio.play();
+    } catch (e) {
+      playing = false; note = `Could not switch: ${e.message}`;
+    } finally { switching = false; if (!playing) frame(); }
   }
   const seek = (t) => (playing || started ? playFrom(t, { end: null }) : (startAt = t, current = t, mark(wordAt(flat.starts, t + 0.02))));
   const onword = (k, el) => playFrom(flat.starts[k], { el });
@@ -346,34 +359,15 @@
       <section bind:this={heroPlayer} aria-label="Player" class="dial mt-6 rounded-2xl bg-radio-dial p-3 sm:p-4">
         {#if canPlay}
           <div class="flex items-center gap-3 sm:gap-4">
-            <div class="flex flex-none flex-col items-center gap-1">
-              <button type="button" onclick={() => playCopy('main')} disabled={busy} aria-label={playing && copy === 'main' ? 'Pause' : 'Play'} class="bigplay">
-                {#if busy}
-                  <svg class="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
-                {:else if playing && copy === 'main'}
-                  <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-                {:else}
-                  <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
-                {/if}
-              </button>
-              {#if level === 'full'}
-                <!-- the Original slot is always reserved (SSR), so the button never shifts the layout -->
-                <div class="orig-slot" data-original-slot>
-                  {#if hasOriginal}
-                    <button type="button" onclick={() => playCopy('original')} disabled={busy} class="orig" class:on={copy === 'original'}
-                      aria-pressed={copy === 'original' && playing} title="Hear the original recording, before restoration, from this moment"
-                      aria-label={copy === 'original' && playing ? 'Pause the original recording' : 'Play the original recording'}>
-                      {#if copy === 'original' && playing}
-                        <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>
-                      {:else}
-                        <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3.5v17l15-8.5z"/></svg>
-                      {/if}
-                      Original
-                    </button>
-                  {/if}
-                </div>
+            <button type="button" onclick={toggle} disabled={busy} aria-label={playing ? 'Pause' : 'Play'} class="bigplay">
+              {#if busy}
+                <svg class="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+              {:else if playing}
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              {:else}
+                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
               {/if}
-            </div>
+            </button>
             <div class="min-w-0 flex-1">
               <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} {pins} />
             </div>
@@ -381,7 +375,20 @@
           <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-radio-dial-ink">
             <span class="font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
             {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
-            <label class="ml-auto flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Speed
+            {#if level === 'full'}
+              <!-- Original | Remastered: the slot is reserved in SSR so the control never shifts the layout -->
+              <div class="ab-slot ml-auto" data-original-slot>
+                {#if hasOriginal}
+                  <div class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Audio
+                  <div class="ab" role="radiogroup" aria-label="Audio version">
+                    {#each [['original', 'Original'], ['main', 'Remastered']] as [k, label] (k)}
+                      <button type="button" role="radio" aria-checked={copy === k} aria-pressed={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)}>{label}</button>
+                    {/each}
+                  </div></div>
+                {/if}
+              </div>
+            {/if}
+            <label class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Speed
               <select bind:value={rate} class="speed rounded-md bg-radio-paper px-1.5 py-0.5 font-sans text-sm text-radio-ink">
                 {#each [0.75, 1, 1.25, 1.5, 2] as r (r)}<option value={r}>{r}×</option>{/each}
               </select>
@@ -579,14 +586,12 @@
     box-shadow: 0 0 0 0 var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); transition: transform 0.2s, box-shadow 0.3s; }
   .bigplay:hover { transform: scale(1.05); box-shadow: 0 0 0 7px var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); }
   .bigplay:disabled { opacity: 0.6; }
-  .orig-slot { height: 1.25rem; display: flex; align-items: center; }
-  .orig { display: inline-flex; align-items: center; gap: 0.25rem; height: 1.25rem; padding: 0 0.45rem; border-radius: 9999px; cursor: pointer;
-    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--radio-dial-ink); opacity: 0.75;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); transition: opacity 0.2s, color 0.2s; }
-  .orig:hover { opacity: 1; }
-  .orig.on { opacity: 1; color: var(--radio-needle); box-shadow: inset 0 0 0 1px var(--radio-needle); }
-  .orig:disabled { opacity: 0.4; cursor: default; }
-  .orig:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
+  .ab-slot { min-height: 1.75rem; min-width: 14rem; display: flex; justify-content: flex-end; align-items: center; }
+  .ab { display: inline-flex; border-radius: 0.375rem; overflow: hidden; background: var(--radio-paper); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); }
+  .ab-opt { cursor: pointer; padding: 0.125rem 0.6rem; font-family: var(--font-sans, sans-serif); font-size: 0.875rem; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--radio-ink); opacity: 0.75; transition: background 0.2s, opacity 0.2s; }
+  .ab-opt:hover { opacity: 1; }
+  .ab-opt.on { background: var(--radio-amber); color: var(--radio-walnut-deep); opacity: 1; }
+  .ab-opt:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .bigplay:focus-visible, .chip:focus-visible, .log-row:focus-visible, .log-head:focus-visible, .rel:focus-visible, .topic:focus-visible, .fab:focus-visible, .follow:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .chip { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.4rem 0.9rem; border-radius: 0.7rem; color: var(--radio-on-dark);
     box-shadow: inset 0 0 0 1px var(--radio-brass); transition: background 0.2s; }

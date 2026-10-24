@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-24T15:24:00.968Z",
+  "generated": "2026-10-24T15:59:05.417Z",
   "entries": [
+    {
+      "hash": "d8fd9922",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Image deps - no torch constraint file (the base's torch already satisfies whisperx); pip output visible, failures not swallowed",
+      "scope": "media"
+    },
+    {
+      "hash": "bee8cdfb",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Image deps resolve (dry-run checked against py3.11 linux wheels); sherpa-onnx waits for the diarize stage",
+      "scope": "media"
+    },
+    {
+      "hash": "bb42fe1a",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Image build - whisperx needs numpy >= 2.1, only the torch family is held to the base image",
+      "scope": "media"
+    },
+    {
+      "hash": "2d911023",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Image deps (librosa/nltk pins do not exist for the base image's python) + site version bump",
+      "scope": "media"
+    },
     {
       "hash": "5f52fddf",
       "date": "2026-10-24",
@@ -3472,38 +3500,38 @@
       "type": "Fixed",
       "description": "Within doctrine, a work the planner named for the theme leads, then relevance; the authority number only breaks ties (a loosely related Aqdas line outranked the exact Promised Day passage); the named works are searched first",
       "scope": "anis"
-    },
-    {
-      "hash": "91b4cff4",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The position planner gets 6000 tokens — Haiku spent all 1500 thinking and returned no text (finish 'length')",
-      "scope": "anis"
-    },
-    {
-      "hash": "634042a7",
-      "date": "2026-10-19",
-      "type": "Chore",
-      "description": "Log why the position planner returned no text",
-      "scope": "anis"
-    },
-    {
-      "hash": "0c05533a",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The position planner's lines are parsed through bullets, numbers and bold (a dressed reply parsed as no themes and the answer fell back); its raw text is logged when no theme parses",
-      "scope": "anis"
-    },
-    {
-      "hash": "931e8ee8",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Position planner covers the related doctrines a scholar would cite (property as an institution, the state, taxation and the rights of subjects, trade, materialist ideologies), up to 7 themes / 20 passages; the 'kinds of authority' opening is dropped",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "d8fd9922",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Image deps - no torch constraint file (the base's torch already satisfies whisperx); pip output visible, failures not swallowed",
+        "scope": "media"
+      },
+      {
+        "hash": "bee8cdfb",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Image deps resolve (dry-run checked against py3.11 linux wheels); sherpa-onnx waits for the diarize stage",
+        "scope": "media"
+      },
+      {
+        "hash": "bb42fe1a",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Image build - whisperx needs numpy >= 2.1, only the torch family is held to the base image",
+        "scope": "media"
+      },
+      {
+        "hash": "2d911023",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Image deps (librosa/nltk pins do not exist for the base image's python) + site version bump",
+        "scope": "media"
+      },
       {
         "hash": "5f52fddf",
         "date": "2026-10-24",
@@ -6984,34 +7012,6 @@
         "date": "2026-10-19",
         "type": "Fixed",
         "description": "Within doctrine, a work the planner named for the theme leads, then relevance; the authority number only breaks ties (a loosely related Aqdas line outranked the exact Promised Day passage); the named works are searched first",
-        "scope": "anis"
-      },
-      {
-        "hash": "91b4cff4",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The position planner gets 6000 tokens — Haiku spent all 1500 thinking and returned no text (finish 'length')",
-        "scope": "anis"
-      },
-      {
-        "hash": "634042a7",
-        "date": "2026-10-19",
-        "type": "Chore",
-        "description": "Log why the position planner returned no text",
-        "scope": "anis"
-      },
-      {
-        "hash": "0c05533a",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The position planner's lines are parsed through bullets, numbers and bold (a dressed reply parsed as no themes and the answer fell back); its raw text is logged when no theme parses",
-        "scope": "anis"
-      },
-      {
-        "hash": "931e8ee8",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Position planner covers the related doctrines a scholar would cite (property as an institution, the state, taxation and the rights of subjects, trade, materialist ideologies), up to 7 themes / 20 passages; the 'kinds of authority' opening is dropped",
         "scope": "anis"
       }
     ]
