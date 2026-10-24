@@ -1272,6 +1272,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return true;
   };
   let balance = null, balAt = 0, stop = null, yielded = false;
+  // the dead-man heartbeat must not depend on how long a tick takes (10-24: a 10-minute upload queue starved it and a pod shut itself down)
+  const pump = setInterval(() => {
+    for (const q of Object.values(st.pods)) if (!q.terminated && q.ip && q.port && q.status !== 'booting') C.podSsh(run, q, 'touch /workspace/spool/.tower-hb', { timeoutMs: 30_000 }).catch(() => {});
+  }, 60_000);
+  pump.unref?.();
   try {
     for (;;) {
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
@@ -1400,7 +1405,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if (kind === 'DONE' && it?.dir) {
                 const enh = join(it.dir, 'enhanced');
                 await fs.mkdir(enh, { recursive: true });
-                for (const [rf, lf, optional] of (['cleanup', 'post'].includes(st.items?.[it.id]?.mode) ? [['done.json', 'unipase.done.json']] : [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']])) {
+                // when the worker finished guard + alignment + encodes the raw generative copy is not needed here (the guarded one is): skip ~200 MB per audio hour of downlink
+                const finished = await C.podSsh(run, p, `test -f /workspace/spool/${job}/post.json && grep -q '"web"' /workspace/spool/${job}/post.json && echo FULL; true`, { timeoutMs: 60_000 }).then((r) => /FULL/.test(r.stdout)).catch(() => false);
+                if (finished && !['cleanup', 'post'].includes(st.items?.[it.id]?.mode)) { await fs.writeFile(join(enh, 'unipase.cloud.flac'), ''); await fs.writeFile(join(enh, 'unipase.asr.json'), '{}'); }
+                for (const [rf, lf, optional] of ((['cleanup', 'post'].includes(st.items?.[it.id]?.mode) || finished) ? [['done.json', 'unipase.done.json']] : [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']])) {
                   try { await C.podGet(run, p, `/workspace/spool/${job}/${rf}`, join(enh, `${lf}.part`)); }
                   catch (err) { if (optional) { await fs.rm(join(enh, lf), { force: true }); continue; } throw err; }   // an older worker: no like-for-like reference
                   await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
@@ -1478,7 +1486,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       await nap(tickMs);
     }
   } finally {
-    clearInterval(hb);
+    clearInterval(hb); clearInterval(pump);
     // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
     if (!yielded) for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, stop || 'finished');
     st.spent_usd = C.spendOf(st, now()); st.updated = now();
