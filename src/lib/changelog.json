@@ -1,6 +1,90 @@
 {
-  "generated": "2026-10-24T17:25:25.263Z",
+  "generated": "2026-10-24T20:26:12.015Z",
   "entries": [
+    {
+      "hash": "abdd9d1a",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Resumable multi-file uploads straight to R2 (edge multipart, up to 50 GB per file)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "16f22949",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Healthy pods were reaped (lastOk went stale during long uploads); realign retried on CPU when the pod GPU places nothing; current job code shipped over the image's copy",
+      "scope": "media"
+    },
+    {
+      "hash": "65958ea4",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Boot deadline 15 min for the 23 GB image (cold pull 5-12 min); a run that ended on 'pods failed to start' restarts clean",
+      "scope": "media"
+    },
+    {
+      "hash": "f7affce7",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "The lane reorders its queue: fresh talks before post work",
+      "scope": "media"
+    },
+    {
+      "hash": "247d6706",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Post orders go behind fresh talks (they ship the 300 MB restored copy back up tower's slow uplink)",
+      "scope": "media"
+    },
+    {
+      "hash": "4f3c7fe1",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Chad's lighter sketch actually published (take l3, sketch-15e13421…); darker one recorded as fallback",
+      "scope": "media"
+    },
+    {
+      "hash": "1dc517b8",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Chad's sketch redrawn with a lighter touch (mean luminance 202 → 229.5, likeness 0.58); the darker first drawing kept as fallback",
+      "scope": "media"
+    },
+    {
+      "hash": "ccd47446",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Retitle jones-01-thursday → 'Early Days Teaching in Bucharest' (talk_identities decisions may carry a title; media-talk-identities writes meta + row, re-renders; slug kept) + Chad's own sketch portrait (supplied photo = identity anchor, likeness 0.54, style A)",
+      "scope": "media"
+    },
+    {
+      "hash": "7212b118",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "RunPod calls time out (30 s) and retry — a call that never answered froze the cloud lane for 10+ min",
+      "scope": "media"
+    },
+    {
+      "hash": "66cc219b",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Restore the cloud lane (a // comment swallowed it from MEDIA_LANES; the backfill was idle) + a test that fails if it goes again",
+      "scope": "media"
+    },
+    {
+      "hash": "90067aff",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Backfill-r2 moves on after a 150 s timeout (a talk being re-processed)",
+      "scope": "media"
+    },
+    {
+      "hash": "a40fc4b1",
+      "date": "2026-10-24",
+      "type": "Chore",
+      "description": "Deploy version",
+      "scope": null
+    },
     {
       "hash": "e28f1d6b",
       "date": "2026-10-24",
@@ -3416,94 +3500,94 @@
       "type": "Fixed",
       "description": "A failed job records and logs its stack (a bare 'Request timed out' did not say which call); battery judge accepts 'Answer B' labels",
       "scope": null
-    },
-    {
-      "hash": "26ba367b",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "From the 61-question Immerse battery — a real topic or pasted passage is never deflected as 'unclear'/'cut off'; references read in the reader's community and the present (ABS, the Nine Year Plan, the House, message paragraphs); study questions researched broadly and answered in full, organised; search API now serves only its own routes (Anís and ops via the gateway)",
-      "scope": "anis"
-    },
-    {
-      "hash": "b76dccc7",
-      "date": "2026-10-19",
-      "type": "Docs",
-      "description": "Macro-services behind the gateway — layout, ports, coordinator (CLAUDE.md + continuous-deploy.md)",
-      "scope": null
-    },
-    {
-      "hash": "ca353922",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Under pm2 cluster mode argv[1] is pm2's container — recognise the entry by pm_exec_path (the gateway never listened)",
-      "scope": "gateway"
-    },
-    {
-      "hash": "24e7e054",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "The API splits into macro-services behind a gateway — siftersearch-gateway (7839, where the tunnel points; routes by path, retries a restarting service, streams), siftersearch-api (search, 7845), siftersearch-anis (conversations/letters/reading/widget, 2 instances, 7844), siftersearch-ops (health/reports, 7843): an Anís update reloads only Anís (Chad 10-19: 3,000 readers/day, dozens of updates, no interrupted conversations). Shared runtime (api-runtime.js) + shared server (http-server.js) + route sets; every service answers /healthz; the coordinator boots each new build on a test port before any reload; stray-killer waits out the 300 s drain",
-      "scope": "services"
-    },
-    {
-      "hash": "5c1441ec",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A file ADDED in a deploy cannot be loaded by running code — no fallback reload for it (the new indexer entry reloaded writer, deep-research and embedding for nothing); behind-check logs quietly",
-      "scope": "coordinator"
-    },
-    {
-      "hash": "e0606135",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "INDEXING is its own macro-service (siftersearch-indexer: phrase/HyPE/concept/section vectors, BM25, coverage ledger) on a 57-file import graph with no Dewey or Anís code — other services' deploys leave it running; ops services share one runtime (drain, heartbeat, lanes, alerts); a restart requeues only ITS OWN interrupted jobs (reports used to requeue carry's live ones); the coordinator starts newly declared services (Chad 10-19)",
-      "scope": "services"
-    },
-    {
-      "hash": "e9df3d78",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Answers as jobs (start + poll) — no request stays open for Cloudflare's 125 s limit or a reload (40 of 61 were 524s)",
-      "scope": "anis battery"
-    },
-    {
-      "hash": "d697ca68",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A service is behind only when its heartbeat commit lags HEAD in code IT loads (not pm2's package version); a version-only package.json bump is no change; a draining service is never signalled or verified twice (frontend deploy 2.187.723: mail drafts as jobs)",
-      "scope": "coordinator"
-    },
-    {
-      "hash": "2207e27a",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Only the pm2 API reports — the updater's pre-deploy test instance inherited its name",
-      "scope": "heartbeat"
-    },
-    {
-      "hash": "a9c46bea",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Continuous deploy without breaking work — coordinator touches only the services a change reaches (import graph); queue services DRAIN (SIGHUP: finish the work in hand, exit, pm2 restarts on new code); API drains requests AND jobs for 300 s; long work is a JOB (Anís mail drafts: async + poll, no more 524 or per-minute recompute); every service heartbeats its version/health/work → GET /api/admin/ops/services (Chad 10-19; docs/architecture/continuous-deploy.md)",
-      "scope": "deploy"
-    },
-    {
-      "hash": "18ca0da1",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A push touching no runtime code (tests, docs, frontend, hand-run scripts) is pulled without reloading the API and writer — a script-only push killed in-flight Anís research answers with 502s (10-19); research replies get 8,000 tokens (Sonnet thinks first; 2,700 cut them off); a timed-out research round retries once and logs round + elapsed",
-      "scope": "deploy"
-    },
-    {
-      "hash": "9d43e601",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A network failure is one answer's error, never the end of the run; results saved after every batch",
-      "scope": "anis battery"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "abdd9d1a",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Resumable multi-file uploads straight to R2 (edge multipart, up to 50 GB per file)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "16f22949",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Healthy pods were reaped (lastOk went stale during long uploads); realign retried on CPU when the pod GPU places nothing; current job code shipped over the image's copy",
+        "scope": "media"
+      },
+      {
+        "hash": "65958ea4",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Boot deadline 15 min for the 23 GB image (cold pull 5-12 min); a run that ended on 'pods failed to start' restarts clean",
+        "scope": "media"
+      },
+      {
+        "hash": "f7affce7",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "The lane reorders its queue: fresh talks before post work",
+        "scope": "media"
+      },
+      {
+        "hash": "247d6706",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Post orders go behind fresh talks (they ship the 300 MB restored copy back up tower's slow uplink)",
+        "scope": "media"
+      },
+      {
+        "hash": "4f3c7fe1",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Chad's lighter sketch actually published (take l3, sketch-15e13421…); darker one recorded as fallback",
+        "scope": "media"
+      },
+      {
+        "hash": "1dc517b8",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Chad's sketch redrawn with a lighter touch (mean luminance 202 → 229.5, likeness 0.58); the darker first drawing kept as fallback",
+        "scope": "media"
+      },
+      {
+        "hash": "ccd47446",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Retitle jones-01-thursday → 'Early Days Teaching in Bucharest' (talk_identities decisions may carry a title; media-talk-identities writes meta + row, re-renders; slug kept) + Chad's own sketch portrait (supplied photo = identity anchor, likeness 0.54, style A)",
+        "scope": "media"
+      },
+      {
+        "hash": "7212b118",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "RunPod calls time out (30 s) and retry — a call that never answered froze the cloud lane for 10+ min",
+        "scope": "media"
+      },
+      {
+        "hash": "66cc219b",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Restore the cloud lane (a // comment swallowed it from MEDIA_LANES; the backfill was idle) + a test that fails if it goes again",
+        "scope": "media"
+      },
+      {
+        "hash": "90067aff",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Backfill-r2 moves on after a 150 s timeout (a talk being re-processed)",
+        "scope": "media"
+      },
+      {
+        "hash": "a40fc4b1",
+        "date": "2026-10-24",
+        "type": "Chore",
+        "description": "Deploy version",
+        "scope": null
+      },
       {
         "hash": "e28f1d6b",
         "date": "2026-10-24",
@@ -6929,90 +7013,6 @@
         "type": "Fixed",
         "description": "A failed job records and logs its stack (a bare 'Request timed out' did not say which call); battery judge accepts 'Answer B' labels",
         "scope": null
-      },
-      {
-        "hash": "26ba367b",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "From the 61-question Immerse battery — a real topic or pasted passage is never deflected as 'unclear'/'cut off'; references read in the reader's community and the present (ABS, the Nine Year Plan, the House, message paragraphs); study questions researched broadly and answered in full, organised; search API now serves only its own routes (Anís and ops via the gateway)",
-        "scope": "anis"
-      },
-      {
-        "hash": "b76dccc7",
-        "date": "2026-10-19",
-        "type": "Docs",
-        "description": "Macro-services behind the gateway — layout, ports, coordinator (CLAUDE.md + continuous-deploy.md)",
-        "scope": null
-      },
-      {
-        "hash": "ca353922",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Under pm2 cluster mode argv[1] is pm2's container — recognise the entry by pm_exec_path (the gateway never listened)",
-        "scope": "gateway"
-      },
-      {
-        "hash": "24e7e054",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "The API splits into macro-services behind a gateway — siftersearch-gateway (7839, where the tunnel points; routes by path, retries a restarting service, streams), siftersearch-api (search, 7845), siftersearch-anis (conversations/letters/reading/widget, 2 instances, 7844), siftersearch-ops (health/reports, 7843): an Anís update reloads only Anís (Chad 10-19: 3,000 readers/day, dozens of updates, no interrupted conversations). Shared runtime (api-runtime.js) + shared server (http-server.js) + route sets; every service answers /healthz; the coordinator boots each new build on a test port before any reload; stray-killer waits out the 300 s drain",
-        "scope": "services"
-      },
-      {
-        "hash": "5c1441ec",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A file ADDED in a deploy cannot be loaded by running code — no fallback reload for it (the new indexer entry reloaded writer, deep-research and embedding for nothing); behind-check logs quietly",
-        "scope": "coordinator"
-      },
-      {
-        "hash": "e0606135",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "INDEXING is its own macro-service (siftersearch-indexer: phrase/HyPE/concept/section vectors, BM25, coverage ledger) on a 57-file import graph with no Dewey or Anís code — other services' deploys leave it running; ops services share one runtime (drain, heartbeat, lanes, alerts); a restart requeues only ITS OWN interrupted jobs (reports used to requeue carry's live ones); the coordinator starts newly declared services (Chad 10-19)",
-        "scope": "services"
-      },
-      {
-        "hash": "e9df3d78",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Answers as jobs (start + poll) — no request stays open for Cloudflare's 125 s limit or a reload (40 of 61 were 524s)",
-        "scope": "anis battery"
-      },
-      {
-        "hash": "d697ca68",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A service is behind only when its heartbeat commit lags HEAD in code IT loads (not pm2's package version); a version-only package.json bump is no change; a draining service is never signalled or verified twice (frontend deploy 2.187.723: mail drafts as jobs)",
-        "scope": "coordinator"
-      },
-      {
-        "hash": "2207e27a",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Only the pm2 API reports — the updater's pre-deploy test instance inherited its name",
-        "scope": "heartbeat"
-      },
-      {
-        "hash": "a9c46bea",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Continuous deploy without breaking work — coordinator touches only the services a change reaches (import graph); queue services DRAIN (SIGHUP: finish the work in hand, exit, pm2 restarts on new code); API drains requests AND jobs for 300 s; long work is a JOB (Anís mail drafts: async + poll, no more 524 or per-minute recompute); every service heartbeats its version/health/work → GET /api/admin/ops/services (Chad 10-19; docs/architecture/continuous-deploy.md)",
-        "scope": "deploy"
-      },
-      {
-        "hash": "18ca0da1",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A push touching no runtime code (tests, docs, frontend, hand-run scripts) is pulled without reloading the API and writer — a script-only push killed in-flight Anís research answers with 502s (10-19); research replies get 8,000 tokens (Sonnet thinks first; 2,700 cut them off); a timed-out research round retries once and logs round + elapsed",
-        "scope": "deploy"
-      },
-      {
-        "hash": "9d43e601",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A network failure is one answer's error, never the end of the run; results saved after every batch",
-        "scope": "anis battery"
       }
     ]
   }
