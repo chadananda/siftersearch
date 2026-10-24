@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libchrom
 
 # Python deps (torch family comes from the base image; whisperx 3.8.6 matches torch 2.8 — the tower venv's pin)
 COPY requirements.lock /tmp/requirements.lock
-RUN python -m pip install -q -c <(python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|numpy)==') -r /tmp/requirements.lock \
+RUN python -m pip install -q -c <(python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio)==') -r /tmp/requirements.lock \
     && python -c "import torch, whisperx, faster_whisper, soundfile, einops, omegaconf; print('deps ok, torch', torch.__version__)"
 
 # UniPASE code (pinned commit) + checksummed weights
