@@ -15,6 +15,7 @@ import { youtubeAt } from '../lib/media/render.js';
 import { buildIndex, shapeSpeakers } from '../lib/media/listing-index.js';
 import { decide } from '../lib/media/exclusions.js';
 import { speakerGallery, compactGallery } from '../lib/media/gallery.js';
+import { sketchOf } from '../lib/media/sketch.js';
 import { parseClipRange, clipText } from '../lib/media/clip-text.js';
 import { stripMdLinks } from '../lib/media/render.js';
 import { tmpdir } from 'os';
@@ -190,9 +191,10 @@ export default async function mediaRoutes(fastify) {
     // every card's picture: the speaker's portrait (image worker) where there is one, else the item's generated tile
     const spk = new Map((await speakersByKeys([...new Set(list.items.map((i) => i.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)]));
     for (const it of list.items) {
-      const t = spk.get(it.speaker_key);
-      it.thumb_url = t?.url || (it.thumb ? `/api/media/${it.slug}/file/${it.thumb}` : null);
-      it.thumb_kind = t ? 'photo' : (it.thumb ? 'tile' : null);
+      const t = spk.get(it.speaker_key), sk = sketchOf(it.speaker_key);
+      // the speaker's DRAWING leads (Chad 10-23: one courtroom-sketch style everywhere), then their photo, then the tile
+      it.thumb_url = sk?.square || t?.url || (it.thumb ? `/api/media/${it.slug}/file/${it.thumb}` : null);
+      it.thumb_kind = sk || t ? 'photo' : (it.thumb ? 'tile' : null);   // a portrait either way (the drawing or the photo)
     }
     const facets = q.facets === '0' ? null : await mediaFacets();
     pub(reply, 60);
@@ -212,6 +214,12 @@ export default async function mediaRoutes(fastify) {
       if (!g) continue;
       s.g = compactGallery(g);
       if (!s.p) { s.p = g[0].url; s.px = g[0].extended; s.cr = g[0].credit; }
+    }
+    // the speaker's DRAWING (ai_rendered, from a verified photo) is the row's portrait: p = the square drawing, px = the 9:16
+    // drawing, dr = 1; the photo stays as ph / pxh / phcr and in g (the gallery, with credits)
+    for (const s of speakers) {
+      const sk = sketchOf(s.k);
+      if (sk) Object.assign(s, { ph: s.p, pxh: s.px, phcr: s.cr, p: sk.square, px: { url: sk.url, width: sk.width, height: sk.height, ai_rendered: true }, cr: null, dr: 1 });
     }
     reply.header('Cache-Control', pending ? 'public, max-age=15, s-maxage=15' : 'public, max-age=120, s-maxage=300, stale-while-revalidate=3600');
     return { v: 1, generated_at: new Date().toISOString(), pending, total: items.length, hours: Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, items, speakers };
@@ -258,7 +266,8 @@ export default async function mediaRoutes(fastify) {
     if (!m) return reply.code(404).send({ error: 'NotFound' });
     let buf = momentCards.get(m.key);
     if (!buf) {
-      const thumb = m.speaker_key ? speakerThumb(await getSpeaker(m.speaker_key)) : null;
+      const sk = sketchOf(m.speaker_key);
+      const thumb = sk ? { url: sk.square } : m.speaker_key ? speakerThumb(await getSpeaker(m.speaker_key)) : null;
       let photo = null;
       if (thumb?.url) { try { const r = await fetch(`${thumb.url}&tr=w-360,h-360,fo-face,q-85,f-jpeg`, { signal: AbortSignal.timeout(8000) }); if (r.ok) photo = Buffer.from(await r.arrayBuffer()); } catch { /* the initials label */ } }
       const { renderMomentCard } = await import('../lib/media/moment-card.js');
@@ -335,6 +344,13 @@ export default async function mediaRoutes(fastify) {
     const gallery = it.speaker_key ? (await galleriesFor([it.speaker_key], spk ? [spk] : [])).get(it.speaker_key) || [] : [];
     const portrait = speakerThumb(spk) || (gallery[0] ? { ...gallery[0], kind: 'photo', service: true, name: it.speaker } : null);
     if (portrait && gallery.length > 1) portrait.gallery = gallery;
+    // the DRAWING leads the portrait slot; the photos (with credits) stay behind a toggle, so the gallery always rides along
+    const sketch = sketchOf(it.speaker_key);
+    if (portrait && sketch) {
+      if (!portrait.gallery && gallery.length) portrait.gallery = gallery;
+      Object.assign(portrait, { photo_url: portrait.url, photo_extended: portrait.extended || null, url: sketch.square,
+        extended: { url: sketch.url, width: sketch.width, height: sketch.height, ai_rendered: true }, sketch });
+    }
     if (!meta || !tr) return reply.code(404).send({ error: 'NotFound' });
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
@@ -411,7 +427,8 @@ export default async function mediaRoutes(fastify) {
       const tr = await readJson(join(it.dir, 'transcript.json'));
       const text = clipText(tr?.paragraphs || [], r.startMs, r.endMs);
       if (!text) return reply.code(404).send({ error: 'NotFound' });
-      const thumb = it.speaker_key ? speakerThumb(await getSpeaker(it.speaker_key)) : null;
+      const sk = sketchOf(it.speaker_key);
+      const thumb = sk ? { url: sk.square } : it.speaker_key ? speakerThumb(await getSpeaker(it.speaker_key)) : null;
       let photo = null;
       if (thumb?.url) { try { const f = await fetch(`${thumb.url}&tr=w-360,h-360,fo-face,q-85,f-jpeg`, { signal: AbortSignal.timeout(8000) }); if (f.ok) photo = Buffer.from(await f.arrayBuffer()); } catch { /* initials */ } }
       const { renderMomentCard } = await import('../lib/media/moment-card.js');

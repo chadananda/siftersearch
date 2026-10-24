@@ -7,17 +7,25 @@ const dayNo = (d) => Math.floor(d.getTime() / 86400_000);
 
 /** The listing row with today's photo as p / px / cr (the row unchanged without a gallery). */
 export function dayPick(s, date = new Date()) {
+  if (s?.dr) return s;   // the speaker's drawing is their portrait every day (Chad 10-23); the photos live on the talk page
   const g = Array.isArray(s?.g) ? s.g.filter((x) => typeof x?.u === 'string') : [];
   if (g.length < 2) return s;
   const pick = g[(dayNo(date) + h(s.k || s.n || '')) % g.length];
   return { ...s, p: pick.u, px: pick.x || null, cr: pick.cr || null };
 }
 
+/** A talk's DRAWING (thumb.sketch: the pen-and-ink portrait, ai_rendered, from a verified photo) or null. */
+export function sketchOf(item) {
+  const k = item?.thumb?.sketch;
+  return k && typeof k.square === 'string' ? { square: k.square, url: k.url || k.square, source_credit: k.source_credit || null } : null;
+}
+
 /** A talk's photos for its one portrait slot: the gallery when the API sent one, else the single portrait. */
 export function galleryOf(item) {
   const t = item?.thumb;
   if (!t?.url || t.kind === 'tile') return [];
-  const list = Array.isArray(t.gallery) && t.gallery.length ? t.gallery : [t];
+  // behind a drawing, t.url is the drawing: the photo it stands for is t.photo_url
+  const list = Array.isArray(t.gallery) && t.gallery.length ? t.gallery : t.sketch ? (t.photo_url ? [{ ...t, url: t.photo_url }] : []) : [t];
   return list.filter((p) => p?.url).map((p) => ({ url: p.url, credit: p.credit || p.artist || null, licence: p.licence || null, year: p.year ?? null,
     source_url: p.source_url || null, page_url: p.page_url || null }));
 }

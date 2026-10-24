@@ -274,6 +274,9 @@ export async function mediaShortJob(params = {}, deps = {}) {
   const { renderShortFor } = deps.short || await import('../media/short-job.js');
   const item = await repo.getMediaBySlug(params.slug);
   const portraitUrl = async (it) => {
+    // the speaker's DRAWING (Chad 10-23: the courtroom-sketch portrait is primary everywhere) — drawn at 9:16, no stretching
+    const sk = (deps.sketchOf || (await import('../media/sketch.js')).sketchOf)(it.speaker_key);
+    if (sk) return sk.url;
     const sp = it.speaker_key ? await repo.getSpeaker(it.speaker_key) : null;
     // the extended 9:16 master when there is one for the current portrait (no stretching, room for every crop)
     if (sp?.ext_file && sp.ext_sha && sp.ext_of === sp.sha) return `https://siftersearch.com/img/cdn/siftersearch.com/${sp.ext_file}?v=${sp.ext_sha.slice(0, 16)}`;

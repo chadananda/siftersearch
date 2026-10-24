@@ -4,7 +4,9 @@
 // while the tab is hidden. Browser only.
 export function rotatePortraits(root = document, { every = 9000 } = {}) {
   const ring = root.querySelector('[data-rotate]');
-  if (!ring || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return () => {};
+  if (!ring) return () => {};
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (reduced && !ring.hasAttribute('data-sketch')) return () => {};
   const layers = [...ring.querySelectorAll('img.rot')];
   const cap = root.querySelector('[data-rot-caption]');
   const first = cap?.querySelector('a');
@@ -23,6 +25,22 @@ export function rotatePortraits(root = document, { every = 9000 } = {}) {
     if (span) span.textContent = d.year ? ` · ${d.year}` : '';
     ring.title = `${who}${d.credit ? ` — photo: ${d.credit}${d.year ? ` · ${d.year}` : ''}` : ''}`;
   };
+  // a DRAWING leads (data-sketch): nothing turns by itself; the Photos toggle shows the real photos (rotating, credits
+  // following) and turns back to the drawing
+  if (ring.hasAttribute('data-sketch')) {
+    const btn = root.querySelector('[data-photos-toggle]');
+    const label = btn?.textContent || 'Photos';
+    let t = null;
+    btn?.addEventListener('click', () => {
+      const on = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(on)); btn.textContent = on ? 'Drawing' : label;
+      clearInterval(t); t = null;
+      if (!on) { i = 0; show(0); return; }
+      i = 1; show(1);
+      if (layers.length > 1 && !reduced) t = setInterval(() => { if (!document.hidden) { i = (i % layers.length) + 1; show(i); } }, every);
+    });
+    return () => clearInterval(t);
+  }
   const t = setInterval(() => { if (!document.hidden) { i = (i + 1) % (layers.length + 1); show(i); } }, every);
   return () => clearInterval(t);
 }

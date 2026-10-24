@@ -1,6 +1,153 @@
 {
-  "generated": "2026-10-23T23:43:25.347Z",
+  "generated": "2026-10-24T01:58:36.944Z",
   "entries": [
+    {
+      "hash": "0530a04c",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Night schema maintenance — named steps over /api/admin/ops/maintenance, run one at a time inside a writer drain (scripts/ops/db-maintenance.sh)",
+      "scope": "ops"
+    },
+    {
+      "hash": "fcf9a946",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The exclusion rules' cache follows the data files' modification times — Chad's decisions change data without a code push, and a long-running service kept the old rules",
+      "scope": "media"
+    },
+    {
+      "hash": "25b8d57a",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Chad's decisions 10-23 — 19 speakers dropped (curation, given name + surname), historian/modern tags, the unsure ranked last; confirmed identities (Furútan, Nakhjavání, Grossmann → Hartmut, Taherzadeh, Sabri → Isobel, Khamsí incl. Khamsi-Dunbar, Faizi → Abu'l-Qásim, Dr. Mohajer → Payman → excluded); the held Remey clip dropped; re-runs of published talks get their own tower slot",
+      "scope": "media"
+    },
+    {
+      "hash": "08cd958d",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Doctrine = the Writings > Shoghi Effendi > pilgrims' notes; NOTHING after the Guardian interprets; the House has legal authority, primary on law and administration (Chad 10-23, a decision)",
+      "scope": "anis authority"
+    },
+    {
+      "hash": "903a1417",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Chad's 10-23 rulings — Publishing Trusts / ABS / Wilmette institutional (open), Ruhi books excluded, per-book exceptions",
+      "scope": "rights"
+    },
+    {
+      "hash": "18526a4c",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Invented second speakers go back to the main speaker — voice-checked per paragraph (titanet: the other speaker ≥ 0.85 AND the paragraph ≥ 0.80 against the main voice); a real questioner stays",
+      "scope": "media"
+    },
+    {
+      "hash": "764c5c76",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A drain never waits on a transcription or diarization slot (DrainAbort while waiting) — 18:00 one diarization waiting for a slot held the media drain 12+ min, so no lane claimed work and aorus sat idle",
+      "scope": "media"
+    },
+    {
+      "hash": "a306474d",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "RAM guard on the compute hosts + intelligibility dominates the remaster QA",
+      "scope": "media"
+    },
+    {
+      "hash": "1ede244f",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The listening copy is the ORIGINAL with transparent processing only (Chad 10-23 by ear: the DFN and restored copies 'badly mangled' words) + fullband Ogg; jobs/tmp on the hosts' data volumes",
+      "scope": "media"
+    },
+    {
+      "hash": "35e3a46c",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Host resource monitoring for tower, aorus and boss in system-checks (10-23: aorus's disk filled and nothing alerted)",
+      "scope": "ops"
+    },
+    {
+      "hash": "afa70197",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Remaster QA decisions (not wired until Chad's OK on Ioas) — listening pick by perceived quality with bandwidth/roll-off, clipping, loudness, ASR, voice-similarity and artefact vetoes, never worse than the original; per-talk verdict pass-auto / needs-work / review; the Ioas numbers are the test fixture",
+      "scope": "media"
+    },
+    {
+      "hash": "c9297d25",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Restoration + remaster QA gate policy (Chad 10-23: check every talk's fix) — grade-chosen chain, pick by perceived quality with bandwidth/voice/artefact vetoes, never worse than the original, verdict per talk, review queue, digest samples",
+      "scope": "media"
+    },
+    {
+      "hash": "58b39077",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The transcription cap counts what the HOST is running (gate 'running transcribe', ≤ every 15 s) — after a restart a new dispatch could take a re-attached job's slot (16:4x: three transcriptions on aorus, cap 2), the twin of the diarization cap fix",
+      "scope": "media"
+    },
+    {
+      "hash": "41712f24",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Pilgrims' notes are relative, never \"no authority\" — below the written text, above all scholarship; no reflex Bahá'í truisms (Chad 10-23)",
+      "scope": "anis"
+    },
+    {
+      "hash": "f1214fea",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "First-hand speakers — International Bahá'í Council members (verified list; Furútan was not one) and pilgrims of the Guardian's time ranked with the Hands; ITC hunt finished (Khamsí 3, Sabri 1, Yazdí 1 new talk; Carney, Mayberry, Bopp none); Banani's 1956 pilgrimage memoirs ×7, Mottahedeh 1; a Remey clip held (undated, Covenant-breaker channel)",
+      "scope": "media"
+    },
+    {
+      "hash": "d8ead9b2",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "'compute idle' uses the feed's own pause rule — prepped + ASR in hand (queued AND transcribing) ≥ 3 × the ASR slots (18); 17:09 it counted only prepped + asr_queued (10) against a fixed 12 and flagged the feed's correct pause (20 in hand) as idle",
+      "scope": "checks"
+    },
+    {
+      "hash": "5586c56a",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The import gate refused ITSELF — late('${p}') in its own error message read as a missing file; non-literal late() paths are skipped",
+      "scope": "deploy"
+    },
+    {
+      "hash": "0e002146",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The import gate checks only code the updater reloads (api/, scripts/, worker/, no *.test.js) — 16:52 it refused every deploy because test files import vitest, a dev dependency not installed on tower",
+      "scope": "deploy"
+    },
+    {
+      "hash": "dea617fc",
+      "date": "2026-10-23",
+      "type": "Docs",
+      "description": "Db-write-path-20261023 — 48 h writer audit, the changes, before/after (writer busy 3.36 → 1.30 %, coverage −96.5 %, content row cost −28/−50 %), the durability window by failure class, tmpfs evaluated and rejected, triggers inventory, UPS read-only design + install runbook, rollback, decisions",
+      "scope": "planning"
+    },
+    {
+      "hash": "c47354cf",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Intent decides inside a reading too — a question is answered by the researcher with the page as context, the bookmark unmoved; \"…then continue\" = answer, then the next page (Chad 10-23)",
+      "scope": "anis reading"
+    },
+    {
+      "hash": "8de6c229",
+      "date": "2026-10-23",
+      "type": "Chore",
+      "description": "Deploy 2.187.799 (reading guide only in reading threads)",
+      "scope": null
+    },
     {
       "hash": "3b8f5439",
       "date": "2026-10-23",
@@ -3353,157 +3500,157 @@
       "type": "Fixed",
       "description": "Loading column says plainly 'Loaded — in the library and searchable' (text + BM25) and clears a loaded book after an hour, active work first; Wanted tab lists only books still sought (no source) — items at OCR or loading were shown twice",
       "scope": "dewey"
-    },
-    {
-      "hash": "8d110955",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "Review answers — no 'add it' for a scan without accepted text (it only went back to OCR); OCR that matched our own read under 30% recommends running OCR again, not using it",
-      "scope": "dewey"
-    },
-    {
-      "hash": "5ec7b181",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "/dewey page — thread opens at the latest message (no scroll-through); missing column hides works now held (a real document of the same title) and repeated titles; loading column shows stage chips + live OCR pages; 'Needs a person' gets a Review popup (view the original, read Dewey's text, answer: add it / use OCR text / run OCR again / decline) — GET items/:id/review, GET items/:id/file, POST items/:id/resolve; a person's 'add it' waives the fragment, twin, recheck and page-limit guards",
-      "scope": "dewey"
-    },
-    {
-      "hash": "06c710f8",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "OCR refresh — an imported document takes SLP's improved result for the same job when it agrees with our own text, re-imported in place; a scan's OCR text is checked against the library before import (one Sears letter came in from two files)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "3e6cbd06",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "Every SearchLayerPDF request retried on a network error (four jobs ended 'fetch failed' — tower's uplink, not the files); a resumed job still awaiting its upload is uploaded",
-      "scope": "dewey"
-    },
-    {
-      "hash": "0fe86358",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "A job SLP reported failed is re-polled under its id (SLP completes failed jobs later); the import log names the vision transcription instead of 'SLP job undefined'",
-      "scope": "dewey"
-    },
-    {
-      "hash": "8b7255f4",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "A re-run SLP job is re-fetched under the same id (current output + receipt), saved copy as fallback; ops runs with params.priority go first in their lane",
-      "scope": "dewey"
-    },
-    {
-      "hash": "5e8bcf35",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "Real-word measure is Unicode-aware (Bahá'u'lláh, Kitáb-i-Íqán counted as noise), all-caps headings and hyphen-joined parts count, numbers/page refs/initials not judged; garbled thresholds recalibrated (clean 0.98–0.99, garbled 0.79–0.84); inspector no longer counts headings before numbered lists, TOC lines or repeated endnote citations",
-      "scope": "dewey"
-    },
-    {
-      "hash": "16487fb1",
-      "date": "2026-10-18",
-      "type": "Docs",
-      "description": "SearchLayerPDF improvement suggestions from the Dewey pilot (handwriting inventions, line-level blocks, per-block confidence, quality score, footnote refs/stamps, front-matter flag, small-job throughput, API details)",
-      "scope": null
-    },
-    {
-      "hash": "e3e05461",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "The text cleaner — the source's false paragraph marks (a hard break on every printed line) repaired, running headers removed only beside page boundaries (never refrains like 'O SON OF MAN!'), page numbers out, hyphens closed (also mid-line typesetting hyphens), emphasis dropped, deep headings capped; applied in intake for every format and SLP; dewey-reimport re-reads imports from the archive into the same document",
-      "scope": "dewey"
-    },
-    {
-      "hash": "e18274e5",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "Import quality inspection — every Dewey import measured (split sentences, running headers, page numbers, broken hyphens, fragments, walls, OCR noise, markup, weak titles), worst first, causes tallied → Dewey fixes and SLP suggestions",
-      "scope": "dewey"
-    },
-    {
-      "hash": "63b469cf",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "Every decided source archived on the NAS (/tank/library-originals, content-addressed, sidecar → its document), ingest folder off Dropbox (/tank/dewey-ingest), dewey-archive backfill; the reader's 'Original scan' link (GET /api/documents/:id/source — unpublished material public, published scans admin-only via signed links, byte ranges); SLP: rejoin lines split at printed line ends, page markers with print pages",
-      "scope": "dewey"
-    },
-    {
-      "hash": "4ba9db11",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "OCR survives restarts — a submitted SearchLayerPDF job is resumed (polled), never re-submitted; an ocr loop gives every item waiting at OCR its job every 10 min (71 waited with 5 queued after restarts)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "a23f5a3e",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "SLP's cross-check counts distinct words (a noisy typed page scored 21% as 4-grams vs SLP's excellent text; 54% as words, wrong file 2%); handwriting SLP misreads (it invented text in a Sears letter) is transcribed by the vision model under the same check; a SLP result on file is re-checked, not re-bought",
-      "scope": "dewey"
-    },
-    {
-      "hash": "fe8f76e6",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "The import board reads { data } from observatoryGet",
-      "scope": "observatory"
-    },
-    {
-      "hash": "16c1c096",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "Document import is stage 01 (new today / importing / for review) and the import board sits under the dial — each book's stages, live OCR progress, SearchLayerPDF's receipt; fix(dewey): the twin guard compares a spot-check sample against the twin's FULL text (World's Congress of Religions went in twice — two scans, different sampled pages)",
-      "scope": "observatory"
-    },
-    {
-      "hash": "d63218a7",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "The IMPORT BOARD — GET /api/observatory/imports: each new book's stages (checked → appraised → OCR → imported → indexed), live SearchLayerPDF progress and its work receipt (narrative, quality before→after, engines, time, cost); public, no paths, no pending offers; ring 01 is Document import",
-      "scope": "observatory"
-    },
-    {
-      "hash": "d44543c4",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "Short real prose passes (min 60 words — letters, emails, pilgrim notes 'failed' at 300); any PDF failing the gate goes to OCR; unreadable scans go forward to OCR and are appraised from SLP's text before import (out of scope → a person); never OCR the same work twice; reconsider param",
-      "scope": "dewey"
-    },
-    {
-      "hash": "8a3bfd50",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "A BOOK whose file holds under 5,000 words waits for a person (The Apocalypse Unsealed .doc was its preface only)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "c60e0841",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "The ingest folder never adds a second copy of a work it already took (same title + same text, e.g. a .doc beside its .pdf, re-checked in one round before either was in the library) — Station and Claims and the Olinga interview went in twice",
-      "scope": "dewey"
-    },
-    {
-      "hash": "d4fc669e",
-      "date": "2026-10-18",
-      "type": "Fixed",
-      "description": "The ingest folder imports nothing unappraised or out of scope — it waits for a person (Copyright Book List.txt, a list of file names whose appraisal had failed, went in as doc 956129 titled by its first line; removed)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "74bd0d08",
-      "date": "2026-10-18",
-      "type": "New",
-      "description": "The INGEST FOLDER (dewey-ingest-folder job: a few at a time, easiest first, re-checked before adding) + SearchLayerPDF for scans (dewey-ocr job, ocr lane ×3: open/economy jobs, output CHECKED — real words, text per page, our own sampled pages must be in it — else needs-human; ≤400 pages automatic); SLP page markers → <pb n/> for pdf_page; intake reads PDFs in place; GET /items?limit",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-23": [
+      {
+        "hash": "0530a04c",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Night schema maintenance — named steps over /api/admin/ops/maintenance, run one at a time inside a writer drain (scripts/ops/db-maintenance.sh)",
+        "scope": "ops"
+      },
+      {
+        "hash": "fcf9a946",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The exclusion rules' cache follows the data files' modification times — Chad's decisions change data without a code push, and a long-running service kept the old rules",
+        "scope": "media"
+      },
+      {
+        "hash": "25b8d57a",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Chad's decisions 10-23 — 19 speakers dropped (curation, given name + surname), historian/modern tags, the unsure ranked last; confirmed identities (Furútan, Nakhjavání, Grossmann → Hartmut, Taherzadeh, Sabri → Isobel, Khamsí incl. Khamsi-Dunbar, Faizi → Abu'l-Qásim, Dr. Mohajer → Payman → excluded); the held Remey clip dropped; re-runs of published talks get their own tower slot",
+        "scope": "media"
+      },
+      {
+        "hash": "08cd958d",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Doctrine = the Writings > Shoghi Effendi > pilgrims' notes; NOTHING after the Guardian interprets; the House has legal authority, primary on law and administration (Chad 10-23, a decision)",
+        "scope": "anis authority"
+      },
+      {
+        "hash": "903a1417",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Chad's 10-23 rulings — Publishing Trusts / ABS / Wilmette institutional (open), Ruhi books excluded, per-book exceptions",
+        "scope": "rights"
+      },
+      {
+        "hash": "18526a4c",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Invented second speakers go back to the main speaker — voice-checked per paragraph (titanet: the other speaker ≥ 0.85 AND the paragraph ≥ 0.80 against the main voice); a real questioner stays",
+        "scope": "media"
+      },
+      {
+        "hash": "764c5c76",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A drain never waits on a transcription or diarization slot (DrainAbort while waiting) — 18:00 one diarization waiting for a slot held the media drain 12+ min, so no lane claimed work and aorus sat idle",
+        "scope": "media"
+      },
+      {
+        "hash": "a306474d",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "RAM guard on the compute hosts + intelligibility dominates the remaster QA",
+        "scope": "media"
+      },
+      {
+        "hash": "1ede244f",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The listening copy is the ORIGINAL with transparent processing only (Chad 10-23 by ear: the DFN and restored copies 'badly mangled' words) + fullband Ogg; jobs/tmp on the hosts' data volumes",
+        "scope": "media"
+      },
+      {
+        "hash": "35e3a46c",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Host resource monitoring for tower, aorus and boss in system-checks (10-23: aorus's disk filled and nothing alerted)",
+        "scope": "ops"
+      },
+      {
+        "hash": "afa70197",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Remaster QA decisions (not wired until Chad's OK on Ioas) — listening pick by perceived quality with bandwidth/roll-off, clipping, loudness, ASR, voice-similarity and artefact vetoes, never worse than the original; per-talk verdict pass-auto / needs-work / review; the Ioas numbers are the test fixture",
+        "scope": "media"
+      },
+      {
+        "hash": "c9297d25",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Restoration + remaster QA gate policy (Chad 10-23: check every talk's fix) — grade-chosen chain, pick by perceived quality with bandwidth/voice/artefact vetoes, never worse than the original, verdict per talk, review queue, digest samples",
+        "scope": "media"
+      },
+      {
+        "hash": "58b39077",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The transcription cap counts what the HOST is running (gate 'running transcribe', ≤ every 15 s) — after a restart a new dispatch could take a re-attached job's slot (16:4x: three transcriptions on aorus, cap 2), the twin of the diarization cap fix",
+        "scope": "media"
+      },
+      {
+        "hash": "41712f24",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Pilgrims' notes are relative, never \"no authority\" — below the written text, above all scholarship; no reflex Bahá'í truisms (Chad 10-23)",
+        "scope": "anis"
+      },
+      {
+        "hash": "f1214fea",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "First-hand speakers — International Bahá'í Council members (verified list; Furútan was not one) and pilgrims of the Guardian's time ranked with the Hands; ITC hunt finished (Khamsí 3, Sabri 1, Yazdí 1 new talk; Carney, Mayberry, Bopp none); Banani's 1956 pilgrimage memoirs ×7, Mottahedeh 1; a Remey clip held (undated, Covenant-breaker channel)",
+        "scope": "media"
+      },
+      {
+        "hash": "d8ead9b2",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "'compute idle' uses the feed's own pause rule — prepped + ASR in hand (queued AND transcribing) ≥ 3 × the ASR slots (18); 17:09 it counted only prepped + asr_queued (10) against a fixed 12 and flagged the feed's correct pause (20 in hand) as idle",
+        "scope": "checks"
+      },
+      {
+        "hash": "5586c56a",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The import gate refused ITSELF — late('${p}') in its own error message read as a missing file; non-literal late() paths are skipped",
+        "scope": "deploy"
+      },
+      {
+        "hash": "0e002146",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The import gate checks only code the updater reloads (api/, scripts/, worker/, no *.test.js) — 16:52 it refused every deploy because test files import vitest, a dev dependency not installed on tower",
+        "scope": "deploy"
+      },
+      {
+        "hash": "dea617fc",
+        "date": "2026-10-23",
+        "type": "Docs",
+        "description": "Db-write-path-20261023 — 48 h writer audit, the changes, before/after (writer busy 3.36 → 1.30 %, coverage −96.5 %, content row cost −28/−50 %), the durability window by failure class, tmpfs evaluated and rejected, triggers inventory, UPS read-only design + install runbook, rollback, decisions",
+        "scope": "planning"
+      },
+      {
+        "hash": "c47354cf",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Intent decides inside a reading too — a question is answered by the researcher with the page as context, the bookmark unmoved; \"…then continue\" = answer, then the next page (Chad 10-23)",
+        "scope": "anis reading"
+      },
+      {
+        "hash": "8de6c229",
+        "date": "2026-10-23",
+        "type": "Chore",
+        "description": "Deploy 2.187.799 (reading guide only in reading threads)",
+        "scope": null
+      },
       {
         "hash": "3b8f5439",
         "date": "2026-10-23",
@@ -6865,153 +7012,6 @@
         "date": "2026-10-18",
         "type": "Fixed",
         "description": "Loading column says plainly 'Loaded — in the library and searchable' (text + BM25) and clears a loaded book after an hour, active work first; Wanted tab lists only books still sought (no source) — items at OCR or loading were shown twice",
-        "scope": "dewey"
-      },
-      {
-        "hash": "8d110955",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "Review answers — no 'add it' for a scan without accepted text (it only went back to OCR); OCR that matched our own read under 30% recommends running OCR again, not using it",
-        "scope": "dewey"
-      },
-      {
-        "hash": "5ec7b181",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "/dewey page — thread opens at the latest message (no scroll-through); missing column hides works now held (a real document of the same title) and repeated titles; loading column shows stage chips + live OCR pages; 'Needs a person' gets a Review popup (view the original, read Dewey's text, answer: add it / use OCR text / run OCR again / decline) — GET items/:id/review, GET items/:id/file, POST items/:id/resolve; a person's 'add it' waives the fragment, twin, recheck and page-limit guards",
-        "scope": "dewey"
-      },
-      {
-        "hash": "06c710f8",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "OCR refresh — an imported document takes SLP's improved result for the same job when it agrees with our own text, re-imported in place; a scan's OCR text is checked against the library before import (one Sears letter came in from two files)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "3e6cbd06",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "Every SearchLayerPDF request retried on a network error (four jobs ended 'fetch failed' — tower's uplink, not the files); a resumed job still awaiting its upload is uploaded",
-        "scope": "dewey"
-      },
-      {
-        "hash": "0fe86358",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "A job SLP reported failed is re-polled under its id (SLP completes failed jobs later); the import log names the vision transcription instead of 'SLP job undefined'",
-        "scope": "dewey"
-      },
-      {
-        "hash": "8b7255f4",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "A re-run SLP job is re-fetched under the same id (current output + receipt), saved copy as fallback; ops runs with params.priority go first in their lane",
-        "scope": "dewey"
-      },
-      {
-        "hash": "5e8bcf35",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "Real-word measure is Unicode-aware (Bahá'u'lláh, Kitáb-i-Íqán counted as noise), all-caps headings and hyphen-joined parts count, numbers/page refs/initials not judged; garbled thresholds recalibrated (clean 0.98–0.99, garbled 0.79–0.84); inspector no longer counts headings before numbered lists, TOC lines or repeated endnote citations",
-        "scope": "dewey"
-      },
-      {
-        "hash": "16487fb1",
-        "date": "2026-10-18",
-        "type": "Docs",
-        "description": "SearchLayerPDF improvement suggestions from the Dewey pilot (handwriting inventions, line-level blocks, per-block confidence, quality score, footnote refs/stamps, front-matter flag, small-job throughput, API details)",
-        "scope": null
-      },
-      {
-        "hash": "e3e05461",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "The text cleaner — the source's false paragraph marks (a hard break on every printed line) repaired, running headers removed only beside page boundaries (never refrains like 'O SON OF MAN!'), page numbers out, hyphens closed (also mid-line typesetting hyphens), emphasis dropped, deep headings capped; applied in intake for every format and SLP; dewey-reimport re-reads imports from the archive into the same document",
-        "scope": "dewey"
-      },
-      {
-        "hash": "e18274e5",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "Import quality inspection — every Dewey import measured (split sentences, running headers, page numbers, broken hyphens, fragments, walls, OCR noise, markup, weak titles), worst first, causes tallied → Dewey fixes and SLP suggestions",
-        "scope": "dewey"
-      },
-      {
-        "hash": "63b469cf",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "Every decided source archived on the NAS (/tank/library-originals, content-addressed, sidecar → its document), ingest folder off Dropbox (/tank/dewey-ingest), dewey-archive backfill; the reader's 'Original scan' link (GET /api/documents/:id/source — unpublished material public, published scans admin-only via signed links, byte ranges); SLP: rejoin lines split at printed line ends, page markers with print pages",
-        "scope": "dewey"
-      },
-      {
-        "hash": "4ba9db11",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "OCR survives restarts — a submitted SearchLayerPDF job is resumed (polled), never re-submitted; an ocr loop gives every item waiting at OCR its job every 10 min (71 waited with 5 queued after restarts)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "a23f5a3e",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "SLP's cross-check counts distinct words (a noisy typed page scored 21% as 4-grams vs SLP's excellent text; 54% as words, wrong file 2%); handwriting SLP misreads (it invented text in a Sears letter) is transcribed by the vision model under the same check; a SLP result on file is re-checked, not re-bought",
-        "scope": "dewey"
-      },
-      {
-        "hash": "fe8f76e6",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "The import board reads { data } from observatoryGet",
-        "scope": "observatory"
-      },
-      {
-        "hash": "16c1c096",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "Document import is stage 01 (new today / importing / for review) and the import board sits under the dial — each book's stages, live OCR progress, SearchLayerPDF's receipt; fix(dewey): the twin guard compares a spot-check sample against the twin's FULL text (World's Congress of Religions went in twice — two scans, different sampled pages)",
-        "scope": "observatory"
-      },
-      {
-        "hash": "d63218a7",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "The IMPORT BOARD — GET /api/observatory/imports: each new book's stages (checked → appraised → OCR → imported → indexed), live SearchLayerPDF progress and its work receipt (narrative, quality before→after, engines, time, cost); public, no paths, no pending offers; ring 01 is Document import",
-        "scope": "observatory"
-      },
-      {
-        "hash": "d44543c4",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "Short real prose passes (min 60 words — letters, emails, pilgrim notes 'failed' at 300); any PDF failing the gate goes to OCR; unreadable scans go forward to OCR and are appraised from SLP's text before import (out of scope → a person); never OCR the same work twice; reconsider param",
-        "scope": "dewey"
-      },
-      {
-        "hash": "8a3bfd50",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "A BOOK whose file holds under 5,000 words waits for a person (The Apocalypse Unsealed .doc was its preface only)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "c60e0841",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "The ingest folder never adds a second copy of a work it already took (same title + same text, e.g. a .doc beside its .pdf, re-checked in one round before either was in the library) — Station and Claims and the Olinga interview went in twice",
-        "scope": "dewey"
-      },
-      {
-        "hash": "d4fc669e",
-        "date": "2026-10-18",
-        "type": "Fixed",
-        "description": "The ingest folder imports nothing unappraised or out of scope — it waits for a person (Copyright Book List.txt, a list of file names whose appraisal had failed, went in as doc 956129 titled by its first line; removed)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "74bd0d08",
-        "date": "2026-10-18",
-        "type": "New",
-        "description": "The INGEST FOLDER (dewey-ingest-folder job: a few at a time, easiest first, re-checked before adding) + SearchLayerPDF for scans (dewey-ocr job, ocr lane ×3: open/economy jobs, output CHECKED — real words, text per page, our own sampled pages must be in it — else needs-human; ≤400 pages automatic); SLP page markers → <pb n/> for pdf_page; intake reads PDFs in place; GET /items?limit",
         "scope": "dewey"
       }
     ]

@@ -40,7 +40,7 @@ PORTRAIT_PROMPT = ('Redraw the person in the FIRST image as a courtroom sketch a
     'loosens and dissolves into a few quick strokes toward the edges, leaving bare paper. '
     'LIKENESS IS ESSENTIAL — this must be recognisably the same individual: keep exactly their facial structure and proportions, '
     'eye shape and spacing, nose, mouth, jawline, ears, hairline and hairstyle, beard or moustache, glasses (only if worn in the photo), '
-    'skin tone and complexion exactly as photographed (never lighter or darker), expression, apparent age and clothing as in the photograph. Do not idealise, beautify, rejuvenate, age or change the face. '
+    'skin tone and complexion exactly as photographed (never lighter or darker: dark skin is drawn dark, with dense hatching and a deep wash), expression, apparent age and clothing as in the photograph. Do not idealise, beautify, rejuvenate, age or change the face. '
     'FRAMING: a tall portrait sheet; head and shoulders, the face toward the viewer, the head in the upper third with clear space above it; '
     'the shoulders and chest sketched more loosely below and fading into the paper. Extend the figure by drawing it, never by stretching. '
     'Plain paper background, no setting, no other people. The paper fills the whole image edge to edge, seen flat like a scan: no '
@@ -158,26 +158,51 @@ def cmd_draw(spec, variant='A', force=False, tag='', refs=0):
         L['spend_usd'] = round(L['spend_usd'] + usd, 4); save_ledger(L)
         print('drew', name, d.size, f'${usd}', flush=True)
 
-def cmd_score():
-    """Likeness: drawing ↔ its source photo, ↔ the person's other verified photos (mean), and the best impostor score
-    (the same drawing against one photo of each other person in the sample set + 12 more). Writes scores into the ledger."""
+_imp = None
+def impostors():
+    """One photo of each of 20 fixed speakers (every 5th gallery key) — the 'closest other person' baseline."""
+    global _imp
+    if _imp is None: _imp = {k: embed_img(photo(best_photo(k)))[0] for k in list(GALLERY)[::5][:20]}
+    return _imp
+
+def score_one(name, d):
+    de, _, _ = embed_img(Image.open(os.path.join(OUT, f'{name}.jpg')))
+    if de is None: d['likeness'] = {'face': False, 'pass': False}; return d['likeness']
+    se = embed_img(photo(next(x for x in GALLERY[d['key']] if x['sha'] == d['source_sha'])))[0]
+    others = [o for o in (embed_img(photo(x))[0] for x in GALLERY[d['key']] if x['sha'] != d['source_sha'])][:4]
+    others = [o for o in others if o is not None]
+    imps = sorted(((cos(de, v), k) for k, v in impostors().items() if v is not None and k != d['key']), reverse=True)
+    d['likeness'] = {'face': True, 'source': cos(de, se) if se is not None else None,
+                     'others_mean': round(sum(cos(de, o) for o in others) / len(others), 3) if others else None,
+                     'impostor_max': imps[0][0] if imps else None, 'impostor_who': imps[0][1] if imps else None}
+    d['likeness']['pass'] = passes(d['likeness'])
+    return d['likeness']
+
+def cmd_score(names=None):
+    """Likeness of every drawing (or the named ones): drawing ↔ its source photo, ↔ the person's other photos (mean),
+    and the closest impostor. Writes scores into the ledger."""
     L = load_ledger()
-    keys = sorted({d['key'] for d in L['drawings'].values()})
-    pool = keys + [k for k in list(GALLERY)[::6] if k not in keys][:12]
-    imp = {k: embed_img(photo(best_photo(k)))[0] for k in pool}
     for name, d in L['drawings'].items():
-        de, _, _ = embed_img(Image.open(os.path.join(OUT, f'{name}.jpg')))
-        if de is None: d['likeness'] = {'face': False, 'pass': False}; print(name, d['likeness']); continue
-        se = embed_img(photo(next(x for x in GALLERY[d['key']] if x['sha'] == d['source_sha'])))[0]
-        others = [embed_img(photo(x))[0] for x in GALLERY[d['key']] if x['sha'] != d['source_sha']][:4]
-        others = [o for o in others if o is not None]
-        imps = sorted(((cos(de, v), k) for k, v in imp.items() if v is not None and k != d['key']), reverse=True)
-        d['likeness'] = {'face': True, 'source': cos(de, se) if se is not None else None,
-                         'others_mean': round(sum(cos(de, o) for o in others) / len(others), 3) if others else None,
-                         'impostor_max': imps[0][0] if imps else None, 'impostor_who': imps[0][1] if imps else None}
-        d['likeness']['pass'] = passes(d['likeness'])
-        print(name, d['likeness'])
+        if names and name not in names: continue
+        print(name, score_one(name, d), flush=True)
     save_ledger(L)
+
+def cmd_batch(keys, variant='A', tries=3):
+    """Draw each key until a take passes the likeness gate: take 1 plain, take 2 plain, take 3 with two more verified
+    photos as identity references. A key that never passes is HELD (keeps its photo). L['final'][key] = the chosen take."""
+    L = load_ledger(); L.setdefault('final', {}); L.setdefault('held', {}); save_ledger(L)
+    for k in keys:
+        L = load_ledger()
+        if k in L['final']: print('have', k, L['final'][k]); continue
+        for i in range(tries):
+            tag = '' if i == 0 else f'-b{i + 1}'
+            cmd_draw(k, variant, False, tag, 2 if i == tries - 1 else 0)
+            L = load_ledger(); name = f'{k}-{variant}{tag}'
+            lk = score_one(name, L['drawings'][name]); save_ledger(L); print('  ', name, lk, flush=True)
+            if lk['pass']:
+                L['final'][k] = name; L['held'].pop(k, None); save_ledger(L); break
+        else:
+            L['held'][k] = 'no take passed the likeness gate'; save_ledger(L); print('HELD', k, flush=True)
 
 if __name__ == '__main__':
     a = sys.argv[1:]
@@ -186,6 +211,7 @@ if __name__ == '__main__':
         v = a[a.index('--variant') + 1] if '--variant' in a else 'A'
         tag = a[a.index('--tag') + 1] if '--tag' in a else ''
         cmd_draw(a[1], v, '--force' in a, tag, int(a[a.index('--refs') + 1]) if '--refs' in a else 0)
-    elif a[0] == 'score': cmd_score()
+    elif a[0] == 'score': cmd_score(a[1].split(',') if len(a) > 1 else None)
+    elif a[0] == 'batch': cmd_batch(a[1].split(','))
     elif a[0] == 'pick':
         for k in a[1].split(','): e = best_photo(k); print(k, e['sha'][:16], e['origin'], e.get('width'), e.get('height'), e.get('face'), e.get('note'))
