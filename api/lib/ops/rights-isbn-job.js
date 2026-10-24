@@ -13,8 +13,17 @@ import { ownIsbn, FRONT_PARAGRAPHS } from '../rights/isbn.js';
 const parseJson = (s) => { if (!s) return null; if (typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
 const bump = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
 
-export async function rightsIsbnJob({ write = false, ids = null, limit = Infinity, samples = 30, checks = 10, except = [] } = {}, deps = {}) {
+// Chad 10-23: a book whose own pages name an INSTITUTIONAL publisher (a Publishing Trust, ABS, the Wilmette Institute, an
+// institution) stays open even with an ISBN — unless named in `force` (books he ruled limited one by one).
+export async function rightsIsbnJob({ write = false, ids = null, limit = Infinity, samples = 30, checks = 10, except = [], force = [] } = {}, deps = {}) {
   const skipIds = new Set((except || []).map(Number));   // books Chad keeps open (decisions page, 10-23)
+  const forced = new Set((force || []).map(Number));
+  const huntRows = deps.huntRows || (async () => (await import('../repos/book-hunt-repo.js')).allHuntRows().catch(() => []));
+  const { publisherClass } = await import('../books/publishers.js');
+  const institutional = new Set((await huntRows()).filter((r) => {
+    const f = parseJson(r.found)?.fields?.publisher;
+    return f && (f.conf === 'high' || f.source === 'copyright-page') && publisherClass(f.value)?.class === 'institutional';
+  }).map((r) => Number(r.doc_id)));
   const { page = rightsScanPage, front = frontParagraphs, record = recordIsbnRights,
     readText = (p) => readFile(p, 'utf8'),
     parseFm = async (t) => (await import('../../services/ingester.js')).parseMarkdownFrontmatter(t).metadata,
@@ -45,7 +54,8 @@ export async function rightsIsbnJob({ write = false, ids = null, limit = Infinit
       const own = ownIsbn({ meta, paragraphs: await front(d.id, FRONT_PARAGRAPHS) });
       if (!own) continue;
       bump(out.own_isbn_by_type, type); bump(out.own_isbn_by_source, own.source);
-      const encumber = type === 'book' && !skipIds.has(d.id);
+      const encumber = type === 'book' && !skipIds.has(d.id) && (!institutional.has(d.id) || forced.has(d.id));
+      if (type === 'book' && institutional.has(d.id) && !forced.has(d.id)) out.kept_open_institutional = (out.kept_open_institutional || 0) + 1;
       if (encumber) {
         if (d.encumbered) out.already_encumbered_books++;
         else {

@@ -102,7 +102,7 @@ describe('rights-isbn report', () => {
   const imprint = [{ paragraph_index: 0, text: 'Title' }, { paragraph_index: 1, text: '© 2001 Kalimát Press' }, { paragraph_index: 2, text: 'ISBN 978-0-306-40615-7' }];
   const fronts = { 1: imprint, 2: imprint, 3: imprint, 4: [{ paragraph_index: 0, text: 'See Smith, Oxford: George Ronald, 1990, pp. 3. ISBN 978-0-306-40615-7' }], 5: imprint };
   const deps = (writes) => ({
-    page: async ({ afterId }) => docs.filter((d) => d.id > afterId), front: async (id) => fronts[id] || [],
+    page: async ({ afterId }) => docs.filter((d) => d.id > afterId), front: async (id) => fronts[id] || [], huntRows: async () => [],
     record: async (id, x) => { writes.push([id, x]); return { changed: 1 }; }, base: '/lib', random: () => 0.5 });
   it('dry run: only the non-canonical BOOK with its own ISBN would change; nothing written', async () => {
     const writes = [];
@@ -136,5 +136,16 @@ describe('preview window (40 paragraphs, staff override)', () => {
     expect(canReadFull({ role: 'editor' })).toBe(true);
     expect(previewWindow({ encumbered: 0, offset: 400, limit: 50 })).toMatchObject({ limit: 50, capped: false });
     expect(cacheControlFor({ encumbered: true, full: true })).toBe('private, no-store');
+  });
+});
+
+describe('rights-isbn and institutional publishers (Chad 10-23)', () => {
+  it('a Publishing-Trust book keeps open despite its ISBN, unless forced', async () => {
+    const docs = [{ id: 1, title: 'BPT Book', author: 'A', religion: "Baha'i", collection: 'Books', paragraph_count: 500, encumbered: 0 }];
+    const front = async () => [{ paragraph_index: 0, text: '© 1990 Bahá’í Publishing Trust' }, { paragraph_index: 1, text: 'ISBN 978-0-306-40615-7' }];
+    const huntRows = async () => [{ doc_id: 1, found: JSON.stringify({ fields: { publisher: { value: 'Bahá’í Publishing Trust', conf: 'high', source: 'copyright-page' } } }) }];
+    const deps = { page: async ({ afterId }) => docs.filter((d) => d.id > afterId), front, huntRows, record: async () => ({ changed: 1 }), base: '/x' };
+    expect((await rightsIsbnJob({}, deps)).would_encumber).toBe(0);
+    expect((await rightsIsbnJob({ force: [1] }, deps)).would_encumber).toBe(1);
   });
 });
