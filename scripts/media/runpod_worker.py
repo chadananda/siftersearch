@@ -100,7 +100,7 @@ MODEL_TAG = 'large-v3-turbo (faster-whisper ct2 @0a363e91; no VAD; per-language 
 def run_job(d, up, inference_file, asr):
     import torch
     meta0 = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}
-    if (meta0.get('post') or {}).get('mode') == 'cleanup':     # a talk the guard held earlier: only the deterministic cleanup runs (no UniPASE, no ASR here)
+    if (meta0.get('post') or {}).get('mode') in ('cleanup', 'post'):     # a talk the guard held earlier: only the deterministic cleanup runs (no UniPASE, no ASR here)
         return {'audio_s': meta0.get('audio_s'), 'mode': 'cleanup', 'seconds': 0, 'gpu': torch.cuda.get_device_name(0)}
     src = next(iter(sorted(glob.glob(os.path.join(d, 'in.*')))), None)
     meta = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}

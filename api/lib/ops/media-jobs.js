@@ -8,7 +8,7 @@
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
 import { late } from '../media/late.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
-import { createReadStream } from 'fs';
+import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -1280,6 +1280,17 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, why);
       }
       if (st.cloud_stopped && !homeHosts.length) { stop = st.cloud_stopped; break; }
+      // WORK ORDERS (media-cloud-order): cleanup runs for held talks, and 'post' runs that take the guard / realign / encodes of results tower is still
+      // holding in its own queue onto the workers. Taken in here so the one persistent lane (state file, budget, pods) serves every kind of work.
+      if (now() - (st.orders_checked || 0) > 20_000) {
+        st.orders_checked = now();
+        const taken = await C.takeOrders(deps.ordersFile).catch(() => []);
+        for (const o of taken) {
+          if (st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
+          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode };
+          if (o.mode === 'post') st.queue.unshift(o.id); else st.queue.push(o.id);   // 'post' relieves tower now; cleanup waits its turn
+        }
+      }
       // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
       // encode — GPUs would be paid for output nobody can consume. Pods that go without work idle out (10 min) and are terminated.
       if (now() - (st.backlog_checked || 0) > 30_000) {
@@ -1379,7 +1390,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if (kind === 'DONE' && it?.dir) {
                 const enh = join(it.dir, 'enhanced');
                 await fs.mkdir(enh, { recursive: true });
-                for (const [rf, lf, optional] of (st.items?.[it.id]?.mode === 'cleanup' ? [['done.json', 'unipase.done.json']] : [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']])) {
+                for (const [rf, lf, optional] of (['cleanup', 'post'].includes(st.items?.[it.id]?.mode) ? [['done.json', 'unipase.done.json']] : [['out.flac', 'unipase.cloud.flac'], ['asr.json', 'unipase.asr.json'], ['asr_orig.json', 'unipase.asr_orig.json', true], ['done.json', 'unipase.done.json']])) {
                   try { await C.podGet(run, p, `/workspace/spool/${job}/${rf}`, join(enh, `${lf}.part`)); }
                   catch (err) { if (optional) { await fs.rm(join(enh, lf), { force: true }); continue; } throw err; }   // an older worker: no like-for-like reference
                   await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
@@ -1399,9 +1410,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(dj));
                 await C.podSsh(run, p, `rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).catch(() => {});
                 delete st.jobs[job];
-                if (st.done.some((d) => d.id === it.id)) continue;   // idempotent: a second result for a talk never queues a second run
-                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name });
-                await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
+                const imode = st.items?.[it.id]?.mode || 'restore';
+                if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) continue;   // idempotent: a second result for a talk never queues a second run
+                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode });
+                // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
+                const mt = await readMeta(it.dir).catch(() => null);
+                if (imode === 'post' && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
+                if (imode !== 'post') await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');   // post: the run is already in tower's queue
               } else if (kind === 'FAIL') {
                 const err = await C.podSsh(run, p, `tail -c 600 /workspace/spool/${job}/error.txt; rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
                 delete st.jobs[job];
@@ -1430,6 +1445,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: true, bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
                   ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
                   orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
+                if (post.mode === 'post') for (const [f, to] of [['unipase.cloud.flac', 'out.flac'], ['unipase.asr.json', 'asr.json'], ['unipase.asr_orig.json', 'asr_orig.json']]) { const lf = join(it.dir, 'enhanced', f); if (existsSync(lf)) await C.podPut(run, p, lf, `/workspace/spool/${job}/${to}`); }   // a result tower holds: the pod finishes it
                 await C.podPut(run, p, join(it.dir, 'transcript.work.json'), `/workspace/spool/${job}/work.json`);
                 if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
               }
@@ -1467,6 +1483,37 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
 
 /** media-preview { fingerprint?, text, duration_s }: Dewey's stage 0 answer (api/lib/media/preview.js) — "duplicate of <slug>" or "new". Text only. */
 export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.preview || await import('../media/preview.js')).previewVerdict(params, deps); }
+
+/** media-cloud-order { mode: 'cleanup' | 'post', ids?, limit? }: put work on the cloud lane without restarting it (orders are taken in on its next tick).
+ *  cleanup: talks the word guard held (review / kept / deferred) get the deterministic cleanup on a worker. post: results tower holds in its own
+ *  media-remaster queue (a pod's copy is already on disk) get their guard, alignment and encodes done on a worker instead — oldest queued first. */
+export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60 } = {}, deps = {}) {
+  const C = deps.cloud || await import('../media/cloud.js');
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const fs = await import('fs/promises');
+  const readMeta = deps.readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
+  let list;
+  if (ids) list = (await Promise.all([].concat(ids).map((x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter(Boolean);
+  else if (mode === 'post') {
+    const pending = (await ops.pendingRuns('media-remaster')).filter((r) => r.status === 'queued').map((r) => Number(r.params?.id)).filter(Boolean);
+    list = (await Promise.all([...new Set(pending)].map((id) => repo.getMediaItem(id)))).filter(Boolean);
+  } else list = await repo.remasterCandidates(['B', 'C', 'D', 'E']);
+  const orders = [];
+  for (const it of list) {
+    if (orders.length >= limit) break;
+    if (!it?.dir) continue;
+    const m = await readMeta(it.dir).catch(() => null);
+    if (!m) continue;
+    const has = existsSync(join(it.dir, 'enhanced', 'unipase.cloud.flac')) && existsSync(join(it.dir, 'enhanced', 'unipase.asr.json'));
+    const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
+    if (mode === 'post' && (!has || ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))) continue;
+    if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
+    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode });
+  }
+  await C.addOrders(orders, deps.ordersFile);
+  return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug) };
+}
 
 /** media-light-backfill { limit?, write? }: the LIGHT tier for every published talk that has no kept original yet (Chad 10-24: every talk has a
  *  restored version and an untouched original). The restored copy is the one already playing (the deterministic safe chain: high-pass, hum

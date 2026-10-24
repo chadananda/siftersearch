@@ -3,7 +3,8 @@
 # deterministic cleanup for talks the guard holds, the forced re-alignment, the four web encodes, and the quality VERDICT. Tower
 # validates the manifest (post.json), records the verdict, places the files and publishes.
 #   job.json['post'] = { af, max_fallback_pct, slug, work_sha, ogg, m4a, orig_ogg, orig_m4a, bw_khz, hum_hz, cleanup: bool, mode }
-#   mode 'restore' (default): out.flac is the generative copy and asr.json its transcript. mode 'cleanup': no generative copy at all.
+#   mode 'restore' (default) / 'post': out.flac is the generative copy and asr.json its transcript ('post' = finishing a result tower holds).
+#   mode 'cleanup': no generative copy at all.
 import glob, hashlib, json, os, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -71,7 +72,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     out['work_sha'] = cfg['work_sha']
     g_first, g, method, why = None, None, None, None
     # 1. the generative copy through the word guard
-    if cfg.get('mode', 'restore') == 'restore' and os.path.exists(os.path.join(d, 'out.flac')):
+    if cfg.get('mode', 'restore') in ('restore', 'post') and os.path.exists(os.path.join(d, 'out.flac')):
         g_first = guard(py, tools, src, os.path.join(d, 'out.flac'), work, os.path.join(d, 'asr.json'), ref, af, flac, os.path.join(post, 'restored.guard.json'), runner)
         out['steps']['guard'] = round(time.time() - t0, 1)
         pct = pct_of(g_first)

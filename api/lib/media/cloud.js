@@ -88,6 +88,21 @@ export async function saveState(state, file = STATE_FILE) {
   await rename(tmp, file);
 }
 
+// ── work orders for the running lane (media-cloud-order writes, the lane takes them in) ──
+export const ORDERS_FILE = join(dirname(STATE_FILE), 'cloud-orders.json');
+export async function addOrders(orders, file = ORDERS_FILE) {
+  if (!orders.length) return;
+  const have = await readFile(file, 'utf8').then(JSON.parse).catch(() => []);
+  const seen = new Set(have.map((o) => `${o.mode}:${o.id}`));
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, JSON.stringify([...have, ...orders.filter((o) => !seen.has(`${o.mode}:${o.id}`))]));
+}
+export async function takeOrders(file = ORDERS_FILE) {
+  const got = await readFile(file, 'utf8').then(JSON.parse).catch(() => []);
+  if (got.length) await rename(file, `${file}.taken`).catch(() => {});
+  return got;
+}
+
 // ── ssh / scp to a pod ──
 const sshOpts = (p) => ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', '-o', 'ServerAliveInterval=30', '-o', 'LogLevel=ERROR'];
 export const podSsh = (run, p, cmd, o = {}) => run('ssh', [...sshOpts(p), '-p', String(p.port), `root@${p.ip}`, cmd], { timeoutMs: 600_000, ...o });

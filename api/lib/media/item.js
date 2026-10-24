@@ -12,6 +12,7 @@ import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
+import { purgeTalk } from './edge-purge.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC, OGG_ARGS_REMASTER, M4A_BITRATE_REMASTER, WEB_CODEC_REMASTER, isRemastered, remasterEligible } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
@@ -896,6 +897,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     await save();
     await repo.updateMediaItem(item.id, { stages_done: stagesDone(meta.stages) }).catch(() => {});
   }
+  if (done.length) purgeTalk(meta.slug);   // the edge-cached page + API entry of this talk: new audio/data shows within seconds
   return { slug: meta.slug, done, meta };
 }
 
