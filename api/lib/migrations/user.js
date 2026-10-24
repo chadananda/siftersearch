@@ -416,4 +416,11 @@ export const userMigrations = {
     try { await userQuery('ALTER TABLE search_log ADD COLUMN strategy TEXT'); } catch { /* exists */ }
     logger.info('User migration 10 complete: search_log.strategy');
   },
+
+  // Version 11: Dewey email allowlist (Chad 10-24: "whitelist the access so I do not have to do this dance"). Pre-approved
+  // addresses get users.dewey_access = 1 when a VERIFIED account with that email exists/signs in (contributors-repo).
+  11: async () => {
+    await userQuery(`CREATE TABLE IF NOT EXISTS dewey_allowlist (email TEXT PRIMARY KEY, note TEXT, added_by TEXT, added_at TEXT)`);
+    logger.info('User migration 11 complete: dewey_allowlist');
+  },
 };

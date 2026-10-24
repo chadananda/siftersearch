@@ -13,6 +13,7 @@
 
 import { userQuery as query, userQueryOne as queryOne, query as contentQuery } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { applyAllowlist } from '../lib/repos/contributors-repo.js';
 import { logger } from '../lib/logger.js';
 import {
   hashPassword,
@@ -118,7 +119,7 @@ export async function upsertGoogleUser({ email, sub, name = null, picture = null
     );
     user = await queryOne('SELECT * FROM users WHERE id = ?', [user.id]);
   }
-  return user;
+  return applyAllowlist(user);
 }
 
 export { connectParticipant };
@@ -230,14 +231,15 @@ export default async function authRoutes(fastify) {
     }
 
     // Get user and generate tokens
-    const user = await queryOne(
-      'SELECT id, email, name, tier, created_at FROM users WHERE id = ?',
+    let user = await queryOne(
+      'SELECT id, email, name, tier, created_at, email_verified, dewey_access FROM users WHERE id = ?',
       [result.userId]
     );
 
     if (!user) {
       throw ApiError.notFound('User not found');
     }
+    user = await applyAllowlist(user);
 
     await connectParticipant(request, user);
 
@@ -297,7 +299,7 @@ export default async function authRoutes(fastify) {
   }, async (request, reply) => {
     const { email, password } = request.body;
 
-    const user = await queryOne('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+    let user = await queryOne('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
     if (!user) {
       throw ApiError.unauthorized('Invalid email or password');
     }
@@ -326,6 +328,7 @@ export default async function authRoutes(fastify) {
       });
     }
 
+    user = await applyAllowlist(user);
     // Login from a new browser: merge that session's conversation into the existing history.
     await connectParticipant(request, user);
 
@@ -529,7 +532,7 @@ export default async function authRoutes(fastify) {
 
   // Get current user
   fastify.get('/me', { preHandler: authenticate }, async (request) => {
-    const user = await queryOne(
+    let user = await queryOne(
       'SELECT id, email, name, tier, picture, preferred_language, email_verified, created_at, approved_at, dewey_access FROM users WHERE id = ?',
       [request.user.sub]
     );
@@ -538,6 +541,6 @@ export default async function authRoutes(fastify) {
       throw ApiError.notFound('User not found');
     }
 
-    return { user };
+    return { user: await applyAllowlist(user) };
   });
 }

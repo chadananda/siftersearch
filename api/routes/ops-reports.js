@@ -19,6 +19,10 @@ export default async function opsReportRoutes(fastify) {
     const have = await slugsFor(ids);
     return { minted, with_slug: have.size, total: ids.length, left: ids.length - have.size };
   });
+  // Dewey email allowlist (ops.mjs dewey-allow add|remove|list): pre-approve addresses; verified sign-ins get dewey_access
+  fastify.get('/ops/dewey-allow', { preHandler: requireInternal }, async () => ({ allowlist: await (await import('../lib/repos/contributors-repo.js')).list() }));
+  fastify.post('/ops/dewey-allow', { preHandler: requireInternal }, async (req) => (await import('../lib/repos/contributors-repo.js')).allow(req.body?.email, req.body?.note || null));
+  fastify.post('/ops/dewey-allow/remove', { preHandler: requireInternal }, async (req) => (await import('../lib/repos/contributors-repo.js')).disallow(req.body?.email, !!req.body?.revoke));
   // Index coverage (planning/index-coverage-plan.md): every layer by tradition × scope, or one document — ledger reads only
   fastify.get('/ops/coverage', { preHandler: requireInternal }, async () => (await import('../lib/repos/coverage-repo.js')).coverageSummary());
   fastify.get('/ops/coverage/:docId', { preHandler: requireInternal }, async (req) => ({ doc_id: Number(req.params.docId),
