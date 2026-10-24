@@ -373,7 +373,7 @@ describe('light tier backfill: raw original beside the playing copy, encoded on 
 });
 
 describe('work orders: cleanup and post runs join the running lane', () => {
-  it('orders are written once, taken once; post orders go to the FRONT of the queue and a stale post result is dropped', async () => {
+  it('orders are written once, taken once; post orders are queued after the fresh talks (their upload is five times the bytes) and a stale post result is dropped', async () => {
     const { mediaCloudOrderJob } = await import('../../api/lib/ops/media-jobs.js');
     const x = setup({ talks: 3, seconds: 3600 });
     for (const id of [1, 2]) { mkdirSync(join(x.items[id].dir, 'enhanced'), { recursive: true }); for (const f of ['unipase.cloud.flac', 'unipase.asr.json']) writeFileSync(join(x.items[id].dir, 'enhanced', f), '{}'); }

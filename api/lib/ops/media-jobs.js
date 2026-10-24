@@ -1289,7 +1289,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         for (const o of taken) {
           if (st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
           st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode };
-          if (o.mode === 'post') st.queue.unshift(o.id); else st.queue.push(o.id);   // 'post' relieves tower now; cleanup waits its turn
+          st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
         }
       }
       // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
