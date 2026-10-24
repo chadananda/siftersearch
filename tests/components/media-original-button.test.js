@@ -94,14 +94,19 @@ describe('switchCopy contract', () => {
   });
 });
 
-// Chad 10-24: no drawing/photos toggle. Drawing → no caption; photo → attribution caption kept; no rotation layers.
+// Chad 10-24: photos are never shown. TalkHero: drawing only (no caption, no toggle/rotation), else initials.
 describe('TalkHero portrait', () => {
-  it('has no Photos toggle or rotation, sketch shows no caption, photo keeps its attribution', async () => {
+  it('a photo thumb renders no image and no attribution; a drawing renders the drawing with no caption', async () => {
     const { default: TalkHero } = await import('../../src/components/media/TalkHero.svelte');
-    const photo = render(TalkHero, { props: { item: { ...base, speaker: 'Peter Khan', thumb: { kind: 'photo', url: '/p.jpg', credit: 'Bahaipedia (bahai.media)', source_url: 'https://bahai.media/x' } } } }).body;
-    expect(photo).not.toMatch(/data-photos-toggle|Photos \(|class="rot|data-rotate/);
-    expect(photo).toMatch(/Photo of Peter Khan/);
-    const src = rf(new URL('../../src/components/media/TalkHero.svelte', import.meta.url), 'utf8');
-    expect(src).not.toMatch(/photos-toggle|data-rotate|rotatePortraits/);
+    const photo = render(TalkHero, { props: { item: { ...base, speaker: 'Peter Khan', thumb: { kind: 'photo', url: 'https://x/p.jpg', credit: 'Bahaipedia (bahai.media)' } } } }).body;
+    expect(photo).not.toMatch(/p\.jpg|Photo of|figcaption|data-photos-toggle|data-rotate/);
+    const sk = render(TalkHero, { props: { item: { ...base, speaker: 'Peter Khan', thumb: { kind: 'sketch', url: 'https://x/sq.jpg', sketch: { square: 'https://x/sq.jpg', url: 'https://x/t.jpg' } } } } }).body;
+    expect(sk).toMatch(/sq\.jpg/);
+    expect(sk).not.toMatch(/figcaption|Photos \(/);
+  });
+  it('the public rights rule serves only the generated tile, never a stored photo file', async () => {
+    const { canServeFile } = await import('../../api/lib/media/rights.js');
+    expect(canServeFile('full', 'thumb.svg')).toBe(true);
+    expect(canServeFile('full', 'thumb.jpg')).toBe(false);
   });
 });

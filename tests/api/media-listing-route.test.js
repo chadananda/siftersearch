@@ -58,11 +58,12 @@ describe('GET /api/media/index', () => {
     expect(it.q.c).toBe('Gleanings');
     expect(it.hl).toEqual([299, 319]);
     expect(it.w).toHaveLength(48);
-    // a published drawing leads (Chad 10-23, courtroom-sketch style): p = square drawing, px = 9:16 drawing, dr = 1; the
-    // verified photo stays one tap away as ph (and in the gallery g)
-    const photo = expect.stringContaining('/img/cdn/siftersearch.com/media-speakers/hooper-dunbar.jpg');
+    // the drawing is the portrait (p = square, px = 9:16, dr = 1); photos are never exposed (Chad 10-24): no ph / g
     expect(body.speakers).toEqual([expect.objectContaining({ k: 'hooper-dunbar', c: 1, role: 'uhj', dr: 1, cr: null,
-      p: SKETCH.square, px: { url: SKETCH.url, width: 768, height: 1376, ai_rendered: true }, ph: photo, g: [{ u: photo }] })]);
+      p: SKETCH.square, px: { url: SKETCH.url, width: 768, height: 1376, ai_rendered: true } })]);
+    expect(JSON.stringify(body)).not.toMatch(/media-speakers\/hooper-dunbar\.jpg/);
+    expect(body.speakers[0]).not.toHaveProperty('ph');
+    expect(body.speakers[0]).not.toHaveProperty('g');
     expect(res.headers['cache-control']).toMatch(/s-maxage=300/);
     // the cache file is written in the background: wait for it (bounded) instead of a fixed 50 ms, which a loaded machine missed
     for (let i = 0; i < 100 && !existsSync(cacheFile); i++) await new Promise((r) => setTimeout(r, 50));
@@ -71,11 +72,12 @@ describe('GET /api/media/index', () => {
 });
 
 describe('GET /api/media/index without a published drawing', () => {
-  it('falls back to the verified photo as the portrait (no dr, no ph)', async () => {
+  it('never falls back to the photo: no portrait (initials disc), no dr, no ph', async () => {
     sketches.delete('hooper-dunbar');
     try {
       const sp = (await app.inject({ method: 'GET', url: '/api/media/index' })).json().speakers[0];
-      expect(sp.p).toContain('/img/cdn/siftersearch.com/media-speakers/hooper-dunbar.jpg');
+      expect(sp.p).toBeNull();
+      expect(sp.px).toBeNull();
       expect(sp.dr).toBeUndefined();
       expect(sp.ph).toBeUndefined();
     } finally { sketches.set('hooper-dunbar', SKETCH); }

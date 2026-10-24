@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-24T16:01:24.817Z",
+  "generated": "2026-10-24T16:05:44.005Z",
   "entries": [
+    {
+      "hash": "3d08d7a9",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Remove the drawing/photos toggle and portrait rotation — the portrait is the drawing where one exists, else the single best photo; photo keeps its attribution caption, drawing shows none",
+      "scope": "media"
+    },
     {
       "hash": "863cdb30",
       "date": "2026-10-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "No whole-book paragraphs — the site2rag adapter split bahai-library PDF markdown only on blank lines and read one page marker a block, so a book with single newlines became ONE 'paragraph' (50k–700k chars) that polluted every search (Chad 10-19: 'Never should we search an unsegmented book … a bug in the ingester'). Every page marker starts a block; an oversized block is split on its own structure (sentence-ending line breaks, then sentence boundaries); the sites ingester REFUSES a file that still has a >8,000-char paragraph (logged, nothing indexed)",
       "scope": "ingest"
-    },
-    {
-      "hash": "e646a022",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The Universal House of Justice is APPLICATION, not doctrine (Chad 10-19, per the Will and Testament: authoritative on applying Bahá'í law, not decisive on doctrine) — doctrine is the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi); House passages are labelled [application] and cited after the doctrine",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "3d08d7a9",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Remove the drawing/photos toggle and portrait rotation — the portrait is the drawing where one exists, else the single best photo; photo keeps its attribution caption, drawing shows none",
+        "scope": "media"
+      },
       {
         "hash": "863cdb30",
         "date": "2026-10-24",
@@ -7006,13 +7013,6 @@
         "type": "Fixed",
         "description": "No whole-book paragraphs — the site2rag adapter split bahai-library PDF markdown only on blank lines and read one page marker a block, so a book with single newlines became ONE 'paragraph' (50k–700k chars) that polluted every search (Chad 10-19: 'Never should we search an unsegmented book … a bug in the ingester'). Every page marker starts a block; an oversized block is split on its own structure (sentence-ending line breaks, then sentence boundaries); the sites ingester REFUSES a file that still has a >8,000-char paragraph (logged, nothing indexed)",
         "scope": "ingest"
-      },
-      {
-        "hash": "e646a022",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The Universal House of Justice is APPLICATION, not doctrine (Chad 10-19, per the Will and Testament: authoritative on applying Bahá'í law, not decisive on doctrine) — doctrine is the Revelation (Bahá'u'lláh, the Báb) and its authorised interpretation ('Abdu'l-Bahá, Shoghi Effendi); House passages are labelled [application] and cited after the doctrine",
-        "scope": "anis"
       }
     ]
   }

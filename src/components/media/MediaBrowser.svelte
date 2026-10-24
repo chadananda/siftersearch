@@ -148,7 +148,7 @@
         <li>
           <a href={`/media/${h.slug}?t=${Math.floor(h.t0)}`} class="block rounded-lg border border-border-subtle bg-surface-1 px-4 py-3 hover:border-border hover:bg-surface-2">
             <span class="flex flex-wrap items-center gap-x-2 text-sm">
-              {#if it?.thumb_kind === 'photo'}
+              {#if it?.thumb_kind === 'sketch'}
                 {@const av = picture(it.thumb_url, 32)}
                 <img src={av.src} srcset={av.srcset} alt="" width="32" height="32" loading="lazy" class="h-8 w-8 shrink-0 rounded-full object-cover" />
               {/if}
@@ -176,7 +176,7 @@
       <a href={`/media/${it.slug}`} class="group flex h-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface-1 transition hover:border-border hover:bg-surface-2">
         <div class="relative aspect-video overflow-hidden bg-surface-2">
           {#if it.thumb_url || it.thumb}
-            {#if it.thumb_kind === 'photo'}
+            {#if it.thumb_kind === 'sketch'}
               <!-- the biography portraits' responsive helper, face-centred (fo-face) at the card's 16:9 -->
               {@const pic = ikSrcset(it.thumb_url, [320, 480, 640, 960], { ratio: 16 / 9, q: 80, fo: 'face' }) || { src: it.thumb_url, srcset: null }}
               <img src={pic.src} srcset={pic.srcset} sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" alt={it.speaker || ''} loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover" />

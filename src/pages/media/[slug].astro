@@ -52,8 +52,8 @@ const description = item ? (item.summary || `${item.title}${item.speaker ? ` by 
 // face-centred (cover — never stretched)
 const bestMoment = (item?.moments || []).slice().sort((x, y) => (x.rank ?? 9) - (y.rank ?? 9))[0];
 const image = bestMoment ? `https://siftersearch.com/api/media/moments/${encodeURIComponent(bestMoment.key)}/card.jpg?v=2`
-  : item?.thumb?.kind === 'photo' ? ikUrl(item.thumb.url, 'w-1200,h-630,fo-face,q-80')
-  : item?.thumb?.url && !/\.svg(\?|$)/.test(item.thumb.url) ? item.thumb.url : undefined;
+  : item?.thumb?.kind === 'sketch' ? ikUrl(item.thumb.url, 'w-1200,h-630,fo-face,q-80')   // the drawing; photos are never exposed (Chad 10-24)
+  : item?.thumb?.kind === 'tile' && item.thumb.url && !/\.svg(\?|$)/.test(item.thumb.url) ? item.thumb.url : undefined;
 const url = item ? `https://siftersearch.com/media/${item.slug}` : null;
 const iso = (s) => { s = Math.round(s || 0); return `PT${Math.floor(s / 3600) ? `${Math.floor(s / 3600)}H` : ''}${Math.floor((s % 3600) / 60)}M${s % 60}S`; };
 const transcriptText = item ? item.paragraphs.map((p) => p.words.filter((w) => !w[3]).map((w) => w[0]).join(' ')).join('\n\n') : '';

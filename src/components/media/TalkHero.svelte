@@ -3,21 +3,13 @@
   // as they arrive, before the island's large transcript props. MediaPlayer (the island below) continues the cabinet with
   // the player and toggles .spinning / .live here while playing.
   import RecordLabel from './listening/RecordLabel.svelte';
-  import { eraVar, duration as dur, portraitSquare } from '../../lib/media-listing.js';
-  import { galleryOf, dayIndex, sketchOf } from '../../lib/speaker-gallery.js';
+  import { eraVar, duration as dur } from '../../lib/media-listing.js';
+  import { sketchOf } from '../../lib/speaker-gallery.js';
 
   let { item, speakerKey = null } = $props();
   const duration = Number(item.duration_s) || 0;
-  // the speaker's DRAWING (Chad 10-23: pen-and-ink, one style for everyone) leads; the real photos sit behind a toggle
+  // the speaker's DRAWING (pen-and-ink, one style for everyone) — photos are never shown (Chad 10-24); no drawing → initials
   const sketch = sketchOf(item);
-  const photo = item.thumb?.kind === 'photo' || !!sketch;
-  // the speaker's GALLERY (Chad 10-23): today's photo first (per person, per day); the rest crossfade in on the client
-  // ([slug].astro), loaded only when their turn comes — the label ring keeps its size, so nothing shifts
-  const gallery = photo ? galleryOf(item) : [];
-  const start = dayIndex(speakerKey || item.speaker || '', gallery.length);
-  const order = [...gallery.slice(start), ...gallery.slice(0, start)];
-  const lead = sketch ? { url: sketch.square, credit: null, year: null, licence: null, source_url: null, page_url: null } : order[0] || null;
-  const creditOf = (p) => (p ? [p.credit, p.year].filter(Boolean).join(' · ') : '');
   const when = [item.date || item.year, item.place, item.event].filter(Boolean);
   const q = item.quality;
   const ISSUE_LABEL = { muffled: 'muffled (narrow bandwidth)', noisy: 'background noise', hum: 'mains hum', reverberant: 'echoey room', clipped: 'distorted (clipped)', dropouts: 'dropouts', 'low-level': 'quiet or uneven levels', speed: 'speed off' };
@@ -41,19 +33,10 @@
           <div class="record relative h-40 w-40 sm:h-48 sm:w-48">
             <div class="vinyl absolute inset-0 rounded-full bg-radio-groove"></div>
             <div class="absolute inset-[21%] label-ring overflow-hidden rounded-full"
-              title={sketch ? `${item.speaker || ''} — pen-and-ink drawing after a photograph` : lead ? `${item.speaker || ''}${creditOf(lead) ? ` — photo: ${creditOf(lead)}` : ''}` : undefined}>
-              <RecordLabel name={item.speaker || item.title} photo={photo ? (lead?.url || item.thumb.url) : null} year={item.year} size={112} eager alt={photo ? (item.speaker || '') : ''} />
+              title={sketch ? `${item.speaker || ''} — pen-and-ink drawing` : undefined}>
+              <RecordLabel name={item.speaker || item.title} photo={sketch ? sketch.square : null} year={item.year} size={112} eager alt={sketch ? (item.speaker || '') : ''} />
             </div>
           </div>
-          {#if !sketch && photo && lead && (lead.credit || lead.licence || lead.source_url || lead.page_url)}
-            {@const credit = lead.credit}
-            {@const src = lead.source_url || lead.page_url}
-            <figcaption class="mx-auto mt-2 max-w-48 text-center text-xs text-radio-on-dark opacity-70">
-              <!-- the credit itself links to where the photo came from (descriptive anchor text, no bare "source") -->
-              <!-- the licence line can be long (a publisher's permission statement): it rides on the link's title -->
-              <a href={src || undefined} title={lead.licence || undefined} target="_blank" rel="noopener" class="underline decoration-radio-brass underline-offset-2 hover:text-radio-amber">Photo of {item.speaker || 'the speaker'}{credit ? `: ${credit}` : ''}</a><span>{lead.year ? ` · ${lead.year}` : ''}</span>
-            </figcaption>
-          {/if}
         </figure>
         <div class="min-w-0">
           <p class="font-dial text-sm font-bold uppercase tracking-[0.24em] text-radio-brass-bright">

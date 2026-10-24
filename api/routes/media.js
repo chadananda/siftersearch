@@ -205,12 +205,13 @@ export default async function mediaRoutes(fastify) {
     }
     const list = await listMedia({ ...q, ids, limit: q.limit, offset: q.offset });
     // every card's picture: the speaker's portrait (image worker) where there is one, else the item's generated tile
-    const spk = new Map((await speakersByKeys([...new Set(list.items.map((i) => i.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)]));
+    // Photos are never shown (Chad 10-24): the speaker's DRAWING, else the item's generated tile (the initials disc)
     for (const it of list.items) {
-      const t = spk.get(it.speaker_key), sk = sketchOf(it.speaker_key);
-      // the speaker's DRAWING leads (Chad 10-23: one courtroom-sketch style everywhere), then their photo, then the tile
-      it.thumb_url = sk?.square || t?.url || (it.thumb ? `/api/media/${it.slug}/file/${it.thumb}` : null);
-      it.thumb_kind = sk || t ? 'photo' : (it.thumb ? 'tile' : null);   // a portrait either way (the drawing or the photo)
+      const sk = sketchOf(it.speaker_key);
+      const tile = it.thumb && /\.svg$/.test(it.thumb) ? it.thumb : null;   // a generated tile only: a stored photo file is never served
+      it.thumb_url = sk?.square || (tile ? `/api/media/${it.slug}/file/${tile}` : null);
+      it.thumb_kind = sk ? 'sketch' : (tile ? 'tile' : null);
+      if (!tile) it.thumb = null;
     }
     const facets = q.facets === '0' ? null : await mediaFacets();
     pub(reply, 60);
@@ -222,20 +223,12 @@ export default async function mediaRoutes(fastify) {
   fastify.get('/index', async (req, reply) => {
     const { items, pending } = await mediaIndex(INDEX_BUDGET);
     const spkRows = await listSpeakers();
-    const speakers = shapeSpeakers(items, spkRows, speakerThumb);
-    // each speaker's gallery (the pages rotate through it); a person without a media_speakers portrait gets the gallery's first
-    const gal = await galleriesFor(speakers.map((s) => s.k), spkRows);
-    for (const s of speakers) {
-      const g = gal.get(s.k);
-      if (!g) continue;
-      s.g = compactGallery(g);
-      if (!s.p) { s.p = g[0].url; s.px = g[0].extended; s.cr = g[0].credit; }
-    }
-    // the speaker's DRAWING (ai_rendered, from a verified photo) is the row's portrait: p = the square drawing, px = the 9:16
-    // drawing, dr = 1; the photo stays as ph / pxh / phcr and in g (the gallery, with credits)
+    const speakers = shapeSpeakers(items, spkRows);
+    // Photos are never shown or exposed (Chad 10-24): a speaker's portrait is their DRAWING (p = square, px = 9:16), else none
+    // (the page draws the initials disc). The photos stay in the gallery manifest for making drawings.
     for (const s of speakers) {
       const sk = sketchOf(s.k);
-      if (sk) Object.assign(s, { ph: s.p, pxh: s.px, phcr: s.cr, p: sk.square, px: { url: sk.url, width: sk.width, height: sk.height, ai_rendered: true }, cr: null, dr: 1 });
+      Object.assign(s, sk ? { p: sk.square, px: { url: sk.url, width: sk.width, height: sk.height, ai_rendered: true }, cr: null, dr: 1 } : { p: null, px: null, cr: null });
     }
     reply.header('Cache-Control', pending ? 'public, max-age=15, s-maxage=15' : 'public, max-age=120, s-maxage=300, stale-while-revalidate=3600');
     return { v: 1, generated_at: new Date().toISOString(), pending, total: items.length, hours: Math.round(items.reduce((a, i) => a + i.d, 0) / 360) / 10, items, speakers };
@@ -283,7 +276,7 @@ export default async function mediaRoutes(fastify) {
     let buf = momentCards.get(m.key);
     if (!buf) {
       const sk = sketchOf(m.speaker_key);
-      const thumb = sk ? { url: sk.square } : m.speaker_key ? speakerThumb(await getSpeaker(m.speaker_key)) : null;
+      const thumb = sk ? { url: sk.square } : null;   // a drawing or initials, never a photo
       let photo = null;
       if (thumb?.url) { try { const r = await fetch(`${thumb.url}&tr=w-360,h-360,fo-face,q-85,f-jpeg`, { signal: AbortSignal.timeout(8000) }); if (r.ok) photo = Buffer.from(await r.arrayBuffer()); } catch { /* the initials label */ } }
       const { renderMomentCard } = await import('../lib/media/moment-card.js');
@@ -357,16 +350,10 @@ export default async function mediaRoutes(fastify) {
     const it = await getMediaBySlug(req.params.slug);
     if (!it || it.state !== 'done' || !it.dir) { reply.header('Cache-Control', 'public, max-age=60, s-maxage=60'); return reply.code(404).send({ error: 'NotFound' }); }
     const [meta, tr, spk] = await Promise.all([readJson(join(it.dir, 'meta.json')), readJson(join(it.dir, 'transcript.json')), it.speaker_key ? getSpeaker(it.speaker_key) : null]);
-    const gallery = it.speaker_key ? (await galleriesFor([it.speaker_key], spk ? [spk] : [])).get(it.speaker_key) || [] : [];
-    const portrait = speakerThumb(spk) || (gallery[0] ? { ...gallery[0], kind: 'photo', service: true, name: it.speaker } : null);
-    if (portrait && gallery.length > 1) portrait.gallery = gallery;
-    // the DRAWING leads the portrait slot; the photos (with credits) stay behind a toggle, so the gallery always rides along
+    // Photos are never shown (Chad 10-24): the portrait is the speaker's DRAWING, else the generated tile/initials
     const sketch = sketchOf(it.speaker_key);
-    if (portrait && sketch) {
-      if (!portrait.gallery && gallery.length) portrait.gallery = gallery;
-      Object.assign(portrait, { photo_url: portrait.url, photo_extended: portrait.extended || null, url: sketch.square,
-        extended: { url: sketch.url, width: sketch.width, height: sketch.height, ai_rendered: true }, sketch });
-    }
+    const portrait = sketch ? { kind: 'sketch', service: true, name: it.speaker, url: sketch.square,
+      extended: { url: sketch.url, width: sketch.width, height: sketch.height, ai_rendered: true }, sketch: { square: sketch.square, url: sketch.url } } : null;
     if (!meta || !tr) return reply.code(404).send({ error: 'NotFound' });
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
@@ -389,7 +376,7 @@ export default async function mediaRoutes(fastify) {
       skips: meta.trim?.gaps || [],
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${v}`, page: `${base}/file/page.html?v=${v}`,
-      thumb: portrait || (meta.thumb?.file ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),
+      thumb: portrait || (meta.thumb?.file && meta.thumb.kind !== 'photo' ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),
       // compact transcript: words as [text, start, end]
       // s0: the words' starts on the ORIGINAL copy (remastered talks only) — highlight + position while Original plays
       paragraphs: tr.paragraphs.map((p) => ({ n: p.n, pi: meta.pi?.[p.n] ?? null, t0: p.t0, t1: p.t1, spk: p.spk, sentences: p.sentences, words: p.words.map((w) => (w.hide ? [w.w, w.s, w.e, 1] : [w.w, w.s, w.e])),
@@ -448,7 +435,7 @@ export default async function mediaRoutes(fastify) {
       const text = clipText(tr?.paragraphs || [], r.startMs, r.endMs);
       if (!text) return reply.code(404).send({ error: 'NotFound' });
       const sk = sketchOf(it.speaker_key);
-      const thumb = sk ? { url: sk.square } : it.speaker_key ? speakerThumb(await getSpeaker(it.speaker_key)) : null;
+      const thumb = sk ? { url: sk.square } : null;
       let photo = null;
       if (thumb?.url) { try { const f = await fetch(`${thumb.url}&tr=w-360,h-360,fo-face,q-85,f-jpeg`, { signal: AbortSignal.timeout(8000) }); if (f.ok) photo = Buffer.from(await f.arrayBuffer()); } catch { /* initials */ } }
       const { renderMomentCard } = await import('../lib/media/moment-card.js');
@@ -531,7 +518,7 @@ export default async function mediaRoutes(fastify) {
       const ids = [...new Set((await runningRuns(['media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
       const rows = (await liveItemsByIds(ids.slice(0, 60))).slice(0, 40);
       const recent = await recentlyPublished(6);
-      const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, speakerThumb(s)?.url || null]));
+      const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, sketchOf(s.key)?.square || null]));
       const in_progress = await Promise.all(rows.map(async (r) => {
         const meta = r.dir ? await readJson(join(r.dir, 'meta.json')) : null;
         const stages = meta?.stages || {};
@@ -582,14 +569,13 @@ export async function speakerRoutes(fastify) {
   fastify.get('/', async (req, reply) => {
     pub(reply, 300);
     const rows = await listSpeakers();
-    const gal = await galleriesFor(rows.map((s) => s.key), rows);
-    return { speakers: rows.map((s) => ({ key: s.key, name: s.name, entity_id: s.entity_id, photo: speakerThumb(s), photos: gal.get(s.key)?.length || 0 })) };
+    // public: the drawing only (photos are never exposed, Chad 10-24)
+    return { speakers: rows.map((s) => { const sk = sketchOf(s.key); return { key: s.key, name: s.name, entity_id: s.entity_id, photo: sk ? { url: sk.square, extended: { url: sk.url, width: sk.width, height: sk.height, ai_rendered: true } } : null }; }) };
   });
   // one person's gallery, primary first, with every photo's credit, licence, year and source
-  fastify.get('/:key/gallery', async (req, reply) => {
+  fastify.get('/:key/gallery', { preHandler: requireInternal }, async (req, reply) => {
     const g = (await galleriesFor([String(req.params.key)])).get(String(req.params.key));
     if (!g) return reply.code(404).send({ error: 'NotFound' });
-    pub(reply, 300);
     return { key: req.params.key, gallery: g };
   });
 }

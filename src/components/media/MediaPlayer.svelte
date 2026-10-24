@@ -71,7 +71,7 @@
     return onOriginal() && starts0 ? mapTime(t, starts0, flat.starts) : t;   // the original's time → the page's (main) time
   };
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
-  const photo = item.thumb?.kind === 'photo';
+  const photo = item.thumb?.kind === 'sketch';
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
   const head = item.thumb?.url ? picture(item.thumb.url, 160, 160, { photo }) : { src: null, srcset: null };
   const when = [item.date || item.year, item.place, item.event].filter(Boolean);
@@ -278,7 +278,7 @@
 
   function sessionSetup() {
     if (!('mediaSession' in navigator)) return;
-    const art = item.thumb?.url ? [{ src: new URL(media.href(picture(item.thumb.url, 512, 512, { photo: item.thumb.kind === 'photo' }).src), location.href).href, sizes: '512x512', type: /\.svg/.test(item.thumb.url) ? 'image/svg+xml' : 'image/webp' }] : [];
+    const art = item.thumb?.url ? [{ src: new URL(media.href(picture(item.thumb.url, 512, 512, { photo: item.thumb.kind === 'sketch' }).src), location.href).href, sizes: '512x512', type: /\.svg/.test(item.thumb.url) ? 'image/svg+xml' : 'image/webp' }] : [];
     navigator.mediaSession.metadata = new MediaMetadata({ title: item.title, artist: item.speaker || '', album: item.collection || 'SifterSearch Media', artwork: art });
     const set = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch { /* unsupported */ } };
     set('play', () => toggle());
