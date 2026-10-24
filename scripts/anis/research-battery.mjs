@@ -51,7 +51,9 @@ const CASES = [
     messages: [{ role: 'user', content: "'Abdu'l-Bahá said it is better to have no religion if religion causes disunity. Doesn't that mean a Bahá'í can drop religion whenever it divides people?" }] },
   // Chad 10-23 authority decision: doctrine with only House letters + pilgrims' notes → the notes lead, the House is not doctrine;
   // administration → the House is primary
-  { id: 17, kind: 'doctrine: only House letters + pilgrim notes', mustNot: /House[^.]{0,80}\b(interpret|authoritative interpretation|doctrinal authority)/i, must: /pilgrim|recalled|notes/i,
+  // (10-23 run: Shoghi Effendi's own letter on suicide exists — the right answer leads with it; the check is that the House is
+  // never cast as interpreting)
+  { id: 17, kind: 'doctrine where House letters abound', mustNot: /House[^.]{0,80}\b(interpret|authoritative interpretation|doctrinal authority)/i,
     messages: [{ role: 'user', content: 'What happens to the soul of a suicide in the next world, according to the Bahá\'í teachings?' }] },
   { id: 18, kind: 'administration: the House is primary', must: /Universal House of Justice|House of Justice/i,
     messages: [{ role: 'user', content: 'Can a Bahá\'í be elected to a Local Spiritual Assembly if they are under 21, and who decides the age?' }] },
