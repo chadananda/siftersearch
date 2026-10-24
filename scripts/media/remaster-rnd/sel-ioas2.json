@@ -1,0 +1,3 @@
+{"round": "ioas-r2", "title": "Ioas round 2: less tube?",
+ "intro": "Round 2 goes after the tube sound: the boxy midrange, the room, and the missing highs above about 2.9 kHz. Below 2.9 kHz, where the words are, every version keeps the original speech. Six versions in random order: the original, last round's MossFormer2 60 % for continuity, and new chains with a de-resonance EQ, gentle dereverb and two ways of restoring the highs (a classic harmonic exciter, and a high band from a restoration model). All are matched in loudness. Pick the one you would rather hear for a whole talk.",
+ "clips": {"ioas": ["mf2se-w60", "t2-deres-wpe", "t2-deres-wpe-exc2", "t2-deres-wpe+mf2sr-hf-4", "t2-deres-wpe+resenh-hf-4"]}}
