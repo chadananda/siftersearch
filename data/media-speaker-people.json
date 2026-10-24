@@ -1048,7 +1048,11 @@
    ],
    "role": "hand",
    "historical": "first-hand",
-   "historical_basis": "Hand of the Cause"
+   "historical_basis": "Hand of the Cause",
+   "confirmed": [
+    "Khazeh",
+    "Mr. Khazeh"
+   ]
   },
   {
    "key": "arthur-lyon-dahl",
