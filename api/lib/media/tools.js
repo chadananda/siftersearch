@@ -398,7 +398,7 @@ export function pickDiarHost(busy = diarBusy) {
 }
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
 export const diarHost = () => process.env.MEDIA_DIAR_HOST ?? asrHost();
-async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, stop = null, pollMs = 15000, onStart = async () => {}, exec = run } = {}) {
+async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, stop = null, pollMs = null, onStart = async () => {}, exec = run } = {}) {
   const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs: 600_000, ...o });
   const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
   let st = await state().catch(() => ({ state: 'missing' }));
@@ -423,10 +423,13 @@ async function asrJobOn(input, opts = {}, { host, threads = asrThreads(), job, s
     await onStart();
     st = { state: 'running' };
   }
+  // poll 2 s, growing to 8 s (21:05: a 15 s poll held a finished short talk's slot up to 15 s — aorus ran 1 of 2 slots)
+  let every = pollMs ?? 2000;
   for (;;) {
     if (st.state === 'done') break;
     if (st.state === 'failed' || st.state === 'missing') throw new Error(`asr job ${job} ${st.state}: ${String(st.error || '').slice(-300)}`);
-    for (let waited = 0; waited < pollMs; waited += 1000) { if (stop?.()) throw new DrainAbort(`asr job ${job} (left running on ${host})`); await pause(1000); }
+    for (let waited = 0; waited < every; waited += Math.min(1000, every)) { if (stop?.()) throw new DrainAbort(`asr job ${job} (left running on ${host})`); await pause(Math.min(1000, every)); }
+    if (pollMs == null) every = Math.min(8000, Math.round(every * 1.5));
     st = await state().catch(() => ({ state: 'running' }));   // a blip on the network is not a failure
   }
   const { stdout } = await ssh(`fetch ${job}`, { timeoutMs: 300_000 });

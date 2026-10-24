@@ -389,3 +389,12 @@ describe('a GPU reservation ends with its job, or once a later reading shows it 
     delete process.env.MEDIA_GPU_HOST;
   });
 });
+
+describe('a finished transcription is noticed within seconds (21:05: a 15 s poll held aorus’s second slot)', () => {
+  it('polls quickly at first and never more than every 8 s', async () => {
+    const { readFileSync } = await import('fs');
+    const src = readFileSync(new URL('../../api/lib/media/tools.js', import.meta.url), 'utf8');
+    expect(src).toMatch(/let every = pollMs \?\? 2000;/);
+    expect(src).toMatch(/every = Math\.min\(8000, Math\.round\(every \* 1\.5\)\)/);
+  });
+});
