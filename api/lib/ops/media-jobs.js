@@ -1043,6 +1043,95 @@ export async function mediaRemasterRevertJob({ ids = [] } = {}, deps = {}) {
   return out;
 }
 
+/** media-remaster-review-pack { out?, clipS? }: the talks the word guard HELD (> 15 % of sentences fell back — the worst audio,
+ *  where Chad most wants the upgrade) as a morning review set (coordinator 10-23): per talk a 40 s A/B — the original
+ *  (transparent chain) vs the FULL UniPASE copy, no splice — from the stretch with the most flagged sentences, and those
+ *  sentences' text (published text · the original's ASR · the copy's ASR). Incremental: clips already cut are kept.
+ *  → writes <out>/clips/*.m4a + <out>/review.json; returns the counts */
+export async function mediaRemasterReviewPackJob({ out = null, clipS = 40 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const T = deps.tools || await import('../media/tools.js');
+  const { safeChain } = await import('../media/enhance.js');
+  const fs = await import('fs/promises');
+  const dir = out || join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run', 'remaster-review');
+  await fs.mkdir(join(dir, 'clips'), { recursive: true });
+  const rd = async (f, d = null) => JSON.parse(await fs.readFile(f, 'utf8').catch(() => 'null')) ?? d;
+  const exists = (f) => fs.stat(f).then(() => true, () => false);
+  const words = (asr, s, e) => (asr?.segments || []).flatMap((g) => g.words || []).filter((w) => w.s >= s - 0.3 && w.s <= e + 0.3).map((w) => w.w).join(' ').trim();
+  const entries = [];
+  let cut = 0;
+  for (const it of await repo.remasterCandidates(['B', 'C', 'D', 'E'])) {
+    const m = it.dir ? await rd(join(it.dir, 'meta.json')) : null;
+    if (m?.remaster?.status !== 'review' || m.remaster.fallback_sent_pct == null) continue;
+    const enh = join(it.dir, 'enhanced');
+    const g = await rd(join(enh, 'unipase.guard.json'), {});
+    const flagged = (g.detail || []).filter((x) => x.swap);
+    if (!flagged.length || !(await exists(join(enh, 'unipase.cloud.flac')))) continue;
+    // the clip window with the most flagged sentences
+    let best = { t: Math.max(0, flagged[0].s - 3), n: 0 };
+    for (const f of flagged) { const t = Math.max(0, f.s - 3); const n = flagged.filter((x) => x.s >= t && x.e <= t + clipS).length; if (n > best.n) best = { t, n }; }
+    const orig = (m.enhancement?.variants || []).find((v) => v.name === 'original') || {};
+    const co = join(dir, 'clips', `${it.slug}.orig.m4a`), cu = join(dir, 'clips', `${it.slug}.unipase.m4a`);
+    const enc = ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '48k', '-movflags', '+faststart'];
+    if (!(await exists(co)) || !(await exists(cu))) {
+      await T.ffmpeg(['-ss', String(best.t), '-t', String(clipS), '-i', join(it.dir, m.original), '-af', safeChain(orig), ...enc, co]);
+      await T.ffmpeg(['-ss', String(best.t), '-t', String(clipS), '-i', join(enh, 'unipase.cloud.flac'), '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled', ...enc, cu]);
+      cut++;
+    }
+    const work = await rd(join(it.dir, 'transcript.work.json'), { paragraphs: [] });
+    const ao = await rd(join(enh, 'unipase.asr_orig.json')) || await rd(join(it.dir, 'transcript.raw.json'));
+    const au = await rd(join(enh, 'unipase.asr.json'));
+    const byN = new Map((work.paragraphs || []).map((p) => [p.n, p]));
+    const shown = flagged.filter((x) => x.s >= best.t && x.e <= best.t + clipS).slice(0, 6).map((x) => {
+      const p = byN.get(x.n); const [i0, i1] = (p?.sentences || [])[x.k] || [0, 0];
+      return { at: Math.round(x.s - best.t), text: (p?.words || []).slice(i0, i1).map((w) => w.w).join(' '), original_heard: words(ao, x.s, x.e), remaster_heard: words(au, x.s, x.e), lost: x.lost };
+    });
+    entries.push({ id: it.id, slug: it.slug, title: m.title || it.slug, speaker: m.speaker || null, grade: m.quality?.overall || it.grade, fallback_pct: m.remaster.fallback_sent_pct,
+      unguardable_s: m.remaster.unguardable_s ?? null, clip_start_s: Math.round(best.t), clip_s: clipS, orig: `clips/${it.slug}.orig.m4a`, unipase: `clips/${it.slug}.unipase.m4a`,
+      flagged: shown, page: `https://siftersearch.com/media/${it.slug}`, held_at: m.remaster.at || null });
+  }
+  entries.sort((a, b) => b.fallback_pct - a.fallback_pct);
+  await fs.writeFile(join(dir, 'review.json'), JSON.stringify(entries, null, 1));
+  return { held: entries.length, clips_cut: cut, dir };
+}
+
+/** media-remaster-decide { picks: [{ id | slug, choice: 'publish' | 'keep' }] }: Chad's morning picks from the review page.
+ *  publish → the FULL UniPASE copy (no splice; -18 LUFS, -1 dBFS) becomes the listening copy, then realign → encode →
+ *  publish with the original kept (the "Original" button); keep → the transparent original stays, marked decided. */
+export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const T = deps.tools || await import('../media/tools.js');
+  const queue = deps.queue || enqueue;
+  const fs = await import('fs/promises');
+  const out = { published: [], kept: [], skipped: [] };
+  for (const pk of [].concat(picks)) {
+    const x = pk.id ?? pk.slug;
+    const it = /^\d+$/.test(String(x)) ? await repo.getMediaItem(Number(x)) : await repo.getMediaBySlug(String(x));
+    if (!it?.dir) { out.skipped.push(String(x)); continue; }
+    const mf = join(it.dir, 'meta.json');
+    const m = JSON.parse(await fs.readFile(mf, 'utf8'));
+    const at = new Date().toISOString();
+    if (pk.choice === 'publish') {
+      const cloud = join(it.dir, 'enhanced', 'unipase.cloud.flac'), full = join(it.dir, 'enhanced', 'unipase.full.flac');
+      await T.ffmpeg(['-i', cloud, '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled', '-ac', '1', '-ar', '48000', '-c:a', 'flac', full]);
+      const vs = (m.enhancement.variants || []).filter((v) => v.name !== 'unipase');
+      vs.push({ name: 'unipase', file: 'enhanced/unipase.full.flac', shifts_time: true, full: true, chosen_by: 'human' });
+      m.enhancement.variants = vs;
+      if (m.enhancement.listening !== 'unipase') m.enhancement.listening_before = { name: m.enhancement.listening };
+      m.enhancement.listening = 'unipase';
+      m.remaster = { ...(m.remaster || {}), status: 'done', verdict: 'pass-human-full', decided_at: at };
+      await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      await queue('media-item', { id: it.id, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-decide');
+      out.published.push(it.slug);
+    } else if (pk.choice === 'keep') {
+      m.remaster = { ...(m.remaster || {}), status: 'kept', verdict: 'keep-human', decided_at: at };
+      await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      out.kept.push(it.slug);
+    } else out.skipped.push(it.slug);
+  }
+  return out;
+}
+
 /** HOME HOSTS as extra remaster workers (Chad 10-23 overnight): aorus when its card has UniPASE's ~4.3 GB free beside the
  *  transcriptions (ASR keeps priority: a free ASR slot is required to start), boss only when cool (one APU heat budget).
  *  UniPASE through the gate's 'unipase' verb, then the copy's transcript through the host's normal ASR job; the files land
