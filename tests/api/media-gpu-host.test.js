@@ -365,3 +365,27 @@ describe('GPU memory is budgeted at dispatch (10-23 20:12: a DFN job OOM-ed on a
     expect(readFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), 'utf8')).toMatch(/gpu_free_mb/);
   });
 });
+
+describe('a GPU reservation ends with its job, or once a later reading shows it resident (20:50: idle gaps on aorus)', () => {
+  it('released at job end; ignored by a reading taken ≥ 30 s after the dispatch; a released slot forces a fresh reading', async () => {
+    process.env.MEDIA_GPU_HOST = 'gpu-r';
+    const t = await import('../../api/lib/media/tools.js');
+    const noop = async () => ({});
+    const now = Date.now();
+    t.noteDisk('gpu-r', { free_gb: 3000, mem_avail_gb: 11, gpu_free_mb: 4500, gpu_temp: 60, cpu_tctl: 70 }, now);
+    const un = t.reserveGpu('gpu-r', 'transcribe', now);
+    expect(t.diskOk('gpu-r', { refresh: noop, kind: 'dfn', now })).toBe(false);
+    un();                                                                          // the transcription ended
+    t.noteDisk('gpu-r', { gpu_free_mb: 4500 }, now);
+    expect(t.diskOk('gpu-r', { refresh: noop, kind: 'dfn', now })).toBe(true);
+    t.reserveGpu('gpu-r', 'transcribe', now);
+    t.noteDisk('gpu-r', { gpu_free_mb: 4500 }, now + 31_000);                      // a reading 31 s later: the job is resident in it
+    expect(t.diskOk('gpu-r', { refresh: noop, kind: 'dfn', now: now + 31_000 })).toBe(true);
+    let refreshed = 0;
+    const got = await t.acquireAsrHost([{ host: 'gpu-r', slots: 2 }], { running: async () => [] });
+    got.release();
+    t.diskOk('gpu-r', { refresh: async () => { refreshed++; }, kind: 'transcribe' });   // the reading was marked stale at release
+    expect(refreshed).toBe(1);
+    delete process.env.MEDIA_GPU_HOST;
+  });
+});

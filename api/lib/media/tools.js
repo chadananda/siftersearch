@@ -136,10 +136,17 @@ const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host
 export const VRAM_NEED_MB = { transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };
 const gpuReserved = new Map();   // host → [{ mb, at }] dispatched, maybe not resident yet
 /** Count a job just dispatched to the GPU host against its free memory until the next readings show it. */
+// A reservation ends when its job ENDS (release → the reading is re-taken at once) or when a reading taken ≥ 30 s after the
+// dispatch shows it resident (20:50: a 3.5 GB hold outlived its short job by a minute and aorus sat idle between talks).
 export function reserveGpu(host, kind, now = Date.now()) {
-  if (host !== gpuHost() || !VRAM_NEED_MB[kind]) return;
-  gpuReserved.set(host, [...(gpuReserved.get(host) || []).filter((x) => now - x.at < 90_000), { mb: VRAM_NEED_MB[kind], at: now }]);
+  if (host !== gpuHost() || !VRAM_NEED_MB[kind]) return () => {};
+  const r = { mb: VRAM_NEED_MB[kind], at: now };
+  gpuReserved.set(host, [...(gpuReserved.get(host) || []).filter((x) => now - x.at < 90_000), r]);
+  return () => { gpuReserved.set(host, (gpuReserved.get(host) || []).filter((x) => x !== r)); staleDisk(host); };
 }
+/** A job ended on this host: the next check re-reads its memory instead of trusting a reading taken while it ran. */
+export function staleDisk(host) { const d = diskInfo.get(host); if (d) d.at = 0; }
+const pendingVram = (host, d, now) => (gpuReserved.get(host) || []).filter((x) => now - x.at < 90_000 && !(d.at && d.at - x.at >= 30_000)).reduce((n, x) => n + x.mb, 0);
 export function noteDisk(host, info, now = Date.now()) { diskInfo.set(host, { ...(diskInfo.get(host) || {}), ...info, at: now }); }
 /** May a NEW job of `kind` go to this host now? (disk ≥ 20 GB free; RAM ≥ the kind's budget + the host's reserve) */
 export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = null, needGb = null } = {}) {
@@ -153,7 +160,7 @@ export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = n
   // there in the last 90 s (not resident yet) must cover the kind's need
   const vneed = host === gpuHost() ? VRAM_NEED_MB[kind] : null;
   if (vneed && d.gpu_free_mb != null) {
-    const pending = (gpuReserved.get(host) || []).filter((x) => now - x.at < 90_000).reduce((n, x) => n + x.mb, 0);
+    const pending = pendingVram(host, d, now);
     if (d.gpu_free_mb - pending < vneed + 300) why.push(`${d.gpu_free_mb - pending} MiB GPU memory free (< ${vneed + 300} for a ${kind})`);
   }
   const need = (needGb ?? MEM_BUDGET[kind] ?? 0) + memReserve(host);
@@ -164,6 +171,7 @@ export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = n
 async function refreshDisk(host, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
   const j = JSON.parse(stdout.trim().split('\n').pop());
+  setImmediate(() => { for (const w of asrWaiters.splice(0)) w(); });   // a fresh reading may admit a waiting transcription
   if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, pending: false });
   return j;
 }
@@ -228,8 +236,8 @@ export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHos
     if (host) break;
     await slotWait(probeWaiters, 'a probe host');
   }
-  probeBusy.set(host, (probeBusy.get(host) || 0) + 1); reserveGpu(host, 'probe');
-  try { return await fn(host); } finally { probeBusy.set(host, probeBusy.get(host) - 1); probeWaiters.shift()?.(); }
+  probeBusy.set(host, (probeBusy.get(host) || 0) + 1); const unreserve = reserveGpu(host, 'probe');
+  try { return await fn(host); } finally { unreserve(); probeBusy.set(host, probeBusy.get(host) - 1); probeWaiters.shift()?.(); }
 }
 /** Why pickAsrHost chose a host (the dispatch log line). */
 export function asrPickReason(host, hosts = asrHosts(), busy = asrBusy) {
@@ -302,7 +310,7 @@ export async function asrJob(input, opts = {}, { host = asrHost(), count = true,
   try { return await asrJobOn(input, opts, { host, ...rest }); } finally { if (count && !reserved) releaseAsr(host); }   // a reserved slot: the caller releases it
 }
 const asrWaiters = [];
-function releaseAsr(host) { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 1) - 1)); asrWaiters.shift()?.(); }
+function releaseAsr(host) { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 1) - 1)); staleDisk(host); asrWaiters.shift()?.(); }
 /** A host with a FREE transcription slot (fastest first), the slot taken at once — waits while every host is full, so new
  *  transcriptions queue here instead of piling onto a busy host. release() if the job is never started. */
 // the HOST's own count of live transcriptions (gate 'running transcribe'), at most every 15 s per host: after a restart,
@@ -329,9 +337,9 @@ export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn, 
       if (remote != null && Math.max(remote, asrBusy.get(x.host) || 0) >= slots) continue;
       if ((asrBusy.get(x.host) || 0) < slots) { h = x; break; }   // re-checked after the await
     }
-    if (h) { reserveGpu(h.host, 'transcribe'); asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; releaseAsr(h.host); } } }; }
+    if (h) { const unreserve = reserveGpu(h.host, 'transcribe'); asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; unreserve(); releaseAsr(h.host); } } }; }
     // a slot frees here, or 20 s pass (a job of a previous process finished on its host; a host low on disk was cleaned)
-    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, stop ? 5_000 : 20_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
+    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, 5_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
   }
 }
 const diarBusy = new Map();
@@ -365,8 +373,8 @@ export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = 
     if (all.size < slots && idsOn(host).size < Math.min(slots, Math.max(1, thermalSlots(host, slots))) && diskOk(host, { kind: 'diarize' }) && thermalSlots(host, slots) > 0) break;
     await waitDiar(host, recheckMs);   // full with jobs this process does not hold, or short of RAM / disk: look again shortly
   }
-  idsOn(host).add(job); syncBusy(host); reserveGpu(host, 'diarize');
-  try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); }
+  idsOn(host).add(job); syncBusy(host); const unreserve = reserveGpu(host, 'diarize');
+  try { return await fn(); } finally { unreserve(); idsOn(host).delete(job); syncBusy(host); wakeDiar(host); }
 }
 async function countDiar(host, fn, job = `local-${++diarSeq}`) { idsOn(host).add(job); syncBusy(host); try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); } }
 /** Stop a detached job on its host (gate 'cancel <job>'): an excluded talk's transcription / diarization / DFN. */
@@ -667,7 +675,7 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
       const st = await remoteJob('poll-only', input, {}, { host: h, job: idOf(h), probeOnly: true, exec }).catch(() => null);
       if (st === 'running' || st === 'done') { host = h; break; }
     }
-    let took = false;
+    let took = false, unreserve = () => {};
     if (!host) {
       for (;;) {
         const usable = hosts.filter(([h]) => diskOk(h, { kind: sub === 'dfn' ? 'dfn' : 'grade', needGb }));
@@ -676,12 +684,12 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
         if (host) break;
         await slotWait(offWait, `a ${sub} host`);
       }
-      if (host) { offBusy.set(host, (offBusy.get(host) || 0) + 1); took = true; reserveGpu(host, sub === 'dfn' ? 'dfn' : 'grade'); }
+      if (host) { offBusy.set(host, (offBusy.get(host) || 0) + 1); took = true; unreserve = reserveGpu(host, sub === 'dfn' ? 'dfn' : 'grade'); }
     }
     if (host) try { return await remoteJob(sub, input, { ...opts, ...(sub === 'dfn' && host !== gpuHost() ? { threads: 6 } : {}) }, { host, job: idOf(host), stop, file, exec, ...(pollMs != null ? { pollMs } : {}) }); }
     // a drain leaves the remote job running (re-attached next time); anything else → the tower does it
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] ${sub} on ${host} failed — tower fallback: ${String(err.message).slice(0, 300)}`); }
-    finally { if (took) { offBusy.set(host, offBusy.get(host) - 1); offWait.shift()?.(); } }
+    finally { unreserve(); if (took) { offBusy.set(host, offBusy.get(host) - 1); offWait.shift()?.(); } }
   }
   return slot(() => detachedTool(sub, input, opts, { pidFile, threads: 4, stop, python }));   // the tower's 8-thread budget (towerSlot)
 }
