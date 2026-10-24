@@ -196,7 +196,7 @@ describe('re-attached diarizations count toward the host cap', () => {
     const { diarize, pickDiarHost } = await import('../../api/lib/media/tools.js');
     process.env.MEDIA_ASR_HOST = 'zgpu'; process.env.MEDIA_GPU_HOST = 'aorus';
     const { diarSlot } = await import('../../api/lib/media/tools.js');
-    let free1; const one = diarSlot('aorus', () => new Promise((r) => { free1 = r; }));   // one of aorus's 2 slots in use
+    let free1; const one = { then: (f) => f() }; free1 = () => {};   // aorus has ONE diarization slot (10-23 heat)
     const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
     const out = join(mkdtempSync(join(tmpdir(), 'rd-')), 'd.json');
     let release; const hold = new Promise((r) => { release = r; });
@@ -283,5 +283,25 @@ describe('a drain never waits on a slot (10-23 18:00: one diarization waiting fo
     const a = await acquireAsrHost([{ host: 'hd2', slots: 1 }], { running: async () => [] });
     await expect(acquireAsrHost([{ host: 'hd2', slots: 1 }], { running: async () => [], stop: () => true })).rejects.toMatchObject({ code: 'DRAIN' });
     a.release();
+  });
+});
+
+describe('heat guard (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss Tctl 99.9 °C)', () => {
+  it('GPU ≥ 83 °C → one transcription on the GPU host; CPU ≥ 95 °C → none; ≥ 90 °C → half; cool → as configured', async () => {
+    process.env.MEDIA_GPU_HOST = 'aorus';
+    const t = await import('../../api/lib/media/tools.js');
+    t.noteDisk('aorus', { gpu_temp: 86, cpu_tctl: 80 }); expect(t.thermalSlots('aorus', 2)).toBe(1);
+    t.noteDisk('aorus', { gpu_temp: 70, cpu_tctl: 80 }); expect(t.thermalSlots('aorus', 2)).toBe(2);
+    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 99 }); expect(t.thermalSlots('boss', 4)).toBe(0);
+    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 92 }); expect(t.thermalSlots('boss', 4)).toBe(2);
+    t.noteDisk('aorus', { gpu_temp: 81, cpu_tctl: 70 }); expect(t.coolEnough('aorus')).toBe(false);
+    t.noteDisk('aorus', { gpu_temp: 70, cpu_tctl: 70 }); expect(t.coolEnough('aorus')).toBe(true);
+    delete process.env.MEDIA_GPU_HOST;
+  });
+  it('the gate reports GPU temperature and CPU Tctl; a GPU diarization never falls back to the CPU on aorus', async () => {
+    const { readFileSync } = await import('fs');
+    const g = readFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), 'utf8');
+    expect(g).toMatch(/temperature\.gpu/); expect(g).toMatch(/Tctl/); expect(g).toMatch(/MEDIA_DIAR_NO_CPU=1/);
+    expect(readFileSync(new URL('../../scripts/media/media_tool.py', import.meta.url), 'utf8')).toMatch(/MEDIA_DIAR_NO_CPU/);
   });
 });

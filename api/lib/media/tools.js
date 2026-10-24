@@ -140,9 +140,24 @@ export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = n
 async function refreshDisk(host, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
   const j = JSON.parse(stdout.trim().split('\n').pop());
-  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, pending: false });
+  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, pending: false });
   return j;
 }
+/** HEAT (10-23 monitor: aorus GPU 88 °C thermally throttling at 209 W, CPU Tctl 95 °C; boss Tctl 99.9 °C): the slots a host
+ *  may fill now. GPU ≥ 83 °C → 1 transcription on the GPU host (2 again under 83); CPU Tctl ≥ 95 °C → no new job; ≥ 90 °C →
+ *  half the slots (at least 1). Read from the gate's 'df' (≤ every 30 s). */
+export function thermalSlots(host, base, { now = Date.now() } = {}) {
+  const d = diskInfo.get(host);
+  if (!d || now - (d.at || 0) > 5 * 60_000) return base;   // no fresh reading: as configured
+  let n = base;
+  if (d.gpu_temp != null && host === gpuHost() && d.gpu_temp >= 83) n = Math.min(n, 1);
+  if (d.cpu_tctl != null && d.cpu_tctl >= 95) n = 0;
+  else if (d.cpu_tctl != null && d.cpu_tctl >= 90) n = Math.min(n, Math.max(1, Math.floor(base / 2)));
+  if (n < base && (!d.heatWarnedAt || now - d.heatWarnedAt > 10 * 60_000)) { d.heatWarnedAt = now; console.warn(`[media] WARN ${host} hot (GPU ${d.gpu_temp} °C, CPU ${d.cpu_tctl} °C): ${n} of ${base} slots`); }
+  return n;
+}
+/** May the GPU host take CPU-side work (probes) now? Not when warm (GPU ≥ 80 °C or CPU ≥ 85 °C). */
+export const coolEnough = (host) => { const d = diskInfo.get(host); return !d || ((d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < 85); };
 /** Remove a finished job's folder on its host (best effort; the gate refuses a running one and its janitor sweeps the rest). */
 export async function cleanRemote(host, job, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `clean ${job}`)], { timeoutMs: 60_000 });
@@ -177,7 +192,8 @@ export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHos
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq0 = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
-  const uniq = uniq0.filter(([h]) => diskOk(h, { kind: 'probe' })).length ? uniq0.filter(([h]) => diskOk(h, { kind: 'probe' })) : uniq0;
+  const okHost = ([h]) => diskOk(h, { kind: 'probe' }) && (h !== gpuHost() || coolEnough(h));   // no probes on a warm aorus (10-23 heat)
+  const uniq = uniq0.filter(okHost).length ? uniq0.filter(okHost) : uniq0.filter(([h]) => h !== gpuHost() || coolEnough(h));
   if (!uniq.length) return fn(null);
   let host = null;
   for (;;) {
@@ -280,10 +296,11 @@ export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn, 
     if (stop?.()) throw new DrainAbort('transcription waiting for a host slot');   // a drain never waits on a slot
     let h = null;
     for (const x of hosts) {
-      if ((asrBusy.get(x.host) || 0) >= x.slots || !diskOk(x.host, { kind: 'transcribe' })) continue;
+      const slots = thermalSlots(x.host, x.slots);   // fewer when the host runs hot
+      if ((asrBusy.get(x.host) || 0) >= slots || !diskOk(x.host, { kind: 'transcribe' })) continue;
       const remote = await remoteAsrCount(x.host, { running });
-      if (remote != null && Math.max(remote, asrBusy.get(x.host) || 0) >= x.slots) continue;
-      if ((asrBusy.get(x.host) || 0) < x.slots) { h = x; break; }   // re-checked after the await
+      if (remote != null && Math.max(remote, asrBusy.get(x.host) || 0) >= slots) continue;
+      if ((asrBusy.get(x.host) || 0) < slots) { h = x; break; }   // re-checked after the await
     }
     if (h) { asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; releaseAsr(h.host); } } }; }
     // a slot frees here, or 20 s pass (a job of a previous process finished on its host; a host low on disk was cleaned)
@@ -295,7 +312,7 @@ const diarWait = new Map();
 // per host: aorus 2 (≈1.5 GB RAM each on a 15 GB box beside two transcriptions; 10-23 watch: 6 at once, load 55, 3 GB free)
 // aorus diarizes on its GPU (venv-diar: sherpa-onnx built for CUDA; 600 s of audio in ~100 s at ONE CPU thread, vs boss's
 // CPU 112 s at 4 threads under load) — 2 at a time, ≥ 1.5 GB free or its CPU; boss is the overflow at 3 (10-23)
-const DIAR_SLOTS = { aorus: 2, boss: 3 };
+const DIAR_SLOTS = { aorus: 1, boss: 3 };   // aorus 1 (10-23 heat: GPU 88 °C throttling)
 // a slot is a JOB ID held on its host; a new diarization starts only while BOTH this process's ids and the ids the host
 // reports running (gate verb 'running diarize') stay under the cap. 10-23 14:30: after a restart four re-attached jobs sat
 // on aorus (cap 2); each one that finished woke a waiter that never re-checked the cap, so aorus ran 3 all afternoon.
@@ -318,7 +335,7 @@ export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = 
     const remote = running ? await running().catch(() => null) : null;
     const all = new Set([...idsOn(host), ...(remote || [])]);
     all.delete(job);
-    if (all.size < slots && idsOn(host).size < slots && diskOk(host, { kind: 'diarize' })) break;
+    if (all.size < slots && idsOn(host).size < Math.min(slots, Math.max(1, thermalSlots(host, slots))) && diskOk(host, { kind: 'diarize' }) && thermalSlots(host, slots) > 0) break;
     await waitDiar(host, recheckMs);   // full with jobs this process does not hold, or short of RAM / disk: look again shortly
   }
   idsOn(host).add(job); syncBusy(host);

@@ -201,13 +201,23 @@ def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name
     # the transcriptions keep the card; else the CPU (10-23: 600 s of audio in ~100 s on the GPU at 1 CPU thread)
     prov = os.environ.get('MEDIA_DIAR_PROVIDER', 'cpu')
     if prov == 'cuda':
-        try:
-            free = int(subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'], capture_output=True, text=True).stdout.split()[0])
-            if free < 1536:
+        # MEDIA_DIAR_NO_CPU (aorus, 10-23: its CPU at Tctl 95 °C): WAIT for GPU memory (up to 30 min), never the CPU
+        no_cpu = os.environ.get('MEDIA_DIAR_NO_CPU') == '1'
+        t_wait = time.time()
+        while True:
+            try:
+                free = int(subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'], capture_output=True, text=True).stdout.split()[0])
+            except Exception:
+                free = None
+            if free is not None and free >= 1536:
+                break
+            if not no_cpu:
                 prov = 'cpu'
                 print(f'GPU has {free} MiB free — diarizing on the CPU', file=sys.stderr)
-        except Exception:
-            prov = 'cpu'
+                break
+            if time.time() - t_wait > 1800:
+                raise RuntimeError(f'GPU memory never freed ({free} MiB) in 30 min — diarize retried later (no CPU fallback on this host)')
+            time.sleep(20)
     cfg = sherpa_onnx.OfflineSpeakerDiarizationConfig(
         segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
             pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads, provider=prov),

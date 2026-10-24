@@ -68,7 +68,10 @@ if [[ "$verb" == "df" ]]; then
   mkdir -p jobs
   read -r size avail pcent < <(df -Pk jobs | awk 'NR==2 {gsub("%","",$5); print $2, $4, $5}')
   mem=$(awk '/^MemAvailable:/ {print int($2/1048576*10)/10}' /proc/meminfo 2>/dev/null || echo null)
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}"
+  # heat (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss Tctl 99.9 °C): GPU temperature and CPU Tctl
+  gpu=$( (nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null || true) | head -1 | tr -dc '0-9' || true); gpu=${gpu:-null}   # a host without a GPU / sensors: null, never an exit (set -e)
+  tctl=$( (sensors 2>/dev/null || true) | awk '/^Tctl:/ {gsub(/[^0-9.]/,"",$2); print int($2); exit}' || true); tctl=${tctl:-null}
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then
@@ -140,7 +143,7 @@ if [[ "$verb" == "start" ]]; then
     # a host with venv-diar (aorus: sherpa-onnx built for CUDA) diarizes on its GPU, the CUDA libraries from the main venv
     if [[ -x venv-diar/bin/python ]]; then
       NV=$(ls -d "$PWD"/venv/lib/python3*/site-packages/nvidia/*/lib 2>/dev/null | tr '\n' ':')
-      LD_LIBRARY_PATH="$NV${LD_LIBRARY_PATH:-}" MEDIA_DIAR_PROVIDER=cuda nohup setsid nice -n 19 venv-diar/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} --threads 1 >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+      LD_LIBRARY_PATH="$NV${LD_LIBRARY_PATH:-}" MEDIA_DIAR_PROVIDER=cuda MEDIA_DIAR_NO_CPU=1 nohup setsid nice -n 19 venv-diar/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} --threads 1 >"$d/summary.json" 2>"$d/err.txt" </dev/null &
     else
       nohup setsid nice -n 19 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
     fi
