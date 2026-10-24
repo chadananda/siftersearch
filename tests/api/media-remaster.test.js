@@ -264,3 +264,22 @@ describe('morning review picks', () => {
     expect(JSON.parse(readFileSync(join(items[2].dir, 'meta.json'), 'utf8')).remaster.status).toBe('kept');
   });
 });
+
+describe('one remaster run per talk', () => {
+  it('a second run for the same talk waits for the first', async () => {
+    const { mediaRemasterJob } = await import('../../api/lib/ops/media-jobs.js');
+    const order = [];
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    let n = 0;
+    const deps = { runItem: async () => { const k = ++n; order.push(`start${k}`); if (k === 1) await gate; order.push(`end${k}`); return { yielded: true }; },
+      repo: { getMediaItem: async () => null } };
+    const db = await import('../../api/lib/db.js');
+    db.queryOne.mockResolvedValue({ id: 77, slug: 't77', state: 'done', dir: null });
+    const a = mediaRemasterJob({ id: 77 }, deps), b = mediaRemasterJob({ id: 77 }, deps);
+    await new Promise((r) => setTimeout(r, 20));
+    release(); await Promise.allSettled([a, b]);
+    db.queryOne.mockReset();
+    expect(order).toEqual(['start1', 'end1', 'start2', 'end2']);
+  });
+});

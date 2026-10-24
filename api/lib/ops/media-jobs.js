@@ -992,7 +992,17 @@ export async function mediaTalkIdentitiesJob({ write = false } = {}, deps = {}) 
 
 /** media-remaster { id }: one talk's TOWER part of the remaster (Chad 10-23): the word guard on the UniPASE copy the cloud
  *  worker left in its folder, realign, the Opus 96k + original encodes, trim, update. Its own lane ('remaster'). */
-export async function mediaRemasterJob({ id, ...rest } = {}, deps = {}) {
+// ONE remaster run per talk at a time (10-24: duplicate runs — a pod's collection, a re-score, a resume — raced on meta.json
+// and a stale run overwrote a newer verdict). Same process: a run for a busy talk waits, then runs on the latest files.
+const remasterBusy = new Map();
+export async function mediaRemasterJob(params = {}, deps = {}) {
+  const key = String(params.id);
+  const prev = remasterBusy.get(key);
+  const mine = (async () => { if (prev) await prev.catch(() => {}); return remasterRun(params, deps); })();
+  remasterBusy.set(key, mine);
+  try { return await mine; } finally { if (remasterBusy.get(key) === mine) remasterBusy.delete(key); }
+}
+async function remasterRun({ id, ...rest } = {}, deps = {}) {
   // phase 1: the word guard only; phase 2 (realign → encode → publish) only when the UniPASE copy became the listening copy —
   // a 'review' / 'skipped' talk keeps its published audio untouched (no re-encode, no re-ingest)
   let r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['remaster'] }, deps);
