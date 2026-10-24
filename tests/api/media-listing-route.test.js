@@ -22,6 +22,12 @@ vi.mock('../../api/lib/repos/media-repo.js', async (orig) => ({
   listSpeakers: vi.fn(async () => [{ key: 'hooper-dunbar', name: 'Hooper Dunbar', file: 'media-speakers/hooper-dunbar.jpg', sha: 'abcdef0123456789abcd' }]),
 }));
 
+// the published-drawings manifest, controlled per test (never the real data/media-speaker-sketches.json)
+const SKETCH = { url: 'https://cdn.test/media-speakers/hooper-dunbar/sketch-aa.jpg?v=aa', square: 'https://cdn.test/media-speakers/hooper-dunbar/sketch-sq-bb.jpg?v=bb',
+  width: 768, height: 1376, ai_rendered: true };
+const sketches = new Map([['hooper-dunbar', SKETCH]]);
+vi.mock('../../api/lib/media/sketch.js', async (orig) => ({ ...(await orig()), sketchOf: (k) => (k ? sketches.get(k) || null : null) }));
+
 vi.mock('../../api/lib/search.js', () => ({ multiIndexSearch: vi.fn(async (q, o) => ({ hits: o.filters?.collection === 'Media'
   ? [{ paragraph_id: 501, _formatted: { text: 'The <em>soul</em> is a sign' } }, { paragraph_id: 502 }] : [] })) }));
 
@@ -52,11 +58,27 @@ describe('GET /api/media/index', () => {
     expect(it.q.c).toBe('Gleanings');
     expect(it.hl).toEqual([299, 319]);
     expect(it.w).toHaveLength(48);
-    expect(body.speakers).toEqual([expect.objectContaining({ k: 'hooper-dunbar', c: 1, role: 'uhj', p: expect.stringContaining('/img/cdn/siftersearch.com/media-speakers/hooper-dunbar.jpg') })]);
+    // a published drawing leads (Chad 10-23, courtroom-sketch style): p = square drawing, px = 9:16 drawing, dr = 1; the
+    // verified photo stays one tap away as ph (and in the gallery g)
+    const photo = expect.stringContaining('/img/cdn/siftersearch.com/media-speakers/hooper-dunbar.jpg');
+    expect(body.speakers).toEqual([expect.objectContaining({ k: 'hooper-dunbar', c: 1, role: 'uhj', dr: 1, cr: null,
+      p: SKETCH.square, px: { url: SKETCH.url, width: 768, height: 1376, ai_rendered: true }, ph: photo, g: [{ u: photo }] })]);
     expect(res.headers['cache-control']).toMatch(/s-maxage=300/);
     // the cache file is written in the background: wait for it (bounded) instead of a fixed 50 ms, which a loaded machine missed
     for (let i = 0; i < 100 && !existsSync(cacheFile); i++) await new Promise((r) => setTimeout(r, 50));
     expect(existsSync(cacheFile)).toBe(true);
+  });
+});
+
+describe('GET /api/media/index without a published drawing', () => {
+  it('falls back to the verified photo as the portrait (no dr, no ph)', async () => {
+    sketches.delete('hooper-dunbar');
+    try {
+      const sp = (await app.inject({ method: 'GET', url: '/api/media/index' })).json().speakers[0];
+      expect(sp.p).toContain('/img/cdn/siftersearch.com/media-speakers/hooper-dunbar.jpg');
+      expect(sp.dr).toBeUndefined();
+      expect(sp.ph).toBeUndefined();
+    } finally { sketches.set('hooper-dunbar', SKETCH); }
   });
 });
 

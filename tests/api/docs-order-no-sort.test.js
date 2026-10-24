@@ -46,12 +46,15 @@ function enclosingLiteral(src, i) {
   const a = src.lastIndexOf('`', i), b = src.indexOf('`', i);
   return a >= 0 && b >= 0 ? src.slice(a, b + 1) : line;
 }
+// ORDER BY the INTEGER PRIMARY KEY alone (docs.id = rowid) walks the table b-tree in order — no temp B-tree, LIMIT stops early.
+const PK_ORDER = /\bORDER\s+BY\s+(?:\w+\.)?(?:id|rowid)(?:\s+(?:ASC|DESC))?\s*(?:LIMIT\b|$|`|'|")/i;
 /** SQL literals that ORDER BY over docs with nothing indexed narrowing or ordering them. */
 function unnarrowedDocsOrderBy(src) {
   const code = codeOnly(src), out = [];
   for (const m of code.matchAll(/\bFROM\s+docs\b/gi)) {
     const q = enclosingLiteral(code, m.index);
-    if (/\bORDER\s+BY\b/i.test(q) && !/(?<![!<>])=\s*\?|\bIS\s+\?|\bIN\s*\(\s*\?|\bIN\s*\(\$\{|\bINDEXED\s+BY\b/i.test(q) && !out.includes(q)) out.push(q);
+    if (/\bORDER\s+BY\b/i.test(q) && !/(?<![!<>])=\s*\?|\bIS\s+\?|\bIN\s*\(\s*\?|\bIN\s*\(\$\{|\bINDEXED\s+BY\b/i.test(q)
+      && !PK_ORDER.test(q) && !out.includes(q)) out.push(q);
   }
   return out;
 }
@@ -62,6 +65,9 @@ describe('request path never sorts docs without an index (static ratchet)', () =
     expect(unnarrowedDocsOrderBy(offender)).toHaveLength(1);
     expect(unnarrowedDocsOrderBy('queryAll(`SELECT id FROM docs WHERE collection = ? ORDER BY title LIMIT 5`, [c])')).toHaveLength(0);
     expect(unnarrowedDocsOrderBy('queryAll(`SELECT id FROM docs d INDEXED BY idx_x WHERE ${w} ORDER BY d.title LIMIT ?`, p)')).toHaveLength(0);
+    // primary-key order is the table's own b-tree (maintenance-repo writeProbe: newest live doc)
+    expect(unnarrowedDocsOrderBy("queryAll('SELECT id FROM docs WHERE deleted_at IS NULL ORDER BY id DESC LIMIT 1', [])")).toHaveLength(0);
+    expect(unnarrowedDocsOrderBy("queryAll('SELECT id FROM docs WHERE deleted_at IS NULL ORDER BY id DESC, title LIMIT 1', [])")).toHaveLength(1);
   });
 
   it('no request-path file adds one (outside the shrinking legacy list)', () => {
