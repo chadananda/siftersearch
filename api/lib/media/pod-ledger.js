@@ -5,6 +5,7 @@ export const LEDGER = {
   busyUtil: 15,                     // GPU utilisation % at or above which a sampled tick counts as busy
   windowMs: 30 * 60_000,            // the efficiency window
   idleMs: 10 * 60_000,              // a rented pod with no work this long is terminated
+  unreachableMs: 25 * 60_000,       // no successful contact with the lane this long (transfers refresh it, so a busy lane keeps it fresh)
   quietMs: 15 * 60_000,             // work assigned but the GPU quiet this long = stuck
   maxLifeMs: 8 * 3600_000,          // no pod lives longer than this
   bootMs: 15 * 60_000,              // no SSH-reachable pod after this → terminate and replace (cold pull of the 23 GB image: 5-12 min)
@@ -96,6 +97,6 @@ export function reapReason(pod, entry, st, now, cfg = LEDGER) {
   if (entry.status === 'warming' && age > cfg.warmMs) return `worker not ready after ${min(age)} min`;
   if (entry.idle_since && now - entry.idle_since > cfg.idleMs) return `idle ${min(now - entry.idle_since)} min`;
   if (entry.quiet_since && now - entry.quiet_since > cfg.quietMs) return `GPU quiet ${min(now - entry.quiet_since)} min (stuck)`;
-  if (entry.status === 'ready' && entry.lastOk && now - entry.lastOk > cfg.idleMs) return `unreachable ${min(now - entry.lastOk)} min`;
+  if (entry.status === 'ready' && entry.lastOk && now - entry.lastOk > (cfg.unreachableMs || cfg.idleMs)) return `unreachable ${min(now - entry.lastOk)} min`;
   return null;
 }

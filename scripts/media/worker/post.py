@@ -108,10 +108,19 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     # 3. forced re-alignment of the final transcript on the chosen copy
     t2 = time.time()
     rj = os.path.join(post, 'realign.json')
+    def run_realign(cpu=False):
+        env = {**os.environ, 'CUDA_VISIBLE_DEVICES': ''} if cpu else None
+        cp = runner([py, os.path.join(tools, 'media_tool.py'), 'realign', flac, '--threads', str(cfg.get('threads', 4)), '--segments', work, '--output', rj],
+                    capture_output=True, text=True, check=True, **({'env': env} if env else {}))
+        out['realign_err'] = (getattr(cp, 'stderr', '') or '')[-300:]
+        return json.loads(cp.stdout.strip().split('\n')[-1])
     try:
-        r = json.loads(sh([py, os.path.join(tools, 'media_tool.py'), 'realign', flac, '--threads', str(cfg.get('threads', 4)), '--segments', work, '--output', rj], runner).strip().split('\n')[-1])
+        r = run_realign()
+        if not r.get('total') or r['placed'] / r['total'] < 0.98:     # 10-24: 0 of 1672 placed on a pod's GPU while aorus placed all — retry on the CPU before giving up
+            out['realign_gpu'] = {'placed': r.get('placed'), 'total': r.get('total')}
+            r = run_realign(cpu=True)
     except Exception as err:     # no aligner on this machine: the guard result stands (tower aligns itself only in non-strict mode)
-        out['ok'] = True; out['why'] = f'realign unavailable here: {str(err)[-160:]}'
+        out['ok'] = True; out['why'] = f'realign unavailable here: {str(err)[-160:]}'; out['work_sha'] = cfg['work_sha']
         return out
     out['realign'] = {'placed': r.get('placed'), 'total': r.get('total')}; out['steps']['realign'] = round(time.time() - t2, 1)
     out['qa']['metrics']['realign_unplaced_pct'] = round((1 - r['placed'] / r['total']) * 100, 2) if r.get('total') else None

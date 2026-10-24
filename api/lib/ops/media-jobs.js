@@ -1362,6 +1362,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const baked = /BAKED/.test((await C.podSsh(run, p, 'test -f /opt/sifter-image-version && echo BAKED; true', { timeoutMs: 60_000 })).stdout || '');
               if (baked) {
                 p.baked = true;   // the image carries code + weights + aligners: nothing to upload or download
+                try {   // the current job code on top of the image's pinned copy
+                  const tgz = join((await import('os')).tmpdir(), `media-scripts-${process.pid}.tgz`);
+                  await run('tar', ['czf', tgz, '-C', join(dirname(C.WORKER_FILE)), ...C.MEDIA_SCRIPTS], { timeoutMs: 60_000 });
+                  await C.podPut(run, p, tgz, '/workspace/media-scripts.tgz');
+                } catch { /* the image's own copy runs */ }
                 await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');

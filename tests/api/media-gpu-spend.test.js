@@ -50,7 +50,8 @@ describe('the reaper touches only idle / stuck / unreachable / old / orphan / la
     expect(reapReason(pod(), st().pods.x, st(), now)).toBeNull();
     expect(reapReason(pod(), st({ idle_since: now - 11 * MIN }).pods.x, st({ idle_since: now - 11 * MIN }), now)).toMatch(/idle 11/);
     expect(reapReason(pod(), st({ quiet_since: now - 16 * MIN }).pods.x, st({ quiet_since: now - 16 * MIN }), now)).toMatch(/stuck/);
-    expect(reapReason(pod(), st({ lastOk: now - 11 * MIN }).pods.x, st({ lastOk: now - 11 * MIN }), now)).toMatch(/unreachable/);
+    expect(reapReason(pod(), st({ lastOk: now - 11 * MIN }).pods.x, st({ lastOk: now - 11 * MIN }), now)).toBeNull();   // a long upload queue is not unreachability
+    expect(reapReason(pod(), st({ lastOk: now - 26 * MIN }).pods.x, st({ lastOk: now - 26 * MIN }), now)).toMatch(/unreachable/);
     expect(reapReason(pod({ lastStartedAt: '2026-10-24 05:00:00.000 +0000 UTC' }), st().pods.x, st(), now)).toMatch(/lifetime/);
     expect(reapReason(pod(), null, st(), now)).toMatch(/orphan/);
     expect(reapReason(pod({ lastStartedAt: '2026-10-24 14:58:00.000 +0000 UTC' }), null, st(), now)).toBeNull();   // just created: the lane has not saved it yet
@@ -399,5 +400,39 @@ describe('RunPod calls never hang the lane', () => {
     await expect(C.fetchRetry('https://x', {}, { fetchFn: async () => { throw new TypeError('fetch failed'); }, tries: 2, backoffMs: 1 })).rejects.toThrow('fetch failed');
     const e = await C.getPod('p', { fetchFn: async () => ({ status: 404, ok: false, text: async () => 'nope' }) }).catch((x) => x);
     expect(e.message).toMatch(/404/);   // a real answer is not retried
+  });
+});
+
+describe('transfers keep the pod alive in the ledger', () => {
+  it('a successful ssh / scp refreshes lastOk', async () => {
+    const p = { ip: '1.2.3.4', port: 22, lastOk: 0 };
+    await C.podPut(async () => ({ stdout: '' }), p, 'a', '/b'); expect(p.lastOk).toBeGreaterThan(0);
+    p.lastOk = 0; await C.podSsh(async () => ({ stdout: '' }), p, 'true'); expect(p.lastOk).toBeGreaterThan(0);
+    p.lastOk = 0; await expect(C.podGet(async () => { throw new Error('refused'); }, p, '/a', 'b')).rejects.toThrow(); expect(p.lastOk).toBe(0);
+  });
+});
+
+describe('realign that places nothing on the GPU is retried on the CPU', () => {
+  it('0 of N on the first try, all of N with CUDA hidden: the talk is published, not held', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rg-'));
+    writeFileSync(join(dir, 'in.mp3'), 'x'); writeFileSync(join(dir, 'out.flac'), 'y'); writeFileSync(join(dir, 'asr.json'), '{}'); writeFileSync(join(dir, 'work.json'), '{"paragraphs":[]}');
+    const sha = createHash('sha256').update('{"paragraphs":[]}').digest('hex');
+    writeFileSync(join(dir, 'job.json'), JSON.stringify({ post: { af: 'l', max_fallback_pct: 15, slug: 's', work_sha: sha, bw_khz: 5, ogg: [], m4a: [], orig_ogg: [], orig_m4a: [] } }));
+    const o = JSON.parse(execFileSync('python3', ['-c', `
+import sys, json, types
+sys.path.insert(0, 'scripts/media/worker')
+import post
+envs = []
+def runner(cmd, **kw):
+    name = cmd[1].split('/')[-1] if cmd[0] != 'ffmpeg' else 'ffmpeg'
+    if name == 'remaster_guard.py': return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': 3, 'swapped_pct': 3}) + '\\n', stderr='')
+    if name == 'media_tool.py':
+        cpu = (kw.get('env') or {}).get('CUDA_VISIBLE_DEVICES') == ''
+        envs.append(cpu)
+        return types.SimpleNamespace(stdout=json.dumps({'placed': 100 if cpu else 0, 'total': 100}) + '\\n', stderr='cuda error' if not cpu else '')
+    return types.SimpleNamespace(stdout='', stderr='')
+r = post.process(${JSON.stringify(dir)}, runner=runner)
+print(json.dumps({'envs': envs, 'held': r.get('held'), 'web': bool(r.get('web')), 'gpu': r.get('realign_gpu'), 'verdict': r['qa']['verdict']}))`], { encoding: 'utf8' }));
+    expect(o).toMatchObject({ envs: [false, true], web: true, gpu: { placed: 0, total: 100 }, verdict: 'usable' }); expect(o.held).toBeFalsy();
   });
 });

@@ -118,9 +118,11 @@ export async function takeOrders(file = ORDERS_FILE) {
 
 // ── ssh / scp to a pod ──
 const sshOpts = (p) => ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', '-o', 'ServerAliveInterval=30', '-o', 'LogLevel=ERROR'];
-export const podSsh = (run, p, cmd, o = {}) => run('ssh', [...sshOpts(p), '-p', String(p.port), `root@${p.ip}`, cmd], { timeoutMs: 600_000, ...o });
-export const podPut = (run, p, local, remote) => run('scp', [...sshOpts(p), '-P', String(p.port), local, `root@${p.ip}:${remote}`], { timeoutMs: 3600_000 });
-export const podGet = (run, p, remote, local) => run('scp', [...sshOpts(p), '-P', String(p.port), `root@${p.ip}:${remote}`, local], { timeoutMs: 3600_000 });
+// every successful transfer proves the pod is alive: lastOk moves with it (10-24: a 10-minute upload queue left lastOk stale and the reaper killed three healthy pods mid-work)
+const alive = (p) => (r) => { p.lastOk = Date.now(); return r; };
+export const podSsh = (run, p, cmd, o = {}) => run('ssh', [...sshOpts(p), '-p', String(p.port), `root@${p.ip}`, cmd], { timeoutMs: 600_000, ...o }).then(alive(p));
+export const podPut = (run, p, local, remote) => run('scp', [...sshOpts(p), '-P', String(p.port), local, `root@${p.ip}:${remote}`], { timeoutMs: 3600_000 }).then(alive(p));
+export const podGet = (run, p, remote, local) => run('scp', [...sshOpts(p), '-P', String(p.port), `root@${p.ip}:${remote}`, local], { timeoutMs: 3600_000 }).then(alive(p));
 
 // PINNED (R&D spec 10-23): weights Xiaobin-Rong/unipase @ f0b4d4c4 (each file sha256-verified, Vocoder_WavLM-L24 skipped),
 // code github Xiaobin-Rong/unipase @ 857b60ad (git archive, shipped from tower), Whisper turbo (CTranslate2) pinned the same way.
@@ -179,10 +181,12 @@ W_PY=/workspace/runpod_worker.py; [ -f /workspace/scripts/media/runpod_worker.py
 nohup bash -c 'while true; do python '$W_PY' --repo /workspace/unipase --weights '$W' --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
 
-export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
+export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
 /** Start of a pod from the BAKED image (ghcr.io/chadananda/sifter-media-worker): code, UniPASE, whisper and aligners are already inside — seconds, no downloads. */
 export const BOOTSTRAP_BAKED = `set -e
 mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb
+# the image carries a pinned copy of the job code; the lane ships the current one (small) on top, so a code fix needs no image rebuild
+[ -f /workspace/media-scripts.tgz ] && tar xzf /workspace/media-scripts.tgz -C /opt/sifter/media
 pkill -f runpod_worker.py || true
 nohup bash -c 'while true; do python /opt/sifter/media/runpod_worker.py --repo /opt/unipase --weights /opt/models/weights --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
