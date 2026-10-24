@@ -15,6 +15,10 @@ SFACE = os.path.join(ROOT, 'tmp', 'speaker-gallery', 'sface.onnx')
 CDN = 'https://siftersearch.com/img/cdn/siftersearch.com/'
 MODEL = 'gemini-3.1-flash-image'
 GALLERY = json.load(open(os.path.join(ROOT, 'data', 'media-speaker-gallery.json')))['speakers']
+# a speaker with no gallery yet: the portrait already in use (an identity anchor), listed by hand in extra-sources.json
+_EXTRA = os.path.join(ROOT, 'tmp', 'speaker-sketch', 'extra-sources.json')
+if os.path.exists(_EXTRA):
+    for _k, _l in json.load(open(_EXTRA)).items(): GALLERY.setdefault(_k, _l)
 S = requests.Session(); S.headers['User-Agent'] = 'SifterSearch media library (https://siftersearch.com)'
 rec = cv2.FaceRecognizerSF.create(SFACE, '')
 
