@@ -98,3 +98,11 @@ adds to the wanted list when asked, and attaches sources you link.
 
 Keys: 600 requests per hour. Bodies: 30 MB (`/holdings`, `/chat`), 120 MB (`/items/:id/source`). Photos are best sent
 at about 1600 px.
+
+## Large uploads (audio, video, big PDFs, many files)
+
+Never base64 a big file into `/chat` or `/holdings` (30–120 MB body limit). The page's "Upload files" box (`DeweyUploads.svelte`, `src/lib/dewey-uploader.js`) sends
+browser → edge Worker → R2 (`worker/dewey-upload.js`), in 32 MB parts (64 MB from 2 GB), 1–6 in parallel, resumable for 3 days:
+1. `POST /api/dewey/upload/start {name,size}` (Dewey access) → `{ token, key, partSize, parts }` (type/size/quota/rate checked; ≤ 50 GB audio/video, 5 GB documents, 1 GB images).
+2. `POST /api/dewey/upload/init` · `PUT /api/dewey/upload/part?uploadId=&n=` (body = the part) · `POST /api/dewey/upload/complete?uploadId=` `{parts:[{n,etag}]}` — each with header `x-upload-token`.
+3. The item is recorded as `received`; small documents go to the ingest folder (check → appraise → offer), audio/video/large files wait for the media/OCR workers (tower never processes them). `dewey-discard {ids}` clears unwanted ones.
