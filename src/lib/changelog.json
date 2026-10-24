@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-24T17:02:28.421Z",
+  "generated": "2026-10-24T17:10:14.083Z",
   "entries": [
+    {
+      "hash": "d29b815a",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Version switch is a bare tiny pill (no label/box/caption) centred in the player's existing row, exactly the Speed select's height (23 px), no growth of the play box; Orig",
+      "scope": "media"
+    },
     {
       "hash": "26b7033f",
       "date": "2026-10-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "An empty word study is about the spelling, never evidence — no disowning an earlier reply on it; candidate words are checked in the concordance in Arabic script",
       "scope": "anis researcher"
-    },
-    {
-      "hash": "02b4d053",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "The researcher answers EMAIL — Haiku 5.5 plans, Sonnet 5.5 writes; battery 10-19 (10 real questions, Opus blind): mean 7.45, beat Perplexity 10/10 (old pipeline 5.0, 6/10); chat stays on the fast path",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "d29b815a",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Version switch is a bare tiny pill (no label/box/caption) centred in the player's existing row, exactly the Speed select's height (23 px), no growth of the play box; Orig",
+        "scope": "media"
+      },
       {
         "hash": "26b7033f",
         "date": "2026-10-24",
@@ -7006,13 +7013,6 @@
         "type": "Fixed",
         "description": "An empty word study is about the spelling, never evidence — no disowning an earlier reply on it; candidate words are checked in the concordance in Arabic script",
         "scope": "anis researcher"
-      },
-      {
-        "hash": "02b4d053",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "The researcher answers EMAIL — Haiku 5.5 plans, Sonnet 5.5 writes; battery 10-19 (10 real questions, Opus blind): mean 7.45, beat Perplexity 10/10 (old pipeline 5.0, 6/10); chat stays on the fast path",
-        "scope": "anis"
       }
     ]
   }

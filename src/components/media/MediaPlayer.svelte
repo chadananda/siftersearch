@@ -434,7 +434,7 @@
             <span class="flex-none font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
             {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
             {@render abToggle()}
-            <div class="ml-auto flex flex-none items-center">
+            <div class="flex flex-none items-center">
             <label class="flex items-center gap-1.5 text-xs opacity-80">Speed
               <select bind:value={rate} class="speed rounded-md bg-radio-paper px-1.5 py-0.5 font-sans text-sm text-radio-ink">
                 {#each [0.75, 1, 1.25, 1.5, 2] as r (r)}<option value={r}>{r}×</option>{/each}
