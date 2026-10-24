@@ -47,3 +47,16 @@ describe('finish', () => {
     expect(r.json().item.why).toMatch(/awaiting processing by the media worker/); expect(enq.length).toBe(n);
   });
 });
+
+describe('discard job', () => {
+  it('deletes the stored copy and declines a received item; skips others', async () => {
+    vi.resetModules();
+    const upd = [];
+    vi.doMock('../../api/lib/repos/dewey-repo.js', () => ({ getItem: async (id) => id === 1 ? { id: 1, state: 'received', identified: { upload: { key: 'dewey-uploads/7/x/a.mp3' } } } : { id: 2, state: 'ingested' },
+      updateItem: async (...a) => upd.push(a) }));
+    process.env.INTERNAL_API_KEY = 'ik';
+    const { deweyDiscardJob } = await import('../../api/lib/ops/dewey-received-job.js');
+    const calls = []; const r = await deweyDiscardJob({ ids: [1, 2] }, { fetchImpl: async (u, i) => { calls.push([u, i.method]); return { ok: true }; } });
+    expect(r).toEqual({ discarded: [1], skipped: [2] }); expect(calls[0][1]).toBe('DELETE'); expect(upd[0][1]).toEqual({ state: 'declined' });
+  });
+});

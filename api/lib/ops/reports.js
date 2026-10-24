@@ -11,7 +11,7 @@ import { deweyIntakeJob } from './dewey-intake-job.js';
 import { deweyIngestFolderJob } from './dewey-ingest-folder-job.js';
 import { deweyOcrJob } from './dewey-ocr-job.js';
 import { deweyArchiveJob } from './dewey-archive-job.js';
-import { deweyReceivedJob } from './dewey-received-job.js';
+import { deweyReceivedJob, deweyDiscardJob } from './dewey-received-job.js';
 import { deweyQualityJob } from './dewey-quality-job.js';
 import { deweyCompletenessJob } from './dewey-completeness-job.js';
 import { deweyScoutJob } from './dewey-scout-job.js';
@@ -198,6 +198,7 @@ REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates
 REPORTS['dewey-research'] = deweyResearchJob;   // params: { id } — research a wanted work: ISBN, publisher, cover (Chad 10-17)
 REPORTS['dewey-ingest-folder'] = deweyIngestFolderJob;   // params: { batch?, round? } — the ingest folder, a few at a time, easiest first
 REPORTS['dewey-received'] = deweyReceivedJob;   // params: { id } — a member's uploaded document: R2 → ingest folder
+REPORTS['dewey-discard'] = deweyDiscardJob;   // params: { ids } — received uploads not wanted: delete the R2 copy, decline the item
 REPORTS['dewey-reimport'] = deweyReimportJob;   // params: { docs?, all?, limit? } — re-read from the archive with today's cleaner, same document
 REPORTS['unsegmented-docs'] = unsegmentedDocsJob;   // params: { minChars? } — documents holding a whole-book 'paragraph': the re-ingest list (read-only)
 REPORTS['dewey-offer-paths'] = deweyOfferPathsJob;   // params: { paths } — files a folder sweep found missing → offers on /dewey (never imported unasked)
@@ -318,7 +319,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 Object.assign(REPORTS, INDEX_REPORTS);
 export const LANES = { extract: ['episode-extract', 'structure-infer'],
   heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
-  intake: ['dewey-received', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
+  intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
