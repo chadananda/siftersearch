@@ -42,9 +42,13 @@ export async function createPod(name, publicKey, deps = {}) {
   let lastErr = null;
   // a network volume (weights fetched once) pins the pods to its data centre and to Secure Cloud; without one, community first
   const vol = process.env.MEDIA_CLOUD_VOLUME_ID;
-  for (const cloudType of vol ? ['SECURE'] : ['COMMUNITY', 'SECURE']) {
+  // a 4090 FIRST (10-24 measured GPU-min per audio hour: 4090 2.4-3.2 · 3090 4.4 · A40 5.4 · A4500 6.1 — about the same $ per
+  // audio hour, twice the speed), community then secure; only then any card on the list
+  const tries = [];
+  for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of vol ? ['SECURE'] : ['COMMUNITY', 'SECURE']) tries.push([types, cloudType]);
+  for (const [types, cloudType] of tries) {
     try {
-      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: CLOUD.gpuTypes, gpuCount: 1, imageName: CLOUD.image,
+      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: CLOUD.image,
         containerDiskInGb: 60, ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
         env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
     } catch (err) { lastErr = err; }
