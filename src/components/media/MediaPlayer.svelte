@@ -6,6 +6,7 @@
   // position; wheel/touch/scroll keys drop Follow. ?t=a / ?t=a-b / #t=a,b set the start / a played-and-shaded range.
   import { onMount, tick } from 'svelte';
   import { media } from '../../lib/api.js';
+  import { liveRefresh } from '../../lib/live-data.js';
   import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
@@ -33,8 +34,11 @@
   // ORIGINAL A/B (Chad 10-23): a remastered talk keeps its original copy; the small button under Play switches to it at the
   // same moment (and back). Page times stay the MAIN copy's; the one conversion is now()/copyTime() via the words' starts
   // on the original (s0). No s0 → positions map 1:1 and the highlight pauses while Original plays.
-  const hasOriginal = level === 'full' && !!item.audio?.remastered && !!(item.audio.original_url || item.audio.original_ogg);
-  const starts0 = hasOriginal ? flattenOriginalStarts(item.paragraphs) : null;
+  // audioInfo/s0paras start as the SSR data and are refreshed once on load (liveRefresh below): the page HTML is edge-cached,
+  // so a talk remastered after its page was cached still shows the switch within a minute
+  let audioInfo = $state(item.audio), s0paras = $state(item.paragraphs);
+  const hasOriginal = $derived(level === 'full' && !!audioInfo?.remastered && !!(audioInfo.original_url || audioInfo.original_ogg));
+  const starts0 = $derived(hasOriginal ? flattenOriginalStarts(s0paras) : null);
   let copy = $state('main');                   // 'main' | 'original': which copy the <audio> holds
   let loaded = '';                             // the URL in the <audio> (audio.src is absolute; compare by ours)
   const onOriginal = () => copy === 'original';
@@ -164,8 +168,8 @@
     try {
       if (level === 'full') {
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
-        const want = onOriginal() ? (ogg && item.audio.original_ogg ? item.audio.original_ogg : item.audio.original_url || item.audio.original_ogg)
-          : (ogg && item.audio.ogg ? item.audio.ogg : item.audio.m4a || item.audio.ogg);
+        const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
+          : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
         if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { audio.src = media.href(want); loaded = want; }
         await waitMeta();
         audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
@@ -209,8 +213,8 @@
     switching = true; note = '';
     try {
       const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
-      const want = onOriginal() ? (ogg && item.audio.original_ogg ? item.audio.original_ogg : item.audio.original_url || item.audio.original_ogg)
-        : (ogg && item.audio.ogg ? item.audio.ogg : item.audio.m4a || item.audio.ogg);
+      const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
+        : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
       audio.src = media.href(want); loaded = want;
       await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load')), 10000))]);
       audio.currentTime = Math.max(0, copyTime(t) - offset);
@@ -292,6 +296,7 @@
     try { navigator.mediaSession.setPositionState({ duration, position: Math.min(duration, Math.max(0, now())), playbackRate: rate }); } catch { /* ignore */ }
   }
 
+  const cleanups = [];
   onMount(() => {
     wordEls = Array.from(root.querySelectorAll('[data-k]'));
     let r = rangeFrom({ search: location.search, hash: location.hash });
@@ -312,6 +317,11 @@
       startAt = r.start; current = r.start; limit = r.end ?? null;
       range = r.end != null ? r : null;
       tick().then(() => { const k = wordAt(flat.starts, r.start + 0.02); mark(k); wordEls[k]?.scrollIntoView({ block: 'center' }); });
+    }
+    if (level === 'full' && !hasOriginal) {   // a talk remastered after its page was cached: fetch the current audio block once
+      const stop = liveRefresh(async () => { const r = await fetch(media.href(`/api/media/${encodeURIComponent(item.slug)}?live=${Math.floor(Date.now() / 60000)}`)); if (!r.ok) throw new Error(String(r.status)); const d = await r.json(); return d.audio?.remastered ? { audio: d.audio, paragraphs: d.paragraphs } : null; },
+        (d) => { if (d) { audioInfo = d.audio; s0paras = d.paragraphs; } }, { every: 0, initial: null });
+      cleanups.push(stop);
     }
     if (canPlay) sessionSetup();
     const silent = () => audio.src.startsWith('blob:');   // the unlock blip, not the talk
@@ -336,6 +346,7 @@
     const io = { disconnect: () => { window.removeEventListener('scroll', onHeroScroll); cancelAnimationFrame(heroRaf); } };
     return () => {
       io.disconnect();
+      cleanups.forEach((f) => f());
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKey); window.removeEventListener('wheel', manual); window.removeEventListener('touchmove', manual);
       document.removeEventListener('selectionchange', onSelection);
@@ -350,6 +361,23 @@
     document.querySelector('.talk-hero .lamp')?.classList.toggle('live', on);
   });
 </script>
+
+{#snippet abToggle(slim = false)}
+  {#if level === 'full'}
+    <!-- Original | Remastered: one switch, two places (hero + sticky bar), the same state; the hero slot is reserved in SSR -->
+    <div class={slim ? 'ab-slim' : 'ab-slot ml-auto'} data-original-slot={slim ? undefined : ''}>
+      {#if hasOriginal}
+        <div class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">{#if !slim}Audio{/if}
+          <div class="ab" role="radiogroup" aria-label="Audio version">
+            {#each [['original', 'Original'], ['main', 'Remastered']] as [k, label] (k)}
+              <button type="button" role="radio" aria-checked={copy === k} aria-pressed={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)}>{label}</button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
+{/snippet}
 
 <article class="talk">
   <!-- the broadcast card continues from TalkHero (SSR-only, above this island): the player on the dial glass -->
@@ -375,19 +403,7 @@
           <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-radio-dial-ink">
             <span class="font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
             {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
-            {#if level === 'full'}
-              <!-- Original | Remastered: the slot is reserved in SSR so the control never shifts the layout -->
-              <div class="ab-slot ml-auto" data-original-slot>
-                {#if hasOriginal}
-                  <div class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Audio
-                  <div class="ab" role="radiogroup" aria-label="Audio version">
-                    {#each [['original', 'Original'], ['main', 'Remastered']] as [k, label] (k)}
-                      <button type="button" role="radio" aria-checked={copy === k} aria-pressed={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)}>{label}</button>
-                    {/each}
-                  </div></div>
-                {/if}
-              </div>
-            {/if}
+            {@render abToggle()}
             <label class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">Speed
               <select bind:value={rate} class="speed rounded-md bg-radio-paper px-1.5 py-0.5 font-sans text-sm text-radio-ink">
                 {#each [0.75, 1, 1.25, 1.5, 2] as r (r)}<option value={r}>{r}×</option>{/each}
@@ -516,6 +532,7 @@
       </div>
       <div class="min-w-0 flex-1"><MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} variant="slim" label="Seek (condensed player)" /></div>
       <span class="font-dial text-base font-bold tabular-nums text-radio-on-dark">{formatTime(current)}</span>
+      {#if hasOriginal}<div class="ab-bar flex-none text-radio-on-dark">{@render abToggle(true)}</div>{/if}
     </div>
   </div>
 {/if}
@@ -586,6 +603,7 @@
     box-shadow: 0 0 0 0 var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); transition: transform 0.2s, box-shadow 0.3s; }
   .bigplay:hover { transform: scale(1.05); box-shadow: 0 0 0 7px var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); }
   .bigplay:disabled { opacity: 0.6; }
+  .ab-bar .ab-opt { color: var(--radio-ink); }
   .ab-slot { min-height: 1.75rem; min-width: 14rem; display: flex; justify-content: flex-end; align-items: center; }
   .ab { display: inline-flex; border-radius: 0.375rem; overflow: hidden; background: var(--radio-paper); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); }
   .ab-opt { cursor: pointer; padding: 0.125rem 0.6rem; font-family: var(--font-sans, sans-serif); font-size: 0.875rem; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--radio-ink); opacity: 0.75; transition: background 0.2s, opacity 0.2s; }

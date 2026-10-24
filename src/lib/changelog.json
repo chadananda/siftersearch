@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-24T16:19:08.393Z",
+  "generated": "2026-10-24T16:39:10.798Z",
   "entries": [
+    {
+      "hash": "43429056",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Email allowlist - pre-approved verified addresses get Dewey on signup/login/me",
+      "scope": "dewey"
+    },
+    {
+      "hash": "08ee6a08",
+      "date": "2026-10-24",
+      "type": "Chore",
+      "description": "Deploy 2.187.807 (biography slug pages)",
+      "scope": null
+    },
     {
       "hash": "1591706b",
       "date": "2026-10-24",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Quality gate before ingestion — repair then judge; below the bar is HELD, never ingested (Chad 10-19)",
       "scope": "dewey"
-    },
-    {
-      "hash": "c85404c2",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A file whose row was retired as a duplicate AND soft-deleted stays retired (a forced bahai-library re-ingest would have resurrected 598 pages retired for their OceanLibrary copies); unsegmented-docs lists live documents only, deleted ones with orphaned paragraphs counted apart",
-      "scope": "ingest"
-    },
-    {
-      "hash": "35c40bbf",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Text with no sentence structure (verse lines, lists) is split at line breaks then words, never left whole; bahai-library's raw-HTML navigation table (8,538 chars on hundreds of pages) is dropped as site chrome",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "43429056",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Email allowlist - pre-approved verified addresses get Dewey on signup/login/me",
+        "scope": "dewey"
+      },
+      {
+        "hash": "08ee6a08",
+        "date": "2026-10-24",
+        "type": "Chore",
+        "description": "Deploy 2.187.807 (biography slug pages)",
+        "scope": null
+      },
       {
         "hash": "1591706b",
         "date": "2026-10-24",
@@ -6999,20 +7013,6 @@
         "type": "New",
         "description": "Quality gate before ingestion — repair then judge; below the bar is HELD, never ingested (Chad 10-19)",
         "scope": "dewey"
-      },
-      {
-        "hash": "c85404c2",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A file whose row was retired as a duplicate AND soft-deleted stays retired (a forced bahai-library re-ingest would have resurrected 598 pages retired for their OceanLibrary copies); unsegmented-docs lists live documents only, deleted ones with orphaned paragraphs counted apart",
-        "scope": "ingest"
-      },
-      {
-        "hash": "35c40bbf",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Text with no sentence structure (verse lines, lists) is split at line breaks then words, never left whole; bahai-library's raw-HTML navigation table (8,538 chars on hundreds of pages) is dropped as site chrome",
-        "scope": "ingest"
       }
     ]
   }
