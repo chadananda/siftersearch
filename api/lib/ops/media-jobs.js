@@ -1396,7 +1396,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
             const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
-            const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at) p.worker_seen = now(); p.worker = w; } catch { /* partial write */ } }
+            const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at || !p.worker_seen) p.worker_seen = now(); p.worker = w; } catch { /* partial write */ } }
             // a worker that stopped (idled itself out, crashed, drained) leaves a pod that bills and takes jobs it will never run: replace it, its jobs go back to the queue
             if (p.worker_seen && now() - p.worker_seen > 240_000 && !stdout.includes('READY')) { p.dead_worker = true; }
             if (!wm && p.status === 'ready' && !p.worker_seen) p.worker_seen = now();   // the worker's live controller numbers (limit, VRAM, heat, state)
