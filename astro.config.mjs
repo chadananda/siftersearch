@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import svelte from '@astrojs/svelte';
 import sitemap from '@astrojs/sitemap';
+import { isUnlisted } from './src/lib/remaster-demo.js';
 import tailwindcss from '@tailwindcss/vite';
 import cloudflare from '@astrojs/cloudflare';
 import remarkSmartypants from 'remark-smartypants';
@@ -83,6 +84,7 @@ export default defineConfig({
     svelte(),
     sitemap({
       filter: (page) => {
+        if (isUnlisted(page)) return false;   // reachable by link only (e.g. /media/remaster)
         if (page.includes('/api/')) return false;
         if (page.includes('/admin')) return false;
         if (page.includes('/sitemap-library')) return false;

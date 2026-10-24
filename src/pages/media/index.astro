@@ -98,6 +98,11 @@ const listLd = {
       ) : (
         <>
         <div class="room"><OnAir client:load highlights={initial.highlights} speakersByKey={heroSpeakers} stats={initial.stats} importProgress={progress} /></div>
+        <a href="/media/remaster" class="remaster-link mt-5 flex cursor-pointer flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border border-radio-line bg-radio-paper px-5 py-3 text-radio-ink hover:border-radio-brass hover:bg-radio-panel">
+          <span><span class="font-dial text-sm font-semibold uppercase tracking-[0.22em] text-radio-amber">Hear the remastering</span>
+            <span class="ml-2 text-radio-ink-soft">before &amp; after: historic talks recovered from worn tape</span></span>
+          <span class="font-dial text-sm font-semibold uppercase tracking-[0.18em] text-radio-brass" aria-hidden="true">Listen →</span>
+        </a>
         <div class="room mt-8"><ProcessStrip client:visible {progress} {live} /></div>
         <script is:inline>
           // typing in the tuner before the listing hydrates: remember value, focus and caret (ListeningRoom applies them)

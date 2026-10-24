@@ -1,0 +1,72 @@
+---
+// /media/remaster — unlisted before/after demo of recovered talks (noindex, out of the sitemap; linked from /media).
+// Static data (src/lib/remaster-demo.js): the SSR view is complete; a tiny inline script pauses the other players.
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+import { CLIPS, audioUrl } from '../../lib/remaster-demo.js';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+const title = 'SifterSearch Media Recovery and Remaster';
+const description = 'Historic talks recovered from worn tape: hear each recording before and after remastering.';
+---
+
+<Layout {title} {description} noindex={true}>
+  <Fragment slot="head">
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
+  </Fragment>
+  <NavBar client:idle currentPage="media" />
+  <main class="remaster bg-radio-room text-radio-ink">
+    <div class="mx-auto w-full max-w-4xl px-4 pb-28 pt-6 sm:px-6 lg:pt-10">
+      <a href="/media" class="font-dial text-sm font-semibold uppercase tracking-[0.24em] text-radio-brass hover:text-radio-amber">← The Fireside Room</a>
+      <h1 class="mt-3 font-marquee text-4xl leading-tight text-radio-ink sm:text-5xl">SifterSearch Media Recovery and Remaster</h1>
+      <p class="mt-4 max-w-[62ch] text-lg text-radio-ink-soft">
+        Historic talks from the 1950s to the 1990s, on reel tapes, worn cassettes and lecture-hall microphones, recovered so the
+        speaker can be heard clearly again. Each pair is the same moment of the same recording: the original as it survived,
+        and the recovered version.
+      </p>
+      <p class="mt-5 flex flex-wrap gap-5 text-sm text-radio-ink-soft">
+        <span class="inline-flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-full bg-radio-ink-soft"></i>Before: the original recording</span>
+        <span class="inline-flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-full bg-radio-amber"></i>After: recovered and remastered</span>
+      </p>
+
+      <div class="mt-8 grid gap-4" id="remaster-list">
+        {CLIPS.map((c) => (
+          <section class="rounded-2xl border border-radio-line bg-radio-paper p-4 sm:p-5" aria-label={c.title}>
+            <div class="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <h2 class="font-marquee text-xl leading-snug text-radio-ink">{c.title}</h2>
+                <p class="mt-0.5 text-sm text-radio-ink-soft">{c.year}</p>
+              </div>
+              <span class="whitespace-nowrap rounded-full border border-radio-line px-3 py-0.5 text-xs text-radio-ink-soft">{c.defect}</span>
+            </div>
+            <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <div class="grid gap-1.5 rounded-xl bg-radio-panel px-3 py-2.5">
+                <span class="font-dial text-xs font-semibold uppercase tracking-[0.2em] text-radio-ink-soft">Before</span>
+                <audio controls preload="none" src={audioUrl(c.id, 'before')} class="h-9 w-full"></audio>
+              </div>
+              <div class="grid gap-1.5 rounded-xl bg-radio-brass-soft px-3 py-2.5">
+                <span class="font-dial text-xs font-semibold uppercase tracking-[0.2em] text-radio-amber">After</span>
+                <audio controls preload="none" src={audioUrl(c.id, 'after')} class="h-9 w-full"></audio>
+              </div>
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <p class="mt-10 border-t border-radio-line pt-5 text-sm text-radio-ink-soft">
+        Clips are 40–60 seconds, matched in loudness so the difference you hear is clarity, not volume. Starting one clip pauses the others.
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline>
+  (function () {
+    var all = document.querySelectorAll('#remaster-list audio');
+    all.forEach(function (a) { a.addEventListener('play', function () { all.forEach(function (o) { if (o !== a) o.pause(); }); }); });
+  })();
+</script>
