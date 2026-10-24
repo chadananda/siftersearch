@@ -6,7 +6,7 @@
 import { randomBytes } from 'crypto';
 import { requireDewey } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
-import { checkStart, signToken, safeName, PART_SIZE, partCount, PREFIX } from '../../worker/dewey-upload.js';
+import { checkStart, signToken, safeName, partSizeFor, partCount, PREFIX } from '../../worker/dewey-upload.js';
 import { createItem, updateItem, receivedBytesBy, findByUploadKey } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 
@@ -33,7 +33,7 @@ export default async function deweyUploadRoutes(fastify) {
     if (await receivedBytesBy(email) + Number(size) > QUOTA_BYTES) throw Object.assign(new Error('you have a lot waiting for processing already — Chad will clear it, then you can send more'), { statusCode: 413 });
     const d = new Date(), key = `${PREFIX}${uid}/${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}/${randomBytes(5).toString('hex')}-${safeName(name)}`;
     const token = await signToken({ k: key, u: uid, e: email, s: Number(size), n: safeName(name), t: c.kind }, secret());
-    return { token, key, kind: c.kind, partSize: PART_SIZE, parts: partCount(Number(size)) };
+    return { token, key, kind: c.kind, partSize: partSizeFor(Number(size)), parts: partCount(Number(size)) };
   });
 
   fastify.post('/finish', async (request, reply) => {

@@ -10,7 +10,9 @@ export const KINDS = {
   video: { ext: 'mp4 m4v mov mkv webm avi', max: 50 * GB },
 };
 export const PART_SIZE = 32 * MB;          // R2 parts must be equal-sized except the last; 5 MiB minimum
-export const MAX_PART = 48 * MB;           // a part above this is refused (Worker request bodies are limited)
+export const MAX_PART = 96 * MB;           // a part above this is refused (Worker request bodies are limited, ~100 MB)
+/** 32 MB parts below 2 GB, 64 MB from there (R2 allows 10,000 parts: 50 GB at 64 MB is 800). Tower and Worker both derive it from the size. */
+export const partSizeFor = (size) => (size >= 2 * GB ? 64 * MB : PART_SIZE);
 export const TOKEN_TTL = 3 * 24 * 3600;    // seconds: resumable for 3 days (R2 lifecycle rule dewey-abort-stale aborts unfinished multiparts after 3)
 export const PREFIX = 'dewey-uploads/';
 
@@ -18,7 +20,7 @@ const EXT = Object.fromEntries(Object.entries(KINDS).flatMap(([kind, v]) => v.ex
 export const extOf = (name) => (String(name).match(/\.([a-z0-9]{2,5})$/i)?.[1] || '').toLowerCase();
 export const kindOf = (name) => EXT[extOf(name)] || null;
 export const safeName = (name) => String(name).split(/[\\/]/).pop().normalize('NFC').replace(/[^\p{L}\p{N}._ ()-]+/gu, '_').replace(/^\.+/, '').slice(0, 120) || 'file';
-export const partCount = (size) => Math.max(1, Math.ceil(size / PART_SIZE));
+export const partCount = (size) => Math.max(1, Math.ceil(size / partSizeFor(size)));
 
 /** Validate a start request → { ok, kind, error }. Pure. */
 export function checkStart({ name, size }) {
@@ -88,7 +90,7 @@ export async function deweyUploadRoute(request, env, { fetchImpl = fetch } = {})
 
   if (op === 'init' && request.method === 'POST') {
     const up = await env.MEDIA_BUCKET.createMultipartUpload(tok.k, { httpMetadata: { contentType: 'application/octet-stream' }, customMetadata: { user: String(tok.u), name: tok.n } });
-    return json({ uploadId: up.uploadId, key: tok.k, partSize: PART_SIZE, parts: partCount(tok.s) });
+    return json({ uploadId: up.uploadId, key: tok.k, partSize: partSizeFor(tok.s), parts: partCount(tok.s) });
   }
   const uploadId = url.searchParams.get('uploadId') || '';
   if (!uploadId) return json({ error: 'uploadId required' }, 400);
@@ -99,7 +101,7 @@ export async function deweyUploadRoute(request, env, { fetchImpl = fetch } = {})
     if (!Number.isInteger(n) || n < 1 || n > partCount(tok.s)) return json({ error: 'bad part number' }, 400);
     const len = Number(request.headers.get('content-length'));
     if (!len || len > MAX_PART) return json({ error: `a part must be 1 byte to ${MAX_PART / MB} MB` }, 413);
-    if (n < partCount(tok.s) && len !== PART_SIZE) return json({ error: `parts must be ${PART_SIZE / MB} MB except the last` }, 400);
+    if (n < partCount(tok.s) && len !== partSizeFor(tok.s)) return json({ error: `parts must be ${partSizeFor(tok.s) / MB} MB except the last` }, 400);
     try {
       const [probe, body] = n === 1 ? request.body.tee() : [null, request.body];
       if (probe) {   // first bytes of the file: does the content match the extension?

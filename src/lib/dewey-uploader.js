@@ -1,7 +1,7 @@
 // Dewey's upload queue (browser): many files, 2 at a time, 3 parts at a time each, straight to the edge Worker → R2.
 // Resume: the upload id and every part's etag persist in localStorage keyed by name|size|lastModified, so re-adding the same file
 // after a refresh or a dropped connection sends only the missing parts. Deps are injectable (tests).
-import { checkStart, PART_SIZE } from '../../worker/dewey-upload.js';
+import { checkStart, partSizeFor } from '../../worker/dewey-upload.js';
 
 const STORE = 'dewey-uploads-v1', TTL_MS = 2.9 * 24 * 3600_000;
 export const fingerprint = (f) => `${f.name}|${f.size}|${f.lastModified || 0}`;
@@ -29,9 +29,10 @@ export function xhrPut(url, blob, headers, onProgress, signal) {
 }
 
 export class UploadQueue {
-  constructor({ authHeaders = () => ({}), base = '', fetchImpl = (...a) => fetch(...a), putPart = xhrPut, storage, fileConcurrency = 2, partConcurrency = 3,
+  constructor({ authHeaders = () => ({}), base = '', fetchImpl = (...a) => fetch(...a), putPart = xhrPut, storage, fileConcurrency = 2, partConcurrency = 4, maxParts = 6,
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)), onChange = () => {}, retries = 6 } = {}) {
-    Object.assign(this, { authHeaders, base, fetchImpl, putPart, fileConcurrency, partConcurrency, sleep, onChange, retries });
+    Object.assign(this, { authHeaders, base, fetchImpl, putPart, fileConcurrency, partConcurrency, maxParts, sleep, onChange, retries });
+    this.inflight = 0; this.good = 0; this.samples = [];
     this.store = makeStore(storage); this.items = []; this.seq = 0;
   }
   add(files) {
@@ -48,7 +49,10 @@ export class UploadQueue {
   progress() {
     const live = this.items.filter((i) => i.state !== 'rejected' && i.state !== 'canceled');
     const total = live.reduce((a, i) => a + i.size, 0), sent = live.reduce((a, i) => a + (i.state === 'done' ? i.size : Math.min(i.sent, i.size)), 0);
-    return { total, sent, pct: total ? Math.floor((sent / total) * 100) : 0, files: live.length, done: live.filter((i) => i.state === 'done').length };
+    const now = Date.now(); this.samples = [...this.samples.filter((s) => now - s.t < 20000), { t: now, sent }];
+    const a = this.samples[0], span = (now - a.t) / 1000, bps = span >= 2 ? Math.max(0, (sent - a.sent) / span) : 0;
+    return { total, sent, pct: total ? Math.floor((sent / total) * 100) : 0, files: live.length, done: live.filter((i) => i.state === 'done').length,
+      bps, etaSec: bps > 1024 ? Math.ceil((total - sent) / bps) : null, parallel: this.partConcurrency };
   }
   pump() {
     const running = this.items.filter((i) => i.state === 'uploading').length;
@@ -64,6 +68,9 @@ export class UploadQueue {
     if (s?.uploadId) await this.fetchImpl(`${this.base}/api/dewey/upload/abort?uploadId=${encodeURIComponent(s.uploadId)}`, { method: 'POST', headers: { 'x-upload-token': s.token } }).catch(() => {});
     this.emit(); this.pump();
   }
+  // adaptive: a slow or dropping connection halves the parts in flight (min 1); eight clean parts in a row add one (max maxParts)
+  slower() { this.good = 0; this.partConcurrency = Math.max(1, Math.floor(this.partConcurrency / 2)); }
+  faster() { if (++this.good >= 8) { this.good = 0; this.partConcurrency = Math.min(this.maxParts, this.partConcurrency + 1); } }
   get(id) { return this.items.find((i) => i.id === id); }
 
   async session(it) {   // a saved session to resume, or a new one (start on tower → init at the edge)
@@ -76,7 +83,7 @@ export class UploadQueue {
     const i = await this.fetchImpl(`${this.base}/api/dewey/upload/init`, { method: 'POST', headers: { 'x-upload-token': s.token } });
     const init = await i.json().catch(() => ({}));
     if (!i.ok) throw new Error(init.error || `could not open the upload (${i.status})`);
-    const sess = { token: s.token, key: s.key, uploadId: init.uploadId, partSize: init.partSize || PART_SIZE, parts: Math.max(1, Math.ceil(it.size / (init.partSize || PART_SIZE))), size: it.size, etags: {} };
+    const sess = { token: s.token, key: s.key, uploadId: init.uploadId, partSize: init.partSize || partSizeFor(it.size), parts: Math.max(1, Math.ceil(it.size / (init.partSize || partSizeFor(it.size)))), size: it.size, etags: {} };
     this.store.set(it.fp, sess); return sess;
   }
 
@@ -115,21 +122,23 @@ export class UploadQueue {
         const p = todo.shift(), blob = it.file.slice((p - 1) * size, Math.min(p * size, it.size));
         for (let t = 0; ; t++) {
           if (it.state !== 'uploading') return;
+          while (this.inflight >= this.partConcurrency) { await new Promise((r) => setTimeout(r, 20)); if (it.state !== 'uploading') return; }   // one budget of parts in flight across all files
+          this.inflight++;
           try {
             const r = await this.putPart(`${this.base}/api/dewey/upload/part?uploadId=${encodeURIComponent(sess.uploadId)}&n=${p}`, blob, { 'x-upload-token': sess.token },
               (loaded) => { it.partBytes[p] = loaded; recount(); }, it.ctl.signal);
             if (r.status === 401 || r.status === 404) { restart = true; return; }
             if (r.status >= 400 && r.status < 500 && r.status !== 408 && r.status !== 429) throw Object.assign(new Error(r.body?.error || `part ${p} refused (${r.status})`), { fatal: true });
             if (r.status >= 400) throw new Error(`part ${p} failed (${r.status})`);
-            sess.etags[p] = r.body.etag; this.store.set(it.fp, sess); it.partBytes[p] = blob.size; recount(); break;
+            sess.etags[p] = r.body.etag; this.store.set(it.fp, sess); it.partBytes[p] = blob.size; recount(); this.faster(); break;
           } catch (e) {
             if (e.aborted || e.fatal || t >= this.retries) throw e;
-            it.partBytes[p] = 0; recount(); await this.sleep(Math.min(30000, 1000 * 2 ** t));   // dropped connection: back off, then the same part again
-          }
+            this.slower(); it.partBytes[p] = 0; recount(); await this.sleep(Math.min(30000, 1000 * 2 ** t));   // dropped connection: back off, then the same part again
+          } finally { this.inflight--; }
         }
       }
     };
-    await Promise.all(Array.from({ length: Math.min(this.partConcurrency, todo.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(this.maxParts, todo.length) }, worker));
     if (it.state !== 'uploading') throw Object.assign(new Error('stopped'), { aborted: true });
     return restart ? 'restart' : 'ok';
   }

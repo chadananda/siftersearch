@@ -10,6 +10,9 @@
   let prog = $derived((items, q.progress()));
   let busy = $derived(items.some((i) => i.state === 'uploading' || i.state === 'queued'));
   const mb = (n) => n >= 1073741824 ? `${(n / 1073741824).toFixed(1)} GB` : `${Math.max(1, Math.round(n / 1048576))} MB`;
+  const eta = (s) => s == null ? '' : s < 90 ? `${s} s` : s < 5400 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`;
+  let tick = $state(0); onMount(() => { const t = setInterval(() => tick++, 1000); return () => clearInterval(t); });   // speed and ETA refresh each second
+  let sp = $derived((tick, items, q.progress()));
   const LABEL = { queued: 'Waiting', uploading: 'Uploading', paused: 'Paused', done: 'Sent', error: 'Stopped', rejected: 'Not accepted', canceled: 'Canceled' };
   onMount(() => { unfinished = makeStore().list(); const warn = (e) => { if (busy) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn); });
   const take = (list) => { q.add([...list]); open = true; unfinished = makeStore().list().filter((u) => !items.some((i) => i.fp === u.fp)); };
@@ -33,7 +36,7 @@
   {#if open || items.length}
     <div class="body">
       <div class="drop" class:over role="button" tabindex="0" ondragover={(e) => { e.preventDefault(); over = true; }} ondragleave={() => (over = false)} ondrop={dropped}>
-        <p>Drop files or a folder here — audio, video, PDF, Word, EPUB, text, photos. Any size up to 50 GB.</p>
+        <p>Drop files or a folder here — audio, video, PDF, Word, EPUB, text, photos. Big files are fine (up to 50 GB each); dozens at once are fine.</p>
         <label class="act">Choose files<input type="file" multiple class="sr-only" onchange={(e) => { take(e.currentTarget.files); e.currentTarget.value = ''; }} /></label>
         <label class="act">Choose a folder<input type="file" webkitdirectory class="sr-only" onchange={(e) => { take(e.currentTarget.files); e.currentTarget.value = ''; }} /></label>
       </div>
@@ -42,7 +45,8 @@
       {/if}
       {#if items.length}
         <div class="bar" role="progressbar" aria-valuenow={prog.pct} aria-valuemin="0" aria-valuemax="100"><i style="width:{prog.pct}%"></i></div>
-        <p class="note">{prog.done} of {prog.files} files sent · {mb(prog.sent)} of {mb(prog.total)}. Keep this page open until they are all sent.</p>
+        <p class="note">{prog.done} of {prog.files} files sent · {mb(sp.sent)} of {mb(sp.total)}{#if busy && sp.bps} · {(sp.bps / 1048576).toFixed(1)} MB/s{#if sp.etaSec != null} · about {eta(sp.etaSec)} left{/if}{/if}.</p>
+        {#if busy}<p class="keep">Keep this tab open until every file shows “Sent”. If the connection drops, nothing is lost — it carries on by itself, and if you close the page, choose the same files again to resume.</p>{/if}
         <ul>
           {#each items as it (it.id)}
             <li class={it.state}>
@@ -76,6 +80,7 @@
   .bar i { display: block; height: 100%; background: var(--accent, #08c); transition: width 0.3s; }
   ul { list-style: none; padding: 0; margin: 0; } li { padding: 0.4rem 0; border-top: 1px solid var(--border-subtle, #eee); }
   .row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.9rem; } .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .st { white-space: nowrap; color: var(--text-secondary, #555); }
+  .keep { font-size: 0.85rem; font-weight: 600; margin: 0.2rem 0; color: var(--text-primary, inherit); }
   .err { color: var(--error, #b00); font-size: 0.85rem; margin: 0.2rem 0; } li.done .st { color: var(--success, #080); }
   .btns { display: flex; gap: 0.4rem; margin-top: 0.2rem; }
 </style>

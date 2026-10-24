@@ -1,6 +1,6 @@
 // Dewey multipart uploads: policy, token, edge route (fake R2), tower start/finish, and the browser queue (resume, retry, multi-file).
 import { describe, it, expect, vi } from 'vitest';
-import { checkStart, signToken, verifyToken, sniff, deweyUploadRoute, PART_SIZE, partCount, KINDS } from '../../worker/dewey-upload.js';
+import { checkStart, signToken, verifyToken, sniff, deweyUploadRoute, PART_SIZE, partCount, partSizeFor, KINDS } from '../../worker/dewey-upload.js';
 import { UploadQueue, fingerprint } from '../../src/lib/dewey-uploader.js';
 import { rateOk } from '../../api/routes/dewey-upload.js';
 
@@ -25,7 +25,10 @@ describe('policy', () => {
     expect(sniff('a.pdf', new TextEncoder().encode('MZ......'))).toMatch(/not a PDF/);
     expect(sniff('a.mp3', new Uint8Array(8))).toBeNull();
   });
-  it('20 GB is 640 parts', () => expect(partCount(20 * GB)).toBe(640));
+  it('part size scales: 32 MB under 2 GB, 64 MB above; 20 GB = 320 parts, 50 GB under 10,000', () => {
+    expect(partSizeFor(1.5 * GB)).toBe(32 * 1024 ** 2); expect(partSizeFor(2 * GB)).toBe(64 * 1024 ** 2);
+    expect(partCount(20 * GB)).toBe(320); expect(partCount(50 * GB)).toBeLessThan(10000);
+  });
 });
 
 describe('token', () => {
@@ -87,6 +90,19 @@ describe('edge route', () => {
   it('the blob endpoint needs the internal key', async () => {
     expect((await call(env(), '/_dewey/blob?key=dewey-uploads/1/x')).status).toBe(401);
     expect((await call(env(), '/_dewey/blob?key=other/x', { headers: { 'x-internal-key': S } })).status).toBe(400);
+  });
+});
+
+describe('adaptive parallelism', () => {
+  it('halves on trouble, grows back after clean parts, within 1..6', () => {
+    const q = new UploadQueue({ storage: mem() });
+    expect(q.partConcurrency).toBe(4); q.slower(); expect(q.partConcurrency).toBe(2); q.slower(); q.slower(); expect(q.partConcurrency).toBe(1);
+    for (let i = 0; i < 8 * 7; i++) q.faster(); expect(q.partConcurrency).toBe(6);
+  });
+  it('reports speed and ETA', async () => {
+    const q = new UploadQueue({ storage: mem() }); q.items = [{ id: 1, state: 'uploading', size: 1000, sent: 0 }];
+    q.progress(); q.samples[0].t -= 4000; q.items[0].sent = 400;
+    const p = q.progress(); expect(p.bps).toBeGreaterThan(90); expect(p.etaSec).toBeNull();   // under 1 KB/s: no ETA claimed
   });
 });
 
