@@ -45,7 +45,7 @@ export function summarize(rows) {
     const g = (byGrade[x.grade || '?'] ||= {}); g[v] = (g[v] || 0) + 1;
     const row = { slug: x.slug, hours: Math.round((x.hours || 0) * 100) / 100, grade: x.grade, reason: x.qa?.reason, fallback_pct: x.qa?.metrics?.fallback_pct ?? null, bandwidth_khz: x.qa?.metrics?.source_bandwidth_khz ?? null };
     if (v === 'review') review.push(row); else if (v === 'unrepairable') unrepairable.push(row);
-    if (x.published_remaster && !x.qa?.verdict) noVerdict++;
+    if (x.published_remaster && !(x.stored ?? !!x.qa?.verdict)) noVerdict++;
   }
   return { by_verdict: by, by_grade: byGrade, review, unrepairable, published_without_verdict: noVerdict, at: new Date().toISOString() };
 }

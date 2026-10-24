@@ -17,11 +17,12 @@ const API_ROUTES = [
   [/^\/api\/media\/index$/, 60, true],
   [/^\/api\/media\/progress$/, 15, true],
   [/^\/api\/media\/progress\/live$/, 10, true],
+  [/^\/api\/media\/restored$/, 30, true],             // the /media restoration readout (counts + latest five)
   [/^\/api\/media$/, 60, false],                        // listing / search (high-cardinality query: L1 only)
   [/^\/api\/media\/(moments|intro-clips)$/, 300, false],
   [/^\/api\/media\/moments\/[^/]+$/, 300, true],
   [/^\/api\/media\/heard$/, 300, false],
-  [/^\/api\/media\/(?!admin$|shorts$|progress$|index$)[^/]+$/, 120, true],   // a talk
+  [/^\/api\/media\/(?!admin$|shorts$|progress$|restored$|index$)[^/]+$/, 120, true],   // a talk
   [/^\/api\/speakers$/, 300, true],
   [/^\/api\/library\/landing$/, 30, true],          // the /library landing's live numbers + new arrivals
   [/^\/api\/library\/sitemap(\/[a-z0-9-]+)?$/, 3600, true],   // the library sitemap's data (reports snapshot, 3 h)

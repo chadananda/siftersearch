@@ -1591,6 +1591,7 @@ export const media = {
   href: (p) => (p && p.startsWith('/api/') ? `${API_URL}${p}` : p),
   list: (query) => mediaGet(`/api/media?${query}`),
   index: () => mediaGet('/api/media/index'),
+  restored: () => mediaGet('/api/media/restored'),
   // transcript passages for the tuner: the site's search engine over the Media collection (concepts, not just words)
   heard: async (q, signal) => {
     const res = await fetch(`${API_URL}/api/media/heard?q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' }, signal });

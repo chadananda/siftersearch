@@ -4,7 +4,7 @@
 // YouTube channel permissions, add media by URL/path (Dewey's "add media"). Deps: media-repo, media/*.
 import { createReadStream, existsSync, statSync } from 'fs';
 import { readFile } from 'fs/promises';
-import { join, normalize, extname } from 'path';
+import { join, dirname, normalize, extname } from 'path';
 import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
@@ -138,6 +138,13 @@ export function byStage(items = [], cap = 12) {
 }
 /** A source key from a queue rank (the progress buckets). */
 export const sourceOfRank = (rank) => ([null, 'historic', 'hands', 'uhj', 'historic-speakers', 'scholars'][Math.floor((rank ?? 5e7) / 1e7)] || 'scholars');
+/** The /media restoration readout (public: counts and the latest five, nothing else). Pure (exported for tests). */
+export function restoredShape(prog = {}, q = {}) {
+  const by = q.by_verdict || {};
+  return { planned: prog.total_targets ?? null, published: prog.published ?? null, restored: (by.usable || 0) + (by.partial || 0), usable: by.usable || 0, partial: by.partial || 0, held: by.review || 0,
+    recent: (q.recent || []).slice(0, 5).map((x) => ({ slug: String(x.slug), title: String(x.title || x.slug), speaker: x.speaker || null })), updated_at: q.at || null };
+}
+
 /** The public progress shape. Pure (exported for tests). */
 export function shapeProgress({ rows = [], published_6h = 0 }, sources, now = Date.now()) {
   const by = sources.map(([source, label]) => { const r = rows.find((x) => x.source === source) || {};
@@ -497,6 +504,20 @@ export default async function mediaRoutes(fastify) {
     }
     pub(reply, 60);
     return progressMemo.value;
+  });
+
+  // THE RESTORATION READOUT for the /media page (Chad 10-24: "I should be able to see the rapid updates"): counts and the latest five only —
+  // nothing about workers, cost or tools. Memoised 20 s, edge-cached 30 s.
+  let restoredMemo = null;
+  fastify.get('/restored', async (req, reply) => {
+    if (!restoredMemo || Date.now() - restoredMemo.at > 20_000) {
+      const { importProgress, SOURCES } = await import('../lib/repos/media-repo.js');
+      const prog = shapeProgress(await importProgress(), SOURCES);
+      const q = (await readJson(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'remaster-quality.json'))) || {};
+      restoredMemo = { at: Date.now(), value: restoredShape(prog, q) };
+    }
+    pub(reply, 30);
+    return restoredMemo.value;
   });
 
   // WHAT IS BEING WORKED ON NOW (Chad 10-22: "the talks being processed right now and their steps") + the latest published;

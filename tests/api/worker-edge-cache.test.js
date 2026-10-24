@@ -16,6 +16,7 @@ describe('policyFor', () => {
     expect(pol('/api/media/index')).toMatchObject({ mode: 'cache', kind: 'api', fresh: 60 });
     expect(pol('/api/media/progress')).toMatchObject({ mode: 'cache', fresh: 15 });
     expect(pol('/api/media/progress/live')).toMatchObject({ mode: 'cache', fresh: 10 });
+    expect(pol('/api/media/restored')).toMatchObject({ mode: 'cache', kind: 'api', fresh: 30, l2: true });
     expect(pol('/api/media/a-talk')).toMatchObject({ mode: 'cache', fresh: 120 });
     expect(pol('/api/library/tree')).toMatchObject({ mode: 'cache' });
     expect(pol('/api/v1/people/123')).toMatchObject({ mode: 'cache' });

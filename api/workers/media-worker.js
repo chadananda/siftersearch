@@ -68,6 +68,14 @@ async function podReaperLoop() {
     await nap(180_000);
   }
 }
+// the public /media readout and the verdicts: the quality summary refreshed every 5 min (reads meta.json files, never writes while a run is on the talk)
+async function qualityLoop() {
+  const { mediaRemasterQualityJob } = await import('../lib/ops/media-jobs.js');
+  while (!isDraining()) {
+    try { await mediaRemasterQualityJob({ write: true }); } catch (err) { logger.warn({ err: err.message }, 'remaster quality pass failed'); }
+    await nap(300_000);
+  }
+}
 async function backfillStatusLoop() {
   const { pullLocal, render } = await import('../../scripts/media/remaster-backfill-status.mjs');
   const { writeFile, mkdir } = await import('fs/promises');
@@ -79,4 +87,4 @@ async function backfillStatusLoop() {
     await nap(300_000);
   }
 }
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop] });
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop] });

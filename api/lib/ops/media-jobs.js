@@ -1470,15 +1470,24 @@ export async function mediaRemasterQualityJob({ write = false } = {}, deps = {})
   const Q = deps.quality || await import('../media/remaster-quality.js');
   const fs = await import('fs/promises');
   const rows = [];
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const busy = new Set((await Promise.all(['media-item', 'media-remaster', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n).catch(() => [])))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
   for (const it of await repo.remasterCandidates(['B', 'C', 'D', 'E'])) {
     const mf = it.dir ? join(it.dir, 'meta.json') : null;
     const m = mf ? JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null')) : null;
     if (!m) continue;
     const qa = Q.qualityOf(m);
-    if (write && (m.qa?.remaster?.verdict !== qa.verdict || m.qa?.remaster?.reason !== qa.reason)) { m.qa = { ...(m.qa || {}), remaster: qa }; await fs.writeFile(mf, JSON.stringify(m, null, 2)); }
-    rows.push({ slug: it.slug, hours: (it.duration_s || m.duration_s || 0) / 3600, grade: qa.metrics.grade || it.grade, qa, published_remaster: m.enhancement?.listening === 'unipase' });
+    let stored = !!m.qa?.remaster;
+    // stamp meta.qa.remaster on talks that have none (the ~110 done before verdicts existed) — never while a media run on the talk is queued or
+    // running (that run rewrites meta.json), and re-read just before the write
+    if (write && (m.qa?.remaster?.verdict !== qa.verdict || m.qa?.remaster?.reason !== qa.reason) && !busy.has(it.id)) {
+      const fresh = JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null'));
+      if (fresh && JSON.stringify(fresh.remaster) === JSON.stringify(m.remaster)) { fresh.qa = { ...(fresh.qa || {}), remaster: qa }; await fs.writeFile(mf, JSON.stringify(fresh, null, 2)); stored = true; }
+    }
+    rows.push({ slug: it.slug, title: m.title || it.slug, speaker: m.speaker || null, at: m.remaster?.at || null, hours: (it.duration_s || m.duration_s || 0) / 3600, grade: qa.metrics.grade || it.grade, qa, stored, published_remaster: m.enhancement?.listening === 'unipase' });
   }
   const sum = Q.summarize(rows);
+  sum.recent = rows.filter((x) => ['usable', 'partial'].includes(x.qa.verdict) && x.published_remaster && x.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 5).map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker }));
   if (write) {
     const dir = deps.dir || join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run');
     await fs.mkdir(dir, { recursive: true });

@@ -7,6 +7,7 @@ import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import ListeningRoom from '../../components/media/listening/ListeningRoom.svelte';
 import OnAir from '../../components/media/listening/OnAir.svelte';
+import RestoredStrip from '../../components/media/listening/RestoredStrip.svelte';
 import ProcessStrip from '../../components/media/listening/ProcessStrip.svelte';
 import { shapeRow, shapeSpeakers, fold } from '../../../api/lib/media/listing-index.js';
 import { safeIndex, portraitSquare, daySeed, planLayout, pickHighlights, eras, topTopics, tickerLines } from '../../lib/media-listing.js';
@@ -23,7 +24,7 @@ const get = async (path) => {
 let data = null, fetchError = null;
 // the import readout and the workbench: small, edge-cached; a failure only hides them
 const soft = (path) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(4000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-const progressP = soft('/api/media/progress'), liveP = soft('/api/media/progress/live');
+const progressP = soft('/api/media/progress'), liveP = soft('/api/media/progress/live'), restoredP = soft('/api/media/restored');
 try {
   data = await get('/api/media/index');
 } catch (err) {
@@ -48,7 +49,7 @@ let speakerParam = params.get('speaker') || '';
 if (speakerParam && !byKey.has(speakerParam)) speakerParam = speakers.find((s) => fold(s.n) === fold(speakerParam))?.k || fold(speakerParam).replace(/ /g, '-');
 const initialState = { q: params.get('q') || '', preset: params.get('p') || '', era: params.get('era') || '', speaker: speakerParam };
 
-const [progress, live] = await Promise.all([progressP, liveP]);
+const [progress, live, restored] = await Promise.all([progressP, liveP, restoredP]);
 const SSR_MAX = 160;
 const complete = items.length <= SSR_MAX && !data?.pending;
 const plan = planLayout(items, byKey, { seed });
@@ -103,6 +104,7 @@ const listLd = {
             <span class="ml-2 text-radio-ink-soft">before &amp; after: historic talks recovered from worn tape</span></span>
           <span class="font-dial text-sm font-semibold uppercase tracking-[0.18em] text-radio-brass" aria-hidden="true">Listen →</span>
         </a>
+        <div class="room mt-8"><RestoredStrip client:visible initial={restored} /></div>
         <div class="room mt-8"><ProcessStrip client:visible {progress} {live} /></div>
         <script is:inline>
           // typing in the tuner before the listing hydrates: remember value, focus and caret (ListeningRoom applies them)
