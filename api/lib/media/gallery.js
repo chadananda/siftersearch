@@ -12,8 +12,21 @@ export function entryProblem(e) {
   if (!/^(media-speakers|biography)\/[A-Za-z0-9._\-/]+\.(jpe?g|png|webp)$/i.test(e.file || '')) return `bad file ${e.file}`;
   if (!/^[0-9a-f]{16,64}$/.test(e.sha || '')) return 'bad sha';
   if (!e.origin) return 'no origin';
+  if (e.origin === 'supplied') return e.credit ? null : 'supplied without a credit';   // handed to us by Chad (who knows the person)
   if (!e.source_url && !e.page_url && e.origin !== 'current-primary') return 'no source';
   return null;
+}
+
+// IDENTITY ANCHORS (10-23: Bob Harris's only photo was a namesake — Counsellor Robert Harris, Green Lake 1987 — matched on
+// name and a similar-sounding bio, with nothing to compare the face against). A photo whose source only NAMES the person
+// proves nothing about a living speaker with a common name. An anchor ties the face to OUR speaker: a still from one of
+// their own talks, the portrait already in use, or a photo Chad supplied.
+export const ANCHOR_ORIGINS = new Set(['current-primary', 'youtube-still', 'supplied']);
+/** A modern (living-generation) speaker's gallery needs at least one anchor; historical people are verified against
+ *  archive captions. → 'unanchored' or null. Pure. person: their data/media-speaker-people.json entry. */
+export function identityProblem(list = [], person = null) {
+  if (person?.historical !== 'modern') return null;
+  return list.some((e) => ANCHOR_ORIGINS.has(e.origin) || e.anchor) ? null : 'unanchored';
 }
 
 /** The manifest → rows per key, in order (rank = position; the entry marked primary first). Invalid entries are reported,

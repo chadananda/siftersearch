@@ -59,3 +59,18 @@ describe('pages', () => {
     expect(seen[1]).toMatch(/media-speakers\/ab\.jpg\?v=dddd/);
   });
 });
+
+describe('identity anchors (the Bob Harris namesake, 10-23)', async () => {
+  const { identityProblem, entryProblem } = await import('../../api/lib/media/gallery.js');
+  const web = { file: 'media-speakers/ab/0123456789abcdef.jpg', sha: 'e'.repeat(64), origin: 'web', source_url: 'https://x/y.jpg' };
+  it('a modern speaker whose photos only NAME him is held; an anchor (supplied, talk still, portrait in use) clears it', () => {
+    expect(identityProblem([web], { historical: 'modern' })).toBe('unanchored');
+    expect(identityProblem([web, { ...web, origin: 'supplied' }], { historical: 'modern' })).toBeNull();
+    expect(identityProblem([web, { ...web, origin: 'youtube-still' }], { historical: 'modern' })).toBeNull();
+    expect(identityProblem([web], { historical: 'first-hand' })).toBeNull();
+  });
+  it('a supplied photo needs its credit, not a source page', () => {
+    expect(entryProblem({ ...web, origin: 'supplied', source_url: null, credit: 'photo supplied by Chad Jones' })).toBeNull();
+    expect(entryProblem({ ...web, origin: 'supplied', source_url: null })).toBe('supplied without a credit');
+  });
+});

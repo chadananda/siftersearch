@@ -9,6 +9,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { putCdnPortrait } from '../../api/lib/media/speakers.js';
+import { identityProblem } from '../../api/lib/media/gallery.js';
 
 dotenv.config({ path: '.env-secrets', quiet: true });
 const ROOT = join(process.cwd(), 'tmp', 'speaker-gallery');
@@ -62,7 +63,8 @@ async function bytesFor(key, c) {
 }
 
 const out = { ...prev.speakers };
-const report = { people: 0, photos: 0, uploaded: 0, dupes: 0, failed: [] };
+const report = { people: 0, photos: 0, uploaded: 0, dupes: 0, failed: [], held_unanchored: [] };
+const PEOPLE = new Map((readJson(join(process.cwd(), 'data', 'media-speaker-people.json'), { people: [] }).people || []).map((p) => [p.key, p]));
 for (const key of readdirSync(ROOT).filter((d) => existsSync(join(ROOT, d, 'review.json')) || existsSync(join(ROOT, d, 'review-web.json')))) {
   if (keysArg && !keysArg.includes(key)) continue;
   const { candidates } = readJson(join(ROOT, key, 'candidates.json'));
@@ -105,7 +107,13 @@ for (const key of readdirSync(ROOT).filter((d) => existsSync(join(ROOT, d, 'revi
         licence: c.licence || null, ...base, ...(v?.title ? { note: `${a.note ? `${a.note} · ` : ''}from “${v.title}”` } : {}) });
     } catch (err) { report.failed.push(`${key} #${a.n}: ${err.message}`); }
   }
+  // photos Chad supplied are not in any harvest: they stay, first
+  const supplied = (prev.speakers[key] || []).filter((e) => e.origin === 'supplied');
+  if (supplied.length) { list.forEach((e) => { e.primary = false; }); list.unshift(...supplied.filter((e) => !list.some((x) => x.sha === e.sha))); }
   if (!list.length) continue;
+  // a living-generation speaker's photos need an IDENTITY ANCHOR (a still of their own talk, the portrait in use, or a photo
+  // Chad supplied) — a caption naming them is not enough (the Bob Harris namesake, 10-23)
+  if (identityProblem(list, PEOPLE.get(key))) { report.held_unanchored.push(key); continue; }
   out[key] = list;
   report.people++; report.photos += list.length;
 }

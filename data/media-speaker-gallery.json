@@ -1531,27 +1531,21 @@
   ],
   "bob-harris": [
    {
-    "file": "media-speakers/bob-harris/9dd18328d56a604b.jpg",
-    "sha": "9dd18328d56a604bf2373324417a61775696ff0bf6c9b8e0cc075a7b55556dd1",
-    "origin": "web",
-    "source_url": "https://file.bahai.media/9/93/Counsellor_Robert_Harris_conducting_class_at_28th_Green_Lake_Baha%27i_Conference%2C_1987.jpg",
-    "page_url": "https://bahai.media/File:Counsellor_Robert_Harris_conducting_class_at_28th_Green_Lake_Baha'i_Conference,_1987.jpg",
-    "credit": null,
+    "file": "media-speakers/bob-harris/1195cecc943c9b71.png",
+    "sha": "1195cecc943c9b71c7e9e35134418f17b9f20d04193642c9eca3f23d3fa2ba73",
+    "origin": "supplied",
+    "source_url": null,
+    "page_url": null,
+    "credit": "photo supplied by Chad Jones",
     "licence": null,
-    "phash": "e4d3c1c186351c8c",
-    "width": 1451,
-    "height": 1056,
-    "face": {
-     "x": 341,
-     "y": 155,
-     "w": 106,
-     "h": 136,
-     "s": 0.81
-    },
-    "year": 1987,
-    "note": "caption names Counsellor Robert Harris teaching at Green Lake; single speaker, audience backs only",
+    "phash": null,
+    "width": 166,
+    "height": 300,
+    "face": null,
+    "year": null,
+    "note": "present-day portrait supplied by Chad 10-23 (he knows him); replaces a namesake photo (Counsellor Robert Harris, Green Lake 1987: SFace 0.145 against this one)",
     "primary": true,
-    "needs_ext": false
+    "needs_ext": true
    }
   ],
   "brian-aull": [

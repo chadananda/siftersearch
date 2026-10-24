@@ -51,6 +51,10 @@ PORTRAIT_PROMPT = ('Redraw the person in the FIRST image as a courtroom sketch a
 REFS_NOTE = (' Any FURTHER images are other verified photographs of the same person, for identity only: use them to get the face '
     'exactly right, but follow the FIRST image for pose, age, expression and clothing.')
 
+# per-photo notes (named, so the ledger says which a take used)
+NOTES = {'vintage': (' The FIRST image is a faded, very old vintage photograph: interpret the face as a living person drawn from life, '
+    'with clean confident lines; do not copy the photograph\'s damage, grain, blur, halftone dots, fading or flat contrast.')}
+
 def gemini(parts, aspect):
     body = {'contents': [{'parts': parts}], 'generationConfig': {'responseModalities': ['IMAGE'], 'imageConfig': {'aspectRatio': aspect}}}
     for attempt in range(3):
@@ -135,7 +139,7 @@ def square_crop(img):
     l = max(0, min(W - side, cx - side / 2)); t = max(0, min(H - side, cy - side / 2))
     return img.crop((round(l), round(t), round(l + side), round(t + side)))
 
-def cmd_draw(spec, variant='A', force=False, tag='', refs=0):
+def cmd_draw(spec, variant='A', force=False, tag='', refs=0, note=''):
     L = load_ledger()
     if variant not in L['sheets']: cmd_sheet(variant); L = load_ledger()
     sheet = open(os.path.join(OUT, L['sheets'][variant]['file']), 'rb').read()
@@ -145,7 +149,7 @@ def cmd_draw(spec, variant='A', force=False, tag='', refs=0):
         name = f'{k}-{variant}{tag}'
         if name in L['drawings'] and not force: print('have', name); continue
         src = photo(e); s = src.copy(); s.thumbnail((1536, 1536))
-        parts = [{'text': PORTRAIT_PROMPT.format(medium=MEDIUM[variant]) + (REFS_NOTE if refs else '')}, img_part(jpeg(s)), img_part(sheet, 'image/png')]
+        parts = [{'text': PORTRAIT_PROMPT.format(medium=MEDIUM[variant]) + (REFS_NOTE if refs else '') + (NOTES[note] if note else '')}, img_part(jpeg(s)), img_part(sheet, 'image/png')]
         extra = sorted((x for x in GALLERY[k] if x['sha'] != e['sha'] and x.get('face')), key=lambda x: -min(x['face']['w'], x['face']['h']) * x['face']['s'])[:refs]
         for x in extra: t = photo(x).copy(); t.thumbnail((1024, 1024)); parts.append(img_part(jpeg(t)))
         b, usd = gemini(parts, '9:16')
@@ -153,7 +157,7 @@ def cmd_draw(spec, variant='A', force=False, tag='', refs=0):
         d.save(os.path.join(OUT, f'{name}.jpg'), quality=92); square_crop(d).save(os.path.join(OUT, f'{name}-sq.jpg'), quality=90)
         s.save(os.path.join(OUT, f'{name}-src.jpg'), quality=88)
         L['drawings'][name] = {'key': k, 'variant': variant, 'source_sha': e['sha'], 'source_file': e['file'], 'source_credit': e.get('credit'),
-                               'source_origin': e['origin'], 'identity_refs': [x['sha'][:16] for x in extra], 'w': d.size[0], 'h': d.size[1], 'model': MODEL, 'usd': usd,
+                               'source_origin': e['origin'], 'note': note or None, 'identity_refs': [x['sha'][:16] for x in extra], 'w': d.size[0], 'h': d.size[1], 'model': MODEL, 'usd': usd,
                                'sha': hashlib.sha256(b).hexdigest()[:16], 'at': time.strftime('%Y-%m-%dT%H:%M:%S')}
         L['spend_usd'] = round(L['spend_usd'] + usd, 4); save_ledger(L)
         print('drew', name, d.size, f'${usd}', flush=True)
@@ -210,7 +214,7 @@ if __name__ == '__main__':
     elif a[0] == 'draw':
         v = a[a.index('--variant') + 1] if '--variant' in a else 'A'
         tag = a[a.index('--tag') + 1] if '--tag' in a else ''
-        cmd_draw(a[1], v, '--force' in a, tag, int(a[a.index('--refs') + 1]) if '--refs' in a else 0)
+        cmd_draw(a[1], v, '--force' in a, tag, int(a[a.index('--refs') + 1]) if '--refs' in a else 0, a[a.index('--note') + 1] if '--note' in a else '')
     elif a[0] == 'score': cmd_score(a[1].split(',') if len(a) > 1 else None)
     elif a[0] == 'batch': cmd_batch(a[1].split(','))
     elif a[0] == 'pick':

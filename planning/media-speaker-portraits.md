@@ -187,6 +187,21 @@ George Townshend · Kiser Barnes · Shahriar Razavi · Stephen Hall · Shahrokh 
 - Mariette Leong: historical man on talk thumbnail - wrong person · historical woman on talk thumbnail - wrong person/unverifiable
 - Kathryn Hogenson: WRONG PERSON: historic photo of an elderly man (talk subject)
 
+### Published in error: Bob Harris (caught by Chad 10-23)
+
+His only photo, *"Counsellor Robert Harris conducting class at 28th Green Lake Bahá'í Conference, 1987"* (bahai.media), was a
+**namesake**. Bob Harris is alive; Chad supplied a present-day portrait, and SFace puts the two faces at 0.145, the range for
+two different people. **Why it got through:** the photo was accepted because its caption named "Robert Harris" and a
+Bahaipedia bio seemed to fit the speaker. Nothing tied the face to *our* speaker: he had no portrait in use and no talk
+still, so the "check against the reference portrait" step had nothing to compare. **Fixed:** the photo was removed from the
+manifest and from R2, and Chad's photo is his primary (origin `supplied`, "photo supplied by Chad Jones").
+**Rule now (gallery.js `identityProblem`, enforced by speaker_gallery_publish.mjs):** a *modern* speaker (historical:
+`modern` in data/media-speaker-people.json, i.e. the living generation, where common names have namesakes) must have an
+**identity anchor**: a still from one of their own talks, the portrait already in use, or a photo Chad supplied. Without
+one the gallery is held. A caption that only names the person is not proof. Galleries this rule would hold today (none
+are published; review them before any of these people is added): Anne Pearson, Judy Hannen Moe, Mariette Leong, Mikhail
+Sergeev, Shahriar Razavi, Sohrab Kourosh, Steve Friberg, Valerie Phillips, Vasu Mohan.
+
 ## Adib Taherzadeh
 
 Before: the box set was keyed `taherzadeh` (the files say only "Taherzadeh"), a surname-only key with no portrait, so 47 talks showed an initials disc while the one talk keyed `adib-taherzadeh` had the photo. The identity work (data/media-speaker-people.json, media-identity) now files all 47 under `adib-taherzadeh`, and that person has a 6-photo gallery: the Bahá’í Media Bank portrait, 1971 at the microphones (The American Bahá’í vol. 2 no. 9), 1976 speaking (Bahá’í News 545), seated reading (The American Bahá’í vol. 5 no. 11), a titled portrait and a lecture photo from bahai.media. Two YouTube stills were rejected (both the same Media Bank portrait re-framed on a card). Live: the box set on /media and every Taherzadeh talk page rotate these.
@@ -308,7 +323,7 @@ Before: the box set was keyed `taherzadeh` (the files say only "Taherzadeh"), a 
 
 ### Bob Harris
 
-- **primary** · web · 1987 · 1451×1056 · credit: — · [source](https://bahai.media/File:Counsellor_Robert_Harris_conducting_class_at_28th_Green_Lake_Baha'i_Conference,_1987.jpg) · `media-speakers/bob-harris/9dd18328d56a604b.jpg`
+- **primary** · supplied · 166×300 · credit: photo supplied by Chad Jones · `media-speakers/bob-harris/1195cecc943c9b71.png` (replaces a namesake photo; see *Published in error* above)
 
 ### Brian Aull
 
