@@ -1,6 +1,41 @@
 {
-  "generated": "2026-10-24T16:05:44.005Z",
+  "generated": "2026-10-24T16:19:08.393Z",
   "entries": [
+    {
+      "hash": "1591706b",
+      "date": "2026-10-24",
+      "type": "Chore",
+      "description": "Remove biography/[id].astro (replaced by [slug].astro)",
+      "scope": "bio"
+    },
+    {
+      "hash": "2bf21ef5",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Biography pages by name - /biography/<slug> from the canonical full name; id and old slugs 301 to it",
+      "scope": "bio"
+    },
+    {
+      "hash": "fe2a64be",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "The worker decides everything — deterministic cleanup (chain F) for held talks, same word guard, verdict computed on the worker; tower waits instead of reprocessing in STRICT mode; wording: originals are never replaced",
+      "scope": "media"
+    },
+    {
+      "hash": "cc0bbea0",
+      "date": "2026-10-24",
+      "type": "Docs",
+      "description": "Speaker_sketch_publish sources = gallery manifest / internal gallery endpoint, not /api/media/index",
+      "scope": "media"
+    },
+    {
+      "hash": "dd479788",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Photos are never shown or exposed — portrait = the speaker's drawing, else initials; no photo in talk/listing/index/speakers APIs, cards, OG image or served files; gallery endpoint internal-only",
+      "scope": "media"
+    },
     {
       "hash": "3d08d7a9",
       "date": "2026-10-24",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "Text with no sentence structure (verse lines, lists) is split at line breaks then words, never left whole; bahai-library's raw-HTML navigation table (8,538 chars on hundreds of pages) is dropped as site chrome",
       "scope": "ingest"
-    },
-    {
-      "hash": "a12220c1",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Sites-ingest takes a file list — re-ingest exactly the files a fix touched (dry run supported)",
-      "scope": "admin"
-    },
-    {
-      "hash": "65ba7d59",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Letters read like Jafar's — a quotation is quoted text with its link on the work (whole passages showed as underlined link text); headings, bold, lists and rules styled inline (Chad 10-19)",
-      "scope": "anis mail"
-    },
-    {
-      "hash": "47f9b001",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Unsegmented-docs report — every live document holding a whole-book 'paragraph', surveyed in short id windows: the re-ingest list (Chad 10-19)",
-      "scope": "ops"
-    },
-    {
-      "hash": "8424994b",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A whole-book 'paragraph' (unsegmented import awaiting re-ingest) is never returned as a passage — filtered before the 500-char cut hid its size",
-      "scope": "search"
-    },
-    {
-      "hash": "780cd4ad",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "No whole-book paragraphs — the site2rag adapter split bahai-library PDF markdown only on blank lines and read one page marker a block, so a book with single newlines became ONE 'paragraph' (50k–700k chars) that polluted every search (Chad 10-19: 'Never should we search an unsegmented book … a bug in the ingester'). Every page marker starts a block; an oversized block is split on its own structure (sentence-ending line breaks, then sentence boundaries); the sites ingester REFUSES a file that still has a >8,000-char paragraph (logged, nothing indexed)",
-      "scope": "ingest"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "1591706b",
+        "date": "2026-10-24",
+        "type": "Chore",
+        "description": "Remove biography/[id].astro (replaced by [slug].astro)",
+        "scope": "bio"
+      },
+      {
+        "hash": "2bf21ef5",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Biography pages by name - /biography/<slug> from the canonical full name; id and old slugs 301 to it",
+        "scope": "bio"
+      },
+      {
+        "hash": "fe2a64be",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "The worker decides everything — deterministic cleanup (chain F) for held talks, same word guard, verdict computed on the worker; tower waits instead of reprocessing in STRICT mode; wording: originals are never replaced",
+        "scope": "media"
+      },
+      {
+        "hash": "cc0bbea0",
+        "date": "2026-10-24",
+        "type": "Docs",
+        "description": "Speaker_sketch_publish sources = gallery manifest / internal gallery endpoint, not /api/media/index",
+        "scope": "media"
+      },
+      {
+        "hash": "dd479788",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Photos are never shown or exposed — portrait = the speaker's drawing, else initials; no photo in talk/listing/index/speakers APIs, cards, OG image or served files; gallery endpoint internal-only",
+        "scope": "media"
+      },
       {
         "hash": "3d08d7a9",
         "date": "2026-10-24",
@@ -6977,41 +7012,6 @@
         "date": "2026-10-19",
         "type": "Fixed",
         "description": "Text with no sentence structure (verse lines, lists) is split at line breaks then words, never left whole; bahai-library's raw-HTML navigation table (8,538 chars on hundreds of pages) is dropped as site chrome",
-        "scope": "ingest"
-      },
-      {
-        "hash": "a12220c1",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Sites-ingest takes a file list — re-ingest exactly the files a fix touched (dry run supported)",
-        "scope": "admin"
-      },
-      {
-        "hash": "65ba7d59",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Letters read like Jafar's — a quotation is quoted text with its link on the work (whole passages showed as underlined link text); headings, bold, lists and rules styled inline (Chad 10-19)",
-        "scope": "anis mail"
-      },
-      {
-        "hash": "47f9b001",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Unsegmented-docs report — every live document holding a whole-book 'paragraph', surveyed in short id windows: the re-ingest list (Chad 10-19)",
-        "scope": "ops"
-      },
-      {
-        "hash": "8424994b",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A whole-book 'paragraph' (unsegmented import awaiting re-ingest) is never returned as a passage — filtered before the 500-char cut hid its size",
-        "scope": "search"
-      },
-      {
-        "hash": "780cd4ad",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "No whole-book paragraphs — the site2rag adapter split bahai-library PDF markdown only on blank lines and read one page marker a block, so a book with single newlines became ONE 'paragraph' (50k–700k chars) that polluted every search (Chad 10-19: 'Never should we search an unsegmented book … a bug in the ingester'). Every page marker starts a block; an oversized block is split on its own structure (sentence-ending line breaks, then sentence boundaries); the sites ingester REFUSES a file that still has a >8,000-char paragraph (logged, nothing indexed)",
         "scope": "ingest"
       }
     ]
