@@ -1,7 +1,7 @@
 {
  "note": "Speaker SKETCHES (Chad 10-23): one pen-and-ink courtroom-style portrait per speaker, drawn image-to-image (gemini-3.1-flash-image) from the verified gallery photo named by source_sha — never an invented face. ai_rendered: true. Masters in cdn-assets R2 (media-speakers/<key>/sketch-*.jpg). Built by scripts/media/speaker_sketch.py (+ SFace likeness gate) and speaker_sketch_publish.mjs; read by api/lib/media/sketch.js.",
- "generated": "2026-10-24T18:36:50.391Z",
- "spend_usd_total": 3.5163,
+ "generated": "2026-10-24T18:53:08.460Z",
+ "spend_usd_total": 3.6388,
  "speakers": {
   "abul-qasim-faizi": {
    "file": "media-speakers/abul-qasim-faizi/sketch-e23e978ed386436d.jpg",
@@ -1086,15 +1086,15 @@
    "drawn_at": "2026-10-23T22:20:26"
   },
   "chad-jones": {
-   "file": "media-speakers/chad-jones/sketch-4b3d0cac58d4745c.jpg",
-   "sha": "4b3d0cac58d4745c5f43c9c31f03f123f7a3a658ff4b79fbc809a6c080485dea",
-   "sq_file": "media-speakers/chad-jones/sketch-sq-88b86908c3505d05.jpg",
-   "sq_sha": "88b86908c3505d05a15c5087cf52b59208b89ddf282a2129f8f292800a9fc57a",
+   "file": "media-speakers/chad-jones/sketch-15e13421ff99e416.jpg",
+   "sha": "15e13421ff99e416a85fd821887945ae314550e7e450bb0a730c04d8bda38ba0",
+   "sq_file": "media-speakers/chad-jones/sketch-sq-985b0e90ea6b2833.jpg",
+   "sq_sha": "985b0e90ea6b28336aa3fdf903ea03f5acbc4cc675298d969e0570fa143801e1",
    "width": 768,
    "height": 1376,
    "ai_rendered": true,
    "model": "gemini-3.1-flash-image",
-   "usd": 0.0402,
+   "usd": 0.0408,
    "source_sha": "340ca91a1ade70fcb21685373408d96fedb84cf741d7c4601ee3162b3b01a6e3",
    "source_file": "media-speakers/chad-jones/340ca91a1ade70fc.jpg",
    "source_credit": "photo supplied by Chad",
@@ -1102,30 +1102,19 @@
    "source_url": null,
    "likeness": {
     "face": true,
-    "source": 0.541,
+    "source": 0.576,
     "others_mean": null,
-    "impostor_max": 0.296,
-    "impostor_who": "tarazullah-samandari",
+    "impostor_max": 0.258,
+    "impostor_who": "baharieh-rouhani-maani",
     "pass": true
    },
+   "accepted_by": "lighter-touch redo for Chad 10-24 (mean luminance 229.5 vs 202.0)",
    "style": "A (Chad 10-23)",
-   "take": "chad-jones-A",
-   "drawn_at": "2026-10-24T11:36:31",
+   "take": "chad-jones-A-l3",
+   "drawn_at": "2026-10-24T11:52:37",
    "fallback": {
     "file": "media-speakers/chad-jones/sketch-4b3d0cac58d4745c.jpg",
-    "sha": "4b3d0cac58d4745c5f43c9c31f03f123f7a3a658ff4b79fbc809a6c080485dea",
-    "sq_file": "media-speakers/chad-jones/sketch-sq-88b86908c3505d05.jpg",
-    "sq_sha": "88b86908c3505d05a15c5087cf52b59208b89ddf282a2129f8f292800a9fc57a",
-    "take": "chad-jones-A",
-    "likeness": {
-     "face": true,
-     "source": 0.541,
-     "others_mean": null,
-     "impostor_max": 0.296,
-     "impostor_who": "tarazullah-samandari",
-     "pass": true
-    },
-    "note": "the darker first drawing (mean luminance 202.0); its R2 files are kept"
+    "note": "the darker first drawing (mean luminance 202.0); its square crop and R2 files are kept"
    }
   }
  }
