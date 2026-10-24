@@ -1,6 +1,6 @@
 // The talk page's "Original" A/B button (Chad 10-23): the API's audio block (remastered + original URLs, per-paragraph s0),
 // the time mapping between the copies, and the SSR markup (slot always reserved; button only on a remastered talk).
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { render } from 'svelte/server';
 import { talkAudio, isRemastered, originalStarts, originalField } from '../../api/lib/media/talk-audio.js';
@@ -131,5 +131,35 @@ describe('edge purge on publish', () => {
     expect(w).toContain("'/_edge/purge'");
     expect(w).toContain('evict(k, env)');
     expect(w).toMatch(/_edge\/purge[^]*?S1_KEY/);
+  });
+});
+
+describe('R2-first web audio (worker/media.js)', () => {
+  it('a web-audio miss is a 202 with Retry-After, never proxied from the tower; other files keep the old path', async () => {
+    const { mediaFile, isWebAudio } = await import('../../worker/media.js');
+    const env = { MEDIA_BUCKET: { get: async () => null } };
+    const origin = vi.fn();
+    const orig = globalThis.fetch; globalThis.fetch = origin;
+    try {
+      const r = await mediaFile(new Request('https://siftersearch.com/api/media/a-talk/file/web/a-talk.ogg?v=3'), env, { waitUntil() {} }, 'https://api.example');
+      expect(r.status).toBe(202);
+      expect(r.headers.get('retry-after')).toBe('4');
+      expect(origin).not.toHaveBeenCalled();
+    } finally { globalThis.fetch = orig; }
+    expect(isWebAudio('/api/media/a-talk/file/web/a-talk.original.m4a')).toBe(true);
+    expect(isWebAudio('/api/media/a-talk/file/waveform.json')).toBe(false);
+  });
+  it('warm: present objects are never fetched again; a lock makes concurrent page loads one fill', async () => {
+    const { warmMedia } = await import('../../worker/media.js');
+    const store = new Set(['a-talk/web/a-talk.ogg@3']), locks = new Map(), puts = [];
+    const env = { MEDIA_BUCKET: { head: async (k) => (store.has(k) ? {} : null), put: async (k) => puts.push(k) },
+      EDGE_CACHE: { get: async (k) => locks.get(k) || null, put: async (k, v) => locks.set(k, v), delete: async (k) => locks.delete(k) } };
+    const orig = globalThis.fetch; globalThis.fetch = vi.fn();
+    try {
+      const j = await (await warmMedia(new URL('https://x/_media/warm?slug=a-talk&v=3&fmt=ogg&copy=both'), { ...env, EDGE_CACHE: { ...env.EDGE_CACHE, get: async (k) => (k.includes('original') ? '1' : null) } }, 'https://api.example')).json();
+      expect(j.files).toEqual({ 'web/a-talk.ogg': 'present', 'web/a-talk.original.ogg': 'busy' });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+      expect((await warmMedia(new URL('https://x/_media/warm?slug=../x&v=3'), env, 'https://api.example')).status).toBe(400);
+    } finally { globalThis.fetch = orig; }
   });
 });

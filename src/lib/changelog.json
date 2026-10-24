@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-24T16:51:05.054Z",
+  "generated": "2026-10-24T16:53:54.381Z",
   "entries": [
+    {
+      "hash": "64877f0f",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Bump USER_DB_CURRENT_VERSION to 11 so the allowlist migration runs",
+      "scope": "dewey"
+    },
+    {
+      "hash": "a1d59dee",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Audio preload=metadata; Original",
+      "scope": "media"
+    },
     {
       "hash": "5d8229ef",
       "date": "2026-10-24",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "A language answer never says it 'couldn't find anything'",
       "scope": "anis"
-    },
-    {
-      "hash": "0f51b32b",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Every Anís exchange is judged against Perplexity's answer to the same (scrubbed) question — vs_competitor better/equal/worse with what each gave; 'worse' alerts like a poor answer (Chad 10-19: always more helpful than Perplexity)",
-      "scope": "audit"
-    },
-    {
-      "hash": "1c75869b",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The quibble lint — a sentence correcting the reader's case endings is dropped unless they asked about grammar; a language answer never disclaims that 'the texts I can search do not settle' it (Chad 10-19)",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "64877f0f",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Bump USER_DB_CURRENT_VERSION to 11 so the allowlist migration runs",
+        "scope": "dewey"
+      },
+      {
+        "hash": "a1d59dee",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Audio preload=metadata; Original",
+        "scope": "media"
+      },
       {
         "hash": "5d8229ef",
         "date": "2026-10-24",
@@ -6998,20 +7012,6 @@
         "date": "2026-10-19",
         "type": "Fixed",
         "description": "A language answer never says it 'couldn't find anything'",
-        "scope": "anis"
-      },
-      {
-        "hash": "0f51b32b",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Every Anís exchange is judged against Perplexity's answer to the same (scrubbed) question — vs_competitor better/equal/worse with what each gave; 'worse' alerts like a poor answer (Chad 10-19: always more helpful than Perplexity)",
-        "scope": "audit"
-      },
-      {
-        "hash": "1c75869b",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The quibble lint — a sentence correcting the reader's case endings is dropped unless they asked about grammar; a language answer never disclaims that 'the texts I can search do not settle' it (Chad 10-19)",
         "scope": "anis"
       }
     ]

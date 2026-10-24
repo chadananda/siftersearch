@@ -170,7 +170,7 @@
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
         const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
           : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { audio.src = media.href(want); loaded = want; }
+        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { busy = true; try { if (!(await ready(want))) throw new Error('the audio is not ready yet — try again'); note = ''; } finally { busy = false; } audio.src = media.href(want); loaded = want; }
         await waitMeta();
         audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
       } else {
@@ -205,6 +205,20 @@
   /** Original | Remastered: same second, same play state, only the source changes (the other copy is not fetched until
    *  the first switch). Rate and volume are kept; a stalled load gives up after 10 s and says so. */
   let switching = false;
+  const ogg = () => (typeof Audio !== 'undefined' && new Audio().canPlayType('audio/ogg; codecs="opus"') ? 'ogg' : 'm4a');
+  /** Both copies are warmed into the edge store on load (one-time, idempotent: worker /_media/warm). */
+  const warmAudio = () => { const v = /[?&]v=(\d+)/.exec(audioInfo?.m4a || '')?.[1]; if (v) fetch(media.href(`/_media/warm?slug=${encodeURIComponent(item.slug)}&v=${v}&fmt=${ogg()}&copy=${hasOriginal ? 'both' : 'main'}`), { method: 'POST' }).catch(() => {}); };
+  /** Wait until the audio object is in the edge store (202 + Retry-After while it is being prepared): "preparing audio". */
+  async function ready(path) {
+    const t0 = Date.now();
+    for (;;) {
+      const r = await fetch(media.href(path), { headers: { range: 'bytes=0-0' } });
+      if (r.status !== 202) return r.ok;
+      note = 'Preparing the audio…';
+      if (Date.now() - t0 > 180000) return false;
+      await new Promise((res) => setTimeout(res, (Number(r.headers.get('retry-after')) || 4) * 1000));
+    }
+  }
   let loadingCopy = $state(false);   // the other copy is buffering (shown beside the switch)
   const warmed = new Set();
   /** Hover/focus on the switch: read the other copy's first 64 KB so the switch finds it warm at the edge. */
@@ -224,7 +238,8 @@
       const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
       const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
         : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-      audio.src = media.href(want); loaded = want;
+      if (!(await ready(want))) throw new Error('the other copy is not ready yet — try again');
+      note = ''; audio.src = media.href(want); loaded = want;
       await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load — try again')), 25000))]);
       audio.currentTime = Math.max(0, copyTime(t) - offset);
       audio.playbackRate = rate;
@@ -329,9 +344,10 @@
     }
     if (level === 'full' && !hasOriginal) {   // a talk remastered after its page was cached: fetch the current audio block once
       const stop = liveRefresh(async () => { const r = await fetch(media.href(`/api/media/${encodeURIComponent(item.slug)}?live=${Math.floor(Date.now() / 60000)}`)); if (!r.ok) throw new Error(String(r.status)); const d = await r.json(); return d.audio?.remastered ? { audio: d.audio, paragraphs: d.paragraphs } : null; },
-        (d) => { if (d) { audioInfo = d.audio; s0paras = d.paragraphs; } }, { every: 0, initial: null });
+        (d) => { if (d) { audioInfo = d.audio; s0paras = d.paragraphs; warmAudio(); } }, { every: 0, initial: null });
       cleanups.push(stop);
     }
+    if (level === 'full' && canPlay) warmAudio();   // loading the page warms both copies at the edge (idempotent)
     if (canPlay) sessionSetup();
     const silent = () => audio.src.startsWith('blob:');   // the unlock blip, not the talk
     const onPlay = () => { if (silent()) return; playing = true; startedAt = performance.now(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };

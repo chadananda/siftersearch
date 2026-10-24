@@ -897,7 +897,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     await save();
     await repo.updateMediaItem(item.id, { stages_done: stagesDone(meta.stages) }).catch(() => {});
   }
-  if (done.length) purgeTalk(meta.slug);   // the edge-cached page + API entry of this talk: new audio/data shows within seconds
+  if (done.length) purgeTalk(meta.slug, { version: meta.version || 1 });   // the edge-cached page + API entry of this talk: new audio/data shows within seconds
   return { slug: meta.slug, done, meta };
 }
 

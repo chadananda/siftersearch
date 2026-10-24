@@ -15,7 +15,7 @@ import { App } from 'astro/app';
 import { handle } from '@astrojs/cloudflare/handler';
 import { mailRoute, mailCron } from './mail/index.js';
 import { deweyEmail } from './mail/dewey.js';
-import { mediaFile, MEDIA_FILE } from './media.js';
+import { mediaFile, warmMedia, MEDIA_FILE } from './media.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
 
@@ -121,6 +121,7 @@ export function createExports(manifest) {
           await Promise.all(keys.map((k) => evict(k, env)));
           return Response.json({ purged: keys });
         }
+        if (url.pathname === '/_media/warm' && request.method === 'POST') return warmMedia(url, env, API_ORIGIN);   // idempotent one-time tower → R2 copy (worker/media.js)
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
         // a contributor's item page from Dewey's receipts (signed link, rendered on tower; never cached)
