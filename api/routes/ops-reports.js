@@ -1,5 +1,6 @@
 // Ops reports over the internal API — the ONLY way scripts and agents ask production about library health. Runs are
 // queued here and executed by siftersearch-reports; nothing in this route scans a table. Auth: requireInternal.
+import { join, dirname } from 'path';
 import { requireInternal } from '../lib/auth.js';
 import { enqueue, getRun, latest, recent, cancel } from '../lib/repos/ops-report-repo.js';
 import { reportNames } from '../lib/ops/reports.js';
@@ -34,7 +35,9 @@ export default async function opsReportRoutes(fastify) {
       const reaper = await fs.readFile((await import('../lib/media/pod-reaper.js')).REAPER_FILE, 'utf8').then(JSON.parse).catch(() => null);
       cloud_gpu = { ...ledgerSummary(st, Date.now(), C.spendOf, C.CLOUD.capUsd()), reaper: reaper ? { at: reaper.at, seen: reaper.seen, reaped: reaper.history?.slice(0, 5) || [] } : null };
     } catch { /* no cloud run yet */ }
-    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu };
+    let remaster_quality = null;
+    try { remaster_quality = JSON.parse(await (await import('fs/promises')).readFile(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'remaster-quality.json'), 'utf8')); remaster_quality.review = remaster_quality.review?.length; remaster_quality.unrepairable = remaster_quality.unrepairable?.length; } catch { /* not run yet */ }
+    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu, remaster_quality };
   });
   // NIGHT SCHEMA MAINTENANCE (10-24): named steps only — scripts/ops/db-maintenance.sh calls them one at a time with the
   // writers drained around each (a DROP frees a whole b-tree inside the single writer). No arbitrary SQL. maintenance-repo.js

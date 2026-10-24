@@ -2,6 +2,8 @@
 // describe → headings → quotes → links → assess → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
+import { qualityOf } from './remaster-quality.js';
+import { podPost, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
@@ -377,7 +379,10 @@ export async function runItem(item, opts = {}, deps = {}) {
         else {
           const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
           const out = join(dir, 'enhanced', 'unipase.flac'), report = join(dir, 'enhanced', 'unipase.guard.json');
-          const g = await heavySlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
+          // the worker already ran the word guard (scripts/media/worker/post.py) when its transcript hash still matches: take it, no CPU here
+          const pod = await podPost(dir);
+          if (pod) { await podTake(dir, 'unipase.flac', out); await podTake(dir, 'unipase.guard.json', report).catch(() => {}); }
+          const g = pod ? pod.guard : await heavySlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
             // the reference: the ORIGINAL through the same model + settings as the copy (pods), else the production transcript
             ref: existsSync(join(dir, 'enhanced', 'unipase.asr_orig.json')) ? join(dir, 'enhanced', 'unipase.asr_orig.json') : join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));
           // publish unless > 15 % of sentences fell back (the coordinator's review bar, 10-23); > 40 % is listed as 'high fallback'
@@ -399,6 +404,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): kept the original — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
+          meta.qa = { ...(meta.qa || {}), remaster: qualityOf(meta) };
         }
       }
     }
@@ -408,17 +414,24 @@ export async function runItem(item, opts = {}, deps = {}) {
       // (no transcription); the original times stay on every word as s0 / e0 (the "Original" button). A copy the aligner
       // cannot place (> 2 % of words) goes back to the transparent copy. Back on the original → the s0 / e0 times return.
       const work = await readJson(join(dir, 'transcript.work.json'), null);
+      let podSigned = false;   // the worker's result was valid for the transcript before this alignment: re-sign it for the aligned one
       if (work?.paragraphs?.length && meta.enhancement) {
         const target = meta.enhancement.listening;
         if (isRemastered(meta) && meta.aligned_to !== target) {
           const v = meta.enhancement.variants.find((x) => x.name === target);
           const out = join(dir, 'enhanced', 'realign.json');
-          const r = await heavySlot(() => tools.tool('realign', join(dir, v.file), { segments: join(dir, 'transcript.work.json'), output: out }, { threads: 4, stop, timeoutMs: 3 * 3600_000 }));
+          // the worker's alignment of THIS transcript on the guarded copy, when it ran (post.py): no alignment CPU on tower
+          const pod = target === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
+          const podAligned = pod?.realign && existsSync(join(podDir(dir), 'realign.json'));
+          if (podAligned) await podTake(dir, 'realign.json', out);
+          podSigned = !!pod;
+          const r = podAligned ? pod.realign : await heavySlot(() => tools.tool('realign', join(dir, v.file), { segments: join(dir, 'transcript.work.json'), output: out }, { threads: 4, stop, timeoutMs: 3 * 3600_000 }));
           const times = (await readJson(out, { times: {} })).times || {};
           const unplaced = r.total ? 1 - r.placed / r.total : 1;
           if (unplaced > 0.02) {
             meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
             meta.remaster = { ...(meta.remaster || {}), status: 'review', verdict: 'review', why: `realign placed ${r.placed} of ${r.total} words — kept the original copy`, realign_unplaced_pct: Math.round(unplaced * 10000) / 100, at: d.now() };
+            meta.qa = { ...(meta.qa || {}), remaster: qualityOf(meta) };
           } else {
             for (const p of work.paragraphs) {
               const tm = times[String(p.n)] || [];
@@ -442,6 +455,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
         for (const m of meta.moments || []) { const p = byN.get(m.para); if (p?.words?.[m.i0]?.s != null && p.words[m.i1 - 1]?.e != null) { m.t0_ms = Math.round(p.words[m.i0].s * 1000); m.t1_ms = Math.round(p.words[m.i1 - 1].e * 1000); } }
         await writeJson(join(dir, 'transcript.work.json'), work);
+        if (podSigned) await podResign(dir);
       }
     }
 
@@ -453,10 +467,16 @@ export async function runItem(item, opts = {}, deps = {}) {
       const afArgs = af ? ['-af', af] : [];
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
+      // the worker's four encodes of this remaster (post.py), when its transcript hash still matches and the listening copy is the guarded one
+      const podW = remastered && meta.enhancement?.listening === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
+      const podWeb = podW?.web && ['ogg', 'm4a', 'orig_ogg', 'orig_m4a'].every((k) => existsSync(join(podDir(dir), 'web', podW.web[k]))) ? podW.web : null;
       const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...(remastered ? OGG_ARGS_REMASTER : OGG_ARGS), ogg], { stop }));
       const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', remastered ? '48000' : '44100', '-c:a', 'aac', '-b:a', remastered ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', m4a], { stop }));
       // the ORIGINAL (transparent) copy beside a remaster — the talk page's "Original" button (audio.original_url)
-      if (remastered) {
+      if (podWeb) {
+        for (const [k, dst] of [['ogg', ogg], ['m4a', m4a], ['orig_ogg', join(dir, 'web', `${meta.slug}.original.ogg`)], ['orig_m4a', join(dir, 'web', `${meta.slug}.original.m4a`)]]) await podTake(dir, join('web', podWeb[k]), dst);
+        meta.web_original = { ogg: `web/${meta.slug}.original.ogg`, m4a: `web/${meta.slug}.original.m4a` };
+      } else if (remastered) {
         const safeSrc = listeningSource({ ...meta, enhancement: { ...meta.enhancement, listening: 'safe' } }, dir);
         const oo = join(dir, 'web', `${meta.slug}.original.ogg`), om = join(dir, 'web', `${meta.slug}.original.m4a`);
         const sa = safeSrc.af ? ['-af', safeSrc.af] : [];
@@ -471,8 +491,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
         await save();
         await Promise.all([tools.encodeRemote('ogg', src, ogg, { af: af || '', job: meta.enc_jobs.ogg, stop, local: oggLocal }), tools.encodeRemote('m4a', src, m4a, { af: af || '', job: meta.enc_jobs.m4a, stop, local: m4aLocal })]);
-      } else await Promise.all([oggLocal(), m4aLocal()]);
+      } else if (!podWeb) await Promise.all([oggLocal(), m4aLocal()]);
       delete meta.enc_jobs;
+      if (podWeb) await podForget(dir);   // consumed: a later re-encode runs here
       meta.web_codec = remastered ? WEB_CODEC_REMASTER : WEB_CODEC;   // the encode settings these copies were made with
       // the DURATION from the web encode (QA 10-22: the original's header under-reported by ~6 s on 31 talks)
       const enc = tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;

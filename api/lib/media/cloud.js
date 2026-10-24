@@ -49,7 +49,7 @@ export async function createPod(name, publicKey, deps = {}) {
   for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of vol ? ['SECURE'] : ['COMMUNITY', 'SECURE']) tries.push([types, cloudType]);
   for (const [types, cloudType] of tries) {
     try {
-      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: CLOUD.image,
+      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
         containerDiskInGb: 60, ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
         env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
     } catch (err) { lastErr = err; }
@@ -139,9 +139,18 @@ CUBLAS=$(python -c 'import os, nvidia.cublas; print(os.path.dirname(nvidia.cubla
 export LD_LIBRARY_PATH="$CUDNN:$CUBLAS:\${LD_LIBRARY_PATH:-}" HF_HUB_OFFLINE=1
 pkill -f runpod_worker.py || true
 touch /workspace/spool/.tower-hb
-nohup python /workspace/runpod_worker.py --repo /workspace/unipase --weights $W --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 > /workspace/worker.log 2>&1 < /dev/null &
+mkdir -p /workspace/scripts/media && [ -f /workspace/media-scripts.tgz ] && tar xzf /workspace/media-scripts.tgz -C /workspace/scripts/media
+W_PY=/workspace/runpod_worker.py; [ -f /workspace/scripts/media/runpod_worker.py ] && W_PY=/workspace/scripts/media/runpod_worker.py
+nohup bash -c 'while true; do python '$W_PY' --repo /workspace/unipase --weights '$W' --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
 
+export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
+/** Start of a pod from the BAKED image (ghcr.io/chadananda/sifter-media-worker): code, UniPASE, whisper and aligners are already inside — seconds, no downloads. */
+export const BOOTSTRAP_BAKED = `set -e
+mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb
+pkill -f runpod_worker.py || true
+nohup bash -c 'while true; do python /opt/sifter/media/runpod_worker.py --repo /opt/unipase --weights /opt/models/weights --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
+echo started`;
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
 export const REPO_TGZ = () => process.env.MEDIA_UNIPASE_REPO_TGZ || join(homedir(), 'sifter', 'remaster', 'cloud', `unipase-${UNIPASE_COMMIT.slice(0, 8)}.tgz`);
 export const jobIdOf = (item) => `${String(item.slug || item.id).replace(/[^a-z0-9-]/gi, '').slice(0, 80)}-${item.id}`;

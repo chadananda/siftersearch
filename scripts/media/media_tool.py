@@ -8,6 +8,24 @@ import numpy as np
 SR = 16000
 
 
+def _clean(o):
+    """JSON-safe: NaN / +-Infinity (digital silence gives -inf dB) become null — Python prints them as bare tokens that JSON.parse rejects
+    ('No number after minus sign', 10-24: the aorus grade failed and fell back to tower)."""
+    if isinstance(o, float) and (o != o or o in (float('inf'), float('-inf'))):
+        return None
+    if isinstance(o, dict):
+        return {k: _clean(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_clean(v) for v in o]
+    if isinstance(o, np.generic):
+        return _clean(o.item())
+    return o
+
+
+def jdumps(o, **kw):
+    return json.dumps(_clean(o), allow_nan=False, **kw)
+
+
 def load(path, sr=SR, start=None, dur=None):
     """Decode any media file to mono float32 at `sr` through ffmpeg (no temp files)."""
     cmd = ['ffmpeg', '-nostdin', '-v', 'error']
@@ -75,7 +93,7 @@ def cmd_metrics(a):
     win = SR * 60
     snrs = [v for v in (frame_snr(x[i:i + win]) for i in range(0, max(1, len(x) - win + 1), win)) if v is not None]
     rms = float(20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-12))
-    print(json.dumps({
+    print(jdumps({
         'duration_s': round(len(x) / SR, 2),
         'snr_db': round(float(np.median(snrs)), 2) if snrs else None,
         'rms_db': round(rms, 2),
@@ -155,7 +173,7 @@ def cmd_probe(a):
                     'compression': round(float(np.mean([sg.compression_ratio for sg in segs])), 3) if segs else None,
                     'words': words, 'language': info.language, 'text': ' '.join(sg.text.strip() for sg in segs)[:400]})
     lps = [o['avg_logprob'] for o in out if o['avg_logprob'] is not None]
-    print(json.dumps({'model': a.model, 'excerpts': out, 'avg_logprob': round(float(np.mean(lps)), 4) if lps else None,
+    print(jdumps({'model': a.model, 'excerpts': out, 'avg_logprob': round(float(np.mean(lps)), 4) if lps else None,
                       'words': sum(o['words'] for o in out), 'seconds': round(time.time() - t0, 1)}))
 
 
@@ -166,7 +184,7 @@ def cmd_langid(a):
         x = load(a.input, start=s, dur=a.len if a.len and a.len < 30 else 30)
         lang, prob, allp = m.detect_language(x)
         res.append({'start': s, 'language': lang, 'prob': round(float(prob), 3), 'top': [(l, round(float(p), 3)) for l, p in allp[:3]]})
-    print(json.dumps({'excerpts': res}))
+    print(jdumps({'excerpts': res}))
 
 
 def cmd_dfn(a):
@@ -190,7 +208,7 @@ def cmd_dfn(a):
         out.append(y.squeeze(0).numpy())
     y = np.concatenate(out) if out else np.zeros(1, dtype=np.float32)
     sf.write(a.output, y, sr, format='FLAC', subtype='PCM_16')
-    print(json.dumps({'output': a.output, 'sr': sr, 'seconds': round(time.time() - t0, 1), 'atten_lim_db': a.atten}))
+    print(jdumps({'output': a.output, 'sr': sr, 'seconds': round(time.time() - t0, 1), 'atten_lim_db': a.atten}))
 
 
 EMB_MODELS = ('wespeaker_en_voxceleb_resnet34_LM.onnx', 'nemo_en_titanet_small.onnx', '3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx')
@@ -336,7 +354,7 @@ def cmd_transcribe(a):
         json.dump({'language': lang, 'languages': {k: round(v, 1) for k, v in langs.items()}, 'model': a.model, 'prompt': a.prompt, 'aligned': align_ok, 'segments': out, 'turns': turns,
                    'duration_s': round(len(audio) / SR, 2), 'timings': timings, 'align_score': round(float(np.mean(scores)), 4) if scores else None},
                   f, ensure_ascii=False)
-    print(json.dumps({'output': a.output, 'language': lang, 'segments': len(out), 'speakers': len({t['speaker'] for t in turns}),
+    print(jdumps({'output': a.output, 'language': lang, 'segments': len(out), 'speakers': len({t['speaker'] for t in turns}),
                       'timings': timings, 'seconds': round(time.time() - t0, 1), 'duration_s': round(len(audio) / SR, 2)}))
 
 
@@ -354,7 +372,7 @@ def cmd_diarize(a):
     res = {'speakers': len(talk), 'talk_s': dict(sorted(talk.items(), key=lambda x: -x[1])), 'turns': len(turns), 'seconds': round(time.time() - t0, 1), 'threshold': a.cluster, 'emb': a.emb or 'default'}
     if a.emit_turns:   # run remotely (boss, through the gate): the turns travel back on stdout
         res['turn_list'] = turns
-    print(json.dumps(res))
+    print(jdumps(res))
 
 
 def screen_windows(segments, duration, every=10.0, win=2.0, cap=720):
@@ -420,7 +438,7 @@ def cmd_spkscreen(a):
     if a.emb_out:
         np.save(a.emb_out, E)
     st = screen_stats(E)
-    print(json.dumps({'windows': [[s, e] for s, e in wins], 'sims': st['sims'], 'duration_s': round(dur, 1), 'seconds': round(time.time() - t0, 1)}))
+    print(jdumps({'windows': [[s, e] for s, e in wins], 'sims': st['sims'], 'duration_s': round(dur, 1), 'seconds': round(time.time() - t0, 1)}))
 
 
 def cmd_spkmerge(a):
@@ -447,7 +465,7 @@ def cmd_spkmerge(a):
         return np.concatenate(out) if out else None
     em = excerpt(sp.get('main', []), 90.0)
     if em is None:
-        print(json.dumps({'error': 'no main speech'})); return
+        print(jdumps({'error': 'no main speech'})); return
     cm = emb(em)
     res = {}
     for k, spans in (sp.get('others') or {}).items():
@@ -456,7 +474,7 @@ def cmd_spkmerge(a):
         for s, e in spans:
             r['spans'].append(round(float(cm @ emb(x[int(s * SR):int(e * SR)])), 3) if e - s >= 2.0 else None)
         res[k] = r
-    print(json.dumps({'others': res, 'seconds': round(time.time() - t0, 1)}))
+    print(jdumps({'others': res, 'seconds': round(time.time() - t0, 1)}))
 
 
 def realign_words(paragraphs, aligned_by_par):
@@ -529,7 +547,7 @@ def cmd_realign(a):
                 print(f'realign: paragraph {p.get("n")} failed ({err})', file=sys.stderr)
     times, placed, total = realign_words(work.get('paragraphs', []), aligned)
     json.dump({'times': {str(k): v for k, v in times.items()}, 'placed': placed, 'total': total}, open(a.output, 'w'))
-    print(json.dumps({'placed': placed, 'total': total, 'seconds': round(time.time() - t0, 1)}))
+    print(jdumps({'placed': placed, 'total': total, 'seconds': round(time.time() - t0, 1)}))
 
 
 def cmd_grade(a):
@@ -635,7 +653,7 @@ def cmd_grade(a):
     except Exception as err:
         out['tools']['error'] = str(err)[:200]
     out['seconds'] = round(time.time() - t0, 1)
-    print(json.dumps(out))
+    print(jdumps(out))
 
 
 ENCODE_FILTERS = {'highpass', 'lowpass', 'bandreject', 'adeclick', 'afftdn', 'loudnorm', 'dynaudnorm', 'acompressor', 'volume', 'equalizer'}
@@ -660,7 +678,7 @@ def cmd_encode(a):
     t0 = time.time()
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-threads', str(a.threads), '-i', a.input, '-threads', str(a.threads)]
                    + RECIPES[a.recipe](af) + [a.output], check=True)
-    print(json.dumps({'output': a.output, 'recipe': a.recipe, 'seconds': round(time.time() - t0, 1)}))
+    print(jdumps({'output': a.output, 'recipe': a.recipe, 'seconds': round(time.time() - t0, 1)}))
 
 
 def cmd_levels(a):
@@ -678,7 +696,7 @@ def cmd_levels(a):
     for spk, segs in acc.items():
         y = np.concatenate(segs)
         res[spk] = {'seconds': round(len(y) / SR, 1), 'rms_dbfs': round(float(20 * np.log10(np.sqrt(np.mean(y ** 2)) + 1e-12)), 1)}
-    print(json.dumps({'speakers': res}))
+    print(jdumps({'speakers': res}))
 
 
 def main():

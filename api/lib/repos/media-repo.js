@@ -385,3 +385,8 @@ export const mediaQueueAhead = async (rank) => (await queryOne(`SELECT COUNT(*) 
   AND COALESCE(queue_rank, 900000000) < ?`, [rank ?? 900000000], 'media:queue-ahead'))?.n || 0;
 /** Talks published since `since` (the queue's recent pace, for an ETA). */
 export const mediaPublishedSince = async (since) => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE published_at >= ?`, [since], 'media:published-since'))?.n || 0;
+
+/** Items whose length is within `pct` of `duration_s` and that are not duplicates/excluded: the candidates Dewey's stage-0 preview is matched against. */
+export const itemsNearDuration = async (duration_s, pct = 0.03) => queryAll(
+  `SELECT id, slug, title, speaker, dir, duration_s FROM media_items WHERE duration_s BETWEEN ? AND ? AND state NOT IN ('duplicate', 'excluded') AND dir IS NOT NULL`,
+  [duration_s * (1 - pct), duration_s * (1 + pct)], 'media:preview-candidates');

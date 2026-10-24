@@ -75,7 +75,7 @@ export function ledgerSummary(st, now = Date.now(), spendOf = () => st.spent_usd
     efficiency_30m: efficiency(st, now),
     queue: (st.queue || []).length, in_flight: Object.keys(st.jobs || {}).length,
     pods: pods.map((p) => ({ id: p.id, name: p.name, gpu: p.gpu || null, cost_per_hr: p.costPerHr ?? null, live: !p.terminated, status: p.terminated ? `terminated (${p.why})` : p.status,
-      rented_min: Math.round((p.rented_ms || 0) / 60_000), busy_min: Math.round((p.busy_ms || 0) / 60_000), util: p.util ?? null,
+      rented_min: Math.round((p.rented_ms || 0) / 60_000), busy_min: Math.round((p.busy_ms || 0) / 60_000), util: p.util ?? null, worker: p.worker || null, baked: !!p.baked,
       idle_min: p.idle_since ? Math.round((now - p.idle_since) / 60_000) : 0 })),
   };
 }

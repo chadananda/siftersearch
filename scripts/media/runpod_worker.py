@@ -123,9 +123,23 @@ def run_job(d, up, inference_file, asr):
         os.remove(f)
     done = {'audio_s': round(info.frames / info.samplerate, 1), 'unipase_s': round(t_up, 1), 'asr_s': round(time.time() - t1, 1),
             'seconds': round(time.time() - t0, 1), 'gpu': torch.cuda.get_device_name(0), 'peak_vram_gb': round(torch.cuda.max_memory_allocated() / 2 ** 30, 2)}
+    return done
+
+
+def finalize(d, done):
+    """CPU half (word guard, realign, web encodes — worker/post.py), then done.json: the GPU is already on the next talk meanwhile."""
+    meta = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}
+    if meta.get('post'):
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
+            import post as postmod
+            post = postmod.process(d)
+            json.dump(post, open(os.path.join(d, 'post.json'), 'w'))
+            done['post_s'] = post.get('seconds')
+        except Exception:
+            open(os.path.join(d, 'post.error.txt'), 'w').write(traceback.format_exc()[-2000:])   # tower falls back to doing it itself
     json.dump(done, open(os.path.join(d, 'done.json.tmp'), 'w'))
     os.replace(os.path.join(d, 'done.json.tmp'), os.path.join(d, 'done.json'))
-    return done
 
 
 def main():
@@ -141,28 +155,56 @@ def main():
     up, IL, asr = load_models(a.repo, a.weights)
     open(os.path.join(a.spool, '.worker-ready'), 'w').write(str(os.getpid()))
     print(f'{time.strftime("%H:%M:%S")} models loaded', flush=True)
-    last = time.time()
-    born = time.time()
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
+    from controller import Controller, Leak
+    from concurrent.futures import ThreadPoolExecutor
+    ctl, leak = Controller(max_jobs=6), Leak(); ex = ThreadPoolExecutor(max_workers=6)
+    active = {}     # job dir -> future (CPU half)
+    last = born = time.time()
     hbf = os.path.join(a.spool, '.tower-hb')
+    last_tick = 0.0
+    def beat():
+        json.dump({**ctl.heartbeat(), 'at': time.time(), 'cpu_jobs': len(active)}, open(os.path.join(a.spool, '.worker-status.tmp'), 'w'))
+        os.replace(os.path.join(a.spool, '.worker-status.tmp'), os.path.join(a.spool, '.worker-status.json'))
+    def done_cb(d):
+        def cb(fut):
+            ctl.job_finished(d + '#cpu')
+            active.pop(d, None)
+            try:
+                fut.result()
+            except Exception:
+                open(os.path.join(d, 'error.txt'), 'w').write(traceback.format_exc()[-3000:]); open(os.path.join(d, 'failed'), 'w').close()
+        return cb
     while True:
         # DEAD-MAN SWITCH (Chad 10-24): the pod ends itself when tower's heartbeat stops, or at its maximum lifetime — whatever the lane is doing
         why = deadman(time.time(), born, os.path.getmtime(hbf) if os.path.exists(hbf) else 0, a.hb_min, a.max_hours)
         if why:
             terminate_self(why)
             sys.exit(0)
+        if time.time() - last_tick > 5:       # LIVE feedback (VRAM / RAM / swap / heat / OOM), never a startup estimate
+            last_tick = time.time()
+            for j in ctl.tick():
+                pass                           # shed: the lane re-queues any job whose done.json never appears
+            beat()
+        if ctl.state == 'drain' and not active:
+            terminate_self('unstable worker: repeated failures'); sys.exit(0)
         ready = sorted(glob.glob(os.path.join(a.spool, '*', 'ready')), key=os.path.getmtime)
-        if not ready:
-            if time.time() - last > a.idle_min * 60:
+        if not ready or len(active) >= 3 or not ctl.admit('unipase'):
+            if not ready and not active and time.time() - last > a.idle_min * 60:
                 terminate_self(f'idle {a.idle_min:g} min')
                 sys.exit(0)
             time.sleep(2)
             continue
         d = os.path.dirname(ready[0])
         os.rename(ready[0], os.path.join(d, 'running'))
+        ctl.job_started(d, 'unipase')
         try:
             r = run_job(d, up, IL, asr)
-            print(f'{time.strftime("%H:%M:%S")} {os.path.basename(d)} done {r}', flush=True)
+            print(f'{time.strftime("%H:%M:%S")} {os.path.basename(d)} gpu done {r}', flush=True)
+            ctl.job_finished(d); ctl.job_started(d + '#cpu', 'guard')
+            active[d] = ex.submit(finalize, d, r); active[d].add_done_callback(done_cb(d))
         except Exception:
+            ctl.job_failed(d, 'gpu stage')
             open(os.path.join(d, 'error.txt'), 'w').write(traceback.format_exc()[-3000:])
             open(os.path.join(d, 'failed'), 'w').close()
             print(f'{time.strftime("%H:%M:%S")} {os.path.basename(d)} FAILED', flush=True)
@@ -172,6 +214,12 @@ def main():
             except OSError:
                 pass
         last = time.time()
+        try:
+            import resource
+            if leak.check(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1048576) and not active:
+                print('memory climbed across jobs: recycling the process', flush=True); sys.exit(75)
+        except ImportError:
+            pass
 
 
 if __name__ == '__main__':

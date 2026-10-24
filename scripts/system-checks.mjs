@@ -113,6 +113,8 @@ let drainSeen = state.drainSeen || {};
     try {
       const { podChecks } = await import('./lib/pod-checks.mjs');
       for (const c of podChecks(JSON.parse(r.body).cloud_gpu)) add(c.name, c.ok, 'critical', c.detail);
+      const rq = JSON.parse(r.body).remaster_quality;
+      if (rq) add('Remaster verdicts', !(rq.published_without_verdict > 0), 'warn', rq.published_without_verdict > 0 ? `${rq.published_without_verdict} published remaster(s) have no quality verdict` : `ok · ${JSON.stringify(rq.by_verdict)}`);
     } catch { /* no cloud_gpu in the response */ }
     const d = power ? { stuck: [], seen: {} } : stuckDrains(services, { seen: drainSeen, limitMs: Number(process.env.DRAIN_WARN_MIN || 10) * 60_000 });   // a power drain is not stuck
     drainSeen = d.seen;

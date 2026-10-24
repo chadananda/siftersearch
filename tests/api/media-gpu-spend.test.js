@@ -10,6 +10,9 @@ import { podsWanted, ledgerTick, efficiency, ledgerSummary, reapReason, runpodTi
 import { reapPass } from '../../api/lib/media/pod-reaper.js';
 import { podChecks } from '../../scripts/lib/pod-checks.mjs';
 import { mediaCloudRemasterJob } from '../../api/lib/ops/media-jobs.js';
+import { runItem } from '../../api/lib/media/item.js';
+import { sha256File } from '../../api/lib/media/pod-post.js';
+import { createHash } from 'crypto';
 
 const MIN = 60_000;
 describe('rent rule: work first, rent second', () => {
@@ -204,5 +207,87 @@ describe('the lane: GPU is rented only for work', () => {
     const st = { jobs: {}, pods: {} }, p = { id: 'a', status: 'ready', costPerHr: 1, created: 0 };
     let t = 5e11; ledgerTick(st, [p], { a: 0 }, t); t += 11 * MIN; ledgerTick(st, [p], { a: 0 }, t);
     expect(t - p.idle_since).toBeGreaterThan(LEDGER.idleMs);
+  });
+});
+
+// ── tower takes the worker's guard / alignment / encodes and does none of it itself ──
+describe('the pod does the heavy half of a remaster; tower validates and places', () => {
+  const talk = async ({ stale = false } = {}) => {
+    const dir = mkdtempSync(join(tmpdir(), 'pp-'));
+    for (const d of ['enhanced/pod/web', 'original', 'web']) mkdirSync(join(dir, d), { recursive: true });
+    for (const f of ['unipase.cloud.flac', 'unipase.asr.json']) writeFileSync(join(dir, 'enhanced', f), '{}');
+    writeFileSync(join(dir, 'transcript.raw.json'), '{"segments":[]}');
+    const words = [{ w: 'Today,', s: 1.0, e: 1.5 }, { w: 'the', s: 1.5, e: 1.7 }, { w: 'world', s: 1.7, e: 2.0 }];
+    const workJson = JSON.stringify({ paragraphs: [{ n: 1, t0: 1.0, t1: 2.0, words, sentences: [[0, 3]] }] });
+    writeFileSync(join(dir, 'transcript.work.json'), workJson);
+    const sha = createHash('sha256').update(stale ? 'other' : workJson).digest('hex');
+    const pod = join(dir, 'enhanced', 'pod');
+    writeFileSync(join(pod, 'unipase.flac'), 'FLAC'); writeFileSync(join(pod, 'unipase.guard.json'), '{}');
+    writeFileSync(join(pod, 'realign.json'), JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } }));
+    const web = { ogg: 'x.ogg', m4a: 'x.m4a', orig_ogg: 'x.original.ogg', orig_m4a: 'x.original.m4a' };
+    for (const f of Object.values(web)) writeFileSync(join(pod, 'web', f), f);
+    writeFileSync(join(pod, 'post.json'), JSON.stringify({ ok: true, work_sha: sha, guard: { sentences: 20, swapped: 1, swapped_pct: 5, fallback_sent_pct: 5, lag_ms: 20 }, realign: { placed: 2, total: 2 }, web }));
+    const meta = { slug: 'x', original: 'original/a.mp3', duration_s: 3, quality: { overall: 'D' }, moments: [{ para: 1, i0: 0, i1: 3, t0_ms: 1000, t1_ms: 2000 }],
+      enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
+      stages: Object.fromEntries(['archive', 'grade', 'enhance', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) };
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
+    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 1, swapped_pct: 5, fallback_sent_pct: 5, lag_ms: 25 })),
+      tool: vi.fn(async (sub, input, opts) => { writeFileSync(opts.output, JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } })); return { placed: 2, total: 2 }; }),
+      ffmpeg: vi.fn(async (args) => writeFileSync(args.at(-1), 'enc')), ffprobe: vi.fn(async () => ({ duration_s: 3 })), pcmStream: vi.fn(async () => {}) };
+    const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };
+    return { dir, tools, deps, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
+  };
+  it('guard, alignment and the four encodes come from the worker: tower runs no guard, no aligner, no ffmpeg', async () => {
+    const t = await talk();
+    await runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps);
+    const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(meta.enhancement.listening).toBe('unipase'); expect(meta.aligned_to).toBe('unipase');
+    expect(t.tools.remasterGuard).not.toHaveBeenCalled(); expect(t.tools.tool).not.toHaveBeenCalled(); expect(t.tools.ffmpeg).not.toHaveBeenCalled();
+    expect(readFileSync(join(t.dir, 'web', 'x.ogg'), 'utf8')).toBe('x.ogg'); expect(readFileSync(join(t.dir, 'web', 'x.original.m4a'), 'utf8')).toBe('x.original.m4a');
+    expect(meta.web_original).toEqual({ ogg: 'web/x.original.ogg', m4a: 'web/x.original.m4a' });
+    expect(meta.qa.remaster.verdict).toMatch(/usable|partial/);
+  });
+  it('a worker result made for a DIFFERENT transcript is ignored: tower computes everything itself', async () => {
+    const t = await talk({ stale: true });
+    await runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps);
+    expect(t.tools.remasterGuard).toHaveBeenCalled(); expect(t.tools.tool).toHaveBeenCalled(); expect(t.tools.ffmpeg).toHaveBeenCalled();
+  });
+});
+
+describe('post.py orchestration (guard, then realign, then four encodes; held talks skip the rest)', () => {
+  const run = (guardPct, realignOk = true) => {
+    const dir = mkdtempSync(join(tmpdir(), 'po-'));
+    writeFileSync(join(dir, 'in.mp3'), 'x'); writeFileSync(join(dir, 'out.flac'), 'y'); writeFileSync(join(dir, 'asr.json'), '{}');
+    writeFileSync(join(dir, 'work.json'), '{"paragraphs":[]}');
+    const sha = createHash('sha256').update('{"paragraphs":[]}').digest('hex');
+    writeFileSync(join(dir, 'job.json'), JSON.stringify({ post: { af: 'loudnorm', max_fallback_pct: 15, slug: 's', work_sha: sha, ogg: ['-c:a', 'libopus'], m4a: ['-c:a', 'aac'], orig_ogg: ['-c:a', 'libopus'], orig_m4a: ['-c:a', 'aac'] } }));
+    const out = execFileSync('python3', ['-c', `
+import sys, json, subprocess, types
+sys.path.insert(0, 'scripts/media/worker')
+import post
+calls = []
+def runner(cmd, **kw):
+    calls.append(cmd[1].split('/')[-1] if cmd[0] != 'ffmpeg' else 'ffmpeg')
+    if 'remaster_guard.py' in cmd[1]: return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': ${guardPct}, 'swapped_pct': ${guardPct}}) + '\\n')
+    if 'media_tool.py' in cmd[1]:
+        if not ${realignOk ? 'True' : 'False'}: raise RuntimeError('no whisperx')
+        return types.SimpleNamespace(stdout=json.dumps({'placed': 100, 'total': 100}) + '\\n')
+    return types.SimpleNamespace(stdout='')
+r = post.process(${JSON.stringify(dir)}, runner=runner)
+print(json.dumps({'r': {k: v for k, v in r.items() if k != 'guard'}, 'calls': calls}))`], { encoding: 'utf8' });
+    return JSON.parse(out);
+  };
+  it('a passing talk: guard, realign, 4 encodes', () => {
+    const o = run(4);
+    expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py', 'ffmpeg', 'ffmpeg', 'ffmpeg', 'ffmpeg']);
+    expect(o.r.web).toMatchObject({ ogg: 's.ogg', orig_m4a: 's.original.m4a' });
+  });
+  it('a held talk (> 15 %) stops after the guard — no GPU / CPU wasted on realign or encodes', () => {
+    const o = run(30);
+    expect(o.calls).toEqual(['remaster_guard.py']); expect(o.r.held).toBe(true);
+  });
+  it('no aligner on this machine: the guard result stands and tower aligns itself', () => {
+    const o = run(4, false);
+    expect(o.r.why).toMatch(/realign unavailable/); expect(o.r.web).toBeUndefined(); expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py']);
   });
 });

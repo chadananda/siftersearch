@@ -1339,10 +1339,21 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if (g.publicIp && port) {
               p.ip = g.publicIp; p.port = port;
               await C.podSsh(run, p, 'mkdir -p /workspace/spool && echo ok', { timeoutMs: 60_000 });
-              await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
-              await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
-              // DETACHED on the pod (pip + a ~3.7 GB verified fetch take minutes): the loop keeps feeding the other pods meanwhile
-              await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: C.BOOTSTRAP, timeoutMs: 120_000 });
+              const baked = /BAKED/.test((await C.podSsh(run, p, 'test -f /opt/sifter-image-version && echo BAKED; true', { timeoutMs: 60_000 })).stdout || '');
+              if (baked) {
+                p.baked = true;   // the image carries code + weights + aligners: nothing to upload or download
+                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
+              } else {
+                await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
+                await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
+                try {   // the pod's half of the remaster: worker + word guard + aligner + post.py (small); a failure here only means tower does those steps itself
+                  const tgz = join((await import('os')).tmpdir(), `media-scripts-${process.pid}.tgz`);
+                  await run('tar', ['czf', tgz, '-C', join(dirname(C.WORKER_FILE)), ...C.MEDIA_SCRIPTS], { timeoutMs: 60_000 });
+                  await C.podPut(run, p, tgz, '/workspace/media-scripts.tgz');
+                } catch { /* optional */ }
+                // DETACHED on the pod (pip + a ~3.7 GB verified fetch take minutes): the loop keeps feeding the other pods meanwhile
+                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: C.BOOTSTRAP, timeoutMs: 120_000 });
+              }
               p.status = 'warming'; p.lastOk = now();
             } else if (now() - p.created > C.CLOUD.bootTimeoutMs) { await closePod(p, 'boot timeout'); st.pod_failures++; }
           } else if (p.status === 'warming') {
@@ -1352,9 +1363,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
             else if (now() - p.created > C.CLOUD.warmTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
-            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
             const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
+            const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { p.worker = JSON.parse(wm[1]); } catch { /* partial write */ } }   // the worker's live controller numbers (limit, VRAM, heat, state)
             for (const line of stdout.split('\n')) {
               const [kind, job] = line.trim().split(' ');
               const x = st.jobs[job];
@@ -1368,6 +1380,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   catch (err) { if (optional) { await fs.rm(join(enh, lf), { force: true }); continue; } throw err; }   // an older worker: no like-for-like reference
                   await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
                 }
+                // the worker's guard / realign / encodes (best effort: anything missing is computed on tower)
+                try {
+                  const pd = join(enh, 'pod'); await fs.rm(pd, { recursive: true, force: true }); await fs.mkdir(join(pd, 'web'), { recursive: true });
+                  await C.podGet(run, p, `/workspace/spool/${job}/post.json`, join(pd, 'post.json'));
+                  const pj = JSON.parse(await fs.readFile(join(pd, 'post.json'), 'utf8'));
+                  if (pj.guard) {
+                    for (const f of ['unipase.flac', 'unipase.guard.json', ...(pj.realign ? ['realign.json'] : [])]) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, f));
+                    for (const f of Object.values(pj.web || {})) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, 'web', f));
+                  }
+                } catch { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); }
                 const dj = JSON.parse(await fs.readFile(join(enh, 'unipase.done.json'), 'utf8'));
                 dj.pod = p.name; dj.cost_per_hr = p.costPerHr;
                 await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(dj));
@@ -1395,7 +1417,17 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
               await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}`);
               const work = await fs.readFile(join(it.dir, 'transcript.work.json'), 'utf8').then(JSON.parse).catch(() => null);
-              await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s) }) });
+              // the rest of the remaster runs on the pod too (word guard, realign, 4 web encodes — scripts/media/worker/post.py); tower validates and publishes
+              let post;
+              if (work?.paragraphs?.length && m.enhancement && deps.podPost !== false) {
+                const E = await import('../media/enhance.js'), PP = await import('../media/pod-post.js');
+                const orig = (m.enhancement.variants || []).find((v) => v.name === 'original') || {};
+                post = { af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
+                  ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
+                  orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
+                await C.podPut(run, p, join(it.dir, 'transcript.work.json'), `/workspace/spool/${job}/work.json`);
+              }
+              await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: now() };
             }
           }
@@ -1425,6 +1457,35 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const summary = { done: st.done.length, failed: st.failed.length, queue: st.queue.length, in_flight: Object.keys(st.jobs).length, spent_usd: st.spent_usd,
     usd_per_audio_hour: audioH ? Math.round((st.spent_usd / audioH) * 100) / 100 : null, home_done: st.home_done, cloud_stopped: st.cloud_stopped || null, audio_hours: Math.round(audioH * 10) / 10, stop, pods: Object.values(st.pods).map((p) => ({ name: p.name, gpu: p.gpu, cost_per_hr: p.costPerHr, status: p.terminated ? `terminated (${p.why})` : p.status })) };
   return yielded ? { ...summary, yielded: true, resume: { write: true, maxPods } } : summary;
+}
+
+/** media-preview { fingerprint?, text, duration_s }: Dewey's stage 0 answer (api/lib/media/preview.js) — "duplicate of <slug>" or "new". Text only. */
+export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.preview || await import('../media/preview.js')).previewVerdict(params, deps); }
+
+/** media-remaster-quality { write? }: the per-talk remaster verdict (api/lib/media/remaster-quality.js) over every B–E talk — counts by verdict
+ *  and grade, the review + unrepairable lists. write: stamps meta.qa.remaster, saves data/run/remaster-quality.json (/ops/services) and
+ *  data/run/remaster-deferred.md (the archive candidates). */
+export async function mediaRemasterQualityJob({ write = false } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const Q = deps.quality || await import('../media/remaster-quality.js');
+  const fs = await import('fs/promises');
+  const rows = [];
+  for (const it of await repo.remasterCandidates(['B', 'C', 'D', 'E'])) {
+    const mf = it.dir ? join(it.dir, 'meta.json') : null;
+    const m = mf ? JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null')) : null;
+    if (!m) continue;
+    const qa = Q.qualityOf(m);
+    if (write && (m.qa?.remaster?.verdict !== qa.verdict || m.qa?.remaster?.reason !== qa.reason)) { m.qa = { ...(m.qa || {}), remaster: qa }; await fs.writeFile(mf, JSON.stringify(m, null, 2)); }
+    rows.push({ slug: it.slug, hours: (it.duration_s || m.duration_s || 0) / 3600, grade: qa.metrics.grade || it.grade, qa, published_remaster: m.enhancement?.listening === 'unipase' });
+  }
+  const sum = Q.summarize(rows);
+  if (write) {
+    const dir = deps.dir || join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(join(dir, 'remaster-quality.json'), JSON.stringify(sum));
+    await fs.writeFile(join(dir, 'remaster-deferred.md'), Q.deferredMarkdown(sum));
+  }
+  return sum;
 }
 
 /** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from
