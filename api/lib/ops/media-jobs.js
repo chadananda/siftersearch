@@ -1416,7 +1416,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
                 const mt = await readMeta(it.dir).catch(() => null);
                 if (imode === 'post' && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
-                if (imode !== 'post') await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');   // post: the run is already in tower's queue
+                await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');   // tower takes the finished result (seconds); an identical queued run is not doubled
               } else if (kind === 'FAIL') {
                 const err = await C.podSsh(run, p, `tail -c 600 /workspace/spool/${job}/error.txt; rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
                 delete st.jobs[job];
