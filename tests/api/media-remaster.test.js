@@ -55,7 +55,7 @@ describe('the RunPod backfill', () => {
       return { stdout: 'ok' };
     });
     const queued = [];
-    const deps = { cloud, run, stateFile: join(root, 'state.json'), publicKey: 'ssh-ed25519 AAA test', nap: async () => {}, draining: () => false,
+    const deps = { cloud, run, homeHosts: [], stateFile: join(root, 'state.json'), publicKey: 'ssh-ed25519 AAA test', nap: async () => {}, draining: () => false,
       repo: { getMediaItem: async (id) => items[id], getMediaBySlug: async (s) => Object.values(items).find((x) => x.slug === s), remasterCandidates: async () => Object.values(items) },
       queue: async (n, p) => queued.push([n, p]) };
     return { root, items, deps, calls, queued, cloud };
@@ -81,6 +81,25 @@ describe('the RunPod backfill', () => {
     const r2 = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 1 }, t2.deps);
     expect(r2.yielded).toBe(true);
     expect(t2.calls).toEqual([]);
+  });
+  it('home hosts take talks beside the pods; when the money stops the pods, the home hosts finish the queue', async () => {
+    const t = setup();
+    t.cloud.accountBalance = vi.fn(async () => ({ balance: 80 }));   // below the floor from the start → no pod at all
+    const homeRemaster = vi.fn(async (h, it) => ({ audio_s: it.duration_s, seconds: 30 }));
+    const r = await mediaCloudRemasterJob({ write: true, ids: [1, 2], maxPods: 3 }, { ...t.deps, homeHosts: ['aorus'], homeRemaster,
+      tools: { diskOk: () => true, coolEnough: () => true, asrLoad: () => ({}) } });
+    expect(r).toMatchObject({ done: 2, home_done: 2, queue: 0 });
+    expect(r.cloud_stopped).toMatch(/balance/);
+    expect(t.cloud.createPod).not.toHaveBeenCalled();
+    expect(t.queued.map((q) => q[1].id).sort()).toEqual([1, 2]);
+  });
+  it('a home host that is hot or has no free ASR slot is not given work', async () => {
+    const { homeEligible } = await import('../../api/lib/ops/media-jobs.js');
+    const T = { diskOk: () => true, coolEnough: (h) => h !== 'boss', asrLoad: () => ({ aorus: { busy: 2, slots: 2 } }) };
+    expect(homeEligible('boss', T)).toBe(false);
+    expect(homeEligible('aorus', T)).toBe(false);
+    expect(homeEligible('aorus', { ...T, asrLoad: () => ({ aorus: { busy: 1, slots: 2 } }) })).toBe(true);
+    expect(homeEligible('aorus', { ...T, diskOk: () => false, asrLoad: () => ({}) })).toBe(false);
   });
   it('dry run lists the B–E candidates and the hours', async () => {
     const t = setup();

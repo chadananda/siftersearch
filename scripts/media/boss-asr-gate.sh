@@ -145,7 +145,7 @@ if [[ "$verb" == "start" ]]; then
     # shellcheck disable=SC1091
     source ./unipase.conf
     [[ -x "${UNIPASE_PY:-}" ]] || { echo '{"error":"no UniPASE venv"}'; exit 2; }
-    nohup setsid env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
+    nohup setsid env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "encode" ]]; then
     # a fixed encode recipe (media_tool.py encode: light chain / ogg / m4a) → out.file, then the out.json marker
     nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &

@@ -1035,6 +1035,34 @@ export async function mediaRemasterRevertJob({ ids = [] } = {}, deps = {}) {
   return out;
 }
 
+/** HOME HOSTS as extra remaster workers (Chad 10-23 overnight): aorus when its card has UniPASE's ~4.3 GB free beside the
+ *  transcriptions (ASR keeps priority: a free ASR slot is required to start), boss only when cool (one APU heat budget).
+ *  UniPASE through the gate's 'unipase' verb, then the copy's transcript through the host's normal ASR job; the files land
+ *  where the pods' land and the talk's media-remaster run is queued. Re-attaches by job id after a restart. */
+export function homeEligible(host, T) {
+  if (!T.diskOk(host, { kind: 'unipase' })) return false;
+  if (host === 'boss' && !T.coolEnough(host)) return false;
+  const load = T.asrLoad?.()[host];
+  return !load || load.busy < load.slots;
+}
+export async function homeRemaster(host, it, m, { T, C, fs, stop }) {
+  const enh = join(it.dir, 'enhanced');
+  await fs.mkdir(enh, { recursive: true });
+  const job = `um-${C.jobIdOf(it)}`.slice(0, 100);
+  const copy = join(enh, 'unipase.cloud.flac');
+  const t0 = Date.now();
+  const unreserve = T.reserveGpu ? T.reserveGpu(host, 'unipase') : () => {};
+  try { await T.remoteJob('unipase', join(it.dir, m.original), { output: `${copy}.part` }, { host, job, stop, file: true, pollMs: 10_000 }); }
+  finally { unreserve(); }
+  await fs.rename(`${copy}.part`, copy);
+  const t1 = Date.now();
+  await T.asrJob(copy, { output: join(enh, 'unipase.asr.json.part') }, { host, job: `ua-${C.jobIdOf(it)}`.slice(0, 100), stop });
+  await fs.rename(join(enh, 'unipase.asr.json.part'), join(enh, 'unipase.asr.json'));
+  const done = { audio_s: it.duration_s || m.duration_s || null, unipase_s: Math.round((t1 - t0) / 1000), asr_s: Math.round((Date.now() - t1) / 1000), seconds: Math.round((Date.now() - t0) / 1000), gpu: host, pod: host, cost_per_hr: 0 };
+  await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(done));
+  return done;
+}
+
 /** Worst first: grade E → B, then the narrowest bandwidth, then the lowest SNR (unknowns last within their grade). */
 export function worstFirst(talks) {
   const rank = { E: 0, D: 1, C: 2, B: 3, A: 4 };
@@ -1090,7 +1118,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   }
   if (!write) return { queue: st.queue.length, jobs: Object.keys(st.jobs || {}).length, spent_usd: C.spendOf(st, now()) };
   st.started = st.started || now(); st.pods = st.pods || {}; st.jobs = st.jobs || {}; st.attempts = st.attempts || {}; st.done = st.done || []; st.failed = st.failed || [];
-  st.pod_failures = st.pod_failures || 0;
+  st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
+  const homeHosts = (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  const homeTasks = new Map();   // host → promise (in this process)
   const pub = deps.publicKey || (await fs.readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8')).trim();
   const closePod = async (p, why) => {
     try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
@@ -1102,14 +1132,41 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   let balance = null, balAt = 0, stop = null, yielded = false;
   try {
     for (;;) {
-      if (draining()) { yielded = true; break; }
+      if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
       if (now() - balAt > 120_000) { balance = (await C.accountBalance(deps).catch(() => ({ balance }))).balance; balAt = now(); }
-      stop = C.budgetStop(st, balance, now());
-      if (stop) break;
+      // the money stops the PODS, not the backfill: the home hosts carry on (and the log says how far the cloud got)
+      const why = st.cloud_stopped || C.budgetStop(st, balance, now()) || (st.pod_failures >= C.CLOUD.maxPodFailures && !Object.values(st.pods).some((q) => !q.terminated) ? `${st.pod_failures} pods failed to start` : null);
+      if (why && !st.cloud_stopped) {
+        st.cloud_stopped = why; st.cloud_stopped_at = now(); st.cloud_done_at_stop = st.done.length;
+        for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, why);
+      }
+      if (st.cloud_stopped && !homeHosts.length) { stop = st.cloud_stopped; break; }
+      // home hosts: re-attach a task from before a restart, start one when a host is free and eligible
+      for (const h of homeHosts) {
+        if (homeTasks.has(h)) continue;
+        const cur = st.home[h] || (st.queue.length && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
+        if (!cur) continue;
+        st.home[h] = cur;
+        homeTasks.set(h, (async () => {
+          const it = await repo.getMediaItem(cur.itemId);
+          const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
+          if (!m?.original) throw new Error('no original');
+          const dj = await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
+          st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h });
+          st.home_done++;
+          await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
+        })().then(() => { delete st.home[h]; }, (err) => {
+          if (err?.code === 'DRAIN') return;   // left running on the host; re-attached next start
+          delete st.home[h];
+          st.attempts[cur.itemId] = (st.attempts[cur.itemId] || 0) + 1;
+          if (st.attempts[cur.itemId] < 2) st.queue.push(cur.itemId); else st.failed.push({ id: cur.itemId, error: `${h}: ${String(err?.message || err).slice(-300)}` });
+          st.home_errors = (st.home_errors || 0) + 1;
+        }).finally(() => homeTasks.delete(h)));
+      }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const inflight = Object.keys(st.jobs).length;
-      if (!st.queue.length && !inflight) break;
-      const want = Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      if (!st.queue.length && !inflight && !homeTasks.size) break;
+      const want = st.cloud_stopped ? 0 : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       if (live.length < want && st.pod_failures < C.CLOUD.maxPodFailures) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, deps).catch((err) => ({ error: err.message }));
@@ -1185,7 +1242,6 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       // an idle pod (nothing left to give it) is terminated at once
       if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'queue empty');
-      if (st.pod_failures >= C.CLOUD.maxPodFailures && !Object.values(st.pods).some((q) => !q.terminated)) { stop = `${st.pod_failures} pods failed to start`; break; }
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
       await save(st);
       await nap(tickMs);
@@ -1199,7 +1255,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   }
   const audioH = st.done.reduce((a, d) => a + (d.audio_s || 0), 0) / 3600;
   const summary = { done: st.done.length, failed: st.failed.length, queue: st.queue.length, in_flight: Object.keys(st.jobs).length, spent_usd: st.spent_usd,
-    usd_per_audio_hour: audioH ? Math.round((st.spent_usd / audioH) * 100) / 100 : null, audio_hours: Math.round(audioH * 10) / 10, stop, pods: Object.values(st.pods).map((p) => ({ name: p.name, gpu: p.gpu, cost_per_hr: p.costPerHr, status: p.terminated ? `terminated (${p.why})` : p.status })) };
+    usd_per_audio_hour: audioH ? Math.round((st.spent_usd / audioH) * 100) / 100 : null, home_done: st.home_done, cloud_stopped: st.cloud_stopped || null, audio_hours: Math.round(audioH * 10) / 10, stop, pods: Object.values(st.pods).map((p) => ({ name: p.name, gpu: p.gpu, cost_per_hr: p.costPerHr, status: p.terminated ? `terminated (${p.why})` : p.status })) };
   return yielded ? { ...summary, yielded: true, resume: { write: true, maxPods } } : summary;
 }
 

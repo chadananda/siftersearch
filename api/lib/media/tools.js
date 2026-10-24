@@ -128,12 +128,12 @@ export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
 const diskInfo = new Map();   // host → { free_gb, used_pct, mem_avail_gb, at, warnedAt }
 const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
 /** RAM a job of each kind needs on a compute host (GB, measured RSS + headroom). */
-export const MEM_BUDGET = { transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
+export const MEM_BUDGET = { unipase: 4, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
 /** RAM kept free on each host whatever runs (GB). */
 const MEM_RESERVE = { boss: 5, aorus: 2 };
 const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host).toUpperCase()}`]) || MEM_RESERVE[host] || 2;
 /** GPU memory each kind needs on the GPU host (MiB; measured resident + load peak). */
-export const VRAM_NEED_MB = { transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };
+export const VRAM_NEED_MB = { unipase: 6000, transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };
 const gpuReserved = new Map();   // host → [{ mb, at }] dispatched, maybe not resident yet
 /** Count a job just dispatched to the GPU host against its free memory until the next readings show it. */
 // A reservation ends when its job ENDS (release → the reading is re-taken at once) or when a reading taken ≥ 30 s after the
