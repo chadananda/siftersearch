@@ -34,7 +34,7 @@ def terminate_self(reason):
     pod, key = os.environ.get('RUNPOD_POD_ID'), os.environ.get('RP_TERMINATE_KEY')
     print(f'{time.strftime("%H:%M:%S")} terminating pod {pod}: {reason}', flush=True)
     if pod and key:
-        req = urllib.request.Request(f'https://rest.runpod.io/v1/pods/{pod}', method='DELETE', headers={'Authorization': f'Bearer {key}'})
+        req = urllib.request.Request(f'https://rest.runpod.io/v1/pods/{pod}', method='DELETE', headers={'Authorization': f'Bearer {key.strip()}', 'User-Agent': 'sifter-media-worker/1', 'Accept': 'application/json'})   # 10-24: urllib's default UA got 403 (the pod could not end itself)
         try:
             urllib.request.urlopen(req, timeout=30)
         except Exception as err:

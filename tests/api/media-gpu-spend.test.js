@@ -437,3 +437,18 @@ print(json.dumps({'envs': envs, 'held': r.get('held'), 'web': bool(r.get('web'))
     expect(o).toMatchObject({ envs: [false, true], web: true, gpu: { placed: 0, total: 100 }, verdict: 'usable' }); expect(o.held).toBeFalsy();
   });
 });
+
+describe('a pod whose worker stopped is replaced and its talks go back to the queue', () => {
+  it('no status change for 4 min on a ready pod with jobs: closed, jobs requeued, a new pod takes them', async () => {
+    let calls = 0;
+    const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => {
+      if (cmd === 'ssh' && last.startsWith('cd /workspace/spool')) { calls++; return { stdout: `UTIL 0\nSTATUS {"at": 1, "state": "ok", "limit": 1}` }; }   // the same status forever: the worker is gone
+      return null;
+    } });
+    const sleeps = { n: 0 }; x.deps.nap = async (ms) => { sleeps.n++; };
+    let t = 1_800_000_000_000; x.deps.now = () => (t += 20_000);
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
+    expect(x.killed.length).toBeGreaterThanOrEqual(1);
+    expect(x.cloud.createPod.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+});

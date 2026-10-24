@@ -1396,7 +1396,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
             const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
-            const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { p.worker = JSON.parse(wm[1]); } catch { /* partial write */ } }   // the worker's live controller numbers (limit, VRAM, heat, state)
+            const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at) p.worker_seen = now(); p.worker = w; } catch { /* partial write */ } }
+            // a worker that stopped (idled itself out, crashed, drained) leaves a pod that bills and takes jobs it will never run: replace it, its jobs go back to the queue
+            if (p.worker_seen && now() - p.worker_seen > 240_000 && !stdout.includes('READY')) { p.dead_worker = true; }
+            if (!wm && p.status === 'ready' && !p.worker_seen) p.worker_seen = now();   // the worker's live controller numbers (limit, VRAM, heat, state)
             for (const line of stdout.split('\n')) {
               const [kind, job] = line.trim().split(' ');
               const x = st.jobs[job];
@@ -1430,7 +1433,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 delete st.jobs[job];
                 const imode = st.items?.[it.id]?.mode || 'restore';
                 if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) continue;   // idempotent: a second result for a talk never queues a second run
-                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode });
+                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, at: now() });
                 // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
                 const mt = await readMeta(it.dir).catch(() => null);
                 if (imode === 'post' && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
@@ -1444,8 +1447,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               }
             }
             // keep the pod fed (one running, one waiting)
-            while (!held && Object.values(st.jobs).filter((j) => j.pod === p.id).length < C.CLOUD.perPod && st.queue.length) {
-              const itemId = st.queue.shift();
+            // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
+            while (!held && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < C.CLOUD.perPod && st.queue.length) {
+              const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
               if (decided(m)) continue;
@@ -1468,7 +1472,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
               }
               await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
-              st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: now() };
+              st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
             }
           }
         } catch (err) {
@@ -1476,6 +1480,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { await closePod(p, `unreachable: ${p.last_error}`); if (p.status !== 'ready') st.pod_failures++; }
         }
       }));
+      for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.dead_worker)) { await closePod(p, `worker stopped (no status for ${Math.round((now() - p.worker_seen) / 60_000)} min)`); st.pod_failures = Math.max(0, st.pod_failures); }
       // the LEDGER (rented vs busy minutes, $ rented vs $ productive) and the lane's own idle rule; pod-reaper.js is the independent second path
       L.ledgerTick(st, Object.values(st.pods).filter((q) => !q.terminated), utilBy, now());
       for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.idle_since && now() - q.idle_since > L.LEDGER.idleMs)) await closePod(p, `idle ${Math.round((now() - p.idle_since) / 60_000)} min`);
