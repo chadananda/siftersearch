@@ -97,3 +97,30 @@ describe("Chad's decisions 10-23 (the answers collection)", async () => {
     }
   });
 });
+
+describe('per-talk identities from the evidence (Chad 10-23)', async () => {
+  const { mediaTalkIdentitiesJob } = await import('../../api/lib/ops/media-jobs.js');
+  const data = JSON.parse(readFileSync(new URL('../../data/media-speaker-people.json', import.meta.url), 'utf8'));
+  it('every decision names a known person form and carries a reason; Mrs. Banání → Samíhih, not Sheila', () => {
+    const forms = new Set(data.people.flatMap((p) => [p.name, ...(p.aliases || [])]));
+    for (const t of data.talk_identities) { expect(t.reason, t.slug).toBeTruthy(); if (t.speaker) expect(forms.has(t.speaker), t.speaker).toBe(true); }
+    expect(data.talk_identities.find((t) => t.slug === 'hand-great-grandmother').speaker).toBe('Samíhih Banání');
+    expect(of('Samíhih Banání')?.historical).toBe('first-hand');
+    for (const o of data.talk_identities_open) expect(o.facts, o.slug).toBeTruthy();
+  });
+  it('the job sets the speaker / labels in meta, skips a running talk, then hands off to media-identity', async () => {
+    const metas = { '/a': { speaker: null, speakers: { S1: 'Narrator' } }, '/b': { speakers: { S6: 'Javidukht Banání' } }, '/c': { speaker: 'X' } };
+    const items = { a: { id: 1, dir: '/a' }, b: { id: 2, dir: '/b' }, c: { id: 3, dir: '/c' } };
+    const written = {}, queued = [], idCalls = [];
+    const r = await mediaTalkIdentitiesJob({ write: true }, {
+      data: { talk_identities: [{ slug: 'a', speaker: 'Samíhih Banání', reason: 'r' }, { slug: 'b', speaker_labels: { S6: 'Samíhih Banání' }, reason: 'r' }, { slug: 'c', speaker: 'Y', reason: 'r' }, { slug: 'zz', speaker: 'Q', reason: 'r' }] },
+      repo: { getMediaBySlug: async (s) => items[s] || null, updateMediaItem: async () => ({}) },
+      ops: { pendingRuns: async (n) => (n === 'media-item' ? [{ status: 'running', params: { id: 3 } }] : []) },
+      readMeta: async (d) => structuredClone(metas[d]), writeMeta: async (d, m) => { written[d] = m; }, queue: async (n, p) => queued.push(p), identity: async (o) => { idCalls.push(o.ids); return {}; } });
+    expect(r).toMatchObject({ decisions: 4, applied: ['a', 'b'], skipped_running: ['c'], missing: ['zz'] });
+    expect(written['/a'].speaker).toBe('Samíhih Banání');
+    expect(written['/b'].speakers.S6).toBe('Samíhih Banání');
+    expect(idCalls).toEqual([[1, 2]]);
+    expect(queued).toEqual([{ id: 1, redo: ['update'] }, { id: 2, redo: ['update'] }]);
+  });
+});

@@ -1545,11 +1545,187 @@
    "aliases": [],
    "historical": "modern",
    "historical_basis": "kept (Chad 10-23)"
+  },
+  {
+   "key": "samihih-banani",
+   "name": "Samíhih Banání",
+   "aliases": [
+    "Samihih Banani",
+    "Samíḥíh Banání",
+    "Samíḥíh Banani"
+   ],
+   "role": null,
+   "historical": "first-hand",
+   "historical_basis": "wife of the Hand of the Cause Músá Banání; pilgrim to Shoghi Effendi 1934 and 1952; pioneer to Africa"
+  },
+  {
+   "key": "b-afshin",
+   "name": "B. Afshin",
+   "aliases": [
+    "Counselor B. Afshin",
+    "Counsellor B. Afshin"
+   ],
+   "role": "counsellor",
+   "historical": "modern",
+   "historical_basis": "Continental Counsellor (India, c. 1987: Lotus Temple maintenance fund newly set up); given name not stated; not ITC"
   }
  ],
  "not_speakers": [
   "Echoes from the Lotus",
   "Echoes From The Lotus",
   "Echos from the Lotus"
- ]
+ ],
+ "talk_identities": [
+  {
+   "slug": "hand-great-grandmother",
+   "speaker": "Samíhih Banání",
+   "reason": "She visited the Guardian in 1934 and 1952, 'my husband was one of them' (the Hands appointed in 1952), pioneered to Africa — Músá Banání's wife, not Sheila (Chad's rule 10-23)",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "our-beloved-guardian",
+   "speaker_labels": {
+    "S6": "Samíhih Banání"
+   },
+   "reason": "Panel; source title 'by Samíḥíh Banani, Javidukht & Zikrullah Khadem, Audrey & John Robarts'; S6 tells the 1934/1952 visits and 'my husband' appointed a Hand — mislabelled 'Javidukht Banání'",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "reminiscences-of-shoghi-effendi-part-1-of-2-2002",
+   "speaker_labels": {
+    "S4": "Samíhih Banání"
+   },
+   "reason": "Same panel as 'Our beloved Guardian'; S4 answers 'this question is for Mrs. Banání' with the 1934/1952 visits and 'my husband' made a Hand",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "duties-of-the-believers-and-the-importance-of-adorning-onese-2015",
+   "speaker": "Shu‘á‘u’lláh ‘Alá’í",
+   "reason": "Source title 'Hand of the Cause of God-Shu'á'u'lláh `Alá'í'; one speaker",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "hand-of-the-cause",
+   "speaker": "H. Collis Featherstone",
+   "reason": "Source title 'Hand of the Cause Mr Featherstone'; one speaker",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "talks-about-father-mother-dunn",
+   "speaker": "H. Collis Featherstone",
+   "reason": "Source title 'Hand of the Cause of God Mr Featherstone Talks about Father & Mother Dunn'; the speaker already labelled Mr Featherstone",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "the-entry-of-the-waves-of-believers-2015",
+   "speaker": "Raḥmatu’lláh Muhájir",
+   "reason": "Source title 'Hand of the Cause of God-Mr Mohajer'; the questioner addresses Dr. Muhájir — the Hand, not Payman Mohajer",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "prayer-2020",
+   "speaker": "Abu’l-Qásim Faizí",
+   "reason": "Source title 'Prayer by Hand of the Cause of God Abu'l-Qásim Faizí'; one reciter",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "commentary-on-the-kitab-i-aqdas-2025",
+   "speaker": "Abu’l-Qásim Faizí",
+   "reason": "Source title 'Commentary on the Kitab-I-Aqdas by A.Q. Faizi'",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "the-hidden-words-by-a-q-faizi",
+   "speaker": "Abu’l-Qásim Faizí",
+   "reason": "Title 'The Hidden Words by A.Q. Faizi'; one speaker",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "talk-in-usa",
+   "speaker": "Abu’l-Qásim Faizí",
+   "reason": "Source title 'Talk by The Hand of The Cause of God Mr.Faizi in USA'; the narrator names Abu'l-Qásim Faizí",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "untitled",
+   "speaker": "‘Alí-Akbar Furútan",
+   "reason": "Source title 'ایادی عزیز امرالله جناب علی اکبر فروتن' (the Hand Furútan); he recalls the Guardian questioning Persian pilgrims",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "hearing-the-beautiful-voice-again-after-twenty-years-2020",
+   "speaker": "‘Alí-Akbar Furútan",
+   "reason": "Source title: the beautiful voice of Mr. Furútan heard again after twenty years",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "william-sears",
+   "speaker": "William Sears",
+   "reason": "Title 'William Sears'; the water-pouring demonstration is his signature opening",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "hand-of-the-cause-of-god-paul-haney-2020",
+   "speaker": "Paul E. Haney",
+   "reason": "An interview with Paul Haney in the Riḍván Garden: he is the speaker, the interviewer only asks",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-2014",
+   "speaker": "Steven Phelps",
+   "reason": "Channel series '5/14 Gems of Divine Mysteries' = Dr. Stephen Phelps's 14-part course (part 1's title names him)",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-2014-2",
+   "speaker": "Steven Phelps",
+   "reason": "'8/14 Gems of Divine Mysteries' — the same Phelps course",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-2014-3",
+   "speaker": "Steven Phelps",
+   "reason": "'11/14 Gems of Divine Mysteries' — the same Phelps course (a participant's question opens it)",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "gems-of-divine-mysteries-2014-4",
+   "speaker": "Steven Phelps",
+   "reason": "'12/14 Gems of Divine Mysteries' — the same Phelps course",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "lotus-afshin-1",
+   "speaker": "B. Afshin",
+   "reason": "File 'Echoes From The Lotus — Afshin 1'; the speaker is introduced as Counselor B. Afshin",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "lotus-afshin-part-2",
+   "speaker": "B. Afshin",
+   "reason": "The same series ('Afshin part 2')",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  },
+  {
+   "slug": "lotus-afshin-3",
+   "speaker": "B. Afshin",
+   "reason": "The same series ('Afshin 3')",
+   "decided": "by evidence (Chad 10-23: settle identities from the evidence)"
+  }
+ ],
+ "talk_identities_open": [
+  {
+   "slug": "what-makes-the-bahai-faith-unique-2017",
+   "facts": "Source title credits Amatu'l-Bahá Rúhíyyih Khánum; the summary of the transcript speaks of 'he' recounting the 1963 convention — a male voice, or the narrator of a film about her?"
+  },
+  {
+   "slug": "glimpses-from-the-bahai-history",
+   "facts": "The speaker 'worked closely with Shoghi Effendi for about nine and a half years' and is male: Ugo Giachery? Leroy Ioas served 1952–57 (5 years). No name in the recording"
+  },
+  {
+   "slug": "many-a-chilled-heart-2019",
+   "facts": "Title says '(Hand of the Cause Mr. Faizi)', but the audio is a short chanted Arabic invocation with music: his own voice, or someone chanting his text?"
+  }
+ ],
+ "talk_identities_unknown_note": "No evidence at all (stay unnamed, not Chad's question): the Gustavo Cerrato channel talks without names, two Lovebaha clips, 'Difference between a Muslim and a Bahá'í', 'Turning Point for the World' (1992), 'An Evening with the Hands of the Cause' (2011). Documentaries/tributes/readings with several voices stay uncredited by design."
 }

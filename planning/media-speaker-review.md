@@ -77,3 +77,22 @@ Charles Mason Remey counts only for talks **before Ridván 1960** (`cb_from`); u
 Targets: `planning/media-targets/itc-talks.json` (sections `itc_pre_1988`, `first_hand`, `held_for_chad`). The search
 was YouTube titles only (yt-dlp search, no downloads); more pilgrims will surface from titles like these as the import
 reads descriptions — the pattern list is in the targets file note.
+
+## Identities — settled from the evidence (Chad 10-23: "decide yourself"), 23:00
+
+22 talks decided, each with its reason in `data/media-speaker-people.json` → `talk_identities` (applied by
+`media-talk-identities`): "Mrs. Banání" = **Samíhih Banání** in all three recordings (1934 + 1952 visits, "my husband"
+appointed a Hand, pioneer to Africa — the panel had her as "Javidukht Banání"); ‘Alá’í, Featherstone ×2, Muhájir (the
+Hand — not Payman), Faizí ×4, Furútan ×2, Sears, Haney, Phelps's Gems course ×4, Counsellor B. Afshin ×3.
+
+**Still for Chad — the evidence is split** (`talk_identities_open`):
+- *What Makes the Bahá'í Faith Unique* (2017): the source credits Rúhíyyih Khánum, but the transcript is a man ("he
+  recounts" the 1963 convention).
+- *Glimpses from the Bahá'í History*: a man who "worked closely with Shoghi Effendi for about nine and a half years" —
+  Ugo Giachery? (Leroy Ioas served 5 years.)
+- *Many a Chilled Heart*: titled "(Hand of the Cause Mr. Faizi)", but it is a short chanted Arabic invocation with music —
+  his voice or someone chanting his text?
+
+No evidence at all (left unnamed, not a question): the unnamed Gustavo Cerrato channel talks, two Lovebaha clips, *Difference
+between a Muslim and a Bahá'í*, *Turning Point for the World* (1992), *An Evening with the Hands of the Cause* (2011).
+Documentaries, tributes and readings with several voices are uncredited by design.

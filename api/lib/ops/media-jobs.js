@@ -948,6 +948,47 @@ export async function mediaSpeakerMergeJob({ write = false, ids = null, limit = 
   return out;
 }
 
+/** media-talk-identities { write }: per-talk speaker decisions made from the evidence (data/media-speaker-people.json
+ *  `talk_identities`, each with its reason — Chad 10-23: "settle identities yourself from the evidence"): the talk's speaker
+ *  and/or individual speaker labels are set in its meta, then media-identity resolves the person (catalogue row, key) and
+ *  queues the re-render. A talk with a RUNNING run is skipped (it would overwrite the meta); a queued run is fine. → counts */
+export async function mediaTalkIdentitiesJob({ write = false } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const { readFile, writeFile: wf } = await import('fs/promises');
+  const data = deps.data || JSON.parse(await readFile(join(process.cwd(), 'data', 'media-speaker-people.json'), 'utf8'));
+  const read = deps.readMeta || (async (dir) => JSON.parse(await readFile(join(dir, 'meta.json'), 'utf8')));
+  const writeMeta = deps.writeMeta || (async (dir, m) => wf(join(dir, 'meta.json'), JSON.stringify(m, null, 2)));
+  const running = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n)))).flat()
+    .filter((r) => r.status === 'running').map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { decisions: 0, applied: [], unchanged: 0, missing: [], skipped_running: [] };
+  const ids = [];
+  for (const t of data.talk_identities || []) {
+    out.decisions++;
+    const it = repo.getMediaBySlug ? await repo.getMediaBySlug(t.slug) : null;
+    if (!it?.dir) { out.missing.push(t.slug); continue; }
+    const meta = await read(it.dir).catch(() => null);
+    if (!meta) { out.missing.push(t.slug); continue; }
+    const same = (!t.speaker || meta.speaker === t.speaker) && Object.entries(t.speaker_labels || {}).every(([k, v]) => meta.speakers?.[k] === v);
+    if (same) { out.unchanged++; continue; }
+    if (!write) { out.applied.push(t.slug); continue; }
+    if (running.has(it.id)) { out.skipped_running.push(t.slug); continue; }
+    if (t.speaker) meta.speaker = t.speaker;
+    if (t.speaker_labels) meta.speakers = { ...(meta.speakers || {}), ...t.speaker_labels };
+    meta.identity_decision = { reason: t.reason, at: new Date().toISOString() };
+    await writeMeta(it.dir, meta);
+    if (t.speaker && repo.updateMediaItem) await repo.updateMediaItem(it.id, { speaker: t.speaker });
+    out.applied.push(t.slug); ids.push(it.id);
+  }
+  if (write && ids.length) {
+    out.identity = await (deps.identity || mediaIdentityJob)({ write: true, ids }, deps.identity ? {} : { repo, ops });
+    // a label-only change (no talk speaker) still needs the re-render
+    const queue = deps.queue || enqueue;
+    for (const id of ids) await queue('media-item', { id, redo: ['update'] }, 'media-talk-identities');
+  }
+  return out;
+}
+
 /** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from
  *  its words + waveform). write: an ['trim', 'update'] re-run where the lead or tail is ≥ 5 s or a gap is marked (busy
  *  talks skipped). → the distribution (talks, minutes trimmed, the longest leads) */

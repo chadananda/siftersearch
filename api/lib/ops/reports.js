@@ -19,7 +19,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
+import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
@@ -232,6 +232,7 @@ REPORTS['media-compute'] = mediaComputeJob;   // { id } — PREP: archive … we
 REPORTS['media-meta-fix'] = mediaMetaFixJob;
 REPORTS['media-trim-audit'] = mediaTrimAuditJob;   // { write } — leading/trailing silence + dead gaps of published talks
 REPORTS['media-exclude'] = mediaExcludeJob;   // { write } — talks by excluded speakers (data/media-speaker-people.json `exclude`) out of the library; run by the reports service (never waits on a media drain)
+REPORTS['media-talk-identities'] = mediaTalkIdentitiesJob;   // { write } — per-talk speaker decisions from the evidence (data: talk_identities)
 REPORTS['media-speaker-merge'] = mediaSpeakerMergeJob;   // { write } — invented second speakers back to the main speaker (voice-checked per paragraph)
 REPORTS['media-safe-listening'] = mediaSafeListeningJob;   // { write } — every published talk's listening copy → the transparent original + fullband Ogg
 REPORTS['media-relink'] = mediaRelinkJob;   // { write } — re-resolve person links refused by a retired rule (links + update re-run)
@@ -315,7 +316,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
-export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-trim-audit'];
+export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-trim-audit'];
 MEDIA_JOBS.push('media-gallery', 'media-portrait-inventory');
 export { LANE_WORKERS } from './lane-workers.js';
 
