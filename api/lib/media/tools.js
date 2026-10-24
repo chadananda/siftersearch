@@ -113,22 +113,34 @@ export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
 // ── REMOTE DISK (10-23 16:09: aorus's disk filled with job folders — 28 failures "No space left on device", the GPU idle):
 // a host with < MEDIA_HOST_MIN_FREE_GB (20) free takes no NEW job; its free space (gate 'df') is re-read at most every
 // minute, in the background — a picker never waits on it. Unknown → OK (an unreachable host fails on its own).
-const diskInfo = new Map();   // host → { free_gb, used_pct, at, warnedAt }
+// + RAM (10-23 host monitor: boss — 31 GB of system RAM, the rest is its iGPU's — at 8 % free and 16 GB of swap with six
+// transcriptions; aorus — 15 GB — OOM-killed python six times): a NEW job goes to a host only when MemAvailable covers the
+// job's budget plus the host's reserve. Both read from the gate's 'df' at most every 30 s, in the background.
+const diskInfo = new Map();   // host → { free_gb, used_pct, mem_avail_gb, at, warnedAt }
 const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
+/** RAM a job of each kind needs on a compute host (GB, measured RSS + headroom). */
+export const MEM_BUDGET = { transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
+/** RAM kept free on each host whatever runs (GB). */
+const MEM_RESERVE = { boss: 5, aorus: 2 };
+const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host).toUpperCase()}`]) || MEM_RESERVE[host] || 2;
 export function noteDisk(host, info, now = Date.now()) { diskInfo.set(host, { ...(diskInfo.get(host) || {}), ...info, at: now }); }
-export function diskOk(host, { now = Date.now(), refresh = refreshDisk } = {}) {
+/** May a NEW job of `kind` go to this host now? (disk ≥ 20 GB free; RAM ≥ the kind's budget + the host's reserve) */
+export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = null } = {}) {
   if (!host) return true;
   const d = diskInfo.get(host);
-  if ((!d || now - d.at > 60_000) && !d?.pending) { noteDisk(host, { pending: true }, d?.at ?? 0); refresh(host).catch(() => {}).finally(() => { const x = diskInfo.get(host); if (x) x.pending = false; }); }
-  if (!d || d.free_gb == null) return true;
-  const ok = d.free_gb >= diskMinGb();
-  if (!ok && (!d.warnedAt || now - d.warnedAt > 10 * 60_000)) { d.warnedAt = now; console.warn(`[media] WARN ${host} has ${d.free_gb} GB free (< ${diskMinGb()} GB): no new jobs there`); }
-  return ok;
+  if ((!d || now - d.at > 30_000) && !d?.pending) { noteDisk(host, { pending: true }, d?.at ?? 0); refresh(host).catch(() => {}).finally(() => { const x = diskInfo.get(host); if (x) x.pending = false; }); }
+  if (!d) return true;
+  const why = [];
+  if (d.free_gb != null && d.free_gb < diskMinGb()) why.push(`${d.free_gb} GB disk free (< ${diskMinGb()} GB)`);
+  const need = (MEM_BUDGET[kind] || 0) + memReserve(host);
+  if (kind && d.mem_avail_gb != null && d.mem_avail_gb < need) why.push(`${d.mem_avail_gb} GB RAM available (< ${need} GB for a ${kind})`);
+  if (why.length && (!d.warnedAt || now - d.warnedAt > 10 * 60_000)) { d.warnedAt = now; console.warn(`[media] WARN ${host}: ${why.join(', ')} — no new jobs there`); }
+  return !why.length;
 }
 async function refreshDisk(host, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
   const j = JSON.parse(stdout.trim().split('\n').pop());
-  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, pending: false });
+  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, pending: false });
   return j;
 }
 /** Remove a finished job's folder on its host (best effort; the gate refuses a running one and its janitor sweeps the rest). */
@@ -165,7 +177,7 @@ export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHos
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq0 = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
-  const uniq = uniq0.filter(([h]) => diskOk(h)).length ? uniq0.filter(([h]) => diskOk(h)) : uniq0;
+  const uniq = uniq0.filter(([h]) => diskOk(h, { kind: 'probe' })).length ? uniq0.filter(([h]) => diskOk(h, { kind: 'probe' })) : uniq0;
   if (!uniq.length) return fn(null);
   let host = null;
   for (;;) {
@@ -267,7 +279,7 @@ export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn }
   for (;;) {
     let h = null;
     for (const x of hosts) {
-      if ((asrBusy.get(x.host) || 0) >= x.slots || !diskOk(x.host)) continue;
+      if ((asrBusy.get(x.host) || 0) >= x.slots || !diskOk(x.host, { kind: 'transcribe' })) continue;
       const remote = await remoteAsrCount(x.host, { running });
       if (remote != null && Math.max(remote, asrBusy.get(x.host) || 0) >= x.slots) continue;
       if ((asrBusy.get(x.host) || 0) < x.slots) { h = x; break; }   // re-checked after the await
@@ -303,8 +315,8 @@ export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = 
     const remote = running ? await running().catch(() => null) : null;
     const all = new Set([...idsOn(host), ...(remote || [])]);
     all.delete(job);
-    if (all.size < slots && idsOn(host).size < slots) break;
-    await waitDiar(host, recheckMs);   // the host is full with jobs this process does not hold: look again shortly
+    if (all.size < slots && idsOn(host).size < slots && diskOk(host, { kind: 'diarize' })) break;
+    await waitDiar(host, recheckMs);   // full with jobs this process does not hold, or short of RAM / disk: look again shortly
   }
   idsOn(host).add(job); syncBusy(host);
   try { return await fn(); } finally { idsOn(host).delete(job); syncBusy(host); wakeDiar(host); }
@@ -325,7 +337,8 @@ export async function runningOn(host, verb = 'diarize', { exec = run } = {}) {
  *  stay on boss (10-23 watch). */
 export function pickDiarHost(busy = diarBusy) {
   const all = [gpuHost(), asrHost()].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);   // the GPU host first
-  const order = all.filter((h) => diskOk(h)).length ? all.filter((h) => diskOk(h)) : all;   // never onto a full disk
+  const order = all.filter((h) => diskOk(h, { kind: 'diarize' }));   // never onto a full disk or a host short of RAM
+  if (!order.length) return all[0] || null;   // every host short: the first (its slot wait paces it)
   return order.find((h) => (busy.get(h) || 0) < (DIAR_SLOTS[h] || 3)) || order[0] || null;
 }
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
@@ -572,7 +585,7 @@ let encBusy = 0;
 const encWait = [];
 export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 4 } = {}) {   // boss prep 4 at a time (10-23 06:09: boss at load 9, prep the limit)
   const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
-  if (host && job && diskOk(host)) {
+  if (host && job && diskOk(host, { kind: 'encode' })) {
     // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
     if (encBusy >= slots) await new Promise((r) => encWait.push(r));
     encBusy++;
@@ -604,7 +617,7 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
     let took = false;
     if (!host) {
       for (;;) {
-        const usable = hosts.filter(([h]) => diskOk(h));
+        const usable = hosts.filter(([h]) => diskOk(h, { kind: sub === 'dfn' ? 'dfn' : 'grade' }));
         if (!usable.length) break;   // every offload host is low on disk → the tower does it
         host = usable.find(([h, n]) => (offBusy.get(h) || 0) < n)?.[0] || null;
         if (host) break;

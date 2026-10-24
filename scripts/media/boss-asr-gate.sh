@@ -10,7 +10,7 @@
 #   fetch-file <job>                                        a detached job's output FILE (the DeepFilterNet audio)
 #   running <tool>                                          the ids of the live detached jobs of that kind
 #   clean <job>                                             remove a finished job's folder (tower has fetched its result)
-#   df                                                      free space where the jobs live (+ the jobs' own size)
+#   df                                                      free space where the jobs live, the job count, MemAvailable
 #   hoststat <since-epoch>                                  read-only host resources for system-checks (./host-stat.sh,
 #                                                          a copy of scripts/ops/host-stat.sh beside this gate)
 # jobs/ and tmp/ may be SYMLINKS to a data volume (aorus /data/media-gpu, boss /mnt/data4tb/media-asr — 10-23: off the root
@@ -67,7 +67,8 @@ janitor() {
 if [[ "$verb" == "df" ]]; then
   mkdir -p jobs
   read -r size avail pcent < <(df -Pk jobs | awk 'NR==2 {gsub("%","",$5); print $2, $4, $5}')
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)"
+  mem=$(awk '/^MemAvailable:/ {print int($2/1048576*10)/10}' /proc/meminfo 2>/dev/null || echo null)
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then

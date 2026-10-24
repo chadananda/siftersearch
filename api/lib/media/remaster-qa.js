@@ -3,8 +3,16 @@
 // and the per-talk QA VERDICT. Metrics per version: { nisqa, dnsmos_ovrl, bandwidth_khz, rolloff99_hz, clip_pct, lufs,
 // asr_logprob, voice_sim (speaker-embedding cosine to the original), flatness_spikes }. Not wired into enhance until Chad
 // has heard the Ioas proof of fix.
+// 10-23 Chad, by ear on Ioas: NISQA 1.2 → 4.6 and DNSMOS 1.2 → 3.1, yet "badly mangled … many words are clipped" — the
+// perceived-quality models rewarded noise removal while INTELLIGIBILITY got worse. So intelligibility is checked FIRST and
+// dominates: any word lost against the original is a veto; and no processing chain is picked at all until Chad has
+// approved it by ear (approvedChains, empty by default → the transparent original).
 
 export const QA = {
+  wordsLostMax: 0,        // ANY word the original's transcript has (confident) and the candidate's lacks → veto
+  lowConfRiseMax: 0.02,   // share of low-confidence words may not rise by more than 2 points
+  onsetLossMaxDb: 2,      // speech-onset energy (first 50 ms of each word) may not fall by more than 2 dB
+  approvedChains: [],     // chains Chad approved BY EAR; empty → no processed copy is ever picked
   bandLossMax: 0.20,      // bandwidth or 99 % roll-off may not fall more than 20 % below the original's
   clipRiseMax: 0.1,       // percentage points of new clipping
   lufsTarget: -18, lufsTol: 2,
@@ -19,8 +27,28 @@ export const QA = {
 export const perceived = (m = {}) => (m.nisqa ?? 0) + 0.25 * (m.dnsmos_ovrl ?? 0);
 
 /** Why a candidate may not be published (empty = allowed), measured against the original. */
+/** Word-level comparison on the same segments: the original's confident words (conf ≥ 0.5) the candidate's transcript
+ *  lacks (an LCS alignment of normalised tokens), and the change in the low-confidence share. words: [{ w, conf }] */
+export function compareWords(origWords = [], candWords = []) {
+  const norm = (x) => String(x.w ?? x.word ?? x).toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
+  const a = origWords.map(norm), b = candWords.map(norm);
+  const n = a.length, m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const kept = new Set();
+  for (let i = 0, j = 0; i < n && j < m;) { if (a[i] === b[j]) { kept.add(i); i++; j++; } else if (dp[i + 1][j] >= dp[i][j + 1]) i++; else j++; }
+  const lost = origWords.map((w, i) => ({ w: a[i], conf: w.conf ?? w.score ?? 1, i })).filter((x) => !kept.has(x.i) && x.conf >= 0.5 && x.w);
+  const low = (ws) => (ws.length ? ws.filter((w) => (w.conf ?? w.score ?? 1) < 0.5).length / ws.length : 0);
+  return { words_lost: lost.length, lost: lost.slice(0, 20).map((x) => x.w), low_conf_rise: Math.round((low(candWords) - low(origWords)) * 1000) / 1000 };
+}
+
 export function vetoes(c = {}, orig = {}, q = QA) {
   const out = [];
+  // INTELLIGIBILITY first (it dominates — Chad 10-23)
+  if (c.words_lost != null && c.words_lost > q.wordsLostMax) out.push(`intelligibility: ${c.words_lost} word(s) lost against the original${c.lost?.length ? ` (${c.lost.slice(0, 5).join(', ')})` : ''}`);
+  if (c.low_conf_rise != null && c.low_conf_rise > q.lowConfRiseMax) out.push(`intelligibility: low-confidence words +${Math.round(c.low_conf_rise * 100)} points`);
+  if (c.onset_loss_db != null && c.onset_loss_db > q.onsetLossMaxDb) out.push(`intelligibility: word onsets ${c.onset_loss_db} dB weaker`);
+  if (c.words_lost == null && !c.is_original) out.push('intelligibility not measured (word-level comparison required)');
   const drop = (a, b) => (a != null && b != null && b > 0 ? (b - a) / b : 0);
   if (drop(c.bandwidth_khz, orig.bandwidth_khz) > q.bandLossMax && !c.removed_noise_above_speech) out.push(`bandwidth ${orig.bandwidth_khz} → ${c.bandwidth_khz} kHz`);
   if (drop(c.rolloff99_hz, orig.rolloff99_hz) > q.bandLossMax && !c.removed_noise_above_speech) out.push(`roll-off ${orig.rolloff99_hz} → ${c.rolloff99_hz} Hz`);
@@ -41,6 +69,8 @@ export function pickListening(candidates = {}, q = QA) {
   for (const [name, m] of Object.entries(candidates)) {
     if (name === 'original') continue;
     const v = vetoes(m, orig, q);
+    const chain = m.chain || name;
+    if (!q.approvedChains.includes(chain)) v.unshift(`chain '${chain}' not approved by ear (a human A/B is mandatory)`);
     if (v.length) vetoed[name] = v; else if (perceived(m) > perceived(orig)) ok.push(name);
   }
   ok.sort((a, b) => perceived(candidates[b]) - perceived(candidates[a]));

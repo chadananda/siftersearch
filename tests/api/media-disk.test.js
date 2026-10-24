@@ -2,7 +2,7 @@
 // on its host, the gate's janitor removes old / over-cap finished jobs (never a running one), a host under 20 GB free takes
 // no new job, and system-checks warns at 85 % / is critical at 95 %.
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, copyFileSync, utimesSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, copyFileSync, utimesSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync, spawn } from 'child_process';
@@ -127,5 +127,24 @@ describe('jobs/ as a symlink to a data volume (10-23: off the root disk)', () =>
     try { gate('start flac j-xx1 --verb nope'); } catch { /* bad verb: exit 2 after the janitor */ }
     expect(existsSync(join(vol, 'jobs', 'old1'))).toBe(false);
     expect(existsSync(join(vol, 'jobs', 'new1'))).toBe(true);
+  });
+});
+
+describe('RAM guard (10-23: boss at 8 % free with six transcriptions; aorus OOM-killed python six times)', () => {
+  it('a job goes to a host only when MemAvailable covers its budget plus the host reserve', async () => {
+    const t = await import('../../api/lib/media/tools.js');
+    const noop = async () => ({});
+    t.noteDisk('boss', { free_gb: 1600, mem_avail_gb: 6 });   // reserve 5 GB on boss
+    expect(t.diskOk('boss', { refresh: noop, kind: 'encode' })).toBe(true);        // 0.5 + 5 ≤ 6
+    expect(t.diskOk('boss', { refresh: noop, kind: 'transcribe' })).toBe(false);   // 3 + 5 > 6
+    t.noteDisk('aorus', { free_gb: 3000, mem_avail_gb: 5.5 });   // reserve 2 GB
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'transcribe' })).toBe(true);
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'transcribe', now: Date.now() })).toBe(true);
+    const got = await t.acquireAsrHost([{ host: 'boss', slots: 4 }, { host: 'aorus', slots: 2 }], { running: async () => [] });
+    expect(got.host).toBe('aorus'); got.release();
+  });
+  it('the gate reports MemAvailable', () => {
+    const src = readFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), 'utf8');
+    expect(src).toMatch(/MemAvailable/);
   });
 });
