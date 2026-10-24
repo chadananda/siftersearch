@@ -3,6 +3,7 @@
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { late } from './late.js';
+import { slotWait } from './tools.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -30,7 +31,7 @@ const TOWER_SLOTS = Math.max(1, Number(process.env.MEDIA_TOWER_SLOTS) || 2);
 let towerBusy = 0;
 const towerWait = [];
 export async function towerSlot(fn) {
-  if (towerBusy >= TOWER_SLOTS) await new Promise((r) => towerWait.push(r));
+  while (towerBusy >= TOWER_SLOTS) await slotWait(towerWait, 'a tower slot');
   towerBusy++;
   try { return await fn(); } finally { towerBusy--; towerWait.shift()?.(); }
 }
@@ -41,7 +42,7 @@ const LIGHT_SLOTS = Math.max(1, Number(process.env.MEDIA_LIGHT_SLOTS) || 4);
 let lightBusy = 0;
 const lightWait = [];
 export async function towerLight(fn) {
-  if (lightBusy >= LIGHT_SLOTS) await new Promise((r) => lightWait.push(r));
+  while (lightBusy >= LIGHT_SLOTS) await slotWait(lightWait, 'a light slot');
   lightBusy++;
   try { return await fn(); } finally { lightBusy--; lightWait.shift()?.(); }
 }
@@ -51,7 +52,7 @@ const RERUN_SLOTS = Math.max(1, Number(process.env.MEDIA_RERUN_SLOTS) || 1);
 let rerunBusy = 0;
 const rerunWait = [];
 export async function rerunLight(fn) {
-  while (rerunBusy >= RERUN_SLOTS) await new Promise((r) => rerunWait.push(r));
+  while (rerunBusy >= RERUN_SLOTS) await slotWait(rerunWait, 'the re-run slot');
   rerunBusy++;
   try { return await fn(); } finally { rerunBusy--; rerunWait.shift()?.(); }
 }
@@ -83,7 +84,7 @@ async function cbPeople() {
 let screenBusy = 0;
 const screenWait = [];
 async function screenSlot(fn) {
-  while (screenBusy >= 2) await new Promise((r) => screenWait.push(r));
+  while (screenBusy >= 2) await slotWait(screenWait, 'a prescreen slot');
   screenBusy++;
   try { return await fn(); } finally { screenBusy--; screenWait.shift()?.(); }
 }
@@ -488,7 +489,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         console.info(`[media] diarize ${meta.slug} → ${meta.diar_job.host || 'boss'} (job ${meta.diar_job.id})`);
         // a failed (or cancelled) diarization is dispatched afresh next time — never re-attached to the dead job on its host
         if (tools.diarize) {
-          try { await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 4 }); }
+          try { await tools.diarize(join(dir, v.file), turnsFile, { pidFile: join(dir, 'diarization.pid'), job: meta.diar_job.id, stop, host: meta.diar_job.host || 'boss', threads: 4, deps: { onHost: async (h) => { meta.diar_job.host = h; await save(); console.info(`[media] diarize ${meta.slug} moved → ${h} (its host was full)`); } } }); }
           catch (err) { if (err?.code !== 'DRAIN') { delete meta.diar_job; await save(); } throw err; }
         }
         else await tools.tool('diarize', join(dir, v.file), { output: turnsFile }, { threads: 4, timeoutMs: 6 * 3600_000, stop });

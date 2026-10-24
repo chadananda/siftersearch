@@ -305,3 +305,39 @@ describe('heat guard (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss 
     expect(readFileSync(new URL('../../scripts/media/media_tool.py', import.meta.url), 'utf8')).toMatch(/MEDIA_DIAR_NO_CPU/);
   });
 });
+
+describe('every slot wait gives way to a drain (10-23 19:44: two compute jobs held the media drain 9+ min in a probe/encode wait)', () => {
+  it('slotWait throws DrainAbort when draining, and otherwise returns after its re-check interval', async () => {
+    const { slotWait } = await import('../../api/lib/media/tools.js');
+    const q = [];
+    await expect(slotWait(q, 'x', { draining: () => true })).rejects.toMatchObject({ code: 'DRAIN' });
+    let drain = false; const t0 = Date.now();
+    await slotWait(q, 'x', { ms: 20, draining: () => drain });
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(15);
+    expect(q).toHaveLength(0);   // a timed-out waker removes itself
+    const p = slotWait(q, 'x', { ms: 5000, draining: () => drain }); drain = true; q.shift()();
+    await expect(p).rejects.toMatchObject({ code: 'DRAIN' });
+  });
+  it('no plain slot wait is left in the media code', async () => {
+    const { readFileSync } = await import('fs');
+    for (const f of ['../../api/lib/media/tools.js', '../../api/lib/media/item.js']) {
+      expect(readFileSync(new URL(f, import.meta.url), 'utf8'), f).not.toMatch(/await new Promise\(\(r\) => \w*[Ww]ait\w*\.push\(r\)\)/);
+    }
+  });
+});
+
+describe('a diarization not yet started moves off a full host (10-23 19:41: five queued for aorus’s one slot, boss idle)', () => {
+  it('aorus full, boss free → it runs on boss and the item is told', async () => {
+    process.env.MEDIA_GPU_HOST = 'aorus'; process.env.MEDIA_ASR_HOST = 'bossy';
+    const { diarize, diarSlot } = await import('../../api/lib/media/tools.js');
+    let free; const busy = diarSlot('aorus', () => new Promise((r) => { free = r; }), 1);   // aorus's one slot taken
+    const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
+    const out = join(mkdtempSync(join(tmpdir(), 'mv-')), 'd.json');
+    const ran = [], moved = [];
+    await diarize('/a.flac', out, { host: 'aorus', job: 'mv-dz-1', deps: { live: async () => 'missing', running: async () => [], onHost: async (h) => moved.push(h),
+      asrJob: async (i, o, x) => { ran.push(x.host); writeFileSync(o.output, '{"turns":[]}'); return {}; } } });
+    expect(ran).toEqual(['bossy']); expect(moved).toEqual(['bossy']);
+    free(); await busy;
+    delete process.env.MEDIA_GPU_HOST; delete process.env.MEDIA_ASR_HOST;
+  });
+});

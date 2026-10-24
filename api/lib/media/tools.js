@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { isDraining } from '../drain.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const TOOL = join(ROOT, 'scripts', 'media', 'media_tool.py');
@@ -28,12 +29,20 @@ process.once('exit', () => { for (const c of live) { try { c.kill('SIGTERM'); } 
 
 /** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
 export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
+/** A SLOT WAIT that a drain never hangs on (10-23: a diarization at 17:59 and two compute jobs at 19:44 held the media drain
+ *  in plain slot waits): resolves when woken or after `ms` (the caller re-checks its condition), and throws DrainAbort when
+ *  the service is draining. queue: the array of wakers. */
+export async function slotWait(queue, label = 'a slot', { ms = 5_000, draining = isDraining } = {}) {
+  if (draining()) throw new DrainAbort(`waiting for ${label}`);
+  await new Promise((r) => { const t = setTimeout(() => { const i = queue.indexOf(go); if (i >= 0) queue.splice(i, 1); r(); }, ms); const go = () => { clearTimeout(t); r(); }; queue.push(go); });
+  if (draining()) throw new DrainAbort(`waiting for ${label}`);
+}
 
 // the 16 kHz conversions sent to the ASR hosts: 3 at once × 2 threads (with item.js towerLight's 4 × 2, prep stays ≤ 14 cores)
 let convBusy = 0;
 const convWait = [];
 export async function convSlot(fn) {
-  if (convBusy >= 3) await new Promise((r) => convWait.push(r));
+  while (convBusy >= 3) await slotWait(convWait, 'a conversion slot');
   convBusy++;
   try { return await fn(); } finally { convBusy--; convWait.shift()?.(); }
 }
@@ -42,7 +51,7 @@ export async function convSlot(fn) {
 let asrConvBusy = 0;
 const asrConvWait = [];
 export async function asrConvSlot(fn) {
-  if (asrConvBusy >= 2) await new Promise((r) => asrConvWait.push(r));
+  while (asrConvBusy >= 2) await slotWait(asrConvWait, 'a transcription conversion slot');
   asrConvBusy++;
   try { return await fn(); } finally { asrConvBusy--; asrConvWait.shift()?.(); }
 }
@@ -202,7 +211,7 @@ export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHos
   for (;;) {
     host = uniq.find(([h, n]) => (probeBusy.get(h) || 0) < n)?.[0] || null;
     if (host) break;
-    await new Promise((r) => probeWaiters.push(r));
+    await slotWait(probeWaiters, 'a probe host');
   }
   probeBusy.set(host, (probeBusy.get(host) || 0) + 1);
   try { return await fn(host); } finally { probeBusy.set(host, probeBusy.get(host) - 1); probeWaiters.shift()?.(); }
@@ -535,9 +544,15 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
       // a job ALREADY running (or done) on its host is re-attached outside the slots — the slots limit what we START
       // (10-23: re-attached aorus jobs held the diar lane in aorus's single slot while boss sat idle)
       const live = deps.live ? await deps.live() : deps.asrJob ? null : await remoteJob('poll-only', input, {}, { host, job, probeOnly: true }).catch(() => null);
-      const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
       // a re-attached job does not wait for a slot, but it COUNTS (12:29: after a restart two re-attached jobs plus a new one
       // ran on aorus, whose cap is 1) — pickDiarHost sees it
+      // NOT started yet and its host is full while another has a free slot → move there before it starts (10-23 19:41: five
+      // diarizations kept aorus — host chosen before a restart — and queued for its single slot while boss had room)
+      if (live !== 'running' && live !== 'done' && idsOn(host).size >= (DIAR_SLOTS[host] || 3)) {
+        const alt = pickDiarHost();
+        if (alt && alt !== host && idsOn(alt).size < (DIAR_SLOTS[alt] || 3)) { host = alt; await deps.onHost?.(alt); }
+      }
+      const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
       const r = live === 'running' || live === 'done' ? await countDiar(host, go, job) : await diarSlot(host, go, undefined, { job, stop, running: deps.running || (deps.asrJob ? null : () => runningOn(host)) });
       const j = JSON.parse(await (await import('fs/promises')).readFile(output, 'utf8'));
       return { speakers: new Set((j.turns || []).map((t) => t.speaker)).size, turns: (j.turns || []).length, host, job, reattached: r.reattached };
@@ -610,7 +625,7 @@ export async function encodeRemote(recipe, input, output, { af = '', job, stop, 
   const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
   if (host && job && diskOk(host, { kind: 'encode' })) {
     // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
-    if (encBusy >= slots) await new Promise((r) => encWait.push(r));
+    while (encBusy >= slots) await slotWait(encWait, 'an encode slot');
     encBusy++;
     try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output, threads: 2 }, { host, job, stop, file: true }); }   // 2 threads each (was 8)
     catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] encode ${recipe} on ${host} failed — tower: ${String(err.message).slice(0, 300)}`); }
@@ -644,7 +659,7 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
         if (!usable.length) break;   // every offload host is low on disk → the tower does it
         host = usable.find(([h, n]) => (offBusy.get(h) || 0) < n)?.[0] || null;
         if (host) break;
-        await new Promise((r) => offWait.push(r));
+        await slotWait(offWait, `a ${sub} host`);
       }
       if (host) { offBusy.set(host, (offBusy.get(host) || 0) + 1); took = true; }
     }
