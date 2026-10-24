@@ -287,7 +287,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       // detached (pid file): a service restart re-attaches instead of starting over
       // on the GPU host (aorus) when it answers, else a detached tower process; both re-attach after a restart
       if (!meta.grade_job) { meta.grade_job = `${meta.slug}-gr-${Date.now().toString(36)}`.slice(0, 110); await save(); }
-      const m = tools.gpuOrTower ? await tools.gpuOrTower('grade', join(dir, meta.original), {}, { job: meta.grade_job, pidFile: join(dir, 'grade.pid'), stop, slot: towerSlot })
+      const needGb = tools.gradeNeedGb ? tools.gradeNeedGb(meta.duration_s, meta.source?.probe?.sample_rate) : null;   // a long talk goes to tower, not into aorus's OOM killer
+      const m = tools.gpuOrTower ? await tools.gpuOrTower('grade', join(dir, meta.original), {}, { job: meta.grade_job, pidFile: join(dir, 'grade.pid'), stop, slot: towerSlot, needGb })
         : await towerSlot(() => tools.tool('grade', join(dir, meta.original), {}, { threads: 4, stop, timeoutMs: 3600_000 }));
       delete meta.grade_job;
       meta.quality = { measured_at: d.now(), raw: m, ...gradeReport(m) };

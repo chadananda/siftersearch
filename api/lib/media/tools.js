@@ -125,15 +125,15 @@ const MEM_RESERVE = { boss: 5, aorus: 2 };
 const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host).toUpperCase()}`]) || MEM_RESERVE[host] || 2;
 export function noteDisk(host, info, now = Date.now()) { diskInfo.set(host, { ...(diskInfo.get(host) || {}), ...info, at: now }); }
 /** May a NEW job of `kind` go to this host now? (disk ≥ 20 GB free; RAM ≥ the kind's budget + the host's reserve) */
-export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = null } = {}) {
+export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = null, needGb = null } = {}) {
   if (!host) return true;
   const d = diskInfo.get(host);
   if ((!d || now - d.at > 30_000) && !d?.pending) { noteDisk(host, { pending: true }, d?.at ?? 0); refresh(host).catch(() => {}).finally(() => { const x = diskInfo.get(host); if (x) x.pending = false; }); }
   if (!d) return true;
   const why = [];
   if (d.free_gb != null && d.free_gb < diskMinGb()) why.push(`${d.free_gb} GB disk free (< ${diskMinGb()} GB)`);
-  const need = (MEM_BUDGET[kind] || 0) + memReserve(host);
-  if (kind && d.mem_avail_gb != null && d.mem_avail_gb < need) why.push(`${d.mem_avail_gb} GB RAM available (< ${need} GB for a ${kind})`);
+  const need = (needGb ?? MEM_BUDGET[kind] ?? 0) + memReserve(host);
+  if (kind && d.mem_avail_gb != null && d.mem_avail_gb < need) why.push(`${d.mem_avail_gb} GB RAM available (< ${Math.round(need * 10) / 10} GB for a ${kind})`);
   if (why.length && (!d.warnedAt || now - d.warnedAt > 10 * 60_000)) { d.warnedAt = now; console.warn(`[media] WARN ${host}: ${why.join(', ')} — no new jobs there`); }
   return !why.length;
 }
@@ -158,6 +158,9 @@ export function thermalSlots(host, base, { now = Date.now() } = {}) {
 }
 /** May the GPU host take CPU-side work (probes) now? Not when warm (GPU ≥ 80 °C or CPU ≥ 85 °C). */
 export const coolEnough = (host) => { const d = diskInfo.get(host); return !d || ((d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < 85); };
+/** A GRADE's RAM: it decodes the whole recording at its native rate (several float32 copies) besides DNSMOS/NISQA —
+ *  10-23 19:15 the OOM killer took one on aorus at 7.7 GB. → GB */
+export const gradeNeedGb = (durationS = 3600, sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * (sampleRate || 48000) * 4 * 4 / 1e9) * 10) / 10;
 /** Remove a finished job's folder on its host (best effort; the gate refuses a running one and its janitor sweeps the rest). */
 export async function cleanRemote(host, job, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, `clean ${job}`)], { timeoutMs: 60_000 });
@@ -625,7 +628,7 @@ const offWait = [];
 // that aorus's GPU does in under a minute — MEDIA_DFN_OVERFLOW=boss uses it (1 at a time)
 export const offloadHosts = (sub) => (sub === 'dfn' ? [[gpuHost(), 2], [process.env.MEDIA_DFN_OVERFLOW || null, 1]] : [[gpuHost(), 3]]).filter(([h]) => h)
   .filter(([h], i, a) => a.findIndex(([x]) => x === h) === i);
-export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn(), hosts = offloadHosts(sub), exec, pollMs } = {}) {
+export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn(), hosts = offloadHosts(sub), exec, pollMs, needGb = null } = {}) {
   if (hosts.length && job) {
     // a job already started on one of the hosts (before a restart) is re-attached THERE (the job id carries the host)
     const idOf = (h) => `${job}-${h.replace(/[^a-z0-9]/gi, '').toLowerCase()}`.slice(0, 120);
@@ -637,7 +640,7 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
     let took = false;
     if (!host) {
       for (;;) {
-        const usable = hosts.filter(([h]) => diskOk(h, { kind: sub === 'dfn' ? 'dfn' : 'grade' }));
+        const usable = hosts.filter(([h]) => diskOk(h, { kind: sub === 'dfn' ? 'dfn' : 'grade', needGb }));
         if (!usable.length) break;   // every offload host is low on disk → the tower does it
         host = usable.find(([h, n]) => (offBusy.get(h) || 0) < n)?.[0] || null;
         if (host) break;

@@ -153,14 +153,15 @@ export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000
       SUM(CASE WHEN state IN ('prepped','asr_queued') THEN 1 ELSE 0 END) asr_backlog,
       SUM(CASE WHEN state IN ('asr_done','diar_queued') THEN 1 ELSE 0 END) diar_backlog,
       SUM(CASE WHEN state = 'done' AND why LIKE 'update failed:%' THEN 1 ELSE 0 END) published_problems,
-      SUM(CASE WHEN published_at >= ? THEN 1 ELSE 0 END) published_window
-    FROM media_items`, [sinceIso, sinceIso], 'media:health');
+      SUM(CASE WHEN published_at >= ? THEN 1 ELSE 0 END) published_window,
+      SUM(CASE WHEN state = 'done' AND updated_at >= ? AND published_at < ? THEN 1 ELSE 0 END) rerendered_window
+    FROM media_items`, [sinceIso, sinceIso, sinceIso, sinceIso], 'media:health');
   const by = await queryAll(`SELECT COALESCE(stage, '?') stage, COUNT(*) n FROM media_items WHERE state = 'failed' AND updated_at >= ? GROUP BY stage`, [sinceIso], 'media:health-failed');
   const recent = await queryAll(`SELECT slug, stage, why, updated_at FROM media_items WHERE state = 'failed' AND updated_at >= ? ORDER BY updated_at DESC LIMIT 10`, [sinceIso], 'media:health-failed-items');
   const n = (k) => Number(r?.[k] || 0);
   return { since: sinceIso, failed: n('failed_window'), failed_total: n('failed_total'), failed_by_stage: Object.fromEntries(by.map((x) => [x.stage, x.n])),
     failed_items: recent.map((x) => ({ slug: x.slug, stage: x.stage, why: String(x.why || '').slice(0, 200), at: x.updated_at })),
-    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), asr_backlog: n('asr_backlog'), diar_backlog: n('diar_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window'), published_problems: n('published_problems') };
+    compute_running: n('compute_running'), llm_running: n('llm_running'), compute_backlog: n('compute_backlog'), asr_backlog: n('asr_backlog'), diar_backlog: n('diar_backlog'), llm_backlog: n('llm_backlog'), published: n('published_window'), rerendered: n('rerendered_window'), published_problems: n('published_problems') };   // published = FIRST publications (published_at); rerendered = re-runs of talks published before the window
 }
 /** RESTORE: a talk once published (catalogued) that a failed re-run marked 'failed' goes back to 'done', its reason kept as
  *  'update failed: …' (10-23: the publish gate took ~13 published talks off the site). → [ids] */
