@@ -133,6 +133,12 @@ Spanish; word check in that language). Ioas: UniPASE lost 5 / added 6 words (ASR
 0.928 → 0.961; speaker-embedding similarity reads 0.46 although Chad hears the voice unchanged — the embedding metric
 does not survive bandwidth restoration and must not gate UniPASE.
 
+Multilingual (word check in that language): Persian alone 3 lost / 5 added of 98, confidence 0.948 → 0.951, bandwidth
+6.2 → 13.2 kHz (holds up); Persian+English interpreted 41 lost / 25 added of 81 with Whisper auto-detect (a whole Persian
+sentence missing; likely language-choice drift per 30 s window, unproven) → mixed-language talks cannot be word-guarded
+reliably, keep them on the transparent chain; Arabic/Persian chant: Whisper recognises only ~20 words per minute, so
+chant cannot be guarded either → chant windows keep the original.
+
 Production wiring (media agent, 10-23) uses these venvs — do not delete/upgrade: aorus `/data/remaster-rnd/venvs/venv-rnd`
 (torch 2.14 cu130), boss `/mnt/data4tb/remaster-rnd/venvs/rocm` (torch 2.9.1 ROCm 7.13); config `~/media-gpu/unipase.conf`
 / `~/media-asr/unipase.conf`; repo + weights copied to `/data/media-gpu/unipase` and `/mnt/data4tb/media-asr/unipase`.

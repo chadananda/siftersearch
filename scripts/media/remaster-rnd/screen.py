@@ -6,7 +6,8 @@
 # 4 threads, under `nice -n 15 ionice -c3`; never the GPU. Usage: python screen.py <root> [clip ...]
 #   <root>/cands/<clip>/<name>.wav (original.wav included) → <root>/screen/<clip>/<name>.json (cached by size+mtime)
 import difflib, json, os, re, sys, time
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
+if os.environ.get('SCREEN_DEVICE', 'cpu') == 'cpu':
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''   # default: CPU only (tower/boss); SCREEN_DEVICE=cuda for ASR on aorus's GPU
 THREADS = int(os.environ.get('SCREEN_THREADS', '4'))
 for k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS'):
     os.environ[k] = str(THREADS)
@@ -26,7 +27,8 @@ def models():
         import torch
         torch.set_num_threads(THREADS)
         from faster_whisper import WhisperModel
-        _m['asr'] = WhisperModel('large-v3-turbo', device='cpu', compute_type='int8', cpu_threads=THREADS)
+        dev = os.environ.get('SCREEN_DEVICE', 'cpu')
+        _m['asr'] = WhisperModel('large-v3-turbo', device=dev, compute_type='float16' if dev == 'cuda' else 'int8', cpu_threads=THREADS)
         from torchaudio.pipelines import SQUIM_OBJECTIVE
         _m['squim'] = SQUIM_OBJECTIVE.get_model().eval()
         import sherpa_onnx
