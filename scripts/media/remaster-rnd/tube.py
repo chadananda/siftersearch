@@ -14,9 +14,13 @@ from scipy.signal import firwin2, fftconvolve, welch
 from rnd_common import SR, read, write, align, mix, hf_blend
 from build_cands import finish, ffmpeg, BW
 
-ROOT, CLIP = sys.argv[1], sys.argv[2]
-FC = BW[CLIP] * 0.97 * 1000                      # crossover just under the measured band edge
-os.makedirs(f'{ROOT}/work', exist_ok=True)
+ROOT, CLIP = (sys.argv[1:3] + [None, None])[:2] if __name__ == '__main__' else (None, None)
+FC = BW.get(CLIP, 3.0) * 0.97 * 1000             # crossover just under the measured band edge (set_fc() when imported)
+
+
+def set_fc(bw_khz):
+    global FC
+    FC = bw_khz * 0.97 * 1000
 
 
 def speech_frames(x, sr=SR):
@@ -84,6 +88,7 @@ def exciter(x, amount):
 
 
 def main():
+    os.makedirs(f'{ROOT}/work', exist_ok=True)
     dry = read(f'{ROOT}/clips/{CLIP}.wav')
     wet = {}
     for m in ('mf2se', 'dfn6', 'sidon', 'audiosr', 'resenh', 'vf0', 'mf2sr', 'vr'):

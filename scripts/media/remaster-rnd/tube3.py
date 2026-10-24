@@ -8,11 +8,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from scipy.signal import butter, sosfiltfilt, firwin2, fftconvolve, welch
 import tube
-from tube import speech_frames, smooth_oct, ltass_target, wpe, FC
+from tube import speech_frames, smooth_oct, ltass_target, wpe
 from rnd_common import SR, read, write, align, mix
 from build_cands import finish
 
-ROOT, CLIP = sys.argv[1], sys.argv[2]
+ROOT, CLIP = (sys.argv[1:3] + [None, None])[:2] if __name__ == '__main__' else (None, None)
+if CLIP:
+    tube.set_fc(tube.BW[CLIP])
 
 
 def deres2(x, mud_db, lift_lo=800, lift_hi=1800, lift_end=2500, max_boost=5.0, max_cut=6.0):
@@ -20,7 +22,7 @@ def deres2(x, mud_db, lift_lo=800, lift_hi=1800, lift_end=2500, max_boost=5.0, m
     freqs, P = welch(s, SR, nperseg=8192)
     db = 10 * np.log10(P + 1e-20)
     s6, s1 = smooth_oct(freqs, db, 6), smooth_oct(freqs, db, 1)
-    band = (freqs >= 150) & (freqs <= FC)
+    band = (freqs >= 150) & (freqs <= tube.FC)
     peaks = np.clip(s6 - s1, 0, None)
     tgt = ltass_target(freqs) + s1[np.argmin(abs(freqs - 500))]
     tilt = np.clip(tgt - s1, -4, max_boost)
@@ -30,7 +32,7 @@ def deres2(x, mud_db, lift_lo=800, lift_hi=1800, lift_end=2500, max_boost=5.0, m
     # mud: a broad bell cut centred at 320 Hz (about 1.3 octaves wide)
     lf = np.log2(np.maximum(freqs, 1) / 320)
     corr += mud_db * np.exp(-0.5 * (lf / 0.55) ** 2)
-    taper = np.interp(np.log2(np.maximum(freqs, 1)), [np.log2(80), np.log2(110), np.log2(FC), np.log2(FC * 1.26)], [0, 1, 1, 0])
+    taper = np.interp(np.log2(np.maximum(freqs, 1)), [np.log2(80), np.log2(110), np.log2(tube.FC), np.log2(tube.FC * 1.26)], [0, 1, 1, 0])
     corr = smooth_oct(freqs, corr * taper, 6)
     corr = np.where(freqs < 100, corr - 12 * np.log2(100 / np.maximum(freqs, 10)), corr)   # 12 dB/oct high-pass at 100 Hz
     taps = firwin2(4095, freqs / (SR / 2), 10 ** (np.maximum(corr, -40) / 20))
