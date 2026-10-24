@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-24T16:43:19.619Z",
+  "generated": "2026-10-24T16:51:05.054Z",
   "entries": [
+    {
+      "hash": "5d8229ef",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Publishing a talk purges its edge-cached page + API entry (worker POST /_edge/purge, keyed) so a newly restored talk shows the Original",
+      "scope": "media"
+    },
     {
       "hash": "3ca57b07",
       "date": "2026-10-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "The quibble lint — a sentence correcting the reader's case endings is dropped unless they asked about grammar; a language answer never disclaims that 'the texts I can search do not settle' it (Chad 10-19)",
       "scope": "anis"
-    },
-    {
-      "hash": "a5d58a0d",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Language questions get their own shape — answered from knowledge of the language and the passage under discussion, no padding search; authority shown by use, never described (Chad 10-19, Lal's 'fí baytihi')",
-      "scope": "anis"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "5d8229ef",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Publishing a talk purges its edge-cached page + API entry (worker POST /_edge/purge, keyed) so a newly restored talk shows the Original",
+        "scope": "media"
+      },
       {
         "hash": "3ca57b07",
         "date": "2026-10-24",
@@ -7005,13 +7012,6 @@
         "date": "2026-10-19",
         "type": "Fixed",
         "description": "The quibble lint — a sentence correcting the reader's case endings is dropped unless they asked about grammar; a language answer never disclaims that 'the texts I can search do not settle' it (Chad 10-19)",
-        "scope": "anis"
-      },
-      {
-        "hash": "a5d58a0d",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Language questions get their own shape — answered from knowledge of the language and the passage under discussion, no padding search; authority shown by use, never described (Chad 10-19, Lal's 'fí baytihi')",
         "scope": "anis"
       }
     ]

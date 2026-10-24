@@ -205,24 +205,33 @@
   /** Original | Remastered: same second, same play state, only the source changes (the other copy is not fetched until
    *  the first switch). Rate and volume are kept; a stalled load gives up after 10 s and says so. */
   let switching = false;
+  let loadingCopy = $state(false);   // the other copy is buffering (shown beside the switch)
+  const warmed = new Set();
+  /** Hover/focus on the switch: read the other copy's first 64 KB so the switch finds it warm at the edge. */
+  function warm(which) {
+    const u = which === 'original' ? audioInfo?.original_ogg || audioInfo?.original_url : audioInfo?.ogg || audioInfo?.m4a;
+    if (!u || warmed.has(u) || which === copy) return;
+    warmed.add(u);
+    fetch(media.href(u), { headers: { range: 'bytes=0-65535' } }).catch(() => {});
+  }
   async function switchCopy(which) {
     if (!canPlay || !hasOriginal || which === copy || switching) return;
     const t = started ? now() : startAt, wasPlaying = playing;
     copy = which;
     if (!started || !audio.src || audio.src.startsWith('blob:')) return;   // nothing loaded yet: the first play loads this copy
-    switching = true; note = '';
+    switching = true; loadingCopy = true; note = '';
     try {
       const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
       const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
         : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
       audio.src = media.href(want); loaded = want;
-      await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load')), 10000))]);
+      await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load — try again')), 25000))]);
       audio.currentTime = Math.max(0, copyTime(t) - offset);
       audio.playbackRate = rate;
       if (wasPlaying) await audio.play();
     } catch (e) {
       playing = false; note = `Could not switch: ${e.message}`;
-    } finally { switching = false; if (!playing) frame(); }
+    } finally { switching = false; loadingCopy = false; if (!playing) frame(); }
   }
   const seek = (t) => (playing || started ? playFrom(t, { end: null }) : (startAt = t, current = t, mark(wordAt(flat.starts, t + 0.02))));
   const onword = (k, el) => playFrom(flat.starts[k], { el });
@@ -370,9 +379,10 @@
         <div class="flex items-center gap-1.5 font-dial font-semibold uppercase tracking-wider">{#if !slim}Audio{/if}
           <div class="ab" role="radiogroup" aria-label="Audio version">
             {#each [['original', 'Original'], ['main', 'Remastered']] as [k, label] (k)}
-              <button type="button" role="radio" aria-checked={copy === k} aria-pressed={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)}>{label}</button>
+              <button type="button" role="radio" aria-checked={copy === k} aria-pressed={copy === k} class="ab-opt" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
             {/each}
           </div>
+          {#if loadingCopy}<span class="text-xs font-normal normal-case tracking-normal opacity-80" role="status">loading the other copy…</span>{/if}
         </div>
       {/if}
     </div>
@@ -425,7 +435,7 @@
           <p class="text-sm text-radio-dial-ink">Text only — audio is not available for this recording{item.source?.kind === 'youtube' ? '; the full talk is on YouTube' : ''}.</p>
         {/if}
         <!-- svelte-ignore a11y_media_has_caption — the transcript below is the caption track -->
-        <audio bind:this={audio} preload="auto" class="hidden"></audio>
+        <audio bind:this={audio} preload="metadata" class="hidden"></audio>
       </section>
 
       <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
